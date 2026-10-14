@@ -75,6 +75,15 @@
     cursor: pointer;
 }
 
+/* The open conversation, marked the way the customer service screen marks it:
+   a light background and a bar on the left, rather than the theme's solid
+   active fill, which turned the whole row black or blue. The bar takes the
+   colour of the theme's primary button, read by the script below. */
+.somcp-agent-list .list-group-item.somcp-agent-current {
+    background: rgba(0, 0, 0, .04);
+    box-shadow: inset 3px 0 0 var(--somcp-accent, #25b9d7);
+}
+
 .somcp-agent-row {
     display: flex;
     justify-content: space-between;
@@ -444,15 +453,14 @@
                     }
                     shown++;
                     var item = document.createElement('a');
-                    item.className = 'list-group-item' + (conversation.id_conversation === current ? ' active' : '');
+                    item.className = 'list-group-item' + (conversation.id_conversation === current ? ' somcp-agent-current' : '');
+                    item.setAttribute('aria-current', conversation.id_conversation === current ? 'true' : 'false');
                     item.setAttribute('role', 'button');
                     item.setAttribute('tabindex', '0');
-                    // list-group-item-text rather than text-muted: the theme recolours it on
-                    // the active row, where muted grey would vanish into the highlight.
-                    item.innerHTML = '<div class="somcp-agent-row"><strong></strong><small></small></div><small class="list-group-item-text"></small>';
+                    item.innerHTML = '<div class="somcp-agent-row"><strong></strong><small></small></div><small class="text-muted"></small>';
                     item.querySelector('strong').textContent = conversation.title;
                     item.querySelector('.somcp-agent-row small').textContent = when(conversation.date_upd);
-                    item.querySelector('.list-group-item-text').textContent = agentLabel(conversation.provider + ':' + conversation.model) || conversation.model;
+                    item.querySelector('.text-muted').textContent = agentLabel(conversation.provider + ':' + conversation.model) || conversation.model;
                     item.addEventListener('click', function () {
                         open(conversation.id_conversation);
                     });
@@ -680,6 +688,14 @@
 
             search.addEventListener('input', drawList);
             pick.addEventListener('change', showRole);
+
+            // The accent of the open conversation is the theme's own primary
+            // colour, whatever theme the shop runs: read from the button that
+            // already wears it rather than guessed.
+            var accent = window.getComputedStyle(root.querySelector('[data-somcp-new]')).backgroundColor;
+            if (accent && accent !== 'transparent' && accent !== 'rgba(0, 0, 0, 0)') {
+                root.style.setProperty('--somcp-accent', accent);
+            }
 
             showRole();
             drawList();

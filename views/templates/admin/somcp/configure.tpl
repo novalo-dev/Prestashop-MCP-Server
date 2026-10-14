@@ -41,6 +41,7 @@
                 {if $somcp_consents}<span class="badge">{count($somcp_consents)|intval}</span>{/if}
             </a>
         </li>
+        <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-agent" role="tab" data-somcp-tab="agent">{l s='AI agent' d='Modules.Somcp.Admin'}</a></li>
         <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-log" role="tab" data-somcp-tab="log">{l s='Security log' d='Modules.Somcp.Admin'}</a></li>
     </ul>
 
@@ -463,6 +464,116 @@
         {/if}
         </div>
     </div>
+
+    {* A form of its own: these settings are one document for the whole
+       installation, while the settings form above follows the shop
+       inheritance. *}
+    <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="form-horizontal somcp-pane" id="somcp-pane-agent" data-somcp-pane="agent" role="tabpanel" autocomplete="off" hidden>
+
+        <div class="alert alert-info">
+            {l s='Talk to Claude, ChatGPT or Gemini from the back office, with the same tools as the MCP server and the permissions of the employee who writes. Every change waits for the employee to approve it.' d='Modules.Somcp.Admin'}
+            <a href="{$somcp_agent_url|escape:'html':'UTF-8'}">{l s='Open the AI agent' d='Modules.Somcp.Admin'}</a>
+        </div>
+
+        {foreach from=$somcp_agent.providers item=provider}
+            <div class="panel">
+                <div class="panel-heading"><i class="icon-comments"></i> {$provider.label|escape:'html':'UTF-8'}</div>
+
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Enabled' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-9">
+                        <span class="switch prestashop-switch fixed-width-lg">
+                            <input type="radio" name="agent_{$provider.id|escape:'html':'UTF-8'}_enabled" id="agent_{$provider.id|escape:'html':'UTF-8'}_on" value="1"{if $provider.enabled} checked{/if}>
+                            <label for="agent_{$provider.id|escape:'html':'UTF-8'}_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
+                            <input type="radio" name="agent_{$provider.id|escape:'html':'UTF-8'}_enabled" id="agent_{$provider.id|escape:'html':'UTF-8'}_off" value="0"{if !$provider.enabled} checked{/if}>
+                            <label for="agent_{$provider.id|escape:'html':'UTF-8'}_off">{l s='No' d='Modules.Somcp.Admin'}</label>
+                            <a class="slide-button btn"></a>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-lg-3" for="agent_{$provider.id|escape:'html':'UTF-8'}_key">{l s='API key' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-9">
+                        {* Never filled in: the saved key does not leave the server. *}
+                        <input type="password" class="form-control" name="agent_{$provider.id|escape:'html':'UTF-8'}_key" id="agent_{$provider.id|escape:'html':'UTF-8'}_key" value="" autocomplete="new-password"
+                            placeholder="{if $provider.readable}{l s='Saved key ending in %hint%. Leave empty to keep it.' sprintf=['%hint%' => $provider.hint] d='Modules.Somcp.Admin'}{/if}">
+                        <p class="help-block">
+                            {if $provider.has_key && !$provider.readable}
+                                <span class="text-danger">{l s='The saved key can no longer be read on this shop. Enter it again.' d='Modules.Somcp.Admin'}</span>
+                            {elseif $provider.enabled && !$provider.has_key}
+                                <span class="text-danger">{l s='Enter an API key to use this assistant.' d='Modules.Somcp.Admin'}</span>
+                            {/if}
+                            <a href="{$provider.console|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">{l s='Get an API key' d='Modules.Somcp.Admin'}</a>
+                            &middot; {l s='Stored encrypted with the secret key of this shop. Each message is billed by the provider on this key.' d='Modules.Somcp.Admin'}
+                        </p>
+                        {if $provider.has_key}
+                            <div class="checkbox">
+                                <label><input type="checkbox" name="agent_{$provider.id|escape:'html':'UTF-8'}_forget" value="1"> {l s='Remove the saved key' d='Modules.Somcp.Admin'}</label>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Models' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-9">
+                        {if $provider.error}
+                            <div class="alert alert-warning">{l s='The list of models could not be read:' d='Modules.Somcp.Admin'} {$provider.error|escape:'html':'UTF-8'}</div>
+                        {/if}
+                        {foreach from=$provider.models item=model}
+                            <input type="hidden" name="agent_{$provider.id|escape:'html':'UTF-8'}_shown[]" value="{$model.id|escape:'html':'UTF-8'}">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="agent_{$provider.id|escape:'html':'UTF-8'}_models[]" value="{$model.id|escape:'html':'UTF-8'}"{if $model.on} checked{/if}>
+                                    {$model.label|escape:'html':'UTF-8'} <code>{$model.id|escape:'html':'UTF-8'}</code>
+                                </label>
+                            </div>
+                        {foreachelse}
+                            <p class="form-control-static text-muted">{l s='The models appear here once the assistant is enabled with a valid key.' d='Modules.Somcp.Admin'}</p>
+                        {/foreach}
+                        <p class="help-block">{l s='The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-lg-3" for="agent_{$provider.id|escape:'html':'UTF-8'}_role">{l s='Role' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-9">
+                        <textarea class="form-control" rows="2" name="agent_{$provider.id|escape:'html':'UTF-8'}_role" id="agent_{$provider.id|escape:'html':'UTF-8'}_role" placeholder="{$provider.default_role|escape:'html':'UTF-8'}">{$provider.role|escape:'html':'UTF-8'}</textarea>
+                        <p class="help-block">{l s='What this assistant takes care of when several are enabled. Left empty, it takes the role shown. With a single assistant enabled, it does everything.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+            </div>
+        {/foreach}
+
+        <div class="panel">
+            <div class="panel-heading"><i class="icon-file-text"></i> {l s='Instructions' d='Modules.Somcp.Admin'}</div>
+
+            <div class="form-group">
+                <label class="control-label col-lg-3" for="agent_instructions">{l s='Your instructions' d='Modules.Somcp.Admin'}</label>
+                <div class="col-lg-9">
+                    <textarea class="form-control" rows="6" name="agent_instructions" id="agent_instructions">{$somcp_agent.instructions|escape:'html':'UTF-8'}</textarea>
+                    <p class="help-block">{l s='Given to every assistant at the start of each conversation: your tone, your brand, what to avoid.' d='Modules.Somcp.Admin'}</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="control-label col-lg-3">{l s='Module instructions' d='Modules.Somcp.Admin'}</label>
+                <div class="col-lg-9">
+                    {* Shown as the model reads it, in English: it is written for the
+                       model, and a translation here would no longer be what it gets. *}
+                    <pre class="somcp-technical">{$somcp_agent.technical|escape:'html':'UTF-8'}</pre>
+                    <p class="help-block">{l s='Added by the module before yours: the PrestaShop and PHP versions of this shop, where to find the documentation, and the safety rules.' d='Modules.Somcp.Admin'}</p>
+                </div>
+            </div>
+
+            <div class="panel-footer">
+                <button type="submit" name="submitSomcpAgent" value="1" class="btn btn-default pull-right">
+                    <i class="process-icon-save"></i> {l s='Save' d='Modules.Somcp.Admin'}
+                </button>
+            </div>
+        </div>
+    </form>
 
     <div class="somcp-pane" id="somcp-pane-log" data-somcp-pane="log" role="tabpanel" hidden>
         <div class="panel">

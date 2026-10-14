@@ -75,6 +75,10 @@ class Somcp extends Module
         'SomcpPromptRegistry',
         'SomcpContract',
         'SomcpDiagnostic',
+        'SomcpAgentConfig',
+        'SomcpAgentProvider',
+        'SomcpAgentStore',
+        'SomcpAgent',
     ];
 
     /** @var array<int, string> */
@@ -280,6 +284,8 @@ class Somcp extends Module
         $this->undeclareToolHook();
         SomcpUpload::removeStore();
         SomcpConfig::purge();
+        SomcpAgentConfig::purge();
+        Configuration::deleteByName('SOMCP_AGENT_RELEASE');
 
         return parent::uninstall();
     }
@@ -369,6 +375,10 @@ class Somcp extends Module
             $this->flash($this->trans('The assistant has been disconnected.', [], 'Modules.Somcp.Admin'));
             $this->redirectToSelf();
         }
+        if (Tools::isSubmit('submitSomcpAgent')) {
+            $this->saveAgentSettings();
+            $this->redirectToSelf();
+        }
         if (Tools::isSubmit('submitSomcpClearLog')) {
             SomcpLogger::clear();
             $this->flash($this->trans('The log has been emptied.', [], 'Modules.Somcp.Admin'));
@@ -424,6 +434,8 @@ class Somcp extends Module
             'somcp_logs' => SomcpLogger::recent(),
             'somcp_confirmations' => $this->confirmations,
             'somcp_errors' => $this->pageErrors,
+            'somcp_agent' => $this->agentSettings(),
+            'somcp_agent_url' => $this->context->link->getAdminLink(SomcpBackOffice::AGENT_CONTROLLER),
         ]);
 
         return $this->context->smarty->fetch(
@@ -704,6 +716,110 @@ class Somcp extends Module
     }
 
     /**
+     * Saves the AI agent tab.
+     *
+     * A form of its own, posted apart from the main settings: these settings
+     * are global and the main form follows the shop inheritance, so mixing
+     * them would have a multistore context decide where an API key lands.
+     */
+    private function saveAgentSettings(): void
+    {
+        $document = SomcpAgentConfig::load();
+
+        foreach (array_keys(SomcpAgentConfig::providers()) as $provider) {
+            $row = $document['providers'][$provider];
+            $field = 'agent_' . $provider . '_';
+
+            $row['enabled'] = (string) Tools::getValue($field . 'enabled') === '1';
+            $row['role'] = Tools::substr(trim((string) Tools::getValue($field . 'role')), 0, 1000);
+
+            // An empty field keeps the saved key: the key is never sent back
+            // to the page, so the field is empty on every visit.
+            $typed = trim((string) Tools::getValue($field . 'key'));
+            $keyChanged = false;
+            if ($typed !== '') {
+                $row['key'] = SomcpAgentConfig::sealKey($typed);
+                $keyChanged = true;
+            } elseif ((string) Tools::getValue($field . 'forget') === '1') {
+                $row['key'] = '';
+                $row['models'] = [];
+                $row['off'] = [];
+                $row['error'] = '';
+            }
+
+            // Only the models that were on screen are decided here. One the
+            // provider published in the meantime was not shown, so it is not
+            // in the posted list, and stays on - new models are on by default.
+            $shown = array_map('strval', (array) Tools::getValue($field . 'shown', []));
+            $ticked = array_map('strval', (array) Tools::getValue($field . 'models', []));
+            $row['off'] = array_values(array_unique(array_merge(
+                array_diff($row['off'], $shown),
+                array_diff($shown, $ticked)
+            )));
+
+            // Read again on save, so a key just pasted shows its models - or
+            // the reason it was refused - on the page that follows.
+            if ($row['enabled'] && $row['key'] !== '') {
+                $row = SomcpAgentConfig::refreshedRow($provider, $row, $keyChanged ? $typed : SomcpAgentConfig::apiKey($provider));
+            }
+
+            $document['providers'][$provider] = $row;
+        }
+
+        $document['instructions'] = Tools::substr(trim((string) Tools::getValue('agent_instructions')), 0, 10000);
+
+        SomcpAgentConfig::save($document);
+        $this->flash($this->l10n('AI agent settings saved.'));
+    }
+
+    /**
+     * The AI agent tab as the template draws it. The keys stay out of it.
+     *
+     * @return array<string, mixed>
+     */
+    private function agentSettings(): array
+    {
+        $document = SomcpAgentConfig::load();
+        $providers = [];
+
+        foreach (SomcpAgentConfig::providers() as $provider => $meta) {
+            $row = $document['providers'][$provider];
+            $models = [];
+            foreach ($row['models'] as $model) {
+                $models[] = [
+                    'id' => $model['id'],
+                    'label' => $model['label'],
+                    'on' => !in_array($model['id'], $row['off'], true),
+                ];
+            }
+
+            // A key saved under another cookie key cannot be read back and has
+            // no hint: the page then asks for it again.
+            $hint = SomcpAgentConfig::keyHint($provider);
+
+            $providers[] = [
+                'id' => $provider,
+                'label' => $meta['label'],
+                'console' => $meta['console'],
+                'enabled' => $row['enabled'],
+                'has_key' => $row['key'] !== '',
+                'readable' => $hint !== '',
+                'hint' => $hint,
+                'role' => $row['role'],
+                'default_role' => SomcpAgentConfig::defaultRole($provider),
+                'models' => $models,
+                'error' => $row['error'],
+            ];
+        }
+
+        return [
+            'providers' => $providers,
+            'instructions' => $document['instructions'],
+            'technical' => SomcpAgent::technicalInstructions($this->context->employee),
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     private function currentSettings(): array
@@ -870,7 +986,85 @@ class Somcp extends Module
             }
         }
 
-        return true;
+        return $this->installAgentTab();
+    }
+
+    /**
+     * Puts the AI agent page in the menu, under Improve.
+     *
+     * A real menu entry, so PrestaShop gives it permissions of its own: an
+     * administrator decides per profile who may talk to the assistant.
+     *
+     * The name is stored per language in ps_tab_lang and never goes through
+     * trans() when the menu is drawn, so each language gets its own wording
+     * here, read from the module's catalogues. The wording fields let
+     * PrestaShop translate it again for a language installed later.
+     *
+     * @return bool
+     */
+    private function installAgentTab(): bool
+    {
+        if (Tab::getIdFromClassName(SomcpBackOffice::AGENT_CONTROLLER)) {
+            return true;
+        }
+
+        $tab = new Tab();
+        $tab->class_name = SomcpBackOffice::AGENT_CONTROLLER;
+        $tab->module = $this->name;
+        $tab->active = true;
+        $tab->id_parent = (int) Tab::getIdFromClassName('IMPROVE');
+        $tab->icon = 'chat';
+        $tab->wording = 'AI agent';
+        $tab->wording_domain = 'Modules.Somcp.Admin';
+        $tab->name = [];
+        foreach (Language::getLanguages(false) as $language) {
+            $tab->name[(int) $language['id_lang']] = $this->catalogueEntry('AI agent', (string) $language['locale']);
+        }
+
+        return (bool) $tab->add();
+    }
+
+    /**
+     * A string as the module's catalogue words it in a given locale.
+     *
+     * Read from the file rather than through the translator, which holds the
+     * catalogue of the current language only - installing from an English
+     * back office would otherwise name the menu in English for every shop
+     * language. A locale with no catalogue of its own takes the one of its
+     * language (fr-CA reads fr-FR), and falls back to the source.
+     *
+     * @param string $source
+     * @param string $locale
+     *
+     * @return string
+     */
+    private function catalogueEntry(string $source, string $locale): string
+    {
+        $language = Tools::strtolower(Tools::substr($locale, 0, 2));
+        $files = glob(_PS_MODULE_DIR_ . $this->name . '/translations/*/ModulesSomcpAdmin.*.xlf') ?: [];
+        usort($files, static function (string $a, string $b) use ($locale): int {
+            // The exact locale first, then any locale of the same language.
+            return (int) (strpos($b, '/' . $locale . '/') !== false) - (int) (strpos($a, '/' . $locale . '/') !== false);
+        });
+
+        foreach ($files as $file) {
+            if (Tools::strtolower(Tools::substr(basename(dirname($file)), 0, 2)) !== $language) {
+                continue;
+            }
+
+            $xml = @simplexml_load_file($file);
+            if ($xml === false) {
+                continue;
+            }
+            $xml->registerXPathNamespace('x', 'urn:oasis:names:tc:xliff:document:1.2');
+            foreach ($xml->xpath('//x:trans-unit') ?: [] as $unit) {
+                if ((string) $unit->source === $source && trim((string) $unit->target) !== '') {
+                    return (string) $unit->target;
+                }
+            }
+        }
+
+        return $source;
     }
 
     /**
@@ -880,7 +1074,7 @@ class Somcp extends Module
     {
         $removed = true;
 
-        foreach (self::hiddenTabs() as $controller) {
+        foreach (array_merge(self::hiddenTabs(), [SomcpBackOffice::AGENT_CONTROLLER]) as $controller) {
             $idTab = (int) Tab::getIdFromClassName($controller);
             if ($idTab <= 0) {
                 continue;

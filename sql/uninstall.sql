@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS `PREFIX_somcp_agent_message`;
+DROP TABLE IF EXISTS `PREFIX_somcp_agent_conversation`;
 DROP TABLE IF EXISTS `PREFIX_somcp_upload_file`;
 DROP TABLE IF EXISTS `PREFIX_somcp_upload`;
 DROP TABLE IF EXISTS `PREFIX_somcp_log`;

@@ -818,6 +818,206 @@ T = {
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",
  "Open Source unter der Lizenz AFL-3.0"),
+"AI agent": (
+ "Agent IA",
+ "Agente IA",
+ "KI-Agent"),
+"AI agent settings saved.": (
+ "Réglages de l'agent IA enregistrés.",
+ "Ajustes del agente IA guardados.",
+ "Einstellungen des KI-Agenten gespeichert."),
+"API key": (
+ "Clé API",
+ "Clave API",
+ "API-Schlüssel"),
+"Added by the module before yours: the PrestaShop and PHP versions of this shop, where to find the documentation, and the safety rules.": (
+ "Ajoutées par le module avant les vôtres : les versions de PrestaShop et de PHP de cette boutique, où trouver la documentation, et les règles de sécurité.",
+ "Añadidas por el módulo antes de las suyas: las versiones de PrestaShop y PHP de esta tienda, dónde encontrar la documentación y las reglas de seguridad.",
+ "Vom Modul vor Ihren eingefügt: die PrestaShop- und PHP-Version dieses Shops, wo die Dokumentation zu finden ist, und die Sicherheitsregeln."),
+"Approve": (
+ "Autoriser",
+ "Autorizar",
+ "Freigeben"),
+"Ask an administrator of the shop.": (
+ "Demandez à un administrateur de la boutique.",
+ "Pídalo a un administrador de la tienda.",
+ "Wenden Sie sich an einen Administrator des Shops."),
+"Ask anything about your shop: the assistant reads it with its tools and asks before changing anything.": (
+ "Posez n'importe quelle question sur votre boutique : l'assistant la consulte avec ses outils et demande avant de modifier quoi que ce soit.",
+ "Pregunte lo que quiera sobre su tienda: el asistente la consulta con sus herramientas y pregunta antes de cambiar nada.",
+ "Fragen Sie alles zu Ihrem Shop: Der Assistent liest ihn mit seinen Werkzeugen und fragt, bevor er etwas ändert."),
+"Assistant": (
+ "Assistant",
+ "Asistente",
+ "Assistent"),
+"Conversations": (
+ "Conversations",
+ "Conversaciones",
+ "Unterhaltungen"),
+"Delete": (
+ "Supprimer",
+ "Eliminar",
+ "Löschen"),
+"Delete this conversation?": (
+ "Supprimer cette conversation ?",
+ "¿Eliminar esta conversación?",
+ "Diese Unterhaltung löschen?"),
+"Done": (
+ "Fait",
+ "Hecho",
+ "Erledigt"),
+"Enabled": (
+ "Activé",
+ "Activado",
+ "Aktiviert"),
+"Enter an API key to use this assistant.": (
+ "Saisissez une clé API pour utiliser cet assistant.",
+ "Introduzca una clave API para usar este asistente.",
+ "Geben Sie einen API-Schlüssel ein, um diesen Assistenten zu nutzen."),
+"Failed": (
+ "Échec",
+ "Error",
+ "Fehlgeschlagen"),
+"Get an API key": (
+ "Obtenir une clé API",
+ "Obtener una clave API",
+ "API-Schlüssel erhalten"),
+"Given to every assistant at the start of each conversation: your tone, your brand, what to avoid.": (
+ "Transmises à chaque assistant au début de chaque conversation : votre ton, votre marque, ce qu'il faut éviter.",
+ "Se dan a cada asistente al inicio de cada conversación: su tono, su marca, lo que hay que evitar.",
+ "Werden jedem Assistenten zu Beginn jeder Unterhaltung mitgegeben: Ihr Ton, Ihre Marke, was zu vermeiden ist."),
+"Images: describing, checking and naming the pictures of the catalogue, and writing their alternative text.": (
+ "Images : décrire, vérifier et nommer les images du catalogue, et rédiger leur texte alternatif.",
+ "Imágenes: describir, revisar y nombrar las imágenes del catálogo, y redactar su texto alternativo.",
+ "Bilder: die Bilder des Katalogs beschreiben, prüfen und benennen sowie ihren Alternativtext schreiben."),
+"Instructions": (
+ "Instructions",
+ "Instrucciones",
+ "Anweisungen"),
+"Models": (
+ "Modèles",
+ "Modelos",
+ "Modelle"),
+"Module instructions": (
+ "Instructions du module",
+ "Instrucciones del módulo",
+ "Anweisungen des Moduls"),
+"New conversation": (
+ "Nouvelle conversation",
+ "Nueva conversación",
+ "Neue Unterhaltung"),
+"No assistant is enabled yet. Add an API key for Claude, ChatGPT or Gemini in the module settings.": (
+ "Aucun assistant n'est encore activé. Ajoutez une clé API pour Claude, ChatGPT ou Gemini dans les réglages du module.",
+ "Todavía no hay ningún asistente activado. Añada una clave API de Claude, ChatGPT o Gemini en los ajustes del módulo.",
+ "Noch ist kein Assistent aktiviert. Fügen Sie in den Moduleinstellungen einen API-Schlüssel für Claude, ChatGPT oder Gemini hinzu."),
+"Open the AI agent": (
+ "Ouvrir l'agent IA",
+ "Abrir el agente IA",
+ "KI-Agent öffnen"),
+"Open the AI agent settings": (
+ "Ouvrir les réglages de l'agent IA",
+ "Abrir los ajustes del agente IA",
+ "Einstellungen des KI-Agenten öffnen"),
+"Read": (
+ "Lu",
+ "Leído",
+ "Gelesen"),
+"Refused": (
+ "Refusé",
+ "Rechazado",
+ "Abgelehnt"),
+"Remove the saved key": (
+ "Supprimer la clé enregistrée",
+ "Eliminar la clave guardada",
+ "Gespeicherten Schlüssel entfernen"),
+"Role": (
+ "Rôle",
+ "Función",
+ "Rolle"),
+"SEO: product and category titles, meta descriptions, friendly URLs and keywords.": (
+ "SEO : titres des produits et catégories, meta descriptions, URL simplifiées et mots-clés.",
+ "SEO: títulos de productos y categorías, metadescripciones, URL amigables y palabras clave.",
+ "SEO: Titel von Produkten und Kategorien, Meta-Beschreibungen, sprechende URLs und Schlüsselwörter."),
+"Saved key ending in %hint%. Leave empty to keep it.": (
+ "Clé enregistrée se terminant par %hint%. Laissez vide pour la conserver.",
+ "Clave guardada que termina en %hint%. Déjelo vacío para conservarla.",
+ "Gespeicherter Schlüssel endet auf %hint%. Leer lassen, um ihn zu behalten."),
+"Stored encrypted with the secret key of this shop. Each message is billed by the provider on this key.": (
+ "Enregistrée chiffrée avec la clé secrète de cette boutique. Chaque message est facturé par le fournisseur sur cette clé.",
+ "Se guarda cifrada con la clave secreta de esta tienda. Cada mensaje lo factura el proveedor a esta clave.",
+ "Verschlüsselt mit dem geheimen Schlüssel dieses Shops gespeichert. Jede Nachricht wird vom Anbieter über diesen Schlüssel abgerechnet."),
+"Talk to Claude, ChatGPT or Gemini from the back office, with the same tools as the MCP server and the permissions of the employee who writes. Every change waits for the employee to approve it.": (
+ "Discutez avec Claude, ChatGPT ou Gemini depuis le back-office, avec les mêmes outils que le serveur MCP et les permissions de l'employé qui écrit. Chaque modification attend que l'employé l'autorise.",
+ "Hable con Claude, ChatGPT o Gemini desde el back office, con las mismas herramientas que el servidor MCP y los permisos del empleado que escribe. Cada cambio espera a que el empleado lo autorice.",
+ "Sprechen Sie im Backoffice mit Claude, ChatGPT oder Gemini, mit denselben Werkzeugen wie der MCP-Server und den Berechtigungen des schreibenden Mitarbeiters. Jede Änderung wartet auf die Freigabe des Mitarbeiters."),
+"The assistant could not answer:": (
+ "L'assistant n'a pas pu répondre :",
+ "El asistente no ha podido responder:",
+ "Der Assistent konnte nicht antworten:"),
+"The assistant is working...": (
+ "L'assistant travaille...",
+ "El asistente está trabajando...",
+ "Der Assistent arbeitet..."),
+"The assistant stopped after too many steps in a row. Send a message to let it carry on.": (
+ "L'assistant s'est arrêté après trop d'étapes d'affilée. Envoyez un message pour qu'il continue.",
+ "El asistente se ha detenido tras demasiados pasos seguidos. Envíe un mensaje para que continúe.",
+ "Der Assistent hat nach zu vielen Schritten in Folge angehalten. Senden Sie eine Nachricht, damit er weitermacht."),
+"The assistant wants to make this change:": (
+ "L'assistant veut faire cette modification :",
+ "El asistente quiere hacer este cambio:",
+ "Der Assistent möchte diese Änderung vornehmen:"),
+"The conversation could not be saved.": (
+ "La conversation n'a pas pu être enregistrée.",
+ "No se ha podido guardar la conversación.",
+ "Die Unterhaltung konnte nicht gespeichert werden."),
+"The list of models could not be read:": (
+ "La liste des modèles n'a pas pu être lue :",
+ "No se ha podido leer la lista de modelos:",
+ "Die Liste der Modelle konnte nicht gelesen werden:"),
+"The models appear here once the assistant is enabled with a valid key.": (
+ "Les modèles apparaissent ici une fois l'assistant activé avec une clé valide.",
+ "Los modelos aparecen aquí una vez activado el asistente con una clave válida.",
+ "Die Modelle erscheinen hier, sobald der Assistent mit einem gültigen Schlüssel aktiviert ist."),
+"The saved key can no longer be read on this shop. Enter it again.": (
+ "La clé enregistrée ne peut plus être lue sur cette boutique. Saisissez-la à nouveau.",
+ "La clave guardada ya no se puede leer en esta tienda. Vuelva a introducirla.",
+ "Der gespeicherte Schlüssel kann in diesem Shop nicht mehr gelesen werden. Geben Sie ihn erneut ein."),
+"The shop did not answer. Check your connection and try again.": (
+ "La boutique n'a pas répondu. Vérifiez votre connexion et réessayez.",
+ "La tienda no ha respondido. Compruebe su conexión e inténtelo de nuevo.",
+ "Der Shop hat nicht geantwortet. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut."),
+"The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default.": (
+ "Les trois modèles les plus récents sont lus chez le fournisseur une fois par jour : un nouveau modèle apparaît sans mettre à jour le module. Un nouveau modèle est activé par défaut.",
+ "Los tres modelos más recientes se leen del proveedor una vez al día: un modelo nuevo aparece sin actualizar el módulo. Un modelo nuevo se activa por defecto.",
+ "Die drei neuesten Modelle werden einmal täglich beim Anbieter abgefragt: Ein neues Modell erscheint ohne Update des Moduls. Ein neues Modell ist standardmäßig aktiviert."),
+"This conversation no longer exists.": (
+ "Cette conversation n'existe plus.",
+ "Esta conversación ya no existe.",
+ "Diese Unterhaltung existiert nicht mehr."),
+"This model is not available any more. Pick another one, or check the AI agent settings.": (
+ "Ce modèle n'est plus disponible. Choisissez-en un autre ou vérifiez les réglages de l'agent IA.",
+ "Este modelo ya no está disponible. Elija otro o revise los ajustes del agente IA.",
+ "Dieses Modell ist nicht mehr verfügbar. Wählen Sie ein anderes oder prüfen Sie die Einstellungen des KI-Agenten."),
+"What this assistant takes care of when several are enabled. Left empty, it takes the role shown. With a single assistant enabled, it does everything.": (
+ "Ce dont cet assistant s'occupe quand plusieurs sont activés. Laissé vide, il prend le rôle affiché. Avec un seul assistant activé, il fait tout.",
+ "De qué se encarga este asistente cuando hay varios activados. Si se deja vacío, toma la función indicada. Con un solo asistente activado, lo hace todo.",
+ "Wofür dieser Assistent zuständig ist, wenn mehrere aktiviert sind. Leer gelassen, übernimmt er die angezeigte Rolle. Ist nur ein Assistent aktiviert, erledigt er alles."),
+"Write a message. Enter sends, Shift+Enter goes to the next line.": (
+ "Écrivez un message. Entrée envoie, Maj+Entrée passe à la ligne.",
+ "Escriba un mensaje. Intro envía, Mayús+Intro pasa a la línea siguiente.",
+ "Schreiben Sie eine Nachricht. Enter sendet, Umschalt+Enter beginnt eine neue Zeile."),
+"Writing and research: product descriptions, customer replies, market and competitor research.": (
+ "Rédaction et recherche : descriptions produits, réponses aux clients, études de marché et de la concurrence.",
+ "Redacción e investigación: descripciones de productos, respuestas a clientes, estudios de mercado y de la competencia.",
+ "Texte und Recherche: Produktbeschreibungen, Kundenantworten, Markt- und Wettbewerbsrecherche."),
+"You": (
+ "Vous",
+ "Usted",
+ "Sie"),
+"Your instructions": (
+ "Vos instructions",
+ "Sus instrucciones",
+ "Ihre Anweisungen"),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

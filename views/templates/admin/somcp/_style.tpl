@@ -334,6 +334,16 @@
     font-size: 12px;
 }
 
+/* What the module tells the assistant, shown as it is sent: long lines wrap
+   rather than push the panel wider than the screen. */
+.somcp .somcp-technical {
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 320px;
+    overflow-y: auto;
+    font-size: 12px;
+}
+
 /* A tool that changes something, marked where the merchant decides whether to
    offer it at all. */
 .somcp .somcp-writes {

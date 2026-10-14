@@ -73,8 +73,10 @@
             });
 
             // A diagnostic just run is shown on the first tab, whatever tab the
-            // merchant last had open: they pressed the button to read it.
-            var start = /[?&]somcp_diag=/.test(window.location.search) ? 'config' : remembered;
+            // merchant last had open: they pressed the button to read it. A link
+            // naming a tab - the AI agent page sends to its own - opens that one.
+            var asked = /[?&]somcp_tab=([a-z]+)/.exec(window.location.search);
+            var start = /[?&]somcp_diag=/.test(window.location.search) ? 'config' : (asked ? asked[1] : remembered);
             if (!start || !show(start)) {
                 show(links[0].getAttribute('data-somcp-tab'));
             }

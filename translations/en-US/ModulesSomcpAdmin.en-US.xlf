@@ -1027,6 +1027,256 @@
       <source>Open source under the AFL-3.0 licence</source>
       <target>Open source under the AFL-3.0 licence</target>
     </trans-unit>
+    <!-- AI agent -->
+    <trans-unit id="4a7ad0f6264b98eec240355149b4deb7" resname="AI agent">
+      <source>AI agent</source>
+      <target>AI agent</target>
+    </trans-unit>
+    <!-- AI agent settings saved. -->
+    <trans-unit id="55f604d517b893094a605ccacc34cd11" resname="AI agent settings saved.">
+      <source>AI agent settings saved.</source>
+      <target>AI agent settings saved.</target>
+    </trans-unit>
+    <!-- API key -->
+    <trans-unit id="656a6828d7ef1bb791e42087c4b5ee6e" resname="API key">
+      <source>API key</source>
+      <target>API key</target>
+    </trans-unit>
+    <!-- Added by the module before yours: the PrestaShop and PHP versions of this shop, where to find the documentation, and the safety rules. -->
+    <trans-unit id="c9ec4f3039194749970428236fae5781" resname="Added by the module before yours: the PrestaShop and PHP versions of this shop, where to find the documentation, and the safety rules.">
+      <source>Added by the module before yours: the PrestaShop and PHP versions of this shop, where to find the documentation, and the safety rules.</source>
+      <target>Added by the module before yours: the PrestaShop and PHP versions of this shop, where to find the documentation, and the safety rules.</target>
+    </trans-unit>
+    <!-- Approve -->
+    <trans-unit id="6f7351657f795bc1357a53142b1184cc" resname="Approve">
+      <source>Approve</source>
+      <target>Approve</target>
+    </trans-unit>
+    <!-- Ask an administrator of the shop. -->
+    <trans-unit id="417fc495bca28b43b4792357f6843471" resname="Ask an administrator of the shop.">
+      <source>Ask an administrator of the shop.</source>
+      <target>Ask an administrator of the shop.</target>
+    </trans-unit>
+    <!-- Ask anything about your shop: the assistant reads it with its tools and asks before changing anything. -->
+    <trans-unit id="d72ede0dc751c59fff676153cb34b4ed" resname="Ask anything about your shop: the assistant reads it with its tools and asks before changing anything.">
+      <source>Ask anything about your shop: the assistant reads it with its tools and asks before changing anything.</source>
+      <target>Ask anything about your shop: the assistant reads it with its tools and asks before changing anything.</target>
+    </trans-unit>
+    <!-- Assistant -->
+    <trans-unit id="9b1363da9503dbd4142c0274a88e8d4b" resname="Assistant">
+      <source>Assistant</source>
+      <target>Assistant</target>
+    </trans-unit>
+    <!-- Conversations -->
+    <trans-unit id="f004c5e3e7d457125a022d239dce8b8e" resname="Conversations">
+      <source>Conversations</source>
+      <target>Conversations</target>
+    </trans-unit>
+    <!-- Delete -->
+    <trans-unit id="f2a6c498fb90ee345d997f888fce3b18" resname="Delete">
+      <source>Delete</source>
+      <target>Delete</target>
+    </trans-unit>
+    <!-- Delete this conversation? -->
+    <trans-unit id="18eaaf950e98b0a60e8e6ecbad8bbb85" resname="Delete this conversation?">
+      <source>Delete this conversation?</source>
+      <target>Delete this conversation?</target>
+    </trans-unit>
+    <!-- Done -->
+    <trans-unit id="f92965e2c8a7afb3c1b9a5c09a263636" resname="Done">
+      <source>Done</source>
+      <target>Done</target>
+    </trans-unit>
+    <!-- Enabled -->
+    <trans-unit id="00d23a76e43b46dae9ec7aa9dcbebb32" resname="Enabled">
+      <source>Enabled</source>
+      <target>Enabled</target>
+    </trans-unit>
+    <!-- Enter an API key to use this assistant. -->
+    <trans-unit id="8f27ca8c1b7c58d5868380c92e11a2b2" resname="Enter an API key to use this assistant.">
+      <source>Enter an API key to use this assistant.</source>
+      <target>Enter an API key to use this assistant.</target>
+    </trans-unit>
+    <!-- Failed -->
+    <trans-unit id="d7c8c85bf79bbe1b7188497c32c3b0ca" resname="Failed">
+      <source>Failed</source>
+      <target>Failed</target>
+    </trans-unit>
+    <!-- Get an API key -->
+    <trans-unit id="71480bbd8a28d07d128ef389826fd426" resname="Get an API key">
+      <source>Get an API key</source>
+      <target>Get an API key</target>
+    </trans-unit>
+    <!-- Given to every assistant at the start of each conversation: your tone, your brand, what to avoid. -->
+    <trans-unit id="042cd95d9908c6859fb5766280fbfaae" resname="Given to every assistant at the start of each conversation: your tone, your brand, what to avoid.">
+      <source>Given to every assistant at the start of each conversation: your tone, your brand, what to avoid.</source>
+      <target>Given to every assistant at the start of each conversation: your tone, your brand, what to avoid.</target>
+    </trans-unit>
+    <!-- Images: describing, checking and naming the pictures of the catalogue, and writing their alternative text. -->
+    <trans-unit id="34c34191df31e1b1f7697f9eaa7a407e" resname="Images: describing, checking and naming the pictures of the catalogue, and writing their alternative text.">
+      <source>Images: describing, checking and naming the pictures of the catalogue, and writing their alternative text.</source>
+      <target>Images: describing, checking and naming the pictures of the catalogue, and writing their alternative text.</target>
+    </trans-unit>
+    <!-- Instructions -->
+    <trans-unit id="49cc8e6220245b65cd7d20fc6ccc74f5" resname="Instructions">
+      <source>Instructions</source>
+      <target>Instructions</target>
+    </trans-unit>
+    <!-- Models -->
+    <trans-unit id="25ac429f9072293d27a836ee2a148f47" resname="Models">
+      <source>Models</source>
+      <target>Models</target>
+    </trans-unit>
+    <!-- Module instructions -->
+    <trans-unit id="a2be47ed17e934202d6e3a4374b606e2" resname="Module instructions">
+      <source>Module instructions</source>
+      <target>Module instructions</target>
+    </trans-unit>
+    <!-- New conversation -->
+    <trans-unit id="573ffea6fec9bfdbf9bf4f85e8562d78" resname="New conversation">
+      <source>New conversation</source>
+      <target>New conversation</target>
+    </trans-unit>
+    <!-- No assistant is enabled yet. Add an API key for Claude, ChatGPT or Gemini in the module settings. -->
+    <trans-unit id="a1443be830b22ac393c1743a9e679f43" resname="No assistant is enabled yet. Add an API key for Claude, ChatGPT or Gemini in the module settings.">
+      <source>No assistant is enabled yet. Add an API key for Claude, ChatGPT or Gemini in the module settings.</source>
+      <target>No assistant is enabled yet. Add an API key for Claude, ChatGPT or Gemini in the module settings.</target>
+    </trans-unit>
+    <!-- Open the AI agent -->
+    <trans-unit id="e6c108ebed1ac6ad628cd5ae5e2baad2" resname="Open the AI agent">
+      <source>Open the AI agent</source>
+      <target>Open the AI agent</target>
+    </trans-unit>
+    <!-- Open the AI agent settings -->
+    <trans-unit id="eadeaeac2380dfce130910f8bb12b0df" resname="Open the AI agent settings">
+      <source>Open the AI agent settings</source>
+      <target>Open the AI agent settings</target>
+    </trans-unit>
+    <!-- Read -->
+    <trans-unit id="7a1a5f3e79fdc91edf2f5ead9d66abb4" resname="Read">
+      <source>Read</source>
+      <target>Read</target>
+    </trans-unit>
+    <!-- Refused -->
+    <trans-unit id="f48b206184b7442983452ea4c3e88a3a" resname="Refused">
+      <source>Refused</source>
+      <target>Refused</target>
+    </trans-unit>
+    <!-- Remove the saved key -->
+    <trans-unit id="73f5d855f494e4164231204fa54abd80" resname="Remove the saved key">
+      <source>Remove the saved key</source>
+      <target>Remove the saved key</target>
+    </trans-unit>
+    <!-- Role -->
+    <trans-unit id="bbbabdbe1b262f75d99d62880b953be1" resname="Role">
+      <source>Role</source>
+      <target>Role</target>
+    </trans-unit>
+    <!-- SEO: product and category titles, meta descriptions, friendly URLs and keywords. -->
+    <trans-unit id="69b3424707c76bef4ac643c0074e09b8" resname="SEO: product and category titles, meta descriptions, friendly URLs and keywords.">
+      <source>SEO: product and category titles, meta descriptions, friendly URLs and keywords.</source>
+      <target>SEO: product and category titles, meta descriptions, friendly URLs and keywords.</target>
+    </trans-unit>
+    <!-- Saved key ending in %hint%. Leave empty to keep it. -->
+    <trans-unit id="26405ebf085c4457b4c2b5cf086ba763" resname="Saved key ending in %hint%. Leave empty to keep it.">
+      <source>Saved key ending in %hint%. Leave empty to keep it.</source>
+      <target>Saved key ending in %hint%. Leave empty to keep it.</target>
+    </trans-unit>
+    <!-- Stored encrypted with the secret key of this shop. Each message is billed by the provider on this key. -->
+    <trans-unit id="1ccfb0a692d55b79254551b94ee3d5db" resname="Stored encrypted with the secret key of this shop. Each message is billed by the provider on this key.">
+      <source>Stored encrypted with the secret key of this shop. Each message is billed by the provider on this key.</source>
+      <target>Stored encrypted with the secret key of this shop. Each message is billed by the provider on this key.</target>
+    </trans-unit>
+    <!-- Talk to Claude, ChatGPT or Gemini from the back office, with the same tools as the MCP server and the permissions of the employee who writes. Every change waits for the employee to approve it. -->
+    <trans-unit id="2bcddc8a18485c9fbf82589502a3eb5b" resname="Talk to Claude, ChatGPT or Gemini from the back office, with the same tools as the MCP server and the permissions of the employee who writes. Every change waits for the employee to approve it.">
+      <source>Talk to Claude, ChatGPT or Gemini from the back office, with the same tools as the MCP server and the permissions of the employee who writes. Every change waits for the employee to approve it.</source>
+      <target>Talk to Claude, ChatGPT or Gemini from the back office, with the same tools as the MCP server and the permissions of the employee who writes. Every change waits for the employee to approve it.</target>
+    </trans-unit>
+    <!-- The assistant could not answer: -->
+    <trans-unit id="e9a78e90eb11081155097af0753f1abe" resname="The assistant could not answer:">
+      <source>The assistant could not answer:</source>
+      <target>The assistant could not answer:</target>
+    </trans-unit>
+    <!-- The assistant is working... -->
+    <trans-unit id="afa6ee30fce380b7a4e140e3bfd7adcd" resname="The assistant is working...">
+      <source>The assistant is working...</source>
+      <target>The assistant is working...</target>
+    </trans-unit>
+    <!-- The assistant stopped after too many steps in a row. Send a message to let it carry on. -->
+    <trans-unit id="bc4098a52ccd370bcd02f499273f1348" resname="The assistant stopped after too many steps in a row. Send a message to let it carry on.">
+      <source>The assistant stopped after too many steps in a row. Send a message to let it carry on.</source>
+      <target>The assistant stopped after too many steps in a row. Send a message to let it carry on.</target>
+    </trans-unit>
+    <!-- The assistant wants to make this change: -->
+    <trans-unit id="4dec9f27134e981653aa96879413178b" resname="The assistant wants to make this change:">
+      <source>The assistant wants to make this change:</source>
+      <target>The assistant wants to make this change:</target>
+    </trans-unit>
+    <!-- The conversation could not be saved. -->
+    <trans-unit id="87074350915a622e1ab002ae719b1951" resname="The conversation could not be saved.">
+      <source>The conversation could not be saved.</source>
+      <target>The conversation could not be saved.</target>
+    </trans-unit>
+    <!-- The list of models could not be read: -->
+    <trans-unit id="e6fe189f5aa146831ba2c14a2d5f32aa" resname="The list of models could not be read:">
+      <source>The list of models could not be read:</source>
+      <target>The list of models could not be read:</target>
+    </trans-unit>
+    <!-- The models appear here once the assistant is enabled with a valid key. -->
+    <trans-unit id="ebeac0b65125ca74e167329dd0dcdcf1" resname="The models appear here once the assistant is enabled with a valid key.">
+      <source>The models appear here once the assistant is enabled with a valid key.</source>
+      <target>The models appear here once the assistant is enabled with a valid key.</target>
+    </trans-unit>
+    <!-- The saved key can no longer be read on this shop. Enter it again. -->
+    <trans-unit id="b60856353330b96dd6f3700e4fc74423" resname="The saved key can no longer be read on this shop. Enter it again.">
+      <source>The saved key can no longer be read on this shop. Enter it again.</source>
+      <target>The saved key can no longer be read on this shop. Enter it again.</target>
+    </trans-unit>
+    <!-- The shop did not answer. Check your connection and try again. -->
+    <trans-unit id="940fd75d3d9278667162a0a9adb42c6a" resname="The shop did not answer. Check your connection and try again.">
+      <source>The shop did not answer. Check your connection and try again.</source>
+      <target>The shop did not answer. Check your connection and try again.</target>
+    </trans-unit>
+    <!-- The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default. -->
+    <trans-unit id="7ba4a57a1449d3d5c4d8b282ff12f19c" resname="The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default.">
+      <source>The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default.</source>
+      <target>The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default.</target>
+    </trans-unit>
+    <!-- This conversation no longer exists. -->
+    <trans-unit id="9e746e3bbb3db86fdf3216b863833666" resname="This conversation no longer exists.">
+      <source>This conversation no longer exists.</source>
+      <target>This conversation no longer exists.</target>
+    </trans-unit>
+    <!-- This model is not available any more. Pick another one, or check the AI agent settings. -->
+    <trans-unit id="862759de7f6049e37a4fa6a8cd3ec81b" resname="This model is not available any more. Pick another one, or check the AI agent settings.">
+      <source>This model is not available any more. Pick another one, or check the AI agent settings.</source>
+      <target>This model is not available any more. Pick another one, or check the AI agent settings.</target>
+    </trans-unit>
+    <!-- What this assistant takes care of when several are enabled. Left empty, it takes the role shown. With a single assistant enabled, it does everything. -->
+    <trans-unit id="fa210946da9359c9d3d50777f4a2825b" resname="What this assistant takes care of when several are enabled. Left empty, it takes the role shown. With a single assistant enabled, it does everything.">
+      <source>What this assistant takes care of when several are enabled. Left empty, it takes the role shown. With a single assistant enabled, it does everything.</source>
+      <target>What this assistant takes care of when several are enabled. Left empty, it takes the role shown. With a single assistant enabled, it does everything.</target>
+    </trans-unit>
+    <!-- Write a message. Enter sends, Shift+Enter goes to the next line. -->
+    <trans-unit id="1ba569489cb01b735cbac5e9b5b007c0" resname="Write a message. Enter sends, Shift+Enter goes to the next line.">
+      <source>Write a message. Enter sends, Shift+Enter goes to the next line.</source>
+      <target>Write a message. Enter sends, Shift+Enter goes to the next line.</target>
+    </trans-unit>
+    <!-- Writing and research: product descriptions, customer replies, market and competitor research. -->
+    <trans-unit id="555573db075973439c4b5780a2351180" resname="Writing and research: product descriptions, customer replies, market and competitor research.">
+      <source>Writing and research: product descriptions, customer replies, market and competitor research.</source>
+      <target>Writing and research: product descriptions, customer replies, market and competitor research.</target>
+    </trans-unit>
+    <!-- You -->
+    <trans-unit id="cae8d14edd025e72c59dbab6f378c95a" resname="You">
+      <source>You</source>
+      <target>You</target>
+    </trans-unit>
+    <!-- Your instructions -->
+    <trans-unit id="c41175b2fdc125140ec1de6c5bfb0530" resname="Your instructions">
+      <source>Your instructions</source>
+      <target>Your instructions</target>
+    </trans-unit>
     </body>
   </file>
 </xliff>

@@ -196,3 +196,39 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_upload_file` (
     PRIMARY KEY (`id_upload_file`),
     KEY `idx_upload` (`id_upload`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_agent_conversation - one conversation of the back office assistant.
+--
+-- Owned by the employee who started it and by the shop it was held on: an
+-- employee reads their own history, never a colleague's, and a conversation
+-- about one shop does not follow them onto another.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_agent_conversation` (
+    `id_conversation` INT(11)      NOT NULL AUTO_INCREMENT,
+    `id_employee`     INT(11)      NOT NULL,
+    `id_shop`         INT(11)      NOT NULL DEFAULT 1,
+    `title`           VARCHAR(255) NOT NULL DEFAULT '',
+    `provider`        VARCHAR(20)  NOT NULL DEFAULT '' COMMENT 'anthropic, openai or google',
+    `model`           VARCHAR(100) NOT NULL DEFAULT '',
+    `date_add`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `date_upd`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id_conversation`),
+    KEY `idx_employee_shop` (`id_employee`, `id_shop`, `date_upd`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_agent_message - one turn of a conversation, in a shape of the module's
+-- own that every provider is translated to and from.
+--
+-- `role` is user, assistant or tool. `content` is JSON: the text, the tool
+-- calls an assistant turn asked for, or the result of one call. `status` marks
+-- a call waiting for the employee to approve it, so the page can ask again
+-- after a reload instead of forgetting the question.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_agent_message` (
+    `id_message`      INT(11)      NOT NULL AUTO_INCREMENT,
+    `id_conversation` INT(11)      NOT NULL,
+    `role`            VARCHAR(10)  NOT NULL,
+    `content`         MEDIUMTEXT   NOT NULL,
+    `status`          VARCHAR(10)  NOT NULL DEFAULT 'done' COMMENT 'done or pending',
+    `date_add`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id_message`),
+    KEY `idx_conversation` (`id_conversation`, `id_message`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

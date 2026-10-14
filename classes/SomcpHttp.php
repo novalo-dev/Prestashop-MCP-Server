@@ -36,6 +36,15 @@ class SomcpHttp
     /** @var int Seconds before an outgoing request is abandoned. */
     private const FETCH_TIMEOUT = 5;
 
+    /** @var int Seconds a call to an AI provider may take before it is abandoned. */
+    private const API_TIMEOUT = 120;
+
+    /** @var int Largest answer read from an AI provider, in bytes. */
+    private const MAX_API_BYTES = 4194304;
+
+    /** @var int Largest documentation page read for the assistant, in bytes. */
+    private const MAX_DOCUMENT_BYTES = 262144;
+
     /**
      * Reads a request header whatever the server hands us.
      *
@@ -295,6 +304,59 @@ class SomcpHttp
      */
     public static function fetch(string $url, bool $guard = true, array $extraHeaders = [], ?string $jsonBody = null): array
     {
+        return self::transfer($url, $guard, $extraHeaders, $jsonBody, self::FETCH_TIMEOUT, self::MAX_FETCH_BYTES, 'application/json');
+    }
+
+    /**
+     * Calls the API of an AI provider for the back office assistant.
+     *
+     * The same guarded transfer as fetch(), with the limits such a call needs:
+     * a model can think for a minute before answering, and a long answer or a
+     * model list runs well past the 64 KB a metadata document is allowed.
+     *
+     * @param string $url
+     * @param array<int, string> $headers authentication and versioning headers of the provider
+     * @param string|null $jsonBody POST body, or null for a GET
+     *
+     * @return array{status:int, body:string, headers:array<string,string>, error:string}
+     */
+    public static function api(string $url, array $headers, ?string $jsonBody = null): array
+    {
+        return self::transfer($url, true, $headers, $jsonBody, self::API_TIMEOUT, self::MAX_API_BYTES, 'application/json');
+    }
+
+    /**
+     * Reads a page of documentation for the back office assistant.
+     *
+     * @param string $url
+     *
+     * @return array{status:int, body:string, headers:array<string,string>, error:string}
+     */
+    public static function document(string $url): array
+    {
+        return self::transfer($url, true, [], null, self::FETCH_TIMEOUT * 3, self::MAX_DOCUMENT_BYTES, 'text/plain, text/markdown, text/html;q=0.8, */*;q=0.5');
+    }
+
+    /**
+     * @param string $url
+     * @param bool $guard
+     * @param array<int, string> $extraHeaders
+     * @param string|null $jsonBody
+     * @param int $timeout seconds
+     * @param int $maxBytes
+     * @param string $accept
+     *
+     * @return array{status:int, body:string, headers:array<string,string>, error:string}
+     */
+    private static function transfer(
+        string $url,
+        bool $guard,
+        array $extraHeaders,
+        ?string $jsonBody,
+        int $timeout,
+        int $maxBytes,
+        string $accept,
+    ): array {
         $fail = static function (string $message): array {
             return ['status' => 0, 'body' => '', 'headers' => [], 'error' => $message];
         };
@@ -335,19 +397,19 @@ class SomcpHttp
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_CONNECTTIMEOUT => self::FETCH_TIMEOUT,
-            CURLOPT_TIMEOUT => self::FETCH_TIMEOUT,
+            CURLOPT_TIMEOUT => $timeout,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_USERAGENT => self::userAgent(),
-            CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $extraHeaders),
-            CURLOPT_WRITEFUNCTION => static function ($handle, $chunk) use (&$received) {
+            CURLOPT_HTTPHEADER => array_merge(['Accept: ' . $accept], $extraHeaders),
+            CURLOPT_WRITEFUNCTION => static function ($handle, $chunk) use (&$received, $maxBytes) {
                 $received .= $chunk;
-                if (Tools::strlen($received) > self::MAX_FETCH_BYTES) {
+                if (strlen($received) > $maxBytes) {
                     // Returning less than the chunk length aborts the transfer.
                     return 0;
                 }
 
-                return Tools::strlen($chunk);
+                return strlen($chunk);
             },
             CURLOPT_HEADERFUNCTION => static function ($handle, $line) use (&$responseHeaders) {
                 $length = Tools::strlen($line);

@@ -34,6 +34,22 @@ keeps its meaning and is saved the same way.
 to the module's GitHub repository, to report a problem, suggest a tool or read
 the code.
 
+**AI agent in the back office.** A new **AI agent** page under Improve lets
+you talk to Claude, ChatGPT or Gemini without leaving PrestaShop. The
+assistant uses the same tools as the MCP server, with the permissions of the
+employee who writes, and every change it wants to make waits for that
+employee to click Approve. Conversations are kept per employee and per shop,
+and can be reopened or deleted. A new **AI agent** tab in the settings takes
+the API key of each provider (stored encrypted), lets you switch providers and
+models on and off, give each provider a role (SEO, writing and research,
+images) and write your own instructions. The three newest models of each
+provider are read once a day, so a new model shows up without updating the
+module, switched on. The assistant knows the PrestaShop and PHP versions of
+the shop, can read the PrestaShop documentation on GitHub, and tells you when
+a newer version of this module is published. Who may open the page is set per
+profile in Team > Permissions. Existing shops need to reset the module for the
+page to appear.
+
 ## 1.0.0 - Initial version
 
 ### Added

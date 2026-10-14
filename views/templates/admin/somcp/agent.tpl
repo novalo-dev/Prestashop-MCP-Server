@@ -45,6 +45,14 @@
     flex-shrink: 0;
 }
 
+/* The legacy heading has almost no side padding of its own: the panel's
+   padding gave it room. With that padding gone, the icon sat against the
+   frame, so the heading gets the same inset as the list and the thread. */
+#content .somcp-agent-layout > .panel > .panel-heading {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
 .somcp-agent-side {
     flex: 0 0 340px;
 }
@@ -88,6 +96,13 @@
     display: flex;
     justify-content: space-between;
     gap: 8px;
+}
+
+/* The model under the title, in the same colour as the date beside it:
+   text-muted was too pale to read on some themes. */
+.somcp-agent-model {
+    display: block;
+    margin-top: 2px;
 }
 
 .somcp-agent-row strong {
@@ -457,10 +472,10 @@
                     item.setAttribute('aria-current', conversation.id_conversation === current ? 'true' : 'false');
                     item.setAttribute('role', 'button');
                     item.setAttribute('tabindex', '0');
-                    item.innerHTML = '<div class="somcp-agent-row"><strong></strong><small></small></div><small class="text-muted"></small>';
+                    item.innerHTML = '<div class="somcp-agent-row"><strong></strong><small></small></div><small class="somcp-agent-model"></small>';
                     item.querySelector('strong').textContent = conversation.title;
                     item.querySelector('.somcp-agent-row small').textContent = when(conversation.date_upd);
-                    item.querySelector('.text-muted').textContent = agentLabel(conversation.provider + ':' + conversation.model) || conversation.model;
+                    item.querySelector('.somcp-agent-model').textContent = agentLabel(conversation.provider + ':' + conversation.model) || conversation.model;
                     item.addEventListener('click', function () {
                         open(conversation.id_conversation);
                     });

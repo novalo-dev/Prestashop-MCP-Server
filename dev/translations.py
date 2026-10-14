@@ -818,13 +818,13 @@ T = {
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",
  "Open Source unter der Lizenz AFL-3.0"),
-"AI agent": (
+"AI Agent": (
  "Agent IA",
  "Agente IA",
  "KI-Agent"),
-"AI agent settings saved.": (
- "Réglages de l'agent IA enregistrés.",
- "Ajustes del agente IA guardados.",
+"AI Agent settings saved.": (
+ "Réglages de l'Agent IA enregistrés.",
+ "Ajustes del Agente IA guardados.",
  "Einstellungen des KI-Agenten gespeichert."),
 "API key": (
  "Clé API",
@@ -842,14 +842,6 @@ T = {
  "Demandez à un administrateur de la boutique.",
  "Pídalo a un administrador de la tienda.",
  "Wenden Sie sich an einen Administrator des Shops."),
-"Ask anything about your shop: the assistant reads it with its tools and asks before changing anything.": (
- "Posez n'importe quelle question sur votre boutique : l'assistant la consulte avec ses outils et demande avant de modifier quoi que ce soit.",
- "Pregunte lo que quiera sobre su tienda: el asistente la consulta con sus herramientas y pregunta antes de cambiar nada.",
- "Fragen Sie alles zu Ihrem Shop: Der Assistent liest ihn mit seinen Werkzeugen und fragt, bevor er etwas ändert."),
-"Assistant": (
- "Assistant",
- "Asistente",
- "Assistent"),
 "Conversations": (
  "Conversations",
  "Conversaciones",
@@ -910,13 +902,13 @@ T = {
  "Aucun assistant n'est encore activé. Ajoutez une clé API pour Claude, ChatGPT ou Gemini dans les réglages du module.",
  "Todavía no hay ningún asistente activado. Añada una clave API de Claude, ChatGPT o Gemini en los ajustes del módulo.",
  "Noch ist kein Assistent aktiviert. Fügen Sie in den Moduleinstellungen einen API-Schlüssel für Claude, ChatGPT oder Gemini hinzu."),
-"Open the AI agent": (
- "Ouvrir l'agent IA",
- "Abrir el agente IA",
+"Open the AI Agent": (
+ "Ouvrir l'Agent IA",
+ "Abrir el Agente IA",
  "KI-Agent öffnen"),
-"Open the AI agent settings": (
- "Ouvrir les réglages de l'agent IA",
- "Abrir los ajustes del agente IA",
+"Open the AI Agent settings": (
+ "Ouvrir les réglages de l'Agent IA",
+ "Abrir los ajustes del Agente IA",
  "Einstellungen des KI-Agenten öffnen"),
 "Read": (
  "Lu",
@@ -950,26 +942,6 @@ T = {
  "Discutez avec Claude, ChatGPT ou Gemini depuis le back-office, avec les mêmes outils que le serveur MCP et les permissions de l'employé qui écrit. Chaque modification attend que l'employé l'autorise.",
  "Hable con Claude, ChatGPT o Gemini desde el back office, con las mismas herramientas que el servidor MCP y los permisos del empleado que escribe. Cada cambio espera a que el empleado lo autorice.",
  "Sprechen Sie im Backoffice mit Claude, ChatGPT oder Gemini, mit denselben Werkzeugen wie der MCP-Server und den Berechtigungen des schreibenden Mitarbeiters. Jede Änderung wartet auf die Freigabe des Mitarbeiters."),
-"The assistant could not answer:": (
- "L'assistant n'a pas pu répondre :",
- "El asistente no ha podido responder:",
- "Der Assistent konnte nicht antworten:"),
-"The assistant is working...": (
- "L'assistant travaille...",
- "El asistente está trabajando...",
- "Der Assistent arbeitet..."),
-"The assistant stopped after too many steps in a row. Send a message to let it carry on.": (
- "L'assistant s'est arrêté après trop d'étapes d'affilée. Envoyez un message pour qu'il continue.",
- "El asistente se ha detenido tras demasiados pasos seguidos. Envíe un mensaje para que continúe.",
- "Der Assistent hat nach zu vielen Schritten in Folge angehalten. Senden Sie eine Nachricht, damit er weitermacht."),
-"The assistant wants to make this change:": (
- "L'assistant veut faire cette modification :",
- "El asistente quiere hacer este cambio:",
- "Der Assistent möchte diese Änderung vornehmen:"),
-"The conversation could not be saved.": (
- "La conversation n'a pas pu être enregistrée.",
- "No se ha podido guardar la conversación.",
- "Die Unterhaltung konnte nicht gespeichert werden."),
 "The list of models could not be read:": (
  "La liste des modèles n'a pas pu être lue :",
  "No se ha podido leer la lista de modelos:",
@@ -982,22 +954,10 @@ T = {
  "La clé enregistrée ne peut plus être lue sur cette boutique. Saisissez-la à nouveau.",
  "La clave guardada ya no se puede leer en esta tienda. Vuelva a introducirla.",
  "Der gespeicherte Schlüssel kann in diesem Shop nicht mehr gelesen werden. Geben Sie ihn erneut ein."),
-"The shop did not answer. Check your connection and try again.": (
- "La boutique n'a pas répondu. Vérifiez votre connexion et réessayez.",
- "La tienda no ha respondido. Compruebe su conexión e inténtelo de nuevo.",
- "Der Shop hat nicht geantwortet. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut."),
 "The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default.": (
  "Les trois modèles les plus récents sont lus chez le fournisseur une fois par jour : un nouveau modèle apparaît sans mettre à jour le module. Un nouveau modèle est activé par défaut.",
  "Los tres modelos más recientes se leen del proveedor una vez al día: un modelo nuevo aparece sin actualizar el módulo. Un modelo nuevo se activa por defecto.",
  "Die drei neuesten Modelle werden einmal täglich beim Anbieter abgefragt: Ein neues Modell erscheint ohne Update des Moduls. Ein neues Modell ist standardmäßig aktiviert."),
-"This conversation no longer exists.": (
- "Cette conversation n'existe plus.",
- "Esta conversación ya no existe.",
- "Diese Unterhaltung existiert nicht mehr."),
-"This model is not available any more. Pick another one, or check the AI agent settings.": (
- "Ce modèle n'est plus disponible. Choisissez-en un autre ou vérifiez les réglages de l'agent IA.",
- "Este modelo ya no está disponible. Elija otro o revise los ajustes del agente IA.",
- "Dieses Modell ist nicht mehr verfügbar. Wählen Sie ein anderes oder prüfen Sie die Einstellungen des KI-Agenten."),
 "What this assistant takes care of when several are enabled. Left empty, it takes the role shown. With a single assistant enabled, it does everything.": (
  "Ce dont cet assistant s'occupe quand plusieurs sont activés. Laissé vide, il prend le rôle affiché. Avec un seul assistant activé, il fait tout.",
  "De qué se encarga este asistente cuando hay varios activados. Si se deja vacío, toma la función indicada. Con un solo asistente activado, lo hace todo.",
@@ -1018,6 +978,58 @@ T = {
  "Vos instructions",
  "Sus instrucciones",
  "Ihre Anweisungen"),
+"Agent": (
+ "Agent",
+ "Agente",
+ "Agent"),
+"Ask anything about your shop: the Agent reads it with its tools and asks before changing anything.": (
+ "Posez n'importe quelle question sur votre boutique : l'Agent la consulte avec ses outils et demande avant de modifier quoi que ce soit.",
+ "Pregunte lo que quiera sobre su tienda: el Agente la consulta con sus herramientas y pregunta antes de cambiar nada.",
+ "Fragen Sie alles zu Ihrem Shop: Der Agent liest ihn mit seinen Werkzeugen und fragt, bevor er etwas ändert."),
+"I am not available with this model any more. Pick another one in the list below, or check the AI Agent settings.": (
+ "Je ne suis plus disponible avec ce modèle. Choisissez-en un autre dans la liste en bas, ou vérifiez les réglages de l'Agent IA.",
+ "Ya no estoy disponible con este modelo. Elija otro en la lista de abajo o revise los ajustes del Agente IA.",
+ "Mit diesem Modell bin ich nicht mehr verfügbar. Wählen Sie unten ein anderes aus oder prüfen Sie die Einstellungen des KI-Agenten."),
+"I could not answer this time. Here is what my provider replied:": (
+ "Je n'ai pas pu répondre cette fois. Voici ce que mon fournisseur a répondu :",
+ "Esta vez no he podido responder. Esto es lo que ha contestado mi proveedor:",
+ "Diesmal konnte ich nicht antworten. Das hat mein Anbieter zurückgemeldet:"),
+"I could not save our conversation. Try again in a moment.": (
+ "Je n'ai pas pu enregistrer notre conversation. Réessayez dans un instant.",
+ "No he podido guardar nuestra conversación. Inténtelo de nuevo en un momento.",
+ "Ich konnte unsere Unterhaltung nicht speichern. Versuchen Sie es gleich noch einmal."),
+"I stopped after too many steps in a row, to be safe. Send me a message and I will carry on where I left off.": (
+ "Je me suis arrêté après trop d'étapes d'affilée, par prudence. Envoyez-moi un message et je reprendrai là où je me suis arrêté.",
+ "Me he detenido tras demasiados pasos seguidos, por precaución. Envíeme un mensaje y seguiré donde lo dejé.",
+ "Ich habe nach zu vielen Schritten in Folge vorsichtshalber angehalten. Schreiben Sie mir, und ich mache dort weiter, wo ich aufgehört habe."),
+"No conversation found.": (
+ "Aucune conversation trouvée.",
+ "No se ha encontrado ninguna conversación.",
+ "Keine Unterhaltung gefunden."),
+"Pick a conversation on the left, or write to start a new one.": (
+ "Choisissez une conversation à gauche, ou écrivez pour en commencer une nouvelle.",
+ "Elija una conversación a la izquierda o escriba para empezar una nueva.",
+ "Wählen Sie links eine Unterhaltung oder schreiben Sie, um eine neue zu beginnen."),
+"Search a conversation": (
+ "Rechercher une conversation",
+ "Buscar una conversación",
+ "Unterhaltung suchen"),
+"The Agent wants to make this change:": (
+ "L'Agent veut faire cette modification :",
+ "El Agente quiere hacer este cambio:",
+ "Der Agent möchte diese Änderung vornehmen:"),
+"Thinking...": (
+ "Réflexion en cours...",
+ "Pensando...",
+ "Denkt nach..."),
+"This conversation no longer exists. Write to me here and we will start a new one.": (
+ "Cette conversation n'existe plus. Écrivez-moi ici et nous en commencerons une nouvelle.",
+ "Esta conversación ya no existe. Escríbame aquí y empezaremos una nueva.",
+ "Diese Unterhaltung existiert nicht mehr. Schreiben Sie mir hier, und wir beginnen eine neue."),
+"Your message did not reach me: the shop did not answer. Check your connection and send it again.": (
+ "Votre message ne m'est pas parvenu : la boutique n'a pas répondu. Vérifiez votre connexion et renvoyez-le.",
+ "Su mensaje no me ha llegado: la tienda no ha respondido. Compruebe su conexión y vuelva a enviarlo.",
+ "Ihre Nachricht hat mich nicht erreicht: Der Shop hat nicht geantwortet. Prüfen Sie Ihre Verbindung und senden Sie sie erneut."),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

@@ -716,7 +716,7 @@ class Somcp extends Module
     }
 
     /**
-     * Saves the AI agent tab.
+     * Saves the AI Agent tab.
      *
      * A form of its own, posted apart from the main settings: these settings
      * are global and the main form follows the shop inheritance, so mixing
@@ -769,11 +769,11 @@ class Somcp extends Module
         $document['instructions'] = Tools::substr(trim((string) Tools::getValue('agent_instructions')), 0, 10000);
 
         SomcpAgentConfig::save($document);
-        $this->flash($this->l10n('AI agent settings saved.'));
+        $this->flash($this->l10n('AI Agent settings saved.'));
     }
 
     /**
-     * The AI agent tab as the template draws it. The keys stay out of it.
+     * The AI Agent tab as the template draws it. The keys stay out of it.
      *
      * @return array<string, mixed>
      */
@@ -990,7 +990,7 @@ class Somcp extends Module
     }
 
     /**
-     * Puts the AI agent page in the menu, under Improve.
+     * Puts the AI Agent page in the menu, under Improve.
      *
      * A real menu entry, so PrestaShop gives it permissions of its own: an
      * administrator decides per profile who may talk to the assistant.
@@ -1014,11 +1014,11 @@ class Somcp extends Module
         $tab->active = true;
         $tab->id_parent = (int) Tab::getIdFromClassName('IMPROVE');
         $tab->icon = 'chat';
-        $tab->wording = 'AI agent';
+        $tab->wording = 'AI Agent';
         $tab->wording_domain = 'Modules.Somcp.Admin';
         $tab->name = [];
         foreach (Language::getLanguages(false) as $language) {
-            $tab->name[(int) $language['id_lang']] = $this->catalogueEntry('AI agent', (string) $language['locale']);
+            $tab->name[(int) $language['id_lang']] = $this->catalogueEntry('AI Agent', (string) $language['locale']);
         }
 
         return (bool) $tab->add();

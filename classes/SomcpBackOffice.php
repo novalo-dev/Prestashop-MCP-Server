@@ -55,7 +55,7 @@ class SomcpBackOffice
      */
     public const UPLOAD_CONTROLLER = 'AdminSomcpUpload';
 
-    /** @var string Controller of the AI agent page, the one the module puts in the menu. */
+    /** @var string Controller of the AI Agent page, the one the module puts in the menu. */
     public const AGENT_CONTROLLER = 'AdminSomcpAgent';
 
     /**

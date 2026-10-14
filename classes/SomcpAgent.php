@@ -209,7 +209,7 @@ class SomcpAgent
      * The stored turns carry what the providers need to replay them; the page
      * needs less, and must never be handed the raw parts of a provider.
      *
-     * @param array<int, array{id_message:int, role:string, content:array<string, mixed>, status:string}> $turns
+     * @param array<int, array{id_message:int, role:string, content:array<string, mixed>, status:string, date_add:string}> $turns
      *
      * @return array<int, array<string, mixed>>
      */
@@ -222,13 +222,14 @@ class SomcpAgent
             $content = $turn['content'];
 
             if ($turn['role'] === 'user') {
-                $items[] = ['kind' => 'user', 'text' => (string) ($content['text'] ?? '')];
+                $items[] = ['kind' => 'user', 'text' => (string) ($content['text'] ?? ''), 'date' => $turn['date_add']];
             } elseif ($turn['role'] === 'assistant' && trim((string) ($content['text'] ?? '')) !== '') {
                 $provider = (string) ($content['provider'] ?? '');
                 $items[] = [
                     'kind' => 'assistant',
                     'text' => (string) $content['text'],
                     'agent' => ($labels[$provider]['label'] ?? $provider) . ' ' . (string) ($content['model'] ?? ''),
+                    'date' => $turn['date_add'],
                 ];
             } elseif ($turn['role'] === 'tool' && $turn['status'] !== 'answered') {
                 $items[] = [

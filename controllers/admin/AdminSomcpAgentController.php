@@ -17,7 +17,7 @@
 declare(strict_types=1);
 
 /*
- * The AI agent page of the back office.
+ * The AI Agent page of the back office.
  *
  * A menu entry with permissions of its own, unlike the module's two hidden
  * pages: who may talk to the assistant is decided per profile, in Team >

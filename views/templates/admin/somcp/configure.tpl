@@ -41,7 +41,7 @@
                 {if $somcp_consents}<span class="badge">{count($somcp_consents)|intval}</span>{/if}
             </a>
         </li>
-        <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-agent" role="tab" data-somcp-tab="agent">{l s='AI agent' d='Modules.Somcp.Admin'}</a></li>
+        <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-agent" role="tab" data-somcp-tab="agent">{l s='AI Agent' d='Modules.Somcp.Admin'}</a></li>
         <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-log" role="tab" data-somcp-tab="log">{l s='Security log' d='Modules.Somcp.Admin'}</a></li>
     </ul>
 
@@ -472,7 +472,7 @@
 
         <div class="alert alert-info">
             {l s='Talk to Claude, ChatGPT or Gemini from the back office, with the same tools as the MCP server and the permissions of the employee who writes. Every change waits for the employee to approve it.' d='Modules.Somcp.Admin'}
-            <a href="{$somcp_agent_url|escape:'html':'UTF-8'}">{l s='Open the AI agent' d='Modules.Somcp.Admin'}</a>
+            <a href="{$somcp_agent_url|escape:'html':'UTF-8'}">{l s='Open the AI Agent' d='Modules.Somcp.Admin'}</a>
         </div>
 
         {foreach from=$somcp_agent.providers item=provider}

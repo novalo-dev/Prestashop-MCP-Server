@@ -1027,15 +1027,15 @@
       <source>Open source under the AFL-3.0 licence</source>
       <target>Código abierto bajo licencia AFL-3.0</target>
     </trans-unit>
-    <!-- AI agent -->
-    <trans-unit id="4a7ad0f6264b98eec240355149b4deb7" resname="AI agent">
-      <source>AI agent</source>
+    <!-- AI Agent -->
+    <trans-unit id="4412225fe5b326643b8c2e1d9b7b10ae" resname="AI Agent">
+      <source>AI Agent</source>
       <target>Agente IA</target>
     </trans-unit>
-    <!-- AI agent settings saved. -->
-    <trans-unit id="55f604d517b893094a605ccacc34cd11" resname="AI agent settings saved.">
-      <source>AI agent settings saved.</source>
-      <target>Ajustes del agente IA guardados.</target>
+    <!-- AI Agent settings saved. -->
+    <trans-unit id="19f4bb7c558becb99541361e3f7d946b" resname="AI Agent settings saved.">
+      <source>AI Agent settings saved.</source>
+      <target>Ajustes del Agente IA guardados.</target>
     </trans-unit>
     <!-- API key -->
     <trans-unit id="656a6828d7ef1bb791e42087c4b5ee6e" resname="API key">
@@ -1056,16 +1056,6 @@
     <trans-unit id="417fc495bca28b43b4792357f6843471" resname="Ask an administrator of the shop.">
       <source>Ask an administrator of the shop.</source>
       <target>Pídalo a un administrador de la tienda.</target>
-    </trans-unit>
-    <!-- Ask anything about your shop: the assistant reads it with its tools and asks before changing anything. -->
-    <trans-unit id="d72ede0dc751c59fff676153cb34b4ed" resname="Ask anything about your shop: the assistant reads it with its tools and asks before changing anything.">
-      <source>Ask anything about your shop: the assistant reads it with its tools and asks before changing anything.</source>
-      <target>Pregunte lo que quiera sobre su tienda: el asistente la consulta con sus herramientas y pregunta antes de cambiar nada.</target>
-    </trans-unit>
-    <!-- Assistant -->
-    <trans-unit id="9b1363da9503dbd4142c0274a88e8d4b" resname="Assistant">
-      <source>Assistant</source>
-      <target>Asistente</target>
     </trans-unit>
     <!-- Conversations -->
     <trans-unit id="f004c5e3e7d457125a022d239dce8b8e" resname="Conversations">
@@ -1142,15 +1132,15 @@
       <source>No assistant is enabled yet. Add an API key for Claude, ChatGPT or Gemini in the module settings.</source>
       <target>Todavía no hay ningún asistente activado. Añada una clave API de Claude, ChatGPT o Gemini en los ajustes del módulo.</target>
     </trans-unit>
-    <!-- Open the AI agent -->
-    <trans-unit id="e6c108ebed1ac6ad628cd5ae5e2baad2" resname="Open the AI agent">
-      <source>Open the AI agent</source>
-      <target>Abrir el agente IA</target>
+    <!-- Open the AI Agent -->
+    <trans-unit id="569bc69aad57ebc5cd55aa7a033ce4ee" resname="Open the AI Agent">
+      <source>Open the AI Agent</source>
+      <target>Abrir el Agente IA</target>
     </trans-unit>
-    <!-- Open the AI agent settings -->
-    <trans-unit id="eadeaeac2380dfce130910f8bb12b0df" resname="Open the AI agent settings">
-      <source>Open the AI agent settings</source>
-      <target>Abrir los ajustes del agente IA</target>
+    <!-- Open the AI Agent settings -->
+    <trans-unit id="bb13bd44414910876fc8be100783e0d7" resname="Open the AI Agent settings">
+      <source>Open the AI Agent settings</source>
+      <target>Abrir los ajustes del Agente IA</target>
     </trans-unit>
     <!-- Read -->
     <trans-unit id="7a1a5f3e79fdc91edf2f5ead9d66abb4" resname="Read">
@@ -1192,31 +1182,6 @@
       <source>Talk to Claude, ChatGPT or Gemini from the back office, with the same tools as the MCP server and the permissions of the employee who writes. Every change waits for the employee to approve it.</source>
       <target>Hable con Claude, ChatGPT o Gemini desde el back office, con las mismas herramientas que el servidor MCP y los permisos del empleado que escribe. Cada cambio espera a que el empleado lo autorice.</target>
     </trans-unit>
-    <!-- The assistant could not answer: -->
-    <trans-unit id="e9a78e90eb11081155097af0753f1abe" resname="The assistant could not answer:">
-      <source>The assistant could not answer:</source>
-      <target>El asistente no ha podido responder:</target>
-    </trans-unit>
-    <!-- The assistant is working... -->
-    <trans-unit id="afa6ee30fce380b7a4e140e3bfd7adcd" resname="The assistant is working...">
-      <source>The assistant is working...</source>
-      <target>El asistente está trabajando...</target>
-    </trans-unit>
-    <!-- The assistant stopped after too many steps in a row. Send a message to let it carry on. -->
-    <trans-unit id="bc4098a52ccd370bcd02f499273f1348" resname="The assistant stopped after too many steps in a row. Send a message to let it carry on.">
-      <source>The assistant stopped after too many steps in a row. Send a message to let it carry on.</source>
-      <target>El asistente se ha detenido tras demasiados pasos seguidos. Envíe un mensaje para que continúe.</target>
-    </trans-unit>
-    <!-- The assistant wants to make this change: -->
-    <trans-unit id="4dec9f27134e981653aa96879413178b" resname="The assistant wants to make this change:">
-      <source>The assistant wants to make this change:</source>
-      <target>El asistente quiere hacer este cambio:</target>
-    </trans-unit>
-    <!-- The conversation could not be saved. -->
-    <trans-unit id="87074350915a622e1ab002ae719b1951" resname="The conversation could not be saved.">
-      <source>The conversation could not be saved.</source>
-      <target>No se ha podido guardar la conversación.</target>
-    </trans-unit>
     <!-- The list of models could not be read: -->
     <trans-unit id="e6fe189f5aa146831ba2c14a2d5f32aa" resname="The list of models could not be read:">
       <source>The list of models could not be read:</source>
@@ -1232,25 +1197,10 @@
       <source>The saved key can no longer be read on this shop. Enter it again.</source>
       <target>La clave guardada ya no se puede leer en esta tienda. Vuelva a introducirla.</target>
     </trans-unit>
-    <!-- The shop did not answer. Check your connection and try again. -->
-    <trans-unit id="940fd75d3d9278667162a0a9adb42c6a" resname="The shop did not answer. Check your connection and try again.">
-      <source>The shop did not answer. Check your connection and try again.</source>
-      <target>La tienda no ha respondido. Compruebe su conexión e inténtelo de nuevo.</target>
-    </trans-unit>
     <!-- The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default. -->
     <trans-unit id="7ba4a57a1449d3d5c4d8b282ff12f19c" resname="The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default.">
       <source>The three newest models are read from the provider once a day, so a new model appears without updating the module. A new model is enabled by default.</source>
       <target>Los tres modelos más recientes se leen del proveedor una vez al día: un modelo nuevo aparece sin actualizar el módulo. Un modelo nuevo se activa por defecto.</target>
-    </trans-unit>
-    <!-- This conversation no longer exists. -->
-    <trans-unit id="9e746e3bbb3db86fdf3216b863833666" resname="This conversation no longer exists.">
-      <source>This conversation no longer exists.</source>
-      <target>Esta conversación ya no existe.</target>
-    </trans-unit>
-    <!-- This model is not available any more. Pick another one, or check the AI agent settings. -->
-    <trans-unit id="862759de7f6049e37a4fa6a8cd3ec81b" resname="This model is not available any more. Pick another one, or check the AI agent settings.">
-      <source>This model is not available any more. Pick another one, or check the AI agent settings.</source>
-      <target>Este modelo ya no está disponible. Elija otro o revise los ajustes del agente IA.</target>
     </trans-unit>
     <!-- What this assistant takes care of when several are enabled. Left empty, it takes the role shown. With a single assistant enabled, it does everything. -->
     <trans-unit id="fa210946da9359c9d3d50777f4a2825b" resname="What this assistant takes care of when several are enabled. Left empty, it takes the role shown. With a single assistant enabled, it does everything.">
@@ -1276,6 +1226,71 @@
     <trans-unit id="c41175b2fdc125140ec1de6c5bfb0530" resname="Your instructions">
       <source>Your instructions</source>
       <target>Sus instrucciones</target>
+    </trans-unit>
+    <!-- Agent -->
+    <trans-unit id="7446050b848d839fe9847073ff94cfd6" resname="Agent">
+      <source>Agent</source>
+      <target>Agente</target>
+    </trans-unit>
+    <!-- Ask anything about your shop: the Agent reads it with its tools and asks before changing anything. -->
+    <trans-unit id="18851855f1d5e43de3ca186d1f08ee10" resname="Ask anything about your shop: the Agent reads it with its tools and asks before changing anything.">
+      <source>Ask anything about your shop: the Agent reads it with its tools and asks before changing anything.</source>
+      <target>Pregunte lo que quiera sobre su tienda: el Agente la consulta con sus herramientas y pregunta antes de cambiar nada.</target>
+    </trans-unit>
+    <!-- I am not available with this model any more. Pick another one in the list below, or check the AI Agent settings. -->
+    <trans-unit id="c26c0ef3551bf133a4744ef92f4703a3" resname="I am not available with this model any more. Pick another one in the list below, or check the AI Agent settings.">
+      <source>I am not available with this model any more. Pick another one in the list below, or check the AI Agent settings.</source>
+      <target>Ya no estoy disponible con este modelo. Elija otro en la lista de abajo o revise los ajustes del Agente IA.</target>
+    </trans-unit>
+    <!-- I could not answer this time. Here is what my provider replied: -->
+    <trans-unit id="320af7fb9ab2270f4d873c6e4337068c" resname="I could not answer this time. Here is what my provider replied:">
+      <source>I could not answer this time. Here is what my provider replied:</source>
+      <target>Esta vez no he podido responder. Esto es lo que ha contestado mi proveedor:</target>
+    </trans-unit>
+    <!-- I could not save our conversation. Try again in a moment. -->
+    <trans-unit id="9a671d26619c8950324beeb5c0e68774" resname="I could not save our conversation. Try again in a moment.">
+      <source>I could not save our conversation. Try again in a moment.</source>
+      <target>No he podido guardar nuestra conversación. Inténtelo de nuevo en un momento.</target>
+    </trans-unit>
+    <!-- I stopped after too many steps in a row, to be safe. Send me a message and I will carry on where I left off. -->
+    <trans-unit id="53130e0fd38c3896f36c43e70e2c246e" resname="I stopped after too many steps in a row, to be safe. Send me a message and I will carry on where I left off.">
+      <source>I stopped after too many steps in a row, to be safe. Send me a message and I will carry on where I left off.</source>
+      <target>Me he detenido tras demasiados pasos seguidos, por precaución. Envíeme un mensaje y seguiré donde lo dejé.</target>
+    </trans-unit>
+    <!-- No conversation found. -->
+    <trans-unit id="487bbe9b8b55d0cfd5f61642b36bded4" resname="No conversation found.">
+      <source>No conversation found.</source>
+      <target>No se ha encontrado ninguna conversación.</target>
+    </trans-unit>
+    <!-- Pick a conversation on the left, or write to start a new one. -->
+    <trans-unit id="8a6e928bb88a5d262073d4f146114940" resname="Pick a conversation on the left, or write to start a new one.">
+      <source>Pick a conversation on the left, or write to start a new one.</source>
+      <target>Elija una conversación a la izquierda o escriba para empezar una nueva.</target>
+    </trans-unit>
+    <!-- Search a conversation -->
+    <trans-unit id="8115aaa3f7ef31b2e8d3ab9b77bf85a7" resname="Search a conversation">
+      <source>Search a conversation</source>
+      <target>Buscar una conversación</target>
+    </trans-unit>
+    <!-- The Agent wants to make this change: -->
+    <trans-unit id="bcde12a3b449d86b308e3a17d89b7e5f" resname="The Agent wants to make this change:">
+      <source>The Agent wants to make this change:</source>
+      <target>El Agente quiere hacer este cambio:</target>
+    </trans-unit>
+    <!-- Thinking... -->
+    <trans-unit id="a321c84a4bb5557eb0b6a82aa0f1604a" resname="Thinking...">
+      <source>Thinking...</source>
+      <target>Pensando...</target>
+    </trans-unit>
+    <!-- This conversation no longer exists. Write to me here and we will start a new one. -->
+    <trans-unit id="64a619a572ad651f94d5e07e6d6155bc" resname="This conversation no longer exists. Write to me here and we will start a new one.">
+      <source>This conversation no longer exists. Write to me here and we will start a new one.</source>
+      <target>Esta conversación ya no existe. Escríbame aquí y empezaremos una nueva.</target>
+    </trans-unit>
+    <!-- Your message did not reach me: the shop did not answer. Check your connection and send it again. -->
+    <trans-unit id="f710c854d680a9ae535008a8cb6e818a" resname="Your message did not reach me: the shop did not answer. Check your connection and send it again.">
+      <source>Your message did not reach me: the shop did not answer. Check your connection and send it again.</source>
+      <target>Su mensaje no me ha llegado: la tienda no ha respondido. Compruebe su conexión y vuelva a enviarlo.</target>
     </trans-unit>
     </body>
   </file>

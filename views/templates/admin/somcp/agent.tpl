@@ -14,157 +14,250 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License v3.0 (AFL-3.0)
  *}
 
-{* Styles and script inline, for the reason given in _copy.tpl: one file that
-   works the same on PrestaShop 8 and 9. *}
+{* The same layout as the customer service screen of the other Novalo module -
+   conversations on the left, the thread on the right, the reply bar at the
+   foot - drawn with PrestaShop's own panels, lists, buttons and fields. The
+   rules below only place things: colours, borders and fonts come from the
+   back office theme, so the page follows whatever theme the shop runs.
+   Inline for the reason given in _copy.tpl. *}
 <style type="text/css">
-.somcp-agent .somcp-agent-list {
-    max-height: calc(100vh - 300px);
-    overflow-y: auto;
-    margin-bottom: 0;
+.somcp-agent-layout {
+    display: flex;
+    gap: 16px;
+    height: calc(100vh - 260px);
+    min-height: 500px;
 }
 
-.somcp-agent .somcp-agent-list .list-group-item {
+#content .somcp-agent-layout > .panel {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    min-height: 0;
+    margin-bottom: 0;
+    padding: 0;
+}
+
+/* The panel loses its padding so the list and the thread reach its edges;
+   the heading and the reply bar keep the theme's own padding but drop the
+   negative margins that padding used to offset. */
+#content .somcp-agent-layout > .panel > .panel-heading,
+#content .somcp-agent-layout > .panel > .panel-footer {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.somcp-agent-side {
+    flex: 0 0 340px;
+}
+
+.somcp-agent-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.somcp-agent-tools {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.somcp-agent-list {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0;
+}
+
+.somcp-agent-list .list-group-item {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
     cursor: pointer;
 }
 
-.somcp-agent .somcp-agent-list .somcp-agent-title {
+.somcp-agent-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.somcp-agent-row strong {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.somcp-agent .somcp-agent-list .somcp-agent-drop {
-    border: 0;
-    background: none;
-    color: #98a3b0;
-    padding: 0 2px;
+.somcp-agent-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.somcp-agent .somcp-agent-list .somcp-agent-drop:hover {
-    color: #c0392b;
+.somcp-agent-head [data-somcp-title] {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.somcp-agent .somcp-agent-thread {
-    height: calc(100vh - 380px);
-    min-height: 260px;
+.somcp-agent-head .btn {
+    text-transform: none;
+}
+
+.somcp-agent-thread {
+    flex: 1;
     overflow-y: auto;
-    padding: 4px 2px 12px;
+    padding: 16px;
+    min-height: 0;
 }
 
-.somcp-agent .somcp-agent-empty {
-    color: #6c868e;
+.somcp-agent-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    margin-top: 60px;
 }
 
-.somcp-agent .somcp-agent-msg {
-    margin: 10px 0;
-    padding: 10px 14px;
-    border-radius: 6px;
-    max-width: 85%;
-    line-height: 1.5;
-    word-wrap: break-word;
+.somcp-agent-empty .material-icons {
+    font-size: 64px;
+    opacity: .3;
+    margin-bottom: 12px;
 }
 
-.somcp-agent .somcp-agent-msg-user {
-    background: #e8f6f9;
+/* Bubbles: the employee on the right, the Agent on the left, each with the
+   theme's own well and panel boxes. Only the width and side are set here. */
+.somcp-agent-msg {
+    max-width: 75%;
+    margin-bottom: 14px;
+}
+
+.somcp-agent-msg-user {
     margin-left: auto;
+}
+
+/* Under #content: the theme sets the panel margin with #content.bootstrap,
+   which outweighs any selector made of classes alone. */
+#content .somcp-agent .somcp-agent-msg > .alert {
+    margin: 0;
+}
+
+/* The alert keeps its own padding: PrestaShop 9 draws its icon inside it. */
+#content .somcp-agent .somcp-agent-msg > .well,
+#content .somcp-agent .somcp-agent-msg > .panel {
+    margin: 0;
+    padding: 10px 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.somcp-agent-msg-user > .well {
     white-space: pre-wrap;
 }
 
-.somcp-agent .somcp-agent-msg-assistant {
-    background: #f8f9fa;
-    border: 1px solid #eef1f4;
-}
-
-.somcp-agent .somcp-agent-who {
-    display: block;
-    font-size: 11px;
-    color: #6c868e;
-    margin-bottom: 4px;
-}
-
-.somcp-agent .somcp-agent-msg pre {
+.somcp-agent-msg pre {
     white-space: pre-wrap;
-    font-size: 12px;
-}
-
-.somcp-agent .somcp-agent-tool {
-    margin: 6px 0;
-    font-size: 12px;
-    color: #6c868e;
-}
-
-.somcp-agent .somcp-agent-tool pre {
     margin: 6px 0 0;
-    font-size: 11px;
+}
+
+.somcp-agent-meta {
+    margin-top: 4px;
+    padding: 0 6px;
+}
+
+.somcp-agent-msg-user .somcp-agent-meta {
+    text-align: right;
+}
+
+.somcp-agent-tool {
+    margin: 0 0 10px;
+}
+
+.somcp-agent-tool summary {
+    cursor: pointer;
+}
+
+.somcp-agent-tool pre {
     max-height: 240px;
     overflow: auto;
 }
 
-.somcp-agent .somcp-agent-pending {
-    padding: 10px 14px;
-    border: 1px solid #fbc02d;
-    background: #fffbea;
-    border-radius: 6px;
-    color: #363a41;
+.somcp-agent-decide {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: -4px 0 14px;
 }
 
-.somcp-agent .somcp-agent-actions {
+#content .somcp-agent-reply {
+    padding: 12px 16px;
+    height: auto;
+}
+
+.somcp-agent-reply textarea {
+    resize: vertical;
+    min-height: 70px;
+}
+
+/* Two groups, as on the customer service screen: what shapes the message on
+   the left, what sends it on the right. The row breaks between them on a
+   narrow screen rather than squeezing either. */
+.somcp-agent-foot {
     display: flex;
-    gap: 8px;
-    justify-content: flex-end;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
     margin-top: 8px;
 }
 
-.somcp-agent .somcp-agent-compose {
+.somcp-agent-foot > div {
     display: flex;
-    gap: 8px;
-    align-items: flex-end;
-    border-top: 1px solid #eef1f4;
-    padding-top: 12px;
-}
-
-.somcp-agent .somcp-agent-compose textarea {
-    flex: 1;
-    resize: vertical;
-    min-height: 60px;
-}
-
-.somcp-agent .somcp-agent-bar {
-    display: flex;
-    gap: 8px;
     align-items: center;
-    margin-bottom: 10px;
+    gap: 10px;
 }
 
-.somcp-agent .somcp-agent-bar select {
-    max-width: 360px;
+.somcp-agent-foot .control-label,
+.somcp-agent-foot .help-block {
+    margin: 0;
+    padding: 0;
 }
 
-.somcp-agent .somcp-agent-role {
-    font-size: 12px;
-    color: #6c868e;
+.somcp-agent-foot select {
+    width: auto;
+    max-width: 280px;
 }
 
-.somcp-agent .somcp-agent-working {
-    color: #6c868e;
-    font-style: italic;
-    margin: 8px 0;
+.somcp-agent-count {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
-.somcp-agent .somcp-agent-working[hidden],
 .somcp-agent [hidden] {
-    display: none;
+    display: none !important;
 }
 
 .somcp-agent .btn:focus:not(:focus-visible),
 .somcp-agent .list-group-item:focus:not(:focus-visible) {
     outline: 0;
+}
+
+@media (max-width: 991px) {
+    .somcp-agent-layout {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .somcp-agent-side {
+        flex-basis: auto;
+        max-height: 260px;
+    }
+
+    .somcp-agent-main {
+        height: 70vh;
+    }
 }
 </style>
 
@@ -173,52 +266,69 @@
     <div class="alert alert-info">
         {l s='No assistant is enabled yet. Add an API key for Claude, ChatGPT or Gemini in the module settings.' d='Modules.Somcp.Admin'}
         {if $somcp_settings_url}
-            <a href="{$somcp_settings_url|escape:'html':'UTF-8'}">{l s='Open the AI agent settings' d='Modules.Somcp.Admin'}</a>
+            <a href="{$somcp_settings_url|escape:'html':'UTF-8'}">{l s='Open the AI Agent settings' d='Modules.Somcp.Admin'}</a>
         {else}
             {l s='Ask an administrator of the shop.' d='Modules.Somcp.Admin'}
         {/if}
     </div>
 {else}
-    <div class="row">
-        <div class="col-lg-3">
-            <div class="panel">
-                <div class="panel-heading"><i class="icon-comments"></i> {l s='Conversations' d='Modules.Somcp.Admin'}</div>
+    <div class="somcp-agent-layout">
+
+        {* ===== Left: the conversations ===== *}
+        <div class="panel somcp-agent-side">
+            <div class="panel-heading"><i class="icon-comments"></i> {l s='Conversations' d='Modules.Somcp.Admin'}</div>
+            <div class="somcp-agent-tools">
                 <button type="button" class="btn btn-primary btn-block" data-somcp-new>
                     <i class="icon-plus"></i> {l s='New conversation' d='Modules.Somcp.Admin'}
                 </button>
-                <div class="list-group somcp-agent-list" data-somcp-list></div>
+                <input type="search" class="form-control" data-somcp-search placeholder="{l s='Search a conversation' d='Modules.Somcp.Admin'}">
             </div>
+            <div class="list-group somcp-agent-list" data-somcp-list></div>
         </div>
 
-        <div class="col-lg-9">
-            <div class="panel">
-                <div class="panel-heading"><i class="icon-comment"></i> <span data-somcp-title>{l s='New conversation' d='Modules.Somcp.Admin'}</span></div>
-
-                <div class="somcp-agent-bar">
-                    <label for="somcp-agent-pick" class="control-label">{l s='Assistant' d='Modules.Somcp.Admin'}</label>
-                    <select id="somcp-agent-pick" class="form-control" data-somcp-pick>
-                        {foreach from=$somcp_agents item=agent}
-                            <option value="{$agent.value|escape:'html':'UTF-8'}" data-role="{$agent.role|escape:'html':'UTF-8'}">{$agent.label|escape:'html':'UTF-8'}</option>
-                        {/foreach}
-                    </select>
-                    <span class="somcp-agent-role" data-somcp-role></span>
-                </div>
-
-                <div class="somcp-agent-thread" data-somcp-thread>
-                    <p class="somcp-agent-empty">{l s='Ask anything about your shop: the assistant reads it with its tools and asks before changing anything.' d='Modules.Somcp.Admin'}</p>
-                </div>
-                <p class="somcp-agent-working" data-somcp-working hidden>{l s='The assistant is working...' d='Modules.Somcp.Admin'}</p>
-                <div class="alert alert-danger" data-somcp-error hidden></div>
-
-                <form class="somcp-agent-compose" data-somcp-compose>
-                    <textarea class="form-control" rows="2" maxlength="20000" data-somcp-text placeholder="{l s='Write a message. Enter sends, Shift+Enter goes to the next line.' d='Modules.Somcp.Admin'}"></textarea>
-                    <button type="submit" class="btn btn-primary" data-somcp-send>
-                        <i class="icon-send"></i> {l s='Send' d='Modules.Somcp.Admin'}
-                    </button>
-                </form>
+        {* ===== Right: the thread and the reply bar ===== *}
+        <div class="panel somcp-agent-main">
+            <div class="panel-heading somcp-agent-head">
+                <i class="icon-comment"></i>
+                <span data-somcp-title>{l s='New conversation' d='Modules.Somcp.Admin'}</span>
+                <button type="button" class="btn btn-default btn-sm" data-somcp-drop hidden>
+                    <i class="icon-trash"></i> {l s='Delete' d='Modules.Somcp.Admin'}
+                </button>
             </div>
+
+            <div class="somcp-agent-thread" data-somcp-thread></div>
+
+            <form class="somcp-agent-reply panel-footer" data-somcp-compose>
+                <textarea class="form-control" rows="3" maxlength="20000" data-somcp-text placeholder="{l s='Write a message. Enter sends, Shift+Enter goes to the next line.' d='Modules.Somcp.Admin'}"></textarea>
+                <div class="somcp-agent-foot">
+                    <div>
+                        <label for="somcp-agent-pick" class="control-label">{l s='Agent' d='Modules.Somcp.Admin'}</label>
+                        <select id="somcp-agent-pick" class="form-control" data-somcp-pick>
+                            {foreach from=$somcp_agents item=agent}
+                                <option value="{$agent.value|escape:'html':'UTF-8'}" data-role="{$agent.role|escape:'html':'UTF-8'}">{$agent.label|escape:'html':'UTF-8'}</option>
+                            {/foreach}
+                        </select>
+                        <span class="help-block" data-somcp-role></span>
+                    </div>
+                    <div>
+                        <span class="help-block somcp-agent-count" data-somcp-count>0 / 20000</span>
+                        <button type="submit" class="btn btn-primary" data-somcp-send>
+                            <i class="icon-send"></i> {l s='Send' d='Modules.Somcp.Admin'}
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
+
+    {* The empty thread, cloned whenever no conversation is open. *}
+    <template data-somcp-empty>
+        <div class="somcp-agent-empty text-muted">
+            <i class="material-icons">forum</i>
+            <p>{l s='Pick a conversation on the left, or write to start a new one.' d='Modules.Somcp.Admin'}</p>
+            <p>{l s='Ask anything about your shop: the Agent reads it with its tools and asks before changing anything.' d='Modules.Somcp.Admin'}</p>
+        </div>
+    </template>
 
     <script type="text/javascript">
         (function () {
@@ -231,18 +341,21 @@
                 done: '{l s='Done' d='Modules.Somcp.Admin' js=1}',
                 failed: '{l s='Failed' d='Modules.Somcp.Admin' js=1}',
                 refused: '{l s='Refused' d='Modules.Somcp.Admin' js=1}',
-                pending: '{l s='The assistant wants to make this change:' d='Modules.Somcp.Admin' js=1}',
+                pending: '{l s='The Agent wants to make this change:' d='Modules.Somcp.Admin' js=1}',
                 approve: '{l s='Approve' d='Modules.Somcp.Admin' js=1}',
                 refuse: '{l s='Refuse' d='Modules.Somcp.Admin' js=1}',
+                working: '{l s='Thinking...' d='Modules.Somcp.Admin' js=1}',
+                nothing: '{l s='No conversation found.' d='Modules.Somcp.Admin' js=1}',
                 confirmDrop: '{l s='Delete this conversation?' d='Modules.Somcp.Admin' js=1}',
-                drop: '{l s='Delete' d='Modules.Somcp.Admin' js=1}',
+                // Written as the Agent's own reply, so a failure reads like the
+                // rest of the conversation rather than as a page error.
                 errors: {
-                    unavailable: '{l s='This model is not available any more. Pick another one, or check the AI agent settings.' d='Modules.Somcp.Admin' js=1}',
-                    too_many_steps: '{l s='The assistant stopped after too many steps in a row. Send a message to let it carry on.' d='Modules.Somcp.Admin' js=1}',
-                    provider: '{l s='The assistant could not answer:' d='Modules.Somcp.Admin' js=1}',
-                    storage: '{l s='The conversation could not be saved.' d='Modules.Somcp.Admin' js=1}',
-                    not_found: '{l s='This conversation no longer exists.' d='Modules.Somcp.Admin' js=1}',
-                    network: '{l s='The shop did not answer. Check your connection and try again.' d='Modules.Somcp.Admin' js=1}'
+                    unavailable: '{l s='I am not available with this model any more. Pick another one in the list below, or check the AI Agent settings.' d='Modules.Somcp.Admin' js=1}',
+                    too_many_steps: '{l s='I stopped after too many steps in a row, to be safe. Send me a message and I will carry on where I left off.' d='Modules.Somcp.Admin' js=1}',
+                    provider: '{l s='I could not answer this time. Here is what my provider replied:' d='Modules.Somcp.Admin' js=1}',
+                    storage: '{l s='I could not save our conversation. Try again in a moment.' d='Modules.Somcp.Admin' js=1}',
+                    not_found: '{l s='This conversation no longer exists. Write to me here and we will start a new one.' d='Modules.Somcp.Admin' js=1}',
+                    network: '{l s='Your message did not reach me: the shop did not answer. Check your connection and send it again.' d='Modules.Somcp.Admin' js=1}'
                 }
             };
 {* Everything below is plain JavaScript: kept away from Smarty, which would
@@ -250,20 +363,23 @@
 {literal}
             var root = document.querySelector('.somcp-agent');
             var list = root.querySelector('[data-somcp-list]');
+            var search = root.querySelector('[data-somcp-search]');
             var thread = root.querySelector('[data-somcp-thread]');
-            var empty = thread.innerHTML;
+            var empty = root.querySelector('[data-somcp-empty]');
             var title = root.querySelector('[data-somcp-title]');
+            var dropButton = root.querySelector('[data-somcp-drop]');
             var pick = root.querySelector('[data-somcp-pick]');
             var role = root.querySelector('[data-somcp-role]');
-            var working = root.querySelector('[data-somcp-working]');
-            var failure = root.querySelector('[data-somcp-error]');
             var compose = root.querySelector('[data-somcp-compose]');
             var field = root.querySelector('[data-somcp-text]');
+            var count = root.querySelector('[data-somcp-count]');
             var send = root.querySelector('[data-somcp-send]');
 
             var current = 0;
             var busy = false;
-            var remembered = null;
+            var conversations = initial;
+            var items = [];
+            var waiting = false;
 
             var escape = function (value) {
                 return String(value).replace(/[&<>"']/g, function (c) {
@@ -293,58 +409,101 @@
                 });
             };
 
+            // Today shows the time only, an older message its date as well.
+            var when = function (stamp) {
+                if (!stamp) {
+                    return '';
+                }
+                var date = new Date(String(stamp).replace(' ', 'T'));
+                if (isNaN(date.getTime())) {
+                    return String(stamp);
+                }
+                var time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return date.toDateString() === new Date().toDateString()
+                    ? time
+                    : date.toLocaleDateString() + ' ' + time;
+            };
+
+            var agentLabel = function (value) {
+                var option = pick.querySelector('option[value="' + String(value).replace(/["\\]/g, '') + '"]');
+                return option ? option.textContent : '';
+            };
+
             var showRole = function () {
                 var option = pick.options[pick.selectedIndex];
                 role.textContent = option ? option.getAttribute('data-role') : '';
             };
 
-            var drawList = function (conversations) {
+            var drawList = function () {
+                var filter = search.value.trim().toLowerCase();
                 list.innerHTML = '';
+                var shown = 0;
                 conversations.forEach(function (conversation) {
+                    if (filter && conversation.title.toLowerCase().indexOf(filter) === -1) {
+                        return;
+                    }
+                    shown++;
                     var item = document.createElement('a');
                     item.className = 'list-group-item' + (conversation.id_conversation === current ? ' active' : '');
                     item.setAttribute('role', 'button');
                     item.setAttribute('tabindex', '0');
-                    item.innerHTML = '<span class="somcp-agent-title"></span><button type="button" class="somcp-agent-drop" title="' + escape(text.drop) + '">&times;</button>';
-                    item.querySelector('.somcp-agent-title').textContent = conversation.title;
-                    item.addEventListener('click', function (event) {
-                        if (event.target.classList.contains('somcp-agent-drop')) {
-                            event.stopPropagation();
-                            if (window.confirm(text.confirmDrop)) {
-                                drop(conversation.id_conversation);
-                            }
-                            return;
-                        }
+                    // list-group-item-text rather than text-muted: the theme recolours it on
+                    // the active row, where muted grey would vanish into the highlight.
+                    item.innerHTML = '<div class="somcp-agent-row"><strong></strong><small></small></div><small class="list-group-item-text"></small>';
+                    item.querySelector('strong').textContent = conversation.title;
+                    item.querySelector('.somcp-agent-row small').textContent = when(conversation.date_upd);
+                    item.querySelector('.list-group-item-text').textContent = agentLabel(conversation.provider + ':' + conversation.model) || conversation.model;
+                    item.addEventListener('click', function () {
                         open(conversation.id_conversation);
+                    });
+                    item.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter') {
+                            open(conversation.id_conversation);
+                        }
                     });
                     list.appendChild(item);
                     if (conversation.id_conversation === current) {
                         title.textContent = conversation.title;
                     }
                 });
+                if (!shown) {
+                    list.innerHTML = '<p class="list-group-item text-muted text-center">' + escape(text.nothing) + '</p>';
+                }
             };
 
-            var drawThread = function (items, waiting) {
-                if (!items.length) {
-                    thread.innerHTML = empty;
+            var bubble = function (side, who, stamp, body, box) {
+                var node = document.createElement('div');
+                node.className = 'somcp-agent-msg somcp-agent-msg-' + side;
+                node.innerHTML = '<div class="' + box + '">' + body + '</div>'
+                    + '<div class="somcp-agent-meta help-block">' + escape(who) + (stamp ? ' &middot; ' + escape(when(stamp)) : '') + '</div>';
+                return node;
+            };
+
+            // Draws the thread. A failure, when there is one, is drawn as the
+            // Agent's last reply: it is not saved, and the next answer replaces it.
+            var drawThread = function (failure, thinking) {
+                thread.innerHTML = '';
+                if (!items.length && !failure && !thinking) {
+                    thread.appendChild(empty.content.cloneNode(true));
                     return;
                 }
-                thread.innerHTML = '';
                 items.forEach(function (item) {
-                    var node = document.createElement('div');
                     if (item.kind === 'user') {
-                        node.className = 'somcp-agent-msg somcp-agent-msg-user';
-                        node.textContent = item.text;
-                    } else if (item.kind === 'assistant') {
-                        node.className = 'somcp-agent-msg somcp-agent-msg-assistant';
-                        node.innerHTML = '<span class="somcp-agent-who">' + escape(item.agent) + '</span>' + markdown(item.text);
-                    } else if (item.status === 'pending') {
-                        node.className = 'somcp-agent-pending';
-                        node.innerHTML = '<strong>' + escape(text.pending) + '</strong> <code>' + escape(item.name) + '</code>'
-                            + '<pre>' + escape(item.arguments) + '</pre>';
+                        thread.appendChild(bubble('user', text.you, item.date, escape(item.text), 'well'));
+                        return;
+                    }
+                    if (item.kind === 'assistant') {
+                        thread.appendChild(bubble('agent', item.agent, item.date, markdown(item.text), 'panel'));
+                        return;
+                    }
+                    var node = document.createElement('div');
+                    if (item.status === 'pending') {
+                        node.className = 'somcp-agent-msg somcp-agent-msg-agent';
+                        node.innerHTML = '<div class="alert alert-warning"><strong>' + escape(text.pending) + '</strong> <code>'
+                            + escape(item.name) + '</code><pre>' + escape(item.arguments) + '</pre></div>';
                     } else {
                         var label = { done: text.done, error: text.failed, refused: text.refused }[item.status] || text.read;
-                        node.className = 'somcp-agent-tool';
+                        node.className = 'somcp-agent-tool help-block';
                         node.innerHTML = '<details><summary><i class="icon-wrench"></i> <code>' + escape(item.name) + '</code> &middot; '
                             + escape(label) + '</summary><pre>' + escape(item.arguments) + '</pre></details>';
                     }
@@ -352,7 +511,7 @@
                 });
                 if (waiting) {
                     var actions = document.createElement('div');
-                    actions.className = 'somcp-agent-actions';
+                    actions.className = 'somcp-agent-decide';
                     actions.innerHTML = '<button type="button" class="btn btn-default" data-decide="0">' + escape(text.refuse) + '</button>'
                         + '<button type="button" class="btn btn-primary" data-decide="1">' + escape(text.approve) + '</button>';
                     actions.querySelectorAll('[data-decide]').forEach(function (button) {
@@ -362,20 +521,24 @@
                     });
                     thread.appendChild(actions);
                 }
+                if (thinking) {
+                    thread.appendChild(bubble('agent', agentLabel(pick.value), '', '<span class="text-muted">' + escape(text.working) + '</span>', 'panel'));
+                }
+                if (failure) {
+                    thread.appendChild(bubble('agent', agentLabel(pick.value), new Date().toISOString(), failure, 'panel'));
+                }
                 thread.scrollTop = thread.scrollHeight;
+            };
+
+            var failureText = function (code, detail) {
+                var message = escape(text.errors[code] || text.errors.network);
+                return detail ? message + '<pre>' + escape(detail) + '</pre>' : message;
             };
 
             var setBusy = function (on) {
                 busy = on;
-                working.hidden = !on;
                 send.disabled = on;
                 pick.disabled = on;
-            };
-
-            var fail = function (code, detail) {
-                var message = text.errors[code] || text.errors.network;
-                failure.textContent = detail ? message + ' ' + detail : message;
-                failure.hidden = false;
             };
 
             var call = function (action, data) {
@@ -388,8 +551,9 @@
                     body.append(key, data[key]);
                 });
 
-                failure.hidden = true;
                 setBusy(true);
+                waiting = false;
+                drawThread('', action !== 'open' && action !== 'remove');
 
                 return fetch(url, { method: 'POST', body: body, credentials: 'same-origin' })
                     .then(function (response) {
@@ -400,7 +564,7 @@
                     })
                     .catch(function () {
                         setBusy(false);
-                        fail('network', '');
+                        drawThread(failureText('network', ''), false);
                     });
             };
 
@@ -409,22 +573,27 @@
                     current = answer.id_conversation;
                     remember();
                 }
-                if (answer.agent && pick.querySelector('option[value="' + answer.agent.replace(/"/g, '') + '"]')) {
+                if (answer.agent && agentLabel(answer.agent)) {
                     pick.value = answer.agent;
                     showRole();
                 }
                 if (answer.conversations) {
-                    drawList(answer.conversations);
+                    conversations = answer.conversations;
                 }
                 if (answer.items) {
-                    drawThread(answer.items, answer.state === 'confirm');
+                    items = answer.items;
                 }
-                if (answer.error) {
-                    fail(answer.error, answer.detail || '');
-                    if (answer.error === 'not_found') {
-                        reset();
-                    }
+                if (answer.error === 'not_found') {
+                    current = 0;
+                    items = [];
+                    remember();
                 }
+                waiting = answer.state === 'confirm';
+                dropButton.hidden = !current;
+                if (!current) {
+                    title.textContent = text.fresh;
+                }
+                drawList();
 
                 // Tools ran: the page asks for the next turn itself, so no
                 // single request has to last as long as the whole answer.
@@ -433,7 +602,8 @@
                     return;
                 }
                 setBusy(false);
-                if (answer.state !== 'confirm') {
+                drawThread(answer.error ? failureText(answer.error, answer.detail || '') : '', false);
+                if (!waiting) {
                     field.focus();
                 }
             };
@@ -448,12 +618,13 @@
 
             var reset = function () {
                 current = 0;
+                items = [];
+                waiting = false;
                 remember();
                 title.textContent = text.fresh;
-                thread.innerHTML = empty;
-                list.querySelectorAll('.active').forEach(function (item) {
-                    item.classList.remove('active');
-                });
+                dropButton.hidden = true;
+                drawList();
+                drawThread('', false);
             };
 
             var open = function (id) {
@@ -464,19 +635,6 @@
                 call('open', {});
             };
 
-            var drop = function (id) {
-                var previous = current;
-                current = id;
-                call('remove', {}).then(function () {
-                    if (previous === id) {
-                        reset();
-                    } else {
-                        current = previous;
-                        remember();
-                    }
-                });
-            };
-
             compose.addEventListener('submit', function (event) {
                 event.preventDefault();
                 var message = field.value.trim();
@@ -484,24 +642,33 @@
                     return;
                 }
                 field.value = '';
+                count.textContent = '0 / 20000';
                 // Shown at once, before the round trip, so the employee sees
                 // their message leave; the answer redraws the whole thread.
-                if (!current) {
-                    thread.innerHTML = '';
-                }
-                var mine = document.createElement('div');
-                mine.className = 'somcp-agent-msg somcp-agent-msg-user';
-                mine.textContent = message;
-                thread.appendChild(mine);
-                thread.scrollTop = thread.scrollHeight;
+                items = items.concat([{ kind: 'user', text: message, date: new Date().toISOString() }]);
                 call('send', { text: message });
             });
 
             field.addEventListener('keydown', function (event) {
                 if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
                     event.preventDefault();
-                    compose.requestSubmit ? compose.requestSubmit() : compose.dispatchEvent(new Event('submit', { cancelable: true }));
+                    if (compose.requestSubmit) {
+                        compose.requestSubmit();
+                    } else {
+                        compose.dispatchEvent(new Event('submit', { cancelable: true }));
+                    }
                 }
+            });
+
+            field.addEventListener('input', function () {
+                count.textContent = field.value.length + ' / 20000';
+            });
+
+            dropButton.addEventListener('click', function () {
+                if (busy || !current || !window.confirm(text.confirmDrop)) {
+                    return;
+                }
+                call('remove', {}).then(reset);
             });
 
             root.querySelector('[data-somcp-new]').addEventListener('click', function () {
@@ -511,17 +678,20 @@
                 }
             });
 
+            search.addEventListener('input', drawList);
             pick.addEventListener('change', showRole);
 
             showRole();
-            drawList(initial);
+            drawList();
+            drawThread('', false);
 
+            var remembered = 0;
             try {
                 remembered = parseInt(window.sessionStorage.getItem('somcp.agent.conversation') || '0', 10);
             } catch (e) {
                 remembered = 0;
             }
-            if (remembered && initial.some(function (conversation) { return conversation.id_conversation === remembered; })) {
+            if (remembered && conversations.some(function (conversation) { return conversation.id_conversation === remembered; })) {
                 open(remembered);
             }
 {/literal}

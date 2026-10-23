@@ -117,6 +117,11 @@
       <source>Change the orders of this shop, which can email your customers</source>
       <target>Modificar los pedidos de esta tienda, lo que puede enviar correos electrónicos a sus clientes</target>
     </trans-unit>
+    <!-- Read the catalogue of this shop: products, prices and categories -->
+    <trans-unit id="9078d9527c0914dcf527a5185e6f51e3" resname="Read the catalogue of this shop: products, prices and categories">
+      <source>Read the catalogue of this shop: products, prices and categories</source>
+      <target>Leer el catálogo de esta tienda: productos, precios y categorías</target>
+    </trans-unit>
     <!-- Outgoing HTTP requests -->
     <trans-unit id="44dc1cd9380e6350a77f6d24def569f7" resname="Outgoing HTTP requests">
       <source>Outgoing HTTP requests</source>
@@ -677,6 +682,11 @@
       <source>Search orders</source>
       <target>Buscar pedidos</target>
     </trans-unit>
+    <!-- Search products -->
+    <trans-unit id="437ac95a91364eb49587af5e146b1745" resname="Search products">
+      <source>Search products</source>
+      <target>Buscar productos</target>
+    </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">
       <source>Change the status of an order</source>
@@ -777,6 +787,11 @@
       <source>Change an order status</source>
       <target>Cambiar el estado de un pedido</target>
     </trans-unit>
+    <!-- Manage products -->
+    <trans-unit id="93b46287befd343af1d5eaeb7d18655d" resname="Manage products">
+      <source>Manage products</source>
+      <target>Gestionar los productos</target>
+    </trans-unit>
     <!-- Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in. -->
     <trans-unit id="911ba9aa6db02bd840aa72147dc37333" resname="Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.">
       <source>Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.</source>
@@ -792,6 +807,11 @@
       <source>Change the status of an order in the PrestaShop shop, one order at a time, with the checks that keep a customer from being emailed twice.</source>
       <target>Cambiar el estado de un pedido en la tienda PrestaShop, un pedido cada vez, con las comprobaciones que evitan enviar dos veces un correo al cliente.</target>
     </trans-unit>
+    <!-- Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier. -->
+    <trans-unit id="1029b5f99933d5e26b2c0ad1262de26e" resname="Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.">
+      <source>Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.</source>
+      <target>Buscar, leer y modificar los productos y las categorías de la tienda PrestaShop, uno cada vez, sin adivinar ningún identificador.</target>
+    </trans-unit>
     <!-- Order reference, number or customer name -->
     <trans-unit id="257b671f0fd599af83977738ac7c7bea" resname="Order reference, number or customer name">
       <source>Order reference, number or customer name</source>
@@ -806,6 +826,11 @@
     <trans-unit id="7ba9173fdf75ebd71504c07fbbcb944f" resname="Status to set">
       <source>Status to set</source>
       <target>Estado que aplicar</target>
+    </trans-unit>
+    <!-- Name, reference or EAN13 of a product -->
+    <trans-unit id="8befea239b14adb58304a3298ac62cb9" resname="Name, reference or EAN13 of a product">
+      <source>Name, reference or EAN13 of a product</source>
+      <target>Nombre, referencia o EAN13 de un producto</target>
     </trans-unit>
     <!-- Send a file to your assistant -->
     <trans-unit id="bc445a0e56169dfb1aa11611f145dff9" resname="Send a file to your assistant">

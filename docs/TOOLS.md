@@ -561,7 +561,7 @@ The products and the categories they are sorted into: texts, prices, combination
 **Not here**: stock quantities (→ Stock), what sold (→ Statistics).
 
 #### `somcp_search_products`
-**State**: to write · [issue #1](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/1)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.catalog.read`
 
 **Does** - finds products with the filters of the back office product list (ID, name, reference, category, price without and with tax, quantity, status, EAN13, MPN, UPC, ISBN), and returns one short line each.
@@ -595,6 +595,8 @@ The products and the categories they are sorted into: texts, prices, combination
 - Reference and EAN13 also look in `product_attribute`; MPN, UPC and ISBN only on the product. A product found through several combinations comes back once.
 - Prices are the product's base price, before specific prices and combination impacts. The price with tax uses the product's tax rule in the shop's default country, as the back office list does.
 - At least one filter is not required: without any, the tool lists the catalogue page by page.
+- Like the back office list, the prices add the ecotax when the shop uses it, and a product still being created (`state` other than saved) is left out. A tax rule with no rate for the default country counts as no tax.
+- Prices are rounded to the precision of the shop default currency, which is the currency they are stored in. With both `reference` and `ean13` given, a combination is listed in `matched_combinations` when it matches either one.
 
 #### `somcp_get_product`
 **State**: to write · [issue #2](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/2)
@@ -1949,7 +1951,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-connection-check` | Diagnostics | written |
 | `somcp-order-lookup` | Orders | written |
 | `somcp-order-status-change` | Orders | written |
-| `somcp-catalogue-manage` | Catalogue | draft · [issue #36](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/36) |
+| `somcp-catalogue-manage` | Catalogue | written |
 | `somcp-stock-check` | Stock | draft · [issue #37](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/37) |
 | `somcp-customer-lookup` | Customers | draft · [issue #38](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/38) |
 | `somcp-sales-report` | Statistics | draft · [issue #39](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/39) |
@@ -1959,7 +1961,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-cache-maintenance` | System | draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43) |
 
 #### `somcp-catalogue-manage`
-**State**: draft · [issue #36](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/36)
+**State**: written
 **Section**: Catalogue · **Scope**: `mcp.catalog.read` · **Permission**: `view` on `AdminProducts`
 
 **Title** - Manage products

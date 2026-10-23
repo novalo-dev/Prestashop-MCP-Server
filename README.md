@@ -12,9 +12,10 @@
 [![Contributors](https://img.shields.io/github/contributors/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Contributors)](https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors)
 
 A PrestaShop module that turns a shop into an [MCP](https://modelcontextprotocol.io)
-server. Claude, ChatGPT or any MCP client can then work with the shop's orders,
-through a standard protocol, with OAuth 2.1 and the employee's own back office
-permissions, instead of a database login or an API key that can do everything.
+server. Claude, ChatGPT or any MCP client can then work with the shop's orders
+and catalogue, through a standard protocol, with OAuth 2.1 and the employee's
+own back office permissions, instead of a database login or an API key that can
+do everything.
 
 The module folder is `somcp`; in the back office it is called **O'So MCP Server**.
 
@@ -72,6 +73,7 @@ calling the shop's own addresses.
 | `somcp_get_order` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_list_order_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
 | `somcp_set_order_status` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+| `somcp_search_products` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running
@@ -83,8 +85,8 @@ and only says what the assistant is connected to (shop, account, language,
 currency), so an assistant can always tell which account it is using, even one
 with no rights at all.
 
-Three prompts ship with the module: checking the connection, finding an order,
-and changing an order status. Details of every tool are in
+Four prompts ship with the module: checking the connection, finding an order,
+changing an order status, and managing products. Details of every tool are in
 [docs/TOOLS.md](docs/TOOLS.md).
 
 ## Install for development
@@ -137,8 +139,8 @@ welcome, see the roadmap.
   access tokens one hour and refresh tokens thirty days by default, both
   configurable. Refresh tokens rotate; presenting an old one revokes the grant.
 - **Scopes** say what an assistant may do: `mcp.access` to connect,
-  `mcp.orders.read`, `mcp.orders.write`. Other modules declare their own scopes
-  rather than borrowing these.
+  `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`. Other modules
+  declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's
   current profile, and the shop always comes from the token, never from the
   request.

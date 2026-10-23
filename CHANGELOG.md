@@ -30,6 +30,18 @@ keeps its meaning and is saved the same way.
 
 ### Added
 
+**Product search.** The new tool `somcp_search_products` finds products with
+the filters of the back office product list: identifier, name, reference,
+category, price without or with tax, quantity, status, EAN13, MPN, UPC and
+ISBN. A reference or an EAN13 also finds the product through its combinations,
+and says which ones matched. It needs the new permission `mcp.catalog.read`,
+which the consent screen describes as reading the catalogue, and the `view`
+right on the back office products page.
+
+**Manage products prompt.** A guided task for the catalogue, picked from the
+assistant's menu: search before reading, never guess an identifier, always say
+whether a price is with or without tax.
+
 **Feedback and source code.** A card at the bottom of the settings page leads
 to the module's GitHub repository, to report a problem, suggest a tool or read
 the code.

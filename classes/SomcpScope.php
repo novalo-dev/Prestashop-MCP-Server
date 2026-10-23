@@ -19,11 +19,11 @@ declare(strict_types=1);
 /*
  * SomcpScope - the permissions a token can carry.
  *
- * Only `mcp.access` exists in this version. The scopes that gate products,
- * orders or customers are added together with the tools that need them, not
- * before: a scope advertised in the metadata but enforced nowhere is a promise
- * the server does not keep, and a client that asks for it gets a token that
- * grants more than the shop can honour.
+ * The scopes that gate products, orders or customers are added together
+ * with the tools that need them, not before: a scope advertised in the
+ * metadata but enforced nowhere is a promise the server does not keep, and a
+ * client that asks for it gets a token that grants more than the shop can
+ * honour.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -41,6 +41,9 @@ class SomcpScope
     /** @var string Acting on orders: statuses, notes, documents. */
     public const ORDERS_WRITE = 'mcp.orders.write';
 
+    /** @var string Reading the catalogue: products, categories, brands, suppliers. */
+    public const CATALOG_READ = 'mcp.catalog.read';
+
     /**
      * The scopes this module owns.
      *
@@ -48,7 +51,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ];
     }
 
     /**
@@ -71,7 +74,7 @@ class SomcpScope
      * The scopes other modules brought, if the registry is there to ask.
      *
      * The module loads its classes together, so it normally is. The guard is
-     * for the boot that stopped short: a discovery document listing our three
+     * for the boot that stopped short: a discovery document listing our own
      * scopes is a document a client can still work from, while a fatal error
      * on the well-known address takes the whole server down.
      *
@@ -217,6 +220,8 @@ class SomcpScope
                 return $module->l10n(
                     'Change the orders of this shop, which can email your customers'
                 );
+            case self::CATALOG_READ:
+                return $module->l10n('Read the catalogue of this shop: products, prices and categories');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

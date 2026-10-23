@@ -101,6 +101,10 @@ T = {
  "Modifier les commandes de cette boutique, ce qui peut envoyer des e-mails à vos clients",
  "Modificar los pedidos de esta tienda, lo que puede enviar correos electrónicos a sus clientes",
  "Die Bestellungen dieses Shops ändern, wodurch E-Mails an Ihre Kunden gesendet werden können"),
+"Read the catalogue of this shop: products, prices and categories": (
+ "Lire le catalogue de cette boutique : produits, prix et catégories",
+ "Leer el catálogo de esta tienda: productos, precios y categorías",
+ "Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien"),
 "Outgoing HTTP requests": (
  "Requêtes HTTP sortantes",
  "Peticiones HTTP salientes",
@@ -549,6 +553,10 @@ T = {
  "Rechercher des commandes",
  "Buscar pedidos",
  "Bestellungen suchen"),
+"Search products": (
+ "Rechercher des produits",
+ "Buscar productos",
+ "Produkte suchen"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",
@@ -629,6 +637,10 @@ T = {
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",
  "Den Status einer Bestellung ändern"),
+"Manage products": (
+ "Gérer les produits",
+ "Gestionar los productos",
+ "Produkte verwalten"),
 "Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.": (
  "Vérifier que la connexion à la boutique PrestaShop fonctionne, et indiquer ce qu'elle atteint : quelle boutique, quel compte, dans quelle langue et quelle devise arrivent les réponses.",
  "Comprobar que la conexión con la tienda PrestaShop funciona e indicar a qué llega: qué tienda, qué cuenta, en qué idioma y moneda llegan las respuestas.",
@@ -641,6 +653,10 @@ T = {
  "Changer le statut d'une commande dans la boutique PrestaShop, une commande à la fois, avec les vérifications qui évitent d'envoyer deux fois un e-mail au client.",
  "Cambiar el estado de un pedido en la tienda PrestaShop, un pedido cada vez, con las comprobaciones que evitan enviar dos veces un correo al cliente.",
  "Den Status einer Bestellung im PrestaShop-Shop ändern, eine Bestellung nach der anderen, mit den Prüfungen, die verhindern, dass ein Kunde zweimal eine E-Mail erhält."),
+"Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.": (
+ "Trouver, lire et modifier les produits et les catégories de la boutique PrestaShop, un à la fois, sans deviner d'identifiant.",
+ "Buscar, leer y modificar los productos y las categorías de la tienda PrestaShop, uno cada vez, sin adivinar ningún identificador.",
+ "Produkte und Kategorien im PrestaShop-Shop finden, lesen und ändern, eins nach dem anderen, ohne eine Kennung zu erraten."),
 "Order reference, number or customer name": (
  "Référence, numéro de commande ou nom du client",
  "Referencia, número de pedido o nombre del cliente",
@@ -653,6 +669,10 @@ T = {
  "Statut à appliquer",
  "Estado que aplicar",
  "Zu setzender Status"),
+"Name, reference or EAN13 of a product": (
+ "Nom, référence ou EAN13 d'un produit",
+ "Nombre, referencia o EAN13 de un producto",
+ "Name, Referenz oder EAN13 eines Produkts"),
 "Send a file to your assistant": (
  "Envoyer un fichier à votre assistant",
  "Enviar un archivo a su asistente",

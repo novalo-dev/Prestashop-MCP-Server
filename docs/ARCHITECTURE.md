@@ -65,7 +65,7 @@ The pieces, in `classes/`:
   already rotated one revokes the whole grant: that is what a stolen token
   looks like.
 - `SomcpRandom` mints every secret, and `SomcpScope` defines the core scopes:
-  `mcp.access`, `mcp.orders.read`, `mcp.orders.write`.
+  `mcp.access`, `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`.
 
 Reaching the consent screen from a front controller is its own problem.
 PrestaShop 8 accepts a legacy back office address with a computed token.

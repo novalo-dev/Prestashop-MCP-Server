@@ -1,0 +1,20 @@
+{
+  "title": "Manage products",
+  "description": "Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.",
+  "scopes": [
+    "mcp.catalog.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_search_products"
+  ],
+  "controller": "AdminProducts",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "product",
+      "description": "Name, reference or EAN13 of a product",
+      "required": false
+    }
+  ]
+}

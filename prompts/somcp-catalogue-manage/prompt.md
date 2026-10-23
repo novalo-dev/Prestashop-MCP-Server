@@ -8,6 +8,7 @@ word, a reference prefix or a barcode fragment.
 
 - `somcp_ping`
 - `somcp_search_products`
+- `somcp_get_product`
 
 ## Know which shop you are in
 
@@ -30,6 +31,10 @@ one that answered. The currency of the prices comes from there too.
    hundred is not "twenty products".
 4. When the merchant asks for several matches, show them the list and let them
    pick. Never choose one for them.
+5. To answer about one product - its description, carriers, images, suppliers,
+   a combination - read it with `somcp_get_product`, by the identifier the
+   search returned. When the search named a matching combination, pass its
+   `id_product_attribute` too.
 
 ## Identifiers are never guessed
 
@@ -46,7 +51,9 @@ which, and so must you. Always give the currency with an amount.
 
 The prices returned are the base price of the product, before specific prices,
 discounts and combination impacts. A customer may pay something else: say so
-when the merchant asks what a customer pays.
+when the merchant asks what a customer pays. `somcp_get_product` lists the
+specific prices apart, with who they apply to and when: never present one of
+them as the product's price.
 
 ## Changing products
 

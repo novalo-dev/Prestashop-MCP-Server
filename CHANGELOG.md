@@ -38,6 +38,15 @@ and says which ones matched. It needs the new permission `mcp.catalog.read`,
 which the consent screen describes as reading the catalogue, and the `view`
 right on the back office products page.
 
+**Reading a product.** The new tool `somcp_get_product` returns everything the
+back office product page shows for one product, tab by tab: texts,
+categories, brand, related products, references, features, attachments,
+condition, customization, stock, shipping and carriers, prices and tax,
+specific prices and their priorities, SEO, options, suppliers, images, and
+every combination with its own codes, stock and price impacts. Prices are the
+product's own; promotions are listed apart, so one is never taken for the
+price. It needs the same permission as product search.
+
 **Manage products prompt.** A guided task for the catalogue, picked from the
 assistant's menu: search before reading, never guess an identifier, always say
 whether a price is with or without tax.

@@ -599,7 +599,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - Prices are rounded to the precision of the shop default currency, which is the currency they are stored in. With both `reference` and `ean13` given, a combination is listed in `matched_combinations` when it matches either one.
 
 #### `somcp_get_product`
-**State**: to write · [issue #2](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/2)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.catalog.read`
 
 **Does** - returns everything the back office product page shows for one product, tab by tab, combinations included.
@@ -611,39 +611,41 @@ The products and the categories they are sorted into: texts, prices, combination
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_product` | integer | yes | from `somcp_search_products` |
-| `id_product_attribute` | integer | no | one combination of that product: `combinations` then holds that one only |
+| `id_product_attribute` | integer | no | one combination of that product: `combinations` then holds that one only, and `specific_prices` and `suppliers` keep what applies to it |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - one object, grouped like the tabs of the product page. Texts are in `language`; every amount comes with `currency`.
+**Returns** - one object, grouped like the tabs of the product page. Texts are in `language`; every amount comes with `currency`. Values are the ones PrestaShop stores, so the write tools can take them back as they are.
 
 | Group | Fields | Where it is read |
 |---|---|---|
-| `basics` | `id_product`, `product_type` (standard, combinations, pack, virtual), `name`, `description_short` (summary), `description` | `product`, `product_lang` |
-| `categories` | `id_category_default`, `categories` (id and name of each associated category) | `category_product` |
-| `brand` | `id_manufacturer`, `manufacturer_name` | `manufacturer` |
-| `related_products` | id, reference and name of each related product | `Product::getAccessories()` |
-| `references` | `reference`, `mpn`, `upc`, `ean13` (EAN-13 or JAN), `isbn` | `product` |
-| `features` | per feature: `id_feature`, `name`, `value`, `custom` | `Product::getFrontFeatures()` |
-| `attachments` | per document: `id_attachment`, `name`, `description`, `file_name`, `mime` | `Product::getAttachments()` |
-| `condition` | `condition` (new, used, refurbished; PrestaShop 9 adds open_box, damaged, new_with_defects), `show_condition` | `product` |
-| `customization` | `customizable`, `uploadable_files`, `text_fields`, and each field: `id_customization_field`, `type` (file or text), `name`, `required` | `customization_field`, `customization_field_lang` |
-| `stock` | `quantity` (total, combinations included), `location` (stock location), `out_of_stock` (deny, allow, shop default), `available_now` (label when in stock), `available_later` (label when out of stock and backorders allowed), `available_date` | `stock_available`, `product`, `product_lang` |
-| `shipping` | `width`, `height`, `depth`, `weight`, `additional_delivery_times` (none, shop default, this product's), `delivery_in_stock`, `delivery_out_stock`, `additional_shipping_cost`, `carriers` (every carrier of the shop with `id_carrier`, `name` and `available` true or false for this product) | `product`, `product_lang`, `Product::getCarriers()` |
-| `pricing` | `price_tax_excl`, `id_tax_rules_group`, `tax_rules_group_name`, `tax_rate`, `price_tax_incl`, `wholesale_price` (purchase price, tax excluded), `unit_price_tax_excl`, `unit_price_tax_incl`, `unity` (the unit), `on_sale` | `product`, `TaxRulesGroup`, `Product::getTaxesRate()` |
-| `specific_prices` | each one: `id_specific_price`, `id_product_attribute`, shop, currency, country, group, customer, `from_quantity`, `price` (fixed or -1), `reduction`, `reduction_type`, `reduction_tax`, `from`, `to`; plus `priorities`, the order used to pick between them | `SpecificPrice::getByProductId()`, `SpecificPrice::getPriority()` |
-| `seo` | `meta_title`, `meta_description`, `link_rewrite` (friendly URL), `url` (full product URL), `redirect_type`, `id_type_redirected` (redirection page), `meta_keywords` | `product_lang`, `Link::getProductLink()` |
-| `options` | `visibility` (everywhere, catalog only, search only, nowhere), `available_for_order`, `show_price`, `online_only` (web exclusive, not sold in store), `active` | `product_shop` |
-| `suppliers` | `id_supplier_default`, and per supplier and combination: `id_supplier`, `supplier_name`, `id_product_attribute`, `product_supplier_reference` (supplier SKU), `product_supplier_price_te` (supplier purchase price), `currency` (supplier currency) | `product_supplier`, `supplier` |
-| `images` | per image: `id_image`, `position`, `cover` (the default image), `legend`, `url` (large size) | `Image::getImages()`, `image_lang`, `Link::getImageLink()` |
-| `combinations` | per combination: `id_product_attribute`, `attributes` (group and value, for example Size: M), `default_on`, `reference`, `mpn`, `upc`, `ean13`, `isbn`, `quantity`, `location`, `available_date`, `available_now`, `available_later`, `price_impact_tax_excl`, `price_impact_tax_incl`, `unit_price_impact_tax_excl`, `unit_price_impact_tax_incl`, `weight_impact`, `wholesale_price`, `minimal_quantity`, `images` (ids) | `product_attribute`, `product_attribute_lang`, `product_attribute_combination`, `stock_available`, `product_attribute_image` |
+| `basics` | `id_product`, `product_type` (standard, combinations, pack, virtual), `name`, `description_short` (summary), `description` | `Product`, `Product::getProductType()` |
+| `categories` | `id_category_default`, `categories` (`id_category` and `name` of each associated category) | `Product::getProductCategoriesFull()` |
+| `brand` | `id_manufacturer`, `manufacturer_name` | `Manufacturer::getNameById()` |
+| `related_products` | `id_product`, `reference` and `name` of each related product, active or not | `Product::getAccessoriesLight()` |
+| `references` | `reference`, `mpn`, `upc`, `ean13` (EAN-13 or JAN), `isbn` | `Product` |
+| `features` | per feature: `id_feature`, `id_feature_value`, `name`, `value`, `custom` | `feature_product`, `feature_lang`, `feature_value`, `feature_value_lang` |
+| `attachments` | per document: `id_attachment`, `name`, `description`, `file_name`, `mime` | `Product::getAttachmentsStatic()` |
+| `condition` | `condition` (new, used, refurbished; PrestaShop 9 adds open_box, damaged, new_with_defects), `show_condition` | `Product` |
+| `customization` | `customizable` (0 no, 1 optional fields, 2 a required field), `uploadable_files`, `text_fields`, and `fields`, each: `id_customization_field`, `type` (file or text), `name`, `required` | `Product::getCustomizationFields()` |
+| `stock` | `quantity` (total, combinations included), `location` (stock location), `out_of_stock` (deny, allow, default), `available_now` (label when in stock), `available_later` (label when out of stock and backorders allowed), `available_date` | `stock_available`, `Product` |
+| `shipping` | `width`, `height`, `depth`, `weight`, `additional_delivery_times` (none, default, product), `delivery_in_stock`, `delivery_out_stock`, `additional_shipping_cost`, `currency`, `carriers` (every carrier of the shop with `id_carrier`, `name` and `available` true or false for this product) | `Product`, `Product::getCarriers()`, `Carrier::getCarriers()` |
+| `pricing` | `price_tax_excl`, `id_tax_rules_group`, `tax_rules_group_name`, `tax_rate`, `price_tax_incl`, `wholesale_price` (purchase price, tax excluded), `unit_price_tax_excl`, `unit_price_tax_incl`, `unity` (the unit), `on_sale`, `currency` | `Product`, `TaxRulesGroup`, `TaxRulesGroup::getAssociatedTaxRatesByIdCountry()` |
+| `specific_prices` | `rules`, each one: `id_specific_price`, `id_product_attribute`, `id_shop`, `currency` and `country` (ISO code, `null` for all), `id_group`, `id_customer` (0 for all), `from_quantity`, `price` (fixed or -1), `reduction`, `reduction_type` (amount or percentage), `reduction_tax`, `amounts_currency`, `from`, `to`; plus `priorities`, the order used to pick between them | `SpecificPrice::getByProductId()`, `SpecificPrice::getPriority()` |
+| `seo` | `meta_title`, `meta_description`, `link_rewrite` (friendly URL), `url` (full product URL), `redirect_type`, `id_type_redirected` (redirection page), `meta_keywords` | `Product`, `product_lang`, `Link::getProductLink()` |
+| `options` | `visibility` (both, catalog, search, none), `available_for_order`, `show_price`, `online_only` (web exclusive, not sold in store), `active` | `Product` |
+| `suppliers` | `id_supplier_default`, and `suppliers`, per supplier and combination: `id_supplier`, `supplier_name`, `id_product_attribute`, `product_supplier_reference` (supplier SKU), `product_supplier_price_te` (supplier purchase price), `currency` (supplier currency) | `product_supplier`, `supplier`, `currency` |
+| `images` | per image: `id_image`, `position`, `cover` (the default image), `legend`, `url` (large size) | `Image::getImages()`, `Link::getImageLink()` |
+| `combinations` | per combination: `id_product_attribute`, `attributes` (each: `id_attribute_group`, `group`, `id_attribute`, `value`, for example Size: M), `default_on`, `reference`, `mpn`, `upc`, `ean13`, `isbn`, `quantity`, `location`, `available_date`, `available_now`, `available_later`, `price_impact_tax_excl`, `price_impact_tax_incl`, `unit_price_impact_tax_excl`, `unit_price_impact_tax_incl`, `weight_impact`, `wholesale_price`, `minimal_quantity`, `currency`, `images` (ids) | `product_attribute`, `product_attribute_shop`, `product_attribute_lang`, `product_attribute_combination`, `stock_available`, `product_attribute_image` |
 
 **Notes**
 - Called by identifiers only, never by a reference, an EAN13 or a name: finding the product is the job of `somcp_search_products`, which also returns the `id_product_attribute` of a matching combination.
-- An `id_product_attribute` that does not belong to `id_product` is refused, never silently ignored.
-- The values are the product's own, before specific prices and cart rules; `specific_prices` lists the rules apart, so the assistant does not mistake a promotion for the price.
-- PrestaShop 8.0 has no `product_attribute_lang`: the `available_now` and `available_later` of a combination exist from 8.1 and are `null` before. PrestaShop 9 dropped `meta_keywords`: the field is `null` there. Check with the column, not the version number.
-- `tax_rate` is the rate of the tax rule in the shop's default country, the one the back office shows.
-- Read the product in the shop of the token (`product_shop`), never the default shop.
+- An `id_product_attribute` that does not belong to `id_product` in this shop is refused, never silently ignored. A product not associated with the shop, or still being created, is answered like one that does not exist.
+- The values are the product's own, before specific prices and cart rules; `specific_prices` lists the rules apart, so the assistant does not mistake a promotion for the price. Only the rules of this shop or of all shops are listed.
+- PrestaShop 8.0 has no `product_attribute_lang`: the `available_now` and `available_later` of a combination exist from 8.1 and are `null` before. PrestaShop 9 dropped `meta_keywords`: the field is `null` there. Checked with the table and the column, not the version number.
+- `tax_rate` is the rate of the tax rule in the shop's default country, the one the back office shows, and the one `somcp_search_products` uses: 0 when the shop has taxes switched off or the rule has nothing for that country. Amounts with tax are rounded to the precision of the shop default currency; the ecotax is not added to them.
+- No carrier ticked on the product means every carrier may deliver it: each one then says `available: true`.
+- Read the product in the shop of the token (`product_shop`), never the default shop. Stock follows the shop's stock sharing, as the core decides it.
+- Features are read from the tables rather than `Product::getFrontFeatures()`, which returns nothing when features are switched off for the storefront and does not say whether a value is custom. Combinations are read the same way rather than with `Product::getAttributeCombinations()`, whose stock join ignores the shop.
 
 #### `somcp_create_product`
 **State**: to write · [issue #3](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/3)

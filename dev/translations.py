@@ -557,6 +557,10 @@ T = {
  "Rechercher des produits",
  "Buscar productos",
  "Produkte suchen"),
+"Get a product": (
+ "Lire un produit",
+ "Leer un producto",
+ "Ein Produkt abrufen"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",

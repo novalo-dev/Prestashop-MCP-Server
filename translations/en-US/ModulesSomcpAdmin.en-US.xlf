@@ -687,6 +687,11 @@
       <source>Search products</source>
       <target>Search products</target>
     </trans-unit>
+    <!-- Get a product -->
+    <trans-unit id="96ee562d63ac925506398e4fe253c056" resname="Get a product">
+      <source>Get a product</source>
+      <target>Get a product</target>
+    </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">
       <source>Change the status of an order</source>

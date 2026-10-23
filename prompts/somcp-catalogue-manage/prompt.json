@@ -6,7 +6,8 @@
   ],
   "tools": [
     "somcp_ping",
-    "somcp_search_products"
+    "somcp_search_products",
+    "somcp_get_product"
   ],
   "controller": "AdminProducts",
   "action": "view",

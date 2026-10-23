@@ -74,6 +74,7 @@ calling the shop's own addresses.
 | `somcp_list_order_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
 | `somcp_set_order_status` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_search_products` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
+| `somcp_get_product` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running

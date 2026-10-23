@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "every product, newest first", "arguments": {}, "expect": "ok"},
+    {"why": "one product by identifier", "arguments": {"id_product": 1}, "expect": "ok"},
+    {"why": "by name, active only, sorted by price", "arguments": {"name": "shirt", "active": true, "sort": "price_asc"}, "expect": "ok"},
+    {"why": "price, stock and category filters with paging", "arguments": {"price_tax_incl_min": 0, "price_tax_excl_max": 10000, "quantity_min": 0, "id_category": 2, "limit": 3, "offset": 1}, "expect": "ok"},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "any"}
+  ]
+}

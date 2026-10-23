@@ -139,3 +139,256 @@ jobs:
             symfony/http-foundation:^${{ matrix.symfony }}
       - name: Compile services.yml and resolve routes.yml
         run: php .github/scripts/compile-container.php "$RUNNER_TEMP/sf/vendor" .
+
+  shop:
+    # Every tool called for real, on each published PrestaShop 8 and 9 with
+    # each PHP version that release accepts. The other jobs read the code;
+    # this one runs it against a database, which is where a column PrestaShop
+    # 8.0 lacks or a method PrestaShop 9 removed actually shows up.
+    #
+    # PrestaShop 8 refuses PHP above 8.1. Merchants run it there anyway, so
+    # those pairs run too, but marked unsupported: a failure is reported
+    # without turning the run red, since the core itself may be what breaks.
+    name: PrestaShop ${{ matrix.prestashop }} on PHP ${{ matrix.php }}${{ matrix.unsupported && ' (unsupported by PrestaShop)' || '' }}
+    needs: [lint, tools]
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.unsupported }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { prestashop: '8.0.0', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.0', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.0', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.0', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.0', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.1', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.1', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.1', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.1', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.1', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.2', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.2', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.2', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.2', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.2', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.3', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.3', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.3', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.3', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.3', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.4', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.4', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.4', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.4', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.4', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.5', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.5', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.5', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.5', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.5', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.0', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.0', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.0', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.0', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.0', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.1', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.1', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.1', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.1', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.1', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.2', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.2', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.2', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.2', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.2', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.3', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.3', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.3', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.3', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.3', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.4', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.4', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.4', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.4', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.4', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.5', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.5', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.5', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.5', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.5', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.6', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.6', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.6', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.6', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.6', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.7', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.7', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.7', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.7', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.7', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.0', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.0', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.0', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.0', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.0', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.1', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.1', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.1', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.1', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.1', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.2', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.2', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.2', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.2', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.2', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.3', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.3', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.3', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.3', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.3', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.4', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.4', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.4', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.4', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.4', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.5', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.5', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.5', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.5', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.5', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.6', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.6', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.6', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.6', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.6', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.7', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.7', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.7', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.7', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.7', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.8', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.8', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.8', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.8', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.8', php: '8.5', unsupported: true }
+          - { prestashop: '9.0.0', php: '8.1', unsupported: false }
+          - { prestashop: '9.0.0', php: '8.2', unsupported: false }
+          - { prestashop: '9.0.0', php: '8.3', unsupported: false }
+          - { prestashop: '9.0.0', php: '8.4', unsupported: false }
+          - { prestashop: '9.0.1', php: '8.1', unsupported: false }
+          - { prestashop: '9.0.1', php: '8.2', unsupported: false }
+          - { prestashop: '9.0.1', php: '8.3', unsupported: false }
+          - { prestashop: '9.0.1', php: '8.4', unsupported: false }
+          - { prestashop: '9.0.2', php: '8.1', unsupported: false }
+          - { prestashop: '9.0.2', php: '8.2', unsupported: false }
+          - { prestashop: '9.0.2', php: '8.3', unsupported: false }
+          - { prestashop: '9.0.2', php: '8.4', unsupported: false }
+          - { prestashop: '9.0.3', php: '8.1', unsupported: false }
+          - { prestashop: '9.0.3', php: '8.2', unsupported: false }
+          - { prestashop: '9.0.3', php: '8.3', unsupported: false }
+          - { prestashop: '9.0.3', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.5', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.1', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.2', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.3', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.4', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.5', unsupported: false }
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: prestashop
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: module
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, intl, gd, zip, pdo_mysql, curl, xml, dom, simplexml, fileinfo, iconv, bcmath, openssl
+          ini-values: memory_limit=1G
+          coverage: none
+          tools: composer
+      # PrestaShop 9 is published as a zip only behind a form on
+      # prestashop.com, so every version is built the same way from its tag:
+      # the sources, then the dependencies from the tag's own composer.lock.
+      - name: PrestaShop ${{ matrix.prestashop }} sources
+        run: git clone --quiet --depth 1 --branch "${{ matrix.prestashop }}" https://github.com/PrestaShop/PrestaShop.git shop
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ matrix.prestashop }}-${{ matrix.php }}-${{ hashFiles('shop/composer.lock') }}
+      - name: Dependencies
+        working-directory: shop
+        run: composer install --no-interaction --no-progress --prefer-dist
+      # The themes come from Composer as sources, without the built
+      # assets the installer insists on finding. Nothing here renders the
+      # storefront, so empty files are enough to let the install through.
+      - name: Theme assets the installer checks for
+        working-directory: shop
+        run: |
+          for theme in themes/*/; do
+            [ -f "$theme/config/theme.yml" ] || continue
+            mkdir -p "$theme/assets/js" "$theme/assets/css"
+            [ -f "$theme/assets/js/theme.js" ] || touch "$theme/assets/js/theme.js"
+            [ -f "$theme/assets/css/theme.css" ] || touch "$theme/assets/css/theme.css"
+          done
+      - name: Install the shop with its demo data
+        working-directory: shop
+        run: |
+          # Logs are not readable from outside the run, so the end of a failed
+          # install is repeated as one annotation, where the summary shows it.
+          set -o pipefail
+          php -d memory_limit=1G install-dev/index_cli.php \
+            --domain=localhost --db_server=127.0.0.1 --db_user=root --db_password=root \
+            --db_name=prestashop --prefix=ps_ --language=en --country=fr --ssl=0 --fixtures=1 \
+            --email=demo@example.com --password=Somcp-shop-test-1 2>&1 | tee ../install.log \
+            || { echo "::error title=Install failed::$(tail -n 40 ../install.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
+      - name: Install somcp
+        run: |
+          # The module as a merchant receives it: git archive leaves out what
+          # export-ignore keeps out of the package.
+          mkdir shop/modules/somcp
+          git -C module archive HEAD | tar -x -C shop/modules/somcp
+          set -o pipefail
+          php shop/bin/console prestashop:module install somcp 2>&1 | tee module.log \
+            || { echo "::error title=Module install failed::$(tail -n 40 module.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
+      - name: Call every tool
+        run: php module/dev/shop-tests/run.php shop

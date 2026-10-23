@@ -1,0 +1,5 @@
+{
+  "calls": [
+    {"why": "answers with the shop and the version", "arguments": {}, "expect": "ok", "contains": ["prestashop: "]}
+  ]
+}

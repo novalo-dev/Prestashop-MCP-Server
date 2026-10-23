@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "moves a demo order to Payment error, unless it is already there", "arguments": {"id_order": 2, "status_id": 8}, "expect": "any"},
+    {"why": "then to Canceled, which it cannot already be", "arguments": {"id_order": 2, "status_id": 6}, "expect": "ok"},
+    {"why": "the status it already has changes nothing", "arguments": {"id_order": 2, "status_id": 6}, "expect": "ok", "contains": ["\"changed\": false"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "status_id": 6}, "expect": "error"}
+  ]
+}

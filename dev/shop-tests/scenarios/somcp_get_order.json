@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "reads a demo order", "arguments": {"id_order": 1}, "expect": "ok"},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999}, "expect": "error"}
+  ]
+}

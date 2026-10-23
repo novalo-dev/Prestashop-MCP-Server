@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "every order, newest first", "arguments": {}, "expect": "ok"},
+    {"why": "one order by identifier", "arguments": {"id_order": 1}, "expect": "ok"},
+    {"why": "filters, sort and paging together", "arguments": {"date_from": "2000-01-01", "total_min": 0, "only_valid": false, "limit": 2, "offset": 1}, "expect": "ok"},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "any"}
+  ]
+}

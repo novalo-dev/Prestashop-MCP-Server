@@ -61,6 +61,16 @@ php .github/scripts/check-translations.php .
 php .github/scripts/check-tools.php .
 ```
 
+CI also installs every published PrestaShop 8 and 9, with each PHP version
+that release accepts, and calls every tool there through
+`dev/shop-tests/run.php`, following its scenario in
+`dev/shop-tests/scenarios/`. Each call says what it expects: `ok`, `error`
+(the tool answers with `isError`), `input` (the tool asks the client first) or
+`any` (a write whose outcome depends on the demo data), and optionally
+`contains`, text the answer must hold. A notice raised from a file of the
+module fails the call too. PrestaShop 8 also runs on PHP 8.2 and later, which
+it does not support: those runs report without failing CI.
+
 CI also lints every file on PHP 8.1 to 8.4 and compiles `config/services.yml`
 with the Symfony versions of PrestaShop 8 (4.4) and 9 (6.4), with and without
 what PrestaShop 9 adds. That last check exists because a service asking for a
@@ -125,7 +135,10 @@ design: do not start it.
      and in the guide `prompt.md`.
 7. **Test** on PrestaShop 8 and 9, multistore included if you can, with a real
    MCP client: the call that should work, the account without the permission,
-   and for a write, the call that changes nothing.
+   and for a write, the call that changes nothing. Then write its **scenario**,
+   `dev/shop-tests/scenarios/<tool name>.json`: the calls CI makes on every
+   published PrestaShop 8 and 9 with their demo data (see Checks). A tool
+   without one fails CI.
 8. **Run the checks** listed above, then open the pull request with
    `Closes #<issue>` in its description. Sign the CLA when the bot asks.
 9. **Review.** CI must be green. The maintainer reviews, may build a test zip

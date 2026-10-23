@@ -475,8 +475,8 @@ class SomcpToolGetProduct
             'depth' => (float) $product->depth,
             'weight' => (float) $product->weight,
             'additional_delivery_times' => self::DELIVERY_TIMES[(int) $product->additional_delivery_times] ?? 'default',
-            'delivery_in_stock' => (string) $product->delivery_in_stock,
-            'delivery_out_stock' => (string) $product->delivery_out_stock,
+            'delivery_in_stock' => self::text($product->delivery_in_stock, $idLang),
+            'delivery_out_stock' => self::text($product->delivery_out_stock, $idLang),
             'additional_shipping_cost' => (float) $product->additional_shipping_cost,
             'currency' => $currency,
             'carriers' => $carriers,
@@ -820,6 +820,25 @@ class SomcpToolGetProduct
         }
 
         return $images;
+    }
+
+    /**
+     * One language of a translated field. PrestaShop declares some of them as
+     * string[] although a product loaded in one language holds a plain string,
+     * so the value is taken as it comes rather than as the docblock says.
+     *
+     * @param mixed $value
+     * @param int $idLang
+     *
+     * @return string
+     */
+    private static function text($value, int $idLang): string
+    {
+        if (is_array($value)) {
+            return (string) ($value[$idLang] ?? '');
+        }
+
+        return is_scalar($value) ? (string) $value : '';
     }
 
     /**

@@ -49,6 +49,9 @@ jobs:
         run: dev/tools/vendor/bin/php-cs-fixer fix --dry-run --using-cache=no --format=checkstyle | cs2pr
 
   phpstan:
+    # Kept beside the analysis in the shop job, which covers every release:
+    # these two names are required checks of the main branch ruleset, and a
+    # required check that never reports blocks every merge.
     name: PHPStan on PrestaShop ${{ matrix.prestashop }}
     runs-on: ubuntu-latest
     strategy:
@@ -141,9 +144,10 @@ jobs:
         run: php .github/scripts/compile-container.php "$RUNNER_TEMP/sf/vendor" .
 
   shop:
-    # Every tool called for real, on each published PrestaShop 8 and 9 with
-    # each PHP version that release accepts. The other jobs read the code;
-    # this one runs it against a database, which is where a column PrestaShop
+    # Every tool called for real, then PHPStan, on each published PrestaShop
+    # 8 and 9 with each PHP version that release accepts. The other jobs read
+    # the code on its own; this one runs it against a database and analyses
+    # it against that release's classes, which is where a column PrestaShop
     # 8.0 lacks or a method PrestaShop 9 removed actually shows up.
     #
     # PrestaShop 8 refuses PHP above 8.1. Merchants run it there anyway, so
@@ -356,6 +360,7 @@ jobs:
           path: ~/.cache/composer
           key: composer-${{ matrix.prestashop }}-${{ matrix.php }}-${{ hashFiles('shop/composer.lock') }}
       - name: Dependencies
+        id: deps
         working-directory: shop
         run: composer install --no-interaction --no-progress --prefer-dist
       # The themes come from Composer as sources, without the built
@@ -392,3 +397,16 @@ jobs:
             || { echo "::error title=Module install failed::$(tail -n 40 module.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
       - name: Call every tool
         run: php module/dev/shop-tests/run.php shop
+      # The same PrestaShop sources, so each release is analysed against its
+      # own classes; PHPStan targets the PHP it runs on, so each pair is a
+      # different analysis. It runs even when a tool call failed above, so a
+      # run reports both kinds of problem at once.
+      - name: Install dev tools
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        run: composer install --working-dir=module/dev/tools --no-interaction --no-progress
+      - name: PHPStan
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        working-directory: module
+        env:
+          _PS_ROOT_DIR_: ${{ github.workspace }}/shop
+        run: php -d memory_limit=1G dev/tools/vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress --error-format=github

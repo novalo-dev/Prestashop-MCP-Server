@@ -62,7 +62,8 @@ php .github/scripts/check-tools.php .
 ```
 
 CI also installs every published PrestaShop 8 and 9, with each PHP version
-that release accepts, and calls every tool there through
+that release accepts, runs PHPStan against that release on that PHP, and
+calls every tool there through
 `dev/shop-tests/run.php`, following its scenario in
 `dev/shop-tests/scenarios/`. Each call says what it expects: `ok`, `error`
 (the tool answers with `isError`), `input` (the tool asks the client first) or

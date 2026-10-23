@@ -1,0 +1,114 @@
+# Security rules specific to a PrestaShop module, run by CI beside Semgrep's
+# own PHP rules (p/php).
+#
+# The registry rules know PHP; they do not know that PrestaShop hands request
+# data out through Tools::getValue(), that pSQL() is how a string is made safe
+# for a query, or that a tool of this module receives what the assistant sent
+# in $arguments. These rules do.
+#
+# Usage: semgrep scan --config dev/security/semgrep.yml --error
+
+rules:
+  - id: somcp-sql-from-input
+    mode: taint
+    languages: [php]
+    severity: ERROR
+    message: >-
+      Data from the request or from a tool's arguments reaches an SQL query
+      without pSQL(), bqSQL() or a cast. Escape it, cast it, or build the
+      condition from values already validated.
+    options:
+      # A helper the input goes through (a WHERE builder, an allowed-list
+      # sort) is trusted here, or every query built by a helper would be
+      # flagged. Following data across functions is Psalm's job, in the same
+      # CI job, with taint analysis.
+      taint_assume_safe_functions: true
+    pattern-sources:
+      - pattern: $_GET
+      - pattern: $_POST
+      - pattern: $_REQUEST
+      - pattern: $_COOKIE
+      - pattern: $_SERVER
+      - pattern: Tools::getValue(...)
+      - pattern: Tools::getAllValues(...)
+      - pattern: file_get_contents('php://input')
+      # What the assistant sent: every tool handler receives it under this name.
+      - patterns:
+          - pattern-inside: |
+              function $F(..., $arguments, ...) { ... }
+          - pattern: $arguments
+    pattern-sanitizers:
+      - pattern: pSQL(...)
+      - pattern: bqSQL(...)
+      - pattern: (int) $X
+      - pattern: (float) $X
+      - pattern: (bool) $X
+      - pattern: intval(...)
+      - pattern: floatval(...)
+      - pattern: count(...)
+      - pattern: Db::getInstance(...)->escape(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - patterns:
+                  - pattern: Db::getInstance(...)->$M($Q, ...)
+                  - metavariable-regex:
+                      metavariable: $M
+                      regex: ^(execute|executeS|getRow|getValue|query)$
+              - pattern: Db::getInstance(...)->delete($T, $Q, ...)
+              # DbQuery pieces: the object is rarely typed where it is used,
+              # so the method names carry the match.
+              - patterns:
+                  - pattern: $D->$M($Q)
+                  - metavariable-regex:
+                      metavariable: $M
+                      regex: ^(select|where|having|orderBy|groupBy|join)$
+              - patterns:
+                  - pattern: $D->$M($T, $A, $Q)
+                  - metavariable-regex:
+                      metavariable: $M
+                      regex: ^(leftJoin|innerJoin|leftOuterJoin|naturalJoin|rightJoin)$
+          - focus-metavariable: $Q
+
+  - id: somcp-command-execution
+    languages: [php]
+    severity: ERROR
+    message: >-
+      Runs code or a shell command. A module has no reason to, and PrestaShop
+      Addons refuses modules that do.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+      - pattern: shell_exec(...)
+      - pattern: system(...)
+      - pattern: passthru(...)
+      - pattern: proc_open(...)
+      - pattern: popen(...)
+      - pattern: pcntl_exec(...)
+      - pattern: create_function(...)
+      - pattern: assert($X)
+
+  - id: somcp-unserialize
+    languages: [php]
+    severity: ERROR
+    message: >-
+      unserialize() builds objects from text, which is how a crafted value
+      runs code. Use json_decode(), or pass ['allowed_classes' => false].
+    patterns:
+      - pattern: unserialize(...)
+      - pattern-not: "unserialize($X, ['allowed_classes' => false])"
+
+  - id: somcp-smarty-unescaped
+    languages: [generic]
+    severity: ERROR
+    paths:
+      include:
+        - "*.tpl"
+    message: >-
+      A Smarty variable printed without |escape (or a cast). Escape it for
+      where it lands: |escape:'html':'UTF-8', 'htmlall', 'javascript' or 'url'.
+      nofilter is for HTML the module built itself, and says so.
+    patterns:
+      - pattern-regex: \{\$[A-Za-z_][^}]*\}
+      # A modifier that makes the value safe, or an explicit nofilter, is fine.
+      - pattern-not-regex: \{\$[^}]*(\|escape|\|intval|\|floatval|\|json_encode|\|count|\|@count|nofilter)[^}]*\}

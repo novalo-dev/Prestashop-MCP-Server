@@ -40,6 +40,10 @@ declare(strict_types=1);
  * left alone: they are PrestaShop's, and some versions raise them on every
  * request under recent PHP.
  *
+ * Then the permissions: every tool must be refused to an employee whose
+ * profile holds no right, to an account that does not exist and to a token
+ * without its scope, and only somcp_ping may ask for no right at all.
+ *
  * Usage: php dev/shop-tests/run.php <prestashop root>
  * Exit code 0 when every call behaved, 1 otherwise.
  */
@@ -209,18 +213,57 @@ foreach (array_keys($shipped) as $name) {
     }
 }
 
+// Permissions. The calls above run as a superadmin holding exactly the scopes
+// each tool needs; what matters as much is who is turned away. Checked on the
+// registry's own gate - isAvailableTo(), which decides both the listing and
+// the call - so a tool that forgets its acts() fails here and not at a shop.
+$checks = 0;
+$nobody = permissionlessEmployee((int) $context->language->id);
+if ($nobody === 0) {
+    $failures[] = 'permissions: the employee without rights could not be created';
+} else {
+    foreach (array_keys($shipped) as $name) {
+        $tool = $registry->get($name);
+        if ($tool === null) {
+            continue;
+        }
+
+        $scopes = implode(' ', $tool->getRequiredScopes());
+        $required = $tool->getRequiredPermissions();
+        $checks += 5;
+
+        // Only the connection check is meant to ask for no back-office right.
+        if ($required === [] && $name !== 'somcp_ping') {
+            $failures[] = "$name: asks for no back-office permission - declare it with SomcpTool::acts()";
+        }
+        if (!$tool->isAvailableTo($scopes, (int) $employee->id)) {
+            $failures[] = "$name: refused to a superadmin holding its scopes";
+        }
+        if ($required !== [] && $tool->isAvailableTo($scopes, $nobody)) {
+            $failures[] = "$name: open to an employee whose profile has no right at all";
+        }
+        if ($tool->getRequiredScopes() !== [] && $tool->isAvailableTo('', (int) $employee->id)) {
+            $failures[] = "$name: open to a token without its scope";
+        }
+        // An account that does not exist - deleted since the token was issued.
+        if ($tool->isAvailableTo($scopes, 999999)) {
+            $failures[] = "$name: open to an employee that does not exist";
+        }
+    }
+}
+
 echo "\n";
 if ($failures !== []) {
     foreach ($failures as $failure) {
         echo "::error::$failure\n";
     }
-    printf("%d problem(s) over %d calls.\n", count($failures), $calls);
+    printf("%d problem(s) over %d calls and %d permission checks.\n", count($failures), $calls, $checks);
     exit(1);
 }
 
 // A notice too, so the run summary shows how much was exercised and a green
 // job cannot hide a test that called nothing.
-printf("::notice::Shop test OK on PrestaShop %s, PHP %s: %d calls over %d tools.\n", _PS_VERSION_, PHP_VERSION, $calls, count($shipped));
+printf("::notice::Shop test OK on PrestaShop %s, PHP %s: %d calls and %d permission checks over %d tools.\n", _PS_VERSION_, PHP_VERSION, $calls, $checks, count($shipped));
 exit(0);
 
 /**
@@ -236,4 +279,31 @@ function excerpt(array $result): string
     }
 
     return substr(preg_replace('/\s+/', ' ', $text) ?? '', 0, 200);
+}
+
+/**
+ * An active employee whose profile holds no back-office right at all.
+ *
+ * A new profile starts with every access off, which is the account a tool
+ * must refuse. Its id, or 0 when PrestaShop would not create it.
+ */
+function permissionlessEmployee(int $idLang): int
+{
+    $profile = new Profile();
+    $profile->name = [$idLang => 'Shop test - no rights'];
+    if (!$profile->add()) {
+        return 0;
+    }
+
+    $employee = new Employee();
+    $employee->firstname = 'No';
+    $employee->lastname = 'Rights';
+    $employee->email = 'no-rights@example.com';
+    // Never used to log in: the test asks the registry, not the login page.
+    $employee->passwd = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+    $employee->id_profile = (int) $profile->id;
+    $employee->id_lang = $idLang;
+    $employee->active = true;
+
+    return $employee->add() ? (int) $employee->id : 0;
 }

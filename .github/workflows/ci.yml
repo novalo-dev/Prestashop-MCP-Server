@@ -143,6 +143,47 @@ jobs:
       - name: Compile services.yml and resolve routes.yml
         run: php .github/scripts/compile-container.php "$RUNNER_TEMP/sf/vendor" .
 
+
+  security:
+    # PHP has no CodeQL support, so the security checks are put together:
+    # Semgrep with its PHP rules and PrestaShop's own (request data reaching a
+    # query, command execution, unserialize, unescaped Smarty output), Psalm's
+    # taint analysis to follow data from a request or a tool's arguments
+    # across functions to a query, an echo or a file, and Gitleaks over the
+    # whole history for a key or a token committed by mistake.
+    name: Security
+    runs-on: ubuntu-latest
+    env:
+      SEMGREP_VERSION: '1.182.1'
+      PSALM_VERSION: '6.20.1'
+      GITLEAKS_VERSION: '8.30.1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Every commit, not only the last one: a secret removed in a later
+          # commit is still published in the history.
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: none
+      - name: Semgrep
+        run: |
+          pip install --quiet "semgrep==$SEMGREP_VERSION"
+          semgrep scan --metrics=off --error \
+            --config p/php --config dev/security/semgrep.yml \
+            somcp.php classes controllers src tools views config prompts
+      - name: Psalm taint analysis
+        run: |
+          curl -fsSL -o /tmp/psalm.phar "https://github.com/vimeo/psalm/releases/download/$PSALM_VERSION/psalm.phar"
+          php dev/security/make-entry.php
+          cd dev/security
+          php /tmp/psalm.phar --no-cache --no-progress --taint-analysis --output-format=github
+      - name: Gitleaks
+        run: |
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v$GITLEAKS_VERSION/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz -C /tmp gitleaks
+          /tmp/gitleaks git --no-banner --redact --exit-code 1 .
   shop:
     # Every tool called for real, then PHPStan, on each published PrestaShop
     # 8 and 9 with each PHP version that release accepts. The other jobs read
@@ -154,7 +195,7 @@ jobs:
     # those pairs run too, but marked unsupported: a failure is reported
     # without turning the run red, since the core itself may be what breaks.
     name: PrestaShop ${{ matrix.prestashop }} on PHP ${{ matrix.php }}${{ matrix.unsupported && ' (unsupported by PrestaShop)' || '' }}
-    needs: [lint, tools]
+    needs: [lint, tools, security]
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.unsupported }}
     strategy:

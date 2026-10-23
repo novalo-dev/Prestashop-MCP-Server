@@ -1,0 +1,80 @@
+<?php
+/*
+ * What Psalm's taint analysis needs to know about PrestaShop: where request
+ * data enters, which calls run SQL, and what makes a value safe for SQL.
+ *
+ * Only these signatures are described. Psalm reads PHP's own sources and
+ * sinks (superglobals, echo, file and include calls) without help; PrestaShop's
+ * are invisible to it until they are named here.
+ */
+
+class Tools
+{
+    /** @psalm-taint-source input */
+    public static function getValue($key, $default_value = false) {}
+
+    /** @psalm-taint-source input */
+    public static function getAllValues() {}
+}
+
+class Db
+{
+    public static function getInstance($master = true): Db {}
+
+    /** @psalm-taint-sink sql $sql */
+    public function execute($sql, $use_cache = true) {}
+
+    /** @psalm-taint-sink sql $sql */
+    public function executeS($sql, $array = true, $use_cache = true) {}
+
+    /** @psalm-taint-sink sql $sql */
+    public function getRow($sql, $use_cache = true) {}
+
+    /** @psalm-taint-sink sql $sql */
+    public function getValue($sql, $use_cache = true) {}
+
+    /** @psalm-taint-sink sql $sql */
+    public function query($sql) {}
+
+    /** @psalm-taint-sink sql $where */
+    public function delete($table, $where = '', $limit = 0, $use_cache = true, $add_prefix = true) {}
+
+    /** @psalm-taint-sink sql $where */
+    public function update($table, $data, $where = '', $limit = 0, $null_values = false, $use_cache = true, $add_prefix = true) {}
+
+    /** @psalm-taint-escape sql */
+    public function escape($string, $html_ok = false, $bq_sql = false) {}
+}
+
+class DbQuery
+{
+    /** @psalm-taint-sink sql $fields */
+    public function select($fields): DbQuery {}
+
+    /** @psalm-taint-sink sql $restriction */
+    public function where($restriction): DbQuery {}
+
+    /** @psalm-taint-sink sql $restriction */
+    public function having($restriction): DbQuery {}
+
+    /** @psalm-taint-sink sql $fields */
+    public function orderBy($fields): DbQuery {}
+
+    /** @psalm-taint-sink sql $fields */
+    public function groupBy($fields): DbQuery {}
+
+    /** @psalm-taint-sink sql $join */
+    public function join($join): DbQuery {}
+
+    /** @psalm-taint-sink sql $on */
+    public function leftJoin($table, $alias = null, $on = null): DbQuery {}
+
+    /** @psalm-taint-sink sql $on */
+    public function innerJoin($table, $alias = null, $on = null): DbQuery {}
+}
+
+/** @psalm-taint-escape sql */
+function pSQL($string, $htmlOK = false) {}
+
+/** @psalm-taint-escape sql */
+function bqSQL($string) {}

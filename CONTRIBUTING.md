@@ -61,6 +61,29 @@ php .github/scripts/check-translations.php .
 php .github/scripts/check-tools.php .
 ```
 
+CI also runs a **Security** job, which you can run too:
+
+```bash
+# Semgrep: its PHP rules and the module's own (pip install semgrep)
+semgrep scan --metrics=off --config p/php --config dev/security/semgrep.yml \
+  somcp.php classes controllers src tools views config prompts
+
+# Psalm taint analysis, from every tool's arguments and every request read
+# (psalm.phar from the Psalm releases on GitHub)
+php dev/security/make-entry.php && (cd dev/security && php psalm.phar --taint-analysis)
+
+# Gitleaks, over the whole history
+gitleaks git .
+```
+
+A finding is fixed, not silenced: escape with `pSQL()` or cast, print with
+`|escape`, and never commit a key. If one is truly a false positive, say why
+in the pull request before adding any `nosemgrep` or `@psalm-suppress`.
+
+The shop test also checks permissions: every tool is refused to an employee
+whose profile has no right, to an account that does not exist and to a token
+without its scope. Only `somcp_ping` may skip `SomcpTool::acts()`.
+
 CI also installs every published PrestaShop 8 and 9, with each PHP version
 that release accepts, runs PHPStan against that release on that PHP, and
 calls every tool there through

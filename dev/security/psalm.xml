@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<psalm errorLevel="8" resolveFromConfigFile="true" findUnusedCode="false" findUnusedBaselineEntry="false"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://getpsalm.org/schema/config"
+       xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd">
+    <projectFiles>
+        <file name="../../somcp.php"/>
+        <directory name="../../classes"/>
+        <directory name="../../controllers"/>
+        <directory name="../../src"/>
+        <directory name="../../tools"/>
+        <file name="entry.generated.php"/>
+    </projectFiles>
+    <stubs>
+        <file name="prestashop.phpstub"/>
+    </stubs>
+</psalm>

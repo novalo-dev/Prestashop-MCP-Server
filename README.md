@@ -19,6 +19,8 @@ do everything.
 
 The module folder is `somcp`; in the back office it is called **O'So MCP Server**.
 
+[![O'So MCP Server in 54 seconds, with sound](docs/video/presentation-poster.jpg)](docs/video/OSo-MCP-Server-presentation.mp4)
+
 This repository is looking for PrestaShop developers who want to build it with
 us. See [Where to help](#where-to-help).
 

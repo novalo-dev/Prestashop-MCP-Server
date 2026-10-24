@@ -702,6 +702,11 @@
       <source>List categories</source>
       <target>Kategorien auflisten</target>
     </trans-unit>
+    <!-- List brands -->
+    <trans-unit id="6ad9cfcb9b571235ec0114870ac1badd" resname="List brands">
+      <source>List brands</source>
+      <target>Marken auflisten</target>
+    </trans-unit>
     <!-- Search products -->
     <trans-unit id="437ac95a91364eb49587af5e146b1745" resname="Search products">
       <source>Search products</source>

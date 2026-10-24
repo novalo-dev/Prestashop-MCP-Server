@@ -1,0 +1,5 @@
+{
+  "calls": [
+    {"why": "lists the two brands of the demo shop", "arguments": {}, "expect": "ok", "contains": ["\"manufacturers\"", "\"count\": 2", "\"id_manufacturer\"", "Studio Design", "Graphic Corner"]}
+  ]
+}

@@ -57,6 +57,14 @@ than guessing it before searching, creating or changing a product. The root
 category is left out; Home is listed. It needs the permission
 `mcp.catalog.read` and the `view` right on the back office categories page.
 
+**Listing brands.** The new tool `somcp_list_manufacturers` lists the brands
+of the shop the assistant is connected to, with their identifier and name and
+nothing else, so the assistant takes a brand from the shop rather than guessing
+it before creating or changing a product. Brands that are switched off are
+listed too, since a product can still be attached to one. It needs the
+permission `mcp.catalog.read` and the `view` right on the back office brands
+page.
+
 **Creating a product.** The new tool `somcp_create_product` creates one
 complete product, offline by default: everything the product page holds can be
 given at once, combinations, specific prices, suppliers and images included,

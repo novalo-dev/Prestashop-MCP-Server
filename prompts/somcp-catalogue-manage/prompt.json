@@ -9,6 +9,7 @@
     "somcp_search_products",
     "somcp_get_product",
     "somcp_list_categories",
+    "somcp_list_manufacturers",
     "somcp_create_product",
     "somcp_update_product",
     "somcp_set_product_active",

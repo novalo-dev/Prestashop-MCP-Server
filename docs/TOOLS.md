@@ -939,22 +939,21 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 **Notes** - hiding a category does not switch its products off: they stay reachable through search and their other categories. The description says so, so the merchant is not surprised. Root and Home are refused.
 
 #### `somcp_list_manufacturers`
-**State**: to write · [issue #45](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/45)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminManufacturers')` · **Scope**: `mcp.catalog.read`
 
 **Does** - lists the brands of this shop: identifier and name, nothing else.
 
-**Do not use for** - everything about one brand (→ `somcp_get_manufacturer`), or the products of a brand (→ `somcp_search_products`).
+**Do not use for** - everything about one brand (→ `somcp_get_manufacturer`), or the products of a brand (`somcp_search_products` has no brand filter; `somcp_get_product` names the brand of one product).
 
-**Parameters**
-
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+**Parameters** - none.
 
 **Returns** - per brand: `id_manufacturer`, `name`. Plus `count`.
 
-**Notes** - same shape as `somcp_list_categories`: the list an assistant reads before a write that takes a brand, which must never guess an identifier. Inactive ones are listed too, since a product can still point to them.
+**Notes**
+- Same shape as `somcp_list_categories`: the list an assistant reads before a write that takes a brand, which must never guess an identifier. Inactive ones are listed too, since a product can still point to them.
+- No `language` parameter, unlike the first draft of this entry: a brand name is not translated in PrestaShop (`Manufacturer::$name` has no `lang`, checked on 8.0.0 and 9.0.0), so it would change nothing.
+- Read through a query on `manufacturer` and `manufacturer_shop` in the shop of the token, rather than `Manufacturer::getManufacturers()`, which takes the shop from the global context and leaves out a brand with no row in the language asked for. Sorted by name, as the core does.
 
 #### `somcp_get_manufacturer`
 **State**: to write · [issue #54](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/54)

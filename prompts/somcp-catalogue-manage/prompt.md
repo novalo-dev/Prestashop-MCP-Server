@@ -10,6 +10,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_search_products`
 - `somcp_get_product`
 - `somcp_list_categories`
+- `somcp_list_manufacturers`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -54,6 +55,10 @@ wrong products with total confidence.
 Two categories can share a name in different branches (Men > T-shirts, Women >
 T-shirts). When the name the merchant gave comes back more than once, show
 them the matches and let them pick before searching or writing.
+
+A brand is taken the same way, from `somcp_list_manufacturers`: never write an
+`id_manufacturer` the list did not give. When the brand the merchant names is
+not in the list, say so rather than picking the closest one.
 
 ## Prices
 

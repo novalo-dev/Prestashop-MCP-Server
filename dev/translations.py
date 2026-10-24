@@ -569,6 +569,10 @@ T = {
  "Lister les catégories",
  "Listar las categorías",
  "Kategorien auflisten"),
+"List brands": (
+ "Lister les marques",
+ "Listar las marcas",
+ "Marken auflisten"),
 "Search products": (
  "Rechercher des produits",
  "Buscar productos",

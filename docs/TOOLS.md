@@ -1501,7 +1501,7 @@ The faceted search fields follow the rule given under `somcp_create_feature`.
 **Notes** - the value stays on the products that use it: changing it changes it there too, which the assistant tells the merchant before the call. Custom values are refused. Replayable: the same values again say `changed: false`.
 
 #### `somcp_list_attachments`
-**State**: to write · [issue #49](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/49)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminAttachments')` · **Scope**: `mcp.catalog.read`
 
 **Does** - lists the files of the shop (Catalogue > Files: manuals, data sheets) that a product can carry, with the columns of the back office list and a download link.
@@ -1514,12 +1514,14 @@ The faceted search fields follow the rule given under `somcp_create_feature`.
 |---|---|---|---|
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - per file: `id_attachment` (ID), `name` (Name), `file_name` (File), `file_size` (Size, in bytes), `products_count` (Products), `mime`, `download_url`. Plus `count`.
+**Returns** - `attachments`, per file: `id_attachment` (ID), `name` (Name), `file_name` (File), `file_size` (Size, in bytes), `products_count` (Products), `mime`, `download_url`. Plus `count`, the number of files.
 
 **Notes**
 - The file itself never travels through the conversation. `download_url` is the storefront link PrestaShop already gives customers on a product page, built with `Link::getPageLink('attachment', true, null, 'id_attachment=N')`; the `attachment` front controller sends the file. The merchant opens it in a browser to download or preview it.
 - That link works without being signed in, as on the storefront: anyone holding it can download the file. The description says so, so the assistant does not paste it somewhere public by mistake.
-- Columns of `attachment` and `attachment_lang`; `products_count` from `product_attachment`.
+- Columns of `attachment` and `attachment_lang`; `products_count` from `product_attachment`. `file_name` is the name the file was uploaded under; the back office File column shows the name it is stored under on disk, which means nothing to a merchant.
+- Files have no shop of their own in PrestaShop: every shop sees the same list, as in the back office. `products_count` only counts products of the shop of the token (`product_shop`), so a count never reaches into another shop.
+- A file with no name in the language read is still listed, with an empty `name`, rather than missing from the only list of identifiers.
 - Lists only, never uploads: files do not travel through the conversation.
 
 ### Stock

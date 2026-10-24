@@ -82,6 +82,7 @@ calling the shop's own addresses.
 | `somcp_list_suppliers` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
 | `somcp_list_attributes` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
 | `somcp_list_features` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
+| `somcp_list_attachments` | `mcp.catalog.read` | `view` on `AdminAttachments` | read |
 | `somcp_create_product` | `mcp.catalog.write` | `add` on `AdminProducts` | write |
 | `somcp_update_product` | `mcp.catalog.write` | `edit` on `AdminProducts` | write |
 | `somcp_set_product_active` | `mcp.catalog.write` | `edit` on `AdminProducts` | write |

@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "lists the files of the demo shop, which ships none", "arguments": {}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]},
+    {"why": "in a language given by ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]},
+    {"why": "a language the shop does not have falls back on the default one", "arguments": {"language": "zz"}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]}
+  ]
+}

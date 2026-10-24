@@ -90,6 +90,16 @@ product only are left out: they belong to that product. One feature can be
 asked for on its own. It needs the permission `mcp.catalog.read` and the
 `view` right on the back office features page.
 
+**Listing files.** The new tool `somcp_list_attachments` lists the files of
+the shop (Catalogue > Files: manuals, data sheets) with the columns of the back
+office list - name, file, size, number of products - so the assistant takes
+the right files from the shop rather than guessing them before creating or
+changing a product. Each file comes with its storefront download link, the one
+customers already see on a product page: the file itself never goes through
+the conversation, and anyone holding the link can download it. It needs the
+permission `mcp.catalog.read` and the `view` right on the back office files
+page.
+
 **Creating a product.** The new tool `somcp_create_product` creates one
 complete product, offline by default: everything the product page holds can be
 given at once, combinations, specific prices, suppliers and images included,

@@ -585,6 +585,10 @@ T = {
  "Lister les caractéristiques",
  "Listar las características",
  "Merkmale auflisten"),
+"List files": (
+ "Lister les fichiers",
+ "Listar los archivos",
+ "Dateien auflisten"),
 "Search products": (
  "Rechercher des produits",
  "Buscar productos",

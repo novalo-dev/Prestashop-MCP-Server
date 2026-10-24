@@ -964,7 +964,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read through a query on `manufacturer` and `manufacturer_shop` in the shop of the token, rather than `Manufacturer::getManufacturers()`, which takes the shop from the global context and leaves out a brand with no row in the language asked for. Sorted by name, as the core does.
 
 #### `somcp_get_manufacturer`
-**State**: to write · [issue #54](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/54)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminManufacturers')` · **Scope**: `mcp.catalog.read`
 
 **Does** - returns everything the back office brand form shows for one brand.
@@ -980,7 +980,12 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 **Returns** - `id_manufacturer`, `name`, `short_description`, `description`, `meta_title`, `meta_description`, `meta_keywords`, `logo` (URL), `active`, `products_count`.
 
-**Notes** - columns of `manufacturer` and `manufacturer_lang`, checked against PrestaShop 8.0.3 and 9.2; `meta_keywords` exists on PrestaShop 8 only and is `null` on 9. A brand's postal addresses are a separate back office list and are not part of the brand form.
+**Notes**
+- Columns of `manufacturer` and `manufacturer_lang`, checked against PrestaShop 8.0.0 and 9.0.0; `meta_keywords` exists on PrestaShop 8 only and is `null` on 9. A brand's postal addresses are a separate back office list and are not part of the brand form.
+- Read in the shop of the token: a brand of another shop, or an identifier that does not exist, is answered like one that does not exist (`manufacturer_shop`), since the `Manufacturer` constructor takes no shop. `products_count` counts the products of this shop only.
+- `logo` is `null` when the brand has none, rather than the "no picture" image `Link::getManufacturerImageLink()` falls back on.
+- The reader and the test of the shop are public, for the brand write tools to answer with the brand as this tool returns it.
+- A language the shop does not have falls back on the shop default.
 
 #### `somcp_create_manufacturer`
 **State**: to write · [issue #55](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/55)

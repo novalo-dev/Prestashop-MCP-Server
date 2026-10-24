@@ -928,17 +928,18 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     }
 
     /**
-     * A translated field of a category loaded in one language.
+     * A translated field of an object loaded in one language.
      *
      * Loaded with a language, the core gives a string; an override or a hook
-     * may still leave the array of every language.
+     * may still leave the array of every language. Public because
+     * somcp_get_manufacturer reads brand texts the same way.
      *
      * @param mixed $value
      * @param int $idLang
      *
      * @return string
      */
-    protected static function textOf($value, int $idLang): string
+    public static function textOf($value, int $idLang): string
     {
         if (is_array($value)) {
             $value = $value[$idLang] ?? reset($value);

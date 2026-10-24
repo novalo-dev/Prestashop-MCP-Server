@@ -76,6 +76,14 @@ listed too, since a product can still be attached to one. It needs the
 permission `mcp.catalog.read` and the `view` right on the back office brands
 page.
 
+**Reading a brand.** The new tool `somcp_get_manufacturer` returns everything
+the back office brand form shows for one brand: name, Enabled, short
+description, description, meta title and description, meta keywords on
+PrestaShop 8, the logo address, and how many products of the shop belong to
+it. A brand without a logo says so rather than showing a placeholder image. It
+only reads the shop the assistant is connected to. It needs the permission
+`mcp.catalog.read` and the `view` right on the back office brands page.
+
 **Listing suppliers.** The new tool `somcp_list_suppliers` lists the suppliers
 of the shop the assistant is connected to, with their identifier and name and
 nothing else, so the assistant takes a supplier from the shop rather than

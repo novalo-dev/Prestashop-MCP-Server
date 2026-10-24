@@ -707,6 +707,11 @@
       <source>List brands</source>
       <target>Lister les marques</target>
     </trans-unit>
+    <!-- Get a brand -->
+    <trans-unit id="9f43ab513afa1940c0b205bd0400e292" resname="Get a brand">
+      <source>Get a brand</source>
+      <target>Lire une marque</target>
+    </trans-unit>
     <!-- List suppliers -->
     <trans-unit id="9612da082bad7b857b8bedea2743be00" resname="List suppliers">
       <source>List suppliers</source>

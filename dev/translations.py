@@ -569,6 +569,10 @@ T = {
  "Créer un produit",
  "Crear un producto",
  "Ein Produkt anlegen"),
+"Change a product": (
+ "Modifier un produit",
+ "Modificar un producto",
+ "Ein Produkt ändern"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",

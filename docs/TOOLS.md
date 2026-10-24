@@ -728,39 +728,47 @@ The products and the categories they are sorted into: texts, prices, combination
 - The stock movement of an initial quantity carries the employee of the token, set on the context for the length of the write since the MCP endpoint has none. Quantities are written last, so a rollback leaves no movement behind.
 
 #### `somcp_update_product`
-**State**: to write · [issue #4](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/4)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminProducts')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one existing product with everything `somcp_create_product` can write: the same groups, the same fields, the same rules, combinations and images included. Only what is given changes.
 
-**Do not use for** - creating a product (→ `somcp_create_product`), or deleting one (→ `somcp_delete_product`).
+**Do not use for** - creating a product (→ `somcp_create_product`), switching one on or off alone (→ `somcp_set_product_active`), or deleting one (→ `somcp_delete_product`).
 
-**Parameters** - `id_product` (required), `languages`, then the groups and fields of `somcp_create_product`, all optional. Every rule of that entry applies unchanged: who fills each field (merchant, merchant from the shop, assistant, both), the lengths (name 128, summary 100 to 200, reference 50, SEO title 55, meta description 512, counted on the visible text with spaces), the identifiers taken from the `somcp_list_*` tools, the SEO section and the image download guards.
+**Parameters** - `id_product` (required), `languages`, then the groups and fields of `somcp_create_product`, all optional. Every rule of that entry applies unchanged: who fills each field (merchant, merchant from the shop, assistant, both), the lengths (name 128, summary 100 to 200, reference 50, SEO title 55, meta description 512, counted on the visible text with spaces), the identifiers taken from the `somcp_list_*` tools, the SEO section and the image download guards. The tool extends `SomcpToolCreateProduct` and calls its checks, so the two cannot drift apart.
 
 **What "only what is given" means**
 
 | Kind of field | Given | Left out |
 |---|---|---|
 | a single value (`price_tax_excl`, `weight`, `active`...) | replaced | kept |
-| a translatable text | replaced in the languages given, the others kept | kept in every language |
+| a translatable text | replaced in the languages filled, the others kept | kept in every language |
 | a set chosen as a whole in the back office: `categories`, `related_products`, `features`, `attachments`, `carriers`, `customization` fields | the set given replaces the old one entirely | kept |
 | `combinations` | an item with `id_product_attribute` changes that combination, field by field; an item without one creates a combination | kept |
 | `images` | an item with `id_image` changes its legend, cover, position or combinations; an item with `url` adds an image | kept |
-| `specific_prices` | an item with `id_specific_price` changes it, an item without one adds it | kept |
+| `specific_prices` | an item with `id_specific_price` changes it, field by field; an item without one adds it | kept |
 | `suppliers` | per supplier and combination, the values given replace the old ones | kept |
 
-Removing is always explicit, never inferred from a missing item: `remove_combinations`, `remove_images`, `remove_specific_prices`, `remove_suppliers` (lists of identifiers). A removed combination takes its stock with it, so the assistant names each one to the merchant before the call.
+Removing is always explicit, never inferred from a missing item: `remove_combinations`, `remove_images`, `remove_specific_prices`, `remove_suppliers` (lists of identifiers; a supplier is removed from the product and from all its combinations). A removed combination takes its stock with it, so the assistant names each one to the merchant before the call.
 
-**Returns** - `changed`, then per field written its old and new value, `seo_warnings` for the languages touched, `images` (per URL: `id_image` or the reason it was refused), and the product as `somcp_get_product` returns it.
+`languages` left out means every active language, as at creation, so a text must then be given in each one; to change one language, `languages` names it alone.
+
+The `combination` of a specific price or a supplier, and the `combinations` of an image, are positions in the `combinations` of the call, as at creation. An item holding only an `id_product_attribute` points at an existing combination without changing it.
+
+**Returns** - `changed: true`, `id_product`, `changes` (each field written: `field`, `old`, `new`; an item added or removed says so), `seo_warnings` for the languages whose texts changed, `images` (per item: `removed`, `changed`, the `id_image` of an image added, or the reason it was refused), and the product as `somcp_get_product` returns it. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
 **Notes**
-- `id_product` that does not exist, or an `id_product_attribute`, `id_image`, `id_specific_price` that does not belong to it: refused, nothing written.
-- A `reference` changed to one another product or combination uses: refused, as at creation.
-- `product_type` can change as in the back office, except away from `combinations` while the product still has some: they would be lost silently. Remove them first, explicitly.
-- `link_rewrite` changed on an active product: the old URL stops working. The answer says so in `seo_warnings`; the assistant tells the merchant before the call.
-- Everything or nothing, as at creation: if one part cannot be written, nothing is. Only images and SEO warnings are reported without failing.
-- Written through the core classes (`Product::update()`, `Combination`, `StockAvailable`, `SpecificPrice`, `Image`) so hooks fire.
-- Replayable: calling it again with the same values changes nothing and says `changed: false`, except for an image added by `url`, which would be added twice. The read tool to check first is `somcp_get_product`.
+- `id_product` that does not exist in this shop, or an `id_product_attribute`, `id_image`, `id_specific_price` that does not belong to it: refused, nothing written.
+- A `reference` changed to one another product or combination uses: refused, as at creation. The product's own references do not count: a combination often has the reference of its product, the demo data included.
+- `product_type` can change as in the back office, except away from `combinations` while the product still has some: they would be lost silently. Remove them first, explicitly. Away from `pack` while it has contents, or from `virtual` while it has a file, is refused too: those are removed in the back office first. Adding combinations to a standard product makes it a combinations product, as at creation.
+- The attributes of an existing combination do not change: the back office does not change them either. Remove the combination and add another.
+- The default combination moves with `default_on: true` on another one; `default_on: false` on the current default alone is refused. When the default one is removed, the first combination left becomes the default.
+- With combinations, `stock.quantity` and `stock.location` are refused: each combination has its own, and the core writes a product location on every combination row.
+- `link_rewrite` is only written in the languages given, never made again from a new name. Changed on an active product, the old URL stops working: the answer says so in `seo_warnings`, and the assistant tells the merchant before the call.
+- Two specific prices that would apply to the same customers, combination, quantity and dates are refused before anything is written: the database accepts only one.
+- Every check runs before the first write, so a call refused for a reason the shop can foresee changes nothing. Everything or nothing cannot hold past that point: undoing the creation means deleting the product, which an update cannot do, and a database transaction does not hold either, because hooks commit it - `ps_facetedsearch`, shipped with every shop, truncates its cache table on each product save. If a write still fails, the answer names the steps already written, and the assistant reads the product before anything else. Images come last and are reported without failing.
+- Written through the core classes (`Product::update()`, `Combination`, `StockAvailable`, `SpecificPrice`, `ProductSupplier`, `Image`) so hooks fire, in the shop of the token only: on a multistore installation the other shops keep their prices, texts and options.
+- Each value is compared with what the shop holds before writing: calling it again with the same values changes nothing and says `changed: false`, except for an image added by `url`, which would be added twice. The read tool to check first is `somcp_get_product`.
 
 #### `somcp_set_product_active`
 **State**: to write · [issue #6](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/6)

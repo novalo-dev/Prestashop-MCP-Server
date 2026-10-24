@@ -41,6 +41,10 @@ declare(strict_types=1);
  * product creation. The rules a value must follow are read from each class's
  * own definition (ObjectModel::validateField()), so an EAN13 is checked the
  * way PrestaShop 8 checks it on 8 and the way PrestaShop 9 does on 9.
+ *
+ * The checks and writes are protected rather than private because
+ * somcp_update_product extends this class: changing a product follows the
+ * same rules as creating one, and two copies of a rule would drift apart.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -50,32 +54,32 @@ if (!defined('_PS_VERSION_')) {
 class SomcpToolCreateProduct
 {
     /** @var array<string, int> out_of_stock as the merchant says it, and as it is stored. */
-    private const OUT_OF_STOCK = ['deny' => 0, 'allow' => 1, 'default' => 2];
+    protected const OUT_OF_STOCK = ['deny' => 0, 'allow' => 1, 'default' => 2];
 
     /** @var array<string, int> additional_delivery_times as the merchant says it, and as it is stored. */
-    private const DELIVERY_TIMES = ['none' => 0, 'default' => 1, 'product' => 2];
+    protected const DELIVERY_TIMES = ['none' => 0, 'default' => 1, 'product' => 2];
 
     /** @var int Stricter than PrestaShop's 64, as the specification asks. */
-    private const MAX_REFERENCE = 50;
+    protected const MAX_REFERENCE = 50;
 
     /** @var int Summary bounds, counted on the visible text. */
-    private const SUMMARY_MIN = 100;
-    private const SUMMARY_MAX = 200;
+    protected const SUMMARY_MIN = 100;
+    protected const SUMMARY_MAX = 200;
 
     /** @var int Long enough for search engines to show the title whole. */
-    private const META_TITLE_MAX = 55;
+    protected const META_TITLE_MAX = 55;
 
     /** @var int The limit of Product::$definition. */
-    private const META_DESCRIPTION_MAX = 512;
+    protected const META_DESCRIPTION_MAX = 512;
 
     /** @var int What search results show before cutting. */
-    private const META_DESCRIPTION_SHOWN = 160;
+    protected const META_DESCRIPTION_SHOWN = 160;
 
     /** @var int 10 MB per downloaded image. */
-    private const IMAGE_MAX_BYTES = 10485760;
+    protected const IMAGE_MAX_BYTES = 10485760;
 
     /** @var array<int, string> What a downloaded image may be, by the type getimagesize() reads in its bytes. */
-    private const IMAGE_TYPES = [
+    protected const IMAGE_TYPES = [
         IMAGETYPE_JPEG => 'image/jpeg',
         IMAGETYPE_PNG => 'image/png',
         IMAGETYPE_GIF => 'image/gif',
@@ -83,10 +87,10 @@ class SomcpToolCreateProduct
     ];
 
     /** @var array<int, string> The criteria a merchant can order; id_customer always comes first and is not one of them. */
-    private const PRIORITIES = ['id_shop', 'id_currency', 'id_country', 'id_group'];
+    protected const PRIORITIES = ['id_shop', 'id_currency', 'id_country', 'id_group'];
 
     /** @var array<string, array<int, string>> The fields each group accepts. */
-    private const ACCEPTED = [
+    protected const ACCEPTED = [
         'basics' => ['product_type', 'name', 'description_short', 'description'],
         'categories' => ['categories', 'id_category_default'],
         'brand' => ['id_manufacturer'],
@@ -123,7 +127,7 @@ class SomcpToolCreateProduct
      *                         read from another object. Named, so the assistant learns why rather than meeting
      *                         an "unknown field" for a value it was just given.
      */
-    private const COMPUTED = [
+    protected const COMPUTED = [
         'basics.id_product', 'categories.name', 'brand.manufacturer_name', 'seo.url', 'pricing.tax_rules_group_name',
         'pricing.tax_rate', 'pricing.price_tax_incl', 'pricing.unit_price_tax_incl', 'pricing.currency',
         'shipping.currency', 'customization.customizable', 'customization.uploadable_files',
@@ -139,17 +143,6 @@ class SomcpToolCreateProduct
      */
     public static function define(): SomcpTool
     {
-        $text = static function (string $description): array {
-            return [
-                'type' => 'object',
-                'description' => $description . ' One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.',
-                'additionalProperties' => ['type' => 'string'],
-            ];
-        };
-        $ids = static function (string $description): array {
-            return ['type' => 'array', 'description' => $description, 'items' => ['type' => 'integer']];
-        };
-
         return new SomcpTool(
             'somcp_create_product',
             Somcp::t('Create a product'),
@@ -177,328 +170,7 @@ class SomcpToolCreateProduct
                 . 'call: for several, call it once per product and report each result. '
                 . 'Not to be retried: if the answer is lost, search with somcp_search_products by the '
                 . 'reference or the name before anything else, because a second call creates a second product.',
-            [
-                'type' => 'object',
-                'properties' => [
-                    'languages' => [
-                        'type' => 'array',
-                        'description' => 'ISO codes of the languages to fill, among the active languages of the shop. '
-                            . 'All of them by default. Every text must then be given in each of them.',
-                        'items' => ['type' => 'string'],
-                    ],
-                    'basics' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'product_type' => [
-                                'type' => 'string',
-                                'enum' => ['standard', 'combinations', 'pack', 'virtual'],
-                                'description' => 'Merchant. combinations when combinations are given, standard '
-                                    . 'otherwise. A pack or a virtual product is created empty: its contents or '
-                                    . 'its file are added in the back office.',
-                            ],
-                            'name' => $text('Merchant. Required, 128 characters at most.'),
-                            'description_short' => $text('Assistant. The summary, 100 to 200 characters.'),
-                            'description' => $text('Assistant. The description, HTML allowed.'),
-                        ],
-                        'required' => ['name'],
-                        'additionalProperties' => false,
-                    ],
-                    'categories' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'categories' => $ids('Merchant, from the shop: category identifiers from somcp_list_categories.'),
-                            'id_category_default' => [
-                                'type' => 'integer',
-                                'description' => 'Merchant, from the shop: the main category, one of categories (added '
-                                    . 'to them if missing). The first category given otherwise, the home category '
-                                    . 'when none is.',
-                            ],
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'brand' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'id_manufacturer' => [
-                                'type' => 'integer',
-                                'description' => 'Merchant, from the shop: brand identifier from somcp_list_manufacturers.',
-                            ],
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'related_products' => $ids('Merchant: identifiers of related products. Find candidates with '
-                        . 'somcp_search_products and let the merchant pick.'),
-                    'references' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'reference' => [
-                                'type' => 'string',
-                                'description' => 'Merchant. 50 characters at most, used by no other product or combination.',
-                            ],
-                            'mpn' => ['type' => 'string', 'description' => 'Merchant. Manufacturer part number.'],
-                            'upc' => ['type' => 'string', 'description' => 'Merchant. UPC barcode.'],
-                            'ean13' => ['type' => 'string', 'description' => 'Merchant. EAN-13 or JAN barcode.'],
-                            'isbn' => ['type' => 'string', 'description' => 'Merchant. ISBN.'],
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'features' => [
-                        'type' => 'array',
-                        'description' => 'Merchant, from the shop: features from somcp_list_features, each with an '
-                            . 'existing value or a custom value typed for this product only.',
-                        'items' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'id_feature' => ['type' => 'integer', 'description' => 'Feature identifier.'],
-                                'id_feature_value' => ['type' => 'integer', 'description' => 'One of its values. Leave out to give value instead.'],
-                                'value' => $text('A custom value, instead of id_feature_value.'),
-                            ],
-                            'required' => ['id_feature'],
-                            'additionalProperties' => false,
-                        ],
-                    ],
-                    'attachments' => $ids('Merchant, from the shop: document identifiers from somcp_list_attachments. '
-                        . 'Files do not travel through the call.'),
-                    'condition' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'condition' => [
-                                'type' => 'string',
-                                'description' => 'Merchant. new, used or refurbished; PrestaShop 9 adds open_box, damaged '
-                                    . 'and new_with_defects.',
-                            ],
-                            'show_condition' => ['type' => 'boolean', 'description' => 'Merchant. Show it on the product page.'],
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'customization' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'fields' => [
-                                'type' => 'array',
-                                'description' => 'Merchant: what the customer fills in when ordering.',
-                                'items' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'type' => ['type' => 'string', 'enum' => ['file', 'text']],
-                                        'name' => $text('The label the customer reads.'),
-                                        'required' => ['type' => 'boolean'],
-                                    ],
-                                    'required' => ['type', 'name'],
-                                    'additionalProperties' => false,
-                                ],
-                            ],
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'stock' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'quantity' => [
-                                'type' => 'integer',
-                                'description' => 'Merchant. Quantity in stock; with combinations, give each one its own instead.',
-                            ],
-                            'location' => ['type' => 'string', 'description' => 'Merchant. Where it is stored.'],
-                            'out_of_stock' => [
-                                'type' => 'string',
-                                'enum' => ['deny', 'allow', 'default'],
-                                'description' => 'Merchant. Orders when out of stock: refused, accepted, or the shop default.',
-                            ],
-                            'available_now' => $text('Merchant. Label when in stock; left out, the shop default label shows.'),
-                            'available_later' => $text('Merchant. Label when out of stock and orders are accepted.'),
-                            'available_date' => ['type' => 'string', 'description' => 'Merchant. Availability date, YYYY-MM-DD.'],
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'shipping' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'width' => ['type' => 'number', 'description' => 'Merchant. In the shop dimension unit.'],
-                            'height' => ['type' => 'number', 'description' => 'Merchant. In the shop dimension unit.'],
-                            'depth' => ['type' => 'number', 'description' => 'Merchant. In the shop dimension unit.'],
-                            'weight' => ['type' => 'number', 'description' => 'Merchant. In the shop weight unit.'],
-                            'additional_delivery_times' => [
-                                'type' => 'string',
-                                'enum' => ['none', 'default', 'product'],
-                                'description' => 'Merchant. Delivery time shown: none, the shop default, or this product\'s.',
-                            ],
-                            'delivery_in_stock' => $text('Merchant. Delivery time of this product when in stock.'),
-                            'delivery_out_stock' => $text('Merchant. Delivery time of this product when out of stock.'),
-                            'additional_shipping_cost' => ['type' => 'number', 'description' => 'Merchant. Tax excluded.'],
-                            'carriers' => $ids('Merchant, from the shop: carrier identifiers from somcp_list_carriers. '
-                                . 'None means every carrier, as in the back office.'),
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'pricing' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'price_tax_excl' => ['type' => 'number', 'description' => 'Merchant. Required. Selling price, tax excluded.'],
-                            'id_tax_rules_group' => [
-                                'type' => 'integer',
-                                'description' => 'Merchant, from the shop: tax rule from somcp_list_tax_rules, 0 for no '
-                                    . 'tax. Left out, the rule the back office preselects for a new product.',
-                            ],
-                            'wholesale_price' => ['type' => 'number', 'description' => 'Merchant. Purchase price, tax excluded.'],
-                            'unit_price_tax_excl' => ['type' => 'number', 'description' => 'Merchant. Price per unit, tax excluded.'],
-                            'unity' => ['type' => 'string', 'description' => 'Merchant. The unit, for example per kilo.'],
-                            'on_sale' => ['type' => 'boolean', 'description' => 'Merchant. Show the "on sale" flag.'],
-                        ],
-                        'required' => ['price_tax_excl'],
-                        'additionalProperties' => false,
-                    ],
-                    'specific_prices' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'rules' => [
-                                'type' => 'array',
-                                'description' => 'Merchant: specific prices, each for this shop.',
-                                'items' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'combination' => ['type' => 'integer', 'description' => 'Position in combinations, from 0. Left out: the whole product.'],
-                                        'currency' => ['type' => 'string', 'description' => 'ISO code, left out for all currencies.'],
-                                        'country' => ['type' => 'string', 'description' => 'ISO code, left out for all countries.'],
-                                        'id_group' => ['type' => 'integer', 'description' => 'From somcp_list_customer_groups, 0 for all.'],
-                                        'id_customer' => ['type' => 'integer', 'description' => '0 for all customers.'],
-                                        'from_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
-                                        'price' => ['type' => 'number', 'description' => 'A fixed price tax excluded, or -1 (the default) to keep the product price.'],
-                                        'reduction' => ['type' => 'number', 'description' => 'An amount, or for a percentage the fraction PrestaShop stores: 0.2 for 20 %.'],
-                                        'reduction_type' => ['type' => 'string', 'enum' => ['amount', 'percentage']],
-                                        'reduction_tax' => ['type' => 'boolean', 'description' => 'Whether an amount is tax included; true by default.'],
-                                        'from' => ['type' => 'string', 'description' => 'Start, YYYY-MM-DD HH:MM:SS. Left out: no start.'],
-                                        'to' => ['type' => 'string', 'description' => 'End, YYYY-MM-DD HH:MM:SS. Left out: no end.'],
-                                    ],
-                                    'additionalProperties' => false,
-                                ],
-                            ],
-                            'priorities' => [
-                                'type' => 'array',
-                                'description' => 'Merchant: the order used to pick between rules, the four of id_shop, '
-                                    . 'id_currency, id_country, id_group.',
-                                'items' => ['type' => 'string'],
-                            ],
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'seo' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'meta_title' => $text('Assistant. 55 characters at most.'),
-                            'meta_description' => $text('Assistant. 512 characters at most; past 160, search results cut it.'),
-                            'link_rewrite' => $text('Assistant. The friendly URL; generated from the name when left out.'),
-                            'redirect_type' => [
-                                'type' => 'string',
-                                'description' => 'Assistant. What the product page does while inactive: 404, 410, '
-                                    . '301-product, 302-product, 301-category, 302-category; PrestaShop 9 adds default, '
-                                    . '200-displayed, 404-displayed, 410-displayed. Left out: the shop default.',
-                            ],
-                            'id_type_redirected' => [
-                                'type' => 'integer',
-                                'description' => 'Assistant. The product or category a 301 or 302 redirects to.',
-                            ],
-                            'meta_keywords' => $text('Assistant. PrestaShop 8 only; refused on 9, which dropped them.'),
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'options' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'visibility' => [
-                                'type' => 'string',
-                                'enum' => ['both', 'catalog', 'search', 'none'],
-                                'description' => 'Merchant. Where the product shows.',
-                            ],
-                            'available_for_order' => ['type' => 'boolean', 'description' => 'Merchant.'],
-                            'show_price' => ['type' => 'boolean', 'description' => 'Merchant.'],
-                            'online_only' => ['type' => 'boolean', 'description' => 'Merchant. Web exclusive, not sold in store.'],
-                            'active' => ['type' => 'boolean', 'description' => 'Merchant. false by default: the product is created offline.'],
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'suppliers' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'id_supplier_default' => [
-                                'type' => 'integer',
-                                'description' => 'Merchant, from the shop: default supplier from somcp_list_suppliers. '
-                                    . 'The first supplier given otherwise.',
-                            ],
-                            'suppliers' => [
-                                'type' => 'array',
-                                'description' => 'Merchant: per supplier, and per combination when it differs.',
-                                'items' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'id_supplier' => ['type' => 'integer'],
-                                        'combination' => ['type' => 'integer', 'description' => 'Position in combinations, from 0. Left out: the product.'],
-                                        'product_supplier_reference' => ['type' => 'string', 'description' => 'The supplier\'s own reference.'],
-                                        'product_supplier_price_te' => ['type' => 'number', 'description' => 'Purchase price at this supplier, tax excluded.'],
-                                        'currency' => ['type' => 'string', 'description' => 'ISO code among the shop currencies; the shop default otherwise.'],
-                                    ],
-                                    'required' => ['id_supplier'],
-                                    'additionalProperties' => false,
-                                ],
-                            ],
-                        ],
-                        'additionalProperties' => false,
-                    ],
-                    'images' => [
-                        'type' => 'array',
-                        'description' => 'Merchant and assistant: the merchant gives the addresses, the assistant '
-                            . 'writes the legends. Downloaded by the shop: public https only, no redirect, 10 MB at '
-                            . 'most, JPEG, PNG, GIF or WebP.',
-                        'items' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'url' => ['type' => 'string', 'description' => 'Public https address of the image.'],
-                                'legend' => $text('Alternative text of the image.'),
-                                'cover' => ['type' => 'boolean', 'description' => 'The main image; the first one otherwise.'],
-                                'position' => ['type' => 'integer', 'description' => 'Order of the images, from 1; the order given otherwise.'],
-                                'combinations' => [
-                                    'type' => 'array',
-                                    'description' => 'Positions in combinations, from 0, of the combinations this image illustrates.',
-                                    'items' => ['type' => 'integer'],
-                                ],
-                            ],
-                            'required' => ['url'],
-                            'additionalProperties' => false,
-                        ],
-                    ],
-                    'combinations' => [
-                        'type' => 'array',
-                        'description' => 'Merchant and assistant: the merchant gives the attributes (sizes, colours), '
-                            . 'the assistant prepares codes and shows them first. One is the default.',
-                        'items' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'attributes' => $ids('Merchant, from the shop: attribute values from somcp_list_attributes, '
-                                    . 'one per attribute group. Two combinations cannot have the same ones.'),
-                                'default_on' => ['type' => 'boolean', 'description' => 'The default combination; the first one otherwise.'],
-                                'reference' => ['type' => 'string', 'description' => '50 characters at most, used nowhere else.'],
-                                'mpn' => ['type' => 'string'],
-                                'upc' => ['type' => 'string'],
-                                'ean13' => ['type' => 'string'],
-                                'isbn' => ['type' => 'string'],
-                                'quantity' => ['type' => 'integer'],
-                                'location' => ['type' => 'string'],
-                                'available_date' => ['type' => 'string', 'description' => 'YYYY-MM-DD.'],
-                                'available_now' => $text('Label when in stock. From PrestaShop 8.1.'),
-                                'available_later' => $text('Label when out of stock. From PrestaShop 8.1.'),
-                                'price_impact_tax_excl' => ['type' => 'number', 'description' => 'Added to the product price, tax excluded; negative to lower it.'],
-                                'unit_price_impact_tax_excl' => ['type' => 'number'],
-                                'weight_impact' => ['type' => 'number'],
-                                'wholesale_price' => ['type' => 'number'],
-                                'minimal_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
-                            ],
-                            'required' => ['attributes'],
-                            'additionalProperties' => false,
-                        ],
-                    ],
-                ],
-                'required' => ['basics', 'pricing'],
-                'additionalProperties' => false,
-            ],
+            self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],
             // Adding a product is what the products page asks for in Team,
@@ -506,6 +178,348 @@ class SomcpToolCreateProduct
             // somcp_update_product.
             SomcpTool::acts(SomcpPermission::ADD, 'AdminProducts')
         );
+    }
+
+    /**
+     * The arguments, in the groups and under the names somcp_get_product returns.
+     *
+     * @return array<string, mixed>
+     */
+    protected static function inputSchema(): array
+    {
+        $text = static function (string $description): array {
+            return [
+                'type' => 'object',
+                'description' => $description . ' One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.',
+                'additionalProperties' => ['type' => 'string'],
+            ];
+        };
+        $ids = static function (string $description): array {
+            return ['type' => 'array', 'description' => $description, 'items' => ['type' => 'integer']];
+        };
+
+        return [
+            'type' => 'object',
+            'properties' => [
+                'languages' => [
+                    'type' => 'array',
+                    'description' => 'ISO codes of the languages to fill, among the active languages of the shop. '
+                        . 'All of them by default. Every text must then be given in each of them.',
+                    'items' => ['type' => 'string'],
+                ],
+                'basics' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'product_type' => [
+                            'type' => 'string',
+                            'enum' => ['standard', 'combinations', 'pack', 'virtual'],
+                            'description' => 'Merchant. combinations when combinations are given, standard '
+                                . 'otherwise. A pack or a virtual product is created empty: its contents or '
+                                . 'its file are added in the back office.',
+                        ],
+                        'name' => $text('Merchant. Required, 128 characters at most.'),
+                        'description_short' => $text('Assistant. The summary, 100 to 200 characters.'),
+                        'description' => $text('Assistant. The description, HTML allowed.'),
+                    ],
+                    'required' => ['name'],
+                    'additionalProperties' => false,
+                ],
+                'categories' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'categories' => $ids('Merchant, from the shop: category identifiers from somcp_list_categories.'),
+                        'id_category_default' => [
+                            'type' => 'integer',
+                            'description' => 'Merchant, from the shop: the main category, one of categories (added '
+                                . 'to them if missing). The first category given otherwise, the home category '
+                                . 'when none is.',
+                        ],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'brand' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'id_manufacturer' => [
+                            'type' => 'integer',
+                            'description' => 'Merchant, from the shop: brand identifier from somcp_list_manufacturers.',
+                        ],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'related_products' => $ids('Merchant: identifiers of related products. Find candidates with '
+                    . 'somcp_search_products and let the merchant pick.'),
+                'references' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'reference' => [
+                            'type' => 'string',
+                            'description' => 'Merchant. 50 characters at most, used by no other product or combination.',
+                        ],
+                        'mpn' => ['type' => 'string', 'description' => 'Merchant. Manufacturer part number.'],
+                        'upc' => ['type' => 'string', 'description' => 'Merchant. UPC barcode.'],
+                        'ean13' => ['type' => 'string', 'description' => 'Merchant. EAN-13 or JAN barcode.'],
+                        'isbn' => ['type' => 'string', 'description' => 'Merchant. ISBN.'],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'features' => [
+                    'type' => 'array',
+                    'description' => 'Merchant, from the shop: features from somcp_list_features, each with an '
+                        . 'existing value or a custom value typed for this product only.',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id_feature' => ['type' => 'integer', 'description' => 'Feature identifier.'],
+                            'id_feature_value' => ['type' => 'integer', 'description' => 'One of its values. Leave out to give value instead.'],
+                            'value' => $text('A custom value, instead of id_feature_value.'),
+                        ],
+                        'required' => ['id_feature'],
+                        'additionalProperties' => false,
+                    ],
+                ],
+                'attachments' => $ids('Merchant, from the shop: document identifiers from somcp_list_attachments. '
+                    . 'Files do not travel through the call.'),
+                'condition' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'condition' => [
+                            'type' => 'string',
+                            'description' => 'Merchant. new, used or refurbished; PrestaShop 9 adds open_box, damaged '
+                                . 'and new_with_defects.',
+                        ],
+                        'show_condition' => ['type' => 'boolean', 'description' => 'Merchant. Show it on the product page.'],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'customization' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'fields' => [
+                            'type' => 'array',
+                            'description' => 'Merchant: what the customer fills in when ordering.',
+                            'items' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'type' => ['type' => 'string', 'enum' => ['file', 'text']],
+                                    'name' => $text('The label the customer reads.'),
+                                    'required' => ['type' => 'boolean'],
+                                ],
+                                'required' => ['type', 'name'],
+                                'additionalProperties' => false,
+                            ],
+                        ],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'stock' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'quantity' => [
+                            'type' => 'integer',
+                            'description' => 'Merchant. Quantity in stock; with combinations, give each one its own instead.',
+                        ],
+                        'location' => ['type' => 'string', 'description' => 'Merchant. Where it is stored.'],
+                        'out_of_stock' => [
+                            'type' => 'string',
+                            'enum' => ['deny', 'allow', 'default'],
+                            'description' => 'Merchant. Orders when out of stock: refused, accepted, or the shop default.',
+                        ],
+                        'available_now' => $text('Merchant. Label when in stock; left out, the shop default label shows.'),
+                        'available_later' => $text('Merchant. Label when out of stock and orders are accepted.'),
+                        'available_date' => ['type' => 'string', 'description' => 'Merchant. Availability date, YYYY-MM-DD.'],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'shipping' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'width' => ['type' => 'number', 'description' => 'Merchant. In the shop dimension unit.'],
+                        'height' => ['type' => 'number', 'description' => 'Merchant. In the shop dimension unit.'],
+                        'depth' => ['type' => 'number', 'description' => 'Merchant. In the shop dimension unit.'],
+                        'weight' => ['type' => 'number', 'description' => 'Merchant. In the shop weight unit.'],
+                        'additional_delivery_times' => [
+                            'type' => 'string',
+                            'enum' => ['none', 'default', 'product'],
+                            'description' => 'Merchant. Delivery time shown: none, the shop default, or this product\'s.',
+                        ],
+                        'delivery_in_stock' => $text('Merchant. Delivery time of this product when in stock.'),
+                        'delivery_out_stock' => $text('Merchant. Delivery time of this product when out of stock.'),
+                        'additional_shipping_cost' => ['type' => 'number', 'description' => 'Merchant. Tax excluded.'],
+                        'carriers' => $ids('Merchant, from the shop: carrier identifiers from somcp_list_carriers. '
+                            . 'None means every carrier, as in the back office.'),
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'pricing' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'price_tax_excl' => ['type' => 'number', 'description' => 'Merchant. Required. Selling price, tax excluded.'],
+                        'id_tax_rules_group' => [
+                            'type' => 'integer',
+                            'description' => 'Merchant, from the shop: tax rule from somcp_list_tax_rules, 0 for no '
+                                . 'tax. Left out, the rule the back office preselects for a new product.',
+                        ],
+                        'wholesale_price' => ['type' => 'number', 'description' => 'Merchant. Purchase price, tax excluded.'],
+                        'unit_price_tax_excl' => ['type' => 'number', 'description' => 'Merchant. Price per unit, tax excluded.'],
+                        'unity' => ['type' => 'string', 'description' => 'Merchant. The unit, for example per kilo.'],
+                        'on_sale' => ['type' => 'boolean', 'description' => 'Merchant. Show the "on sale" flag.'],
+                    ],
+                    'required' => ['price_tax_excl'],
+                    'additionalProperties' => false,
+                ],
+                'specific_prices' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'rules' => [
+                            'type' => 'array',
+                            'description' => 'Merchant: specific prices, each for this shop.',
+                            'items' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'combination' => ['type' => 'integer', 'description' => 'Position in combinations, from 0. Left out: the whole product.'],
+                                    'currency' => ['type' => 'string', 'description' => 'ISO code, left out for all currencies.'],
+                                    'country' => ['type' => 'string', 'description' => 'ISO code, left out for all countries.'],
+                                    'id_group' => ['type' => 'integer', 'description' => 'From somcp_list_customer_groups, 0 for all.'],
+                                    'id_customer' => ['type' => 'integer', 'description' => '0 for all customers.'],
+                                    'from_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
+                                    'price' => ['type' => 'number', 'description' => 'A fixed price tax excluded, or -1 (the default) to keep the product price.'],
+                                    'reduction' => ['type' => 'number', 'description' => 'An amount, or for a percentage the fraction PrestaShop stores: 0.2 for 20 %.'],
+                                    'reduction_type' => ['type' => 'string', 'enum' => ['amount', 'percentage']],
+                                    'reduction_tax' => ['type' => 'boolean', 'description' => 'Whether an amount is tax included; true by default.'],
+                                    'from' => ['type' => 'string', 'description' => 'Start, YYYY-MM-DD HH:MM:SS. Left out: no start.'],
+                                    'to' => ['type' => 'string', 'description' => 'End, YYYY-MM-DD HH:MM:SS. Left out: no end.'],
+                                ],
+                                'additionalProperties' => false,
+                            ],
+                        ],
+                        'priorities' => [
+                            'type' => 'array',
+                            'description' => 'Merchant: the order used to pick between rules, the four of id_shop, '
+                                . 'id_currency, id_country, id_group.',
+                            'items' => ['type' => 'string'],
+                        ],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'seo' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'meta_title' => $text('Assistant. 55 characters at most.'),
+                        'meta_description' => $text('Assistant. 512 characters at most; past 160, search results cut it.'),
+                        'link_rewrite' => $text('Assistant. The friendly URL; generated from the name when left out.'),
+                        'redirect_type' => [
+                            'type' => 'string',
+                            'description' => 'Assistant. What the product page does while inactive: 404, 410, '
+                                . '301-product, 302-product, 301-category, 302-category; PrestaShop 9 adds default, '
+                                . '200-displayed, 404-displayed, 410-displayed. Left out: the shop default.',
+                        ],
+                        'id_type_redirected' => [
+                            'type' => 'integer',
+                            'description' => 'Assistant. The product or category a 301 or 302 redirects to.',
+                        ],
+                        'meta_keywords' => $text('Assistant. PrestaShop 8 only; refused on 9, which dropped them.'),
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'options' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'visibility' => [
+                            'type' => 'string',
+                            'enum' => ['both', 'catalog', 'search', 'none'],
+                            'description' => 'Merchant. Where the product shows.',
+                        ],
+                        'available_for_order' => ['type' => 'boolean', 'description' => 'Merchant.'],
+                        'show_price' => ['type' => 'boolean', 'description' => 'Merchant.'],
+                        'online_only' => ['type' => 'boolean', 'description' => 'Merchant. Web exclusive, not sold in store.'],
+                        'active' => ['type' => 'boolean', 'description' => 'Merchant. false by default: the product is created offline.'],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'suppliers' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'id_supplier_default' => [
+                            'type' => 'integer',
+                            'description' => 'Merchant, from the shop: default supplier from somcp_list_suppliers. '
+                                . 'The first supplier given otherwise.',
+                        ],
+                        'suppliers' => [
+                            'type' => 'array',
+                            'description' => 'Merchant: per supplier, and per combination when it differs.',
+                            'items' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'id_supplier' => ['type' => 'integer'],
+                                    'combination' => ['type' => 'integer', 'description' => 'Position in combinations, from 0. Left out: the product.'],
+                                    'product_supplier_reference' => ['type' => 'string', 'description' => 'The supplier\'s own reference.'],
+                                    'product_supplier_price_te' => ['type' => 'number', 'description' => 'Purchase price at this supplier, tax excluded.'],
+                                    'currency' => ['type' => 'string', 'description' => 'ISO code among the shop currencies; the shop default otherwise.'],
+                                ],
+                                'required' => ['id_supplier'],
+                                'additionalProperties' => false,
+                            ],
+                        ],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'images' => [
+                    'type' => 'array',
+                    'description' => 'Merchant and assistant: the merchant gives the addresses, the assistant '
+                        . 'writes the legends. Downloaded by the shop: public https only, no redirect, 10 MB at '
+                        . 'most, JPEG, PNG, GIF or WebP.',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'url' => ['type' => 'string', 'description' => 'Public https address of the image.'],
+                            'legend' => $text('Alternative text of the image.'),
+                            'cover' => ['type' => 'boolean', 'description' => 'The main image; the first one otherwise.'],
+                            'position' => ['type' => 'integer', 'description' => 'Order of the images, from 1; the order given otherwise.'],
+                            'combinations' => [
+                                'type' => 'array',
+                                'description' => 'Positions in combinations, from 0, of the combinations this image illustrates.',
+                                'items' => ['type' => 'integer'],
+                            ],
+                        ],
+                        'required' => ['url'],
+                        'additionalProperties' => false,
+                    ],
+                ],
+                'combinations' => [
+                    'type' => 'array',
+                    'description' => 'Merchant and assistant: the merchant gives the attributes (sizes, colours), '
+                        . 'the assistant prepares codes and shows them first. One is the default.',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'attributes' => $ids('Merchant, from the shop: attribute values from somcp_list_attributes, '
+                                . 'one per attribute group. Two combinations cannot have the same ones.'),
+                            'default_on' => ['type' => 'boolean', 'description' => 'The default combination; the first one otherwise.'],
+                            'reference' => ['type' => 'string', 'description' => '50 characters at most, used nowhere else.'],
+                            'mpn' => ['type' => 'string'],
+                            'upc' => ['type' => 'string'],
+                            'ean13' => ['type' => 'string'],
+                            'isbn' => ['type' => 'string'],
+                            'quantity' => ['type' => 'integer'],
+                            'location' => ['type' => 'string'],
+                            'available_date' => ['type' => 'string', 'description' => 'YYYY-MM-DD.'],
+                            'available_now' => $text('Label when in stock. From PrestaShop 8.1.'),
+                            'available_later' => $text('Label when out of stock. From PrestaShop 8.1.'),
+                            'price_impact_tax_excl' => ['type' => 'number', 'description' => 'Added to the product price, tax excluded; negative to lower it.'],
+                            'unit_price_impact_tax_excl' => ['type' => 'number'],
+                            'weight_impact' => ['type' => 'number'],
+                            'wholesale_price' => ['type' => 'number'],
+                            'minimal_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
+                        ],
+                        'required' => ['attributes'],
+                        'additionalProperties' => false,
+                    ],
+                ],
+            ],
+            'required' => ['basics', 'pricing'],
+            'additionalProperties' => false,
+        ];
     }
 
     /**
@@ -528,10 +542,26 @@ class SomcpToolCreateProduct
             );
         }
 
-        // The core reads the employee from the context when it records a stock
-        // movement. The MCP endpoint is a front controller, which has none, so
-        // the movement would be anonymous: the account behind the token is put
-        // there for the length of the write, and the context given back as it was.
+        return self::asEmployee($idEmployee, static function () use ($plan, $context, $shop, $idEmployee): array {
+            return self::create($plan, $context, (int) $shop->id, $idEmployee);
+        });
+    }
+
+    /**
+     * Runs a write with the employee of the token on the context.
+     *
+     * The core reads the employee from the context when it records a stock
+     * movement. The MCP endpoint is a front controller, which has none, so the
+     * movement would be anonymous: the account behind the token is put there
+     * for the length of the write, and the context given back as it was.
+     *
+     * @param int $idEmployee
+     * @param callable(): array<string, mixed> $write
+     *
+     * @return array<string, mixed>
+     */
+    protected static function asEmployee(int $idEmployee, callable $write): array
+    {
         $legacy = Somcp::legacyContext();
         $previousEmployee = $legacy->employee;
         if (!$previousEmployee instanceof Employee || (int) $previousEmployee->id !== $idEmployee) {
@@ -542,7 +572,7 @@ class SomcpToolCreateProduct
         }
 
         try {
-            return self::create($plan, $context, (int) $shop->id, $idEmployee);
+            return $write();
         } finally {
             $legacy->employee = $previousEmployee;
         }
@@ -558,7 +588,7 @@ class SomcpToolCreateProduct
      *
      * @return array<string, mixed>
      */
-    private static function create(array $plan, array $context, int $idShop, int $idEmployee): array
+    protected static function create(array $plan, array $context, int $idShop, int $idEmployee): array
     {
         $product = new Product(null, false, null, $idShop);
         $combinationIds = [];
@@ -625,7 +655,7 @@ class SomcpToolCreateProduct
      *
      * @return array<string, mixed>|null
      */
-    private static function prepare(array $arguments, Shop $shop, array &$errors): ?array
+    protected static function prepare(array $arguments, Shop $shop, array &$errors): ?array
     {
         $idShop = (int) $shop->id;
         $groups = [];
@@ -707,7 +737,7 @@ class SomcpToolCreateProduct
      *
      * @return array{filled: array<int, string>, all: array<int, int>, fallback: int}|null
      */
-    private static function languages(array $arguments, int $idShop, array &$errors): ?array
+    protected static function languages(array $arguments, int $idShop, array &$errors): ?array
     {
         $active = [];
         foreach (Language::getLanguages(true, $idShop) as $row) {
@@ -755,12 +785,14 @@ class SomcpToolCreateProduct
      * @param Product $probe
      * @param array<string, mixed> $plan
      * @param array<int, string> $errors
+     * @param bool $nameRequired false when changing a product, whose name is already there
      *
      * @return void
      */
-    private static function basics(array $group, array $languages, Product $probe, array &$plan, array &$errors): void
+    protected static function basics(array $group, array $languages, Product $probe, array &$plan, array &$errors, bool $nameRequired = true): void
     {
-        $names = self::texts($group, 'name', 'basics.name', $languages, $errors, true);
+        // Given, a name is never empty, whether the product is new or not.
+        $names = self::texts($group, 'name', 'basics.name', $languages, $errors, $nameRequired || array_key_exists('name', $group));
         if ($names !== null) {
             foreach ($names as $idLang => $name) {
                 $name = trim($name);
@@ -808,7 +840,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function productType(array $group, int $combinations, array &$plan, array &$errors): void
+    protected static function productType(array $group, int $combinations, array &$plan, array &$errors): void
     {
         $types = PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\ProductType::AVAILABLE_TYPES;
         $type = $combinations > 0
@@ -844,7 +876,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function categorise(array $group, Shop $shop, array &$plan, array &$errors): void
+    protected static function categorise(array $group, Shop $shop, array &$plan, array &$errors): void
     {
         $categories = self::ids($group['categories'] ?? [], 'id_category', 'categories.categories', $errors);
         $default = array_key_exists('id_category_default', $group) ? self::integer($group['id_category_default']) : null;
@@ -882,7 +914,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function brand(array $group, array &$plan, array &$errors): void
+    protected static function brand(array $group, array &$plan, array &$errors): void
     {
         if (!array_key_exists('id_manufacturer', $group)) {
             return;
@@ -908,7 +940,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, int>
      */
-    private static function relatedProducts($value, int $idShop, array &$errors): array
+    protected static function relatedProducts($value, int $idShop, array &$errors): array
     {
         $ids = array_values(array_unique(self::ids($value ?? [], 'id_product', 'related_products', $errors)));
         if ($ids === []) {
@@ -939,7 +971,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function references(array $group, Product $probe, array &$plan, array &$errors): void
+    protected static function references(array $group, Product $probe, array &$plan, array &$errors): void
     {
         foreach (self::ACCEPTED['references'] as $field) {
             if (!array_key_exists($field, $group)) {
@@ -970,7 +1002,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, array{id_feature: int, id_feature_value: int, value: array<int, string>|null}>
      */
-    private static function features($value, array $languages, array &$errors): array
+    protected static function features($value, array $languages, array &$errors): array
     {
         $features = [];
         $seen = [];
@@ -1025,7 +1057,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, int>|null null when not given
      */
-    private static function attachments($value, array &$errors): ?array
+    protected static function attachments($value, array &$errors): ?array
     {
         if ($value === null) {
             return null;
@@ -1048,7 +1080,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function condition(array $group, Product $probe, array &$plan, array &$errors): void
+    protected static function condition(array $group, Product $probe, array &$plan, array &$errors): void
     {
         if (array_key_exists('condition', $group)) {
             $condition = self::string($group['condition']);
@@ -1071,7 +1103,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function customization(array $group, array $languages, array &$plan, array &$errors): void
+    protected static function customization(array $group, array $languages, array &$plan, array &$errors): void
     {
         $fields = [];
         $probe = new CustomizationField();
@@ -1127,7 +1159,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function stock(array $group, array $languages, Product $probe, array &$plan, array &$errors): void
+    protected static function stock(array $group, array $languages, Product $probe, array &$plan, array &$errors): void
     {
         $plan['stock'] = ['quantity' => null, 'location' => null, 'out_of_stock' => null];
 
@@ -1171,7 +1203,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function shipping(array $group, array $languages, int $idShop, Product $probe, array &$plan, array &$errors): void
+    protected static function shipping(array $group, array $languages, int $idShop, Product $probe, array &$plan, array &$errors): void
     {
         foreach (['width', 'height', 'depth', 'weight', 'additional_shipping_cost'] as $field) {
             self::number($group, $field, $field, 'shipping', $probe, $plan, $errors);
@@ -1224,12 +1256,13 @@ class SomcpToolCreateProduct
      * @param Product $probe
      * @param array<string, mixed> $plan
      * @param array<int, string> $errors
+     * @param bool $creating false when changing a product, which already has a price and a tax rule
      *
      * @return void
      */
-    private static function pricing(array $group, Product $probe, array &$plan, array &$errors): void
+    protected static function pricing(array $group, Product $probe, array &$plan, array &$errors, bool $creating = true): void
     {
-        if (!array_key_exists('price_tax_excl', $group)) {
+        if ($creating && !array_key_exists('price_tax_excl', $group)) {
             $errors[] = 'pricing.price_tax_excl: required, the selling price tax excluded';
         }
         self::number($group, 'price_tax_excl', 'price', 'pricing', $probe, $plan, $errors);
@@ -1251,7 +1284,9 @@ class SomcpToolCreateProduct
         if (!array_key_exists('id_tax_rules_group', $group)) {
             // What the back office preselects on a new product. Saying nothing
             // and storing no tax would sell the product without VAT.
-            $plan['fields']['id_tax_rules_group'] = (int) Product::getIdTaxRulesGroupMostUsed();
+            if ($creating) {
+                $plan['fields']['id_tax_rules_group'] = (int) Product::getIdTaxRulesGroupMostUsed();
+            }
 
             return;
         }
@@ -1273,7 +1308,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function options(array $group, Product $probe, array &$plan, array &$errors): void
+    protected static function options(array $group, Product $probe, array &$plan, array &$errors): void
     {
         if (array_key_exists('visibility', $group)) {
             $visibility = self::string($group['visibility']);
@@ -1296,7 +1331,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function combinations($value, array $languages, array $stock, array &$errors): array
+    protected static function combinations($value, array $languages, array $stock, array &$errors): array
     {
         $items = self::items($value, 'combinations', $errors);
         if ($items === []) {
@@ -1306,8 +1341,6 @@ class SomcpToolCreateProduct
             $errors[] = 'stock.quantity: with combinations, the product quantity is their total; give each combination its quantity';
         }
 
-        $probe = new Combination();
-        $labels = isset(Combination::$definition['fields']['available_now']);
         $combinations = [];
         $sets = [];
         $defaults = 0;
@@ -1315,125 +1348,18 @@ class SomcpToolCreateProduct
         foreach ($items as $i => $item) {
             $path = 'combinations[' . $i . ']';
             self::onlyAccepted($item, 'combination', $path, $errors);
-            $combination = ['fields' => ['minimal_quantity' => 1, 'default_on' => false], 'texts' => [], 'quantity' => null, 'location' => null];
 
-            $attributes = array_values(array_unique(self::ids($item['attributes'] ?? null, 'id_attribute', $path . '.attributes', $errors)));
-            if ($attributes === []) {
-                $errors[] = $path . '.attributes: at least one attribute value, from somcp_list_attributes';
-            }
-            $groups = [];
-            foreach ($attributes as $idAttribute) {
-                $attribute = new ProductAttribute($idAttribute);
-                if (!Validate::isLoadedObject($attribute)) {
-                    $errors[] = $path . '.attributes: no attribute value ' . $idAttribute . '. Take identifiers from somcp_list_attributes.';
-                    continue;
-                }
-                if (isset($groups[(int) $attribute->id_attribute_group])) {
-                    $errors[] = $path . '.attributes: two values of the same attribute group';
-                }
-                $groups[(int) $attribute->id_attribute_group] = true;
-            }
-            sort($attributes);
+            $attributes = self::attributeSet($item['attributes'] ?? null, $path, $errors);
             $set = implode('-', $attributes);
             if ($set !== '' && isset($sets[$set])) {
                 $errors[] = $path . ': the same attributes as combinations[' . $sets[$set] . ']';
             }
             $sets[$set] = $i;
+
+            $combination = self::combinationItem($item, $path, $languages, ['minimal_quantity' => 1, 'default_on' => false], $errors);
             $combination['attributes'] = $attributes;
-
-            if (array_key_exists('default_on', $item)) {
-                $default = self::bool($item['default_on']);
-                if ($default === null) {
-                    $errors[] = $path . '.default_on: true or false';
-                } elseif ($default) {
-                    $combination['fields']['default_on'] = true;
-                    ++$defaults;
-                }
-            }
-
-            foreach (['reference', 'mpn', 'upc', 'ean13', 'isbn'] as $field) {
-                if (!array_key_exists($field, $item)) {
-                    continue;
-                }
-                $code = self::string($item[$field]);
-                $code = $code === null ? null : trim($code);
-                if ($code === null) {
-                    $errors[] = $path . '.' . $field . ': a text';
-                } elseif ($field === 'reference' && (Tools::strlen($code) > self::MAX_REFERENCE || !Validate::isReference($code))) {
-                    // Combination::$definition gives the reference no rule of
-                    // its own; the product's is the one the back office applies.
-                    $errors[] = $path . '.reference: ' . self::MAX_REFERENCE . ' characters at most, no <>;={}';
-                } elseif (($check = $probe->validateField($field, $code)) !== true) {
-                    $errors[] = $path . '.' . $field . ': ' . self::reason($check);
-                } else {
-                    $combination['fields'][$field] = $code;
-                }
-            }
-
-            $numbers = [
-                'price_impact_tax_excl' => 'price',
-                'unit_price_impact_tax_excl' => 'unit_price_impact',
-                'weight_impact' => 'weight',
-                'wholesale_price' => 'wholesale_price',
-            ];
-            foreach ($numbers as $given => $field) {
-                if (!array_key_exists($given, $item)) {
-                    continue;
-                }
-                $number = self::float($item[$given]);
-                if ($number === null) {
-                    $errors[] = $path . '.' . $given . ': a number';
-                } elseif (($check = $probe->validateField($field, $number)) !== true) {
-                    $errors[] = $path . '.' . $given . ': ' . self::reason($check);
-                } else {
-                    $combination['fields'][$field] = $number;
-                }
-            }
-            if (array_key_exists('minimal_quantity', $item)) {
-                $minimal = self::integer($item['minimal_quantity']);
-                if ($minimal === null || $minimal < 1 || $probe->validateField('minimal_quantity', $minimal) !== true) {
-                    $errors[] = $path . '.minimal_quantity: a whole number, 1 or more';
-                } else {
-                    $combination['fields']['minimal_quantity'] = $minimal;
-                }
-            }
-            if (array_key_exists('quantity', $item)) {
-                $quantity = self::integer($item['quantity']);
-                if ($quantity === null) {
-                    $errors[] = $path . '.quantity: a whole number';
-                } else {
-                    $combination['quantity'] = $quantity;
-                }
-            }
-            if (array_key_exists('location', $item)) {
-                $combination['location'] = self::location($item['location'], $path . '.location', $errors);
-            }
-            if (array_key_exists('available_date', $item)) {
-                $date = self::date($item['available_date'], $path . '.available_date', $errors);
-                if ($date !== null) {
-                    $combination['fields']['available_date'] = $date;
-                }
-            }
-            foreach (['available_now', 'available_later'] as $field) {
-                if (!array_key_exists($field, $item)) {
-                    continue;
-                }
-                // PrestaShop 8.0 has no labels per combination: the table came
-                // with 8.1. Dropping them silently would lose what the merchant
-                // typed, so the call says so instead.
-                if (!$labels) {
-                    $errors[] = $path . '.' . $field . ': this PrestaShop version has no labels per combination (they came with 8.1)';
-                    continue;
-                }
-                $texts = self::texts($item, $field, $path . '.' . $field, $languages, $errors);
-                foreach ($texts ?? [] as $idLang => $text) {
-                    if (($check = $probe->validateField($field, $text, $idLang)) !== true) {
-                        $errors[] = $path . '.' . $field . ' (' . $languages['filled'][$idLang] . '): ' . self::reason($check);
-                    }
-                }
-                if ($texts !== null) {
-                    $combination['texts'][$field] = $texts;
-                }
+            if ($combination['fields']['default_on']) {
+                ++$defaults;
             }
 
             $combinations[] = $combination;
@@ -1450,137 +1376,152 @@ class SomcpToolCreateProduct
     }
 
     /**
-     * @param array<string, mixed> $group
-     * @param int $combinations
-     * @param int $idShop
-     * @param array<string, mixed> $plan
+     * The attribute values of one combination, checked and sorted.
+     *
+     * @param mixed $value
+     * @param string $path
      * @param array<int, string> $errors
      *
-     * @return void
+     * @return array<int, int>
      */
-    private static function specificPrices(array $group, int $combinations, int $idShop, array &$plan, array &$errors): void
+    protected static function attributeSet($value, string $path, array &$errors): array
     {
-        $plan['specific_prices'] = [];
-        $plan['priorities'] = null;
-        $probe = new SpecificPrice();
-
-        foreach (self::items($group['rules'] ?? null, 'specific_prices.rules', $errors) as $i => $item) {
-            $path = 'specific_prices.rules[' . $i . ']';
-            self::onlyAccepted($item, 'rule', $path, $errors);
-            $rule = [
-                'combination' => self::position($item, 'combination', $combinations, $path, $errors),
-                'id_currency' => 0,
-                'id_country' => 0,
-                'id_group' => 0,
-                'id_customer' => 0,
-                'from_quantity' => 1,
-                'price' => -1.0,
-                'reduction' => 0.0,
-                'reduction_type' => 'amount',
-                'reduction_tax' => 1,
-                'from' => '0000-00-00 00:00:00',
-                'to' => '0000-00-00 00:00:00',
-            ];
-
-            if (isset($item['currency'])) {
-                $rule['id_currency'] = self::currency($item['currency'], $idShop, $path . '.currency', $errors);
-            }
-            if (isset($item['country'])) {
-                $iso = self::string($item['country']);
-                // Country::getByIso() stops the request on a malformed code
-                // rather than answering false, so the code is checked first.
-                $idCountry = $iso !== null && Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
-                if ($idCountry <= 0) {
-                    $errors[] = $path . '.country: no country with this ISO code';
-                }
-                $rule['id_country'] = $idCountry;
-            }
-            if (isset($item['id_group'])) {
-                $idGroup = self::integer($item['id_group']);
-                if ($idGroup === null || $idGroup < 0 || ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup)))) {
-                    $errors[] = $path . '.id_group: no such customer group. Take identifiers from somcp_list_customer_groups, 0 for all.';
-                }
-                $rule['id_group'] = (int) $idGroup;
-            }
-            if (isset($item['id_customer'])) {
-                $idCustomer = self::integer($item['id_customer']);
-                if ($idCustomer === null || $idCustomer < 0 || ($idCustomer > 0 && !Customer::customerIdExistsStatic($idCustomer))) {
-                    $errors[] = $path . '.id_customer: no such customer, 0 for all';
-                }
-                $rule['id_customer'] = (int) $idCustomer;
-            }
-            if (isset($item['from_quantity'])) {
-                $from = self::integer($item['from_quantity']);
-                if ($from === null || $from < 1) {
-                    $errors[] = $path . '.from_quantity: a whole number, 1 or more';
-                }
-                $rule['from_quantity'] = (int) $from;
-            }
-            if (isset($item['price'])) {
-                $price = self::float($item['price']);
-                if ($price === null || ($price < 0 && $price !== -1.0)) {
-                    $errors[] = $path . '.price: a price tax excluded, or -1 to keep the product price';
-                }
-                $rule['price'] = (float) $price;
-            }
-            if (isset($item['reduction_type'])) {
-                $type = self::string($item['reduction_type']);
-                if (!in_array($type, ['amount', 'percentage'], true)) {
-                    $errors[] = $path . '.reduction_type: amount or percentage';
-                }
-                $rule['reduction_type'] = (string) $type;
-            }
-            if (isset($item['reduction'])) {
-                $reduction = self::float($item['reduction']);
-                if ($reduction === null || $reduction < 0) {
-                    $errors[] = $path . '.reduction: a positive number';
-                } elseif ($rule['reduction_type'] === 'percentage' && $reduction > 1) {
-                    // Stored as a fraction, which is also how somcp_get_product
-                    // returns it. 20 here would be a 2000 % reduction.
-                    $errors[] = $path . '.reduction: for a percentage, the fraction - 0.2 for 20 %';
-                }
-                $rule['reduction'] = (float) $reduction;
-            }
-            if (isset($item['reduction_tax'])) {
-                $tax = self::bool($item['reduction_tax']);
-                if ($tax === null) {
-                    $errors[] = $path . '.reduction_tax: true or false';
-                }
-                $rule['reduction_tax'] = $tax ? 1 : 0;
-            }
-            foreach (['from', 'to'] as $bound) {
-                if (isset($item[$bound])) {
-                    $rule[$bound] = (string) self::dateTime($item[$bound], $path . '.' . $bound, $errors);
-                }
-            }
-            if (strpos($rule['to'], '0000') !== 0 && strpos($rule['from'], '0000') !== 0 && $rule['to'] < $rule['from']) {
-                $errors[] = $path . ': to comes before from';
-            }
-            if ($rule['price'] < 0 && $rule['reduction'] <= 0) {
-                $errors[] = $path . ': neither a price nor a reduction, so the rule would change nothing';
-            }
-            if (($check = $probe->validateField('reduction_type', $rule['reduction_type'])) !== true) {
-                $errors[] = $path . '.reduction_type: ' . self::reason($check);
-            }
-            $plan['specific_prices'][] = $rule;
+        $attributes = array_values(array_unique(self::ids($value, 'id_attribute', $path . '.attributes', $errors)));
+        if ($attributes === []) {
+            $errors[] = $path . '.attributes: at least one attribute value, from somcp_list_attributes';
         }
+        $groups = [];
+        foreach ($attributes as $idAttribute) {
+            $attribute = new ProductAttribute($idAttribute);
+            if (!Validate::isLoadedObject($attribute)) {
+                $errors[] = $path . '.attributes: no attribute value ' . $idAttribute . '. Take identifiers from somcp_list_attributes.';
+                continue;
+            }
+            if (isset($groups[(int) $attribute->id_attribute_group])) {
+                $errors[] = $path . '.attributes: two values of the same attribute group';
+            }
+            $groups[(int) $attribute->id_attribute_group] = true;
+        }
+        sort($attributes);
 
-        if (array_key_exists('priorities', $group)) {
-            $priorities = is_array($group['priorities']) ? array_values(array_filter($group['priorities'], static function ($value): bool {
-                // somcp_get_product lists id_customer first, because the core
-                // always puts it there; it is not the merchant's to order.
-                return $value !== 'id_customer';
-            })) : [];
-            $sorted = $priorities;
-            sort($sorted);
-            $expected = self::PRIORITIES;
-            sort($expected);
-            if ($sorted !== $expected) {
-                $errors[] = 'specific_prices.priorities: each of ' . implode(', ', self::PRIORITIES) . ' once, in the order wanted';
+        return $attributes;
+    }
+
+    /**
+     * The fields of one combination given in the call, on top of $fields.
+     *
+     * Only what the item names is set, so the same reading serves a new
+     * combination, which starts from the defaults, and an existing one, which
+     * starts from nothing and keeps whatever is left out.
+     *
+     * @param array<string, mixed> $item
+     * @param string $path
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param array<string, mixed> $fields the values before this item
+     * @param array<int, string> $errors
+     *
+     * @return array{fields: array<string, mixed>, texts: array<string, array<int, string>>, quantity: int|null, location: string|null}
+     */
+    protected static function combinationItem(array $item, string $path, array $languages, array $fields, array &$errors): array
+    {
+        $probe = new Combination();
+        $combination = ['fields' => $fields, 'texts' => [], 'quantity' => null, 'location' => null];
+
+        if (array_key_exists('default_on', $item)) {
+            $default = self::bool($item['default_on']);
+            if ($default === null) {
+                $errors[] = $path . '.default_on: true or false';
             } else {
-                $plan['priorities'] = $priorities;
+                $combination['fields']['default_on'] = $default;
             }
         }
+
+        foreach (['reference', 'mpn', 'upc', 'ean13', 'isbn'] as $field) {
+            if (!array_key_exists($field, $item)) {
+                continue;
+            }
+            $code = self::string($item[$field]);
+            $code = $code === null ? null : trim($code);
+            if ($code === null) {
+                $errors[] = $path . '.' . $field . ': a text';
+            } elseif ($field === 'reference' && (Tools::strlen($code) > self::MAX_REFERENCE || !Validate::isReference($code))) {
+                // Combination::$definition gives the reference no rule of
+                // its own; the product's is the one the back office applies.
+                $errors[] = $path . '.reference: ' . self::MAX_REFERENCE . ' characters at most, no <>;={}';
+            } elseif (($check = $probe->validateField($field, $code)) !== true) {
+                $errors[] = $path . '.' . $field . ': ' . self::reason($check);
+            } else {
+                $combination['fields'][$field] = $code;
+            }
+        }
+
+        $numbers = [
+            'price_impact_tax_excl' => 'price',
+            'unit_price_impact_tax_excl' => 'unit_price_impact',
+            'weight_impact' => 'weight',
+            'wholesale_price' => 'wholesale_price',
+        ];
+        foreach ($numbers as $given => $field) {
+            if (!array_key_exists($given, $item)) {
+                continue;
+            }
+            $number = self::float($item[$given]);
+            if ($number === null) {
+                $errors[] = $path . '.' . $given . ': a number';
+            } elseif (($check = $probe->validateField($field, $number)) !== true) {
+                $errors[] = $path . '.' . $given . ': ' . self::reason($check);
+            } else {
+                $combination['fields'][$field] = $number;
+            }
+        }
+        if (array_key_exists('minimal_quantity', $item)) {
+            $minimal = self::integer($item['minimal_quantity']);
+            if ($minimal === null || $minimal < 1 || $probe->validateField('minimal_quantity', $minimal) !== true) {
+                $errors[] = $path . '.minimal_quantity: a whole number, 1 or more';
+            } else {
+                $combination['fields']['minimal_quantity'] = $minimal;
+            }
+        }
+        if (array_key_exists('quantity', $item)) {
+            $quantity = self::integer($item['quantity']);
+            if ($quantity === null) {
+                $errors[] = $path . '.quantity: a whole number';
+            } else {
+                $combination['quantity'] = $quantity;
+            }
+        }
+        if (array_key_exists('location', $item)) {
+            $combination['location'] = self::location($item['location'], $path . '.location', $errors);
+        }
+        if (array_key_exists('available_date', $item)) {
+            $date = self::date($item['available_date'], $path . '.available_date', $errors);
+            if ($date !== null) {
+                $combination['fields']['available_date'] = $date;
+            }
+        }
+        foreach (['available_now', 'available_later'] as $field) {
+            if (!array_key_exists($field, $item)) {
+                continue;
+            }
+            // PrestaShop 8.0 has no labels per combination: the table came
+            // with 8.1. Dropping them silently would lose what the merchant
+            // typed, so the call says so instead.
+            if (!isset(Combination::$definition['fields']['available_now'])) {
+                $errors[] = $path . '.' . $field . ': this PrestaShop version has no labels per combination (they came with 8.1)';
+                continue;
+            }
+            $texts = self::texts($item, $field, $path . '.' . $field, $languages, $errors);
+            foreach ($texts ?? [] as $idLang => $text) {
+                if (($check = $probe->validateField($field, $text, $idLang)) !== true) {
+                    $errors[] = $path . '.' . $field . ' (' . $languages['filled'][$idLang] . '): ' . self::reason($check);
+                }
+            }
+            if ($texts !== null) {
+                $combination['texts'][$field] = $texts;
+            }
+        }
+
+        return $combination;
     }
 
     /**
@@ -1592,12 +1533,186 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function suppliers(array $group, int $combinations, int $idShop, array &$plan, array &$errors): void
+    protected static function specificPrices(array $group, int $combinations, int $idShop, array &$plan, array &$errors): void
+    {
+        $plan['specific_prices'] = [];
+        $plan['priorities'] = null;
+
+        foreach (self::items($group['rules'] ?? null, 'specific_prices.rules', $errors) as $i => $item) {
+            $path = 'specific_prices.rules[' . $i . ']';
+            self::onlyAccepted($item, 'rule', $path, $errors);
+            $plan['specific_prices'][] = self::rule($item, $path, [
+                'combination' => null,
+                'id_currency' => 0,
+                'id_country' => 0,
+                'id_group' => 0,
+                'id_customer' => 0,
+                'from_quantity' => 1,
+                'price' => -1.0,
+                'reduction' => 0.0,
+                'reduction_type' => 'amount',
+                'reduction_tax' => 1,
+                'from' => '0000-00-00 00:00:00',
+                'to' => '0000-00-00 00:00:00',
+            ], $combinations, $idShop, $errors);
+        }
+
+        $plan['priorities'] = self::priorities($group, $errors);
+    }
+
+    /**
+     * One specific price: the values given in the call, on top of $rule.
+     *
+     * A new rule starts from the defaults, an existing one from what it holds,
+     * so a value left out keeps its meaning in both cases; the checks that
+     * span several fields run on the result.
+     *
+     * @param array<string, mixed> $item
+     * @param string $path
+     * @param array<string, mixed> $rule the values before this item
+     * @param int $combinations
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return array<string, mixed>
+     */
+    protected static function rule(array $item, string $path, array $rule, int $combinations, int $idShop, array &$errors): array
+    {
+        if (isset($item['combination'])) {
+            $rule['combination'] = self::position($item, 'combination', $combinations, $path, $errors);
+        }
+        if (isset($item['currency'])) {
+            $rule['id_currency'] = self::currency($item['currency'], $idShop, $path . '.currency', $errors);
+        }
+        if (isset($item['country'])) {
+            $iso = self::string($item['country']);
+            // Country::getByIso() stops the request on a malformed code
+            // rather than answering false, so the code is checked first.
+            $idCountry = $iso !== null && Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
+            if ($idCountry <= 0) {
+                $errors[] = $path . '.country: no country with this ISO code';
+            }
+            $rule['id_country'] = $idCountry;
+        }
+        if (isset($item['id_group'])) {
+            $idGroup = self::integer($item['id_group']);
+            if ($idGroup === null || $idGroup < 0 || ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup)))) {
+                $errors[] = $path . '.id_group: no such customer group. Take identifiers from somcp_list_customer_groups, 0 for all.';
+            }
+            $rule['id_group'] = (int) $idGroup;
+        }
+        if (isset($item['id_customer'])) {
+            $idCustomer = self::integer($item['id_customer']);
+            if ($idCustomer === null || $idCustomer < 0 || ($idCustomer > 0 && !Customer::customerIdExistsStatic($idCustomer))) {
+                $errors[] = $path . '.id_customer: no such customer, 0 for all';
+            }
+            $rule['id_customer'] = (int) $idCustomer;
+        }
+        if (isset($item['from_quantity'])) {
+            $from = self::integer($item['from_quantity']);
+            if ($from === null || $from < 1) {
+                $errors[] = $path . '.from_quantity: a whole number, 1 or more';
+            }
+            $rule['from_quantity'] = (int) $from;
+        }
+        if (isset($item['price'])) {
+            $price = self::float($item['price']);
+            if ($price === null || ($price < 0 && $price !== -1.0)) {
+                $errors[] = $path . '.price: a price tax excluded, or -1 to keep the product price';
+            }
+            $rule['price'] = (float) $price;
+        }
+        if (isset($item['reduction_type'])) {
+            $type = self::string($item['reduction_type']);
+            if (!in_array($type, ['amount', 'percentage'], true)) {
+                $errors[] = $path . '.reduction_type: amount or percentage';
+            }
+            $rule['reduction_type'] = (string) $type;
+        }
+        if (isset($item['reduction'])) {
+            $reduction = self::float($item['reduction']);
+            if ($reduction === null || $reduction < 0) {
+                $errors[] = $path . '.reduction: a positive number';
+            }
+            $rule['reduction'] = (float) $reduction;
+        }
+        // Checked on the result rather than on the item: an existing
+        // percentage rule given only a new reduction is still a percentage.
+        if ($rule['reduction_type'] === 'percentage' && (float) $rule['reduction'] > 1) {
+            // Stored as a fraction, which is also how somcp_get_product
+            // returns it. 20 here would be a 2000 % reduction.
+            $errors[] = $path . '.reduction: for a percentage, the fraction - 0.2 for 20 %';
+        }
+        if (isset($item['reduction_tax'])) {
+            $tax = self::bool($item['reduction_tax']);
+            if ($tax === null) {
+                $errors[] = $path . '.reduction_tax: true or false';
+            }
+            $rule['reduction_tax'] = $tax ? 1 : 0;
+        }
+        foreach (['from', 'to'] as $bound) {
+            if (isset($item[$bound])) {
+                $rule[$bound] = (string) self::dateTime($item[$bound], $path . '.' . $bound, $errors);
+            }
+        }
+        if (strpos((string) $rule['to'], '0000') !== 0 && strpos((string) $rule['from'], '0000') !== 0 && $rule['to'] < $rule['from']) {
+            $errors[] = $path . ': to comes before from';
+        }
+        if ((float) $rule['price'] < 0 && (float) $rule['reduction'] <= 0) {
+            $errors[] = $path . ': neither a price nor a reduction, so the rule would change nothing';
+        }
+        if (($check = (new SpecificPrice())->validateField('reduction_type', $rule['reduction_type'])) !== true) {
+            $errors[] = $path . '.reduction_type: ' . self::reason($check);
+        }
+
+        return $rule;
+    }
+
+    /**
+     * The priorities between specific prices, or null when not given.
+     *
+     * @param array<string, mixed> $group
+     * @param array<int, string> $errors
+     *
+     * @return array<int, string>|null
+     */
+    protected static function priorities(array $group, array &$errors): ?array
+    {
+        if (!array_key_exists('priorities', $group)) {
+            return null;
+        }
+        $priorities = is_array($group['priorities']) ? array_values(array_filter($group['priorities'], static function ($value): bool {
+            // somcp_get_product lists id_customer first, because the core
+            // always puts it there; it is not the merchant's to order.
+            return $value !== 'id_customer';
+        })) : [];
+        $sorted = $priorities;
+        sort($sorted);
+        $expected = self::PRIORITIES;
+        sort($expected);
+        if ($sorted !== $expected) {
+            $errors[] = 'specific_prices.priorities: each of ' . implode(', ', self::PRIORITIES) . ' once, in the order wanted';
+
+            return null;
+        }
+
+        return $priorities;
+    }
+
+    /**
+     * @param array<string, mixed> $group
+     * @param int $combinations
+     * @param int $idShop
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function suppliers(array $group, int $combinations, int $idShop, array &$plan, array &$errors): void
     {
         $rows = [];
         $seen = [];
         $known = [];
-        $probe = new ProductSupplier();
         $defaultCurrency = (int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop);
 
         foreach (self::items($group['suppliers'] ?? null, 'suppliers.suppliers', $errors) as $i => $item) {
@@ -1616,35 +1731,13 @@ class SomcpToolCreateProduct
             }
             $seen[$key] = true;
 
-            $row = [
+            $rows[] = self::supplierValues($item, $path, [
                 'id_supplier' => $idSupplier,
                 'combination' => $combination,
                 'product_supplier_reference' => '',
                 'product_supplier_price_te' => 0.0,
                 'id_currency' => $defaultCurrency,
-            ];
-            if (array_key_exists('product_supplier_reference', $item)) {
-                $reference = self::string($item['product_supplier_reference']);
-                if ($reference === null) {
-                    $errors[] = $path . '.product_supplier_reference: a text';
-                } elseif (($check = $probe->validateField('product_supplier_reference', trim($reference))) !== true) {
-                    $errors[] = $path . '.product_supplier_reference: ' . self::reason($check);
-                } else {
-                    $row['product_supplier_reference'] = trim($reference);
-                }
-            }
-            if (array_key_exists('product_supplier_price_te', $item)) {
-                $price = self::float($item['product_supplier_price_te']);
-                if ($price === null || $probe->validateField('product_supplier_price_te', $price) !== true) {
-                    $errors[] = $path . '.product_supplier_price_te: a price tax excluded';
-                } else {
-                    $row['product_supplier_price_te'] = $price;
-                }
-            }
-            if (isset($item['currency'])) {
-                $row['id_currency'] = self::currency($item['currency'], $idShop, $path . '.currency', $errors);
-            }
-            $rows[] = $row;
+            ], $idShop, $errors);
         }
 
         $default = null;
@@ -1687,6 +1780,45 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * The values of one supplier row given in the call, on top of $row.
+     *
+     * @param array<string, mixed> $item
+     * @param string $path
+     * @param array<string, mixed> $row the values before this item
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return array<string, mixed>
+     */
+    protected static function supplierValues(array $item, string $path, array $row, int $idShop, array &$errors): array
+    {
+        $probe = new ProductSupplier();
+        if (array_key_exists('product_supplier_reference', $item)) {
+            $reference = self::string($item['product_supplier_reference']);
+            if ($reference === null) {
+                $errors[] = $path . '.product_supplier_reference: a text';
+            } elseif (($check = $probe->validateField('product_supplier_reference', trim($reference))) !== true) {
+                $errors[] = $path . '.product_supplier_reference: ' . self::reason($check);
+            } else {
+                $row['product_supplier_reference'] = trim($reference);
+            }
+        }
+        if (array_key_exists('product_supplier_price_te', $item)) {
+            $price = self::float($item['product_supplier_price_te']);
+            if ($price === null || $probe->validateField('product_supplier_price_te', $price) !== true) {
+                $errors[] = $path . '.product_supplier_price_te: a price tax excluded';
+            } else {
+                $row['product_supplier_price_te'] = $price;
+            }
+        }
+        if (isset($item['currency'])) {
+            $row['id_currency'] = self::currency($item['currency'], $idShop, $path . '.currency', $errors);
+        }
+
+        return $row;
+    }
+
+    /**
      * @param mixed $value
      * @param int $combinations
      * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
@@ -1694,11 +1826,10 @@ class SomcpToolCreateProduct
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function imagePlan($value, int $combinations, array $languages, array &$errors): array
+    protected static function imagePlan($value, int $combinations, array $languages, array &$errors): array
     {
         $images = [];
         $covers = 0;
-        $probe = new Image();
         foreach (self::items($value, 'images', $errors) as $i => $item) {
             $path = 'images[' . $i . ']';
             self::onlyAccepted($item, 'image', $path, $errors);
@@ -1708,44 +1839,17 @@ class SomcpToolCreateProduct
                 continue;
             }
 
-            $legends = self::texts($item, 'legend', $path . '.legend', $languages, $errors);
-            foreach ($legends ?? [] as $idLang => $legend) {
-                if (($check = $probe->validateField('legend', $legend, $idLang)) !== true) {
-                    $errors[] = $path . '.legend (' . $languages['filled'][$idLang] . '): ' . self::reason($check);
-                }
-            }
-
-            $cover = array_key_exists('cover', $item) ? self::bool($item['cover']) : false;
-            if ($cover === null) {
-                $errors[] = $path . '.cover: true or false';
-            } elseif ($cover) {
+            $fields = self::imageFields($item, $path, $combinations, $languages, $errors);
+            if ($fields['cover'] === true) {
                 ++$covers;
-            }
-
-            $position = null;
-            if (array_key_exists('position', $item)) {
-                $position = self::integer($item['position']);
-                if ($position === null || $position < 1) {
-                    $errors[] = $path . '.position: a whole number from 1';
-                }
-            }
-
-            $illustrated = [];
-            foreach (self::items($item['combinations'] ?? null, $path . '.combinations', $errors, false) as $index) {
-                $index = self::integer($index);
-                if ($index === null || $index < 0 || $index >= $combinations) {
-                    $errors[] = $path . '.combinations: not a position in combinations (from 0 to ' . max(0, $combinations - 1) . ')';
-                    continue;
-                }
-                $illustrated[] = $index;
             }
 
             $images[] = [
                 'url' => trim($url),
-                'legend' => $legends,
-                'cover' => (bool) $cover,
-                'order' => [$position ?? PHP_INT_MAX, $i],
-                'combinations' => array_values(array_unique($illustrated)),
+                'legend' => $fields['legend'],
+                'cover' => (bool) $fields['cover'],
+                'order' => [$fields['position'] ?? PHP_INT_MAX, $i],
+                'combinations' => $fields['combinations'] ?? [],
             ];
         }
         if ($covers > 1) {
@@ -1761,6 +1865,61 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * What one image item says besides its address, each null when left out.
+     *
+     * @param array<string, mixed> $item
+     * @param string $path
+     * @param int $combinations
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param array<int, string> $errors
+     *
+     * @return array{legend: array<int, string>|null, cover: bool|null, position: int|null, combinations: array<int, int>|null}
+     */
+    protected static function imageFields(array $item, string $path, int $combinations, array $languages, array &$errors): array
+    {
+        $probe = new Image();
+        $legends = self::texts($item, 'legend', $path . '.legend', $languages, $errors);
+        foreach ($legends ?? [] as $idLang => $legend) {
+            if (($check = $probe->validateField('legend', $legend, $idLang)) !== true) {
+                $errors[] = $path . '.legend (' . $languages['filled'][$idLang] . '): ' . self::reason($check);
+            }
+        }
+
+        $cover = null;
+        if (array_key_exists('cover', $item)) {
+            $cover = self::bool($item['cover']);
+            if ($cover === null) {
+                $errors[] = $path . '.cover: true or false';
+            }
+        }
+
+        $position = null;
+        if (array_key_exists('position', $item)) {
+            $position = self::integer($item['position']);
+            if ($position === null || $position < 1) {
+                $errors[] = $path . '.position: a whole number from 1';
+                $position = null;
+            }
+        }
+
+        $illustrated = null;
+        if (array_key_exists('combinations', $item)) {
+            $illustrated = [];
+            foreach (self::items($item['combinations'], $path . '.combinations', $errors, false) as $index) {
+                $index = self::integer($index);
+                if ($index === null || $index < 0 || $index >= $combinations) {
+                    $errors[] = $path . '.combinations: not a position in combinations (from 0 to ' . max(0, $combinations - 1) . ')';
+                    continue;
+                }
+                $illustrated[] = $index;
+            }
+            $illustrated = array_values(array_unique($illustrated));
+        }
+
+        return ['legend' => $legends, 'cover' => $cover, 'position' => $position, 'combinations' => $illustrated];
+    }
+
+    /**
      * @param array<string, mixed> $group
      * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
      * @param int $idShop
@@ -1770,7 +1929,53 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function seo(array $group, array $languages, int $idShop, Product $probe, array &$plan, array &$errors): void
+    protected static function seo(array $group, array $languages, int $idShop, Product $probe, array &$plan, array &$errors): void
+    {
+        self::metaTexts($group, $languages, $probe, $plan, $errors);
+
+        // The friendly URL is never empty in any language: given, it goes
+        // through the same conversion the back office applies; left out, it is
+        // made from the name.
+        $given = self::texts($group, 'link_rewrite', 'seo.link_rewrite', $languages, $errors) ?? [];
+        $sources = [];
+        foreach (array_keys($languages['filled']) as $idLang) {
+            if (isset($given[$idLang])) {
+                $sources[$idLang] = [$given[$idLang], 'it'];
+            } elseif (isset($plan['texts']['name'][$idLang])) {
+                $sources[$idLang] = [$plan['texts']['name'][$idLang], 'the name'];
+            }
+        }
+        $plan['texts']['link_rewrite'] = self::linkRewrites($sources, $languages, $probe, $errors);
+
+        if (array_key_exists('redirect_type', $group)) {
+            $type = self::redirectType($group['redirect_type'], $errors);
+            if ($type !== null) {
+                $plan['fields']['redirect_type'] = $type;
+            }
+        }
+        $target = array_key_exists('id_type_redirected', $group) ? self::integer($group['id_type_redirected']) : 0;
+        if ($target === null || $target < 0) {
+            $errors[] = 'seo.id_type_redirected: an identifier';
+            $target = 0;
+        }
+        self::redirection((string) ($plan['fields']['redirect_type'] ?? ''), $target, $idShop, $errors);
+        if ($target > 0) {
+            $plan['fields']['id_type_redirected'] = $target;
+        }
+    }
+
+    /**
+     * The meta title, description and keywords given in the call.
+     *
+     * @param array<string, mixed> $group
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param Product $probe
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function metaTexts(array $group, array $languages, Product $probe, array &$plan, array &$errors): void
     {
         $limits = ['meta_title' => self::META_TITLE_MAX, 'meta_description' => self::META_DESCRIPTION_MAX];
         foreach ($limits as $field => $max) {
@@ -1809,20 +2014,26 @@ class SomcpToolCreateProduct
                 }
             }
         }
+    }
 
-        // The friendly URL is never empty in any language: given, it goes
-        // through the same conversion the back office applies; left out, it is
-        // made from the name.
-        $given = self::texts($group, 'link_rewrite', 'seo.link_rewrite', $languages, $errors) ?? [];
+    /**
+     * Friendly URLs, converted the way the back office converts them.
+     *
+     * @param array<int, array{0: string, 1: string}> $sources by language: the text to convert, and what it is
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param Product $probe
+     * @param array<int, string> $errors
+     *
+     * @return array<int, string>
+     */
+    protected static function linkRewrites(array $sources, array $languages, Product $probe, array &$errors): array
+    {
         $rewrites = [];
-        foreach (array_keys($languages['filled']) as $idLang) {
-            $source = $given[$idLang] ?? ($plan['texts']['name'][$idLang] ?? '');
+        foreach ($sources as $idLang => [$source, $what]) {
             $rewrite = (string) Tools::str2url($source);
             $where = 'seo.link_rewrite (' . $languages['filled'][$idLang] . ')';
             if ($rewrite === '') {
-                if (isset($plan['texts']['name'][$idLang])) {
-                    $errors[] = $where . ': nothing usable could be made from ' . (isset($given[$idLang]) ? 'it' : 'the name') . '; give one';
-                }
+                $errors[] = $where . ': nothing usable could be made from ' . $what . '; give one';
                 continue;
             }
             if (!Validate::isLinkRewrite($rewrite) || ($check = $probe->validateField('link_rewrite', $rewrite, $idLang)) !== true) {
@@ -1831,23 +2042,41 @@ class SomcpToolCreateProduct
             }
             $rewrites[$idLang] = $rewrite;
         }
-        $plan['texts']['link_rewrite'] = $rewrites;
 
-        if (array_key_exists('redirect_type', $group)) {
-            $types = array_values(PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\RedirectType::AVAILABLE_REDIRECT_TYPES);
-            $type = self::string($group['redirect_type']);
-            if ($type === null || !in_array($type, $types, true)) {
-                $errors[] = 'seo.redirect_type: one of ' . implode(', ', $types) . ' on this version';
-            } else {
-                $plan['fields']['redirect_type'] = $type;
-            }
+        return $rewrites;
+    }
+
+    /**
+     * @param mixed $value
+     * @param array<int, string> $errors
+     *
+     * @return string|null
+     */
+    protected static function redirectType($value, array &$errors): ?string
+    {
+        $types = array_values(PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\RedirectType::AVAILABLE_REDIRECT_TYPES);
+        $type = self::string($value);
+        if ($type === null || !in_array($type, $types, true)) {
+            $errors[] = 'seo.redirect_type: one of ' . implode(', ', $types) . ' on this version';
+
+            return null;
         }
-        $target = array_key_exists('id_type_redirected', $group) ? self::integer($group['id_type_redirected']) : 0;
-        if ($target === null || $target < 0) {
-            $errors[] = 'seo.id_type_redirected: an identifier';
-            $target = 0;
-        }
-        $type = (string) ($plan['fields']['redirect_type'] ?? '');
+
+        return $type;
+    }
+
+    /**
+     * Whether a redirection and its target go together.
+     *
+     * @param string $type
+     * @param int $target
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function redirection(string $type, int $target, int $idShop, array &$errors): void
+    {
         if (in_array($type, ['301-product', '302-product'], true)) {
             $exists = $target > 0 && (bool) Db::getInstance()->getValue(
                 'SELECT 1 FROM `' . _DB_PREFIX_ . 'product_shop` WHERE `id_product` = ' . (int) $target . ' AND `id_shop` = ' . (int) $idShop
@@ -1863,9 +2092,6 @@ class SomcpToolCreateProduct
         } elseif ($target > 0) {
             $errors[] = 'seo.id_type_redirected: only a 301 or 302 redirection goes somewhere';
         }
-        if ($target > 0) {
-            $plan['fields']['id_type_redirected'] = $target;
-        }
     }
 
     /**
@@ -1876,7 +2102,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function uniqueReferences(array $plan, array &$errors): void
+    protected static function uniqueReferences(array $plan, array &$errors): void
     {
         $references = [];
         if (($plan['fields']['reference'] ?? '') !== '') {
@@ -1888,6 +2114,20 @@ class SomcpToolCreateProduct
             }
         }
 
+        self::referencesFree($references, 0, $errors);
+    }
+
+    /**
+     * References given once in the call, and used by no other product or its combinations.
+     *
+     * @param array<string, string> $references by the path they were given at
+     * @param int $idProduct the product being changed, whose own references do not count; 0 for a new one
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function referencesFree(array $references, int $idProduct, array &$errors): void
+    {
         $counts = array_count_values($references);
         foreach ($references as $path => $reference) {
             if ($counts[$reference] > 1) {
@@ -1896,11 +2136,13 @@ class SomcpToolCreateProduct
             }
             $taken = Db::getInstance()->getValue(
                 'SELECT 1 FROM `' . _DB_PREFIX_ . "product` WHERE `reference` = '" . pSQL($reference) . "'"
+                . ' AND `id_product` != ' . (int) $idProduct
                 . ' UNION SELECT 1 FROM `' . _DB_PREFIX_ . "product_attribute` WHERE `reference` = '" . pSQL($reference) . "'"
+                . ' AND `id_product` != ' . (int) $idProduct
             );
             if ($taken) {
-                $errors[] = $path . ': "' . $reference . '" is already used by another product or combination. '
-                    . 'If this product was just created by a call whose answer was lost, find it with somcp_search_products.';
+                $errors[] = $path . ': "' . $reference . '" is already used by another product or combination'
+                    . ($idProduct > 0 ? '.' : '. If this product was just created by a call whose answer was lost, find it with somcp_search_products.');
             }
         }
     }
@@ -1914,7 +2156,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, int> combination identifiers, by position
      */
-    private static function write(Product $product, array $plan, int $idShop): array
+    protected static function write(Product $product, array $plan, int $idShop): array
     {
         $languages = $plan['languages'];
         self::fill($product, $plan['fields'] + self::completeTexts($plan['texts'], $languages));
@@ -1983,7 +2225,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function writeFeatures(int $idProduct, array $features, array $languages): void
+    protected static function writeFeatures(int $idProduct, array $features, array $languages): void
     {
         foreach ($features as $feature) {
             $idValue = $feature['id_feature_value'];
@@ -2015,7 +2257,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function writeCustomization(int $idProduct, array $fields, array $languages, int $idShop): void
+    protected static function writeCustomization(int $idProduct, array $fields, array $languages, int $idShop): void
     {
         foreach ($fields as $field) {
             $customization = new CustomizationField();
@@ -2041,7 +2283,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, int>
      */
-    private static function writeCombinations(Product $product, array $combinations, array $languages, int $idShop): array
+    protected static function writeCombinations(Product $product, array $combinations, array $languages, int $idShop): array
     {
         $ids = [];
         $default = 0;
@@ -2085,7 +2327,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function writeSuppliers(int $idProduct, array $suppliers, array $combinationIds): void
+    protected static function writeSuppliers(int $idProduct, array $suppliers, array $combinationIds): void
     {
         foreach ($suppliers as $row) {
             $supplier = new ProductSupplier();
@@ -2111,7 +2353,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function writeSpecificPrices(int $idProduct, array $plan, array $combinationIds, int $idShop): void
+    protected static function writeSpecificPrices(int $idProduct, array $plan, array $combinationIds, int $idShop): void
     {
         foreach ($plan['specific_prices'] as $i => $rule) {
             $price = new SpecificPrice();
@@ -2142,7 +2384,7 @@ class SomcpToolCreateProduct
      *
      * @return bool true when a product was left behind
      */
-    private static function rollback(Product $product): bool
+    protected static function rollback(Product $product): bool
     {
         if ((int) $product->id <= 0) {
             return false;
@@ -2167,7 +2409,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function images(Product $product, array $plan, array $combinationIds, int $idShop): array
+    protected static function images(Product $product, array $plan, array $combinationIds, int $idShop): array
     {
         $report = [];
         $created = [];
@@ -2229,7 +2471,7 @@ class SomcpToolCreateProduct
      *
      * @return int the image identifier, 0 when refused
      */
-    private static function addImage(Product $product, array $plan, int $position, array $languages, int $idShop, ?string &$refusal): int
+    protected static function addImage(Product $product, array $plan, int $position, array $languages, int $idShop, ?string &$refusal): int
     {
         $refusal = null;
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
@@ -2292,7 +2534,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function thumbnails(string $source, string $path): void
+    protected static function thumbnails(string $source, string $path): void
     {
         // PrestaShop 8.1 added image formats besides JPEG, chosen in the
         // settings; the JPEG is always made, the others when switched on.
@@ -2349,7 +2591,7 @@ class SomcpToolCreateProduct
      *
      * @return string empty on success, the reason otherwise
      */
-    private static function download(string $url, string $target): string
+    protected static function download(string $url, string $target): string
     {
         $parts = parse_url($url);
         if (!is_array($parts) || Tools::strtolower((string) ($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) {
@@ -2439,7 +2681,7 @@ class SomcpToolCreateProduct
      *
      * @return string empty when the file is an image the shop can use
      */
-    private static function checkImage(string $file): string
+    protected static function checkImage(string $file): string
     {
         $info = @getimagesize($file);
         $type = is_array($info) ? (int) $info[2] : 0;
@@ -2461,7 +2703,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, string>
      */
-    private static function resolve(string $host): array
+    protected static function resolve(string $host): array
     {
         if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
             return [$host];
@@ -2500,7 +2742,7 @@ class SomcpToolCreateProduct
      *
      * @return bool
      */
-    private static function isPublic(string $address): bool
+    protected static function isPublic(string $address): bool
     {
         $packed = @inet_pton($address);
         if ($packed === false) {
@@ -2544,7 +2786,7 @@ class SomcpToolCreateProduct
      *
      * @return array<string, array<int, string>>
      */
-    private static function seoWarnings(Product $product, array $plan, int $idShop): array
+    protected static function seoWarnings(Product $product, array $plan, int $idShop): array
     {
         $warnings = [];
         foreach ($plan['languages']['filled'] as $idLang => $iso) {
@@ -2591,7 +2833,7 @@ class SomcpToolCreateProduct
      *
      * @return mixed
      */
-    private static function read(int $idProduct, string $iso, array $context)
+    protected static function read(int $idProduct, string $iso, array $context)
     {
         $result = SomcpToolGetProduct::handle(['id_product' => $idProduct, 'language' => $iso], $context);
         $text = (string) ($result['content'][0]['text'] ?? '');
@@ -2610,7 +2852,7 @@ class SomcpToolCreateProduct
      *
      * @return array<string, mixed>
      */
-    private static function group(array $arguments, string $name, array &$errors): array
+    protected static function group(array $arguments, string $name, array &$errors): array
     {
         if (!array_key_exists($name, $arguments)) {
             return [];
@@ -2636,7 +2878,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function onlyAccepted(array $item, string $kind, string $path, array &$errors): void
+    protected static function onlyAccepted(array $item, string $kind, string $path, array &$errors): void
     {
         foreach (array_keys($item) as $key) {
             $key = (string) $key;
@@ -2659,7 +2901,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, mixed>
      */
-    private static function items($value, string $path, array &$errors, bool $objects = true): array
+    protected static function items($value, string $path, array &$errors, bool $objects = true): array
     {
         if ($value === null || $value === []) {
             return [];
@@ -2694,7 +2936,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, int>
      */
-    private static function ids($value, string $key, string $path, array &$errors): array
+    protected static function ids($value, string $key, string $path, array &$errors): array
     {
         $ids = [];
         foreach (self::items($value, $path, $errors, false) as $item) {
@@ -2721,7 +2963,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, string>|null by language identifier, null when not given
      */
-    private static function texts(array $group, string $field, string $path, array $languages, array &$errors, bool $required = false): ?array
+    protected static function texts(array $group, string $field, string $path, array $languages, array &$errors, bool $required = false): ?array
     {
         $value = $group[$field] ?? null;
         $isos = implode(', ', $languages['filled']);
@@ -2778,7 +3020,7 @@ class SomcpToolCreateProduct
      *
      * @return bool whether it was given
      */
-    private static function labels(array $group, string $field, string $groupName, array $languages, Product $probe, array &$plan, array &$errors): bool
+    protected static function labels(array $group, string $field, string $groupName, array $languages, Product $probe, array &$plan, array &$errors): bool
     {
         $texts = self::texts($group, $field, $groupName . '.' . $field, $languages, $errors);
         if ($texts === null) {
@@ -2803,7 +3045,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, string>
      */
-    private static function complete(array $texts, array $languages): array
+    protected static function complete(array $texts, array $languages): array
     {
         $fallback = $texts[$languages['fallback']] ?? '';
         $complete = [];
@@ -2820,7 +3062,7 @@ class SomcpToolCreateProduct
      *
      * @return array<string, array<int, string>>
      */
-    private static function completeTexts(array $texts, array $languages): array
+    protected static function completeTexts(array $texts, array $languages): array
     {
         $complete = [];
         foreach ($texts as $field => $values) {
@@ -2839,7 +3081,7 @@ class SomcpToolCreateProduct
      *
      * @return string
      */
-    private static function html(string $html, string $path, array &$errors): string
+    protected static function html(string $html, string $path, array &$errors): string
     {
         $html = (string) Tools::purifyHTML(trim($html));
         if (!Validate::isCleanHtml($html, (bool) Configuration::get('PS_ALLOW_HTML_IFRAME'))) {
@@ -2856,7 +3098,7 @@ class SomcpToolCreateProduct
      *
      * @return int
      */
-    private static function visibleLength(string $html): int
+    protected static function visibleLength(string $html): int
     {
         $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
@@ -2876,7 +3118,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function number(array $group, string $given, string $field, string $groupName, Product $probe, array &$plan, array &$errors): void
+    protected static function number(array $group, string $given, string $field, string $groupName, Product $probe, array &$plan, array &$errors): void
     {
         if (!array_key_exists($given, $group)) {
             return;
@@ -2899,7 +3141,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function boolean(array $group, string $field, string $groupName, array &$plan, array &$errors): void
+    protected static function boolean(array $group, string $field, string $groupName, array &$plan, array &$errors): void
     {
         if (!array_key_exists($field, $group)) {
             return;
@@ -2924,7 +3166,7 @@ class SomcpToolCreateProduct
      *
      * @return int|null null when not given
      */
-    private static function position(array $item, string $key, int $combinations, string $path, array &$errors): ?int
+    protected static function position(array $item, string $key, int $combinations, string $path, array &$errors): ?int
     {
         if (!isset($item[$key])) {
             return null;
@@ -2947,7 +3189,7 @@ class SomcpToolCreateProduct
      *
      * @return int
      */
-    private static function currency($value, int $idShop, string $path, array &$errors): int
+    protected static function currency($value, int $idShop, string $path, array &$errors): int
     {
         $iso = self::string($value);
         $id = $iso !== null && preg_match('/^[A-Za-z]{3}$/', $iso) ? (int) Currency::getIdByIsoCode(Tools::strtoupper($iso), $idShop) : 0;
@@ -2964,7 +3206,7 @@ class SomcpToolCreateProduct
      *
      * @return bool
      */
-    private static function supplierExists(int $idSupplier, array &$known): bool
+    protected static function supplierExists(int $idSupplier, array &$known): bool
     {
         if (!isset($known[$idSupplier])) {
             $known[$idSupplier] = $idSupplier > 0 && Validate::isLoadedObject(new Supplier($idSupplier));
@@ -2980,7 +3222,7 @@ class SomcpToolCreateProduct
      *
      * @return string|null
      */
-    private static function location($value, string $path, array &$errors): ?string
+    protected static function location($value, string $path, array &$errors): ?string
     {
         $location = self::string($value);
         if ($location === null || !Validate::isString($location) || Tools::strlen(trim($location)) > 255) {
@@ -2999,7 +3241,7 @@ class SomcpToolCreateProduct
      *
      * @return string|null YYYY-MM-DD
      */
-    private static function date($value, string $path, array &$errors): ?string
+    protected static function date($value, string $path, array &$errors): ?string
     {
         $date = self::string($value);
         $date = $date === null ? '' : Tools::substr(trim($date), 0, 10);
@@ -3020,7 +3262,7 @@ class SomcpToolCreateProduct
      *
      * @return string|null YYYY-MM-DD HH:MM:SS
      */
-    private static function dateTime($value, string $path, array &$errors): ?string
+    protected static function dateTime($value, string $path, array &$errors): ?string
     {
         $text = self::string($value);
         // ISO 8601 as the conventions say, written the way MySQL stores it;
@@ -3039,7 +3281,7 @@ class SomcpToolCreateProduct
      *
      * @return int|null
      */
-    private static function integer($value): ?int
+    protected static function integer($value): ?int
     {
         if (is_int($value)) {
             return $value;
@@ -3059,7 +3301,7 @@ class SomcpToolCreateProduct
      *
      * @return float|null
      */
-    private static function float($value): ?float
+    protected static function float($value): ?float
     {
         if (is_int($value) || is_float($value)) {
             return is_finite((float) $value) ? (float) $value : null;
@@ -3076,7 +3318,7 @@ class SomcpToolCreateProduct
      *
      * @return bool|null
      */
-    private static function bool($value): ?bool
+    protected static function bool($value): ?bool
     {
         if (is_bool($value)) {
             return $value;
@@ -3093,7 +3335,7 @@ class SomcpToolCreateProduct
      *
      * @return string|null
      */
-    private static function string($value): ?string
+    protected static function string($value): ?string
     {
         if (is_string($value)) {
             return $value;
@@ -3112,7 +3354,7 @@ class SomcpToolCreateProduct
      *
      * @return string
      */
-    private static function reason($check): string
+    protected static function reason($check): string
     {
         return is_string($check) ? strip_tags($check) : 'not accepted by PrestaShop';
     }
@@ -3129,7 +3371,7 @@ class SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function fill(ObjectModel $object, array $values): void
+    protected static function fill(ObjectModel $object, array $values): void
     {
         foreach ($values as $field => $value) {
             $object->{$field} = $value;

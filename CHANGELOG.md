@@ -61,6 +61,18 @@ fetched is reported without stopping the creation. It needs the new
 permission `mcp.catalog.write`, which the consent screen describes as changing
 the catalogue, and the `add` right on the back office products page.
 
+**Changing a product.** The new tool `somcp_update_product` changes one
+existing product with everything the creation can write, under the same names
+and with the same rules: texts, categories, prices, stock, SEO, suppliers,
+specific prices, images and combinations. Only what you give changes; a text
+given in one language leaves the others as they are, and combinations, images,
+specific prices and suppliers are only removed when you name them. The answer
+lists every field changed with its old and new value, and a call that would
+change nothing writes nothing. Every problem is listed before anything is
+written; if writing still fails, the answer says which parts were already
+saved. It needs the permission `mcp.catalog.write` and the `edit` right on the
+back office products page.
+
 **Manage products prompt.** A guided task for the catalogue, picked from the
 assistant's menu: search before reading, never guess an identifier, always say
 whether a price is with or without tax.

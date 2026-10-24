@@ -10,6 +10,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_search_products`
 - `somcp_get_product`
 - `somcp_create_product`
+- `somcp_update_product`
 
 ## Know which shop you are in
 
@@ -87,6 +88,31 @@ The answer lists every problem at once when the call is refused; nothing was
 created then. When it succeeds, show the merchant the product as returned,
 the `seo_warnings`, and any image in `images` that was refused, with its
 reason.
+
+## Changing a product
+
+`somcp_update_product` changes one existing product. Before calling it:
+
+1. Read the product with `somcp_get_product`, so you change what the shop
+   holds and not what you remember of it.
+2. Give only what changes. A list that is a set - categories, carriers,
+   features, related products, documents, customization fields - replaces the
+   current one: give the whole set, not just what is added. Combinations,
+   images, specific prices and suppliers are only removed when named in their
+   `remove_` list; name each one to the merchant first, since a removed
+   combination takes its stock with it.
+3. To change a text in one language, pass `languages` with that language
+   alone; otherwise every language of the shop must be given. A new
+   `link_rewrite` on an active product breaks the old address of its page:
+   say so before.
+4. Show the merchant what will change, with the old value next to the new one,
+   and call once they agree.
+
+The answer lists each field changed with its old and new value: show it to the
+merchant, with the `seo_warnings` and any refused image. `changed: false`
+means the product already held those values and nothing was written. If the
+call fails part way, the answer names what was already saved: read the
+product again and tell the merchant before anything else.
 
 ## Do not use when
 

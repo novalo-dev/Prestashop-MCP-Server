@@ -702,6 +702,11 @@
       <source>Create a product</source>
       <target>Ein Produkt anlegen</target>
     </trans-unit>
+    <!-- Change a product -->
+    <trans-unit id="85221eebca91d164871f6305e28cb859" resname="Change a product">
+      <source>Change a product</source>
+      <target>Ein Produkt ändern</target>
+    </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">
       <source>Change the status of an order</source>

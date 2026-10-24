@@ -19,8 +19,9 @@ are:
 ### Changed
 
 **Settings page.** The page was one long column of panels. It is now split
-into five tabs, drawn with PrestaShop's own tabs and panels: Configuration,
-Tools and prompts, Access and security, Connected assistants, Security log.
+into six tabs, drawn with PrestaShop's own tabs and panels: Configuration,
+Tools and prompts, Access and security, Connected assistants, Security log,
+Help and updates.
 The switch that turns the MCP server on and off leads the first tab and saves
 as soon as it moves, without a trip to the Save button. The address to give an
 assistant now sits in a regular back office field with its Copy button, on
@@ -253,9 +254,18 @@ movement, which is never repeated on a lost answer.
 assistant's menu: search before reading, never guess an identifier, always say
 whether a price is with or without tax.
 
-**Feedback and source code.** A card at the bottom of the settings page leads
-to the module's GitHub repository, to report a problem, suggest a tool or read
-the code.
+**Feedback and source code.** A card in the Help and updates tab leads to the
+module's GitHub repository, to report a problem, suggest a tool or read the
+code.
+
+**New version alert.** The Help and updates tab shows the installed version
+and the latest one published on GitHub. When a newer version exists, the tab
+title shows its number and the tab lists the main changes, with a button to
+download the zip and the steps to install it from the Module Manager, which
+keeps your settings and connected assistants. The module asks GitHub at most
+once a day, only while an administrator has the settings page open, and a
+Check now button asks again on demand. It never downloads or installs anything
+by itself. A switch in the same tab turns the check off.
 
 ## 1.0.0 - Initial version
 

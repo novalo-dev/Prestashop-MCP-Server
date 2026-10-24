@@ -75,6 +75,7 @@ class Somcp extends Module
         'SomcpPromptRegistry',
         'SomcpContract',
         'SomcpDiagnostic',
+        'SomcpUpdate',
     ];
 
     /** @var array<int, string> */
@@ -280,6 +281,7 @@ class Somcp extends Module
         $this->undeclareToolHook();
         SomcpUpload::removeStore();
         SomcpConfig::purge();
+        SomcpUpdate::purge();
 
         return parent::uninstall();
     }
@@ -334,8 +336,8 @@ class Somcp extends Module
     /**
      * The settings page.
      *
-     * Everything lives here, in one page with one Save button: a module whose
-     * whole job is one endpoint and one authorization flow does not need tabs.
+     * Everything lives here, in one page split into tabs. Every action posts
+     * back to this page and is redirected, so a reload never repeats it.
      *
      * @return string
      */
@@ -374,6 +376,22 @@ class Somcp extends Module
             $this->flash($this->trans('The log has been emptied.', [], 'Modules.Somcp.Admin'));
             $this->redirectToSelf();
         }
+        if (Tools::isSubmit('submitSomcpUpdateSwitch')) {
+            SomcpUpdate::setOn(Tools::getValue(SomcpUpdate::CHECK) === '1');
+            $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpUpdateCheck')) {
+            $checked = SomcpUpdate::state($this->version, true);
+            if ($checked['failed']) {
+                $this->flash($this->trans('GitHub could not be reached. Try again later.', [], 'Modules.Somcp.Admin'));
+            } elseif ($checked['available']) {
+                $this->flash($this->trans('Version %version% is available.', ['%version%' => $checked['latest']], 'Modules.Somcp.Admin'));
+            } else {
+                $this->flash($this->trans('You have the latest version.', [], 'Modules.Somcp.Admin'));
+            }
+            $this->redirectToSelf();
+        }
         if (Tools::isSubmit('submitSomcpDiagnostic')) {
             // Redirected like every other action on this page, with the chosen
             // shop carried in the address. Running the checks straight from the
@@ -400,11 +418,20 @@ class Somcp extends Module
 
         $this->readFlash();
 
+        $update = SomcpUpdate::state($this->version);
+
         $this->context->smarty->assign([
             'somcp_form_action' => $this->selfUrl(),
             'somcp_name' => $this->displayName,
             'somcp_version' => $this->version,
             'somcp_repository' => self::REPOSITORY,
+            'somcp_update' => $update,
+            // Formatted here, in the employee's language, rather than in the
+            // template: Smarty's date modifier knows nothing of the back
+            // office date formats.
+            'somcp_update_checked' => $update['checked'] > 0
+                ? date((string) $this->context->language->date_format_full, $update['checked'])
+                : '',
             'somcp_settings' => $this->currentSettings(),
             'somcp_profiles' => Profile::getProfiles((int) $this->context->language->id),
             'somcp_diagnostic' => $diagnostic,

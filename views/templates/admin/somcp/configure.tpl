@@ -42,6 +42,12 @@
             </a>
         </li>
         <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-log" role="tab" data-somcp-tab="log">{l s='Security log' d='Modules.Somcp.Admin'}</a></li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#somcp-pane-help" role="tab" data-somcp-tab="help">
+                {l s='Help and updates' d='Modules.Somcp.Admin'}
+                {if $somcp_update.available}<span class="badge badge-info">{$somcp_update.latest|escape:'html':'UTF-8'}</span>{/if}
+            </a>
+        </li>
     </ul>
 
     <div class="somcp-pane" id="somcp-pane-config" data-somcp-pane="config" role="tabpanel">
@@ -502,15 +508,97 @@
         </div>
     </div>
 
-    <div class="panel">
-        <div class="panel-heading"><i class="icon-comments"></i> {l s='Share your feedback' d='Modules.Somcp.Admin'}</div>
-        <p>{l s='A bug, an idea, a tool you are missing? The module is built in the open on GitHub: tell us there.' d='Modules.Somcp.Admin'}</p>
-        <a class="btn btn-default" href="{$somcp_repository|escape:'html':'UTF-8'}/issues/new/choose" target="_blank" rel="noopener noreferrer">
-            <i class="icon-comment"></i> {l s='Give feedback' d='Modules.Somcp.Admin'}
-        </a>
-        <a class="btn btn-default" href="{$somcp_repository|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">
-            <i class="icon-github"></i> {l s='Source code' d='Modules.Somcp.Admin'}
-        </a>
+    {* Updates are announced, never applied: the module does not download or
+       replace its own code. The merchant uploads the archive in the Module
+       Manager, which upgrades the module in place and keeps its settings. *}
+    <div class="somcp-pane" id="somcp-pane-help" data-somcp-pane="help" role="tabpanel" hidden>
+        <div class="panel">
+            <div class="panel-heading"><i class="icon-refresh"></i> {l s='Updates' d='Modules.Somcp.Admin'}</div>
+            <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="form-horizontal">
+                <div class="form-group">
+                    <label class="control-label col-lg-4">{l s='Installed version' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-8"><p class="form-control-static">{$somcp_update.installed|escape:'html':'UTF-8'}</p></div>
+                </div>
+            {if $somcp_update.enabled}
+                <div class="form-group">
+                    <label class="control-label col-lg-4">{l s='Latest version' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-8">
+                        <p class="form-control-static">
+                        {if $somcp_update.failed}
+                            <span class="text-muted">{l s='Unknown: GitHub could not be reached.' d='Modules.Somcp.Admin'}</span>
+                        {elseif $somcp_update.latest}
+                            {$somcp_update.latest|escape:'html':'UTF-8'}
+                        {/if}
+                        {if $somcp_update_checked}
+                            <br><small class="text-muted">{l s='Checked on %date%' sprintf=['%date%' => $somcp_update_checked] d='Modules.Somcp.Admin'}</small>
+                        {/if}
+                        </p>
+                    </div>
+                </div>
+            {/if}
+                <div class="form-group">
+                    <label class="control-label col-lg-4">{l s='Check for new versions' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-8">
+                        <span class="switch prestashop-switch fixed-width-lg">
+                            <input type="radio" data-somcp-autosave="submitSomcpUpdateSwitch" name="SOMCP_UPDATE_CHECK" id="SOMCP_UPDATE_CHECK_on" value="1"{if $somcp_update.enabled} checked{/if}>
+                            <label for="SOMCP_UPDATE_CHECK_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
+                            <input type="radio" data-somcp-autosave="submitSomcpUpdateSwitch" name="SOMCP_UPDATE_CHECK" id="SOMCP_UPDATE_CHECK_off" value="0"{if !$somcp_update.enabled} checked{/if}>
+                            <label for="SOMCP_UPDATE_CHECK_off">{l s='No' d='Modules.Somcp.Admin'}</label>
+                            <a class="slide-button btn"></a>
+                        </span>
+                        <p class="help-block">{l s='Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+            {if $somcp_update.enabled}
+                <div class="form-group">
+                    <div class="col-lg-8 col-lg-offset-4">
+                        <button type="submit" name="submitSomcpUpdateCheck" value="1" class="btn btn-default">
+                            <i class="icon-refresh"></i> {l s='Check now' d='Modules.Somcp.Admin'}
+                        </button>
+                    </div>
+                </div>
+            {/if}
+            </form>
+
+        {if $somcp_update.available}
+            <div class="alert alert-info">
+                <p><strong>{l s='Version %version% is available.' sprintf=['%version%' => $somcp_update.latest] d='Modules.Somcp.Admin'}</strong></p>
+            {if $somcp_update.titles}
+                <p>{l s='What is new:' d='Modules.Somcp.Admin'}</p>
+                <ul>
+                {foreach from=$somcp_update.titles item=title}
+                    <li>{$title|escape:'html':'UTF-8'}</li>
+                {/foreach}
+                {if $somcp_update.more > 0}
+                    <li>{l s='and %count% more' sprintf=['%count%' => $somcp_update.more|intval] d='Modules.Somcp.Admin'}</li>
+                {/if}
+                </ul>
+            {/if}
+                <p>
+                    <a class="btn btn-primary" href="{$somcp_update.download|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">
+                        <i class="icon-download"></i> {l s='Download the zip' d='Modules.Somcp.Admin'}
+                    </a>
+                    <a class="btn btn-default" href="{$somcp_update.notes|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">
+                        <i class="icon-external-link"></i> {l s='See what is new' d='Modules.Somcp.Admin'}
+                    </a>
+                </p>
+                <p class="help-block">{l s='To update, open Modules > Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.' d='Modules.Somcp.Admin'}</p>
+            </div>
+        {elseif $somcp_update.enabled && !$somcp_update.failed && $somcp_update.latest}
+            <div class="alert alert-success">{l s='You have the latest version.' d='Modules.Somcp.Admin'}</div>
+        {/if}
+        </div>
+
+        <div class="panel">
+            <div class="panel-heading"><i class="icon-comments"></i> {l s='Share your feedback' d='Modules.Somcp.Admin'}</div>
+            <p>{l s='A bug, an idea, a tool you are missing? The module is built in the open on GitHub: tell us there.' d='Modules.Somcp.Admin'}</p>
+            <a class="btn btn-default" href="{$somcp_repository|escape:'html':'UTF-8'}/issues/new/choose" target="_blank" rel="noopener noreferrer">
+                <i class="icon-comment"></i> {l s='Give feedback' d='Modules.Somcp.Admin'}
+            </a>
+            <a class="btn btn-default" href="{$somcp_repository|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">
+                <i class="icon-github"></i> {l s='Source code' d='Modules.Somcp.Admin'}
+            </a>
+        </div>
     </div>
 
     <p class="somcp-foot text-center text-muted">

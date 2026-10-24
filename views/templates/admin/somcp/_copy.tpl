@@ -82,7 +82,8 @@
 
         // The server switch saves as soon as it moves, like every on/off switch
         // of the back office: a merchant who turns it off in an emergency must
-        // not also have to find a Save button in another tab.
+        // not also have to find a Save button in another tab. A switch that
+        // belongs to another form names the action it submits.
         document.querySelectorAll('[data-somcp-autosave]').forEach(function (field) {
             field.addEventListener('change', function () {
                 var form = field.form;
@@ -91,7 +92,7 @@
                 }
                 var marker = document.createElement('input');
                 marker.type = 'hidden';
-                marker.name = 'submitSomcpSettings';
+                marker.name = field.getAttribute('data-somcp-autosave') || 'submitSomcpSettings';
                 marker.value = '1';
                 form.appendChild(marker);
                 form.submit();

@@ -938,6 +938,74 @@ T = {
  "Code source",
  "Código fuente",
  "Quellcode"),
+"Help and updates": (
+ "Aide et mises à jour",
+ "Ayuda y actualizaciones",
+ "Hilfe und Updates"),
+"Updates": (
+ "Mises à jour",
+ "Actualizaciones",
+ "Updates"),
+"Installed version": (
+ "Version installée",
+ "Versión instalada",
+ "Installierte Version"),
+"Latest version": (
+ "Dernière version",
+ "Última versión",
+ "Neueste Version"),
+"Unknown: GitHub could not be reached.": (
+ "Inconnue : GitHub n'a pas pu être joint.",
+ "Desconocida: no se ha podido contactar con GitHub.",
+ "Unbekannt: GitHub war nicht erreichbar."),
+"Checked on %date%": (
+ "Vérifié le %date%",
+ "Comprobado el %date%",
+ "Geprüft am %date%"),
+"Check for new versions": (
+ "Rechercher les nouvelles versions",
+ "Buscar nuevas versiones",
+ "Nach neuen Versionen suchen"),
+"Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you.": (
+ "Une fois par jour, lorsque vous ouvrez cette page, le module demande à GitHub la dernière version publiée. Rien n'est téléchargé ni installé sans vous.",
+ "Una vez al día, mientras tiene esta página abierta, el módulo consulta a GitHub la última versión publicada. No se descarga ni se instala nada sin usted.",
+ "Einmal am Tag, während Sie diese Seite geöffnet haben, fragt das Modul GitHub nach der neuesten veröffentlichten Version. Ohne Sie wird nichts heruntergeladen oder installiert."),
+"Check now": (
+ "Vérifier maintenant",
+ "Comprobar ahora",
+ "Jetzt prüfen"),
+"Version %version% is available.": (
+ "La version %version% est disponible.",
+ "La versión %version% está disponible.",
+ "Version %version% ist verfügbar."),
+"What is new:": (
+ "Les nouveautés :",
+ "Novedades:",
+ "Neuerungen:"),
+"and %count% more": (
+ "et %count% autres",
+ "y %count% más",
+ "und %count% weitere"),
+"Download the zip": (
+ "Télécharger le zip",
+ "Descargar el zip",
+ "Zip herunterladen"),
+"See what is new": (
+ "Voir les nouveautés",
+ "Ver las novedades",
+ "Neuerungen ansehen"),
+"To update, open Modules > Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.": (
+ "Pour mettre à jour, ouvrez Modules > Gestionnaire de modules, cliquez sur Installer un module et déposez le zip. PrestaShop remplace le module sur place et conserve vos réglages et vos assistants connectés.",
+ "Para actualizar, abra Módulos > Gestor de módulos, haga clic en Subir un módulo y suelte el zip. PrestaShop sustituye el módulo en su sitio y conserva sus ajustes y sus asistentes conectados.",
+ "Zum Aktualisieren öffnen Sie Module > Modul-Manager, klicken auf Modul hochladen und legen die Zip-Datei ab. PrestaShop ersetzt das Modul an Ort und Stelle und behält Ihre Einstellungen und verbundenen Assistenten."),
+"You have the latest version.": (
+ "Vous avez la dernière version.",
+ "Tiene la última versión.",
+ "Sie haben die neueste Version."),
+"GitHub could not be reached. Try again later.": (
+ "GitHub n'a pas pu être joint. Réessayez plus tard.",
+ "No se ha podido contactar con GitHub. Inténtelo más tarde.",
+ "GitHub war nicht erreichbar. Versuchen Sie es später erneut."),
 "Open source under the AFL-3.0 licence": (
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",

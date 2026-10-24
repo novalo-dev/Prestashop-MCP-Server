@@ -1177,6 +1177,91 @@
       <source>Source code</source>
       <target>Código fuente</target>
     </trans-unit>
+    <!-- Help and updates -->
+    <trans-unit id="662572f2794af4eb6c7df2761ebaacbe" resname="Help and updates">
+      <source>Help and updates</source>
+      <target>Ayuda y actualizaciones</target>
+    </trans-unit>
+    <!-- Updates -->
+    <trans-unit id="9ac41b6a577daadd588f0fcde0071e8b" resname="Updates">
+      <source>Updates</source>
+      <target>Actualizaciones</target>
+    </trans-unit>
+    <!-- Installed version -->
+    <trans-unit id="569df326497fb0d637986f21ddcb378f" resname="Installed version">
+      <source>Installed version</source>
+      <target>Versión instalada</target>
+    </trans-unit>
+    <!-- Latest version -->
+    <trans-unit id="9ca445b9db010a99239196af5ac3a8b9" resname="Latest version">
+      <source>Latest version</source>
+      <target>Última versión</target>
+    </trans-unit>
+    <!-- Unknown: GitHub could not be reached. -->
+    <trans-unit id="b52b1137f78f5c1ea0abeaca5741ff5f" resname="Unknown: GitHub could not be reached.">
+      <source>Unknown: GitHub could not be reached.</source>
+      <target>Desconocida: no se ha podido contactar con GitHub.</target>
+    </trans-unit>
+    <!-- Checked on %date% -->
+    <trans-unit id="c4218fc240cd8faefc25f1508067730c" resname="Checked on %date%">
+      <source>Checked on %date%</source>
+      <target>Comprobado el %date%</target>
+    </trans-unit>
+    <!-- Check for new versions -->
+    <trans-unit id="f4fe9b96de22e5af7ac03c4d864ec5d4" resname="Check for new versions">
+      <source>Check for new versions</source>
+      <target>Buscar nuevas versiones</target>
+    </trans-unit>
+    <!-- Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you. -->
+    <trans-unit id="d134110250c958e754f1c91ffa6655d8" resname="Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you.">
+      <source>Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you.</source>
+      <target>Una vez al día, mientras tiene esta página abierta, el módulo consulta a GitHub la última versión publicada. No se descarga ni se instala nada sin usted.</target>
+    </trans-unit>
+    <!-- Check now -->
+    <trans-unit id="2c872e677f8b5831f20a66c65e7f8966" resname="Check now">
+      <source>Check now</source>
+      <target>Comprobar ahora</target>
+    </trans-unit>
+    <!-- Version %version% is available. -->
+    <trans-unit id="8905002ce4822972c2271fabbcd7e154" resname="Version %version% is available.">
+      <source>Version %version% is available.</source>
+      <target>La versión %version% está disponible.</target>
+    </trans-unit>
+    <!-- What is new: -->
+    <trans-unit id="838b0198e0bb3c42d28b59ce2d48da7e" resname="What is new:">
+      <source>What is new:</source>
+      <target>Novedades:</target>
+    </trans-unit>
+    <!-- and %count% more -->
+    <trans-unit id="770d850345e31be0c33bd14f0e6f7275" resname="and %count% more">
+      <source>and %count% more</source>
+      <target>y %count% más</target>
+    </trans-unit>
+    <!-- Download the zip -->
+    <trans-unit id="edcb4d7773cb33d7fd22a9417412ba51" resname="Download the zip">
+      <source>Download the zip</source>
+      <target>Descargar el zip</target>
+    </trans-unit>
+    <!-- See what is new -->
+    <trans-unit id="f22c6a5299272fb2676f3a10381289fa" resname="See what is new">
+      <source>See what is new</source>
+      <target>Ver las novedades</target>
+    </trans-unit>
+    <!-- To update, open Modules &gt; Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants. -->
+    <trans-unit id="78e3d108df69c7b61ca5b48a5805bf7b" resname="To update, open Modules &gt; Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.">
+      <source>To update, open Modules &gt; Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.</source>
+      <target>Para actualizar, abra Módulos &gt; Gestor de módulos, haga clic en Subir un módulo y suelte el zip. PrestaShop sustituye el módulo en su sitio y conserva sus ajustes y sus asistentes conectados.</target>
+    </trans-unit>
+    <!-- You have the latest version. -->
+    <trans-unit id="d02d85c9bbc932be313327b47cd28e9a" resname="You have the latest version.">
+      <source>You have the latest version.</source>
+      <target>Tiene la última versión.</target>
+    </trans-unit>
+    <!-- GitHub could not be reached. Try again later. -->
+    <trans-unit id="3a7ca167574392411556624991549e2e" resname="GitHub could not be reached. Try again later.">
+      <source>GitHub could not be reached. Try again later.</source>
+      <target>No se ha podido contactar con GitHub. Inténtelo más tarde.</target>
+    </trans-unit>
     <!-- Open source under the AFL-3.0 licence -->
     <trans-unit id="c670648db949fca4d11ac24fa3806100" resname="Open source under the AFL-3.0 licence">
       <source>Open source under the AFL-3.0 licence</source>

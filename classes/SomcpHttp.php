@@ -290,11 +290,13 @@ class SomcpHttp
      * @param bool $guard
      * @param array<int, string> $extraHeaders
      * @param string|null $jsonBody when given, the request is a POST carrying this JSON
+     * @param int $maxBytes largest body read; 0 keeps the default cap
      *
      * @return array{status:int, body:string, headers:array<string,string>, error:string}
      */
-    public static function fetch(string $url, bool $guard = true, array $extraHeaders = [], ?string $jsonBody = null): array
+    public static function fetch(string $url, bool $guard = true, array $extraHeaders = [], ?string $jsonBody = null, int $maxBytes = 0): array
     {
+        $limit = $maxBytes > 0 ? $maxBytes : self::MAX_FETCH_BYTES;
         $fail = static function (string $message): array {
             return ['status' => 0, 'body' => '', 'headers' => [], 'error' => $message];
         };
@@ -340,9 +342,9 @@ class SomcpHttp
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_USERAGENT => self::userAgent(),
             CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $extraHeaders),
-            CURLOPT_WRITEFUNCTION => static function ($handle, $chunk) use (&$received) {
+            CURLOPT_WRITEFUNCTION => static function ($handle, $chunk) use (&$received, $limit) {
                 $received .= $chunk;
-                if (Tools::strlen($received) > self::MAX_FETCH_BYTES) {
+                if (Tools::strlen($received) > $limit) {
                     // Returning less than the chunk length aborts the transfer.
                     return 0;
                 }

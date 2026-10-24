@@ -14,6 +14,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_product`
 - `somcp_set_product_active`
 - `somcp_delete_product`
+- `somcp_create_category`
 
 ## Know which shop you are in
 
@@ -143,6 +144,24 @@ Orders that contain the product keep their lines as sold. When
 `still_in_shops` is above 0, the product is gone from this shop only: tell the
 merchant, who removes it from a connection to each of the other shops. On a lost
 answer, search for the product again rather than calling twice.
+
+## Creating a category
+
+`somcp_create_category` creates one category, under Home and displayed unless
+the merchant says otherwise. Before calling it:
+
+1. Read `somcp_list_categories`: the category may already exist, and the
+   parent is taken from there, never guessed. Two categories can share a name
+   in different branches, so name the parent's branch to the merchant.
+2. Ask the merchant for the name, the parent, whether it is displayed and
+   which customer groups see it. Write the descriptions and the SEO texts
+   yourself, in every language being filled, and show them first.
+3. An image is given by a public `https` address, which the shop downloads.
+
+When it succeeds, show the merchant the category as returned, the
+`seo_warnings`, and any image in `images` that was refused, with its reason. On
+a lost answer, read `somcp_list_categories` again rather than calling twice: a
+second call creates a second category.
 
 ## Do not use when
 

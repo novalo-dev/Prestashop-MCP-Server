@@ -864,7 +864,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read in the shop of the token.
 
 #### `somcp_create_category`
-**State**: to write · [issue #9](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/9)
+**State**: written
 **Nature**: `acts(ADD, 'AdminCategories')` · **Scope**: `mcp.catalog.write`
 
 **Does** - creates one category with every field of the back office category form, in every language of the shop or the ones the merchant picks.
@@ -875,25 +875,29 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 | Field | Who fills it | Rule |
 |---|---|---|
-| `name` | merchant | required; 128 characters at most; forbidden characters `<>;=#{}` (`Validate::isCatalogName`) |
-| `id_parent` | merchant, from the shop | from `somcp_list_categories`; Home when left out; never the root |
+| `name` | merchant | required; 128 characters at most; forbidden characters `<>{}`, and `;=#` before PrestaShop 9.1 (`Validate::isCatalogName` of the running version) |
+| `id_parent` | merchant, from the shop | from `somcp_list_categories`; Home (the top category of the shop of the token) when left out; never the root |
 | `active` (Displayed) | merchant | true by default |
 | `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office |
 | `additional_description` (additional information) | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office |
-| `groups` (group access) | merchant, from the shop | ids from `somcp_list_customer_groups`; every group when left out, as in the back office |
+| `groups` (group access) | merchant, from the shop | ids from `somcp_list_customer_groups`; every group when left out, as in the back office; an empty list is refused rather than read as every group |
 | `link_rewrite` | assistant | generated from the name when left out; `Tools::str2url()` then `Validate::isLinkRewrite()`; 128 characters at most |
 | `meta_title` | assistant | 70 characters at most |
 | `meta_description` | assistant | 150 characters at most |
-| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>;=#{}` |
+| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
+| `redirect_type` | assistant | PrestaShop 9 only, refused on 8 with a clear message: what the page does while not displayed, a value of the core's `RedirectType` (`301`, `302`, `404`, `410`); the shop default when left out |
+| `id_type_redirected` | merchant, from the shop | PrestaShop 9 only: the category a `301` or `302` goes to, from `somcp_list_categories`; 0 or left out for the closest parent, as the storefront does; refused next to a `404` or `410` |
 | `cover_image` | merchant | a public `https` URL, downloaded with the guards of `somcp_create_product` |
-| `menu_thumbnails` | merchant | up to 3 public `https` URLs, same guards |
+| `menu_thumbnails` | merchant | PrestaShop 8 only, refused on 9, which removed them from the form: up to 3 public `https` URLs, same guards |
 
-**Returns** - `created`, `id_category`, `seo_warnings` (no meta title or description in a language, a `link_rewrite` already used by another category), `images` (per URL: stored or the reason it was refused), and the category as `somcp_get_category` returns it.
+**Returns** - `created`, `id_category`, `seo_warnings` (no meta title or description in a language, a `link_rewrite` already used by another category), `images` (per URL: `for` - `cover_image` or `menu_thumbnails` - and `stored: true` or the reason it was `refused`), and `category`, with the fields `somcp_get_category` returns (`menu_thumbnails` is `null` on PrestaShop 9, like `meta_keywords`).
 
 **Notes**
-- Written through `Category::add()` and the core's category image uploaders (`src/Adapter/Image/Uploader/Category*`, whose names differ between PrestaShop 8 and 9), so hooks fire and thumbnails are generated as in the back office.
+- Written through `Category::add()` in the shop of the token (`id_shop_list`), so `actionCategoryAdd` fires, the tree is rebuilt and the position and group access are set as in the back office. If the add fails after the row went in, the category is deleted again.
+- The core's category image uploaders (`src/Adapter/Image/Uploader/Category*`) cannot be called: they take an uploaded file and move it with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The downloaded image is written where they write it instead, under the same names: the cover as `img/c/<id>.jpg` with one file per category image type (and each extra format switched on, from PrestaShop 8.1, with the fitment of each type on 9), a menu thumbnail as `img/c/<id>-<slot>_thumb.jpg`, slots 0 to 2, after which the Smarty cache is cleared as the core does.
+- Every problem is reported at once, before anything is written; images are fetched once the category exists, and one refused does not undo it.
 - Not replayable: the read tool to check is `somcp_list_categories`.
-- The forbidden characters `<>;=#{}` are PrestaShop's own rule for the name and the meta fields (`isCatalogName`, `isGenericName`); the descriptions are rich text and follow `isCleanHtml`, as the back office form does.
+- The forbidden characters are PrestaShop's own rules, read from the running version: `isCatalogName` for the name (`<>;=#{}` up to 9.0, `<>{}` from 9.1), `isGenericName` for the meta fields (`<>={}` up to 9.0, `<>{}` from 9.1); the descriptions are rich text and follow `isCleanHtml`, as the back office form does.
 
 #### `somcp_update_category`
 **State**: to write · [issue #10](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/10)

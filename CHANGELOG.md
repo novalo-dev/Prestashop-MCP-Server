@@ -99,6 +99,21 @@ consent screen now says that the catalogue permission can delete products. It
 needs the permission `mcp.catalog.write` and the `delete` right on the back
 office products page.
 
+**Creating a category.** The new tool `somcp_create_category` creates one
+category with the fields of the back office category form: name, parent,
+Displayed, descriptions, customer groups, friendly URL, meta title and
+description, meta keywords on PrestaShop 8, what the page does while hidden on
+PrestaShop 9, a cover image and, on PrestaShop 8, menu thumbnails. It goes under
+Home and is displayed unless you say otherwise, and is visible to every customer
+group when none is chosen. Images are given by a public https address and
+downloaded by the shop with the same safeguards as product images; one that
+cannot be fetched is reported and does not stop the creation. The answer warns
+when a meta title or description is missing, or when another category already
+uses the friendly URL. On a multistore installation the category is created in
+the shop the assistant is connected to. The consent screen now says that the
+catalogue permission can create categories. It needs the permission
+`mcp.catalog.write` and the `add` right on the back office categories page.
+
 **Manage products prompt.** A guided task for the catalogue, picked from the
 assistant's menu: search before reading, never guess an identifier, always say
 whether a price is with or without tax.

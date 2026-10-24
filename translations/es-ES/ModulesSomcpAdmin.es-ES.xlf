@@ -122,10 +122,10 @@
       <source>Read the catalogue of this shop: products, prices and categories</source>
       <target>Leer el catálogo de esta tienda: productos, precios y categorías</target>
     </trans-unit>
-    <!-- Change the catalogue of this shop: create, edit and delete products, prices and stock -->
-    <trans-unit id="97fa452f4438e00ee4795dcc69cf5d1c" resname="Change the catalogue of this shop: create, edit and delete products, prices and stock">
-      <source>Change the catalogue of this shop: create, edit and delete products, prices and stock</source>
-      <target>Modificar el catálogo de esta tienda: crear, editar y eliminar productos, precios y stock</target>
+    <!-- Change the catalogue of this shop: create, edit and delete products, create categories, change prices and stock -->
+    <trans-unit id="9308ef8841767068149c65afb32fedd9" resname="Change the catalogue of this shop: create, edit and delete products, create categories, change prices and stock">
+      <source>Change the catalogue of this shop: create, edit and delete products, create categories, change prices and stock</source>
+      <target>Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear categorías, cambiar precios y stock</target>
     </trans-unit>
     <!-- Outgoing HTTP requests -->
     <trans-unit id="44dc1cd9380e6350a77f6d24def569f7" resname="Outgoing HTTP requests">
@@ -721,6 +721,11 @@
     <trans-unit id="c7cb9daf3caa20adc61e4f518e72e296" resname="Delete a product">
       <source>Delete a product</source>
       <target>Eliminar un producto</target>
+    </trans-unit>
+    <!-- Create a category -->
+    <trans-unit id="cff15d43797962a1e28c0515ab556743" resname="Create a category">
+      <source>Create a category</source>
+      <target>Crear una categoría</target>
     </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">

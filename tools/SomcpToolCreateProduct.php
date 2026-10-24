@@ -2527,14 +2527,15 @@ class SomcpToolCreateProduct
     }
 
     /**
-     * Every thumbnail of the product image types, as the back office makes them.
+     * Every thumbnail of the image types of one kind of object, as the back office makes them.
      *
      * @param string $source the original, already written as JPEG
      * @param string $path the image path without extension
+     * @param string $for the image types to make: products, or categories for somcp_create_category
      *
      * @return void
      */
-    protected static function thumbnails(string $source, string $path): void
+    protected static function thumbnails(string $source, string $path, string $for = 'products'): void
     {
         // PrestaShop 8.1 added image formats besides JPEG, chosen in the
         // settings; the JPEG is always made, the others when switched on.
@@ -2547,7 +2548,7 @@ class SomcpToolCreateProduct
             }
         }
 
-        foreach (ImageType::getImagesTypes('products', true) ?: [] as $type) {
+        foreach (ImageType::getImagesTypes($for, true) ?: [] as $type) {
             foreach ($formats as $format) {
                 $error = 0;
                 $targetWidth = $targetHeight = $sourceWidth = $sourceHeight = null;

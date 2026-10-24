@@ -1,0 +1,18 @@
+{
+  "calls": [
+    {"why": "a new name and meta title on the demo Art category, its friendly URL kept", "arguments": {"id_category": 9, "languages": ["en"], "name": {"en": "Somcp art"}, "meta_title": {"en": "Somcp art prints"}}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"name (en)\"", "\"field\": \"meta_title (en)\"", "\"name\": \"Somcp art\"", "\"meta_title\": \"Somcp art prints\""]},
+    {"why": "the same values again change nothing", "arguments": {"id_category": 9, "languages": ["en"], "name": {"en": "Somcp art"}, "meta_title": {"en": "Somcp art prints"}}, "expect": "ok", "contains": ["\"changed\": false"]},
+    {"why": "moved under Accessories, hidden, for one customer group", "arguments": {"id_category": 9, "id_parent": 6, "active": false, "groups": [3]}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"id_parent\"", "\"field\": \"active\"", "\"field\": \"groups\"", "\"id_parent\": 6", "\"active\": false", "\"id_group\": 3"]},
+    {"why": "a new friendly URL on a displayed category warns that the old address stops working", "arguments": {"id_category": 7, "languages": ["en"], "link_rewrite": {"en": "Somcp Stationery"}}, "expect": "ok", "contains": ["\"changed\": true", "\"link_rewrite\": \"somcp-stationery\"", "link_rewrite changed on a displayed category"]},
+    {"why": "a cover image that is refused is reported without stopping the change", "arguments": {"id_category": 7, "languages": ["en"], "description": {"en": "<p>Notebooks and <strong>pens</strong>.</p>"}, "cover_image": "https://127.0.0.1/cover.jpg"}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"description (en)\"", "\"for\": \"cover_image\"", "private, local or reserved address"]},
+    {"why": "what a hidden page does, which exists on PrestaShop 9 only and is refused on 8", "arguments": {"id_category": 8, "redirect_type": "301", "id_type_redirected": 3}, "expect": "any"},
+    {"why": "menu thumbnails removed, which exist on PrestaShop 8 only and are refused on 9", "arguments": {"id_category": 8, "remove_menu_thumbnails": true}, "expect": "any"},
+    {"why": "a category moved under one of its own subcategories", "arguments": {"id_category": 6, "id_parent": 8}, "expect": "error", "contains": ["Nothing was changed", "under itself or one of its subcategories"]},
+    {"why": "a category moved under itself", "arguments": {"id_category": 6, "id_parent": 6}, "expect": "error", "contains": ["under itself or one of its subcategories"]},
+    {"why": "Home is not changed here", "arguments": {"id_category": 2, "active": false}, "expect": "error", "contains": ["root category or the Home of a shop"]},
+    {"why": "a category that does not exist", "arguments": {"id_category": 999999, "active": false}, "expect": "error", "contains": ["No category of this shop"]},
+    {"why": "an empty name, a computed field, an unknown one and active as a string", "arguments": {"id_category": 7, "languages": ["en"], "name": {"en": " "}, "level": 3, "colour": "red", "active": "false"}, "expect": "error", "contains": ["name: missing in en", "level: worked out by the shop", "colour: not a field of this tool", "active: true or false"]},
+    {"why": "a removal next to the field that already replaces it, and an empty list of groups", "arguments": {"id_category": 7, "cover_image": "https://example.com/cover.jpg", "remove_cover_image": true, "groups": []}, "expect": "error", "contains": ["remove_cover_image: not with cover_image", "groups: at least one group"]},
+    {"why": "a parent and a customer group that do not exist", "arguments": {"id_category": 7, "id_parent": 999999, "groups": [999999]}, "expect": "error", "contains": ["no category 999999", "no customer group 999999"]}
+  ]
+}

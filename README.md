@@ -81,6 +81,7 @@ calling the shop's own addresses.
 | `somcp_set_product_active` | `mcp.catalog.write` | `edit` on `AdminProducts` | write |
 | `somcp_delete_product` | `mcp.catalog.write` | `delete` on `AdminProducts` | write |
 | `somcp_create_category` | `mcp.catalog.write` | `add` on `AdminCategories` | write |
+| `somcp_update_category` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running

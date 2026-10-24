@@ -13,7 +13,8 @@
     "somcp_update_product",
     "somcp_set_product_active",
     "somcp_delete_product",
-    "somcp_create_category"
+    "somcp_create_category",
+    "somcp_update_category"
   ],
   "controller": "AdminProducts",
   "action": "view",

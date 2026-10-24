@@ -53,7 +53,7 @@ require_once __DIR__ . '/SomcpToolCreateProduct.php';
 class SomcpToolCreateCategory extends SomcpToolCreateProduct
 {
     /** @var array<int, string> Every argument this tool takes. */
-    private const ARGUMENTS = [
+    protected const ARGUMENTS = [
         'languages', 'name', 'id_parent', 'active', 'description', 'additional_description', 'groups',
         'link_rewrite', 'meta_title', 'meta_description', 'meta_keywords', 'redirect_type', 'id_type_redirected',
         'cover_image', 'menu_thumbnails',
@@ -63,7 +63,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      * @var array<int, string> What somcp_get_category returns and this tool refuses, because the shop works it
      *                         out. Named, so the assistant learns why rather than meeting an "unknown field".
      */
-    private const CATEGORY_COMPUTED = [
+    protected const CATEGORY_COMPUTED = [
         'id_category', 'parent_name', 'level', 'position', 'url', 'products_count', 'children_count',
     ];
 
@@ -80,7 +80,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     private const META_KEYWORDS_MAX = 5;
 
     /** @var int The menu thumbnail slots of PrestaShop 8 (MenuThumbnailId::ALLOWED_ID_VALUES). */
-    private const MENU_THUMBNAILS_MAX = 3;
+    protected const MENU_THUMBNAILS_MAX = 3;
 
     /**
      * @return SomcpTool
@@ -273,38 +273,8 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             }
         }
 
-        $names = self::texts($arguments, 'name', 'name', $languages, $errors, true);
-        foreach ($names ?? [] as $idLang => $name) {
-            $name = trim($name);
-            $names[$idLang] = $name;
-            $where = 'name (' . $languages['filled'][$idLang] . ')';
-            if (Tools::strlen($name) > self::NAME_MAX) {
-                $errors[] = $where . ': ' . self::NAME_MAX . ' characters at most, ' . Tools::strlen($name) . ' given';
-            } elseif ($name !== '' && !Validate::isCatalogName($name)) {
-                // The rule is the running version's: PrestaShop 9.1 dropped ; = # from it.
-                $errors[] = $where . ': a character PrestaShop refuses in a name (< > { }, and ; = # before PrestaShop 9.1)';
-            } elseif ($name !== '' && ($check = $probe->validateField('name', $name, $idLang)) !== true) {
-                $errors[] = $where . ': ' . self::reason($check);
-            }
-        }
-        if ($names !== null) {
-            $plan['texts']['name'] = $names;
-        }
-
-        foreach (['description', 'additional_description'] as $field) {
-            $texts = self::texts($arguments, $field, $field, $languages, $errors);
-            foreach ($texts ?? [] as $idLang => $html) {
-                $where = $field . ' (' . $languages['filled'][$idLang] . ')';
-                $texts[$idLang] = self::html($html, $where, $errors);
-                if (($check = $probe->validateField($field, $texts[$idLang], $idLang)) !== true) {
-                    $errors[] = $where . ': ' . self::reason($check);
-                }
-            }
-            if ($texts !== null) {
-                $plan['texts'][$field] = $texts;
-            }
-        }
-
+        self::categoryNames($arguments, $languages, $probe, $plan, $errors, true);
+        self::categoryDescriptions($arguments, $languages, $probe, $plan, $errors);
         self::categoryMeta($arguments, $languages, $probe, $plan, $errors);
         $plan['texts']['link_rewrite'] = self::categoryLinkRewrites($arguments, $languages, $plan, $errors);
         self::categoryRedirect($arguments, $idShop, $plan, $errors);
@@ -325,6 +295,68 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     }
 
     /**
+     * The names given in the call, checked with the running version's rules.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param Category $probe
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     * @param bool $required false when changing a category, which already has a name
+     *
+     * @return void
+     */
+    protected static function categoryNames(array $arguments, array $languages, Category $probe, array &$plan, array &$errors, bool $required): void
+    {
+        // Given, a name is never empty, whether the category is new or not.
+        $names = self::texts($arguments, 'name', 'name', $languages, $errors, $required || array_key_exists('name', $arguments));
+        foreach ($names ?? [] as $idLang => $name) {
+            $name = trim($name);
+            $names[$idLang] = $name;
+            $where = 'name (' . $languages['filled'][$idLang] . ')';
+            if (Tools::strlen($name) > self::NAME_MAX) {
+                $errors[] = $where . ': ' . self::NAME_MAX . ' characters at most, ' . Tools::strlen($name) . ' given';
+            } elseif ($name !== '' && !Validate::isCatalogName($name)) {
+                // The rule is the running version's: PrestaShop 9.1 dropped ; = # from it.
+                $errors[] = $where . ': a character PrestaShop refuses in a name (< > { }, and ; = # before PrestaShop 9.1)';
+            } elseif ($name !== '' && ($check = $probe->validateField('name', $name, $idLang)) !== true) {
+                $errors[] = $where . ': ' . self::reason($check);
+            }
+        }
+        if ($names !== null) {
+            $plan['texts']['name'] = $names;
+        }
+    }
+
+    /**
+     * The description and additional description given in the call, cleaned as the back office cleans them.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param Category $probe
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function categoryDescriptions(array $arguments, array $languages, Category $probe, array &$plan, array &$errors): void
+    {
+        foreach (['description', 'additional_description'] as $field) {
+            $texts = self::texts($arguments, $field, $field, $languages, $errors);
+            foreach ($texts ?? [] as $idLang => $html) {
+                $where = $field . ' (' . $languages['filled'][$idLang] . ')';
+                $texts[$idLang] = self::html($html, $where, $errors);
+                if (($check = $probe->validateField($field, $texts[$idLang], $idLang)) !== true) {
+                    $errors[] = $where . ': ' . self::reason($check);
+                }
+            }
+            if ($texts !== null) {
+                $plan['texts'][$field] = $texts;
+            }
+        }
+    }
+
+    /**
      * The parent: given, an existing category of this shop other than the root; left out, Home.
      *
      * @param array<string, mixed> $arguments
@@ -333,7 +365,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      *
      * @return int
      */
-    private static function parentCategory(array $arguments, Shop $shop, array &$errors): int
+    protected static function parentCategory(array $arguments, Shop $shop, array &$errors): int
     {
         // Home is the top category of the shop, which on a multistore
         // installation is not necessarily PS_HOME_CATEGORY.
@@ -373,7 +405,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      *
      * @return array<int, int> empty for every group
      */
-    private static function customerGroups($value, array &$errors): array
+    protected static function customerGroups($value, array &$errors): array
     {
         if ($value === null) {
             return [];
@@ -410,7 +442,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      *
      * @return void
      */
-    private static function categoryMeta(array $arguments, array $languages, Category $probe, array &$plan, array &$errors): void
+    protected static function categoryMeta(array $arguments, array $languages, Category $probe, array &$plan, array &$errors): void
     {
         $limits = ['meta_title' => self::CATEGORY_META_TITLE_MAX, 'meta_description' => self::CATEGORY_META_DESCRIPTION_MAX];
         foreach ($limits as $field => $max) {
@@ -470,7 +502,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      *
      * @return array<int, string>
      */
-    private static function categoryLinkRewrites(array $arguments, array $languages, array $plan, array &$errors): array
+    protected static function categoryLinkRewrites(array $arguments, array $languages, array $plan, array &$errors): array
     {
         $given = self::texts($arguments, 'link_rewrite', 'link_rewrite', $languages, $errors) ?? [];
         $rewrites = [];
@@ -509,10 +541,11 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      * @param int $idShop
      * @param array<string, mixed> $plan
      * @param array<int, string> $errors
+     * @param string|null $currentType what a category being changed already does, when redirect_type is not given
      *
      * @return void
      */
-    private static function categoryRedirect(array $arguments, int $idShop, array &$plan, array &$errors): void
+    protected static function categoryRedirect(array $arguments, int $idShop, array &$plan, array &$errors, ?string $currentType = null): void
     {
         $typeGiven = array_key_exists('redirect_type', $arguments);
         $targetGiven = array_key_exists('id_type_redirected', $arguments);
@@ -532,7 +565,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         // exists on PrestaShop 9 only, hence the name in a string.
         $constant = 'PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\RedirectType::AVAILABLE_REDIRECT_TYPES';
         $types = defined($constant) ? array_values((array) constant($constant)) : ['404', '410', '301', '302'];
-        $type = $typeGiven ? self::string($arguments['redirect_type']) : null;
+        $type = $typeGiven ? self::string($arguments['redirect_type']) : $currentType;
         if ($typeGiven) {
             if ($type === null || !in_array($type, $types, true)) {
                 $errors[] = 'redirect_type: one of ' . implode(', ', $types);
@@ -577,7 +610,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      *
      * @return array<int, array{url: string, for: string}>
      */
-    private static function imageUrls(array $arguments, array &$errors): array
+    protected static function imageUrls(array $arguments, array &$errors): array
     {
         $images = [];
         if (array_key_exists('cover_image', $arguments)) {
@@ -709,7 +742,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function storeImages(int $idCategory, array $images): array
+    protected static function storeImages(int $idCategory, array $images): array
     {
         $report = [];
         $slot = 0;
@@ -774,7 +807,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      *
      * @return array<string, array<int, string>>
      */
-    private static function categoryWarnings(int $idCategory, array $plan, int $idShop): array
+    protected static function categoryWarnings(int $idCategory, array $plan, int $idShop): array
     {
         $warnings = [];
         foreach ($plan['languages']['filled'] as $idLang => $iso) {
@@ -815,7 +848,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      *
      * @return array<string, mixed>
      */
-    private static function category(int $idCategory, int $idLang, int $idShop): array
+    protected static function category(int $idCategory, int $idLang, int $idShop): array
     {
         $category = new Category($idCategory, $idLang, $idShop);
         $parent = new Category((int) $category->id_parent, $idLang, $idShop);
@@ -902,7 +935,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      *
      * @return string
      */
-    private static function textOf($value, int $idLang): string
+    protected static function textOf($value, int $idLang): string
     {
         if (is_array($value)) {
             $value = $value[$idLang] ?? reset($value);

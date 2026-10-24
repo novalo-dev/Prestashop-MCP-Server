@@ -114,6 +114,21 @@ the shop the assistant is connected to. The consent screen now says that the
 catalogue permission can create categories. It needs the permission
 `mcp.catalog.write` and the `add` right on the back office categories page.
 
+**Changing a category.** The new tool `somcp_update_category` changes one
+existing category with everything the creation can write: name, parent,
+Displayed, descriptions, customer groups, friendly URL, meta texts, meta
+keywords on PrestaShop 8, what the page does while hidden on PrestaShop 9, the
+cover image and, on PrestaShop 8, the menu thumbnails. Only what you ask for
+changes, and the answer lists each change with its old and new value; a request
+that would change nothing changes nothing. The friendly URL is never rebuilt
+from a new name, and the answer warns when a displayed category's address
+changes. The root category and Home are left to the back office, and a category
+cannot be moved under one of its own subcategories. On a multistore
+installation only the shop the assistant is connected to is changed. The
+consent screen now says that the catalogue permission can edit categories. It
+needs the permission `mcp.catalog.write` and the `edit` right on the back office
+categories page.
+
 **Manage products prompt.** A guided task for the catalogue, picked from the
 assistant's menu: search before reading, never guess an identifier, always say
 whether a price is with or without tax.

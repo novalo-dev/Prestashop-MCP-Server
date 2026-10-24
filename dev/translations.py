@@ -105,10 +105,10 @@ T = {
  "Lire le catalogue de cette boutique : produits, prix et catégories",
  "Leer el catálogo de esta tienda: productos, precios y categorías",
  "Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien"),
-"Change the catalogue of this shop: create, edit and delete products, create categories, change prices and stock": (
- "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer les catégories, modifier les prix et le stock",
- "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear categorías, cambiar precios y stock",
- "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen, Preise und Bestand ändern"),
+"Change the catalogue of this shop: create, edit and delete products, create and edit categories, change prices and stock": (
+ "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, modifier les prix et le stock",
+ "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, cambiar precios y stock",
+ "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Preise und Bestand ändern"),
 "Outgoing HTTP requests": (
  "Requêtes HTTP sortantes",
  "Peticiones HTTP salientes",
@@ -589,6 +589,10 @@ T = {
  "Créer une catégorie",
  "Crear una categoría",
  "Eine Kategorie anlegen"),
+"Change a category": (
+ "Modifier une catégorie",
+ "Modificar una categoría",
+ "Eine Kategorie ändern"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",

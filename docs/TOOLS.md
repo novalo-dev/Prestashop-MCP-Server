@@ -900,20 +900,24 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - The forbidden characters are PrestaShop's own rules, read from the running version: `isCatalogName` for the name (`<>;=#{}` up to 9.0, `<>{}` from 9.1), `isGenericName` for the meta fields (`<>={}` up to 9.0, `<>{}` from 9.1); the descriptions are rich text and follow `isCleanHtml`, as the back office form does.
 
 #### `somcp_update_category`
-**State**: to write · [issue #10](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/10)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminCategories')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one category with everything `somcp_create_category` can write, under the same rules. Only what is given changes.
 
 **Do not use for** - creating one (→ `somcp_create_category`), or only switching it on or off (→ `somcp_set_category_active`).
 
-**Parameters** - `id_category` (required), `languages`, then the fields of `somcp_create_category`, all optional. A text given replaces the languages given and keeps the others; `groups` given replaces the whole set; `menu_thumbnails` given replaces the existing ones, and `remove_cover_image` / `remove_menu_thumbnails` remove explicitly.
+**Parameters** - `id_category` (required), `languages`, then the fields of `somcp_create_category`, all optional. A text given replaces the languages given and keeps the others; `groups` given replaces the whole set; `cover_image` given replaces the cover; `menu_thumbnails` given replaces the existing ones, and `remove_cover_image` / `remove_menu_thumbnails` (booleans, `remove_menu_thumbnails` on PrestaShop 8 only) remove explicitly, never next to the field that already replaces them.
 
-**Returns** - `changed`, per field its old and new value, `seo_warnings`, `images`, and the category as `somcp_get_category` returns it.
+**Returns** - `changed`, `id_category`, `changes` (per field its `field`, `old` and `new` value; a text names its language), `seo_warnings` for the languages whose texts changed, `images` (per image: `for`, and `stored`, `removed` or the reason it was `refused`), and `category`, as `somcp_get_category` returns it. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
 **Notes**
-- The root and Home categories are refused, as in the back office. A category cannot be moved under itself or one of its children.
-- `link_rewrite` changed on a displayed category: the old URL stops working, said in `seo_warnings`.
+- The root category and Home - the top category of a shop, `is_root_category` - are refused: the back office changes Home through a form of its own, and refuses the root. A category cannot be moved under itself or one of its children, checked by walking up `id_parent` rather than trusting `nleft` / `nright`.
+- Written through `Category::update()` in the shop of the token (`id_shop_list`), so `actionCategoryUpdate` fires, and a new parent has the level, positions and tree worked out by the core. Group access is only rewritten when `groups` is given.
+- `link_rewrite` is only written in the languages given, never made again from a new name. Changed on a displayed category, the old URL stops working: said in `seo_warnings`.
+- On PrestaShop 9, a target left from a `301` or `302` is cleared when `redirect_type` becomes `404` or `410`, since the core accepts a target only next to a redirection; `id_type_redirected` alone keeps the current `redirect_type`.
+- Every problem is reported at once, before anything is written. Images come after the write, as at creation: a new cover is written over the current files, so a refused one leaves the old cover in place; menu thumbnails given replace the current ones, which are deleted first. A removed cover goes through `ObjectModel::deleteImage()`, as in the back office.
+- Not replayable: the read tool to check is `somcp_get_category`, or `somcp_list_categories` while the former is not written.
 
 #### `somcp_set_category_active`
 **State**: to write · [issue #53](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/53)

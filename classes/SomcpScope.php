@@ -226,7 +226,7 @@ class SomcpScope
             case self::CATALOG_READ:
                 return $module->l10n('Read the catalogue of this shop: products, prices and categories');
             case self::CATALOG_WRITE:
-                return $module->l10n('Change the catalogue of this shop: create, edit and delete products, create categories, change prices and stock');
+                return $module->l10n('Change the catalogue of this shop: create, edit and delete products, create and edit categories, change prices and stock');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

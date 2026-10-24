@@ -15,6 +15,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_set_product_active`
 - `somcp_delete_product`
 - `somcp_create_category`
+- `somcp_update_category`
 
 ## Know which shop you are in
 
@@ -162,6 +163,25 @@ When it succeeds, show the merchant the category as returned, the
 `seo_warnings`, and any image in `images` that was refused, with its reason. On
 a lost answer, read `somcp_list_categories` again rather than calling twice: a
 second call creates a second category.
+
+## Changing a category
+
+`somcp_update_category` changes one existing category. Before calling it:
+
+1. Take the category from `somcp_list_categories`, never guessed, and name its
+   branch to the merchant: two categories can share a name.
+2. Give only what changes. `groups` replaces the current set, and new menu
+   thumbnails replace the current ones; the cover and the thumbnails are only
+   removed through `remove_cover_image` and `remove_menu_thumbnails`.
+3. To change a text in one language, pass `languages` with that language alone.
+   A new `link_rewrite` on a displayed category breaks the old address of its
+   page: tell the merchant before.
+
+The root category and Home are changed in the back office, not here. When it
+succeeds, show the merchant each change with its old and new value, the
+`seo_warnings`, and any image in `images` that was refused. `changed: false`
+means the category already held those values. On a lost answer, read the
+category again before calling twice.
 
 ## Do not use when
 

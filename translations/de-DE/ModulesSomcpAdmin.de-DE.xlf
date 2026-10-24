@@ -122,10 +122,10 @@
       <source>Read the catalogue of this shop: products, prices and categories</source>
       <target>Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien</target>
     </trans-unit>
-    <!-- Change the catalogue of this shop: create, edit and delete products, create categories, change prices and stock -->
-    <trans-unit id="9308ef8841767068149c65afb32fedd9" resname="Change the catalogue of this shop: create, edit and delete products, create categories, change prices and stock">
-      <source>Change the catalogue of this shop: create, edit and delete products, create categories, change prices and stock</source>
-      <target>Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen, Preise und Bestand ändern</target>
+    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, change prices and stock -->
+    <trans-unit id="3672064a648d5977e9882c9ed74357b5" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, change prices and stock">
+      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, change prices and stock</source>
+      <target>Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Preise und Bestand ändern</target>
     </trans-unit>
     <!-- Outgoing HTTP requests -->
     <trans-unit id="44dc1cd9380e6350a77f6d24def569f7" resname="Outgoing HTTP requests">
@@ -726,6 +726,11 @@
     <trans-unit id="cff15d43797962a1e28c0515ab556743" resname="Create a category">
       <source>Create a category</source>
       <target>Eine Kategorie anlegen</target>
+    </trans-unit>
+    <!-- Change a category -->
+    <trans-unit id="fdca271b592029bd8413fe87b78de085" resname="Change a category">
+      <source>Change a category</source>
+      <target>Eine Kategorie ändern</target>
     </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">

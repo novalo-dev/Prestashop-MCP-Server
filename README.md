@@ -83,6 +83,7 @@ calling the shop's own addresses.
 | `somcp_create_category` | `mcp.catalog.write` | `add` on `AdminCategories` | write |
 | `somcp_update_category` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
 | `somcp_get_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
+| `somcp_list_low_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running

@@ -6,6 +6,7 @@
   ],
   "tools": [
     "somcp_ping",
+    "somcp_list_low_stock",
     "somcp_get_stock",
     "somcp_search_products"
   ],

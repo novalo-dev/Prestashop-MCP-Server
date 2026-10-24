@@ -742,6 +742,11 @@
       <source>Get the stock of a product</source>
       <target>Get the stock of a product</target>
     </trans-unit>
+    <!-- List low stock -->
+    <trans-unit id="dc73d6f241e06132c512404f453a5adc" resname="List low stock">
+      <source>List low stock</source>
+      <target>List low stock</target>
+    </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">
       <source>Change the status of an order</source>

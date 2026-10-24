@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "each line against its own alert level, active products only", "arguments": {}, "expect": "ok", "contains": ["\"lines\"", "\"total_count\"", "\"offset\": 0"]},
+    {"why": "a threshold above every demo quantity fills a full first page", "arguments": {"threshold": 1000000}, "expect": "ok", "contains": ["\"id_product_attribute\"", "\"reference\"", "\"threshold\": 1000000", "\"returned\": 20"]},
+    {"why": "a threshold under every quantity lists nothing", "arguments": {"threshold": -1000000}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
+    {"why": "inactive products included", "arguments": {"threshold": 1000000, "active": false}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "the next page", "arguments": {"threshold": 1000000, "limit": 5, "offset": 5}, "expect": "ok", "contains": ["\"returned\": 5", "\"offset\": 5"]},
+    {"why": "a limit over the cap is brought back to 100", "arguments": {"threshold": 1000000, "limit": 500}, "expect": "ok", "contains": ["\"lines\""]}
+  ]
+}

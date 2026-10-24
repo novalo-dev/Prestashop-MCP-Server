@@ -7,6 +7,7 @@ quantities move with every order.
 ## Tools
 
 - `somcp_ping`
+- `somcp_list_low_stock`
 - `somcp_get_stock`
 - `somcp_search_products`
 
@@ -24,10 +25,11 @@ which may not be the one the merchant has in mind.
 1. **A named product.** Find it with `somcp_search_products` (name, reference
    or EAN13), then read its quantities with `somcp_get_stock`. Several matches:
    show them and let the merchant pick. Never choose one for them.
-2. **What runs low.** Use `somcp_list_low_stock` when the shop offers it, with
-   the threshold the merchant gave, or each product's own alert level when they
-   gave none. Without it, say that this shop cannot list low stock yet, and offer
-   to check named products one by one.
+2. **What runs low.** Use `somcp_list_low_stock`, with the threshold the
+   merchant gave, or without one to compare each line with its own alert level.
+   It returns one line per combination: read `somcp_get_stock` on a product to
+   name its combinations by their attributes. Read the next page while
+   `total_count` says there is more, before saying that is all.
 3. Report the quantities as the tool gives them, and say which one you mean.
 
 ## Quantities

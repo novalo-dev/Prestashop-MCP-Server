@@ -601,6 +601,10 @@ T = {
  "Lire le stock d'un produit",
  "Leer el stock de un producto",
  "Den Bestand eines Produkts abrufen"),
+"List low stock": (
+ "Lister les stocks bas",
+ "Listar el stock bajo",
+ "Niedrigen Bestand auflisten"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",

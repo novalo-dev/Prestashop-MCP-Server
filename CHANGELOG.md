@@ -138,6 +138,15 @@ and its own quantities. It gives the same quantities as reading the product. It
 needs the new permission `mcp.stock.read`, which the consent screen describes
 as reading the stock, and the `view` right on the back office Stock page.
 
+**Listing what runs low.** The new tool `somcp_list_low_stock` lists the
+products and combinations whose quantity left to sell is at or under a level,
+lowest first. Without a level given, each one is compared with the low stock
+alert level the merchant set on it, and one without an alert level shows only
+once it reaches zero. Each combination has its own line, so a size that is gone
+shows even when the product as a whole still has stock. Only active products by
+default. It needs the permission `mcp.stock.read` and the `view` right on the
+back office Stock page.
+
 **Check and adjust stock prompt.** A guided task for stock, picked from the
 assistant's menu: find the product before reading its stock, say which quantity
 is meant, name a combination by its attributes.

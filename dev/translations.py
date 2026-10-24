@@ -573,6 +573,10 @@ T = {
  "Lister les marques",
  "Listar las marcas",
  "Marken auflisten"),
+"List suppliers": (
+ "Lister les fournisseurs",
+ "Listar los proveedores",
+ "Lieferanten auflisten"),
 "Search products": (
  "Rechercher des produits",
  "Buscar productos",

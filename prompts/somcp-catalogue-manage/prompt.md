@@ -11,6 +11,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_product`
 - `somcp_list_categories`
 - `somcp_list_manufacturers`
+- `somcp_list_suppliers`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -59,6 +60,10 @@ them the matches and let them pick before searching or writing.
 A brand is taken the same way, from `somcp_list_manufacturers`: never write an
 `id_manufacturer` the list did not give. When the brand the merchant names is
 not in the list, say so rather than picking the closest one.
+
+A supplier too, from `somcp_list_suppliers`: never write an `id_supplier` the
+list did not give, and when the supplier the merchant names is not in it, say
+so.
 
 ## Prices
 

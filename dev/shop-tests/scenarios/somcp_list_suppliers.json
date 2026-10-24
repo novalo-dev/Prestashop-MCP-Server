@@ -1,0 +1,5 @@
+{
+  "calls": [
+    {"why": "lists the two suppliers of the demo shop", "arguments": {}, "expect": "ok", "contains": ["\"suppliers\"", "\"count\": 2", "\"id_supplier\"", "Fashion supplier", "Accessories supplier"]}
+  ]
+}

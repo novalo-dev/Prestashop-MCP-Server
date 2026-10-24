@@ -707,6 +707,11 @@
       <source>List brands</source>
       <target>Marken auflisten</target>
     </trans-unit>
+    <!-- List suppliers -->
+    <trans-unit id="9612da082bad7b857b8bedea2743be00" resname="List suppliers">
+      <source>List suppliers</source>
+      <target>Lieferanten auflisten</target>
+    </trans-unit>
     <!-- Search products -->
     <trans-unit id="437ac95a91364eb49587af5e146b1745" resname="Search products">
       <source>Search products</source>

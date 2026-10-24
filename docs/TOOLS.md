@@ -1129,22 +1129,21 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 **Notes** - irreversible: the assistant names the brand and the city to the merchant before the call. Through `Address::delete()`, so hooks fire.
 
 #### `somcp_list_suppliers`
-**State**: to write · [issue #46](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/46)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminSuppliers')` · **Scope**: `mcp.catalog.read`
 
 **Does** - lists the suppliers of this shop: identifier and name, nothing else.
 
-**Do not use for** - everything about one supplier (→ `somcp_get_supplier`), or the products of a supplier (→ `somcp_search_products`).
+**Do not use for** - everything about one supplier (→ `somcp_get_supplier`), or the products of a supplier (`somcp_search_products` has no supplier filter; `somcp_get_product` names the suppliers of one product).
 
-**Parameters**
-
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+**Parameters** - none.
 
 **Returns** - per supplier: `id_supplier`, `name`. Plus `count`.
 
-**Notes** - same shape as `somcp_list_categories`: the list an assistant reads before a write that takes a supplier, which must never guess an identifier. Inactive ones are listed too, since a product can still point to them.
+**Notes**
+- Same shape as `somcp_list_categories`: the list an assistant reads before a write that takes a supplier, which must never guess an identifier. Inactive ones are listed too, since a product can still point to them.
+- No `language` parameter, unlike the first draft of this entry: a supplier name is not translated in PrestaShop (`Supplier::$name` has no `lang`, checked on 8.0.0 and 9.0.0), so it would change nothing.
+- Read through a query on `supplier` and `supplier_shop` in the shop of the token, rather than `Supplier::getSuppliers()`, which takes the shop from the global context and leaves inactive suppliers out by default. Sorted by name, as the core does.
 
 #### `somcp_get_supplier`
 **State**: to write · [issue #58](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/58)

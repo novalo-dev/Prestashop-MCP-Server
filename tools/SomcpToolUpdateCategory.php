@@ -191,12 +191,15 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
     /**
      * The category as this shop holds it, every language loaded.
      *
+     * Public because somcp_get_category decides with it what exists, so a
+     * category this tool would refuse is never one that tool describes.
+     *
      * @param int $idCategory
      * @param int $idShop
      *
      * @return Category|null
      */
-    private static function existingCategory(int $idCategory, int $idShop): ?Category
+    public static function existingCategory(int $idCategory, int $idShop): ?Category
     {
         if ($idCategory <= 0) {
             return null;

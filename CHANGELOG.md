@@ -57,6 +57,17 @@ than guessing it before searching, creating or changing a product. The root
 category is left out; Home is listed. It needs the permission
 `mcp.catalog.read` and the `view` right on the back office categories page.
 
+**Reading a category.** The new tool `somcp_get_category` returns everything
+the back office category form shows for one category: name, Displayed, parent,
+place in the tree, descriptions, the customer groups that see it, friendly URL
+and address, meta texts, meta keywords on PrestaShop 8, what the page does
+while hidden on PrestaShop 9, cover image, menu thumbnails on PrestaShop 8, and
+how many products and subcategories it holds. It tells apart two categories of
+the same name by their parent, and gives the values under the names the
+category creation and change take. It only reads the shop the assistant is
+connected to. It needs the permission `mcp.catalog.read` and the `view` right
+on the back office categories page.
+
 **Listing brands.** The new tool `somcp_list_manufacturers` lists the brands
 of the shop the assistant is connected to, with their identifier and name and
 nothing else, so the assistant takes a brand from the shop rather than guessing

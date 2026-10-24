@@ -613,6 +613,10 @@ T = {
  "Supprimer un produit",
  "Eliminar un producto",
  "Ein Produkt löschen"),
+"Get a category": (
+ "Lire une catégorie",
+ "Leer una categoría",
+ "Eine Kategorie abrufen"),
 "Create a category": (
  "Créer une catégorie",
  "Crear una categoría",

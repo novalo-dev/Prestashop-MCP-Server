@@ -842,13 +842,16 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     /**
      * The category with the fields somcp_get_category returns.
      *
+     * Public because somcp_get_category answers with it: the read tool and the
+     * write tools then cannot come to name a field differently.
+     *
      * @param int $idCategory
      * @param int $idLang
      * @param int $idShop
      *
      * @return array<string, mixed>
      */
-    protected static function category(int $idCategory, int $idLang, int $idShop): array
+    public static function category(int $idCategory, int $idLang, int $idShop): array
     {
         $category = new Category($idCategory, $idLang, $idShop);
         $parent = new Category((int) $category->id_parent, $idLang, $idShop);

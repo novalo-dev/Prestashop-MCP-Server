@@ -10,6 +10,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_search_products`
 - `somcp_get_product`
 - `somcp_list_categories`
+- `somcp_get_category`
 - `somcp_list_manufacturers`
 - `somcp_list_suppliers`
 - `somcp_list_attributes`
@@ -57,8 +58,13 @@ the merchant which category they mean. A guessed category filter returns the
 wrong products with total confidence.
 
 Two categories can share a name in different branches (Men > T-shirts, Women >
-T-shirts). When the name the merchant gave comes back more than once, show
-them the matches and let them pick before searching or writing.
+T-shirts). When the name the merchant gave comes back more than once, read
+each one with `somcp_get_category` when the shop offers it, show the merchant
+the matches with their parent, and let them pick before searching or writing.
+
+To answer about one category - its descriptions, customer groups, friendly
+URL, SEO texts, images, how many products it holds - read it with
+`somcp_get_category`, by the identifier the list gave.
 
 A brand is taken the same way, from `somcp_list_manufacturers`: never write an
 `id_manufacturer` the list did not give. When the brand the merchant names is
@@ -198,7 +204,8 @@ second call creates a second category.
 `somcp_update_category` changes one existing category. Before calling it:
 
 1. Take the category from `somcp_list_categories`, never guessed, and name its
-   branch to the merchant: two categories can share a name.
+   branch to the merchant: two categories can share a name. Read it with
+   `somcp_get_category` to know what it holds before changing it.
 2. Give only what changes. `groups` replaces the current set, and new menu
    thumbnails replace the current ones; the cover and the thumbnails are only
    removed through `remove_cover_image` and `remove_menu_thumbnails`.

@@ -843,7 +843,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read through a query on `category`, `category_shop` and `category_lang` in the shop of the token, rather than `Category::getSimpleCategories()`, which takes the shop from the global context. Inactive categories are listed too, in tree order (`nleft`), so each one follows its parent. A language the shop does not have falls back on the shop default.
 
 #### `somcp_get_category`
-**State**: to write · [issue #52](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/52)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminCategories')` · **Scope**: `mcp.catalog.read`
 
 **Does** - returns everything the back office category form shows for one category.
@@ -860,8 +860,10 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 **Returns** - `id_category`, `name`, `active` (Displayed), `id_parent` and `parent_name`, `level`, `position`, `description`, `additional_description`, `groups` (id and name of each customer group with access), `link_rewrite`, `url`, `meta_title`, `meta_description`, `meta_keywords`, `cover_image` (URL), `menu_thumbnails` (URLs), `products_count`, `children_count`, and on PrestaShop 9 `redirect_type` with `id_type_redirected`.
 
 **Notes**
-- Columns of `category`, `category_lang`, `category_group`, checked against PrestaShop 8.0.3 and 9.2. `meta_keywords` exists on PrestaShop 8 only and is `null` on 9; `redirect_type` exists on 9 only and is `null` on 8.
-- Read in the shop of the token.
+- Columns of `category`, `category_lang`, `category_group`, checked against PrestaShop 8.0.3 and 9.2. `meta_keywords` exists on PrestaShop 8 only and is `null` on 9; `redirect_type` and `id_type_redirected` exist on 9 only and are `null` on 8; `menu_thumbnails` exist on 8 only and are `null` on 9.
+- Read in the shop of the token: a category of another shop, or an identifier that does not exist, is answered like one that does not exist. `products_count` and `children_count` count the products and subcategories of this shop only.
+- Read by the same method `somcp_create_category` and `somcp_update_category` answer with, and checked by the same test of the shop as `somcp_update_category`, so the three tools name every field alike and agree on what exists.
+- A language the shop does not have falls back on the shop default.
 
 #### `somcp_create_category`
 **State**: written
@@ -917,7 +919,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - `link_rewrite` is only written in the languages given, never made again from a new name. Changed on a displayed category, the old URL stops working: said in `seo_warnings`.
 - On PrestaShop 9, a target left from a `301` or `302` is cleared when `redirect_type` becomes `404` or `410`, since the core accepts a target only next to a redirection; `id_type_redirected` alone keeps the current `redirect_type`.
 - Every problem is reported at once, before anything is written. Images come after the write, as at creation: a new cover is written over the current files, so a refused one leaves the old cover in place; menu thumbnails given replace the current ones, which are deleted first. A removed cover goes through `ObjectModel::deleteImage()`, as in the back office.
-- Not replayable: the read tool to check is `somcp_get_category`, or `somcp_list_categories` while the former is not written.
+- Not replayable: the read tool to check is `somcp_get_category`.
 
 #### `somcp_set_category_active`
 **State**: to write · [issue #53](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/53)

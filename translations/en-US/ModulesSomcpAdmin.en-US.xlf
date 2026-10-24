@@ -757,6 +757,11 @@
       <source>Delete a product</source>
       <target>Delete a product</target>
     </trans-unit>
+    <!-- Get a category -->
+    <trans-unit id="55b9a369c6673af09d5f52a5f1fd9a45" resname="Get a category">
+      <source>Get a category</source>
+      <target>Get a category</target>
+    </trans-unit>
     <!-- Create a category -->
     <trans-unit id="cff15d43797962a1e28c0515ab556743" resname="Create a category">
       <source>Create a category</source>

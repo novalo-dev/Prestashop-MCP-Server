@@ -66,7 +66,7 @@ The pieces, in `classes/`:
   looks like.
 - `SomcpRandom` mints every secret, and `SomcpScope` defines the core scopes:
   `mcp.access`, `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`,
-  `mcp.catalog.write`.
+  `mcp.catalog.write`, `mcp.stock.read`.
 
 Reaching the consent screen from a front controller is its own problem.
 PrestaShop 8 accepts a legacy back office address with a computed token.

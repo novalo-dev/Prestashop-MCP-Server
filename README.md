@@ -82,6 +82,7 @@ calling the shop's own addresses.
 | `somcp_delete_product` | `mcp.catalog.write` | `delete` on `AdminProducts` | write |
 | `somcp_create_category` | `mcp.catalog.write` | `add` on `AdminCategories` | write |
 | `somcp_update_category` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
+| `somcp_get_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running
@@ -93,8 +94,8 @@ and only says what the assistant is connected to (shop, account, language,
 currency), so an assistant can always tell which account it is using, even one
 with no rights at all.
 
-Four prompts ship with the module: checking the connection, finding an order,
-changing an order status, and managing products. Details of every tool are in
+Five prompts ship with the module: checking the connection, finding an order,
+changing an order status, managing products, and checking stock. Details of every tool are in
 [docs/TOOLS.md](docs/TOOLS.md).
 
 ## Install for development
@@ -147,7 +148,8 @@ welcome, see the roadmap.
   access tokens one hour and refresh tokens thirty days by default, both
   configurable. Refresh tokens rotate; presenting an old one revokes the grant.
 - **Scopes** say what an assistant may do: `mcp.access` to connect,
-  `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`. Other modules
+  `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
+  `mcp.stock.read`. Other modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's
   current profile, and the shop always comes from the token, never from the

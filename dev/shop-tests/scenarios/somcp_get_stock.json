@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "a demo product with combinations", "arguments": {"id_product": 1}, "expect": "ok", "contains": ["\"id_product\": 1", "\"physical_quantity\"", "\"reserved_quantity\"", "\"low_stock_threshold\"", "\"id_product_attribute\"", "\"attributes\""]},
+    {"why": "in a language given by ISO code", "arguments": {"id_product": 1, "language": "en"}, "expect": "ok", "contains": ["\"combinations\""]},
+    {"why": "a language the shop does not have falls back on the default one", "arguments": {"id_product": 1, "language": "zz"}, "expect": "ok"},
+    {"why": "a virtual product, without combinations", "arguments": {"id_product": 12}, "expect": "ok", "contains": ["\"combinations\": []"]},
+    {"why": "a pack", "arguments": {"id_product": 15}, "expect": "ok"},
+    {"why": "a product that does not exist", "arguments": {"id_product": 999999}, "expect": "error"},
+    {"why": "no identifier", "arguments": {"id_product": 0}, "expect": "error"}
+  ]
+}

@@ -183,7 +183,9 @@ class SomcpToolGetProduct
      * Loads the product as the shop of the token holds it.
      *
      * Loaded with that shop, the object carries the price, status and options
-     * of product_shop for that shop rather than the default shop's.
+     * of product_shop for that shop rather than the default shop's. Public
+     * because somcp_get_stock finds its product the same way: two tools that
+     * disagree on which products exist would answer for different ones.
      *
      * @param int $idProduct
      * @param int $idLang
@@ -191,7 +193,7 @@ class SomcpToolGetProduct
      *
      * @return Product|null
      */
-    private static function locate(int $idProduct, int $idLang, int $idShop): ?Product
+    public static function locate(int $idProduct, int $idLang, int $idShop): ?Product
     {
         if ($idProduct <= 0) {
             return null;
@@ -261,17 +263,20 @@ class SomcpToolGetProduct
      * The stock rows of the product and of its combinations, by combination.
      *
      * Read once for all of them. Whether they belong to the shop or to its
-     * group depends on stock sharing, which the core decides for us.
+     * group depends on stock sharing, which the core decides for us. Public
+     * because somcp_get_stock reads the same rows, so the two tools never
+     * give different quantities for one product.
      *
      * @param Product $product
      * @param Shop $shop
      *
-     * @return array<int, array{quantity: int, location: string, out_of_stock: int}>
+     * @return array<int, array{quantity: int, physical_quantity: int, reserved_quantity: int, location: string, out_of_stock: int}>
      */
-    private static function stockRows(Product $product, Shop $shop): array
+    public static function stockRows(Product $product, Shop $shop): array
     {
         $rows = Db::getInstance()->executeS(
-            'SELECT sa.`id_product_attribute`, sa.`quantity`, sa.`location`, sa.`out_of_stock`'
+            'SELECT sa.`id_product_attribute`, sa.`quantity`, sa.`physical_quantity`, sa.`reserved_quantity`,'
+            . ' sa.`location`, sa.`out_of_stock`'
             . ' FROM `' . _DB_PREFIX_ . 'stock_available` sa'
             . ' WHERE sa.`id_product` = ' . (int) $product->id
             . (string) StockAvailable::addSqlShopRestriction(null, $shop, 'sa')
@@ -281,6 +286,8 @@ class SomcpToolGetProduct
         foreach ($rows as $row) {
             $stock[(int) $row['id_product_attribute']] = [
                 'quantity' => (int) $row['quantity'],
+                'physical_quantity' => (int) $row['physical_quantity'],
+                'reserved_quantity' => (int) $row['reserved_quantity'],
                 'location' => (string) $row['location'],
                 'out_of_stock' => (int) $row['out_of_stock'],
             ];
@@ -425,7 +432,7 @@ class SomcpToolGetProduct
 
     /**
      * @param Product $product
-     * @param array{quantity: int, location: string, out_of_stock: int}|null $row the row without combination
+     * @param array{quantity: int, physical_quantity: int, reserved_quantity: int, location: string, out_of_stock: int}|null $row the row without combination
      *
      * @return array<string, mixed>
      */
@@ -682,7 +689,7 @@ class SomcpToolGetProduct
      * @param int $idLang
      * @param int $idShop
      * @param int $idCombination
-     * @param array<int, array{quantity: int, location: string, out_of_stock: int}> $stock
+     * @param array<int, array{quantity: int, physical_quantity: int, reserved_quantity: int, location: string, out_of_stock: int}> $stock
      * @param array{iso: string, precision: int, tax_ratio: float} $money
      *
      * @return array<int, array<string, mixed>>
@@ -763,12 +770,14 @@ class SomcpToolGetProduct
     /**
      * The group and value of each attribute of the combinations, Size: M.
      *
+     * Public because somcp_get_stock names its combinations the same way.
+     *
      * @param array<int, int> $ids
      * @param int $idLang
      *
      * @return array<int, array<int, array<string, mixed>>>
      */
-    private static function combinationAttributes(array $ids, int $idLang): array
+    public static function combinationAttributes(array $ids, int $idLang): array
     {
         $query = new DbQuery();
         $query->select('pac.`id_product_attribute`, a.`id_attribute`, a.`id_attribute_group`');

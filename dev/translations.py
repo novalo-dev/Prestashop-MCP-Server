@@ -109,6 +109,10 @@ T = {
  "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, modifier les prix et le stock",
  "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, cambiar precios y stock",
  "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Preise und Bestand ändern"),
+"Read the stock of this shop: quantities of products and combinations": (
+ "Lire le stock de cette boutique : quantités des produits et des déclinaisons",
+ "Leer el stock de esta tienda: cantidades de los productos y de las combinaciones",
+ "Den Bestand dieses Shops lesen: Mengen der Produkte und Kombinationen"),
 "Outgoing HTTP requests": (
  "Requêtes HTTP sortantes",
  "Peticiones HTTP salientes",
@@ -593,6 +597,10 @@ T = {
  "Modifier une catégorie",
  "Modificar una categoría",
  "Eine Kategorie ändern"),
+"Get the stock of a product": (
+ "Lire le stock d'un produit",
+ "Leer el stock de un producto",
+ "Den Bestand eines Produkts abrufen"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",
@@ -677,6 +685,10 @@ T = {
  "Gérer les produits",
  "Gestionar los productos",
  "Produkte verwalten"),
+"Check and adjust stock": (
+ "Vérifier et ajuster le stock",
+ "Comprobar y ajustar el stock",
+ "Bestand prüfen und anpassen"),
 "Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.": (
  "Vérifier que la connexion à la boutique PrestaShop fonctionne, et indiquer ce qu'elle atteint : quelle boutique, quel compte, dans quelle langue et quelle devise arrivent les réponses.",
  "Comprobar que la conexión con la tienda PrestaShop funciona e indicar a qué llega: qué tienda, qué cuenta, en qué idioma y moneda llegan las respuestas.",
@@ -693,6 +705,10 @@ T = {
  "Trouver, lire et modifier les produits et les catégories de la boutique PrestaShop, un à la fois, sans deviner d'identifiant.",
  "Buscar, leer y modificar los productos y las categorías de la tienda PrestaShop, uno cada vez, sin adivinar ningún identificador.",
  "Produkte und Kategorien im PrestaShop-Shop finden, lesen und ändern, eins nach dem anderen, ohne eine Kennung zu erraten."),
+"See what runs low in the PrestaShop shop and set quantities, one product or combination at a time.": (
+ "Voir ce qui manque dans la boutique PrestaShop et régler les quantités, un produit ou une déclinaison à la fois.",
+ "Ver lo que escasea en la tienda PrestaShop y ajustar las cantidades, un producto o una combinación cada vez.",
+ "Sehen, was im PrestaShop-Shop knapp wird, und Mengen festlegen, ein Produkt oder eine Kombination nach der anderen."),
 "Order reference, number or customer name": (
  "Référence, numéro de commande ou nom du client",
  "Referencia, número de pedido o nombre del cliente",
@@ -709,6 +725,10 @@ T = {
  "Nom, référence ou EAN13 d'un produit",
  "Nombre, referencia o EAN13 de un producto",
  "Name, Referenz oder EAN13 eines Produkts"),
+"Quantity at or under which a product counts as low": (
+ "Quantité à partir de laquelle un produit est considéré en stock bas",
+ "Cantidad a partir de la cual un producto se considera con stock bajo",
+ "Menge, ab der ein Produkt als knapp gilt"),
 "Send a file to your assistant": (
  "Envoyer un fichier à votre assistant",
  "Enviar un archivo a su asistente",

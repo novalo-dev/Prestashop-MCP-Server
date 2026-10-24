@@ -1,0 +1,21 @@
+{
+  "title": "Check and adjust stock",
+  "description": "See what runs low in the PrestaShop shop and set quantities, one product or combination at a time.",
+  "scopes": [
+    "mcp.stock.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_get_stock",
+    "somcp_search_products"
+  ],
+  "controller": "AdminStockManagement",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "threshold",
+      "description": "Quantity at or under which a product counts as low",
+      "required": false
+    }
+  ]
+}

@@ -129,6 +129,19 @@ consent screen now says that the catalogue permission can edit categories. It
 needs the permission `mcp.catalog.write` and the `edit` right on the back office
 categories page.
 
+**Reading the stock of a product.** The new tool `somcp_get_stock` gives the
+stock of one product as the storefront sells against it: the quantity that can
+still be sold, the physical quantity and the quantity held by orders not shipped
+yet, with the low stock alert level when one is set. A product with
+combinations comes with each combination, named by its attributes (Size: M),
+and its own quantities. It gives the same quantities as reading the product. It
+needs the new permission `mcp.stock.read`, which the consent screen describes
+as reading the stock, and the `view` right on the back office Stock page.
+
+**Check and adjust stock prompt.** A guided task for stock, picked from the
+assistant's menu: find the product before reading its stock, say which quantity
+is meant, name a combination by its attributes.
+
 **Manage products prompt.** A guided task for the catalogue, picked from the
 assistant's menu: search before reading, never guess an identifier, always say
 whether a price is with or without tax.

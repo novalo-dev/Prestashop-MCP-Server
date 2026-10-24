@@ -1526,7 +1526,7 @@ The quantities the storefront sells against, per product and combination.
 **Not here**: prices and texts (→ Catalogue).
 
 #### `somcp_get_stock`
-**State**: to write · [issue #12](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/12)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminStockManagement')` · **Scope**: `mcp.stock.read`
 
 **Does** - returns the quantities of one product, per combination.
@@ -1538,10 +1538,15 @@ The quantities the storefront sells against, per product and combination.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_product` | integer | yes |  |
+| `language` | string | no | ISO code for the product and attribute names, shop default otherwise |
 
-**Returns** - `quantity` (total), and per combination: `id_product_attribute`, `attributes`, `quantity`, `physical_quantity`, `reserved_quantity`, `low_stock_threshold`.
+**Returns** - `id_product`, `name`, the product line - `quantity` (total), `physical_quantity`, `reserved_quantity`, `low_stock_threshold` - and per combination: `id_product_attribute`, `attributes`, `quantity`, `physical_quantity`, `reserved_quantity`, `low_stock_threshold`.
 
-**Notes** - read from `StockAvailable`, the quantities the storefront sells against.
+**Notes**
+- Read from `stock_available`, the quantities the storefront sells against, through the same reader as `somcp_get_product` (restricted to the shop or its group by `StockAvailable::addSqlShopRestriction()`, as stock sharing decides), so the two tools always agree.
+- The product line also carries `physical_quantity`, `reserved_quantity` and `low_stock_threshold`: without them, a product without combinations would have none of the three.
+- Combinations are listed from `product_attribute_shop`, so one without a stock row yet comes back at zero rather than missing. `low_stock_threshold` is the shop's own (`product_shop`, `product_attribute_shop`), `null` when no alert is set.
+- A product still being created, or not in this shop, is not found, as in `somcp_get_product`.
 
 #### `somcp_list_low_stock`
 **State**: to write · [issue #13](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/13)
@@ -1984,7 +1989,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-order-lookup` | Orders | written |
 | `somcp-order-status-change` | Orders | written |
 | `somcp-catalogue-manage` | Catalogue | written |
-| `somcp-stock-check` | Stock | draft · [issue #37](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/37) |
+| `somcp-stock-check` | Stock | written |
 | `somcp-customer-lookup` | Customers | draft · [issue #38](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/38) |
 | `somcp-sales-report` | Statistics | draft · [issue #39](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/39) |
 | `somcp-content-pages` | Content | draft · [issue #40](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/40) |
@@ -2007,7 +2012,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 
 #### `somcp-stock-check`
-**State**: draft · [issue #37](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/37)
+**State**: written
 **Section**: Stock · **Scope**: `mcp.stock.read` · **Permission**: `view` on `AdminStockManagement`
 
 **Title** - Check and adjust stock

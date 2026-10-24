@@ -127,6 +127,11 @@
       <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, change prices and stock</source>
       <target>Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Preise und Bestand ändern</target>
     </trans-unit>
+    <!-- Read the stock of this shop: quantities of products and combinations -->
+    <trans-unit id="44aed62b337ebd9f1875feb664e23563" resname="Read the stock of this shop: quantities of products and combinations">
+      <source>Read the stock of this shop: quantities of products and combinations</source>
+      <target>Den Bestand dieses Shops lesen: Mengen der Produkte und Kombinationen</target>
+    </trans-unit>
     <!-- Outgoing HTTP requests -->
     <trans-unit id="44dc1cd9380e6350a77f6d24def569f7" resname="Outgoing HTTP requests">
       <source>Outgoing HTTP requests</source>
@@ -732,6 +737,11 @@
       <source>Change a category</source>
       <target>Eine Kategorie ändern</target>
     </trans-unit>
+    <!-- Get the stock of a product -->
+    <trans-unit id="5ce4c0ce8e0b1778f0a99f54abdd5230" resname="Get the stock of a product">
+      <source>Get the stock of a product</source>
+      <target>Den Bestand eines Produkts abrufen</target>
+    </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">
       <source>Change the status of an order</source>
@@ -837,6 +847,11 @@
       <source>Manage products</source>
       <target>Produkte verwalten</target>
     </trans-unit>
+    <!-- Check and adjust stock -->
+    <trans-unit id="f522c8316bb101ad6052425e7f80271a" resname="Check and adjust stock">
+      <source>Check and adjust stock</source>
+      <target>Bestand prüfen und anpassen</target>
+    </trans-unit>
     <!-- Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in. -->
     <trans-unit id="911ba9aa6db02bd840aa72147dc37333" resname="Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.">
       <source>Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.</source>
@@ -857,6 +872,11 @@
       <source>Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.</source>
       <target>Produkte und Kategorien im PrestaShop-Shop finden, lesen und ändern, eins nach dem anderen, ohne eine Kennung zu erraten.</target>
     </trans-unit>
+    <!-- See what runs low in the PrestaShop shop and set quantities, one product or combination at a time. -->
+    <trans-unit id="5ca2db14220758c1f69e0977d95afd08" resname="See what runs low in the PrestaShop shop and set quantities, one product or combination at a time.">
+      <source>See what runs low in the PrestaShop shop and set quantities, one product or combination at a time.</source>
+      <target>Sehen, was im PrestaShop-Shop knapp wird, und Mengen festlegen, ein Produkt oder eine Kombination nach der anderen.</target>
+    </trans-unit>
     <!-- Order reference, number or customer name -->
     <trans-unit id="257b671f0fd599af83977738ac7c7bea" resname="Order reference, number or customer name">
       <source>Order reference, number or customer name</source>
@@ -876,6 +896,11 @@
     <trans-unit id="8befea239b14adb58304a3298ac62cb9" resname="Name, reference or EAN13 of a product">
       <source>Name, reference or EAN13 of a product</source>
       <target>Name, Referenz oder EAN13 eines Produkts</target>
+    </trans-unit>
+    <!-- Quantity at or under which a product counts as low -->
+    <trans-unit id="ba75fdf3c14d9e665cdcb4c037d2559f" resname="Quantity at or under which a product counts as low">
+      <source>Quantity at or under which a product counts as low</source>
+      <target>Menge, ab der ein Produkt als knapp gilt</target>
     </trans-unit>
     <!-- Send a file to your assistant -->
     <trans-unit id="bc445a0e56169dfb1aa11611f145dff9" resname="Send a file to your assistant">

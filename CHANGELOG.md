@@ -28,6 +28,9 @@ the settings page and on the page shown to employees who may only connect an
 assistant. The page remembers the tab you were on after saving. Every setting
 keeps its meaning and is saved the same way.
 
+**Logo.** The module has a new logo: a white pulse ending on an orange dot,
+on the dark background of the other O'So modules.
+
 ### Added
 
 **Product search.** The new tool `somcp_search_products` finds products with

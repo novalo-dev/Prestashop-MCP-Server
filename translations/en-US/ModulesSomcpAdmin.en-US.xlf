@@ -687,6 +687,11 @@
       <source>Search orders</source>
       <target>Search orders</target>
     </trans-unit>
+    <!-- List categories -->
+    <trans-unit id="212f7cc9644cdd793a6e5cc3edda6d90" resname="List categories">
+      <source>List categories</source>
+      <target>List categories</target>
+    </trans-unit>
     <!-- Search products -->
     <trans-unit id="437ac95a91364eb49587af5e146b1745" resname="Search products">
       <source>Search products</source>

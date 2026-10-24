@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "lists the categories of the demo shop, Home included", "arguments": {}, "expect": "ok", "contains": ["\"categories\"", "\"count\"", "\"id_category\": 2"]},
+    {"why": "in a language given by ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"id_category\": 2"]},
+    {"why": "a language the shop does not have falls back on the default one", "arguments": {"language": "zz"}, "expect": "ok", "contains": ["\"id_category\": 2"]}
+  ]
+}

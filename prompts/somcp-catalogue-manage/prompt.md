@@ -9,6 +9,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_ping`
 - `somcp_search_products`
 - `somcp_get_product`
+- `somcp_list_categories`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -47,6 +48,10 @@ next. Take a product identifier from a search result, and a category
 identifier from `somcp_list_categories` when the shop offers it - otherwise ask
 the merchant which category they mean. A guessed category filter returns the
 wrong products with total confidence.
+
+Two categories can share a name in different branches (Men > T-shirts, Women >
+T-shirts). When the name the merchant gave comes back more than once, show
+them the matches and let them pick before searching or writing.
 
 ## Prices
 

@@ -50,6 +50,13 @@ every combination with its own codes, stock and price impacts. Prices are the
 product's own; promotions are listed apart, so one is never taken for the
 price. It needs the same permission as product search.
 
+**Listing categories.** The new tool `somcp_list_categories` lists the
+categories of the shop the assistant is connected to, with their identifier and
+name and nothing else, so the assistant takes a category from the shop rather
+than guessing it before searching, creating or changing a product. The root
+category is left out; Home is listed. It needs the permission
+`mcp.catalog.read` and the `view` right on the back office categories page.
+
 **Creating a product.** The new tool `somcp_create_product` creates one
 complete product, offline by default: everything the product page holds can be
 given at once, combinations, specific prices, suppliers and images included,

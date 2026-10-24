@@ -557,6 +557,10 @@ T = {
  "Rechercher des commandes",
  "Buscar pedidos",
  "Bestellungen suchen"),
+"List categories": (
+ "Lister les catégories",
+ "Listar las categorías",
+ "Kategorien auflisten"),
 "Search products": (
  "Rechercher des produits",
  "Buscar productos",

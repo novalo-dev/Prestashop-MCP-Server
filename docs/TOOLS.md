@@ -821,7 +821,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Not replayable: the read tool to check is `somcp_search_products`, since `somcp_get_product` has nothing to read once the product is gone.
 
 #### `somcp_list_categories`
-**State**: to write · [issue #8](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/8)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminCategories')` · **Scope**: `mcp.catalog.read`
 
 **Does** - lists the categories of this shop: identifier and name, nothing else.
@@ -840,6 +840,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Kept that short on purpose, as the maintainer decided: it is the list an assistant reads before any write that takes a category, which must never guess an identifier.
 - Two categories can share a name in different branches (Men > T-shirts, Women > T-shirts): the assistant reads `somcp_get_category` to tell them apart before writing.
 - The root category is left out: nothing can be placed in it. Home is listed.
+- Read through a query on `category`, `category_shop` and `category_lang` in the shop of the token, rather than `Category::getSimpleCategories()`, which takes the shop from the global context. Inactive categories are listed too, in tree order (`nleft`), so each one follows its parent. A language the shop does not have falls back on the shop default.
 
 #### `somcp_get_category`
 **State**: to write · [issue #52](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/52)

@@ -81,6 +81,15 @@ guessing them before creating or changing the combinations of a product. One
 group can be asked for on its own. It needs the permission `mcp.catalog.read`
 and the `view` right on the back office attributes page.
 
+**Listing features.** The new tool `somcp_list_features` lists the features
+of the shop the assistant is connected to (Composition, Property...) and, under
+each one, its predefined values, with their identifier and name and nothing
+else, so the assistant takes the right values from the shop rather than
+guessing them before creating or changing a product. Values typed on one
+product only are left out: they belong to that product. One feature can be
+asked for on its own. It needs the permission `mcp.catalog.read` and the
+`view` right on the back office features page.
+
 **Creating a product.** The new tool `somcp_create_product` creates one
 complete product, offline by default: everything the product page holds can be
 given at once, combinations, specific prices, suppliers and images included,

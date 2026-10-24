@@ -717,6 +717,11 @@
       <source>List attributes</source>
       <target>Attribute auflisten</target>
     </trans-unit>
+    <!-- List features -->
+    <trans-unit id="6009a2cf3b6dc4a7df637cb89db902f8" resname="List features">
+      <source>List features</source>
+      <target>Merkmale auflisten</target>
+    </trans-unit>
     <!-- Search products -->
     <trans-unit id="437ac95a91364eb49587af5e146b1745" resname="Search products">
       <source>Search products</source>

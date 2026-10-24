@@ -1368,7 +1368,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 **Notes** - the value stays on the combinations that use it: renaming it renames it there too, which the assistant tells the merchant before the call. Replayable: the same values again say `changed: false`.
 
 #### `somcp_list_features`
-**State**: to write · [issue #48](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/48)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminFeatures')` · **Scope**: `mcp.catalog.read`
 
 **Does** - lists the features (Material, Composition...) and, under each, its predefined values: identifier and name, nothing else. A cascade, like the attributes.
@@ -1382,9 +1382,11 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature` | integer | no | one feature only |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - per feature: `id_feature`, `name`, and its `values`: `id_feature_value`, `value`. Plus `count`.
+**Returns** - `features`, per feature: `id_feature`, `name`, and its `values`: `id_feature_value`, `value`. Plus `count`, the number of features. An `id_feature` that is not a feature of this shop is an error, not an empty list.
 
-**Notes** - predefined values only (`custom` = 0). A custom value typed on one product belongs to that product and is read with `somcp_get_product`.
+**Notes**
+- Predefined values only (`custom` = 0, or NULL, which the core reads the same way). A custom value typed on one product belongs to that product and is read with `somcp_get_product`.
+- Read through queries on `feature`, `feature_shop`, `feature_value` and their language tables in the shop of the token, rather than `Feature::getFeatures()` and `FeatureValue::getFeatureValuesWithLang()`, which take the shop from the global context. Features are sorted by position, as the back office does; values by identifier, since `feature_value` only has a position from PrestaShop 9 on.
 
 #### `somcp_get_feature`
 **State**: to write · [issue #73](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/73)

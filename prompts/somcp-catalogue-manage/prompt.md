@@ -13,6 +13,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_manufacturers`
 - `somcp_list_suppliers`
 - `somcp_list_attributes`
+- `somcp_list_features`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -70,6 +71,11 @@ Attribute values - a size, a colour - come from `somcp_list_attributes`: a
 combination is a set of `id_attribute`, never of names. Two groups can hold a
 value of the same name, so check the group as well as the value, and ask the
 merchant when the name they gave sits in more than one.
+
+Features - a composition, a material - come from `somcp_list_features`: take
+the `id_feature` and the `id_feature_value` from there. Only predefined values
+are listed; when the value the merchant wants is not among them, it is a custom
+value written on that product alone, so say so before writing it.
 
 ## Prices
 

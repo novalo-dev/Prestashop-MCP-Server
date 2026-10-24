@@ -581,6 +581,10 @@ T = {
  "Lister les attributs",
  "Listar los atributos",
  "Attribute auflisten"),
+"List features": (
+ "Lister les caractéristiques",
+ "Listar las características",
+ "Merkmale auflisten"),
 "Search products": (
  "Rechercher des produits",
  "Buscar productos",

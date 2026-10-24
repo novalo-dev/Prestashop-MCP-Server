@@ -1239,8 +1239,10 @@ class SomcpToolCreateProduct
 
         if (array_key_exists('unity', $group)) {
             $unity = self::string($group['unity']);
-            if ($unity === null || ($check = $probe->validateField('unity', trim($unity))) !== true) {
-                $errors[] = 'pricing.unity: ' . ($unity === null ? 'a text' : self::reason($check ?? ''));
+            if ($unity === null) {
+                $errors[] = 'pricing.unity: a text';
+            } elseif (($check = $probe->validateField('unity', trim($unity))) !== true) {
+                $errors[] = 'pricing.unity: ' . self::reason($check);
             } else {
                 $plan['fields']['unity'] = trim($unity);
             }
@@ -1379,8 +1381,10 @@ class SomcpToolCreateProduct
                     continue;
                 }
                 $number = self::float($item[$given]);
-                if ($number === null || ($check = $probe->validateField($field, $number)) !== true) {
-                    $errors[] = $path . '.' . $given . ': ' . ($number === null ? 'a number' : self::reason($check ?? ''));
+                if ($number === null) {
+                    $errors[] = $path . '.' . $given . ': a number';
+                } elseif (($check = $probe->validateField($field, $number)) !== true) {
+                    $errors[] = $path . '.' . $given . ': ' . self::reason($check);
                 } else {
                     $combination['fields'][$field] = $number;
                 }
@@ -1437,7 +1441,8 @@ class SomcpToolCreateProduct
 
         if ($defaults > 1) {
             $errors[] = 'combinations: only one can be the default';
-        } elseif ($defaults === 0 && $combinations !== []) {
+        } elseif ($defaults === 0) {
+            // Never empty here: every item above adds one entry, and no items returned early.
             $combinations[0]['fields']['default_on'] = true;
         }
 
@@ -1620,8 +1625,10 @@ class SomcpToolCreateProduct
             ];
             if (array_key_exists('product_supplier_reference', $item)) {
                 $reference = self::string($item['product_supplier_reference']);
-                if ($reference === null || ($check = $probe->validateField('product_supplier_reference', trim($reference))) !== true) {
-                    $errors[] = $path . '.product_supplier_reference: ' . ($reference === null ? 'a text' : self::reason($check ?? ''));
+                if ($reference === null) {
+                    $errors[] = $path . '.product_supplier_reference: a text';
+                } elseif (($check = $probe->validateField('product_supplier_reference', trim($reference))) !== true) {
+                    $errors[] = $path . '.product_supplier_reference: ' . self::reason($check);
                 } else {
                     $row['product_supplier_reference'] = trim($reference);
                 }

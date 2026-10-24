@@ -1018,7 +1018,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Not replayable: the read tool to check is `somcp_list_manufacturers`.
 
 #### `somcp_update_manufacturer`
-**State**: to write · [issue #56](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/56)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminManufacturers')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one brand with everything `somcp_create_manufacturer` can write, under the same rules. Only what is given changes.
@@ -1027,9 +1027,14 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 **Parameters** - `id_manufacturer` (required), `languages`, then the fields of `somcp_create_manufacturer`, all optional. A text given replaces the languages given and keeps the others. `remove_logo` removes the logo explicitly.
 
-**Returns** - `changed`, per field its old and new value, `seo_warnings`, `logo`, and the brand as `somcp_get_manufacturer` returns it.
+**Returns** - `changed`, `changes` (per field its old and new value, a text per language), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise `stored: true`, `removed: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
 
-**Notes** - an `id_manufacturer` that does not exist is refused. Replayable: the same values again change nothing and say `changed: false`.
+**Notes**
+- Extends `somcp_create_manufacturer`: every field is checked by the same code, and the logo downloaded with the same guards and written where the creation writes it, over the current files, so a logo that cannot be fetched leaves the brand with the one it had.
+- An `id_manufacturer` that does not exist, or a brand of another shop, is refused by the same test of the shop as `somcp_get_manufacturer`.
+- Written through one `Manufacturer::update()` in the shop of the token (`id_shop_list`), as the core's `EditManufacturerHandler` does, so the object hooks fire; left to the context, the update could attach the brand to a shop it was never in.
+- `remove_logo` deletes what the core's `DeleteManufacturerLogoImageHandler` deletes: the original, every brand image type in every format, and the two cached copies of the back office. It is refused next to `logo`, and counts as a change only when the brand has a logo.
+- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address cannot be compared with a stored file.
 
 #### `somcp_set_manufacturer_active`
 **State**: to write · [issue #57](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/57)

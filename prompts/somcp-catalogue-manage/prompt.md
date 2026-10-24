@@ -25,6 +25,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_category`
 - `somcp_set_category_active`
 - `somcp_create_manufacturer`
+- `somcp_update_manufacturer`
 
 ## Know which shop you are in
 
@@ -253,6 +254,22 @@ When it succeeds, show the merchant the brand as returned, the `seo_warnings`,
 and the logo if it was refused, with its reason. On a lost answer, read
 `somcp_list_manufacturers` again rather than calling twice: a second call
 creates a second brand.
+
+## Changing a brand
+
+`somcp_update_manufacturer` changes one existing brand. Before calling it:
+
+1. Take the brand from `somcp_list_manufacturers`, never guessed, and read it
+   with `somcp_get_manufacturer` to know what it holds before changing it.
+2. Give only what changes. A new logo replaces the current one; the logo is
+   only removed through `remove_logo`. The name is one text, the same in every
+   language.
+3. To change a text in one language, pass `languages` with that language alone.
+
+When it succeeds, show the merchant each change with its old and new value, the
+`seo_warnings`, and the logo if it was refused, with its reason.
+`changed: false` means the brand already held those values. On a lost answer,
+read the brand again with `somcp_get_manufacturer` before calling twice.
 
 ## Do not use when
 

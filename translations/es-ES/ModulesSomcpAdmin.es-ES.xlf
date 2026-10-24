@@ -122,10 +122,10 @@
       <source>Read the catalogue of this shop: products, prices and categories</source>
       <target>Leer el catálogo de esta tienda: productos, precios y categorías</target>
     </trans-unit>
-    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, create brands, change prices and stock -->
-    <trans-unit id="324e2564b8dfde7cbcc8e707b13f7a08" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, create brands, change prices and stock">
-      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create brands, change prices and stock</source>
-      <target>Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear marcas, cambiar precios y stock</target>
+    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, change prices and stock -->
+    <trans-unit id="abd98ece09bf6cdfb6d76346b4a90a44" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, change prices and stock">
+      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, change prices and stock</source>
+      <target>Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear y editar marcas, cambiar precios y stock</target>
     </trans-unit>
     <!-- Read the stock of this shop: quantities of products and combinations -->
     <trans-unit id="44aed62b337ebd9f1875feb664e23563" resname="Read the stock of this shop: quantities of products and combinations">
@@ -716,6 +716,11 @@
     <trans-unit id="98c2d0b867d6335d424c5ed7e5ce5e5a" resname="Create a brand">
       <source>Create a brand</source>
       <target>Crear una marca</target>
+    </trans-unit>
+    <!-- Change a brand -->
+    <trans-unit id="821df97a4aeda434036c872f6b1674c7" resname="Change a brand">
+      <source>Change a brand</source>
+      <target>Modificar una marca</target>
     </trans-unit>
     <!-- List suppliers -->
     <trans-unit id="9612da082bad7b857b8bedea2743be00" resname="List suppliers">

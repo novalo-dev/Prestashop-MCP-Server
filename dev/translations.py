@@ -105,10 +105,10 @@ T = {
  "Lire le catalogue de cette boutique : produits, prix et catégories",
  "Leer el catálogo de esta tienda: productos, precios y categorías",
  "Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien"),
-"Change the catalogue of this shop: create, edit and delete products, create and edit categories, create brands, change prices and stock": (
- "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, créer les marques, modifier les prix et le stock",
- "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear marcas, cambiar precios y stock",
- "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Marken anlegen, Preise und Bestand ändern"),
+"Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, change prices and stock": (
+ "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, créer et modifier les marques, modifier les prix et le stock",
+ "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear y editar marcas, cambiar precios y stock",
+ "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Marken anlegen und bearbeiten, Preise und Bestand ändern"),
 "Read the stock of this shop: quantities of products and combinations": (
  "Lire le stock de cette boutique : quantités des produits et des déclinaisons",
  "Leer el stock de esta tienda: cantidades de los productos y de las combinaciones",
@@ -581,6 +581,10 @@ T = {
  "Créer une marque",
  "Crear una marca",
  "Eine Marke anlegen"),
+"Change a brand": (
+ "Modifier une marque",
+ "Modificar una marca",
+ "Eine Marke ändern"),
 "List suppliers": (
  "Lister les fournisseurs",
  "Listar los proveedores",

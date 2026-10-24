@@ -23,7 +23,8 @@
     "somcp_create_category",
     "somcp_update_category",
     "somcp_set_category_active",
-    "somcp_create_manufacturer"
+    "somcp_create_manufacturer",
+    "somcp_update_manufacturer"
   ],
   "controller": "AdminProducts",
   "action": "view",

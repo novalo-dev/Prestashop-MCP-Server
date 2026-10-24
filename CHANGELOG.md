@@ -215,6 +215,18 @@ connected to. The consent screen now says that the catalogue permission can
 create brands. It needs the permission `mcp.catalog.write` and the `add` right
 on the back office brands page.
 
+**Changing a brand.** The new tool `somcp_update_manufacturer` changes one
+existing brand with everything the creation can write: name, short
+description, description, meta title and description, meta keywords on
+PrestaShop 8, logo and Enabled. Only what you ask for changes, and the answer
+lists each change with its old and new value; a request that would change
+nothing changes nothing. A new logo replaces the current one, which is kept if
+the new one cannot be fetched, and the logo can also be removed. On a
+multistore installation only the shop the assistant is connected to is changed.
+The consent screen now says that the catalogue permission can edit brands. It
+needs the permission `mcp.catalog.write` and the `edit` right on the back
+office brands page.
+
 **Reading the stock of a product.** The new tool `somcp_get_stock` gives the
 stock of one product as the storefront sells against it: the quantity that can
 still be sold, the physical quantity and the quantity held by orders not shipped

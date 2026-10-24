@@ -707,6 +707,11 @@
       <source>Change a product</source>
       <target>Ein Produkt ändern</target>
     </trans-unit>
+    <!-- Switch a product on or off -->
+    <trans-unit id="5d895faf06a520cd682722110ca8e4c6" resname="Switch a product on or off">
+      <source>Switch a product on or off</source>
+      <target>Ein Produkt aktivieren oder deaktivieren</target>
+    </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">
       <source>Change the status of an order</source>

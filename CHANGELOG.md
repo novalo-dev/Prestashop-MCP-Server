@@ -73,6 +73,15 @@ written; if writing still fails, the answer says which parts were already
 saved. It needs the permission `mcp.catalog.write` and the `edit` right on the
 back office products page.
 
+**Switching a product on or off.** The new tool `somcp_set_product_active`
+puts one product online or takes it offline, like the Status toggle of the back
+office product list, and changes nothing else. It only acts on the shop the
+assistant is connected to; on a multistore installation the other shops keep
+their own status. Asking for the status the product already has writes nothing.
+A product without a name in the shop's default language cannot be put online.
+It needs the permission `mcp.catalog.write` and the `edit` right on the back
+office products page.
+
 **Manage products prompt.** A guided task for the catalogue, picked from the
 assistant's menu: search before reading, never guess an identifier, always say
 whether a price is with or without tax.

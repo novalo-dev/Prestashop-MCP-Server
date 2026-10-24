@@ -771,7 +771,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Each value is compared with what the shop holds before writing: calling it again with the same values changes nothing and says `changed: false`, except for an image added by `url`, which would be added twice. The read tool to check first is `somcp_get_product`.
 
 #### `somcp_set_product_active`
-**State**: to write · [issue #6](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/6)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminProducts')` · **Scope**: `mcp.catalog.write`
 
 **Does** - switches one product on or off on the storefront: the **Status** toggle of the back office product list (Catalogue > Products).
@@ -785,9 +785,15 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `id_product` | integer | yes |  |
 | `active` | boolean | yes |  |
 
-**Returns** - `changed`, `active`. When the product is already in that state: `changed: false` and nothing happens.
+**Returns** - `changed`, `id_product`, `active`. When the product is already in that state: `changed: false` with a `reason`, and nothing is written.
 
-**Notes** - kept apart from `somcp_update_product` on purpose: "switch this product off" must touch the status and nothing else, the way the toggle does. Written in the shop of the token (`product_shop`), so on a multistore installation the product stays as it was in the other shops.
+**Notes**
+- Kept apart from `somcp_update_product` on purpose: "switch this product off" must touch the status and nothing else, the way the toggle does.
+- The core's own sequence (`ProductStatusUpdater` on 8, `BulkUpdateProductStatusHandler` on 9): the `active` field alone, written through `Product::update()` so hooks fire, then the search index updated when the shop indexes products.
+- Written in the shop of the token (`product_shop`), so on a multistore installation the product stays as it was in the other shops.
+- `id_product` that does not exist in this shop: refused, nothing written. `active` must be a boolean: a string such as `"false"` is refused rather than read as true.
+- Switching on a product with no name in the shop default language is refused, as PrestaShop 9 refuses it, on 8 too.
+- Not replayable: the read tool to check is `somcp_get_product`.
 
 #### `somcp_delete_product`
 **State**: to write · [issue #7](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/7)

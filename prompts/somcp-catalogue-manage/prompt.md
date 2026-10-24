@@ -11,6 +11,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_product`
 - `somcp_create_product`
 - `somcp_update_product`
+- `somcp_set_product_active`
 
 ## Know which shop you are in
 
@@ -113,6 +114,14 @@ merchant, with the `seo_warnings` and any refused image. `changed: false`
 means the product already held those values and nothing was written. If the
 call fails part way, the answer names what was already saved: read the
 product again and tell the merchant before anything else.
+
+## Switching a product on or off
+
+`somcp_set_product_active` puts one product online or takes it offline, and
+changes nothing else: use it rather than `somcp_update_product` when the
+merchant only asks for that. Taking a product offline hides it from customers
+and can be undone; say so, so the merchant does not mistake it for a deletion.
+`changed: false` means the product already had that status.
 
 ## Do not use when
 

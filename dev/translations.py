@@ -573,6 +573,10 @@ T = {
  "Modifier un produit",
  "Modificar un producto",
  "Ein Produkt ändern"),
+"Switch a product on or off": (
+ "Activer ou désactiver un produit",
+ "Activar o desactivar un producto",
+ "Ein Produkt aktivieren oder deaktivieren"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",

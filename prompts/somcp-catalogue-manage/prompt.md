@@ -22,6 +22,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_delete_product`
 - `somcp_create_category`
 - `somcp_update_category`
+- `somcp_set_category_active`
 
 ## Know which shop you are in
 
@@ -218,6 +219,18 @@ succeeds, show the merchant each change with its old and new value, the
 `seo_warnings`, and any image in `images` that was refused. `changed: false`
 means the category already held those values. On a lost answer, read the
 category again before calling twice.
+
+## Showing or hiding a category
+
+`somcp_set_category_active` shows or hides one category on the storefront, and
+changes nothing else: use it rather than `somcp_update_category` when the
+merchant only asks for that. Take the category from `somcp_list_categories` and
+name its branch. Tell the merchant that hiding it does not take its products
+offline: they stay reachable through search and their other categories. On a
+multistore installation the change shows in every shop sharing the category.
+`changed: false` means it was already in that state; the root category and Home
+cannot be hidden. On a lost answer, read it with `somcp_get_category` before
+calling twice.
 
 ## Do not use when
 

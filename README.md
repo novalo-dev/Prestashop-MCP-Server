@@ -90,6 +90,7 @@ calling the shop's own addresses.
 | `somcp_delete_product` | `mcp.catalog.write` | `delete` on `AdminProducts` | write |
 | `somcp_create_category` | `mcp.catalog.write` | `add` on `AdminCategories` | write |
 | `somcp_update_category` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
+| `somcp_set_category_active` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
 | `somcp_get_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 | `somcp_list_low_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 | `somcp_set_stock_quantity` | `mcp.stock.write` | `edit` on `AdminStockManagement` | write |

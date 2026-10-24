@@ -772,6 +772,11 @@
       <source>Change a category</source>
       <target>Eine Kategorie ändern</target>
     </trans-unit>
+    <!-- Show or hide a category -->
+    <trans-unit id="01f0fe87fdbb9f5205fff7006353e7be" resname="Show or hide a category">
+      <source>Show or hide a category</source>
+      <target>Eine Kategorie ein- oder ausblenden</target>
+    </trans-unit>
     <!-- Get the stock of a product -->
     <trans-unit id="5ce4c0ce8e0b1778f0a99f54abdd5230" resname="Get the stock of a product">
       <source>Get the stock of a product</source>

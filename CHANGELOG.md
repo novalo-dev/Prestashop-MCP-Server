@@ -183,6 +183,17 @@ consent screen now says that the catalogue permission can edit categories. It
 needs the permission `mcp.catalog.write` and the `edit` right on the back office
 categories page.
 
+**Showing or hiding a category.** The new tool `somcp_set_category_active`
+shows or hides one category on the storefront, like the Displayed toggle of the
+back office category list, and changes nothing else. Its products stay online:
+they can still be found through search and their other categories, and the
+assistant is told to say so. Asking for the state the category already has
+writes nothing. The root category and Home cannot be hidden. PrestaShop keeps
+Displayed once for all shops, so on a multistore installation the change shows
+in every shop sharing the category, as in the back office. It needs the
+permission `mcp.catalog.write` and the `edit` right on the back office
+categories page.
+
 **Reading the stock of a product.** The new tool `somcp_get_stock` gives the
 stock of one product as the storefront sells against it: the quantity that can
 still be sold, the physical quantity and the quantity held by orders not shipped

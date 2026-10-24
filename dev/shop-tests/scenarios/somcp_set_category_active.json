@@ -1,0 +1,13 @@
+{
+  "calls": [
+    {"why": "the demo Women category hidden", "arguments": {"id_category": 5, "active": false}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": false"]},
+    {"why": "hidden again, nothing changes", "arguments": {"id_category": 5, "active": false}, "expect": "ok", "contains": ["\"changed\": false", "already hidden"]},
+    {"why": "displayed again, with the identifier as a string", "arguments": {"id_category": "5", "active": true}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": true"]},
+    {"why": "displayed again, nothing changes", "arguments": {"id_category": 5, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "already displayed"]},
+    {"why": "a state given as a string is refused", "arguments": {"id_category": 5, "active": "false"}, "expect": "error", "contains": ["true or false"]},
+    {"why": "Home cannot be hidden", "arguments": {"id_category": 2, "active": false}, "expect": "error", "contains": ["root category or the Home of a shop"]},
+    {"why": "the root category cannot be hidden", "arguments": {"id_category": 1, "active": false}, "expect": "error", "contains": ["Nothing was changed"]},
+    {"why": "an identifier given as a list is not read as category 1", "arguments": {"id_category": [5], "active": false}, "expect": "error", "contains": ["No category of this shop"]},
+    {"why": "a category that does not exist", "arguments": {"id_category": 999999, "active": false}, "expect": "error", "contains": ["No category of this shop"]}
+  ]
+}

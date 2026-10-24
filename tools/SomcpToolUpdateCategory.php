@@ -220,12 +220,15 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
     /**
      * Whether the category is the root of the tree or the top category of a shop.
      *
+     * Public because somcp_set_category_active refuses the same categories,
+     * so hiding one is never allowed where changing it is not.
+     *
      * @param Category $category
      * @param Shop $shop
      *
      * @return bool
      */
-    private static function isTop(Category $category, Shop $shop): bool
+    public static function isTop(Category $category, Shop $shop): bool
     {
         return (int) $category->id === (int) Configuration::get('PS_ROOT_CATEGORY')
             || (int) $category->id_parent === 0

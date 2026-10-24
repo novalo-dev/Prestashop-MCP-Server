@@ -625,6 +625,10 @@ T = {
  "Modifier une catégorie",
  "Modificar una categoría",
  "Eine Kategorie ändern"),
+"Show or hide a category": (
+ "Afficher ou masquer une catégorie",
+ "Mostrar u ocultar una categoría",
+ "Eine Kategorie ein- oder ausblenden"),
 "Get the stock of a product": (
  "Lire le stock d'un produit",
  "Leer el stock de un producto",

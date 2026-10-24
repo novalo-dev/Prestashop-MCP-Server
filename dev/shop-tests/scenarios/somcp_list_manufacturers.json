@@ -1,5 +1,5 @@
 {
   "calls": [
-    {"why": "lists the two brands of the demo shop", "arguments": {}, "expect": "ok", "contains": ["\"manufacturers\"", "\"count\": 2", "\"id_manufacturer\"", "Studio Design", "Graphic Corner"]}
+    {"why": "lists the brands of the demo shop, with the ones somcp_create_manufacturer added before it", "arguments": {}, "expect": "ok", "contains": ["\"manufacturers\"", "\"count\"", "\"id_manufacturer\"", "Studio Design", "Graphic Corner"]}
   ]
 }

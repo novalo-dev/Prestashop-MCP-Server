@@ -848,13 +848,12 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             }
         }
 
-        // Fields one version has and the other does not are read by a name in
-        // a variable: the core loads them only where its definition has them,
-        // and a literal property would be unknown to the other version.
-        $keywords = 'meta_keywords';
-        $redirectType = 'redirect_type';
-        $redirectTarget = 'id_type_redirected';
-        $redirects = isset(Category::$definition['fields'][$redirectType]);
+        // Fields one version has and the other does not are read from the
+        // object's properties: the core declares them only where its definition
+        // has them, and a property access, even behind the definition check, is
+        // an unknown property to static analysis against the other version.
+        $properties = get_object_vars($category);
+        $redirects = isset(Category::$definition['fields']['redirect_type']);
 
         return [
             'id_category' => $idCategory,
@@ -874,7 +873,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             'url' => (string) $link->getCategoryLink($category, null, $idLang, null, $idShop),
             'meta_title' => self::textOf($category->meta_title, $idLang),
             'meta_description' => self::textOf($category->meta_description, $idLang),
-            'meta_keywords' => isset(Category::$definition['fields'][$keywords]) ? self::textOf($category->{$keywords} ?? '', $idLang) : null,
+            'meta_keywords' => isset(Category::$definition['fields']['meta_keywords']) ? self::textOf($properties['meta_keywords'] ?? '', $idLang) : null,
             'cover_image' => $cover,
             'menu_thumbnails' => $thumbnails,
             'products_count' => (int) $db->getValue(
@@ -887,8 +886,8 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 . ' INNER JOIN `' . _DB_PREFIX_ . 'category_shop` cs ON cs.`id_category` = c.`id_category` AND cs.`id_shop` = ' . (int) $idShop
                 . ' WHERE c.`id_parent` = ' . (int) $idCategory
             ),
-            'redirect_type' => $redirects ? (string) $category->{$redirectType} : null,
-            'id_type_redirected' => $redirects ? (int) $category->{$redirectTarget} : null,
+            'redirect_type' => $redirects ? (string) ($properties['redirect_type'] ?? '') : null,
+            'id_type_redirected' => $redirects ? (int) ($properties['id_type_redirected'] ?? 0) : null,
         ];
     }
 

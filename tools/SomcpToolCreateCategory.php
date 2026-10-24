@@ -341,7 +341,27 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      */
     protected static function categoryDescriptions(array $arguments, array $languages, Category $probe, array &$plan, array &$errors): void
     {
-        foreach (['description', 'additional_description'] as $field) {
+        self::richTexts($arguments, ['description', 'additional_description'], $languages, $probe, $plan, $errors);
+    }
+
+    /**
+     * Rich texts given in the call, cleaned as the back office cleans them.
+     *
+     * Shared with the brand tools, whose descriptions follow the same rule on
+     * another object.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<int, string> $fields
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param ObjectModel $probe the object whose rules the texts are checked against
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function richTexts(array $arguments, array $fields, array $languages, ObjectModel $probe, array &$plan, array &$errors): void
+    {
+        foreach ($fields as $field) {
             $texts = self::texts($arguments, $field, $field, $languages, $errors);
             foreach ($texts ?? [] as $idLang => $html) {
                 $where = $field . ' (' . $languages['filled'][$idLang] . ')';
@@ -445,6 +465,27 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     protected static function categoryMeta(array $arguments, array $languages, Category $probe, array &$plan, array &$errors): void
     {
         $limits = ['meta_title' => self::CATEGORY_META_TITLE_MAX, 'meta_description' => self::CATEGORY_META_DESCRIPTION_MAX];
+        self::metaWithin($arguments, $limits, $languages, $probe, $plan, $errors);
+        self::metaKeywords($arguments, $languages, $probe, $plan, $errors);
+    }
+
+    /**
+     * Meta texts given in the call, each refused past its limit.
+     *
+     * Shared with the brand tools: the limits differ from one object to the
+     * other, the way they are counted and checked must not.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<string, int> $limits characters at most, by field
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param ObjectModel $probe the object whose rules the texts are checked against
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function metaWithin(array $arguments, array $limits, array $languages, ObjectModel $probe, array &$plan, array &$errors): void
+    {
         foreach ($limits as $field => $max) {
             $texts = self::texts($arguments, $field, $field, $languages, $errors);
             foreach ($texts ?? [] as $idLang => $text) {
@@ -463,11 +504,25 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 $plan['texts'][$field] = $texts;
             }
         }
+    }
 
+    /**
+     * Meta keywords given in the call, on the versions that still have them.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param ObjectModel $probe the object whose definition says whether the field exists
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function metaKeywords(array $arguments, array $languages, ObjectModel $probe, array &$plan, array &$errors): void
+    {
         if (!array_key_exists('meta_keywords', $arguments)) {
             return;
         }
-        if (!isset(Category::$definition['fields']['meta_keywords'])) {
+        if (!isset($probe::$definition['fields']['meta_keywords'])) {
             // PrestaShop 9 dropped the column. Accepting the field and storing
             // nothing would tell the merchant something false.
             $errors[] = 'meta_keywords: this PrestaShop version no longer has meta keywords; leave the field out';

@@ -1,0 +1,18 @@
+{
+  "calls": [
+    {"why": "the name only, enabled", "arguments": {"languages": ["en"], "name": "Somcp test brand"}, "expect": "ok", "contains": ["\"created\": true", "\"name\": \"Somcp test brand\"", "\"active\": true", "\"logo\": null", "no meta_title", "no meta_description"]},
+    {"why": "every field the two versions share, disabled", "arguments": {"languages": ["en"], "name": "Somcp complete brand", "active": false, "short_description": {"en": "<p>Hand <strong>printed</strong> posters.</p>"}, "description": {"en": "<p>A studio of three designers.</p>"}, "meta_title": {"en": "Somcp complete brand posters"}, "meta_description": {"en": "Posters printed by hand in small runs."}}, "expect": "ok", "contains": ["\"created\": true", "\"active\": false", "<strong>printed</strong>", "\"meta_title\": \"Somcp complete brand posters\"", "\"seo_warnings\": {}"]},
+    {"why": "the same name again creates a second brand", "arguments": {"languages": ["en"], "name": "Somcp test brand"}, "expect": "ok", "contains": ["\"created\": true", "\"name\": \"Somcp test brand\""]},
+    {"why": "a logo that is refused is reported without stopping the creation", "arguments": {"languages": ["en"], "name": "Somcp brand with a refused logo", "logo": "https://127.0.0.1/logo.jpg"}, "expect": "ok", "contains": ["\"created\": true", "private, local or reserved address", "\"refused\""]},
+    {"why": "a plain http logo is refused too", "arguments": {"languages": ["en"], "name": "Somcp brand with an http logo", "logo": "http://example.com/logo.jpg"}, "expect": "ok", "contains": ["only public https addresses are accepted"]},
+    {"why": "meta keywords, accepted on PrestaShop 8 and refused on 9", "arguments": {"languages": ["en"], "name": "Somcp brand with keywords", "meta_keywords": {"en": "posters, prints"}}, "expect": "any"},
+    {"why": "no name", "arguments": {"languages": ["en"]}, "expect": "error", "contains": ["Nothing was created", "name: required"]},
+    {"why": "a name per language, which a brand does not have", "arguments": {"languages": ["en"], "name": {"en": "Somcp"}}, "expect": "error", "contains": ["name: a text, the same in every language"]},
+    {"why": "a name too long", "arguments": {"languages": ["en"], "name": "Somcp brand whose name goes on well past the sixty four characters"}, "expect": "error", "contains": ["name: 64 characters at most"]},
+    {"why": "forbidden characters in the name and the meta title, and a text missing in a language", "arguments": {"languages": ["en"], "name": "Somcp <bad>", "meta_title": {"en": "A {title}"}, "description": {"fr": "Texte"}}, "expect": "error", "contains": ["name: a character PrestaShop refuses", "meta_title (en)", "\"fr\" is not among the languages being filled"]},
+    {"why": "a computed field and a field this tool does not know", "arguments": {"languages": ["en"], "name": "Somcp extra", "products_count": 3, "colour": "red"}, "expect": "error", "contains": ["products_count: worked out by the shop", "colour: not a field of this tool"]},
+    {"why": "active as a string", "arguments": {"languages": ["en"], "name": "Somcp string", "active": "false"}, "expect": "error", "contains": ["active: true or false"]},
+    {"why": "a script in the description", "arguments": {"languages": ["en"], "name": "Somcp script", "description": {"en": "<p onclick=\"alert(1)\">Hi</p><script>alert(1)</script>"}}, "expect": "any"},
+    {"why": "a language the shop does not have", "arguments": {"languages": ["zz"], "name": "Somcp"}, "expect": "error", "contains": ["not an active language"]}
+  ]
+}

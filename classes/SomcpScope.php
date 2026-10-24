@@ -44,7 +44,7 @@ class SomcpScope
     /** @var string Reading the catalogue: products, categories, brands, suppliers. */
     public const CATALOG_READ = 'mcp.catalog.read';
 
-    /** @var string Changing the catalogue: creating and editing products. */
+    /** @var string Changing the catalogue: products, categories and brands. */
     public const CATALOG_WRITE = 'mcp.catalog.write';
 
     /** @var string Reading stock: the quantities of products and combinations. */
@@ -232,7 +232,7 @@ class SomcpScope
             case self::CATALOG_READ:
                 return $module->l10n('Read the catalogue of this shop: products, prices and categories');
             case self::CATALOG_WRITE:
-                return $module->l10n('Change the catalogue of this shop: create, edit and delete products, create and edit categories, change prices and stock');
+                return $module->l10n('Change the catalogue of this shop: create, edit and delete products, create and edit categories, create brands, change prices and stock');
             case self::STOCK_READ:
                 return $module->l10n('Read the stock of this shop: quantities of products and combinations');
             case self::STOCK_WRITE:

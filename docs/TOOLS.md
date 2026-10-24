@@ -988,7 +988,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - A language the shop does not have falls back on the shop default.
 
 #### `somcp_create_manufacturer`
-**State**: to write · [issue #55](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/55)
+**State**: written
 **Nature**: `acts(ADD, 'AdminManufacturers')` · **Scope**: `mcp.catalog.write`
 
 **Does** - creates one brand with every field of the back office brand form, in every language of the shop or the ones the merchant picks.
@@ -999,18 +999,23 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 | Field | Who fills it | Rule |
 |---|---|---|
-| `name` | merchant | required; 64 characters at most; forbidden characters `<>;=#{}` (`Validate::isCatalogName`) |
+| `name` | merchant | required; one string, the same in every language (`Manufacturer::$name` has no `lang`); 64 characters at most; forbidden characters `<>{}`, and `;=#` before PrestaShop 9.1 (`Validate::isCatalogName` of the running version) |
 | `short_description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` |
 | `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` |
-| `meta_title` | assistant | forbidden characters `<>={}` (`Validate::isGenericName`); 255 characters at most |
-| `meta_description` | assistant | forbidden characters `<>={}`; 512 characters at most |
+| `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most |
+| `meta_description` | assistant | same characters; 512 characters at most |
 | `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
 | `logo` | merchant | a public `https` URL, downloaded with the guards of `somcp_create_product` |
-| `active` | merchant | true by default |
+| `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 
-**Returns** - `created`, `id_manufacturer`, `seo_warnings` (no meta title or description in a language), `logo` (stored or the reason it was refused), and the brand as `somcp_get_manufacturer` returns it.
+**Returns** - `created`, `id_manufacturer`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` with `stored: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
 
-**Notes** - written through `Manufacturer::add()`; the logo through the core's image uploader for brands, so thumbnails are generated as in the back office. Not replayable: the read tool to check is `somcp_list_manufacturers`.
+**Notes**
+- Written through `Manufacturer::add()` in the shop of the token (`id_shop_list`), as the core's `AddManufacturerHandler` does, so the object hooks fire. If the add fails after the row went in, the brand is deleted again.
+- The core's `ManufacturerImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The downloaded logo is written where it writes it instead, as `img/m/<id>.jpg` with one file per brand image type (and each extra format switched on, from PrestaShop 8.1, with the fitment of each type on 9), and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the brand.
+- PrestaShop accepts two brands of the same name: the description tells the assistant to read `somcp_list_manufacturers` first.
+- Every problem is reported at once, before anything is written. The rich texts, meta texts and meta keywords are checked by the same methods as `somcp_create_category`, with the limits of `Manufacturer::$definition`.
+- Not replayable: the read tool to check is `somcp_list_manufacturers`.
 
 #### `somcp_update_manufacturer`
 **State**: to write · [issue #56](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/56)

@@ -202,6 +202,18 @@ in every shop sharing the category, as in the back office. It needs the
 permission `mcp.catalog.write` and the `edit` right on the back office
 categories page.
 
+**Creating a brand.** The new tool `somcp_create_manufacturer` creates one
+brand with the fields of the back office brand form: name, short description,
+description, meta title and description, meta keywords on PrestaShop 8, logo
+and Enabled. It is enabled unless you say otherwise. The logo is given by a
+public https address and downloaded by the shop with the same safeguards as
+product images; one that cannot be fetched is reported and does not stop the
+creation. The answer warns when a meta title or description is missing. On a
+multistore installation the brand is created in the shop the assistant is
+connected to. The consent screen now says that the catalogue permission can
+create brands. It needs the permission `mcp.catalog.write` and the `add` right
+on the back office brands page.
+
 **Reading the stock of a product.** The new tool `somcp_get_stock` gives the
 stock of one product as the storefront sells against it: the quantity that can
 still be sold, the physical quantity and the quantity held by orders not shipped

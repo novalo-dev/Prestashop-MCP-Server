@@ -24,6 +24,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_category`
 - `somcp_update_category`
 - `somcp_set_category_active`
+- `somcp_create_manufacturer`
 
 ## Know which shop you are in
 
@@ -234,6 +235,24 @@ multistore installation the change shows in every shop sharing the category.
 `changed: false` means it was already in that state; the root category and Home
 cannot be hidden. On a lost answer, read it with `somcp_get_category` before
 calling twice.
+
+## Creating a brand
+
+`somcp_create_manufacturer` creates one brand, enabled unless the merchant says
+otherwise. Before calling it:
+
+1. Read `somcp_list_manufacturers`: the brand may already exist, and the shop
+   accepts two brands of the same name.
+2. Ask the merchant for the name, whether the brand is enabled and the address
+   of its logo. The name is one text, the same in every language. Write the
+   descriptions and the SEO texts yourself, in every language being filled, and
+   show them first.
+3. The logo is given by a public `https` address, which the shop downloads.
+
+When it succeeds, show the merchant the brand as returned, the `seo_warnings`,
+and the logo if it was refused, with its reason. On a lost answer, read
+`somcp_list_manufacturers` again rather than calling twice: a second call
+creates a second brand.
 
 ## Do not use when
 

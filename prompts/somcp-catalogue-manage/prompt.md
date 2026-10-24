@@ -9,6 +9,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_ping`
 - `somcp_search_products`
 - `somcp_get_product`
+- `somcp_create_product`
 
 ## Know which shop you are in
 
@@ -66,6 +67,26 @@ When the tools to change the catalogue are available:
 - Switching a product off hides it from the shop and is reversible. Deleting a
   product is not. Tell the merchant which of the two is about to happen, in one
   line, before doing it.
+
+## Creating a product
+
+`somcp_create_product` creates one product, offline unless the merchant asks
+for it to go live. Before calling it:
+
+1. Search first with `somcp_search_products`, by the reference or the name: the
+   product may already exist, and then it is a change, not a creation.
+2. Each field says who fills it. Ask the merchant for what is theirs (name,
+   price, reference, stock, dimensions) and never invent it. Take categories,
+   brands, carriers, tax rules, suppliers, attributes and features from the
+   shop's own lists and let the merchant pick. Write the summary, the
+   description and the SEO texts yourself, in every language being filled.
+3. Show the merchant the whole product - texts, prices with or without tax,
+   combinations - and call once they agree.
+
+The answer lists every problem at once when the call is refused; nothing was
+created then. When it succeeds, show the merchant the product as returned,
+the `seo_warnings`, and any image in `images` that was refused, with its
+reason.
 
 ## Do not use when
 

@@ -47,6 +47,17 @@ every combination with its own codes, stock and price impacts. Prices are the
 product's own; promotions are listed apart, so one is never taken for the
 price. It needs the same permission as product search.
 
+**Creating a product.** The new tool `somcp_create_product` creates one
+complete product, offline by default: everything the product page holds can be
+given at once, combinations, specific prices, suppliers and images included,
+in every language of the shop or the ones you choose. Every problem is listed
+before anything is written, and if writing still fails half way, what was
+written is removed: you never end up with a half-made product. Images are
+fetched by the shop from public https addresses only; one that cannot be
+fetched is reported without stopping the creation. It needs the new
+permission `mcp.catalog.write`, which the consent screen describes as changing
+the catalogue, and the `add` right on the back office products page.
+
 **Manage products prompt.** A guided task for the catalogue, picked from the
 assistant's menu: search before reading, never guess an identifier, always say
 whether a price is with or without tax.

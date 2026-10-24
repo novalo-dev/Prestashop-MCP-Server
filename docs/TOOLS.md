@@ -648,7 +648,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - Features are read from the tables rather than `Product::getFrontFeatures()`, which returns nothing when features are switched off for the storefront and does not say whether a value is custom. Combinations are read the same way rather than with `Product::getAttributeCombinations()`, whose stock join ignores the shop.
 
 #### `somcp_create_product`
-**State**: to write · [issue #3](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/3)
+**State**: written
 **Nature**: `acts(ADD, 'AdminProducts')` · **Scope**: `mcp.catalog.write`
 
 **Does** - creates one complete product: everything `somcp_get_product` reads can be given at creation, combinations and images included, in every language of the shop or the ones the merchant picks. Inactive by default. Each field says whether the merchant gives it or the assistant writes it; SEO is written by the assistant in every language, checked and warned about.
@@ -681,25 +681,25 @@ The products and the categories they are sorted into: texts, prices, combination
 | `attachments` | `id_attachment` | merchant, from the shop | ids from `somcp_list_attachments`; files do not travel through the call |
 | `condition` | `condition`, `show_condition` | merchant | values of the running PrestaShop version |
 | `customization` | fields: `type` (file or text), `name`, `required` | merchant | `customizable`, `uploadable_files`, `text_fields` follow from them |
-| `stock` | `quantity`, `location` | merchant | written through `StockAvailable` |
+| `stock` | `quantity`, `location` | merchant | written through `StockAvailable`; with combinations, `quantity` is refused: each combination has its own and the product's is their total |
 | | `out_of_stock` | merchant | deny, allow, or shop default |
 | | `available_now`, `available_later` | merchant | the merchant's text, or left out: the storefront then shows the shop's default label |
 | | `available_date` | merchant | a date, or left out: none |
 | `shipping` | `width`, `height`, `depth`, `weight` | merchant | |
 | | `additional_delivery_times` | merchant | none, shop default, or this product's |
-| | `delivery_in_stock`, `delivery_out_stock` | merchant | used when `additional_delivery_times` is this product's |
+| | `delivery_in_stock`, `delivery_out_stock` | merchant | used when `additional_delivery_times` is this product's, which they select when it is left out; refused next to another value |
 | | `additional_shipping_cost` | merchant | |
 | | `carriers` | merchant, from the shop | ids from `somcp_list_carriers`; none given means every carrier, as in the back office |
 | `pricing` | `price_tax_excl` | merchant | required |
-| | `id_tax_rules_group` | merchant, from the shop | id from `somcp_list_tax_rules`, never guessed |
+| | `id_tax_rules_group` | merchant, from the shop | id from `somcp_list_tax_rules`, never guessed; 0 for no tax; left out, the rule the back office preselects for a new product (the most used one), so a product is never sold without VAT by omission |
 | | `wholesale_price`, `unit_price_tax_excl`, `unity`, `on_sale` | merchant | |
-| `specific_prices` | as read by `somcp_get_product`, plus `priorities` | merchant | currency and country by ISO code, group from `somcp_list_customer_groups`; each written through `SpecificPrice::add()` |
+| `specific_prices` | `rules` as read by `somcp_get_product`, plus `priorities` | merchant | currency and country by ISO code, group from `somcp_list_customer_groups`; each written through `SpecificPrice::add()` for the shop of the token; a combination is named by its position in `combinations` (`combination`, from 0); a percentage `reduction` is the fraction PrestaShop stores, 0.2 for 20 %; a rule with neither a price nor a reduction is refused; `priorities` lists `id_shop`, `id_currency`, `id_country`, `id_group` once each (`id_customer`, always first, is left out) |
 | `seo` | `meta_title`, `meta_description`, `link_rewrite`, `redirect_type`, `id_type_redirected`, `meta_keywords` | assistant | every language being filled; see **SEO** below |
 | `options` | `visibility`, `available_for_order`, `show_price`, `online_only`, `active` | merchant | `active` false by default |
 | `suppliers` | `id_supplier_default` | merchant, from the shop | id from `somcp_list_suppliers` |
-| | per supplier and combination: `product_supplier_reference`, `product_supplier_price_te`, `currency` | merchant | currency by ISO code, among the shop's currencies |
+| | per supplier and combination: `id_supplier`, `combination` (position in `combinations`, left out for the product), `product_supplier_reference`, `product_supplier_price_te`, `currency` | merchant | currency by ISO code, among the shop's currencies, the shop default otherwise; each supplier is also associated with the product itself; `id_supplier_default` left out is the first supplier given |
 | `images` | `url` | merchant | see **Images** below |
-| | `legend`, `cover`, `position`, combinations illustrated | merchant and assistant | legend in every language being filled |
+| | `legend`, `cover`, `position`, `combinations` (positions in `combinations`) | merchant and assistant | legend in every language being filled; one cover at most, the first image that arrived otherwise |
 | `combinations` | `attributes` | merchant, from the shop | `id_attribute` values from `somcp_list_attributes`; two combinations with the same attributes are refused |
 | | `default_on`, `reference`, `mpn`, `upc`, `ean13`, `isbn`, `quantity`, `location`, `available_date`, `available_now`, `available_later`, `price_impact_tax_excl`, `unit_price_impact_tax_excl`, `weight_impact`, `wholesale_price`, `minimal_quantity` | merchant and assistant | same rules as the product's own fields; one combination is the default |
 
@@ -712,8 +712,8 @@ The products and the categories they are sorted into: texts, prices, combination
 
 **Images**
 - Files do not travel through the conversation: an image is given by a public `https` URL and the shop downloads it.
-- That download is a new network request from the shop, so it is guarded: `https` only, the host must resolve to a public address (no localhost, no private or link-local range, checked after resolution), redirects not followed, 10 MB at most, and the content must be a JPEG, PNG, GIF or WebP that `ImageManager` accepts. A refused image is reported in the answer and does not stop the creation.
-- Thumbnails generated through `ImageManager` for every image type, as the back office does.
+- That download is a new network request from the shop, so it is guarded: `https` on the standard port only, no credentials in the address, the host must resolve to a public address (no localhost, no private, link-local, shared, documentation or multicast range, IPv4 hidden in IPv6 included, checked after resolution and then pinned for the connection), no proxy, redirects not followed, 10 MB at most counted while reading, and the content must be a JPEG, PNG, GIF or WebP that `ImageManager` accepts. A refused image is reported in the answer and does not stop the creation.
+- Thumbnails generated through `ImageManager` for every image type, as the back office does, in JPEG and in each extra format switched on in the settings (PrestaShop 8.1 and later), with the fitment of each type on PrestaShop 9.
 
 **Returns** - `created`, `id_product`, `seo_warnings`, `images` (per URL: `id_image` or the reason it was refused), and the product as `somcp_get_product` returns it.
 
@@ -722,6 +722,10 @@ The products and the categories they are sorted into: texts, prices, combination
 - Everything or nothing for the product itself: if the product or a combination cannot be written, what was created is deleted and the call fails. Only images and SEO warnings are reported without failing.
 - Pack contents and the file of a virtual product are not written here: a `pack` or `virtual` product is created empty and completed in the back office.
 - Not replayable: the read tool to check is `somcp_search_products` with the reference.
+- Every problem is reported at once, before anything is written: unknown or computed fields, identifiers that do not exist in the shop, texts missing in a language, references already used, two combinations with the same attributes or two values of one attribute group. The rules of each field (`validate`, `size`, `values`) are read from the class definition of the running version through `ObjectModel::validateField()`, so an EAN13 is checked as PrestaShop 8 or 9 checks it.
+- Lists of identifiers (`categories`, `related_products`, `attachments`, `carriers`, combination `attributes`) take integers; the objects `somcp_get_product` returns are accepted too.
+- The labels of a combination (`available_now`, `available_later`) exist from PrestaShop 8.1; on 8.0 they are refused with a clear message rather than dropped.
+- The stock movement of an initial quantity carries the employee of the token, set on the context for the length of the write since the MCP endpoint has none. Quantities are written last, so a rollback leaves no movement behind.
 
 #### `somcp_update_product`
 **State**: to write · [issue #4](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/4)

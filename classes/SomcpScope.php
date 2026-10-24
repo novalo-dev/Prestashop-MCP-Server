@@ -44,6 +44,9 @@ class SomcpScope
     /** @var string Reading the catalogue: products, categories, brands, suppliers. */
     public const CATALOG_READ = 'mcp.catalog.read';
 
+    /** @var string Changing the catalogue: creating and editing products. */
+    public const CATALOG_WRITE = 'mcp.catalog.write';
+
     /**
      * The scopes this module owns.
      *
@@ -51,7 +54,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE];
     }
 
     /**
@@ -222,6 +225,8 @@ class SomcpScope
                 );
             case self::CATALOG_READ:
                 return $module->l10n('Read the catalogue of this shop: products, prices and categories');
+            case self::CATALOG_WRITE:
+                return $module->l10n('Change the catalogue of this shop: create and edit products, prices and stock');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

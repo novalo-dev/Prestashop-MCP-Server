@@ -122,6 +122,11 @@
       <source>Read the catalogue of this shop: products, prices and categories</source>
       <target>Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien</target>
     </trans-unit>
+    <!-- Change the catalogue of this shop: create and edit products, prices and stock -->
+    <trans-unit id="3a25832bbdaec3abebcd5956580716d7" resname="Change the catalogue of this shop: create and edit products, prices and stock">
+      <source>Change the catalogue of this shop: create and edit products, prices and stock</source>
+      <target>Den Katalog dieses Shops ändern: Produkte, Preise und Bestand anlegen und bearbeiten</target>
+    </trans-unit>
     <!-- Outgoing HTTP requests -->
     <trans-unit id="44dc1cd9380e6350a77f6d24def569f7" resname="Outgoing HTTP requests">
       <source>Outgoing HTTP requests</source>
@@ -691,6 +696,11 @@
     <trans-unit id="96ee562d63ac925506398e4fe253c056" resname="Get a product">
       <source>Get a product</source>
       <target>Ein Produkt abrufen</target>
+    </trans-unit>
+    <!-- Create a product -->
+    <trans-unit id="7103cc73421e986bc200e6ef8c7392ed" resname="Create a product">
+      <source>Create a product</source>
+      <target>Ein Produkt anlegen</target>
     </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">

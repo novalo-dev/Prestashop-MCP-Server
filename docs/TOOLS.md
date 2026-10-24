@@ -1230,7 +1230,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 **Notes** - a disabled supplier stays attached to its products; only its page on the storefront goes.
 
 #### `somcp_list_attributes`
-**State**: to write · [issue #47](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/47)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.read`
 
 **Does** - lists the attribute groups (Size, Colour...) and, under each, its values: identifier and name, nothing else. A cascade, like the categories.
@@ -1244,9 +1244,12 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `id_attribute_group` | integer | no | one group only |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - per group: `id_attribute_group`, `name`, and its `values`: `id_attribute`, `name`. Plus `count`.
+**Returns** - `attribute_groups`, per group: `id_attribute_group`, `name`, and its `values`: `id_attribute`, `name`. Plus `count`, the number of groups. An `id_attribute_group` that is not a group of this shop is an error, not an empty list.
 
-**Notes** - a combination is a set of `id_attribute`, never of names: names are translated and two groups can hold the same value name.
+**Notes**
+- A combination is a set of `id_attribute`, never of names: names are translated and two groups can hold the same value name.
+- `name` is the name the back office lists, not the public name shown on the storefront.
+- Read through queries on `attribute_group`, `attribute_group_shop`, `attribute` and `attribute_shop` in the shop of the token, rather than `AttributeGroup::getAttributesGroups()` and `AttributeGroup::getAttributes()`, which take the shop from the global context. Sorted by position, as the back office does.
 
 #### `somcp_get_attribute_group`
 **State**: to write · [issue #67](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/67)

@@ -73,6 +73,14 @@ off are listed too, since a product can still be attached to one. It needs the
 permission `mcp.catalog.read` and the `view` right on the back office suppliers
 page.
 
+**Listing attributes.** The new tool `somcp_list_attributes` lists the
+attribute groups of the shop the assistant is connected to (Size, Colour...)
+and, under each one, its values, with their identifier and name and nothing
+else, so the assistant takes the right values from the shop rather than
+guessing them before creating or changing the combinations of a product. One
+group can be asked for on its own. It needs the permission `mcp.catalog.read`
+and the `view` right on the back office attributes page.
+
 **Creating a product.** The new tool `somcp_create_product` creates one
 complete product, offline by default: everything the product page holds can be
 given at once, combinations, specific prices, suppliers and images included,

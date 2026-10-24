@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "lists the attribute groups of the demo shop and their values", "arguments": {}, "expect": "ok", "contains": ["\"attribute_groups\"", "\"count\"", "\"id_attribute_group\": 1", "\"values\"", "\"id_attribute\": 1"]},
+    {"why": "one group only", "arguments": {"id_attribute_group": 1}, "expect": "ok", "contains": ["\"count\": 1", "\"id_attribute_group\": 1", "\"id_attribute\": 1"]},
+    {"why": "in a language given by ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"id_attribute_group\": 1"]},
+    {"why": "a language the shop does not have falls back on the default one", "arguments": {"language": "zz"}, "expect": "ok", "contains": ["\"id_attribute_group\": 1"]},
+    {"why": "a group that does not exist", "arguments": {"id_attribute_group": 999999}, "expect": "error"},
+    {"why": "no identifier", "arguments": {"id_attribute_group": 0}, "expect": "error"}
+  ]
+}

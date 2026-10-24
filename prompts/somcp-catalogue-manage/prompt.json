@@ -11,6 +11,7 @@
     "somcp_list_categories",
     "somcp_list_manufacturers",
     "somcp_list_suppliers",
+    "somcp_list_attributes",
     "somcp_create_product",
     "somcp_update_product",
     "somcp_set_product_active",

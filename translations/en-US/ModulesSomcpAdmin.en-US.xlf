@@ -712,6 +712,11 @@
       <source>List suppliers</source>
       <target>List suppliers</target>
     </trans-unit>
+    <!-- List attributes -->
+    <trans-unit id="54ffb845ff62b05780e0e7edcf23707a" resname="List attributes">
+      <source>List attributes</source>
+      <target>List attributes</target>
+    </trans-unit>
     <!-- Search products -->
     <trans-unit id="437ac95a91364eb49587af5e146b1745" resname="Search products">
       <source>Search products</source>

@@ -192,12 +192,14 @@ jobs:
     # 8.0 lacks or a method PrestaShop 9 removed actually shows up.
     #
     # PrestaShop 8 refuses PHP above 8.1. Merchants run it there anyway, so
-    # those pairs run too, but marked unsupported: a failure is reported
-    # without turning the run red, since the core itself may be what breaks.
+    # those pairs run too, but marked unsupported: a failing step shows in
+    # orange with its annotations, and the job itself stays green, since the
+    # core may be what breaks. Tolerated on each step rather than on the job:
+    # a failed job counts against the commit even when the run is allowed to
+    # pass, and every commit would show a red cross for PrestaShop's sake.
     name: PrestaShop ${{ matrix.prestashop }} on PHP ${{ matrix.php }}${{ matrix.unsupported && ' (unsupported by PrestaShop)' || '' }}
     needs: [lint, tools, security]
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.unsupported }}
     strategy:
       fail-fast: false
       matrix:
@@ -401,6 +403,7 @@ jobs:
           path: ~/.cache/composer
           key: composer-${{ matrix.prestashop }}-${{ matrix.php }}-${{ hashFiles('shop/composer.lock') }}
       - name: Dependencies
+        continue-on-error: ${{ matrix.unsupported }}
         id: deps
         working-directory: shop
         run: composer install --no-interaction --no-progress --prefer-dist
@@ -408,6 +411,7 @@ jobs:
       # assets the installer insists on finding. Nothing here renders the
       # storefront, so empty files are enough to let the install through.
       - name: Theme assets the installer checks for
+        continue-on-error: ${{ matrix.unsupported }}
         working-directory: shop
         run: |
           for theme in themes/*/; do
@@ -417,6 +421,7 @@ jobs:
             [ -f "$theme/assets/css/theme.css" ] || touch "$theme/assets/css/theme.css"
           done
       - name: Install the shop with its demo data
+        continue-on-error: ${{ matrix.unsupported }}
         working-directory: shop
         run: |
           # Logs are not readable from outside the run, so the end of a failed
@@ -428,6 +433,7 @@ jobs:
             --email=demo@example.com --password=Somcp-shop-test-1 2>&1 | tee ../install.log \
             || { echo "::error title=Install failed::$(tail -n 40 ../install.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
       - name: Install somcp
+        continue-on-error: ${{ matrix.unsupported }}
         run: |
           # The module as a merchant receives it: git archive leaves out what
           # export-ignore keeps out of the package.
@@ -437,15 +443,18 @@ jobs:
           php shop/bin/console prestashop:module install somcp 2>&1 | tee module.log \
             || { echo "::error title=Module install failed::$(tail -n 40 module.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
       - name: Call every tool
+        continue-on-error: ${{ matrix.unsupported }}
         run: php module/dev/shop-tests/run.php shop
       # The same PrestaShop sources, so each release is analysed against its
       # own classes; PHPStan targets the PHP it runs on, so each pair is a
       # different analysis. It runs even when a tool call failed above, so a
       # run reports both kinds of problem at once.
       - name: Install dev tools
+        continue-on-error: ${{ matrix.unsupported }}
         if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
         run: composer install --working-dir=module/dev/tools --no-interaction --no-progress
       - name: PHPStan
+        continue-on-error: ${{ matrix.unsupported }}
         if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
         working-directory: module
         env:

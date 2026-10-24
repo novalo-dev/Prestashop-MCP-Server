@@ -147,9 +147,22 @@ shows even when the product as a whole still has stock. Only active products by
 default. It needs the permission `mcp.stock.read` and the `view` right on the
 back office Stock page.
 
+**Setting the stock of a product.** The new tool `somcp_set_stock_quantity`
+changes the quantity the storefront sells against, for one product without
+combinations or for one combination, as the quantity field of the back office
+Stock page does: either to a new level, or by a movement such as -3 or +10.
+Each change is recorded as a stock movement in the name of the employee who
+connected the assistant, and the physical quantity follows. A product with
+combinations is changed one combination at a time, and a pack whose stock comes
+from its products is left to them. Asking for the quantity a product already
+has changes nothing. It needs the new permission `mcp.stock.write`, which the
+consent screen describes as changing the stock, and the `edit` right on the
+back office Stock page.
+
 **Check and adjust stock prompt.** A guided task for stock, picked from the
 assistant's menu: find the product before reading its stock, say which quantity
-is meant, name a combination by its attributes.
+is meant, name a combination by its attributes, and prefer a new level to a
+movement, which is never repeated on a lost answer.
 
 **Manage products prompt.** A guided task for the catalogue, picked from the
 assistant's menu: search before reading, never guess an identifier, always say

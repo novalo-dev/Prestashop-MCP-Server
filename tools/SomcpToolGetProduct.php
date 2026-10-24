@@ -219,7 +219,7 @@ class SomcpToolGetProduct
      *
      * @return bool
      */
-    private static function combinationBelongs(Product $product, int $idCombination, int $idShop): bool
+    public static function combinationBelongs(Product $product, int $idCombination, int $idShop): bool
     {
         $query = new DbQuery();
         $query->select('1');

@@ -84,6 +84,7 @@ calling the shop's own addresses.
 | `somcp_update_category` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
 | `somcp_get_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 | `somcp_list_low_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
+| `somcp_set_stock_quantity` | `mcp.stock.write` | `edit` on `AdminStockManagement` | write |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running
@@ -150,7 +151,7 @@ welcome, see the roadmap.
   configurable. Refresh tokens rotate; presenting an old one revokes the grant.
 - **Scopes** say what an assistant may do: `mcp.access` to connect,
   `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
-  `mcp.stock.read`. Other modules
+  `mcp.stock.read`, `mcp.stock.write`. Other modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's
   current profile, and the shop always comes from the token, never from the

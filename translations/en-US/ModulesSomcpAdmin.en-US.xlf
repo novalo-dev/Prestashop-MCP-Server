@@ -132,6 +132,11 @@
       <source>Read the stock of this shop: quantities of products and combinations</source>
       <target>Read the stock of this shop: quantities of products and combinations</target>
     </trans-unit>
+    <!-- Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements -->
+    <trans-unit id="0a173388b665e6b8dc6accf83d2355ea" resname="Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements">
+      <source>Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements</source>
+      <target>Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements</target>
+    </trans-unit>
     <!-- Outgoing HTTP requests -->
     <trans-unit id="44dc1cd9380e6350a77f6d24def569f7" resname="Outgoing HTTP requests">
       <source>Outgoing HTTP requests</source>
@@ -741,6 +746,11 @@
     <trans-unit id="5ce4c0ce8e0b1778f0a99f54abdd5230" resname="Get the stock of a product">
       <source>Get the stock of a product</source>
       <target>Get the stock of a product</target>
+    </trans-unit>
+    <!-- Set the stock of a product -->
+    <trans-unit id="dd0ca3a77054d75601481e1fbdd2e144" resname="Set the stock of a product">
+      <source>Set the stock of a product</source>
+      <target>Set the stock of a product</target>
     </trans-unit>
     <!-- List low stock -->
     <trans-unit id="dc73d6f241e06132c512404f453a5adc" resname="List low stock">

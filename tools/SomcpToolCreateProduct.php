@@ -560,7 +560,7 @@ class SomcpToolCreateProduct
      *
      * @return array<string, mixed>
      */
-    protected static function asEmployee(int $idEmployee, callable $write): array
+    public static function asEmployee(int $idEmployee, callable $write): array
     {
         $legacy = Somcp::legacyContext();
         $previousEmployee = $legacy->employee;

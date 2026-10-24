@@ -1574,7 +1574,7 @@ The quantities the storefront sells against, per product and combination.
 - Lowest quantity first. A product still being created, or not in this shop, is left out.
 
 #### `somcp_set_stock_quantity`
-**State**: to write · [issue #14](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/14)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminStockManagement')` · **Scope**: `mcp.stock.write`
 
 **Does** - sets the available quantity of one product or one combination.
@@ -1590,9 +1590,14 @@ The quantities the storefront sells against, per product and combination.
 | `quantity` | integer | one of the two | the new quantity |
 | `delta` | integer | one of the two | a movement, positive or negative |
 
-**Returns** - `changed`, `previous_quantity`, `quantity`.
+**Returns** - `changed`, `id_product`, `id_product_attribute`, `previous_quantity`, `quantity`.
 
-**Notes** - through `StockAvailable::setQuantity()` / `updateQuantity()`, so stock movements and hooks follow. A delta is not replayable: a lost answer retried would move the stock twice, which the description says, naming `somcp_get_stock` to check.
+**Notes**
+- The Stock page's own sequence (`StockRepository::updateStock()`): the change goes through `StockAvailable::updateQuantity()` as a movement with the employee edition reason, then the physical and reserved quantities of the product are brought in line. A `quantity` becomes the movement that reaches it. `setQuantity()` is not used: it skips packs, the low stock alert and the movement reason. The employee of the token is put on the context for the write, so the movement carries their name.
+- A product with combinations is refused without `id_product_attribute`: its line is the total of its combinations, which the core rewrites. A combination must belong to the product in this shop. A pack whose stock is worked out from its products is refused; one that counts both moves its products too, as in the back office.
+- The quantity already in place, or a `delta` of 0, writes nothing and answers `changed: false`. `quantity` and `delta` are whole numbers under a billion either way. `quantity` in the answer is read back after the write.
+- Read in the shop of the token, restricted as stock sharing decides, as in `somcp_get_stock`. A product still being created, or not in this shop, is not found.
+- A delta is not replayable: a lost answer retried would move the stock twice, which the description says, naming `somcp_get_stock` to check.
 
 ### Customers
 

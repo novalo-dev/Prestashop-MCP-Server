@@ -8,7 +8,8 @@
     "somcp_ping",
     "somcp_list_low_stock",
     "somcp_get_stock",
-    "somcp_search_products"
+    "somcp_search_products",
+    "somcp_set_stock_quantity"
   ],
   "controller": "AdminStockManagement",
   "action": "view",

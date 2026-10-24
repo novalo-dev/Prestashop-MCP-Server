@@ -1,0 +1,19 @@
+{
+  "calls": [
+    {"why": "a new level on a demo mug no other scenario writes", "arguments": {"id_product": 7, "quantity": 321}, "expect": "ok", "contains": ["\"changed\": true", "\"previous_quantity\"", "\"quantity\": 321"]},
+    {"why": "the same level again changes nothing", "arguments": {"id_product": 7, "quantity": 321}, "expect": "ok", "contains": ["\"changed\": false", "\"quantity\": 321", "already 321"]},
+    {"why": "a movement down, with the values as strings", "arguments": {"id_product": "7", "delta": "-21"}, "expect": "ok", "contains": ["\"changed\": true", "\"previous_quantity\": 321", "\"quantity\": 300"]},
+    {"why": "a movement up", "arguments": {"id_product": 7, "delta": 5}, "expect": "ok", "contains": ["\"changed\": true", "\"previous_quantity\": 300", "\"quantity\": 305"]},
+    {"why": "a movement of 0 changes nothing", "arguments": {"id_product": 7, "delta": 0}, "expect": "ok", "contains": ["\"changed\": false", "\"quantity\": 305"]},
+    {"why": "both a level and a movement", "arguments": {"id_product": 7, "quantity": 10, "delta": 1}, "expect": "error", "contains": ["Nothing was changed", "one of the two"]},
+    {"why": "neither", "arguments": {"id_product": 7}, "expect": "error", "contains": ["one of the two"]},
+    {"why": "a quantity that is not a whole number", "arguments": {"id_product": 7, "quantity": 2.5}, "expect": "error", "contains": ["whole numbers"]},
+    {"why": "a combination that is not an identifier", "arguments": {"id_product": 7, "id_product_attribute": "abc", "quantity": 10}, "expect": "error", "contains": ["combination identifier"]},
+    {"why": "a combination given for a product without any", "arguments": {"id_product": 7, "id_product_attribute": 1, "quantity": 10}, "expect": "error", "contains": ["no combinations"]},
+    {"why": "the demo tee has combinations, so no quantity of its own", "arguments": {"id_product": 1, "quantity": 10}, "expect": "error", "contains": ["has combinations", "id_product_attribute"]},
+    {"why": "a combination that is not the product's", "arguments": {"id_product": 1, "id_product_attribute": 999999, "quantity": 10}, "expect": "error", "contains": ["does not belong"]},
+    {"why": "one combination of the demo tee, whose identifier depends on how the demo data was numbered", "arguments": {"id_product": 1, "id_product_attribute": 1, "delta": 2}, "expect": "any"},
+    {"why": "the demo pack, whose outcome depends on the shop's pack stock setting", "arguments": {"id_product": 15, "quantity": 12}, "expect": "any"},
+    {"why": "a product that does not exist", "arguments": {"id_product": 999999, "quantity": 10}, "expect": "error", "contains": ["No product"]}
+  ]
+}

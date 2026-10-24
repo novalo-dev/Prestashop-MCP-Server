@@ -10,6 +10,7 @@ quantities move with every order.
 - `somcp_list_low_stock`
 - `somcp_get_stock`
 - `somcp_search_products`
+- `somcp_set_stock_quantity`
 
 ## Know which shop you are in
 
@@ -46,8 +47,10 @@ which may not be the one the merchant has in mind.
 
 ## Changing quantities
 
-When the shop offers `somcp_set_stock_quantity`:
+With `somcp_set_stock_quantity`, when the account may change stock:
 
+- Read the quantity with `somcp_get_stock` first, and take the combination
+  identifier from there.
 - One product or one combination per call. A product with combinations is
   changed combination by combination.
 - Prefer a `quantity` (the new level) to a `delta` (a movement). A `delta`

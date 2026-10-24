@@ -113,6 +113,10 @@ T = {
  "Lire le stock de cette boutique : quantités des produits et des déclinaisons",
  "Leer el stock de esta tienda: cantidades de los productos y de las combinaciones",
  "Den Bestand dieses Shops lesen: Mengen der Produkte und Kombinationen"),
+"Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements": (
+ "Modifier le stock de cette boutique : régler les quantités des produits et des déclinaisons, enregistrées comme mouvements de stock",
+ "Modificar el stock de esta tienda: ajustar las cantidades de los productos y de las combinaciones, registradas como movimientos de stock",
+ "Den Bestand dieses Shops ändern: Mengen der Produkte und Kombinationen festlegen, als Lagerbewegungen erfasst"),
 "Outgoing HTTP requests": (
  "Requêtes HTTP sortantes",
  "Peticiones HTTP salientes",
@@ -601,6 +605,10 @@ T = {
  "Lire le stock d'un produit",
  "Leer el stock de un producto",
  "Den Bestand eines Produkts abrufen"),
+"Set the stock of a product": (
+ "Régler le stock d'un produit",
+ "Ajustar el stock de un producto",
+ "Den Bestand eines Produkts festlegen"),
 "List low stock": (
  "Lister les stocks bas",
  "Listar el stock bajo",

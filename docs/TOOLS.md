@@ -1982,6 +1982,651 @@ How the shop runs: caching.
 
 ---
 
+### SEO
+
+What search engines read of the shop: titles, descriptions, URLs and their settings, robots.txt, the sitemap, and the pages as they are actually served.
+
+**Not here**: the product, category and brand fields themselves, which their own update tools write (→ Catalogue); what answer engines and AI assistants need (→ AEO).
+
+#### `somcp_audit_product_seo`
+**State**: to write · [issue #82](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/82)
+**Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.seo.read`
+
+**Does** - lists the products whose search engine fields have a problem, with the problem named, per language.
+
+**Do not use for** - reading or changing one product (→ `somcp_get_product`, `somcp_update_product`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code; every language of the shop when left out |
+| `active` | boolean | no | true by default: hidden products rank for nothing |
+| `checks` | array of enum | no | a subset of the checks below; all by default |
+| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+
+**Returns** - per product: `id_product`, `name`, `language`, `issues` (each a `check` from the list below and the value at fault). Plus `total_count` and `counts` per check over the whole catalogue.
+
+**Notes**
+- Checks: `meta_title_missing`, `meta_title_too_long` (over 60 characters), `meta_title_duplicate` (another product has it in that language), `meta_description_missing`, `meta_description_short` (under 70), `meta_description_long` (over 160), `link_rewrite_duplicate`, `description_short` (under 150 words, tags removed), `image_legend_missing` (an image without its alternative text), `no_image`, `no_brand`, `no_gtin` (no ean13, upc nor isbn), `inactive_without_redirect` only when `active` is false.
+- Read in SQL from `product`, `product_shop`, `product_lang` and `image_lang` of this shop, in pages, so a catalogue of 50,000 products stays fast. No write, ever: corrections go through `somcp_update_product`.
+
+#### `somcp_audit_category_seo`
+**State**: to write · [issue #83](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/83)
+**Nature**: `acts(VIEW, 'AdminCategories')` · **Scope**: `mcp.seo.read`
+
+**Does** - lists the categories whose search engine fields have a problem, per language.
+
+**Do not use for** - changing a category (→ `somcp_update_category`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code; every language when left out |
+| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+
+**Returns** - per category: `id_category`, `name`, `language`, `issues`. Plus `total_count` and `counts` per check.
+
+**Notes**
+- Checks: `meta_title_missing`, `meta_title_too_long`, `meta_title_duplicate`, `meta_description_missing`, `meta_description_long`, `description_missing` (a category page with no text has nothing to rank on), `link_rewrite_duplicate`, `empty_category` (displayed, no active product), `no_cover_image`.
+- The root and Home categories are left out: they have no page of their own.
+
+#### `somcp_audit_cms_seo`
+**State**: to write · [issue #84](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/84)
+**Nature**: `acts(VIEW, 'AdminCmsContent')` · **Scope**: `mcp.seo.read`
+
+**Does** - lists the CMS pages whose search engine fields have a problem, per language.
+
+**Do not use for** - changing a page's SEO fields (→ `somcp_update_cms_seo`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code; every language when left out |
+
+**Returns** - per page: `id_cms`, `meta_title`, `language`, `active`, `issues`. Plus `counts` per check.
+
+**Notes**
+- Checks: `meta_title_too_long`, `meta_title_duplicate`, `meta_description_missing`, `meta_description_long`, `content_short` (under 150 words), `link_rewrite_duplicate`, `not_indexable` (the page's `indexation` flag is off).
+
+#### `somcp_audit_brand_seo`
+**State**: to write · [issue #85](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/85)
+**Nature**: `acts(VIEW, 'AdminManufacturers')` · **Scope**: `mcp.seo.read`
+
+**Does** - lists the brands whose search engine fields or descriptions have a problem, per language.
+
+**Do not use for** - changing a brand (→ `somcp_update_manufacturer`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code; every language when left out |
+
+**Returns** - per brand: `id_manufacturer`, `name`, `language`, `products_count`, `issues`. Plus `counts` per check.
+
+**Notes**
+- Checks: `meta_title_missing`, `meta_description_missing`, `description_missing`, `no_logo`, `inactive_with_products`.
+
+#### `somcp_update_cms_seo`
+**State**: to write · [issue #86](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/86)
+**Nature**: `acts(EDIT, 'AdminCmsContent')` · **Scope**: `mcp.seo.write`
+
+**Does** - changes the meta title, meta description, friendly URL and indexing flag of one CMS page.
+
+**Do not use for** - the page's content (a Content tool), or a product, category or brand (→ their update tools).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_cms` | integer | yes |  |
+| `meta_title` | object | no | per ISO code; 70 characters at most |
+| `meta_description` | object | no | per ISO code; 512 characters at most, a warning over 160 |
+| `link_rewrite` | object | no | per ISO code; `Tools::str2url()` then `Validate::isLinkRewrite()` |
+| `indexation` | boolean | no | whether search engines may index the page |
+
+**Returns** - `changed`, `id_cms`, and per field the `previous` and new values, plus `seo_warnings`.
+
+**Notes**
+- Written through the `CMS` object, so hooks fire. Only the languages given change.
+- A new `link_rewrite` on an active page breaks the old URL: said in `seo_warnings`, and the assistant tells the merchant before the call.
+- A call that changes nothing writes nothing and answers `changed: false`.
+
+#### `somcp_list_meta_pages`
+**State**: to write · [issue #87](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/87)
+**Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
+
+**Does** - lists the shop's own pages (home, contact, new products, best sales, search...) with their title, description and friendly URL.
+
+**Do not use for** - products, categories, brands or CMS pages, which have their own fields.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code, shop default otherwise |
+
+**Returns** - per page: `id_meta`, `page` (the controller name), `title`, `description`, `url_rewrite`, `url`, `configurable`.
+
+**Notes**
+- Read through `Meta`, as the Traffic & SEO page lists them.
+
+#### `somcp_update_meta_page`
+**State**: to write · [issue #88](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/88)
+**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`
+
+**Does** - changes the title, description or friendly URL of one of the shop's own pages.
+
+**Do not use for** - products, categories, brands or CMS pages.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_meta` | integer | yes | from `somcp_list_meta_pages` |
+| `title` | object | no | per ISO code; 70 characters at most |
+| `description` | object | no | per ISO code; a warning over 160 |
+| `url_rewrite` | object | no | per ISO code; refused if another page already uses it |
+
+**Returns** - `changed`, `id_meta`, per field `previous` and new value, `seo_warnings`.
+
+**Notes**
+- Written through `Meta`. A new `url_rewrite` breaks the old address: said before and in the answer. The home page has no `url_rewrite` and refuses one.
+
+#### `somcp_get_seo_settings`
+**State**: to write · [issue #89](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/89)
+**Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
+
+**Does** - returns the shop's SEO and URL settings, and what each one means for search engines.
+
+**Do not use for** - changing them, which stays in the back office: these settings break every URL of the shop when wrong.
+
+**Parameters**
+
+None.
+
+**Returns** - `friendly_urls`, `accented_urls`, `canonical_redirect` (none, 302 or 301), `https` (whether the shop answers in HTTPS), `domains` (main and others), `routes` (product, category, brand, supplier, CMS and their patterns), `robots_txt_present`, `sitemap_module` (gsitemap installed and active, or not), `languages`, `warnings`.
+
+**Notes**
+- Settings read by their configuration keys in each version; a key a version does not have is `null`, never guessed.
+- `warnings` names what costs rankings: friendly URLs off, no canonical redirection, a shop not served in HTTPS, no robots.txt, no sitemap module.
+
+#### `somcp_get_robots_txt`
+**State**: to write · [issue #90](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/90)
+**Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
+
+**Does** - returns the shop's robots.txt and what it allows and blocks, rule by rule.
+
+**Do not use for** - AI crawlers specifically (→ `somcp_check_ai_crawler_access`), or regenerating the file (→ `somcp_generate_robots_txt`).
+
+**Parameters**
+
+None.
+
+**Returns** - `present`, `content`, `groups` (per user agent: `allow`, `disallow`), `sitemaps` (declared sitemap URLs), `size`, `last_modified`, `warnings`.
+
+**Notes**
+- Read from the file at the shop root, the one PrestaShop writes.
+- `warnings` names a rule that blocks product or category pages, a whole-site `Disallow: /`, a missing sitemap line.
+
+#### `somcp_generate_robots_txt`
+**State**: to write · [issue #91](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/91)
+**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`
+
+**Does** - writes the shop's robots.txt again, as the Generate button of the Traffic & SEO page does.
+
+**Do not use for** - reading it (→ `somcp_get_robots_txt`).
+
+**Parameters**
+
+None.
+
+**Returns** - `changed`, `previous_content`, `content`.
+
+**Notes**
+- Through the core's own `Tools::generateRobotsFile()`, so modules that add their lines through its hook still do.
+- Any line added by hand to the file is lost: the previous content is returned and the assistant tells the merchant before the call.
+
+#### `somcp_audit_page`
+**State**: to write · [issue #92](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/92)
+**Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
+
+**Does** - fetches one public page of the shop and returns what a search engine reads on it.
+
+**Do not use for** - many pages at once (→ `somcp_check_links`), or the fields stored in the database (→ the audit tools of this section).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `url` | string | yes | an address of this shop, or a path such as `/en/3-clothes` |
+
+**Returns** - `status`, `final_url`, `redirects` (each hop with its code), `time_ms`, `title`, `meta_description`, `meta_robots`, `canonical`, `hreflang` (language and URL of each alternate), `headings` (h1 to h3 in order), `images` (count, without alt), `links` (internal and external counts), `json_ld` (each block's `@type` and its main fields), `open_graph`, `word_count`, `warnings`.
+
+**Notes**
+- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
+- `warnings`: no or several h1, a canonical pointing elsewhere, a `noindex`, a missing hreflang for an active language, a title or description too long, a redirect chain, a page slower than 2 seconds.
+
+#### `somcp_check_links`
+**State**: to write · [issue #93](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/93)
+**Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
+
+**Does** - follows the links of the shop's public pages from a starting page and reports broken links and redirect chains.
+
+**Do not use for** - one page in detail (→ `somcp_audit_page`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `start_url` | string | no | the home page by default |
+| `max_pages` | integer | no | 50 by default, 200 at most |
+
+**Returns** - `pages_checked`, `broken` (URL, status, the pages linking to it), `redirect_chains` (URL and its hops), `slow_pages` (over 2 seconds), `stopped_early` with the reason.
+
+**Notes**
+- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
+- Internal links only are followed; external links are listed, not fetched. The crawl stops at `max_pages` or after 60 seconds, and says so.
+
+#### `somcp_audit_sitemap`
+**State**: to write · [issue #94](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/94)
+**Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
+
+**Does** - finds the shop's sitemaps, counts their URLs, and checks them against the active catalogue.
+
+**Do not use for** - robots.txt (→ `somcp_get_robots_txt`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `sample` | integer | no | how many listed URLs to fetch and check; 20 by default, 100 at most |
+
+**Returns** - `sitemaps` (URL, `url_count`, `last_modified`), `missing_products` (active products of this shop absent from every sitemap, counted, the first 20 listed), `inactive_listed` (URLs of disabled products still listed), `sample_errors` (listed URLs answering other than 200).
+
+**Notes**
+- Sitemaps are found from robots.txt, then from the gsitemap module's files at the shop root.
+- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
+
+### AEO
+
+What answer engines and AI assistants need to recommend a product: complete and consistent product data, structured data that matches the shop, open access for their crawlers, and the pages that build trust.
+
+**Not here**: classic search engine fields and settings (→ SEO).
+
+#### `somcp_audit_product_schema`
+**State**: to write · [issue #95](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/95)
+**Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.seo.read`
+
+**Does** - fetches a product's public page and compares its structured data (JSON-LD) with what the shop holds.
+
+**Do not use for** - the database fields alone (→ `somcp_audit_product_entities`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_product` | integer | yes |  |
+| `id_product_attribute` | integer | no | a combination's page |
+| `language` | string | no | ISO code, shop default otherwise |
+
+**Returns** - `url`, `found` (the `@type`s present), `product` (name, brand, sku, gtin, mpn, image, description length as printed), `offer` (price, currency, availability, url as printed), `rating` (as printed, when present), `mismatches` (field, printed value, shop value), `missing` (recommended fields absent).
+
+**Notes**
+- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
+- Prices are compared with the tax-included price the page shows for this shop's default country and currency, availability with the stock and the out-of-stock behaviour.
+- Said plainly when the theme prints no Product JSON-LD at all: that is a theme matter, not something a tool can write.
+
+#### `somcp_audit_product_entities`
+**State**: to write · [issue #96](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/96)
+**Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.seo.read`
+
+**Does** - scores how complete each product's data is for an assistant answering a buyer, and lists what is missing.
+
+**Do not use for** - the page as printed (→ `somcp_audit_product_schema`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `active` | boolean | no | true by default |
+| `max_score` | integer | no | only products scoring at or under this, out of 100 |
+| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+
+**Returns** - per product, worst first: `id_product`, `name`, `score`, `missing` (from the list below). Plus `total_count` and `average_score`.
+
+**Notes**
+- Scored on: brand, a GTIN (ean13, upc or isbn), an mpn, at least 3 features, a description of 150 words or more, a short description, at least 3 images with alternative text, weight, condition, a default category deeper than Home, a meta description. Each item is worth the same; the list says which is missing, the score only sorts.
+
+#### `somcp_check_ai_crawler_access`
+**State**: to write · [issue #97](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/97)
+**Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
+
+**Does** - says whether the main AI crawlers may read the shop, from its robots.txt and the robots meta of its pages.
+
+**Do not use for** - the full robots.txt (→ `somcp_get_robots_txt`).
+
+**Parameters**
+
+None.
+
+**Returns** - per crawler (`GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-SearchBot`, `PerplexityBot`, `Google-Extended`, `Applebot-Extended`, `CCBot`, `Bingbot`): `allowed` on the home page, a product page and a category page, and the rule deciding it. Plus `meta_robots` found on those pages.
+
+**Notes**
+- Applies the robots.txt matching rules (most specific group, longest rule) the way the crawlers document them.
+- Reports only; whether to open the shop to a crawler is the merchant's choice, and the answer says so.
+
+#### `somcp_audit_store_policies`
+**State**: to write · [issue #98](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/98)
+**Nature**: `acts(VIEW, 'AdminCmsContent')` · **Scope**: `mcp.seo.read`
+
+**Does** - checks that the pages buyers and assistants look for before trusting a shop exist, are displayed and are linked.
+
+**Do not use for** - the SEO fields of those pages (→ `somcp_audit_cms_seo`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code, shop default otherwise |
+
+**Returns** - per expected page (`legal_notice`, `terms`, `shipping`, `returns`, `privacy`, `contact`, `about`): `found`, `id_cms` or the shop page, `active`, `url`, `word_count`. Plus `delivery_times` (whether products carry delivery time texts) and `warnings`.
+
+**Notes**
+- Pages are matched by their friendly URL and title in the shop's languages, then confirmed with the merchant when unsure; the answer says how each was matched.
+
+#### `somcp_get_llms_txt`
+**State**: to write · [issue #99](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/99)
+**Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
+
+**Does** - returns the shop's llms.txt, the summary some AI tools read at a site's root, if it has one.
+
+**Do not use for** - writing it (→ `somcp_generate_llms_txt`).
+
+**Parameters**
+
+None.
+
+**Returns** - `present`, `content`, `size`, `last_modified`, `written_by_somcp`.
+
+**Notes**
+- llms.txt is a proposed convention, not a standard: the answer says so, and that no assistant is bound to read it.
+
+#### `somcp_generate_llms_txt`
+**State**: to write · [issue #100](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/100)
+**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`
+
+**Does** - writes an llms.txt at the shop root from the shop's own data: name, description, main categories and their URLs, policy pages.
+
+**Do not use for** - robots.txt (→ `somcp_generate_robots_txt`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `summary` | object | no | per ISO code: the paragraph describing the shop, written with the merchant |
+| `overwrite` | boolean | no | required to replace a file somcp did not write |
+
+**Returns** - `changed`, `previous_content`, `content`, `url`.
+
+**Notes**
+- Only factual content from the shop: no claim, review or figure invented. Active categories and CMS pages only, in the default language first.
+- A file written by someone else is never replaced without `overwrite`, and its content comes back in the answer. A marker comment records that somcp wrote it.
+- The file is written atomically next to robots.txt; a shop whose root is not writable gets a clear refusal.
+
+### Sales
+
+The levers that turn visits into orders: carts left behind, what customers search for, what they look at without buying, products that stopped selling, and the promotions that move them.
+
+**Not here**: sales figures over a period (→ Statistics), the orders themselves (→ Orders), a product's own specific prices (→ `somcp_update_product`).
+
+#### `somcp_list_abandoned_carts`
+**State**: to write · [issue #101](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/101)
+**Nature**: `acts(VIEW, 'AdminCarts')` · **Scope**: `mcp.sales.read`
+
+**Does** - lists the carts with products that never became an order, newest first.
+
+**Do not use for** - placed orders (→ `somcp_search_orders`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `older_than_hours` | integer | no | 2 by default: a cart still being filled is not abandoned |
+| `date_from` / `date_to` | string | no | `YYYY-MM-DD` |
+| `with_customer` | boolean | no | only carts of a known customer |
+| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+
+**Returns** - per cart: `id_cart`, `date_upd`, `customer` (id and name, or `null` for a guest), `products_count`, `total_tax_incl`, `currency`, `top_products` (the three most expensive lines). Plus `total_count` and `total_value`.
+
+**Notes**
+- A cart with an order is never listed. Personal data stays plain in the list: no email or phone, as the shared conventions require.
+- Read only: the tool sends nothing to anyone.
+
+#### `somcp_list_search_terms`
+**State**: to write · [issue #102](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/102)
+**Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.sales.read`
+
+**Does** - lists what customers typed in the shop's search, with how often and how many results they got.
+
+**Do not use for** - search engine queries from outside the shop, which need Search Console.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `date_from` / `date_to` | string | no | `YYYY-MM-DD`, the last 30 days by default |
+| `no_results_only` | boolean | no | the searches that found nothing |
+| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+
+**Returns** - per term: `keywords`, `searches`, `average_results`, `last_searched`. Plus `total_count`.
+
+**Notes**
+- Read from the table the statssearch module fills; when that module is not installed or active, the answer says so and returns nothing, rather than an empty list that would read as no searches.
+- Terms are grouped case- and accent-insensitively.
+
+#### `somcp_list_viewed_not_sold`
+**State**: to write · [issue #103](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/103)
+**Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.sales.read`
+
+**Does** - lists the products customers looked at most over a period, with what they sold, so the ones that are seen but not bought stand out.
+
+**Do not use for** - best sellers (→ `somcp_list_best_sellers`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `date_from` / `date_to` | string | no | the last 30 days by default |
+| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+
+**Returns** - per product: `id_product`, `name`, `views`, `quantity_sold`, `conversion` (orders per hundred views), `price_tax_incl`, `quantity` in stock. Sorted by views with the lowest conversion first among equals.
+
+**Notes**
+- Views come from the tables the statsdata module fills, with page views recorded; when it does not record them, the answer says so.
+- Sales count valid orders only (`Order::valid`).
+
+#### `somcp_list_unsold_products`
+**State**: to write · [issue #104](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/104)
+**Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.sales.read`
+
+**Does** - lists active products in stock that sold nothing over a period.
+
+**Do not use for** - low stock (→ `somcp_list_low_stock`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `days` | integer | no | 90 by default |
+| `min_quantity` | integer | no | only products with at least this much in stock; 1 by default |
+| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+
+**Returns** - per product: `id_product`, `name`, `quantity`, `price_tax_incl`, `stock_value_tax_excl` (quantity times wholesale price, when set), `date_add`, `last_sold` (or `null`). Plus `total_count` and `total_stock_value`.
+
+**Notes**
+- Products created during the period are left out: they had no chance to sell yet.
+
+#### `somcp_list_cart_rules`
+**State**: to write · [issue #105](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/105)
+**Nature**: `acts(VIEW, 'AdminCartRules')` · **Scope**: `mcp.sales.read`
+
+**Does** - lists the cart rules (vouchers and automatic discounts) with their dates, code and use.
+
+**Do not use for** - reading one rule (→ `somcp_get_cart_rule`), or catalogue price rules (→ `somcp_list_catalog_price_rules`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `active` | boolean | no |  |
+| `current` | boolean | no | only rules valid today |
+| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+
+**Returns** - per rule: `id_cart_rule`, `name`, `code`, `active`, `date_from`, `date_to`, `quantity` left, `reduction` (percent, amount with currency and tax, free shipping, gift product, summarised), `times_used`. Plus `total_count`.
+
+**Notes**
+- Only the rules this shop can use.
+
+#### `somcp_get_cart_rule`
+**State**: to write · [issue #106](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/106)
+**Nature**: `acts(VIEW, 'AdminCartRules')` · **Scope**: `mcp.sales.read`
+
+**Does** - returns every field of one cart rule, as its three back office tabs show it.
+
+**Do not use for** - listing rules (→ `somcp_list_cart_rules`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_cart_rule` | integer | yes |  |
+
+**Returns** - Information (name per language, description, code, highlight, partial use, priority, active), Conditions (customer, dates, minimum amount with currency and tax, quantities, carrier, country, group and product restrictions as lists), Actions (free shipping, percent or amount with currency and tax, the product it applies to, gift product).
+
+**Notes**
+- Restrictions are returned as names and identifiers, read from the core's own tables.
+
+#### `somcp_create_cart_rule`
+**State**: to write · [issue #107](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/107)
+**Nature**: `acts(ADD, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
+
+**Does** - creates one cart rule: a voucher code or an automatic discount.
+
+**Do not use for** - changing a rule (→ `somcp_update_cart_rule`), or a discount on products in the catalogue (→ `somcp_create_catalog_price_rule`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `name` | object | yes | per ISO code, shown to the customer |
+| `code` | string | no | empty for an automatic rule; refused if another rule has it |
+| `date_from` / `date_to` | string | yes | `YYYY-MM-DD HH:MM:SS` |
+| `reduction_percent` / `reduction_amount` | number | no | one of the two, or `free_shipping` |
+| `reduction_tax` | boolean | no | whether an amount includes tax |
+| `reduction_currency` | string | no | ISO code of an amount |
+| `free_shipping` | boolean | no |  |
+| `minimum_amount` | number | no | with `minimum_amount_tax` and `minimum_amount_currency` |
+| `quantity` / `quantity_per_user` | integer | no | 1 each by default |
+| `reduction_product` | integer | no | apply to one product only |
+| `id_customer` | integer | no | a rule for one customer |
+| `active` | boolean | no | false by default: the merchant switches it on |
+
+**Returns** - `created`, `id_cart_rule`, and the rule as `somcp_get_cart_rule` returns it.
+
+**Notes**
+- Written through `CartRule`, so hooks fire. Product, category, carrier and country restrictions are not set by this tool in its first version: the answer says so when asked, and the back office remains the place for them.
+- Created inactive by default, so a rule never reaches customers before the merchant has seen it.
+
+#### `somcp_update_cart_rule`
+**State**: to write · [issue #108](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/108)
+**Nature**: `acts(EDIT, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
+
+**Does** - changes the dates, quantities, amounts or texts of one cart rule.
+
+**Do not use for** - switching a rule on or off (→ `somcp_set_cart_rule_active`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_cart_rule` | integer | yes |  |
+| ... |  | no | the fields of `somcp_create_cart_rule`, each optional |
+
+**Returns** - `changed`, per field `previous` and new value, and the rule.
+
+**Notes**
+- Only what is given changes; a call that changes nothing writes nothing and answers `changed: false`.
+
+#### `somcp_set_cart_rule_active`
+**State**: to write · [issue #109](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/109)
+**Nature**: `acts(EDIT, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
+
+**Does** - switches one cart rule on or off.
+
+**Do not use for** - changing its content (→ `somcp_update_cart_rule`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_cart_rule` | integer | yes |  |
+| `active` | boolean | yes |  |
+
+**Returns** - `changed`, `id_cart_rule`, `active`.
+
+**Notes**
+- Reversible, and said so: switching off is how a promotion is stopped early.
+
+#### `somcp_list_catalog_price_rules`
+**State**: to write · [issue #110](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/110)
+**Nature**: `acts(VIEW, 'AdminSpecificPriceRule')` · **Scope**: `mcp.sales.read`
+
+**Does** - lists the catalogue price rules, the discounts applied to products before the cart.
+
+**Do not use for** - cart rules (→ `somcp_list_cart_rules`), or one product's specific prices (→ `somcp_get_product`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `current` | boolean | no | only rules valid today |
+
+**Returns** - per rule: `id_specific_price_rule`, `name`, `from`, `to`, `reduction` with `reduction_type` and `reduction_tax`, `from_quantity`, `currency`, `country`, `group`, `conditions` (summarised).
+
+**Notes**
+- Only this shop's rules.
+
+#### `somcp_create_catalog_price_rule`
+**State**: to write · [issue #111](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/111)
+**Nature**: `acts(ADD, 'AdminSpecificPriceRule')` · **Scope**: `mcp.sales.write`
+
+**Does** - creates one catalogue price rule, optionally limited to some categories, and applies it.
+
+**Do not use for** - a voucher (→ `somcp_create_cart_rule`), or one product's own price (→ `somcp_update_product`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `name` | string | yes |  |
+| `reduction` | number | yes |  |
+| `reduction_type` | enum | yes | `percentage` or `amount` |
+| `reduction_tax` | boolean | no | for an amount |
+| `from` / `to` | string | yes | `YYYY-MM-DD HH:MM:SS` |
+| `from_quantity` | integer | no | 1 by default |
+| `currency` / `country` / `group` | string or integer | no | ISO codes, and a group from `somcp_list_customer_groups`; all by default |
+| `categories` | array of integer | no | limit the rule to products of these categories |
+
+**Returns** - `created`, `id_specific_price_rule`, the rule, and `products_affected` (count).
+
+**Notes**
+- Written through `SpecificPriceRule` and its condition groups, then `apply()`, as the back office does.
+- The answer says how many products the rule reaches, so the merchant sees its size before it runs a day.
+
 ## Prompts
 
 A prompt is the guide an assistant reads before using the tools of one part of the
@@ -2007,6 +2652,9 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-modules-review` | Modules | draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41) |
 | `somcp-storefront-menu` | Appearance | draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42) |
 | `somcp-cache-maintenance` | System | draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43) |
+| `somcp-seo-audit` | SEO | to write · [issue #79](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/79) |
+| `somcp-aeo-audit` | AEO | to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
+| `somcp-sales-boost` | Sales | to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
 
 #### `somcp-catalogue-manage`
 **State**: written
@@ -2119,3 +2767,45 @@ pull request that adds a tool adds it to the prompt of its section, in both
 **Tools** - `somcp_ping`, `somcp_get_cache_status`, `somcp_clear_cache`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read the status first; clearing the cache slows the storefront while it rebuilds, so say so and clear it once, not as a reflex.
+
+#### `somcp-seo-audit`
+**State**: to write · [issue #79](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/79)
+**Section**: SEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminMeta`
+
+**Title** - Audit and improve SEO
+
+**Description** - Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards.
+
+**Arguments** - `focus` (optional: products, categories, pages or the whole shop).
+
+**Tools** - `somcp_ping`, `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`, `somcp_audit_brand_seo`, `somcp_update_cms_seo`, `somcp_list_meta_pages`, `somcp_update_meta_page`, `somcp_get_seo_settings`, `somcp_get_robots_txt`, `somcp_generate_robots_txt`, `somcp_audit_page`, `somcp_check_links`, `somcp_audit_sitemap`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+
+**The guide must say** - start with `somcp_get_seo_settings` and the audits, then sort what was found by its effect on sales: products that sell or should sell first; propose every new title or description to the merchant before writing it, in each language of the shop; change a URL of a live page only after saying that the old one stops working; after a change, check the public page with `somcp_audit_page`, since a value in the database is not proof of what the theme prints.
+
+#### `somcp-aeo-audit`
+**State**: to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80)
+**Section**: AEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminProducts`
+
+**Title** - Get recommended by AI assistants
+
+**Description** - Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.
+
+**Arguments** - `product` (optional: name, reference or ean13 of a product to start from).
+
+**Tools** - `somcp_ping`, `somcp_audit_product_schema`, `somcp_audit_product_entities`, `somcp_check_ai_crawler_access`, `somcp_audit_store_policies`, `somcp_get_llms_txt`, `somcp_generate_llms_txt`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+
+**The guide must say** - no tool can guarantee that an assistant cites the shop, and the guide never promises it; start with `somcp_check_ai_crawler_access` and `somcp_audit_store_policies`, then the products that sell; fix the data itself (brand, GTIN, features, description) with the Catalogue tools rather than adding text for robots; never invent a fact, a review or a figure about a product: ask the merchant; check the public page with `somcp_audit_product_schema` after a change.
+
+#### `somcp-sales-boost`
+**State**: to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81)
+**Section**: Sales · **Scope**: `mcp.sales.read` · **Permission**: `view` on `AdminStats`
+
+**Title** - Boost sales
+
+**Description** - Find the products, searches and carts where sales are lost, and set up promotions with the merchant's approval.
+
+**Arguments** - `period` (optional: the number of days to look back, 30 by default).
+
+**Tools** - `somcp_ping`, `somcp_list_abandoned_carts`, `somcp_list_search_terms`, `somcp_list_viewed_not_sold`, `somcp_list_unsold_products`, `somcp_list_cart_rules`, `somcp_get_cart_rule`, `somcp_create_cart_rule`, `somcp_update_cart_rule`, `somcp_set_cart_rule_active`, `somcp_list_catalog_price_rules`, `somcp_create_catalog_price_rule`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+
+**The guide must say** - start from data, never from a guess: abandoned carts, searches with no result, products viewed but not sold, products that stopped selling; propose each promotion with its cost (the discount times the expected quantity) before creating it; a cart rule is created inactive unless the merchant says otherwise; never email or contact a customer: report the carts, the merchant decides.

@@ -142,8 +142,15 @@ class SomcpToolSetStockQuantity
 
         $previous = (int) StockAvailable::getQuantityAvailableByProduct((int) $product->id, $idCombination, $idShop);
         // A level becomes the movement that reaches it, as the Stock page
-        // sends what the merchant typed.
-        $movement = $delta ?? ((int) $quantity - $previous);
+        // sends what the merchant typed. Each way of asking for no movement
+        // gets its own answer, so the reason given matches what was sent.
+        if ($delta !== null) {
+            $movement = $delta;
+            $unchanged = 'A delta of 0 moves nothing. Nothing was written.';
+        } else {
+            $movement = (int) $quantity - $previous;
+            $unchanged = 'The quantity is already ' . $previous . '. Nothing was written.';
+        }
         if ($movement === 0) {
             return SomcpTool::json([
                 'changed' => false,
@@ -151,9 +158,7 @@ class SomcpToolSetStockQuantity
                 'id_product_attribute' => $idCombination,
                 'previous_quantity' => $previous,
                 'quantity' => $previous,
-                'reason' => $delta === null
-                    ? 'The quantity is already ' . $previous . '. Nothing was written.'
-                    : 'A delta of 0 moves nothing. Nothing was written.',
+                'reason' => $unchanged,
             ]);
         }
 

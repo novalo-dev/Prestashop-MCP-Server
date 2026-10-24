@@ -112,3 +112,14 @@ rules:
       - pattern-regex: \{\$[A-Za-z_][^}]*\}
       # A modifier that makes the value safe, or an explicit nofilter, is fine.
       - pattern-not-regex: \{\$[^}]*(\|escape|\|intval|\|floatval|\|json_encode|\|count|\|@count|nofilter)[^}]*\}
+
+  - id: somcp-removed-in-prestashop-9
+    languages: [php]
+    severity: ERROR
+    message: >-
+      This setting no longer exists in PrestaShop 9, and the Addons validator
+      reports any module that still reads it. Branch on _PS_VERSION_ or use
+      the core method that already handles both versions.
+    pattern-either:
+      - pattern: Configuration::get('PS_LEGACY_IMAGES', ...)
+      - pattern: Configuration::get("PS_LEGACY_IMAGES", ...)

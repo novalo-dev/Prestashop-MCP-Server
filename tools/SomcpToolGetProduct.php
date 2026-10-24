@@ -654,10 +654,11 @@ class SomcpToolGetProduct
     {
         $link = Somcp::legacyContext()->link ?? new Link();
         $type = ImageType::getFormattedName('large');
-        // Legacy image names carry the product identifier, and only PrestaShop
-        // 8 still has them; PrestaShop 9 wants the image identifier alone and
-        // flags the old form as deprecated.
-        $legacy = (bool) Configuration::get('PS_LEGACY_IMAGES');
+        // PrestaShop 8 takes "product-image" and works out the legacy image
+        // names from its own setting; PrestaShop 9 removed that setting, wants
+        // the image identifier alone and flags the old form as deprecated. So
+        // the form follows the version, and the setting is never read here.
+        $productPrefix = version_compare(_PS_VERSION_, '9.0.0', '<') ? (int) $product->id . '-' : '';
 
         $images = [];
         foreach (Image::getImages($idLang, (int) $product->id, 0, $idShop) ?: [] as $row) {
@@ -669,7 +670,7 @@ class SomcpToolGetProduct
                 'legend' => (string) $row['legend'],
                 'url' => (string) $link->getImageLink(
                     (string) $product->link_rewrite,
-                    $legacy ? (int) $product->id . '-' . $idImage : (string) $idImage,
+                    $productPrefix . $idImage,
                     $type
                 ),
             ];

@@ -796,7 +796,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Not replayable: the read tool to check is `somcp_get_product`.
 
 #### `somcp_delete_product`
-**State**: to write · [issue #7](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/7)
+**State**: written
 **Nature**: `acts(DELETE, 'AdminProducts')` · **Scope**: `mcp.catalog.write`
 
 **Does** - deletes one product from the shop of the token, with its combinations, images and stock there, as the back office does.
@@ -816,6 +816,9 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - A product that has been ordered is deleted like any other: PrestaShop handles it, and orders keep their lines with the product's name, reference and price as sold.
 - Multistore: the shop comes from the token, never from an argument, so the tool deletes in that shop only (`id_shop_list` set to it before `Product::delete()`). PrestaShop removes the product completely only when no shop carries it any more. When `still_in_shops` is above 0, the assistant tells the merchant, who removes it elsewhere from a connection to each of those shops.
 - Through `Product::delete()`, so hooks fire and other modules clean up after it.
+- `id_product` that does not exist in this shop, or a product already deleted: refused, nothing deleted. A second call never reads as a success.
+- `Product::delete()` also answers false when a clean-up step after the removal fails. Whether the product is still in the shop is read back from `product_shop` rather than inferred, and the answer says which of the two happened.
+- Not replayable: the read tool to check is `somcp_search_products`, since `somcp_get_product` has nothing to read once the product is gone.
 
 #### `somcp_list_categories`
 **State**: to write · [issue #8](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/8)

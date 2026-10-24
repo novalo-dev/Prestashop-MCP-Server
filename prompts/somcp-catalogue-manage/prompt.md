@@ -12,6 +12,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
+- `somcp_delete_product`
 
 ## Know which shop you are in
 
@@ -122,6 +123,21 @@ changes nothing else: use it rather than `somcp_update_product` when the
 merchant only asks for that. Taking a product offline hides it from customers
 and can be undone; say so, so the merchant does not mistake it for a deletion.
 `changed: false` means the product already had that status.
+
+## Deleting a product
+
+`somcp_delete_product` deletes one product for good, with its combinations,
+images and stock. Before calling it:
+
+1. Read the product with `somcp_get_product` and name it to the merchant by its
+   name and reference.
+2. Offer to switch it off with `somcp_set_product_active` instead: it hides the
+   product and can be undone. Delete only once the merchant confirms.
+
+Orders that contain the product keep their lines as sold. When
+`still_in_shops` is above 0, the product is gone from this shop only: tell the
+merchant, who removes it from a connection to each of the other shops. On a lost
+answer, search for the product again rather than calling twice.
 
 ## Do not use when
 

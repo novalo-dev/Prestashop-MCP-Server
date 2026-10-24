@@ -82,6 +82,16 @@ A product without a name in the shop's default language cannot be put online.
 It needs the permission `mcp.catalog.write` and the `edit` right on the back
 office products page.
 
+**Deleting a product.** The new tool `somcp_delete_product` deletes one product
+with its combinations, images and stock, as the back office does. Orders that
+contain it keep their lines as sold. The assistant is told to ask you first,
+naming the product by its name and reference, and to offer switching it off
+instead. On a multistore installation it only leaves the shop the assistant is
+connected to, and the answer says how many other shops still carry it. The
+consent screen now says that the catalogue permission can delete products. It
+needs the permission `mcp.catalog.write` and the `delete` right on the back
+office products page.
+
 **Manage products prompt.** A guided task for the catalogue, picked from the
 assistant's menu: search before reading, never guess an identifier, always say
 whether a price is with or without tax.

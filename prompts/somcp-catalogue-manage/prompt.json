@@ -10,7 +10,8 @@
     "somcp_get_product",
     "somcp_create_product",
     "somcp_update_product",
-    "somcp_set_product_active"
+    "somcp_set_product_active",
+    "somcp_delete_product"
   ],
   "controller": "AdminProducts",
   "action": "view",

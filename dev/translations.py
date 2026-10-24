@@ -105,10 +105,10 @@ T = {
  "Lire le catalogue de cette boutique : produits, prix et catégories",
  "Leer el catálogo de esta tienda: productos, precios y categorías",
  "Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien"),
-"Change the catalogue of this shop: create and edit products, prices and stock": (
- "Modifier le catalogue de cette boutique : créer et modifier les produits, les prix et le stock",
- "Modificar el catálogo de esta tienda: crear y editar productos, precios y stock",
- "Den Katalog dieses Shops ändern: Produkte, Preise und Bestand anlegen und bearbeiten"),
+"Change the catalogue of this shop: create, edit and delete products, prices and stock": (
+ "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, les prix et le stock",
+ "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, precios y stock",
+ "Den Katalog dieses Shops ändern: Produkte, Preise und Bestand anlegen, bearbeiten und löschen"),
 "Outgoing HTTP requests": (
  "Requêtes HTTP sortantes",
  "Peticiones HTTP salientes",
@@ -577,6 +577,10 @@ T = {
  "Activer ou désactiver un produit",
  "Activar o desactivar un producto",
  "Ein Produkt aktivieren oder deaktivieren"),
+"Delete a product": (
+ "Supprimer un produit",
+ "Eliminar un producto",
+ "Ein Produkt löschen"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",

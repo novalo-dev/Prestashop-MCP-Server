@@ -122,10 +122,10 @@
       <source>Read the catalogue of this shop: products, prices and categories</source>
       <target>Read the catalogue of this shop: products, prices and categories</target>
     </trans-unit>
-    <!-- Change the catalogue of this shop: create and edit products, prices and stock -->
-    <trans-unit id="3a25832bbdaec3abebcd5956580716d7" resname="Change the catalogue of this shop: create and edit products, prices and stock">
-      <source>Change the catalogue of this shop: create and edit products, prices and stock</source>
-      <target>Change the catalogue of this shop: create and edit products, prices and stock</target>
+    <!-- Change the catalogue of this shop: create, edit and delete products, prices and stock -->
+    <trans-unit id="97fa452f4438e00ee4795dcc69cf5d1c" resname="Change the catalogue of this shop: create, edit and delete products, prices and stock">
+      <source>Change the catalogue of this shop: create, edit and delete products, prices and stock</source>
+      <target>Change the catalogue of this shop: create, edit and delete products, prices and stock</target>
     </trans-unit>
     <!-- Outgoing HTTP requests -->
     <trans-unit id="44dc1cd9380e6350a77f6d24def569f7" resname="Outgoing HTTP requests">
@@ -711,6 +711,11 @@
     <trans-unit id="5d895faf06a520cd682722110ca8e4c6" resname="Switch a product on or off">
       <source>Switch a product on or off</source>
       <target>Switch a product on or off</target>
+    </trans-unit>
+    <!-- Delete a product -->
+    <trans-unit id="c7cb9daf3caa20adc61e4f518e72e296" resname="Delete a product">
+      <source>Delete a product</source>
+      <target>Delete a product</target>
     </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">

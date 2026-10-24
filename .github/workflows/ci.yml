@@ -424,14 +424,25 @@ jobs:
         continue-on-error: ${{ matrix.unsupported }}
         working-directory: shop
         run: |
+          # The installer downloads the currency feed from api.prestashop.com
+          # and aborts when that host does not answer, which fails one pair
+          # out of the matrix for a reason unrelated to the module. It drops
+          # its own tables before starting (db_clear), so a second attempt
+          # starts clean.
           # Logs are not readable from outside the run, so the end of a failed
           # install is repeated as one annotation, where the summary shows it.
           set -o pipefail
-          php -d memory_limit=1G install-dev/index_cli.php \
-            --domain=localhost --db_server=127.0.0.1 --db_user=root --db_password=root \
-            --db_name=prestashop --prefix=ps_ --language=en --country=fr --ssl=0 --fixtures=1 \
-            --email=demo@example.com --password=Somcp-shop-test-1 2>&1 | tee ../install.log \
-            || { echo "::error title=Install failed::$(tail -n 40 ../install.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
+          for attempt in 1 2 3; do
+            php -d memory_limit=1G install-dev/index_cli.php \
+              --domain=localhost --db_server=127.0.0.1 --db_user=root --db_password=root \
+              --db_name=prestashop --prefix=ps_ --language=en --country=fr --ssl=0 --fixtures=1 \
+              --email=demo@example.com --password=Somcp-shop-test-1 2>&1 | tee ../install.log \
+              && exit 0
+            echo "Install attempt $attempt failed"
+            sleep 15
+          done
+          echo "::error title=Install failed::$(tail -n 40 ../install.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"
+          exit 1
       - name: Install somcp
         continue-on-error: ${{ matrix.unsupported }}
         run: |

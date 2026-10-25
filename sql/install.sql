@@ -248,6 +248,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_thread` (
     `id_assistant`   INT(11)      NOT NULL DEFAULT 0 COMMENT 'picked by hand in the chat, 0 for the default one',
     `title`          VARCHAR(255) NOT NULL DEFAULT '',
     `files`          TEXT         NULL COMMENT 'images generated in the conversation, JSON: name and upload reference',
+    `memory_count`   INT(11)      NOT NULL DEFAULT 0 COMMENT 'messages already written to the long-term memory',
     `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `date_upd`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id_thread`),

@@ -57,5 +57,15 @@ function upgrade_module_1_1_0($module)
         }
     }
 
+    // The long-term memory marks how far each conversation was written.
+    $thread = _DB_PREFIX_ . 'somcp_assistant_thread';
+    $present = $db->executeS('SHOW TABLES LIKE "' . pSQL($thread) . '"');
+    if (is_array($present) && $present !== []) {
+        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($thread) . '` LIKE "memory_count"');
+        if (!is_array($column) || $column === []) {
+            $db->execute('ALTER TABLE `' . bqSQL($thread) . '` ADD `memory_count` INT(11) NOT NULL DEFAULT 0');
+        }
+    }
+
     return $module->installDatabase() && $module->installTabs();
 }

@@ -576,7 +576,7 @@ class SomcpAssistant
      *
      * @return string
      */
-    private static function seal(string $plain): string
+    public static function seal(string $plain): string
     {
         if (!defined('_NEW_COOKIE_KEY_')) {
             return self::PLAIN . $plain;
@@ -591,7 +591,7 @@ class SomcpAssistant
      * @return string empty when the key cannot be read back, as after the shop's
      *                cookie key was regenerated - the merchant then pastes it again
      */
-    private static function open(string $stored): string
+    public static function open(string $stored): string
     {
         if ($stored === '') {
             return '';

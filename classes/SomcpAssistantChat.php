@@ -43,6 +43,7 @@ use NeuronAI\Providers\Ollama\Ollama;
 use NeuronAI\Providers\OpenAI\Image\OpenAIImage;
 use NeuronAI\Providers\OpenAI\OpenAI;
 use NeuronAI\Providers\XAI\Grok;
+use NeuronAI\RAG\RAG;
 use NeuronAI\Tools\ApprovalState;
 use NeuronAI\Tools\FrontendTool;
 use NeuronAI\Tools\ToolCall;
@@ -669,8 +670,106 @@ class SomcpAssistantChat
             ['date_upd' => date('Y-m-d H:i:s')],
             '`id_thread` = ' . (int) $thread['id_thread']
         );
+        $this->rememberMemory($thread);
 
         return $this->view($thread);
+    }
+
+    /**
+     * Stores in the long-term memory the new messages of a conversation since
+     * the last time, so a later conversation can recall them. Only the plain
+     * exchange is kept - the employee's words and the assistant's answers, not
+     * tool calls - and a counter on the thread marks how far it was written, so
+     * nothing is embedded or paid for twice. Off unless memory is set up.
+     *
+     * @param array<string, mixed> $thread
+     */
+    private function rememberMemory(array $thread): void
+    {
+        if (!SomcpAssistantMemory::enabled($this->idShop)) {
+            return;
+        }
+
+        // Read the mark from the row, not the array passed in: it may have been
+        // loaded before an earlier move of the same turn advanced it, and a
+        // stale mark would embed - and pay for - the same messages twice.
+        $from = (int) Db::getInstance()->getValue(
+            'SELECT `memory_count` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread` WHERE `id_thread` = ' . (int) $thread['id_thread']
+        );
+        $messages = $this->store()->loadAll((string) $thread['thread_id'], 1000);
+        $total = count($messages);
+        if ($total <= $from) {
+            return;
+        }
+
+        $new = [];
+        foreach (array_slice($messages, $from) as $message) {
+            if ($message instanceof UserMessage) {
+                $text = $this->userText($message);
+                if ($text !== '') {
+                    $new[] = ['role' => 'user', 'text' => $text];
+                }
+            } elseif ($message instanceof AssistantMessage) {
+                $text = trim((string) $message->getContent());
+                if ($text !== '') {
+                    $new[] = ['role' => 'assistant', 'text' => $text];
+                }
+            }
+        }
+
+        SomcpAssistantMemory::write($this->idShop, (string) $thread['thread_id'], $new);
+        Db::getInstance()->update(
+            'somcp_assistant_thread',
+            ['memory_count' => $total],
+            '`id_thread` = ' . (int) $thread['id_thread']
+        );
+    }
+
+    /**
+     * The plain words of a user message, without the file names that ride along
+     * with an attachment.
+     *
+     * @param UserMessage $message
+     *
+     * @return string
+     */
+    private function userText(UserMessage $message): string
+    {
+        $skipNext = false;
+        foreach ($message->getContentBlocks() as $block) {
+            if ($block instanceof TextContent && strpos($block->content, self::FILE_MARKER) === 0) {
+                $skipNext = true;
+                continue;
+            }
+            if ($skipNext) {
+                $skipNext = false;
+                continue;
+            }
+            if ($block instanceof TextContent && $block->content !== '' && $block->content !== '(files attached)') {
+                return trim($block->content);
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * The conversations of this employee on this shop, newest first: the memory
+     * reads only these, so one employee never retrieves another's.
+     *
+     * @return array<int, string>
+     */
+    private function employeeThreadIds(): array
+    {
+        $rows = Db::getInstance()->executeS(
+            'SELECT `thread_id` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
+            . ' WHERE `id_employee` = ' . (int) $this->employee->id . ' AND `id_shop` = ' . (int) $this->idShop
+            . ' ORDER BY `date_upd` DESC LIMIT ' . self::MAX_THREADS
+        );
+
+        return is_array($rows) ? array_map(static function (array $row): string {
+            return (string) $row['thread_id'];
+        }, $rows) : [];
     }
 
     /**
@@ -895,7 +994,14 @@ class SomcpAssistantChat
      */
     private function agent(array $thread, array $assistant): Agent
     {
-        $agent = Agent::make()
+        // With memory on, the leader is a RAG agent: before answering it reads
+        // the matching passages of this employee's past conversations and the
+        // model works from them. It is used only when actually answering (an
+        // assistant is given): reading a run's state needs no retrieval, so the
+        // inspect path below stays a plain agent with no embeddings call.
+        $memory = $assistant !== [] ? SomcpAssistantMemory::retrieval($this->idShop, $this->employeeThreadIds()) : null;
+
+        $agent = ($memory !== null ? RAG::make() : Agent::make())
             ->setThreadId((string) $thread['thread_id'])
             ->setMessageStore($this->store())
             ->setPersistence(new DatabasePersistence(self::pdo(), _DB_PREFIX_ . 'somcp_assistant_run'))
@@ -906,6 +1012,12 @@ class SomcpAssistantChat
             // this - it is one shot with no history to summarize.
             ->setContextWindow(self::CONTEXT_WINDOW);
         $agent->addMiddleware(InferenceNode::class, new Summarization(null, self::SUMMARIZE_AT));
+
+        if ($memory !== null && $agent instanceof RAG) {
+            // The retrieval already carries its own store and embeddings and is
+            // scoped to this employee's conversations, so this is all it needs.
+            $agent->setRetrieval($memory);
+        }
 
         if ($assistant !== []) {
             $agent->setAiProvider($this->provider($assistant))

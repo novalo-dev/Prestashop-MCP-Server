@@ -70,6 +70,7 @@ class Somcp extends Module
         'SomcpDiagnostic',
         'SomcpUpdate',
         'SomcpAssistant',
+        'SomcpAssistantMemory',
         'SomcpAssistantChat',
     ];
 
@@ -278,6 +279,7 @@ class Somcp extends Module
         SomcpConfig::purge();
         SomcpUpdate::purge();
         SomcpAssistant::purge();
+        SomcpAssistantMemory::purge();
 
         return parent::uninstall();
     }
@@ -495,6 +497,11 @@ class Somcp extends Module
                 (string) Tools::getValue('SOMCP_ASSISTANT_INSTRUCTIONS'),
                 (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE')
             );
+            SomcpAssistantMemory::save(
+                (int) self::currentShopId(),
+                (string) Tools::getValue('SOMCP_EMB_PROVIDER'),
+                (string) Tools::getValue('SOMCP_EMB_KEY')
+            );
             $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
             $this->redirectToSelf();
         }
@@ -566,6 +573,9 @@ class Somcp extends Module
             'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
             'somcp_assistant_edit' => $editing,
             'somcp_assistant_models' => $editModels,
+            'somcp_memory_providers' => SomcpAssistantMemory::providers(),
+            'somcp_memory_provider' => SomcpAssistantMemory::providerId((int) self::currentShopId()),
+            'somcp_memory_has_key' => SomcpAssistantMemory::key((int) self::currentShopId()) !== '',
             'somcp_assistant_ready' => SomcpAssistantChat::available(),
             // Formatted here, in the employee's language, rather than in the
             // template: Smarty's date modifier knows nothing of the back

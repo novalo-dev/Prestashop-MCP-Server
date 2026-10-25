@@ -1034,6 +1034,30 @@ T = {
  "Personnalisé",
  "Personalizado",
  "Benutzerdefiniert"),
+"Memory": (
+ "Mémoire",
+ "Memoria",
+ "Gedächtnis"),
+"Off": (
+ "Désactivée",
+ "Desactivada",
+ "Aus"),
+"Memory key": (
+ "Clé de la mémoire",
+ "Clave de la memoria",
+ "Gedächtnis-Schlüssel"),
+"Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default.": (
+ "Permet à l'assistant de se souvenir des conversations passées et de les retrouver plus tard, chacune réservée à l'employé qui l'a eue. Il faut un fournisseur pour les embeddings - les mêmes familles de clés que le chat, ou Ollama sur votre serveur - et ils sont facturés. Désactivée par défaut.",
+ "Permite al asistente recordar conversaciones pasadas y recuperarlas más tarde, cada una reservada al empleado que la tuvo. Necesita un proveedor para los embeddings - las mismas familias de claves que el chat, u Ollama en su servidor - y se facturan. Desactivada por defecto.",
+ "Ermöglicht dem Assistenten, sich an frühere Gespräche zu erinnern und sie später abzurufen, jedes dem Mitarbeiter vorbehalten, der es geführt hat. Es braucht einen Anbieter für die Embeddings - dieselben Schlüsselfamilien wie der Chat oder Ollama auf Ihrem Server - und sie werden berechnet. Standardmäßig aus."),
+"The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one.": (
+ "La clé du fournisseur d'embeddings, ou l'adresse de votre serveur Ollama. Stockée chiffrée. Laissez vide pour garder celle enregistrée.",
+ "La clave del proveedor de embeddings, o la dirección de su servidor Ollama. Almacenada cifrada. Deje vacío para conservar la guardada.",
+ "Der Schlüssel des Embeddings-Anbieters oder die Adresse Ihres Ollama-Servers. Verschlüsselt gespeichert. Leer lassen, um den gespeicherten zu behalten."),
+"A key is saved. Leave empty to keep it.": (
+ "Une clé est enregistrée. Laissez vide pour la garder.",
+ "Hay una clave guardada. Deje vacío para conservarla.",
+ "Ein Schlüssel ist gespeichert. Leer lassen, um ihn zu behalten."),
 "choose the exact model yourself from the list below": (
  "choisissez vous-même le modèle exact dans la liste ci-dessous",
  "elija usted mismo el modelo exacto en la lista de abajo",

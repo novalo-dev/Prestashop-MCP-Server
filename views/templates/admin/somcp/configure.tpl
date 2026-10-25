@@ -701,6 +701,29 @@
                         <p class="help-block">{l s='Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
+                {* Long-term memory: off until an embeddings provider and its key
+                   are set. The assistant then recalls an employee's past
+                   conversations instead of starting blank. Each provider uses a
+                   good default model, so the merchant only picks and pastes. *}
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Memory' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <select name="SOMCP_EMB_PROVIDER" class="form-control">
+                            <option value="">{l s='Off' d='Modules.Somcp.Admin'}</option>
+                            {foreach from=$somcp_memory_providers key=id item=provider}
+                                <option value="{$id|escape:'html':'UTF-8'}"{if $id === $somcp_memory_provider} selected{/if}>{$provider.label|escape:'html':'UTF-8'}</option>
+                            {/foreach}
+                        </select>
+                        <p class="help-block">{l s='Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Memory key' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <input type="password" name="SOMCP_EMB_KEY" class="form-control" autocomplete="new-password" value=""{if $somcp_memory_has_key} placeholder="{l s='A key is saved. Leave empty to keep it.' d='Modules.Somcp.Admin' js=1}"{/if}>
+                        <p class="help-block">{l s='The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
                 <div class="panel-footer">
                     <button type="submit" name="submitSomcpAssistantSettings" value="1" class="btn btn-default pull-right"><i class="process-icon-save"></i> {l s='Save' d='Modules.Somcp.Admin'}</button>
                 </div>

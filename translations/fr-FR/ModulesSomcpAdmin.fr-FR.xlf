@@ -1297,6 +1297,36 @@
       <source>Custom</source>
       <target>Personnalisé</target>
     </trans-unit>
+    <!-- Memory -->
+    <trans-unit id="4789f23283b3a61f858b641a1bef19a3" resname="Memory">
+      <source>Memory</source>
+      <target>Mémoire</target>
+    </trans-unit>
+    <!-- Off -->
+    <trans-unit id="d15305d7a4e34e02489c74a5ef542f36" resname="Off">
+      <source>Off</source>
+      <target>Désactivée</target>
+    </trans-unit>
+    <!-- Memory key -->
+    <trans-unit id="ec84f90d54cb549ac2088bb1ae500dfb" resname="Memory key">
+      <source>Memory key</source>
+      <target>Clé de la mémoire</target>
+    </trans-unit>
+    <!-- Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default. -->
+    <trans-unit id="1852bd8e80844a5a7d171082fb101adf" resname="Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default.">
+      <source>Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default.</source>
+      <target>Permet à l'assistant de se souvenir des conversations passées et de les retrouver plus tard, chacune réservée à l'employé qui l'a eue. Il faut un fournisseur pour les embeddings - les mêmes familles de clés que le chat, ou Ollama sur votre serveur - et ils sont facturés. Désactivée par défaut.</target>
+    </trans-unit>
+    <!-- The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one. -->
+    <trans-unit id="eefaf228096d95bf0a5a600b261e3762" resname="The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one.">
+      <source>The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one.</source>
+      <target>La clé du fournisseur d'embeddings, ou l'adresse de votre serveur Ollama. Stockée chiffrée. Laissez vide pour garder celle enregistrée.</target>
+    </trans-unit>
+    <!-- A key is saved. Leave empty to keep it. -->
+    <trans-unit id="4b513934268ebc4a63939194f8e9870e" resname="A key is saved. Leave empty to keep it.">
+      <source>A key is saved. Leave empty to keep it.</source>
+      <target>Une clé est enregistrée. Laissez vide pour la garder.</target>
+    </trans-unit>
     <!-- choose the exact model yourself from the list below -->
     <trans-unit id="aa88b893d9a68dfbe5b78a49e4f32eb9" resname="choose the exact model yourself from the list below">
       <source>choose the exact model yourself from the list below</source>

@@ -305,7 +305,8 @@ office page the chat is open on, your PrestaShop version and the module
 version, with links to the matching source and documentation, and the role of
 every assistant switched on. When a key is tested or saved and the provider
 refuses it, the message is now shown in red, not green, and the assistant is
-marked "Key refused" in the list until a test passes. Runs on Neuron AI.
+switched off so the chat never opens onto a key that does not work; it comes
+back on once a working key is saved. Runs on Neuron AI.
 
 **Product images from a file on the shop.** Creating or changing a product now
 accepts, for each image, either a public address to download or the reference

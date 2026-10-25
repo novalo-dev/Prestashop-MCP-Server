@@ -320,11 +320,13 @@ class SomcpAssistant
      */
     public static function test(array $assistant): string
     {
-        $ok = self::listModels((string) $assistant['provider'], self::key($assistant)) !== null;
-        // Remembered so the list can show a refused key, not just a flash the
-        // merchant may have scrolled past.
-        Db::getInstance()->update('somcp_assistant', ['key_ok' => $ok ? 1 : 0], '`id_assistant` = ' . (int) $assistant['id_assistant']);
-        if (!$ok) {
+        if (self::listModels((string) $assistant['provider'], self::key($assistant)) === null) {
+            // A key the provider refuses would only surface on the first
+            // message. The assistant is switched off instead, so it never
+            // leads a conversation and, when it was the last one on, the chat
+            // button goes away rather than opening onto a dead key.
+            Db::getInstance()->update('somcp_assistant', ['active' => 0], '`id_assistant` = ' . (int) $assistant['id_assistant']);
+
             return '';
         }
 
@@ -483,9 +485,6 @@ class SomcpAssistant
             'role' => (string) $row['role'],
             'active' => (int) $row['active'] === 1,
             'is_default' => (int) $row['is_default'] === 1,
-            // null until a key test ran, then true or false. Lets the table
-            // show a refused key instead of a plain green check.
-            'key_ok' => array_key_exists('key_ok', $row) && $row['key_ok'] !== null ? (int) $row['key_ok'] === 1 : null,
         ];
     }
 

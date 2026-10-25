@@ -1030,10 +1030,6 @@ T = {
  "Réglages du module",
  "Ajustes del módulo",
  "Moduleinstellungen"),
-"Key refused": (
- "Clé refusée",
- "Clave rechazada",
- "Schlüssel abgelehnt"),
 "Write your message...": (
  "Écrivez votre message…",
  "Escriba su mensaje…",

@@ -40,18 +40,5 @@ function upgrade_module_1_1_0($module)
     // reason to fail the upgrade.
     $module->registerHook('displayBackOfficeTop');
 
-    // installDatabase() only creates missing tables, so a shop that already
-    // has the assistant table from a pre-release build keeps it without the
-    // key_ok column. Add it when it is missing, so the refused-key state has
-    // somewhere to live.
-    $table = _DB_PREFIX_ . 'somcp_assistant';
-    $exists = Db::getInstance()->executeS('SHOW TABLES LIKE "' . pSQL($table) . '"');
-    if (is_array($exists) && $exists !== []) {
-        $columns = Db::getInstance()->executeS('SHOW COLUMNS FROM `' . bqSQL($table) . '` LIKE "key_ok"');
-        if (!is_array($columns) || $columns === []) {
-            Db::getInstance()->execute('ALTER TABLE `' . bqSQL($table) . '` ADD `key_ok` TINYINT(1) DEFAULT NULL AFTER `role`');
-        }
-    }
-
     return $module->installDatabase() && $module->installTabs();
 }

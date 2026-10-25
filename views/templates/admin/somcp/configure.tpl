@@ -651,6 +651,18 @@
             <div class="panel">
                 <div class="panel-heading"><i class="icon-cogs"></i> {l s='Settings' d='Modules.Somcp.Admin'}</div>
                 <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Employees allowed to use the built-in assistant' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <select name="SOMCP_ASSISTANT_PROFILE" class="form-control fixed-width-xl">
+                            <option value="0"{if !$somcp_assistant_profile} selected{/if}>{l s='Any employee' d='Modules.Somcp.Admin'}</option>
+                            {foreach from=$somcp_profiles item=profile}
+                                <option value="{$profile.id_profile|intval}"{if $somcp_assistant_profile == $profile.id_profile} selected{/if}>{$profile.name|escape:'html':'UTF-8'}</option>
+                            {/foreach}
+                        </select>
+                        <p class="help-block">{l s='The chat acts with the rights of the employee using it, never more. Administrators always have it.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+                <div class="form-group">
                     <label class="control-label col-lg-3">{l s='Monthly cap, all assistants' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
                         <div class="input-group fixed-width-lg">

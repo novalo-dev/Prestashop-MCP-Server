@@ -46,6 +46,9 @@ class SomcpAssistant
     /** @var string Key the links to attached files are signed with. Never shown anywhere. */
     public const LINK_KEY = 'SOMCP_ASSISTANT_LINK_KEY';
 
+    /** @var string Profile allowed to use the built-in assistant, 0 for every employee. */
+    public const PROFILE = 'SOMCP_ASSISTANT_PROFILE';
+
     public const LEVEL_ECONOMY = 'economy';
     public const LEVEL_BALANCED = 'balanced';
     public const LEVEL_POWER = 'power';
@@ -404,6 +407,25 @@ class SomcpAssistant
     }
 
     /**
+     * Whether an employee profile may use the built-in assistant.
+     *
+     * A rule of its own, beside the one for connecting an assistant over MCP:
+     * a merchant may well let every employee chat in the back office and keep
+     * outside assistants to a few, or the other way round. The shop's
+     * administrators always may, as they may change this very setting.
+     *
+     * @param int $idProfile
+     *
+     * @return bool
+     */
+    public static function mayUse(int $idProfile): bool
+    {
+        $required = (int) Configuration::getGlobalValue(self::PROFILE);
+
+        return $required <= 0 || $idProfile === $required || $idProfile === (int) _PS_ADMIN_PROFILE_;
+    }
+
+    /**
      * @return string
      */
     public static function instructions(): string
@@ -415,8 +437,9 @@ class SomcpAssistant
      * @param float $budget
      * @param string $instructions
      */
-    public static function saveSettings(float $budget, string $instructions): void
+    public static function saveSettings(float $budget, string $instructions, int $idProfile): void
     {
+        Configuration::updateGlobalValue(self::PROFILE, (string) max(0, $idProfile));
         Configuration::updateGlobalValue(self::BUDGET, (string) max(0.0, round($budget, 2)));
         // Stored as HTML-allowed so the merchant's punctuation survives: the
         // value is only ever sent to the model and escaped wherever shown.
@@ -431,6 +454,7 @@ class SomcpAssistant
         Configuration::deleteByName(self::BUDGET);
         Configuration::deleteByName(self::INSTRUCTIONS);
         Configuration::deleteByName(self::LINK_KEY);
+        Configuration::deleteByName(self::PROFILE);
     }
 
     /**

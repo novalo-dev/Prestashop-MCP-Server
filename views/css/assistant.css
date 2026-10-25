@@ -20,8 +20,36 @@
 
 /* The header button takes the back office's own markup (component,
    shop-list, link): only the floating fallback is drawn here. */
-#somcp-chat-button:not(.somcp-floating) {
+/* The header link, printed by the displayBackOfficeTop hook: drawn like
+   "View my shop" beside it, with the same grey and the same icon size, and
+   its own spacing so it never touches its neighbour. */
+#somcp-chat-component {
+    display: flex;
+    align-items: center;
+    margin: 0 8px;
+}
+
+#somcp-chat-button.somcp-header-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 4px;
+    color: #6c868e;
+    font-size: 0.875rem;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
     cursor: pointer;
+}
+
+#somcp-chat-button.somcp-header-link:hover,
+#somcp-chat-button.somcp-header-link:focus {
+    color: #25b9d7;
+    text-decoration: none;
+}
+
+#somcp-chat-button.somcp-header-link .material-icons {
+    font-size: 1.25rem;
 }
 
 #somcp-chat-button.somcp-floating {
@@ -91,15 +119,20 @@
     min-width: 0;
 }
 
+/* !important against the back office's own select styles, which paint
+   every select white and left the chosen assistant white on white. */
 #somcp-chat .somcp-chat-head select {
-    max-width: 130px;
+    width: auto;
+    max-width: 150px;
     height: 26px;
+    margin: 0;
     padding: 0 6px;
-    border: 0;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
     border-radius: 13px;
-    background: rgba(255, 255, 255, 0.22);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #fff !important;
     font-size: 12px;
+    box-shadow: none !important;
 }
 
 #somcp-chat .somcp-chat-head select option {
@@ -116,24 +149,86 @@
     cursor: pointer;
 }
 
-#somcp-chat .somcp-chat-threads {
-    max-height: 40%;
-    overflow-y: auto;
-    border-bottom: 1px solid #e3e8ea;
-    background: #fff;
-}
-
-#somcp-chat .somcp-chat-threads[hidden] {
+/* The conversations: a bar sliding in from the left over the messages,
+   with a shade behind it that closes it. */
+#somcp-chat .somcp-chat-shade {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
     display: none;
+    background: rgba(0, 0, 0, 0.25);
 }
 
-#somcp-chat .somcp-chat-threads button {
+#somcp-chat.somcp-threads-open .somcp-chat-shade {
     display: block;
-    width: 100%;
-    padding: 8px 14px;
+}
+
+#somcp-chat .somcp-chat-threads {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    width: 270px;
+    max-width: 85%;
+    overflow-y: auto;
+    background: #fff;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+    transform: translateX(-105%);
+    transition: transform 0.2s ease;
+}
+
+#somcp-chat.somcp-threads-open .somcp-chat-threads {
+    transform: translateX(0);
+}
+
+#somcp-chat .somcp-chat-newthread {
+    margin: 12px;
+    padding: 8px 12px;
+    border: 1px solid #25b9d7;
+    border-radius: 8px;
+    background: #fff;
+    color: #25b9d7;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-chat-newthread:hover {
+    background: #f4fcfd;
+}
+
+#somcp-chat .somcp-chat-threads-title {
+    padding: 4px 14px;
+    color: #9aa8ad;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+#somcp-chat .somcp-thread {
+    display: flex;
+    align-items: center;
+    margin: 0 6px;
+    border-radius: 6px;
+}
+
+#somcp-chat .somcp-thread:hover,
+#somcp-chat .somcp-thread.somcp-current {
+    background: #f4f6f7;
+}
+
+#somcp-chat .somcp-thread-open {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 8px;
     overflow: hidden;
     border: 0;
-    border-bottom: 1px solid #f0f2f3;
     background: none;
     color: #363a41;
     text-align: left;
@@ -142,14 +237,29 @@
     cursor: pointer;
 }
 
-#somcp-chat .somcp-chat-threads button:hover,
-#somcp-chat .somcp-chat-threads button.somcp-current {
-    background: #f4fcfd;
+#somcp-chat .somcp-thread-delete {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 4px 6px;
+    border: 0;
+    background: none;
+    color: #9aa8ad;
+    cursor: pointer;
+    visibility: hidden;
 }
 
-#somcp-chat .somcp-chat-threads .somcp-chat-newthread {
-    color: #25b9d7;
-    font-weight: 600;
+#somcp-chat .somcp-thread:hover .somcp-thread-delete,
+#somcp-chat .somcp-thread.somcp-current .somcp-thread-delete {
+    visibility: visible;
+}
+
+#somcp-chat .somcp-thread-delete:hover {
+    color: #c05c67;
+}
+
+#somcp-chat .somcp-thread-delete .material-icons {
+    font-size: 18px;
 }
 
 #somcp-chat .somcp-chat-body {

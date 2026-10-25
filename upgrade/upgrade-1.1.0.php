@@ -22,10 +22,10 @@ if (!defined('_PS_VERSION_')) {
  * 1.1.0 brings the assistant built into the back office.
  *
  * A shop upgrading in place gets what a fresh install of 1.1.0 would have
- * done: the assistant tables and the hidden page the chat talks to. Both
- * calls skip what already exists, so running this twice changes nothing.
- * The back office header hook the chat button needs was already registered
- * by 1.0.0.
+ * done: the assistant tables, the hidden page the chat talks to, and the
+ * header hook its button is printed by. Every call skips what already
+ * exists, so running this twice changes nothing. The hook that loads the
+ * chat's script was already registered by 1.0.0.
  *
  * @param Somcp $module
  *
@@ -34,6 +34,11 @@ if (!defined('_PS_VERSION_')) {
 function upgrade_module_1_1_0($module)
 {
     Somcp::bootClasses();
+
+    // The header hook the chat button needs is new; one that cannot be
+    // registered leaves the chat reachable from the module only, which is no
+    // reason to fail the upgrade.
+    $module->registerHook('displayBackOfficeTop');
 
     return $module->installDatabase() && $module->installTabs();
 }

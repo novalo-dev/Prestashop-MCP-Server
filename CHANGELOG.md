@@ -296,7 +296,10 @@ that level never leads the chat, the default one asks it for pictures. The chat
 opens from an Assistant link beside View my shop, can be enlarged, and its
 message box holds the field, the files and the buttons together, with a reminder
 that the answers come from an AI. Keys are stored encrypted.
-Conversations are kept per employee. Runs on Neuron AI.
+Conversations are kept per employee: the menu in the chat slides out the list,
+each with a bin to delete it. The setting "Employees allowed to use the built-in
+assistant" chooses who sees the chat, separately from who may connect an
+outside assistant; administrators always may. Runs on Neuron AI.
 
 **Product images from a file on the shop.** Creating or changing a product now
 accepts, for each image, either a public address to download or the reference

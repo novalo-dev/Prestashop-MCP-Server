@@ -1647,6 +1647,16 @@
       <source>This is an AI and can make mistakes.</source>
       <target>This is an AI and can make mistakes.</target>
     </trans-unit>
+    <!-- Employees allowed to use the built-in assistant -->
+    <trans-unit id="491a80a6822010d378b6745fd55cdd2d" resname="Employees allowed to use the built-in assistant">
+      <source>Employees allowed to use the built-in assistant</source>
+      <target>Employees allowed to use the built-in assistant</target>
+    </trans-unit>
+    <!-- The chat acts with the rights of the employee using it, never more. Administrators always have it. -->
+    <trans-unit id="47f0d7d7abbdb279f4bda78eda35cfd3" resname="The chat acts with the rights of the employee using it, never more. Administrators always have it.">
+      <source>The chat acts with the rights of the employee using it, never more. Administrators always have it.</source>
+      <target>The chat acts with the rights of the employee using it, never more. Administrators always have it.</target>
+    </trans-unit>
     <!-- Open source under the AFL-3.0 licence -->
     <trans-unit id="c670648db949fca4d11ac24fa3806100" resname="Open source under the AFL-3.0 licence">
       <source>Open source under the AFL-3.0 licence</source>

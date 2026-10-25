@@ -351,32 +351,7 @@
             picker.value = '0';
         }
 
-        threadList.innerHTML = '';
-        var fresh = el('button', 'somcp-chat-newthread', '+ ' + text.newThread);
-        fresh.type = 'button';
-        fresh.addEventListener('click', function () {
-            threadList.hidden = true;
-            run('new', { id_assistant: picker.value });
-        });
-        threadList.appendChild(fresh);
-        state.threads.forEach(function (thread) {
-            var item = el('button', view && view.thread_id === thread.thread_id ? 'somcp-current' : '', thread.title || thread.date);
-            item.type = 'button';
-            item.addEventListener('click', function () {
-                threadList.hidden = true;
-                run('load', { thread_id: thread.thread_id });
-            });
-            threadList.appendChild(item);
-        });
-        if (view) {
-            var remove = el('button', '', '🗑 ' + text.deleteThread);
-            remove.type = 'button';
-            remove.addEventListener('click', function () {
-                threadList.hidden = true;
-                run('delete', { thread_id: view.thread_id });
-            });
-            threadList.appendChild(remove);
-        }
+        drawThreads();
 
         var spentNode = foot.firstChild;
         if (view) {
@@ -384,6 +359,53 @@
                 ? text.spentOf.replace('%spent%', money(view.spent)).replace('%budget%', money(view.budget))
                 : text.spent.replace('%spent%', money(view.spent));
         }
+    }
+
+    // The conversations, in a bar sliding in from the left of the chat: the
+    // new one on top, then each conversation with its own bin.
+    function drawThreads() {
+        var view = state.view;
+        threadList.innerHTML = '';
+        var fresh = el('button', 'somcp-chat-newthread', '+ ' + text.newThread);
+        fresh.type = 'button';
+        fresh.addEventListener('click', function () {
+            closeThreads();
+            run('new', { id_assistant: picker.value });
+        });
+        threadList.appendChild(fresh);
+        var title = el('div', 'somcp-chat-threads-title', text.threads);
+        threadList.appendChild(title);
+        state.threads.forEach(function (thread) {
+            var row = el('div', 'somcp-thread' + (view && view.thread_id === thread.thread_id ? ' somcp-current' : ''));
+            var open = el('button', 'somcp-thread-open', thread.title || thread.date);
+            open.type = 'button';
+            open.title = thread.title || thread.date;
+            open.addEventListener('click', function () {
+                closeThreads();
+                run('load', { thread_id: thread.thread_id });
+            });
+            var remove = el('button', 'somcp-thread-delete');
+            remove.type = 'button';
+            remove.title = text.deleteThread;
+            remove.setAttribute('aria-label', text.deleteThread);
+            remove.appendChild(el('i', 'material-icons', 'delete'));
+            remove.addEventListener('click', function () {
+                if (window.confirm(text.deleteThread + ' ?')) {
+                    run('delete', { thread_id: thread.thread_id });
+                }
+            });
+            row.appendChild(open);
+            row.appendChild(remove);
+            threadList.appendChild(row);
+        });
+    }
+
+    function openThreads() {
+        panel.classList.add('somcp-threads-open');
+    }
+
+    function closeThreads() {
+        panel.classList.remove('somcp-threads-open');
     }
 
     function build() {
@@ -398,7 +420,11 @@
         menu.type = 'button';
         menu.title = text.threads;
         menu.addEventListener('click', function () {
-            threadList.hidden = !threadList.hidden;
+            if (panel.classList.contains('somcp-threads-open')) {
+                closeThreads();
+            } else {
+                openThreads();
+            }
         });
         var who = el('div', 'somcp-chat-who');
         who.appendChild(el('b', '', text.title));
@@ -444,7 +470,8 @@
         }
 
         threadList = el('div', 'somcp-chat-threads');
-        threadList.hidden = true;
+        var shade = el('div', 'somcp-chat-shade');
+        shade.addEventListener('click', closeThreads);
 
         body = el('div', 'somcp-chat-body');
 
@@ -512,6 +539,7 @@
         foot.appendChild(credit);
 
         panel.appendChild(head);
+        panel.appendChild(shade);
         panel.appendChild(threadList);
         panel.appendChild(body);
         panel.appendChild(form);
@@ -597,39 +625,27 @@
         }
     }
 
-    // The button sits in the back office header right after "View my shop",
-    // built as a copy of that very link and its container: the header is not
-    // the same on legacy pages and on Symfony pages, nor on PrestaShop 8 and
-    // 9, and a copy gets whatever styling each of them gives the original.
-    // A page without that link gets a floating button rather than nothing.
+    // The button is printed by the server through the displayBackOfficeTop
+    // hook, at the end of the header bar. It is moved right after "View my
+    // shop" when that link is on the page, and left where the hook put it
+    // otherwise. A page that prints no header at all gets a floating button.
     function placeButton() {
-        var original = document.getElementById('header_shopname');
-        if (original && original.parentNode && original.parentNode.parentNode) {
-            var holder = original.parentNode.cloneNode(false);
-            holder.removeAttribute('id');
-            Array.prototype.slice.call(holder.attributes).forEach(function (attribute) {
-                if (attribute.name.indexOf('data-') === 0) {
-                    holder.removeAttribute(attribute.name);
-                }
-            });
-            var link = original.cloneNode(false);
-            link.id = 'somcp-chat-button';
-            link.href = '#';
-            link.removeAttribute('target');
-            link.title = text.open;
-            link.setAttribute('role', 'button');
-            link.appendChild(el('i', 'material-icons', 'forum'));
-            link.appendChild(el('span', '', text.button));
-            link.addEventListener('click', function (event) {
+        var button = document.getElementById('somcp-chat-button');
+        if (button) {
+            var holder = document.getElementById('somcp-chat-component');
+            var shop = document.getElementById('header_shopname');
+            var after = shop ? (shop.closest('li, .component') || shop.parentNode) : null;
+            if (holder && after && after.parentNode && !after.contains(holder)) {
+                after.parentNode.insertBefore(holder, after.nextSibling);
+            }
+            button.addEventListener('click', function (event) {
                 event.preventDefault();
                 toggle();
             });
-            holder.appendChild(link);
-            original.parentNode.parentNode.insertBefore(holder, original.parentNode.nextSibling);
             return;
         }
 
-        var button = el('button', 'somcp-floating');
+        button = el('button', 'somcp-floating');
         button.id = 'somcp-chat-button';
         button.type = 'button';
         button.title = text.open;

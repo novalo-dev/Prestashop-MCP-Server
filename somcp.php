@@ -39,7 +39,7 @@ class Somcp extends Module
     private const ESSENTIAL_HOOKS = ['moduleRoutes'];
 
     /** @var array<int, string> Hooks the module works without, in a reduced way. */
-    private const OPTIONAL_HOOKS = ['displayBackOfficeHeader'];
+    private const OPTIONAL_HOOKS = ['displayBackOfficeHeader', 'displayBackOfficeTop'];
 
     /** @var string Key the settings page leaves a message under, for the page after the redirect. */
     private const FLASH_KEY = 'somcp_flash';
@@ -342,7 +342,7 @@ class Somcp extends Module
         if (!$employee instanceof Employee || (int) $employee->id <= 0
             || !SomcpAssistantChat::available()
             || SomcpAssistant::leader() === null
-            || !SomcpBackOffice::mayGrant((int) $employee->id_profile)) {
+            || !SomcpAssistant::mayUse((int) $employee->id_profile)) {
             return '';
         }
 
@@ -390,6 +390,38 @@ class Somcp extends Module
         return '<link rel="stylesheet" href="' . htmlspecialchars($base . 'css/assistant.css?v=' . $version, ENT_QUOTES) . '">'
             . '<script>window.somcpAssistant = ' . $json . ';</script>'
             . '<script src="' . htmlspecialchars($base . 'js/assistant.js?v=' . $version, ENT_QUOTES) . '" defer></script>';
+    }
+
+    /**
+     * The button that opens the built-in assistant, in the back office header.
+     *
+     * displayBackOfficeTop is printed inside the header bar on legacy pages and
+     * on Symfony pages alike, on PrestaShop 8 and 9, so the button is written
+     * by the server where the header is built rather than slipped in by a
+     * script looking for its place. The hook prints it at the end of the bar;
+     * the chat script then sets it right after "View my shop", where the
+     * merchant looks for it, and leaves it where it is if that link is absent.
+     *
+     * @return string
+     */
+    public function hookDisplayBackOfficeTop(): string
+    {
+        self::bootClasses();
+
+        $employee = $this->context->employee;
+        if (!$employee instanceof Employee || (int) $employee->id <= 0
+            || !SomcpAssistantChat::available()
+            || SomcpAssistant::leader() === null
+            || !SomcpAssistant::mayUse((int) $employee->id_profile)) {
+            return '';
+        }
+
+        $label = htmlspecialchars($this->l10n('Assistant'), ENT_QUOTES, 'UTF-8');
+        $title = htmlspecialchars($this->l10n('Open the built-in assistant'), ENT_QUOTES, 'UTF-8');
+
+        return '<div class="component" id="somcp-chat-component">'
+            . '<a href="#" id="somcp-chat-button" class="somcp-header-link" role="button" title="' . $title . '">'
+            . '<i class="material-icons">forum</i><span>' . $label . '</span></a></div>';
     }
 
     /**
@@ -461,7 +493,8 @@ class Somcp extends Module
         if (Tools::isSubmit('submitSomcpAssistantSettings')) {
             SomcpAssistant::saveSettings(
                 (float) str_replace(',', '.', (string) Tools::getValue('SOMCP_ASSISTANT_BUDGET')),
-                (string) Tools::getValue('SOMCP_ASSISTANT_INSTRUCTIONS')
+                (string) Tools::getValue('SOMCP_ASSISTANT_INSTRUCTIONS'),
+                (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE')
             );
             $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
             $this->redirectToSelf();
@@ -521,6 +554,7 @@ class Somcp extends Module
             'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts()),
             'somcp_assistant_budget' => SomcpAssistant::budget(),
             'somcp_assistant_instructions' => SomcpAssistant::instructions(),
+            'somcp_assistant_profile' => (int) Configuration::getGlobalValue(SomcpAssistant::PROFILE),
             'somcp_assistant_providers' => SomcpAssistant::providers(),
             'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
             'somcp_assistant_edit' => $this->assistantBeingEdited(),

@@ -67,9 +67,9 @@ class AdminSomcpAssistantController extends ModuleAdminController
     }
 
     /**
-     * Open to the employees allowed to connect an assistant, the same rule as
-     * the consent screen: the chat acts with the employee's own rights, so the
-     * question is only whether the merchant lets this profile use one at all.
+     * Open to the employees the merchant allowed to use the built-in
+     * assistant: the chat acts with the employee's own rights, so the question
+     * is only whether this profile may use it at all.
      *
      * @param bool $disable
      *
@@ -79,7 +79,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
     {
         Somcp::bootClasses();
 
-        return SomcpBackOffice::mayGrant((int) $this->context->employee->id_profile);
+        return SomcpAssistant::mayUse((int) $this->context->employee->id_profile);
     }
 
     /**

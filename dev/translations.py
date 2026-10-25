@@ -1314,6 +1314,14 @@ T = {
  "Ceci est une IA et peut commettre des erreurs.",
  "Esto es una IA y puede cometer errores.",
  "Dies ist eine KI und kann Fehler machen."),
+"Employees allowed to use the built-in assistant": (
+ "Employés autorisés à utiliser l'assistant intégré",
+ "Empleados autorizados a usar el asistente integrado",
+ "Mitarbeiter, die den integrierten Assistenten nutzen dürfen"),
+"The chat acts with the rights of the employee using it, never more. Administrators always have it.": (
+ "Le chat agit avec les droits de l'employé qui l'utilise, jamais plus. Les administrateurs y ont toujours accès.",
+ "El chat actúa con los derechos del empleado que lo usa, nunca más. Los administradores siempre tienen acceso.",
+ "Der Chat handelt mit den Rechten des Mitarbeiters, der ihn nutzt, nie mit mehr. Administratoren haben immer Zugriff."),
 "Open source under the AFL-3.0 licence": (
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",

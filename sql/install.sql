@@ -214,22 +214,26 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     `resolved_model` VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'what the level resolved to last time',
     `resolved_at`    DATETIME     DEFAULT NULL,
     `role`           VARCHAR(255) NOT NULL DEFAULT '',
+    `id_shop`        INT(11)      NOT NULL DEFAULT 1,
     `active`         TINYINT(1)   NOT NULL DEFAULT 1,
     `is_default`     TINYINT(1)   NOT NULL DEFAULT 0,
     `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `date_upd`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id_assistant`)
+    PRIMARY KEY (`id_assistant`),
+    KEY `idx_shop` (`id_shop`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- somcp_assistant_usage - what each assistant consumed, per calendar month.
 -- The monthly cap is checked against the sum of `cost` before every call.
 CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_usage` (
     `id_assistant`   INT(11)        NOT NULL,
+    `id_shop`        INT(11)        NOT NULL DEFAULT 1,
     `month`          CHAR(7)        NOT NULL COMMENT 'YYYY-MM',
     `input_tokens`   BIGINT         NOT NULL DEFAULT 0,
     `output_tokens`  BIGINT         NOT NULL DEFAULT 0,
     `cost`           DECIMAL(14,6)  NOT NULL DEFAULT 0 COMMENT 'US dollars, estimated from public prices',
-    PRIMARY KEY (`id_assistant`, `month`)
+    PRIMARY KEY (`id_assistant`, `month`),
+    KEY `idx_shop` (`id_shop`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- somcp_assistant_thread - one row per conversation, and who it belongs to.

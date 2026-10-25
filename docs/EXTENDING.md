@@ -228,6 +228,12 @@ and the assistant gets a generic error. An exception thrown by your handler is
 caught, logged, and reported without its message, which could contain a query
 or a path.
 
+**Multistore.** `$context['id_shop']` is the shop the call is for; read and
+write only that shop's data with it. If your module keeps its own tables, give
+each one an `id_shop` and scope every query to this shop - the same rule somcp
+holds itself to, so a tool behaves the same whether the shop is one of many or
+on its own.
+
 ---
 
 ## Files: the two doors

@@ -306,7 +306,10 @@ version, with links to the matching source and documentation, and the role of
 every assistant switched on. When a key is tested or saved and the provider
 refuses it, the message is now shown in red, not green, and the assistant is
 switched off so the chat never opens onto a key that does not work; it comes
-back on once a working key is saved. Runs on Neuron AI.
+back on once a working key is saved. On a multistore install everything about
+the assistant belongs to the shop you are on - its assistants and keys, budget,
+instructions, allowed profile, spending and conversations are kept apart from
+the other shops'. Runs on Neuron AI.
 
 **Product images from a file on the shop.** Creating or changing a product now
 accepts, for each image, either a public address to download or the reference

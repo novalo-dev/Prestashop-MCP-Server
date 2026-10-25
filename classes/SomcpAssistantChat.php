@@ -215,7 +215,7 @@ class SomcpAssistantChat
     {
         $rows = Db::getInstance()->executeS(
             'SELECT `thread_id`, `title`, `id_assistant`, `date_upd` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
-            . ' WHERE `id_employee` = ' . (int) $this->employee->id
+            . ' WHERE `id_employee` = ' . (int) $this->employee->id . ' AND `id_shop` = ' . (int) $this->idShop
             . ' ORDER BY `date_upd` DESC, `id_thread` DESC LIMIT ' . self::MAX_THREADS
         );
 
@@ -239,6 +239,7 @@ class SomcpAssistantChat
         $row = Db::getInstance()->getRow(
             'SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
             . ' WHERE `thread_id` = \'' . pSQL($threadId) . '\' AND `id_employee` = ' . (int) $this->employee->id
+            . ' AND `id_shop` = ' . (int) $this->idShop
         );
 
         return is_array($row) ? $row : null;

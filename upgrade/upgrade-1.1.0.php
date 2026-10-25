@@ -40,5 +40,22 @@ function upgrade_module_1_1_0($module)
     // reason to fail the upgrade.
     $module->registerHook('displayBackOfficeTop');
 
+    // installDatabase() only creates missing tables. A shop that built the
+    // assistant tables from a pre-release copy has them without id_shop, so the
+    // per-shop scoping is added here. Each column defaults to shop 1, which is
+    // the only shop on a single-store install.
+    $db = Db::getInstance();
+    foreach (['somcp_assistant', 'somcp_assistant_usage'] as $name) {
+        $table = _DB_PREFIX_ . $name;
+        $present = $db->executeS('SHOW TABLES LIKE "' . pSQL($table) . '"');
+        if (!is_array($present) || $present === []) {
+            continue;
+        }
+        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($table) . '` LIKE "id_shop"');
+        if (!is_array($column) || $column === []) {
+            $db->execute('ALTER TABLE `' . bqSQL($table) . '` ADD `id_shop` INT(11) NOT NULL DEFAULT 1, ADD KEY `idx_shop` (`id_shop`)');
+        }
+    }
+
     return $module->installDatabase() && $module->installTabs();
 }

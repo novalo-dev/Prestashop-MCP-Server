@@ -60,6 +60,9 @@ php .github/scripts/check-translations.php .
 
 # Every tool in the README, its entry, its scope, the CHANGELOG and a prompt
 php .github/scripts/check-tools.php .
+
+# Every table shop-scoped, no merchant setting stored globally
+php .github/scripts/check-multishop.php .
 ```
 
 CI also runs a **Security** job, which you can run too:
@@ -120,6 +123,15 @@ PrestaShop 9 class once took the whole PrestaShop 8 back office down.
   token, no code, no client secret, not even truncated.
 - **The shop comes from the token**, never from an argument. The employee's
   rights are checked on every call.
+- **Everything belongs to a shop.** Every table the module creates carries an
+  `id_shop`, unless it is the child of one that does and is reached only through
+  its parent's id (`somcp_upload_file`, `somcp_assistant_message`,
+  `somcp_assistant_run`). Every read and write is scoped to the shop in context.
+  A merchant setting is stored per shop with `Configuration::updateValue(...,
+  $idShop)` and read with `Configuration::get($key, null, null, $idShop)` -
+  never `getGlobalValue` / `updateGlobalValue`, which are for the module's own
+  state and minted secrets, the same on every shop. `check-multishop.php`
+  enforces the table rule and guards the assistant's settings; it runs in CI.
 - **Files enter the shop through two doors, and no third.** No tool takes file
   bytes in an argument - no base64, no data URL. A file comes in either as a
   **deposit**, read through `upload_ref` (`SomcpUpload`: bytes checked against

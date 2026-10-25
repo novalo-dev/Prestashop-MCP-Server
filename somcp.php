@@ -553,7 +553,7 @@ class Somcp extends Module
             'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts()),
             'somcp_assistant_budget' => SomcpAssistant::budget(),
             'somcp_assistant_instructions' => SomcpAssistant::instructions(),
-            'somcp_assistant_profile' => (int) Configuration::getGlobalValue(SomcpAssistant::PROFILE),
+            'somcp_assistant_profile' => (int) Configuration::get(SomcpAssistant::PROFILE, null, null, (int) self::currentShopId()),
             'somcp_assistant_providers' => SomcpAssistant::providers(),
             'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
             'somcp_assistant_edit' => $this->assistantBeingEdited(),

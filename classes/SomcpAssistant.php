@@ -130,7 +130,8 @@ class SomcpAssistant
     public static function all(): array
     {
         $rows = Db::getInstance()->executeS(
-            'SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant` ORDER BY `is_default` DESC, `id_assistant` ASC'
+            'SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant` WHERE `id_shop` = ' . self::shop()
+            . ' ORDER BY `is_default` DESC, `id_assistant` ASC'
         );
 
         return is_array($rows) ? array_map([self::class, 'shape'], $rows) : [];
@@ -171,7 +172,8 @@ class SomcpAssistant
     public static function get(int $idAssistant): ?array
     {
         $row = Db::getInstance()->getRow(
-            'SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant` WHERE `id_assistant` = ' . (int) $idAssistant
+            'SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant`'
+            . ' WHERE `id_assistant` = ' . (int) $idAssistant . ' AND `id_shop` = ' . self::shop()
         );
 
         return is_array($row) ? self::shape($row) : null;
@@ -212,6 +214,7 @@ class SomcpAssistant
             $db->update('somcp_assistant', $data, '`id_assistant` = ' . (int) $idAssistant);
         } else {
             $data['api_key'] = $data['api_key'] ?? '';
+            $data['id_shop'] = self::shop();
             // The first assistant that can lead is the default one: a chat
             // with no default would have nobody to answer.
             $data['is_default'] = $level !== self::LEVEL_IMAGE && self::leader() === null ? 1 : 0;
@@ -252,8 +255,9 @@ class SomcpAssistant
             return;
         }
         $db = Db::getInstance();
-        $db->update('somcp_assistant', ['is_default' => 0], '1');
-        $db->update('somcp_assistant', ['is_default' => 1], '`id_assistant` = ' . (int) $idAssistant);
+        // Only this shop's assistants: each shop keeps its own default.
+        $db->update('somcp_assistant', ['is_default' => 0], '`id_shop` = ' . self::shop());
+        $db->update('somcp_assistant', ['is_default' => 1], '`id_assistant` = ' . (int) $idAssistant . ' AND `id_shop` = ' . self::shop());
     }
 
     /**
@@ -266,7 +270,8 @@ class SomcpAssistant
     public static function key(array $assistant): string
     {
         $stored = (string) Db::getInstance()->getValue(
-            'SELECT `api_key` FROM `' . _DB_PREFIX_ . 'somcp_assistant` WHERE `id_assistant` = ' . (int) $assistant['id_assistant']
+            'SELECT `api_key` FROM `' . _DB_PREFIX_ . 'somcp_assistant`'
+            . ' WHERE `id_assistant` = ' . (int) $assistant['id_assistant'] . ' AND `id_shop` = ' . self::shop()
         );
 
         return self::open($stored);
@@ -365,8 +370,8 @@ class SomcpAssistant
         }
 
         Db::getInstance()->execute(
-            'INSERT INTO `' . _DB_PREFIX_ . 'somcp_assistant_usage` (`id_assistant`, `month`, `input_tokens`, `output_tokens`, `cost`)'
-            . ' VALUES (' . (int) $idAssistant . ', \'' . pSQL(date('Y-m')) . '\', ' . (int) $inputTokens . ', ' . (int) $outputTokens . ', ' . (float) $cost . ')'
+            'INSERT INTO `' . _DB_PREFIX_ . 'somcp_assistant_usage` (`id_assistant`, `id_shop`, `month`, `input_tokens`, `output_tokens`, `cost`)'
+            . ' VALUES (' . (int) $idAssistant . ', ' . self::shop() . ', \'' . pSQL(date('Y-m')) . '\', ' . (int) $inputTokens . ', ' . (int) $outputTokens . ', ' . (float) $cost . ')'
             . ' ON DUPLICATE KEY UPDATE `input_tokens` = `input_tokens` + VALUES(`input_tokens`),'
             . ' `output_tokens` = `output_tokens` + VALUES(`output_tokens`), `cost` = `cost` + VALUES(`cost`)'
         );
@@ -381,7 +386,7 @@ class SomcpAssistant
     {
         $rows = Db::getInstance()->executeS(
             'SELECT `id_assistant`, `cost` FROM `' . _DB_PREFIX_ . 'somcp_assistant_usage`'
-            . ' WHERE `month` = \'' . pSQL(date('Y-m')) . '\''
+            . ' WHERE `month` = \'' . pSQL(date('Y-m')) . '\' AND `id_shop` = ' . self::shop()
         );
 
         $costs = [];
@@ -397,7 +402,19 @@ class SomcpAssistant
      */
     public static function budget(): float
     {
-        return max(0.0, (float) Configuration::getGlobalValue(self::BUDGET));
+        return max(0.0, (float) Configuration::get(self::BUDGET, null, null, self::shop()));
+    }
+
+    /**
+     * The shop the built-in assistant works for: the one in context. Every
+     * assistant, its usage and its settings belong to a shop, so a multistore
+     * install keeps each shop's chat, keys and spending apart.
+     *
+     * @return int
+     */
+    private static function shop(): int
+    {
+        return max(1, (int) Context::getContext()->shop->id);
     }
 
     /**
@@ -426,7 +443,7 @@ class SomcpAssistant
      */
     public static function mayUse(int $idProfile): bool
     {
-        $required = (int) Configuration::getGlobalValue(self::PROFILE);
+        $required = (int) Configuration::get(self::PROFILE, null, null, self::shop());
 
         return $required <= 0 || $idProfile === $required || $idProfile === (int) _PS_ADMIN_PROFILE_;
     }
@@ -436,7 +453,7 @@ class SomcpAssistant
      */
     public static function instructions(): string
     {
-        return (string) Configuration::getGlobalValue(self::INSTRUCTIONS);
+        return (string) Configuration::get(self::INSTRUCTIONS, null, null, self::shop());
     }
 
     /**
@@ -445,11 +462,12 @@ class SomcpAssistant
      */
     public static function saveSettings(float $budget, string $instructions, int $idProfile): void
     {
-        Configuration::updateGlobalValue(self::PROFILE, (string) max(0, $idProfile));
-        Configuration::updateGlobalValue(self::BUDGET, (string) max(0.0, round($budget, 2)));
+        $idShop = self::shop();
+        Configuration::updateValue(self::PROFILE, (string) max(0, $idProfile), false, null, $idShop);
+        Configuration::updateValue(self::BUDGET, (string) max(0.0, round($budget, 2)), false, null, $idShop);
         // Stored as HTML-allowed so the merchant's punctuation survives: the
         // value is only ever sent to the model and escaped wherever shown.
-        Configuration::updateGlobalValue(self::INSTRUCTIONS, Tools::substr($instructions, 0, 4000), true);
+        Configuration::updateValue(self::INSTRUCTIONS, Tools::substr($instructions, 0, 4000), true, null, $idShop);
     }
 
     /**

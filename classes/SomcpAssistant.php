@@ -422,7 +422,7 @@ class SomcpAssistant
      */
     private static function seal(string $plain): string
     {
-        if (!defined('_NEW_COOKIE_KEY_') || (string) _NEW_COOKIE_KEY_ === '') {
+        if (!defined('_NEW_COOKIE_KEY_')) {
             return self::PLAIN . $plain;
         }
 

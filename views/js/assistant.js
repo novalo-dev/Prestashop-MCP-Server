@@ -41,6 +41,9 @@
     var picker;
     var threadList;
     var foot;
+    var fileInput;
+    var fileList;
+    var pending = [];
 
     function el(tag, className, content) {
         var node = document.createElement(tag);
@@ -121,6 +124,12 @@
         var form = new FormData();
         form.append('somcp_action', action);
         Object.keys(data || {}).forEach(function (key) {
+            if (key === 'files') {
+                data.files.forEach(function (file) {
+                    form.append('files[]', file, file.name);
+                });
+                return;
+            }
             form.append(key, data[key]);
         });
 
@@ -164,8 +173,14 @@
                 absorb(json);
                 // A message the assistant could not answer is not kept by the
                 // server: it goes back into the field rather than being lost.
-                if (action === 'send' && state.view && state.view.error && data.text && input.value === '') {
-                    input.value = data.text;
+                if (action === 'send' && state.view && state.view.error) {
+                    if (data.text && input.value === '') {
+                        input.value = data.text;
+                    }
+                    if (data.files && data.files.length && !pending.length) {
+                        pending = data.files;
+                        drawPending();
+                    }
                 }
                 if (action !== 'step') {
                     state.steps = 0;
@@ -180,6 +195,9 @@
                 state.busy = false;
                 if (action === 'send' && data.text && input.value === '') {
                     input.value = data.text;
+                }
+                if (action === 'send' && data.files && data.files.length && !pending.length) {
+                    pending = data.files;
                 }
                 render(text.failed);
             });
@@ -214,7 +232,10 @@
         }
 
         var node = el('div', 'somcp-msg ' + (message.role === 'user' ? 'somcp-msg-user' : 'somcp-msg-assistant'));
-        node.innerHTML = markdown(message.text);
+        node.innerHTML = markdown(message.text || '');
+        (message.files || []).forEach(function (name) {
+            node.appendChild(el('div', 'somcp-msg-file', '📎 ' + name));
+        });
         return node;
     }
 
@@ -287,6 +308,7 @@
         var waiting = view && view.status === 'approval';
         input.disabled = state.busy || waiting;
         sendButton.disabled = state.busy || waiting;
+        drawPending();
 
         picker.innerHTML = '';
         var automatic = el('option', '', text.defaultAssistant);
@@ -374,7 +396,30 @@
 
         body = el('div', 'somcp-chat-body');
 
+        fileList = el('div', 'somcp-chat-files');
+        fileInput = el('input');
+        fileInput.type = 'file';
+        fileInput.multiple = true;
+        fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp,application/pdf,.txt,.csv,.md,.json,.xml';
+        fileInput.hidden = true;
+        fileInput.addEventListener('change', function () {
+            Array.prototype.forEach.call(fileInput.files, function (file) {
+                if (pending.length < config.maxFiles) {
+                    pending.push(file);
+                }
+            });
+            fileInput.value = '';
+            drawPending();
+        });
+
         var form = el('form', 'somcp-chat-input');
+        var attach = el('button', 'somcp-attach', '📎');
+        attach.type = 'button';
+        attach.title = text.attach;
+        attach.setAttribute('aria-label', text.attach);
+        attach.addEventListener('click', function () {
+            fileInput.click();
+        });
         input = el('textarea');
         input.rows = 1;
         input.placeholder = text.placeholder;
@@ -387,6 +432,8 @@
         sendButton = el('button', '', '➤');
         sendButton.type = 'submit';
         sendButton.title = text.send;
+        form.appendChild(attach);
+        form.appendChild(fileInput);
         form.appendChild(input);
         form.appendChild(sendButton);
         form.addEventListener('submit', function (event) {
@@ -407,20 +454,52 @@
         panel.appendChild(head);
         panel.appendChild(threadList);
         panel.appendChild(body);
+        panel.appendChild(fileList);
         panel.appendChild(form);
         panel.appendChild(foot);
         document.body.appendChild(panel);
     }
 
-    function submit() {
-        var message = input.value.trim();
-        if (!message || state.busy) {
+    // The files chosen for the next message, each with a cross to take it
+    // back before sending.
+    function drawPending() {
+        if (!fileList) {
             return;
         }
+        fileList.innerHTML = '';
+        pending.forEach(function (file, index) {
+            var chip = el('span', 'somcp-file-chip', '📎 ' + file.name + ' ');
+            var remove = el('button', '', '×');
+            remove.type = 'button';
+            remove.title = text.removeFile;
+            remove.addEventListener('click', function () {
+                pending.splice(index, 1);
+                drawPending();
+            });
+            chip.appendChild(remove);
+            fileList.appendChild(chip);
+        });
+        fileList.hidden = pending.length === 0;
+    }
+
+    function submit() {
+        var message = input.value.trim();
+        if ((!message && !pending.length) || state.busy) {
+            return;
+        }
+        var tooBig = pending.filter(function (file) {
+            return file.size > config.maxFileBytes;
+        });
+        if (tooBig.length) {
+            render(text.fileTooBig + ' ' + tooBig[0].name);
+            return;
+        }
+        var files = pending;
+        pending = [];
         input.value = '';
         state.view = state.view || { thread_id: '', id_assistant: Number(picker.value), messages: [], status: 'idle', actions: [], budget: 0, spent: 0 };
-        state.view.messages.push({ role: 'user', text: message });
-        var data = { text: message, id_assistant: picker.value };
+        state.view.messages.push({ role: 'user', text: message, files: files.map(function (file) { return file.name; }) });
+        var data = { text: message, id_assistant: picker.value, files: files };
         if (state.view.thread_id) {
             data.thread_id = state.view.thread_id;
         }

@@ -337,3 +337,58 @@
 #somcp-chat .somcp-chat-foot a {
     color: #25b9d7;
 }
+
+#somcp-chat .somcp-msg-file {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+#somcp-chat .somcp-chat-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px 0;
+}
+
+#somcp-chat .somcp-chat-files[hidden] {
+    display: none;
+}
+
+#somcp-chat .somcp-file-chip {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 2px 4px 2px 8px;
+    overflow: hidden;
+    border: 1px solid #dfe3e5;
+    border-radius: 12px;
+    background: #f4f6f7;
+    font-size: 11px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#somcp-chat .somcp-file-chip button {
+    margin-left: 2px;
+    padding: 0 4px;
+    border: 0;
+    background: none;
+    color: #6c868e;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-chat-input .somcp-attach {
+    width: 32px;
+    height: 36px;
+    border-radius: 50%;
+    background: none;
+    color: #6c868e;
+    font-size: 17px;
+}
+
+#somcp-chat .somcp-chat-input .somcp-attach:hover {
+    background: #f4f6f7;
+}

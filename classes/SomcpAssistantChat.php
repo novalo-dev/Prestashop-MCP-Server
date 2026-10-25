@@ -20,8 +20,12 @@ use NeuronAI\Agent\Agent;
 use NeuronAI\Agent\AgentState;
 use NeuronAI\Agent\Interrupt\ApprovalRequest;
 use NeuronAI\Agent\Interrupt\ToolResultsRequest;
+use NeuronAI\Chat\Enums\SourceType;
 use NeuronAI\Chat\History\SQLMessageStore;
 use NeuronAI\Chat\Messages\AssistantMessage;
+use NeuronAI\Chat\Messages\ContentBlocks\FileContent;
+use NeuronAI\Chat\Messages\ContentBlocks\ImageContent;
+use NeuronAI\Chat\Messages\ContentBlocks\TextContent;
 use NeuronAI\Chat\Messages\Message;
 use NeuronAI\Chat\Messages\ToolCallMessage;
 use NeuronAI\Chat\Messages\ToolResultMessage;
@@ -85,6 +89,39 @@ class SomcpAssistantChat
 
     /** @var int Conversations listed in the chat. */
     private const MAX_THREADS = 30;
+
+    /** @var int Files one message may carry. */
+    public const MAX_FILES = 5;
+
+    /** @var int Largest file, in bytes. Images and PDFs travel base64-encoded, a third larger. */
+    public const MAX_FILE_BYTES = 5242880;
+
+    /** @var int Characters of a text file handed to the model. */
+    private const MAX_TEXT_CHARS = 200000;
+
+    /** @var string Opens the text block that names an attached file, so the chat can draw it as a file. */
+    private const FILE_MARKER = '[File: ';
+
+    /**
+     * What an employee may attach, by extension, with the type the file's
+     * content must actually have. The type is read from the bytes, never
+     * taken from the browser.
+     *
+     * @var array<string, array{0:string, 1:array<int, string>}>
+     */
+    private const ATTACHABLE = [
+        'jpg' => ['image', ['image/jpeg']],
+        'jpeg' => ['image', ['image/jpeg']],
+        'png' => ['image', ['image/png']],
+        'gif' => ['image', ['image/gif']],
+        'webp' => ['image', ['image/webp']],
+        'pdf' => ['pdf', ['application/pdf']],
+        'txt' => ['text', ['text/plain']],
+        'csv' => ['text', ['text/plain', 'text/csv', 'application/csv']],
+        'md' => ['text', ['text/plain', 'text/markdown']],
+        'json' => ['text', ['application/json', 'text/plain']],
+        'xml' => ['text', ['text/xml', 'application/xml', 'text/plain']],
+    ];
 
     /** @var Employee */
     private $employee;
@@ -233,14 +270,24 @@ class SomcpAssistantChat
      *
      * @param array<string, mixed> $thread
      * @param string $text
+     * @param array<int, array{name:string, tmp_name:string, size:int, error:int}> $files attached from the employee's computer
      *
      * @return array<string, mixed> the conversation as the chat draws it
      */
-    public function send(array $thread, string $text): array
+    public function send(array $thread, string $text, array $files = []): array
     {
         $text = trim($text);
-        if ($text === '') {
+        if ($text === '' && $files === []) {
             return $this->view($thread);
+        }
+
+        $refused = '';
+        $blocks = $this->attachments($files, $refused);
+        if ($refused !== '') {
+            return $this->view($thread, $refused);
+        }
+        if ($text === '') {
+            $text = '(files attached)';
         }
         if ((string) $thread['title'] === '') {
             Db::getInstance()->update(
@@ -250,9 +297,71 @@ class SomcpAssistantChat
             );
         }
 
-        return $this->advance($thread, static function (Agent $agent) use ($text): AgentState {
-            return $agent->chat(new UserMessage(Tools::substr($text, 0, 20000)));
+        $content = array_merge([new TextContent(Tools::substr($text, 0, 20000))], $blocks);
+
+        return $this->advance($thread, static function (Agent $agent) use ($content): AgentState {
+            return $agent->chat(new UserMessage($content));
         });
+    }
+
+    /**
+     * The files of a message, as content the model reads.
+     *
+     * Images and PDFs go as they are, for the providers that read them; text
+     * files go as text, which every provider reads. Each one is preceded by
+     * its name, so the model can refer to it and the chat can draw it.
+     * Anything else is refused whole: one file the employee meant to send and
+     * that silently did not go would be worse than an error.
+     *
+     * @param array<int, array{name:string, tmp_name:string, size:int, error:int}> $files
+     * @param string $refused set to a sentence for the employee when a file is refused
+     *
+     * @return array<int, TextContent|ImageContent|FileContent>
+     */
+    private function attachments(array $files, string &$refused = ''): array
+    {
+        $refused = '';
+        if (count($files) > self::MAX_FILES) {
+            $refused = self::t('Up to 5 files per message.');
+
+            return [];
+        }
+
+        $blocks = [];
+        $finfo = function_exists('finfo_open') ? finfo_open(FILEINFO_MIME_TYPE) : false;
+        foreach ($files as $file) {
+            $name = Tools::substr(basename(str_replace('\\', '/', (string) $file['name'])), 0, 120);
+            $extension = Tools::strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+            $rule = self::ATTACHABLE[$extension] ?? null;
+            $ok = $rule !== null
+                && (int) $file['error'] === UPLOAD_ERR_OK
+                && is_uploaded_file((string) $file['tmp_name'])
+                && (int) $file['size'] > 0 && (int) $file['size'] <= self::MAX_FILE_BYTES;
+            $mime = $ok && $finfo !== false ? (string) finfo_file($finfo, (string) $file['tmp_name']) : '';
+            if (!$ok || !in_array($mime, $rule[1], true)) {
+                $refused = self::t('This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.') . ' ' . $name;
+
+                return [];
+            }
+
+            $bytes = (string) Tools::file_get_contents((string) $file['tmp_name']);
+            $blocks[] = new TextContent(self::FILE_MARKER . $name . ']');
+            if ($rule[0] === 'image') {
+                $blocks[] = new ImageContent(base64_encode($bytes), SourceType::BASE64, $mime);
+            } elseif ($rule[0] === 'pdf') {
+                $blocks[] = new FileContent(base64_encode($bytes), SourceType::BASE64, $mime, $name);
+            } else {
+                // Invalid UTF-8 would make the whole request unreadable to
+                // the provider: a file saved in an older encoding is
+                // converted rather than refused.
+                if (!mb_check_encoding($bytes, 'UTF-8')) {
+                    $bytes = (string) mb_convert_encoding($bytes, 'UTF-8', 'Windows-1252');
+                }
+                $blocks[] = new TextContent(Tools::substr($bytes, 0, self::MAX_TEXT_CHARS));
+            }
+        }
+
+        return $blocks;
     }
 
     /**
@@ -849,7 +958,27 @@ class SomcpAssistantChat
             return ['role' => 'tools', 'text' => (string) $message->getContent(), 'tools' => $calls];
         }
         if ($message instanceof UserMessage) {
-            return ['role' => 'user', 'text' => (string) $message->getContent()];
+            // The employee's words, and the files by name: the content of an
+            // attached file is for the model, the chat shows that it went.
+            $text = '';
+            $files = [];
+            $skipNext = false;
+            foreach ($message->getContentBlocks() as $block) {
+                if ($block instanceof TextContent && strpos($block->content, self::FILE_MARKER) === 0) {
+                    $files[] = rtrim(Tools::substr($block->content, Tools::strlen(self::FILE_MARKER)), ']');
+                    $skipNext = true;
+                    continue;
+                }
+                if ($skipNext) {
+                    $skipNext = false;
+                    continue;
+                }
+                if ($block instanceof TextContent && $text === '') {
+                    $text = $block->content === '(files attached)' ? '' : $block->content;
+                }
+            }
+
+            return ['role' => 'user', 'text' => $text, 'files' => $files];
         }
         if ($message instanceof AssistantMessage) {
             $text = (string) $message->getContent();

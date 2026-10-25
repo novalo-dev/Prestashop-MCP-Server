@@ -117,7 +117,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
                 break;
             case 'send':
                 $thread = $thread ?? $chat->newThread((int) Tools::getValue('id_assistant'));
-                $this->answer($chat, $chat->send($thread, (string) Tools::getValue('text')));
+                $this->answer($chat, $chat->send($thread, (string) Tools::getValue('text'), self::uploadedFiles()));
                 break;
             case 'step':
                 if ($thread !== null) {
@@ -149,6 +149,35 @@ class AdminSomcpAssistantController extends ModuleAdminController
         }
 
         $this->answer($chat, $thread !== null ? $chat->view($thread) : null);
+    }
+
+    /**
+     * The files sent with a message, one entry per file, from PHP's
+     * upload array that groups them by field instead.
+     *
+     * @return array<int, array{name:string, tmp_name:string, size:int, error:int}>
+     */
+    private static function uploadedFiles(): array
+    {
+        $raw = $_FILES['files'] ?? null;
+        if (!is_array($raw) || !is_array($raw['name'] ?? null)) {
+            return [];
+        }
+
+        $files = [];
+        foreach (array_keys($raw['name']) as $index) {
+            if ((int) ($raw['error'][$index] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $files[] = [
+                'name' => (string) $raw['name'][$index],
+                'tmp_name' => (string) ($raw['tmp_name'][$index] ?? ''),
+                'size' => (int) ($raw['size'][$index] ?? 0),
+                'error' => (int) ($raw['error'][$index] ?? UPLOAD_ERR_NO_FILE),
+            ];
+        }
+
+        return $files;
     }
 
     /**

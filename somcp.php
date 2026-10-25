@@ -349,6 +349,8 @@ class Somcp extends Module
         $config = [
             'endpoint' => $this->context->link->getAdminLink(SomcpBackOffice::ASSISTANT_CONTROLLER, true, [], ['ajax' => 1]),
             'neuron' => 'https://github.com/neuron-core/neuron-ai',
+            'maxFiles' => SomcpAssistantChat::MAX_FILES,
+            'maxFileBytes' => SomcpAssistantChat::MAX_FILE_BYTES,
             'text' => [
                 'title' => $this->l10n('Built-in assistant'),
                 'subtitle' => $this->l10n('Acts with your rights and asks before any change'),
@@ -371,6 +373,9 @@ class Somcp extends Module
                 'spentOf' => $this->l10n('This month: %spent% of %budget%'),
                 'failed' => $this->l10n('Something went wrong. Try again.'),
                 'poweredBy' => $this->l10n('Powered by'),
+                'attach' => $this->l10n('Attach files from your computer'),
+                'removeFile' => $this->l10n('Remove this file'),
+                'fileTooBig' => $this->l10n('This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.'),
             ],
         ];
 

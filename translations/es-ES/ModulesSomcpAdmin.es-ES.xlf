@@ -1602,6 +1602,26 @@
       <source>Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.</source>
       <target>Se añaden a cada conversación, para todos los asistentes. Por ejemplo: cómo dirigirse a los clientes, plazos de entrega, estilo de la casa.</target>
     </trans-unit>
+    <!-- Attach files from your computer -->
+    <trans-unit id="acc8bbaac5f20a0f0701bfd65343c247" resname="Attach files from your computer">
+      <source>Attach files from your computer</source>
+      <target>Adjuntar archivos desde su ordenador</target>
+    </trans-unit>
+    <!-- Remove this file -->
+    <trans-unit id="432f7f7e33afb218c2173c2a19c2ba75" resname="Remove this file">
+      <source>Remove this file</source>
+      <target>Quitar este archivo</target>
+    </trans-unit>
+    <!-- Up to 5 files per message. -->
+    <trans-unit id="b5d629efcbcbb1282dd85f24fa6bf990" resname="Up to 5 files per message.">
+      <source>Up to 5 files per message.</source>
+      <target>Hasta 5 archivos por mensaje.</target>
+    </trans-unit>
+    <!-- This file cannot be sent: only images, PDF and text files up to 5 MB are accepted. -->
+    <trans-unit id="d7f16843e9d4108edf57774e73baef0e" resname="This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.">
+      <source>This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.</source>
+      <target>Este archivo no se puede enviar: solo se aceptan imágenes, PDF y archivos de texto de hasta 5 MB.</target>
+    </trans-unit>
     <!-- Open source under the AFL-3.0 licence -->
     <trans-unit id="c670648db949fca4d11ac24fa3806100" resname="Open source under the AFL-3.0 licence">
       <source>Open source under the AFL-3.0 licence</source>

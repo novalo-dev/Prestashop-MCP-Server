@@ -282,7 +282,9 @@ every change waits for you to click Approve. With several assistants switched
 on, give each a role: the default one hands them the work of their role and
 uses their answer. A monthly spending cap, estimated in US dollars from the
 providers' public prices, stops the chat when it is reached, and shop-wide
-instructions are added to every conversation. Keys are stored encrypted.
+instructions are added to every conversation. Files from your computer -
+images, PDF and text files such as CSV, up to 5 MB each - can be attached to a
+message for the assistant to read. Keys are stored encrypted.
 Conversations are kept per employee. Runs on Neuron AI.
 
 **New version alert.** The Help and updates tab shows the installed version

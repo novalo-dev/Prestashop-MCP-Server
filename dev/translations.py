@@ -1278,6 +1278,22 @@ T = {
  "Ajoutées à chaque conversation, pour tous les assistants. Par exemple : comment s'adresser aux clients, délais de livraison, style maison.",
  "Se añaden a cada conversación, para todos los asistentes. Por ejemplo: cómo dirigirse a los clientes, plazos de entrega, estilo de la casa.",
  "Werden jedem Gespräch für alle Assistenten hinzugefügt. Zum Beispiel: Anrede der Kunden, Lieferzeiten, Hausstil."),
+"Attach files from your computer": (
+ "Joindre des fichiers depuis votre ordinateur",
+ "Adjuntar archivos desde su ordenador",
+ "Dateien von Ihrem Computer anhängen"),
+"Remove this file": (
+ "Retirer ce fichier",
+ "Quitar este archivo",
+ "Diese Datei entfernen"),
+"Up to 5 files per message.": (
+ "5 fichiers au maximum par message.",
+ "Hasta 5 archivos por mensaje.",
+ "Höchstens 5 Dateien pro Nachricht."),
+"This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.": (
+ "Ce fichier ne peut pas être envoyé : seuls les images, les PDF et les fichiers texte jusqu'à 5 Mo sont acceptés.",
+ "Este archivo no se puede enviar: solo se aceptan imágenes, PDF y archivos de texto de hasta 5 MB.",
+ "Diese Datei kann nicht gesendet werden: Es werden nur Bilder, PDF- und Textdateien bis 5 MB angenommen."),
 "Open source under the AFL-3.0 licence": (
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",

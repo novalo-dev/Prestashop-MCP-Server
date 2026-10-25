@@ -130,6 +130,19 @@ PrestaShop 9 class once took the whole PrestaShop 8 back office down.
   deposit. Going the other way, a tool hands a file out as a link of its own,
   signed and expiring, never as bytes. See
   [Files: the two doors](docs/EXTENDING.md#files-the-two-doors).
+- **Data goes through the PrestaShop core**, never the Webservice REST API. The
+  module runs inside the shop, so a tool reads and writes with the core classes
+  the back office uses (`ObjectModel`, `OrderHistory`, the services) - hooks
+  fire and validation runs exactly as on screen. The Webservice is for callers
+  outside the shop and would skip part of that.
+- **The built-in assistant is held to every rule here.** Its code
+  (`SomcpAssistant`, `SomcpAssistantChat`, `AdminSomcpAssistantController`) uses
+  the same tool contract, the same shop-from-token and employee-rights checks,
+  the same four-language strings and the same core classes as everything else -
+  no second data path, no Webservice, no hardcoded text. A capability added for
+  assistants connected over MCP is added for the built-in one in the same
+  change, and the reverse. The chat makes one model call per HTTP request; the
+  step loop lives in the browser, not in a long-running PHP process.
 
 ## Writing a tool, from A to Z
 

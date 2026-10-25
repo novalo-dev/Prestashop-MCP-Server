@@ -580,6 +580,7 @@
                         <td>
                             {$assistant.label|escape:'html':'UTF-8'}
                             {if $assistant.is_default}<span class="badge badge-info">{l s='Default' d='Modules.Somcp.Admin'}</span>{/if}
+                            {if $assistant.key_ok === false}<span class="text-danger"><i class="icon-remove"></i> {l s='Key refused' d='Modules.Somcp.Admin'}</span>{/if}
                         </td>
                         <td>{if $assistant.role}{$assistant.role|escape:'html':'UTF-8'}{else}<span class="text-muted">{l s='Everything' d='Modules.Somcp.Admin'}</span>{/if}</td>
                         <td>

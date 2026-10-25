@@ -475,7 +475,7 @@ class Somcp extends Module
             if ($model !== '') {
                 $this->flash($this->trans('The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
             } else {
-                $this->flash($this->trans('The provider refused the key or did not answer. Check the key and try again.', [], 'Modules.Somcp.Admin'));
+                $this->flash($this->trans('The provider refused the key or did not answer. Check the key and try again.', [], 'Modules.Somcp.Admin'), true);
             }
             $this->redirectToSelf();
         }
@@ -611,7 +611,7 @@ class Somcp extends Module
         if ($model !== '') {
             $this->flash($this->trans('Assistant saved. The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
         } else {
-            $this->flash($this->trans('Assistant saved, but the provider refused the key or did not answer. Check the key.', [], 'Modules.Somcp.Admin'));
+            $this->flash($this->trans('Assistant saved, but the provider refused the key or did not answer. Check the key.', [], 'Modules.Somcp.Admin'), true);
         }
         $this->redirectToSelf();
     }
@@ -922,13 +922,15 @@ class Somcp extends Module
      *
      * @param string $message
      */
-    private function flash(string $message): void
+    private function flash(string $message, bool $isError = false): void
     {
         // The employee cookie is capped at 4096 bytes, so a long message is cut
-        // rather than left to break the whole cookie.
+        // rather than left to break the whole cookie. A leading E or S carries
+        // the kind across the redirect, so a failure lands in a red banner
+        // rather than the green one every message used to get.
         // Through the magic accessor explicitly: the key is the module's own,
         // so it is not declared on Cookie and static analysis rightly says so.
-        $this->context->cookie->__set(self::FLASH_KEY, Tools::substr($message, 0, 500));
+        $this->context->cookie->__set(self::FLASH_KEY, ($isError ? 'E' : 'S') . Tools::substr($message, 0, 500));
         $this->context->cookie->write();
     }
 
@@ -937,9 +939,14 @@ class Somcp extends Module
      */
     private function readFlash(): void
     {
-        $message = (string) $this->context->cookie->__get(self::FLASH_KEY);
-        if ($message !== '') {
-            $this->confirmations[] = $message;
+        $stored = (string) $this->context->cookie->__get(self::FLASH_KEY);
+        if ($stored !== '') {
+            $message = Tools::substr($stored, 1);
+            if (Tools::substr($stored, 0, 1) === 'E') {
+                $this->pageErrors[] = $message;
+            } else {
+                $this->confirmations[] = $message;
+            }
             $this->context->cookie->__unset(self::FLASH_KEY);
             $this->context->cookie->write();
         }

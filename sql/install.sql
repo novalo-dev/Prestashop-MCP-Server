@@ -214,6 +214,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     `resolved_model` VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'what the level resolved to last time',
     `resolved_at`    DATETIME     DEFAULT NULL,
     `role`           VARCHAR(255) NOT NULL DEFAULT '',
+    `key_ok`         TINYINT(1)   DEFAULT NULL COMMENT 'NULL until tested, then 1 ok or 0 refused',
     `active`         TINYINT(1)   NOT NULL DEFAULT 1,
     `is_default`     TINYINT(1)   NOT NULL DEFAULT 0,
     `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

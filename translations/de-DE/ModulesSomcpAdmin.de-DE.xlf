@@ -1292,6 +1292,11 @@
       <source>Module settings</source>
       <target>Moduleinstellungen</target>
     </trans-unit>
+    <!-- Key refused -->
+    <trans-unit id="95338704adfea98f17759a2853797f67" resname="Key refused">
+      <source>Key refused</source>
+      <target>Schlüssel abgelehnt</target>
+    </trans-unit>
     <!-- Write your message... -->
     <trans-unit id="869a3d44483465d3f21681c6bcf47ebd" resname="Write your message...">
       <source>Write your message...</source>

@@ -309,7 +309,10 @@ switched off so the chat never opens onto a key that does not work; it comes
 back on once a working key is saved. On a multistore install everything about
 the assistant belongs to the shop you are on - its assistants and keys, budget,
 instructions, allowed profile, spending and conversations are kept apart from
-the other shops'. Runs on Neuron AI.
+the other shops'. A long conversation no longer resends everything on every
+turn: past a point the oldest messages are condensed into a summary, so it keeps
+its thread without the cost climbing. When the assistant hands a task to another
+of your assistants, the step now names which one it asked. Runs on Neuron AI.
 
 **Product images from a file on the shop.** Creating or changing a product now
 accepts, for each image, either a public address to download or the reference

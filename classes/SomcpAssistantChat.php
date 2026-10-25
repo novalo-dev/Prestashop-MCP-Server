@@ -20,6 +20,8 @@ use NeuronAI\Agent\Agent;
 use NeuronAI\Agent\AgentState;
 use NeuronAI\Agent\Interrupt\ApprovalRequest;
 use NeuronAI\Agent\Interrupt\ToolResultsRequest;
+use NeuronAI\Agent\Middleware\Summarization;
+use NeuronAI\Agent\Nodes\InferenceNode;
 use NeuronAI\Chat\Enums\SourceType;
 use NeuronAI\Chat\History\SQLMessageStore;
 use NeuronAI\Chat\Messages\AssistantMessage;
@@ -87,6 +89,15 @@ class SomcpAssistantChat
 
     /** @var int Tool calls one answer may chain, a guard against a model going round in circles. */
     private const MAX_TOOL_RUNS = 25;
+
+    /**
+     * @var int Tokens of history kept before the model call. Past this, the
+     *          oldest messages are summarized rather than dropped.
+     */
+    private const CONTEXT_WINDOW = 64000;
+
+    /** @var int History size that triggers a summary of the oldest messages. */
+    private const SUMMARIZE_AT = 48000;
 
     /** @var int Conversations listed in the chat. */
     private const MAX_THREADS = 30;
@@ -887,7 +898,14 @@ class SomcpAssistantChat
         $agent = Agent::make()
             ->setThreadId((string) $thread['thread_id'])
             ->setMessageStore($this->store())
-            ->setPersistence(new DatabasePersistence(self::pdo(), _DB_PREFIX_ . 'somcp_assistant_run'));
+            ->setPersistence(new DatabasePersistence(self::pdo(), _DB_PREFIX_ . 'somcp_assistant_run'))
+            // The history is kept to a token window, and past a threshold the
+            // oldest messages are summarized by the model rather than cut, so a
+            // long conversation keeps its gist without resending everything.
+            // The delegate sub-agent is built on its own below and gets none of
+            // this - it is one shot with no history to summarize.
+            ->setContextWindow(self::CONTEXT_WINDOW);
+        $agent->addMiddleware(InferenceNode::class, new Summarization(null, self::SUMMARIZE_AT));
 
         if ($assistant !== []) {
             $agent->setAiProvider($this->provider($assistant))
@@ -1259,8 +1277,18 @@ class SomcpAssistantChat
             $calls = [];
             foreach ($message->getToolCalls() as $call) {
                 $state = $call->getApprovalState();
+                $title = $titles[$call->getName()] ?? $call->getName();
+                // Name the assistant a delegation went to, so the step reads
+                // "Ask another assistant (Gemini)" rather than hiding who did it.
+                if ($call->getName() === self::DELEGATE_TOOL) {
+                    $inputs = $call->getInputs();
+                    $target = isset($inputs['assistant']) ? SomcpAssistant::get((int) $inputs['assistant']) : null;
+                    if ($target !== null) {
+                        $title .= ' (' . $target['label'] . ')';
+                    }
+                }
                 $calls[] = [
-                    'title' => $titles[$call->getName()] ?? $call->getName(),
+                    'title' => $title,
                     'approval' => $state instanceof ApprovalState ? $state->value : '',
                 ];
             }

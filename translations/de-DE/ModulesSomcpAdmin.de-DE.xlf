@@ -1307,20 +1307,45 @@
       <source>Off</source>
       <target>Aus</target>
     </trans-unit>
-    <!-- Memory key -->
-    <trans-unit id="ec84f90d54cb549ac2088bb1ae500dfb" resname="Memory key">
-      <source>Memory key</source>
-      <target>Gedächtnis-Schlüssel</target>
+    <!-- Voyage key -->
+    <trans-unit id="fe0d1d62f580b13b46e8226ba0cae9d3" resname="Voyage key">
+      <source>Voyage key</source>
+      <target>Voyage-Schlüssel</target>
     </trans-unit>
-    <!-- Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default. -->
-    <trans-unit id="1852bd8e80844a5a7d171082fb101adf" resname="Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default.">
-      <source>Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default.</source>
-      <target>Ermöglicht dem Assistenten, sich an frühere Gespräche zu erinnern und sie später abzurufen, jedes dem Mitarbeiter vorbehalten, der es geführt hat. Es braucht einen Anbieter für die Embeddings - dieselben Schlüsselfamilien wie der Chat oder Ollama auf Ihrem Server - und sie werden berechnet. Standardmäßig aus.</target>
+    <!-- Embeddings provider -->
+    <trans-unit id="e724fc35b17d8dc034ab062d85fdcd6e" resname="Embeddings provider">
+      <source>Embeddings provider</source>
+      <target>Embeddings-Anbieter</target>
     </trans-unit>
-    <!-- The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one. -->
-    <trans-unit id="eefaf228096d95bf0a5a600b261e3762" resname="The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one.">
-      <source>The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one.</source>
-      <target>Der Schlüssel des Embeddings-Anbieters oder die Adresse Ihres Ollama-Servers. Verschlüsselt gespeichert. Leer lassen, um den gespeicherten zu behalten.</target>
+    <!-- special provider for the memory -->
+    <trans-unit id="c1a863ef45c3f511bbf3b5cf9ae3c699" resname="special provider for the memory">
+      <source>special provider for the memory</source>
+      <target>Spezialanbieter für das Gedächtnis</target>
+    </trans-unit>
+    <!-- Get a key at -->
+    <trans-unit id="85342df2efd0f67ea78bbd6c7959c2e0" resname="Get a key at">
+      <source>Get a key at</source>
+      <target>Holen Sie sich einen Schlüssel unter</target>
+    </trans-unit>
+    <!-- Stored encrypted. Leave empty to keep the saved one. -->
+    <trans-unit id="3181d32df987db56e03601ae0247eef0" resname="Stored encrypted. Leave empty to keep the saved one.">
+      <source>Stored encrypted. Leave empty to keep the saved one.</source>
+      <target>Verschlüsselt gespeichert. Leer lassen, um den gespeicherten zu behalten.</target>
+    </trans-unit>
+    <!-- Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default. -->
+    <trans-unit id="e6be38824f5e043cae612f12e13f70c3" resname="Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.">
+      <source>Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.</source>
+      <target>Ermöglicht dem Assistenten, sich an frühere Gespräche zu erinnern und sie später abzurufen, jedes dem Mitarbeiter vorbehalten, der es geführt hat. Es kodiert sie mit einem Anbieter - einem bereits eingerichteten Chat-Anbieter oder Voyage - und das wird berechnet. Standardmäßig aus.</target>
+    </trans-unit>
+    <!-- The chat providers already set up lend their key. Voyage is embeddings only, so it asks for its own key below. -->
+    <trans-unit id="5b5e404fa0d42e07c7c00ce3cf6c9339" resname="The chat providers already set up lend their key. Voyage is embeddings only, so it asks for its own key below.">
+      <source>The chat providers already set up lend their key. Voyage is embeddings only, so it asks for its own key below.</source>
+      <target>Die bereits eingerichteten Chat-Anbieter leihen ihren Schlüssel. Voyage macht nur Embeddings und fragt daher unten nach seinem eigenen Schlüssel.</target>
+    </trans-unit>
+    <!-- Set up a chat assistant first (OpenAI, Gemini, Mistral or Cohere), or pick Voyage, to give the memory a key. -->
+    <trans-unit id="42ad8d60791cf0b06663b87e582a20e9" resname="Set up a chat assistant first (OpenAI, Gemini, Mistral or Cohere), or pick Voyage, to give the memory a key.">
+      <source>Set up a chat assistant first (OpenAI, Gemini, Mistral or Cohere), or pick Voyage, to give the memory a key.</source>
+      <target>Richten Sie zuerst einen Chat-Assistenten ein (OpenAI, Gemini, Mistral oder Cohere) oder wählen Sie Voyage, um dem Gedächtnis einen Schlüssel zu geben.</target>
     </trans-unit>
     <!-- A key is saved. Leave empty to keep it. -->
     <trans-unit id="4b513934268ebc4a63939194f8e9870e" resname="A key is saved. Leave empty to keep it.">
@@ -1497,10 +1522,10 @@
       <source>Leave empty to keep the key already saved.</source>
       <target>Leer lassen, um den bereits gespeicherten Schlüssel zu behalten.</target>
     </trans-unit>
-    <!-- The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead. -->
-    <trans-unit id="da83320971e274328cacae45a5855e77" resname="The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead.">
-      <source>The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead.</source>
-      <target>Der Schlüssel wird verschlüsselt in Ihrem Shop gespeichert und nur an den gewählten Anbieter gesendet. Für Ollama geben Sie stattdessen die Adresse Ihres Servers an.</target>
+    <!-- The key is stored encrypted on your shop and only sent to the provider you picked. -->
+    <trans-unit id="441494555b9f573eb690bbec8bac0ef8" resname="The key is stored encrypted on your shop and only sent to the provider you picked.">
+      <source>The key is stored encrypted on your shop and only sent to the provider you picked.</source>
+      <target>Der Schlüssel wird verschlüsselt in Ihrem Shop gespeichert und nur an den gewählten Anbieter gesendet.</target>
     </trans-unit>
     <!-- Level -->
     <trans-unit id="a0db49ba470c1c9ae2128c3470339153" resname="Level">

@@ -39,7 +39,6 @@ use NeuronAI\Providers\Cohere\Cohere;
 use NeuronAI\Providers\Deepseek\Deepseek;
 use NeuronAI\Providers\Gemini\Gemini;
 use NeuronAI\Providers\Mistral\Mistral;
-use NeuronAI\Providers\Ollama\Ollama;
 use NeuronAI\Providers\OpenAI\Image\OpenAIImage;
 use NeuronAI\Providers\OpenAI\OpenAI;
 use NeuronAI\Providers\XAI\Grok;
@@ -1075,8 +1074,6 @@ class SomcpAssistantChat
                 return new Grok($key, $model);
             case 'cohere':
                 return new Cohere($key, $model);
-            case 'ollama':
-                return new Ollama(SomcpAssistant::ollamaBase($key), $model);
             default:
                 return new Anthropic($key, $model, '2023-06-01', 4096);
         }

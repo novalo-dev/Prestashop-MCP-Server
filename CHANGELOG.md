@@ -274,7 +274,7 @@ code.
 **Built-in assistant.** A chat button now sits at the top right of every back
 office page. It opens a conversation with the AI you connect in the new Built-in
 assistant tab, with your own API key: Claude, ChatGPT, Gemini, Mistral,
-DeepSeek, Grok, Cohere or Ollama on your own server. For each one you pick a
+DeepSeek, Grok or Cohere. For each one you pick a
 level - economy, balanced or powerful - and the module always uses the newest
 model of that level, without an update. A Custom level is there too, to pick the
 exact model yourself from the list your provider offers, chosen from a drop-down
@@ -317,11 +317,12 @@ its thread without the cost climbing. When the assistant hands a task to another
 of your assistants, the step now names which one it asked. A long-term memory
 can be switched on: the assistant then remembers past conversations and recalls
 the relevant ones when you ask something related, instead of starting blank,
-and each employee's conversations stay their own. It is off until you set an
-embeddings provider and its key on the settings page - OpenAI, Gemini, Mistral,
-Cohere, Voyage, or Ollama on your own server - since embeddings are billed; each
-provider uses a sensible model by itself. The conversations are embedded and
-kept on your shop's own disk. Runs on Neuron AI.
+and each employee's conversations stay their own. It is off until you turn it on
+and pick an embeddings provider on the settings page, since embeddings are
+billed. A provider you already use for the chat (OpenAI, Gemini, Mistral or
+Cohere) lends its key, so nothing is asked twice; Voyage, which does embeddings
+only, takes a key of its own. Each uses a sensible model by itself, and the
+conversations are embedded and kept on your shop's own disk. Runs on Neuron AI.
 
 **Product images from a file on the shop.** Creating or changing a product now
 accepts, for each image, either a public address to download or the reference

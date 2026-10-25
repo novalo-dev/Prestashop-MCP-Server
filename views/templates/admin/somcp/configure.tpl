@@ -502,7 +502,7 @@
                         <input type="password" name="somcp_assistant_key" class="form-control" autocomplete="off" value=""{if !$somcp_assistant_edit.has_key} required{/if}>
                         <p class="help-block">
                             {if $somcp_assistant_edit.has_key}{l s='Leave empty to keep the key already saved.' d='Modules.Somcp.Admin'}{/if}
-                            {l s='The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead.' d='Modules.Somcp.Admin'}
+                            {l s='The key is stored encrypted on your shop and only sent to the provider you picked.' d='Modules.Somcp.Admin'}
                         </p>
                         <p class="help-block">
                         {foreach from=$somcp_assistant_providers key=providerId item=provider name=keys}
@@ -701,27 +701,43 @@
                         <p class="help-block">{l s='Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
-                {* Long-term memory: off until an embeddings provider and its key
-                   are set. The assistant then recalls an employee's past
-                   conversations instead of starting blank. Each provider uses a
-                   good default model, so the merchant only picks and pastes. *}
+                {* Long-term memory: a switch, then a provider. Providers already
+                   set up for the chat lend their key, so nothing is asked twice;
+                   Voyage does embeddings only and shows a key field of its own
+                   when picked. The whole block hides when the switch is off. *}
                 <div class="form-group">
                     <label class="control-label col-lg-3">{l s='Memory' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
-                        <select name="SOMCP_EMB_PROVIDER" class="form-control">
-                            <option value="">{l s='Off' d='Modules.Somcp.Admin'}</option>
-                            {foreach from=$somcp_memory_providers key=id item=provider}
-                                <option value="{$id|escape:'html':'UTF-8'}"{if $id === $somcp_memory_provider} selected{/if}>{$provider.label|escape:'html':'UTF-8'}</option>
-                            {/foreach}
-                        </select>
-                        <p class="help-block">{l s='Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default.' d='Modules.Somcp.Admin'}</p>
+                        <span class="switch prestashop-switch fixed-width-lg" data-somcp-memory-switch>
+                            <input type="radio" name="SOMCP_EMB_ON" id="somcp_emb_on" value="1"{if $somcp_memory_on} checked{/if}>
+                            <label for="somcp_emb_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
+                            <input type="radio" name="SOMCP_EMB_ON" id="somcp_emb_off" value="0"{if !$somcp_memory_on} checked{/if}>
+                            <label for="somcp_emb_off">{l s='No' d='Modules.Somcp.Admin'}</label>
+                            <a class="slide-button btn"></a>
+                        </span>
+                        <p class="help-block">{l s='Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Memory key' d='Modules.Somcp.Admin'}</label>
+                <div class="form-group" data-somcp-memory-block{if !$somcp_memory_on} style="display:none"{/if}>
+                    <label class="control-label col-lg-3">{l s='Embeddings provider' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
-                        <input type="password" name="SOMCP_EMB_KEY" class="form-control" autocomplete="new-password" value=""{if $somcp_memory_has_key} placeholder="{l s='A key is saved. Leave empty to keep it.' d='Modules.Somcp.Admin' js=1}"{/if}>
-                        <p class="help-block">{l s='The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one.' d='Modules.Somcp.Admin'}</p>
+                        {if $somcp_memory_selectable}
+                            <select name="SOMCP_EMB_PROVIDER" class="form-control" data-somcp-memory-provider>
+                                {foreach from=$somcp_memory_selectable key=id item=provider}
+                                    <option value="{$id|escape:'html':'UTF-8'}" data-key-url="{$provider.key_url|escape:'html':'UTF-8'}"{if $provider.special} data-somcp-special{/if}{if $id === $somcp_memory_provider} selected{/if}>{$provider.label|escape:'html':'UTF-8'}{if $provider.special} ({l s='special provider for the memory' d='Modules.Somcp.Admin'}){/if}</option>
+                                {/foreach}
+                            </select>
+                            <p class="help-block">{l s='The chat providers already set up lend their key. Voyage is embeddings only, so it asks for its own key below.' d='Modules.Somcp.Admin'}</p>
+                        {else}
+                            <p class="help-block">{l s='Set up a chat assistant first (OpenAI, Gemini, Mistral or Cohere), or pick Voyage, to give the memory a key.' d='Modules.Somcp.Admin'}</p>
+                        {/if}
+                    </div>
+                </div>
+                <div class="form-group" data-somcp-memory-key style="display:none">
+                    <label class="control-label col-lg-3">{l s='Voyage key' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <input type="password" name="SOMCP_EMB_KEY" class="form-control" autocomplete="new-password" value=""{if $somcp_memory_has_own_key} placeholder="{l s='A key is saved. Leave empty to keep it.' d='Modules.Somcp.Admin' js=1}"{/if}>
+                        <p class="help-block">{l s='Get a key at' d='Modules.Somcp.Admin'} <a href="https://dashboard.voyageai.com" target="_blank" rel="noopener">dashboard.voyageai.com</a>. {l s='Stored encrypted. Leave empty to keep the saved one.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
                 <div class="panel-footer">

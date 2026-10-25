@@ -20,7 +20,6 @@ use NeuronAI\RAG\Embeddings\CohereEmbeddingsProvider;
 use NeuronAI\RAG\Embeddings\EmbeddingsProviderInterface;
 use NeuronAI\RAG\Embeddings\GeminiEmbeddingsProvider;
 use NeuronAI\RAG\Embeddings\MistralEmbeddingsProvider;
-use NeuronAI\RAG\Embeddings\OllamaEmbeddingsProvider;
 use NeuronAI\RAG\Embeddings\OpenAIEmbeddingsProvider;
 use NeuronAI\RAG\Embeddings\VoyageEmbeddingsProvider;
 use NeuronAI\RAG\Retrieval\SemanticMemoryRetrieval;
@@ -48,10 +47,13 @@ if (!defined('_PS_VERSION_')) {
  */
 class SomcpAssistantMemory
 {
-    /** @var string Provider that turns text into vectors, '' when memory is off. */
+    /** @var string Whether the merchant switched the memory on. */
+    public const ON = 'SOMCP_EMB_ON';
+
+    /** @var string Provider that turns text into vectors. */
     public const PROVIDER = 'SOMCP_EMB_PROVIDER';
 
-    /** @var string The provider's key (or an Ollama server address), encrypted. */
+    /** @var string A key of its own, encrypted. Only for a provider with no chat assistant to borrow one from (Voyage). */
     public const KEY = 'SOMCP_EMB_KEY';
 
     /**
@@ -79,35 +81,65 @@ class SomcpAssistantMemory
 
     /**
      * The embeddings providers Neuron AI supports, each with the model memory
-     * uses by default so the merchant only picks a provider and pastes a key.
-     * Anthropic is absent on purpose: it has no embeddings endpoint. Ollama
-     * runs on the merchant's own server, so its "key" is that address.
+     * uses by default so the merchant only picks a provider. Anthropic is
+     * absent: it has no embeddings endpoint. `reuse` says the provider also
+     * serves the chat, so memory borrows that assistant's key rather than ask
+     * again; Voyage does embeddings only, so it brings a key of its own.
      *
-     * @var array<string, array{label:string, model:string, key_url:string, local:bool}>
+     * @var array<string, array{label:string, model:string, key_url:string, reuse:bool}>
      */
     private const PROVIDERS = [
-        'openai' => ['label' => 'OpenAI', 'model' => 'text-embedding-3-small', 'key_url' => 'https://platform.openai.com/api-keys', 'local' => false],
-        'gemini' => ['label' => 'Gemini (Google)', 'model' => 'text-embedding-004', 'key_url' => 'https://aistudio.google.com/apikey', 'local' => false],
-        'mistral' => ['label' => 'Mistral', 'model' => 'mistral-embed', 'key_url' => 'https://console.mistral.ai/api-keys', 'local' => false],
-        'cohere' => ['label' => 'Cohere', 'model' => 'embed-v4.0', 'key_url' => 'https://dashboard.cohere.com/api-keys', 'local' => false],
-        'voyage' => ['label' => 'Voyage', 'model' => 'voyage-3', 'key_url' => 'https://dashboard.voyageai.com', 'local' => false],
-        'ollama' => ['label' => 'Ollama', 'model' => 'nomic-embed-text', 'key_url' => 'https://ollama.com/download', 'local' => true],
+        'openai' => ['label' => 'OpenAI', 'model' => 'text-embedding-3-small', 'key_url' => 'https://platform.openai.com/api-keys', 'reuse' => true],
+        'gemini' => ['label' => 'Gemini (Google)', 'model' => 'text-embedding-004', 'key_url' => 'https://aistudio.google.com/apikey', 'reuse' => true],
+        'mistral' => ['label' => 'Mistral', 'model' => 'mistral-embed', 'key_url' => 'https://console.mistral.ai/api-keys', 'reuse' => true],
+        'cohere' => ['label' => 'Cohere', 'model' => 'embed-v4.0', 'key_url' => 'https://dashboard.cohere.com/api-keys', 'reuse' => true],
+        'voyage' => ['label' => 'Voyage', 'model' => 'voyage-3', 'key_url' => 'https://dashboard.voyageai.com', 'reuse' => false],
     ];
 
     /**
-     * The providers offered on the settings page, each with its label, the
-     * default model and where to get a key.
+     * The providers offered in the memory selector: the ones that also serve
+     * the chat and already have a key on this shop to borrow (so no key is
+     * asked twice), plus Voyage, which does embeddings only and brings its own.
+     * Voyage is marked special so the form shows its key field on selection.
      *
-     * @return array<string, array{label:string, model:string, key_url:string, local:bool}>
+     * @param int $idShop
+     *
+     * @return array<string, array{label:string, key_url:string, special:bool}>
      */
-    public static function providers(): array
+    public static function selectable(int $idShop): array
     {
-        return self::PROVIDERS;
+        $offered = [];
+        foreach (self::PROVIDERS as $id => $provider) {
+            if ($provider['reuse'] && SomcpAssistant::keyForProvider($id) === '') {
+                // A reusable provider with no chat assistant to borrow a key
+                // from is not offered: memory would have no key to embed with.
+                continue;
+            }
+            $offered[$id] = [
+                'label' => $provider['label'],
+                'key_url' => $provider['key_url'],
+                'special' => !$provider['reuse'],
+            ];
+        }
+
+        return $offered;
     }
 
     /**
-     * Whether the memory is set up and usable for a shop: a known provider and,
-     * unless it is a local server, a key.
+     * Whether the merchant switched the memory on.
+     *
+     * @param int $idShop
+     *
+     * @return bool
+     */
+    public static function on(int $idShop): bool
+    {
+        return (string) Configuration::get(self::ON, null, null, $idShop) === '1';
+    }
+
+    /**
+     * Whether the memory is on, set to a known provider and has a key to embed
+     * with - borrowed from the chat, or Voyage's own.
      *
      * @param int $idShop
      *
@@ -115,9 +147,7 @@ class SomcpAssistantMemory
      */
     public static function enabled(int $idShop): bool
     {
-        $provider = self::providerId($idShop);
-
-        return $provider !== '' && self::key($idShop) !== '';
+        return self::on($idShop) && self::providerId($idShop) !== '' && self::key($idShop) !== '';
     }
 
     /**
@@ -133,7 +163,8 @@ class SomcpAssistantMemory
     }
 
     /**
-     * The key in clear, or the Ollama server address. Never sent to a page.
+     * The key memory embeds with: Voyage's own stored key, or the key of a chat
+     * assistant using the same provider. Never sent to a page.
      *
      * @param int $idShop
      *
@@ -141,21 +172,33 @@ class SomcpAssistantMemory
      */
     public static function key(int $idShop): string
     {
+        $provider = self::providerId($idShop);
+        if ($provider === '') {
+            return '';
+        }
+        if (self::PROVIDERS[$provider]['reuse']) {
+            return SomcpAssistant::keyForProvider($provider);
+        }
+
         return SomcpAssistant::open((string) Configuration::get(self::KEY, null, null, $idShop));
     }
 
     /**
      * @param int $idShop
-     * @param string $provider '' turns the memory off
-     * @param string $key the provider's key, or an Ollama address; '' keeps the stored one
+     * @param bool $on
+     * @param string $provider
+     * @param string $key a key of its own, only for a non-reusable provider; '' keeps the stored one
      */
-    public static function save(int $idShop, string $provider, string $key): void
+    public static function save(int $idShop, bool $on, string $provider, string $key): void
     {
         $provider = isset(self::PROVIDERS[$provider]) ? $provider : '';
+        Configuration::updateValue(self::ON, $on ? '1' : '0', false, null, $idShop);
         Configuration::updateValue(self::PROVIDER, $provider, false, null, $idShop);
 
         $key = trim($key);
-        if ($provider === '') {
+        // The own key is kept only for a provider that needs one, and only when
+        // the merchant typed it; blank keeps whatever was stored.
+        if ($provider === '' || self::PROVIDERS[$provider]['reuse']) {
             Configuration::updateValue(self::KEY, '', false, null, $idShop);
         } elseif ($key !== '') {
             Configuration::updateValue(self::KEY, SomcpAssistant::seal($key), false, null, $idShop);
@@ -167,6 +210,7 @@ class SomcpAssistantMemory
      */
     public static function purge(): void
     {
+        Configuration::deleteByName(self::ON);
         Configuration::deleteByName(self::PROVIDER);
         Configuration::deleteByName(self::KEY);
     }
@@ -268,10 +312,6 @@ class SomcpAssistantMemory
                 return new CohereEmbeddingsProvider($key, $model);
             case 'voyage':
                 return new VoyageEmbeddingsProvider($key, $model);
-            case 'ollama':
-                // The key field holds the merchant's own server address, read
-                // the same way the chat reads an Ollama address.
-                return new OllamaEmbeddingsProvider($model, rtrim(SomcpAssistant::ollamaBase($key), '/') . '/api');
             default:
                 return null;
         }

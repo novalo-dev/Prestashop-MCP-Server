@@ -48,7 +48,7 @@ us. See [Where to help](#where-to-help).
 - **Has a built-in assistant in the back office.** A chat button at the top
   right of every page opens a conversation with the AI the merchant connected
   with their own API key (Claude, ChatGPT, Gemini, Mistral, DeepSeek, Grok,
-  Cohere or Ollama). It uses the same tools, with the rights of the employee
+  or Cohere). It uses the same tools, with the rights of the employee
   signed in, and asks for approval before any change. Several assistants can
   share the work by role. Runs on [Neuron AI](https://github.com/neuron-core/neuron-ai).
 - **Speaks both eras of the protocol** from one endpoint: the stateless

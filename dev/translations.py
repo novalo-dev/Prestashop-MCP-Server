@@ -1042,18 +1042,38 @@ T = {
  "Désactivée",
  "Desactivada",
  "Aus"),
-"Memory key": (
- "Clé de la mémoire",
- "Clave de la memoria",
- "Gedächtnis-Schlüssel"),
-"Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It needs a provider for the embeddings - the same key families as the chat, or Ollama on your own server - and is billed for them. Off by default.": (
- "Permet à l'assistant de se souvenir des conversations passées et de les retrouver plus tard, chacune réservée à l'employé qui l'a eue. Il faut un fournisseur pour les embeddings - les mêmes familles de clés que le chat, ou Ollama sur votre serveur - et ils sont facturés. Désactivée par défaut.",
- "Permite al asistente recordar conversaciones pasadas y recuperarlas más tarde, cada una reservada al empleado que la tuvo. Necesita un proveedor para los embeddings - las mismas familias de claves que el chat, u Ollama en su servidor - y se facturan. Desactivada por defecto.",
- "Ermöglicht dem Assistenten, sich an frühere Gespräche zu erinnern und sie später abzurufen, jedes dem Mitarbeiter vorbehalten, der es geführt hat. Es braucht einen Anbieter für die Embeddings - dieselben Schlüsselfamilien wie der Chat oder Ollama auf Ihrem Server - und sie werden berechnet. Standardmäßig aus."),
-"The key of the embeddings provider, or the address of your Ollama server. Stored encrypted. Leave empty to keep the saved one.": (
- "La clé du fournisseur d'embeddings, ou l'adresse de votre serveur Ollama. Stockée chiffrée. Laissez vide pour garder celle enregistrée.",
- "La clave del proveedor de embeddings, o la dirección de su servidor Ollama. Almacenada cifrada. Deje vacío para conservar la guardada.",
- "Der Schlüssel des Embeddings-Anbieters oder die Adresse Ihres Ollama-Servers. Verschlüsselt gespeichert. Leer lassen, um den gespeicherten zu behalten."),
+"Voyage key": (
+ "Clé Voyage",
+ "Clave de Voyage",
+ "Voyage-Schlüssel"),
+"Embeddings provider": (
+ "Fournisseur d'embeddings",
+ "Proveedor de embeddings",
+ "Embeddings-Anbieter"),
+"special provider for the memory": (
+ "fournisseur spécial pour la mémoire",
+ "proveedor especial para la memoria",
+ "Spezialanbieter für das Gedächtnis"),
+"Get a key at": (
+ "Obtenez une clé sur",
+ "Obtenga una clave en",
+ "Holen Sie sich einen Schlüssel unter"),
+"Stored encrypted. Leave empty to keep the saved one.": (
+ "Stockée chiffrée. Laissez vide pour garder celle enregistrée.",
+ "Almacenada cifrada. Deje vacío para conservar la guardada.",
+ "Verschlüsselt gespeichert. Leer lassen, um den gespeicherten zu behalten."),
+"Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.": (
+ "Permet à l'assistant de se souvenir des conversations passées et de les retrouver plus tard, chacune réservée à l'employé qui l'a eue. Il les encode avec un fournisseur - un fournisseur de chat déjà configuré, ou Voyage - et c'est facturé. Désactivée par défaut.",
+ "Permite al asistente recordar conversaciones pasadas y recuperarlas más tarde, cada una reservada al empleado que la tuvo. Las codifica con un proveedor - un proveedor de chat ya configurado, o Voyage - y se factura. Desactivada por defecto.",
+ "Ermöglicht dem Assistenten, sich an frühere Gespräche zu erinnern und sie später abzurufen, jedes dem Mitarbeiter vorbehalten, der es geführt hat. Es kodiert sie mit einem Anbieter - einem bereits eingerichteten Chat-Anbieter oder Voyage - und das wird berechnet. Standardmäßig aus."),
+"The chat providers already set up lend their key. Voyage is embeddings only, so it asks for its own key below.": (
+ "Les fournisseurs de chat déjà configurés prêtent leur clé. Voyage ne fait que des embeddings, il demande donc sa propre clé ci-dessous.",
+ "Los proveedores de chat ya configurados prestan su clave. Voyage solo hace embeddings, por lo que pide su propia clave abajo.",
+ "Die bereits eingerichteten Chat-Anbieter leihen ihren Schlüssel. Voyage macht nur Embeddings und fragt daher unten nach seinem eigenen Schlüssel."),
+"Set up a chat assistant first (OpenAI, Gemini, Mistral or Cohere), or pick Voyage, to give the memory a key.": (
+ "Configurez d'abord un assistant chat (OpenAI, Gemini, Mistral ou Cohere), ou choisissez Voyage, pour donner une clé à la mémoire.",
+ "Configure primero un asistente de chat (OpenAI, Gemini, Mistral o Cohere), o elija Voyage, para dar una clave a la memoria.",
+ "Richten Sie zuerst einen Chat-Assistenten ein (OpenAI, Gemini, Mistral oder Cohere) oder wählen Sie Voyage, um dem Gedächtnis einen Schlüssel zu geben."),
 "A key is saved. Leave empty to keep it.": (
  "Une clé est enregistrée. Laissez vide pour la garder.",
  "Hay una clave guardada. Deje vacío para conservarla.",
@@ -1194,10 +1214,10 @@ T = {
  "Laissez vide pour garder la clé déjà enregistrée.",
  "Déjelo vacío para conservar la clave ya guardada.",
  "Leer lassen, um den bereits gespeicherten Schlüssel zu behalten."),
-"The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead.": (
- "La clé est stockée chiffrée sur votre boutique et envoyée uniquement au fournisseur choisi. Pour Ollama, indiquez plutôt l'adresse de votre serveur.",
- "La clave se guarda cifrada en su tienda y solo se envía al proveedor elegido. Para Ollama, indique en su lugar la dirección de su servidor.",
- "Der Schlüssel wird verschlüsselt in Ihrem Shop gespeichert und nur an den gewählten Anbieter gesendet. Für Ollama geben Sie stattdessen die Adresse Ihres Servers an."),
+"The key is stored encrypted on your shop and only sent to the provider you picked.": (
+ "La clé est stockée chiffrée sur votre boutique et envoyée uniquement au fournisseur choisi.",
+ "La clave se guarda cifrada en su tienda y solo se envía al proveedor elegido.",
+ "Der Schlüssel wird verschlüsselt in Ihrem Shop gespeichert und nur an den gewählten Anbieter gesendet."),
 "Level": (
  "Niveau",
  "Nivel",

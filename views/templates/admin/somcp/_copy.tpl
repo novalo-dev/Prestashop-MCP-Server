@@ -148,6 +148,32 @@
             followLevel();
         }
 
+        // The memory block follows its switch, and the key field appears only
+        // for a provider marked special (Voyage), which brings its own key.
+        var memSwitch = document.querySelectorAll('[data-somcp-memory-switch] input');
+        var memBlock = document.querySelector('[data-somcp-memory-block]');
+        var memProvider = document.querySelector('[data-somcp-memory-provider]');
+        var memKey = document.querySelector('[data-somcp-memory-key]');
+        if (memSwitch.length && memBlock) {
+            var followMemory = function () {
+                var on = document.getElementById('somcp_emb_on');
+                var isOn = on && on.checked;
+                memBlock.style.display = isOn ? '' : 'none';
+                if (memKey) {
+                    var opt = memProvider ? memProvider.options[memProvider.selectedIndex] : null;
+                    var special = opt && opt.hasAttribute('data-somcp-special');
+                    memKey.style.display = isOn && special ? '' : 'none';
+                }
+            };
+            memSwitch.forEach(function (input) {
+                input.addEventListener('change', followMemory);
+            });
+            if (memProvider) {
+                memProvider.addEventListener('change', followMemory);
+            }
+            followMemory();
+        }
+
         // A removal asks first, in the merchant's language.
         document.querySelectorAll('[data-somcp-confirm]').forEach(function (button) {
             button.addEventListener('click', function (event) {

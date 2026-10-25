@@ -89,8 +89,6 @@ class SomcpAssistant
      * need a region, a deployment or a service account; they are left out
      * until the form can ask for those without growing for everyone else.
      *
-     * Ollama takes the address of the merchant's own server instead of a key.
-     *
      * @return array<string, array{label:string, key_url:string, address:bool}>
      */
     public static function providers(): array
@@ -103,7 +101,6 @@ class SomcpAssistant
             'deepseek' => ['label' => 'DeepSeek', 'key_url' => 'https://platform.deepseek.com/api_keys', 'address' => false],
             'xai' => ['label' => 'Grok (xAI)', 'key_url' => 'https://console.x.ai', 'address' => false],
             'cohere' => ['label' => 'Cohere', 'key_url' => 'https://dashboard.cohere.com/api-keys', 'address' => false],
-            'ollama' => ['label' => 'Ollama', 'key_url' => 'https://ollama.com/download', 'address' => true],
         ];
     }
 
@@ -288,6 +285,29 @@ class SomcpAssistant
         }
 
         return $idAssistant;
+    }
+
+    /**
+     * The key in clear of an active assistant of this shop using a provider, so
+     * the memory can embed with a key the merchant already set for the chat
+     * rather than ask for it twice. '' when no such assistant has a key.
+     *
+     * @param string $provider
+     *
+     * @return string
+     */
+    public static function keyForProvider(string $provider): string
+    {
+        foreach (self::active() as $assistant) {
+            if ($assistant['provider'] === $provider && $assistant['has_key']) {
+                $key = self::key($assistant);
+                if ($key !== '') {
+                    return $key;
+                }
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -656,15 +676,6 @@ class SomcpAssistant
                 $url = 'https://api.cohere.com/v1/models?endpoint=chat&page_size=1000';
                 $headers = ['Authorization: Bearer ' . $key];
                 break;
-            case 'ollama':
-                // The merchant's own server, which may well sit on a private
-                // address next to the shop: the address guard would refuse
-                // exactly the setup Ollama is for. Only an administrator can
-                // type this address.
-                $url = rtrim(self::ollamaBase($key), '/') . '/tags';
-                $headers = [];
-                $guard = false;
-                break;
             default:
                 return null;
         }
@@ -700,24 +711,6 @@ class SomcpAssistant
         }
 
         return $models;
-    }
-
-    /**
-     * The address Neuron AI's Ollama provider expects, from what the merchant
-     * typed: "http://192.168.1.10:11434" becomes ".../api".
-     *
-     * @param string $typed
-     *
-     * @return string
-     */
-    public static function ollamaBase(string $typed): string
-    {
-        $base = rtrim(trim($typed), '/');
-        if ($base === '') {
-            $base = 'http://localhost:11434';
-        }
-
-        return preg_match('#/api$#', $base) ? $base : $base . '/api';
     }
 
     /**
@@ -790,16 +783,10 @@ class SomcpAssistant
         foreach ($models as $model) {
             $id = $model['id'];
             if (preg_match('/(preview|exp|embed|tts|audio|image|vision|realtime|transcribe|search|translate|-\d{4}-\d{2}-\d{2}$)/', $id)
-                && $provider !== 'anthropic' && $provider !== 'ollama') {
+                && $provider !== 'anthropic') {
                 continue;
             }
             $ids[$id] = $model['created'];
-        }
-
-        if ($provider === 'ollama') {
-            // Whatever the merchant pulled on their own server; levels mean
-            // nothing there.
-            return (string) (array_key_first($ids) ?? '');
         }
 
         $rule = $rules[$provider][$level] ?? null;

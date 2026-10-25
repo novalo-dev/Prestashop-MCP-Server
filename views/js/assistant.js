@@ -123,6 +123,7 @@
     function request(action, data) {
         var form = new FormData();
         form.append('somcp_action', action);
+        form.append('page', config.page || '');
         Object.keys(data || {}).forEach(function (key) {
             if (key === 'files') {
                 data.files.forEach(function (file) {

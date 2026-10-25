@@ -44,13 +44,6 @@ class Somcp extends Module
     /** @var string Key the settings page leaves a message under, for the page after the redirect. */
     private const FLASH_KEY = 'somcp_flash';
 
-    /**
-     * Where the module is built in the open. The settings page links to it for
-     * feedback and for the source, so a merchant who hits a problem reports it
-     * where the developers who can fix it will read it.
-     */
-    private const REPOSITORY = 'https://github.com/novalo-dev/Prestashop-MCP-Server';
-
     /** @var array<int, string> Classes loaded together, in dependency order. */
     private const CLASSES = [
         'SomcpConfig',
@@ -349,6 +342,8 @@ class Somcp extends Module
         $config = [
             'endpoint' => $this->context->link->getAdminLink(SomcpBackOffice::ASSISTANT_CONTROLLER, true, [], ['ajax' => 1]),
             'neuron' => 'https://github.com/neuron-core/neuron-ai',
+            // Symfony pages keep their legacy name here too, e.g. AdminOrders.
+            'page' => isset($this->context->controller->controller_name) ? (string) $this->context->controller->controller_name : (string) Tools::getValue('controller'),
             'maxFiles' => SomcpAssistantChat::MAX_FILES,
             'maxFileBytes' => SomcpAssistantChat::MAX_FILE_BYTES,
             'text' => [
@@ -547,7 +542,7 @@ class Somcp extends Module
             'somcp_form_action' => $this->selfUrl(),
             'somcp_name' => $this->displayName,
             'somcp_version' => $this->version,
-            'somcp_repository' => self::REPOSITORY,
+            'somcp_repository' => SomcpUpdate::REPOSITORY,
             'somcp_update' => $update,
             'somcp_assistants' => SomcpAssistant::all(),
             'somcp_assistant_costs' => SomcpAssistant::monthCosts(),

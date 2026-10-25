@@ -40,7 +40,7 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpUpdate
 {
-    /** @var string Repository whose releases are read. */
+    /** @var string Where the module is built in the open: releases, source, issues. */
     public const REPOSITORY = 'https://github.com/novalo-dev/Prestashop-MCP-Server';
 
     /** @var string '0' when the merchant turned the check off. Missing means on. */

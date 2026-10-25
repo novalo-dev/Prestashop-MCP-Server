@@ -100,6 +100,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
         }
 
         $chat = new SomcpAssistantChat($this->context->employee, Somcp::currentShopId());
+        $chat->openOn((string) Tools::getValue('page'));
         $action = (string) Tools::getValue('somcp_action');
 
         $thread = null;

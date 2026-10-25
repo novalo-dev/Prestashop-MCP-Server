@@ -299,7 +299,10 @@ that the answers come from an AI. Keys are stored encrypted.
 Conversations are kept per employee: the menu in the chat slides out the list,
 each with a bin to delete it. The setting "Employees allowed to use the built-in
 assistant" chooses who sees the chat, separately from who may connect an
-outside assistant; administrators always may. Runs on Neuron AI.
+outside assistant; administrators always may. The assistant knows which back
+office page the chat is open on, your PrestaShop version and the module
+version, with links to the matching source and documentation, and the role of
+every assistant switched on. Runs on Neuron AI.
 
 **Product images from a file on the shop.** Creating or changing a product now
 accepts, for each image, either a public address to download or the reference

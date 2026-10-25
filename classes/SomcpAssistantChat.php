@@ -151,6 +151,9 @@ class SomcpAssistantChat
     /** @var int */
     private $idShop;
 
+    /** @var string Back office controller the chat is open on, e.g. AdminOrders. */
+    private $page = '';
+
     /** @var PDO|null */
     private static $pdo;
 
@@ -165,6 +168,18 @@ class SomcpAssistantChat
     {
         $this->employee = $employee;
         $this->idShop = $idShop;
+    }
+
+    /**
+     * Tells the model which back office page the employee has open, so "this
+     * order" or "here" has a meaning. Sent by the browser, hence kept to the
+     * shape of a controller name.
+     *
+     * @param string $page
+     */
+    public function openOn(string $page): void
+    {
+        $this->page = preg_match('/^[A-Za-z0-9_]{1,64}$/', $page) === 1 ? $page : '';
     }
 
     /**
@@ -1044,36 +1059,48 @@ class SomcpAssistantChat
      */
     private function instructions(array $assistant, array $thread = []): string
     {
+        // Kept terse on purpose: this text is paid for on every model call.
         $shop = Context::getContext()->shop;
         $language = Language::getLanguage((int) $this->employee->id_lang);
+        $module = Module::getInstanceByName('somcp');
+        // The links follow what is installed, so the model reads the code and
+        // the docs of this very shop rather than of whatever version is newest.
+        $version = $module instanceof Module ? (string) $module->version : '';
+        $major = (int) _PS_VERSION_;
 
         $lines = [
-            'You are the assistant built into the back office of the PrestaShop shop "' . $shop->name . '".',
-            'You work for ' . trim($this->employee->firstname . ' ' . $this->employee->lastname) . ', an employee of the shop, with exactly their back office permissions, through the tools you are given.',
-            'Answer in ' . (is_array($language) ? $language['name'] : 'English') . '. Be concise and concrete.',
-            'Files the employee attached are named with an upload_ref. A tool that accepts an upload_ref argument can use the file itself: pass it that reference.',
-            'Read real data with the tools rather than guessing. Any tool that changes the shop is shown to the employee for approval before it runs: when the request is clear, call it directly instead of asking for permission in text.',
-            'When a tool returns an error, explain it plainly and suggest what the employee can do.',
-            'Environment: PrestaShop ' . _PS_VERSION_ . ', PHP ' . PHP_VERSION . ', shop address ' . $shop->getBaseURL(true) . ', today is ' . date('Y-m-d') . '.',
+            'You are an e-commerce expert running a shop on the PrestaShop CMS, built into its back office.',
+            'Shop "' . $shop->name . '", ' . $shop->getBaseURL(true) . '. Today ' . date('Y-m-d') . '.',
+            'PrestaShop ' . _PS_VERSION_ . ': code https://github.com/PrestaShop/PrestaShop/tree/' . _PS_VERSION_
+                . ', docs https://github.com/PrestaShop/docs/tree/' . $major . '.x',
+            'Module O\'So MCP Server ' . $version . ': ' . SomcpUpdate::REPOSITORY . '/tree/v' . $version,
+            'Employee: ' . trim($this->employee->firstname . ' ' . $this->employee->lastname) . ', with exactly their back office rights, through your tools.',
         ];
-
-        if ($assistant['role'] !== '') {
-            $lines[] = 'Your own role in this shop: ' . $assistant['role'] . '.';
+        if ($this->page !== '') {
+            $lines[] = 'Chat opened on page ' . $this->page . '.';
         }
+        $lines[] = 'Reply in ' . (is_array($language) ? $language['name'] : 'English') . ', short and concrete. Read real data with tools, never guess.';
+        $lines[] = 'Tools that change the shop ask the employee for approval: call them directly.';
+        $lines[] = 'Explain tool errors plainly with a next step.';
+        $lines[] = 'Attached files carry an upload_ref: pass it to any tool accepting one.';
 
         $others = $this->colleagues($assistant);
-        if ($others !== []) {
-            $lines[] = 'Other assistants of this shop, each with a role. When part of a request falls under one of these roles, hand that part over with ' . self::DELEGATE_TOOL . ', then use the answer:';
-            foreach ($others as $other) {
-                $role = $other['role'] !== '' ? $other['role'] : ($other['level'] === SomcpAssistant::LEVEL_IMAGE ? 'images' : 'general help');
-                $lines[] = '- id ' . $other['id_assistant'] . ', ' . $other['label'] . ': ' . $role
-                    . ($other['level'] === SomcpAssistant::LEVEL_IMAGE ? ' (generates images: ask it for any picture, describing it fully)' : '');
+        if ($others !== [] || $assistant['role'] !== '') {
+            $lines[] = 'Assistants (you = #' . (int) $assistant['id_assistant'] . '):';
+            foreach (array_merge([$assistant], $others) as $one) {
+                $image = $one['level'] === SomcpAssistant::LEVEL_IMAGE;
+                $role = $one['role'] !== '' ? $one['role'] : ($image ? 'generates images' : 'general help');
+                $lines[] = '#' . (int) $one['id_assistant'] . ' ' . $one['label'] . ': ' . $role
+                    . ($image && $one['role'] !== '' ? ' (generates images)' : '');
+            }
+            if ($others !== []) {
+                $lines[] = 'Hand a task to the one whose role fits with ' . self::DELEGATE_TOOL . ', then use its answer. Describe any image fully.';
             }
         }
 
         $generated = $thread !== [] ? $this->generated($thread) : [];
         if ($generated !== []) {
-            $lines[] = 'Images generated in this conversation, each usable by a tool that takes an upload_ref (for example as the image of a product):';
+            $lines[] = 'Images generated here, usable via upload_ref (e.g. as a product image):';
             foreach ($generated as $file) {
                 $lines[] = '- ' . $file['name'] . ', upload_ref: ' . $file['ref'];
             }

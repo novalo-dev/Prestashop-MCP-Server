@@ -1070,7 +1070,9 @@ class SomcpAssistantChat
 
         $lines = [
             'You are an e-commerce expert running a shop on the PrestaShop CMS, built into its back office.',
-            'Shop "' . $shop->name . '", ' . $shop->getBaseURL(true) . '. Today ' . date('Y-m-d') . '.',
+            // The shop id is stated because a tool call in a multistore install
+            // runs against this shop, and the model must not guess another.
+            'Shop #' . $this->idShop . ' "' . $shop->name . '"' . (Shop::isFeatureActive() ? ' (one shop of a multistore install)' : '') . ', ' . $shop->getBaseURL(true) . '. Today ' . date('Y-m-d') . '.',
             'PrestaShop ' . _PS_VERSION_ . ': code https://github.com/PrestaShop/PrestaShop/tree/' . _PS_VERSION_
                 . ', docs https://github.com/PrestaShop/docs/tree/' . $major . '.x',
             'Module O\'So MCP Server ' . $version . ': ' . SomcpUpdate::REPOSITORY . '/tree/v' . $version,

@@ -137,7 +137,7 @@ jobs:
         with:
           php-version: '8.1'
           coverage: none
-          tools: none
+          tools: composer
 
       - name: PHP syntax
         if: steps.guard.outputs.skip == 'false'
@@ -183,7 +183,16 @@ jobs:
         if: steps.guard.outputs.skip == 'false'
         run: |
           NAME="OSo-MCP-Server-${{ steps.version.outputs.number }}.zip"
-          git archive --format=zip --prefix=somcp/ -o "$NAME" HEAD
+          # The archive is laid out, given its Composer dependencies, pruned
+          # of what the module never runs, then zipped: the shop has no
+          # Composer, so vendor/ ships inside the module.
+          mkdir -p /tmp/pack
+          git archive --format=tar --prefix=somcp/ HEAD | tar -x -C /tmp/pack
+          composer install --working-dir=/tmp/pack/somcp --no-dev --no-interaction --no-progress \
+            --no-scripts --no-plugins --optimize-autoloader
+          rm -f /tmp/pack/somcp/composer.lock
+          dev/package/prune.sh /tmp/pack/somcp
+          (cd /tmp/pack && zip -qr "$GITHUB_WORKSPACE/$NAME" somcp)
           N=$(unzip -l "$NAME" | tail -1 | awk '{print $2}')
           SIZE=$(du -h "$NAME" | cut -f1)
           echo "name=$NAME" >> "$GITHUB_OUTPUT"

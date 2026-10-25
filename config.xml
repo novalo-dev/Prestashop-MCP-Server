@@ -2,7 +2,7 @@
 <module>
     <name>somcp</name>
     <displayName><![CDATA[O'So MCP Server]]></displayName>
-    <version><![CDATA[1.0.0]]></version>
+    <version><![CDATA[1.1.0]]></version>
     <description><![CDATA[Lets AI assistants such as Claude, ChatGPT or Cursor connect to this shop, with each employee approving what they may do.]]></description>
     <author><![CDATA[Novalo]]></author>
     <tab><![CDATA[administration]]></tab>

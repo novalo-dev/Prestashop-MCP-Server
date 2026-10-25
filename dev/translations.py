@@ -1010,6 +1010,274 @@ T = {
  "GitHub n'a pas pu être joint. Réessayez plus tard.",
  "No se ha podido contactar con GitHub. Inténtelo más tarde.",
  "GitHub war nicht erreichbar. Versuchen Sie es später erneut."),
+"Built-in assistant": (
+ "Assistant intégré",
+ "Asistente integrado",
+ "Integrierter Assistent"),
+"Acts with your rights and asks before any change": (
+ "Agit avec vos droits et demande avant toute modification",
+ "Actúa con sus derechos y pregunta antes de cualquier cambio",
+ "Handelt mit Ihren Rechten und fragt vor jeder Änderung"),
+"Open the built-in assistant": (
+ "Ouvrir l'assistant intégré",
+ "Abrir el asistente integrado",
+ "Integrierten Assistenten öffnen"),
+"Close": (
+ "Fermer",
+ "Cerrar",
+ "Schließen"),
+"Write your message...": (
+ "Écrivez votre message…",
+ "Escriba su mensaje…",
+ "Schreiben Sie Ihre Nachricht…"),
+"Hello! What can I do for the shop?": (
+ "Bonjour ! Que puis-je faire pour la boutique ?",
+ "¡Hola! ¿Qué puedo hacer por la tienda?",
+ "Hallo! Was kann ich für den Shop tun?"),
+"New conversation": (
+ "Nouvelle conversation",
+ "Nueva conversación",
+ "Neues Gespräch"),
+"Conversations": (
+ "Conversations",
+ "Conversaciones",
+ "Gespräche"),
+"Delete this conversation": (
+ "Supprimer cette conversation",
+ "Eliminar esta conversación",
+ "Dieses Gespräch löschen"),
+"Default assistant": (
+ "Assistant par défaut",
+ "Asistente predeterminado",
+ "Standardassistent"),
+"Confirmation requested": (
+ "Confirmation demandée",
+ "Confirmación solicitada",
+ "Bestätigung erforderlich"),
+"Approve": (
+ "Approuver",
+ "Aprobar",
+ "Genehmigen"),
+"Approved": (
+ "Approuvé",
+ "Aprobado",
+ "Genehmigt"),
+"Refused": (
+ "Refusé",
+ "Rechazado",
+ "Abgelehnt"),
+"Working...": (
+ "En cours…",
+ "Trabajando…",
+ "In Arbeit…"),
+"This month: %spent%": (
+ "Ce mois-ci : %spent%",
+ "Este mes: %spent%",
+ "Diesen Monat: %spent%"),
+"This month: %spent% of %budget%": (
+ "Ce mois-ci : %spent% sur %budget%",
+ "Este mes: %spent% de %budget%",
+ "Diesen Monat: %spent% von %budget%"),
+"Something went wrong. Try again.": (
+ "Un problème est survenu. Réessayez.",
+ "Algo ha fallado. Inténtelo de nuevo.",
+ "Etwas ist schiefgelaufen. Versuchen Sie es erneut."),
+"Powered by": (
+ "Propulsé par",
+ "Con la tecnología de",
+ "Bereitgestellt von"),
+"The key works. Model in use: %model%.": (
+ "La clé fonctionne. Modèle utilisé : %model%.",
+ "La clave funciona. Modelo en uso: %model%.",
+ "Der Schlüssel funktioniert. Verwendetes Modell: %model%."),
+"The provider refused the key or did not answer. Check the key and try again.": (
+ "Le fournisseur a refusé la clé ou n'a pas répondu. Vérifiez la clé et réessayez.",
+ "El proveedor ha rechazado la clave o no ha respondido. Compruebe la clave e inténtelo de nuevo.",
+ "Der Anbieter hat den Schlüssel abgelehnt oder nicht geantwortet. Prüfen Sie den Schlüssel und versuchen Sie es erneut."),
+"The assistant has been removed.": (
+ "L'assistant a été retiré.",
+ "El asistente se ha eliminado.",
+ "Der Assistent wurde entfernt."),
+"Assistant saved. The key works. Model in use: %model%.": (
+ "Assistant enregistré. La clé fonctionne. Modèle utilisé : %model%.",
+ "Asistente guardado. La clave funciona. Modelo en uso: %model%.",
+ "Assistent gespeichert. Der Schlüssel funktioniert. Verwendetes Modell: %model%."),
+"Assistant saved, but the provider refused the key or did not answer. Check the key.": (
+ "Assistant enregistré, mais le fournisseur a refusé la clé ou n'a pas répondu. Vérifiez la clé.",
+ "Asistente guardado, pero el proveedor ha rechazado la clave o no ha respondido. Compruebe la clave.",
+ "Assistent gespeichert, aber der Anbieter hat den Schlüssel abgelehnt oder nicht geantwortet. Prüfen Sie den Schlüssel."),
+"No assistant is switched on. Add one in the module settings.": (
+ "Aucun assistant n'est activé. Ajoutez-en un dans les réglages du module.",
+ "No hay ningún asistente activado. Añada uno en los ajustes del módulo.",
+ "Kein Assistent ist aktiviert. Fügen Sie in den Moduleinstellungen einen hinzu."),
+"The monthly spending cap is reached. Raise it in the module settings to keep chatting.": (
+ "Le plafond mensuel de dépenses est atteint. Relevez-le dans les réglages du module pour continuer.",
+ "Se ha alcanzado el límite mensual de gasto. Auméntelo en los ajustes del módulo para seguir.",
+ "Die monatliche Ausgabengrenze ist erreicht. Erhöhen Sie sie in den Moduleinstellungen, um weiterzumachen."),
+"Answer the change waiting for your approval first.": (
+ "Répondez d'abord à la modification qui attend votre accord.",
+ "Responda primero al cambio que espera su aprobación.",
+ "Beantworten Sie zuerst die Änderung, die auf Ihre Genehmigung wartet."),
+"The assistant could not answer. Check its key in the module settings, then try again.": (
+ "L'assistant n'a pas pu répondre. Vérifiez sa clé dans les réglages du module, puis réessayez.",
+ "El asistente no ha podido responder. Compruebe su clave en los ajustes del módulo e inténtelo de nuevo.",
+ "Der Assistent konnte nicht antworten. Prüfen Sie seinen Schlüssel in den Moduleinstellungen und versuchen Sie es erneut."),
+"Ask another assistant": (
+ "Demander à un autre assistant",
+ "Preguntar a otro asistente",
+ "Einen anderen Assistenten fragen"),
+"The files of the assistant are missing from this copy of the module. Install the module from its release zip.": (
+ "Les fichiers de l'assistant manquent dans cette copie du module. Installez le module depuis le zip de sa version.",
+ "Faltan los archivos del asistente en esta copia del módulo. Instale el módulo desde el zip de su versión.",
+ "In dieser Kopie des Moduls fehlen die Dateien des Assistenten. Installieren Sie das Modul aus dem Zip seiner Version."),
+"Edit the assistant": (
+ "Modifier l'assistant",
+ "Editar el asistente",
+ "Assistenten bearbeiten"),
+"Add an assistant": (
+ "Ajouter un assistant",
+ "Añadir un asistente",
+ "Assistenten hinzufügen"),
+"Assistant": (
+ "Assistant",
+ "Asistente",
+ "Assistent"),
+"API key": (
+ "Clé API",
+ "Clave API",
+ "API-Schlüssel"),
+"Leave empty to keep the key already saved.": (
+ "Laissez vide pour garder la clé déjà enregistrée.",
+ "Déjelo vacío para conservar la clave ya guardada.",
+ "Leer lassen, um den bereits gespeicherten Schlüssel zu behalten."),
+"The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead.": (
+ "La clé est stockée chiffrée sur votre boutique et envoyée uniquement au fournisseur choisi. Pour Ollama, indiquez plutôt l'adresse de votre serveur.",
+ "La clave se guarda cifrada en su tienda y solo se envía al proveedor elegido. Para Ollama, indique en su lugar la dirección de su servidor.",
+ "Der Schlüssel wird verschlüsselt in Ihrem Shop gespeichert und nur an den gewählten Anbieter gesendet. Für Ollama geben Sie stattdessen die Adresse Ihres Servers an."),
+"Level": (
+ "Niveau",
+ "Nivel",
+ "Stufe"),
+"Economy": (
+ "Économique",
+ "Económico",
+ "Sparsam"),
+"fast and inexpensive, enough for most tasks": (
+ "rapide et peu cher, suffit pour la plupart des tâches",
+ "rápido y económico, suficiente para la mayoría de tareas",
+ "schnell und günstig, reicht für die meisten Aufgaben"),
+"Balanced": (
+ "Équilibré",
+ "Equilibrado",
+ "Ausgewogen"),
+"finer for texts and SEO": (
+ "plus fin pour les textes et le SEO",
+ "más fino para los textos y el SEO",
+ "feiner für Texte und SEO"),
+"Powerful": (
+ "Puissant",
+ "Potente",
+ "Leistungsstark"),
+"the most capable, clearly more expensive": (
+ "le plus capable, nettement plus cher",
+ "el más capaz, claramente más caro",
+ "der leistungsfähigste, deutlich teurer"),
+"The module always takes the newest model of the chosen level, without an update.": (
+ "Le module prend toujours le modèle le plus récent du niveau choisi, sans mise à jour.",
+ "El módulo siempre usa el modelo más reciente del nivel elegido, sin actualización.",
+ "Das Modul nimmt immer das neueste Modell der gewählten Stufe, ohne Update."),
+"Role": (
+ "Rôle",
+ "Función",
+ "Rolle"),
+"For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.": (
+ "Par exemple : SEO et fiches produits. Facultatif : avec un seul assistant activé, il fait tout. Avec plusieurs, celui par défaut confie à chacun le travail de son rôle.",
+ "Por ejemplo: SEO y fichas de producto. Opcional: con un solo asistente activado, lo hace todo. Con varios, el predeterminado encarga a cada uno el trabajo de su función.",
+ "Zum Beispiel: SEO und Produktseiten. Optional: Ist nur ein Assistent aktiviert, erledigt er alles. Bei mehreren gibt der Standardassistent jedem die Arbeit seiner Rolle."),
+"Active": (
+ "Actif",
+ "Activo",
+ "Aktiv"),
+"Exact model": (
+ "Modèle exact",
+ "Modelo exacto",
+ "Genaues Modell"),
+"Advanced. Leave empty to follow the level. Required for Ollama if your server has several models.": (
+ "Avancé. Laissez vide pour suivre le niveau. Obligatoire pour Ollama si votre serveur a plusieurs modèles.",
+ "Avanzado. Déjelo vacío para seguir el nivel. Obligatorio para Ollama si su servidor tiene varios modelos.",
+ "Erweitert. Leer lassen, um der Stufe zu folgen. Für Ollama erforderlich, wenn Ihr Server mehrere Modelle hat."),
+"Cancel": (
+ "Annuler",
+ "Cancelar",
+ "Abbrechen"),
+"Your assistants": (
+ "Vos assistants",
+ "Sus asistentes",
+ "Ihre Assistenten"),
+"The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.": (
+ "Le chat s'ouvre avec le bouton en haut à droite de chaque page du back-office. Il agit avec les droits de l'employé connecté et demande votre accord avant toute modification. Un seul assistant activé fait tout ; avec plusieurs, chacun prend son rôle.",
+ "El chat se abre con el botón de arriba a la derecha de cada página del back office. Actúa con los derechos del empleado conectado y pide aprobación antes de cualquier cambio. Un solo asistente activado lo hace todo; con varios, cada uno asume su función.",
+ "Der Chat öffnet sich über die Schaltfläche oben rechts auf jeder Back-Office-Seite. Er handelt mit den Rechten des angemeldeten Mitarbeiters und fragt vor jeder Änderung nach Genehmigung. Ein aktivierter Assistent erledigt alles; bei mehreren übernimmt jeder seine Rolle."),
+"Model": (
+ "Modèle",
+ "Modelo",
+ "Modell"),
+"This month": (
+ "Ce mois-ci",
+ "Este mes",
+ "Diesen Monat"),
+"Default": (
+ "Par défaut",
+ "Predeterminado",
+ "Standard"),
+"Everything": (
+ "Tout",
+ "Todo",
+ "Alles"),
+"not checked yet": (
+ "pas encore vérifié",
+ "aún sin comprobar",
+ "noch nicht geprüft"),
+"Edit": (
+ "Modifier",
+ "Editar",
+ "Bearbeiten"),
+"Test the key": (
+ "Tester la clé",
+ "Probar la clave",
+ "Schlüssel testen"),
+"Make default": (
+ "Mettre par défaut",
+ "Establecer como predeterminado",
+ "Als Standard festlegen"),
+"Remove this assistant?": (
+ "Retirer cet assistant ?",
+ "¿Eliminar este asistente?",
+ "Diesen Assistenten entfernen?"),
+"No assistant yet. Add one with your own API key to get the chat.": (
+ "Aucun assistant pour l'instant. Ajoutez-en un avec votre propre clé API pour avoir le chat.",
+ "Todavía no hay ningún asistente. Añada uno con su propia clave API para tener el chat.",
+ "Noch kein Assistent. Fügen Sie einen mit Ihrem eigenen API-Schlüssel hinzu, um den Chat zu erhalten."),
+"Monthly cap, all assistants": (
+ "Plafond mensuel, tous assistants",
+ "Límite mensual, todos los asistentes",
+ "Monatliche Grenze, alle Assistenten"),
+"This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.": (
+ "Ce mois-ci : environ %spent% $. Le chat s'arrête quand le plafond est atteint. 0 pour aucun plafond.",
+ "Este mes: unos %spent% $. El chat se detiene al alcanzar el límite. 0 para ningún límite.",
+ "Diesen Monat: etwa %spent% $. Der Chat stoppt, wenn die Grenze erreicht ist. 0 für keine Grenze."),
+"Estimated in US dollars from the public prices of each provider, the currency they bill in.": (
+ "Estimé en dollars américains d'après les prix publics de chaque fournisseur, la devise dans laquelle ils facturent.",
+ "Estimado en dólares estadounidenses según los precios públicos de cada proveedor, la moneda en la que facturan.",
+ "Geschätzt in US-Dollar nach den öffentlichen Preisen der Anbieter, der Währung, in der sie abrechnen."),
+"Instructions for the shop": (
+ "Consignes de la boutique",
+ "Instrucciones de la tienda",
+ "Anweisungen des Shops"),
+"Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.": (
+ "Ajoutées à chaque conversation, pour tous les assistants. Par exemple : comment s'adresser aux clients, délais de livraison, style maison.",
+ "Se añaden a cada conversación, para todos los asistentes. Por ejemplo: cómo dirigirse a los clientes, plazos de entrega, estilo de la casa.",
+ "Werden jedem Gespräch für alle Assistenten hinzugefügt. Zum Beispiel: Anrede der Kunden, Lieferzeiten, Hausstil."),
 "Open source under the AFL-3.0 licence": (
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",

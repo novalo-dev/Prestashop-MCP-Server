@@ -31,8 +31,9 @@ MCP client connects from the outside.
 2. Give it a public HTTPS address with a tunnel (`cloudflared tunnel --url
    http://localhost:8080`, or `ngrok http 8080`), set that domain as the shop
    domain, and enable friendly URLs.
-3. Clone this repository into `modules/somcp` (the folder name matters) and
-   install the module.
+3. Clone this repository into `modules/somcp` (the folder name matters), run
+   `composer install` in it for Neuron AI, which runs the built-in assistant,
+   and install the module.
 4. Press **Run the diagnostic** in the module settings: every line green means
    a client can connect.
 
@@ -130,6 +131,10 @@ say so in the issue before writing something else.
 Only entries marked **to write** can be taken. An entry marked **draft**, whose
 issue carries the `draft` label, waits for the maintainer to approve its
 design: do not start it.
+
+A tool needs nothing more to reach the built-in assistant: the chat offers
+every tool of the registry the employee may use, and asks for approval before
+any tool whose `acts()` is not a `view`.
 
 1. **Take the issue.** Comment on it so nobody else starts the same tool. Read
    the [shared conventions](docs/TOOLS.md#shared-conventions) and the entry.
@@ -247,11 +252,22 @@ that module), reformatting unrelated code.
 ## Building the Addons package
 
 Files only useful to developers are marked `export-ignore` in
-`.gitattributes`, so the package is built straight from git:
+`.gitattributes`. The builds lay the module out from git, add its Composer
+dependencies, then remove what the module never runs, listed in
+`dev/package/prune.txt`:
 
 ```bash
-git archive --format=zip --prefix=somcp/ -o somcp.zip HEAD
+mkdir -p build && git archive --prefix=somcp/ HEAD | tar -x -C build
+composer install --working-dir=build/somcp --no-dev --no-scripts --no-plugins --optimize-autoloader
+dev/package/prune.sh build/somcp
+(cd build && zip -qr ../somcp.zip somcp)
 ```
+
+The version of Neuron AI is pinned in `composer.json`. The CI **Dependencies**
+job checks it for known vulnerabilities, checks the part of its API the
+assistant calls (`dev/package/contract.php`) and that every class of the pruned
+archive still loads; the weekly **Dependencies** workflow opens an issue when a
+newer version is out.
 
 ## Security
 

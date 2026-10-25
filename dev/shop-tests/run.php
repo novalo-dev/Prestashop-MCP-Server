@@ -252,18 +252,93 @@ if ($nobody === 0) {
     }
 }
 
+// The built-in assistant, end to end, with Neuron AI's own fake provider: no
+// network, no key, but the real framework, the real tables and the real tools.
+// A read-only tool runs on the next step; a tool that changes the shop stops
+// on an approval, a refusal runs nothing, an approval runs it. Then another
+// employee must not be able to open the conversation.
+$assistantChecks = 0;
+if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
+    $failures[] = 'assistant: Neuron AI is not installed - run composer install in the module';
+} else {
+    $order = new Order(2);
+    $status = (int) $order->current_state;
+    $call = static function (string $name, string $id, array $inputs): NeuronAI\Chat\Messages\ToolCallMessage {
+        return new NeuronAI\Chat\Messages\ToolCallMessage(null, [new NeuronAI\Tools\ToolCall($name, $id, $inputs, null, true)]);
+    };
+    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+        $call('somcp_ping', 'call_ping', []),
+        $call('somcp_set_order_status', 'call_refused', ['id_order' => 2, 'status_id' => $status === 8 ? 6 : 8]),
+        new NeuronAI\Chat\Messages\AssistantMessage('Nothing was changed.'),
+        $call('somcp_set_order_status', 'call_approved', ['id_order' => 2, 'status_id' => $status]),
+        new NeuronAI\Chat\Messages\AssistantMessage('Done.')
+    ));
+    $idAssistant = SomcpAssistant::save(0, [
+        'provider' => 'anthropic', 'api_key' => 'test-key', 'level' => 'economy',
+        'model' => 'claude-shop-test', 'role' => '', 'active' => true,
+    ]);
+    $chat = new SomcpAssistantChat($employee, (int) $context->shop->id);
+    $thread = $chat->newThread(0);
+    $expect = static function (array $view, string $status, string $label) use (&$failures, &$assistantChecks): void {
+        ++$assistantChecks;
+        if ($view['status'] !== $status || $view['error'] !== '') {
+            $failures[] = "assistant: $label - expected $status, got {$view['status']}" . ($view['error'] !== '' ? " ({$view['error']})" : '');
+        }
+    };
+
+    try {
+        $view = $chat->send($thread, 'Check the connection, then change order 2.');
+        $expect($view, 'working', 'a read-only tool waits for the next step');
+        $view = $chat->step($thread);
+        $expect($view, 'approval', 'a change asks for approval');
+        if (count($view['actions']) !== 1) {
+            $failures[] = 'assistant: one action to approve expected, got ' . count($view['actions']);
+        }
+        $view = $chat->decide($thread, ['call_refused' => 'reject']);
+        $expect($view, 'idle', 'a refusal ends the turn');
+        ++$assistantChecks;
+        if ((int) (new Order(2))->current_state !== $status) {
+            $failures[] = 'assistant: a refused change was applied anyway';
+        }
+        $view = $chat->send($thread, 'Set it back as it was.');
+        $expect($view, 'approval', 'the second change asks for approval');
+        $view = $chat->decide($thread, ['call_approved' => 'approve']);
+        $expect($view, 'working', 'an approved change runs on the next step');
+        $view = $chat->step($thread);
+        $expect($view, 'idle', 'the answer after the approved change');
+        ++$assistantChecks;
+        $last = end($view['messages']);
+        if (!is_array($last) || $last['text'] !== 'Done.') {
+            $failures[] = 'assistant: the final answer is missing from the conversation';
+        }
+
+        // Ownership: the same thread id, asked for by another employee.
+        ++$assistantChecks;
+        $other = new Employee($nobody > 0 ? $nobody : 999999);
+        if ((new SomcpAssistantChat($other, (int) $context->shop->id))->thread((string) $thread['thread_id']) !== null) {
+            $failures[] = 'assistant: another employee could open the conversation';
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+
+    $chat->deleteThread($thread);
+    SomcpAssistant::delete($idAssistant);
+    SomcpAssistantChat::overrideProvider(null);
+}
+
 echo "\n";
 if ($failures !== []) {
     foreach ($failures as $failure) {
         echo "::error::$failure\n";
     }
-    printf("%d problem(s) over %d calls and %d permission checks.\n", count($failures), $calls, $checks);
+    printf("%d problem(s) over %d calls, %d permission checks and %d assistant checks.\n", count($failures), $calls, $checks, $assistantChecks);
     exit(1);
 }
 
 // A notice too, so the run summary shows how much was exercised and a green
 // job cannot hide a test that called nothing.
-printf("::notice::Shop test OK on PrestaShop %s, PHP %s: %d calls and %d permission checks over %d tools.\n", _PS_VERSION_, PHP_VERSION, $calls, $checks, count($shipped));
+printf("::notice::Shop test OK on PrestaShop %s, PHP %s: %d calls, %d permission checks and %d assistant checks over %d tools.\n", _PS_VERSION_, PHP_VERSION, $calls, $checks, $assistantChecks, count($shipped));
 exit(0);
 
 /**

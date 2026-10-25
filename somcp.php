@@ -76,6 +76,8 @@ class Somcp extends Module
         'SomcpContract',
         'SomcpDiagnostic',
         'SomcpUpdate',
+        'SomcpAssistant',
+        'SomcpAssistantChat',
     ];
 
     /** @var array<int, string> */
@@ -88,7 +90,7 @@ class Somcp extends Module
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '1.0.0';
+        $this->version = '1.1.0';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -282,6 +284,7 @@ class Somcp extends Module
         SomcpUpload::removeStore();
         SomcpConfig::purge();
         SomcpUpdate::purge();
+        SomcpAssistant::purge();
 
         return parent::uninstall();
     }
@@ -316,12 +319,17 @@ class Somcp extends Module
     }
 
     /**
-     * Keeps track of the administration folder name.
+     * Keeps track of the administration folder name, and puts the chat button
+     * of the built-in assistant on every back office page.
      *
      * A front controller has no _PS_ADMIN_DIR_, so the authorization endpoint
      * could not build the address of the consent screen without this. The value
      * is refreshed on every back office page because PrestaShop renames that
      * folder by itself the first time a shop is used.
+     *
+     * The chat is written straight into the page head rather than added through
+     * the controller's media list: pages built on Symfony have no such list,
+     * and this hook output reaches the head of both kinds of page.
      *
      * @return string
      */
@@ -330,7 +338,49 @@ class Somcp extends Module
         self::bootClasses();
         SomcpBackOffice::rememberAdminDir();
 
-        return '';
+        $employee = $this->context->employee;
+        if (!$employee instanceof Employee || (int) $employee->id <= 0
+            || !SomcpAssistantChat::available()
+            || SomcpAssistant::leader() === null
+            || !SomcpBackOffice::mayGrant((int) $employee->id_profile)) {
+            return '';
+        }
+
+        $config = [
+            'endpoint' => $this->context->link->getAdminLink(SomcpBackOffice::ASSISTANT_CONTROLLER, true, [], ['ajax' => 1]),
+            'neuron' => 'https://github.com/neuron-core/neuron-ai',
+            'text' => [
+                'title' => $this->l10n('Built-in assistant'),
+                'subtitle' => $this->l10n('Acts with your rights and asks before any change'),
+                'open' => $this->l10n('Open the built-in assistant'),
+                'close' => $this->l10n('Close'),
+                'placeholder' => $this->l10n('Write your message...'),
+                'send' => $this->l10n('Send'),
+                'hello' => $this->l10n('Hello! What can I do for the shop?'),
+                'newThread' => $this->l10n('New conversation'),
+                'threads' => $this->l10n('Conversations'),
+                'deleteThread' => $this->l10n('Delete this conversation'),
+                'defaultAssistant' => $this->l10n('Default assistant'),
+                'approvalTitle' => $this->l10n('Confirmation requested'),
+                'approve' => $this->l10n('Approve'),
+                'refuse' => $this->l10n('Refuse'),
+                'approved' => $this->l10n('Approved'),
+                'refused' => $this->l10n('Refused'),
+                'working' => $this->l10n('Working...'),
+                'spent' => $this->l10n('This month: %spent%'),
+                'spentOf' => $this->l10n('This month: %spent% of %budget%'),
+                'failed' => $this->l10n('Something went wrong. Try again.'),
+                'poweredBy' => $this->l10n('Powered by'),
+            ],
+        ];
+
+        $json = (string) json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $base = $this->_path . 'views/';
+        $version = urlencode($this->version);
+
+        return '<link rel="stylesheet" href="' . htmlspecialchars($base . 'css/assistant.css?v=' . $version, ENT_QUOTES) . '">'
+            . '<script>window.somcpAssistant = ' . $json . ';</script>'
+            . '<script src="' . htmlspecialchars($base . 'js/assistant.js?v=' . $version, ENT_QUOTES) . '" defer></script>';
     }
 
     /**
@@ -374,6 +424,37 @@ class Somcp extends Module
         if (Tools::isSubmit('submitSomcpClearLog')) {
             SomcpLogger::clear();
             $this->flash($this->trans('The log has been emptied.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpAssistant')) {
+            $this->saveAssistant();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantTest')) {
+            $tested = SomcpAssistant::get((int) Tools::getValue('id_assistant'));
+            $model = $tested !== null ? SomcpAssistant::test($tested) : '';
+            if ($model !== '') {
+                $this->flash($this->trans('The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
+            } else {
+                $this->flash($this->trans('The provider refused the key or did not answer. Check the key and try again.', [], 'Modules.Somcp.Admin'));
+            }
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantDelete')) {
+            SomcpAssistant::delete((int) Tools::getValue('id_assistant'));
+            $this->flash($this->trans('The assistant has been removed.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantDefault')) {
+            SomcpAssistant::makeDefault((int) Tools::getValue('id_assistant'));
+            $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantSettings')) {
+            SomcpAssistant::saveSettings(
+                (float) str_replace(',', '.', (string) Tools::getValue('SOMCP_ASSISTANT_BUDGET')),
+                (string) Tools::getValue('SOMCP_ASSISTANT_INSTRUCTIONS')
+            );
+            $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
             $this->redirectToSelf();
         }
         if (Tools::isSubmit('submitSomcpUpdateSwitch')) {
@@ -426,6 +507,14 @@ class Somcp extends Module
             'somcp_version' => $this->version,
             'somcp_repository' => self::REPOSITORY,
             'somcp_update' => $update,
+            'somcp_assistants' => SomcpAssistant::all(),
+            'somcp_assistant_costs' => SomcpAssistant::monthCosts(),
+            'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts()),
+            'somcp_assistant_budget' => SomcpAssistant::budget(),
+            'somcp_assistant_instructions' => SomcpAssistant::instructions(),
+            'somcp_assistant_providers' => SomcpAssistant::providers(),
+            'somcp_assistant_edit' => $this->assistantBeingEdited(),
+            'somcp_assistant_ready' => SomcpAssistantChat::available(),
             // Formatted here, in the employee's language, rather than in the
             // template: Smarty's date modifier knows nothing of the back
             // office date formats.
@@ -456,6 +545,48 @@ class Somcp extends Module
         return $this->context->smarty->fetch(
             _PS_MODULE_DIR_ . 'somcp/views/templates/admin/somcp/configure.tpl'
         );
+    }
+
+    /**
+     * Saves the assistant form of the Built-in assistant tab.
+     */
+    private function saveAssistant(): void
+    {
+        $idAssistant = SomcpAssistant::save((int) Tools::getValue('id_assistant'), [
+            'provider' => (string) Tools::getValue('somcp_assistant_provider'),
+            'api_key' => (string) Tools::getValue('somcp_assistant_key'),
+            'level' => (string) Tools::getValue('somcp_assistant_level'),
+            'model' => (string) Tools::getValue('somcp_assistant_model'),
+            'role' => (string) Tools::getValue('somcp_assistant_role'),
+            'active' => Tools::getValue('somcp_assistant_active') === '1',
+        ]);
+
+        // Tested right away: a key pasted with a stray space or for the wrong
+        // provider is better found here than on the first message in the chat.
+        $saved = SomcpAssistant::get($idAssistant);
+        $model = $saved !== null ? SomcpAssistant::test($saved) : '';
+        if ($model !== '') {
+            $this->flash($this->trans('Assistant saved. The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
+        } else {
+            $this->flash($this->trans('Assistant saved, but the provider refused the key or did not answer. Check the key.', [], 'Modules.Somcp.Admin'));
+        }
+        $this->redirectToSelf();
+    }
+
+    /**
+     * The assistant open in the form: an existing one when the merchant clicked
+     * Edit, a blank one when they clicked Add, null when the form is closed.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function assistantBeingEdited(): ?array
+    {
+        if (Tools::getValue('somcp_assistant_add') === '1') {
+            return ['id_assistant' => 0, 'provider' => 'anthropic', 'has_key' => false, 'level' => SomcpAssistant::LEVEL_ECONOMY, 'model' => '', 'role' => '', 'active' => true];
+        }
+        $idAssistant = (int) Tools::getValue('somcp_assistant_edit');
+
+        return $idAssistant > 0 ? SomcpAssistant::get($idAssistant) : null;
     }
 
     /**
@@ -797,9 +928,13 @@ class Somcp extends Module
     }
 
     /**
+     * Creates the module tables. Every statement is CREATE TABLE IF NOT EXISTS,
+     * so an upgrade script calls this to add the tables of a new version
+     * without touching the ones a shop already has.
+     *
      * @return bool
      */
-    private function installDatabase(): bool
+    public function installDatabase(): bool
     {
         return $this->runSqlFile('install.sql');
     }
@@ -866,6 +1001,7 @@ class Somcp extends Module
         return [
             SomcpBackOffice::CONSENT_CONTROLLER,
             SomcpBackOffice::UPLOAD_CONTROLLER,
+            SomcpBackOffice::ASSISTANT_CONTROLLER,
         ];
     }
 

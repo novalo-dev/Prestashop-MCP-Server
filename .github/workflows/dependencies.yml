@@ -1,0 +1,75 @@
+name: Dependencies
+
+# Every Monday, and on demand: is a newer Neuron AI out, and does the version
+# the module pins have a known vulnerability? Either one opens an issue - one
+# per version, never a duplicate - with what to read before moving the pin.
+# Nothing is upgraded here: the pin moves in a commit, and the CI dependency
+# job then checks the new version against the API the assistant calls.
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+
+      - name: Newer Neuron AI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PINNED=$(php -r '$c = json_decode(file_get_contents("composer.json"), true); echo $c["require"]["neuron-core/neuron-ai"];')
+          LATEST=$(curl -fsSL https://repo.packagist.org/p2/neuron-core/neuron-ai.json \
+            | php -r '$d = json_decode(stream_get_contents(STDIN), true); foreach ($d["packages"]["neuron-core/neuron-ai"] as $p) { if (preg_match("/^v?\d+\.\d+\.\d+$/", $p["version"])) { echo ltrim($p["version"], "v"); break; } }')
+          echo "Pinned $PINNED, latest $LATEST"
+          echo "| Neuron AI | pinned $PINNED, latest $LATEST |" >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$LATEST" ] || [ "$(printf '%s\n%s\n' "$PINNED" "$LATEST" | sort -V | tail -1)" = "$PINNED" ]; then
+            exit 0
+          fi
+          TITLE="Neuron AI $LATEST is out (pinned: $PINNED)"
+          if gh issue list --state all --search "\"$TITLE\" in:title" --json number --jq '.[0].number' | grep -q .; then
+            echo "Issue already open for $LATEST"
+            exit 0
+          fi
+          gh issue create --title "$TITLE" --label dependencies --body "Neuron AI runs the built-in assistant. Version **$LATEST** is published; the module pins **$PINNED** in \`composer.json\`.
+
+          Before moving the pin:
+
+          1. Read what changed: https://github.com/neuron-core/neuron-ai/releases and https://github.com/neuron-core/neuron-ai/compare/$PINNED...$LATEST
+          2. Change the version in \`composer.json\`, then run \`composer install\` and \`php dev/package/contract.php .\` locally.
+          3. Push: the CI **Dependencies** job checks the API the assistant calls and that the pruned archive still loads, and the shop tests run a conversation on every PrestaShop release.
+          4. Look for new code that runs processes or shell commands, and add its folder to \`dev/package/prune.txt\` if the assistant does not need it." \
+            || gh issue create --title "$TITLE" --body "Neuron AI $LATEST is published; the module pins $PINNED. See https://github.com/neuron-core/neuron-ai/releases"
+
+      - name: Known vulnerabilities
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          composer install --no-dev --no-interaction --no-progress
+          if composer audit --no-dev --locked --format=plain > /tmp/audit.txt 2>&1; then
+            echo "| Audit | no known vulnerability |" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          cat /tmp/audit.txt
+          TITLE="Security advisory on a dependency ($(date +%Y-%m-%d))"
+          if gh issue list --state open --search "\"Security advisory on a dependency\" in:title" --json number --jq '.[0].number' | grep -q .; then
+            echo "An advisory issue is already open"
+          else
+            gh issue create --title "$TITLE" --body "\`composer audit\` reports a known vulnerability in a dependency the module ships:
+
+          \`\`\`
+          $(head -c 5000 /tmp/audit.txt)
+          \`\`\`"
+          fi
+          exit 1

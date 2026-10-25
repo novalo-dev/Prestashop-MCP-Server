@@ -19,9 +19,10 @@ are:
 ### Changed
 
 **Settings page.** The page was one long column of panels. It is now split
-into six tabs, drawn with PrestaShop's own tabs and panels: Configuration,
-Tools and prompts, Access and security, Connected assistants, Security log,
-Help and updates.
+into seven tabs, drawn with PrestaShop's own tabs and panels: Configuration,
+Tools and prompts, Access and security, Connected assistants, Built-in
+assistant, Security log, Help and updates. They stay on one line; on a narrow
+screen the bar scrolls sideways instead of wrapping.
 The switch that turns the MCP server on and off leads the first tab and saves
 as soon as it moves, without a trip to the Save button. The address to give an
 assistant now sits in a regular back office field with its Copy button, on
@@ -269,6 +270,20 @@ whether a price is with or without tax.
 **Feedback and source code.** A card in the Help and updates tab leads to the
 module's GitHub repository, to report a problem, suggest a tool or read the
 code.
+
+**Built-in assistant.** A chat button now sits at the top right of every back
+office page. It opens a conversation with the AI you connect in the new Built-in
+assistant tab, with your own API key: Claude, ChatGPT, Gemini, Mistral,
+DeepSeek, Grok, Cohere or Ollama on your own server. For each one you pick a
+level - economy, balanced or powerful - and the module always uses the newest
+model of that level, without an update. The assistant uses the same tools as
+assistants connected over MCP, with the rights of the employee signed in, and
+every change waits for you to click Approve. With several assistants switched
+on, give each a role: the default one hands them the work of their role and
+uses their answer. A monthly spending cap, estimated in US dollars from the
+providers' public prices, stops the chat when it is reached, and shop-wide
+instructions are added to every conversation. Keys are stored encrypted.
+Conversations are kept per employee. Runs on Neuron AI.
 
 **New version alert.** The Help and updates tab shows the installed version
 and the latest one published on GitHub. When a newer version exists, the tab

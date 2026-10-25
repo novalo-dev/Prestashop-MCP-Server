@@ -1,0 +1,339 @@
+/*
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License version 3.0
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * https://opensource.org/licenses/AFL-3.0
+ * If you did not receive a copy of the license and are unable to obtain
+ * it through the world-wide-web, please send an email to
+ * contact@novalo.fr so we can send you a copy immediately.
+ *
+ * @author    Novalo <contact@novalo.fr>
+ * @copyright 2026 Novalo
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License v3.0 (AFL-3.0)
+ */
+
+/* The chat of the built-in assistant. PrestaShop has no chat component, so
+   this one is drawn here, in the back office primary colour. Every rule is
+   scoped to the chat's own ids so nothing leaks onto the page around it. */
+
+#somcp-chat-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin: 0 6px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #25b9d7;
+    color: #fff;
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(37, 185, 215, 0.25);
+    vertical-align: middle;
+}
+
+#somcp-chat-button:hover,
+#somcp-chat-button:focus {
+    background: #1f9fba;
+    outline: 0;
+}
+
+#somcp-chat-button.somcp-floating {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 10000;
+    width: 52px;
+    height: 52px;
+    font-size: 24px;
+}
+
+#somcp-chat {
+    position: fixed;
+    top: 64px;
+    right: 22px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    width: 400px;
+    max-width: calc(100vw - 32px);
+    height: calc(100vh - 90px);
+    max-height: 760px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    font-size: 13px;
+    color: #363a41;
+}
+
+#somcp-chat[hidden] {
+    display: none;
+}
+
+#somcp-chat .somcp-chat-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #25b9d7;
+    color: #fff;
+}
+
+#somcp-chat .somcp-chat-head b {
+    display: block;
+    font-size: 14px;
+}
+
+#somcp-chat .somcp-chat-head small {
+    display: block;
+    opacity: 0.9;
+    font-size: 11px;
+}
+
+#somcp-chat .somcp-chat-head .somcp-chat-who {
+    flex: 1;
+    min-width: 0;
+}
+
+#somcp-chat .somcp-chat-head select {
+    max-width: 130px;
+    height: 26px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+    font-size: 12px;
+}
+
+#somcp-chat .somcp-chat-head select option {
+    color: #363a41;
+}
+
+#somcp-chat .somcp-chat-head button {
+    padding: 0 4px;
+    border: 0;
+    background: none;
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-chat-threads {
+    max-height: 40%;
+    overflow-y: auto;
+    border-bottom: 1px solid #e3e8ea;
+    background: #fff;
+}
+
+#somcp-chat .somcp-chat-threads[hidden] {
+    display: none;
+}
+
+#somcp-chat .somcp-chat-threads button {
+    display: block;
+    width: 100%;
+    padding: 8px 14px;
+    overflow: hidden;
+    border: 0;
+    border-bottom: 1px solid #f0f2f3;
+    background: none;
+    color: #363a41;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-chat-threads button:hover,
+#somcp-chat .somcp-chat-threads button.somcp-current {
+    background: #f4fcfd;
+}
+
+#somcp-chat .somcp-chat-threads .somcp-chat-newthread {
+    color: #25b9d7;
+    font-weight: 600;
+}
+
+#somcp-chat .somcp-chat-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 9px;
+    padding: 14px;
+    overflow-y: auto;
+    background: #f4f6f7;
+}
+
+#somcp-chat .somcp-msg {
+    max-width: 86%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+#somcp-chat .somcp-msg p {
+    margin: 0 0 6px;
+}
+
+#somcp-chat .somcp-msg p:last-child,
+#somcp-chat .somcp-msg ul:last-child {
+    margin-bottom: 0;
+}
+
+#somcp-chat .somcp-msg ul {
+    margin: 0 0 6px 18px;
+    padding: 0;
+}
+
+#somcp-chat .somcp-msg code {
+    padding: 0 3px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.06);
+    font-size: 12px;
+}
+
+#somcp-chat .somcp-msg-user {
+    align-self: flex-end;
+    border-bottom-right-radius: 3px;
+    background: #25b9d7;
+    color: #fff;
+}
+
+#somcp-chat .somcp-msg-user a {
+    color: #fff;
+}
+
+#somcp-chat .somcp-msg-assistant {
+    align-self: flex-start;
+    border: 1px solid #e3e8ea;
+    border-bottom-left-radius: 3px;
+    background: #fff;
+}
+
+#somcp-chat .somcp-tool {
+    align-self: flex-start;
+    padding: 3px 10px;
+    border: 1px dashed #cfd8dc;
+    border-radius: 10px;
+    background: #fff;
+    color: #6c868e;
+    font-size: 11px;
+}
+
+#somcp-chat .somcp-approval {
+    padding: 10px 12px;
+    border: 1px solid #f0c36d;
+    border-radius: 10px;
+    background: #fff8e6;
+}
+
+#somcp-chat .somcp-approval b {
+    display: block;
+    margin-bottom: 4px;
+}
+
+#somcp-chat .somcp-approval ul {
+    margin: 4px 0 8px 18px;
+    padding: 0;
+}
+
+#somcp-chat .somcp-approval pre {
+    max-height: 120px;
+    margin: 2px 0 0;
+    padding: 4px 6px;
+    overflow: auto;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.04);
+    font-size: 11px;
+    white-space: pre-wrap;
+}
+
+#somcp-chat .somcp-approval button {
+    margin-right: 6px;
+    padding: 5px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-approve {
+    border: 1px solid #70b580;
+    background: #70b580;
+    color: #fff;
+}
+
+#somcp-chat .somcp-refuse {
+    border: 1px solid #c05c67;
+    background: #fff;
+    color: #c05c67;
+}
+
+#somcp-chat .somcp-error {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #fbe9eb;
+    color: #a33a46;
+}
+
+#somcp-chat .somcp-typing {
+    align-self: flex-start;
+    color: #6c868e;
+    font-style: italic;
+}
+
+#somcp-chat .somcp-chat-input {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 12px;
+    border-top: 1px solid #e3e8ea;
+}
+
+#somcp-chat .somcp-chat-input textarea {
+    flex: 1;
+    max-height: 120px;
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid #dfe3e5;
+    border-radius: 18px;
+    resize: none;
+    font: inherit;
+}
+
+#somcp-chat .somcp-chat-input button {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: #25b9d7;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-chat-input button:disabled {
+    background: #bbcdd2;
+    cursor: default;
+}
+
+#somcp-chat .somcp-chat-foot {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 14px 8px;
+    color: #9aa8ad;
+    font-size: 10.5px;
+}
+
+#somcp-chat .somcp-chat-foot a {
+    color: #25b9d7;
+}

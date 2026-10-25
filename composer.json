@@ -9,9 +9,15 @@
         }
     },
     "config": {
-        "prepend-autoloader": false
+        "prepend-autoloader": false,
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "platform": {
+            "php": "8.1.0"
+        }
     },
     "require": {
-        "php": ">=8.1"
+        "php": ">=8.1",
+        "neuron-core/neuron-ai": "4.1.13"
     }
 }

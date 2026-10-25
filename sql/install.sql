@@ -196,3 +196,85 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_upload_file` (
     PRIMARY KEY (`id_upload_file`),
     KEY `idx_upload` (`id_upload`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_assistant - one row per assistant the merchant connected for the chat
+-- built into the back office: a provider, the merchant's own API key and how
+-- much model they want to pay for.
+--
+-- `api_key` is encrypted with the shop's own key before it is stored, so a
+-- database dump alone does not hand out the merchant's provider account.
+-- `model` is empty unless the merchant picked one by hand: the level then
+-- resolves to the newest model of that tier, read from the provider.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
+    `id_assistant`   INT(11)      NOT NULL AUTO_INCREMENT,
+    `provider`       VARCHAR(32)  NOT NULL,
+    `api_key`        TEXT         NOT NULL,
+    `level`          VARCHAR(16)  NOT NULL DEFAULT 'economy' COMMENT 'economy, balanced or power',
+    `model`          VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'chosen by hand, overrides the level',
+    `resolved_model` VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'what the level resolved to last time',
+    `resolved_at`    DATETIME     DEFAULT NULL,
+    `role`           VARCHAR(255) NOT NULL DEFAULT '',
+    `active`         TINYINT(1)   NOT NULL DEFAULT 1,
+    `is_default`     TINYINT(1)   NOT NULL DEFAULT 0,
+    `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `date_upd`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id_assistant`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_assistant_usage - what each assistant consumed, per calendar month.
+-- The monthly cap is checked against the sum of `cost` before every call.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_usage` (
+    `id_assistant`   INT(11)        NOT NULL,
+    `month`          CHAR(7)        NOT NULL COMMENT 'YYYY-MM',
+    `input_tokens`   BIGINT         NOT NULL DEFAULT 0,
+    `output_tokens`  BIGINT         NOT NULL DEFAULT 0,
+    `cost`           DECIMAL(14,6)  NOT NULL DEFAULT 0 COMMENT 'US dollars, estimated from public prices',
+    PRIMARY KEY (`id_assistant`, `month`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_assistant_thread - one row per conversation, and who it belongs to.
+-- The framework behind the chat keys everything by thread id and checks no
+-- ownership itself, so an employee only ever reaches a thread listed here
+-- under their own id.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_thread` (
+    `id_thread`      INT(11)      NOT NULL AUTO_INCREMENT,
+    `thread_id`      VARCHAR(64)  NOT NULL,
+    `id_employee`    INT(11)      NOT NULL,
+    `id_shop`        INT(11)      NOT NULL DEFAULT 1,
+    `id_assistant`   INT(11)      NOT NULL DEFAULT 0 COMMENT 'picked by hand in the chat, 0 for the default one',
+    `title`          VARCHAR(255) NOT NULL DEFAULT '',
+    `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `date_upd`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id_thread`),
+    UNIQUE KEY `uq_thread_id` (`thread_id`),
+    KEY `idx_employee` (`id_employee`, `date_upd`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_assistant_message - the messages of every conversation, in the shape
+-- Neuron AI's SQL message store reads and writes. The identifiers are binary
+-- because the store needs them compared exactly, which a case-insensitive
+-- collation would not do.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_message` (
+    `id`             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `thread_id`      VARBINARY(255)  NOT NULL,
+    `message_id`     VARBINARY(64)   NOT NULL,
+    `role`           VARCHAR(32)     NOT NULL,
+    `content`        LONGTEXT        NULL,
+    `meta`           LONGTEXT        NULL,
+    `archived_at`    DATETIME        NULL,
+    `created_at`     DATETIME        DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_thread_message` (`thread_id`, `message_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_assistant_run - where Neuron AI keeps a conversation that is waiting:
+-- for the merchant to approve a change, or for the next step of a tool. Its
+-- own encoding, ASCII only, as the framework requires.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_run` (
+    `partition`      VARCHAR(510) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    `key`            VARCHAR(510) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    `value`          LONGTEXT CHARACTER SET ascii NOT NULL,
+    `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`partition`, `key`)
+) ENGINE=InnoDB;

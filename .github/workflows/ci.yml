@@ -68,6 +68,10 @@ jobs:
           coverage: none
       - name: Install dev tools
         run: composer install --working-dir=dev/tools --no-interaction --no-progress
+      # The module's own dependencies, which PHPStan reads to check the calls
+      # the built-in assistant makes to Neuron AI.
+      - name: Install the module dependencies
+        run: composer install --no-dev --no-interaction --no-progress
       - name: Analyse inside the PrestaShop image
         run: |
           docker run --rm \
@@ -140,6 +144,10 @@ jobs:
             symfony/yaml:^${{ matrix.symfony }} \
             symfony/routing:^${{ matrix.symfony }} \
             symfony/http-foundation:^${{ matrix.symfony }}
+      # The module's own autoloader, which the script loads: Composer writes
+      # it, as the builds do for the archive.
+      - name: Module dependencies
+        run: composer install --no-dev --no-interaction --no-progress
       - name: Compile services.yml and resolve routes.yml
         run: php .github/scripts/compile-container.php "$RUNNER_TEMP/sf/vendor" .
 
@@ -184,6 +192,39 @@ jobs:
         run: |
           curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v$GITLEAKS_VERSION/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz -C /tmp gitleaks
           /tmp/gitleaks git --no-banner --redact --exit-code 1 .
+  dependencies:
+    # Neuron AI runs the built-in assistant, and it moves fast: the version is
+    # pinned in composer.json, nothing changes without a commit, and this job
+    # watches what the pin brings in. Known vulnerabilities fail it. So does a
+    # class of the pruned archive that no longer loads, or a part of Neuron's
+    # API the module calls that is gone or changed shape - which is how an
+    # upgrade that would break the chat shows up here and not in a shop.
+    # The weekly Dependencies workflow says when a newer version is out.
+    name: Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+      - name: composer.json is valid
+        run: composer validate --no-check-publish --no-check-lock
+      - name: Install
+        run: composer install --no-dev --no-interaction --no-progress --optimize-autoloader
+      - name: Known vulnerabilities
+        run: composer audit --no-dev --locked --abandoned=report
+      - name: The API the assistant calls is still there
+        run: php dev/package/contract.php .
+      - name: Every class of the pruned archive loads
+        run: |
+          mkdir -p /tmp/pack/somcp
+          git archive HEAD | tar -x -C /tmp/pack/somcp
+          cp -r vendor /tmp/pack/somcp/vendor
+          dev/package/prune.sh /tmp/pack/somcp
+          php dev/package/loads.php /tmp/pack/somcp
+
   shop:
     # Every tool called for real, then PHPStan, on each published PrestaShop
     # 8 and 9 with each PHP version that release accepts. The other jobs read
@@ -198,7 +239,7 @@ jobs:
     # a failed job counts against the commit even when the run is allowed to
     # pass, and every commit would show a red cross for PrestaShop's sake.
     name: PrestaShop ${{ matrix.prestashop }} on PHP ${{ matrix.php }}${{ matrix.unsupported && ' (unsupported by PrestaShop)' || '' }}
-    needs: [lint, tools, security]
+    needs: [lint, tools, security, dependencies]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -450,6 +491,10 @@ jobs:
           # export-ignore keeps out of the package.
           mkdir shop/modules/somcp
           git -C module archive HEAD | tar -x -C shop/modules/somcp
+          # The builds add vendor/ the same way. Not pruned here: the test of
+          # the assistant drives it with Neuron AI's own fake provider, which
+          # the archive leaves out. The dependency job checks the pruned copy.
+          composer install --working-dir=shop/modules/somcp --no-dev --no-interaction --no-progress --optimize-autoloader
           set -o pipefail
           php shop/bin/console prestashop:module install somcp 2>&1 | tee module.log \
             || { echo "::error title=Module install failed::$(tail -n 40 module.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
@@ -464,6 +509,10 @@ jobs:
         continue-on-error: ${{ matrix.unsupported }}
         if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
         run: composer install --working-dir=module/dev/tools --no-interaction --no-progress
+      - name: Module dependencies for PHPStan
+        continue-on-error: ${{ matrix.unsupported }}
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        run: composer install --working-dir=module --no-dev --no-interaction --no-progress
       - name: PHPStan
         continue-on-error: ${{ matrix.unsupported }}
         if: ${{ !cancelled() && steps.deps.outcome == 'success' }}

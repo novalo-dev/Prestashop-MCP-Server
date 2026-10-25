@@ -27,6 +27,37 @@
     margin-bottom: 15px;
 }
 
+/* Seven tabs on one line. Where the screen is too narrow for them, the bar
+   scrolls sideways instead of wrapping onto a second row, which would push the
+   active tab away from its pane. Flex on both back office themes: Bootstrap 3
+   floats the items, Bootstrap 4 wraps them. */
+.somcp .somcp-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.somcp .somcp-tabs::before,
+.somcp .somcp-tabs::after {
+    display: none;
+}
+
+.somcp .somcp-tabs > li {
+    float: none;
+    flex: 0 0 auto;
+}
+
+.somcp .somcp-tabs > li > a {
+    white-space: nowrap;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.somcp .somcp-row-actions {
+    display: inline-block;
+}
+
 .somcp .somcp-pane[hidden] {
     display: none;
 }

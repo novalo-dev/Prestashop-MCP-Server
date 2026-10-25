@@ -74,7 +74,10 @@
 
             // A diagnostic just run is shown on the first tab, whatever tab the
             // merchant last had open: they pressed the button to read it.
-            var start = /[?&]somcp_diag=/.test(window.location.search) ? 'config' : remembered;
+            // The assistant form opens on its own tab: the merchant clicked
+            // Add or Edit there, whatever tab was remembered before.
+            var start = /[?&]somcp_diag=/.test(window.location.search) ? 'config'
+                : (/[?&]somcp_assistant_(edit|add)=/.test(window.location.search) ? 'assistant' : remembered);
             if (!start || !show(start)) {
                 show(links[0].getAttribute('data-somcp-tab'));
             }
@@ -84,6 +87,15 @@
         // of the back office: a merchant who turns it off in an emergency must
         // not also have to find a Save button in another tab. A switch that
         // belongs to another form names the action it submits.
+        // A removal asks first, in the merchant's language.
+        document.querySelectorAll('[data-somcp-confirm]').forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                if (!window.confirm(button.getAttribute('data-somcp-confirm'))) {
+                    event.preventDefault();
+                }
+            });
+        });
+
         document.querySelectorAll('[data-somcp-autosave]').forEach(function (field) {
             field.addEventListener('change', function () {
                 var form = field.form;

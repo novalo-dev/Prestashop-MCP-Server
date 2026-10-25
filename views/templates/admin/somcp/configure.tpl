@@ -41,6 +41,7 @@
                 {if $somcp_consents}<span class="badge">{count($somcp_consents)|intval}</span>{/if}
             </a>
         </li>
+        <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-assistant" role="tab" data-somcp-tab="assistant">{l s='Built-in assistant' d='Modules.Somcp.Admin'}</a></li>
         <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-log" role="tab" data-somcp-tab="log">{l s='Security log' d='Modules.Somcp.Admin'}</a></li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#somcp-pane-help" role="tab" data-somcp-tab="help">
@@ -468,6 +469,194 @@
             <p class="text-muted">{l s='No assistant is connected to this shop yet.' d='Modules.Somcp.Admin'}</p>
         {/if}
         </div>
+    </div>
+
+    {* The chat built into the back office. Same panels and table as the
+       Connected assistants tab, and the Edit button of PrestaShop's own lists,
+       so the two tabs read as one family. *}
+    <div class="somcp-pane" id="somcp-pane-assistant" data-somcp-pane="assistant" role="tabpanel" hidden>
+    {if !$somcp_assistant_ready}
+        <div class="alert alert-warning">{l s='The files of the assistant are missing from this copy of the module. Install the module from its release zip.' d='Modules.Somcp.Admin'}</div>
+    {/if}
+
+    {if $somcp_assistant_edit}
+        <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="defaultForm form-horizontal">
+            <input type="hidden" name="id_assistant" value="{$somcp_assistant_edit.id_assistant|intval}">
+            <div class="panel">
+                <div class="panel-heading">
+                    {if $somcp_assistant_edit.id_assistant}{l s='Edit the assistant' d='Modules.Somcp.Admin'}{else}{l s='Add an assistant' d='Modules.Somcp.Admin'}{/if}
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3 required">{l s='Assistant' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <select name="somcp_assistant_provider" class="form-control">
+                        {foreach from=$somcp_assistant_providers key=providerId item=provider}
+                            <option value="{$providerId|escape:'html':'UTF-8'}"{if $somcp_assistant_edit.provider === $providerId} selected{/if}>{$provider.label|escape:'html':'UTF-8'}</option>
+                        {/foreach}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3{if !$somcp_assistant_edit.has_key} required{/if}">{l s='API key' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <input type="password" name="somcp_assistant_key" class="form-control" autocomplete="off" value=""{if !$somcp_assistant_edit.has_key} required{/if}>
+                        <p class="help-block">
+                            {if $somcp_assistant_edit.has_key}{l s='Leave empty to keep the key already saved.' d='Modules.Somcp.Admin'}{/if}
+                            {l s='The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead.' d='Modules.Somcp.Admin'}
+                        </p>
+                        <p class="help-block">
+                        {foreach from=$somcp_assistant_providers key=providerId item=provider name=keys}
+                            <a href="{$provider.key_url|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">{$provider.label|escape:'html':'UTF-8'}</a>{if !$smarty.foreach.keys.last} &middot; {/if}
+                        {/foreach}
+                        </p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Level' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <div class="radio"><label><input type="radio" name="somcp_assistant_level" value="economy"{if $somcp_assistant_edit.level === 'economy'} checked{/if}> <strong>{l s='Economy' d='Modules.Somcp.Admin'}</strong> - {l s='fast and inexpensive, enough for most tasks' d='Modules.Somcp.Admin'}</label></div>
+                        <div class="radio"><label><input type="radio" name="somcp_assistant_level" value="balanced"{if $somcp_assistant_edit.level === 'balanced'} checked{/if}> <strong>{l s='Balanced' d='Modules.Somcp.Admin'}</strong> - {l s='finer for texts and SEO' d='Modules.Somcp.Admin'}</label></div>
+                        <div class="radio"><label><input type="radio" name="somcp_assistant_level" value="power"{if $somcp_assistant_edit.level === 'power'} checked{/if}> <strong>{l s='Powerful' d='Modules.Somcp.Admin'}</strong> - {l s='the most capable, clearly more expensive' d='Modules.Somcp.Admin'}</label></div>
+                        <p class="help-block">{l s='The module always takes the newest model of the chosen level, without an update.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Role' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <input type="text" name="somcp_assistant_role" class="form-control" maxlength="255" value="{$somcp_assistant_edit.role|escape:'html':'UTF-8'}">
+                        <p class="help-block">{l s='For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Active' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <span class="switch prestashop-switch fixed-width-lg">
+                            <input type="radio" name="somcp_assistant_active" id="somcp_assistant_active_on" value="1"{if $somcp_assistant_edit.active} checked{/if}>
+                            <label for="somcp_assistant_active_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
+                            <input type="radio" name="somcp_assistant_active" id="somcp_assistant_active_off" value="0"{if !$somcp_assistant_edit.active} checked{/if}>
+                            <label for="somcp_assistant_active_off">{l s='No' d='Modules.Somcp.Admin'}</label>
+                            <a class="slide-button btn"></a>
+                        </span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Exact model' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <input type="text" name="somcp_assistant_model" class="form-control" maxlength="128" value="{$somcp_assistant_edit.model|escape:'html':'UTF-8'}">
+                        <p class="help-block">{l s='Advanced. Leave empty to follow the level. Required for Ollama if your server has several models.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}"><i class="process-icon-cancel"></i> {l s='Cancel' d='Modules.Somcp.Admin'}</a>
+                    <button type="submit" name="submitSomcpAssistant" value="1" class="btn btn-default pull-right"><i class="process-icon-save"></i> {l s='Save' d='Modules.Somcp.Admin'}</button>
+                </div>
+            </div>
+        </form>
+    {/if}
+
+        <div class="panel">
+            <div class="panel-heading"><i class="icon-comments"></i> {l s='Your assistants' d='Modules.Somcp.Admin'}</div>
+            <p class="help-block">{l s='The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.' d='Modules.Somcp.Admin'}</p>
+        {if $somcp_assistants}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{l s='Assistant' d='Modules.Somcp.Admin'}</th>
+                        <th>{l s='Role' d='Modules.Somcp.Admin'}</th>
+                        <th>{l s='Level' d='Modules.Somcp.Admin'}</th>
+                        <th>{l s='Model' d='Modules.Somcp.Admin'}</th>
+                        <th class="text-right">{l s='This month' d='Modules.Somcp.Admin'}</th>
+                        <th class="text-center">{l s='Active' d='Modules.Somcp.Admin'}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {foreach from=$somcp_assistants item=assistant}
+                    <tr>
+                        <td>
+                            {$assistant.label|escape:'html':'UTF-8'}
+                            {if $assistant.is_default}<span class="badge badge-info">{l s='Default' d='Modules.Somcp.Admin'}</span>{/if}
+                        </td>
+                        <td>{if $assistant.role}{$assistant.role|escape:'html':'UTF-8'}{else}<span class="text-muted">{l s='Everything' d='Modules.Somcp.Admin'}</span>{/if}</td>
+                        <td>
+                            {if $assistant.level === 'power'}{l s='Powerful' d='Modules.Somcp.Admin'}
+                            {elseif $assistant.level === 'balanced'}{l s='Balanced' d='Modules.Somcp.Admin'}
+                            {else}{l s='Economy' d='Modules.Somcp.Admin'}{/if}
+                        </td>
+                        <td>
+                            {if $assistant.model}<code>{$assistant.model|escape:'html':'UTF-8'}</code>
+                            {elseif $assistant.resolved_model}<code>{$assistant.resolved_model|escape:'html':'UTF-8'}</code>
+                            {else}<span class="text-muted">{l s='not checked yet' d='Modules.Somcp.Admin'}</span>{/if}
+                        </td>
+                        <td class="text-right">{if isset($somcp_assistant_costs[$assistant.id_assistant])}${$somcp_assistant_costs[$assistant.id_assistant]|floatval|string_format:'%.2f'}{else}$0.00{/if}</td>
+                        <td class="text-center">
+                            {if $assistant.active}<i class="icon-check text-success"></i>{else}<i class="icon-remove text-danger"></i>{/if}
+                        </td>
+                        <td class="text-right">
+                            <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="somcp-row-actions">
+                                <input type="hidden" name="id_assistant" value="{$assistant.id_assistant|intval}">
+                                <div class="btn-group">
+                                    <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_assistant_edit={$assistant.id_assistant|intval}">
+                                        <i class="icon-pencil"></i> {l s='Edit' d='Modules.Somcp.Admin'}
+                                    </a>
+                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                        <i class="icon-caret-down"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-right">
+                                        <li><button type="submit" name="submitSomcpAssistantTest" value="1" class="btn btn-link"><i class="icon-refresh"></i> {l s='Test the key' d='Modules.Somcp.Admin'}</button></li>
+                                        {if !$assistant.is_default}
+                                            <li><button type="submit" name="submitSomcpAssistantDefault" value="1" class="btn btn-link"><i class="icon-star"></i> {l s='Make default' d='Modules.Somcp.Admin'}</button></li>
+                                        {/if}
+                                        <li class="divider"></li>
+                                        <li><button type="submit" name="submitSomcpAssistantDelete" value="1" class="btn btn-link" data-somcp-confirm="{l s='Remove this assistant?' d='Modules.Somcp.Admin'}"><i class="icon-trash"></i> {l s='Remove' d='Modules.Somcp.Admin'}</button></li>
+                                    </ul>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                {/foreach}
+                </tbody>
+            </table>
+        {else}
+            <p class="text-muted">{l s='No assistant yet. Add one with your own API key to get the chat.' d='Modules.Somcp.Admin'}</p>
+        {/if}
+            <div class="panel-footer">
+                <a class="btn btn-default pull-right" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_assistant_add=1"><i class="process-icon-new"></i> {l s='Add an assistant' d='Modules.Somcp.Admin'}</a>
+            </div>
+        </div>
+
+        <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="defaultForm form-horizontal">
+            <div class="panel">
+                <div class="panel-heading"><i class="icon-cogs"></i> {l s='Settings' d='Modules.Somcp.Admin'}</div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Monthly cap, all assistants' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <div class="input-group fixed-width-lg">
+                            <span class="input-group-addon">$</span>
+                            <input type="number" min="0" step="0.5" name="SOMCP_ASSISTANT_BUDGET" class="form-control" value="{$somcp_assistant_budget|floatval}">
+                        </div>
+                        <p class="help-block">
+                            {l s='This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.' sprintf=['%spent%' => ($somcp_assistant_spent|string_format:'%.2f')] d='Modules.Somcp.Admin'}
+                            {l s='Estimated in US dollars from the public prices of each provider, the currency they bill in.' d='Modules.Somcp.Admin'}
+                        </p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Instructions for the shop' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <textarea name="SOMCP_ASSISTANT_INSTRUCTIONS" class="form-control" rows="4" maxlength="4000">{$somcp_assistant_instructions|escape:'html':'UTF-8'}</textarea>
+                        <p class="help-block">{l s='Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <button type="submit" name="submitSomcpAssistantSettings" value="1" class="btn btn-default pull-right"><i class="process-icon-save"></i> {l s='Save' d='Modules.Somcp.Admin'}</button>
+                </div>
+            </div>
+        </form>
+
+        <p class="somcp-foot text-center text-muted">
+            {l s='Powered by' d='Modules.Somcp.Admin'} <a href="https://github.com/neuron-core/neuron-ai" target="_blank" rel="noopener noreferrer">Neuron AI</a>
+        </p>
     </div>
 
     <div class="somcp-pane" id="somcp-pane-log" data-somcp-pane="log" role="tabpanel" hidden>

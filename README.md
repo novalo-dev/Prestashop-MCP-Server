@@ -28,9 +28,8 @@ us. See [Where to help](#where-to-help).
 
 ## What it does
 
-- **Serves MCP from inside PrestaShop.** No separate service, no Node process,
-  no dependency beyond PrestaShop itself. The endpoint is a module front
-  controller.
+- **Serves MCP from inside PrestaShop.** No separate service, no Node process.
+  The endpoint is a module front controller.
 - **Runs its own OAuth 2.1 authorization server**: discovery documents (RFC 9728
   and RFC 8414), PKCE S256, dynamic client registration and client ID metadata
   documents, refresh token rotation with reuse detection. Tokens are stored
@@ -46,6 +45,12 @@ us. See [Where to help](#where-to-help).
 - **Lets any module publish tools and prompts** through two hooks, by returning
   arrays. No dependency on somcp's classes, so those modules still pass the
   Addons validator. See [docs/EXTENDING.md](docs/EXTENDING.md).
+- **Has a built-in assistant in the back office.** A chat button at the top
+  right of every page opens a conversation with the AI the merchant connected
+  with their own API key (Claude, ChatGPT, Gemini, Mistral, DeepSeek, Grok,
+  Cohere or Ollama). It uses the same tools, with the rights of the employee
+  signed in, and asks for approval before any change. Several assistants can
+  share the work by role. Runs on [Neuron AI](https://github.com/neuron-core/neuron-ai).
 - **Speaks both eras of the protocol** from one endpoint: the stateless
   `2026-07-28` revision, with questions in the middle of a call, and the
   `2025-11-25`, `2025-06-18` and `2025-03-26` revisions.
@@ -121,7 +126,13 @@ changing an order status, managing products, and checking stock. Details of ever
    git clone https://github.com/novalo-dev/Prestashop-MCP-Server.git somcp
    ```
 
-2. Install it from **Modules > Module Manager**, then open its settings.
+2. Install the module's dependencies, then install it from **Modules > Module
+   Manager** and open its settings:
+
+   ```bash
+   cd somcp && composer install --no-dev
+   ```
+
 3. Copy the **address to give to your assistant**. It looks like
    `https://your-shop.example/module/somcp/mcp`.
 4. Press **Run the diagnostic**. Every line should be green before you connect a

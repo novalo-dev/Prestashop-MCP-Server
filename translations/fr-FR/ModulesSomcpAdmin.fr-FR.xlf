@@ -1267,6 +1267,341 @@
       <source>GitHub could not be reached. Try again later.</source>
       <target>GitHub n'a pas pu être joint. Réessayez plus tard.</target>
     </trans-unit>
+    <!-- Built-in assistant -->
+    <trans-unit id="c27bb80ef4449445971f7928c2e519b3" resname="Built-in assistant">
+      <source>Built-in assistant</source>
+      <target>Assistant intégré</target>
+    </trans-unit>
+    <!-- Acts with your rights and asks before any change -->
+    <trans-unit id="f61effb71b3429653b792c1774b19bf5" resname="Acts with your rights and asks before any change">
+      <source>Acts with your rights and asks before any change</source>
+      <target>Agit avec vos droits et demande avant toute modification</target>
+    </trans-unit>
+    <!-- Open the built-in assistant -->
+    <trans-unit id="1b72d410632684cbac420a95d9a3cebc" resname="Open the built-in assistant">
+      <source>Open the built-in assistant</source>
+      <target>Ouvrir l'assistant intégré</target>
+    </trans-unit>
+    <!-- Close -->
+    <trans-unit id="d3d2e617335f08df83599665eef8a418" resname="Close">
+      <source>Close</source>
+      <target>Fermer</target>
+    </trans-unit>
+    <!-- Write your message... -->
+    <trans-unit id="869a3d44483465d3f21681c6bcf47ebd" resname="Write your message...">
+      <source>Write your message...</source>
+      <target>Écrivez votre message…</target>
+    </trans-unit>
+    <!-- Hello! What can I do for the shop? -->
+    <trans-unit id="15a7e05a7d47782999e55459c9576efb" resname="Hello! What can I do for the shop?">
+      <source>Hello! What can I do for the shop?</source>
+      <target>Bonjour ! Que puis-je faire pour la boutique ?</target>
+    </trans-unit>
+    <!-- New conversation -->
+    <trans-unit id="573ffea6fec9bfdbf9bf4f85e8562d78" resname="New conversation">
+      <source>New conversation</source>
+      <target>Nouvelle conversation</target>
+    </trans-unit>
+    <!-- Conversations -->
+    <trans-unit id="f004c5e3e7d457125a022d239dce8b8e" resname="Conversations">
+      <source>Conversations</source>
+      <target>Conversations</target>
+    </trans-unit>
+    <!-- Delete this conversation -->
+    <trans-unit id="49ebed8ecd50e58d994a84edc11c5692" resname="Delete this conversation">
+      <source>Delete this conversation</source>
+      <target>Supprimer cette conversation</target>
+    </trans-unit>
+    <!-- Default assistant -->
+    <trans-unit id="1cc614a623e7431a0f4240f034523c00" resname="Default assistant">
+      <source>Default assistant</source>
+      <target>Assistant par défaut</target>
+    </trans-unit>
+    <!-- Confirmation requested -->
+    <trans-unit id="b4bfecd0d321f54ddb01ac288f33cdc9" resname="Confirmation requested">
+      <source>Confirmation requested</source>
+      <target>Confirmation demandée</target>
+    </trans-unit>
+    <!-- Approve -->
+    <trans-unit id="6f7351657f795bc1357a53142b1184cc" resname="Approve">
+      <source>Approve</source>
+      <target>Approuver</target>
+    </trans-unit>
+    <!-- Approved -->
+    <trans-unit id="6f8063417ab31f38d864c28302f3de2f" resname="Approved">
+      <source>Approved</source>
+      <target>Approuvé</target>
+    </trans-unit>
+    <!-- Refused -->
+    <trans-unit id="f48b206184b7442983452ea4c3e88a3a" resname="Refused">
+      <source>Refused</source>
+      <target>Refusé</target>
+    </trans-unit>
+    <!-- Working... -->
+    <trans-unit id="9c8a77ee3bca206e3dfab19d94eb5127" resname="Working...">
+      <source>Working...</source>
+      <target>En cours…</target>
+    </trans-unit>
+    <!-- This month: %spent% -->
+    <trans-unit id="a75e924a56bc92c5ccb7c910e9cbc75b" resname="This month: %spent%">
+      <source>This month: %spent%</source>
+      <target>Ce mois-ci : %spent%</target>
+    </trans-unit>
+    <!-- This month: %spent% of %budget% -->
+    <trans-unit id="70e97c664623ca21a39ca0e93ce4a44e" resname="This month: %spent% of %budget%">
+      <source>This month: %spent% of %budget%</source>
+      <target>Ce mois-ci : %spent% sur %budget%</target>
+    </trans-unit>
+    <!-- Something went wrong. Try again. -->
+    <trans-unit id="31a5bcc383c3f166b58b66b16feb347a" resname="Something went wrong. Try again.">
+      <source>Something went wrong. Try again.</source>
+      <target>Un problème est survenu. Réessayez.</target>
+    </trans-unit>
+    <!-- Powered by -->
+    <trans-unit id="7a52e36bf4a1caa031c75a742fb9927a" resname="Powered by">
+      <source>Powered by</source>
+      <target>Propulsé par</target>
+    </trans-unit>
+    <!-- The key works. Model in use: %model%. -->
+    <trans-unit id="cf878182d20a22f15020e32a348148e9" resname="The key works. Model in use: %model%.">
+      <source>The key works. Model in use: %model%.</source>
+      <target>La clé fonctionne. Modèle utilisé : %model%.</target>
+    </trans-unit>
+    <!-- The provider refused the key or did not answer. Check the key and try again. -->
+    <trans-unit id="65369c127c60eb0121b36f7ab479ec3d" resname="The provider refused the key or did not answer. Check the key and try again.">
+      <source>The provider refused the key or did not answer. Check the key and try again.</source>
+      <target>Le fournisseur a refusé la clé ou n'a pas répondu. Vérifiez la clé et réessayez.</target>
+    </trans-unit>
+    <!-- The assistant has been removed. -->
+    <trans-unit id="5d727fa3a7fe4e8d0178e29760ad40a7" resname="The assistant has been removed.">
+      <source>The assistant has been removed.</source>
+      <target>L'assistant a été retiré.</target>
+    </trans-unit>
+    <!-- Assistant saved. The key works. Model in use: %model%. -->
+    <trans-unit id="17a31ca60217fef3537e2962885220af" resname="Assistant saved. The key works. Model in use: %model%.">
+      <source>Assistant saved. The key works. Model in use: %model%.</source>
+      <target>Assistant enregistré. La clé fonctionne. Modèle utilisé : %model%.</target>
+    </trans-unit>
+    <!-- Assistant saved, but the provider refused the key or did not answer. Check the key. -->
+    <trans-unit id="c131e8a695b79a521918d0bc52b5bfd5" resname="Assistant saved, but the provider refused the key or did not answer. Check the key.">
+      <source>Assistant saved, but the provider refused the key or did not answer. Check the key.</source>
+      <target>Assistant enregistré, mais le fournisseur a refusé la clé ou n'a pas répondu. Vérifiez la clé.</target>
+    </trans-unit>
+    <!-- No assistant is switched on. Add one in the module settings. -->
+    <trans-unit id="d7268d8ca828f5832b38fa829d36d0d5" resname="No assistant is switched on. Add one in the module settings.">
+      <source>No assistant is switched on. Add one in the module settings.</source>
+      <target>Aucun assistant n'est activé. Ajoutez-en un dans les réglages du module.</target>
+    </trans-unit>
+    <!-- The monthly spending cap is reached. Raise it in the module settings to keep chatting. -->
+    <trans-unit id="48633de4aae59072250413a205b4814a" resname="The monthly spending cap is reached. Raise it in the module settings to keep chatting.">
+      <source>The monthly spending cap is reached. Raise it in the module settings to keep chatting.</source>
+      <target>Le plafond mensuel de dépenses est atteint. Relevez-le dans les réglages du module pour continuer.</target>
+    </trans-unit>
+    <!-- Answer the change waiting for your approval first. -->
+    <trans-unit id="67409127c5e8655e91544f4feb7ce0b7" resname="Answer the change waiting for your approval first.">
+      <source>Answer the change waiting for your approval first.</source>
+      <target>Répondez d'abord à la modification qui attend votre accord.</target>
+    </trans-unit>
+    <!-- The assistant could not answer. Check its key in the module settings, then try again. -->
+    <trans-unit id="5434f7febd02d67b759ba0e511edd1d9" resname="The assistant could not answer. Check its key in the module settings, then try again.">
+      <source>The assistant could not answer. Check its key in the module settings, then try again.</source>
+      <target>L'assistant n'a pas pu répondre. Vérifiez sa clé dans les réglages du module, puis réessayez.</target>
+    </trans-unit>
+    <!-- Ask another assistant -->
+    <trans-unit id="615e05ec7bda738caa966dbd0c13fce5" resname="Ask another assistant">
+      <source>Ask another assistant</source>
+      <target>Demander à un autre assistant</target>
+    </trans-unit>
+    <!-- The files of the assistant are missing from this copy of the module. Install the module from its release zip. -->
+    <trans-unit id="0f3a1d570c146da3187f66185c9c4fb5" resname="The files of the assistant are missing from this copy of the module. Install the module from its release zip.">
+      <source>The files of the assistant are missing from this copy of the module. Install the module from its release zip.</source>
+      <target>Les fichiers de l'assistant manquent dans cette copie du module. Installez le module depuis le zip de sa version.</target>
+    </trans-unit>
+    <!-- Edit the assistant -->
+    <trans-unit id="1bfb39f857ef076837da95e30de22458" resname="Edit the assistant">
+      <source>Edit the assistant</source>
+      <target>Modifier l'assistant</target>
+    </trans-unit>
+    <!-- Add an assistant -->
+    <trans-unit id="2c3ecf1cd0b57db8889f202e1e59a334" resname="Add an assistant">
+      <source>Add an assistant</source>
+      <target>Ajouter un assistant</target>
+    </trans-unit>
+    <!-- Assistant -->
+    <trans-unit id="9b1363da9503dbd4142c0274a88e8d4b" resname="Assistant">
+      <source>Assistant</source>
+      <target>Assistant</target>
+    </trans-unit>
+    <!-- API key -->
+    <trans-unit id="656a6828d7ef1bb791e42087c4b5ee6e" resname="API key">
+      <source>API key</source>
+      <target>Clé API</target>
+    </trans-unit>
+    <!-- Leave empty to keep the key already saved. -->
+    <trans-unit id="6dcead59cd7bc1003765f0be8baf139c" resname="Leave empty to keep the key already saved.">
+      <source>Leave empty to keep the key already saved.</source>
+      <target>Laissez vide pour garder la clé déjà enregistrée.</target>
+    </trans-unit>
+    <!-- The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead. -->
+    <trans-unit id="da83320971e274328cacae45a5855e77" resname="The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead.">
+      <source>The key is stored encrypted on your shop and only sent to the provider you picked. For Ollama, give the address of your server instead.</source>
+      <target>La clé est stockée chiffrée sur votre boutique et envoyée uniquement au fournisseur choisi. Pour Ollama, indiquez plutôt l'adresse de votre serveur.</target>
+    </trans-unit>
+    <!-- Level -->
+    <trans-unit id="a0db49ba470c1c9ae2128c3470339153" resname="Level">
+      <source>Level</source>
+      <target>Niveau</target>
+    </trans-unit>
+    <!-- Economy -->
+    <trans-unit id="8afc1f2760cfc2d63b8f0e9ddb1b6f39" resname="Economy">
+      <source>Economy</source>
+      <target>Économique</target>
+    </trans-unit>
+    <!-- fast and inexpensive, enough for most tasks -->
+    <trans-unit id="f2d33646b94d7181862110dbcc561266" resname="fast and inexpensive, enough for most tasks">
+      <source>fast and inexpensive, enough for most tasks</source>
+      <target>rapide et peu cher, suffit pour la plupart des tâches</target>
+    </trans-unit>
+    <!-- Balanced -->
+    <trans-unit id="c6589f5236c0c434d0c63dc5f9a856f2" resname="Balanced">
+      <source>Balanced</source>
+      <target>Équilibré</target>
+    </trans-unit>
+    <!-- finer for texts and SEO -->
+    <trans-unit id="58cac80fbf300c70df5a959d3c49cf38" resname="finer for texts and SEO">
+      <source>finer for texts and SEO</source>
+      <target>plus fin pour les textes et le SEO</target>
+    </trans-unit>
+    <!-- Powerful -->
+    <trans-unit id="42f7a5c8ba7f943ae22164aa3e3a04f8" resname="Powerful">
+      <source>Powerful</source>
+      <target>Puissant</target>
+    </trans-unit>
+    <!-- the most capable, clearly more expensive -->
+    <trans-unit id="6464048b53fb01bfc8eace3c615d777d" resname="the most capable, clearly more expensive">
+      <source>the most capable, clearly more expensive</source>
+      <target>le plus capable, nettement plus cher</target>
+    </trans-unit>
+    <!-- The module always takes the newest model of the chosen level, without an update. -->
+    <trans-unit id="56f1cef7ae8b6076e60a08be4ca33826" resname="The module always takes the newest model of the chosen level, without an update.">
+      <source>The module always takes the newest model of the chosen level, without an update.</source>
+      <target>Le module prend toujours le modèle le plus récent du niveau choisi, sans mise à jour.</target>
+    </trans-unit>
+    <!-- Role -->
+    <trans-unit id="bbbabdbe1b262f75d99d62880b953be1" resname="Role">
+      <source>Role</source>
+      <target>Rôle</target>
+    </trans-unit>
+    <!-- For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role. -->
+    <trans-unit id="5f9ba197a927c22de53436204b702e04" resname="For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.">
+      <source>For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.</source>
+      <target>Par exemple : SEO et fiches produits. Facultatif : avec un seul assistant activé, il fait tout. Avec plusieurs, celui par défaut confie à chacun le travail de son rôle.</target>
+    </trans-unit>
+    <!-- Active -->
+    <trans-unit id="4d3d769b812b6faa6b76e1a8abaece2d" resname="Active">
+      <source>Active</source>
+      <target>Actif</target>
+    </trans-unit>
+    <!-- Exact model -->
+    <trans-unit id="bf05ac87def68c6d9b3cf7d4f81c246e" resname="Exact model">
+      <source>Exact model</source>
+      <target>Modèle exact</target>
+    </trans-unit>
+    <!-- Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. -->
+    <trans-unit id="4c3d8f87b517005e2756691203a6da9d" resname="Advanced. Leave empty to follow the level. Required for Ollama if your server has several models.">
+      <source>Advanced. Leave empty to follow the level. Required for Ollama if your server has several models.</source>
+      <target>Avancé. Laissez vide pour suivre le niveau. Obligatoire pour Ollama si votre serveur a plusieurs modèles.</target>
+    </trans-unit>
+    <!-- Cancel -->
+    <trans-unit id="ea4788705e6873b424c65e91c2846b19" resname="Cancel">
+      <source>Cancel</source>
+      <target>Annuler</target>
+    </trans-unit>
+    <!-- Your assistants -->
+    <trans-unit id="c41fc3a0a61d4d6383c71707722debfe" resname="Your assistants">
+      <source>Your assistants</source>
+      <target>Vos assistants</target>
+    </trans-unit>
+    <!-- The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role. -->
+    <trans-unit id="35b449823f65726fb1102525b7587a57" resname="The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.">
+      <source>The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.</source>
+      <target>Le chat s'ouvre avec le bouton en haut à droite de chaque page du back-office. Il agit avec les droits de l'employé connecté et demande votre accord avant toute modification. Un seul assistant activé fait tout ; avec plusieurs, chacun prend son rôle.</target>
+    </trans-unit>
+    <!-- Model -->
+    <trans-unit id="a559b87068921eec05086ce5485e9784" resname="Model">
+      <source>Model</source>
+      <target>Modèle</target>
+    </trans-unit>
+    <!-- This month -->
+    <trans-unit id="96165d6df5c2fc0a2d2049848c130c1c" resname="This month">
+      <source>This month</source>
+      <target>Ce mois-ci</target>
+    </trans-unit>
+    <!-- Default -->
+    <trans-unit id="7a1920d61156abc05a60135aefe8bc67" resname="Default">
+      <source>Default</source>
+      <target>Par défaut</target>
+    </trans-unit>
+    <!-- Everything -->
+    <trans-unit id="709468af25e91284821d1bdbfdded24c" resname="Everything">
+      <source>Everything</source>
+      <target>Tout</target>
+    </trans-unit>
+    <!-- not checked yet -->
+    <trans-unit id="1c678d76e38553d0bc3f67ec7adbd34d" resname="not checked yet">
+      <source>not checked yet</source>
+      <target>pas encore vérifié</target>
+    </trans-unit>
+    <!-- Edit -->
+    <trans-unit id="7dce122004969d56ae2e0245cb754d35" resname="Edit">
+      <source>Edit</source>
+      <target>Modifier</target>
+    </trans-unit>
+    <!-- Test the key -->
+    <trans-unit id="288e74b212129652c0f28a2bde40c789" resname="Test the key">
+      <source>Test the key</source>
+      <target>Tester la clé</target>
+    </trans-unit>
+    <!-- Make default -->
+    <trans-unit id="630aa22e854b4dbaff60cd67bc227f3e" resname="Make default">
+      <source>Make default</source>
+      <target>Mettre par défaut</target>
+    </trans-unit>
+    <!-- Remove this assistant? -->
+    <trans-unit id="358cb949fbc46a2c67de0669a7498613" resname="Remove this assistant?">
+      <source>Remove this assistant?</source>
+      <target>Retirer cet assistant ?</target>
+    </trans-unit>
+    <!-- No assistant yet. Add one with your own API key to get the chat. -->
+    <trans-unit id="d99e3c3fa39a62b3977697162ab8d118" resname="No assistant yet. Add one with your own API key to get the chat.">
+      <source>No assistant yet. Add one with your own API key to get the chat.</source>
+      <target>Aucun assistant pour l'instant. Ajoutez-en un avec votre propre clé API pour avoir le chat.</target>
+    </trans-unit>
+    <!-- Monthly cap, all assistants -->
+    <trans-unit id="8a628fe3e633b015f7c84ebab16b1aa0" resname="Monthly cap, all assistants">
+      <source>Monthly cap, all assistants</source>
+      <target>Plafond mensuel, tous assistants</target>
+    </trans-unit>
+    <!-- This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap. -->
+    <trans-unit id="6c3a2e01add43a2ffb653aa9f54b8014" resname="This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.">
+      <source>This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.</source>
+      <target>Ce mois-ci : environ %spent% $. Le chat s'arrête quand le plafond est atteint. 0 pour aucun plafond.</target>
+    </trans-unit>
+    <!-- Estimated in US dollars from the public prices of each provider, the currency they bill in. -->
+    <trans-unit id="2fe36cf51a6d1f5bc7d02e0dc907d29f" resname="Estimated in US dollars from the public prices of each provider, the currency they bill in.">
+      <source>Estimated in US dollars from the public prices of each provider, the currency they bill in.</source>
+      <target>Estimé en dollars américains d'après les prix publics de chaque fournisseur, la devise dans laquelle ils facturent.</target>
+    </trans-unit>
+    <!-- Instructions for the shop -->
+    <trans-unit id="ac3cf63cabfdaa88ed5311ebdc3a9e42" resname="Instructions for the shop">
+      <source>Instructions for the shop</source>
+      <target>Consignes de la boutique</target>
+    </trans-unit>
+    <!-- Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style. -->
+    <trans-unit id="c8eee4569b3cb5dd6db0936d3e751142" resname="Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.">
+      <source>Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.</source>
+      <target>Ajoutées à chaque conversation, pour tous les assistants. Par exemple : comment s'adresser aux clients, délais de livraison, style maison.</target>
+    </trans-unit>
     <!-- Open source under the AFL-3.0 licence -->
     <trans-unit id="c670648db949fca4d11ac24fa3806100" resname="Open source under the AFL-3.0 licence">
       <source>Open source under the AFL-3.0 licence</source>

@@ -56,6 +56,14 @@ class SomcpBackOffice
     public const UPLOAD_CONTROLLER = 'AdminSomcpUpload';
 
     /**
+     * @var string Controller the chat bubble of the back office talks to.
+     *
+     * Hidden like the two above, for the token it gives every request: tied to
+     * this controller and the employee signed in.
+     */
+    public const ASSISTANT_CONTROLLER = 'AdminSomcpAssistant';
+
+    /**
      * Whether an employee profile may connect an assistant to this shop.
      *
      * The merchant can restrict this to one profile. Left unset, any employee

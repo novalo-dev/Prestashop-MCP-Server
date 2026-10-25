@@ -392,3 +392,11 @@
 #somcp-chat .somcp-chat-input .somcp-attach:hover {
     background: #f4f6f7;
 }
+
+#somcp-chat .somcp-msg-image {
+    display: block;
+    max-width: 100%;
+    max-height: 260px;
+    margin-top: 6px;
+    border-radius: 8px;
+}

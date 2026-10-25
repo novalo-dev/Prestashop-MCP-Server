@@ -216,12 +216,14 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         ] + $properties['specific_prices']['properties']['rules']['items']['properties'];
 
         $properties['images']['description'] = 'Merchant and assistant. With id_image, that image has its legend, '
-            . 'cover, position or combinations changed; with url, an image is added: downloaded by the shop, '
-            . 'public https only, no redirect, 10 MB at most, JPEG, PNG, GIF or WebP.';
+            . 'cover, position or combinations changed; with url or upload_ref, an image is added: a url is '
+            . 'downloaded by the shop (public https only, no redirect, 10 MB at most), an upload_ref names a file '
+            . 'already on the shop - attached, deposited or generated in the built-in assistant. JPEG, PNG, GIF '
+            . 'or WebP. Never file content.';
         $properties['images']['items']['properties'] = [
             'id_image' => ['type' => 'integer', 'description' => 'An image of this product, from somcp_get_product.'],
         ] + $properties['images']['items']['properties'];
-        $properties['images']['items']['properties']['url']['description'] = 'Public https address of an image to add.';
+        $properties['images']['items']['properties']['url']['description'] = 'Public https address of an image to add. Give url or upload_ref, not both.';
 
         $properties['combinations']['description'] = 'Merchant and assistant. With id_product_attribute, that '
             . 'combination has the values given replaced and keeps the others; its attributes do not change. '
@@ -1468,18 +1470,21 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             }
 
             if ($id === null) {
-                $url = self::string($item['url'] ?? null);
-                if ($url === null || trim($url) === '') {
-                    $errors[] = $path . ': id_image to change an image of the product, or url to add one';
+                if (!array_key_exists('url', $item) && !array_key_exists(SomcpUpload::ARG_REF, $item)) {
+                    $errors[] = $path . ': id_image to change an image of the product, or url or upload_ref to add one';
                     continue;
                 }
-                $added[] = ['index' => $i, 'url' => trim($url)] + $fields;
-                self::record($plan, $path, null, 'added from ' . trim($url));
+                $source = self::imageSource($item, $path, $errors);
+                if ($source === null) {
+                    continue;
+                }
+                $added[] = ['index' => $i] + $source + $fields;
+                self::record($plan, $path, null, 'added from ' . ($source['url'] !== '' ? $source['url'] : 'upload_ref ' . $source['upload_ref']));
                 continue;
             }
 
-            if (array_key_exists('url', $item)) {
-                $errors[] = $path . ': id_image or url, not both - an image cannot be downloaded again over another';
+            if (array_key_exists('url', $item) || array_key_exists(SomcpUpload::ARG_REF, $item)) {
+                $errors[] = $path . ': id_image, or url or upload_ref, not both - an image cannot be replaced by another';
                 continue;
             }
             if (!isset($current[$id])) {
@@ -1961,10 +1966,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             }
             if ($id <= 0) {
                 --$position;
-                $report[] = ['url' => $added['url'], 'refused' => $refusal];
+                $report[] = self::imageOrigin($added) + ['refused' => $refusal];
                 continue;
             }
-            $report[] = ['url' => $added['url'], 'id_image' => $id];
+            $report[] = self::imageOrigin($added) + ['id_image' => $id];
             $order[] = $id;
             $byItem[$added['index']] = ['id' => $id] + $added;
         }

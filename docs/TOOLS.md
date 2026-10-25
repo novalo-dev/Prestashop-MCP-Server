@@ -698,7 +698,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | `options` | `visibility`, `available_for_order`, `show_price`, `online_only`, `active` | merchant | `active` false by default |
 | `suppliers` | `id_supplier_default` | merchant, from the shop | id from `somcp_list_suppliers` |
 | | per supplier and combination: `id_supplier`, `combination` (position in `combinations`, left out for the product), `product_supplier_reference`, `product_supplier_price_te`, `currency` | merchant | currency by ISO code, among the shop's currencies, the shop default otherwise; each supplier is also associated with the product itself; `id_supplier_default` left out is the first supplier given |
-| `images` | `url` | merchant | see **Images** below |
+| `images` | `url` or `upload_ref` | merchant | see **Images** below |
 | | `legend`, `cover`, `position`, `combinations` (positions in `combinations`) | merchant and assistant | legend in every language being filled; one cover at most, the first image that arrived otherwise |
 | `combinations` | `attributes` | merchant, from the shop | `id_attribute` values from `somcp_list_attributes`; two combinations with the same attributes are refused |
 | | `default_on`, `reference`, `mpn`, `upc`, `ean13`, `isbn`, `quantity`, `location`, `available_date`, `available_now`, `available_later`, `price_impact_tax_excl`, `unit_price_impact_tax_excl`, `weight_impact`, `wholesale_price`, `minimal_quantity` | merchant and assistant | same rules as the product's own fields; one combination is the default |
@@ -711,11 +711,11 @@ The products and the categories they are sorted into: texts, prices, combination
 - The answer carries `seo_warnings`, per language: no `meta_title` or no `meta_description` (the storefront then falls back on the name), `meta_description` over 160 characters (cut in search results), a `link_rewrite` or a `meta_title` already used by another product in that language. Warnings never block the creation.
 
 **Images**
-- Files do not travel through the conversation: an image is given by a public `https` URL and the shop downloads it.
+- Files do not travel through the conversation: an image is given by a public `https` URL the shop downloads, or by the `upload_ref` of a file already on the shop (attached or deposited by the merchant, or generated in the built-in assistant), redeemed for the employee the call runs as. One of the two per image, never both, never file content.
 - That download is a new network request from the shop, so it is guarded: `https` on the standard port only, no credentials in the address, the host must resolve to a public address (no localhost, no private, link-local, shared, documentation or multicast range, IPv4 hidden in IPv6 included, checked after resolution and then pinned for the connection), no proxy, redirects not followed, 10 MB at most counted while reading, and the content must be a JPEG, PNG, GIF or WebP that `ImageManager` accepts. A refused image is reported in the answer and does not stop the creation.
 - Thumbnails generated through `ImageManager` for every image type, as the back office does, in JPEG and in each extra format switched on in the settings (PrestaShop 8.1 and later), with the fitment of each type on PrestaShop 9.
 
-**Returns** - `created`, `id_product`, `seo_warnings`, `images` (per URL: `id_image` or the reason it was refused), and the product as `somcp_get_product` returns it.
+**Returns** - `created`, `id_product`, `seo_warnings`, `images` (per image, its `url` or `upload_ref`: `id_image` or the reason it was refused), and the product as `somcp_get_product` returns it.
 
 **Notes**
 - Written through the core classes (`Product::add()`, `Combination`, `StockAvailable`, `SpecificPrice`, `Image`) so hooks fire and other modules see a normal product creation.
@@ -745,7 +745,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | a translatable text | replaced in the languages filled, the others kept | kept in every language |
 | a set chosen as a whole in the back office: `categories`, `related_products`, `features`, `attachments`, `carriers`, `customization` fields | the set given replaces the old one entirely | kept |
 | `combinations` | an item with `id_product_attribute` changes that combination, field by field; an item without one creates a combination | kept |
-| `images` | an item with `id_image` changes its legend, cover, position or combinations; an item with `url` adds an image | kept |
+| `images` | an item with `id_image` changes its legend, cover, position or combinations; an item with `url` or `upload_ref` adds an image | kept |
 | `specific_prices` | an item with `id_specific_price` changes it, field by field; an item without one adds it | kept |
 | `suppliers` | per supplier and combination, the values given replace the old ones | kept |
 

@@ -543,7 +543,7 @@
                     <label class="control-label col-lg-3">{l s='Exact model' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
                         <input type="text" name="somcp_assistant_model" class="form-control" maxlength="128" value="{$somcp_assistant_edit.model|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='Advanced. Leave empty to follow the level. Required for Ollama if your server has several models.' d='Modules.Somcp.Admin'}</p>
+                        <p class="help-block">{l s='Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
                 <div class="panel-footer">

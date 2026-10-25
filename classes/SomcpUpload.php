@@ -812,6 +812,57 @@ class SomcpUpload
     }
 
     /**
+     * Keeps a file the shop received itself - an image a provider generated
+     * for the built-in assistant - as a deposit of an employee.
+     *
+     * Same store, same formats, same check of the bytes against the
+     * extension as a file a merchant deposits: a provider's answer is not
+     * trusted more than an upload.
+     *
+     * @param int $idEmployee
+     * @param string $name shown to the merchant and to the model
+     * @param string $bytes
+     * @param string $extension one of ACCEPTED
+     * @param string $module
+     * @param int $ttl
+     *
+     * @return string the reference, empty when refused
+     */
+    public static function keep(int $idEmployee, string $name, string $bytes, string $extension, string $module, int $ttl): string
+    {
+        $extension = Tools::strtolower($extension);
+        if ($bytes === '' || strlen($bytes) > self::MAX_BYTES || !isset(self::ACCEPTED[$extension])) {
+            return '';
+        }
+
+        $reference = self::invite($idEmployee, $name, [$extension], $module, ['files' => 1, 'bytes' => strlen($bytes)], $ttl);
+        $invitation = $reference !== '' ? self::find($reference, $idEmployee) : null;
+        $directory = self::directory();
+        if ($invitation === null || $directory === '') {
+            return '';
+        }
+
+        $storedAs = SomcpRandom::token(16) . '.' . $extension;
+        if (@file_put_contents($directory . $storedAs, $bytes) === false || !self::looksLike($directory . $storedAs, $extension)) {
+            @unlink($directory . $storedAs);
+            self::forget((int) $invitation['id_upload']);
+
+            return '';
+        }
+        @chmod($directory . $storedAs, 0640);
+
+        Db::getInstance()->insert('somcp_upload_file', [
+            'id_upload' => (int) $invitation['id_upload'],
+            'file_name' => pSQL(Tools::substr($name, 0, 255)),
+            'mime_type' => pSQL(self::ACCEPTED[$extension]['mime']),
+            'stored_as' => pSQL($storedAs),
+            'file_size' => strlen($bytes),
+        ]);
+
+        return $reference;
+    }
+
+    /**
      * A single-use copy of a deposit, for a tool.
      *
      * A tool redeems what it is given, which deletes it: right for a file

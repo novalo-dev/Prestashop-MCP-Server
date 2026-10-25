@@ -1202,10 +1202,10 @@ T = {
  "Modèle exact",
  "Modelo exacto",
  "Genaues Modell"),
-"Advanced. Leave empty to follow the level. Required for Ollama if your server has several models.": (
- "Avancé. Laissez vide pour suivre le niveau. Obligatoire pour Ollama si votre serveur a plusieurs modèles.",
- "Avanzado. Déjelo vacío para seguir el nivel. Obligatorio para Ollama si su servidor tiene varios modelos.",
- "Erweitert. Leer lassen, um der Stufe zu folgen. Für Ollama erforderlich, wenn Ihr Server mehrere Modelle hat."),
+"Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.": (
+ "Avancé. Laissez vide pour suivre le niveau. Obligatoire pour Ollama si votre serveur a plusieurs modèles. Pour un assistant qui crée des images, un modèle d'images comme gemini-2.5-flash-image ou gpt-image-1.",
+ "Avanzado. Déjelo vacío para seguir el nivel. Obligatorio para Ollama si su servidor tiene varios modelos. Para un asistente que crea imágenes, un modelo de imágenes como gemini-2.5-flash-image o gpt-image-1.",
+ "Erweitert. Leer lassen, um der Stufe zu folgen. Für Ollama erforderlich, wenn Ihr Server mehrere Modelle hat. Für einen Assistenten, der Bilder erstellt, ein Bildmodell wie gemini-2.5-flash-image oder gpt-image-1."),
 "Cancel": (
  "Annuler",
  "Cancelar",

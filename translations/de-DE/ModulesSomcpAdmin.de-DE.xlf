@@ -1507,10 +1507,10 @@
       <source>Exact model</source>
       <target>Genaues Modell</target>
     </trans-unit>
-    <!-- Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. -->
-    <trans-unit id="4c3d8f87b517005e2756691203a6da9d" resname="Advanced. Leave empty to follow the level. Required for Ollama if your server has several models.">
-      <source>Advanced. Leave empty to follow the level. Required for Ollama if your server has several models.</source>
-      <target>Erweitert. Leer lassen, um der Stufe zu folgen. Für Ollama erforderlich, wenn Ihr Server mehrere Modelle hat.</target>
+    <!-- Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1. -->
+    <trans-unit id="c6df3fe810b0ad814ae4c660f3dbc1ec" resname="Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.">
+      <source>Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.</source>
+      <target>Erweitert. Leer lassen, um der Stufe zu folgen. Für Ollama erforderlich, wenn Ihr Server mehrere Modelle hat. Für einen Assistenten, der Bilder erstellt, ein Bildmodell wie gemini-2.5-flash-image oder gpt-image-1.</target>
     </trans-unit>
     <!-- Cancel -->
     <trans-unit id="ea4788705e6873b424c65e91c2846b19" resname="Cancel">

@@ -41,10 +41,10 @@ $methods = [
     'NeuronAI\Agent\Interrupt\ToolResultsRequest' => ['getToolCalls', 'getResults'],
     'NeuronAI\Agent\Interrupt\Action' => ['isPending'],
     'NeuronAI\Chat\History\SQLMessageStore' => ['loadAll'],
-    'NeuronAI\Chat\Messages\Message' => ['getContent', 'getUsage'],
     'NeuronAI\Chat\Messages\ToolCallMessage' => ['getToolCalls'],
     'NeuronAI\Tools\FrontendTool' => ['requireApproval', 'getInputSchema'],
-    'NeuronAI\Tools\ToolCall' => ['getName', 'getCallId', 'getInputs', 'getApprovalState'],
+    'NeuronAI\Tools\ToolCall' => ['getName', 'getCallId', 'getInputs', 'getApprovalState', 'hasResult', 'getResult'],
+    'NeuronAI\Chat\Messages\Message' => ['getContent', 'getUsage', 'getContentBlocks'],
     'NeuronAI\Workflow\Persistence\DatabasePersistence' => ['get'],
 ];
 
@@ -58,6 +58,10 @@ $constructors = [
     'NeuronAI\Providers\XAI\Grok' => ['key', 'model'],
     'NeuronAI\Providers\Cohere\Cohere' => ['key', 'model'],
     'NeuronAI\Providers\Ollama\Ollama' => ['url', 'model'],
+    'NeuronAI\Providers\OpenAI\Image\OpenAIImage' => ['key', 'model'],
+    'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
+    'NeuronAI\Chat\Messages\ContentBlocks\FileContent' => ['content', 'sourceType', 'mediaType', 'filename'],
+    'NeuronAI\Chat\Messages\ContentBlocks\TextContent' => ['content'],
     'NeuronAI\Tools\FrontendTool' => ['name', 'description', 'inputSchema'],
     'NeuronAI\Chat\History\SQLMessageStore' => ['pdo', 'table'],
     'NeuronAI\Workflow\Persistence\DatabasePersistence' => ['pdo', 'table'],
@@ -68,6 +72,7 @@ $properties = [
     'NeuronAI\Workflow\WorkflowRunSnapshot' => ['interrupt'],
     'NeuronAI\Agent\Interrupt\Action' => ['id', 'name', 'inputs'],
     'NeuronAI\Chat\Messages\Usage' => ['inputTokens', 'outputTokens'],
+    'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
 ];
 
 $classes = [
@@ -75,6 +80,7 @@ $classes = [
     'NeuronAI\Chat\Messages\AssistantMessage',
     'NeuronAI\Chat\Messages\ToolResultMessage',
     'NeuronAI\Tools\ApprovalState',
+    'NeuronAI\Chat\Enums\SourceType',
 ];
 
 $problems = [];

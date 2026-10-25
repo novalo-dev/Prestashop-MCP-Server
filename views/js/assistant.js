@@ -233,10 +233,37 @@
 
         var node = el('div', 'somcp-msg ' + (message.role === 'user' ? 'somcp-msg-user' : 'somcp-msg-assistant'));
         node.innerHTML = markdown(message.text || '');
+        (message.images || []).forEach(function (image) {
+            node.appendChild(drawImage(image));
+        });
         (message.files || []).forEach(function (name) {
             node.appendChild(el('div', 'somcp-msg-file', '📎 ' + name));
         });
         return node;
+    }
+
+    // An image a provider generated: inline bytes in the message, or a signed
+    // link of the shop. Anything else is not drawn: the address is set as an
+    // attribute, never written into HTML.
+    function drawImage(image) {
+        var src = String(image.src || '');
+        var inline = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(src);
+        if (!inline && !/^https?:\/\//.test(src)) {
+            return document.createDocumentFragment();
+        }
+        var picture = el('img', 'somcp-msg-image');
+        picture.src = src;
+        picture.alt = image.name || '';
+        picture.loading = 'lazy';
+        if (inline) {
+            return picture;
+        }
+        var link = el('a');
+        link.href = src;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.appendChild(picture);
+        return link;
     }
 
     function drawApproval(actions) {

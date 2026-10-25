@@ -114,7 +114,7 @@ class SomcpToolCreateProduct
             'reduction', 'reduction_type', 'reduction_tax', 'from', 'to',
         ],
         'supplier' => ['id_supplier', 'combination', 'product_supplier_reference', 'product_supplier_price_te', 'currency'],
-        'image' => ['url', 'legend', 'cover', 'position', 'combinations'],
+        'image' => ['url', 'upload_ref', 'legend', 'cover', 'position', 'combinations'],
         'combination' => [
             'attributes', 'default_on', 'reference', 'mpn', 'upc', 'ean13', 'isbn', 'quantity', 'location',
             'available_date', 'available_now', 'available_later', 'price_impact_tax_excl',
@@ -164,8 +164,9 @@ class SomcpToolCreateProduct
                 . 'language of the shop left out takes the default language\'s text. Lengths count the visible '
                 . 'text, spaces included, HTML tags not counted. '
                 . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Images are downloaded by the shop from public https addresses; one that cannot be fetched '
-                . 'is reported in images and does not stop the creation. '
+                . 'Images are downloaded by the shop from public https addresses, or taken from a file already '
+                . 'on the shop by its upload_ref; one that cannot be had is reported in images and does not stop '
+                . 'the creation. '
                 . 'Do not use it to change an existing product, which is somcp_update_product. One product per '
                 . 'call: for several, call it once per product and report each result. '
                 . 'Not to be retried: if the answer is lost, search with somcp_search_products by the '
@@ -466,13 +467,16 @@ class SomcpToolCreateProduct
                 ],
                 'images' => [
                     'type' => 'array',
-                    'description' => 'Merchant and assistant: the merchant gives the addresses, the assistant '
-                        . 'writes the legends. Downloaded by the shop: public https only, no redirect, 10 MB at '
-                        . 'most, JPEG, PNG, GIF or WebP.',
+                    'description' => 'Merchant and assistant: the merchant gives the images, the assistant '
+                        . 'writes the legends. Each image is a url, downloaded by the shop (public https only, '
+                        . 'no redirect, 10 MB at most), or the upload_ref of a file already on the shop - one '
+                        . 'the merchant attached or deposited, or an image generated in the built-in assistant. '
+                        . 'JPEG, PNG, GIF or WebP. Never file content.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
-                            'url' => ['type' => 'string', 'description' => 'Public https address of the image.'],
+                            'url' => ['type' => 'string', 'description' => 'Public https address of the image. Give url or upload_ref, not both.'],
+                            'upload_ref' => ['type' => 'string', 'description' => 'Reference of an image already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],
                             'legend' => $text('Alternative text of the image.'),
                             'cover' => ['type' => 'boolean', 'description' => 'The main image; the first one otherwise.'],
                             'position' => ['type' => 'integer', 'description' => 'Order of the images, from 1; the order given otherwise.'],
@@ -482,7 +486,6 @@ class SomcpToolCreateProduct
                                 'items' => ['type' => 'integer'],
                             ],
                         ],
-                        'required' => ['url'],
                         'additionalProperties' => false,
                     ],
                 ],
@@ -1833,9 +1836,8 @@ class SomcpToolCreateProduct
         foreach (self::items($value, 'images', $errors) as $i => $item) {
             $path = 'images[' . $i . ']';
             self::onlyAccepted($item, 'image', $path, $errors);
-            $url = self::string($item['url'] ?? null);
-            if ($url === null || trim($url) === '') {
-                $errors[] = $path . '.url: the public https address of the image';
+            $source = self::imageSource($item, $path, $errors);
+            if ($source === null) {
                 continue;
             }
 
@@ -1844,8 +1846,7 @@ class SomcpToolCreateProduct
                 ++$covers;
             }
 
-            $images[] = [
-                'url' => trim($url),
+            $images[] = $source + [
                 'legend' => $fields['legend'],
                 'cover' => (bool) $fields['cover'],
                 'order' => [$fields['position'] ?? PHP_INT_MAX, $i],
@@ -1862,6 +1863,48 @@ class SomcpToolCreateProduct
         });
 
         return $images;
+    }
+
+    /**
+     * Where one image comes from: a public address the shop downloads, or
+     * the reference of a file already on the shop. One of the two, never
+     * both, and never the bytes themselves - the two doors somcp lets a file
+     * in through.
+     *
+     * @param array<string, mixed> $item
+     * @param string $path
+     * @param array<int, string> $errors
+     *
+     * @return array{url: string, upload_ref: string}|null
+     */
+    protected static function imageSource(array $item, string $path, array &$errors): ?array
+    {
+        $url = trim((string) (self::string($item['url'] ?? null) ?? ''));
+        $reference = trim((string) (self::string($item[SomcpUpload::ARG_REF] ?? null) ?? ''));
+        if ($url !== '' && $reference !== '') {
+            $errors[] = $path . ': url or upload_ref, not both';
+
+            return null;
+        }
+        if ($url === '' && $reference === '') {
+            $errors[] = $path . ': the public https address of the image (url), or the upload_ref of a file on the shop';
+
+            return null;
+        }
+
+        return ['url' => $url, 'upload_ref' => $reference];
+    }
+
+    /**
+     * How an image is named in the answer: its address, or its reference.
+     *
+     * @param array<string, mixed> $image
+     *
+     * @return array<string, string>
+     */
+    protected static function imageOrigin(array $image): array
+    {
+        return ($image['upload_ref'] ?? '') !== '' ? ['upload_ref' => (string) $image['upload_ref']] : ['url' => (string) $image['url']];
     }
 
     /**
@@ -2425,11 +2468,11 @@ class SomcpToolCreateProduct
             }
             if ($idImage <= 0) {
                 --$position;
-                $report[] = ['url' => $image['url'], 'refused' => $refusal];
+                $report[] = self::imageOrigin($image) + ['refused' => $refusal];
                 continue;
             }
 
-            $report[] = ['url' => $image['url'], 'id_image' => $idImage];
+            $report[] = self::imageOrigin($image) + ['id_image' => $idImage];
             $created[] = $idImage;
             foreach ($image['combinations'] as $index) {
                 $illustrates[$combinationIds[$index]][] = $idImage;
@@ -2482,7 +2525,9 @@ class SomcpToolCreateProduct
         }
 
         try {
-            $refusal = self::download((string) $plan['url'], $file);
+            $refusal = ($plan['upload_ref'] ?? '') !== ''
+                ? self::fromDeposit((string) $plan['upload_ref'], $file)
+                : self::download((string) $plan['url'], $file);
             if ($refusal === '') {
                 $refusal = self::checkImage($file);
             }
@@ -2675,6 +2720,34 @@ class SomcpToolCreateProduct
         }
 
         return '';
+    }
+
+    /**
+     * Writes the file behind an upload_ref where the image is put together.
+     *
+     * Redeemed for the employee the write runs as, on this shop: a reference
+     * belonging to someone else, expired or already used finds nothing. The
+     * built-in assistant hands over a copy, so its conversation keeps the
+     * file.
+     *
+     * @param string $reference
+     * @param string $target
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    protected static function fromDeposit(string $reference, string $target): string
+    {
+        $employee = Somcp::legacyContext()->employee;
+        $idEmployee = $employee instanceof Employee ? (int) $employee->id : 0;
+        $files = SomcpUpload::redeem($reference, $idEmployee);
+        if ($files === []) {
+            return 'no file of this account matches this upload_ref, or it expired or was already used';
+        }
+        if (strlen($files[0]['contents']) > self::IMAGE_MAX_BYTES) {
+            return 'the file is larger than 10 MB';
+        }
+
+        return @file_put_contents($target, $files[0]['contents']) === false ? 'the shop has no room to receive it' : '';
     }
 
     /**

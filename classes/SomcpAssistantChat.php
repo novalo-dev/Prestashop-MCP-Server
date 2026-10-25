@@ -38,6 +38,7 @@ use NeuronAI\Providers\Deepseek\Deepseek;
 use NeuronAI\Providers\Gemini\Gemini;
 use NeuronAI\Providers\Mistral\Mistral;
 use NeuronAI\Providers\Ollama\Ollama;
+use NeuronAI\Providers\OpenAI\Image\OpenAIImage;
 use NeuronAI\Providers\OpenAI\OpenAI;
 use NeuronAI\Providers\XAI\Grok;
 use NeuronAI\Tools\ApprovalState;
@@ -111,6 +112,9 @@ class SomcpAssistantChat
 
     /** @var string Opens the text block that names an attached file, so the chat can draw it as a file. */
     private const FILE_MARKER = '[File: ';
+
+    /** @var string Names an image another assistant generated, in the result handed back. */
+    private const GENERATED_MARKER = '[Generated image: ';
 
     /**
      * What an employee may attach, and how each kind reaches the model. The
@@ -496,7 +500,7 @@ class SomcpAssistantChat
      */
     public function step(array $thread): array
     {
-        return $this->advance($thread, function (Agent $agent, array $assistant): ?AgentState {
+        return $this->advance($thread, function (Agent $agent, array $assistant) use ($thread): ?AgentState {
             $run = $agent->inspect();
             if ($run === null || !$run->interrupt instanceof ToolResultsRequest) {
                 return null;
@@ -507,7 +511,7 @@ class SomcpAssistantChat
             foreach ($run->interrupt->getToolCalls() as $call) {
                 $callId = (string) $call->getCallId();
                 if ($callId !== '' && !isset($done[$callId])) {
-                    $results[$callId] = $this->execute($call, $assistant);
+                    $results[$callId] = $this->execute($call, $assistant, $thread);
                 }
             }
 
@@ -617,6 +621,7 @@ class SomcpAssistantChat
             $state = $move($this->agent($thread, $assistant), $assistant);
             if ($state instanceof AgentState) {
                 $this->account($state->getSteps(), $assistant);
+                $this->remember($thread, $this->keepImages($state->getSteps()));
             }
         } catch (RunInFlightException $e) {
             return $this->view($thread, self::t('Answer the change waiting for your approval first.'));
@@ -646,16 +651,17 @@ class SomcpAssistantChat
      *
      * @param ToolCall $call
      * @param array<string, mixed> $assistant the assistant leading the conversation
+     * @param array<string, mixed> $thread
      *
      * @return array{result?:string, error?:string}
      */
-    private function execute(ToolCall $call, array $assistant): array
+    private function execute(ToolCall $call, array $assistant, array $thread): array
     {
         $name = $call->getName();
         $arguments = $call->getInputs();
 
         if ($name === self::DELEGATE_TOOL) {
-            return $this->delegate($arguments, $assistant);
+            return $this->delegate($arguments, $assistant, $thread);
         }
 
         $tool = SomcpToolRegistry::getInstance()->get($name);
@@ -673,14 +679,11 @@ class SomcpAssistantChat
             return ['error' => 'This account does not have the back office permission this tool requires.'];
         }
 
-        // A file attached in the chat is still shown by the conversation: the
-        // tool gets a copy to redeem, under its own reference.
-        if (is_string($arguments[SomcpUpload::ARG_REF] ?? null) && $arguments[SomcpUpload::ARG_REF] !== '') {
-            $copy = SomcpUpload::copyForTool($arguments[SomcpUpload::ARG_REF], $idEmployee);
-            if ($copy !== '') {
-                $arguments[SomcpUpload::ARG_REF] = $copy;
-            }
-        }
+        // A file attached or generated in the chat is still shown by the
+        // conversation: the tool gets a copy to redeem, under its own
+        // reference - wherever the reference sits, an image of a product
+        // carries its own.
+        $arguments = $this->copiesFor($arguments, $idEmployee);
 
         $result = SomcpToolRegistry::run($tool, $arguments, [
             'id_shop' => $this->idShop,
@@ -707,14 +710,117 @@ class SomcpAssistantChat
     }
 
     /**
+     * The arguments with every upload_ref replaced by a single-use copy.
+     *
+     * @param array<array-key, mixed> $arguments
+     * @param int $idEmployee
+     *
+     * @return array<array-key, mixed>
+     */
+    private function copiesFor(array $arguments, int $idEmployee): array
+    {
+        foreach ($arguments as $key => $value) {
+            if ($key === SomcpUpload::ARG_REF && is_string($value) && $value !== '') {
+                $copy = SomcpUpload::copyForTool($value, $idEmployee);
+                if ($copy !== '') {
+                    $arguments[$key] = $copy;
+                }
+            } elseif (is_array($value)) {
+                $arguments[$key] = $this->copiesFor($value, $idEmployee);
+            }
+        }
+
+        return $arguments;
+    }
+
+    /**
+     * Keeps the images a provider generated, each as a deposit of the
+     * employee: the chat shows them, and a tool that takes a file - the image
+     * of a product - can be given their upload_ref. Nothing the model wrote
+     * goes anywhere: these are bytes the provider answered with, checked like
+     * any upload.
+     *
+     * @param array<int, Message> $messages
+     *
+     * @return array<int, array{name:string, ref:string}>
+     */
+    private function keepImages(array $messages): array
+    {
+        $extensions = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+        $kept = [];
+        foreach ($messages as $message) {
+            if (!$message instanceof AssistantMessage) {
+                continue;
+            }
+            foreach ($message->getContentBlocks() as $block) {
+                if (!$block instanceof ImageContent || $block->sourceType !== SourceType::BASE64) {
+                    continue;
+                }
+                $extension = $extensions[(string) $block->mediaType] ?? 'png';
+                $bytes = base64_decode($block->content, true);
+                $name = 'image-' . date('Ymd-His') . '-' . (count($kept) + 1) . '.' . $extension;
+                $reference = is_string($bytes)
+                    ? SomcpUpload::keep((int) $this->employee->id, $name, $bytes, $extension, SomcpUpload::CHAT_MODULE, self::FILE_TTL)
+                    : '';
+                if ($reference !== '') {
+                    $kept[] = ['name' => $name, 'ref' => $reference];
+                }
+            }
+        }
+
+        return $kept;
+    }
+
+    /**
+     * Adds generated files to what a conversation remembers, so the model is
+     * told their references on the next turns.
+     *
+     * The references are kept in the employee's own thread row. One only
+     * redeems a file for this employee, on this shop, before it expires.
+     *
+     * @param array<string, mixed> $thread
+     * @param array<int, array{name:string, ref:string}> $files
+     */
+    private function remember(array $thread, array $files): void
+    {
+        if ($files === []) {
+            return;
+        }
+        $known = $this->generated($thread);
+        Db::getInstance()->update(
+            'somcp_assistant_thread',
+            ['files' => pSQL((string) json_encode(array_slice(array_merge($known, $files), -50)))],
+            '`id_thread` = ' . (int) $thread['id_thread']
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $thread
+     *
+     * @return array<int, array{name:string, ref:string}>
+     */
+    private function generated(array $thread): array
+    {
+        $row = (string) Db::getInstance()->getValue(
+            'SELECT `files` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread` WHERE `id_thread` = ' . (int) $thread['id_thread']
+        );
+        $files = json_decode($row, true);
+
+        return is_array($files) ? array_values(array_filter($files, static function ($file): bool {
+            return is_array($file) && isset($file['name'], $file['ref']);
+        })) : [];
+    }
+
+    /**
      * Hands a task to another assistant and returns its answer.
      *
      * @param array<string, mixed> $arguments
      * @param array<string, mixed> $leader
+     * @param array<string, mixed> $thread
      *
      * @return array{result?:string, error?:string}
      */
-    private function delegate(array $arguments, array $leader): array
+    private function delegate(array $arguments, array $leader, array $thread): array
     {
         $target = SomcpAssistant::get((int) ($arguments['assistant'] ?? 0));
         $task = trim((string) ($arguments['task'] ?? ''));
@@ -728,15 +834,23 @@ class SomcpAssistantChat
         try {
             $agent = Agent::make()
                 ->setThreadId('delegate-' . bin2hex(random_bytes(8)))
-                ->setAiProvider($this->provider($target))
+                ->setAiProvider($this->provider($target, true))
                 ->setInstructions($this->delegateInstructions($target));
             $state = $agent->chat(new UserMessage(Tools::substr($task, 0, 20000)));
             $this->account($state->getSteps(), $target);
             $answer = (string) ($state->getMessage() ? $state->getMessage()->getContent() : '');
+            $images = $this->keepImages($state->getMessage() ? [$state->getMessage()] : []);
+            $this->remember($thread, $images);
         } catch (Throwable $e) {
             SomcpLogger::log('assistant_failed', SomcpLogger::OUTCOME_FAILURE, $target['provider'] . ': ' . Tools::substr($e->getMessage(), 0, 300), '', (int) $this->employee->id);
 
             return ['error' => $target['label'] . ' could not answer.'];
+        }
+
+        // The references go back in the result, which the conversation keeps:
+        // the leading model reads them there, and the chat draws the images.
+        foreach ($images as $image) {
+            $answer .= "\n" . self::GENERATED_MARKER . $image['name'] . ', ' . SomcpUpload::ARG_REF . ': ' . $image['ref'] . ']';
         }
 
         return ['result' => $target['label'] . ' answered: ' . $answer];
@@ -761,7 +875,7 @@ class SomcpAssistantChat
 
         if ($assistant !== []) {
             $agent->setAiProvider($this->provider($assistant))
-                ->setInstructions($this->instructions($assistant))
+                ->setInstructions($this->instructions($assistant, $thread))
                 ->setTools($this->tools($assistant));
         }
         $agent->toolMaxRuns(self::MAX_TOOL_RUNS);
@@ -784,7 +898,7 @@ class SomcpAssistantChat
      *
      * @return AIProviderInterface
      */
-    private function provider(array $assistant): AIProviderInterface
+    private function provider(array $assistant, bool $delegated = false): AIProviderInterface
     {
         if (self::$providerOverride !== null) {
             return self::$providerOverride;
@@ -794,6 +908,12 @@ class SomcpAssistantChat
         $model = SomcpAssistant::model($assistant);
         if ($model === '') {
             throw new RuntimeException('no model resolved for assistant ' . (int) $assistant['id_assistant']);
+        }
+
+        // OpenAI's image models answer on their own API, without tools or a
+        // conversation: fine for a task handed over, which is one prompt.
+        if ($delegated && $assistant['provider'] === 'openai' && preg_match('/^(gpt-image|dall-e)/', $model)) {
+            return new OpenAIImage($key, $model);
         }
 
         switch ($assistant['provider']) {
@@ -922,7 +1042,7 @@ class SomcpAssistantChat
      *
      * @return string
      */
-    private function instructions(array $assistant): string
+    private function instructions(array $assistant, array $thread = []): string
     {
         $shop = Context::getContext()->shop;
         $language = Language::getLanguage((int) $this->employee->id_lang);
@@ -949,6 +1069,14 @@ class SomcpAssistantChat
             }
         }
 
+        $generated = $thread !== [] ? $this->generated($thread) : [];
+        if ($generated !== []) {
+            $lines[] = 'Images generated in this conversation, each usable by a tool that takes an upload_ref (for example as the image of a product):';
+            foreach ($generated as $file) {
+                $lines[] = '- ' . $file['name'] . ', upload_ref: ' . $file['ref'];
+            }
+        }
+
         $custom = trim(SomcpAssistant::instructions());
         if ($custom !== '') {
             $lines[] = 'Instructions from the shop: ' . $custom;
@@ -965,7 +1093,7 @@ class SomcpAssistantChat
     private function delegateInstructions(array $assistant): string
     {
         $lines = [
-            'You help the assistant of a PrestaShop shop with one task. You cannot use tools and you do not see the conversation: work only from the task you are given, and answer with the result itself.',
+            'You help the assistant of a PrestaShop shop with one task. You cannot use tools and you do not see the conversation: work only from the task you are given, and answer with the result itself. When the task asks for an image and you can generate images, generate it.',
         ];
         if ($assistant['role'] !== '') {
             $lines[] = 'Your role in this shop: ' . $assistant['role'] . '.';
@@ -1075,7 +1203,22 @@ class SomcpAssistantChat
     private function draw(Message $message, array $titles): ?array
     {
         if ($message instanceof ToolResultMessage) {
-            return null;
+            // Shown only for the images another assistant generated, drawn
+            // from their deposits through signed links.
+            $images = [];
+            foreach ($message->getToolCalls() as $call) {
+                if ($call->getName() !== self::DELEGATE_TOOL || !$call->hasResult()) {
+                    continue;
+                }
+                $result = (string) $call->getResult();
+                if (preg_match_all('/' . preg_quote(self::GENERATED_MARKER, '/') . '([^,\]]+), ' . SomcpUpload::ARG_REF . ': ([A-Za-z0-9_-]+)\]/', $result, $found, PREG_SET_ORDER)) {
+                    foreach ($found as $match) {
+                        $images[] = ['name' => $match[1], 'src' => self::fileUrl($match[2])];
+                    }
+                }
+            }
+
+            return $images === [] ? null : ['role' => 'images', 'text' => '', 'images' => $images];
         }
         if ($message instanceof ToolCallMessage) {
             $calls = [];
@@ -1116,8 +1259,16 @@ class SomcpAssistantChat
         }
         if ($message instanceof AssistantMessage) {
             $text = (string) $message->getContent();
+            $images = [];
+            foreach ($message->getContentBlocks() as $block) {
+                if ($block instanceof ImageContent && $block->sourceType === SourceType::BASE64
+                    && in_array((string) $block->mediaType, ['image/png', 'image/jpeg', 'image/webp', 'image/gif'], true)
+                    && preg_match('/^[A-Za-z0-9+\/=]+$/', $block->content)) {
+                    $images[] = ['name' => '', 'src' => 'data:' . $block->mediaType . ';base64,' . $block->content];
+                }
+            }
 
-            return $text === '' ? null : ['role' => 'assistant', 'text' => $text];
+            return $text === '' && $images === [] ? null : ['role' => 'assistant', 'text' => $text, 'images' => $images];
         }
 
         return null;

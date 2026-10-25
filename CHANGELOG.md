@@ -288,8 +288,15 @@ message. They are kept on your shop for a week, checked like any deposited
 file, and a tool that takes a file can use them directly. The assistant sees
 an image or a PDF through a private link that expires, when your shop is
 reachable from the internet and the provider reads links; otherwise the file
-itself is sent. Keys are stored encrypted.
+itself is sent. An image an assistant generates - Gemini or OpenAI with an
+image model, often the one given the images role - is kept the same way: shown
+in the chat, and usable as the image of a product. Keys are stored encrypted.
 Conversations are kept per employee. Runs on Neuron AI.
+
+**Product images from a file on the shop.** Creating or changing a product now
+accepts, for each image, either a public address to download or the reference
+of a file already on your shop: one you attached in the built-in assistant or
+deposited, or an image an assistant generated.
 
 **New version alert.** The Help and updates tab shows the installed version
 and the latest one published on GitHub. When a newer version exists, the tab

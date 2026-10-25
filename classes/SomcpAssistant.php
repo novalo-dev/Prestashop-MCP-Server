@@ -239,7 +239,25 @@ class SomcpAssistant
         if ($level !== self::LEVEL_CUSTOM) {
             $model = '';
         } elseif ($model === '') {
-            $level = self::LEVEL_ECONOMY;
+            // Custom with no model yet, on a first save: read the models from
+            // the key the merchant just typed (or the stored one) and start on
+            // a sensible mid-tier one, which the drop-down then lets them change.
+            // No separate request from the browser - the key is the one posted.
+            $plain = trim($values['api_key']);
+            if ($plain === '' && $idAssistant > 0) {
+                $existing = self::get($idAssistant);
+                $plain = $existing !== null ? self::key($existing) : '';
+            }
+            $listed = $plain !== '' ? self::listModels($provider, $plain) : null;
+            if (is_array($listed) && $listed !== []) {
+                $model = self::pick($provider, self::LEVEL_BALANCED, $listed);
+                if ($model === '') {
+                    $model = (string) $listed[0]['id'];
+                }
+            } else {
+                // No key or no answer: Custom cannot run without a model.
+                $level = self::LEVEL_ECONOMY;
+            }
         }
 
         $data = [

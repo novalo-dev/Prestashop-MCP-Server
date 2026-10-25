@@ -525,28 +525,9 @@
                         <p class="help-block">{l s='The module always takes the newest model of the chosen level, without an update.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Role' d='Modules.Somcp.Admin'}</label>
-                    <div class="col-lg-6">
-                        <input type="text" name="somcp_assistant_role" class="form-control" maxlength="255" value="{$somcp_assistant_edit.role|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.' d='Modules.Somcp.Admin'}</p>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="control-label col-lg-3">{l s='Active' d='Modules.Somcp.Admin'}</label>
-                    <div class="col-lg-6">
-                        <span class="switch prestashop-switch fixed-width-lg">
-                            <input type="radio" name="somcp_assistant_active" id="somcp_assistant_active_on" value="1"{if $somcp_assistant_edit.active} checked{/if}>
-                            <label for="somcp_assistant_active_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
-                            <input type="radio" name="somcp_assistant_active" id="somcp_assistant_active_off" value="0"{if !$somcp_assistant_edit.active} checked{/if}>
-                            <label for="somcp_assistant_active_off">{l s='No' d='Modules.Somcp.Admin'}</label>
-                            <a class="slide-button btn"></a>
-                        </span>
-                    </div>
-                </div>
-                {* The exact model shows only for the Custom level. The list is
-                   the one the provider returned for the saved key; a stored
-                   model that is no longer listed stays selectable so editing
+                {* The exact model shows only for the Custom level, right under it.
+                   The list is the one the provider returned for the saved key; a
+                   stored model no longer listed stays selectable so editing
                    another field never loses it. No key yet, no list - the hint
                    says to save a working key first. *}
                 <div class="form-group" data-somcp-custom-model{if $somcp_assistant_edit.level !== 'custom'} style="display:none"{/if}>
@@ -566,6 +547,25 @@
                             <input type="hidden" name="somcp_assistant_model" value="">
                             <p class="help-block">{l s='Save this assistant with a working key first, then edit it to choose a model here.' d='Modules.Somcp.Admin'}</p>
                         {/if}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Role' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <input type="text" name="somcp_assistant_role" class="form-control" maxlength="255" value="{$somcp_assistant_edit.role|escape:'html':'UTF-8'}">
+                        <p class="help-block">{l s='For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Active' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <span class="switch prestashop-switch fixed-width-lg">
+                            <input type="radio" name="somcp_assistant_active" id="somcp_assistant_active_on" value="1"{if $somcp_assistant_edit.active} checked{/if}>
+                            <label for="somcp_assistant_active_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
+                            <input type="radio" name="somcp_assistant_active" id="somcp_assistant_active_off" value="0"{if !$somcp_assistant_edit.active} checked{/if}>
+                            <label for="somcp_assistant_active_off">{l s='No' d='Modules.Somcp.Admin'}</label>
+                            <a class="slide-button btn"></a>
+                        </span>
                     </div>
                 </div>
                 <div class="panel-footer">

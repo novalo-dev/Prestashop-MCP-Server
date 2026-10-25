@@ -1173,6 +1173,12 @@ class SomcpAssistantChat
             if (array_key_exists('properties', $node) && $node['properties'] === []) {
                 unset($node['properties']);
             }
+            // Gemini's function-declaration schema rejects additionalProperties.
+            // Neuron already strips it for structured output but not for tools,
+            // so it is taken out here, where the tool schema is normalised. Our
+            // tool schemas never carry a property of that name, so a plain
+            // unset at every level is safe.
+            unset($node['additionalProperties']);
 
             return array_map($clean, $node);
         };

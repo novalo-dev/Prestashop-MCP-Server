@@ -82,6 +82,12 @@ class SomcpUpload
     public const ARG_REF = 'upload_ref';
 
     /**
+     * @var string marks the deposits made by attaching a file in the built-in
+     *             assistant, the only ones a signed link may serve
+     */
+    public const CHAT_MODULE = 'somcp-assistant';
+
+    /**
      * @var string Folder the files live in, relative to the shop root.
      *
      * Under var/ rather than under the module, and the difference is the web
@@ -373,6 +379,7 @@ class SomcpUpload
      * @param string|array<int, string> $accept a KINDS shorthand or a list of extensions
      * @param string $module folder of the module asking, empty for this one
      * @param array{files?:int, bytes?:int} $limits
+     * @param int $ttl seconds the invitation and its files are kept
      *
      * @return string the reference, or an empty string when refused
      */
@@ -382,6 +389,7 @@ class SomcpUpload
         $accept,
         string $module = '',
         array $limits = [],
+        int $ttl = self::TTL,
     ): string {
         $extensions = self::resolve($accept);
 
@@ -401,7 +409,7 @@ class SomcpUpload
             'purpose' => pSQL(Tools::substr($purpose, 0, 255)),
             'max_files' => self::clampFiles($limits['files'] ?? 1),
             'max_bytes' => self::clampBytes($limits['bytes'] ?? self::DEFAULT_BYTES),
-            'expires_at' => pSQL(date('Y-m-d H:i:s', time() + self::TTL)),
+            'expires_at' => pSQL(date('Y-m-d H:i:s', time() + max(60, $ttl))),
         ]);
 
         if (!$stored) {
@@ -734,6 +742,124 @@ class SomcpUpload
         }
 
         return $taken;
+    }
+
+    /**
+     * The first file of a deposit, read without taking it.
+     *
+     * For the built-in assistant, which shows an attached file to the model on
+     * every turn of the conversation and must not use it up doing so.
+     *
+     * @param string $reference
+     * @param int $idEmployee
+     *
+     * @return array{name:string, mimeType:string, size:int, contents:string}|null
+     */
+    public static function peek(string $reference, int $idEmployee): ?array
+    {
+        $row = self::find($reference, $idEmployee);
+        $file = $row !== null ? (self::deposited((int) $row['id_upload'])[0] ?? null) : null;
+        if ($file === null) {
+            return null;
+        }
+
+        $contents = @file_get_contents(self::directory() . (string) $file['stored_as']);
+
+        return $contents === false ? null : [
+            'name' => (string) $file['file_name'],
+            'mimeType' => (string) $file['mime_type'],
+            'size' => (int) $file['file_size'],
+            'contents' => $contents,
+        ];
+    }
+
+    /**
+     * The file a signed link points at: a deposit of the built-in assistant,
+     * found by the hash of its reference, which is what the link carries.
+     *
+     * The reference itself never goes into a link. It redeems the file for a
+     * tool, and a link is read by the provider's servers and may end up in
+     * their logs; the hash only lets a file be looked at.
+     *
+     * @param string $referenceHash
+     *
+     * @return array{name:string, mimeType:string, path:string}|null
+     */
+    public static function linked(string $referenceHash): ?array
+    {
+        if (!preg_match('/^[a-f0-9]{64}$/', $referenceHash)) {
+            return null;
+        }
+
+        $row = Db::getInstance()->getRow(
+            'SELECT * FROM `' . _DB_PREFIX_ . "somcp_upload`
+             WHERE `reference_hash` = '" . pSQL($referenceHash) . "'
+               AND `module` = '" . pSQL(self::CHAT_MODULE) . "'
+               AND `expires_at` > '" . pSQL(date('Y-m-d H:i:s')) . "'"
+        );
+        $file = is_array($row) && $row !== [] ? (self::deposited((int) $row['id_upload'])[0] ?? null) : null;
+        if ($file === null) {
+            return null;
+        }
+
+        $path = self::directory() . (string) $file['stored_as'];
+
+        return is_file($path) ? [
+            'name' => (string) $file['file_name'],
+            'mimeType' => (string) $file['mime_type'],
+            'path' => $path,
+        ] : null;
+    }
+
+    /**
+     * A single-use copy of a deposit, for a tool.
+     *
+     * A tool redeems what it is given, which deletes it: right for a file
+     * deposited for that one call, wrong for a file attached in the built-in
+     * assistant, which the conversation still shows. The tool is handed a copy
+     * under a new reference instead, so both keep working.
+     *
+     * @param string $reference a deposit of this employee
+     * @param int $idEmployee
+     *
+     * @return string the reference of the copy, empty when there is nothing to copy
+     */
+    public static function copyForTool(string $reference, int $idEmployee): string
+    {
+        $row = self::find($reference, $idEmployee);
+        if ($row === null) {
+            return '';
+        }
+
+        $copy = self::invite(
+            $idEmployee,
+            (string) $row['purpose'],
+            explode(' ', (string) $row['extensions']),
+            (string) $row['module'],
+            ['files' => (int) $row['max_files'], 'bytes' => (int) $row['max_bytes']]
+        );
+        $copied = self::find($copy, $idEmployee);
+        if ($copied === null) {
+            return '';
+        }
+
+        $directory = self::directory();
+        foreach (self::deposited((int) $row['id_upload']) as $file) {
+            $storedAs = SomcpRandom::token(16) . '.' . Tools::strtolower((string) pathinfo((string) $file['stored_as'], PATHINFO_EXTENSION));
+            if (!@copy($directory . (string) $file['stored_as'], $directory . $storedAs)) {
+                continue;
+            }
+            @chmod($directory . $storedAs, 0640);
+            Db::getInstance()->insert('somcp_upload_file', [
+                'id_upload' => (int) $copied['id_upload'],
+                'file_name' => pSQL((string) $file['file_name']),
+                'mime_type' => pSQL((string) $file['mime_type']),
+                'stored_as' => pSQL($storedAs),
+                'file_size' => (int) $file['file_size'],
+            ]);
+        }
+
+        return $copy;
     }
 
     /**

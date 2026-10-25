@@ -284,7 +284,11 @@ uses their answer. A monthly spending cap, estimated in US dollars from the
 providers' public prices, stops the chat when it is reached, and shop-wide
 instructions are added to every conversation. Files from your computer -
 images, PDF and text files such as CSV, up to 5 MB each - can be attached to a
-message for the assistant to read. Keys are stored encrypted.
+message. They are kept on your shop for a week, checked like any deposited
+file, and a tool that takes a file can use them directly. The assistant sees
+an image or a PDF through a private link that expires, when your shop is
+reachable from the internet and the provider reads links; otherwise the file
+itself is sent. Keys are stored encrypted.
 Conversations are kept per employee. Runs on Neuron AI.
 
 **New version alert.** The Help and updates tab shows the installed version

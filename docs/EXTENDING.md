@@ -281,6 +281,12 @@ asks again, which opens a fresh deposit.
 uses to come back with the deposit. Without it, a client that validates
 arguments refuses the second call.
 
+In the built-in assistant, a file the employee attached to a message is
+already a deposit, named to the model with its `upload_ref`. The model can call
+your tool with that reference straight away: your handler receives the file in
+`$context['files']` on the first call, with no deposit page. It gets a copy,
+so the conversation keeps showing the file.
+
 ---
 
 ## Anatomy of a prompt

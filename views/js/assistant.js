@@ -400,7 +400,7 @@
         fileInput = el('input');
         fileInput.type = 'file';
         fileInput.multiple = true;
-        fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp,application/pdf,.txt,.csv,.md,.json,.xml';
+        fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp,application/pdf,.txt,.csv,.json,.xml';
         fileInput.hidden = true;
         fileInput.addEventListener('change', function () {
             Array.prototype.forEach.call(fileInput.files, function (file) {

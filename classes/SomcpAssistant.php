@@ -43,6 +43,9 @@ class SomcpAssistant
     /** @var string The merchant's own instructions, added to every conversation. */
     public const INSTRUCTIONS = 'SOMCP_ASSISTANT_INSTRUCTIONS';
 
+    /** @var string Key the links to attached files are signed with. Never shown anywhere. */
+    public const LINK_KEY = 'SOMCP_ASSISTANT_LINK_KEY';
+
     public const LEVEL_ECONOMY = 'economy';
     public const LEVEL_BALANCED = 'balanced';
     public const LEVEL_POWER = 'power';
@@ -388,6 +391,7 @@ class SomcpAssistant
     {
         Configuration::deleteByName(self::BUDGET);
         Configuration::deleteByName(self::INSTRUCTIONS);
+        Configuration::deleteByName(self::LINK_KEY);
     }
 
     /**

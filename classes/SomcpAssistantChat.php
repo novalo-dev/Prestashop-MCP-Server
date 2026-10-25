@@ -93,8 +93,18 @@ class SomcpAssistantChat
     /** @var int Files one message may carry. */
     public const MAX_FILES = 5;
 
-    /** @var int Largest file, in bytes. Images and PDFs travel base64-encoded, a third larger. */
+    /** @var int Largest file, in bytes. Images and PDFs may travel base64-encoded, a third larger. */
     public const MAX_FILE_BYTES = 5242880;
+
+    /**
+     * @var int Seconds an attached file is kept, and its signed link valid.
+     *
+     * A conversation sends its whole history to the model on every turn,
+     * links included, and a provider that finds one dead refuses the request.
+     * A week covers a conversation picked up again a few days later; past it,
+     * the employee starts a new one.
+     */
+    public const FILE_TTL = 604800;
 
     /** @var int Characters of a text file handed to the model. */
     private const MAX_TEXT_CHARS = 200000;
@@ -103,24 +113,32 @@ class SomcpAssistantChat
     private const FILE_MARKER = '[File: ';
 
     /**
-     * What an employee may attach, by extension, with the type the file's
-     * content must actually have. The type is read from the bytes, never
-     * taken from the browser.
+     * What an employee may attach, and how each kind reaches the model. The
+     * deposit store checks every file against its bytes, as it does for the
+     * deposit page: this list only narrows what the chat offers.
      *
-     * @var array<string, array{0:string, 1:array<int, string>}>
+     * @var array<string, string>
      */
     private const ATTACHABLE = [
-        'jpg' => ['image', ['image/jpeg']],
-        'jpeg' => ['image', ['image/jpeg']],
-        'png' => ['image', ['image/png']],
-        'gif' => ['image', ['image/gif']],
-        'webp' => ['image', ['image/webp']],
-        'pdf' => ['pdf', ['application/pdf']],
-        'txt' => ['text', ['text/plain']],
-        'csv' => ['text', ['text/plain', 'text/csv', 'application/csv']],
-        'md' => ['text', ['text/plain', 'text/markdown']],
-        'json' => ['text', ['application/json', 'text/plain']],
-        'xml' => ['text', ['text/xml', 'application/xml', 'text/plain']],
+        'jpg' => 'image',
+        'jpeg' => 'image',
+        'png' => 'image',
+        'gif' => 'image',
+        'webp' => 'image',
+        'pdf' => 'pdf',
+        'txt' => 'text',
+        'csv' => 'text',
+        'json' => 'text',
+        'xml' => 'text',
+    ];
+
+    /**
+     * @var array<string, array<int, string>> Providers that fetch a file from a link
+     *                                        themselves, by kind. The others get the bytes.
+     */
+    private const LINKABLE = [
+        'image' => ['anthropic', 'openai', 'mistral'],
+        'pdf' => ['anthropic'],
     ];
 
     /** @var Employee */
@@ -282,7 +300,7 @@ class SomcpAssistantChat
         }
 
         $refused = '';
-        $blocks = $this->attachments($files, $refused);
+        $blocks = $this->attachments($files, $this->assistantOf($thread), $refused);
         if ($refused !== '') {
             return $this->view($thread, $refused);
         }
@@ -305,20 +323,25 @@ class SomcpAssistantChat
     }
 
     /**
-     * The files of a message, as content the model reads.
+     * The files of a message, kept on the shop and shown to the model.
      *
-     * Images and PDFs go as they are, for the providers that read them; text
-     * files go as text, which every provider reads. Each one is preceded by
-     * its name, so the model can refer to it and the chat can draw it.
-     * Anything else is refused whole: one file the employee meant to send and
-     * that silently did not go would be worse than an error.
+     * Every file becomes a deposit in the store the deposit page uses - same
+     * formats, same check of the bytes, same purge - with a reference a tool
+     * can be given to use the file itself. Then the model is shown it: an
+     * image or a PDF through a signed link when the shop is reachable from the
+     * internet and the provider fetches links, as bytes otherwise; a text file
+     * as text, which every provider reads. Each file is preceded by its name
+     * and its reference. One file refused stops the whole message: a file the
+     * employee meant to send and that silently did not go would be worse than
+     * an error.
      *
      * @param array<int, array{name:string, tmp_name:string, size:int, error:int}> $files
+     * @param array<string, mixed>|null $assistant the assistant that will read them
      * @param string $refused set to a sentence for the employee when a file is refused
      *
      * @return array<int, TextContent|ImageContent|FileContent>
      */
-    private function attachments(array $files, string &$refused = ''): array
+    private function attachments(array $files, ?array $assistant, string &$refused = ''): array
     {
         $refused = '';
         if (count($files) > self::MAX_FILES) {
@@ -327,41 +350,140 @@ class SomcpAssistantChat
             return [];
         }
 
+        $idEmployee = (int) $this->employee->id;
+        $provider = (string) ($assistant['provider'] ?? '');
         $blocks = [];
-        $finfo = function_exists('finfo_open') ? finfo_open(FILEINFO_MIME_TYPE) : false;
         foreach ($files as $file) {
             $name = Tools::substr(basename(str_replace('\\', '/', (string) $file['name'])), 0, 120);
             $extension = Tools::strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
-            $rule = self::ATTACHABLE[$extension] ?? null;
-            $ok = $rule !== null
-                && (int) $file['error'] === UPLOAD_ERR_OK
-                && is_uploaded_file((string) $file['tmp_name'])
-                && (int) $file['size'] > 0 && (int) $file['size'] <= self::MAX_FILE_BYTES;
-            $mime = $ok && $finfo !== false ? (string) finfo_file($finfo, (string) $file['tmp_name']) : '';
-            if (!$ok || !in_array($mime, $rule[1], true)) {
-                $refused = self::t('This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.') . ' ' . $name;
+            $kind = self::ATTACHABLE[$extension] ?? '';
+            $refusal = self::t('This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.') . ' ' . $name;
+            if ($kind === '') {
+                $refused = $refusal;
 
                 return [];
             }
 
-            $bytes = (string) Tools::file_get_contents((string) $file['tmp_name']);
-            $blocks[] = new TextContent(self::FILE_MARKER . $name . ']');
-            if ($rule[0] === 'image') {
-                $blocks[] = new ImageContent(base64_encode($bytes), SourceType::BASE64, $mime);
-            } elseif ($rule[0] === 'pdf') {
-                $blocks[] = new FileContent(base64_encode($bytes), SourceType::BASE64, $mime, $name);
+            $reference = SomcpUpload::invite(
+                $idEmployee,
+                'Attached in the built-in assistant',
+                [$extension],
+                SomcpUpload::CHAT_MODULE,
+                ['files' => 1, 'bytes' => self::MAX_FILE_BYTES],
+                self::FILE_TTL
+            );
+            $invitation = $reference !== '' ? SomcpUpload::find($reference, $idEmployee) : null;
+            $problem = $invitation !== null ? SomcpUpload::accept($invitation, $file) : 'no_store';
+            $stored = $problem === '' ? SomcpUpload::peek($reference, $idEmployee) : null;
+            if ($stored === null) {
+                if ($invitation !== null) {
+                    SomcpUpload::drop($invitation);
+                }
+                $refused = $refusal;
+
+                return [];
+            }
+
+            $blocks[] = new TextContent(self::FILE_MARKER . $name . ', ' . SomcpUpload::ARG_REF . ': ' . $reference . ']');
+            $linked = in_array($provider, self::LINKABLE[$kind] ?? [], true) && self::shopIsPublic();
+            if ($kind === 'image') {
+                $blocks[] = $linked
+                    ? new ImageContent(self::fileUrl($reference), SourceType::URL, $stored['mimeType'])
+                    : new ImageContent(base64_encode($stored['contents']), SourceType::BASE64, $stored['mimeType']);
+            } elseif ($kind === 'pdf') {
+                $blocks[] = $linked
+                    ? new FileContent(self::fileUrl($reference), SourceType::URL, $stored['mimeType'], $name)
+                    : new FileContent(base64_encode($stored['contents']), SourceType::BASE64, $stored['mimeType'], $name);
             } else {
                 // Invalid UTF-8 would make the whole request unreadable to
                 // the provider: a file saved in an older encoding is
                 // converted rather than refused.
-                if (!mb_check_encoding($bytes, 'UTF-8')) {
-                    $bytes = (string) mb_convert_encoding($bytes, 'UTF-8', 'Windows-1252');
+                $text = $stored['contents'];
+                if (!mb_check_encoding($text, 'UTF-8')) {
+                    $text = (string) mb_convert_encoding($text, 'UTF-8', 'Windows-1252');
                 }
-                $blocks[] = new TextContent(Tools::substr($bytes, 0, self::MAX_TEXT_CHARS));
+                $blocks[] = new TextContent(Tools::substr($text, 0, self::MAX_TEXT_CHARS));
             }
         }
 
         return $blocks;
+    }
+
+    /**
+     * The signed link a provider fetches an attached file from.
+     *
+     * It carries the hash of the file's reference, never the reference that
+     * redeems it, and expires with the file. The signature is what makes it
+     * unguessable; without it, the address answers nothing.
+     *
+     * @param string $reference
+     *
+     * @return string
+     */
+    private static function fileUrl(string $reference): string
+    {
+        $hash = SomcpRandom::hash($reference);
+        $expires = time() + self::FILE_TTL;
+
+        return Context::getContext()->link->getModuleLink('somcp', 'file', [
+            'f' => $hash,
+            'e' => $expires,
+            's' => self::signature($hash, $expires),
+        ], true);
+    }
+
+    /**
+     * @param string $hash
+     * @param int $expires
+     *
+     * @return string
+     */
+    public static function signature(string $hash, int $expires): string
+    {
+        return hash_hmac('sha256', $hash . '|' . $expires, self::linkKey());
+    }
+
+    /**
+     * The key file links are signed with, minted the first time one is
+     * needed and kept for all shops. Its own key, so that emptying it kills
+     * every link at once and nothing else.
+     *
+     * @return string
+     */
+    private static function linkKey(): string
+    {
+        $key = (string) Configuration::getGlobalValue(SomcpAssistant::LINK_KEY);
+        if (strlen($key) < 32) {
+            $key = SomcpRandom::token(32);
+            Configuration::updateGlobalValue(SomcpAssistant::LINK_KEY, $key);
+        }
+
+        return $key;
+    }
+
+    /**
+     * Whether a provider's servers can reach this shop: not a local name, and
+     * every address it resolves to on the public internet. A shop behind a
+     * tunnel or a firewall may still be unreachable; the provider then says
+     * so, and the employee sees it.
+     *
+     * @return bool
+     */
+    private static function shopIsPublic(): bool
+    {
+        $host = (string) parse_url(Context::getContext()->shop->getBaseURL(true), PHP_URL_HOST);
+        if ($host === '' || $host === 'localhost' || preg_match('/\.(local|localhost|test|internal|lan)$/', $host)) {
+            return false;
+        }
+
+        $addresses = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
+        foreach ($addresses as $address) {
+            if (!filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+        }
+
+        return $addresses !== [];
     }
 
     /**
@@ -549,6 +671,15 @@ class SomcpAssistantChat
             SomcpLogger::log('permission_refused', SomcpLogger::OUTCOME_FAILURE, 'assistant: tool ' . $name, '', $idEmployee);
 
             return ['error' => 'This account does not have the back office permission this tool requires.'];
+        }
+
+        // A file attached in the chat is still shown by the conversation: the
+        // tool gets a copy to redeem, under its own reference.
+        if (is_string($arguments[SomcpUpload::ARG_REF] ?? null) && $arguments[SomcpUpload::ARG_REF] !== '') {
+            $copy = SomcpUpload::copyForTool($arguments[SomcpUpload::ARG_REF], $idEmployee);
+            if ($copy !== '') {
+                $arguments[SomcpUpload::ARG_REF] = $copy;
+            }
         }
 
         $result = SomcpToolRegistry::run($tool, $arguments, [
@@ -800,6 +931,7 @@ class SomcpAssistantChat
             'You are the assistant built into the back office of the PrestaShop shop "' . $shop->name . '".',
             'You work for ' . trim($this->employee->firstname . ' ' . $this->employee->lastname) . ', an employee of the shop, with exactly their back office permissions, through the tools you are given.',
             'Answer in ' . (is_array($language) ? $language['name'] : 'English') . '. Be concise and concrete.',
+            'Files the employee attached are named with an upload_ref. A tool that accepts an upload_ref argument can use the file itself: pass it that reference.',
             'Read real data with the tools rather than guessing. Any tool that changes the shop is shown to the employee for approval before it runs: when the request is clear, call it directly instead of asking for permission in text.',
             'When a tool returns an error, explain it plainly and suggest what the employee can do.',
             'Environment: PrestaShop ' . _PS_VERSION_ . ', PHP ' . PHP_VERSION . ', shop address ' . $shop->getBaseURL(true) . ', today is ' . date('Y-m-d') . '.',
@@ -965,7 +1097,9 @@ class SomcpAssistantChat
             $skipNext = false;
             foreach ($message->getContentBlocks() as $block) {
                 if ($block instanceof TextContent && strpos($block->content, self::FILE_MARKER) === 0) {
-                    $files[] = rtrim(Tools::substr($block->content, Tools::strlen(self::FILE_MARKER)), ']');
+                    $named = rtrim(Tools::substr($block->content, Tools::strlen(self::FILE_MARKER)), ']');
+                    $cut = strpos($named, ', ' . SomcpUpload::ARG_REF . ':');
+                    $files[] = $cut === false ? $named : substr($named, 0, $cut);
                     $skipNext = true;
                     continue;
                 }

@@ -50,6 +50,20 @@ class SomcpAssistant
     public const LEVEL_BALANCED = 'balanced';
     public const LEVEL_POWER = 'power';
 
+    /**
+     * @var string The level that makes pictures. Offered only by the providers
+     *             in IMAGE_PROVIDERS, and never leading a conversation: image
+     *             models do not call the shop's tools, so the leading
+     *             assistant hands them the work of their role instead.
+     */
+    public const LEVEL_IMAGE = 'image';
+
+    /**
+     * @var array<int, string> providers whose image models the chat can reach:
+     *                         Gemini through its chat API, OpenAI through its image API
+     */
+    public const IMAGE_PROVIDERS = ['gemini', 'openai'];
+
     /** @var int Seconds a resolved model is trusted before the provider is asked again. */
     private const RESOLVE_TTL = 86400;
 
@@ -91,6 +105,21 @@ class SomcpAssistant
     }
 
     /**
+     * The levels one provider offers: the three text levels everywhere, and
+     * images where the provider makes them.
+     *
+     * @param string $provider
+     *
+     * @return array<int, string>
+     */
+    public static function levelsOf(string $provider): array
+    {
+        return in_array($provider, self::IMAGE_PROVIDERS, true)
+            ? array_merge(self::levels(), [self::LEVEL_IMAGE])
+            : self::levels();
+    }
+
+    /**
      * Every assistant, the default one first.
      *
      * @return array<int, array<string, mixed>>
@@ -122,9 +151,13 @@ class SomcpAssistant
      */
     public static function leader(): ?array
     {
-        $active = self::active();
+        foreach (self::active() as $assistant) {
+            if ($assistant['level'] !== self::LEVEL_IMAGE) {
+                return $assistant;
+            }
+        }
 
-        return $active[0] ?? null;
+        return null;
     }
 
     /**
@@ -155,7 +188,7 @@ class SomcpAssistant
     {
         $providers = self::providers();
         $provider = isset($providers[$values['provider']]) ? $values['provider'] : 'anthropic';
-        $level = in_array($values['level'], self::levels(), true) ? $values['level'] : self::LEVEL_ECONOMY;
+        $level = in_array($values['level'], self::levelsOf($provider), true) ? $values['level'] : self::LEVEL_ECONOMY;
 
         $data = [
             'provider' => pSQL($provider),
@@ -176,9 +209,9 @@ class SomcpAssistant
             $db->update('somcp_assistant', $data, '`id_assistant` = ' . (int) $idAssistant);
         } else {
             $data['api_key'] = $data['api_key'] ?? '';
-            // The first assistant is the default one: a chat with one
-            // assistant and no default would have nobody to answer.
-            $data['is_default'] = self::all() === [] ? 1 : 0;
+            // The first assistant that can lead is the default one: a chat
+            // with no default would have nobody to answer.
+            $data['is_default'] = $level !== self::LEVEL_IMAGE && self::leader() === null ? 1 : 0;
             $db->insert('somcp_assistant', $data);
             $idAssistant = (int) $db->Insert_ID();
         }
@@ -197,9 +230,11 @@ class SomcpAssistant
         Db::getInstance()->delete('somcp_assistant_usage', '`id_assistant` = ' . (int) $idAssistant);
 
         if ($wasDefault) {
-            $next = self::all()[0] ?? null;
-            if ($next !== null) {
-                self::makeDefault((int) $next['id_assistant']);
+            foreach (self::all() as $next) {
+                if ($next['level'] !== self::LEVEL_IMAGE) {
+                    self::makeDefault((int) $next['id_assistant']);
+                    break;
+                }
             }
         }
     }
@@ -209,6 +244,10 @@ class SomcpAssistant
      */
     public static function makeDefault(int $idAssistant): void
     {
+        $assistant = self::get($idAssistant);
+        if ($assistant === null || $assistant['level'] === self::LEVEL_IMAGE) {
+            return;
+        }
         $db = Db::getInstance();
         $db->update('somcp_assistant', ['is_default' => 0], '1');
         $db->update('somcp_assistant', ['is_default' => 1], '`id_assistant` = ' . (int) $idAssistant);
@@ -630,6 +669,10 @@ class SomcpAssistant
             ],
         ];
 
+        if ($level === self::LEVEL_IMAGE) {
+            return self::pickImage($provider, $models);
+        }
+
         $ids = [];
         foreach ($models as $model) {
             $id = $model['id'];
@@ -679,6 +722,41 @@ class SomcpAssistant
     }
 
     /**
+     * The newest image model of a provider: the stable one when there is
+     * one, a preview otherwise, and the smaller variant last.
+     *
+     * @param string $provider
+     * @param array<int, array{id:string, created:int}> $models
+     *
+     * @return string empty when the account lists none
+     */
+    private static function pickImage(string $provider, array $models): string
+    {
+        $rules = [
+            'gemini' => ['/^gemini-\d+(\.\d+)?-flash-image$/', '/^gemini-\d+(\.\d+)?-flash-image-preview$/', '/^gemini-[\d.]+-pro-image/'],
+            'openai' => ['/^gpt-image-\d+(\.\d+)?$/', '/^gpt-image-\d+(\.\d+)?-mini$/', '/^dall-e-3$/'],
+        ];
+
+        foreach ($rules[$provider] ?? [] as $rule) {
+            $candidates = [];
+            foreach ($models as $model) {
+                if (preg_match($rule, $model['id'])) {
+                    $candidates[$model['id']] = $model['created'];
+                }
+            }
+            if ($candidates !== []) {
+                uksort($candidates, static function (string $a, string $b) use ($candidates): int {
+                    return $candidates[$b] <=> $candidates[$a] ?: version_compare(self::versionOf($b), self::versionOf($a));
+                });
+
+                return (string) array_key_first($candidates);
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * @param string $id
      *
      * @return string
@@ -704,8 +782,10 @@ class SomcpAssistant
     {
         $table = [
             'anthropic' => [['haiku', 1.0, 5.0], ['sonnet', 3.0, 15.0], ['opus', 5.0, 25.0]],
-            'openai' => [['nano', 0.05, 0.4], ['mini', 0.25, 2.0], ['gpt', 1.25, 10.0]],
-            'gemini' => [['flash-lite', 0.1, 0.4], ['flash', 0.3, 2.5], ['pro', 1.25, 10.0]],
+            // Image models first: their names hold the family names of the
+            // text models, and an image costs far more per output token.
+            'openai' => [['gpt-image', 5.0, 40.0], ['dall-e', 0.0, 40.0], ['nano', 0.05, 0.4], ['mini', 0.25, 2.0], ['gpt', 1.25, 10.0]],
+            'gemini' => [['-image', 0.3, 30.0], ['flash-lite', 0.1, 0.4], ['flash', 0.3, 2.5], ['pro', 1.25, 10.0]],
             'mistral' => [['small', 0.1, 0.3], ['medium', 0.4, 2.0], ['large', 2.0, 6.0]],
             'deepseek' => [['deepseek', 0.28, 0.42]],
             'xai' => [['fast', 0.2, 0.5], ['mini', 0.3, 0.5], ['grok', 3.0, 15.0]],

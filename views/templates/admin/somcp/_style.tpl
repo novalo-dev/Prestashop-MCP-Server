@@ -54,10 +54,6 @@
     padding-right: 12px;
 }
 
-.somcp .somcp-row-actions {
-    display: inline-block;
-}
-
 .somcp .somcp-pane[hidden] {
     display: none;
 }

@@ -409,6 +409,21 @@
                 run('assistant', threadData({ id_assistant: picker.value }));
             }
         });
+        var widen = el('button', 'somcp-widen', '⤢');
+        widen.type = 'button';
+        widen.title = text.enlarge;
+        widen.setAttribute('aria-label', text.enlarge);
+        widen.addEventListener('click', function () {
+            var wide = !panel.classList.contains('somcp-chat-wide');
+            panel.classList.toggle('somcp-chat-wide', wide);
+            widen.textContent = wide ? '⤡' : '⤢';
+            widen.title = wide ? text.reduce : text.enlarge;
+            try {
+                window.localStorage.setItem('somcp.assistant.wide', wide ? '1' : '');
+            } catch (e) {
+                // Not remembered; the next page opens it at its usual size.
+            }
+        });
         var close = el('button', '', '×');
         close.type = 'button';
         close.title = text.close;
@@ -416,7 +431,17 @@
         head.appendChild(menu);
         head.appendChild(who);
         head.appendChild(picker);
+        head.appendChild(widen);
         head.appendChild(close);
+        try {
+            if (window.localStorage.getItem('somcp.assistant.wide') === '1') {
+                panel.classList.add('somcp-chat-wide');
+                widen.textContent = '⤡';
+                widen.title = text.reduce;
+            }
+        } catch (e) {
+            // Storage refused: the usual size.
+        }
 
         threadList = el('div', 'somcp-chat-threads');
         threadList.hidden = true;
@@ -439,14 +464,9 @@
             drawPending();
         });
 
-        var form = el('form', 'somcp-chat-input');
-        var attach = el('button', 'somcp-attach', '📎');
-        attach.type = 'button';
-        attach.title = text.attach;
-        attach.setAttribute('aria-label', text.attach);
-        attach.addEventListener('click', function () {
-            fileInput.click();
-        });
+        // One rounded box holding the field, the files waiting and a row of
+        // actions under them, the way the chat apps people know lay it out.
+        var form = el('form', 'somcp-composer');
         input = el('textarea');
         input.rows = 1;
         input.placeholder = text.placeholder;
@@ -456,17 +476,30 @@
                 submit();
             }
         });
-        sendButton = el('button', '', '➤');
+        input.addEventListener('input', grow);
+        var actions = el('div', 'somcp-composer-actions');
+        var attach = el('button', 'somcp-attach', '+');
+        attach.type = 'button';
+        attach.title = text.attach;
+        attach.setAttribute('aria-label', text.attach);
+        attach.addEventListener('click', function () {
+            fileInput.click();
+        });
+        sendButton = el('button', 'somcp-send', '↑');
         sendButton.type = 'submit';
         sendButton.title = text.send;
-        form.appendChild(attach);
-        form.appendChild(fileInput);
+        sendButton.setAttribute('aria-label', text.send);
+        actions.appendChild(attach);
+        actions.appendChild(fileInput);
+        actions.appendChild(sendButton);
+        form.appendChild(fileList);
         form.appendChild(input);
-        form.appendChild(sendButton);
+        form.appendChild(actions);
         form.addEventListener('submit', function (event) {
             event.preventDefault();
             submit();
         });
+        var warning = el('div', 'somcp-chat-warning', text.mistakes);
 
         foot = el('div', 'somcp-chat-foot');
         foot.appendChild(el('span', '', ''));
@@ -481,10 +514,16 @@
         panel.appendChild(head);
         panel.appendChild(threadList);
         panel.appendChild(body);
-        panel.appendChild(fileList);
         panel.appendChild(form);
+        panel.appendChild(warning);
         panel.appendChild(foot);
         document.body.appendChild(panel);
+    }
+
+    // The field grows with what is typed, up to a few lines, then scrolls.
+    function grow() {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 200) + 'px';
     }
 
     // The files chosen for the next message, each with a cross to take it
@@ -524,6 +563,7 @@
         var files = pending;
         pending = [];
         input.value = '';
+        grow();
         state.view = state.view || { thread_id: '', id_assistant: Number(picker.value), messages: [], status: 'idle', actions: [], budget: 0, spent: 0 };
         state.view.messages.push({ role: 'user', text: message, files: files.map(function (file) { return file.name; }) });
         var data = { text: message, id_assistant: picker.value, files: files };
@@ -557,29 +597,45 @@
         }
     }
 
-    // The button goes beside the other icons of the back office header; the
-    // header differs between versions and between legacy and Symfony pages,
-    // so it falls back to a floating button rather than to nothing.
+    // The button sits in the back office header right after "View my shop",
+    // built as a copy of that very link and its container: the header is not
+    // the same on legacy pages and on Symfony pages, nor on PrestaShop 8 and
+    // 9, and a copy gets whatever styling each of them gives the original.
+    // A page without that link gets a floating button rather than nothing.
     function placeButton() {
-        var button = el('button', '', '✦');
+        var original = document.getElementById('header_shopname');
+        if (original && original.parentNode && original.parentNode.parentNode) {
+            var holder = original.parentNode.cloneNode(false);
+            holder.removeAttribute('id');
+            Array.prototype.slice.call(holder.attributes).forEach(function (attribute) {
+                if (attribute.name.indexOf('data-') === 0) {
+                    holder.removeAttribute(attribute.name);
+                }
+            });
+            var link = original.cloneNode(false);
+            link.id = 'somcp-chat-button';
+            link.href = '#';
+            link.removeAttribute('target');
+            link.title = text.open;
+            link.setAttribute('role', 'button');
+            link.appendChild(el('i', 'material-icons', 'forum'));
+            link.appendChild(el('span', '', text.button));
+            link.addEventListener('click', function (event) {
+                event.preventDefault();
+                toggle();
+            });
+            holder.appendChild(link);
+            original.parentNode.parentNode.insertBefore(holder, original.parentNode.nextSibling);
+            return;
+        }
+
+        var button = el('button', 'somcp-floating');
         button.id = 'somcp-chat-button';
         button.type = 'button';
         button.title = text.open;
         button.setAttribute('aria-label', text.open);
+        button.appendChild(el('i', 'material-icons', 'forum'));
         button.addEventListener('click', toggle);
-
-        var anchors = ['#header-notifications-container', '#notification', '.notification-center', '#employee_infos', '#header-employee-container'];
-        for (var i = 0; i < anchors.length; i += 1) {
-            var anchor = document.querySelector(anchors[i]);
-            if (anchor && anchor.parentNode) {
-                var holder = el('div', 'component');
-                holder.appendChild(button);
-                anchor.parentNode.insertBefore(holder, anchor);
-                return;
-            }
-        }
-
-        button.className = 'somcp-floating';
         document.body.appendChild(button);
     }
 

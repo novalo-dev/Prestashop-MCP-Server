@@ -199,6 +199,11 @@ class AdminSomcpAssistantController extends ModuleAdminController
 
         $assistants = [];
         foreach (SomcpAssistant::active() as $assistant) {
+            // Only the assistants that can lead a conversation are offered in
+            // the picker; an image one is reached through its role.
+            if ($assistant['level'] === SomcpAssistant::LEVEL_IMAGE) {
+                continue;
+            }
             $assistants[] = [
                 'id' => (int) $assistant['id_assistant'],
                 'label' => (string) $assistant['label'],

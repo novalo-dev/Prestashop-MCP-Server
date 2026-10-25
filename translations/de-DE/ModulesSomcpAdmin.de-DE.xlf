@@ -1622,6 +1622,31 @@
       <source>This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.</source>
       <target>Diese Datei kann nicht gesendet werden: Es werden nur Bilder, PDF- und Textdateien bis 5 MB angenommen.</target>
     </trans-unit>
+    <!-- Images -->
+    <trans-unit id="fff0d600f8a0b5e19e88bfb821dd1157" resname="Images">
+      <source>Images</source>
+      <target>Bilder</target>
+    </trans-unit>
+    <!-- creates pictures; it never leads the chat, the default assistant asks it for them -->
+    <trans-unit id="959c4849b6eb58bc8186bf8f7b6b569b" resname="creates pictures; it never leads the chat, the default assistant asks it for them">
+      <source>creates pictures; it never leads the chat, the default assistant asks it for them</source>
+      <target>erstellt Bilder; er führt nie den Chat, der Standardassistent bittet ihn darum</target>
+    </trans-unit>
+    <!-- Enlarge -->
+    <trans-unit id="fe0475f9d22f9d4ff86c0648dc8b9c01" resname="Enlarge">
+      <source>Enlarge</source>
+      <target>Vergrößern</target>
+    </trans-unit>
+    <!-- Reduce -->
+    <trans-unit id="ec4875f03ff0bb0b26cf76ac7f41e3c8" resname="Reduce">
+      <source>Reduce</source>
+      <target>Verkleinern</target>
+    </trans-unit>
+    <!-- This is an AI and can make mistakes. -->
+    <trans-unit id="3606ebb3f5c20193228f58641f791867" resname="This is an AI and can make mistakes.">
+      <source>This is an AI and can make mistakes.</source>
+      <target>Dies ist eine KI und kann Fehler machen.</target>
+    </trans-unit>
     <!-- Open source under the AFL-3.0 licence -->
     <trans-unit id="c670648db949fca4d11ac24fa3806100" resname="Open source under the AFL-3.0 licence">
       <source>Open source under the AFL-3.0 licence</source>

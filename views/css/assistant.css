@@ -18,29 +18,10 @@
    this one is drawn here, in the back office primary colour. Every rule is
    scoped to the chat's own ids so nothing leaks onto the page around it. */
 
-#somcp-chat-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    margin: 0 6px;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: #25b9d7;
-    color: #fff;
-    font-size: 17px;
-    line-height: 1;
+/* The header button takes the back office's own markup (component,
+   shop-list, link): only the floating fallback is drawn here. */
+#somcp-chat-button:not(.somcp-floating) {
     cursor: pointer;
-    box-shadow: 0 0 0 3px rgba(37, 185, 215, 0.25);
-    vertical-align: middle;
-}
-
-#somcp-chat-button:hover,
-#somcp-chat-button:focus {
-    background: #1f9fba;
-    outline: 0;
 }
 
 #somcp-chat-button.somcp-floating {
@@ -48,9 +29,18 @@
     right: 22px;
     bottom: 22px;
     z-index: 10000;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 52px;
     height: 52px;
-    font-size: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #25b9d7;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
 }
 
 #somcp-chat {
@@ -291,39 +281,87 @@
     font-style: italic;
 }
 
-#somcp-chat .somcp-chat-input {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    padding: 10px 12px;
-    border-top: 1px solid #e3e8ea;
+#somcp-chat.somcp-chat-wide {
+    width: 860px;
+    height: calc(100vh - 90px);
+    max-height: none;
 }
 
-#somcp-chat .somcp-chat-input textarea {
-    flex: 1;
-    max-height: 120px;
-    min-height: 36px;
-    padding: 8px 12px;
+#somcp-chat .somcp-composer {
+    margin: 10px 12px 0;
+    padding: 8px 10px 6px;
     border: 1px solid #dfe3e5;
-    border-radius: 18px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+#somcp-chat .somcp-composer:focus-within {
+    border-color: #bbcdd2;
+}
+
+#somcp-chat .somcp-composer textarea {
+    display: block;
+    width: 100%;
+    min-height: 24px;
+    max-height: 200px;
+    padding: 4px 2px;
+    border: 0;
+    outline: 0;
+    background: transparent;
     resize: none;
     font: inherit;
+    font-size: 14px;
+    line-height: 1.45;
 }
 
-#somcp-chat .somcp-chat-input button {
-    width: 36px;
-    height: 36px;
+#somcp-chat .somcp-composer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+#somcp-chat .somcp-composer-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
     border: 0;
-    border-radius: 50%;
-    background: #25b9d7;
-    color: #fff;
-    font-size: 15px;
+    border-radius: 8px;
     cursor: pointer;
 }
 
-#somcp-chat .somcp-chat-input button:disabled {
+#somcp-chat .somcp-attach {
+    background: none;
+    color: #6c868e;
+    font-size: 22px;
+    line-height: 1;
+}
+
+#somcp-chat .somcp-attach:hover {
+    background: #f4f6f7;
+}
+
+#somcp-chat .somcp-send {
+    background: #25b9d7;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+#somcp-chat .somcp-send:disabled {
     background: #bbcdd2;
     cursor: default;
+}
+
+#somcp-chat .somcp-chat-warning {
+    padding: 6px 14px 0;
+    color: #9aa8ad;
+    font-size: 11px;
+    text-align: center;
 }
 
 #somcp-chat .somcp-chat-foot {
@@ -348,7 +386,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 8px 12px 0;
+    padding: 0 0 6px;
 }
 
 #somcp-chat .somcp-chat-files[hidden] {
@@ -378,19 +416,6 @@
     font-size: 14px;
     line-height: 1;
     cursor: pointer;
-}
-
-#somcp-chat .somcp-chat-input .somcp-attach {
-    width: 32px;
-    height: 36px;
-    border-radius: 50%;
-    background: none;
-    color: #6c868e;
-    font-size: 17px;
-}
-
-#somcp-chat .somcp-chat-input .somcp-attach:hover {
-    background: #f4f6f7;
 }
 
 #somcp-chat .somcp-msg-image {

@@ -1294,6 +1294,26 @@ T = {
  "Ce fichier ne peut pas être envoyé : seuls les images, les PDF et les fichiers texte jusqu'à 5 Mo sont acceptés.",
  "Este archivo no se puede enviar: solo se aceptan imágenes, PDF y archivos de texto de hasta 5 MB.",
  "Diese Datei kann nicht gesendet werden: Es werden nur Bilder, PDF- und Textdateien bis 5 MB angenommen."),
+"Images": (
+ "Images",
+ "Imágenes",
+ "Bilder"),
+"creates pictures; it never leads the chat, the default assistant asks it for them": (
+ "crée des visuels ; il ne mène jamais le chat, l'assistant par défaut les lui demande",
+ "crea imágenes; nunca dirige el chat, el asistente predeterminado se las pide",
+ "erstellt Bilder; er führt nie den Chat, der Standardassistent bittet ihn darum"),
+"Enlarge": (
+ "Agrandir",
+ "Ampliar",
+ "Vergrößern"),
+"Reduce": (
+ "Réduire",
+ "Reducir",
+ "Verkleinern"),
+"This is an AI and can make mistakes.": (
+ "Ceci est une IA et peut commettre des erreurs.",
+ "Esto es una IA y puede cometer errores.",
+ "Dies ist eine KI und kann Fehler machen."),
 "Open source under the AFL-3.0 licence": (
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",

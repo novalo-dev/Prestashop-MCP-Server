@@ -1065,7 +1065,9 @@ class SomcpAssistantChat
         if ($others !== []) {
             $lines[] = 'Other assistants of this shop, each with a role. When part of a request falls under one of these roles, hand that part over with ' . self::DELEGATE_TOOL . ', then use the answer:';
             foreach ($others as $other) {
-                $lines[] = '- id ' . $other['id_assistant'] . ', ' . $other['label'] . ': ' . ($other['role'] !== '' ? $other['role'] : 'general help');
+                $role = $other['role'] !== '' ? $other['role'] : ($other['level'] === SomcpAssistant::LEVEL_IMAGE ? 'images' : 'general help');
+                $lines[] = '- id ' . $other['id_assistant'] . ', ' . $other['label'] . ': ' . $role
+                    . ($other['level'] === SomcpAssistant::LEVEL_IMAGE ? ' (generates images: ask it for any picture, describing it fully)' : '');
             }
         }
 
@@ -1132,7 +1134,10 @@ class SomcpAssistantChat
     {
         $picked = (int) $thread['id_assistant'] > 0 ? SomcpAssistant::get((int) $thread['id_assistant']) : null;
 
-        return $picked !== null && $picked['active'] ? $picked : SomcpAssistant::leader();
+        // An image assistant cannot lead: it does not call the shop's tools.
+        return $picked !== null && $picked['active'] && $picked['level'] !== SomcpAssistant::LEVEL_IMAGE
+            ? $picked
+            : SomcpAssistant::leader();
     }
 
     /**

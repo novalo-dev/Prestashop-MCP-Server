@@ -355,6 +355,10 @@ class Somcp extends Module
                 'title' => $this->l10n('Built-in assistant'),
                 'subtitle' => $this->l10n('Acts with your rights and asks before any change'),
                 'open' => $this->l10n('Open the built-in assistant'),
+                'button' => $this->l10n('Assistant'),
+                'enlarge' => $this->l10n('Enlarge'),
+                'reduce' => $this->l10n('Reduce'),
+                'mistakes' => $this->l10n('This is an AI and can make mistakes.'),
                 'close' => $this->l10n('Close'),
                 'placeholder' => $this->l10n('Write your message...'),
                 'send' => $this->l10n('Send'),
@@ -518,6 +522,7 @@ class Somcp extends Module
             'somcp_assistant_budget' => SomcpAssistant::budget(),
             'somcp_assistant_instructions' => SomcpAssistant::instructions(),
             'somcp_assistant_providers' => SomcpAssistant::providers(),
+            'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
             'somcp_assistant_edit' => $this->assistantBeingEdited(),
             'somcp_assistant_ready' => SomcpAssistantChat::available(),
             // Formatted here, in the employee's language, rather than in the

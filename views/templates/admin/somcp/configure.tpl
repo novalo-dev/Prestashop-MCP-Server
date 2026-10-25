@@ -489,7 +489,7 @@
                 <div class="form-group">
                     <label class="control-label col-lg-3 required">{l s='Assistant' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
-                        <select name="somcp_assistant_provider" class="form-control">
+                        <select name="somcp_assistant_provider" class="form-control" data-somcp-provider>
                         {foreach from=$somcp_assistant_providers key=providerId item=provider}
                             <option value="{$providerId|escape:'html':'UTF-8'}"{if $somcp_assistant_edit.provider === $providerId} selected{/if}>{$provider.label|escape:'html':'UTF-8'}</option>
                         {/foreach}
@@ -517,6 +517,10 @@
                         <div class="radio"><label><input type="radio" name="somcp_assistant_level" value="economy"{if $somcp_assistant_edit.level === 'economy'} checked{/if}> <strong>{l s='Economy' d='Modules.Somcp.Admin'}</strong> - {l s='fast and inexpensive, enough for most tasks' d='Modules.Somcp.Admin'}</label></div>
                         <div class="radio"><label><input type="radio" name="somcp_assistant_level" value="balanced"{if $somcp_assistant_edit.level === 'balanced'} checked{/if}> <strong>{l s='Balanced' d='Modules.Somcp.Admin'}</strong> - {l s='finer for texts and SEO' d='Modules.Somcp.Admin'}</label></div>
                         <div class="radio"><label><input type="radio" name="somcp_assistant_level" value="power"{if $somcp_assistant_edit.level === 'power'} checked{/if}> <strong>{l s='Powerful' d='Modules.Somcp.Admin'}</strong> - {l s='the most capable, clearly more expensive' d='Modules.Somcp.Admin'}</label></div>
+                        {* Only for the providers that make images. Hidden, not
+                           removed, when another provider is picked: the server
+                           refuses the level for them anyway. *}
+                        <div class="radio" data-somcp-image-level="{$somcp_assistant_image_providers|escape:'html':'UTF-8'}"><label><input type="radio" name="somcp_assistant_level" value="image"{if $somcp_assistant_edit.level === 'image'} checked{/if}> <strong>{l s='Images' d='Modules.Somcp.Admin'}</strong> - {l s='creates pictures; it never leads the chat, the default assistant asks it for them' d='Modules.Somcp.Admin'}</label></div>
                         <p class="help-block">{l s='The module always takes the newest model of the chosen level, without an update.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
@@ -579,7 +583,8 @@
                         </td>
                         <td>{if $assistant.role}{$assistant.role|escape:'html':'UTF-8'}{else}<span class="text-muted">{l s='Everything' d='Modules.Somcp.Admin'}</span>{/if}</td>
                         <td>
-                            {if $assistant.level === 'power'}{l s='Powerful' d='Modules.Somcp.Admin'}
+                            {if $assistant.level === 'image'}{l s='Images' d='Modules.Somcp.Admin'}
+                            {elseif $assistant.level === 'power'}{l s='Powerful' d='Modules.Somcp.Admin'}
                             {elseif $assistant.level === 'balanced'}{l s='Balanced' d='Modules.Somcp.Admin'}
                             {else}{l s='Economy' d='Modules.Somcp.Admin'}{/if}
                         </td>
@@ -593,25 +598,36 @@
                             {if $assistant.active}<i class="icon-check text-success"></i>{else}<i class="icon-remove text-danger"></i>{/if}
                         </td>
                         <td class="text-right">
-                            <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="somcp-row-actions">
-                                <input type="hidden" name="id_assistant" value="{$assistant.id_assistant|intval}">
-                                <div class="btn-group">
-                                    <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_assistant_edit={$assistant.id_assistant|intval}">
+                            <div class="btn-group-action">
+                                <div class="btn-group pull-right">
+                                    <a class="edit btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_assistant_edit={$assistant.id_assistant|intval}" title="{l s='Edit' d='Modules.Somcp.Admin'}">
                                         <i class="icon-pencil"></i> {l s='Edit' d='Modules.Somcp.Admin'}
                                     </a>
-                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                                         <i class="icon-caret-down"></i>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-right">
-                                        <li><button type="submit" name="submitSomcpAssistantTest" value="1" class="btn btn-link"><i class="icon-refresh"></i> {l s='Test the key' d='Modules.Somcp.Admin'}</button></li>
-                                        {if !$assistant.is_default}
-                                            <li><button type="submit" name="submitSomcpAssistantDefault" value="1" class="btn btn-link"><i class="icon-star"></i> {l s='Make default' d='Modules.Somcp.Admin'}</button></li>
-                                        {/if}
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a href="#" data-somcp-post="submitSomcpAssistantTest" data-somcp-id="{$assistant.id_assistant|intval}">
+                                                <i class="icon-refresh"></i> {l s='Test the key' d='Modules.Somcp.Admin'}
+                                            </a>
+                                        </li>
+                                    {if !$assistant.is_default && $assistant.level !== 'image'}
+                                        <li>
+                                            <a href="#" data-somcp-post="submitSomcpAssistantDefault" data-somcp-id="{$assistant.id_assistant|intval}">
+                                                <i class="icon-star"></i> {l s='Make default' d='Modules.Somcp.Admin'}
+                                            </a>
+                                        </li>
+                                    {/if}
                                         <li class="divider"></li>
-                                        <li><button type="submit" name="submitSomcpAssistantDelete" value="1" class="btn btn-link" data-somcp-confirm="{l s='Remove this assistant?' d='Modules.Somcp.Admin'}"><i class="icon-trash"></i> {l s='Remove' d='Modules.Somcp.Admin'}</button></li>
+                                        <li>
+                                            <a href="#" class="delete" data-somcp-post="submitSomcpAssistantDelete" data-somcp-id="{$assistant.id_assistant|intval}" data-somcp-question="{l s='Remove this assistant?' d='Modules.Somcp.Admin'}">
+                                                <i class="icon-trash"></i> {l s='Remove' d='Modules.Somcp.Admin'}
+                                            </a>
+                                        </li>
                                     </ul>
                                 </div>
-                            </form>
+                            </div>
                         </td>
                     </tr>
                 {/foreach}
@@ -620,6 +636,12 @@
         {else}
             <p class="text-muted">{l s='No assistant yet. Add one with your own API key to get the chat.' d='Modules.Somcp.Admin'}</p>
         {/if}
+            {* One form for every row action of the list, filled by the link
+               clicked: PrestaShop's lists put links in their menus, not
+               buttons, and a link cannot post on its own. *}
+            <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" id="somcp-assistant-action" hidden>
+                <input type="hidden" name="id_assistant" value="">
+            </form>
             <div class="panel-footer">
                 <a class="btn btn-default pull-right" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_assistant_add=1"><i class="process-icon-new"></i> {l s='Add an assistant' d='Modules.Somcp.Admin'}</a>
             </div>

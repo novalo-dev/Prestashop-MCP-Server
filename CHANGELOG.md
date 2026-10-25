@@ -290,7 +290,12 @@ an image or a PDF through a private link that expires, when your shop is
 reachable from the internet and the provider reads links; otherwise the file
 itself is sent. An image an assistant generates - Gemini or OpenAI with an
 image model, often the one given the images role - is kept the same way: shown
-in the chat, and usable as the image of a product. Keys are stored encrypted.
+in the chat, and usable as the image of a product. Gemini and ChatGPT also offer
+an Images level, which picks their newest image model by itself; an assistant at
+that level never leads the chat, the default one asks it for pictures. The chat
+opens from an Assistant link beside View my shop, can be enlarged, and its
+message box holds the field, the files and the buttons together, with a reminder
+that the answers come from an AI. Keys are stored encrypted.
 Conversations are kept per employee. Runs on Neuron AI.
 
 **Product images from a file on the shop.** Creating or changing a product now

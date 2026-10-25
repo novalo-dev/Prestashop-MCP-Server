@@ -87,6 +87,52 @@
         // of the back office: a merchant who turns it off in an emergency must
         // not also have to find a Save button in another tab. A switch that
         // belongs to another form names the action it submits.
+        // The menu of a row in the assistants list posts its action through
+        // the one hidden form, asking first when the action removes.
+        document.querySelectorAll('[data-somcp-post]').forEach(function (link) {
+            link.addEventListener('click', function (event) {
+                event.preventDefault();
+                var question = link.getAttribute('data-somcp-question');
+                if (question && !window.confirm(question)) {
+                    return;
+                }
+                var form = document.getElementById('somcp-assistant-action');
+                if (!form) {
+                    return;
+                }
+                form.querySelector('[name="id_assistant"]').value = link.getAttribute('data-somcp-id');
+                var marker = document.createElement('input');
+                marker.type = 'hidden';
+                marker.name = link.getAttribute('data-somcp-post');
+                marker.value = '1';
+                form.appendChild(marker);
+                form.submit();
+            });
+        });
+
+        // The images level is offered only for the providers that make
+        // images: it follows the provider picked in the form.
+        var providerField = document.querySelector('[data-somcp-provider]');
+        var imageLevel = document.querySelector('[data-somcp-image-level]');
+        if (providerField && imageLevel) {
+            var followProvider = function () {
+                var offered = imageLevel.getAttribute('data-somcp-image-level').split(' ').indexOf(providerField.value) !== -1;
+                // A style, not the hidden attribute: Bootstrap's .radio sets
+                // display itself and would win over it.
+                imageLevel.style.display = offered ? '' : 'none';
+                var radio = imageLevel.querySelector('input');
+                if (!offered && radio.checked) {
+                    radio.checked = false;
+                    var first = document.querySelector('input[name="somcp_assistant_level"]');
+                    if (first) {
+                        first.checked = true;
+                    }
+                }
+            };
+            providerField.addEventListener('change', followProvider);
+            followProvider();
+        }
+
         // A removal asks first, in the merchant's language.
         document.querySelectorAll('[data-somcp-confirm]').forEach(function (button) {
             button.addEventListener('click', function (event) {

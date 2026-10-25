@@ -1030,6 +1030,22 @@ T = {
  "Réglages du module",
  "Ajustes del módulo",
  "Moduleinstellungen"),
+"Custom": (
+ "Personnalisé",
+ "Personalizado",
+ "Benutzerdefiniert"),
+"choose the exact model yourself from the list below": (
+ "choisissez vous-même le modèle exact dans la liste ci-dessous",
+ "elija usted mismo el modelo exacto en la lista de abajo",
+ "wählen Sie das genaue Modell selbst aus der Liste unten"),
+"Pick the model this assistant runs. The list comes from your provider.": (
+ "Choisissez le modèle utilisé par cet assistant. La liste vient de votre fournisseur.",
+ "Elija el modelo que usa este asistente. La lista proviene de su proveedor.",
+ "Wählen Sie das Modell dieses Assistenten. Die Liste stammt von Ihrem Anbieter."),
+"Save this assistant with a working key first, then edit it to choose a model here.": (
+ "Enregistrez d'abord cet assistant avec une clé valide, puis modifiez-le pour choisir un modèle ici.",
+ "Guarde primero este asistente con una clave válida y luego edítelo para elegir un modelo aquí.",
+ "Speichern Sie diesen Assistenten zuerst mit einem gültigen Schlüssel und bearbeiten Sie ihn dann, um hier ein Modell zu wählen."),
 "Write your message...": (
  "Écrivez votre message…",
  "Escriba su mensaje…",

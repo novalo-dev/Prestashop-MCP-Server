@@ -1292,6 +1292,26 @@
       <source>Module settings</source>
       <target>Module settings</target>
     </trans-unit>
+    <!-- Custom -->
+    <trans-unit id="90589c47f06eb971d548591f23c285af" resname="Custom">
+      <source>Custom</source>
+      <target>Custom</target>
+    </trans-unit>
+    <!-- choose the exact model yourself from the list below -->
+    <trans-unit id="aa88b893d9a68dfbe5b78a49e4f32eb9" resname="choose the exact model yourself from the list below">
+      <source>choose the exact model yourself from the list below</source>
+      <target>choose the exact model yourself from the list below</target>
+    </trans-unit>
+    <!-- Pick the model this assistant runs. The list comes from your provider. -->
+    <trans-unit id="988ce2b86e244bb3a3da21c86329af98" resname="Pick the model this assistant runs. The list comes from your provider.">
+      <source>Pick the model this assistant runs. The list comes from your provider.</source>
+      <target>Pick the model this assistant runs. The list comes from your provider.</target>
+    </trans-unit>
+    <!-- Save this assistant with a working key first, then edit it to choose a model here. -->
+    <trans-unit id="bd1281829938c96b41346fb580e4794e" resname="Save this assistant with a working key first, then edit it to choose a model here.">
+      <source>Save this assistant with a working key first, then edit it to choose a model here.</source>
+      <target>Save this assistant with a working key first, then edit it to choose a model here.</target>
+    </trans-unit>
     <!-- Write your message... -->
     <trans-unit id="869a3d44483465d3f21681c6bcf47ebd" resname="Write your message...">
       <source>Write your message...</source>

@@ -62,6 +62,14 @@ class SomcpAssistant
     public const LEVEL_IMAGE = 'image';
 
     /**
+     * @var string The level where the merchant picks the exact model by hand,
+     *             chosen from the list the provider returns. Offered by every
+     *             provider, since any of them may expose a model the three
+     *             automatic levels do not map to.
+     */
+    public const LEVEL_CUSTOM = 'custom';
+
+    /**
      * @var array<int, string> providers whose image models the chat can reach:
      *                         Gemini through its chat API, OpenAI through its image API
      */
@@ -117,9 +125,37 @@ class SomcpAssistant
      */
     public static function levelsOf(string $provider): array
     {
-        return in_array($provider, self::IMAGE_PROVIDERS, true)
-            ? array_merge(self::levels(), [self::LEVEL_IMAGE])
-            : self::levels();
+        $levels = self::levels();
+        if (in_array($provider, self::IMAGE_PROVIDERS, true)) {
+            $levels[] = self::LEVEL_IMAGE;
+        }
+        $levels[] = self::LEVEL_CUSTOM;
+
+        return $levels;
+    }
+
+    /**
+     * The models the provider exposes for this assistant, for the Custom level
+     * to pick from. Empty when the key is missing or the provider cannot be
+     * reached - the form then says to save a working key first.
+     *
+     * @param array<string, mixed> $assistant
+     *
+     * @return array<int, string> model ids, sorted
+     */
+    public static function models(array $assistant): array
+    {
+        $listed = self::listModels((string) $assistant['provider'], self::key($assistant));
+        if ($listed === null) {
+            return [];
+        }
+
+        $ids = array_map(static function (array $model): string {
+            return (string) $model['id'];
+        }, $listed);
+        sort($ids);
+
+        return $ids;
     }
 
     /**
@@ -195,10 +231,21 @@ class SomcpAssistant
         $provider = isset($providers[$values['provider']]) ? $values['provider'] : 'anthropic';
         $level = in_array($values['level'], self::levelsOf($provider), true) ? $values['level'] : self::LEVEL_ECONOMY;
 
+        // The exact model belongs to the Custom level only; the automatic
+        // levels resolve it themselves, so it is cleared for them. A Custom
+        // level left without a model has nothing to run, so it falls back to
+        // the Economy level rather than a chat that cannot answer.
+        $model = Tools::substr(trim($values['model']), 0, 128);
+        if ($level !== self::LEVEL_CUSTOM) {
+            $model = '';
+        } elseif ($model === '') {
+            $level = self::LEVEL_ECONOMY;
+        }
+
         $data = [
             'provider' => pSQL($provider),
             'level' => pSQL($level),
-            'model' => pSQL(Tools::substr(trim($values['model']), 0, 128)),
+            'model' => pSQL($model),
             'role' => pSQL(Tools::substr(trim($values['role']), 0, 255)),
             'active' => $values['active'] ? 1 : 0,
             // A changed provider, level or model invalidates what the level

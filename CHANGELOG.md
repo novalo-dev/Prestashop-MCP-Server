@@ -276,7 +276,9 @@ office page. It opens a conversation with the AI you connect in the new Built-in
 assistant tab, with your own API key: Claude, ChatGPT, Gemini, Mistral,
 DeepSeek, Grok, Cohere or Ollama on your own server. For each one you pick a
 level - economy, balanced or powerful - and the module always uses the newest
-model of that level, without an update. The assistant uses the same tools as
+model of that level, without an update. A Custom level is there too, to pick the
+exact model yourself from the list your provider offers, chosen from a drop-down
+rather than typed. The assistant uses the same tools as
 assistants connected over MCP, with the rights of the employee signed in, and
 every change waits for you to click Approve. With several assistants switched
 on, give each a role: the default one hands them the work of their role and

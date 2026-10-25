@@ -542,6 +542,14 @@ class Somcp extends Module
 
         $update = SomcpUpdate::state($this->version);
 
+        // The model list for the Custom level: read from the provider only when
+        // an existing assistant with a key is open for editing, so the settings
+        // page never calls a provider just to be shown.
+        $editing = $this->assistantBeingEdited();
+        $editModels = ($editing !== null && !empty($editing['has_key']) && (int) $editing['id_assistant'] > 0)
+            ? SomcpAssistant::models($editing)
+            : [];
+
         $this->context->smarty->assign([
             'somcp_form_action' => $this->selfUrl(),
             'somcp_name' => $this->displayName,
@@ -556,7 +564,8 @@ class Somcp extends Module
             'somcp_assistant_profile' => (int) Configuration::get(SomcpAssistant::PROFILE, null, null, (int) self::currentShopId()),
             'somcp_assistant_providers' => SomcpAssistant::providers(),
             'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
-            'somcp_assistant_edit' => $this->assistantBeingEdited(),
+            'somcp_assistant_edit' => $editing,
+            'somcp_assistant_models' => $editModels,
             'somcp_assistant_ready' => SomcpAssistantChat::available(),
             // Formatted here, in the employee's language, rather than in the
             // template: Smarty's date modifier knows nothing of the back

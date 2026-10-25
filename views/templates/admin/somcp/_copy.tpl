@@ -133,6 +133,21 @@
             followProvider();
         }
 
+        // The exact-model row belongs to the Custom level only: it follows the
+        // level radios, shown when Custom is picked and hidden otherwise.
+        var customRow = document.querySelector('[data-somcp-custom-model]');
+        var levelRadios = document.querySelectorAll('input[name="somcp_assistant_level"]');
+        if (customRow && levelRadios.length) {
+            var followLevel = function () {
+                var custom = document.querySelector('input[name="somcp_assistant_level"]:checked');
+                customRow.style.display = custom && custom.value === 'custom' ? '' : 'none';
+            };
+            levelRadios.forEach(function (radio) {
+                radio.addEventListener('change', followLevel);
+            });
+            followLevel();
+        }
+
         // A removal asks first, in the merchant's language.
         document.querySelectorAll('[data-somcp-confirm]').forEach(function (button) {
             button.addEventListener('click', function (event) {

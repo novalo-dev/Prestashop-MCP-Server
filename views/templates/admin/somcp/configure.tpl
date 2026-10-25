@@ -521,6 +521,7 @@
                            removed, when another provider is picked: the server
                            refuses the level for them anyway. *}
                         <div class="radio" data-somcp-image-level="{$somcp_assistant_image_providers|escape:'html':'UTF-8'}"><label><input type="radio" name="somcp_assistant_level" value="image"{if $somcp_assistant_edit.level === 'image'} checked{/if}> <strong>{l s='Images' d='Modules.Somcp.Admin'}</strong> - {l s='creates pictures; it never leads the chat, the default assistant asks it for them' d='Modules.Somcp.Admin'}</label></div>
+                        <div class="radio"><label><input type="radio" name="somcp_assistant_level" value="custom" data-somcp-custom-level{if $somcp_assistant_edit.level === 'custom'} checked{/if}> <strong>{l s='Custom' d='Modules.Somcp.Admin'}</strong> - {l s='choose the exact model yourself from the list below' d='Modules.Somcp.Admin'}</label></div>
                         <p class="help-block">{l s='The module always takes the newest model of the chosen level, without an update.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
@@ -543,11 +544,28 @@
                         </span>
                     </div>
                 </div>
-                <div class="form-group">
+                {* The exact model shows only for the Custom level. The list is
+                   the one the provider returned for the saved key; a stored
+                   model that is no longer listed stays selectable so editing
+                   another field never loses it. No key yet, no list - the hint
+                   says to save a working key first. *}
+                <div class="form-group" data-somcp-custom-model{if $somcp_assistant_edit.level !== 'custom'} style="display:none"{/if}>
                     <label class="control-label col-lg-3">{l s='Exact model' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
-                        <input type="text" name="somcp_assistant_model" class="form-control" maxlength="128" value="{$somcp_assistant_edit.model|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.' d='Modules.Somcp.Admin'}</p>
+                        {if $somcp_assistant_models || $somcp_assistant_edit.model}
+                            <select name="somcp_assistant_model" class="form-control">
+                                {if $somcp_assistant_edit.model && !in_array($somcp_assistant_edit.model, $somcp_assistant_models)}
+                                    <option value="{$somcp_assistant_edit.model|escape:'html':'UTF-8'}" selected>{$somcp_assistant_edit.model|escape:'html':'UTF-8'}</option>
+                                {/if}
+                                {foreach from=$somcp_assistant_models item=model}
+                                    <option value="{$model|escape:'html':'UTF-8'}"{if $model === $somcp_assistant_edit.model} selected{/if}>{$model|escape:'html':'UTF-8'}</option>
+                                {/foreach}
+                            </select>
+                            <p class="help-block">{l s='Pick the model this assistant runs. The list comes from your provider.' d='Modules.Somcp.Admin'}</p>
+                        {else}
+                            <input type="hidden" name="somcp_assistant_model" value="">
+                            <p class="help-block">{l s='Save this assistant with a working key first, then edit it to choose a model here.' d='Modules.Somcp.Admin'}</p>
+                        {/if}
                     </div>
                 </div>
                 <div class="panel-footer">
@@ -584,6 +602,7 @@
                         <td>{if $assistant.role}{$assistant.role|escape:'html':'UTF-8'}{else}<span class="text-muted">{l s='Everything' d='Modules.Somcp.Admin'}</span>{/if}</td>
                         <td>
                             {if $assistant.level === 'image'}{l s='Images' d='Modules.Somcp.Admin'}
+                            {elseif $assistant.level === 'custom'}{l s='Custom' d='Modules.Somcp.Admin'}
                             {elseif $assistant.level === 'power'}{l s='Powerful' d='Modules.Somcp.Admin'}
                             {elseif $assistant.level === 'balanced'}{l s='Balanced' d='Modules.Somcp.Admin'}
                             {else}{l s='Economy' d='Modules.Somcp.Admin'}{/if}

@@ -78,7 +78,7 @@
     z-index: 10001;
     display: flex;
     flex-direction: column;
-    width: 400px;
+    width: 600px;
     max-width: calc(100vw - 32px);
     height: calc(100vh - 90px);
     max-height: 760px;
@@ -111,7 +111,8 @@
 #somcp-chat .somcp-chat-head small {
     display: block;
     opacity: 0.9;
-    font-size: 11px;
+    font-size: 10px;
+    white-space: nowrap;
 }
 
 #somcp-chat .somcp-chat-head .somcp-chat-who {
@@ -139,12 +140,20 @@
     color: #363a41;
 }
 
+/* All header buttons share one exact square so they line up to the pixel,
+   whatever glyph each one carries. */
 #somcp-chat .somcp-chat-head button {
-    padding: 0 4px;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
     border: 0;
     background: none;
     color: #fff;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1;
     cursor: pointer;
 }

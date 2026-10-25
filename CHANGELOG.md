@@ -293,9 +293,10 @@ image model, often the one given the images role - is kept the same way: shown
 in the chat, and usable as the image of a product. Gemini and ChatGPT also offer
 an Images level, which picks their newest image model by itself; an assistant at
 that level never leads the chat, the default one asks it for pictures. The chat
-opens from an Assistant link beside View my shop, can be enlarged, and its
-message box holds the field, the files and the buttons together, with a reminder
-that the answers come from an AI. Keys are stored encrypted.
+opens from an Assistant link beside View my shop, can be enlarged, has a gear
+that opens the module settings in a new tab, and its message box holds the
+field, the files and the buttons together, with a reminder that the answers
+come from an AI. Keys are stored encrypted.
 Conversations are kept per employee: the menu in the chat slides out the list,
 each with a bin to delete it. The setting "Employees allowed to use the built-in
 assistant" chooses who sees the chat, separately from who may connect an

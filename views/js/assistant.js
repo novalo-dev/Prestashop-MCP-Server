@@ -451,6 +451,15 @@
                 // Not remembered; the next page opens it at its usual size.
             }
         });
+        var settings = el('button', '', '⚙');
+        settings.type = 'button';
+        settings.title = text.settings;
+        settings.setAttribute('aria-label', text.settings);
+        settings.addEventListener('click', function () {
+            if (config.settingsUrl) {
+                window.open(config.settingsUrl, '_blank', 'noopener');
+            }
+        });
         var close = el('button', '', '×');
         close.type = 'button';
         close.title = text.close;
@@ -458,6 +467,7 @@
         head.appendChild(menu);
         head.appendChild(who);
         head.appendChild(picker);
+        head.appendChild(settings);
         head.appendChild(widen);
         head.appendChild(close);
         try {

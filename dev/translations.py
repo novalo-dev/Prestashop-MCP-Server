@@ -1026,6 +1026,10 @@ T = {
  "Fermer",
  "Cerrar",
  "Schließen"),
+"Module settings": (
+ "Réglages du module",
+ "Ajustes del módulo",
+ "Moduleinstellungen"),
 "Write your message...": (
  "Écrivez votre message…",
  "Escriba su mensaje…",

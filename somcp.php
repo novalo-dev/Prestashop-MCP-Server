@@ -346,6 +346,9 @@ class Somcp extends Module
             'page' => isset($this->context->controller->controller_name) ? (string) $this->context->controller->controller_name : (string) Tools::getValue('controller'),
             'maxFiles' => SomcpAssistantChat::MAX_FILES,
             'maxFileBytes' => SomcpAssistantChat::MAX_FILE_BYTES,
+            // The gear in the chat header opens the module settings, in a new
+            // tab so the page the employee is on is not lost.
+            'settingsUrl' => $this->context->link->getAdminLink('AdminModules', true, [], ['configure' => 'somcp']),
             'text' => [
                 'title' => $this->l10n('Built-in assistant'),
                 'subtitle' => $this->l10n('Acts with your rights and asks before any change'),
@@ -355,6 +358,7 @@ class Somcp extends Module
                 'reduce' => $this->l10n('Reduce'),
                 'mistakes' => $this->l10n('This is an AI and can make mistakes.'),
                 'close' => $this->l10n('Close'),
+                'settings' => $this->l10n('Module settings'),
                 'placeholder' => $this->l10n('Write your message...'),
                 'send' => $this->l10n('Send'),
                 'hello' => $this->l10n('Hello! What can I do for the shop?'),

@@ -1287,6 +1287,11 @@
       <source>Close</source>
       <target>Fermer</target>
     </trans-unit>
+    <!-- Module settings -->
+    <trans-unit id="1a11db3d2781e8ee1401eab17b296b6a" resname="Module settings">
+      <source>Module settings</source>
+      <target>Réglages du module</target>
+    </trans-unit>
     <!-- Write your message... -->
     <trans-unit id="869a3d44483465d3f21681c6bcf47ebd" resname="Write your message...">
       <source>Write your message...</source>

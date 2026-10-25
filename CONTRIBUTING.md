@@ -120,6 +120,16 @@ PrestaShop 9 class once took the whole PrestaShop 8 back office down.
   token, no code, no client secret, not even truncated.
 - **The shop comes from the token**, never from an argument. The employee's
   rights are checked on every call.
+- **Files enter the shop through two doors, and no third.** No tool takes file
+  bytes in an argument - no base64, no data URL. A file comes in either as a
+  **deposit**, read through `upload_ref` (`SomcpUpload`: bytes checked against
+  the extension, tied to one employee, single use), or as a **public https
+  address the shop downloads itself** through `SomcpHttp::fetch()` with its
+  address guard on. It works the same for an assistant connected over MCP and
+  for the built-in assistant, where a file the employee attached is already a
+  deposit. Going the other way, a tool hands a file out as a link of its own,
+  signed and expiring, never as bytes. See
+  [Files: the two doors](docs/EXTENDING.md#files-the-two-doors).
 
 ## Writing a tool, from A to Z
 

@@ -998,7 +998,12 @@ class SomcpAssistantChat
         // model works from them. It is used only when actually answering (an
         // assistant is given): reading a run's state needs no retrieval, so the
         // inspect path below stays a plain agent with no embeddings call.
-        $memory = $assistant !== [] ? SomcpAssistantMemory::retrieval($this->idShop, $this->employeeThreadIds()) : null;
+        // enabled() first: it honours the on/off switch, which retrieval() does
+        // not - a provider and a borrowed key are enough for retrieval to build,
+        // so without this the memory would read even while switched off.
+        $memory = ($assistant !== [] && SomcpAssistantMemory::enabled($this->idShop))
+            ? SomcpAssistantMemory::retrieval($this->idShop, $this->employeeThreadIds())
+            : null;
 
         $agent = ($memory !== null ? RAG::make() : Agent::make())
             ->setThreadId((string) $thread['thread_id'])

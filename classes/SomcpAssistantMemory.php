@@ -90,7 +90,7 @@ class SomcpAssistantMemory
      */
     private const PROVIDERS = [
         'openai' => ['label' => 'OpenAI', 'model' => 'text-embedding-3-small', 'key_url' => 'https://platform.openai.com/api-keys', 'reuse' => true],
-        'gemini' => ['label' => 'Gemini (Google)', 'model' => 'text-embedding-004', 'key_url' => 'https://aistudio.google.com/apikey', 'reuse' => true],
+        'gemini' => ['label' => 'Gemini (Google)', 'model' => 'gemini-embedding-001', 'key_url' => 'https://aistudio.google.com/apikey', 'reuse' => true],
         'mistral' => ['label' => 'Mistral', 'model' => 'mistral-embed', 'key_url' => 'https://console.mistral.ai/api-keys', 'reuse' => true],
         'cohere' => ['label' => 'Cohere', 'model' => 'embed-v4.0', 'key_url' => 'https://dashboard.cohere.com/api-keys', 'reuse' => true],
         'voyage' => ['label' => 'Voyage', 'model' => 'voyage-3', 'key_url' => 'https://dashboard.voyageai.com', 'reuse' => false],

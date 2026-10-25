@@ -162,6 +162,11 @@
             .then(function (json) {
                 state.busy = false;
                 absorb(json);
+                // A message the assistant could not answer is not kept by the
+                // server: it goes back into the field rather than being lost.
+                if (action === 'send' && state.view && state.view.error && data.text && input.value === '') {
+                    input.value = data.text;
+                }
                 if (action !== 'step') {
                     state.steps = 0;
                 }
@@ -173,6 +178,9 @@
             })
             .catch(function () {
                 state.busy = false;
+                if (action === 'send' && data.text && input.value === '') {
+                    input.value = data.text;
+                }
                 render(text.failed);
             });
     }

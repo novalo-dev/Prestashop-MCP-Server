@@ -496,7 +496,7 @@ them out before we see them. Removed rather than left lying.
 **Notes** - `id_carrier` changes each time a carrier is edited in PrestaShop; `id_reference` does not. Both are returned, and the description says which to keep.
 
 #### `somcp_list_tax_rules`
-**State**: draft · [issue #50](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/50)
+**State**: to write · [issue #50](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/50)
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`
 
 **Does** - lists the tax rules a product can take, with the rate each one applies in the shop's default country.

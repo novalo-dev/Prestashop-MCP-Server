@@ -42,10 +42,12 @@ one object per call.
 
 ## Tests
 
-The module has no automated test suite in this repository yet. A PHPUnit suite
-running against PrestaShop 8 and 9 would be the most valuable contribution of
-all: OAuth flows, permission checks, the multistore boundary, and the contract
-with other modules first.
+Every push runs the CI: the PrestaShop coding standard, PHPStan, Semgrep and
+Psalm, the catalogue, tool and multistore checks, and an end-to-end run of the
+shop tests (`dev/shop-tests/`) that installs the module and exercises the tools,
+OAuth and permissions across PrestaShop 8 and 9. Still wanted is a formal
+PHPUnit unit suite over the same ground: OAuth flows, permission checks, the
+multistore boundary, and the contract with other modules first.
 
 ## Clients
 

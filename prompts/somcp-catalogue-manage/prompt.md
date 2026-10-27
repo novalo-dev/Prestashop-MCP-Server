@@ -17,6 +17,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_attributes`
 - `somcp_list_features`
 - `somcp_list_attachments`
+- `somcp_list_tax_rules`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -95,6 +96,12 @@ Files - a manual, a data sheet - come from `somcp_list_attachments`: take the
 when the one the merchant wants is not listed, they upload it in the back
 office first. Its `download_url` opens without being signed in: give it to the
 merchant, never put it anywhere public.
+
+Tax rules come from `somcp_list_tax_rules`: take the `id_tax_rules_group` from
+there, 0 for no tax. Match the merchant's "20 %" on the `rate`, not on the
+name, and say that the rate is the one of the country given: a customer
+delivered elsewhere may pay another one. When `taxes_enabled` is false the
+shop charges no tax at all, whatever the rule.
 
 ## Prices
 

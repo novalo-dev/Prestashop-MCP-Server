@@ -496,7 +496,7 @@ them out before we see them. Removed rather than left lying.
 **Notes** - `id_carrier` changes each time a carrier is edited in PrestaShop; `id_reference` does not. Both are returned, and the description says which to keep.
 
 #### `somcp_list_tax_rules`
-**State**: to write · [issue #50](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/50)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.read`
 
 **Does** - lists the tax rules a product can take, with the rate each one applies in the shop's default country.
@@ -507,11 +507,15 @@ them out before we see them. Removed rather than left lying.
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `active` | boolean | no | true by default |
+| `active` | boolean | no | true by default, enabled rules only; false lists disabled ones too |
 
-**Returns** - per rule: `id_tax_rules_group`, `name`, `active`, `rate` in the default country, `country` (ISO code of that country).
+**Returns** - per rule: `id_tax_rules_group`, `name`, `active`, `rate` in the default country, `country` (ISO code of that country). Plus `count`, and `taxes_enabled`: false when the shop has taxes switched off, so that no rule applies.
 
-**Notes** - scope `mcp.catalog.read`, not a configuration one: it is read to price a product. The rate depends on the country; the one returned is the one the back office product page shows.
+**Notes**
+- Scope `mcp.catalog.read`, not a configuration one: it is read to price a product. The rate depends on the country; the one returned is the one the back office product page shows.
+- The rate comes from `TaxRulesGroup::getAssociatedTaxRatesByIdCountry()` for `PS_COUNTRY_DEFAULT` of the shop of the token, the same call `somcp_get_product` and `somcp_search_products` make, so the three tools agree. A rule with nothing for that country gives 0.
+- `taxes_enabled` added to the first draft of this entry: with `PS_TAX` off, `somcp_get_product` gives a rate of 0 whatever the rule, and an assistant reading 20 here would otherwise price tax included wrongly.
+- Read through a query on `tax_rules_group` and `tax_rules_group_shop` in the shop of the token, rather than `TaxRulesGroup::getTaxRulesGroups()`, which takes the shop from the global context. Rules deleted in the back office (`deleted = 1`, kept for the orders that used them) are left out. Sorted by name, as the core does.
 
 #### `somcp_list_customer_groups`
 **State**: draft · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)

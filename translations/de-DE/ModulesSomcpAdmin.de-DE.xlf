@@ -737,6 +737,11 @@
       <source>List features</source>
       <target>Merkmale auflisten</target>
     </trans-unit>
+    <!-- List tax rules -->
+    <trans-unit id="7e8244819dc9fb2b17e66f14264cf391" resname="List tax rules">
+      <source>List tax rules</source>
+      <target>Steuerregeln auflisten</target>
+    </trans-unit>
     <!-- List files -->
     <trans-unit id="92f00b54c2461cd9c23db65a88cd11e1" resname="List files">
       <source>List files</source>

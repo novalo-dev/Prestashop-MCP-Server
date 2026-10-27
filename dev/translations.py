@@ -597,6 +597,10 @@ T = {
  "Lister les caractéristiques",
  "Listar las características",
  "Merkmale auflisten"),
+"List tax rules": (
+    "Lister les règles de taxes",
+    "Listar las reglas de impuestos",
+    "Steuerregeln auflisten"),
 "List files": (
  "Lister les fichiers",
  "Listar los archivos",

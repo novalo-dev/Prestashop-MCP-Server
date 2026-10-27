@@ -136,6 +136,16 @@ the conversation, and anyone holding the link can download it. It needs the
 permission `mcp.catalog.read` and the `view` right on the back office files
 page.
 
+**Listing tax rules.** The new tool `somcp_list_tax_rules` lists the tax rules
+of the shop (Localization > Taxes > Tax rules) with their identifier, name,
+whether they are enabled, and the rate each one applies in the shop's default
+country, the one the product page shows. The assistant then picks the right
+rule from the shop when it creates or changes a product, rather than guessing
+its identifier or leaving it to the back office default. It also says when
+taxes are switched off in the shop. Disabled rules can be listed too. It needs
+the permission `mcp.catalog.read` and the `view` right on the back office tax
+rules page.
+
 **Creating a product.** The new tool `somcp_create_product` creates one
 complete product, offline by default: everything the product page holds can be
 given at once, combinations, specific prices, suppliers and images included,

@@ -18,10 +18,12 @@ are:
 
 ### Added
 
-**Product tags.** Creating a product can now fill its tags (the Étiquettes
-field), given as a comma separated list per language. They are written to the
-shop's own tag field, which is separate from the meta keywords and exists on
-every PrestaShop version; the shop creates the tags it does not have yet.
+**Product tags.** Creating or updating a product can now fill its tags (the
+Étiquettes field), given as a comma separated list per language. They are
+written to the shop's own tag field, which is separate from the meta keywords
+and exists on every PrestaShop version; the shop creates the tags it does not
+have yet. On an update, the tags given replace the product's tags in those
+languages, and a language left out keeps the ones it had.
 
 ### Changed
 

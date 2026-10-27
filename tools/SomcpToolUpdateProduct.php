@@ -555,6 +555,28 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
     private static function planSeo(array $group, array $languages, Product $product, int $idShop, Product $probe, array &$plan, array &$errors): void
     {
         self::metaTexts($group, $languages, $probe, $plan, $errors);
+        // Tags are planned like at creation, then compared with the product's
+        // own: a language whose tags are unchanged is dropped, so a call that
+        // only repeats them writes nothing. writeUpdate replaces the rest; a
+        // language left out of the call keeps the tags it had.
+        $plan['tags'] = self::tagPlan($group, $languages, $errors);
+        if ($plan['tags'] !== []) {
+            // getProductTags() answers false when the product has no tag yet.
+            $existing = Tag::getProductTags((int) $product->id);
+            $existing = is_array($existing) ? $existing : [];
+            foreach ($plan['tags'] as $idLang => $tags) {
+                $old = isset($existing[$idLang]) && is_array($existing[$idLang]) ? array_map('strval', $existing[$idLang]) : [];
+                $a = $old;
+                $b = $tags;
+                sort($a);
+                sort($b);
+                if ($a === $b) {
+                    unset($plan['tags'][$idLang]);
+                    continue;
+                }
+                self::record($plan, 'seo.tags (' . $languages['filled'][$idLang] . ')', implode(', ', $old), implode(', ', $tags));
+            }
+        }
 
         // Unlike at creation, the friendly URL is not made again from a new
         // name: the page already has an address, and moving it is a decision.
@@ -1666,6 +1688,18 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             self::removeCustomization($product);
             self::writeCustomization($idProduct, $plan['customization'], $languages, $idShop);
             $written[] = 'the customization fields';
+        }
+        if ($plan['tags'] !== []) {
+            foreach ($plan['tags'] as $idLang => $tags) {
+                // Replace, as the back office does on save: the language's old
+                // tags are removed and the given ones take their place. Only the
+                // tags given were validated, so none is empty here.
+                Tag::deleteProductTagsInLang($idProduct, $idLang);
+                if (!Tag::addTags($idLang, $idProduct, $tags, ',')) {
+                    throw new RuntimeException('the tags could not be saved');
+                }
+            }
+            $written[] = 'the tags';
         }
 
         if ($plan['stock']['out_of_stock'] !== null || $plan['stock']['location'] !== null) {

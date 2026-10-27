@@ -104,7 +104,7 @@ class SomcpToolCreateProduct
         ],
         'pricing' => ['price_tax_excl', 'id_tax_rules_group', 'wholesale_price', 'unit_price_tax_excl', 'unity', 'on_sale'],
         'specific_prices' => ['rules', 'priorities'],
-        'seo' => ['meta_title', 'meta_description', 'link_rewrite', 'redirect_type', 'id_type_redirected', 'meta_keywords'],
+        'seo' => ['meta_title', 'meta_description', 'link_rewrite', 'redirect_type', 'id_type_redirected', 'meta_keywords', 'tags'],
         'options' => ['visibility', 'available_for_order', 'show_price', 'online_only', 'active'],
         'suppliers' => ['id_supplier_default', 'suppliers'],
         'feature' => ['id_feature', 'id_feature_value', 'value'],
@@ -420,6 +420,10 @@ class SomcpToolCreateProduct
                             'description' => 'Assistant. The product or category a 301 or 302 redirects to.',
                         ],
                         'meta_keywords' => $text('Assistant. PrestaShop 8 only; refused on 9, which dropped them.'),
+                        'tags' => $text('Assistant and merchant. The tags (Étiquettes), a comma separated list per '
+                            . 'language: "pixel 8, smartphone google, android 14". Written to the shop tag field, '
+                            . 'which is separate from meta_keywords and kept on every PrestaShop version. Each tag is '
+                            . '32 characters at most and may not hold < > = # { }.'),
                     ],
                     'additionalProperties' => false,
                 ],
@@ -1975,6 +1979,7 @@ class SomcpToolCreateProduct
     protected static function seo(array $group, array $languages, int $idShop, Product $probe, array &$plan, array &$errors): void
     {
         self::metaTexts($group, $languages, $probe, $plan, $errors);
+        $plan['tags'] = self::tagPlan($group, $languages, $errors);
 
         // The friendly URL is never empty in any language: given, it goes
         // through the same conversion the back office applies; left out, it is
@@ -2057,6 +2062,55 @@ class SomcpToolCreateProduct
                 }
             }
         }
+    }
+
+    /**
+     * The product tags given in the call, by language, validated so the native
+     * writer never meets a bad one.
+     *
+     * Tags are their own objects (Tag::addTags), not a field of the product, so
+     * they are planned here and written after the product exists. Each entry is
+     * split on the comma, trimmed and de-duplicated; a tag too long or holding a
+     * character the shop refuses is reported rather than silently cut, as the
+     * meta texts are. An empty list in a language writes nothing for it.
+     *
+     * @param array<string, mixed> $group
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     * @param array<int, string> $errors
+     *
+     * @return array<int, array<int, string>> the tags to write, by language id
+     */
+    protected static function tagPlan(array $group, array $languages, array &$errors): array
+    {
+        $texts = self::texts($group, 'tags', 'seo.tags', $languages, $errors);
+        if ($texts === null) {
+            return [];
+        }
+
+        $max = (int) Tag::$definition['fields']['name']['size'];
+        $plan = [];
+        foreach ($texts as $idLang => $text) {
+            $tags = [];
+            foreach (explode(',', $text) as $tag) {
+                $tag = trim($tag);
+                if ($tag === '' || in_array($tag, $tags, true)) {
+                    continue;
+                }
+                $where = 'seo.tags (' . $languages['filled'][$idLang] . ')';
+                if (Tools::strlen($tag) > $max) {
+                    $errors[] = $where . ': "' . $tag . '" is longer than ' . $max . ' characters';
+                } elseif (!Validate::isGenericName($tag)) {
+                    $errors[] = $where . ': "' . $tag . '" cannot be a tag; < > = # { } are not allowed';
+                } else {
+                    $tags[] = $tag;
+                }
+            }
+            if ($tags !== []) {
+                $plan[$idLang] = $tags;
+            }
+        }
+
+        return $plan;
     }
 
     /**
@@ -2212,6 +2266,15 @@ class SomcpToolCreateProduct
         $idProduct = (int) $product->id;
 
         $product->addToCategories($plan['categories']);
+
+        // Tags are written per language with the product's own writer, which
+        // creates the ones the shop does not have yet and links them. Validated
+        // in the plan, so a language that reaches here has only usable tags.
+        foreach ($plan['tags'] as $idLang => $tags) {
+            if (!Tag::addTags($idLang, $idProduct, $tags, ',')) {
+                throw new RuntimeException('the tags could not be saved');
+            }
+        }
 
         // Out of stock before the combinations, which copy the product's
         // setting as they are created; location before them too, because the

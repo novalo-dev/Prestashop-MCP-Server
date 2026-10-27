@@ -16,6 +16,13 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Product tags.** Creating a product can now fill its tags (the Étiquettes
+field), given as a comma separated list per language. They are written to the
+shop's own tag field, which is separate from the meta keywords and exists on
+every PrestaShop version; the shop creates the tags it does not have yet.
+
 ### Changed
 
 **Stock of a product.** Reading a product's stock now also shows who is waiting

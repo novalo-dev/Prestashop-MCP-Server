@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "a demo product with combinations and a specific price", "arguments": {"id_product": 1}, "expect": "ok", "contains": ["\"basics\"", "\"combinations\"", "\"specific_prices\"", "\"carriers\""]},
+    {"why": "a demo product with combinations and a specific price", "arguments": {"id_product": 1}, "expect": "ok", "contains": ["\"basics\"", "\"combinations\"", "\"specific_prices\"", "\"carriers\"", "\"tags\""]},
     {"why": "in a language given by ISO code", "arguments": {"id_product": 1, "language": "en"}, "expect": "ok", "contains": ["\"id_product\": 1"]},
     {"why": "a language the shop does not have falls back on the default one", "arguments": {"id_product": 2, "language": "zz"}, "expect": "ok"},
     {"why": "a virtual product", "arguments": {"id_product": 12}, "expect": "ok"},

@@ -23,7 +23,8 @@ are:
 written to the shop's own tag field, which is separate from the meta keywords
 and exists on every PrestaShop version; the shop creates the tags it does not
 have yet. On an update, the tags given replace the product's tags in those
-languages, and a language left out keeps the ones it had.
+languages, and a language left out keeps the ones it had. Reading a product
+now returns its tags as well, so they can be read, changed and written back.
 
 ### Changed
 

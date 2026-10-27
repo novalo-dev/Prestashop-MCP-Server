@@ -602,6 +602,11 @@ class SomcpToolGetProduct
             'redirect_type' => (string) $product->redirect_type,
             'id_type_redirected' => (int) $product->id_type_redirected,
             'meta_keywords' => $keywords,
+            // The tags (Étiquettes) of the read language, as a comma separated
+            // list - the shape somcp_create_product and somcp_update_product
+            // take. Empty when the product has none. A field of its own, not
+            // meta_keywords, and kept on every PrestaShop version.
+            'tags' => (string) $product->getTags($idLang),
         ];
     }
 

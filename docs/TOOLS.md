@@ -1568,11 +1568,12 @@ The quantities the storefront sells against, per product and combination.
 | `id_product` | integer | yes |  |
 | `language` | string | no | ISO code for the product and attribute names, shop default otherwise |
 
-**Returns** - `id_product`, `name`, the product line - `quantity` (total), `physical_quantity`, `reserved_quantity`, `low_stock_threshold` - and per combination: `id_product_attribute`, `attributes`, `quantity`, `physical_quantity`, `reserved_quantity`, `low_stock_threshold`.
+**Returns** - `id_product`, `name`, the product line - `quantity` (total), `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `reserved_by` - and per combination: `id_product_attribute`, `attributes`, `quantity`, `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `reserved_by`. Each `reserved_by` entry is `id_order`, `reference` and `quantity`.
 
 **Notes**
 - Read from `stock_available`, the quantities the storefront sells against, through the same reader as `somcp_get_product` (restricted to the shop or its group by `StockAvailable::addSqlShopRestriction()`, as stock sharing decides), so the two tools always agree.
 - The product line also carries `physical_quantity`, `reserved_quantity` and `low_stock_threshold`: without them, a product without combinations would have none of the three.
+- `reserved_by` names the orders behind the reserved stock. `reserved_quantity` is a stored count with no link to its orders, so the list is rebuilt from the order lines: an order counts once it is valid (`order_state.logable`) and until it ships (`order_state.shipped`), with the quantity the line still holds after any refund or return. The product line sums an order's combinations into one entry; each combination lists its own. Restricted to this shop's orders, so the total can differ from `reserved_quantity` when stock is shared with the group or a line was partly refunded.
 - Combinations are listed from `product_attribute_shop`, so one without a stock row yet comes back at zero rather than missing. `low_stock_threshold` is the shop's own (`product_shop`, `product_attribute_shop`), `null` when no alert is set.
 - A product still being created, or not in this shop, is not found, as in `somcp_get_product`.
 

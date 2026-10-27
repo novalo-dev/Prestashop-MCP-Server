@@ -49,7 +49,11 @@ class SomcpToolGetStock
                 . 'reserved_quantity what orders not shipped yet already hold. For a product with '
                 . 'combinations, the product line is the total and each combination comes with its '
                 . 'attributes (Size: M) and its own quantities; low_stock_threshold is the level the '
-                . 'merchant set for an alert, null when none is set. Identify the product by its '
+                . 'merchant set for an alert, null when none is set. reserved_by lists the orders of '
+                . 'this shop that hold the reserved stock, each with its id_order, reference and the '
+                . 'quantity it holds; it is rebuilt from the orders still valid and not shipped, so its '
+                . 'total can differ from reserved_quantity in edge cases (partial refund or return). '
+                . 'Identify the product by its '
                 . 'identifier, from somcp_search_products, which finds it from a name, a reference or '
                 . 'an EAN13. Do not use it to find what runs low across the catalogue: '
                 . 'somcp_list_low_stock does that when the shop offers it.',
@@ -98,6 +102,11 @@ class SomcpToolGetStock
         // The row without a combination holds the total of all of them.
         $total = $stock[0] ?? null;
 
+        // The orders still holding the reserved stock, grouped by combination.
+        // stock_available.reserved_quantity is a stored count with no link to
+        // the orders behind it, so it is rebuilt here from the order lines.
+        $reservations = self::reservations((int) $product->id, $idShop);
+
         return SomcpTool::json([
             'id_product' => (int) $product->id,
             'name' => (string) $product->name,
@@ -107,7 +116,10 @@ class SomcpToolGetStock
             // Loaded for this shop, the product carries the threshold of
             // product_shop, which is the one the back office edits.
             'low_stock_threshold' => self::threshold($product->low_stock_threshold),
-            'combinations' => self::combinations((int) $product->id, $idLang, $idShop, $stock),
+            // The product line sums every combination, so one order with two
+            // sizes of the same product shows once, with both added together.
+            'reserved_by' => self::byOrder($reservations),
+            'combinations' => self::combinations((int) $product->id, $idLang, $idShop, $stock, $reservations),
         ]);
     }
 
@@ -122,10 +134,11 @@ class SomcpToolGetStock
      * @param int $idLang
      * @param int $idShop
      * @param array<int, array{quantity: int, physical_quantity: int, reserved_quantity: int, location: string, out_of_stock: int}> $stock
+     * @param array<int, array{id_order: int, reference: string, id_product_attribute: int, quantity: int}> $reservations
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function combinations(int $idProduct, int $idLang, int $idShop, array $stock): array
+    private static function combinations(int $idProduct, int $idLang, int $idShop, array $stock, array $reservations): array
     {
         $query = new DbQuery();
         $query->select('pa.`id_product_attribute`, pas.`low_stock_threshold`');
@@ -156,10 +169,105 @@ class SomcpToolGetStock
                 'physical_quantity' => $stock[$id]['physical_quantity'] ?? 0,
                 'reserved_quantity' => $stock[$id]['reserved_quantity'] ?? 0,
                 'low_stock_threshold' => self::threshold($row['low_stock_threshold']),
+                'reserved_by' => self::forAttribute($reservations, $id),
             ];
         }
 
         return $combinations;
+    }
+
+    /**
+     * The orders of this shop that still hold reserved stock of the product,
+     * one row per order and combination.
+     *
+     * reserved_quantity in stock_available is a stored count that PrestaShop
+     * keeps in step with order state changes, with nothing tying it back to the
+     * orders behind it. It is rebuilt here from the order lines: an order
+     * reserves stock once it is valid (logable) and until it ships (the state
+     * where the stock physically leaves), which is also when a cancelled or
+     * errored order - not logable - stops counting. The quantity is what the
+     * line still holds, after any refund or return has put units back, floored
+     * at zero. Restricted to this shop's orders, so a shop that shares stock
+     * with its group sees here only its own orders, not the group's.
+     *
+     * @param int $idProduct
+     * @param int $idShop
+     *
+     * @return array<int, array{id_order: int, reference: string, id_product_attribute: int, quantity: int}>
+     */
+    private static function reservations(int $idProduct, int $idShop): array
+    {
+        $query = new DbQuery();
+        $query->select('od.`id_order`, o.`reference`, od.`product_attribute_id`');
+        $query->select('GREATEST(SUM(od.`product_quantity` - od.`product_quantity_refunded` - od.`product_quantity_return`), 0) AS `quantity`');
+        $query->from('order_detail', 'od');
+        $query->innerJoin('orders', 'o', 'o.`id_order` = od.`id_order`');
+        $query->innerJoin('order_state', 'os', 'os.`id_order_state` = o.`current_state`');
+        $query->where('od.`product_id` = ' . $idProduct);
+        $query->where('o.`id_shop` = ' . $idShop);
+        $query->where('os.`logable` = 1 AND os.`shipped` = 0');
+        $query->groupBy('od.`id_order`, od.`product_attribute_id`');
+        // HAVING on the alias: a line fully refunded before shipping reserves
+        // nothing and must not show as an order holding zero.
+        $query->having('`quantity` > 0');
+        $query->orderBy('od.`id_order` ASC, od.`product_attribute_id` ASC');
+        $rows = Db::getInstance()->executeS($query) ?: [];
+
+        $reservations = [];
+        foreach ($rows as $row) {
+            $reservations[] = [
+                'id_order' => (int) $row['id_order'],
+                'reference' => (string) $row['reference'],
+                'id_product_attribute' => (int) $row['product_attribute_id'],
+                'quantity' => (int) $row['quantity'],
+            ];
+        }
+
+        return $reservations;
+    }
+
+    /**
+     * The reservations summed per order, for the product line.
+     *
+     * One order with two combinations of the same product is a single entry
+     * whose quantity adds them, so the product line never lists an order twice.
+     *
+     * @param array<int, array{id_order: int, reference: string, id_product_attribute: int, quantity: int}> $reservations
+     *
+     * @return array<int, array{id_order: int, reference: string, quantity: int}>
+     */
+    private static function byOrder(array $reservations): array
+    {
+        $byOrder = [];
+        foreach ($reservations as $row) {
+            $id = $row['id_order'];
+            if (!isset($byOrder[$id])) {
+                $byOrder[$id] = ['id_order' => $id, 'reference' => $row['reference'], 'quantity' => 0];
+            }
+            $byOrder[$id]['quantity'] += $row['quantity'];
+        }
+
+        return array_values($byOrder);
+    }
+
+    /**
+     * The reservations of one combination, for its own line.
+     *
+     * @param array<int, array{id_order: int, reference: string, id_product_attribute: int, quantity: int}> $reservations
+     * @param int $idProductAttribute
+     *
+     * @return array<int, array{id_order: int, reference: string, quantity: int}>
+     */
+    private static function forAttribute(array $reservations, int $idProductAttribute): array
+    {
+        $lines = [];
+        foreach ($reservations as $row) {
+            if ($row['id_product_attribute'] === $idProductAttribute) {
+                $lines[] = ['id_order' => $row['id_order'], 'reference' => $row['reference'], 'quantity' => $row['quantity']];
+            }
+        }
+
+        return $lines;
     }
 
     /**

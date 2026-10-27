@@ -18,6 +18,11 @@ are:
 
 ### Changed
 
+**Stock of a product.** Reading a product's stock now also shows who is waiting
+on it: alongside the reserved quantity, the orders holding that stock are
+listed, each with its number and reference and how many units it holds, for the
+product and for each of its combinations.
+
 **Settings page.** The page was one long column of panels. It is now split
 into seven tabs, drawn with PrestaShop's own tabs and panels: Configuration,
 Tools and prompts, Access and security, Connected assistants, Built-in

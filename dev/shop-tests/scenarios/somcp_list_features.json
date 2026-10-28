@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "lists the features of the demo shop and their predefined values", "arguments": {}, "expect": "ok", "contains": ["\"features\"", "\"count\": 2", "\"id_feature\": 1", "Composition", "Property", "\"values\"", "\"id_feature_value\"", "Polyester"]},
+    {"why": "lists the features of the demo shop and their predefined values, with the ones somcp_create_feature added before it", "arguments": {}, "expect": "ok", "contains": ["\"features\"", "\"count\"", "Somcp material", "\"id_feature\": 1", "Composition", "Property", "\"values\"", "\"id_feature_value\"", "Polyester"]},
     {"why": "one feature only", "arguments": {"id_feature": 1}, "expect": "ok", "contains": ["\"count\": 1", "\"id_feature\": 1", "Composition", "Polyester"]},
     {"why": "in a language given by ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"id_feature\": 1", "Composition"]},
     {"why": "a language the shop does not have falls back on the default one", "arguments": {"language": "zz"}, "expect": "ok", "contains": ["\"id_feature\": 1"]},

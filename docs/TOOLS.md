@@ -1182,7 +1182,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read through a query on `supplier` and `supplier_shop` in the shop of the token, rather than `Supplier::getSuppliers()`, which takes the shop from the global context and leaves inactive suppliers out by default. Sorted by name, as the core does.
 
 #### `somcp_get_supplier`
-**State**: to write · [issue #58](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/58)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminSuppliers')` · **Scope**: `mcp.catalog.read`
 
 **Does** - returns everything the back office supplier form shows for one supplier.
@@ -1198,7 +1198,13 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 **Returns** - `id_supplier`, `name`, `description`, `phone`, `phone_mobile`, `address1`, `address2`, `postcode`, `city`, `country` (ISO code), `state` (ISO code, when the country has states), `dni` (national ID number), `meta_title`, `meta_description`, `meta_keywords`, `logo` (URL), `active`, `products_count`.
 
-**Notes** - columns of `supplier` and `supplier_lang`, and of the supplier's row in `address` for the contact fields, checked against PrestaShop 8.0.3 and 9.2; `meta_keywords` exists on PrestaShop 8 only and is `null` on 9.
+**Notes**
+- Columns of `supplier` and `supplier_lang`, and of the supplier's row in `address` for the contact fields, checked against PrestaShop 8.0.0 and 9.0.0; `meta_keywords` exists on PrestaShop 8 only and is `null` on 9.
+- The address row is found with `Address::getAddressIdBySupplierId()`, the lookup the supplier form uses. A supplier with no such row - one created without contact details - answers with those fields empty, and `country` and `state` `null`.
+- Read in the shop of the token: a supplier of another shop, or an identifier that does not exist, is answered like one that does not exist (`supplier_shop`), since the `Supplier` constructor takes no shop. `products_count` counts the products of this shop in `product_supplier`, as the back office supplier list does: a product can have several suppliers.
+- `logo` is `null` when the supplier has none, rather than the "no picture" image `Link::getSupplierImageLink()` falls back on.
+- The reader and the test of the shop are public, for the supplier write tools to answer with the supplier as this tool returns it.
+- A language the shop does not have falls back on the shop default.
 
 #### `somcp_create_supplier`
 **State**: to write · [issue #59](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/59)

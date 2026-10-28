@@ -109,6 +109,16 @@ off are listed too, since a product can still be attached to one. It needs the
 permission `mcp.catalog.read` and the `view` right on the back office suppliers
 page.
 
+**Reading a supplier.** The new tool `somcp_get_supplier` returns everything
+the back office supplier form shows for one supplier: name, Enabled,
+description, phone, mobile phone, address, postal code, city, country, state,
+DNI, meta title and description, meta keywords on PrestaShop 8, the logo
+address, and how many products of the shop it supplies. A supplier without a
+logo says so rather than showing a placeholder image, and one entered without
+contact details comes back with those fields empty. It only reads the shop the
+assistant is connected to. It needs the permission `mcp.catalog.read` and the
+`view` right on the back office suppliers page.
+
 **Listing attributes.** The new tool `somcp_list_attributes` lists the
 attribute groups of the shop the assistant is connected to (Size, Colour...)
 and, under each one, its values, with their identifier and name and nothing

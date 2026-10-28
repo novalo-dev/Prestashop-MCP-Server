@@ -732,6 +732,11 @@
       <source>List suppliers</source>
       <target>Lieferanten auflisten</target>
     </trans-unit>
+    <!-- Get a supplier -->
+    <trans-unit id="2125627ab97ff410637f507da9323cb6" resname="Get a supplier">
+      <source>Get a supplier</source>
+      <target>Einen Lieferanten abrufen</target>
+    </trans-unit>
     <!-- List attributes -->
     <trans-unit id="54ffb845ff62b05780e0e7edcf23707a" resname="List attributes">
       <source>List attributes</source>

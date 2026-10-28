@@ -14,6 +14,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_manufacturers`
 - `somcp_get_manufacturer`
 - `somcp_list_suppliers`
+- `somcp_get_supplier`
 - `somcp_list_attributes`
 - `somcp_list_features`
 - `somcp_get_feature`
@@ -86,7 +87,9 @@ read it with `somcp_get_manufacturer`, by the identifier the list gave.
 
 A supplier too, from `somcp_list_suppliers`: never write an `id_supplier` the
 list did not give, and when the supplier the merchant names is not in it, say
-so.
+so. To answer about one supplier - its contact details, description, SEO texts,
+logo, how many products it supplies - read it with `somcp_get_supplier`, by the
+identifier the list gave.
 
 Attribute values - a size, a colour - come from `somcp_list_attributes`: a
 combination is a set of `id_attribute`, never of names. Two groups can hold a

@@ -593,6 +593,10 @@ T = {
  "Lister les fournisseurs",
  "Listar los proveedores",
  "Lieferanten auflisten"),
+"Get a supplier": (
+ "Lire un fournisseur",
+ "Leer un proveedor",
+ "Einen Lieferanten abrufen"),
 "List attributes": (
  "Lister les attributs",
  "Listar los atributos",

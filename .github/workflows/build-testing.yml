@@ -156,7 +156,9 @@ jobs:
         with:
           name: ${{ steps.name.outputs.artifact }}
           path: build/
-          retention-days: 14
+          # The repository keeps artifacts one day: anyone can download them
+          # from a public repository, so a test build does not linger.
+          retention-days: 1
           if-no-files-found: error
 
       - name: How to use it

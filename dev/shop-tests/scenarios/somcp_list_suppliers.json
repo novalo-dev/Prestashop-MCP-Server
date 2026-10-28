@@ -1,5 +1,5 @@
 {
   "calls": [
-    {"why": "lists the two suppliers of the demo shop", "arguments": {}, "expect": "ok", "contains": ["\"suppliers\"", "\"count\": 2", "\"id_supplier\"", "Fashion supplier", "Accessories supplier"]}
+    {"why": "lists the suppliers of the demo shop, with the ones somcp_create_supplier added before it", "arguments": {}, "expect": "ok", "contains": ["\"suppliers\"", "\"count\"", "\"id_supplier\"", "Fashion supplier", "Accessories supplier"]}
   ]
 }

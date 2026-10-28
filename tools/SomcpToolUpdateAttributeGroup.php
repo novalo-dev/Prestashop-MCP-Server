@@ -243,6 +243,28 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
     }
 
     /**
+     * A translated field of an object loaded without a language, as one text per language.
+     *
+     * Loaded that way the core gives an array, yet PrestaShop 8.0 declares
+     * these fields as a plain string, so the value goes through an untyped
+     * parameter: read against the declaration, the array case would look
+     * impossible. A version that hands back a single string still works.
+     *
+     * @param mixed $value
+     * @param int $idFallback
+     *
+     * @return array<int, string>
+     */
+    private static function perLanguage($value, int $idFallback): array
+    {
+        if (is_array($value)) {
+            return array_map('strval', $value);
+        }
+
+        return [$idFallback => is_scalar($value) ? (string) $value : ''];
+    }
+
+    /**
      * Keeps the names, type and faceted search fields that differ from the shop, and records each one.
      *
      * @param AttributeGroup $group loaded in every language
@@ -258,11 +280,7 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
             if (!isset($plan['texts'][$field])) {
                 continue;
             }
-            // Loaded without a language, a name is one text per language; read
-            // as one anyway, should a version hand back a single string. Read
-            // by name, since the core types it as either depending on the version.
-            $stored = $group->{$field};
-            $current = is_array($stored) ? $stored : [(int) $languages['fallback'] => (string) $stored];
+            $current = self::perLanguage($group->{$field}, (int) $languages['fallback']);
             $merged = $current;
             foreach ($plan['texts'][$field] as $idLang => $text) {
                 $old = (string) ($current[$idLang] ?? '');

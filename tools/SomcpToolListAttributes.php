@@ -49,8 +49,8 @@ class SomcpToolListAttributes
                 . 'Two groups can hold a value of the same name: when the merchant names a value, '
                 . 'check which group it belongs to, and ask when it is in more than one. Give '
                 . 'id_attribute_group to read one group only. Everything else about one group or one '
-                . 'value is read with somcp_get_attribute_group or somcp_get_attribute_value when the '
-                . 'shop offers them. Do not use it for the combinations of a product: '
+                . 'value is read with somcp_get_attribute_group or somcp_get_attribute_value. '
+                . 'Do not use it for the combinations of a product: '
                 . 'somcp_get_product lists those.',
             [
                 'type' => 'object',

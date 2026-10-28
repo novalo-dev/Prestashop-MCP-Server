@@ -1366,12 +1366,12 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Every problem is reported at once, before anything is written. Replayable: the same values again write nothing and say `changed: false`.
 
 #### `somcp_get_attribute_value`
-**State**: to write · [issue #70](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/70)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.read`
 
 **Does** - returns every field of the back office value form for one attribute value.
 
-**Do not use for** - the list (→ `somcp_list_attributes`).
+**Do not use for** - the list (→ `somcp_list_attributes`), or the group itself (→ `somcp_get_attribute_group`).
 
 **Parameters**
 
@@ -1380,9 +1380,12 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `id_attribute` | integer | yes | from `somcp_list_attributes` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, and for a group of type `color`: `color` (hex code) and `texture` (URL of the current texture, `null` when there is none); when `ps_facetedsearch` is installed: `url_name`, `meta_title`.
+**Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (URL of the current texture, `null` when there is none), and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. A value that is not one of this shop is an error.
 
-**Notes** - columns of `attribute` and `attribute_lang`; the texture is the file PrestaShop keeps in `img/co/` (`_PS_COL_IMG_DIR_`).
+**Notes**
+- Columns of `attribute` and `attribute_lang`, read through `ProductAttribute`; the value must be in `attribute_shop` for the shop of the token, the set `somcp_list_attributes` lists, since the constructor would load it whatever its shop. `position` is the raw column, 0 for the first of its group. `group_name` is the name the back office lists, not the public one.
+- `color` and `texture` are `null` unless the group is of type `color`: only that type draws them on the product page, and a value whose group changed type keeps them stored but unused. The texture is the file PrestaShop keeps in `img/co/` (`_PS_COL_IMG_DIR_`) under the value's identifier, given as its public URL.
+- The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_attribute_lang_value`, the table its form reads; a value the form was never saved for has no row there, and gives `''`, as the form shows it.
 
 #### `somcp_create_attribute_value`
 **State**: to write · [issue #71](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/71)

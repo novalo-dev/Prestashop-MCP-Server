@@ -136,6 +136,15 @@ filtered pages are indexed. It only reads the shop the assistant is connected
 to. It needs the permission `mcp.catalog.read` and the `view` right on the back
 office attributes page.
 
+**Reading an attribute value.** The new tool `somcp_get_attribute_value`
+returns everything the back office value form shows for one attribute value
+(M under Size, Red under Colour...): its name, the group it belongs to, its
+position in that group, and for a colour group its colour and the address of
+its texture image when it has one; when the faceted search module is installed,
+also the word used in filtered URLs and the title tag. It only reads the shop
+the assistant is connected to. It needs the permission `mcp.catalog.read` and
+the `view` right on the back office attributes page.
+
 **Creating an attribute group.** The new tool `somcp_create_attribute_group`
 creates one attribute group (Size, Colour...) with the fields of the back
 office attribute form: its name and the name customers see, in each language,

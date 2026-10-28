@@ -605,6 +605,10 @@ T = {
  "Lire un groupe d'attributs",
  "Leer un grupo de atributos",
  "Eine Attributgruppe abrufen"),
+"Get an attribute value": (
+ "Lire une valeur d'attribut",
+ "Leer un valor de atributo",
+ "Einen Attributwert abrufen"),
 "Create an attribute group": (
  "Créer un groupe d'attributs",
  "Crear un grupo de atributos",

@@ -57,7 +57,7 @@ class SomcpToolGetAttributeGroup
                 . 'null when the faceted search module is not installed. '
                 . 'Identify the group by its identifier, from somcp_list_attributes: never guess one. '
                 . 'Do not use it for the list of groups or the names of their values, which is '
-                . 'somcp_list_attributes, or for one value: somcp_get_attribute_value when the shop offers it.',
+                . 'somcp_list_attributes, or for one value: somcp_get_attribute_value.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -17,6 +17,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_supplier`
 - `somcp_list_attributes`
 - `somcp_get_attribute_group`
+- `somcp_get_attribute_value`
 - `somcp_list_features`
 - `somcp_get_feature`
 - `somcp_get_feature_value`
@@ -103,6 +104,11 @@ buttons or colour swatches), its position, how many values it holds, its
 faceted search URL word, title tag and indexing - read it with
 `somcp_get_attribute_group`, by the identifier the list gave. Those three
 faceted search fields are null when the shop has no faceted search module.
+To answer about one value - its name, its group, its position in the group,
+its colour and texture for a colour group, its faceted search URL word and
+title tag - read it with `somcp_get_attribute_value`, by the `id_attribute`
+the list gave. The colour and the texture are null when the group is not a
+colour group, since the product page does not show them there.
 
 Features - a composition, a material - come from `somcp_list_features`: take
 the `id_feature` and the `id_feature_value` from there. Only predefined values

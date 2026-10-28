@@ -747,6 +747,11 @@
       <source>Get an attribute group</source>
       <target>Leer un grupo de atributos</target>
     </trans-unit>
+    <!-- Get an attribute value -->
+    <trans-unit id="9099cf97a7f3fecc0c9341cf69934bdf" resname="Get an attribute value">
+      <source>Get an attribute value</source>
+      <target>Leer un valor de atributo</target>
+    </trans-unit>
     <!-- Create an attribute group -->
     <trans-unit id="5f2d757cc4ba9ca446e73099f5ac400e" resname="Create an attribute group">
       <source>Create an attribute group</source>

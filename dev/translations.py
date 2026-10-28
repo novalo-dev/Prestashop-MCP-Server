@@ -609,6 +609,10 @@ T = {
  "Modifier une caractéristique",
  "Modificar una característica",
  "Ein Merkmal ändern"),
+"Get a feature value": (
+ "Lire une valeur de caractéristique",
+ "Leer un valor de característica",
+ "Einen Merkmalswert abrufen"),
 "List tax rules": (
     "Lister les règles de taxes",
     "Listar las reglas de impuestos",

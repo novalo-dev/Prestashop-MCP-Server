@@ -90,6 +90,7 @@ calling the shop's own addresses.
 | `somcp_list_attributes` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
 | `somcp_list_features` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
 | `somcp_get_feature` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
+| `somcp_get_feature_value` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
 | `somcp_list_attachments` | `mcp.catalog.read` | `view` on `AdminAttachments` | read |
 | `somcp_list_tax_rules` | `mcp.catalog.read` | `view` on `AdminTaxRulesGroup` | read |
 | `somcp_create_product` | `mcp.catalog.write` | `add` on `AdminProducts` | write |

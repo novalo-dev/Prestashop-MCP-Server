@@ -1489,7 +1489,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - Replayable: the same values again say `changed: false`. On a lost answer, read `somcp_get_feature` before calling again.
 
 #### `somcp_get_feature_value`
-**State**: to write · [issue #76](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/76)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminFeatures')` · **Scope**: `mcp.catalog.read`
 
 **Does** - returns every field of the back office value form for one predefined feature value.
@@ -1503,9 +1503,12 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`.
+**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. A value that is not one of this shop is an error.
 
-**Notes** - a custom value (`custom` = 1) is refused: it belongs to one product.
+**Notes**
+- Read through `FeatureValue` and `Feature`. `feature_value` has no shop table: a value belongs to the shops of its feature, so its feature must be in `feature_shop` for the shop of the token, the test `somcp_get_feature` makes.
+- A custom value (`custom` = 1) is refused with its own message: it belongs to one product, and is read with `somcp_get_product`. `custom` NULL is predefined, as the core reads it.
+- The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_feature_value_lang_value`, the table its form reads; a value the form was never saved for has no row there, and gives `''`, as the form shows it.
 
 #### `somcp_create_feature_value`
 **State**: to write · [issue #77](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/77)

@@ -16,6 +16,7 @@
     "somcp_list_attributes",
     "somcp_list_features",
     "somcp_get_feature",
+    "somcp_get_feature_value",
     "somcp_list_attachments",
     "somcp_list_tax_rules",
     "somcp_create_product",

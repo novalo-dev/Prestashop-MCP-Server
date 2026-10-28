@@ -752,6 +752,11 @@
       <source>Change a feature</source>
       <target>Ein Merkmal ändern</target>
     </trans-unit>
+    <!-- Get a feature value -->
+    <trans-unit id="a126d0a87f1a32d0e18a1a2a18443bd2" resname="Get a feature value">
+      <source>Get a feature value</source>
+      <target>Einen Merkmalswert abrufen</target>
+    </trans-unit>
     <!-- List tax rules -->
     <trans-unit id="7e8244819dc9fb2b17e66f14264cf391" resname="List tax rules">
       <source>List tax rules</source>

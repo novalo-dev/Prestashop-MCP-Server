@@ -157,6 +157,15 @@ on every product that carries it, and the assistant tells you so before
 asking. It needs the permission `mcp.catalog.write` and the `edit` right on
 the back office features page.
 
+**Reading a feature value.** The new tool `somcp_get_feature_value` returns
+everything the back office value form shows for one predefined value of a
+feature (Cotton under Composition...): its text, the feature it belongs to,
+and, when the faceted search module is installed, the word used in filtered
+URLs and the title tag. A value typed on one product only is not read here: it
+belongs to that product. It only reads the shop the assistant is connected to.
+It needs the permission `mcp.catalog.read` and the `view` right on the back
+office features page.
+
 **Listing files.** The new tool `somcp_list_attachments` lists the files of
 the shop (Catalogue > Files: manuals, data sheets) with the columns of the back
 office list - name, file, size, number of products - so the assistant takes

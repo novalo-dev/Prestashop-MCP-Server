@@ -32,6 +32,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_manufacturer`
 - `somcp_update_manufacturer`
 - `somcp_set_manufacturer_active`
+- `somcp_create_attribute_group`
 - `somcp_create_feature`
 - `somcp_update_feature`
 - `somcp_create_feature_value`
@@ -311,6 +312,28 @@ Tell the merchant that disabling it hides its page on the storefront, while its
 products stay on sale. On a multistore installation the change shows in every
 shop sharing the brand. `changed: false` means it was already in that state. On
 a lost answer, read it with `somcp_get_manufacturer` before calling twice.
+
+## Creating an attribute group
+
+`somcp_create_attribute_group` creates one attribute group - a size, a colour -
+without any value. Before calling it:
+
+1. Read `somcp_list_attributes`: the group may already exist, and the shop
+   accepts two groups of the same name.
+2. Ask the merchant for the name the back office lists, the name customers see
+   on the product page (often the same), in every language being filled, and
+   the type: a drop-down list (`select`), radio buttons (`radio`) or colour
+   swatches (`color`). When the shop has the faceted search module, write the
+   URL word and the title tag yourself and show them first, and ask the
+   merchant whether filtered pages on this group are open to search engines
+   (`indexable`, off by default). Without that module, leave these three
+   fields out: they are refused.
+3. The values come afterwards, one per call, with
+   `somcp_create_attribute_value`.
+
+When it succeeds, show the merchant the group as returned. On a lost answer,
+read `somcp_list_attributes` again rather than calling twice: a second call
+creates a second group.
 
 ## Creating a feature
 

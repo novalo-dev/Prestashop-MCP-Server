@@ -136,6 +136,19 @@ filtered pages are indexed. It only reads the shop the assistant is connected
 to. It needs the permission `mcp.catalog.read` and the `view` right on the back
 office attributes page.
 
+**Creating an attribute group.** The new tool `somcp_create_attribute_group`
+creates one attribute group (Size, Colour...) with the fields of the back
+office attribute form: its name and the name customers see, in each language,
+its type (drop-down list, radio buttons or colour swatches) and, when the
+faceted search module is installed and enabled, the word used in filtered
+URLs, the title tag and whether filtered pages are indexed, which are off
+unless you say otherwise. Without that module, those three fields are refused
+rather than stored for nothing. The group is created without values and placed
+last in the list. On a multistore installation it is created in the shop the
+assistant is connected to. The consent screen now says that the catalogue
+permission can create attribute groups. It needs the permission
+`mcp.catalog.write` and the `add` right on the back office attributes page.
+
 **Listing features.** The new tool `somcp_list_features` lists the features
 of the shop the assistant is connected to (Composition, Property...) and, under
 each one, its predefined values, with their identifier and name and nothing

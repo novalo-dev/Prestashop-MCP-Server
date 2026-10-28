@@ -1316,29 +1316,35 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_attribute_group` and `layered_indexable_attribute_group_lang_value`, the tables its form reads; a group the form was never saved for has no row there, and gives `''` and `false`, as the form shows it.
 
 #### `somcp_create_attribute_group`
-**State**: to write · [issue #68](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/68)
+**State**: written
 **Nature**: `acts(ADD, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.write`
 
 **Does** - creates one attribute group with every field of the back office attribute form, in every language of the shop or the ones the merchant picks.
 
-**Do not use for** - adding a value to a group (→ `somcp_create_attribute_value`).
+**Do not use for** - adding a value to a group (→ `somcp_create_attribute_value`), or changing one (→ `somcp_update_attribute_group`).
 
 **Parameters** - the rules of `somcp_create_product` apply: `languages`, translatable texts as an object keyed by ISO code, who fills each field.
 
 | Field | Who fills it | Rule |
 |---|---|---|
-| `name` | merchant | required; 128 characters at most; `Validate::isGenericName()` |
-| `public_name` | merchant | required; the name shown to customers; 64 characters at most |
-| `group_type` | merchant | required; a type PrestaShop offers: `select`, `radio`, `color` |
-| `url_name` (URL) | assistant | faceted search; the word used in filtered URLs, the name otherwise; `Tools::str2url()` |
-| `meta_title` (title tag) | assistant | faceted search |
-| `indexable` | merchant | faceted search; false when left out, as in the form |
+| `name` | merchant | required; 128 characters at most; `Validate::isGenericName()` (no `<>={}`) |
+| `public_name` | merchant | required; the name shown to customers; 64 characters at most; `Validate::isGenericName()` |
+| `group_type` | merchant | required; a type PrestaShop offers: `select`, `radio`, `color`; any other text is refused, since the product page only draws these three |
+| `url_name` (URL) | assistant | faceted search; the word used in filtered URLs, the name otherwise; refused unless it is already what `Tools::str2url()` makes of it, as the module's form does; 128 characters at most |
+| `meta_title` (title tag) | assistant | faceted search; 128 characters at most; `Validate::isGenericName()`, since the module strips tags from it |
+| `indexable` | merchant | faceted search; false when left out, as in the form; a boolean, a string such as `"false"` is refused |
 
 **Faceted search fields.** `url_name`, `meta_title` and `indexable` are not PrestaShop's: they belong to the module `ps_facetedsearch`, which adds them to the back office form and stores them in its own tables. The module saves them from the form's POST data in its `actionAttributeGroupSave` / `actionAttributeSave` hooks, so a call that goes through the core class alone would silently drop them. The tool writes the same rows the module writes, in `layered_indexable_attribute_group`, `layered_indexable_attribute_group_lang_value` and `layered_indexable_attribute_lang_value`. When the module is not installed and enabled, these fields are refused with a clear message and the rest is written.
 
-**Returns** - `created`, `id_attribute_group`, and the group as `somcp_get_attribute_group` returns it.
+**Returns** - `created`, `id_attribute_group`, and `attribute_group`, the group as `somcp_get_attribute_group` returns it. `faceted_search` appears only when the faceted search rows could not be written; the group is kept then.
 
-**Notes** - written through `AttributeGroup::add()`, so hooks fire. Not replayable: the read tool to check is `somcp_list_attributes`.
+**Notes**
+- Written through `AttributeGroup::add()` in the shop of the token (`id_shop_list`), as the core's `AddAttributeGroupHandler` does, so the hooks fire; `add()` places the group last and sets the colour flag from `group_type`. If the add fails after the row went in, the group is deleted again.
+- `ps_facetedsearch` reads its fields from the request in its `actionAttributeGroupSave` hook, so they never reach it from `AttributeGroup::add()`. With the module installed and enabled, the tool writes after the add what its form writes on every save: one row of `layered_indexable_attribute_group`, and one row of `layered_indexable_attribute_group_lang_value` per language whose URL word or title tag is filled (a language left out taking the default one's text) - the module writes none for a language where both are empty - then drops the module's filter block cache. A new group has no value yet, so `layered_indexable_attribute_lang_value` is written by `somcp_create_attribute_value`.
+- The group is created without values.
+- PrestaShop accepts two groups of the same name: the description tells the assistant to read `somcp_list_attributes` first.
+- Every problem is reported at once, before anything is written.
+- Not replayable: the read tool to check is `somcp_list_attributes`.
 
 #### `somcp_update_attribute_group`
 **State**: to write · [issue #69](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/69)

@@ -59,6 +59,10 @@ the new permissions.
 **Built-in assistant.** "Powered by Neuron AI" now sits in the title of the
 "Your assistants" panel instead of under the settings form.
 
+**Supporting the project.** A "Support the project" button now sits at the end
+of the tab bar, on every tab. It opens a short thank-you window with a link to
+the project's GitHub Sponsors page; it never opens on its own.
+
 **Logo.** The module has a new logo: a white pulse ending on an orange dot,
 on the dark background of the other O'So modules.
 

@@ -364,6 +364,33 @@
             follow();
         });
 
+        // The sponsor window. Escape and a click on the backdrop close it too,
+        // as anyone expects of a window that only says thank you.
+        document.querySelectorAll('[data-somcp-sponsor]').forEach(function (dialog) {
+            var open = document.querySelector('[data-somcp-sponsor-open]');
+            // A browser without dialog support would show it inline for good:
+            // the button goes rather than leaving a window that cannot close.
+            if (!open || typeof dialog.showModal !== 'function') {
+                if (open) {
+                    open.hidden = true;
+                }
+                return;
+            }
+            open.addEventListener('click', function () {
+                dialog.showModal();
+            });
+            dialog.querySelectorAll('[data-somcp-sponsor-close]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    dialog.close();
+                });
+            });
+            dialog.addEventListener('click', function (event) {
+                if (event.target === dialog) {
+                    dialog.close();
+                }
+            });
+        });
+
         // A setting that inherits from the level above is shown but not editable:
         // its value does not belong to this level, and it is not submitted either
         // - the module removes the row instead of writing what was on screen.

@@ -441,6 +441,21 @@ T = {
  "Après la mise à jour, reconnectez vos assistants pour que leur accès inclue les nouvelles permissions.",
  "Después de la actualización, vuelva a conectar sus asistentes para que su acceso incluya los nuevos permisos.",
  "Verbinden Sie Ihre Assistenten nach dem Update erneut, damit ihr Zugriff die neuen Berechtigungen umfasst."),
+"Support the project": ("Soutenir le projet", "Apoyar el proyecto", "Projekt unterstützen"),
+"Thank you for using O'So MCP Server": (
+ "Merci d'utiliser O'So MCP Server",
+ "Gracias por usar O'So MCP Server",
+ "Danke, dass Sie O'So MCP Server verwenden"),
+"The module is free and open source. Your support funds new tools, tests on every PrestaShop version and updates.": (
+ "Le module est gratuit et open source. Votre soutien finance les nouveaux outils, les tests sur chaque version de PrestaShop et les mises à jour.",
+ "El módulo es gratuito y de código abierto. Su apoyo financia las nuevas herramientas, las pruebas en cada versión de PrestaShop y las actualizaciones.",
+ "Das Modul ist kostenlos und Open Source. Ihre Unterstützung finanziert neue Werkzeuge, Tests auf jeder PrestaShop-Version und Updates."),
+"A monthly or one-time donation, of the amount you choose, on GitHub Sponsors.": (
+ "Un don mensuel ou ponctuel, du montant de votre choix, sur GitHub Sponsors.",
+ "Una donación mensual o puntual, del importe que usted elija, en GitHub Sponsors.",
+ "Eine monatliche oder einmalige Spende in der Höhe Ihrer Wahl, über GitHub Sponsors."),
+"Later": ("Plus tard", "Más tarde", "Später"),
+"Become a sponsor on GitHub": ("Devenir sponsor sur GitHub", "Hacerse patrocinador en GitHub", "Sponsor auf GitHub werden"),
 "Add a host name": ("Ajouter un nom de domaine", "Añadir un nombre de dominio", "Hostnamen hinzufügen"),
 "Clients the module works with:": ("Clients compatibles avec le module :", "Clientes compatibles con el módulo:", "Mit dem Modul kompatible Clients:"),
 "Keep a security log": (

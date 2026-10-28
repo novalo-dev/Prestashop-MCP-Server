@@ -542,6 +542,36 @@
       <source>After the update, reconnect your assistants so that their access includes the new permissions.</source>
       <target>Verbinden Sie Ihre Assistenten nach dem Update erneut, damit ihr Zugriff die neuen Berechtigungen umfasst.</target>
     </trans-unit>
+    <!-- Support the project -->
+    <trans-unit id="91674753fe472c121d80acd5a394cab7" resname="Support the project">
+      <source>Support the project</source>
+      <target>Projekt unterstützen</target>
+    </trans-unit>
+    <!-- Thank you for using O'So MCP Server -->
+    <trans-unit id="76a253fa15847f44ae095f3ef3d181c4" resname="Thank you for using O&#x27;So MCP Server">
+      <source>Thank you for using O'So MCP Server</source>
+      <target>Danke, dass Sie O'So MCP Server verwenden</target>
+    </trans-unit>
+    <!-- The module is free and open source. Your support funds new tools, tests on every PrestaShop version and updates. -->
+    <trans-unit id="ed36715d1ac3716b88da00e6067e97fd" resname="The module is free and open source. Your support funds new tools, tests on every PrestaShop version and updates.">
+      <source>The module is free and open source. Your support funds new tools, tests on every PrestaShop version and updates.</source>
+      <target>Das Modul ist kostenlos und Open Source. Ihre Unterstützung finanziert neue Werkzeuge, Tests auf jeder PrestaShop-Version und Updates.</target>
+    </trans-unit>
+    <!-- A monthly or one-time donation, of the amount you choose, on GitHub Sponsors. -->
+    <trans-unit id="5522c8e55cc644118fe7a6ba8fda22f3" resname="A monthly or one-time donation, of the amount you choose, on GitHub Sponsors.">
+      <source>A monthly or one-time donation, of the amount you choose, on GitHub Sponsors.</source>
+      <target>Eine monatliche oder einmalige Spende in der Höhe Ihrer Wahl, über GitHub Sponsors.</target>
+    </trans-unit>
+    <!-- Later -->
+    <trans-unit id="61057a0c84605444201929bdd72014f0" resname="Later">
+      <source>Later</source>
+      <target>Später</target>
+    </trans-unit>
+    <!-- Become a sponsor on GitHub -->
+    <trans-unit id="2c5b047a10df567d03789f02cb090c7f" resname="Become a sponsor on GitHub">
+      <source>Become a sponsor on GitHub</source>
+      <target>Sponsor auf GitHub werden</target>
+    </trans-unit>
     <!-- Add a host name -->
     <trans-unit id="2bed13153045be161310c84e504b78d7" resname="Add a host name">
       <source>Add a host name</source>

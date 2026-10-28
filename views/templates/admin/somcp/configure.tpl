@@ -31,6 +31,7 @@
        were overridden by its rules for headings and inputs. Each tab answers
        one question - is it on and how do I connect, what may an assistant do,
        who may connect and how safely, who is connected, what happened. *}
+    <div class="somcp-tabbar">
     <ul class="nav nav-tabs somcp-tabs" role="tablist">
         <li class="nav-item active" role="presentation"><a class="nav-link active" href="#somcp-pane-config" role="tab" data-somcp-tab="config">{l s='Configuration' d='Modules.Somcp.Admin'}</a></li>
         <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-tools" role="tab" data-somcp-tab="tools">{l s='Tools and prompts' d='Modules.Somcp.Admin'}</a></li>
@@ -50,6 +51,8 @@
             </a>
         </li>
     </ul>
+    {include file='./_sponsor.tpl'}
+    </div>
 
     <div class="somcp-pane" id="somcp-pane-config" data-somcp-pane="config" role="tabpanel">
 

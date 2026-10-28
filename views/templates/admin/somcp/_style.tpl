@@ -54,6 +54,63 @@
     padding-right: 12px;
 }
 
+/* The tabs and the sponsor button share one row. The tabs take what is left
+   and keep scrolling sideways on their own; the button never shrinks. */
+.somcp .somcp-tabbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.somcp .somcp-tabbar .somcp-tabs {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.somcp .somcp-sponsor-open {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.somcp .somcp-sponsor-open .icon-heart,
+.somcp .somcp-sponsor .modal-footer .icon-heart {
+    color: #db61a2;
+}
+
+.somcp .somcp-sponsor .modal-footer .btn-primary .icon-heart {
+    color: inherit;
+}
+
+/* A native dialog dressed as the back office modal. Its own box is cleared so
+   only modal-content draws the frame. */
+.somcp .somcp-sponsor {
+    width: 520px;
+    max-width: calc(100% - 32px);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+}
+
+.somcp .somcp-sponsor::backdrop {
+    background: rgba(0, 0, 0, .45);
+}
+
+.somcp .somcp-sponsor .modal-body {
+    text-align: center;
+    padding: 24px 28px;
+}
+
+.somcp .somcp-sponsor-heart {
+    display: block;
+    width: 110px;
+    height: 102px;
+    margin: 0 auto 12px;
+    color: #db61a2;
+}
+
 .somcp .somcp-pane[hidden] {
     display: none;
 }

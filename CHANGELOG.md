@@ -146,6 +146,17 @@ now says that the catalogue permission can create features. It needs the
 permission `mcp.catalog.write` and the `add` right on the back office features
 page.
 
+**Changing a feature.** The new tool `somcp_update_feature` changes one
+existing feature with everything the creation can write: its name in each
+language and, when the faceted search module is installed and enabled, the
+word used in filtered URLs, the title tag and whether filtered pages are
+indexed. Only what is asked changes: a language left out keeps its text, and
+the answer lists each field changed with its old and new value. Asking for
+what the feature already holds changes nothing. Renaming a feature renames it
+on every product that carries it, and the assistant tells you so before
+asking. It needs the permission `mcp.catalog.write` and the `edit` right on
+the back office features page.
+
 **Listing files.** The new tool `somcp_list_attachments` lists the files of
 the shop (Catalogue > Files: manuals, data sheets) with the columns of the back
 office list - name, file, size, number of products - so the assistant takes

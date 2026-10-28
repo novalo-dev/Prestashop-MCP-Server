@@ -90,7 +90,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
                 . 'language of the shop left out takes the default language\'s text. '
                 . 'Every problem is reported at once and nothing is written until the whole call is valid. '
                 . 'Do not use it to add a value to a feature, which is somcp_create_feature_value, or to change a '
-                . 'feature, which is somcp_update_feature when the shop offers it. One feature per call: for several, call it once per '
+                . 'feature, which is somcp_update_feature. One feature per call: for several, call it once per '
                 . 'feature and report each result. '
                 . 'Not to be retried: if the answer is lost, read somcp_list_features and look for the name '
                 . 'before anything else, because a second call creates a second feature.',
@@ -425,12 +425,9 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
     }
 
     /**
-     * The faceted search rows of one feature, written as the module's form writes them.
+     * The faceted search rows of a new feature, written as the module's form writes them.
      *
-     * The module's own save method is private and reads the form; its
-     * actionFeatureSave hook reads the request. Neither can be handed values,
-     * so its rows are written here, through the same columns: one row for
-     * Indexable, one per language of the shop for the URL word and title tag.
+     * A language left out takes the default one's text, as for the name.
      *
      * @param int $idFeature
      * @param array<string, mixed> $plan
@@ -439,20 +436,48 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
      */
     protected static function storeFaceted(int $idFeature, array $plan): bool
     {
+        return self::writeFaceted(
+            $idFeature,
+            (bool) $plan['indexable'],
+            self::complete($plan['texts']['url_name'] ?? [], $plan['languages']),
+            self::complete($plan['texts']['meta_title'] ?? [], $plan['languages']),
+            $plan['languages']['all']
+        );
+    }
+
+    /**
+     * Replaces the faceted search rows of one feature, then drops the module's filter cache.
+     *
+     * The module's own save method is private and reads the form; its
+     * actionFeatureSave hook reads the request. Neither can be handed values,
+     * so its rows are written here, through the same columns: one row for
+     * Indexable, one per language of the shop for the URL word and title tag.
+     * Shared by the creation and the change of a feature, so both store them
+     * alike.
+     *
+     * @param int $idFeature
+     * @param bool $indexable
+     * @param array<int, string> $urls by language identifier
+     * @param array<int, string> $titles by language identifier
+     * @param array<int, int> $idLangs every language of the shop
+     *
+     * @return bool
+     */
+    protected static function writeFaceted(int $idFeature, bool $indexable, array $urls, array $titles, array $idLangs): bool
+    {
         $db = Db::getInstance();
-        $urls = self::complete($plan['texts']['url_name'] ?? [], $plan['languages']);
-        $titles = self::complete($plan['texts']['meta_title'] ?? [], $plan['languages']);
 
         try {
-            // A row left by a feature that once had this identifier would
-            // otherwise make the insert fail; the module clears them too.
+            // The module replaces the rows rather than updating them, and a
+            // row left by a feature that once had this identifier would
+            // otherwise make the insert fail.
             $done = $db->delete('layered_indexable_feature', '`id_feature` = ' . (int) $idFeature)
                 && $db->delete('layered_indexable_feature_lang_value', '`id_feature` = ' . (int) $idFeature)
                 && $db->insert('layered_indexable_feature', [
                     'id_feature' => (int) $idFeature,
-                    'indexable' => (int) $plan['indexable'],
+                    'indexable' => (int) $indexable,
                 ]);
-            foreach ($plan['languages']['all'] as $idLang) {
+            foreach ($idLangs as $idLang) {
                 $done = $done && $db->insert('layered_indexable_feature_lang_value', [
                     'id_feature' => (int) $idFeature,
                     'id_lang' => (int) $idLang,
@@ -464,8 +489,22 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
             $done = false;
         }
 
-        // The module caches the filter blocks it built; it drops them after
-        // each save so the storefront picks up the new names.
+        self::dropFacetedCache();
+
+        return $done;
+    }
+
+    /**
+     * Drops the filter blocks the faceted search module built.
+     *
+     * It caches them with the feature names and URL words in them, and drops
+     * them after each save of the feature form so the storefront picks up the
+     * new ones.
+     *
+     * @return void
+     */
+    protected static function dropFacetedCache(): void
+    {
         $module = Module::getInstanceByName('ps_facetedsearch');
         if ($module && method_exists($module, 'invalidateLayeredFilterBlockCache')) {
             try {
@@ -474,7 +513,5 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
                 // A stale cache block is rebuilt on its own; not worth failing for.
             }
         }
-
-        return $done;
     }
 }

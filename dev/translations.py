@@ -605,6 +605,10 @@ T = {
  "Créer une caractéristique",
  "Crear una característica",
  "Ein Merkmal anlegen"),
+"Change a feature": (
+ "Modifier une caractéristique",
+ "Modificar una característica",
+ "Ein Merkmal ändern"),
 "List tax rules": (
     "Lister les règles de taxes",
     "Listar las reglas de impuestos",

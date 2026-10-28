@@ -102,6 +102,7 @@ calling the shop's own addresses.
 | `somcp_create_manufacturer` | `mcp.catalog.write` | `add` on `AdminManufacturers` | write |
 | `somcp_update_manufacturer` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
 | `somcp_create_feature` | `mcp.catalog.write` | `add` on `AdminFeatures` | write |
+| `somcp_update_feature` | `mcp.catalog.write` | `edit` on `AdminFeatures` | write |
 | `somcp_get_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 | `somcp_list_low_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 | `somcp_set_stock_quantity` | `mcp.stock.write` | `edit` on `AdminStockManagement` | write |

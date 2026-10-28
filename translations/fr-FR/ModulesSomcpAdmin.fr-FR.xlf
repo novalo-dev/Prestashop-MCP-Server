@@ -747,6 +747,11 @@
       <source>Create a feature</source>
       <target>Créer une caractéristique</target>
     </trans-unit>
+    <!-- Change a feature -->
+    <trans-unit id="5dcc5573a5a7c44bc6e3559b201dcce0" resname="Change a feature">
+      <source>Change a feature</source>
+      <target>Modifier une caractéristique</target>
+    </trans-unit>
     <!-- List tax rules -->
     <trans-unit id="7e8244819dc9fb2b17e66f14264cf391" resname="List tax rules">
       <source>List tax rules</source>

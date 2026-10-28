@@ -29,6 +29,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_manufacturer`
 - `somcp_update_manufacturer`
 - `somcp_create_feature`
+- `somcp_update_feature`
 
 ## Know which shop you are in
 
@@ -302,6 +303,22 @@ without any value. Before calling it:
 When it succeeds, show the merchant the feature as returned. On a lost answer,
 read `somcp_list_features` again rather than calling twice: a second call
 creates a second feature.
+
+## Changing a feature
+
+`somcp_update_feature` changes one existing feature. Before calling it:
+
+1. Take the feature from `somcp_list_features`, never guessed, and read it
+   with `somcp_get_feature` to know what it holds before changing it.
+2. Give only what changes. To change a text in one language, pass `languages`
+   with that language alone. Without the faceted search module, leave
+   `url_name`, `meta_title` and `indexable` out: they are refused.
+3. A new name shows on every product that carries the feature: tell the
+   merchant before calling.
+
+When it succeeds, show the merchant each change with its old and new value.
+`changed: false` means the feature already held those values. On a lost
+answer, read the feature again with `somcp_get_feature` before calling twice.
 
 ## Do not use when
 

@@ -1470,7 +1470,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - Not replayable: the read tool to check is `somcp_list_features`.
 
 #### `somcp_update_feature`
-**State**: to write · [issue #75](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/75)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminFeatures')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one feature with everything `somcp_create_feature` can write, under the same rules. Only what is given changes.
@@ -1479,9 +1479,14 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 
 **Parameters** - `id_feature` (required), `languages`, then the fields of `somcp_create_feature`, all optional. A text given replaces the languages given and keeps the others.
 
-**Returns** - `changed`, per field its old and new value, and the feature as `somcp_get_feature` returns it.
+**Returns** - `changed`, `id_feature`, `changes` (per field its old and new value, a text per language: `name (en)`), and `feature`, the feature as `somcp_get_feature` returns it. `faceted_search` appears only when the faceted search rows could not be written while the name did change. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
-**Notes** - renaming a feature renames it on every product that carries it, which the assistant tells the merchant before the call. Replayable: the same values again say `changed: false`.
+**Notes**
+- Renaming a feature renames it on every product that carries it, which the assistant tells the merchant before the call.
+- The name is written through `Feature::update()` in the shop of the token (`id_shop_list`), as the core's `EditFeatureHandler` does, so the object hooks fire. A language not filled keeps its name.
+- Faceted search fields left out keep what the feature holds, `indexable` included: unlike the creation, it is not turned off when missing. When one of them changes, the rows are written again as the module's form writes them, every language of the shop with its stored text unless a new one was given. A feature whose form was never saved with the module reads as empty texts and not indexable, as `somcp_get_feature` shows it. The module's filter block cache is dropped after any change, a rename included, as its form does.
+- Every problem is reported at once, before anything is written.
+- Replayable: the same values again say `changed: false`. On a lost answer, read `somcp_get_feature` before calling again.
 
 #### `somcp_get_feature_value`
 **State**: to write · [issue #76](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/76)

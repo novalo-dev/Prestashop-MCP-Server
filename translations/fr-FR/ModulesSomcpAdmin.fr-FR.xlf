@@ -742,6 +742,11 @@
       <source>List attributes</source>
       <target>Lister les attributs</target>
     </trans-unit>
+    <!-- Get an attribute group -->
+    <trans-unit id="17cf4f61618a32a66feee4a10b3acd1f" resname="Get an attribute group">
+      <source>Get an attribute group</source>
+      <target>Lire un groupe d'attributs</target>
+    </trans-unit>
     <!-- List features -->
     <trans-unit id="6009a2cf3b6dc4a7df637cb89db902f8" resname="List features">
       <source>List features</source>

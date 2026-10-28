@@ -127,6 +127,15 @@ guessing them before creating or changing the combinations of a product. One
 group can be asked for on its own. It needs the permission `mcp.catalog.read`
 and the `view` right on the back office attributes page.
 
+**Reading an attribute group.** The new tool `somcp_get_attribute_group`
+returns everything the back office attribute form shows for one attribute
+group: name, public name, type (drop-down list, radio buttons or colour
+swatches), position, how many values it holds, and, when the faceted search
+module is installed, the word used in filtered URLs, the title tag and whether
+filtered pages are indexed. It only reads the shop the assistant is connected
+to. It needs the permission `mcp.catalog.read` and the `view` right on the back
+office attributes page.
+
 **Listing features.** The new tool `somcp_list_features` lists the features
 of the shop the assistant is connected to (Composition, Property...) and, under
 each one, its predefined values, with their identifier and name and nothing

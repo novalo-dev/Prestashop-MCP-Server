@@ -16,6 +16,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_suppliers`
 - `somcp_get_supplier`
 - `somcp_list_attributes`
+- `somcp_get_attribute_group`
 - `somcp_list_features`
 - `somcp_get_feature`
 - `somcp_get_feature_value`
@@ -95,6 +96,11 @@ Attribute values - a size, a colour - come from `somcp_list_attributes`: a
 combination is a set of `id_attribute`, never of names. Two groups can hold a
 value of the same name, so check the group as well as the value, and ask the
 merchant when the name they gave sits in more than one.
+To answer about one attribute group - its public name, its type (a list, radio
+buttons or colour swatches), its position, how many values it holds, its
+faceted search URL word, title tag and indexing - read it with
+`somcp_get_attribute_group`, by the identifier the list gave. Those three
+faceted search fields are null when the shop has no faceted search module.
 
 Features - a composition, a material - come from `somcp_list_features`: take
 the `id_feature` and the `id_feature_value` from there. Only predefined values

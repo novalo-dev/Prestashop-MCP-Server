@@ -601,6 +601,10 @@ T = {
  "Lister les attributs",
  "Listar los atributos",
  "Attribute auflisten"),
+"Get an attribute group": (
+ "Lire un groupe d'attributs",
+ "Leer un grupo de atributos",
+ "Eine Attributgruppe abrufen"),
 "List features": (
  "Lister les caractéristiques",
  "Listar las características",

@@ -15,6 +15,7 @@
     "somcp_list_suppliers",
     "somcp_get_supplier",
     "somcp_list_attributes",
+    "somcp_get_attribute_group",
     "somcp_list_features",
     "somcp_get_feature",
     "somcp_get_feature_value",

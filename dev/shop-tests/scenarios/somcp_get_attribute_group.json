@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "a demo attribute group, Size", "arguments": {"id_attribute_group": 1, "language": "en"}, "expect": "ok", "contains": ["\"id_attribute_group\": 1", "Size", "\"public_name\"", "\"group_type\": \"select\"", "\"position\"", "\"values_count\"", "\"url_name\"", "\"meta_title\"", "\"indexable\""]},
+    {"why": "the demo colour group, of type color", "arguments": {"id_attribute_group": 2, "language": "en"}, "expect": "ok", "contains": ["\"id_attribute_group\": 2", "\"group_type\": \"color\""]},
+    {"why": "in the shop default language", "arguments": {"id_attribute_group": 1}, "expect": "ok", "contains": ["\"id_attribute_group\": 1"]},
+    {"why": "a language the shop does not have falls back on the default one", "arguments": {"id_attribute_group": 1, "language": "zz"}, "expect": "ok", "contains": ["\"id_attribute_group\": 1"]},
+    {"why": "the identifier as a numeric string", "arguments": {"id_attribute_group": "2"}, "expect": "ok", "contains": ["\"id_attribute_group\": 2"]},
+    {"why": "a group that does not exist", "arguments": {"id_attribute_group": 999999}, "expect": "error", "contains": ["No attribute group of this shop"]},
+    {"why": "no identifier", "arguments": {"id_attribute_group": 0}, "expect": "error", "contains": ["No attribute group of this shop"]},
+    {"why": "an identifier that is not a number", "arguments": {"id_attribute_group": [1]}, "expect": "error", "contains": ["No attribute group of this shop"]}
+  ]
+}

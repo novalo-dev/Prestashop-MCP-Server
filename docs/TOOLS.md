@@ -1294,7 +1294,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read through queries on `attribute_group`, `attribute_group_shop`, `attribute` and `attribute_shop` in the shop of the token, rather than `AttributeGroup::getAttributesGroups()` and `AttributeGroup::getAttributes()`, which take the shop from the global context. Sorted by position, as the back office does.
 
 #### `somcp_get_attribute_group`
-**State**: to write · [issue #67](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/67)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.read`
 
 **Does** - returns every field of the back office attribute form for one group.
@@ -1308,9 +1308,12 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `id_attribute_group` | integer | yes | from `somcp_list_attributes` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`, `indexable`.
+**Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`, `indexable`. A group that is not one of this shop is an error.
 
-**Notes** - columns of `attribute_group` and `attribute_group_lang`; the faceted search fields are `null` without the module.
+**Notes**
+- Columns of `attribute_group` and `attribute_group_lang`, read through `AttributeGroup`; the group must be in `attribute_group_shop` for the shop of the token, since the constructor would load it whatever its shop. `position` is the raw column, 0 for the first.
+- `values_count` counts the values of the group in `attribute_shop` for the shop of the token, the ones `somcp_list_attributes` lists.
+- The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_attribute_group` and `layered_indexable_attribute_group_lang_value`, the tables its form reads; a group the form was never saved for has no row there, and gives `''` and `false`, as the form shows it.
 
 #### `somcp_create_attribute_group`
 **State**: to write · [issue #68](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/68)

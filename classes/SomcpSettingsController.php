@@ -100,6 +100,10 @@ abstract class SomcpSettingsController extends ModuleAdminController
             'href' => Somcp::SPONSOR_URL,
             'desc' => $this->module->l10n('Support the project'),
             'class' => 'btn-primary',
+            // Named explicitly: both header templates build the button id
+            // from it, and the stylesheet finds the button by that id. Left
+            // out, the legacy template took the class instead.
+            'imgclass' => 'somcp_sponsor',
             'target' => true,
             'js' => "var d=document.querySelector('[data-somcp-sponsor]');if(d&&d.showModal){d.showModal();return false;}",
         ];

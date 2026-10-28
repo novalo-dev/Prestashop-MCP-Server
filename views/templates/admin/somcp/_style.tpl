@@ -27,6 +27,7 @@
    font: the back office does not load the same icon fonts on 8 and 9, and a
    missing glyph left an empty gap in the button. */
 [id$="-somcp_sponsor"]::before,
+[id$="-somcp_sponsor"] > div::before,
 .somcp-heart::before {
     content: "";
     display: inline-block;
@@ -39,6 +40,17 @@
 
 .somcp-heart {
     display: inline;
+}
+
+/* The legacy header template puts an icon box above the label, empty for a
+   button that has no PrestaShop icon, and the label in a div: the box goes,
+   and the heart moves into the div so it sits on the label's line. */
+[id$="-somcp_sponsor"] > i {
+    display: none;
+}
+
+[id$="-somcp_sponsor"]:has(> div)::before {
+    display: none;
 }
 
 /* A native dialog dressed as the back office modal. Its own box is cleared so

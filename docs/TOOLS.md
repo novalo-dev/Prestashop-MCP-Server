@@ -1511,27 +1511,33 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_feature_value_lang_value`, the table its form reads; a value the form was never saved for has no row there, and gives `''`, as the form shows it.
 
 #### `somcp_create_feature_value`
-**State**: to write · [issue #77](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/77)
+**State**: written
 **Nature**: `acts(ADD, 'AdminFeatures')` · **Scope**: `mcp.catalog.write`
 
 **Does** - adds one predefined value to a feature, with every field of the back office value form.
 
 **Do not use for** - creating a feature (→ `somcp_create_feature`), or giving one product its own value (→ `somcp_update_product`, `features` with a custom value).
 
-**Parameters** - same rules as `somcp_create_feature`.
+**Parameters** - same rules as `somcp_create_feature`: `languages`, translatable texts as an object keyed by ISO code (a plain string when one language is filled), who fills each field.
 
 | Field | Who fills it | Rule |
 |---|---|---|
-| `id_feature` (Feature) | merchant, from the shop | required; from `somcp_list_features` |
-| `value` | merchant | required; 255 characters at most; `Validate::isGenericName()` |
+| `id_feature` (Feature) | merchant, from the shop | required; from `somcp_list_features`; a feature of another shop is refused like one that does not exist |
+| `value` | merchant | required; 255 characters at most; `Validate::isGenericName()` (no `<>={}`) |
 | `url_name` (URL) | assistant | faceted search, as for the feature |
 | `meta_title` (title tag) | assistant | faceted search, as for the feature |
 
-The faceted search fields follow the rule given under `somcp_create_feature`.
+The faceted search fields follow the rule given under `somcp_create_feature`. A value has no `indexable` of its own: that switch is the feature's, and is refused here as a field the tool does not take.
 
-**Returns** - `created`, `id_feature_value`, and the value as `somcp_get_feature_value` returns it.
+**Returns** - `created`, `id_feature_value`, and `feature_value`, the value as `somcp_get_feature_value` returns it. `faceted_search` appears only when the faceted search rows could not be written; the value is kept then.
 
-**Notes** - written through `FeatureValue::add()` with `custom` = 0, so hooks fire. Two values with the same text in one feature are refused. Not replayable: the read tool to check is `somcp_list_features`.
+**Notes**
+- Written through `FeatureValue::add()` with `custom` = 0, so `actionFeatureValueSave` fires; from PrestaShop 9 on, `add()` also gives it the last position in its feature. If the add fails after the row went in, the value is deleted again.
+- `ps_facetedsearch` reads its fields from the request in its `actionFeatureValueSave` hook, so they never reach it from `FeatureValue::add()`. With the module installed and enabled, the tool writes after the add one row of `layered_indexable_feature_value_lang_value` per language of the shop (empty texts included, a language left out taking the default one's text), then drops the module's filter block cache.
+- Two predefined values with the same text in one feature are refused, compared per language being filled and without case, and the error gives the `id_feature_value` already there. Custom values are not compared: each belongs to one product.
+- `feature_value` has no shop table: the value belongs to the shops of its feature.
+- Every problem is reported at once, before anything is written.
+- Not replayable: the read tool to check is `somcp_list_features`.
 
 #### `somcp_update_feature_value`
 **State**: to write · [issue #78](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/78)

@@ -166,6 +166,16 @@ belongs to that product. It only reads the shop the assistant is connected to.
 It needs the permission `mcp.catalog.read` and the `view` right on the back
 office features page.
 
+**Adding a value to a feature.** The new tool `somcp_create_feature_value`
+adds one predefined value (Cotton, Linen...) to an existing feature, with the
+fields of the back office value form: its text in each language and, when the
+faceted search module is installed and enabled, the word used in filtered URLs
+and the title tag. Without that module, those two fields are refused rather
+than stored for nothing. A value the feature already holds is refused, and the
+assistant is told which one to use instead. Values typed on one product only
+are not created here: they belong to that product. It needs the permission
+`mcp.catalog.write` and the `add` right on the back office features page.
+
 **Listing files.** The new tool `somcp_list_attachments` lists the files of
 the shop (Catalogue > Files: manuals, data sheets) with the columns of the back
 office list - name, file, size, number of products - so the assistant takes

@@ -757,6 +757,11 @@
       <source>Get a feature value</source>
       <target>Leer un valor de característica</target>
     </trans-unit>
+    <!-- Create a feature value -->
+    <trans-unit id="f9219608e422ac712c2f6edf40f28cb7" resname="Create a feature value">
+      <source>Create a feature value</source>
+      <target>Crear un valor de característica</target>
+    </trans-unit>
     <!-- List tax rules -->
     <trans-unit id="7e8244819dc9fb2b17e66f14264cf391" resname="List tax rules">
       <source>List tax rules</source>

@@ -31,6 +31,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_manufacturer`
 - `somcp_create_feature`
 - `somcp_update_feature`
+- `somcp_create_feature_value`
 
 ## Know which shop you are in
 
@@ -302,8 +303,8 @@ without any value. Before calling it:
    yourself and show them first, and ask the merchant whether filtered pages
    on this feature are open to search engines (`indexable`, off by default).
    Without that module, leave these three fields out: they are refused.
-3. The values come afterwards, one per call, when the shop offers the tool
-   that adds them.
+3. The values come afterwards, one per call, with
+   `somcp_create_feature_value`.
 
 When it succeeds, show the merchant the feature as returned. On a lost answer,
 read `somcp_list_features` again rather than calling twice: a second call
@@ -324,6 +325,23 @@ creates a second feature.
 When it succeeds, show the merchant each change with its old and new value.
 `changed: false` means the feature already held those values. On a lost
 answer, read the feature again with `somcp_get_feature` before calling twice.
+
+## Adding a value to a feature
+
+`somcp_create_feature_value` adds one predefined value - Cotton, Linen - to an
+existing feature. Before calling it:
+
+1. Take the feature from `somcp_list_features`, never guessed, and look at the
+   values it already holds: a value whose text it already has is refused.
+2. Ask the merchant for the value, in every language being filled. When the
+   shop has the faceted search module, write the URL word and the title tag
+   yourself and show them first. Without that module, leave `url_name` and
+   `meta_title` out: they are refused.
+3. To give one product a text of its own rather than a value every product can
+   take, use `somcp_update_product` with a custom value instead.
+
+When it succeeds, show the merchant the value as returned. On a lost answer,
+read `somcp_list_features` again rather than calling twice.
 
 ## Do not use when
 

@@ -613,6 +613,10 @@ T = {
  "Lire une valeur de caractéristique",
  "Leer un valor de característica",
  "Einen Merkmalswert abrufen"),
+"Create a feature value": (
+ "Créer une valeur de caractéristique",
+ "Crear un valor de característica",
+ "Einen Merkmalswert anlegen"),
 "List tax rules": (
     "Lister les règles de taxes",
     "Listar las reglas de impuestos",

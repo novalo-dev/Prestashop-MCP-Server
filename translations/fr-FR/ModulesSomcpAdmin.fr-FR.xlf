@@ -122,10 +122,10 @@
       <source>Read the catalogue of this shop: products, prices and categories</source>
       <target>Lire le catalogue de cette boutique : produits, prix et catégories</target>
     </trans-unit>
-    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, change prices and stock -->
-    <trans-unit id="abd98ece09bf6cdfb6d76346b4a90a44" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, change prices and stock">
-      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, change prices and stock</source>
-      <target>Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, créer et modifier les marques, modifier les prix et le stock</target>
+    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create features, change prices and stock -->
+    <trans-unit id="aacc3a1d0e59bb00919ad9d71147a484" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create features, change prices and stock">
+      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create features, change prices and stock</source>
+      <target>Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, créer et modifier les marques, créer les caractéristiques, modifier les prix et le stock</target>
     </trans-unit>
     <!-- Read the stock of this shop: quantities of products and combinations -->
     <trans-unit id="44aed62b337ebd9f1875feb664e23563" resname="Read the stock of this shop: quantities of products and combinations">
@@ -741,6 +741,11 @@
     <trans-unit id="caa1ac0d6769467502a4e9232ae77723" resname="Get a feature">
       <source>Get a feature</source>
       <target>Lire une caractéristique</target>
+    </trans-unit>
+    <!-- Create a feature -->
+    <trans-unit id="547707fbc6f7f80cde82c4911e1968dc" resname="Create a feature">
+      <source>Create a feature</source>
+      <target>Créer une caractéristique</target>
     </trans-unit>
     <!-- List tax rules -->
     <trans-unit id="7e8244819dc9fb2b17e66f14264cf391" resname="List tax rules">

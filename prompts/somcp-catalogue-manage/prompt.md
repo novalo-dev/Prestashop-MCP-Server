@@ -28,6 +28,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_set_category_active`
 - `somcp_create_manufacturer`
 - `somcp_update_manufacturer`
+- `somcp_create_feature`
 
 ## Know which shop you are in
 
@@ -282,6 +283,25 @@ When it succeeds, show the merchant each change with its old and new value, the
 `seo_warnings`, and the logo if it was refused, with its reason.
 `changed: false` means the brand already held those values. On a lost answer,
 read the brand again with `somcp_get_manufacturer` before calling twice.
+
+## Creating a feature
+
+`somcp_create_feature` creates one feature - a composition, a material -
+without any value. Before calling it:
+
+1. Read `somcp_list_features`: the feature may already exist, and the shop
+   accepts two features of the same name.
+2. Ask the merchant for the name, in every language being filled. When the
+   shop has the faceted search module, write the URL word and the title tag
+   yourself and show them first, and ask the merchant whether filtered pages
+   on this feature are open to search engines (`indexable`, off by default).
+   Without that module, leave these three fields out: they are refused.
+3. The values come afterwards, one per call, when the shop offers the tool
+   that adds them.
+
+When it succeeds, show the merchant the feature as returned. On a lost answer,
+read `somcp_list_features` again rather than calling twice: a second call
+creates a second feature.
 
 ## Do not use when
 

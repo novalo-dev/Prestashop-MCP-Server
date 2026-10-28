@@ -1,0 +1,17 @@
+{
+  "calls": [
+    {"why": "the name only", "arguments": {"languages": ["en"], "name": {"en": "Somcp test feature"}}, "expect": "ok", "contains": ["\"created\": true", "\"id_feature\"", "\"name\": \"Somcp test feature\"", "\"values_count\": 0", "\"indexable\": false"]},
+    {"why": "the name as one string when one language is filled", "arguments": {"languages": ["en"], "name": "Somcp plain feature"}, "expect": "ok", "contains": ["\"created\": true", "\"name\": \"Somcp plain feature\""]},
+    {"why": "every faceted search field of the demo shop's module", "arguments": {"languages": ["en"], "name": {"en": "Somcp material"}, "url_name": {"en": "somcp-material"}, "meta_title": {"en": "Somcp material of the posters"}, "indexable": true}, "expect": "ok", "contains": ["\"created\": true", "\"url_name\": \"somcp-material\"", "\"meta_title\": \"Somcp material of the posters\"", "\"indexable\": true"]},
+    {"why": "the same name again creates a second feature", "arguments": {"languages": ["en"], "name": {"en": "Somcp test feature"}}, "expect": "ok", "contains": ["\"created\": true", "\"name\": \"Somcp test feature\""]},
+    {"why": "a URL word that is not one", "arguments": {"languages": ["en"], "name": {"en": "Somcp url"}, "url_name": {"en": "Somcp Material"}}, "expect": "error", "contains": ["Nothing was created", "url_name (en): not a URL word", "somcp-material"]},
+    {"why": "no name", "arguments": {"languages": ["en"]}, "expect": "error", "contains": ["Nothing was created", "name: required"]},
+    {"why": "an empty name", "arguments": {"languages": ["en"], "name": {"en": "  "}}, "expect": "error", "contains": ["name: missing in en"]},
+    {"why": "a name too long", "arguments": {"languages": ["en"], "name": {"en": "Somcp feature whose name goes on and on, well past the one hundred and twenty eight characters a feature name can hold in PrestaShop"}}, "expect": "error", "contains": ["name (en): 128 characters at most"]},
+    {"why": "forbidden characters in the name and the title tag", "arguments": {"languages": ["en"], "name": {"en": "Somcp <bad>"}, "meta_title": {"en": "A {title}"}}, "expect": "error", "contains": ["name (en): a character PrestaShop refuses", "meta_title (en): a character PrestaShop refuses"]},
+    {"why": "a text in a language not being filled", "arguments": {"languages": ["en"], "name": {"fr": "Matière"}}, "expect": "error", "contains": ["\"fr\" is not among the languages being filled"]},
+    {"why": "a computed field and a field this tool does not know", "arguments": {"languages": ["en"], "name": {"en": "Somcp extra"}, "position": 3, "colour": "red"}, "expect": "error", "contains": ["position: worked out by the shop", "colour: not a field of this tool"]},
+    {"why": "indexable as a string", "arguments": {"languages": ["en"], "name": {"en": "Somcp string"}, "indexable": "false"}, "expect": "error", "contains": ["indexable: true or false"]},
+    {"why": "a language the shop does not have", "arguments": {"languages": ["zz"], "name": {"en": "Somcp"}}, "expect": "error", "contains": ["not an active language"]}
+  ]
+}

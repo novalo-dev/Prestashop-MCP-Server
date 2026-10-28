@@ -134,6 +134,18 @@ indexed. It only reads the shop the assistant is connected to. It needs the
 permission `mcp.catalog.read` and the `view` right on the back office features
 page.
 
+**Creating a feature.** The new tool `somcp_create_feature` creates one
+feature (Composition, Material...) with the fields of the back office feature
+form: its name in each language and, when the faceted search module is
+installed and enabled, the word used in filtered URLs, the title tag and
+whether filtered pages are indexed, which are off unless you say otherwise.
+Without that module, those three fields are refused rather than stored for
+nothing. The feature is created without values. On a multistore installation
+it is created in the shop the assistant is connected to. The consent screen
+now says that the catalogue permission can create features. It needs the
+permission `mcp.catalog.write` and the `add` right on the back office features
+page.
+
 **Listing files.** The new tool `somcp_list_attachments` lists the files of
 the shop (Catalogue > Files: manuals, data sheets) with the columns of the back
 office list - name, file, size, number of products - so the assistant takes

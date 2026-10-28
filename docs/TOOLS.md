@@ -1441,27 +1441,33 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_feature` and `layered_indexable_feature_lang_value`, the tables its form reads; a feature the form was never saved for has no row there, and gives `''` and `false`, as the form shows it.
 
 #### `somcp_create_feature`
-**State**: to write · [issue #74](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/74)
+**State**: written
 **Nature**: `acts(ADD, 'AdminFeatures')` · **Scope**: `mcp.catalog.write`
 
 **Does** - creates one feature with every field of the back office feature form, in every language of the shop or the ones the merchant picks.
 
-**Do not use for** - adding a value to a feature (→ `somcp_create_feature_value`).
+**Do not use for** - adding a value to a feature (→ `somcp_create_feature_value`), or changing one (→ `somcp_update_feature`).
 
 **Parameters** - the rules of `somcp_create_product` apply: `languages`, translatable texts as an object keyed by ISO code, who fills each field.
 
 | Field | Who fills it | Rule |
 |---|---|---|
-| `name` | merchant | required; 128 characters at most; `Validate::isGenericName()` |
-| `url_name` (URL) | assistant | faceted search; the word used in filtered URLs, the name otherwise; `Tools::str2url()` |
-| `meta_title` (title tag) | assistant | faceted search |
-| `indexable` | merchant | faceted search; false when left out, as in the form |
+| `name` | merchant | required; 128 characters at most; `Validate::isGenericName()` (no `<>={}`) |
+| `url_name` (URL) | assistant | faceted search; the word used in filtered URLs, the name otherwise; refused unless it is already what `Tools::str2url()` makes of it, as the module's form does; 128 characters at most |
+| `meta_title` (title tag) | assistant | faceted search; 128 characters at most; `Validate::isGenericName()`, since the module strips tags from it |
+| `indexable` | merchant | faceted search; false when left out, as in the form; a boolean, a string such as `"false"` is refused |
 
 **Faceted search fields.** `url_name`, `meta_title` and `indexable` belong to `ps_facetedsearch`, exactly as for attributes: the module saves them from the back office form only, so the tool writes its rows itself, in `layered_indexable_feature`, `layered_indexable_feature_lang_value` and `layered_indexable_feature_value_lang_value`, and refuses these fields with a clear message when the module is not installed and enabled.
 
-**Returns** - `created`, `id_feature`, and the feature as `somcp_get_feature` returns it.
+**Returns** - `created`, `id_feature`, and `feature`, the feature as `somcp_get_feature` returns it. `faceted_search` appears only when the faceted search rows could not be written; the feature is kept then.
 
-**Notes** - written through `Feature::add()`, so hooks fire. Not replayable: the read tool to check is `somcp_list_features`.
+**Notes**
+- Written through `Feature::add()` in the shop of the token (`id_shop_list`), as the core's `AddFeatureHandler` does, so the object hooks fire and the feature takes the last position. If the add fails after the row went in, the feature is deleted again.
+- `ps_facetedsearch` reads its fields from the request in its `actionFeatureSave` hook, so they never reach it from `Feature::add()`. With the module installed and enabled, the tool writes after the add what its form writes on every save: one row of `layered_indexable_feature`, and one row of `layered_indexable_feature_lang_value` per language of the shop (empty texts included, a language left out taking the default one's text), then drops the module's filter block cache. A new feature has no value yet, so `layered_indexable_feature_value_lang_value` is written by `somcp_create_feature_value`.
+- The feature is created without values.
+- PrestaShop accepts two features of the same name: the description tells the assistant to read `somcp_list_features` first.
+- Every problem is reported at once, before anything is written.
+- Not replayable: the read tool to check is `somcp_list_features`.
 
 #### `somcp_update_feature`
 **State**: to write · [issue #75](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/75)

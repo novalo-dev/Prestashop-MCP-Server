@@ -44,6 +44,12 @@ class Somcp extends Module
     /** @var string Key the settings page leaves a message under, for the page after the redirect. */
     private const FLASH_KEY = 'somcp_flash';
 
+    /** The menu entry the settings pages sit under. */
+    public const SETTINGS_PARENT = 'AdminSomcpParent';
+
+    /** Where the "Support the project" button leads. */
+    public const SPONSOR_URL = 'https://github.com/sponsors/novalo-dev';
+
     /** @var array<int, string> Classes loaded together, in dependency order. */
     private const CLASSES = [
         'SomcpConfig',
@@ -79,6 +85,9 @@ class Somcp extends Module
 
     /** @var array<int, string> */
     private $pageErrors = [];
+
+    /** @var string The settings page being drawn, a key of settingsPages(). */
+    private $settingsPane = 'config';
 
     public function __construct()
     {
@@ -426,17 +435,71 @@ class Somcp extends Module
     }
 
     /**
-     * The settings page.
+     * The Configure button of the module manager.
      *
-     * Everything lives here, in one page split into tabs. Every action posts
-     * back to this page and is redirected, so a reload never repeats it.
+     * The settings are split into pages of the module, one per tab, so that
+     * PrestaShop draws the tabs under the page title as on its own pages; this
+     * only sends the merchant to the first of them. A shop whose pages are
+     * missing - installed from a copy older than them - gets them here, and
+     * falls back to drawing the first page in place if they still cannot be
+     * created, rather than leaving the merchant on an error.
      *
      * @return string
      */
     public function getContent(): string
     {
         self::bootClasses();
+
+        $first = self::settingsPages()['config'][0];
+        if (!Tab::getIdFromClassName($first)) {
+            $this->installTabs();
+        }
+        if (Tab::getIdFromClassName($first)) {
+            SomcpHttp::redirect($this->context->link->getAdminLink($first));
+        }
+
+        return $this->renderSettings('config');
+    }
+
+    /**
+     * The settings pages: pane of the template => controller and the tab label
+     * shown in the menu, in the order of the tabs.
+     *
+     * A method rather than a constant for the reason given on hiddenTabs().
+     *
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function settingsPages(): array
+    {
+        return [
+            'config' => ['AdminSomcpConfig', 'Configuration'],
+            'tools' => ['AdminSomcpTools', 'Tools and prompts'],
+            'access' => ['AdminSomcpAccess', 'Access and security'],
+            'assistants' => ['AdminSomcpConnected', 'Connected assistants'],
+            'assistant' => ['AdminSomcpBuiltin', 'Built-in assistant'],
+            'log' => ['AdminSomcpLog', 'Security log'],
+            'help' => ['AdminSomcpHelp', 'Help and updates'],
+        ];
+    }
+
+    /**
+     * One settings page.
+     *
+     * Every pane is drawn on every page and only the asked one is shown: the
+     * settings form spans two panes, and a pane left out would post its fields
+     * empty. Every action posts back to the page it came from and is
+     * redirected there, so a reload never repeats it.
+     *
+     * @param string $pane a key of settingsPages()
+     *
+     * @return string
+     */
+    public function renderSettings(string $pane): string
+    {
+        self::bootClasses();
         SomcpBackOffice::rememberAdminDir();
+
+        $this->settingsPane = isset(self::settingsPages()[$pane]) ? $pane : 'config';
 
         // A second chance for the deposits to be cleared. The purge otherwise
         // runs only when a new file request is opened, so a shop where nobody
@@ -560,6 +623,8 @@ class Somcp extends Module
 
         $this->context->smarty->assign([
             'somcp_form_action' => $this->selfUrl(),
+            'somcp_pane' => $this->settingsPane,
+            'somcp_sponsor_url' => self::SPONSOR_URL,
             'somcp_name' => $this->displayName,
             'somcp_version' => $this->version,
             'somcp_repository' => SomcpUpdate::REPOSITORY,
@@ -982,6 +1047,12 @@ class Somcp extends Module
      */
     private function selfUrl(array $extra = []): string
     {
+        $controller = self::settingsPages()[$this->settingsPane][0];
+        if (Tab::getIdFromClassName($controller)) {
+            return $this->context->link->getAdminLink($controller, true, [], $extra);
+        }
+
+        // The pages are missing: the settings are drawn by the Configure page.
         return $this->context->link->getAdminLink('AdminModules', true, [], array_merge([
             'configure' => $this->name,
             'tab_module' => $this->tab,
@@ -1106,7 +1177,95 @@ class Somcp extends Module
             }
         }
 
+        return $this->installSettingsTabs();
+    }
+
+    /**
+     * The settings pages, under one entry of the Modules menu.
+     *
+     * A third-level entry with its pages beneath is what makes PrestaShop draw
+     * those pages as tabs under the page title, on 8 and 9 alike. The labels
+     * live in ps_tab_lang, where trans() never runs, so each language gets its
+     * own from the module catalogues when the tab is created.
+     *
+     * @return bool
+     */
+    private function installSettingsTabs(): bool
+    {
+        $idParent = (int) Tab::getIdFromClassName(self::SETTINGS_PARENT);
+        if ($idParent <= 0) {
+            $parent = new Tab();
+            $parent->class_name = self::SETTINGS_PARENT;
+            $parent->module = $this->name;
+            $parent->active = true;
+            // Out of the menu, but still working, on a shop without the
+            // Modules entry.
+            $modules = (int) Tab::getIdFromClassName('AdminParentModulesSf');
+            $parent->id_parent = $modules > 0 ? $modules : -1;
+            $parent->name = [];
+            foreach (Language::getLanguages(false) as $language) {
+                $parent->name[(int) $language['id_lang']] = $this->displayName;
+            }
+            if (!$parent->add()) {
+                return false;
+            }
+            $idParent = (int) $parent->id;
+        }
+
+        foreach (self::settingsPages() as [$controller, $label]) {
+            if (Tab::getIdFromClassName($controller)) {
+                continue;
+            }
+
+            $tab = new Tab();
+            $tab->class_name = $controller;
+            $tab->module = $this->name;
+            $tab->active = true;
+            $tab->id_parent = $idParent;
+            $tab->name = [];
+            foreach (Language::getLanguages(false) as $language) {
+                $tab->name[(int) $language['id_lang']] = self::catalogueLabel($label, (string) $language['locale']);
+            }
+            if (!$tab->add()) {
+                return false;
+            }
+        }
+
         return true;
+    }
+
+    /**
+     * A label in the given locale, read from the module's own catalogue.
+     *
+     * Read from the file rather than asked of the translator: the translator
+     * only has the catalogue of the language the page is in, and the tab of
+     * every other language would be written in English.
+     *
+     * @param string $source the English label
+     * @param string $locale e.g. fr-FR
+     *
+     * @return string
+     */
+    private static function catalogueLabel(string $source, string $locale): string
+    {
+        $file = _PS_MODULE_DIR_ . 'somcp/translations/' . basename($locale) . '/ModulesSomcpAdmin.' . basename($locale) . '.xlf';
+        if (!is_file($file)) {
+            return $source;
+        }
+
+        $xml = @simplexml_load_file($file);
+        if ($xml === false) {
+            return $source;
+        }
+
+        foreach ($xml->xpath('//*[local-name()="trans-unit"]') ?: [] as $unit) {
+            $children = $unit->children('urn:oasis:names:tc:xliff:document:1.2');
+            if ((string) $children->source === $source && trim((string) $children->target) !== '') {
+                return (string) $children->target;
+            }
+        }
+
+        return $source;
     }
 
     /**
@@ -1116,7 +1275,14 @@ class Somcp extends Module
     {
         $removed = true;
 
-        foreach (self::hiddenTabs() as $controller) {
+        // The pages before their menu entry, so none is left orphaned.
+        $controllers = array_merge(
+            array_column(self::settingsPages(), 0),
+            [self::SETTINGS_PARENT],
+            self::hiddenTabs()
+        );
+
+        foreach ($controllers as $controller) {
             $idTab = (int) Tab::getIdFromClassName($controller);
             if ($idTab <= 0) {
                 continue;

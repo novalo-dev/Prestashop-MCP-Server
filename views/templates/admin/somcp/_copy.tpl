@@ -22,67 +22,6 @@
     (function () {
         var copied = '{l s='Copied' d='Modules.Somcp.Admin' js=1}';
 
-        // Tabs. Every pane stays in the page - hidden, not removed - because the
-        // settings form spans two of them and must post all its fields from
-        // whichever one holds the Save button. The tab survives the reload that
-        // follows every save, so a merchant lands back where they were.
-        var tabs = document.querySelector('.somcp-tabs');
-        if (tabs) {
-            var links = tabs.querySelectorAll('[data-somcp-tab]');
-            var panes = document.querySelectorAll('[data-somcp-pane]');
-            var remembered = null;
-
-            try {
-                remembered = window.sessionStorage.getItem('somcp.tab');
-            } catch (e) {
-                // Storage refused (private window, blocked site data): start on
-                // the first tab, which is what a new visit does anyway.
-            }
-
-            var show = function (name) {
-                var found = false;
-                // Both the link and its item carry the state: PrestaShop's
-                // Bootstrap 3 back office styles li.active, Bootstrap 4 styles
-                // a.nav-link.active.
-                links.forEach(function (link) {
-                    var on = link.getAttribute('data-somcp-tab') === name;
-                    link.classList.toggle('active', on);
-                    link.parentNode.classList.toggle('active', on);
-                    link.setAttribute('aria-selected', on ? 'true' : 'false');
-                    found = found || on;
-                });
-                if (!found) {
-                    return false;
-                }
-                panes.forEach(function (pane) {
-                    pane.hidden = pane.getAttribute('data-somcp-pane') !== name;
-                });
-                try {
-                    window.sessionStorage.setItem('somcp.tab', name);
-                } catch (e) {
-                    // Not remembered; nothing else depends on it.
-                }
-                return true;
-            };
-
-            links.forEach(function (link) {
-                link.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    show(link.getAttribute('data-somcp-tab'));
-                });
-            });
-
-            // A diagnostic just run is shown on the first tab, whatever tab the
-            // merchant last had open: they pressed the button to read it.
-            // The assistant form opens on its own tab: the merchant clicked
-            // Add or Edit there, whatever tab was remembered before.
-            var start = /[?&]somcp_diag=/.test(window.location.search) ? 'config'
-                : (/[?&]somcp_assistant_(edit|add)=/.test(window.location.search) ? 'assistant' : remembered);
-            if (!start || !show(start)) {
-                show(links[0].getAttribute('data-somcp-tab'));
-            }
-        }
-
         // The server switch saves as soon as it moves, like every on/off switch
         // of the back office: a merchant who turns it off in an emergency must
         // not also have to find a Save button in another tab. A switch that
@@ -364,21 +303,12 @@
             follow();
         });
 
-        // The sponsor window. Escape and a click on the backdrop close it too,
-        // as anyone expects of a window that only says thank you.
+        // The sponsor window. The header button opens it from its own onclick
+        // (PrestaShop prints that one, and offers no other hook into the
+        // header); here it only learns to close. Escape and a click on the
+        // backdrop close it too, as anyone expects of a window that only says
+        // thank you.
         document.querySelectorAll('[data-somcp-sponsor]').forEach(function (dialog) {
-            var open = document.querySelector('[data-somcp-sponsor-open]');
-            // A browser without dialog support would show it inline for good:
-            // the button goes rather than leaving a window that cannot close.
-            if (!open || typeof dialog.showModal !== 'function') {
-                if (open) {
-                    open.hidden = true;
-                }
-                return;
-            }
-            open.addEventListener('click', function () {
-                dialog.showModal();
-            });
             dialog.querySelectorAll('[data-somcp-sponsor-close]').forEach(function (button) {
                 button.addEventListener('click', function () {
                     dialog.close();

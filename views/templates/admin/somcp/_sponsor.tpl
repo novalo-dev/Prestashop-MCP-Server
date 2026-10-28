@@ -14,14 +14,11 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License v3.0 (AFL-3.0)
  *}
 
-{* Next to the tabs so it is reachable from every one of them, and only ever
-   opened by a click: the page never interrupts the merchant to ask for money.
-   A native dialog rather than the back office modal, because the Bootstrap
-   script behind that modal is not the same on PrestaShop 8 and 9. *}
-<button type="button" class="btn btn-default somcp-sponsor-open" data-somcp-sponsor-open>
-    <i class="icon-heart"></i> {l s='Support the project' d='Modules.Somcp.Admin'}
-</button>
-
+{* Opened by the "Support the project" button PrestaShop draws in the page
+   header, and only ever by a click: the page never interrupts the merchant to
+   ask for money. A native dialog rather than the back office modal, because
+   the Bootstrap script behind that modal is not the same on PrestaShop 8 and
+   9. Without it, the button is a plain link to the sponsor page. *}
 <dialog class="somcp-sponsor" data-somcp-sponsor>
     <div class="modal-content">
         <div class="modal-header">
@@ -35,7 +32,7 @@
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-default" data-somcp-sponsor-close>{l s='Later' d='Modules.Somcp.Admin'}</button>
-            <a class="btn btn-primary" href="https://github.com/sponsors/novalo-dev" target="_blank" rel="noopener noreferrer" data-somcp-sponsor-close>
+            <a class="btn btn-primary" href="{$somcp_sponsor_url|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer" data-somcp-sponsor-close>
                 <i class="icon-heart"></i> {l s='Become a sponsor on GitHub' d='Modules.Somcp.Admin'}
             </a>
         </div>

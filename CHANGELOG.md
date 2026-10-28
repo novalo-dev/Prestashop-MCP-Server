@@ -34,15 +34,17 @@ listed, each with its number and reference and how many units it holds, for the
 product and for each of its combinations.
 
 **Settings page.** The page was one long column of panels. It is now split
-into seven tabs, drawn with PrestaShop's own tabs and panels: Configuration,
-Tools and prompts, Access and security, Connected assistants, Built-in
-assistant, Security log, Help and updates. They stay on one line; on a narrow
-screen the bar scrolls sideways instead of wrapping.
+into seven pages: Configuration, Tools and prompts, Access and security,
+Connected assistants, Built-in assistant, Security log, Help and updates. The
+module has its own entry in the Modules menu, and PrestaShop shows the seven
+pages as tabs under the page title, as it does for Contacts and Stores, with
+the module's buttons beside the title. The Configure button of the module
+manager leads to the first page, and each page has its own address.
 The switch that turns the MCP server on and off leads the first tab and saves
 as soon as it moves, without a trip to the Save button. The address to give an
 assistant now sits in a regular back office field with its Copy button, on
 the settings page and on the page shown to employees who may only connect an
-assistant. The page remembers the tab you were on after saving. Every setting
+assistant. Saving brings you back to the page you were on. Every setting
 keeps its meaning and is saved the same way.
 
 **Return addresses.** "Only allow these return addresses" used to be a plain
@@ -59,9 +61,10 @@ the new permissions.
 **Built-in assistant.** "Powered by Neuron AI" now sits in the title of the
 "Your assistants" panel instead of under the settings form.
 
-**Supporting the project.** A "Support the project" button now sits at the end
-of the tab bar, on every tab. It opens a short thank-you window with a link to
-the project's GitHub Sponsors page; it never opens on its own.
+**Supporting the project.** A "Support the project" button now sits beside the
+page title, on every page of the settings. It opens a short thank-you window with a link to
+the project's GitHub Sponsors page; it never opens on its own. The Help
+button beside it leads to the module's documentation.
 
 **Logo.** The module has a new logo: a white pulse ending on an orange dot,
 on the dark background of the other O'So modules.

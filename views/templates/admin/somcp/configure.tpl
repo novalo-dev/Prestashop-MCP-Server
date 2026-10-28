@@ -26,35 +26,12 @@
         <div class="alert alert-danger">{$error|escape:'html':'UTF-8'}</div>
     {/foreach}
 
-    {* PrestaShop's own tabs and panels, nothing drawn by hand: the back office
-       stylesheet styles them on every version, where custom cards and titles
-       were overridden by its rules for headings and inputs. Each tab answers
-       one question - is it on and how do I connect, what may an assistant do,
-       who may connect and how safely, who is connected, what happened. *}
-    <div class="somcp-tabbar">
-    <ul class="nav nav-tabs somcp-tabs" role="tablist">
-        <li class="nav-item active" role="presentation"><a class="nav-link active" href="#somcp-pane-config" role="tab" data-somcp-tab="config">{l s='Configuration' d='Modules.Somcp.Admin'}</a></li>
-        <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-tools" role="tab" data-somcp-tab="tools">{l s='Tools and prompts' d='Modules.Somcp.Admin'}</a></li>
-        <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-access" role="tab" data-somcp-tab="access">{l s='Access and security' d='Modules.Somcp.Admin'}</a></li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#somcp-pane-assistants" role="tab" data-somcp-tab="assistants">
-                {l s='Connected assistants' d='Modules.Somcp.Admin'}
-                {if $somcp_consents}<span class="badge">{count($somcp_consents)|intval}</span>{/if}
-            </a>
-        </li>
-        <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-assistant" role="tab" data-somcp-tab="assistant">{l s='Built-in assistant' d='Modules.Somcp.Admin'}</a></li>
-        <li class="nav-item" role="presentation"><a class="nav-link" href="#somcp-pane-log" role="tab" data-somcp-tab="log">{l s='Security log' d='Modules.Somcp.Admin'}</a></li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#somcp-pane-help" role="tab" data-somcp-tab="help">
-                {l s='Help and updates' d='Modules.Somcp.Admin'}
-                {if $somcp_update.available}<span class="badge badge-info">{$somcp_update.latest|escape:'html':'UTF-8'}</span>{/if}
-            </a>
-        </li>
-    </ul>
-    {include file='./_sponsor.tpl'}
-    </div>
-
-    <div class="somcp-pane" id="somcp-pane-config" data-somcp-pane="config" role="tabpanel">
+    {* One page of the module per pane, each its own entry under the module in
+       the back office menu: PrestaShop draws the tabs under the page title,
+       as on Contacts and Stores. Every pane is still written into every page,
+       hidden but not removed, because the settings form spans two of them and
+       must post all its fields from whichever page holds the Save button. *}
+    <div class="somcp-pane" id="somcp-pane-config" data-somcp-pane="config" role="tabpanel"{if $somcp_pane !== 'config'} hidden{/if}>
 
         {* The switch leads the first tab, where a merchant looks first. Its fields
            belong to the settings form through the form attribute: that form sits
@@ -138,7 +115,7 @@
 
     <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="defaultForm form-horizontal" id="somcp-settings">
 
-        <div class="somcp-pane" id="somcp-pane-tools" data-somcp-pane="tools" role="tabpanel" hidden>
+        <div class="somcp-pane" id="somcp-pane-tools" data-somcp-pane="tools" role="tabpanel"{if $somcp_pane !== 'tools'} hidden{/if}>
             <div class="panel">
                 <div class="panel-heading"><i class="icon-wrench"></i> {l s='Tools and prompts' d='Modules.Somcp.Admin'}</div>
                 <div class="form-group">
@@ -284,7 +261,7 @@
             </div>
         </div>
 
-        <div class="somcp-pane" id="somcp-pane-access" data-somcp-pane="access" role="tabpanel" hidden>
+        <div class="somcp-pane" id="somcp-pane-access" data-somcp-pane="access" role="tabpanel"{if $somcp_pane !== 'access'} hidden{/if}>
             <div class="panel">
                 <div class="panel-heading"><i class="icon-lock"></i> {l s='Access and security' d='Modules.Somcp.Admin'}</div>
                 <div class="form-group">
@@ -429,7 +406,7 @@
         </div>
     </form>
 
-    <div class="somcp-pane" id="somcp-pane-assistants" data-somcp-pane="assistants" role="tabpanel" hidden>
+    <div class="somcp-pane" id="somcp-pane-assistants" data-somcp-pane="assistants" role="tabpanel"{if $somcp_pane !== 'assistants'} hidden{/if}>
         <div class="panel">
             <div class="panel-heading"><i class="icon-plug"></i> {l s='Connected assistants' d='Modules.Somcp.Admin'}</div>
         {if $somcp_consents}
@@ -488,7 +465,7 @@
     {* The chat built into the back office. Same panels and table as the
        Connected assistants tab, and the Edit button of PrestaShop's own lists,
        so the two tabs read as one family. *}
-    <div class="somcp-pane" id="somcp-pane-assistant" data-somcp-pane="assistant" role="tabpanel" hidden>
+    <div class="somcp-pane" id="somcp-pane-assistant" data-somcp-pane="assistant" role="tabpanel"{if $somcp_pane !== 'assistant'} hidden{/if}>
     {* Shown on every visit to the tab: the assistant ships before it is finished,
        and a merchant must know that before relying on it. *}
     <div class="alert alert-warning">{l s='In development: the built-in assistant is unstable and may change or stop working without notice.' d='Modules.Somcp.Admin'}</div>
@@ -764,7 +741,7 @@
         </form>
     </div>
 
-    <div class="somcp-pane" id="somcp-pane-log" data-somcp-pane="log" role="tabpanel" hidden>
+    <div class="somcp-pane" id="somcp-pane-log" data-somcp-pane="log" role="tabpanel"{if $somcp_pane !== 'log'} hidden{/if}>
         <div class="panel">
             <div class="panel-heading"><i class="icon-list"></i> {l s='Security log' d='Modules.Somcp.Admin'}</div>
         {if $somcp_logs}
@@ -805,7 +782,7 @@
     {* Updates are announced, never applied: the module does not download or
        replace its own code. The merchant uploads the archive in the Module
        Manager, which upgrades the module in place and keeps its settings. *}
-    <div class="somcp-pane" id="somcp-pane-help" data-somcp-pane="help" role="tabpanel" hidden>
+    <div class="somcp-pane" id="somcp-pane-help" data-somcp-pane="help" role="tabpanel"{if $somcp_pane !== 'help'} hidden{/if}>
         <div class="panel">
             <div class="panel-heading"><i class="icon-refresh"></i> {l s='Updates' d='Modules.Somcp.Admin'}</div>
             <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="form-horizontal">
@@ -905,6 +882,7 @@
         &middot; {l s='Open source under the AFL-3.0 licence' d='Modules.Somcp.Admin'}
     </p>
 
+    {include file='./_sponsor.tpl'}
     {include file='./_copy.tpl'}
 
 </div>

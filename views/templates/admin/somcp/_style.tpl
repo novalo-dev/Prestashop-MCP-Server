@@ -20,65 +20,14 @@
    sit in views/css and was only ever loaded by the consent screen, so none of
    these rules applied to the settings page at all. *}
 <style type="text/css">
-/* Tabs and panels are PrestaShop's own; only the spacing between them and
-   the hidden state of a pane are set here. A pane is hidden, never removed,
-   because the settings form spans two of them and posts every field. */
-.somcp .somcp-tabs {
-    margin-bottom: 15px;
-}
-
-/* Seven tabs on one line. Where the screen is too narrow for them, the bar
-   scrolls sideways instead of wrapping onto a second row, which would push the
-   active tab away from its pane. Flex on both back office themes: Bootstrap 3
-   floats the items, Bootstrap 4 wraps them. */
-.somcp .somcp-tabs {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-}
-
-.somcp .somcp-tabs::before,
-.somcp .somcp-tabs::after {
-    display: none;
-}
-
-.somcp .somcp-tabs > li {
-    float: none;
-    flex: 0 0 auto;
-}
-
-.somcp .somcp-tabs > li > a {
-    white-space: nowrap;
-    padding-left: 12px;
-    padding-right: 12px;
-}
-
-/* The tabs and the sponsor button share one row. The tabs take what is left
-   and keep scrolling sideways on their own; the button never shrinks. */
-.somcp .somcp-tabbar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.somcp .somcp-tabbar .somcp-tabs {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin-bottom: 0;
-}
-
-.somcp .somcp-sponsor-open {
-    flex: 0 0 auto;
-    white-space: nowrap;
-}
-
-.somcp .somcp-sponsor-open .icon-heart,
-.somcp .somcp-sponsor .modal-footer .icon-heart {
+/* The heart of the "Support the project" button PrestaShop draws in the page
+   header, outside this module's markup, hence the selector on its id. */
+[id$="-somcp_sponsor"] .material-icons {
     color: #db61a2;
 }
 
+/* The heart inside the sponsor button of the window takes the button's own
+   white, like its text. */
 .somcp .somcp-sponsor .modal-footer .btn-primary .icon-heart {
     color: inherit;
 }
@@ -111,15 +60,17 @@
     color: #db61a2;
 }
 
+/* A pane is hidden, never removed: the settings form spans two of them and
+   posts every field from whichever page holds the Save button. */
 .somcp .somcp-pane[hidden] {
     display: none;
 }
 
 /* The back office draws a heavy outline on every focused link and button
-   (.bootstrap a:focus), and a clicked tab keeps the focus, so the box stayed
-   around it until the merchant clicked elsewhere. It is dropped for a mouse
-   click only: :focus-visible keeps it for someone moving with the keyboard. */
-.somcp .somcp-tabs a:focus:not(:focus-visible),
+   (.bootstrap a:focus), and a clicked button keeps the focus, so the box
+   stayed around it until the merchant clicked elsewhere. It is dropped for a
+   mouse click only: :focus-visible keeps it for someone moving with the
+   keyboard. */
 .somcp .btn:focus:not(:focus-visible) {
     outline: 0;
 }

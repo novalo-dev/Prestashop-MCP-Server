@@ -22,7 +22,8 @@ if (!defined('_PS_VERSION_')) {
  * 1.1.0 brings the assistant built into the back office.
  *
  * A shop upgrading in place gets what a fresh install of 1.1.0 would have
- * done: the assistant tables, the hidden page the chat talks to, and the
+ * done: the assistant tables, the hidden page the chat talks to, the
+ * settings pages under the module's entry of the Modules menu, and the
  * header hook its button is printed by. Every call skips what already
  * exists, so running this twice changes nothing. The hook that loads the
  * chat's script was already registered by 1.0.0.

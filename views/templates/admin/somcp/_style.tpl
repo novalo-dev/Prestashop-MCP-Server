@@ -20,16 +20,25 @@
    sit in views/css and was only ever loaded by the consent screen, so none of
    these rules applied to the settings page at all. *}
 <style type="text/css">
-/* The heart of the "Support the project" button PrestaShop draws in the page
-   header, outside this module's markup, hence the selector on its id. */
-[id$="-somcp_sponsor"] .material-icons {
-    color: #db61a2;
+/* The heart of the two sponsor buttons: the one PrestaShop draws in the page
+   header, outside this module's markup (hence the selector on its id), and
+   the one of the thank-you window. Both are primary buttons, so the heart is
+   white like their text. Drawn as an image rather than taken from an icon
+   font: the back office does not load the same icon fonts on 8 and 9, and a
+   missing glyph left an empty gap in the button. */
+[id$="-somcp_sponsor"]::before,
+.somcp-heart::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 13px;
+    margin-right: 7px;
+    vertical-align: -1px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 15'%3E%3Cpath fill='%23fff' d='M8 14.5 1.6 8.1A4 4 0 0 1 8 2.9a4 4 0 0 1 6.4 5.2Z'/%3E%3C/svg%3E") no-repeat center / contain;
 }
 
-/* The heart inside the sponsor button of the window takes the button's own
-   white, like its text. */
-.somcp .somcp-sponsor .modal-footer .btn-primary .icon-heart {
-    color: inherit;
+.somcp-heart {
+    display: inline;
 }
 
 /* A native dialog dressed as the back office modal. Its own box is cleared so

@@ -44,8 +44,11 @@ class Somcp extends Module
     /** @var string Key the settings page leaves a message under, for the page after the redirect. */
     private const FLASH_KEY = 'somcp_flash';
 
-    /** The menu entry the settings pages sit under. */
+    /** The module's entry in the main menu. */
     public const SETTINGS_PARENT = 'AdminSomcpParent';
+
+    /** The one item under that entry; the settings pages are its tabs. */
+    public const SETTINGS_ITEM = 'AdminSomcpSettings';
 
     /** Where the "Support the project" button leads. */
     public const SPONSOR_URL = 'https://github.com/sponsors/novalo-dev';
@@ -440,7 +443,8 @@ class Somcp extends Module
      * The settings are split into pages of the module, one per tab, so that
      * PrestaShop draws the tabs under the page title as on its own pages; this
      * only sends the merchant to the first of them. A shop whose pages are
-     * missing - installed from a copy older than them - gets them here, and
+     * missing or misplaced - installed from an earlier copy - gets them put
+     * right here, and
      * falls back to drawing the first page in place if they still cannot be
      * created, rather than leaving the merchant on an error.
      *
@@ -450,10 +454,10 @@ class Somcp extends Module
     {
         self::bootClasses();
 
+        // Puts back any page that is missing or out of place; every step
+        // leaves alone what is already right, so this costs a few reads.
         $first = self::settingsPages()['config'][0];
-        if (!Tab::getIdFromClassName($first)) {
-            $this->installTabs();
-        }
+        $this->installTabs();
         if (Tab::getIdFromClassName($first)) {
             SomcpHttp::redirect($this->context->link->getAdminLink($first));
         }
@@ -1181,57 +1185,87 @@ class Somcp extends Module
     }
 
     /**
-     * The settings pages, under one entry of the Modules menu.
+     * The settings pages and the menu entry above them.
      *
-     * A third-level entry with its pages beneath is what makes PrestaShop draw
-     * those pages as tabs under the page title, on 8 and 9 alike. The labels
-     * live in ps_tab_lang, where trans() never runs, so each language gets its
-     * own from the module catalogues when the tab is created.
+     * The module has its own entry in the main menu, after Advanced
+     * Parameters, with one item beneath it whose pages are the settings.
+     * That depth is what makes PrestaShop draw the pages as tabs under the
+     * page title, on 8 and 9 alike: it does so for the pages under a third
+     * level item, as for Contacts and Stores under Shop Parameters > Contact.
+     *
+     * Every tab is put where it belongs whether it is new or not, so a shop
+     * that got the pages from an earlier development build, under Modules,
+     * has them moved rather than left there. The labels live in ps_tab_lang,
+     * where trans() never runs, so each language gets its own from the
+     * module catalogues.
      *
      * @return bool
      */
     private function installSettingsTabs(): bool
     {
-        $idParent = (int) Tab::getIdFromClassName(self::SETTINGS_PARENT);
-        if ($idParent <= 0) {
-            $parent = new Tab();
-            $parent->class_name = self::SETTINGS_PARENT;
-            $parent->module = $this->name;
-            $parent->active = true;
-            // Out of the menu, but still working, on a shop without the
-            // Modules entry.
-            $modules = (int) Tab::getIdFromClassName('AdminParentModulesSf');
-            $parent->id_parent = $modules > 0 ? $modules : -1;
-            $parent->name = [];
-            foreach (Language::getLanguages(false) as $language) {
-                $parent->name[(int) $language['id_lang']] = $this->displayName;
-            }
-            if (!$parent->add()) {
-                return false;
-            }
-            $idParent = (int) $parent->id;
+        $configure = (int) Tab::getIdFromClassName('CONFIGURE');
+
+        $idEntry = $this->placeTab(self::SETTINGS_PARENT, $configure > 0 ? $configure : -1, null, 'device_hub');
+        if ($idEntry <= 0) {
+            return false;
+        }
+
+        $idItem = $this->placeTab(self::SETTINGS_ITEM, $idEntry, 'MCP server', '');
+        if ($idItem <= 0) {
+            return false;
         }
 
         foreach (self::settingsPages() as [$controller, $label]) {
-            if (Tab::getIdFromClassName($controller)) {
-                continue;
-            }
-
-            $tab = new Tab();
-            $tab->class_name = $controller;
-            $tab->module = $this->name;
-            $tab->active = true;
-            $tab->id_parent = $idParent;
-            $tab->name = [];
-            foreach (Language::getLanguages(false) as $language) {
-                $tab->name[(int) $language['id_lang']] = self::catalogueLabel($label, (string) $language['locale']);
-            }
-            if (!$tab->add()) {
+            if ($this->placeTab($controller, $idItem, $label, '') <= 0) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * Creates a tab of the module, or moves an existing one under the given
+     * parent.
+     *
+     * @param string $controller the tab class name
+     * @param int $idParent
+     * @param string|null $label English label, translated per language; null
+     *                           for the module name, which is not translated
+     * @param string $icon material icon of a main menu entry, or ''
+     *
+     * @return int the tab id, 0 on failure
+     */
+    private function placeTab(string $controller, int $idParent, ?string $label, string $icon): int
+    {
+        $idTab = (int) Tab::getIdFromClassName($controller);
+        if ($idTab > 0) {
+            $tab = new Tab($idTab);
+            if ((int) $tab->id_parent !== $idParent || (string) $tab->icon !== $icon) {
+                $tab->id_parent = $idParent;
+                $tab->icon = $icon;
+                if (!$tab->update()) {
+                    return 0;
+                }
+            }
+
+            return $idTab;
+        }
+
+        $tab = new Tab();
+        $tab->class_name = $controller;
+        $tab->module = $this->name;
+        $tab->active = true;
+        $tab->id_parent = $idParent;
+        $tab->icon = $icon;
+        $tab->name = [];
+        foreach (Language::getLanguages(false) as $language) {
+            $tab->name[(int) $language['id_lang']] = $label === null
+                ? $this->displayName
+                : self::catalogueLabel($label, (string) $language['locale']);
+        }
+
+        return $tab->add() ? (int) $tab->id : 0;
     }
 
     /**
@@ -1278,7 +1312,7 @@ class Somcp extends Module
         // The pages before their menu entry, so none is left orphaned.
         $controllers = array_merge(
             array_column(self::settingsPages(), 0),
-            [self::SETTINGS_PARENT],
+            [self::SETTINGS_ITEM, self::SETTINGS_PARENT],
             self::hiddenTabs()
         );
 

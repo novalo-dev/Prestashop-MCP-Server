@@ -33,7 +33,7 @@
         <div class="modal-footer">
             <button type="button" class="btn btn-default" data-somcp-sponsor-close>{l s='Later' d='Modules.Somcp.Admin'}</button>
             <a class="btn btn-primary" href="{$somcp_sponsor_url|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer" data-somcp-sponsor-close>
-                <i class="icon-heart"></i> {l s='Become a sponsor on GitHub' d='Modules.Somcp.Admin'}
+                <span class="somcp-heart" aria-hidden="true"></span>{l s='Become a sponsor on GitHub' d='Modules.Somcp.Admin'}
             </a>
         </div>
     </div>

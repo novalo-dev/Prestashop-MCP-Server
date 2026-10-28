@@ -99,8 +99,7 @@ abstract class SomcpSettingsController extends ModuleAdminController
         $this->page_header_toolbar_btn['somcp_sponsor'] = [
             'href' => Somcp::SPONSOR_URL,
             'desc' => $this->module->l10n('Support the project'),
-            'icon' => 'favorite',
-            'class' => 'btn-outline-secondary',
+            'class' => 'btn-primary',
             'target' => true,
             'js' => "var d=document.querySelector('[data-somcp-sponsor]');if(d&&d.showModal){d.showModal();return false;}",
         ];

@@ -35,6 +35,7 @@
     "somcp_create_attribute_group",
     "somcp_update_attribute_group",
     "somcp_create_attribute_value",
+    "somcp_update_attribute_value",
     "somcp_create_feature",
     "somcp_update_feature",
     "somcp_create_feature_value",

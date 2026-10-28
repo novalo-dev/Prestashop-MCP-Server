@@ -36,6 +36,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_attribute_group`
 - `somcp_update_attribute_group`
 - `somcp_create_attribute_value`
+- `somcp_update_attribute_value`
 - `somcp_create_feature`
 - `somcp_update_feature`
 - `somcp_create_feature_value`
@@ -380,6 +381,27 @@ attribute group. Before calling it:
 When it succeeds, show the merchant the value as returned. If `texture` says
 `refused`, the value exists without it: tell the merchant why. On a lost
 answer, read `somcp_list_attributes` again rather than calling twice.
+
+## Changing an attribute value
+
+`somcp_update_attribute_value` changes one existing attribute value. Before
+calling it:
+
+1. Take the value from `somcp_list_attributes`, never guessed, and read it with
+   `somcp_get_attribute_value` to know what it holds.
+2. Pass only what changes. To change one language, give `languages` with that
+   language alone. A new name or colour shows on every combination using the
+   value: tell the merchant so and call once they agree. Colour, texture and
+   `remove_texture` only go with a group of type `color`.
+3. Moving the value to another group (`id_attribute_group`) is refused while a
+   combination uses it. A texture given is downloaded again and replaces the
+   current one.
+
+When it succeeds, show the merchant each change with its old and new value,
+and the `note` when there is one. If `texture` says `refused`, the value keeps
+its current texture: tell the merchant why. `changed: false` means the value
+already held those values. On a lost answer, read the value again with
+`somcp_get_attribute_value` before calling twice.
 
 ## Creating a feature
 

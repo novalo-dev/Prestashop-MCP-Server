@@ -163,13 +163,7 @@ class SomcpToolGetAttributeValue
         // rather than reporting a colour the shop does not show.
         if ((string) $group->group_type === 'color') {
             $color = (string) $attribute->color;
-            // The texture is not a column: the back office stores the uploaded
-            // file under the value's identifier, and only that file tells
-            // whether there is one.
-            if (is_file(_PS_COL_IMG_DIR_ . $idAttribute . '.jpg')) {
-                $link = Somcp::legacyContext()->link ?? new Link();
-                $texture = (string) $link->getMediaLink(_THEME_COL_DIR_ . $idAttribute . '.jpg');
-            }
+            $texture = self::textureUrl($idAttribute);
         }
 
         $result = [
@@ -198,6 +192,28 @@ class SomcpToolGetAttributeValue
         }
 
         return $result;
+    }
+
+    /**
+     * The public address of a value's texture, whatever the type of its group.
+     *
+     * The texture is not a column: the back office stores the uploaded file
+     * under the value's identifier, and only that file tells whether there is
+     * one. Shared with somcp_update_attribute_value, which reports the texture
+     * it replaces or removes.
+     *
+     * @param int $idAttribute
+     *
+     * @return string|null null when the value has no texture
+     */
+    public static function textureUrl(int $idAttribute): ?string
+    {
+        if (!is_file(_PS_COL_IMG_DIR_ . $idAttribute . '.jpg')) {
+            return null;
+        }
+        $link = Somcp::legacyContext()->link ?? new Link();
+
+        return (string) $link->getMediaLink(_THEME_COL_DIR_ . $idAttribute . '.jpg');
     }
 
     /**

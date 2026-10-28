@@ -1420,18 +1420,26 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - Not replayable: the read tool to check is `somcp_list_attributes`.
 
 #### `somcp_update_attribute_value`
-**State**: to write · [issue #72](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/72)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one attribute value with everything `somcp_create_attribute_value` can write, under the same rules. Only what is given changes.
 
-**Do not use for** - adding one (→ `somcp_create_attribute_value`).
+**Do not use for** - adding one (→ `somcp_create_attribute_value`), or changing its group (→ `somcp_update_attribute_group`).
 
-**Parameters** - `id_attribute` (required), `languages`, then the fields of `somcp_create_attribute_value`, all optional; `id_attribute_group` moves the value to another group; `remove_texture` removes the texture explicitly.
+**Parameters** - `id_attribute` (required, from `somcp_list_attributes`), `languages`, then the fields of `somcp_create_attribute_value`, all optional, checked by the same code; `id_attribute_group` moves the value to another group; `remove_texture` (a boolean, groups of type `color` only, not with `texture`) removes the texture. A text given replaces the languages given and keeps the others; given, `name` is never empty. `color`, `texture` and `remove_texture` follow the type of the group the value ends up in.
 
-**Returns** - `changed`, per field its old and new value, and the value as `somcp_get_attribute_value` returns it.
+**Returns** - `changed`; when something changed, `changes` (per field and language, its `old` and `new` value) and `attribute_value`, the value as `somcp_get_attribute_value` returns it. `texture` appears when one was given (its `url` with `stored: true` or the reason it was `refused`), `note` when the value leaves a group of type `color` with a colour or texture, `faceted_search` only when the faceted search rows could not be written while the rest was.
 
-**Notes** - the value stays on the combinations that use it: renaming it renames it there too, which the assistant tells the merchant before the call. Replayable: the same values again say `changed: false`.
+**Notes**
+- A value that is not in `attribute_shop` for the shop of the token is refused, the same test as `somcp_get_attribute_value`; a group to move to must be in `attribute_group_shop`, the test of `somcp_get_attribute_group`.
+- Written through `ProductAttribute::update()` in the shop of the token (`id_shop_list`), as the core's `EditAttributeHandler` does, so `actionAttributeSave` fires.
+- The value stays on the combinations that use it: a new name or colour shows on every one of them, which the assistant tells the merchant before the call.
+- A move is refused while a combination uses the value: a combination holds one value per group, and the core would leave it with a value of a group its product was not built on. A moved value is placed last in its new group, and the positions of the group it leaves are closed up. Its colour and texture stay stored; a group not of type `color` does not show them, and the answer says so in `note`.
+- A name the group already holds in a language is refused, as at creation; on a move, the names kept from the value are compared with the new group too.
+- A texture given is always downloaded and written over the current one, as at creation, so giving it again is a change; one that cannot be used leaves the current texture in place and says why in `texture`, and is an error when it was the only change. `remove_texture` deletes `img/co/<id_attribute>.jpg`; on a value without a texture it changes nothing.
+- `ps_facetedsearch` deletes the value's rows of `layered_indexable_attribute_lang_value` in its `actionAttributeSave` hook and writes back only what its form's request carries, so after `update()` the tool writes the rows again: the ones given merged with the ones kept, as `somcp_create_attribute_value` writes them. A call that changes only these fields does not go through `update()`. The module's filter block cache is dropped, as its form does on every save.
+- Every problem is reported at once, before anything is written. Replayable, except for a texture: the same values again write nothing and say `changed: false`.
 
 #### `somcp_list_features`
 **State**: written

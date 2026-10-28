@@ -122,10 +122,10 @@
       <source>Read the catalogue of this shop: products, prices and categories</source>
       <target>Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien</target>
     </trans-unit>
-    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create and edit attribute groups, create attribute values, create and edit features and their values, change prices and stock -->
-    <trans-unit id="a2c3d0b69993b97dc4851842ec4089d4" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create and edit attribute groups, create attribute values, create and edit features and their values, change prices and stock">
-      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create and edit attribute groups, create attribute values, create and edit features and their values, change prices and stock</source>
-      <target>Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Marken anlegen und bearbeiten, Attributgruppen anlegen und bearbeiten, Attributwerte anlegen, Merkmale und ihre Werte anlegen und bearbeiten, Preise und Bestand ändern</target>
+    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock -->
+    <trans-unit id="461009a593b9154d6f8077d553d141fb" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock">
+      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock</source>
+      <target>Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Marken anlegen und bearbeiten, Attributgruppen anlegen und bearbeiten, Attributwerte anlegen und bearbeiten, Merkmale und ihre Werte anlegen und bearbeiten, Preise und Bestand ändern</target>
     </trans-unit>
     <!-- Read the stock of this shop: quantities of products and combinations -->
     <trans-unit id="44aed62b337ebd9f1875feb664e23563" resname="Read the stock of this shop: quantities of products and combinations">
@@ -766,6 +766,11 @@
     <trans-unit id="4a71935641e02b647979308587afe33c" resname="Create an attribute value">
       <source>Create an attribute value</source>
       <target>Einen Attributwert anlegen</target>
+    </trans-unit>
+    <!-- Change an attribute value -->
+    <trans-unit id="e14e40ddabbadba30da1cfa07d96637a" resname="Change an attribute value">
+      <source>Change an attribute value</source>
+      <target>Einen Attributwert ändern</target>
     </trans-unit>
     <!-- List features -->
     <trans-unit id="6009a2cf3b6dc4a7df637cb89db902f8" resname="List features">

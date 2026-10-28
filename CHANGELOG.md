@@ -188,6 +188,24 @@ to. The consent screen now says that the catalogue permission can create
 attribute values. It needs the permission `mcp.catalog.write` and the `add`
 right on the back office attributes page.
 
+**Changing an attribute value.** The new tool `somcp_update_attribute_value`
+changes one existing attribute value with everything the creation can write:
+its name in each language, the group it belongs to, for a colour group its
+colour and texture, and when the faceted search module is installed and
+enabled, the word used in filtered URLs and the title tag. A texture can also
+be removed. Only what is asked changes: a language left out keeps its name,
+and the answer lists each field changed with its old and new value. Asking
+for what the value already holds changes nothing. A new name or colour shows
+on every combination using the value, and the assistant tells you so before
+asking. A value cannot be moved to another group while combinations use it,
+and a name the group already holds is refused. If a new texture cannot be
+used, the current one is kept and the assistant tells you why. Changing a
+value keeps its faceted search fields, which that module would otherwise
+clear on any save made outside its own form. The consent screen now says that the
+catalogue permission can create and edit attribute values. It needs the
+permission `mcp.catalog.write` and the `edit` right on the back office
+attributes page.
+
 **Listing features.** The new tool `somcp_list_features` lists the features
 of the shop the assistant is connected to (Composition, Property...) and, under
 each one, its predefined values, with their identifier and name and nothing

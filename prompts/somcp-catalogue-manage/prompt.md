@@ -29,6 +29,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_set_category_active`
 - `somcp_create_manufacturer`
 - `somcp_update_manufacturer`
+- `somcp_set_manufacturer_active`
 - `somcp_create_feature`
 - `somcp_update_feature`
 - `somcp_create_feature_value`
@@ -291,6 +292,16 @@ When it succeeds, show the merchant each change with its old and new value, the
 `seo_warnings`, and the logo if it was refused, with its reason.
 `changed: false` means the brand already held those values. On a lost answer,
 read the brand again with `somcp_get_manufacturer` before calling twice.
+
+## Enabling or disabling a brand
+
+`somcp_set_manufacturer_active` enables or disables one brand, and changes
+nothing else: use it rather than `somcp_update_manufacturer` when the merchant
+only asks for that. Take the brand from `somcp_list_manufacturers` and name it.
+Tell the merchant that disabling it hides its page on the storefront, while its
+products stay on sale. On a multistore installation the change shows in every
+shop sharing the brand. `changed: false` means it was already in that state. On
+a lost answer, read it with `somcp_get_manufacturer` before calling twice.
 
 ## Creating a feature
 

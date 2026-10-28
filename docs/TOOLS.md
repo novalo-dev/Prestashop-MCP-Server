@@ -1044,7 +1044,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address cannot be compared with a stored file.
 
 #### `somcp_set_manufacturer_active`
-**State**: to write · [issue #57](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/57)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminManufacturers')` · **Scope**: `mcp.catalog.write`
 
 **Does** - switches one brand on or off: the **Enabled** toggle of the back office brand list, and nothing else.
@@ -1055,12 +1055,18 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_manufacturer` | integer | yes |  |
+| `id_manufacturer` | integer | yes | from `somcp_list_manufacturers` |
 | `active` | boolean | yes |  |
 
-**Returns** - `changed`, `active`. When it is already in that state: `changed: false` and nothing happens.
+**Returns** - `changed`, `id_manufacturer`, `active`. When it is already in that state: `changed: false` with a `reason`, and nothing is written.
 
-**Notes** - switching a brand off hides its page on the storefront; its products stay on sale.
+**Notes**
+- Switching a brand off hides its page on the storefront; its products stay on sale and keep their brand. The description says so, so the merchant is not surprised.
+- A brand of another shop, or an identifier that does not exist, is refused like one that does not exist, by the same test of the shop as `somcp_get_manufacturer`.
+- The core's own sequence (`ToggleManufacturerStatusHandler`, on 8 and 9): the `active` field set, then the brand saved, so the object hooks fire. Here the save is one `Manufacturer::update()` narrowed to `active`, so the texts of the brand as loaded are not written back. The value asked for is written rather than flipped.
+- Multistore: PrestaShop keeps Enabled in `manufacturer`, not per shop, so the change shows in every shop sharing the brand, as the back office toggle does. The description says so. The update runs in the shop of the token (`id_shop_list`), so it never attaches the brand to another shop.
+- `active` must be a boolean: a string such as `"false"` is refused rather than read as true. Only a whole number is an identifier.
+- Not replayable: the read tool to check is `somcp_get_manufacturer`.
 
 #### `somcp_list_manufacturer_addresses`
 **State**: to write · [issue #62](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/62)

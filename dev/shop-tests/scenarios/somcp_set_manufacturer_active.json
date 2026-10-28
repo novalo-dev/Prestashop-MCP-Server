@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "the demo brand Studio Design enabled first, whatever another scenario left it in", "arguments": {"id_manufacturer": 1, "active": true}, "expect": "ok", "contains": ["\"id_manufacturer\": 1", "\"active\": true"]},
+    {"why": "the demo brand Studio Design disabled", "arguments": {"id_manufacturer": 1, "active": false}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": false"]},
+    {"why": "disabled again, nothing changes", "arguments": {"id_manufacturer": 1, "active": false}, "expect": "ok", "contains": ["\"changed\": false", "already disabled"]},
+    {"why": "enabled again, with the identifier as a string", "arguments": {"id_manufacturer": "1", "active": true}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": true"]},
+    {"why": "enabled again, nothing changes", "arguments": {"id_manufacturer": 1, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "already enabled"]},
+    {"why": "a state given as a string is refused", "arguments": {"id_manufacturer": 1, "active": "false"}, "expect": "error", "contains": ["true or false"]},
+    {"why": "an identifier given as a list is not read as brand 1", "arguments": {"id_manufacturer": [1], "active": false}, "expect": "error", "contains": ["No brand of this shop"]},
+    {"why": "a brand that does not exist", "arguments": {"id_manufacturer": 999999, "active": false}, "expect": "error", "contains": ["No brand of this shop", "Nothing was changed"]}
+  ]
+}

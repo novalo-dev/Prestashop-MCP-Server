@@ -28,6 +28,7 @@
     "somcp_set_category_active",
     "somcp_create_manufacturer",
     "somcp_update_manufacturer",
+    "somcp_set_manufacturer_active",
     "somcp_create_feature",
     "somcp_update_feature",
     "somcp_create_feature_value",

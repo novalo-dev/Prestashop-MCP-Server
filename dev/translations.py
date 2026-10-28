@@ -585,6 +585,10 @@ T = {
  "Modifier une marque",
  "Modificar una marca",
  "Eine Marke ändern"),
+"Enable or disable a brand": (
+ "Activer ou désactiver une marque",
+ "Activar o desactivar una marca",
+ "Eine Marke aktivieren oder deaktivieren"),
 "List suppliers": (
  "Lister les fournisseurs",
  "Listar los proveedores",

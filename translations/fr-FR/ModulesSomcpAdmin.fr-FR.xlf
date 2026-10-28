@@ -722,6 +722,11 @@
       <source>Change a brand</source>
       <target>Modifier une marque</target>
     </trans-unit>
+    <!-- Enable or disable a brand -->
+    <trans-unit id="3d044ca497e3181012c93914cdf5ce7f" resname="Enable or disable a brand">
+      <source>Enable or disable a brand</source>
+      <target>Activer ou désactiver une marque</target>
+    </trans-unit>
     <!-- List suppliers -->
     <trans-unit id="9612da082bad7b857b8bedea2743be00" resname="List suppliers">
       <source>List suppliers</source>

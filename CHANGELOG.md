@@ -319,6 +319,15 @@ The consent screen now says that the catalogue permission can edit brands. It
 needs the permission `mcp.catalog.write` and the `edit` right on the back
 office brands page.
 
+**Enabling or disabling a brand.** The new tool `somcp_set_manufacturer_active`
+enables or disables one brand, like the Enabled toggle of the back office brand
+list, and changes nothing else. A disabled brand no longer has its page on the
+storefront, but its products stay on sale: the assistant is told to say so.
+Asking for the state the brand already has writes nothing. PrestaShop keeps
+Enabled once for all shops, so on a multistore installation the change shows in
+every shop sharing the brand, as in the back office. It needs the permission
+`mcp.catalog.write` and the `edit` right on the back office brands page.
+
 **Reading the stock of a product.** The new tool `somcp_get_stock` gives the
 stock of one product as the storefront sells against it: the quantity that can
 still be sold, the physical quantity and the quantity held by orders not shipped

@@ -73,7 +73,7 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
                 . 'changed with its old and new value. A call that would change nothing writes nothing and says '
                 . 'changed: false. '
                 . 'Do not use it to create a feature (somcp_create_feature) or to change one of its values '
-                . '(somcp_update_feature_value when the shop offers it). One feature per call. '
+                . '(somcp_update_feature_value). One feature per call. '
                 . 'Not to be retried blindly: if the answer is lost, read the feature again with '
                 . 'somcp_get_feature and compare before calling again.',
             self::inputSchema(),

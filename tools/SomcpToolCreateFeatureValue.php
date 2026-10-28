@@ -85,8 +85,9 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
                 . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
                 . 'language of the shop left out takes the default language\'s text. '
                 . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Do not use it to create a feature, which is somcp_create_feature, or to give one product its '
-                . 'own value, which is somcp_update_product with a custom value in features. One value per call: '
+                . 'Do not use it to create a feature, which is somcp_create_feature, to change a value, which is '
+                . 'somcp_update_feature_value, or to give one product its own value, which is '
+                . 'somcp_update_product with a custom value in features. One value per call: '
                 . 'for several, call it once per value and report each result. '
                 . 'Not to be retried: if the answer is lost, read somcp_list_features and look for the value '
                 . 'before anything else.',
@@ -243,18 +244,21 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
      * @param int $idFeature 0 when the feature was refused, which leaves nothing to compare with
      * @param array<string, mixed> $plan
      * @param array<int, string> $errors
+     * @param bool $required false when changing a value, which already has a text
+     * @param int $idOwn the value being changed, which never clashes with itself; 0 for a new one
      *
      * @return void
      */
-    private static function valueTexts(array $arguments, array $languages, int $idFeature, array &$plan, array &$errors): void
+    protected static function valueTexts(array $arguments, array $languages, int $idFeature, array &$plan, array &$errors, bool $required = true, int $idOwn = 0): void
     {
         $probe = new FeatureValue();
-        $values = self::texts($arguments, 'value', 'value', $languages, $errors, true);
+        // Given, a value is never empty, whether it is new or not.
+        $values = self::texts($arguments, 'value', 'value', $languages, $errors, $required || array_key_exists('value', $arguments));
         if ($values === null) {
             return;
         }
 
-        $taken = $idFeature > 0 ? self::predefinedTexts($idFeature) : [];
+        $taken = $idFeature > 0 ? self::predefinedTexts($idFeature, $idOwn) : [];
         foreach ($values as $idLang => $value) {
             $value = trim($value);
             $values[$idLang] = $value;
@@ -271,7 +275,8 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
                 // Compared without case: the storefront filter would show
                 // both under one label, and the merchant could not tell them apart.
                 $errors[] = $where . ': the feature already has this value, id_feature_value '
-                    . $taken[$idLang][Tools::strtolower($value)] . ' - use it rather than adding it again';
+                    . $taken[$idLang][Tools::strtolower($value)]
+                    . ($idOwn > 0 ? ' - two values of one feature cannot share a text' : ' - use it rather than adding it again');
             }
         }
         $plan['texts']['value'] = $values;
@@ -284,10 +289,11 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
      * never picks them from the list.
      *
      * @param int $idFeature
+     * @param int $idOwn a value left out of the comparison, the one being changed; 0 for none
      *
      * @return array<int, array<string, int>> lower-cased text => id_feature_value, by language identifier
      */
-    private static function predefinedTexts(int $idFeature): array
+    protected static function predefinedTexts(int $idFeature, int $idOwn = 0): array
     {
         $rows = Db::getInstance()->executeS(
             'SELECT fvl.`id_feature_value`, fvl.`id_lang`, fvl.`value`'
@@ -296,6 +302,7 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
             . ' WHERE fv.`id_feature` = ' . (int) $idFeature
             // custom is nullable, and the core reads NULL as a predefined value.
             . ' AND (fv.`custom` = 0 OR fv.`custom` IS NULL)'
+            . ' AND fv.`id_feature_value` != ' . (int) $idOwn
         );
 
         $taken = [];

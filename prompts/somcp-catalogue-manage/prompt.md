@@ -32,6 +32,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_feature`
 - `somcp_update_feature`
 - `somcp_create_feature_value`
+- `somcp_update_feature_value`
 
 ## Know which shop you are in
 
@@ -342,6 +343,24 @@ existing feature. Before calling it:
 
 When it succeeds, show the merchant the value as returned. On a lost answer,
 read `somcp_list_features` again rather than calling twice.
+
+## Changing a feature value
+
+`somcp_update_feature_value` changes one existing predefined value. Before
+calling it:
+
+1. Take the value from `somcp_list_features`, never guessed, and read it with
+   `somcp_get_feature_value` to know what it holds.
+2. Pass only what changes. To change one language, give `languages` with that
+   language alone. Changing the text changes it on every product that carries
+   the value: tell the merchant so and call once they agree.
+3. Moving the value to another feature (`id_feature`) is refused while a
+   product carries it. A value typed on one product only is changed with
+   `somcp_update_product` instead.
+
+When it succeeds, show the merchant each change with its old and new value.
+`changed: false` means the value already held those values. On a lost answer,
+read the value again with `somcp_get_feature_value` before calling twice.
 
 ## Do not use when
 

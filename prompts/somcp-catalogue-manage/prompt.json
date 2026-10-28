@@ -30,7 +30,8 @@
     "somcp_update_manufacturer",
     "somcp_create_feature",
     "somcp_update_feature",
-    "somcp_create_feature_value"
+    "somcp_create_feature_value",
+    "somcp_update_feature_value"
   ],
   "controller": "AdminProducts",
   "action": "view",

@@ -176,6 +176,22 @@ assistant is told which one to use instead. Values typed on one product only
 are not created here: they belong to that product. It needs the permission
 `mcp.catalog.write` and the `add` right on the back office features page.
 
+**Changing a feature value.** The new tool `somcp_update_feature_value`
+changes one existing predefined value of a feature with everything the
+creation can write: its text in each language, the feature it belongs to and,
+when the faceted search module is installed and enabled, the word used in
+filtered URLs and the title tag. Only what is asked changes: a language left
+out keeps its text, and the answer lists each field changed with its old and
+new value. Asking for what the value already holds changes nothing. Changing
+the text changes it on every product that carries the value, and the
+assistant tells you so before asking. A value cannot be moved to another
+feature while products carry it, since they would keep showing it under the
+old one, and a text the feature already holds in another value is refused.
+Values typed on one product only are not changed here. The consent screen now
+says that the catalogue permission can create and edit features and their
+values. It needs the permission `mcp.catalog.write` and the `edit` right on
+the back office features page.
+
 **Listing files.** The new tool `somcp_list_attachments` lists the files of
 the shop (Catalogue > Files: manuals, data sheets) with the columns of the back
 office list - name, file, size, number of products - so the assistant takes

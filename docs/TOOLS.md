@@ -1516,7 +1516,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 
 **Does** - adds one predefined value to a feature, with every field of the back office value form.
 
-**Do not use for** - creating a feature (→ `somcp_create_feature`), or giving one product its own value (→ `somcp_update_product`, `features` with a custom value).
+**Do not use for** - creating a feature (→ `somcp_create_feature`), changing a value (→ `somcp_update_feature_value`), or giving one product its own value (→ `somcp_update_product`, `features` with a custom value).
 
 **Parameters** - same rules as `somcp_create_feature`: `languages`, translatable texts as an object keyed by ISO code (a plain string when one language is filled), who fills each field.
 
@@ -1540,18 +1540,26 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 - Not replayable: the read tool to check is `somcp_list_features`.
 
 #### `somcp_update_feature_value`
-**State**: to write · [issue #78](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/78)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminFeatures')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one predefined feature value with everything `somcp_create_feature_value` can write, under the same rules. Only what is given changes.
 
-**Do not use for** - adding one (→ `somcp_create_feature_value`).
+**Do not use for** - adding one (→ `somcp_create_feature_value`), changing the feature itself (→ `somcp_update_feature`), or a custom value typed on one product (→ `somcp_update_product`).
 
-**Parameters** - `id_feature_value` (required), `languages`, then the fields of `somcp_create_feature_value`, all optional; `id_feature` moves the value to another feature.
+**Parameters** - `id_feature_value` (required), `languages`, then the fields of `somcp_create_feature_value`, all optional; `id_feature` moves the value to another feature. A text given replaces the languages given and keeps the others.
 
-**Returns** - `changed`, per field its old and new value, and the value as `somcp_get_feature_value` returns it.
+**Returns** - `changed`, `id_feature_value`, `changes` (per field its old and new value, a text per language: `value (en)`), and `feature_value`, the value as `somcp_get_feature_value` returns it. `faceted_search` appears only when the faceted search rows could not be written while the text or the feature did change. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
-**Notes** - the value stays on the products that use it: changing it changes it there too, which the assistant tells the merchant before the call. Custom values are refused. Replayable: the same values again say `changed: false`.
+**Notes**
+- The value stays on the products that use it: changing its text changes it there too, which the assistant tells the merchant before the call.
+- Written through `FeatureValue::update()`, as the core's `EditFeatureValueHandler` does, so `actionFeatureValueSave` fires. A language not filled keeps its text.
+- A value whose text another predefined value of its feature already holds is refused, compared per language and without case, as at creation; the value never clashes with itself, so its case can be changed.
+- `id_feature` moves the value, as the Feature field of the back office value form does. The products carrying a value name its feature in their own `feature_product` row, which `FeatureValue::update()` leaves alone: they would go on showing the value under the feature it left. The move is therefore refused while a product carries the value. The texts it keeps are compared with the values of the feature it moves to, in every language. From PrestaShop 9 on, where values have a position, it takes the last one in its new feature and the old one closes the gap.
+- Faceted search fields left out keep what the value holds. When one of them changes, the rows are written again as the module's form writes them, every language of the shop with its stored text unless a new one was given. A value whose form was never saved with the module reads as empty texts, as `somcp_get_feature_value` shows it. The module's filter block cache is dropped after any change.
+- Custom values (`custom` = 1) are refused with their own message, and a value of another shop's feature like one that does not exist, the tests `somcp_get_feature_value` makes.
+- Every problem is reported at once, before anything is written.
+- Replayable: the same values again say `changed: false`. On a lost answer, read `somcp_get_feature_value` before calling again.
 
 #### `somcp_list_attachments`
 **State**: written

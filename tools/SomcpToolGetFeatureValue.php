@@ -21,10 +21,10 @@ declare(strict_types=1);
  * somcp_get_feature_value - everything the back office value form shows for
  * one predefined feature value.
  *
- * The reader and the test of the shop are public on purpose: the value write
- * tools answer with "the value as somcp_get_feature_value returns it", and
- * calling these is what keeps them naming every field alike and agreeing on
- * which values exist.
+ * The reader and the tests of the shop and of a custom value are public on
+ * purpose: the value write tools answer with "the value as
+ * somcp_get_feature_value returns it", and calling these is what keeps them
+ * naming every field alike and agreeing on which values exist.
  *
  * It takes an identifier only. Finding a value from its text is the job of
  * somcp_list_features.
@@ -178,7 +178,7 @@ class SomcpToolGetFeatureValue
      *
      * @return FeatureValue|null
      */
-    private static function loadedValue(int $idFeatureValue, int $idShop): ?FeatureValue
+    public static function loadedValue(int $idFeatureValue, int $idShop): ?FeatureValue
     {
         if ($idFeatureValue <= 0) {
             return null;
@@ -203,7 +203,7 @@ class SomcpToolGetFeatureValue
      *
      * @return bool
      */
-    private static function isCustom(FeatureValue $featureValue): bool
+    public static function isCustom(FeatureValue $featureValue): bool
     {
         return (bool) $featureValue->custom;
     }

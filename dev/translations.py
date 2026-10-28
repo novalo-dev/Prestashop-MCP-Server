@@ -105,10 +105,10 @@ T = {
  "Lire le catalogue de cette boutique : produits, prix et catégories",
  "Leer el catálogo de esta tienda: productos, precios y categorías",
  "Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien"),
-"Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create features, change prices and stock": (
- "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, créer et modifier les marques, créer les caractéristiques, modifier les prix et le stock",
- "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear y editar marcas, crear características, cambiar precios y stock",
- "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Marken anlegen und bearbeiten, Merkmale anlegen, Preise und Bestand ändern"),
+"Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create and edit features and their values, change prices and stock": (
+ "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, créer et modifier les marques, créer et modifier les caractéristiques et leurs valeurs, modifier les prix et le stock",
+ "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear y editar marcas, crear y editar características y sus valores, cambiar precios y stock",
+ "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Marken anlegen und bearbeiten, Merkmale und ihre Werte anlegen und bearbeiten, Preise und Bestand ändern"),
 "Read the stock of this shop: quantities of products and combinations": (
  "Lire le stock de cette boutique : quantités des produits et des déclinaisons",
  "Leer el stock de esta tienda: cantidades de los productos y de las combinaciones",
@@ -617,6 +617,10 @@ T = {
  "Créer une valeur de caractéristique",
  "Crear un valor de característica",
  "Einen Merkmalswert anlegen"),
+"Change a feature value": (
+ "Modifier une valeur de caractéristique",
+ "Modificar un valor de característica",
+ "Einen Merkmalswert ändern"),
 "List tax rules": (
     "Lister les règles de taxes",
     "Listar las reglas de impuestos",

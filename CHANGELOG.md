@@ -126,6 +126,14 @@ product only are left out: they belong to that product. One feature can be
 asked for on its own. It needs the permission `mcp.catalog.read` and the
 `view` right on the back office features page.
 
+**Reading a feature.** The new tool `somcp_get_feature` returns everything
+the back office feature form shows for one feature: name, position, how many
+predefined values it holds, and, when the faceted search module is installed,
+the word used in filtered URLs, the title tag and whether filtered pages are
+indexed. It only reads the shop the assistant is connected to. It needs the
+permission `mcp.catalog.read` and the `view` right on the back office features
+page.
+
 **Listing files.** The new tool `somcp_list_attachments` lists the files of
 the shop (Catalogue > Files: manuals, data sheets) with the columns of the back
 office list - name, file, size, number of products - so the assistant takes

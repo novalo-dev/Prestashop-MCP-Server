@@ -597,6 +597,10 @@ T = {
  "Lister les caractéristiques",
  "Listar las características",
  "Merkmale auflisten"),
+"Get a feature": (
+ "Lire une caractéristique",
+ "Leer una característica",
+ "Ein Merkmal abrufen"),
 "List tax rules": (
     "Lister les règles de taxes",
     "Listar las reglas de impuestos",

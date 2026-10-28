@@ -737,6 +737,11 @@
       <source>List features</source>
       <target>Lister les caractéristiques</target>
     </trans-unit>
+    <!-- Get a feature -->
+    <trans-unit id="caa1ac0d6769467502a4e9232ae77723" resname="Get a feature">
+      <source>Get a feature</source>
+      <target>Lire une caractéristique</target>
+    </trans-unit>
     <!-- List tax rules -->
     <trans-unit id="7e8244819dc9fb2b17e66f14264cf391" resname="List tax rules">
       <source>List tax rules</source>

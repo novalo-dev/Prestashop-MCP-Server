@@ -1419,7 +1419,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - Read through queries on `feature`, `feature_shop`, `feature_value` and their language tables in the shop of the token, rather than `Feature::getFeatures()` and `FeatureValue::getFeatureValuesWithLang()`, which take the shop from the global context. Features are sorted by position, as the back office does; values by identifier, since `feature_value` only has a position from PrestaShop 9 on.
 
 #### `somcp_get_feature`
-**State**: to write · [issue #73](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/73)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminFeatures')` · **Scope**: `mcp.catalog.read`
 
 **Does** - returns every field of the back office feature form for one feature.
@@ -1433,9 +1433,12 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_feature`, `name`, `position`, `values_count`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`, `indexable`.
+**Returns** - `id_feature`, `name`, `position`, `values_count`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
 
-**Notes** - columns of `feature` and `feature_lang`; the faceted search fields are `null` without the module.
+**Notes**
+- Columns of `feature` and `feature_lang`, read through `Feature`; the feature must be in `feature_shop` for the shop of the token, since the constructor takes no shop. `position` is the raw column, 0 for the first.
+- `values_count` counts the predefined values only (`custom` = 0 or NULL), the ones `somcp_list_features` lists: a custom value belongs to one product.
+- The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_feature` and `layered_indexable_feature_lang_value`, the tables its form reads; a feature the form was never saved for has no row there, and gives `''` and `false`, as the form shows it.
 
 #### `somcp_create_feature`
 **State**: to write · [issue #74](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/74)

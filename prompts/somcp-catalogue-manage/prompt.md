@@ -16,6 +16,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_suppliers`
 - `somcp_list_attributes`
 - `somcp_list_features`
+- `somcp_get_feature`
 - `somcp_list_attachments`
 - `somcp_list_tax_rules`
 - `somcp_create_product`
@@ -90,6 +91,10 @@ Features - a composition, a material - come from `somcp_list_features`: take
 the `id_feature` and the `id_feature_value` from there. Only predefined values
 are listed; when the value the merchant wants is not among them, it is a custom
 value written on that product alone, so say so before writing it.
+To answer about one feature - its position, how many predefined values it
+holds, its faceted search URL word, title tag and indexing - read it with
+`somcp_get_feature`, by the identifier the list gave. Those three faceted
+search fields are null when the shop has no faceted search module.
 
 Files - a manual, a data sheet - come from `somcp_list_attachments`: take the
 `id_attachment` from there. Files cannot be added through the conversation;

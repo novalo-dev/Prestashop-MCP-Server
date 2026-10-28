@@ -172,6 +172,22 @@ that the catalogue permission can edit attribute groups. It needs the
 permission `mcp.catalog.write` and the `edit` right on the back office
 attributes page.
 
+**Adding an attribute value.** The new tool `somcp_create_attribute_value`
+adds one value (M under Size, Red under Colour...) to an attribute group, with
+the fields of the back office value form: its name in each language, and for a
+colour group its colour and its texture, an image the shop downloads from a
+public https address. When the faceted search module is installed and
+enabled, it also takes the word used in filtered URLs and the title tag;
+without that module, those two fields are refused rather than stored for
+nothing. A name the group already has is refused, and so is a colour or a
+texture on a drop-down list or radio buttons group, where the product page
+would never show it. If the texture cannot be used, the value is still created
+and the assistant tells you why. The value is placed last in its group. On a
+multistore installation it is created in the shop the assistant is connected
+to. The consent screen now says that the catalogue permission can create
+attribute values. It needs the permission `mcp.catalog.write` and the `add`
+right on the back office attributes page.
+
 **Listing features.** The new tool `somcp_list_features` lists the features
 of the shop the assistant is connected to (Composition, Property...) and, under
 each one, its predefined values, with their identifier and name and nothing

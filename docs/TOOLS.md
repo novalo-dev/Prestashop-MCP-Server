@@ -1388,7 +1388,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_attribute_lang_value`, the table its form reads; a value the form was never saved for has no row there, and gives `''`, as the form shows it.
 
 #### `somcp_create_attribute_value`
-**State**: to write · [issue #71](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/71)
+**State**: written
 **Nature**: `acts(ADD, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.write`
 
 **Does** - adds one value to an attribute group, with every field of the back office value form.
@@ -1403,14 +1403,21 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `name` (value) | merchant | required; 128 characters at most; `Validate::isGenericName()` |
 | `url_name` (URL) | assistant | faceted search, as for the group |
 | `meta_title` (title tag) | assistant | faceted search, as for the group |
-| `color` | merchant | groups of type `color` only, refused otherwise; a hex code, `Validate::isColor()` |
-| `texture` | merchant | groups of type `color` only; a public `https` URL, downloaded with the guards of `somcp_create_product` |
+| `color` | merchant | groups of type `color` only, refused otherwise; a hex code `#RRGGBB`, `Validate::isColor()` (which alone would also let a bare word through) |
+| `texture` | merchant | groups of type `color` only, refused otherwise; a public `https` URL, downloaded with the guards of `somcp_create_product` once the value exists |
 
-The faceted search fields follow the rule given under `somcp_create_attribute_group`.
+The faceted search fields follow the rule given under `somcp_create_attribute_group`. A value has no `indexable` of its own: that switch belongs to its group, and is refused here.
 
-**Returns** - `created`, `id_attribute`, `texture` (stored or the reason it was refused), and the value as `somcp_get_attribute_value` returns it.
+**Returns** - `created`, `id_attribute`, `texture` (`null` when none was given, otherwise its `url` with `stored: true` or the reason it was `refused`), and `attribute_value`, the value as `somcp_get_attribute_value` returns it. `faceted_search` appears only when the faceted search rows could not be written; the value is kept then.
 
-**Notes** - written through `ProductAttribute::add()`, so hooks fire. Two values with the same name in one group are refused. Not replayable: the read tool to check is `somcp_list_attributes`.
+**Notes**
+- The group must be in `attribute_group_shop` for the shop of the token, the same test as `somcp_get_attribute_group`.
+- Written through `ProductAttribute::add()` in the shop of the token (`id_shop_list`), as the core's `AddAttributeHandler` does, so `actionAttributeSave` fires; `add()` places the value last in its group. If the add fails after the row went in, the value is deleted again.
+- A name the group already holds in a language is refused, compared without case among the values of the group in `attribute_shop` for the shop of the token, as the back office refuses it.
+- The texture is written where the back office writes it, `img/co/<id_attribute>.jpg` (`_PS_COL_IMG_DIR_`), re-encoded as JPEG, without thumbnails. Only its shape is checked before the write; a texture that cannot be downloaded or is not an image leaves the value created and says why in `texture`.
+- `ps_facetedsearch` reads its fields from the request in its `actionAttributeSave` hook, so on `add()` it finds none and writes no row. With the module installed and enabled, the tool then writes one row of `layered_indexable_attribute_lang_value` per language whose URL word or title tag is filled (a language left out taking the default one's text) - the module writes none for a language where both are empty - and drops the module's filter block cache.
+- Every problem is reported at once, before anything is written.
+- Not replayable: the read tool to check is `somcp_list_attributes`.
 
 #### `somcp_update_attribute_value`
 **State**: to write · [issue #72](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/72)

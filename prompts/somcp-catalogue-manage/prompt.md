@@ -35,6 +35,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_set_manufacturer_active`
 - `somcp_create_attribute_group`
 - `somcp_update_attribute_group`
+- `somcp_create_attribute_value`
 - `somcp_create_feature`
 - `somcp_update_feature`
 - `somcp_create_feature_value`
@@ -360,6 +361,25 @@ When it succeeds, show the merchant each change with its old and new value,
 and the `note` when there is one. `changed: false` means the group already held
 those values. On a lost answer, read the group again with
 `somcp_get_attribute_group` before calling twice.
+
+## Adding an attribute value
+
+`somcp_create_attribute_value` adds one value - a size, a shade - to an
+attribute group. Before calling it:
+
+1. Take the group from `somcp_list_attributes`, never guessed, and look for
+   the value there: a name the group already holds is refused.
+2. Ask the merchant for the name, in every language being filled. For a group
+   of type `color` only, ask for the colour as a hex code and, when they want
+   a pattern rather than a plain colour, the public https address of the
+   texture image; on any other group, leave both out. When the shop has the
+   faceted search module, write the URL word and the title tag yourself and
+   show them first; without it, leave them out: they are refused.
+3. The value comes last in its group. One value per call.
+
+When it succeeds, show the merchant the value as returned. If `texture` says
+`refused`, the value exists without it: tell the merchant why. On a lost
+answer, read `somcp_list_attributes` again rather than calling twice.
 
 ## Creating a feature
 

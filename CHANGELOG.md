@@ -417,6 +417,22 @@ Enabled once for all shops, so on a multistore installation the change shows in
 every shop sharing the brand, as in the back office. It needs the permission
 `mcp.catalog.write` and the `edit` right on the back office brands page.
 
+**Creating a supplier.** The new tool `somcp_create_supplier` creates one
+supplier with the fields of the back office supplier form: name, description,
+phone, mobile phone, address, address line 2, postal code, city, country,
+state, DNI, meta title and description, meta keywords on PrestaShop 8, logo and
+Enabled. It is enabled unless you say otherwise. The address, city and country
+are required, as in the back office, and so are the state when the country has
+states and the DNI when the country asks for one; a postal code that does not
+match the country's format is refused. The logo is given by a public https
+address and downloaded by the shop with the same safeguards as product images;
+one that cannot be fetched is reported and does not stop the creation. The
+answer warns when a meta title or description is missing. On a multistore
+installation the supplier is created in the shop the assistant is connected
+to. The consent screen now says that the catalogue permission can create
+suppliers. It needs the permission `mcp.catalog.write` and the `add` right on
+the back office suppliers page.
+
 **Reading the stock of a product.** The new tool `somcp_get_stock` gives the
 stock of one product as the storefront sells against it: the quantity that can
 still be sold, the physical quantity and the quantity held by orders not shipped

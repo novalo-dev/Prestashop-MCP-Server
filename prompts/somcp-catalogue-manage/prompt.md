@@ -33,6 +33,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_manufacturer`
 - `somcp_update_manufacturer`
 - `somcp_set_manufacturer_active`
+- `somcp_create_supplier`
 - `somcp_create_attribute_group`
 - `somcp_update_attribute_group`
 - `somcp_create_attribute_value`
@@ -321,6 +322,26 @@ Tell the merchant that disabling it hides its page on the storefront, while its
 products stay on sale. On a multistore installation the change shows in every
 shop sharing the brand. `changed: false` means it was already in that state. On
 a lost answer, read it with `somcp_get_manufacturer` before calling twice.
+
+## Creating a supplier
+
+`somcp_create_supplier` creates one supplier, enabled unless the merchant says
+otherwise. Before calling it:
+
+1. Read `somcp_list_suppliers`: the supplier may already exist, and the shop
+   accepts two suppliers of the same name.
+2. Ask the merchant for the name, the contact details - at least the address,
+   the city and the country, the state when the country has states, the DNI
+   when the country asks for one - whether the supplier is enabled and the
+   address of its logo. Never invent a phone number or an address. Write the
+   description and the SEO texts yourself, in every language being filled, and
+   show them first.
+3. The logo is given by a public `https` address, which the shop downloads.
+
+When it succeeds, show the merchant the supplier as returned, the
+`seo_warnings`, and the logo if it was refused, with its reason. On a lost
+answer, read `somcp_list_suppliers` again rather than calling twice: a second
+call creates a second supplier.
 
 ## Creating an attribute group
 

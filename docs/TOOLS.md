@@ -1207,7 +1207,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - A language the shop does not have falls back on the shop default.
 
 #### `somcp_create_supplier`
-**State**: to write · [issue #59](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/59)
+**State**: written
 **Nature**: `acts(ADD, 'AdminSuppliers')` · **Scope**: `mcp.catalog.write`
 
 **Does** - creates one supplier with every field of the back office supplier form, in every language of the shop or the ones the merchant picks.
@@ -1218,25 +1218,33 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 | Field | Who fills it | Rule |
 |---|---|---|
-| `name` | merchant | required; 64 characters at most; forbidden characters `<>;=#{}` (`Validate::isCatalogName`) |
+| `name` | merchant | required; one string, the same in every language (`Supplier::$name` has no `lang`); 64 characters at most; forbidden characters `<>{}`, and `;=#` before PrestaShop 9.1 (`Validate::isCatalogName` of the running version) |
 | `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` |
-| `phone`, `phone_mobile` | merchant | `Validate::isPhoneNumber()` |
-| `address1` | merchant | required by PrestaShop for a supplier |
-| `address2` | merchant | |
-| `postcode` | merchant | checked against the country's format (`Country::checkZipCode()`) |
-| `city` | merchant | required |
-| `country` | merchant | ISO code, required, among the shop's countries |
-| `state` | merchant | ISO code, required when the country uses states |
-| `dni` | merchant | national ID number, required when the country asks for one (`Country::isNeedDni()`) |
-| `meta_title` | assistant | forbidden characters `<>={}` (`Validate::isGenericName`); 255 characters at most |
-| `meta_description` | assistant | forbidden characters `<>={}`; 512 characters at most |
+| `phone`, `phone_mobile` | merchant | `Validate::isPhoneNumber()`: digits, spaces and `+-.()/`; 32 characters at most |
+| `address1` | merchant | required by PrestaShop for a supplier; `Validate::isAddress()`; 128 characters at most |
+| `address2` | merchant | same rules, not required |
+| `postcode` | merchant | `Validate::isPostCode()`, 12 characters at most, and checked against the country's format (`Country::checkZipCode()`) when it has one |
+| `city` | merchant | required; `Validate::isCityName()`; 64 characters at most |
+| `country` | merchant | ISO code, required, among the countries of the shop of the token (`country_shop`) |
+| `state` | merchant | ISO code of a state of that country, required when the country uses states, refused when it has none |
+| `dni` | merchant | national ID number, required when the country asks for one (`need_identification_number`, checked by `Address::validateField()`); `Validate::isDniLite()`, 16 characters at most |
+| `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most |
+| `meta_description` | assistant | same characters; 512 characters at most |
 | `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
 | `logo` | merchant | a public `https` URL, downloaded with the guards of `somcp_create_product` |
-| `active` | merchant | true by default |
+| `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 
-**Returns** - `created`, `id_supplier`, `seo_warnings` (no meta title or description in a language), `logo` (stored or the reason it was refused), and the supplier as `somcp_get_supplier` returns it.
+The name and every contact field are one string each, the same in every language.
 
-**Notes** - written through `Supplier::add()` and its `Address` (`id_supplier` set); the logo through the core's image uploader for suppliers, so thumbnails are generated as in the back office. Not replayable: the read tool to check is `somcp_list_suppliers`.
+**Returns** - `created`, `id_supplier`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` with `stored: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
+
+**Notes**
+- Written through `Supplier::add()` in the shop of the token (`id_shop_list`), then its `Address` through `Address::add()` with `id_supplier` set and the placeholder alias, first name and last name (`supplier`) the core's `AddSupplierHandler` writes. The handler adds the address first and links it after; here it is linked from the start, so a failure in between cannot leave an address that belongs to nobody. If either add fails after a row went in, what was written is deleted again.
+- Every problem is reported at once, before anything is written. The name, rich text, meta texts, meta keywords and logo address are checked by the same methods as `somcp_create_manufacturer`; the contact fields by the definition of `Address` of the running version, then both whole objects by `validateFields()`, as the handler does.
+- The postal code format is the one the checkout asks of a customer of that country; the back office supplier form does not check it, the specification asks for it.
+- The core's `SupplierImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The downloaded logo is written where it writes it, as `img/su/<id>.jpg` with one file per supplier image type, by the code `somcp_create_manufacturer` writes a brand logo with, and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the supplier.
+- PrestaShop accepts two suppliers of the same name: the description tells the assistant to read `somcp_list_suppliers` first.
+- Not replayable: the read tool to check is `somcp_list_suppliers`.
 
 #### `somcp_update_supplier`
 **State**: to write · [issue #60](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/60)

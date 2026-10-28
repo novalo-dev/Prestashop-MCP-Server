@@ -252,20 +252,22 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      * The name given in the call, checked with the running version's rules.
      *
      * One string: Manufacturer::$name has no language, so a name per language
-     * would be a choice the shop cannot store.
+     * would be a choice the shop cannot store. Supplier::$name has none either,
+     * and follows the same rules, so the supplier tools call this too.
      *
      * @param array<string, mixed> $arguments
-     * @param Manufacturer $probe
+     * @param ObjectModel $probe the brand or supplier whose rules the name is checked against
      * @param array<int, string> $errors
      * @param bool $required false when changing a brand, which already has a name
+     * @param string $noun what the name is the name of, in the messages
      *
      * @return string|null null when not given
      */
-    protected static function manufacturerName(array $arguments, Manufacturer $probe, array &$errors, bool $required): ?string
+    protected static function manufacturerName(array $arguments, ObjectModel $probe, array &$errors, bool $required, string $noun = 'brand'): ?string
     {
         if (!array_key_exists('name', $arguments)) {
             if ($required) {
-                $errors[] = 'name: required, the brand name';
+                $errors[] = 'name: required, the ' . $noun . ' name';
             }
 
             return null;
@@ -393,6 +395,27 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      */
     protected static function storeLogo(int $idManufacturer, string $url): array
     {
+        return self::storeLogoIn($idManufacturer, $url, _PS_MANU_IMG_DIR_, 'manufacturers', 'manufacturer_mini_');
+    }
+
+    /**
+     * A logo downloaded, checked and written the way the core's brand and
+     * supplier uploaders write theirs.
+     *
+     * Those two uploaders differ only by folder, image types and cached copy,
+     * so one download path serves both: a second copy would be a second place
+     * to forget one of its checks.
+     *
+     * @param int $id the brand or supplier
+     * @param string $url
+     * @param string $directory where the uploader writes, _PS_MANU_IMG_DIR_ or _PS_SUPP_IMG_DIR_
+     * @param string $for the image types to make: manufacturers or suppliers
+     * @param string $miniPrefix the name of the copy the back office list keeps in the image cache
+     *
+     * @return array<string, mixed> the address, with stored: true or the reason it was refused
+     */
+    protected static function storeLogoIn(int $id, string $url, string $directory, string $for, string $miniPrefix): array
+    {
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($file === false) {
             return ['url' => $url, 'refused' => 'the shop has no room to receive it'];
@@ -404,16 +427,16 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
                 $refusal = self::checkImage($file);
             }
             if ($refusal === '') {
-                // ManufacturerImageUploader: the original as m/<id>.jpg, then
-                // one file per brand image type.
-                $target = _PS_MANU_IMG_DIR_ . $idManufacturer . '.jpg';
+                // ManufacturerImageUploader and SupplierImageUploader: the
+                // original as <id>.jpg, then one file per image type.
+                $target = $directory . $id . '.jpg';
                 $stored = ImageManager::resize($file, $target);
                 if ($stored) {
-                    self::thumbnails($target, _PS_MANU_IMG_DIR_ . $idManufacturer, 'manufacturers');
+                    self::thumbnails($target, $directory . $id, $for);
                     // The back office list keeps a small copy of the logo in
                     // the image cache; the uploader drops it so the list shows
                     // the new one.
-                    @unlink(_PS_TMP_IMG_DIR_ . 'manufacturer_mini_' . $idManufacturer . '.jpg');
+                    @unlink(_PS_TMP_IMG_DIR_ . $miniPrefix . $id . '.jpg');
                 }
                 $refusal = $stored ? '' : 'the shop could not read it as an image';
             }
@@ -430,16 +453,17 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      * What the merchant should know about the SEO of each language filled.
      *
      * @param array<string, mixed> $plan
+     * @param string $noun whose name the storefront falls back on: brand or supplier
      *
      * @return array<string, array<int, string>>
      */
-    protected static function manufacturerWarnings(array $plan): array
+    protected static function manufacturerWarnings(array $plan, string $noun = 'brand'): array
     {
         $warnings = [];
         foreach ($plan['languages']['filled'] as $idLang => $iso) {
             $list = [];
             if ((string) ($plan['texts']['meta_title'][$idLang] ?? '') === '') {
-                $list[] = 'no meta_title: the storefront uses the brand name';
+                $list[] = 'no meta_title: the storefront uses the ' . $noun . ' name';
             }
             if ((string) ($plan['texts']['meta_description'][$idLang] ?? '') === '') {
                 $list[] = 'no meta_description: search engines pick a passage of the page';

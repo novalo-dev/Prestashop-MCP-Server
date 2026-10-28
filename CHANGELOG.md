@@ -149,6 +149,20 @@ assistant is connected to. The consent screen now says that the catalogue
 permission can create attribute groups. It needs the permission
 `mcp.catalog.write` and the `add` right on the back office attributes page.
 
+**Changing an attribute group.** The new tool `somcp_update_attribute_group`
+changes one existing attribute group with everything the creation can write:
+its name and the name customers see, in each language, its type and, when the
+faceted search module is installed and enabled, the word used in filtered
+URLs, the title tag and whether filtered pages are indexed. Only what is asked
+changes: a language left out keeps its text, and the answer lists each field
+changed with its old and new value. Asking for what the group already holds
+changes nothing. When a colour group becomes a drop-down list or radio
+buttons, its values keep their colours and textures but the product page no
+longer shows them, and the assistant tells you so. The consent screen now says
+that the catalogue permission can edit attribute groups. It needs the
+permission `mcp.catalog.write` and the `edit` right on the back office
+attributes page.
+
 **Listing features.** The new tool `somcp_list_features` lists the features
 of the shop the assistant is connected to (Composition, Property...) and, under
 each one, its predefined values, with their identifier and name and nothing

@@ -33,6 +33,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_manufacturer`
 - `somcp_set_manufacturer_active`
 - `somcp_create_attribute_group`
+- `somcp_update_attribute_group`
 - `somcp_create_feature`
 - `somcp_update_feature`
 - `somcp_create_feature_value`
@@ -334,6 +335,25 @@ without any value. Before calling it:
 When it succeeds, show the merchant the group as returned. On a lost answer,
 read `somcp_list_attributes` again rather than calling twice: a second call
 creates a second group.
+
+## Changing an attribute group
+
+`somcp_update_attribute_group` changes one existing attribute group. Before
+calling it:
+
+1. Take the group from `somcp_list_attributes`, never guessed, and read it with
+   `somcp_get_attribute_group` to know what it holds before changing it.
+2. Give only what changes. To change a text in one language, pass `languages`
+   with that language alone. Without the faceted search module, leave
+   `url_name`, `meta_title` and `indexable` out: they are refused.
+3. A new public name or type shows on every product page offering the group:
+   tell the merchant before calling. Away from `color`, the values keep their
+   colours and textures but the product page no longer shows them.
+
+When it succeeds, show the merchant each change with its old and new value,
+and the `note` when there is one. `changed: false` means the group already held
+those values. On a lost answer, read the group again with
+`somcp_get_attribute_group` before calling twice.
 
 ## Creating a feature
 

@@ -1347,18 +1347,23 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Not replayable: the read tool to check is `somcp_list_attributes`.
 
 #### `somcp_update_attribute_group`
-**State**: to write · [issue #69](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/69)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one attribute group with everything `somcp_create_attribute_group` can write, under the same rules. Only what is given changes.
 
-**Do not use for** - creating one (→ `somcp_create_attribute_group`).
+**Do not use for** - creating one (→ `somcp_create_attribute_group`), or changing one of its values (→ `somcp_update_attribute_value`).
 
-**Parameters** - `id_attribute_group` (required), `languages`, then the fields of `somcp_create_attribute_group`, all optional. A text given replaces the languages given and keeps the others.
+**Parameters** - `id_attribute_group` (required, from `somcp_list_attributes`), `languages`, then the fields of `somcp_create_attribute_group`, all optional, checked by the same code. A text given replaces the languages given and keeps the others; given, `name` and `public_name` are never empty. `indexable` left out keeps what the group has.
 
-**Returns** - `changed`, per field its old and new value, and the group as `somcp_get_attribute_group` returns it.
+**Returns** - `changed`; when something changed, `changes` (per field and language, its `old` and `new` value) and `attribute_group`, the group as `somcp_get_attribute_group` returns it. `note` appears when `group_type` leaves `color`, `faceted_search` only when the faceted search rows could not be written while the rest was.
 
-**Notes** - changing `group_type` away from `color` leaves the values' colours and textures in place but unused, as in the back office; the answer says so. Replayable: the same values again say `changed: false`.
+**Notes**
+- A group that is not in `attribute_group_shop` for the shop of the token is refused, the same test as `somcp_get_attribute_group`.
+- Written through `AttributeGroup::update()` in the shop of the token (`id_shop_list`), as the core's `EditAttributeGroupHandler` does, so the hooks fire and `update()` sets the colour flag from `group_type`. Position is not changed.
+- Changing `group_type` away from `color` leaves the values' colours and textures in place but unused, as in the back office; the answer says so in `note`.
+- The faceted search fields are compared with the module's rows and, when one changes, the group's rows are written again as `somcp_create_attribute_group` writes them, the other languages keeping their text; the module's `actionAttributeGroupSave` hook leaves them alone when the request carries no form. A rename alone still drops the module's filter block cache, as its form does on every save.
+- Every problem is reported at once, before anything is written. Replayable: the same values again write nothing and say `changed: false`.
 
 #### `somcp_get_attribute_value`
 **State**: to write · [issue #70](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/70)

@@ -1577,6 +1577,11 @@
       <source>The files of the assistant are missing from this copy of the module. Install the module from its release zip.</source>
       <target>Les fichiers de l'assistant manquent dans cette copie du module. Installez le module depuis le zip de sa version.</target>
     </trans-unit>
+    <!-- In development: the built-in assistant is unstable and may change or stop working without notice. -->
+    <trans-unit id="da4b870d7d4d80d82b60dd7df6e742ab" resname="In development: the built-in assistant is unstable and may change or stop working without notice.">
+      <source>In development: the built-in assistant is unstable and may change or stop working without notice.</source>
+      <target>En cours de développement : l'assistant intégré est instable et peut changer ou cesser de fonctionner sans préavis.</target>
+    </trans-unit>
     <!-- Edit the assistant -->
     <trans-unit id="1bfb39f857ef076837da95e30de22458" resname="Edit the assistant">
       <source>Edit the assistant</source>

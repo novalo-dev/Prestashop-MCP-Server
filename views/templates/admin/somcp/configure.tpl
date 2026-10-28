@@ -475,6 +475,9 @@
        Connected assistants tab, and the Edit button of PrestaShop's own lists,
        so the two tabs read as one family. *}
     <div class="somcp-pane" id="somcp-pane-assistant" data-somcp-pane="assistant" role="tabpanel" hidden>
+    {* Shown on every visit to the tab: the assistant ships before it is finished,
+       and a merchant must know that before relying on it. *}
+    <div class="alert alert-warning">{l s='In development: the built-in assistant is unstable and may change or stop working without notice.' d='Modules.Somcp.Admin'}</div>
     {if !$somcp_assistant_ready}
         <div class="alert alert-warning">{l s='The files of the assistant are missing from this copy of the module. Install the module from its release zip.' d='Modules.Somcp.Admin'}</div>
     {/if}

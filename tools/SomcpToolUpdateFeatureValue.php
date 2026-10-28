@@ -406,6 +406,15 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
         $idLeft = (int) $featureValue->id_feature;
         $written = $plan['values'] !== null || $plan['id_feature'] !== null;
 
+        // update() fires actionFeatureValueSave, on which the faceted search
+        // module deletes the value's rows and writes back only what its form's
+        // request carries - nothing, here. The fields this call leaves alone
+        // are read first and written back once the value is saved.
+        $kept = null;
+        if ($written && $plan['faceted'] && $plan['faceted_rows'] === null) {
+            $kept = self::storedValueFaceted($idFeatureValue, $plan['languages']['all']);
+        }
+
         if ($written) {
             if ($plan['values'] !== null) {
                 self::fill($featureValue, ['value' => $plan['values']]);
@@ -416,7 +425,7 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
                 // keeps the number the value had in the one it leaves: it is
                 // put last in the new one, as add() places a new value.
                 if (self::orderedValues()) {
-                    $highest = 'getHighestPosition';
+                    $highest = self::versionMethod('getHighestPosition');
                     self::fill($featureValue, ['position' => (int) FeatureValue::$highest((int) $plan['id_feature']) + 1]);
                 }
             }
@@ -448,8 +457,13 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
             // The positions left behind are closed up, as the core does when a
             // value is deleted, so the old feature keeps no gap.
             if ($plan['id_feature'] !== null && self::orderedValues()) {
-                $clean = 'cleanPositions';
+                $clean = self::versionMethod('cleanPositions');
                 $featureValue->$clean($idLeft);
+            }
+
+            // A value that never had faceted search fields has nothing to put back.
+            if ($kept !== null && implode('', $kept['url_name']) . implode('', $kept['meta_title']) !== '') {
+                $plan['faceted_rows'] = $kept;
             }
         }
 
@@ -508,6 +522,22 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
     private static function orderedValues(): bool
     {
         return version_compare(_PS_VERSION_, '9.0.0', '>=');
+    }
+
+    /**
+     * The name of a method only some versions have, typed as any string.
+     *
+     * Held in a local variable, a literal name is still resolved by PHPStan,
+     * which then reports the method as missing on PrestaShop 8 although the
+     * call is guarded by orderedValues(). Returned from here, it is not.
+     *
+     * @param string $name
+     *
+     * @return string
+     */
+    private static function versionMethod(string $name): string
+    {
+        return $name;
     }
 
     /**

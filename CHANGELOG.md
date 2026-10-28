@@ -45,6 +45,20 @@ the settings page and on the page shown to employees who may only connect an
 assistant. The page remembers the tab you were on after saving. Every setting
 keeps its meaning and is saved the same way.
 
+**Return addresses.** "Only allow these return addresses" used to be a plain
+text field where host names had to be typed separated by spaces. Each address
+is now a tag, as for a product's tags: type it and press Enter, remove it with
+its cross. Under the field, the clients the module works with (Claude,
+ChatGPT, Make, n8n Cloud, VS Code, Cursor) can be added in one click. The
+setting is saved as before.
+
+**Updates.** When a new version is available, a second notice under it reminds
+you to reconnect your assistants after updating, so that their access includes
+the new permissions.
+
+**Built-in assistant.** "Powered by Neuron AI" now sits in the title of the
+"Your assistants" panel instead of under the settings form.
+
 **Logo.** The module has a new logo: a white pulse ending on an orange dot,
 on the dark background of the other O'So modules.
 

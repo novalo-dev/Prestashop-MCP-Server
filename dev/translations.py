@@ -433,10 +433,16 @@ T = {
  "N'autoriser que ces adresses de retour",
  "Permitir solo estas direcciones de retorno",
  "Nur diese Rückleitungsadressen zulassen"),
-"Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed.": (
- "Noms de domaine séparés par des espaces, par exemple claude.ai chatgpt.com. Laissez vide pour accepter toute adresse enregistrée par une application. Les assistants de bureau passent par votre propre ordinateur et sont toujours autorisés.",
- "Nombres de dominio separados por espacios, por ejemplo claude.ai chatgpt.com. Déjelo vacío para aceptar cualquier dirección registrada por una aplicación. Los asistentes de escritorio usan su propio ordenador y siempre están permitidos.",
- "Hostnamen durch Leerzeichen getrennt, zum Beispiel claude.ai chatgpt.com. Leer lassen, um jede von einer Anwendung eingetragene Adresse zu akzeptieren. Desktop-Assistenten laufen über Ihren eigenen Rechner und sind immer erlaubt."),
+"Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.": (
+ "Saisissez un nom de domaine, par exemple claude.ai, puis appuyez sur Entrée. Laissez vide pour accepter toute adresse enregistrée par une application. Les assistants de bureau et les agents de code passent par votre propre ordinateur et sont toujours autorisés ; un n8n auto-hébergé demande d'ajouter son propre nom de domaine.",
+ "Escriba un nombre de dominio, por ejemplo claude.ai, y pulse Intro. Déjelo vacío para aceptar cualquier dirección registrada por una aplicación. Los asistentes de escritorio y los agentes de código usan su propio ordenador y siempre están permitidos; un n8n autoalojado necesita que se añada su propio nombre de dominio.",
+ "Geben Sie einen Hostnamen ein, zum Beispiel claude.ai, und drücken Sie Enter. Leer lassen, um jede von einer Anwendung eingetragene Adresse zu akzeptieren. Desktop-Assistenten und Coding-Agenten laufen über Ihren eigenen Rechner und sind immer erlaubt; für ein selbst gehostetes n8n muss sein eigener Hostname hinzugefügt werden."),
+"After the update, reconnect your assistants so that their access includes the new permissions.": (
+ "Après la mise à jour, reconnectez vos assistants pour que leur accès inclue les nouvelles permissions.",
+ "Después de la actualización, vuelva a conectar sus asistentes para que su acceso incluya los nuevos permisos.",
+ "Verbinden Sie Ihre Assistenten nach dem Update erneut, damit ihr Zugriff die neuen Berechtigungen umfasst."),
+"Add a host name": ("Ajouter un nom de domaine", "Añadir un nombre de dominio", "Hostnamen hinzufügen"),
+"Clients the module works with:": ("Clients compatibles avec le module :", "Clientes compatibles con el módulo:", "Mit dem Modul kompatible Clients:"),
 "Keep a security log": (
  "Tenir un journal de sécurité",
  "Mantener un registro de seguridad",

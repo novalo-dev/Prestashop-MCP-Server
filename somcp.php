@@ -587,6 +587,7 @@ class Somcp extends Module
                 ? date((string) $this->context->language->date_format_full, $update['checked'])
                 : '',
             'somcp_settings' => $this->currentSettings(),
+            'somcp_redirect_suggestions' => SomcpOAuthClient::KNOWN_HOSTS,
             'somcp_profiles' => Profile::getProfiles((int) $this->context->language->id),
             'somcp_diagnostic' => $diagnostic,
             // One shop is diagnosed at a time: the checks are real HTTP calls,

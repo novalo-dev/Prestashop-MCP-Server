@@ -247,6 +247,123 @@
             draw();
         });
 
+        // A list of host names shown as tags, the way a product's tags are. The
+        // original field stays in the form and keeps receiving the list joined
+        // by spaces, so the save code and a page without script both see the
+        // same value. Built before the inheritance switch below runs, so that
+        // switch finds the typing field and disables it along with the rest.
+        document.querySelectorAll('input[data-somcp-tags]').forEach(function (source) {
+            var box = document.createElement('div');
+            var typing = document.createElement('input');
+            var suggest = document.querySelector('[data-somcp-tags-suggest="' + source.name + '"]');
+            var removeLabel = source.getAttribute('data-somcp-tags-remove') || '';
+            var tags = [];
+
+            // The same characters the module keeps when it saves the setting.
+            var clean = function (text) {
+                return text.toLowerCase().replace(/[^a-z0-9.\-]/g, '');
+            };
+
+            var sync = function () {
+                source.value = tags.join(' ');
+                box.querySelectorAll('.somcp-tag').forEach(function (tag) {
+                    tag.remove();
+                });
+                tags.forEach(function (host, index) {
+                    var tag = document.createElement('span');
+                    var remove = document.createElement('button');
+                    tag.className = 'somcp-tag';
+                    tag.textContent = host;
+                    remove.type = 'button';
+                    remove.className = 'somcp-tag-remove';
+                    remove.setAttribute('aria-label', removeLabel + ' ' + host);
+                    remove.innerHTML = '&times;';
+                    remove.addEventListener('click', function () {
+                        if (!source.disabled) {
+                            tags.splice(index, 1);
+                            sync();
+                        }
+                    });
+                    tag.appendChild(remove);
+                    box.insertBefore(tag, typing);
+                });
+                if (suggest) {
+                    suggest.querySelectorAll('[data-somcp-host]').forEach(function (button) {
+                        button.hidden = tags.indexOf(button.getAttribute('data-somcp-host')) !== -1;
+                    });
+                }
+            };
+
+            var add = function (text) {
+                text.split(/[\s,;]+/).forEach(function (part) {
+                    var host = clean(part);
+                    if (host !== '' && tags.indexOf(host) === -1) {
+                        tags.push(host);
+                    }
+                });
+                sync();
+            };
+
+            // Inheritance disables the original field: mirror that on the tags,
+            // which are not form fields and would otherwise stay clickable.
+            var follow = function () {
+                box.classList.toggle('is-disabled', source.disabled);
+                typing.disabled = source.disabled;
+                if (suggest) {
+                    suggest.querySelectorAll('button').forEach(function (button) {
+                        button.disabled = source.disabled;
+                    });
+                }
+            };
+
+            box.className = 'somcp-tags form-control';
+            typing.type = 'text';
+            typing.className = 'somcp-tags-input';
+            typing.placeholder = source.getAttribute('data-somcp-tags-placeholder') || '';
+            box.appendChild(typing);
+            source.type = 'hidden';
+            source.parentNode.insertBefore(box, source);
+
+            typing.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' || event.key === ',' || event.key === ' ' || (event.key === 'Tab' && typing.value !== '')) {
+                    // Enter would otherwise submit the whole settings form.
+                    event.preventDefault();
+                    add(typing.value);
+                    typing.value = '';
+                } else if (event.key === 'Backspace' && typing.value === '' && tags.length) {
+                    tags.pop();
+                    sync();
+                }
+            });
+            // A host left half typed when the merchant clicks Save is still kept.
+            typing.addEventListener('blur', function () {
+                add(typing.value);
+                typing.value = '';
+            });
+            typing.addEventListener('paste', function (event) {
+                event.preventDefault();
+                add((event.clipboardData || window.clipboardData).getData('text'));
+            });
+            box.addEventListener('click', function (event) {
+                if (event.target === box) {
+                    typing.focus();
+                }
+            });
+
+            if (suggest) {
+                suggest.querySelectorAll('[data-somcp-host]').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        add(button.getAttribute('data-somcp-host'));
+                    });
+                });
+                suggest.hidden = false;
+            }
+
+            new MutationObserver(follow).observe(source, { attributes: true, attributeFilter: ['disabled'] });
+            add(source.value);
+            follow();
+        });
+
         // A setting that inherits from the level above is shown but not editable:
         // its value does not belong to this level, and it is not submitted either
         // - the module removes the row instead of writing what was on screen.

@@ -386,8 +386,19 @@
                     <label class="control-label col-lg-4">{l s='Only allow these return addresses' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-8">
                         {include file='./_inherit.tpl' field='SOMCP_REDIRECT_HOSTS'}
-                        <input type="text" name="SOMCP_REDIRECT_HOSTS" class="form-control" value="{$somcp_settings.SOMCP_REDIRECT_HOSTS|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed.' d='Modules.Somcp.Admin'}</p>
+                        {* A plain field the script turns into tags, like the tags of a
+                           product. Without the script it still works as a list of
+                           host names separated by spaces, which is what is saved. *}
+                        <input type="text" name="SOMCP_REDIRECT_HOSTS" class="form-control" value="{$somcp_settings.SOMCP_REDIRECT_HOSTS|escape:'html':'UTF-8'}"
+                               data-somcp-tags data-somcp-tags-remove="{l s='Remove' d='Modules.Somcp.Admin'}"
+                               data-somcp-tags-placeholder="{l s='Add a host name' d='Modules.Somcp.Admin'}">
+                        <p class="somcp-tags-suggest" data-somcp-tags-suggest="SOMCP_REDIRECT_HOSTS" hidden>
+                            <span class="text-muted">{l s='Clients the module works with:' d='Modules.Somcp.Admin'}</span>
+                            {foreach $somcp_redirect_suggestions as $somcp_host => $somcp_client}
+                                <button type="button" class="somcp-tag-suggest" data-somcp-host="{$somcp_host|escape:'html':'UTF-8'}">+ {$somcp_host|escape:'html':'UTF-8'} <span class="text-muted">{$somcp_client|escape:'html':'UTF-8'}</span></button>
+                            {/foreach}
+                        </p>
+                        <p class="help-block">{l s='Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
@@ -580,7 +591,7 @@
     {/if}
 
         <div class="panel">
-            <div class="panel-heading"><i class="icon-comments"></i> {l s='Your assistants' d='Modules.Somcp.Admin'}</div>
+            <div class="panel-heading"><i class="icon-comments"></i> {l s='Your assistants' d='Modules.Somcp.Admin'} <span class="somcp-foot text-muted">- {l s='Powered by' d='Modules.Somcp.Admin'} <a href="https://github.com/neuron-core/neuron-ai" target="_blank" rel="noopener noreferrer">Neuron AI</a></span></div>
             <p class="help-block">{l s='The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.' d='Modules.Somcp.Admin'}</p>
         {if $somcp_assistants}
             <table class="table">
@@ -748,10 +759,6 @@
                 </div>
             </div>
         </form>
-
-        <p class="somcp-foot text-center text-muted">
-            {l s='Powered by' d='Modules.Somcp.Admin'} <a href="https://github.com/neuron-core/neuron-ai" target="_blank" rel="noopener noreferrer">Neuron AI</a>
-        </p>
     </div>
 
     <div class="somcp-pane" id="somcp-pane-log" data-somcp-pane="log" role="tabpanel" hidden>
@@ -868,6 +875,10 @@
                 </p>
                 <p class="help-block">{l s='To update, open Modules > Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.' d='Modules.Somcp.Admin'}</p>
             </div>
+            {* An assistant keeps the permissions it was granted when it connected,
+               so a release that brings new ones stays out of its reach until it
+               goes through the approval screen again. *}
+            <div class="alert alert-info">{l s='After the update, reconnect your assistants so that their access includes the new permissions.' d='Modules.Somcp.Admin'}</div>
         {elseif $somcp_update.enabled && !$somcp_update.failed && $somcp_update.latest}
             <div class="alert alert-success">{l s='You have the latest version.' d='Modules.Somcp.Admin'}</div>
         {/if}

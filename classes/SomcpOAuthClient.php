@@ -37,6 +37,28 @@ class SomcpOAuthClient
     public const ORIGIN_DCR = 'dcr';
     public const ORIGIN_STATIC = 'static';
 
+    /**
+     * Return-address hosts of the clients the module is known to work with,
+     * offered as one-click suggestions on the settings page. Checked against
+     * each client's published redirect URI: Claude (claude.ai and claude.com),
+     * ChatGPT, Make (www.make.com/oauth/cb/mcp), n8n Cloud
+     * (oauth.n8n.cloud/oauth2/callback), VS Code for the web (vscode.dev/redirect)
+     * and Cursor's web agents (www.cursor.com). Desktop clients and coding agents
+     * return to the loopback address, which is always allowed, and a
+     * self-hosted n8n returns to its own domain, which only the merchant knows.
+     *
+     * @var array<string, string> host => client name
+     */
+    public const KNOWN_HOSTS = [
+        'claude.ai' => 'Claude',
+        'claude.com' => 'Claude',
+        'chatgpt.com' => 'ChatGPT',
+        'www.make.com' => 'Make',
+        'oauth.n8n.cloud' => 'n8n Cloud',
+        'vscode.dev' => 'VS Code',
+        'www.cursor.com' => 'Cursor',
+    ];
+
     /** @var int Seconds a fetched metadata document is trusted without refetching. */
     private const CIMD_CACHE_TTL = 3600;
 

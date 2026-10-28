@@ -71,6 +71,13 @@
     font-size: 12px;
 }
 
+/* The credit now sits in a panel title, which the back office writes in
+   capitals and bold: undone here so it keeps its footnote look. */
+.somcp .panel-heading .somcp-foot {
+    font-weight: normal;
+    text-transform: none;
+}
+
 /* Address block: one row per shop, the shop name as a quiet heading above
    PrestaShop's own input group, so the address and its Copy button look like
    every other field of the back office. */
@@ -359,6 +366,97 @@
 .somcp .somcp-tools-count {
     color: #6c868e;
     font-size: 12px;
+}
+
+/* Host names as tags, drawn like the tags of a product page: a field that
+   grows with its content, one pill per name, the typing area after the last. */
+.somcp .somcp-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    height: auto;
+    min-height: 34px;
+    padding: 3px 6px;
+    cursor: text;
+}
+
+.somcp .somcp-tags.is-disabled {
+    background: #eee;
+    cursor: not-allowed;
+}
+
+.somcp .somcp-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px 2px 8px;
+    border-radius: 3px;
+    background: #25b9d7;
+    color: #fff;
+    font-size: 12px;
+    line-height: 18px;
+}
+
+.somcp .somcp-tags.is-disabled .somcp-tag {
+    background: #a8b4bd;
+}
+
+.somcp .somcp-tag-remove {
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 2px;
+    opacity: .8;
+    cursor: pointer;
+}
+
+.somcp .somcp-tag-remove:hover {
+    opacity: 1;
+}
+
+.somcp .somcp-tags-input {
+    flex: 1 0 120px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    min-height: 24px;
+    padding: 0 2px;
+}
+
+/* The suggestions under the field: quiet outlined pills, so they read as
+   something on offer rather than something already chosen. */
+.somcp .somcp-tags-suggest {
+    margin: 8px 0 0;
+    font-size: 12px;
+}
+
+.somcp .somcp-tags-suggest[hidden],
+.somcp .somcp-tag-suggest[hidden] {
+    display: none;
+}
+
+.somcp .somcp-tag-suggest {
+    margin: 2px 4px 2px 0;
+    padding: 1px 8px;
+    border: 1px dashed #bfc9d4;
+    border-radius: 3px;
+    background: #fff;
+    color: #363a41;
+    font-size: 12px;
+    line-height: 18px;
+    cursor: pointer;
+}
+
+.somcp .somcp-tag-suggest:hover {
+    border-color: #25b9d7;
+}
+
+.somcp .somcp-tag-suggest[disabled] {
+    opacity: .5;
+    cursor: not-allowed;
 }
 
 /* A tool that changes something, marked where the merchant decides whether to

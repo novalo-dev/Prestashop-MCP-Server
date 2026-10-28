@@ -532,10 +532,25 @@
       <source>Only allow these return addresses</source>
       <target>Only allow these return addresses</target>
     </trans-unit>
-    <!-- Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed. -->
-    <trans-unit id="8a0560036353c28ddab19dc97488ea5f" resname="Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed.">
-      <source>Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed.</source>
-      <target>Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed.</target>
+    <!-- Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added. -->
+    <trans-unit id="71a7f567b7fef6921759d852d43111be" resname="Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.">
+      <source>Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.</source>
+      <target>Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.</target>
+    </trans-unit>
+    <!-- After the update, reconnect your assistants so that their access includes the new permissions. -->
+    <trans-unit id="8f877834ba5aff2460d728d322ee9fac" resname="After the update, reconnect your assistants so that their access includes the new permissions.">
+      <source>After the update, reconnect your assistants so that their access includes the new permissions.</source>
+      <target>After the update, reconnect your assistants so that their access includes the new permissions.</target>
+    </trans-unit>
+    <!-- Add a host name -->
+    <trans-unit id="2bed13153045be161310c84e504b78d7" resname="Add a host name">
+      <source>Add a host name</source>
+      <target>Add a host name</target>
+    </trans-unit>
+    <!-- Clients the module works with: -->
+    <trans-unit id="b711af46aae7d8d58fee4ab1b1d3a303" resname="Clients the module works with:">
+      <source>Clients the module works with:</source>
+      <target>Clients the module works with:</target>
     </trans-unit>
     <!-- Keep a security log -->
     <trans-unit id="321e5c4b4dcb88e9e562f3ee8923d55f" resname="Keep a security log">

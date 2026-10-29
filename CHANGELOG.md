@@ -96,6 +96,15 @@ Save button at the bottom saves the three.
 **Logo.** The module has a new logo: a white pulse ending on an orange dot,
 on the dark background of the other O'So modules.
 
+### Fixed
+
+**Documents the module downloads.** When the module reads a document from
+another site - the description a client publishes about itself when it
+connects, the list of models of a provider in the chat settings, the check for
+a new version - a document of more than about 16 KB was cut off as soon as one
+of its parts held an accented letter or an "&", and then read as broken. Such
+documents are now read in full, up to the usual size limit.
+
 ### Added
 
 **Tracking numbers.** The new tool `somcp_set_order_tracking` sets the tracking
@@ -237,6 +246,19 @@ title or description will be cut in search results, or when a new friendly
 URL means the old address of a displayed page stops working. Giving values the
 page already has changes nothing. It needs the permission `mcp.seo.write` and
 the `edit` right on the back office Pages page.
+
+**Public page audit.** The new tool `somcp_audit_page` opens one page of your
+shop the way a visitor without an account sees it, and reports what search
+engines read there: the title and description your theme really prints, the
+robots instructions, the canonical address, the language alternates, the h1 to
+h3 headings, images without alternative text, links, structured data, Open
+Graph tags, the number of words, the redirects on the way and how long the
+page took. It warns about a missing or doubled h1, a canonical pointing
+elsewhere, a page set to noindex, a missing language alternate, a title or
+description too long, a redirect chain and a page slower than 2 seconds. It
+only ever opens addresses on your shop's own domains, redirects included, and
+changes nothing. It needs the permission `mcp.seo.read` and the `view` right
+on the back office Traffic & SEO page.
 
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,

@@ -16,6 +16,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_get_seo_settings`
 - `somcp_get_robots_txt`
 - `somcp_generate_robots_txt`
+- `somcp_audit_page`
 
 ## Know which shop you are in
 
@@ -63,6 +64,12 @@ installation has its own titles, descriptions and URLs.
    title itself. Changing a friendly URL of a displayed page makes the old
    address stop working: say so before the call. Read the page again with
    `somcp_audit_cms_seo` afterwards.
+6. **Check the public page.** A value in the database is not proof of what
+   the theme prints: call `somcp_audit_page` with the address or the path of
+   the page (`/` for the home page) to see the title, description, headings,
+   canonical and structured data search engines are actually given, and again
+   after a change. One page per call: pick the pages that matter, never loop
+   over the catalogue.
 
 ## Reading the checks
 
@@ -100,6 +107,13 @@ installation has its own titles, descriptions and URLs.
   product whose page sends no redirection leaves a dead address. Changing a URL
   or a redirection of a live page makes the old address stop working: say so
   before proposing it.
+- On a public page, `canonical_elsewhere` is expected on a filtered, sorted or
+  paginated address and a problem on the page itself; `noindex` may be the
+  merchant's choice on a legal page. `missing_hreflang` names the active
+  language the page offers no alternate for. `not_ok` means the page answers
+  something other than 200, and its content is then not judged. The tool only
+  opens addresses on the shop's own domains: when it refuses one, say so
+  rather than trying another way.
 
 ## Do not use when
 
@@ -118,3 +132,5 @@ installation has its own titles, descriptions and URLs.
 - "Mes URL sont-elles bien réglées pour Google ?"
 - "Mon robots.txt bloque-t-il des pages ?"
 - "Régénère mon robots.txt"
+- "Que voit Google sur ma page d'accueil ?"
+- "Check the SEO of this product page"

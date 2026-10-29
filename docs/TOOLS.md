@@ -2621,7 +2621,7 @@ None.
 - The new content can only be known by writing it, so a call that changes nothing still rewrites the same bytes, and answers `changed: false`. A file the web server cannot write is refused with nothing changed.
 
 #### `somcp_audit_page`
-**State**: to write · [issue #92](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/92)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
 **Does** - fetches one public page of the shop and returns what a search engine reads on it.
@@ -2634,11 +2634,13 @@ None.
 |---|---|---|---|
 | `url` | string | yes | an address of this shop, or a path such as `/en/3-clothes` |
 
-**Returns** - `status`, `final_url`, `redirects` (each hop with its code), `time_ms`, `title`, `meta_description`, `meta_robots`, `canonical`, `hreflang` (language and URL of each alternate), `headings` (h1 to h3 in order), `images` (count, without alt), `links` (internal and external counts), `json_ld` (each block's `@type` and its main fields), `open_graph`, `word_count`, `warnings`.
+**Returns** - `status`, `final_url`, `redirects` (each hop with its `url`, `status` and `location`), `time_ms`, `title`, `meta_description`, `meta_robots`, `x_robots_tag` (the header, `null` when not sent), `canonical`, `hreflang` (`language` and `url` of each alternate), `headings` (h1 to h3 in order, each a `level` and `text`, 100 at most), `images` (`count`, `without_alt`), `links` (`internal` and `external` counts), `json_ld` (each object's `@type` and its plain fields, nested objects one level down, lists by their `count`; a block that is not valid JSON gives `error: invalid_json`), `open_graph` (each `og:` property and its content), `word_count`, `warnings` (each a `code` and `why`).
 
 **Notes**
-- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
-- `warnings`: no or several h1, a canonical pointing elsewhere, a `noindex`, a missing hreflang for an active language, a title or description too long, a redirect chain, a page slower than 2 seconds.
+- Only addresses of this shop are fetched: the host must be one of the shop's own active domains (`ShopUrl` of this shop, `domain` or `domain_ssl`, with its port), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout for the whole fetch, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session: no cookie, no credential. The resolved address is not checked against private ranges, since a shop's own name may resolve to one behind a load balancer: the list of domains is the boundary.
+- A path is taken from the root of the shop's main domain, in https when the shop has SSL enabled. Accents and spaces are percent-encoded as a browser does; the fragment is dropped. An address with credentials, a backslash or a scheme other than http and https is refused.
+- Redirects are followed one hop at a time, 5 at most, each `Location` checked against the domains before it is fetched. A redirect leaving the shop stops there, with `redirect_outside_shop` and the `location` that was not fetched.
+- `warnings`: `no_h1`, `several_h1`, `canonical_elsewhere` (with the `canonical`), `noindex` (from the robots meta tag or the `X-Robots-Tag` header, `noindex` or `none` as a whole directive), `missing_hreflang` (with the `language`, only when the shop has several active languages), `no_title`, `title_too_long` (over 60 characters), `no_meta_description`, `description_too_long` (over 160), `redirect_chain` (more than one redirect), `redirect_outside_shop`, `too_many_redirects`, `slow_page` (over 2 seconds), `not_ok` (a status other than 200), `not_html`, `truncated` (over 2 MB). A page answering other than 200 is read but not judged on its content.
 
 #### `somcp_check_links`
 **State**: to write · [issue #93](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/93)

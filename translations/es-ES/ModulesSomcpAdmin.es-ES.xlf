@@ -1027,6 +1027,11 @@
       <source>Read the robots.txt file</source>
       <target>Leer el archivo robots.txt</target>
     </trans-unit>
+    <!-- Audit a public page of the shop -->
+    <trans-unit id="03464755b872980ba2e56cafbf6148fe" resname="Audit a public page of the shop">
+      <source>Audit a public page of the shop</source>
+      <target>Auditar una página pública de la tienda</target>
+    </trans-unit>
     <!-- Generate the robots.txt file -->
     <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
       <source>Generate the robots.txt file</source>

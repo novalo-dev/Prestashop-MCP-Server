@@ -228,13 +228,14 @@ class SomcpToolGetSeoSettings
     }
 
     /**
-     * The addresses of the shop, main one first.
+     * The addresses of the shop, main one first. somcp_audit_page reads them
+     * too: they are the only hosts it may fetch.
      *
      * @param int $idShop
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function domains(int $idShop): array
+    public static function domains(int $idShop): array
     {
         $query = new DbQuery();
         $query->select('`domain`, `domain_ssl`, `physical_uri`, `virtual_uri`, `main`, `active`');

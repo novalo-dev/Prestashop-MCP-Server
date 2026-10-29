@@ -814,6 +814,10 @@ T = {
  "Lire le fichier robots.txt",
  "Leer el archivo robots.txt",
  "Die Datei robots.txt lesen"),
+"Audit a public page of the shop": (
+ "Auditer une page publique de la boutique",
+ "Auditar una página pública de la tienda",
+ "Eine öffentliche Seite des Shops prüfen"),
 "Generate the robots.txt file": (
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",

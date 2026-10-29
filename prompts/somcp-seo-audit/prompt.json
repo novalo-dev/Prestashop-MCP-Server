@@ -14,7 +14,8 @@
     "somcp_list_meta_pages",
     "somcp_get_seo_settings",
     "somcp_get_robots_txt",
-    "somcp_generate_robots_txt"
+    "somcp_generate_robots_txt",
+    "somcp_audit_page"
   ],
   "controller": "AdminMeta",
   "action": "view",

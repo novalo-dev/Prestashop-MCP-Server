@@ -138,6 +138,7 @@ calling the shop's own addresses.
 | `somcp_get_seo_settings` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_get_robots_txt` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_generate_robots_txt` | `mcp.seo.write` | `add`, `edit` and `delete` on `AdminMeta` | write |
+| `somcp_audit_page` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running

@@ -20,8 +20,9 @@ declare(strict_types=1);
  * SomcpHttp - everything the module does over HTTP, in one place.
  *
  * Incoming: reading headers that the hosting may have mangled, and writing JSON
- * responses. Outgoing: a single fetch used by the client metadata documents and
- * by the diagnostic, with the guards that fetch needs.
+ * responses. Outgoing: one fetch for documents on other sites and for the
+ * diagnostic, with the guards that fetch needs, and one for the shop's own
+ * public pages, kept to the shop's domains. Both go through the same request.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -328,6 +329,127 @@ class SomcpHttp
             $resolve[] = $host . ':' . $port . ':' . $addresses[0];
         }
 
+        $headers = $jsonBody !== null
+            ? array_merge(['Accept: application/json', 'Content-Type: application/json'], $extraHeaders)
+            : array_merge(['Accept: application/json'], $extraHeaders);
+
+        return self::exchange($url, $resolve, $headers, $jsonBody, $limit, self::FETCH_TIMEOUT);
+    }
+
+    /**
+     * Fetches a public page of the shop itself, as a visitor's browser would.
+     *
+     * The address must be http or https on one of the hosts given, which the
+     * caller takes from the shop's own domains: that list, and not a check of
+     * the resolved address, is what keeps the request on the shop. A shop's
+     * own name may resolve to a private address behind a load balancer, as
+     * the diagnostic already knows, so a public-address guard would refuse
+     * the shop it is meant to read. Redirects are not followed here: each hop
+     * goes back through this method and its host check.
+     *
+     * No cookie and no credential is sent, so the page is the one a visitor
+     * without an account gets, never the employee's.
+     *
+     * @param string $url
+     * @param array<int, string> $hosts lower-case host[:port] the page may be on
+     * @param int $timeout seconds, at least 1
+     * @param int $maxBytes largest body read
+     *
+     * @return array{status:int, body:string, headers:array<string,string>, error:string, truncated:bool}
+     */
+    public static function fetchShopPage(string $url, array $hosts, int $timeout, int $maxBytes): array
+    {
+        $fail = static function (string $message): array {
+            return ['status' => 0, 'body' => '', 'headers' => [], 'error' => $message, 'truncated' => false];
+        };
+
+        if (!function_exists('curl_init')) {
+            return $fail('curl_missing');
+        }
+
+        $authority = self::authority($url);
+        if ($authority === null) {
+            return $fail('invalid_url');
+        }
+        if (!in_array($authority, $hosts, true)) {
+            return $fail('not_this_shop');
+        }
+
+        $response = self::exchange(
+            $url,
+            [],
+            ['Accept: text/html,application/xhtml+xml;q=0.9,*/*;q=0.5'],
+            null,
+            $maxBytes,
+            max(1, $timeout)
+        );
+        $truncated = strlen($response['body']) > $maxBytes;
+        if ($truncated) {
+            $response['body'] = substr($response['body'], 0, $maxBytes);
+        }
+        $response['truncated'] = $truncated;
+
+        return $response;
+    }
+
+    /**
+     * The lower-case host of an http or https address, with its port when it
+     * is not the default one of its scheme - the form ShopUrl stores a domain
+     * in. Null for any other scheme, an address carrying credentials, or one
+     * that is not absolute.
+     *
+     * @param string $url
+     *
+     * @return string|null
+     */
+    public static function authority(string $url): ?string
+    {
+        // parse_url() and curl do not split every odd address the same way: a
+        // backslash or a space can make them disagree on the host, and the
+        // host checked has to be the host reached.
+        if (preg_match('/[\x00-\x20\x7f\\\\]/', $url)) {
+            return null;
+        }
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['host'])) {
+            return null;
+        }
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            return null;
+        }
+        if (isset($parts['user']) || isset($parts['pass'])) {
+            return null;
+        }
+
+        $authority = strtolower((string) $parts['host']);
+        $port = (int) ($parts['port'] ?? 0);
+        if ($port > 0 && $port !== ($scheme === 'https' ? 443 : 80)) {
+            $authority .= ':' . $port;
+        }
+
+        return $authority;
+    }
+
+    /**
+     * One request, without following redirects, its body capped.
+     *
+     * Lengths are counted in bytes with strlen(): curl hands the write
+     * callback raw bytes and aborts the transfer when the count returned
+     * differs. Tools::strlen() counts characters after decoding HTML
+     * entities, so it cut every body holding an accent or an &amp; short.
+     *
+     * @param string $url
+     * @param array<int, string> $resolve CURLOPT_RESOLVE entries pinning the checked address
+     * @param array<int, string> $headers
+     * @param string|null $jsonBody when given, the request is a POST carrying this JSON
+     * @param int $limit largest body read, in bytes
+     * @param int $timeout seconds
+     *
+     * @return array{status:int, body:string, headers:array<string,string>, error:string}
+     */
+    private static function exchange(string $url, array $resolve, array $headers, ?string $jsonBody, int $limit, int $timeout): array
+    {
         $received = '';
         $responseHeaders = [];
 
@@ -336,23 +458,23 @@ class SomcpHttp
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_CONNECTTIMEOUT => self::FETCH_TIMEOUT,
-            CURLOPT_TIMEOUT => self::FETCH_TIMEOUT,
+            CURLOPT_CONNECTTIMEOUT => $timeout,
+            CURLOPT_TIMEOUT => $timeout,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_USERAGENT => self::userAgent(),
-            CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $extraHeaders),
+            CURLOPT_HTTPHEADER => $headers,
             CURLOPT_WRITEFUNCTION => static function ($handle, $chunk) use (&$received, $limit) {
                 $received .= $chunk;
-                if (Tools::strlen($received) > $limit) {
+                if (strlen($received) > $limit) {
                     // Returning less than the chunk length aborts the transfer.
                     return 0;
                 }
 
-                return Tools::strlen($chunk);
+                return strlen($chunk);
             },
             CURLOPT_HEADERFUNCTION => static function ($handle, $line) use (&$responseHeaders) {
-                $length = Tools::strlen($line);
+                $length = strlen($line);
                 $pair = explode(':', $line, 2);
                 if (count($pair) === 2) {
                     $responseHeaders[strtolower(trim($pair[0]))] = trim($pair[1]);
@@ -367,10 +489,6 @@ class SomcpHttp
         if ($jsonBody !== null) {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge(
-                ['Accept: application/json', 'Content-Type: application/json'],
-                $extraHeaders
-            ));
         }
 
         curl_exec($ch);

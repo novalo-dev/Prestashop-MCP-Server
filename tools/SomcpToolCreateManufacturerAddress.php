@@ -174,7 +174,7 @@ class SomcpToolCreateManufacturerAddress extends SomcpToolCreateSupplier
      *
      * @return array<string, mixed>
      */
-    private static function planAddress(array $arguments, int $idShop, array &$errors): array
+    protected static function planAddress(array $arguments, int $idShop, array &$errors): array
     {
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;

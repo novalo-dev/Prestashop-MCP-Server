@@ -109,6 +109,7 @@ calling the shop's own addresses.
 | `somcp_update_manufacturer` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
 | `somcp_set_manufacturer_active` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
 | `somcp_create_manufacturer_address` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
+| `somcp_update_manufacturer_address` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
 | `somcp_create_supplier` | `mcp.catalog.write` | `add` on `AdminSuppliers` | write |
 | `somcp_update_supplier` | `mcp.catalog.write` | `edit` on `AdminSuppliers` | write |
 | `somcp_set_supplier_active` | `mcp.catalog.write` | `edit` on `AdminSuppliers` | write |

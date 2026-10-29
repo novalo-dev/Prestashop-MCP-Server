@@ -36,6 +36,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_manufacturer`
 - `somcp_set_manufacturer_active`
 - `somcp_create_manufacturer_address`
+- `somcp_update_manufacturer_address`
 - `somcp_create_supplier`
 - `somcp_update_supplier`
 - `somcp_set_supplier_active`
@@ -350,6 +351,19 @@ calling it:
 When it succeeds, show the merchant the address as returned. On a lost answer,
 read `somcp_list_manufacturer_addresses` for the brand again rather than
 calling twice: a second call adds a second address.
+
+## Changing a brand address
+
+`somcp_update_manufacturer_address` changes one brand address. Take it from
+`somcp_list_manufacturer_addresses` and read it with
+`somcp_get_manufacturer_address` first, then show the merchant what will change
+and call once they agree. Give only what changes: the rest is kept.
+`id_manufacturer` moves the address to another brand. When the country changes,
+give the state again if the new country has states. Customer and supplier
+addresses are refused. The answer lists each change with its old and new value;
+`changed: false` means the address already held every value given. On a lost
+answer, read it again with `somcp_get_manufacturer_address` before calling
+twice.
 
 ## Creating a supplier
 

@@ -767,6 +767,11 @@
       <source>Add a brand address</source>
       <target>Añadir una dirección de marca</target>
     </trans-unit>
+    <!-- Change a brand address -->
+    <trans-unit id="d43f37faa7918910db2405a2cd150296" resname="Change a brand address">
+      <source>Change a brand address</source>
+      <target>Modificar una dirección de marca</target>
+    </trans-unit>
     <!-- Get a brand -->
     <trans-unit id="9f43ab513afa1940c0b205bd0400e292" resname="Get a brand">
       <source>Get a brand</source>

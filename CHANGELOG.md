@@ -486,6 +486,18 @@ receive an address. The consent screen now says that the catalogue permission
 can create and edit the addresses of brands. It needs the permission
 `mcp.catalog.write` and the `edit` right on the back office brands page.
 
+**Changing a brand address.** The new tool `somcp_update_manufacturer_address`
+changes one brand address with everything the creation can write: brand, last
+name, first name, address, address line 2, postal code, city, country, state,
+DNI, phone, mobile phone and other information. Only what you ask for changes,
+and the answer lists each change with its old and new value; a request that
+would change nothing changes nothing. The fields follow the same rules as at
+creation, checked together with what the address already holds: changing the
+country asks for a state when the new country has states, and the postal code
+must match its format. Giving another brand moves the address to it. Customer
+and supplier addresses cannot be changed through it. It needs the permission
+`mcp.catalog.write` and the `edit` right on the back office brands page.
+
 **Creating a supplier.** The new tool `somcp_create_supplier` creates one
 supplier with the fields of the back office supplier form: name, description,
 phone, mobile phone, address, address line 2, postal code, city, country,

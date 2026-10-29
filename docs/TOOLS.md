@@ -1188,7 +1188,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Not replayable: the read tool to check is `somcp_list_manufacturer_addresses`.
 
 #### `somcp_update_manufacturer_address`
-**State**: to write · [issue #65](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/65)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminManufacturers')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one brand address with everything `somcp_create_manufacturer_address` can write, under the same rules. Only what is given changes.
@@ -1197,9 +1197,15 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 **Parameters** - `id_address` (required), then the fields of `somcp_create_manufacturer_address`, all optional; `id_manufacturer` moves the address to another brand.
 
-**Returns** - `changed`, per field its old and new value, and the address as `somcp_get_manufacturer_address` returns it.
+**Returns** - `changed`, `id_address`, `changes` (per field its old and new value, `country` and `state` as ISO codes), and under `address` the address as `somcp_get_manufacturer_address` returns it. When nothing would change: `changed: false` with a `reason`, and nothing is written.
 
-**Notes** - only brand addresses are accepted, as in `somcp_get_manufacturer_address`. Replayable: the same values again change nothing and say `changed: false`.
+**Notes**
+- Only brand addresses are accepted, by the same test as `somcp_get_manufacturer_address`: a customer, supplier or deleted address, or the address of a brand of another shop, is refused like one that does not exist. Only a whole number is an identifier.
+- Extends `somcp_create_manufacturer_address`: the values given are laid over the stored ones and the whole goes through the creation's checks, since the country decides whether a state or a DNI is required and which postal code format applies. A stored state is not carried over to a new country; give the state again when the new country has states. A new `id_manufacturer` must be a brand of the shop of the token.
+- Only the fields given are compared and written, so a stored value the merchant did not name is never rewritten.
+- The core's own sequence (`EditManufacturerAddressHandler`, the same on 8 and 9): the fields given set on the stored address, then `validateFields()` and `validateFieldsLang()`, then `Address::update()`, so the hooks fire. The alias is left as it is.
+- Every problem is reported at once, and nothing is written until the whole call is valid.
+- Replayable: the same values again change nothing, fire no hook and say `changed: false`.
 
 #### `somcp_delete_manufacturer_address`
 **State**: to write · [issue #66](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/66)

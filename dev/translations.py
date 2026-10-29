@@ -606,6 +606,10 @@ T = {
  "Ajouter une adresse de marque",
  "Añadir una dirección de marca",
  "Markenadresse hinzufügen"),
+"Change a brand address": (
+ "Modifier une adresse de marque",
+ "Modificar una dirección de marca",
+ "Markenadresse ändern"),
 "Get a brand": (
  "Lire une marque",
  "Leer una marca",

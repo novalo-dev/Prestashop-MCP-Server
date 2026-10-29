@@ -35,6 +35,7 @@
     "somcp_update_manufacturer",
     "somcp_set_manufacturer_active",
     "somcp_create_manufacturer_address",
+    "somcp_update_manufacturer_address",
     "somcp_create_supplier",
     "somcp_update_supplier",
     "somcp_set_supplier_active",

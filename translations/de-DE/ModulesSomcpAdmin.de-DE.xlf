@@ -1032,6 +1032,11 @@
       <source>Generate the robots.txt file</source>
       <target>Die Datei robots.txt erzeugen</target>
     </trans-unit>
+    <!-- Change the SEO of a CMS page -->
+    <trans-unit id="39a2ae54e85acae56f94b93320441737" resname="Change the SEO of a CMS page">
+      <source>Change the SEO of a CMS page</source>
+      <target>Das SEO einer CMS-Seite ändern</target>
+    </trans-unit>
     <!-- Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt -->
     <trans-unit id="23d7a2f44f6eb2b665723de3eb177aa3" resname="Change the shop&#x27;s SEO settings, page titles and descriptions, robots.txt and llms.txt">
       <source>Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt</source>

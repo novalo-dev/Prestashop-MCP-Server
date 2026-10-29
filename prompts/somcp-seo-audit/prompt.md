@@ -11,6 +11,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_audit_category_seo`
 - `somcp_audit_cms_seo`
 - `somcp_audit_brand_seo`
+- `somcp_update_cms_seo`
 - `somcp_list_meta_pages`
 - `somcp_get_seo_settings`
 - `somcp_get_robots_txt`
@@ -53,9 +54,15 @@ installation has its own titles, descriptions and URLs.
    you cannot tell.
 4. **Narrow down.** Pass `checks` to work through one problem at a time, and
    `language` to work in one language.
-5. **Propose, do not write.** For each fix, show the merchant the new title or
-   description, in each language of the shop, and wait for their approval. The
-   audit never changes anything.
+5. **Propose, then write what was approved.** For each fix, show the merchant
+   the new title or description, in each language of the shop, and wait for
+   their approval. The audit never changes anything. A CMS page is changed with
+   `somcp_update_cms_seo`, one page per call, only in the languages approved;
+   its `meta_title` is the page's Meta title, which replaces the page title in
+   search results, while the `meta_title` of `somcp_audit_cms_seo` is the page
+   title itself. Changing a friendly URL of a displayed page makes the old
+   address stop working: say so before the call. Read the page again with
+   `somcp_audit_cms_seo` afterwards.
 
 ## Reading the checks
 

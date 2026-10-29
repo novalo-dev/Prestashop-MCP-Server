@@ -133,6 +133,7 @@ calling the shop's own addresses.
 | `somcp_audit_category_seo` | `mcp.seo.read` | `view` on `AdminCategories` | read |
 | `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |
 | `somcp_audit_brand_seo` | `mcp.seo.read` | `view` on `AdminManufacturers` | read |
+| `somcp_update_cms_seo` | `mcp.seo.write` | `edit` on `AdminCmsContent` | write |
 | `somcp_list_meta_pages` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_get_seo_settings` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_get_robots_txt` | `mcp.seo.read` | `view` on `AdminMeta` | read |

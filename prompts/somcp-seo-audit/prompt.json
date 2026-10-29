@@ -10,6 +10,7 @@
     "somcp_audit_category_seo",
     "somcp_audit_cms_seo",
     "somcp_audit_brand_seo",
+    "somcp_update_cms_seo",
     "somcp_list_meta_pages",
     "somcp_get_seo_settings",
     "somcp_get_robots_txt",

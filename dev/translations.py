@@ -818,6 +818,10 @@ T = {
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",
  "Die Datei robots.txt erzeugen"),
+"Change the SEO of a CMS page": (
+ "Modifier le SEO d'une page CMS",
+ "Cambiar el SEO de una página CMS",
+ "Das SEO einer CMS-Seite ändern"),
 "Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt": (
  "Modifier les réglages SEO de la boutique, les titres et descriptions des pages, le robots.txt et le llms.txt",
  "Cambiar los ajustes de SEO de la tienda, los títulos y descripciones de las páginas, el robots.txt y el llms.txt",

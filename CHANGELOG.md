@@ -227,6 +227,17 @@ the consent screen as changing your shop's SEO settings, page titles and
 descriptions, robots.txt and llms.txt, and the same rights as the button: add,
 edit and delete on the back office Traffic & SEO page.
 
+**SEO of a CMS page.** The new tool `somcp_update_cms_seo` changes what search
+engines read of one of your CMS pages (delivery, legal notice, about us...):
+its meta title, meta description, friendly URL and the Indexation by search
+engines switch, the same fields as the page form in Design > Pages. Only the
+languages you give change, and only in the shop you are connected to. The
+assistant shows you the new values before writing them, and warns you when a
+title or description will be cut in search results, or when a new friendly
+URL means the old address of a displayed page stops working. Giving values the
+page already has changes nothing. It needs the permission `mcp.seo.write` and
+the `edit` right on the back office Pages page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

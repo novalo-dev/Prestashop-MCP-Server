@@ -133,6 +133,7 @@ calling the shop's own addresses.
 | `somcp_audit_category_seo` | `mcp.seo.read` | `view` on `AdminCategories` | read |
 | `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |
 | `somcp_audit_brand_seo` | `mcp.seo.read` | `view` on `AdminManufacturers` | read |
+| `somcp_list_meta_pages` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running

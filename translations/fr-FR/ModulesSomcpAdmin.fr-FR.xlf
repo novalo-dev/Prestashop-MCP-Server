@@ -1012,6 +1012,11 @@
       <source>Audit the SEO of brands</source>
       <target>Auditer le SEO des marques</target>
     </trans-unit>
+    <!-- List the shop pages and their SEO -->
+    <trans-unit id="5c7906132b64fb8c0ca2df517f685f09" resname="List the shop pages and their SEO">
+      <source>List the shop pages and their SEO</source>
+      <target>Lister les pages de la boutique et leur SEO</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

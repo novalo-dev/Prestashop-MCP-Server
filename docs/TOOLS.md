@@ -2515,7 +2515,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 - A call that changes nothing writes nothing and answers `changed: false`.
 
 #### `somcp_list_meta_pages`
-**State**: to write · [issue #87](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/87)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
 **Does** - lists the shop's own pages (home, contact, new products, best sales, search...) with their title, description and friendly URL.
@@ -2526,12 +2526,15 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code, shop default otherwise; refused when the shop does not have it |
 
-**Returns** - per page: `id_meta`, `page` (the controller name), `title`, `description`, `url_rewrite`, `url`, `configurable`.
+**Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `title`, `description`, `url_rewrite`, `url`, `configurable`. Plus `count` and the `language` read.
 
 **Notes**
-- Read through `Meta`, as the Traffic & SEO page lists them.
+- Read from `meta` and `meta_lang` of the token's shop, as the Traffic & SEO page lists them, in one query, without paging: a shop has a few dozen pages.
+- The back office lists only the pages whose `configurable` is true. The others - the product, category and CMS templates and some payment module pages - are returned too, with `configurable: false`, empty texts and `url: null`: their texts come from each product, category or page.
+- `url` is the public address the storefront builds: `Link::getModuleLink()` for a module page (`module-<module>-<controller>`), `Link::getPageLink()` otherwise. The home page has no `url_rewrite`.
+- `meta_lang` also holds `keywords` on PrestaShop 8, a field PrestaShop 9 no longer has: it is not returned.
 
 #### `somcp_update_meta_page`
 **State**: to write · [issue #88](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/88)

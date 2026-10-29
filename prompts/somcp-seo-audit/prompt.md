@@ -11,6 +11,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_audit_category_seo`
 - `somcp_audit_cms_seo`
 - `somcp_audit_brand_seo`
+- `somcp_list_meta_pages`
 
 ## Know which shop you are in
 
@@ -23,9 +24,11 @@ installation has its own titles, descriptions and URLs.
 1. **Audit first.** Call `somcp_audit_product_seo` without `checks` for the
    whole picture, `somcp_audit_category_seo` for the category pages and
    `somcp_audit_cms_seo` for the CMS pages (delivery, legal notice...) and
-   `somcp_audit_brand_seo` for the brand pages. Read `counts`: it covers the
-   whole catalogue, while `products` or `categories` is one page; `pages` and
-   `brands` list everything at once. Read the next page with `offset` while
+   `somcp_audit_brand_seo` for the brand pages; `somcp_list_meta_pages` shows
+   the shop's own pages (home, contact, new products, search...) with their
+   titles and descriptions. Read `counts`: it covers the whole catalogue, while
+   `products` or `categories` is one page; `pages` and `brands` list
+   everything at once. Read the next page with `offset` while
    `total_count` says there is more, before saying that is all.
 2. **Sort by effect on sales.** The products that sell, or should, come first;
    a missing title on a best seller matters more than a long description on a
@@ -64,6 +67,11 @@ installation has its own titles, descriptions and URLs.
 - For brands, `products_count` says how many products carry the brand: start
   with the brands that carry the most. `inactive_with_products` is a disabled
   brand whose page is gone while products still show it.
+- For the shop's own pages, look at the ones a visitor can land on from a
+  search: home, new products, best sales, prices drop, contact, stores. An empty
+  title or description there matters; on the account, cart and checkout pages
+  it does not. A page with `configurable: false` is a template whose texts come
+  from each product, category or CMS page: never report it as empty.
 - `inactive_without_redirect` is checked only with `active: false`: an inactive
   product whose page sends no redirection leaves a dead address. Changing a URL
   or a redirection of a live page makes the old address stop working: say so
@@ -82,3 +90,4 @@ installation has its own titles, descriptions and URLs.
 - "Quelles catégories n'ont pas de description ?"
 - "Mes pages CMS sont-elles bien optimisées ?"
 - "Which brands have no logo or description?"
+- "Quel est le titre de ma page d'accueil dans Google ?"

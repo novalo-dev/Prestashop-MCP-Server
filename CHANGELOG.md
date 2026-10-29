@@ -184,6 +184,16 @@ you read the brand, so you can start with the ones that matter. It lists every
 brand, enabled or not. It only reads: nothing is changed. It needs the
 permission `mcp.seo.read` and the `view` right on the back office Brands page.
 
+**Shop pages and their SEO.** The new tool `somcp_list_meta_pages` lists the
+pages of your shop shown under Shop Parameters > Traffic & SEO - home, contact,
+new products, best sales, search, account and checkout pages, and the pages of
+modules - with their meta title, meta description, friendly URL and public
+address, in the language you choose. The product, category and CMS page
+templates, which that page does not list because their texts come from each
+product, category or page, are shown as such rather than as pages with no
+title. It only reads: nothing is changed. It needs the permission
+`mcp.seo.read` and the `view` right on the back office Traffic & SEO page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

@@ -121,6 +121,16 @@ PrestaShop 8, a note too long for the shop to store is refused instead of being
 cut. It needs the permission `mcp.orders.write` and the `edit` right on the back
 office orders page.
 
+**Order payments.** The new tool `somcp_add_order_payment` records a payment you
+received for an order - a bank wire or a cheque that arrived, a part payment -
+like the Payment block of the order page: amount, payment method, currency,
+date, transaction ID, and the invoice when the order has one. The amount paid
+of the order goes up, and the assistant tells you what is still due. The order
+status does not change: marking the order paid stays a separate step, which the
+assistant only takes if you ask. On PrestaShop 9, the payment shows the employee
+who recorded it. A zero or negative amount is refused. It needs the permission
+`mcp.orders.write` and the `edit` right on the back office orders page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

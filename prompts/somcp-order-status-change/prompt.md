@@ -13,6 +13,7 @@ of it can be undone by calling again.
 - `somcp_set_order_tracking`
 - `somcp_add_order_message`
 - `somcp_set_order_note`
+- `somcp_add_order_payment`
 
 ## Know which shop you are in
 
@@ -85,6 +86,21 @@ with the order and `note`. Nobody is emailed.
 - An empty note (`""`) clears it. Only when the merchant asked for that.
 - A message the customer should read is `somcp_add_order_message`, not a note.
 
+## A payment received
+
+When the merchant says money arrived for an order - a bank wire, a cheque, a
+part payment - record the payment first with `somcp_add_order_payment` (the
+order, `amount`, `payment_method`, and `currency` or `payment_date` when they
+are not the order's currency or today), then change the status if the merchant
+wants it.
+
+- Recording a payment **never changes the status**. Read `remaining` in the
+  answer: tell the merchant whether the order is now fully paid, and offer the
+  paid status only then, through the workflow above.
+- When the order has an invoice, `id_order_invoice` is required: take it from
+  `documents.invoices` of `somcp_get_order`, never guess it.
+- A refund is not a negative payment: it is refused.
+
 ## Several orders
 
 One call per order. Never present a batch as one action.
@@ -98,10 +114,11 @@ that failed.
 
 **Do not repeat the call.** Call `somcp_get_order` and read the current status.
 It also gives each shipment with its tracking number, the messages of the
-order, its note and the documents it produced, so you can see whether an
-invoice or a delivery slip came with the change, or whether a message or a note
-was saved. A message is never refused as a repeat: sent twice, the customer
-gets it twice.
+order, its note, its payments and the documents it produced, so you can see
+whether an invoice or a delivery slip came with the change, or whether a
+message, a note or a payment was saved. A message or a payment is never refused
+as a repeat: a message sent twice reaches the customer twice, a payment
+recorded twice is counted twice.
 
 A repeated call is the likeliest way this ends with a customer receiving two
 emails. The shop refuses a status the order already has, which catches most of

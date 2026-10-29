@@ -11,7 +11,8 @@
     "somcp_set_order_status",
     "somcp_set_order_tracking",
     "somcp_add_order_message",
-    "somcp_set_order_note"
+    "somcp_set_order_note",
+    "somcp_add_order_payment"
   ],
   "controller": "AdminOrders",
   "action": "edit",

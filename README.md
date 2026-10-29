@@ -83,6 +83,7 @@ calling the shop's own addresses.
 | `somcp_set_order_tracking` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_add_order_message` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_set_order_note` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+| `somcp_add_order_payment` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_search_products` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
 | `somcp_get_product` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
 | `somcp_list_categories` | `mcp.catalog.read` | `view` on `AdminCategories` | read |

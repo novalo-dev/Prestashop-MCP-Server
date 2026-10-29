@@ -782,6 +782,10 @@ T = {
  "Renseigner la note privée d'une commande",
  "Indicar la nota privada de un pedido",
  "Die private Notiz einer Bestellung eintragen"),
+"Record a payment for an order": (
+ "Enregistrer un paiement pour une commande",
+ "Registrar un pago de un pedido",
+ "Eine Zahlung für eine Bestellung erfassen"),
 "view": (
  "voir",
  "ver",

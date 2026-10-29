@@ -583,6 +583,73 @@ The limit is read from `Order::$definition`, not from the version.
 Not replayable: a lost answer is checked with `somcp_get_order`, whose
 `order.note` shows the saved text.
 
+#### `somcp_add_order_payment`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - records one payment received for one order - a bank wire or a cheque
+that arrived, a part payment - as the **Payment** block of the order page does.
+
+**Do not use for** - refunds (credit slips, a later Billing tool), or marking the
+order paid (→ `somcp_set_order_status`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference |
+| `amount` | number | yes | greater than 0, in `currency` |
+| `payment_method` | string | yes | as the merchant would type it, for example "Bank wire"; 255 characters at most, without `< > = { }` |
+| `currency` | string | no | ISO code; the order's currency by default |
+| `payment_date` | string | no | ISO 8601; now by default |
+| `transaction_id` | string | no | the bank's or the processor's reference, 254 characters at most |
+| `id_order_invoice` | integer | when the order has an invoice | from `somcp_get_order` (`documents.invoices`), never guessed |
+
+**Returns** - `added`, `order` (`id_order` and `reference`), `id_order_payment`,
+`amount`, `currency`, `payment_method`, `transaction_id`, `payment_date` (in the
+shop's time), `total_paid_real` after the payment, `total_tax_included` of the
+order, `order_currency`, `remaining` (what is still due, never below zero), and
+`warning` when the payment row was added but the order or its invoice could not
+be fully updated.
+
+**Notes** - the block holds a table (Date, Payment method, Transaction ID,
+Amount, Invoice, and **Employee** on 9.0.0 only) and a line to add one: date,
+payment method, transaction ID, amount, currency, and the invoice when the order
+has one, then **Add**.
+
+The checks are those of `AddPaymentCommand`, identical on 8.0.1 and 9.0.0: the
+payment method is required and must not hold the characters of
+`INVALID_CHARACTERS_NAME` (`< > = { }`, the rule of `Validate::isGenericName()`);
+the amount must not be negative (`NegativePaymentAmountException`), and zero is
+refused too, since a zero payment records nothing useful; the currency must
+exist in the order's shop. When the order has an invoice, an
+`id_order_invoice` of this order is required - the core only checks that it
+exists, this tool also checks that it belongs to the order - and the call is
+refused with the list of invoices otherwise; when the order has none, it is
+ignored. Then `Order::addOrderPayment()`, as `AddPaymentHandler` calls it, adds
+the `order_payment` row, converts the amount into the order's currency when the
+currencies differ and raises `orders.total_paid_real`. It does **not** change
+the order status: marking the order paid stays a separate call to
+`somcp_set_order_status`.
+
+**Difference between versions** - on 9.0.0 `addOrderPayment()` takes the
+employee as a seventh argument and stores it in `order_payment.id_employee`;
+that argument and that column do not exist on 8.0.1. The token's employee is
+passed only when the method's signature has that argument, read by reflection,
+not from the version.
+
+`addOrderPayment()` does not return the new row: `id_order_payment` is the
+highest payment id of the order's reference after the call, compared with the
+one before. A date given as a day alone gets the time of the call, as the core
+does; relative dates ("tomorrow") and impossible ones (February 31st) are
+refused.
+
+One payment per call. Not replayable: a payment added twice is money counted
+twice. A lost answer is checked with `somcp_get_order`, whose `payments` lists
+it. The card fields of `order_payment` (`card_number`, `card_brand`,
+`card_expiration`, `card_holder`) are not on the screen and are not taken.
+
 ### Billing
 
 The accounting records an order produces: invoices, credit slips, delivery

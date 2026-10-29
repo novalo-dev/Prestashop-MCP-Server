@@ -987,6 +987,11 @@
       <source>Set the private note of an order</source>
       <target>Set the private note of an order</target>
     </trans-unit>
+    <!-- Record a payment for an order -->
+    <trans-unit id="07b372bf62c3cccfdf5b3bf7c6ce8b8d" resname="Record a payment for an order">
+      <source>Record a payment for an order</source>
+      <target>Record a payment for an order</target>
+    </trans-unit>
     <!-- view -->
     <trans-unit id="1bda80f2be4d3658e0baa43fbe7ae8c1" resname="view">
       <source>view</source>

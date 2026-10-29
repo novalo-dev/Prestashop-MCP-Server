@@ -163,6 +163,17 @@ categories, which have no page of their own. It only reads: nothing is changed.
 It needs the permission `mcp.seo.read` and the `view` right on the back office
 categories page.
 
+**CMS page SEO audit.** The new tool `somcp_audit_cms_seo` lists the CMS pages
+(delivery, legal notice, about us...) whose search engine fields have a
+problem, language by language, and names the problem: a title too long or
+shared with another page, a missing or too long meta description, a content
+under 150 words, a friendly URL shared with another page, and a page set not to
+be indexed by search engines. The title checked is the one search engines read:
+the page's meta title when you filled it, its title otherwise. It judges titles
+and descriptions exactly as the product SEO audit does, and lists every page,
+shown or not. It only reads: nothing is changed. It needs the permission
+`mcp.seo.read` and the `view` right on the back office Pages page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

@@ -9,6 +9,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_ping`
 - `somcp_audit_product_seo`
 - `somcp_audit_category_seo`
+- `somcp_audit_cms_seo`
 
 ## Know which shop you are in
 
@@ -19,9 +20,10 @@ installation has its own titles, descriptions and URLs.
 ## Workflow
 
 1. **Audit first.** Call `somcp_audit_product_seo` without `checks` for the
-   whole picture, and `somcp_audit_category_seo` for the category pages.
+   whole picture, `somcp_audit_category_seo` for the category pages and
+   `somcp_audit_cms_seo` for the CMS pages (delivery, legal notice...).
    Read `counts`: it covers the whole catalogue, while `products` or
-   `categories` is one page. Read the next page with `offset` while
+   `categories` is one page; `pages` lists every CMS page at once. Read the next page with `offset` while
    `total_count` says there is more, before saying that is all.
 2. **Sort by effect on sales.** The products that sell, or should, come first;
    a missing title on a best seller matters more than a long description on a
@@ -52,6 +54,11 @@ installation has its own titles, descriptions and URLs.
   to rank on, `empty_category` a displayed category with no active product to
   list, and `no_cover_image` a category without its cover. The root and Home
   categories are never audited: they have no page of their own.
+- For CMS pages, the title checked is the one search engines read: the meta
+  title when filled, the page title otherwise. `content_short` gives the number
+  of words of the content, and `not_indexable` a page set to stay out of search
+  results - often deliberate for legal pages, so ask before proposing to
+  change it.
 - `inactive_without_redirect` is checked only with `active: false`: an inactive
   product whose page sends no redirection leaves a dead address. Changing a URL
   or a redirection of a live page makes the old address stop working: say so
@@ -68,3 +75,4 @@ installation has its own titles, descriptions and URLs.
 - "Which products have no meta description?"
 - "Mes fiches produits sont-elles bien référencées ?"
 - "Quelles catégories n'ont pas de description ?"
+- "Mes pages CMS sont-elles bien optimisées ?"

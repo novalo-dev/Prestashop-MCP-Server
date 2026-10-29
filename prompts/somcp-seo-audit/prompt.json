@@ -7,7 +7,8 @@
   "tools": [
     "somcp_ping",
     "somcp_audit_product_seo",
-    "somcp_audit_category_seo"
+    "somcp_audit_category_seo",
+    "somcp_audit_cms_seo"
   ],
   "controller": "AdminMeta",
   "action": "view",

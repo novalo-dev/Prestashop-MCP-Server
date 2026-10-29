@@ -794,6 +794,10 @@ T = {
  "Auditer le SEO des catégories",
  "Auditar el SEO de las categorías",
  "Das SEO der Kategorien prüfen"),
+"Audit the SEO of CMS pages": (
+ "Auditer le SEO des pages CMS",
+ "Auditar el SEO de las páginas CMS",
+ "Das SEO der CMS-Seiten prüfen"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",

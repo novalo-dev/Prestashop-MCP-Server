@@ -131,6 +131,7 @@ calling the shop's own addresses.
 | `somcp_set_stock_quantity` | `mcp.stock.write` | `edit` on `AdminStockManagement` | write |
 | `somcp_audit_product_seo` | `mcp.seo.read` | `view` on `AdminProducts` | read |
 | `somcp_audit_category_seo` | `mcp.seo.read` | `view` on `AdminCategories` | read |
+| `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running

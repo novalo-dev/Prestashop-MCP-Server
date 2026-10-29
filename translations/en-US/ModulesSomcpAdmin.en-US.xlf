@@ -1002,6 +1002,11 @@
       <source>Audit the SEO of categories</source>
       <target>Audit the SEO of categories</target>
     </trans-unit>
+    <!-- Audit the SEO of CMS pages -->
+    <trans-unit id="a51707660b4abe62470a906cadba7686" resname="Audit the SEO of CMS pages">
+      <source>Audit the SEO of CMS pages</source>
+      <target>Audit the SEO of CMS pages</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

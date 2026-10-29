@@ -403,8 +403,7 @@ class Somcp extends Module
         $version = urlencode($this->version);
 
         $this->context->smarty->assign([
-            // Encoded here, with every flag that keeps the JSON from closing
-            // the script element: the template prints it as it is.
+            // Encoded here, escaped by the template into an attribute.
             'somcp_assistant_config' => (string) json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
             'somcp_assistant_css' => $base . 'css/assistant.css?v=' . $version,
             'somcp_assistant_js' => $base . 'js/assistant.js?v=' . $version,

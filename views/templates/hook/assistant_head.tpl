@@ -14,11 +14,9 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License v3.0 (AFL-3.0)
  *}
 
-{* The built-in assistant's stylesheet, its settings and its script, printed in
-   the head of every back office page by displayBackOfficeHeader. The settings
-   are JSON encoded by the hook with JSON_HEX_TAG, JSON_HEX_AMP, JSON_HEX_APOS
-   and JSON_HEX_QUOT, so they cannot close the script element or open another
-   one: escaping them again here would only break the JSON. *}
+{* The built-in assistant's stylesheet and its script, printed in the head of
+   every back office page by displayBackOfficeHeader. The settings ride on the
+   script tag as an escaped attribute, which the script parses: the Addons
+   validator refuses nofilter, and an attribute needs no inline script. *}
 <link rel="stylesheet" href="{$somcp_assistant_css|escape:'html':'UTF-8'}">
-<script>window.somcpAssistant = {$somcp_assistant_config nofilter};</script>
-<script src="{$somcp_assistant_js|escape:'html':'UTF-8'}" defer></script>
+<script id="somcp-assistant-js" src="{$somcp_assistant_js|escape:'html':'UTF-8'}" data-config="{$somcp_assistant_config|escape:'html':'UTF-8'}" defer></script>

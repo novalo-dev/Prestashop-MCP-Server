@@ -122,6 +122,9 @@ PrestaShop 9 class once took the whole PrestaShop 8 back office down.
 - **No HTML in PHP.** Markup goes in a Smarty template under `views/templates`,
   which the PHP fills; the validator refuses HTML written in PHP strings. The
   Semgrep rules of the Security job check both.
+- **No `nofilter` in a template.** The validator refuses it. Every variable is
+  escaped for where it lands; data for a script goes in an escaped `data-`
+  attribute that the script parses. Semgrep checks this too.
 - **Reuse before writing.** If the logic exists somewhere in the module, call
   it. A second version of the same rule is how two parts of the module end up
   disagreeing.

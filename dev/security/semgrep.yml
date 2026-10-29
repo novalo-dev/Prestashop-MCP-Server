@@ -107,11 +107,12 @@ rules:
     message: >-
       A Smarty variable printed without |escape (or a cast). Escape it for
       where it lands: |escape:'html':'UTF-8', 'htmlall', 'javascript' or 'url'.
-      nofilter is for HTML the module built itself, and says so.
+      nofilter is refused too: the Addons validator reports it. Data for a
+      script goes in an escaped data- attribute that the script parses.
     patterns:
       - pattern-regex: \{\$[A-Za-z_][^}]*\}
-      # A modifier that makes the value safe, or an explicit nofilter, is fine.
-      - pattern-not-regex: \{\$[^}]*(\|escape|\|intval|\|floatval|\|json_encode|\|count|\|@count|nofilter)[^}]*\}
+      # A modifier that makes the value safe is fine; nofilter is not.
+      - pattern-not-regex: \{\$[^}]*(\|escape|\|intval|\|floatval|\|json_encode|\|count|\|@count)[^}]*\}
 
   - id: somcp-context-getcontext
     languages: [php]

@@ -108,9 +108,10 @@ documents are now read in full, up to the usual size limit.
 **PrestaShop Addons validation.** The validator reported the built-in
 assistant's button and loader as HTML written in PHP, four places reading the
 shop context the way PrestaShop 9 deprecates, and, in the test builds, a
-missing `.htaccess`. The button and the loader are now Smarty templates, the
-context is read the module's usual way, and the test builds carry the
-`.htaccess` again. Nothing changes on screen.
+missing `.htaccess`, then the assistant's settings printed without escaping.
+The button and the loader are now Smarty templates, the context is read the
+module's usual way, the settings are escaped like every other value, and the
+test builds carry the `.htaccess` again. Nothing changes on screen.
 
 ### Added
 

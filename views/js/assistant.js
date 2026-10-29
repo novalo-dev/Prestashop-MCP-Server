@@ -26,7 +26,14 @@
 (function () {
     'use strict';
 
-    var config = window.somcpAssistant;
+    // The settings come escaped in an attribute of this script's own tag.
+    var tag = document.getElementById('somcp-assistant-js');
+    var config = null;
+    try {
+        config = JSON.parse((tag && tag.getAttribute('data-config')) || 'null');
+    } catch (e) {
+        config = null;
+    }
     if (!config || !config.endpoint || document.getElementById('somcp-chat')) {
         return;
     }

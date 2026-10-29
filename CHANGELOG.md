@@ -71,7 +71,7 @@ keeps its meaning and is saved the same way.
 text field where host names had to be typed separated by spaces. Each address
 is now a tag, as for a product's tags: type it and press Enter, remove it with
 its cross. Under the field, the clients the module works with (Claude,
-ChatGPT, Make, n8n Cloud, VS Code, Cursor) can be added in one click. The
+ChatGPT, Make, n8n Cloud, VS Code, Cursor, Mistral's Le Chat) can be added in one click. The
 setting is saved as before.
 
 **Updates.** When a new version is available, a second notice under it reminds

@@ -488,6 +488,16 @@ the shop the assistant is connected to is changed. The consent screen now says
 that the catalogue permission can edit suppliers. It needs the permission
 `mcp.catalog.write` and the `edit` right on the back office suppliers page.
 
+**Enabling or disabling a supplier.** The new tool `somcp_set_supplier_active`
+enables or disables one supplier, like the Enabled toggle of the back office
+supplier list, and changes nothing else. A disabled supplier no longer has its
+page on the storefront, but it stays attached to its products: the assistant is
+told to say so. Asking for the state the supplier already has writes nothing.
+PrestaShop keeps Enabled once for all shops, so on a multistore installation the
+change shows in every shop sharing the supplier, as in the back office. It needs
+the permission `mcp.catalog.write` and the `edit` right on the back office
+suppliers page.
+
 **Reading the stock of a product.** The new tool `somcp_get_stock` gives the
 stock of one product as the storefront sells against it: the quantity that can
 still be sold, the physical quantity and the quantity held by orders not shipped

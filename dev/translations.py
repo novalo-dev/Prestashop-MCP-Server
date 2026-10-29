@@ -626,6 +626,10 @@ T = {
  "Modifier un fournisseur",
  "Modificar un proveedor",
  "Einen Lieferanten ändern"),
+"Enable or disable a supplier": (
+ "Activer ou désactiver un fournisseur",
+ "Activar o desactivar un proveedor",
+ "Einen Lieferanten aktivieren oder deaktivieren"),
 "List attributes": (
  "Lister les attributs",
  "Listar los atributos",

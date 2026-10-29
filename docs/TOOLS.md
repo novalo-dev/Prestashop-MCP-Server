@@ -1309,7 +1309,7 @@ The name and every contact field are one string each, the same in every language
 - Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address cannot be compared with a stored file.
 
 #### `somcp_set_supplier_active`
-**State**: to write · [issue #61](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/61)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminSuppliers')` · **Scope**: `mcp.catalog.write`
 
 **Does** - switches one supplier on or off: the **Enabled** toggle of the back office supplier list, and nothing else.
@@ -1320,12 +1320,18 @@ The name and every contact field are one string each, the same in every language
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_supplier` | integer | yes |  |
+| `id_supplier` | integer | yes | from `somcp_list_suppliers` |
 | `active` | boolean | yes |  |
 
-**Returns** - `changed`, `active`. When it is already in that state: `changed: false` and nothing happens.
+**Returns** - `changed`, `id_supplier`, `active`. When it is already in that state: `changed: false` with a `reason`, and nothing is written.
 
-**Notes** - a disabled supplier stays attached to its products; only its page on the storefront goes.
+**Notes**
+- A disabled supplier stays attached to its products, with their supplier references and purchase prices; only its page on the storefront goes. The description says so, so the merchant is not surprised.
+- A supplier of another shop, or an identifier that does not exist, is refused like one that does not exist, by the same test of the shop as `somcp_get_supplier`.
+- The core's own sequence (`ToggleSupplierStatusHandler`, on 8 and 9): `Supplier::toggleStatus()`, which flips `active` and saves the supplier narrowed to that field, so the object hooks fire. Here the save is the same `Supplier::update()` narrowed to `active`, but the value asked for is written rather than flipped.
+- Multistore: PrestaShop keeps Enabled in `supplier`, not per shop, so the change shows in every shop sharing the supplier, as the back office toggle does. The description says so. The update runs in the shop of the token (`id_shop_list`), so it never attaches the supplier to another shop.
+- `active` must be a boolean: a string such as `"false"` is refused rather than read as true. Only a whole number is an identifier.
+- Not replayable: the read tool to check is `somcp_get_supplier`.
 
 #### `somcp_list_attributes`
 **State**: written

@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "the demo supplier Fashion supplier enabled first, whatever another scenario left it in", "arguments": {"id_supplier": 1, "active": true}, "expect": "ok", "contains": ["\"id_supplier\": 1", "\"active\": true"]},
+    {"why": "the demo supplier Fashion supplier disabled", "arguments": {"id_supplier": 1, "active": false}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": false"]},
+    {"why": "disabled again, nothing changes", "arguments": {"id_supplier": 1, "active": false}, "expect": "ok", "contains": ["\"changed\": false", "already disabled"]},
+    {"why": "enabled again, with the identifier as a string", "arguments": {"id_supplier": "1", "active": true}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": true"]},
+    {"why": "enabled again, nothing changes", "arguments": {"id_supplier": 1, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "already enabled"]},
+    {"why": "a state given as a string is refused", "arguments": {"id_supplier": 1, "active": "false"}, "expect": "error", "contains": ["true or false"]},
+    {"why": "an identifier given as a list is not read as supplier 1", "arguments": {"id_supplier": [1], "active": false}, "expect": "error", "contains": ["No supplier of this shop"]},
+    {"why": "a supplier that does not exist", "arguments": {"id_supplier": 999999, "active": false}, "expect": "error", "contains": ["No supplier of this shop", "Nothing was changed"]}
+  ]
+}

@@ -792,6 +792,11 @@
       <source>Change a supplier</source>
       <target>Einen Lieferanten ändern</target>
     </trans-unit>
+    <!-- Enable or disable a supplier -->
+    <trans-unit id="2e9ddb054559204b4524f4cbe705ffef" resname="Enable or disable a supplier">
+      <source>Enable or disable a supplier</source>
+      <target>Einen Lieferanten aktivieren oder deaktivieren</target>
+    </trans-unit>
     <!-- List attributes -->
     <trans-unit id="54ffb845ff62b05780e0e7edcf23707a" resname="List attributes">
       <source>List attributes</source>

@@ -35,6 +35,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_set_manufacturer_active`
 - `somcp_create_supplier`
 - `somcp_update_supplier`
+- `somcp_set_supplier_active`
 - `somcp_create_attribute_group`
 - `somcp_update_attribute_group`
 - `somcp_create_attribute_value`
@@ -361,6 +362,16 @@ When it succeeds, show the merchant each change with its old and new value, the
 `seo_warnings`, and the logo if it was refused, with its reason.
 `changed: false` means the supplier already held those values. On a lost
 answer, read the supplier again with `somcp_get_supplier` before calling twice.
+
+## Enabling or disabling a supplier
+
+`somcp_set_supplier_active` enables or disables one supplier, and changes
+nothing else: use it rather than `somcp_update_supplier` when the merchant only
+asks for that. Take the supplier from `somcp_list_suppliers` and name it. Tell
+the merchant that disabling it hides its page on the storefront, while it stays
+attached to its products. On a multistore installation the change shows in
+every shop sharing the supplier. `changed: false` means it was already in that
+state. On a lost answer, read it with `somcp_get_supplier` before calling twice.
 
 ## Creating an attribute group
 

@@ -107,9 +107,11 @@ documents are now read in full, up to the usual size limit.
 
 **Assistant button in the header.** On a multistore shop, the pages where the
 shop list replaces "View my shop" left the button at the far right of the
-header, and on PrestaShop 9 it was drawn in a grey that does not match the
-header. It now sits right after the shop list or "View my shop", in the same
-colour as that link.
+header, on PrestaShop 9 it was drawn in a grey that does not match the
+header, and a click left a ring and a highlight on it. It now sits right after
+the shop list or "View my shop" - or just before the notification bell on a
+page that shows neither - in the same colour as that link, and a click leaves
+it as it was.
 
 **Your assistants list.** On PrestaShop 9 the list of assistants in the
 Built-in assistant tab ran into the edges of its panel. It now has the same

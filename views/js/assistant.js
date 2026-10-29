@@ -645,26 +645,37 @@
 
     // The button is printed by the server through the displayBackOfficeTop
     // hook, at the end of the header bar. It is moved right after "View my
-    // shop" - or after the shop list that replaces it on a multistore shop -
-    // and left where the hook put it when neither is on the page. A page that
-    // prints no header at all gets a floating button.
+    // shop", or after the shop list that replaces it on a multistore shop.
+    // When a page shows neither, it goes just before the notification bell,
+    // which is where they would have been; with no bell either, it stays
+    // where the hook put it. A page that prints no header gets a floating
+    // button.
     function placeButton() {
         var button = document.getElementById('somcp-chat-button');
         if (button) {
             var holder = document.getElementById('somcp-chat-component');
             var shop = document.getElementById('header_shopname');
-            // Symfony pages wrap the link or the shop list in one container;
-            // legacy pages put either in the #header-list list.
-            var after = document.getElementById('header-shop-list-container')
-                || document.getElementById('header-list')
-                || (shop ? (shop.closest('li, .component') || shop.parentNode) : null);
+            // The legacy pages hold the link or the list in #header-list, the
+            // Symfony pages in .shop-list - wrapped in #header-shop-list-container
+            // on some of them, directly in the header on others.
+            var after = document.querySelector('#header-shop-list-container, #header-list');
+            if (!after) {
+                var list = document.querySelector('#header_shopname, #shop-list');
+                after = list ? (list.closest('.shop-list') || list) : null;
+            }
+            var before = after ? null : document.querySelector('#header-notifications-container, #notification');
+            if (before && before.id === 'notification') {
+                before = before.closest('.header-list') || before;
+            }
             if (holder && after && after.parentNode && !after.contains(holder)) {
                 after.parentNode.insertBefore(holder, after.nextSibling);
+            } else if (holder && before && before.parentNode) {
+                before.parentNode.insertBefore(holder, before);
             }
             // The header colours differ between PrestaShop versions and pages,
-            // so the button takes the colour of the link it sits beside rather
-            // than one written here.
-            var model = shop || document.querySelector('#shop-list > .btn, #header_shop');
+            // so the button takes the colour of the link it sits beside - or of
+            // the bell when it sits before it - rather than one written here.
+            var model = shop || document.querySelector('#shop-list > .btn, #header_shop, #header-notifications-container .notification, #notification .notification');
             if (holder && model && window.getComputedStyle) {
                 holder.style.setProperty('--somcp-header-color', window.getComputedStyle(model).color);
             }

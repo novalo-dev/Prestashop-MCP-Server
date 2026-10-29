@@ -122,6 +122,42 @@ class SomcpHttp
      */
     public static function json(array $payload, int $status = 200, array $headers = []): void
     {
+        self::emit($payload, $status, $headers, false);
+        exit;
+    }
+
+    /**
+     * Sends a JSON body, closes the connection, and lets the request go on.
+     *
+     * For work that outlives the answer: the client has what it needs at once,
+     * and leaving the page no longer stops the work. Some servers - LiteSpeed
+     * among them - end PHP as soon as the visitor goes, whatever
+     * ignore_user_abort() says; once the response is finished, nobody is left
+     * to go.
+     *
+     * @param array<string, mixed> $payload
+     */
+    public static function jsonAndContinue(array $payload): void
+    {
+        self::emit($payload, 200, [], true);
+        if (function_exists('litespeed_finish_request')) {
+            litespeed_finish_request();
+        } elseif (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+    }
+
+    /**
+     * Writes a JSON response.
+     *
+     * @param array<string, mixed> $payload
+     * @param int $status
+     * @param array<string, string> $headers
+     * @param bool $detach true to tell the client the response is complete,
+     *                     so it stops waiting while the request goes on
+     */
+    private static function emit(array $payload, int $status, array $headers, bool $detach): void
+    {
         $body = self::encode($payload);
 
         if ($body !== null && json_last_error() !== JSON_ERROR_NONE) {
@@ -161,9 +197,17 @@ class SomcpHttp
             ob_end_clean();
         }
 
+        if ($detach) {
+            // Without a length and a close, a server without a finish
+            // function keeps the client waiting until the script ends.
+            $headers['Content-Length'] = (string) strlen($body);
+            $headers['Connection'] = 'close';
+        }
         self::sendHeaders($status, 'application/json; charset=utf-8', $headers);
         echo $body;
-        exit;
+        if ($detach) {
+            flush();
+        }
     }
 
     /**

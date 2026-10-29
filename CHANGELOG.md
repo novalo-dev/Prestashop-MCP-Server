@@ -29,11 +29,13 @@ now returns its tags as well, so they can be read, changed and written back.
 ### Changed
 
 **The built-in assistant across pages.** Reloading or leaving a page while
-the assistant was answering made the new page wait until the answer was done.
-The page now loads at once: the answer carries on in the background and
-appears in the chat - or the change waiting for approval does - when it is
+the assistant was answering made the new page wait until the answer was done,
+and on some servers it stopped the answer altogether: the message was lost and
+the chat stayed on "Working..." for minutes. The message is now taken at once
+and the answer is worked out in the background, whatever the page does next;
+it appears in the chat - or the change waiting for approval does - when it is
 ready. The chat also stays open from one back office page to the next, in the
-same browser tab.
+same browser tab, on the conversation it was showing.
 
 **The built-in assistant knows the time.** It was given the date only, so it
 greeted again in the middle of a conversation and spoke the same way morning

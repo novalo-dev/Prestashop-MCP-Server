@@ -114,6 +114,14 @@ class AdminSomcpAssistantController extends ModuleAdminController
         $chat->openOn((string) Tools::getValue('page'));
         $action = (string) Tools::getValue('somcp_action');
 
+        // The chat gets its answer as soon as the model is about to be called,
+        // and the request goes on alone: see SomcpHttp::jsonAndContinue().
+        $answered = false;
+        $chat->answerEarly(function (array $view) use ($chat, &$answered): void {
+            $answered = true;
+            SomcpHttp::jsonAndContinue($this->payload($chat, $view));
+        });
+
         $thread = null;
         $threadId = (string) Tools::getValue('thread_id');
         if ($threadId !== '') {
@@ -123,23 +131,32 @@ class AdminSomcpAssistantController extends ModuleAdminController
             }
         }
 
+        $finish = function (?array $view) use ($chat, &$answered): void {
+            // Already answered early: the chat reads the outcome on its next
+            // look, and nothing more may be written to a closed response.
+            if ($answered) {
+                exit;
+            }
+            $this->answer($chat, $view);
+        };
+
         switch ($action) {
             case 'new':
                 $thread = $chat->newThread((int) Tools::getValue('id_assistant'));
                 break;
             case 'send':
                 $thread = $thread ?? $chat->newThread((int) Tools::getValue('id_assistant'));
-                $this->answer($chat, $chat->send($thread, (string) Tools::getValue('text'), self::uploadedFiles()));
+                $finish($chat->send($thread, (string) Tools::getValue('text'), self::uploadedFiles()));
                 break;
             case 'step':
                 if ($thread !== null) {
-                    $this->answer($chat, $chat->step($thread));
+                    $finish($chat->step($thread));
                 }
                 break;
             case 'decide':
                 if ($thread !== null) {
                     $decisions = json_decode((string) Tools::getValue('decisions'), true);
-                    $this->answer($chat, $chat->decide($thread, is_array($decisions) ? array_map('strval', $decisions) : []));
+                    $finish($chat->decide($thread, is_array($decisions) ? array_map('strval', $decisions) : []));
                 }
                 break;
             case 'assistant':
@@ -200,6 +217,20 @@ class AdminSomcpAssistantController extends ModuleAdminController
      */
     private function answer(SomcpAssistantChat $chat, ?array $view): void
     {
+        SomcpHttp::json($this->payload($chat, $view));
+    }
+
+    /**
+     * What the chat receives: the conversation, the list of conversations and
+     * the assistants it can pick.
+     *
+     * @param SomcpAssistantChat $chat
+     * @param array<string, mixed>|null $view
+     *
+     * @return array<string, mixed>
+     */
+    private function payload(SomcpAssistantChat $chat, ?array $view): array
+    {
         $threads = [];
         foreach ($chat->threads() as $row) {
             $threads[] = [
@@ -224,10 +255,10 @@ class AdminSomcpAssistantController extends ModuleAdminController
             ];
         }
 
-        SomcpHttp::json([
+        return [
             'view' => $view,
             'threads' => $threads,
             'assistants' => $assistants,
-        ]);
+        ];
     }
 }

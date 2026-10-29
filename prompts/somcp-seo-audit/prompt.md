@@ -14,6 +14,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_list_meta_pages`
 - `somcp_get_seo_settings`
 - `somcp_get_robots_txt`
+- `somcp_generate_robots_txt`
 
 ## Know which shop you are in
 
@@ -32,7 +33,11 @@ installation has its own titles, descriptions and URLs.
    `somcp_get_robots_txt`: a group that blocks the whole site, or a rule that
    blocks product or category pages, hides the shop from search engines
    whatever its titles say. A `Disallow: /` aimed at one named crawler can be
-   the merchant's choice: ask before calling it a mistake.
+   the merchant's choice: ask before calling it a mistake. Regenerating the
+   file with `somcp_generate_robots_txt` puts back PrestaShop's own rules, but
+   erases every line written by hand: show the merchant the lines that are not
+   PrestaShop's before proposing it, and call it only once they agree. On a
+   multistore installation the file is shared by every shop.
 2. **Audit the pages.** Call `somcp_audit_product_seo` without `checks` for the
    whole picture, `somcp_audit_category_seo` for the category pages and
    `somcp_audit_cms_seo` for the CMS pages (delivery, legal notice...) and
@@ -105,3 +110,4 @@ installation has its own titles, descriptions and URLs.
 - "Quel est le titre de ma page d'accueil dans Google ?"
 - "Mes URL sont-elles bien réglées pour Google ?"
 - "Mon robots.txt bloque-t-il des pages ?"
+- "Régénère mon robots.txt"

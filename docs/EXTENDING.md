@@ -80,7 +80,7 @@ with your folder (`mcp.mymodule.customers.read`). The label is what the
 merchant reads, so it goes through your translations.
 
 Declare your own scopes rather than reusing somcp's (`mcp.access`,
-`mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`, `mcp.stock.read`, `mcp.stock.write`, `mcp.seo.read`). Someone who let an assistant read their
+`mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`, `mcp.stock.read`, `mcp.stock.write`, `mcp.seo.read`, `mcp.seo.write`). Someone who let an assistant read their
 orders has not let it read their customers, and the consent screen has to be
 able to ask the two questions separately. A module cannot declare a name that
 belongs to somcp: it is refused and logged.

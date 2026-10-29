@@ -216,6 +216,17 @@ never read the file. It only reads: nothing is changed. It needs the
 permission `mcp.seo.read` and the `view` right on the back office Traffic &
 SEO page.
 
+**Generate robots.txt.** The new tool `somcp_generate_robots_txt` writes your
+shop's robots.txt again, exactly as the Generate robots.txt file button of the
+Traffic & SEO page does, so the modules that add their own lines to it still
+do. Lines you typed into the file by hand are lost: the assistant reads the
+file first, shows you what will go and waits for your go-ahead, and the answer
+gives back the previous content in full. On a multistore installation the file
+is shared by every shop. It needs the new permission `mcp.seo.write`, shown on
+the consent screen as changing your shop's SEO settings, page titles and
+descriptions, robots.txt and llms.txt, and the same rights as the button: add,
+edit and delete on the back office Traffic & SEO page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

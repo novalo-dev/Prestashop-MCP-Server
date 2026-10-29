@@ -814,6 +814,14 @@ T = {
  "Lire le fichier robots.txt",
  "Leer el archivo robots.txt",
  "Die Datei robots.txt lesen"),
+"Generate the robots.txt file": (
+ "Générer le fichier robots.txt",
+ "Generar el archivo robots.txt",
+ "Die Datei robots.txt erzeugen"),
+"Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt": (
+ "Modifier les réglages SEO de la boutique, les titres et descriptions des pages, le robots.txt et le llms.txt",
+ "Cambiar los ajustes de SEO de la tienda, los títulos y descripciones de las páginas, el robots.txt y el llms.txt",
+ "Die SEO-Einstellungen des Shops, die Titel und Beschreibungen der Seiten, die robots.txt und die llms.txt ändern"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",

@@ -2599,8 +2599,8 @@ None.
 - The pages checked are the first active, visible product of the shop and its first active category below Home (the categories `somcp_audit_category_seo` audits), their address built with `Link` in each active language of the shop. Each group decides as search engines do: the longest matching pattern wins, `Allow` wins a tie, `*` matches anything and a final `$` ends the address; an empty `Disallow` blocks nothing. A group of `disallow_all` is not checked page by page.
 
 #### `somcp_generate_robots_txt`
-**State**: to write · [issue #91](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/91)
-**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminMeta')`, plus `add` and `delete` on `AdminMeta` · **Scope**: `mcp.seo.write`
 
 **Does** - writes the shop's robots.txt again, as the Generate button of the Traffic & SEO page does.
 
@@ -2610,11 +2610,14 @@ None.
 
 None.
 
-**Returns** - `changed`, `previous_content`, `content`.
+**Returns** - `changed` (false when the new file is byte for byte the old one), `previous_content` (`null` when there was no file), `content`.
 
 **Notes**
-- Through the core's own `Tools::generateRobotsFile()`, so modules that add their lines through its hook still do.
+- Through the core's own `Tools::generateRobotsFile(true)`, the call the back office button makes through `RobotsTextFileGenerator` on PrestaShop 8 and 9, so modules that add their lines through `actionAdminMetaBeforeWriteRobotsFile` and `actionAdminMetaAfterWriteRobotsFile` still do.
+- The button asks for the `add`, `edit` and `delete` rights on `AdminMeta` together (`MetaController::generateRobotsFileAction`), since the file is replaced whole: the tool asks for the same three.
 - Any line added by hand to the file is lost: the previous content is returned and the assistant tells the merchant before the call.
+- One file for the whole installation, at the root of PrestaShop. On a multistore installation it holds the rules of every shop's folder, but its `Sitemap` line is the one of the shop the call is made for, as when the button is pressed from that shop.
+- The new content can only be known by writing it, so a call that changes nothing still rewrites the same bytes, and answers `changed: false`. A file the web server cannot write is refused with nothing changed.
 
 #### `somcp_audit_page`
 **State**: to write · [issue #92](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/92)

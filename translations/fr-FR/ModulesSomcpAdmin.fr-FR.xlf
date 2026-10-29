@@ -1027,6 +1027,16 @@
       <source>Read the robots.txt file</source>
       <target>Lire le fichier robots.txt</target>
     </trans-unit>
+    <!-- Generate the robots.txt file -->
+    <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
+      <source>Generate the robots.txt file</source>
+      <target>Générer le fichier robots.txt</target>
+    </trans-unit>
+    <!-- Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt -->
+    <trans-unit id="23d7a2f44f6eb2b665723de3eb177aa3" resname="Change the shop&#x27;s SEO settings, page titles and descriptions, robots.txt and llms.txt">
+      <source>Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt</source>
+      <target>Modifier les réglages SEO de la boutique, les titres et descriptions des pages, le robots.txt et le llms.txt</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

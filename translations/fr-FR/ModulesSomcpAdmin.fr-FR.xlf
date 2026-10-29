@@ -982,6 +982,11 @@
       <source>Add a message to an order</source>
       <target>Ajouter un message à une commande</target>
     </trans-unit>
+    <!-- Set the private note of an order -->
+    <trans-unit id="c197c87dddd5f3e7009d2b50e1a6dcd8" resname="Set the private note of an order">
+      <source>Set the private note of an order</source>
+      <target>Renseigner la note privée d'une commande</target>
+    </trans-unit>
     <!-- view -->
     <trans-unit id="1bda80f2be4d3658e0baa43fbe7ae8c1" resname="view">
       <source>view</source>

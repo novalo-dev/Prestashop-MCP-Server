@@ -111,6 +111,16 @@ is limited to 1200 characters and refused if it holds a script, and it shows the
 name of the employee who wrote it. It needs the permission `mcp.orders.write`
 and the `edit` right on the back office orders page.
 
+**Order notes.** The new tool `somcp_set_order_note` writes the private note of
+an order, the Order note (Order private note on PrestaShop 9) of the Status tab
+of the order page. Only your team sees it: your customer is never emailed. As
+on the order page, the new text replaces the previous one, so the assistant
+reads the current note first when it is asked to add to it; an empty note
+clears it, and giving the note the order already has changes nothing. On
+PrestaShop 8, a note too long for the shop to store is refused instead of being
+cut. It needs the permission `mcp.orders.write` and the `edit` right on the back
+office orders page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

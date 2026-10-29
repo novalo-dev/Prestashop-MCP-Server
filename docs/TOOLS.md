@@ -539,6 +539,50 @@ Nothing refuses a repeat: two identical messages are a legitimate thing to
 write. Not replayable: a lost answer is checked with `somcp_get_order`, whose
 `messages` list shows the new one.
 
+#### `somcp_set_order_note`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - sets the private note of one order, the text only the shop sees,
+like the **Order note** text area (**Order private note** on 9.0.0) of the
+**Status** tab of the order page.
+
+**Do not use for** - writing to the customer (→ `somcp_add_order_message`), or
+a note about the customer rather than this order (→ the customer tools): the
+**Private note** / **Customer private note** of the Customer block on the same
+page is `customer.note`.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference |
+| `note` | string | yes | the whole new note; an empty string clears it |
+
+**Returns** - `changed`, `order` (`id_order` and `reference`),
+`previous_note`, `note`. When the order already has that note:
+`changed: false` with a `reason`, and nothing is written.
+
+**Notes** - the note lives in `orders.note` (`text` on 8.0.1, `mediumtext` on
+9.0.0). The sequence is the core's own, read from `SetInternalOrderNoteHandler`,
+identical on 8.0.1 and 9.0.0: set `Order::$note`, `validateFields(false)`,
+`update()`, so `actionObjectOrderUpdateBefore/After` fire as from the back
+office. Nothing else happens: no email, no history line.
+
+The note replaces the previous one, exactly as the screen does: there is no
+append, and the description tells the assistant to read the current note with
+`somcp_get_order` (`order.note`) first when it means to add to it. Spaces around
+the note are removed, as the back office form does, before the comparison.
+
+The size limit differs: on 9.0.0 the class declares the mediumtext limit and
+`validateFields()` checks it; on 8.0.1 the class declares none and the `text`
+column holds 65535 bytes, so a longer note is refused rather than cut by MySQL.
+The limit is read from `Order::$definition`, not from the version.
+
+Not replayable: a lost answer is checked with `somcp_get_order`, whose
+`order.note` shows the saved text.
+
 ### Billing
 
 The accounting records an order produces: invoices, credit slips, delivery

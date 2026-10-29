@@ -12,6 +12,7 @@ of it can be undone by calling again.
 - `somcp_set_order_status`
 - `somcp_set_order_tracking`
 - `somcp_add_order_message`
+- `somcp_set_order_note`
 
 ## Know which shop you are in
 
@@ -73,6 +74,17 @@ call `somcp_add_order_message` with the order, `message` and
 - Plain text, 1200 characters at most. A status email the shop already sends
   does not need a message repeating it.
 
+## A note for the shop only
+
+When the merchant wants to remember something about the order without telling
+the customer - a call to make, a parcel to check - call `somcp_set_order_note`
+with the order and `note`. Nobody is emailed.
+
+- The note **replaces** the current one: there is no append. To add a line,
+  read `order.note` with `somcp_get_order` first and send the whole new text.
+- An empty note (`""`) clears it. Only when the merchant asked for that.
+- A message the customer should read is `somcp_add_order_message`, not a note.
+
 ## Several orders
 
 One call per order. Never present a batch as one action.
@@ -86,9 +98,10 @@ that failed.
 
 **Do not repeat the call.** Call `somcp_get_order` and read the current status.
 It also gives each shipment with its tracking number, the messages of the
-order and the documents it produced, so you can see whether an invoice or a
-delivery slip came with the change, or whether a message was saved. A message
-is never refused as a repeat: sent twice, the customer gets it twice.
+order, its note and the documents it produced, so you can see whether an
+invoice or a delivery slip came with the change, or whether a message or a note
+was saved. A message is never refused as a repeat: sent twice, the customer
+gets it twice.
 
 A repeated call is the likeliest way this ends with a customer receiving two
 emails. The shop refuses a status the order already has, which catches most of

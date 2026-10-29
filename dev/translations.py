@@ -778,6 +778,10 @@ T = {
  "Ajouter un message à une commande",
  "Añadir un mensaje a un pedido",
  "Einer Bestellung eine Nachricht hinzufügen"),
+"Set the private note of an order": (
+ "Renseigner la note privée d'une commande",
+ "Indicar la nota privada de un pedido",
+ "Die private Notiz einer Bestellung eintragen"),
 "view": (
  "voir",
  "ver",

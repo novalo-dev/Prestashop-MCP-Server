@@ -10,7 +10,8 @@
     "somcp_get_order",
     "somcp_set_order_status",
     "somcp_set_order_tracking",
-    "somcp_add_order_message"
+    "somcp_add_order_message",
+    "somcp_set_order_note"
   ],
   "controller": "AdminOrders",
   "action": "edit",

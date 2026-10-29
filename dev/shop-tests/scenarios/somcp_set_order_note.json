@@ -1,0 +1,16 @@
+{
+  "calls": [
+    {"why": "the note of a demo order cleared first, in case another run left one", "arguments": {"id_order": 3, "note": ""}, "expect": "ok", "contains": ["\"order\"", "\"note\": \"\""]},
+    {"why": "a note set on an order without one", "arguments": {"id_order": 3, "note": "Shop test: call the customer before delivery."}, "expect": "ok", "contains": ["\"changed\": true", "\"previous_note\": \"\"", "\"note\": \"Shop test: call the customer before delivery.\""]},
+    {"why": "the same note again changes nothing", "arguments": {"id_order": 3, "note": "Shop test: call the customer before delivery."}, "expect": "ok", "contains": ["\"changed\": false", "Nothing was written"]},
+    {"why": "the same note with spaces around it is still the same note", "arguments": {"id_order": 3, "note": "  Shop test: call the customer before delivery.\n"}, "expect": "ok", "contains": ["\"changed\": false"]},
+    {"why": "the note replaced, the order found by its reference, on several lines", "arguments": {"reference": "UOYEVOLI", "note": "Shop test: called on Monday.\nParcel checked."}, "expect": "ok", "contains": ["\"changed\": true", "\"previous_note\": \"Shop test: call the customer before delivery.\"", "\"reference\": \"UOYEVOLI\""]},
+    {"why": "an empty note clears it", "arguments": {"id_order": 3, "note": ""}, "expect": "ok", "contains": ["\"changed\": true", "\"note\": \"\""]},
+    {"why": "cleared again, nothing changes", "arguments": {"id_order": 3, "note": ""}, "expect": "ok", "contains": ["\"changed\": false", "has no note already"]},
+    {"why": "a note that is not a string", "arguments": {"id_order": 3, "note": 12345}, "expect": "error", "contains": ["note must be a string"]},
+    {"why": "a note given as a list", "arguments": {"id_order": 3, "note": ["a", "b"]}, "expect": "error", "contains": ["note must be a string"]},
+    {"why": "the note left out is not read as clearing it", "arguments": {"id_order": 3}, "expect": "error", "contains": ["note must be a string"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "note": "Hello"}, "expect": "error", "contains": ["No order of this shop"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"note": "Hello"}, "expect": "error", "contains": ["No order of this shop"]}
+  ]
+}

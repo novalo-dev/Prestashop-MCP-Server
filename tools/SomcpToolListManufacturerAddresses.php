@@ -54,8 +54,8 @@ class SomcpToolListManufacturerAddresses
                 . 'addresses list of the back office: identifier, brand, last name, first name, postal code, '
                 . 'city and country ISO code. Give id_manufacturer, taken from somcp_list_manufacturers, to '
                 . 'list the addresses of one brand only. Take an address identifier from here rather than '
-                . 'assuming one. Every field of one address is read with somcp_get_manufacturer_address when '
-                . 'the shop offers it. Do not use it for the brands themselves (somcp_list_manufacturers), '
+                . 'assuming one. Every field of one address is read with somcp_get_manufacturer_address. '
+                . 'Do not use it for the brands themselves (somcp_list_manufacturers), '
                 . 'nor for customer or supplier addresses: it lists brand addresses only.',
             [
                 'type' => 'object',

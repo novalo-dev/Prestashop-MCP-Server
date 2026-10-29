@@ -757,6 +757,11 @@
       <source>List brand addresses</source>
       <target>Lister les adresses des marques</target>
     </trans-unit>
+    <!-- Get a brand address -->
+    <trans-unit id="4649e722f94b5fa062a54b4f349c94d7" resname="Get a brand address">
+      <source>Get a brand address</source>
+      <target>Lire une adresse de marque</target>
+    </trans-unit>
     <!-- Get a brand -->
     <trans-unit id="9f43ab513afa1940c0b205bd0400e292" resname="Get a brand">
       <source>Get a brand</source>

@@ -1132,7 +1132,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read through a query on `address`, `manufacturer`, `manufacturer_shop` and `country`, not through `Address` objects. Sorted by brand name, then by identifier.
 
 #### `somcp_get_manufacturer_address`
-**State**: to write · [issue #63](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/63)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminManufacturers')` · **Scope**: `mcp.catalog.read`
 
 **Does** - returns every field of one brand address.
@@ -1145,9 +1145,12 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 |---|---|---|---|
 | `id_address` | integer | yes | from `somcp_list_manufacturer_addresses` |
 
-**Returns** - `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `address1`, `address2`, `postcode`, `city`, `country` (ISO code), `state` (ISO code), `dni`, `phone`, `phone_mobile`, `other`.
+**Returns** - `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `address1`, `address2`, `postcode`, `city`, `country` (ISO code, `null` when the country no longer exists), `state` (ISO code, `null` when the address has none), `dni`, `phone`, `phone_mobile`, `other`.
 
-**Notes** - an `id_address` that belongs to a customer, a supplier or nobody is refused: this tool reads brand addresses only.
+**Notes**
+- An `id_address` that belongs to a customer, a supplier or nobody is refused, like one that does not exist: this tool reads brand addresses only. A deleted address, kept by PrestaShop for past orders and hidden from the back office list, is refused too.
+- `address` has no shop column: the address must belong to a brand of the shop of the token, checked by the same test of the shop as `somcp_get_manufacturer`.
+- Read through an `Address` object. The reader and the test are public, so the brand address write tools answer with the address as this tool returns it.
 
 #### `somcp_create_manufacturer_address`
 **State**: to write · [issue #64](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/64)

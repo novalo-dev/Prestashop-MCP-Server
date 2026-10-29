@@ -14,6 +14,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_manufacturers`
 - `somcp_get_manufacturer`
 - `somcp_list_manufacturer_addresses`
+- `somcp_get_manufacturer_address`
 - `somcp_list_suppliers`
 - `somcp_get_supplier`
 - `somcp_list_attributes`
@@ -96,7 +97,10 @@ one brand - its descriptions, SEO texts, logo, how many products it holds -
 read it with `somcp_get_manufacturer`, by the identifier the list gave. The
 postal addresses of the brands - contact name, postal code, city, country - are
 listed with `somcp_list_manufacturer_addresses`, for every brand or for one
-brand given by the identifier the list gave; never assume an `id_address`.
+brand given by the identifier the list gave; never assume an `id_address`. To
+answer about one address - its street lines, state, phone numbers, national ID
+number - read it with `somcp_get_manufacturer_address`, by the `id_address` the
+list gave.
 
 A supplier too, from `somcp_list_suppliers`: never write an `id_supplier` the
 list did not give, and when the supplier the merchant names is not in it, say

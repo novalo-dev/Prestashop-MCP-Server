@@ -149,6 +149,15 @@ of the shop the assistant is connected to, and leaves out deleted addresses. It
 needs the permission `mcp.catalog.read` and the `view` right on the back office
 brands page.
 
+**Reading a brand address.** The new tool `somcp_get_manufacturer_address`
+returns every field of one brand address, as the brand address form of the back
+office shows it: brand, last name, first name, address, address line 2, postal
+code, city, country, state, national ID number, phone, mobile phone and other
+information. It only reads brand addresses: a customer or supplier address is
+refused, and so is an address of a brand from another shop. It needs the
+permission `mcp.catalog.read` and the `view` right on the back office brands
+page.
+
 **Listing suppliers.** The new tool `somcp_list_suppliers` lists the suppliers
 of the shop the assistant is connected to, with their identifier and name and
 nothing else, so the assistant takes a supplier from the shop rather than

@@ -105,10 +105,10 @@ T = {
  "Lire le catalogue de cette boutique : produits, prix et catégories",
  "Leer el catálogo de esta tienda: productos, precios y categorías",
  "Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien"),
-"Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands and their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock": (
- "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, créer et modifier les marques et leurs adresses, créer et modifier les fournisseurs, créer et modifier les groupes d'attributs, créer et modifier les valeurs d'attributs, créer et modifier les caractéristiques et leurs valeurs, modifier les prix et le stock",
- "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear y editar marcas y sus direcciones, crear y editar proveedores, crear y editar grupos de atributos, crear y editar valores de atributos, crear y editar características y sus valores, cambiar precios y stock",
- "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Marken und ihre Adressen anlegen und bearbeiten, Lieferanten anlegen und bearbeiten, Attributgruppen anlegen und bearbeiten, Attributwerte anlegen und bearbeiten, Merkmale und ihre Werte anlegen und bearbeiten, Preise und Bestand ändern"),
+"Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock": (
+ "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, créer et modifier les marques, créer, modifier et supprimer leurs adresses, créer et modifier les fournisseurs, créer et modifier les groupes d'attributs, créer et modifier les valeurs d'attributs, créer et modifier les caractéristiques et leurs valeurs, modifier les prix et le stock",
+ "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear y editar marcas, crear, editar y eliminar sus direcciones, crear y editar proveedores, crear y editar grupos de atributos, crear y editar valores de atributos, crear y editar características y sus valores, cambiar precios y stock",
+ "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Marken anlegen und bearbeiten, ihre Adressen anlegen, bearbeiten und löschen, Lieferanten anlegen und bearbeiten, Attributgruppen anlegen und bearbeiten, Attributwerte anlegen und bearbeiten, Merkmale und ihre Werte anlegen und bearbeiten, Preise und Bestand ändern"),
 "Read the stock of this shop: quantities of products and combinations": (
  "Lire le stock de cette boutique : quantités des produits et des déclinaisons",
  "Leer el stock de esta tienda: cantidades de los productos y de las combinaciones",
@@ -610,6 +610,10 @@ T = {
  "Modifier une adresse de marque",
  "Modificar una dirección de marca",
  "Markenadresse ändern"),
+"Delete a brand address": (
+ "Supprimer une adresse de marque",
+ "Eliminar una dirección de marca",
+ "Markenadresse löschen"),
 "Get a brand": (
  "Lire une marque",
  "Leer una marca",

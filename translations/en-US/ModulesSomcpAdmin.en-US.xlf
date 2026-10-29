@@ -122,10 +122,10 @@
       <source>Read the catalogue of this shop: products, prices and categories</source>
       <target>Read the catalogue of this shop: products, prices and categories</target>
     </trans-unit>
-    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands and their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock -->
-    <trans-unit id="db840e9cfd779f2290ff82e03986d692" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands and their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock">
-      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands and their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock</source>
-      <target>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands and their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock</target>
+    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock -->
+    <trans-unit id="b899aa8fd14f1c23b340015106ee5e73" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock">
+      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock</source>
+      <target>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock</target>
     </trans-unit>
     <!-- Read the stock of this shop: quantities of products and combinations -->
     <trans-unit id="44aed62b337ebd9f1875feb664e23563" resname="Read the stock of this shop: quantities of products and combinations">
@@ -771,6 +771,11 @@
     <trans-unit id="d43f37faa7918910db2405a2cd150296" resname="Change a brand address">
       <source>Change a brand address</source>
       <target>Change a brand address</target>
+    </trans-unit>
+    <!-- Delete a brand address -->
+    <trans-unit id="9250c2e411837a4cf6d9dad5f4a80d20" resname="Delete a brand address">
+      <source>Delete a brand address</source>
+      <target>Delete a brand address</target>
     </trans-unit>
     <!-- Get a brand -->
     <trans-unit id="9f43ab513afa1940c0b205bd0400e292" resname="Get a brand">

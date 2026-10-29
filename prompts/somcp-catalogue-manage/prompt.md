@@ -37,6 +37,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_set_manufacturer_active`
 - `somcp_create_manufacturer_address`
 - `somcp_update_manufacturer_address`
+- `somcp_delete_manufacturer_address`
 - `somcp_create_supplier`
 - `somcp_update_supplier`
 - `somcp_set_supplier_active`
@@ -364,6 +365,16 @@ addresses are refused. The answer lists each change with its old and new value;
 `changed: false` means the address already held every value given. On a lost
 answer, read it again with `somcp_get_manufacturer_address` before calling
 twice.
+
+## Deleting a brand address
+
+`somcp_delete_manufacturer_address` deletes one brand address for good; the
+brand itself is kept. Take the address from
+`somcp_list_manufacturer_addresses`, read it with
+`somcp_get_manufacturer_address`, and name the brand and the city to the
+merchant. Delete only once they confirm. Customer and supplier addresses are
+refused. On a lost answer, read `somcp_list_manufacturer_addresses` for the
+brand again rather than calling twice.
 
 ## Creating a supplier
 

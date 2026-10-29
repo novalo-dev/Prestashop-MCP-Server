@@ -1208,12 +1208,12 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Replayable: the same values again change nothing, fire no hook and say `changed: false`.
 
 #### `somcp_delete_manufacturer_address`
-**State**: to write · [issue #66](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/66)
+**State**: written
 **Nature**: `acts(DELETE, 'AdminManufacturers')` · **Scope**: `mcp.catalog.write`
 
-**Does** - deletes one brand address.
+**Does** - deletes one brand address, as the delete action of the back office **Brand addresses** list does.
 
-**Do not use for** - anything else than a brand address: customer and supplier addresses are refused.
+**Do not use for** - anything else than a brand address: customer and supplier addresses are refused. Changing one (→ `somcp_update_manufacturer_address`).
 
 **Parameters**
 
@@ -1223,7 +1223,13 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 **Returns** - `deleted`, `id_address`, `manufacturer_name`, `city`.
 
-**Notes** - irreversible: the assistant names the brand and the city to the merchant before the call. Through `Address::delete()`, so hooks fire.
+**Notes**
+- Irreversible: the description tells the assistant to read the address with `somcp_get_manufacturer_address` and name the brand and the city to the merchant before the call. The brand itself is kept.
+- Permission `delete` on `AdminManufacturers`: the right the back office checks on its delete action for a brand address.
+- Only brand addresses are accepted, by the same test as `somcp_get_manufacturer_address`: a customer, supplier or deleted address, or the address of a brand of another shop, is refused like one that does not exist. Only a whole number is an identifier.
+- The core's own sequence (`DeleteAddressHandler`, the same on 8 and 9): `Address::delete()`, so hooks fire. An address an order still points to is flagged deleted rather than removed, as in the back office; either way it is gone from the list and from the brand tools.
+- Whether the address is gone is read back with the test of `somcp_get_manufacturer_address` rather than inferred from `delete()`. A second call is refused, never read as a success.
+- Not replayable: the read tool to check is `somcp_list_manufacturer_addresses`.
 
 #### `somcp_list_suppliers`
 **State**: written

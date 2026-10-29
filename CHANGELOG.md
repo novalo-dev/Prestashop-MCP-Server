@@ -498,6 +498,15 @@ must match its format. Giving another brand moves the address to it. Customer
 and supplier addresses cannot be changed through it. It needs the permission
 `mcp.catalog.write` and the `edit` right on the back office brands page.
 
+**Deleting a brand address.** The new tool `somcp_delete_manufacturer_address`
+deletes one brand address, as the Brand addresses list of the back office does;
+the brand itself is kept. The assistant is told to ask you first, naming the
+brand and the city. Customer and supplier addresses cannot be deleted through
+it, and asking again for an address already deleted is refused rather than
+reported as done. The consent screen now says that the catalogue permission can
+delete the addresses of brands. It needs the permission `mcp.catalog.write` and
+the `delete` right on the back office brands page.
+
 **Creating a supplier.** The new tool `somcp_create_supplier` creates one
 supplier with the fields of the back office supplier form: name, description,
 phone, mobile phone, address, address line 2, postal code, city, country,

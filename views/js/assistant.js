@@ -40,7 +40,12 @@
 
     var text = config.text || {};
     var MAX_STEPS = 30;
-    var state = { view: null, threads: [], assistants: [], busy: false, steps: 0 };
+    // A move still running on the server - from before a reload, or in another
+    // tab - is waited for by asking again every BUSY_DELAY, up to MAX_WAITS
+    // times: the server frees a conversation whose move died after 5 minutes.
+    var BUSY_DELAY = 2000;
+    var MAX_WAITS = 160;
+    var state = { view: null, threads: [], assistants: [], busy: false, steps: 0, waits: 0 };
     var panel;
     var body;
     var input;
@@ -192,6 +197,18 @@
                 }
                 if (action !== 'step') {
                     state.steps = 0;
+                    state.waits = 0;
+                }
+                if (state.view && state.view.status === 'working' && state.view.busy && state.waits < MAX_WAITS) {
+                    // Not a step of ours: the one running is waited for, and
+                    // its answer comes with the next reply.
+                    state.waits += 1;
+                    var threadId = state.view.thread_id;
+                    return new Promise(function (resolve) {
+                        window.setTimeout(resolve, BUSY_DELAY);
+                    }).then(function () {
+                        return run('step', { thread_id: threadId });
+                    });
                 }
                 if (state.view && state.view.status === 'working' && state.steps < MAX_STEPS) {
                     state.steps += 1;
@@ -220,6 +237,16 @@
     }
 
     function drawMessage(message) {
+        // The oldest messages, summarized to keep the cost down: a quiet note
+        // that unfolds to the summary, not a message of the employee.
+        if (message.role === 'summary') {
+            var note = el('details', 'somcp-summary');
+            note.appendChild(el('summary', '', text.summarized));
+            var gist = el('div', 'somcp-summary-text');
+            gist.innerHTML = markdown(message.text || '');
+            note.appendChild(gist);
+            return note;
+        }
         if (message.role === 'tools') {
             var wrap = document.createDocumentFragment();
             if (message.text) {
@@ -621,11 +648,30 @@
 
     var loaded = false;
 
-    function toggle() {
+    // Whether the chat was open, kept per browser tab: going to another page
+    // of the back office opens it again there, and a new tab starts closed.
+    function rememberOpen(open) {
+        try {
+            window.sessionStorage.setItem('somcp.assistant.open', open ? '1' : '');
+        } catch (e) {
+            // Not remembered: the chat starts closed on the next page.
+        }
+    }
+
+    function wasOpen() {
+        try {
+            return window.sessionStorage.getItem('somcp.assistant.open') === '1';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function toggle(event, restoring) {
         if (!panel) {
             build();
         }
         panel.hidden = !panel.hidden;
+        rememberOpen(!panel.hidden);
         if (!panel.hidden) {
             if (!loaded) {
                 loaded = true;
@@ -639,7 +685,11 @@
                     }
                 });
             }
-            input.focus();
+            // Reopened by itself on a new page: the employee may be about to
+            // type in that page, so the focus is not taken from it.
+            if (!restoring) {
+                input.focus();
+            }
         }
     }
 
@@ -683,6 +733,9 @@
                 event.preventDefault();
                 toggle();
             });
+            if (wasOpen()) {
+                toggle(null, true);
+            }
             return;
         }
 
@@ -694,6 +747,9 @@
         button.appendChild(el('i', 'material-icons', 'forum'));
         button.addEventListener('click', toggle);
         document.body.appendChild(button);
+        if (wasOpen()) {
+            toggle(null, true);
+        }
     }
 
     if (document.readyState === 'loading') {

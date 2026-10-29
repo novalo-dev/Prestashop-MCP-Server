@@ -128,6 +128,21 @@ class SomcpAssistantChat
     private const GENERATED_MARKER = '[Generated image: ';
 
     /**
+     * @var string How Neuron AI's Summarization middleware opens the message it
+     *             puts in place of the oldest ones. It is stored as a message
+     *             of the employee, so the chat must recognise it to draw it as
+     *             a note rather than as words the employee never wrote.
+     */
+    private const SUMMARY_MARKER = '## Previous conversation summary:';
+
+    /**
+     * @var int Seconds a conversation stays marked as busy. A move clears the
+     *          mark when it ends; this only frees a conversation whose PHP
+     *          process died mid-move.
+     */
+    private const BUSY_TTL = 300;
+
+    /**
      * What an employee may attach, and how each kind reaches the model. The
      * deposit store checks every file against its bytes, as it does for the
      * deposit page: this list only narrows what the chat offers.
@@ -543,7 +558,7 @@ class SomcpAssistantChat
             }
 
             return $agent->submitToolResults($results)->run();
-        });
+        }, true);
     }
 
     /**
@@ -590,6 +605,7 @@ class SomcpAssistantChat
 
         $status = 'idle';
         $actions = [];
+        $busy = $this->busy($thread);
         try {
             // Reading the run needs no provider: no model is called here.
             $run = $this->agent($thread, [])->inspect();
@@ -607,6 +623,11 @@ class SomcpAssistantChat
             } elseif ($run !== null && $run->interrupt instanceof ToolResultsRequest) {
                 $status = 'working';
             }
+            // A move still running - from before a page reload, or in another
+            // tab - is working too, whatever the stored run said before it.
+            if ($status !== 'approval' && $busy) {
+                $status = 'working';
+            }
         } catch (Throwable $e) {
             SomcpLogger::log('assistant_failed', SomcpLogger::OUTCOME_FAILURE, Tools::substr($e->getMessage(), 0, 200), '', (int) $this->employee->id);
         }
@@ -617,6 +638,9 @@ class SomcpAssistantChat
             'assistant' => $assistant !== null ? (string) $assistant['label'] : '',
             'messages' => $messages,
             'status' => $status,
+            // Tells the chat to wait before asking again, rather than ask for
+            // the next step at once.
+            'busy' => $busy,
             'actions' => $actions,
             'error' => $error,
             'spent' => round(array_sum(SomcpAssistant::monthCosts()), 2),
@@ -629,12 +653,20 @@ class SomcpAssistantChat
      * failure ends up as a sentence for the employee: the chat must never be
      * left spinning on an error it was not told about.
      *
+     * Only one move runs on a conversation at a time. The chat keeps going
+     * after a page reload or in a second tab, and asking for the next step
+     * while the previous one is still with the model would pay for the same
+     * answer twice and write it twice; a step asked meanwhile just reports
+     * that the conversation is busy, and the chat asks again a moment later.
+     *
      * @param array<string, mixed> $thread
      * @param callable $move function(Agent $agent, array $assistant): ?AgentState
+     * @param bool $quiet true for a step the chat asks for by itself: finding
+     *                    the conversation busy is then no error to show
      *
      * @return array<string, mixed>
      */
-    private function advance(array $thread, callable $move): array
+    private function advance(array $thread, callable $move, bool $quiet = false): array
     {
         $assistant = $this->assistantOf($thread);
         if ($assistant === null) {
@@ -643,7 +675,73 @@ class SomcpAssistantChat
         if (SomcpAssistant::overBudget()) {
             return $this->view($thread, self::t('The monthly spending cap is reached. Raise it in the module settings to keep chatting.'));
         }
+        if (!$this->claim($thread)) {
+            return $this->view($thread, $quiet ? '' : self::t('The assistant is still answering. Wait for its reply.'));
+        }
 
+        try {
+            $error = $this->move($thread, $move, $assistant);
+        } finally {
+            Db::getInstance()->update(
+                'somcp_assistant_thread',
+                ['busy_until' => null],
+                '`id_thread` = ' . (int) $thread['id_thread'],
+                0,
+                true
+            );
+        }
+
+        // Drawn once the mark is cleared, or the answer would read as busy.
+        return $this->view($thread, $error);
+    }
+
+    /**
+     * Marks the conversation busy, unless a move already holds it. One UPDATE
+     * both checks and takes, so two requests arriving together cannot both win.
+     *
+     * @param array<string, mixed> $thread
+     *
+     * @return bool
+     */
+    private function claim(array $thread): bool
+    {
+        $db = Db::getInstance();
+        $db->execute(
+            'UPDATE `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
+            . ' SET `busy_until` = DATE_ADD(NOW(), INTERVAL ' . (int) self::BUSY_TTL . ' SECOND)'
+            . ' WHERE `id_thread` = ' . (int) $thread['id_thread']
+            . ' AND (`busy_until` IS NULL OR `busy_until` < NOW())'
+        );
+
+        return (int) $db->Affected_Rows() === 1;
+    }
+
+    /**
+     * Whether a move is running on the conversation right now.
+     *
+     * @param array<string, mixed> $thread
+     *
+     * @return bool
+     */
+    private function busy(array $thread): bool
+    {
+        return (bool) Db::getInstance()->getValue(
+            'SELECT 1 FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
+            . ' WHERE `id_thread` = ' . (int) $thread['id_thread'] . ' AND `busy_until` >= NOW()'
+        );
+    }
+
+    /**
+     * The move itself, once the conversation is held.
+     *
+     * @param array<string, mixed> $thread
+     * @param callable $move
+     * @param array<string, mixed> $assistant
+     *
+     * @return string the sentence for the employee when it failed, '' otherwise
+     */
+    private function move(array $thread, callable $move, array $assistant): string
+    {
         try {
             $state = $move($this->agent($thread, $assistant), $assistant);
             if ($state instanceof AgentState) {
@@ -651,7 +749,7 @@ class SomcpAssistantChat
                 $this->remember($thread, $this->keepImages($state->getSteps()));
             }
         } catch (RunInFlightException $e) {
-            return $this->view($thread, self::t('Answer the change waiting for your approval first.'));
+            return self::t('Answer the change waiting for your approval first.');
         } catch (Throwable $e) {
             SomcpLogger::log(
                 'assistant_failed',
@@ -661,7 +759,7 @@ class SomcpAssistantChat
                 (int) $this->employee->id
             );
 
-            return $this->view($thread, self::t('The assistant could not answer. Check its key in the module settings, then try again.'));
+            return self::t('The assistant could not answer. Check its key in the module settings, then try again.');
         }
 
         Db::getInstance()->update(
@@ -671,7 +769,7 @@ class SomcpAssistantChat
         );
         $this->rememberMemory($thread);
 
-        return $this->view($thread);
+        return '';
     }
 
     /**
@@ -1211,7 +1309,7 @@ class SomcpAssistantChat
             'You are an e-commerce expert running a shop on the PrestaShop CMS, built into its back office.',
             // The shop id is stated because a tool call in a multistore install
             // runs against this shop, and the model must not guess another.
-            'Shop #' . $this->idShop . ' "' . $shop->name . '"' . (Shop::isFeatureActive() ? ' (one shop of a multistore install)' : '') . ', ' . $shop->getBaseURL(true) . '. Today ' . date('Y-m-d') . '.',
+            'Shop #' . $this->idShop . ' "' . $shop->name . '"' . (Shop::isFeatureActive() ? ' (one shop of a multistore install)' : '') . ', ' . $shop->getBaseURL(true) . '.',
             'PrestaShop ' . _PS_VERSION_ . ': code https://github.com/PrestaShop/PrestaShop/tree/' . _PS_VERSION_
                 . ', docs https://github.com/PrestaShop/docs/tree/' . $major . '.x',
             'Module O\'So MCP Server ' . $version . ': ' . SomcpUpdate::REPOSITORY . '/tree/v' . $version,
@@ -1251,6 +1349,12 @@ class SomcpAssistantChat
         if ($custom !== '') {
             $lines[] = 'Instructions from the shop: ' . $custom;
         }
+
+        // Last, because it changes every minute: whatever comes before it stays
+        // the same from one call to the next, which the providers that cache the
+        // start of a prompt bill for less. PrestaShop sets PHP's time zone to
+        // the shop's, so date() gives the merchant's own clock.
+        $lines[] = 'Now ' . date('l Y-m-d H:i') . ' (' . date_default_timezone_get() . '). Suit your tone to the time of day; greet only to open a conversation, never again within it.';
 
         return implode("\n", $lines);
     }
@@ -1416,6 +1520,10 @@ class SomcpAssistantChat
             return ['role' => 'tools', 'text' => (string) $message->getContent(), 'tools' => $calls];
         }
         if ($message instanceof UserMessage) {
+            $first = (string) $message->getContent();
+            if (strpos($first, self::SUMMARY_MARKER) === 0) {
+                return ['role' => 'summary', 'text' => trim(substr($first, strlen(self::SUMMARY_MARKER)))];
+            }
             // The employee's words, and the files by name: the content of an
             // attached file is for the model, the chat shows that it went.
             $text = '';

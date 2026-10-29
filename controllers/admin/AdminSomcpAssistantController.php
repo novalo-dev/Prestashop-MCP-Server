@@ -99,6 +99,17 @@ class AdminSomcpAssistantController extends ModuleAdminController
             SomcpHttp::json(['error' => 'unavailable'], 404);
         }
 
+        // A model call takes seconds. Holding the PHP session through it would
+        // make every other back office page of this employee - a reload, a
+        // click elsewhere - wait for it, since the session file stays locked
+        // until the request ends. Nothing here writes to the session, so it is
+        // released now; and the move goes on to the end if the page that asked
+        // for it is reloaded or left, the chat picking up its answer on return.
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+        ignore_user_abort(true);
+
         $chat = new SomcpAssistantChat($this->context->employee, Somcp::currentShopId());
         $chat->openOn((string) Tools::getValue('page'));
         $action = (string) Tools::getValue('somcp_action');

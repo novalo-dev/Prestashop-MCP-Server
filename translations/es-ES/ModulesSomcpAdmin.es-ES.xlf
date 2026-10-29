@@ -1677,6 +1677,16 @@
       <source>Working...</source>
       <target>Trabajando…</target>
     </trans-unit>
+    <!-- Earlier messages were summarized to keep the cost down. -->
+    <trans-unit id="efa33594f015284d5ecdc2839de6bedf" resname="Earlier messages were summarized to keep the cost down.">
+      <source>Earlier messages were summarized to keep the cost down.</source>
+      <target>Los mensajes más antiguos se han resumido para reducir el coste.</target>
+    </trans-unit>
+    <!-- The assistant is still answering. Wait for its reply. -->
+    <trans-unit id="9854012be358334cb6933b74106635d0" resname="The assistant is still answering. Wait for its reply.">
+      <source>The assistant is still answering. Wait for its reply.</source>
+      <target>El asistente aún está respondiendo. Espere su respuesta.</target>
+    </trans-unit>
     <!-- This month: %spent% -->
     <trans-unit id="a75e924a56bc92c5ccb7c910e9cbc75b" resname="This month: %spent%">
       <source>This month: %spent%</source>

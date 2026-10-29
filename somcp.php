@@ -389,6 +389,7 @@ class Somcp extends Module
                 'approved' => $this->l10n('Approved'),
                 'refused' => $this->l10n('Refused'),
                 'working' => $this->l10n('Working...'),
+                'summarized' => $this->l10n('Earlier messages were summarized to keep the cost down.'),
                 'spent' => $this->l10n('This month: %spent%'),
                 'spentOf' => $this->l10n('This month: %spent% of %budget%'),
                 'failed' => $this->l10n('Something went wrong. Try again.'),

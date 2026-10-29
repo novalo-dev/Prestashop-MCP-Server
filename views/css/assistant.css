@@ -557,3 +557,23 @@
     margin-top: 6px;
     border-radius: 8px;
 }
+
+/* The note that stands for the oldest messages once they were summarized:
+   quieter than a message, since nobody in the conversation wrote it. */
+#somcp-chat .somcp-summary {
+    margin: 4px 0 10px;
+    color: #6c868e;
+    font-size: 12px;
+}
+
+#somcp-chat .somcp-summary > summary {
+    cursor: pointer;
+    font-style: italic;
+}
+
+#somcp-chat .somcp-summary-text {
+    margin-top: 6px;
+    padding: 8px 10px;
+    border-left: 2px solid #dfe3e6;
+    background: #f8f9fa;
+}

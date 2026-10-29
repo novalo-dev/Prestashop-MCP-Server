@@ -1323,6 +1323,14 @@ T = {
  "En cours…",
  "Trabajando…",
  "In Arbeit…"),
+"Earlier messages were summarized to keep the cost down.": (
+ "Les messages plus anciens ont été résumés pour réduire le coût.",
+ "Los mensajes más antiguos se han resumido para reducir el coste.",
+ "Ältere Nachrichten wurden zusammengefasst, um die Kosten zu senken."),
+"The assistant is still answering. Wait for its reply.": (
+ "L'assistant est encore en train de répondre. Attendez sa réponse.",
+ "El asistente aún está respondiendo. Espere su respuesta.",
+ "Der Assistent antwortet noch. Warten Sie seine Antwort ab."),
 "This month: %spent%": (
  "Ce mois-ci : %spent%",
  "Este mes: %spent%",

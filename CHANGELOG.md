@@ -28,6 +28,18 @@ now returns its tags as well, so they can be read, changed and written back.
 
 ### Changed
 
+**The built-in assistant across pages.** Reloading or leaving a page while
+the assistant was answering made the new page wait until the answer was done.
+The page now loads at once: the answer carries on in the background and
+appears in the chat - or the change waiting for approval does - when it is
+ready. The chat also stays open from one back office page to the next, in the
+same browser tab.
+
+**The built-in assistant knows the time.** It was given the date only, so it
+greeted again in the middle of a conversation and spoke the same way morning
+and night. It now has the shop's date and time, suits its tone to the time of
+day, and greets only to open a conversation.
+
 **Reading an order.** Reading one order now returns what its page in the back
 office shows and was missing: the order note, the cart it came from, gift
 wrapping, the gift message and recycled packaging; the customer's title, their
@@ -97,6 +109,12 @@ Save button at the bottom saves the three.
 on the dark background of the other O'So modules.
 
 ### Fixed
+
+**Summary shown as your message.** When a long conversation was summarized to
+keep the cost down, the summary appeared as a message from the employee,
+headed "Previous conversation summary". It now shows as a discreet
+note saying the earlier messages were summarized, which unfolds to the
+summary.
 
 **Documents the module downloads.** When the module reads a document from
 another site - the description a client publishes about itself when it

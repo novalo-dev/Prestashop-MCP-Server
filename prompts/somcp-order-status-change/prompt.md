@@ -11,6 +11,7 @@ of it can be undone by calling again.
 - `somcp_get_order`
 - `somcp_set_order_status`
 - `somcp_set_order_tracking`
+- `somcp_add_order_message`
 
 ## Know which shop you are in
 
@@ -57,6 +58,21 @@ When the merchant says an order has left with its number, set the number
 first, then the shipped status: the shipped email then carries the tracking
 link.
 
+## Writing to the customer
+
+When the customer should hear about the order in the merchant's own words -
+typically after a status change, to explain a delay or what happens next -
+call `somcp_add_order_message` with the order, `message` and
+`display_to_customer`.
+
+- `display_to_customer: true` **emails the customer** and shows the message in
+  their account. Say so before calling.
+- `display_to_customer: false` keeps it private to the shop: nobody is emailed.
+- There is no default: if the merchant has not said whether the customer
+  should see it, ask.
+- Plain text, 1200 characters at most. A status email the shop already sends
+  does not need a message repeating it.
+
 ## Several orders
 
 One call per order. Never present a batch as one action.
@@ -69,9 +85,10 @@ that failed.
 ## If an answer is lost
 
 **Do not repeat the call.** Call `somcp_get_order` and read the current status.
-It also gives each shipment with its tracking number and the documents the
-order produced, so you can see whether an invoice or a delivery slip came with
-the change.
+It also gives each shipment with its tracking number, the messages of the
+order and the documents it produced, so you can see whether an invoice or a
+delivery slip came with the change, or whether a message was saved. A message
+is never refused as a repeat: sent twice, the customer gets it twice.
 
 A repeated call is the likeliest way this ends with a customer receiving two
 emails. The shop refuses a status the order already has, which catches most of

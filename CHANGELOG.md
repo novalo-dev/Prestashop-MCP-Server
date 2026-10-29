@@ -101,6 +101,16 @@ shipments, the assistant has to say which one. The carrier and the order status
 are never changed by it. It needs the permission `mcp.orders.write` and the
 `edit` right on the back office orders page.
 
+**Order messages.** The new tool `somcp_add_order_message` adds a message to an
+order, like the Messages block of the order page. When it is shown to your
+customer, they see it in their account and receive the "New message regarding
+your order" email in the language of their order; a private message stays
+between you and your team, and nobody is emailed. The assistant has to say
+which of the two it is, there is no default. As on the order page, the message
+is limited to 1200 characters and refused if it holds a script, and it shows the
+name of the employee who wrote it. It needs the permission `mcp.orders.write`
+and the `edit` right on the back office orders page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

@@ -977,6 +977,11 @@
       <source>Set the tracking number of an order</source>
       <target>Indicar el número de seguimiento de un pedido</target>
     </trans-unit>
+    <!-- Add a message to an order -->
+    <trans-unit id="c336eae6c62dfc77a0f7a99f52e6ba5b" resname="Add a message to an order">
+      <source>Add a message to an order</source>
+      <target>Añadir un mensaje a un pedido</target>
+    </trans-unit>
     <!-- view -->
     <trans-unit id="1bda80f2be4d3658e0baa43fbe7ae8c1" resname="view">
       <source>view</source>

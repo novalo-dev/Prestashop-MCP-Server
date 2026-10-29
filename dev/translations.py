@@ -774,6 +774,10 @@ T = {
  "Renseigner le numéro de suivi d'une commande",
  "Indicar el número de seguimiento de un pedido",
  "Die Sendungsnummer einer Bestellung eintragen"),
+"Add a message to an order": (
+ "Ajouter un message à une commande",
+ "Añadir un mensaje a un pedido",
+ "Einer Bestellung eine Nachricht hinzufügen"),
 "view": (
  "voir",
  "ver",

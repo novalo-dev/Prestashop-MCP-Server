@@ -481,6 +481,64 @@ The carrier field of the same window is left out: changing it recalculates the
 shipping cost and the order totals (`OrderAmountUpdater`), a different decision
 with a different risk.
 
+#### `somcp_add_order_message`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - adds one message to one order, like the **Messages** block of the
+order page: shown to the customer and emailed to them, or kept private for the
+shop.
+
+**Do not use for** - answering a customer service thread that is not tied to an
+order (Customer Service page), or noting something for the shop only on the
+order itself - that is the order note (→ `somcp_set_order_note`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference |
+| `message` | string | yes | 1200 characters at most, plain text, refused if it holds HTML scripts or events |
+| `display_to_customer` | boolean | yes | the **Display to customer?** checkbox. No default: the assistant must decide whether the customer sees and receives it |
+
+**Returns** - `added`, `order` (`id_order` and `reference`),
+`id_customer_thread`, `id_customer_message`, `display_to_customer`,
+`email_sent`, `warning` when the message was saved but the email failed -
+reported apart, so the assistant does not add it twice.
+
+**Notes** - the block holds a select **Choose your order message** (the
+predefined messages of **Customer Service > Order Messages**), the checkbox
+**Display to customer?**, the field **Message** (1200 characters, counter on
+screen) and **Send message**, the same on 8.0.1 and 9.0.0. The predefined
+messages are not a parameter: they only fill the text field on screen, and
+reading them belongs to a tool for Order Messages.
+
+The sequence is the core's own, read from `AddOrderCustomerMessageHandler`,
+identical on 8.0.1 and 9.0.0, rather than the command bus, whose handler is
+built with context ids the module does not have outside the back office:
+
+1. the message is refused if it holds a script or an event attribute
+   (`Validate::isCleanHtml()`, the check behind the `CleanHtml` constraint);
+2. the order's thread is found by
+   `CustomerThread::getIdCustomerThreadByEmailAndIdOrder()`, or opened
+   (`id_contact` 0, `status` open, the order's customer, shop and language);
+3. a `CustomerMessage` is added with `id_employee` = the token's employee, so
+   the message shows who wrote it, and `private` = not `display_to_customer`;
+4. when it is not private, the customer is emailed the `order_merchant_comment`
+   template ("New message regarding your order") in the order's language,
+   escaped and with its line breaks kept unless the shop sends text emails; a
+   private message sends nothing.
+
+`display_to_customer` must be a real boolean: the string `"false"` is refused
+rather than read as true. Spaces around the message are removed, and a message
+of spaces only is refused. Guest orders have a customer row too; an order whose
+customer was deleted is refused, as the core does.
+
+Nothing refuses a repeat: two identical messages are a legitimate thing to
+write. Not replayable: a lost answer is checked with `somcp_get_order`, whose
+`messages` list shows the new one.
+
 ### Billing
 
 The accounting records an order produces: invoices, credit slips, delivery

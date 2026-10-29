@@ -1017,6 +1017,11 @@
       <source>List the shop pages and their SEO</source>
       <target>Listar las páginas de la tienda y su SEO</target>
     </trans-unit>
+    <!-- Read the SEO and URL settings -->
+    <trans-unit id="a14a0fee0820a2cd10bb3f6a9749f5ba" resname="Read the SEO and URL settings">
+      <source>Read the SEO and URL settings</source>
+      <target>Leer los ajustes de SEO y URL</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

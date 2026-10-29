@@ -806,6 +806,10 @@ T = {
  "Lister les pages de la boutique et leur SEO",
  "Listar las páginas de la tienda y su SEO",
  "Die Seiten des Shops und ihr SEO auflisten"),
+"Read the SEO and URL settings": (
+ "Lire les réglages SEO et URL",
+ "Leer los ajustes de SEO y URL",
+ "Die SEO- und URL-Einstellungen lesen"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",

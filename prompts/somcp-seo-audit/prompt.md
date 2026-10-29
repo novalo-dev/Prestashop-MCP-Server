@@ -12,6 +12,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_audit_cms_seo`
 - `somcp_audit_brand_seo`
 - `somcp_list_meta_pages`
+- `somcp_get_seo_settings`
 
 ## Know which shop you are in
 
@@ -21,7 +22,13 @@ installation has its own titles, descriptions and URLs.
 
 ## Workflow
 
-1. **Audit first.** Call `somcp_audit_product_seo` without `checks` for the
+1. **Start with the settings.** Call `somcp_get_seo_settings` once: its
+   `warnings` (friendly URLs off, no canonical redirection, no HTTPS, no
+   robots.txt, no sitemap) weigh on every page at once, so they come before any
+   single title. Never propose to change these settings yourself: a wrong value
+   breaks every address of the shop, so point the merchant to Shop Parameters >
+   Traffic & SEO and say what to check there.
+2. **Audit the pages.** Call `somcp_audit_product_seo` without `checks` for the
    whole picture, `somcp_audit_category_seo` for the category pages and
    `somcp_audit_cms_seo` for the CMS pages (delivery, legal notice...) and
    `somcp_audit_brand_seo` for the brand pages; `somcp_list_meta_pages` shows
@@ -30,13 +37,13 @@ installation has its own titles, descriptions and URLs.
    `products` or `categories` is one page; `pages` and `brands` list
    everything at once. Read the next page with `offset` while
    `total_count` says there is more, before saying that is all.
-2. **Sort by effect on sales.** The products that sell, or should, come first;
+3. **Sort by effect on sales.** The products that sell, or should, come first;
    a missing title on a best seller matters more than a long description on a
    product nobody looks at. Ask the merchant which products matter most when
    you cannot tell.
-3. **Narrow down.** Pass `checks` to work through one problem at a time, and
+4. **Narrow down.** Pass `checks` to work through one problem at a time, and
    `language` to work in one language.
-4. **Propose, do not write.** For each fix, show the merchant the new title or
+5. **Propose, do not write.** For each fix, show the merchant the new title or
    description, in each language of the shop, and wait for their approval. The
    audit never changes anything.
 
@@ -91,3 +98,4 @@ installation has its own titles, descriptions and URLs.
 - "Mes pages CMS sont-elles bien optimisées ?"
 - "Which brands have no logo or description?"
 - "Quel est le titre de ma page d'accueil dans Google ?"
+- "Mes URL sont-elles bien réglées pour Google ?"

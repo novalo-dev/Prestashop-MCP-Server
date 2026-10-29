@@ -10,7 +10,8 @@
     "somcp_audit_category_seo",
     "somcp_audit_cms_seo",
     "somcp_audit_brand_seo",
-    "somcp_list_meta_pages"
+    "somcp_list_meta_pages",
+    "somcp_get_seo_settings"
   ],
   "controller": "AdminMeta",
   "action": "view",

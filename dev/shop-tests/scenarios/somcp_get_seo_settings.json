@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "the settings of the demo shop", "arguments": {}, "expect": "ok", "contains": ["\"friendly_urls\"", "\"accented_urls\"", "\"canonical_redirect\"", "\"https\"", "\"https_everywhere\"", "\"domains\"", "\"main\": true", "\"routes\"", "\"product\"", "\"category\"", "\"brand\"", "\"supplier\"", "\"cms\"", "\"cms_category\"", "\"pattern\"", "\"customized\"", "\"robots_txt_present\"", "\"sitemap_module\"", "\"installed\"", "\"languages\"", "\"default\": true", "\"warnings\""]},
+    {"why": "the product address keeps its identifier in the default pattern", "arguments": {}, "expect": "ok", "contains": ["{id}"]}
+  ]
+}

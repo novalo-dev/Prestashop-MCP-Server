@@ -194,6 +194,17 @@ product, category or page, are shown as such rather than as pages with no
 title. It only reads: nothing is changed. It needs the permission
 `mcp.seo.read` and the `view` right on the back office Traffic & SEO page.
 
+**SEO and URL settings.** The new tool `somcp_get_seo_settings` reads the
+settings that decide what your shop's addresses look like to search engines:
+friendly URLs, accented characters in URLs, the redirection to the canonical
+URL, HTTPS, the shop's domains, the URL patterns of product, category, brand,
+supplier and CMS pages, whether a robots.txt file is there and whether the
+sitemap module is installed and enabled, and the shop's languages. It points
+out what costs rankings: friendly URLs off, no canonical redirection, a shop
+not served in HTTPS, no robots.txt, no sitemap. It only reads: these settings
+stay yours to change in the back office. It needs the permission
+`mcp.seo.read` and the `view` right on the back office Traffic & SEO page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

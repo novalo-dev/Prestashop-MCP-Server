@@ -2559,7 +2559,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 - Written through `Meta`. A new `url_rewrite` breaks the old address: said before and in the answer. The home page has no `url_rewrite` and refuses one.
 
 #### `somcp_get_seo_settings`
-**State**: to write · [issue #89](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/89)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
 **Does** - returns the shop's SEO and URL settings, and what each one means for search engines.
@@ -2570,11 +2570,13 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 None.
 
-**Returns** - `friendly_urls`, `accented_urls`, `canonical_redirect` (none, 302 or 301), `https` (whether the shop answers in HTTPS), `domains` (main and others), `routes` (product, category, brand, supplier, CMS and their patterns), `robots_txt_present`, `sitemap_module` (gsitemap installed and active, or not), `languages`, `warnings`.
+**Returns** - `friendly_urls`, `accented_urls`, `canonical_redirect` (none, 302 or 301), `https` (whether the shop answers in HTTPS) and `https_everywhere` (the PrestaShop 8 setting serving every page in HTTPS, `null` on PrestaShop 9, which dropped it), `domains` (main first, each with `domain`, `domain_ssl`, `uri`, `main`, `active`), `routes` (`product`, `category`, `brand`, `supplier`, `cms`, `cms_category`, each with its `pattern` and `customized`), `robots_txt_present`, `sitemap_module` (`installed`, `active`), `languages` (`iso_code`, `name`, `active`, `default`), `warnings` (each a `code` and `why`).
 
 **Notes**
-- Settings read by their configuration keys in each version; a key a version does not have is `null`, never guessed.
-- `warnings` names what costs rankings: friendly URLs off, no canonical redirection, a shop not served in HTTPS, no robots.txt, no sitemap module.
+- Settings read by their configuration keys in each version, for the shop of the token; a key a version does not have is `null`, never guessed.
+- A route's default pattern is read from `Dispatcher::$default_routes` of the running version (PrestaShop 8 puts the category and the EAN-13 in the product address), and `PS_ROUTE_<route>` replaces it when not empty, as `Dispatcher::loadRoutes()` does.
+- `sitemap_module.active` is read from `module_shop` for the shop of the token, since `Module::isEnabled()` answers for the shop of the global context.
+- `warnings` names what costs rankings: friendly URLs off (`friendly_urls_off`), no canonical redirection (`no_canonical_redirect`), a shop not served in HTTPS (`not_https`, or `https_not_everywhere` on PrestaShop 8), no robots.txt (`no_robots_txt`), no sitemap module (`no_sitemap_module`).
 
 #### `somcp_get_robots_txt`
 **State**: to write · [issue #90](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/90)

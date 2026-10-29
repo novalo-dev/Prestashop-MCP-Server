@@ -24,6 +24,8 @@ use NeuronAI\RAG\Embeddings\OpenAIEmbeddingsProvider;
 use NeuronAI\RAG\Embeddings\VoyageEmbeddingsProvider;
 use NeuronAI\RAG\Retrieval\SemanticMemoryRetrieval;
 use NeuronAI\RAG\VectorStore\FileVectorStore;
+use NeuronAI\RAG\VectorStore\Filter\Filter;
+use NeuronAI\RAG\VectorStore\Filter\FilterGroup;
 use NeuronAI\RAG\VectorStore\VectorStoreInterface;
 
 if (!defined('_PS_VERSION_')) {
@@ -206,13 +208,58 @@ class SomcpAssistantMemory
     }
 
     /**
-     * Removes what memory stored outside its files, on uninstall.
+     * Removes everything memory stored, on uninstall: its settings and the
+     * folder of embedded messages. Those messages are the employees' words;
+     * leaving them on the server after the module goes would keep data nobody
+     * can reach any more and nobody will remember to delete.
      */
     public static function purge(): void
     {
         Configuration::deleteByName(self::ON);
         Configuration::deleteByName(self::PROVIDER);
         Configuration::deleteByName(self::KEY);
+
+        $directory = rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::STORE;
+        if (!is_dir($directory)) {
+            return;
+        }
+        $entries = @scandir($directory);
+        foreach (is_array($entries) ? $entries : [] as $entry) {
+            if ($entry !== '.' && $entry !== '..' && is_file($directory . $entry)) {
+                @unlink($directory . $entry);
+            }
+        }
+        @rmdir($directory);
+        // The module's own folder under var/, as SomcpUpload::removeStore()
+        // leaves it: rmdir refuses it while anything else is still inside.
+        @rmdir(dirname($directory));
+    }
+
+    /**
+     * Deletes what memory kept of one conversation, when it is deleted: a
+     * conversation the employee removed must not live on in what the
+     * assistant recalls, nor on the disk. Done whether memory is on or not,
+     * since it may have been on while the conversation was written.
+     *
+     * @param int $idShop
+     * @param string $threadId
+     */
+    public static function forget(int $idShop, string $threadId): void
+    {
+        // No folder means memory never wrote anything: nothing to delete, and
+        // no reason to create the folder now.
+        if ($threadId === '' || !is_dir(rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::STORE)) {
+            return;
+        }
+
+        try {
+            self::store($idShop)->delete(FilterGroup::and(
+                Filter::eq('sourceType', self::SOURCE_TYPE),
+                Filter::eq('sourceName', $threadId)
+            ));
+        } catch (Throwable $e) {
+            SomcpLogger::log('assistant_memory_failed', SomcpLogger::OUTCOME_FAILURE, Tools::substr($e->getMessage(), 0, 200), '', 0);
+        }
     }
 
     /**

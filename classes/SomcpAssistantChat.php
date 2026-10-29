@@ -298,6 +298,8 @@ class SomcpAssistantChat
      */
     public function deleteThread(array $thread): void
     {
+        // Read before the messages go: the files are named in them.
+        $references = $this->references($thread);
         try {
             $this->agent($thread, $this->assistantOf($thread) ?? [])->resetConversation();
         } catch (Throwable $e) {
@@ -308,6 +310,50 @@ class SomcpAssistantChat
             'somcp_assistant_thread',
             '`thread_id` = \'' . pSQL((string) $thread['thread_id']) . '\' AND `id_employee` = ' . (int) $this->employee->id
         );
+
+        // What the conversation left elsewhere goes with it: the files attached
+        // or generated in it, which would otherwise wait a week for the purge,
+        // and what the long-term memory kept of it.
+        foreach ($references as $reference) {
+            $deposit = SomcpUpload::find($reference, (int) $this->employee->id);
+            if ($deposit !== null) {
+                SomcpUpload::drop($deposit);
+            }
+        }
+        SomcpAssistantMemory::forget($this->idShop, (string) $thread['thread_id']);
+    }
+
+    /**
+     * The deposits a conversation refers to: the images generated in it, from
+     * the thread's own list, and the files attached to its messages, which the
+     * stored messages name as "upload_ref: <reference>".
+     *
+     * @param array<string, mixed> $thread
+     *
+     * @return array<int, string>
+     */
+    private function references(array $thread): array
+    {
+        $references = array_map(static function (array $file): string {
+            return (string) $file['ref'];
+        }, $this->generated($thread));
+
+        $texts = [];
+        $rows = Db::getInstance()->executeS(
+            'SELECT `content` FROM `' . _DB_PREFIX_ . 'somcp_assistant_message`'
+            . ' WHERE `thread_id` = \'' . pSQL((string) $thread['thread_id']) . '\''
+        );
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $texts[] = (string) $row['content'];
+        }
+
+        foreach ($texts as $text) {
+            if (preg_match_all('/' . preg_quote(SomcpUpload::ARG_REF, '/') . '"?\s*[:=]\s*"?([A-Za-z0-9_-]{16,})/', $text, $found)) {
+                $references = array_merge($references, $found[1]);
+            }
+        }
+
+        return array_values(array_unique($references));
     }
 
     /**

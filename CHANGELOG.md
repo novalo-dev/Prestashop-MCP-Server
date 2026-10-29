@@ -110,6 +110,12 @@ on the dark background of the other O'So modules.
 
 ### Fixed
 
+**Deleting a conversation.** Deleting a conversation of the built-in
+assistant removed its messages but left behind what the long-term memory had
+kept of it, and the files attached or generated in it until the weekly purge.
+Both now go with the conversation. Uninstalling the module also removes the
+memory's folder, which used to stay on the server.
+
 **Memory after a summary.** Once a long conversation was summarized, the
 long-term memory lost count of what it had already kept: the messages that
 followed could be left out of it for good, and the summary could be kept as

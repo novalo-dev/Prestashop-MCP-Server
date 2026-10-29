@@ -45,13 +45,12 @@ class Somcp extends Module
     private const FLASH_KEY = 'somcp_flash';
 
     /**
-     * The top of the module's own branch of pages, under Configure. Kept
-     * switched off, so it draws no entry in the side menu: the settings are
-     * reached from the Configure button of the module manager only.
+     * The menu entry of development builds, under Configure. No longer
+     * installed: kept to remove it from the shops that have it.
      */
-    public const SETTINGS_PARENT = 'AdminSomcpParent';
+    public const LEGACY_PARENT = 'AdminSomcpParent';
 
-    /** The one item under that entry; the settings pages are its tabs. */
+    /** The module's item under Shop Parameters; the settings pages are its tabs. */
     public const SETTINGS_ITEM = 'AdminSomcpSettings';
 
     /** Where the "Support us" button leads. */
@@ -1196,38 +1195,31 @@ class Somcp extends Module
     }
 
     /**
-     * The settings pages and the branch above them.
+     * The settings pages and the menu item above them.
      *
-     * The module has its own branch under Configure, after Advanced
-     * Parameters, with one item beneath it whose pages are the settings.
-     * That depth is what makes PrestaShop draw the pages as tabs under the
-     * page title, on 8 and 9 alike: it does so for the pages under a third
-     * level item, as for Contacts and Stores under Shop Parameters > Contact.
-     * The top of the branch is switched off, which takes the entry out of the
-     * side menu and leaves the tabs under the title as they are (checked on
-     * 8.0.1 and 9.0.0): the module manager's Configure button is the way in.
+     * One item, MCP server, under Shop Parameters right after General, with
+     * the settings as its pages: a setting of the shop among the others
+     * rather than an entry of its own in the side menu. That depth is what
+     * makes PrestaShop draw the pages as tabs under the page title, on 8 and
+     * 9 alike, as for Contacts and Stores under Shop Parameters > Contact.
      *
      * Every tab is put where it belongs whether it is new or not, so a shop
-     * that got the pages from an earlier development build, under Modules,
-     * has them moved rather than left there. The labels live in ps_tab_lang,
-     * where trans() never runs, so each language gets its own from the
-     * module catalogues.
+     * that got the pages from an earlier development build, under Modules or
+     * under an entry of their own, has them moved rather than left there. The
+     * labels live in ps_tab_lang, where trans() never runs, so each language
+     * gets its own from the module catalogues.
      *
      * @return bool
      */
     private function installSettingsTabs(): bool
     {
-        $configure = (int) Tab::getIdFromClassName('CONFIGURE');
+        $shopParameters = (int) Tab::getIdFromClassName('ShopParameters');
 
-        $idEntry = $this->placeTab(self::SETTINGS_PARENT, $configure > 0 ? $configure : -1, null, 'device_hub', false);
-        if ($idEntry <= 0) {
-            return false;
-        }
-
-        $idItem = $this->placeTab(self::SETTINGS_ITEM, $idEntry, 'MCP server', '');
+        $idItem = $this->placeTab(self::SETTINGS_ITEM, $shopParameters > 0 ? $shopParameters : -1, 'MCP server', '');
         if ($idItem <= 0) {
             return false;
         }
+        $this->placeAfter($idItem, 'AdminParentPreferences');
 
         foreach (self::settingsPages() as [$controller, $label]) {
             if ($this->placeTab($controller, $idItem, $label, '') <= 0) {
@@ -1235,7 +1227,48 @@ class Somcp extends Module
             }
         }
 
+        // Only once the item has left it: deleting a tab leaves its children
+        // pointing at nothing.
+        $idLegacy = (int) Tab::getIdFromClassName(self::LEGACY_PARENT);
+        if ($idLegacy > 0) {
+            (new Tab($idLegacy))->delete();
+        }
+
         return true;
+    }
+
+    /**
+     * Moves a tab right after a sibling, General for the MCP server item.
+     *
+     * Done with PrestaShop's own method, which shifts the tabs in between, so
+     * the positions stay a clean run. Left where it is when the sibling is not
+     * under the same parent, as on a shop that reorganised its menu.
+     *
+     * @param int $idTab
+     * @param string $sibling class name of the tab to follow
+     */
+    private function placeAfter(int $idTab, string $sibling): void
+    {
+        $tab = new Tab($idTab);
+        $idSibling = (int) Tab::getIdFromClassName($sibling);
+        if ($idSibling <= 0) {
+            return;
+        }
+
+        $before = new Tab($idSibling);
+        if ((int) $before->id_parent !== (int) $tab->id_parent) {
+            return;
+        }
+
+        // Once the item leaves its place the tabs after it move up by one,
+        // so the target is the sibling's own place when the item comes from
+        // behind it, and the one after when it comes from in front.
+        $target = (int) $tab->position > (int) $before->position
+            ? (int) $before->position + 1
+            : (int) $before->position;
+        if ((int) $tab->position !== $target) {
+            $tab->updatePosition((int) $tab->position < $target, $target);
+        }
     }
 
     /**
@@ -1247,21 +1280,17 @@ class Somcp extends Module
      * @param string|null $label English label, translated per language; null
      *                           for the module name, which is not translated
      * @param string $icon material icon of a main menu entry, or ''
-     * @param bool $active false for a tab kept out of the side menu
      *
      * @return int the tab id, 0 on failure
      */
-    private function placeTab(string $controller, int $idParent, ?string $label, string $icon, bool $active = true): int
+    private function placeTab(string $controller, int $idParent, ?string $label, string $icon): int
     {
         $idTab = (int) Tab::getIdFromClassName($controller);
         if ($idTab > 0) {
             $tab = new Tab($idTab);
-            // The state is set on existing tabs too: a shop that installed a
-            // development build has the entry switched on in its menu.
-            if ((int) $tab->id_parent !== $idParent || (string) $tab->icon !== $icon || (bool) $tab->active !== $active) {
+            if ((int) $tab->id_parent !== $idParent || (string) $tab->icon !== $icon) {
                 $tab->id_parent = $idParent;
                 $tab->icon = $icon;
-                $tab->active = $active;
                 if (!$tab->update()) {
                     return 0;
                 }
@@ -1273,7 +1302,7 @@ class Somcp extends Module
         $tab = new Tab();
         $tab->class_name = $controller;
         $tab->module = $this->name;
-        $tab->active = $active;
+        $tab->active = true;
         $tab->id_parent = $idParent;
         $tab->icon = $icon;
         $tab->name = [];
@@ -1327,10 +1356,10 @@ class Somcp extends Module
     {
         $removed = true;
 
-        // The pages before their menu entry, so none is left orphaned.
+        // The pages before their menu item, so none is left orphaned.
         $controllers = array_merge(
             array_column(self::settingsPages(), 0),
-            [self::SETTINGS_ITEM, self::SETTINGS_PARENT],
+            [self::SETTINGS_ITEM, self::LEGACY_PARENT],
             self::hiddenTabs()
         );
 

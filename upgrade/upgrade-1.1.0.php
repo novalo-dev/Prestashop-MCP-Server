@@ -23,11 +23,10 @@ if (!defined('_PS_VERSION_')) {
  *
  * A shop upgrading in place gets what a fresh install of 1.1.0 would have
  * done: the assistant tables, the hidden page the chat talks to, the
- * settings pages the module manager's Configure button opens, kept out of
- * the side menu, and the header hook its button is printed by. Every call
- * skips what already exists or puts it back where it belongs, so running
- * this twice changes nothing. The hook that loads the
- * chat's script was already registered by 1.0.0.
+ * settings pages under Shop Parameters > MCP server, and the header hook
+ * its button is printed by. Every call skips what already exists or puts it
+ * back where it belongs, so running this twice changes nothing. The hook
+ * that loads the chat's script was already registered by 1.0.0.
  *
  * @param Somcp $module
  *

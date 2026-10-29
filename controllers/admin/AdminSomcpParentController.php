@@ -23,8 +23,9 @@ if (!defined('_PS_VERSION_')) {
 require_once _PS_MODULE_DIR_ . 'somcp/classes/SomcpSettingsController.php';
 
 /*
- * The module's entry in the main menu. It has no page of its own: anybody
- * who lands on it is sent to the first settings page.
+ * The top of the module's branch of pages, kept out of the side menu. It has
+ * no page of its own: anybody who lands on it is sent to the first settings
+ * page.
  */
 class AdminSomcpParentController extends SomcpSettingsController
 {

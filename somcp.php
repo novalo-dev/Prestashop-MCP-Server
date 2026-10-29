@@ -44,7 +44,11 @@ class Somcp extends Module
     /** @var string Key the settings page leaves a message under, for the page after the redirect. */
     private const FLASH_KEY = 'somcp_flash';
 
-    /** The module's entry in the main menu. */
+    /**
+     * The top of the module's own branch of pages, under Configure. Kept
+     * switched off, so it draws no entry in the side menu: the settings are
+     * reached from the Configure button of the module manager only.
+     */
     public const SETTINGS_PARENT = 'AdminSomcpParent';
 
     /** The one item under that entry; the settings pages are its tabs. */
@@ -1192,13 +1196,16 @@ class Somcp extends Module
     }
 
     /**
-     * The settings pages and the menu entry above them.
+     * The settings pages and the branch above them.
      *
-     * The module has its own entry in the main menu, after Advanced
+     * The module has its own branch under Configure, after Advanced
      * Parameters, with one item beneath it whose pages are the settings.
      * That depth is what makes PrestaShop draw the pages as tabs under the
      * page title, on 8 and 9 alike: it does so for the pages under a third
      * level item, as for Contacts and Stores under Shop Parameters > Contact.
+     * The top of the branch is switched off, which takes the entry out of the
+     * side menu and leaves the tabs under the title as they are (checked on
+     * 8.0.1 and 9.0.0): the module manager's Configure button is the way in.
      *
      * Every tab is put where it belongs whether it is new or not, so a shop
      * that got the pages from an earlier development build, under Modules,
@@ -1212,7 +1219,7 @@ class Somcp extends Module
     {
         $configure = (int) Tab::getIdFromClassName('CONFIGURE');
 
-        $idEntry = $this->placeTab(self::SETTINGS_PARENT, $configure > 0 ? $configure : -1, null, 'device_hub');
+        $idEntry = $this->placeTab(self::SETTINGS_PARENT, $configure > 0 ? $configure : -1, null, 'device_hub', false);
         if ($idEntry <= 0) {
             return false;
         }
@@ -1240,17 +1247,21 @@ class Somcp extends Module
      * @param string|null $label English label, translated per language; null
      *                           for the module name, which is not translated
      * @param string $icon material icon of a main menu entry, or ''
+     * @param bool $active false for a tab kept out of the side menu
      *
      * @return int the tab id, 0 on failure
      */
-    private function placeTab(string $controller, int $idParent, ?string $label, string $icon): int
+    private function placeTab(string $controller, int $idParent, ?string $label, string $icon, bool $active = true): int
     {
         $idTab = (int) Tab::getIdFromClassName($controller);
         if ($idTab > 0) {
             $tab = new Tab($idTab);
-            if ((int) $tab->id_parent !== $idParent || (string) $tab->icon !== $icon) {
+            // The state is set on existing tabs too: a shop that installed a
+            // development build has the entry switched on in its menu.
+            if ((int) $tab->id_parent !== $idParent || (string) $tab->icon !== $icon || (bool) $tab->active !== $active) {
                 $tab->id_parent = $idParent;
                 $tab->icon = $icon;
+                $tab->active = $active;
                 if (!$tab->update()) {
                     return 0;
                 }
@@ -1262,7 +1273,7 @@ class Somcp extends Module
         $tab = new Tab();
         $tab->class_name = $controller;
         $tab->module = $this->name;
-        $tab->active = true;
+        $tab->active = $active;
         $tab->id_parent = $idParent;
         $tab->icon = $icon;
         $tab->name = [];

@@ -23,7 +23,7 @@ if (!defined('_PS_VERSION_')) {
 require_once _PS_MODULE_DIR_ . 'somcp/classes/SomcpSettingsController.php';
 
 /*
- * The one item under the module's entry in the main menu, whose tabs are the
+ * The one item under the top of the module's branch of pages, whose tabs are the
  * settings pages. It has no page of its own: anybody who lands on it is sent
  * to the first of them.
  */

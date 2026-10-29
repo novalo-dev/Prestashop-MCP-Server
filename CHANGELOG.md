@@ -54,11 +54,12 @@ product and for each of its combinations.
 
 **Settings page.** The page was one long column of panels. It is now split
 into seven pages: Configuration, Tools and prompts, Access and security,
-Connected assistants, Built-in assistant, Security log, Help and updates. The
-module has its own entry in the main menu, after Advanced Parameters, and
+Connected assistants, Built-in assistant, Security log, Help and updates.
 PrestaShop shows the seven pages as tabs under the page title, as it does for
-Contacts and Stores, with the module's buttons beside the title. The Configure button of the module
-manager leads to the first page, and each page has its own address.
+Contacts and Stores, with the module's buttons beside the title. The module
+adds no entry to the side menu: the settings open from the Configure button of
+the module manager, which leads to the first page, and each page has its own
+address.
 The switch that turns the MCP server on and off leads the first tab and saves
 as soon as it moves, without a trip to the Save button. The address to give an
 assistant now sits in a regular back office field with its Copy button, on

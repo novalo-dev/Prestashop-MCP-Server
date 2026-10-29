@@ -90,6 +90,17 @@ on the dark background of the other O'So modules.
 
 ### Added
 
+**Tracking numbers.** The new tool `somcp_set_order_tracking` sets the tracking
+number of an order's shipment, like the Tracking number field of the Edit
+shipping details window on the Carriers tab of the order page. As in the back
+office, a new number emails your customer the "in transit" message, with the
+tracking link when the carrier has one, and lets carrier modules know; giving
+the number the shipment already has changes nothing and sends nothing, and an
+empty number removes it without any email. When an order has several
+shipments, the assistant has to say which one. The carrier and the order status
+are never changed by it. It needs the permission `mcp.orders.write` and the
+`edit` right on the back office orders page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

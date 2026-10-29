@@ -1,0 +1,17 @@
+{
+  "calls": [
+    {"why": "a number set on the only shipment of a demo order, cleared first in case another run left one", "arguments": {"id_order": 3, "tracking_number": ""}, "expect": "ok", "contains": ["\"id_order_carrier\""]},
+    {"why": "a number on the only shipment, found without id_order_carrier", "arguments": {"id_order": 3, "tracking_number": "SOMCP-TEST-1"}, "expect": "ok", "contains": ["\"changed\": true", "\"tracking_number\": \"SOMCP-TEST-1\"", "\"previous_tracking_number\": \"\""]},
+    {"why": "the same number again changes nothing", "arguments": {"id_order": 3, "tracking_number": "SOMCP-TEST-1"}, "expect": "ok", "contains": ["\"changed\": false", "no email was sent"]},
+    {"why": "the same number with spaces around it is still the same number", "arguments": {"id_order": 3, "tracking_number": "  SOMCP-TEST-1 "}, "expect": "ok", "contains": ["\"changed\": false"]},
+    {"why": "the order found by its reference, its shipment named as a string", "arguments": {"reference": "UOYEVOLI", "id_order_carrier": "3", "tracking_number": "SOMCP-TEST-2"}, "expect": "ok", "contains": ["\"changed\": true", "\"previous_tracking_number\": \"SOMCP-TEST-1\"", "\"reference\": \"UOYEVOLI\""]},
+    {"why": "a shipment of another order is refused", "arguments": {"id_order": 3, "id_order_carrier": 1, "tracking_number": "SOMCP-TEST-3"}, "expect": "error", "contains": ["not a shipment of this order", "Nothing was changed"]},
+    {"why": "a shipment given as a list is not read as shipment 1", "arguments": {"id_order": 1, "id_order_carrier": [1], "tracking_number": "SOMCP-TEST-3"}, "expect": "error", "contains": ["not a shipment of this order"]},
+    {"why": "a character PrestaShop refuses", "arguments": {"id_order": 3, "tracking_number": "ABC<123>"}, "expect": "error", "contains": ["Nothing was changed"]},
+    {"why": "longer than the 64 characters the column holds", "arguments": {"id_order": 3, "tracking_number": "12345678901234567890123456789012345678901234567890123456789012345"}, "expect": "error", "contains": ["64 characters"]},
+    {"why": "a number that is not a string", "arguments": {"id_order": 3, "tracking_number": 12345}, "expect": "error", "contains": ["must be a string"]},
+    {"why": "an empty number clears it", "arguments": {"id_order": 3, "tracking_number": ""}, "expect": "ok", "contains": ["\"changed\": true", "\"tracking_number\": \"\"", "\"customer_notified\": false"]},
+    {"why": "cleared again, nothing changes", "arguments": {"id_order": 3, "tracking_number": ""}, "expect": "ok", "contains": ["\"changed\": false"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "tracking_number": "SOMCP-TEST-4"}, "expect": "error", "contains": ["No order of this shop"]}
+  ]
+}

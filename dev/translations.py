@@ -770,6 +770,10 @@ T = {
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",
  "Den Status einer Bestellung ändern"),
+"Set the tracking number of an order": (
+ "Renseigner le numéro de suivi d'une commande",
+ "Indicar el número de seguimiento de un pedido",
+ "Die Sendungsnummer einer Bestellung eintragen"),
 "view": (
  "voir",
  "ver",

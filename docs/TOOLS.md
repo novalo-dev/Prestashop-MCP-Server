@@ -430,24 +430,56 @@ Advanced stock management is synchronised on PrestaShop 8 only, guarded by
 `method_exists`: `StockAvailable::dependsOnStock()` no longer exists in 9.
 
 #### `somcp_set_order_tracking`
-**State**: draft · [issue #19](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/19)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
 
-**Does** - sets the tracking number of one order's shipment.
+**Does** - sets the tracking number of one shipment of one order, like the
+**Tracking number** field of the **Edit shipping details** window, on the
+**Carriers** tab of the order page.
 
-**Do not use for** - changing the order status to shipped (→ `somcp_set_order_status`), which is a separate decision.
+**Do not use for** - changing the order status to shipped (→
+`somcp_set_order_status`), which is a separate decision, or changing the carrier
+of a shipment, which this tool never does.
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_order` | integer | one of the two |  |
-| `reference` | string | one of the two |  |
-| `tracking_number` | string | yes | checked against the carrier's format when it has one |
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference |
+| `tracking_number` | string | yes | 64 characters at most, checked with `Validate::isTrackingNumber()`; `""` clears the number |
+| `id_order_carrier` | integer | no | which shipment, from `shipping.shipments` of `somcp_get_order`; required only when the order has more than one, refused with the list of shipments otherwise |
 
-**Returns** - `changed`, `previous_tracking_number`, `tracking_number`, `tracking_url`, `customer_notified`.
+**Returns** - `changed`, `order` (`id_order` and `reference`),
+`id_order_carrier`, `carrier` (name), `previous_tracking_number`,
+`tracking_number`, `tracking_url` (built from the carrier's `url`, `@` standing
+for the number, empty when the carrier has none), `customer_notified`,
+`warning` when the number was saved but the email failed. When the shipment
+already has that number: `changed: false` with a `reason`, and nothing happens.
 
-**Notes** - written where the back office writes it, on the order's `OrderCarrier`, with `actionAdminOrdersTrackingNumberUpdate` fired so carrier modules follow. Whether the customer is emailed follows the shop's own setting.
+**Notes** - the number lives on `order_carrier.tracking_number` (`varchar(64)`
+on 8 and 9), one row per shipment, read the way `somcp_get_order` reads them.
+The sequence is the core's own, read from `UpdateOrderShippingDetailsHandler`,
+identical on 8.0.1 and 9.0.0: check with `Validate::isTrackingNumber()` (the
+core has no format per carrier), save the `OrderCarrier`, then, only when the
+number changed and is not empty, `OrderCarrier::sendInTransitEmail()` (the
+`in_transit` email, sent every time, not a shop setting) and, once it has left,
+`actionAdminOrdersTrackingNumberUpdate` with `order`, `customer` and `carrier`
+for the order's shop. The context language is the order's for the length of the
+change, as in the core.
+
+The same number again is `changed: false`, with no write, no email and no hook:
+the guard against a retried call mailing the customer twice. An empty number
+clears it without any email, as in the back office. Spaces around the number
+are removed before the comparison.
+
+`customer_notified` is false when the order's carrier has no tracking address:
+`sendInTransitEmail()` then answers true without sending anything. A failed
+email is reported in `warning`, apart from the change, which did happen.
+
+The carrier field of the same window is left out: changing it recalculates the
+shipping cost and the order totals (`OrderAmountUpdater`), a different decision
+with a different risk.
 
 ### Billing
 

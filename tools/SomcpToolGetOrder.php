@@ -130,11 +130,14 @@ class SomcpToolGetOrder
     /**
      * Finds the order, and only within the shop the token belongs to.
      *
+     * Public so the order tools that write find an order exactly as this one
+     * reads it.
+     *
      * @param array<string, mixed> $arguments
      *
      * @return Order|null
      */
-    private static function locate(array $arguments): ?Order
+    public static function locate(array $arguments): ?Order
     {
         $idShop = Somcp::currentShopId();
         $idOrder = (int) ($arguments['id_order'] ?? 0);
@@ -389,13 +392,15 @@ class SomcpToolGetOrder
      * Read from the order's OrderCarrier rows rather than getShipping(), which
      * groups by carrier: two parcels with the same carrier would become one,
      * and a tracking number could then not be set on the right shipment.
+     * somcp_set_order_tracking lists the shipments to choose from with this
+     * same reading, so the two tools never disagree on what a shipment is.
      *
      * @param Order $order
      * @param int $idLang
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function shipments(Order $order, int $idLang): array
+    public static function shipments(Order $order, int $idLang): array
     {
         $collection = new PrestaShopCollection('OrderCarrier');
         $collection->where('id_order', '=', (int) $order->id);

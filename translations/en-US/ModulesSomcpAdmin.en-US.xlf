@@ -972,6 +972,11 @@
       <source>Change the status of an order</source>
       <target>Change the status of an order</target>
     </trans-unit>
+    <!-- Set the tracking number of an order -->
+    <trans-unit id="300260bdd7dcacd0806901944cd946f8" resname="Set the tracking number of an order">
+      <source>Set the tracking number of an order</source>
+      <target>Set the tracking number of an order</target>
+    </trans-unit>
     <!-- view -->
     <trans-unit id="1bda80f2be4d3658e0baa43fbe7ae8c1" resname="view">
       <source>view</source>

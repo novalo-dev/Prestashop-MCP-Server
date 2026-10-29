@@ -80,6 +80,7 @@ calling the shop's own addresses.
 | `somcp_get_order` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_list_order_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
 | `somcp_set_order_status` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+| `somcp_set_order_tracking` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_search_products` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
 | `somcp_get_product` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
 | `somcp_list_categories` | `mcp.catalog.read` | `view` on `AdminCategories` | read |

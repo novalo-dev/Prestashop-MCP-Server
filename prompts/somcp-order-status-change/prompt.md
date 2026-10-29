@@ -10,6 +10,7 @@ of it can be undone by calling again.
 - `somcp_list_order_statuses`
 - `somcp_get_order`
 - `somcp_set_order_status`
+- `somcp_set_order_tracking`
 
 ## Know which shop you are in
 
@@ -35,6 +36,26 @@ an email sent to someone else's customer.
 5. Call `somcp_set_order_status` with `status_id` and the order.
 6. Report what came back: the previous status, the new one, and whether the
    customer was emailed.
+
+## Tracking number
+
+When the merchant gives the parcel number, call `somcp_set_order_tracking`
+with the order and `tracking_number`. It is its own call, not part of the
+status change: it never moves the order to shipped, and
+`somcp_set_order_status` never sets a number.
+
+- A new number **emails the customer** the in transit message. Say so before
+  calling. Sending the number the shipment already has changes nothing and
+  sends nothing.
+- An order with several shipments needs `id_order_carrier`: the call is
+  refused with the list, so ask the merchant which parcel it is.
+- An empty number (`""`) removes it without any email. Only when the merchant
+  asked for that.
+- The carrier of the shipment is never changed here.
+
+When the merchant says an order has left with its number, set the number
+first, then the shipped status: the shipped email then carries the tracking
+link.
 
 ## Several orders
 

@@ -28,6 +28,13 @@ now returns its tags as well, so they can be read, changed and written back.
 
 ### Changed
 
+**Searching orders.** The order search now covers what the Orders list of the
+back office shows: whether the customer was ordering for the first time (the
+New client column), the delivery country and the customer's company can be
+returned and searched on, and each order comes with the colour of its status.
+The amount returned and the amount filters now use the Total column of that
+list, tax included, and say so in their name.
+
 **Stock of a product.** Reading a product's stock now also shows who is waiting
 on it: alongside the reserved quantity, the orders holding that stock are
 listed, each with its number and reference and how many units it holds, for the

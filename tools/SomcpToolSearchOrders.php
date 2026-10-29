@@ -52,8 +52,10 @@ class SomcpToolSearchOrders
             'somcp_search_orders',
             Somcp::t('Search orders'),
             'Finds orders of this shop by reference, customer, date, status, amount or payment '
-                . 'method, and returns a short line for each: reference, customer, phone, amount '
-                . 'paid, payment method and current status. Use it to answer questions about '
+                . 'method, delivery country, company or whether it was the customer\'s first order, and '
+                . 'returns a short line for each: reference, customer, company, phone, delivery country, '
+                . 'amount paid tax included, payment method, current status and whether the customer was '
+                . 'new. Use it to answer questions about '
                 . 'several orders, or to find the reference of one. '
                 . 'Do not use it to read a single order you already identified - somcp_get_order '
                 . 'returns everything about it. Do not use it for carts that were never paid for, '
@@ -102,6 +104,19 @@ class SomcpToolSearchOrders
                         'type' => 'string',
                         'description' => 'Payment method as the shop records it, whole or partial.',
                     ],
+                    'new_client' => [
+                        'type' => 'boolean',
+                        'description' => 'True for orders placed by a customer with no earlier order in any '
+                            . 'status, false for returning customers. The New client column of the back office.',
+                    ],
+                    'delivery_country' => [
+                        'type' => 'string',
+                        'description' => 'ISO code of the country of the delivery address, for example FR.',
+                    ],
+                    'company' => [
+                        'type' => 'string',
+                        'description' => 'Company of the customer, whole or partial.',
+                    ],
                     'only_valid' => [
                         'type' => 'boolean',
                         'description' => 'Keep only orders the shop considers valid, meaning paid for.',
@@ -138,11 +153,26 @@ class SomcpToolSearchOrders
     {
         $idShop = Somcp::currentShopId();
         $idLang = (int) Somcp::legacyContext()->language->id;
-        $where = self::conditions($arguments, $idShop);
+        $idCountry = 0;
+        if (isset($arguments['delivery_country']) && trim((string) $arguments['delivery_country']) !== '') {
+            $iso = trim((string) $arguments['delivery_country']);
+            // Country::getByIso() stops the request on a malformed code
+            // rather than answering false, so the code is checked first.
+            $idCountry = Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
+            if ($idCountry <= 0) {
+                return SomcpTool::text('No country has this ISO code: give delivery_country as a code such as FR.', true);
+            }
+        }
+        $where = self::conditions($arguments, $idShop, $idCountry);
+
+        // The count joins the same tables as the list, so a filter on the
+        // delivery country or the company counts what the list shows.
+        $from = '`' . _DB_PREFIX_ . 'orders` o
+             LEFT JOIN `' . _DB_PREFIX_ . 'customer` c ON c.`id_customer` = o.`id_customer`
+             LEFT JOIN `' . _DB_PREFIX_ . 'address` a ON a.`id_address` = o.`id_address_delivery`';
 
         $total = (int) Db::getInstance()->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'orders` o
-             LEFT JOIN `' . _DB_PREFIX_ . 'customer` c ON c.`id_customer` = o.`id_customer`
+            'SELECT COUNT(*) FROM ' . $from . '
              WHERE ' . $where
         );
 
@@ -151,14 +181,19 @@ class SomcpToolSearchOrders
 
         $rows = Db::getInstance()->executeS(
             'SELECT o.`id_order`, o.`reference`, o.`date_add`, o.`payment`,
-                    o.`total_paid`, o.`current_state`,
-                    c.`firstname`, c.`lastname`, c.`email`,
+                    o.`total_paid_tax_incl`, o.`current_state`,
+                    c.`firstname`, c.`lastname`, c.`company`,
                     a.`phone`, a.`phone_mobile`,
+                    ctry.`iso_code` AS `country_iso`, ctryl.`name` AS `country_name`,
+                    os.`color` AS `status_color`,
                     osl.`name` AS `status`,
-                    cur.`iso_code` AS `currency`
-             FROM `' . _DB_PREFIX_ . 'orders` o
-             LEFT JOIN `' . _DB_PREFIX_ . 'customer` c ON c.`id_customer` = o.`id_customer`
-             LEFT JOIN `' . _DB_PREFIX_ . 'address` a ON a.`id_address` = o.`id_address_delivery`
+                    cur.`iso_code` AS `currency`,
+                    ' . self::newClientSql() . ' AS `new_client`
+             FROM ' . $from . '
+             LEFT JOIN `' . _DB_PREFIX_ . 'country` ctry ON ctry.`id_country` = a.`id_country`
+             LEFT JOIN `' . _DB_PREFIX_ . 'country_lang` ctryl
+                    ON ctryl.`id_country` = a.`id_country` AND ctryl.`id_lang` = ' . $idLang . '
+             LEFT JOIN `' . _DB_PREFIX_ . 'order_state` os ON os.`id_order_state` = o.`current_state`
              LEFT JOIN `' . _DB_PREFIX_ . 'order_state_lang` osl
                     ON osl.`id_order_state` = o.`current_state` AND osl.`id_lang` = ' . $idLang . '
              LEFT JOIN `' . _DB_PREFIX_ . 'currency` cur ON cur.`id_currency` = o.`id_currency`
@@ -174,15 +209,24 @@ class SomcpToolSearchOrders
                 'reference' => (string) $row['reference'],
                 'date' => (string) $row['date_add'],
                 'customer_name' => trim((string) $row['firstname'] . ' ' . (string) $row['lastname']),
+                'new_client' => (bool) $row['new_client'],
+                // What the Company column shows, whether B2B is on or not:
+                // the field exists either way and an empty one costs nothing.
+                'company' => (string) $row['company'],
                 // The delivery address is the one a merchant calls about a
                 // parcel. The mobile number when there is one, since that is
                 // what the carriers use.
                 'phone' => (string) ($row['phone_mobile'] ?: $row['phone']),
-                'total_paid' => (float) $row['total_paid'],
+                'delivery_country' => (string) $row['country_name'],
+                'delivery_country_iso' => (string) $row['country_iso'],
+                // The Total column of the back office, named so the assistant
+                // never has to guess whether tax is in it.
+                'total_paid_tax_incl' => (float) $row['total_paid_tax_incl'],
                 'currency' => (string) $row['currency'],
                 'payment_method' => (string) $row['payment'],
                 'status' => (string) $row['status'],
                 'status_id' => (int) $row['current_state'],
+                'status_color' => (string) $row['status_color'],
             ];
         }
 
@@ -201,10 +245,11 @@ class SomcpToolSearchOrders
      *
      * @param array<string, mixed> $arguments
      * @param int $idShop
+     * @param int $idCountry delivery country already resolved from its ISO code, 0 for any
      *
      * @return string
      */
-    private static function conditions(array $arguments, int $idShop): string
+    private static function conditions(array $arguments, int $idShop, int $idCountry): string
     {
         // The shop comes from the token, never from the caller: an assistant
         // connected to one shop has no business reading another's orders.
@@ -241,10 +286,19 @@ class SomcpToolSearchOrders
             $conditions[] = 'o.`current_state` = ' . (int) $arguments['status_id'];
         }
         if (isset($arguments['total_min']) && is_numeric($arguments['total_min'])) {
-            $conditions[] = 'o.`total_paid` >= ' . (float) $arguments['total_min'];
+            $conditions[] = 'o.`total_paid_tax_incl` >= ' . (float) $arguments['total_min'];
         }
         if (isset($arguments['total_max']) && is_numeric($arguments['total_max'])) {
-            $conditions[] = 'o.`total_paid` <= ' . (float) $arguments['total_max'];
+            $conditions[] = 'o.`total_paid_tax_incl` <= ' . (float) $arguments['total_max'];
+        }
+        if (isset($arguments['new_client']) && is_bool($arguments['new_client'])) {
+            $conditions[] = self::newClientSql() . ' = ' . ($arguments['new_client'] ? 1 : 0);
+        }
+        if ($idCountry > 0) {
+            $conditions[] = 'a.`id_country` = ' . $idCountry;
+        }
+        if (!empty($arguments['company'])) {
+            $conditions[] = "c.`company` LIKE '%" . pSQL((string) $arguments['company']) . "%'";
         }
         if (!empty($arguments['payment_method'])) {
             $conditions[] = "o.`payment` LIKE '%" . pSQL((string) $arguments['payment_method']) . "%'";
@@ -254,6 +308,20 @@ class SomcpToolSearchOrders
         }
 
         return implode(' AND ', $conditions);
+    }
+
+    /**
+     * 1 when the customer had no earlier order, 0 otherwise.
+     *
+     * The subquery of the core's order grid (OrderQueryBuilder), any status and
+     * any shop, so the answer matches the New client column on screen.
+     *
+     * @return string
+     */
+    private static function newClientSql(): string
+    {
+        return '(SELECT IF(COUNT(so.`id_order`) > 0, 0, 1) FROM `' . _DB_PREFIX_ . 'orders` so
+                 WHERE so.`id_customer` = o.`id_customer` AND so.`id_order` < o.`id_order`)';
     }
 
     /**
@@ -268,9 +336,9 @@ class SomcpToolSearchOrders
             case 'date_asc':
                 return 'o.`date_add` ASC';
             case 'total_desc':
-                return 'o.`total_paid` DESC';
+                return 'o.`total_paid_tax_incl` DESC';
             case 'total_asc':
-                return 'o.`total_paid` ASC';
+                return 'o.`total_paid_tax_incl` ASC';
             default:
                 return 'o.`date_add` DESC';
         }

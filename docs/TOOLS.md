@@ -291,8 +291,9 @@ documents, its addresses.
 **State**: written
 **Nature**: `acts(VIEW, 'AdminOrders')` · **Scope**: `mcp.orders.read`
 
-**Does** - finds orders by reference, customer, date, status, amount or payment
-method, and returns one short line each.
+**Does** - finds orders by reference, customer, date, status, amount, payment
+method, delivery country, company or first order, and returns one short line
+each.
 
 **Do not use for** - reading an order already identified (→ `somcp_get_order`),
 or carts that were never paid for (→ Carts).
@@ -309,19 +310,32 @@ or carts that were never paid for (→ Carts).
 | `status_id` | integer | no | shop-specific, never guessed |
 | `total_min` / `total_max` | number | no | amount paid, tax included |
 | `payment_method` | string | no | whole or partial |
+| `new_client` | boolean | no | `true`: the customer had no earlier order, in any status (New client column); `false`: returning customers |
+| `delivery_country` | string | no | ISO code of the country of the delivery address; an unknown code is an error |
+| `company` | string | no | customer's company, whole or partial |
 | `only_valid` | boolean | no | paid orders only |
 | `sort` | enum | no | `date_desc` (default), `date_asc`, `total_desc`, `total_asc` |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
 **Returns** - per order: `id_order`, `reference`, `date`, `customer_name`,
-`phone`, `total_paid`, `currency`, `payment_method`, `status`, `status_id`. Plus
-`returned`, `total_count` and `offset`.
+`new_client`, `company`, `phone`, `delivery_country` (name in the language
+read), `delivery_country_iso`, `total_paid_tax_incl`, `currency`,
+`payment_method`, `status`, `status_id`, `status_color`. Plus `returned`,
+`total_count` and `offset`.
 
 **Notes** - read through a query, not through Order objects: a page would
 otherwise load twenty orders with their customers and addresses. The phone is
 the delivery address one, mobile first, because that is what carriers use. The
 list stays plain on purpose; the address book of a shop does not belong in an
-answer about what came in yesterday.
+answer about what came in yesterday: the delivery country and the company are
+what the back office list shows, nothing more.
+
+`new_client` uses the subquery of the core's order grid (`OrderQueryBuilder`),
+an earlier order of the same customer in any status, so it matches the New
+client column. The total and its filters read `total_paid_tax_incl`, the Total
+column. The company is returned whatever `PS_B2B_ENABLE` says, empty when the
+customer has none. The count joins the same tables as the list, so
+`total_count` follows every filter.
 
 #### `somcp_get_order`
 **State**: written

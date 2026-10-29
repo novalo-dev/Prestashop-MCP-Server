@@ -86,6 +86,7 @@ calling the shop's own addresses.
 | `somcp_get_category` | `mcp.catalog.read` | `view` on `AdminCategories` | read |
 | `somcp_list_manufacturers` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
 | `somcp_get_manufacturer` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
+| `somcp_list_manufacturer_addresses` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
 | `somcp_list_suppliers` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
 | `somcp_get_supplier` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
 | `somcp_list_attributes` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |

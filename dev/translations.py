@@ -594,6 +594,10 @@ T = {
  "Lister les marques",
  "Listar las marcas",
  "Marken auflisten"),
+"List brand addresses": (
+ "Lister les adresses des marques",
+ "Listar las direcciones de las marcas",
+ "Markenadressen auflisten"),
 "Get a brand": (
  "Lire une marque",
  "Leer una marca",

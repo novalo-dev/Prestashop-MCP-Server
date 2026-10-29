@@ -141,6 +141,14 @@ it. A brand without a logo says so rather than showing a placeholder image. It
 only reads the shop the assistant is connected to. It needs the permission
 `mcp.catalog.read` and the `view` right on the back office brands page.
 
+**Listing brand addresses.** The new tool `somcp_list_manufacturer_addresses`
+lists the postal addresses of the brands, like the Brand addresses list of the
+back office: brand, last name, first name, postal code, city and country. It
+can list the addresses of one brand only. It only shows the addresses of brands
+of the shop the assistant is connected to, and leaves out deleted addresses. It
+needs the permission `mcp.catalog.read` and the `view` right on the back office
+brands page.
+
 **Listing suppliers.** The new tool `somcp_list_suppliers` lists the suppliers
 of the shop the assistant is connected to, with their identifier and name and
 nothing else, so the assistant takes a supplier from the shop rather than

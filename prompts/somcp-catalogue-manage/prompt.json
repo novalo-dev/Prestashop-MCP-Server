@@ -12,6 +12,7 @@
     "somcp_get_category",
     "somcp_list_manufacturers",
     "somcp_get_manufacturer",
+    "somcp_list_manufacturer_addresses",
     "somcp_list_suppliers",
     "somcp_get_supplier",
     "somcp_list_attributes",

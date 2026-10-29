@@ -1111,7 +1111,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Not replayable: the read tool to check is `somcp_get_manufacturer`.
 
 #### `somcp_list_manufacturer_addresses`
-**State**: to write · [issue #62](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/62)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminManufacturers')` · **Scope**: `mcp.catalog.read`
 
 **Does** - lists the postal addresses of the brands: the **Brand addresses** list of the back office.
@@ -1124,9 +1124,12 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 |---|---|---|---|
 | `id_manufacturer` | integer | no | the addresses of one brand only |
 
-**Returns** - per address: `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `postcode`, `city`, `country` (ISO code). Plus `count`.
+**Returns** - `addresses`, per address: `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `postcode`, `city`, `country` (ISO code, `null` when the country no longer exists). Plus `count`. An `id_manufacturer` that is not a brand of this shop is an error, not an empty list.
 
-**Notes** - rows of `address` with `id_manufacturer` set and not deleted. Brand addresses are managed under the brands page, so the permission is the one on `AdminManufacturers`, as in the back office.
+**Notes**
+- Rows of `address` with `id_manufacturer` set and not deleted. Brand addresses are managed under the brands page, so the permission is the one on `AdminManufacturers`, as in the back office.
+- `address` has no shop column: an address belongs to the shop of its brand, so only the addresses of brands in `manufacturer_shop` for the shop of the token are listed, and `id_manufacturer` is checked by the same test of the shop as `somcp_get_manufacturer`.
+- Read through a query on `address`, `manufacturer`, `manufacturer_shop` and `country`, not through `Address` objects. Sorted by brand name, then by identifier.
 
 #### `somcp_get_manufacturer_address`
 **State**: to write · [issue #63](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/63)

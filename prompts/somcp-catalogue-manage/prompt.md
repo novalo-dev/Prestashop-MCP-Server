@@ -13,6 +13,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_category`
 - `somcp_list_manufacturers`
 - `somcp_get_manufacturer`
+- `somcp_list_manufacturer_addresses`
 - `somcp_list_suppliers`
 - `somcp_get_supplier`
 - `somcp_list_attributes`
@@ -92,7 +93,10 @@ A brand is taken the same way, from `somcp_list_manufacturers`: never write an
 `id_manufacturer` the list did not give. When the brand the merchant names is
 not in the list, say so rather than picking the closest one. To answer about
 one brand - its descriptions, SEO texts, logo, how many products it holds -
-read it with `somcp_get_manufacturer`, by the identifier the list gave.
+read it with `somcp_get_manufacturer`, by the identifier the list gave. The
+postal addresses of the brands - contact name, postal code, city, country - are
+listed with `somcp_list_manufacturer_addresses`, for every brand or for one
+brand given by the identifier the list gave; never assume an `id_address`.
 
 A supplier too, from `somcp_list_suppliers`: never write an `id_supplier` the
 list did not give, and when the supplier the merchant names is not in it, say

@@ -105,6 +105,16 @@ a new version - a document of more than about 16 KB was cut off as soon as one
 of its parts held an accented letter or an "&", and then read as broken. Such
 documents are now read in full, up to the usual size limit.
 
+**Assistant button in the header.** On a multistore shop, the pages where the
+shop list replaces "View my shop" left the button at the far right of the
+header, and on PrestaShop 9 it was drawn in a grey that does not match the
+header. It now sits right after the shop list or "View my shop", in the same
+colour as that link.
+
+**Your assistants list.** On PrestaShop 9 the list of assistants in the
+Built-in assistant tab ran into the edges of its panel. It now has the same
+margins as the other lists.
+
 **PrestaShop Addons validation.** The validator reported the built-in
 assistant's button and loader as HTML written in PHP, four places reading the
 shop context the way PrestaShop 9 deprecates, and, in the test builds, a

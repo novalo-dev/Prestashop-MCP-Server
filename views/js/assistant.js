@@ -645,16 +645,28 @@
 
     // The button is printed by the server through the displayBackOfficeTop
     // hook, at the end of the header bar. It is moved right after "View my
-    // shop" when that link is on the page, and left where the hook put it
-    // otherwise. A page that prints no header at all gets a floating button.
+    // shop" - or after the shop list that replaces it on a multistore shop -
+    // and left where the hook put it when neither is on the page. A page that
+    // prints no header at all gets a floating button.
     function placeButton() {
         var button = document.getElementById('somcp-chat-button');
         if (button) {
             var holder = document.getElementById('somcp-chat-component');
             var shop = document.getElementById('header_shopname');
-            var after = shop ? (shop.closest('li, .component') || shop.parentNode) : null;
+            // Symfony pages wrap the link or the shop list in one container;
+            // legacy pages put either in the #header-list list.
+            var after = document.getElementById('header-shop-list-container')
+                || document.getElementById('header-list')
+                || (shop ? (shop.closest('li, .component') || shop.parentNode) : null);
             if (holder && after && after.parentNode && !after.contains(holder)) {
                 after.parentNode.insertBefore(holder, after.nextSibling);
+            }
+            // The header colours differ between PrestaShop versions and pages,
+            // so the button takes the colour of the link it sits beside rather
+            // than one written here.
+            var model = shop || document.querySelector('#shop-list > .btn, #header_shop');
+            if (holder && model && window.getComputedStyle) {
+                holder.style.setProperty('--somcp-header-color', window.getComputedStyle(model).color);
             }
             button.addEventListener('click', function (event) {
                 event.preventDefault();

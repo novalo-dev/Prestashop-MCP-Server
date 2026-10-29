@@ -18,11 +18,9 @@
    this one is drawn here, in the back office primary colour. Every rule is
    scoped to the chat's own ids so nothing leaks onto the page around it. */
 
-/* The header button takes the back office's own markup (component,
-   shop-list, link): only the floating fallback is drawn here. */
 /* The header link, printed by the displayBackOfficeTop hook: drawn like
-   "View my shop" beside it, with the same grey and the same icon size, and
-   its own spacing so it never touches its neighbour. */
+   "View my shop" beside it, in that link's colour and icon size, and with its
+   own spacing so it never touches its neighbour. */
 #somcp-chat-component {
     display: flex;
     align-items: center;
@@ -34,7 +32,8 @@
     align-items: center;
     gap: 5px;
     padding: 0 4px;
-    color: #6c868e;
+    /* Set by the script from the link beside it; grey until then. */
+    color: var(--somcp-header-color, #6c868e);
     font-size: 0.875rem;
     line-height: 1;
     text-decoration: none;

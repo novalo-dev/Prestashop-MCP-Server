@@ -16,7 +16,8 @@
 
 {* The button that opens the built-in assistant, printed in the back office
    header bar by displayBackOfficeTop. The chat script moves it right after
-   "View my shop". *}
+   "View my shop", or after the shop list that replaces it on a multistore
+   shop. *}
 {* Written on one line: the header bar lays its components out inline, and the
    whitespace between tags would show as a gap beside the icon. *}
 <div class="component" id="somcp-chat-component"><a href="#" id="somcp-chat-button" class="somcp-header-link" role="button" title="{l s='Open the built-in assistant' d='Modules.Somcp.Admin'}"><i class="material-icons">forum</i><span>{l s='Assistant' d='Modules.Somcp.Admin'}</span></a></div>

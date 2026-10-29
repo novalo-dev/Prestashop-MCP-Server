@@ -575,6 +575,10 @@
             <div class="panel-heading"><i class="icon-comments"></i> {l s='Your assistants' d='Modules.Somcp.Admin'} <span class="somcp-foot text-muted">- {l s='Powered by' d='Modules.Somcp.Admin'} <a href="https://github.com/neuron-core/neuron-ai" target="_blank" rel="noopener noreferrer">Neuron AI</a></span></div>
             <p class="help-block">{l s='The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.' d='Modules.Somcp.Admin'}</p>
         {if $somcp_assistants}
+            {* Wrapped because this panel has a footer: PrestaShop 9 then takes
+               the panel padding off and gives it to each child instead, which
+               a table ignores, so on its own it ran into the panel edges. *}
+            <div>
             <table class="table">
                 <thead>
                     <tr>
@@ -647,6 +651,7 @@
                 {/foreach}
                 </tbody>
             </table>
+            </div>
         {else}
             <p class="text-muted">{l s='No assistant yet. Add one with your own API key to get the chat.' d='Modules.Somcp.Admin'}</p>
         {/if}

@@ -46,17 +46,17 @@ class SomcpToolAuditProductSeo
     /** @var int Products read per query while scanning the catalogue. */
     private const BATCH = 200;
 
-    /** @var int Beyond this, search engines cut the title in their results. */
-    private const TITLE_MAX = 60;
+    /** @var int Beyond this, search engines cut the title in their results. Shared by every SEO audit. */
+    public const TITLE_MAX = 60;
 
     /** @var int Under this, a description gives search engines little to show. */
     private const DESCRIPTION_MIN = 70;
 
-    /** @var int Beyond this, search engines cut the description in their results. */
-    private const DESCRIPTION_MAX = 160;
+    /** @var int Beyond this, search engines cut the description in their results. Shared by every SEO audit. */
+    public const DESCRIPTION_MAX = 160;
 
-    /** @var int Under this many words, a product page has little text to rank on. */
-    private const WORDS_MIN = 150;
+    /** @var int Under this many words, a page has little text to rank on. Shared by every SEO audit. */
+    public const WORDS_MIN = 150;
 
     /** @var array<int, string> Every check, in the order they are reported. */
     private const CHECKS = [
@@ -286,11 +286,14 @@ class SomcpToolAuditProductSeo
     /**
      * How many words a description holds, once its tags are removed.
      *
+     * Public because the other SEO audits count words the same way: two
+     * counts that disagree would tell the merchant two different stories.
+     *
      * @param string $html
      *
      * @return int
      */
-    private static function words(string $html): int
+    public static function words(string $html): int
     {
         // A tag next to a word must not glue two words into one.
         $text = html_entity_decode(strip_tags(str_replace('<', ' <', $html)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -446,12 +449,14 @@ class SomcpToolAuditProductSeo
     /**
      * The languages to audit, id => ISO code, or null for one the shop lacks.
      *
+     * Public because every SEO audit takes its language the same way.
+     *
      * @param array<string, mixed> $arguments
      * @param int $idShop
      *
      * @return array<int, string>|null
      */
-    private static function languages(array $arguments, int $idShop): ?array
+    public static function languages(array $arguments, int $idShop): ?array
     {
         $all = [];
         foreach (Language::getLanguages(true, $idShop) as $language) {

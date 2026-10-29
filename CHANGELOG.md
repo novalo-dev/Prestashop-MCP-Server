@@ -152,6 +152,17 @@ back office products page. The new prompt "Audit and improve SEO" guides the
 assistant through the audit, sorting what it finds by its effect on your sales
 and proposing every new title or description to you before anything is written.
 
+**Category SEO audit.** The new tool `somcp_audit_category_seo` lists the
+categories whose search engine fields have a problem, language by language, and
+names the problem: a missing, too long or duplicated meta title, a missing or
+too long meta description, no description, a friendly URL shared with another
+category, a displayed category with no active product, and no cover image. It
+judges titles and descriptions exactly as the product SEO audit does, counts
+each problem over all your categories, and leaves out the root and Home
+categories, which have no page of their own. It only reads: nothing is changed.
+It needs the permission `mcp.seo.read` and the `view` right on the back office
+categories page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

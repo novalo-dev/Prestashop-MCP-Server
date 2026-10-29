@@ -997,6 +997,11 @@
       <source>Audit the SEO of products</source>
       <target>Das SEO der Produkte prüfen</target>
     </trans-unit>
+    <!-- Audit the SEO of categories -->
+    <trans-unit id="2bd95da408d15d1245d1fdb632f0884a" resname="Audit the SEO of categories">
+      <source>Audit the SEO of categories</source>
+      <target>Das SEO der Kategorien prüfen</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

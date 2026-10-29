@@ -2417,7 +2417,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 - Read in SQL from `product`, `product_shop`, `product_lang` and `image_lang` of this shop, in batches of products, so a catalogue of 50,000 products stays fast; only the page asked for is kept, while `counts` and `total_count` cover the whole catalogue. A product still being created (`state` 0) is left out. No write, ever: corrections go through `somcp_update_product`.
 
 #### `somcp_audit_category_seo`
-**State**: to write · [issue #83](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/83)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminCategories')` · **Scope**: `mcp.seo.read`
 
 **Does** - lists the categories whose search engine fields have a problem, per language.
@@ -2431,11 +2431,16 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | `language` | string | no | ISO code; every language when left out |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per category: `id_category`, `name`, `language`, `issues`. Plus `total_count` and `counts` per check.
+**Returns** - `categories`, one entry per category and language: `id_category`, `name`, `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over every category, and `languages` audited.
 
 **Notes**
-- Checks: `meta_title_missing`, `meta_title_too_long`, `meta_title_duplicate`, `meta_description_missing`, `meta_description_long`, `description_missing` (a category page with no text has nothing to rank on), `link_rewrite_duplicate`, `empty_category` (displayed, no active product), `no_cover_image`.
-- The root and Home categories are left out: they have no page of their own.
+- Checks: `meta_title_missing`, `meta_title_too_long` (over 60 characters), `meta_title_duplicate` (another category has it in that language), `meta_description_missing`, `meta_description_long` (over 160), `description_missing` (a category page with no text to rank on: no word once tags are removed), `link_rewrite_duplicate`, `empty_category` (displayed, no active product), `no_cover_image`.
+- The root and Home categories are left out: they have no page of their own. The root is the category without a parent, a Home category the one flagged `is_root_category`.
+- The `value` is the title, description or friendly URL at fault, and an empty string for the checks that report an absence. `empty_category` and `no_cover_image` concern the whole category and repeat on each language entry; `counts` counts entries, not categories.
+- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code. Duplicates are found by the database among the categories audited in one language, as for products. Inactive categories are audited too, since they keep their fields, but only a displayed one can be `empty_category`.
+- `empty_category`: no product of the category, directly associated with it, is active in this shop - what the category page lists. A product still being created (`state` 0) does not count.
+- `no_cover_image`: the shop has no `img/c/<id_category>.jpg`, the file the back office form shows as the cover, on PrestaShop 8 and 9.
+- Read in SQL from `category`, `category_shop`, `category_lang` and `category_product` of this shop, in batches; only the page asked for is kept, while `counts` and `total_count` cover every category. No write, ever.
 
 #### `somcp_audit_cms_seo`
 **State**: to write · [issue #84](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/84)

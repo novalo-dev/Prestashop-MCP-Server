@@ -8,6 +8,7 @@ search engines as a fact: say what the audit found and why it matters.
 
 - `somcp_ping`
 - `somcp_audit_product_seo`
+- `somcp_audit_category_seo`
 
 ## Know which shop you are in
 
@@ -18,8 +19,9 @@ installation has its own titles, descriptions and URLs.
 ## Workflow
 
 1. **Audit first.** Call `somcp_audit_product_seo` without `checks` for the
-   whole picture. Read `counts`: it covers the whole catalogue, while
-   `products` is one page. Read the next page with `offset` while
+   whole picture, and `somcp_audit_category_seo` for the category pages.
+   Read `counts`: it covers the whole catalogue, while `products` or
+   `categories` is one page. Read the next page with `offset` while
    `total_count` says there is more, before saying that is all.
 2. **Sort by effect on sales.** The products that sell, or should, come first;
    a missing title on a best seller matters more than a long description on a
@@ -46,6 +48,10 @@ installation has its own titles, descriptions and URLs.
   language.
 - `no_image`, `no_brand` and `no_gtin` (no EAN-13, UPC nor ISBN) concern the
   whole product and repeat on each language.
+- For categories, `description_missing` means the category page has no text
+  to rank on, `empty_category` a displayed category with no active product to
+  list, and `no_cover_image` a category without its cover. The root and Home
+  categories are never audited: they have no page of their own.
 - `inactive_without_redirect` is checked only with `active: false`: an inactive
   product whose page sends no redirection leaves a dead address. Changing a URL
   or a redirection of a live page makes the old address stop working: say so
@@ -53,11 +59,12 @@ installation has its own titles, descriptions and URLs.
 
 ## Do not use when
 
-- The merchant wants to read or change one product: that is the catalogue
-  prompt, `somcp-catalogue-manage`.
+- The merchant wants to read or change one product or one category: that is
+  the catalogue prompt, `somcp-catalogue-manage`.
 
 ## Good triggers
 
 - "Audite le SEO de mes produits"
 - "Which products have no meta description?"
 - "Mes fiches produits sont-elles bien référencées ?"
+- "Quelles catégories n'ont pas de description ?"

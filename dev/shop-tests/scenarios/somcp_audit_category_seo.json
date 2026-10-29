@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "the whole audit of the demo categories, every check and language", "arguments": {}, "expect": "ok", "contains": ["\"categories\"", "\"total_count\"", "\"counts\"", "\"meta_title_missing\"", "\"empty_category\"", "\"no_cover_image\""]},
+    {"why": "one language, by its ISO code, one entry per page", "arguments": {"language": "en", "limit": 1}, "expect": "ok", "contains": ["\"returned\": 1", "\"language\": \"en\""]},
+    {"why": "the ISO code in capitals is the same language", "arguments": {"language": "EN", "limit": 1}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a limit below one still returns one entry", "arguments": {"limit": 0}, "expect": "ok", "contains": ["\"returned\": 1"]},
+    {"why": "the second page follows the first", "arguments": {"limit": 2, "offset": 2}, "expect": "ok", "contains": ["\"offset\": 2"]},
+    {"why": "a page far beyond the end is empty, not an error", "arguments": {"offset": 100000}, "expect": "ok", "contains": ["\"returned\": 0"]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]}
+  ]
+}

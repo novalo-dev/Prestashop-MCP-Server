@@ -35,6 +35,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_manufacturer`
 - `somcp_update_manufacturer`
 - `somcp_set_manufacturer_active`
+- `somcp_create_manufacturer_address`
 - `somcp_create_supplier`
 - `somcp_update_supplier`
 - `somcp_set_supplier_active`
@@ -332,6 +333,23 @@ Tell the merchant that disabling it hides its page on the storefront, while its
 products stay on sale. On a multistore installation the change shows in every
 shop sharing the brand. `changed: false` means it was already in that state. On
 a lost answer, read it with `somcp_get_manufacturer` before calling twice.
+
+## Adding a brand address
+
+`somcp_create_manufacturer_address` adds one postal address to a brand. Before
+calling it:
+
+1. Take the brand from `somcp_list_manufacturers`, never guessed, and read
+   `somcp_list_manufacturer_addresses` for that brand: the address may already
+   be there, and the shop accepts the same address twice.
+2. Ask the merchant for every field - at least the last name, the first name,
+   the address, the city and the country, the state when the country has
+   states, the DNI when the country asks for one. Never invent a name, a phone
+   number or an address. Each field is one text, the same in every language.
+
+When it succeeds, show the merchant the address as returned. On a lost answer,
+read `somcp_list_manufacturer_addresses` for the brand again rather than
+calling twice: a second call adds a second address.
 
 ## Creating a supplier
 

@@ -353,7 +353,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
     protected static function supplierCountry(array $arguments, int $idShop, array &$errors): ?Country
     {
         if (!array_key_exists('country', $arguments)) {
-            $errors[] = 'country: required, the ISO code of the supplier\'s country';
+            $errors[] = 'country: required, the ISO code of the country';
 
             return null;
         }

@@ -1153,7 +1153,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read through an `Address` object. The reader and the test are public, so the brand address write tools answer with the address as this tool returns it.
 
 #### `somcp_create_manufacturer_address`
-**State**: to write · [issue #64](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/64)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminManufacturers')` · **Scope**: `mcp.catalog.write`
 
 **Does** - adds one postal address to a brand, with every field of the back office brand address form.
@@ -1174,11 +1174,18 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `state` | merchant | ISO code, required when the country uses states |
 | `dni` | merchant | national ID number, required when the country asks for one (`Country::isNeedDni()`) |
 | `phone`, `phone_mobile` | merchant | `Validate::isPhoneNumber()`; 32 characters at most |
-| `other` | merchant | forbidden characters `<>{}` (`Validate::isMessage()`) |
+| `other` | merchant | forbidden characters `<>{}` (`Validate::isMessage()`); 300 characters at most |
 
-**Returns** - `created`, `id_address`, and the address as `somcp_get_manufacturer_address` returns it.
+**Returns** - `created`, `id_address`, and under `address` the address as `somcp_get_manufacturer_address` returns it.
 
-**Notes** - permission `edit` on `AdminManufacturers`: adding an address edits the brand, which is the right the back office checks. Written through `Address::add()` with `id_manufacturer` set. Not replayable: the read tool to check is `somcp_list_manufacturer_addresses`.
+**Notes**
+- Permission `edit` on `AdminManufacturers`: adding an address edits the brand, which is the right the back office checks.
+- The core's own sequence (`AddManufacturerAddressHandler`, the same on 8 and 9): the fields of the form, the brand, and the alias `manufacturer`, which the form does not ask for; then `validateFields()` and `validateFieldsLang()` on the whole object, then `Address::add()`. Here likewise, so the hooks fire.
+- The street lines, postal code, city, phones, DNI, country and state are checked by the same code as the contact details of `somcp_create_supplier`, since both are an `address` row: the rules of the running version's `Address`, the country among the shop's countries (`country_shop`), the state among the country's, the postal code against the country's format. Fields the merchant made required for addresses (Customers > Addresses, Set required fields) are required here too, as `validateFields()` reads them.
+- `other`: PrestaShop 9 stores a longer text than its form accepts; the form's 300 characters is the limit held on both versions.
+- An `id_manufacturer` that is not a brand of the shop of the token is refused, by the same test of the shop as `somcp_get_manufacturer`. Only a whole number is an identifier.
+- Every problem is reported at once, and nothing is written until the whole call is valid.
+- Not replayable: the read tool to check is `somcp_list_manufacturer_addresses`.
 
 #### `somcp_update_manufacturer_address`
 **State**: to write · [issue #65](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/65)

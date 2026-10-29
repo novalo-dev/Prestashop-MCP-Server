@@ -474,6 +474,18 @@ Enabled once for all shops, so on a multistore installation the change shows in
 every shop sharing the brand, as in the back office. It needs the permission
 `mcp.catalog.write` and the `edit` right on the back office brands page.
 
+**Adding a brand address.** The new tool `somcp_create_manufacturer_address`
+adds one postal address to a brand with the fields of the back office brand
+address form: brand, last name, first name, address, address line 2, postal
+code, city, country, state, DNI, phone, mobile phone and other information. The
+last name, first name, address, city and country are required, and so are the
+state when the country has states and the DNI when the country asks for one; a
+postal code that does not match the country's format is refused, as for a
+supplier's address. Only a brand of the shop the assistant is connected to can
+receive an address. The consent screen now says that the catalogue permission
+can create and edit the addresses of brands. It needs the permission
+`mcp.catalog.write` and the `edit` right on the back office brands page.
+
 **Creating a supplier.** The new tool `somcp_create_supplier` creates one
 supplier with the fields of the back office supplier form: name, description,
 phone, mobile phone, address, address line 2, postal code, city, country,

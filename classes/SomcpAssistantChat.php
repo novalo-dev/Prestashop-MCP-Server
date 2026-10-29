@@ -776,8 +776,13 @@ class SomcpAssistantChat
      * Stores in the long-term memory the new messages of a conversation since
      * the last time, so a later conversation can recall them. Only the plain
      * exchange is kept - the employee's words and the assistant's answers, not
-     * tool calls - and a counter on the thread marks how far it was written, so
-     * nothing is embedded or paid for twice. Off unless memory is set up.
+     * tool calls nor the summary that stands for older messages - and the
+     * thread keeps the id of the last message written, so nothing is embedded
+     * or paid for twice. Off unless memory is set up.
+     *
+     * The mark is a message id, not a count: a summary replaces the oldest
+     * messages with one, and a count taken before it then pointed past
+     * messages never written, which were lost to the memory for good.
      *
      * @param array<string, mixed> $thread
      */
@@ -790,18 +795,34 @@ class SomcpAssistantChat
         // Read the mark from the row, not the array passed in: it may have been
         // loaded before an earlier move of the same turn advanced it, and a
         // stale mark would embed - and pay for - the same messages twice.
-        $from = (int) Db::getInstance()->getValue(
-            'SELECT `memory_count` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread` WHERE `id_thread` = ' . (int) $thread['id_thread']
+        $last = (string) Db::getInstance()->getValue(
+            'SELECT `memory_last` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread` WHERE `id_thread` = ' . (int) $thread['id_thread']
         );
-        $messages = $this->store()->loadAll((string) $thread['thread_id'], 1000);
-        $total = count($messages);
-        if ($total <= $from) {
+        $messages = array_values($this->store()->loadAll((string) $thread['thread_id'], 1000));
+
+        // Everything after the last message written. When that message is no
+        // longer there, a summary took it away with the rest of the older part,
+        // so every message still in the thread came after it.
+        $from = 0;
+        if ($last !== '') {
+            foreach ($messages as $index => $message) {
+                if ($message->getId() === $last) {
+                    $from = $index + 1;
+                    break;
+                }
+            }
+        }
+        $fresh = array_slice($messages, $from);
+        if ($fresh === []) {
             return;
         }
 
         $new = [];
-        foreach (array_slice($messages, $from) as $message) {
+        foreach ($fresh as $message) {
             if ($message instanceof UserMessage) {
+                if (strpos((string) $message->getContent(), self::SUMMARY_MARKER) === 0) {
+                    continue;
+                }
                 $text = $this->userText($message);
                 if ($text !== '') {
                     $new[] = ['role' => 'user', 'text' => $text];
@@ -817,7 +838,7 @@ class SomcpAssistantChat
         SomcpAssistantMemory::write($this->idShop, (string) $thread['thread_id'], $new);
         Db::getInstance()->update(
             'somcp_assistant_thread',
-            ['memory_count' => $total],
+            ['memory_last' => pSQL(end($fresh)->getId())],
             '`id_thread` = ' . (int) $thread['id_thread']
         );
     }

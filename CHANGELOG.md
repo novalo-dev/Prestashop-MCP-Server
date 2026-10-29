@@ -110,6 +110,12 @@ on the dark background of the other O'So modules.
 
 ### Fixed
 
+**Memory after a summary.** Once a long conversation was summarized, the
+long-term memory lost count of what it had already kept: the messages that
+followed could be left out of it for good, and the summary could be kept as
+if the employee had written it. The memory now picks up exactly after the last
+message it kept, and leaves the summary out.
+
 **Summary shown as your message.** When a long conversation was summarized to
 keep the cost down, the summary appeared as a message from the employee,
 headed "Previous conversation summary". It now shows as a discreet

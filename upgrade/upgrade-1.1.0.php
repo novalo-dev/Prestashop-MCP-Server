@@ -63,9 +63,25 @@ function upgrade_module_1_1_0($module)
     $thread = _DB_PREFIX_ . 'somcp_assistant_thread';
     $present = $db->executeS('SHOW TABLES LIKE "' . pSQL($thread) . '"');
     if (is_array($present) && $present !== []) {
-        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($thread) . '` LIKE "memory_count"');
+        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($thread) . '` LIKE "memory_last"');
         if (!is_array($column) || $column === []) {
-            $db->execute('ALTER TABLE `' . bqSQL($thread) . '` ADD `memory_count` INT(11) NOT NULL DEFAULT 0');
+            $db->execute('ALTER TABLE `' . bqSQL($thread) . '` ADD `memory_last` VARCHAR(64) NOT NULL DEFAULT \'\'');
+        }
+        // A pre-release copy counted the messages written instead, a mark that
+        // a summary of the conversation threw off. A conversation it had
+        // written to is marked written up to its latest message, so the memory
+        // does not embed - and pay for - it a second time; then the old column
+        // goes, and the table matches a fresh install.
+        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($thread) . '` LIKE "memory_count"');
+        if (is_array($column) && $column !== []) {
+            $messages = _DB_PREFIX_ . 'somcp_assistant_message';
+            $db->execute(
+                'UPDATE `' . bqSQL($thread) . '` t SET t.`memory_last` = IFNULL(('
+                . 'SELECT m.`message_id` FROM `' . bqSQL($messages) . '` m'
+                . ' WHERE m.`thread_id` = t.`thread_id` ORDER BY m.`id` DESC LIMIT 1), \'\')'
+                . ' WHERE t.`memory_count` > 0'
+            );
+            $db->execute('ALTER TABLE `' . bqSQL($thread) . '` DROP `memory_count`');
         }
         // One move at a time per conversation, now that the chat carries on
         // across page reloads and tabs.

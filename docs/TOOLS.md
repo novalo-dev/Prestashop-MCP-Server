@@ -354,11 +354,39 @@ customer has none. The count joins the same tables as the list, so
 
 **Returns** - `order`, `customer`, `addresses` (delivery and invoice),
 `products`, `discounts`, `shipping`, `totals`, `payments`, `history`,
-`documents` (invoices and credit slips), `messages`.
+`documents`, `messages`. Among them, what the order page shows:
+
+- `order`: `note` (Order note / Order private note), `id_cart`, `gift`,
+  `gift_message`, `recycled_packaging`;
+- `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
+  `total_spent` with `total_spent_currency`, `private_note` (read only);
+- `products`, per line: `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
+  (strings), `tax_name`, `tax_rate`, `stock_location`, `quantity_in_stock_now`,
+  `quantity_refunded`, `refunded_tax_excluded`, `refunded_tax_included`,
+  `quantity_returned`, `customizations` (`id_customization`, `type` text or
+  file, `name`, `value`);
+- `shipping.shipments`, one per shipment: `id_order_carrier`, `date`,
+  `carrier`, `weight`, `shipping_cost_tax_excluded`,
+  `shipping_cost_tax_included`, `tracking_number`, `tracking_url`;
+- `totals`: `taxes`, `wrapping_tax_excluded` and `wrapping_tax_included`;
+- `payments`, each with `currency`, `invoice_number` (empty when not tied to an
+  invoice) and `employee` (PrestaShop 9 only, empty on 8);
+- `documents`: `invoices` (with `id_order_invoice`), `delivery_slips`
+  (`id_order_invoice`, `number` with the shop's prefix, `date`,
+  `total_tax_included`) and `credit_slips`;
+- `messages`, each with `from` (`employee` or `customer`) and `from_name`.
 
 **Notes** - takes no search filter on purpose: given "Dupont's March orders" it
 would have to pick one of twelve. Finding is one tool, reading is another. Read
 through core objects, which one order can afford.
+
+The customer figures come from `Customer::getStats()`, as on the order page,
+converted into the order's currency. Stock location and quantity in stock now
+come from `Order::getProducts()`, not from `product_quantity_in_stock`, which is
+the quantity at the time of the order. Shipments are read from the order's
+`OrderCarrier` rows, not from `Order::getShipping()`, which groups them by
+carrier. `order_payment.id_employee` exists on 9.0.0 only. Card number, holder
+and expiry are never returned: the page does not show them.
 
 #### `somcp_set_order_status`
 **State**: written

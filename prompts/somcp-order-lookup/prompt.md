@@ -58,6 +58,14 @@ merchant asked what came in, not for their address book.
 For one order: answer the question that was asked. A merchant asking whether an
 order was paid does not want the product lines read out.
 
+`somcp_get_order` returns what the order page shows: the order note and the
+gift message, the customer's valid orders, total spent and private note, each
+product line with its stock location, quantity in stock now, refunds and
+customizations, each shipment with its tracking number, the payments, the
+invoices, delivery slips and credit slips, and the messages. Each message says
+in `from` whether the shop or the customer wrote it: never present the shop's
+answer as the customer's request.
+
 Always say the currency with an amount, and whether a total is with or without
 tax - the field names say which.
 

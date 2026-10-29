@@ -48,6 +48,9 @@ that failed.
 ## If an answer is lost
 
 **Do not repeat the call.** Call `somcp_get_order` and read the current status.
+It also gives each shipment with its tracking number and the documents the
+order produced, so you can see whether an invoice or a delivery slip came with
+the change.
 
 A repeated call is the likeliest way this ends with a customer receiving two
 emails. The shop refuses a status the order already has, which catches most of

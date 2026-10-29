@@ -28,6 +28,18 @@ now returns its tags as well, so they can be read, changed and written back.
 
 ### Changed
 
+**Reading an order.** Reading one order now returns what its page in the back
+office shows and was missing: the order note, the cart it came from, gift
+wrapping, the gift message and recycled packaging; the customer's title, their
+number of valid orders, the total they have spent and the private note on them;
+for each product, its EAN-13, ISBN, UPC, MPN and supplier reference, its tax
+rate, its stock location, the quantity in stock now, the amounts refunded, the
+quantity returned and its customizations; each shipment on its own line with
+its carrier, weight, cost, tracking number and tracking link; the taxes and the
+wrapping without tax in the totals; the currency, invoice and employee of each
+payment; the delivery slips; and, for each message, whether the shop or the
+customer wrote it. Card details of payments are still never returned.
+
 **Searching orders.** The order search now covers what the Orders list of the
 back office shows: whether the customer was ordering for the first time (the
 New client column), the delivery country and the customer's company can be

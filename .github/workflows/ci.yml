@@ -452,10 +452,13 @@ jobs:
       # the sources, then the dependencies from the tag's own composer.lock.
       - name: PrestaShop ${{ matrix.prestashop }} sources
         run: git clone --quiet --depth 1 --branch "${{ matrix.prestashop }}" https://github.com/PrestaShop/PrestaShop.git shop
+      # One cache per PrestaShop version, shared by its PHP versions: the
+      # packages downloaded depend on the lock file only, and a key per PHP
+      # version stored the same files up to five times, past GitHub's 10 GB.
       - uses: actions/cache@v4
         with:
           path: ~/.cache/composer
-          key: composer-${{ matrix.prestashop }}-${{ matrix.php }}-${{ hashFiles('shop/composer.lock') }}
+          key: composer-${{ matrix.prestashop }}-${{ hashFiles('shop/composer.lock') }}
       - name: Dependencies
         continue-on-error: ${{ matrix.unsupported }}
         id: deps

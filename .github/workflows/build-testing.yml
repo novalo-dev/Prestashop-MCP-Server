@@ -144,6 +144,23 @@ jobs:
             echo "| Version numbers | **config.xml ${{ steps.name.outputs.version }}, somcp.php $PHPV** |" >> "$GITHUB_STEP_SUMMARY"
           fi
 
+          # The same script as the CI, run on the laid out archive. Taken from
+          # main like the other checks, so it waits for main to carry it.
+          if [ -f .trusted/.github/scripts/check-addons.php ]; then
+            if php .trusted/.github/scripts/check-addons.php build/somcp > /tmp/addons.txt 2>&1; then
+              echo "| Addons validator | $(tail -1 /tmp/addons.txt) |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "| Addons validator | **$(tail -1 /tmp/addons.txt)** |" >> "$GITHUB_STEP_SUMMARY"
+              head -30 /tmp/addons.txt
+            fi
+          fi
+
+          if [ -f build/somcp/.htaccess ]; then
+            echo "| .htaccess | present at the module root |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| .htaccess | **missing at the module root, the Addons validator reports it** |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
           MISSING=$(find build/somcp -type d ! -exec test -e '{}/index.php' ';' -print | wc -l)
           if [ "$MISSING" -eq 0 ]; then
             echo "| index.php | present in every folder |" >> "$GITHUB_STEP_SUMMARY"
@@ -160,6 +177,10 @@ jobs:
           # from a public repository, so a test build does not linger.
           retention-days: 1
           if-no-files-found: error
+          # The action leaves out files whose name starts with a dot unless
+          # told otherwise, and the module's .htaccess is one: without it the
+          # Addons validator reports the folder as listable.
+          include-hidden-files: true
 
       - name: How to use it
         run: |

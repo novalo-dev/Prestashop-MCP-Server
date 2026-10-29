@@ -128,6 +128,21 @@ jobs:
       - name: Every table shop-scoped, no merchant setting stored globally
         run: php .github/scripts/check-multishop.php .
 
+  addons:
+    name: Addons validator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: none
+      # What the PrestaShop Addons validator reports, caught on every push
+      # rather than when an archive is uploaded to it.
+      - name: No Context::getContext(), no HTML in PHP, .htaccess and index.php in place
+        run: php .github/scripts/check-addons.php .
+
   container:
     name: Symfony container on Symfony ${{ matrix.symfony }}
     runs-on: ubuntu-latest

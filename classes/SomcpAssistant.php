@@ -499,7 +499,7 @@ class SomcpAssistant
      */
     private static function shop(): int
     {
-        return max(1, (int) Context::getContext()->shop->id);
+        return max(1, Somcp::currentShopId());
     }
 
     /**

@@ -456,7 +456,7 @@ class SomcpAssistantChat
         $hash = SomcpRandom::hash($reference);
         $expires = time() + self::FILE_TTL;
 
-        return Context::getContext()->link->getModuleLink('somcp', 'file', [
+        return Somcp::legacyContext()->link->getModuleLink('somcp', 'file', [
             'f' => $hash,
             'e' => $expires,
             's' => self::signature($hash, $expires),
@@ -502,7 +502,7 @@ class SomcpAssistantChat
      */
     private static function shopIsPublic(): bool
     {
-        $host = (string) parse_url(Context::getContext()->shop->getBaseURL(true), PHP_URL_HOST);
+        $host = (string) parse_url(Somcp::legacyContext()->shop->getBaseURL(true), PHP_URL_HOST);
         if ($host === '' || $host === 'localhost' || preg_match('/\.(local|localhost|test|internal|lan)$/', $host)) {
             return false;
         }
@@ -1199,7 +1199,7 @@ class SomcpAssistantChat
     private function instructions(array $assistant, array $thread = []): string
     {
         // Kept terse on purpose: this text is paid for on every model call.
-        $shop = Context::getContext()->shop;
+        $shop = Somcp::legacyContext()->shop;
         $language = Language::getLanguage((int) $this->employee->id_lang);
         $module = Module::getInstanceByName('somcp');
         // The links follow what is installed, so the model reads the code and

@@ -105,6 +105,13 @@ a new version - a document of more than about 16 KB was cut off as soon as one
 of its parts held an accented letter or an "&", and then read as broken. Such
 documents are now read in full, up to the usual size limit.
 
+**PrestaShop Addons validation.** The validator reported the built-in
+assistant's button and loader as HTML written in PHP, four places reading the
+shop context the way PrestaShop 9 deprecates, and, in the test builds, a
+missing `.htaccess`. The button and the loader are now Smarty templates, the
+context is read the module's usual way, and the test builds carry the
+`.htaccess` again. Nothing changes on screen.
+
 ### Added
 
 **Tracking numbers.** The new tool `somcp_set_order_tracking` sets the tracking

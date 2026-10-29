@@ -399,13 +399,18 @@ class Somcp extends Module
             ],
         ];
 
-        $json = (string) json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         $base = $this->_path . 'views/';
         $version = urlencode($this->version);
 
-        return '<link rel="stylesheet" href="' . htmlspecialchars($base . 'css/assistant.css?v=' . $version, ENT_QUOTES) . '">'
-            . '<script>window.somcpAssistant = ' . $json . ';</script>'
-            . '<script src="' . htmlspecialchars($base . 'js/assistant.js?v=' . $version, ENT_QUOTES) . '" defer></script>';
+        $this->context->smarty->assign([
+            // Encoded here, with every flag that keeps the JSON from closing
+            // the script element: the template prints it as it is.
+            'somcp_assistant_config' => (string) json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
+            'somcp_assistant_css' => $base . 'css/assistant.css?v=' . $version,
+            'somcp_assistant_js' => $base . 'js/assistant.js?v=' . $version,
+        ]);
+
+        return $this->context->smarty->fetch(_PS_MODULE_DIR_ . 'somcp/views/templates/hook/assistant_head.tpl');
     }
 
     /**
@@ -432,12 +437,7 @@ class Somcp extends Module
             return '';
         }
 
-        $label = htmlspecialchars($this->l10n('Assistant'), ENT_QUOTES, 'UTF-8');
-        $title = htmlspecialchars($this->l10n('Open the built-in assistant'), ENT_QUOTES, 'UTF-8');
-
-        return '<div class="component" id="somcp-chat-component">'
-            . '<a href="#" id="somcp-chat-button" class="somcp-header-link" role="button" title="' . $title . '">'
-            . '<i class="material-icons">forum</i><span>' . $label . '</span></a></div>';
+        return $this->context->smarty->fetch(_PS_MODULE_DIR_ . 'somcp/views/templates/hook/assistant_button.tpl');
     }
 
     /**

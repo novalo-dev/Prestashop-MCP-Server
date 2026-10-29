@@ -1007,6 +1007,11 @@
       <source>Audit the SEO of CMS pages</source>
       <target>Auditer le SEO des pages CMS</target>
     </trans-unit>
+    <!-- Audit the SEO of brands -->
+    <trans-unit id="b2af7eac503fe87ac309c4ddeb1995b5" resname="Audit the SEO of brands">
+      <source>Audit the SEO of brands</source>
+      <target>Auditer le SEO des marques</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

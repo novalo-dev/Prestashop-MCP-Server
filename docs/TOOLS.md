@@ -2466,7 +2466,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 - Every page associated with the shop is audited, shown or not, with `active` saying which. A shop has a handful of pages, so they are returned whole, without paging, read in SQL from `cms`, `cms_shop` and `cms_lang`. No write, ever.
 
 #### `somcp_audit_brand_seo`
-**State**: to write · [issue #85](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/85)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminManufacturers')` · **Scope**: `mcp.seo.read`
 
 **Does** - lists the brands whose search engine fields or descriptions have a problem, per language.
@@ -2479,10 +2479,15 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 |---|---|---|---|
 | `language` | string | no | ISO code; every language when left out |
 
-**Returns** - per brand: `id_manufacturer`, `name`, `language`, `products_count`, `issues`. Plus `counts` per check.
+**Returns** - `brands`, one entry per brand and language: `id_manufacturer`, `name`, `language`, `active`, `products_count`, `issues` (each a `check` from the list below and the `value` at fault). Plus `total_count`, `counts` per check and `languages` audited.
 
 **Notes**
 - Checks: `meta_title_missing`, `meta_description_missing`, `description_missing`, `no_logo`, `inactive_with_products`.
+- `description_missing`: the brand's description, the text of its page, holds no word once tags are removed. The short description is not checked.
+- `no_logo`: the shop has no `img/m/<id_manufacturer>.jpg`, the file `somcp_get_manufacturer` reads as the logo.
+- `inactive_with_products`: a disabled brand has no page, while products still carry it. Its `value` is `products_count`.
+- `products_count` is the number of products of this shop attached to the brand, counted as `somcp_get_manufacturer` counts it. The `value` of the other checks is an empty string: they report an absence. `no_logo` and `inactive_with_products` concern the whole brand and repeat on each language entry.
+- A brand's texts are the same in every shop (`manufacturer_lang` has no `id_shop`); a language the brand has no row in counts as empty. Every brand associated with the shop is audited, enabled or not, and returned whole, without paging, read in SQL from `manufacturer`, `manufacturer_shop` and `manufacturer_lang`. No write, ever.
 
 #### `somcp_update_cms_seo`
 **State**: to write · [issue #86](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/86)

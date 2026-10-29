@@ -174,6 +174,15 @@ and descriptions exactly as the product SEO audit does, and lists every page,
 shown or not. It only reads: nothing is changed. It needs the permission
 `mcp.seo.read` and the `view` right on the back office Pages page.
 
+**Brand SEO audit.** The new tool `somcp_audit_brand_seo` lists the brands
+whose search engine fields or descriptions have a problem, language by
+language, and names the problem: no meta title, no meta description, no
+description, no logo, and a disabled brand that products of your shop still
+carry. Each brand comes with its number of products, the same figure as when
+you read the brand, so you can start with the ones that matter. It lists every
+brand, enabled or not. It only reads: nothing is changed. It needs the
+permission `mcp.seo.read` and the `view` right on the back office Brands page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

@@ -10,6 +10,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_audit_product_seo`
 - `somcp_audit_category_seo`
 - `somcp_audit_cms_seo`
+- `somcp_audit_brand_seo`
 
 ## Know which shop you are in
 
@@ -21,9 +22,10 @@ installation has its own titles, descriptions and URLs.
 
 1. **Audit first.** Call `somcp_audit_product_seo` without `checks` for the
    whole picture, `somcp_audit_category_seo` for the category pages and
-   `somcp_audit_cms_seo` for the CMS pages (delivery, legal notice...).
-   Read `counts`: it covers the whole catalogue, while `products` or
-   `categories` is one page; `pages` lists every CMS page at once. Read the next page with `offset` while
+   `somcp_audit_cms_seo` for the CMS pages (delivery, legal notice...) and
+   `somcp_audit_brand_seo` for the brand pages. Read `counts`: it covers the
+   whole catalogue, while `products` or `categories` is one page; `pages` and
+   `brands` list everything at once. Read the next page with `offset` while
    `total_count` says there is more, before saying that is all.
 2. **Sort by effect on sales.** The products that sell, or should, come first;
    a missing title on a best seller matters more than a long description on a
@@ -59,6 +61,9 @@ installation has its own titles, descriptions and URLs.
   of words of the content, and `not_indexable` a page set to stay out of search
   results - often deliberate for legal pages, so ask before proposing to
   change it.
+- For brands, `products_count` says how many products carry the brand: start
+  with the brands that carry the most. `inactive_with_products` is a disabled
+  brand whose page is gone while products still show it.
 - `inactive_without_redirect` is checked only with `active: false`: an inactive
   product whose page sends no redirection leaves a dead address. Changing a URL
   or a redirection of a live page makes the old address stop working: say so
@@ -66,8 +71,8 @@ installation has its own titles, descriptions and URLs.
 
 ## Do not use when
 
-- The merchant wants to read or change one product or one category: that is
-  the catalogue prompt, `somcp-catalogue-manage`.
+- The merchant wants to read or change one product, category or brand: that
+  is the catalogue prompt, `somcp-catalogue-manage`.
 
 ## Good triggers
 
@@ -76,3 +81,4 @@ installation has its own titles, descriptions and URLs.
 - "Mes fiches produits sont-elles bien référencées ?"
 - "Quelles catégories n'ont pas de description ?"
 - "Mes pages CMS sont-elles bien optimisées ?"
+- "Which brands have no logo or description?"

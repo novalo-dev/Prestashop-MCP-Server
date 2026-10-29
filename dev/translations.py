@@ -786,6 +786,26 @@ T = {
  "Enregistrer un paiement pour une commande",
  "Registrar un pago de un pedido",
  "Eine Zahlung für eine Bestellung erfassen"),
+"Audit the SEO of products": (
+ "Auditer le SEO des produits",
+ "Auditar el SEO de los productos",
+ "Das SEO der Produkte prüfen"),
+"Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
+ "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
+ "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",
+ "Lesen, wie der Shop für Suchmaschinen erscheint: Titel, Beschreibungen, URLs, robots.txt, Sitemap und öffentliche Seiten"),
+"Audit and improve SEO": (
+ "Auditer et améliorer le SEO",
+ "Auditar y mejorar el SEO",
+ "SEO prüfen und verbessern"),
+"Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards.": (
+ "Trouver ce qui freine la boutique dans les résultats de recherche, le corriger avec l'accord du marchand, puis vérifier les pages publiques.",
+ "Encontrar lo que frena a la tienda en los resultados de búsqueda, corregirlo con la aprobación del comerciante y comprobar después las páginas públicas.",
+ "Finden, was den Shop in den Suchergebnissen bremst, es mit Zustimmung des Händlers beheben und danach die öffentlichen Seiten prüfen."),
+"Products, categories, pages or the whole shop": (
+ "Produits, catégories, pages ou toute la boutique",
+ "Productos, categorías, páginas o toda la tienda",
+ "Produkte, Kategorien, Seiten oder der ganze Shop"),
 "view": (
  "voir",
  "ver",

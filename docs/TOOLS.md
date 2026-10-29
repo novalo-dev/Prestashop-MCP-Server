@@ -2389,7 +2389,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 **Not here**: the product, category and brand fields themselves, which their own update tools write (→ Catalogue); what answer engines and AI assistants need (→ AEO).
 
 #### `somcp_audit_product_seo`
-**State**: to write · [issue #82](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/82)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.seo.read`
 
 **Does** - lists the products whose search engine fields have a problem, with the problem named, per language.
@@ -2405,11 +2405,16 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | `checks` | array of enum | no | a subset of the checks below; all by default |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per product: `id_product`, `name`, `language`, `issues` (each a `check` from the list below and the value at fault). Plus `total_count` and `counts` per check over the whole catalogue.
+**Returns** - `products`, one entry per product and language: `id_product`, `name`, `language`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over the whole catalogue, `languages` audited and `active_only`.
 
 **Notes**
-- Checks: `meta_title_missing`, `meta_title_too_long` (over 60 characters), `meta_title_duplicate` (another product has it in that language), `meta_description_missing`, `meta_description_short` (under 70), `meta_description_long` (over 160), `link_rewrite_duplicate`, `description_short` (under 150 words, tags removed), `image_legend_missing` (an image without its alternative text), `no_image`, `no_brand`, `no_gtin` (no ean13, upc nor isbn), `inactive_without_redirect` only when `active` is false.
-- Read in SQL from `product`, `product_shop`, `product_lang` and `image_lang` of this shop, in pages, so a catalogue of 50,000 products stays fast. No write, ever: corrections go through `somcp_update_product`.
+- Checks: `meta_title_missing`, `meta_title_too_long` (over 60 characters), `meta_title_duplicate` (another product has it in that language), `meta_description_missing`, `meta_description_short` (under 70), `meta_description_long` (over 160), `link_rewrite_duplicate`, `description_short` (the description holds under 150 words, tags removed), `image_legend_missing` (an image without its alternative text), `no_image`, `no_brand`, `no_gtin` (no ean13, upc nor isbn), `inactive_without_redirect` only when `active` is false.
+- The `value` is the title, description or friendly URL at fault, the number of words for `description_short`, the ids of the images without legend for `image_legend_missing`, the `redirect_type` for `inactive_without_redirect`, and an empty string for the checks that report an absence.
+- The product-wide checks (`no_image`, `no_brand`, `no_gtin`, `inactive_without_redirect`) repeat on each language entry, and `counts` counts entries, not products.
+- Duplicates are found by the database, grouping the values of the products audited (same shop, same `active` filter) in one language, so its collation decides what is the same title or URL, as it does for the shop's own URLs. Spaces around a value are ignored.
+- `inactive_without_redirect`: a 301 or 302 sends to another page and `200-displayed` (PrestaShop 9) keeps the page shown; anything else - empty, 404, 410, `404-displayed`, `410-displayed`, the shop `default` - is reported.
+- An image counts in the shop when `image_shop` has it; a language without an `image_lang` row is a missing legend. An unknown `language`, or a `checks` entry not in the list, is refused.
+- Read in SQL from `product`, `product_shop`, `product_lang` and `image_lang` of this shop, in batches of products, so a catalogue of 50,000 products stays fast; only the page asked for is kept, while `counts` and `total_count` cover the whole catalogue. A product still being created (`state` 0) is left out. No write, ever: corrections go through `somcp_update_product`.
 
 #### `somcp_audit_category_seo`
 **State**: to write · [issue #83](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/83)
@@ -3052,7 +3057,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-modules-review` | Modules | draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41) |
 | `somcp-storefront-menu` | Appearance | draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42) |
 | `somcp-cache-maintenance` | System | draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43) |
-| `somcp-seo-audit` | SEO | to write · [issue #79](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/79) |
+| `somcp-seo-audit` | SEO | written |
 | `somcp-aeo-audit` | AEO | to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
 | `somcp-sales-boost` | Sales | to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
 
@@ -3169,7 +3174,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 **The guide must say** - read the status first; clearing the cache slows the storefront while it rebuilds, so say so and clear it once, not as a reflex.
 
 #### `somcp-seo-audit`
-**State**: to write · [issue #79](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/79)
+**State**: written
 **Section**: SEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminMeta`
 
 **Title** - Audit and improve SEO

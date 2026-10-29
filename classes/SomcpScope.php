@@ -53,6 +53,9 @@ class SomcpScope
     /** @var string Changing stock: setting or moving the quantities of products and combinations. */
     public const STOCK_WRITE = 'mcp.stock.write';
 
+    /** @var string Reading how the shop appears to search engines. */
+    public const SEO_READ = 'mcp.seo.read';
+
     /**
      * The scopes this module owns.
      *
@@ -60,7 +63,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::SEO_READ];
     }
 
     /**
@@ -237,6 +240,8 @@ class SomcpScope
                 return $module->l10n('Read the stock of this shop: quantities of products and combinations');
             case self::STOCK_WRITE:
                 return $module->l10n('Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements');
+            case self::SEO_READ:
+                return $module->l10n('Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

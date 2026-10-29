@@ -1,0 +1,20 @@
+{
+  "title": "Audit and improve SEO",
+  "description": "Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards.",
+  "scopes": [
+    "mcp.seo.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_audit_product_seo"
+  ],
+  "controller": "AdminMeta",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "focus",
+      "description": "Products, categories, pages or the whole shop",
+      "required": false
+    }
+  ]
+}

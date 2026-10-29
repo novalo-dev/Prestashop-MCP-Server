@@ -131,6 +131,20 @@ assistant only takes if you ask. On PrestaShop 9, the payment shows the employee
 who recorded it. A zero or negative amount is refused. It needs the permission
 `mcp.orders.write` and the `edit` right on the back office orders page.
 
+**Product SEO audit.** The new tool `somcp_audit_product_seo` lists the products
+whose search engine fields have a problem, language by language, and names the
+problem: a missing, too long or duplicated meta title, a missing, too short or
+too long meta description, a friendly URL shared with another product, a
+description under 150 words, an image without alternative text, no image, no
+brand, no EAN-13, UPC or ISBN, and, when you include inactive products, an
+inactive product that redirects nowhere. It counts each problem over your whole
+catalogue, and works just as fast on a large one. It only reads: nothing is
+changed. It needs the new permission `mcp.seo.read`, shown on the consent screen
+as reading how your shop appears to search engines, and the `view` right on the
+back office products page. The new prompt "Audit and improve SEO" guides the
+assistant through the audit, sorting what it finds by its effect on your sales
+and proposing every new title or description to you before anything is written.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

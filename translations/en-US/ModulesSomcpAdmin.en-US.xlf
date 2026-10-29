@@ -992,6 +992,31 @@
       <source>Record a payment for an order</source>
       <target>Record a payment for an order</target>
     </trans-unit>
+    <!-- Audit the SEO of products -->
+    <trans-unit id="6cf0dd16e3dec0f64c02b9f6dbc7ddbf" resname="Audit the SEO of products">
+      <source>Audit the SEO of products</source>
+      <target>Audit the SEO of products</target>
+    </trans-unit>
+    <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
+    <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
+      <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>
+      <target>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</target>
+    </trans-unit>
+    <!-- Audit and improve SEO -->
+    <trans-unit id="f93114658d1c5849142cfeab5102bcb3" resname="Audit and improve SEO">
+      <source>Audit and improve SEO</source>
+      <target>Audit and improve SEO</target>
+    </trans-unit>
+    <!-- Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards. -->
+    <trans-unit id="3517f4a4fa12b555e690b749ef6f0b7d" resname="Find what holds the shop back in search results, fix it with the merchant&#x27;s approval, and check the public pages afterwards.">
+      <source>Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards.</source>
+      <target>Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards.</target>
+    </trans-unit>
+    <!-- Products, categories, pages or the whole shop -->
+    <trans-unit id="ed839806982bd08c386374db52525bbe" resname="Products, categories, pages or the whole shop">
+      <source>Products, categories, pages or the whole shop</source>
+      <target>Products, categories, pages or the whole shop</target>
+    </trans-unit>
     <!-- view -->
     <trans-unit id="1bda80f2be4d3658e0baa43fbe7ae8c1" resname="view">
       <source>view</source>

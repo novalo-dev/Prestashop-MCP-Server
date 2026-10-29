@@ -107,6 +107,7 @@ calling the shop's own addresses.
 | `somcp_update_manufacturer` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
 | `somcp_set_manufacturer_active` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
 | `somcp_create_supplier` | `mcp.catalog.write` | `add` on `AdminSuppliers` | write |
+| `somcp_update_supplier` | `mcp.catalog.write` | `edit` on `AdminSuppliers` | write |
 | `somcp_create_attribute_group` | `mcp.catalog.write` | `add` on `AdminAttributesGroups` | write |
 | `somcp_update_attribute_group` | `mcp.catalog.write` | `edit` on `AdminAttributesGroups` | write |
 | `somcp_create_attribute_value` | `mcp.catalog.write` | `add` on `AdminAttributesGroups` | write |

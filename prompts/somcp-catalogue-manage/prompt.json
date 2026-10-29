@@ -33,6 +33,7 @@
     "somcp_update_manufacturer",
     "somcp_set_manufacturer_active",
     "somcp_create_supplier",
+    "somcp_update_supplier",
     "somcp_create_attribute_group",
     "somcp_update_attribute_group",
     "somcp_create_attribute_value",

@@ -473,6 +473,21 @@ to. The consent screen now says that the catalogue permission can create
 suppliers. It needs the permission `mcp.catalog.write` and the `add` right on
 the back office suppliers page.
 
+**Changing a supplier.** The new tool `somcp_update_supplier` changes one
+existing supplier with everything the creation can write: name, description,
+phone, mobile phone, address, address line 2, postal code, city, country,
+state, DNI, meta title and description, meta keywords on PrestaShop 8, logo and
+Enabled. Only what you ask for changes, and the answer lists each change with
+its old and new value; a request that would change nothing changes nothing.
+The contact details follow the same rules as at creation, checked together
+with what the supplier already holds: changing the country asks for a state
+when the new country has states, and the postal code must match its format. A
+new logo replaces the current one, which is kept if the new one cannot be
+fetched, and the logo can also be removed. On a multistore installation only
+the shop the assistant is connected to is changed. The consent screen now says
+that the catalogue permission can edit suppliers. It needs the permission
+`mcp.catalog.write` and the `edit` right on the back office suppliers page.
+
 **Reading the stock of a product.** The new tool `somcp_get_stock` gives the
 stock of one product as the storefront sells against it: the quantity that can
 still be sold, the physical quantity and the quantity held by orders not shipped

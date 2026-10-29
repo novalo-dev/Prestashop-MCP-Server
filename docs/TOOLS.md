@@ -1289,7 +1289,7 @@ The name and every contact field are one string each, the same in every language
 - Not replayable: the read tool to check is `somcp_list_suppliers`.
 
 #### `somcp_update_supplier`
-**State**: to write · [issue #60](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/60)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminSuppliers')` · **Scope**: `mcp.catalog.write`
 
 **Does** - changes one supplier with everything `somcp_create_supplier` can write, under the same rules. Only what is given changes.
@@ -1298,9 +1298,15 @@ The name and every contact field are one string each, the same in every language
 
 **Parameters** - `id_supplier` (required), `languages`, then the fields of `somcp_create_supplier`, all optional. A text given replaces the languages given and keeps the others. `remove_logo` removes the logo explicitly.
 
-**Returns** - `changed`, per field its old and new value, `seo_warnings`, `logo`, and the supplier as `somcp_get_supplier` returns it.
+**Returns** - `changed`, `changes` (per field its old and new value, a text per language, `country` and `state` as ISO codes), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise `stored: true`, `removed: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
 
-**Notes** - an `id_supplier` that does not exist is refused. Replayable: the same values again change nothing and say `changed: false`.
+**Notes**
+- Extends `somcp_create_supplier`: every field is checked by the same code, the contact block included, and the logo downloaded with the same guards and written where the creation writes it, over the current files, so a logo that cannot be fetched leaves the supplier with the one it had.
+- The contact details are checked as a whole: the values given are laid over the stored ones before the creation's checks run, since the country decides whether a state or a DNI is required and which postal code format applies. A stored state is not carried over to a new country; give the state again when the new country has states.
+- An `id_supplier` that does not exist, or a supplier of another shop, is refused by the same test of the shop as `somcp_get_supplier`.
+- Written as the core's `EditSupplierHandler` does: one `Supplier::update()` in the shop of the token (`id_shop_list`), then `Address::update()` on the supplier's address row, so the object hooks fire. A supplier with no address row gets one, added with the creation's placeholders, when contact details are given.
+- `remove_logo` deletes what the core's `DeleteSupplierLogoImageHandler` deletes: the original, every supplier image type in every format, and the two cached copies of the back office. It is refused next to `logo`, and counts as a change only when the supplier has a logo.
+- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address cannot be compared with a stored file.
 
 #### `somcp_set_supplier_active`
 **State**: to write · [issue #61](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/61)

@@ -34,6 +34,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_manufacturer`
 - `somcp_set_manufacturer_active`
 - `somcp_create_supplier`
+- `somcp_update_supplier`
 - `somcp_create_attribute_group`
 - `somcp_update_attribute_group`
 - `somcp_create_attribute_value`
@@ -342,6 +343,24 @@ When it succeeds, show the merchant the supplier as returned, the
 `seo_warnings`, and the logo if it was refused, with its reason. On a lost
 answer, read `somcp_list_suppliers` again rather than calling twice: a second
 call creates a second supplier.
+
+## Changing a supplier
+
+`somcp_update_supplier` changes one existing supplier. Before calling it:
+
+1. Take the supplier from `somcp_list_suppliers`, never guessed, and read it
+   with `somcp_get_supplier` to know what it holds before changing it.
+2. Give only what changes. A new logo replaces the current one; the logo is
+   only removed through `remove_logo`. The name and each contact detail are one
+   text, the same in every language. Never invent a phone number or an address.
+3. When the country changes, ask for the state again if the new country has
+   states, and for the DNI if it asks for one. To change a text in one
+   language, pass `languages` with that language alone.
+
+When it succeeds, show the merchant each change with its old and new value, the
+`seo_warnings`, and the logo if it was refused, with its reason.
+`changed: false` means the supplier already held those values. On a lost
+answer, read the supplier again with `somcp_get_supplier` before calling twice.
 
 ## Creating an attribute group
 

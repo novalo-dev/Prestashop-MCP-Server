@@ -357,7 +357,7 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
 
         $logo = null;
         if ($plan['remove_logo']) {
-            $logo = self::removeLogo($idManufacturer);
+            $logo = self::removeLogoIn($idManufacturer, _PS_MANU_IMG_DIR_, 'manufacturers', 'manufacturer');
         } elseif ($plan['logo'] !== null) {
             // Written over the current files, under the same names, rather
             // than after deleting them: if it cannot be fetched, the brand
@@ -385,42 +385,6 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
             // assistant shows the merchant is what the shop stored.
             'manufacturer' => SomcpToolGetManufacturer::manufacturer($idManufacturer, (int) $plan['languages']['fallback'], $idShop),
         ]);
-    }
-
-    /**
-     * Removes the logo the way the core's DeleteManufacturerLogoImageHandler does.
-     *
-     * Every thumbnail of the brand image types in every format, the original,
-     * and the two copies the back office keeps in the image cache, so no page
-     * goes on showing the old logo.
-     *
-     * @param int $idManufacturer
-     *
-     * @return array<string, mixed>
-     */
-    private static function removeLogo(int $idManufacturer): array
-    {
-        $files = [_PS_MANU_IMG_DIR_ . $idManufacturer . '.jpg'];
-        // The formats PrestaShop 8.1 added are listed whether or not they are
-        // switched on: one switched off since the logo was stored still left
-        // its files.
-        foreach (ImageType::getImagesTypes('manufacturers') ?: [] as $type) {
-            foreach (['jpg', 'png', 'webp', 'avif'] as $format) {
-                $files[] = _PS_MANU_IMG_DIR_ . $idManufacturer . '-' . stripslashes((string) $type['name']) . '.' . $format;
-                $files[] = _PS_MANU_IMG_DIR_ . $idManufacturer . '-' . stripslashes((string) $type['name']) . '2x.' . $format;
-            }
-        }
-        $files[] = _PS_TMP_IMG_DIR_ . 'manufacturer_' . $idManufacturer . '.jpg';
-        $files[] = _PS_TMP_IMG_DIR_ . 'manufacturer_mini_' . $idManufacturer . '.jpg';
-
-        $left = 0;
-        foreach ($files as $file) {
-            if (is_file($file) && !@unlink($file)) {
-                ++$left;
-            }
-        }
-
-        return $left === 0 ? ['removed' => true] : ['refused' => 'the shop could not delete ' . $left . ' of its files'];
     }
 
     /**

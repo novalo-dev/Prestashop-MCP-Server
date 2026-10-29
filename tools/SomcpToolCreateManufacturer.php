@@ -450,6 +450,47 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
     }
 
     /**
+     * Removes a logo the way the core's DeleteManufacturerLogoImageHandler and
+     * DeleteSupplierLogoImageHandler do.
+     *
+     * Every thumbnail of the image types in every format, the original, and
+     * the two copies the back office keeps in the image cache, so no page goes
+     * on showing the old logo. Shared by the brand and supplier updates, which
+     * differ only by folder, image types and cache names, as storeLogoIn() is.
+     *
+     * @param int $id the brand or supplier
+     * @param string $directory where the logo lives, _PS_MANU_IMG_DIR_ or _PS_SUPP_IMG_DIR_
+     * @param string $for the image types it was resized to: manufacturers or suppliers
+     * @param string $cacheName the name of its copies in the image cache: manufacturer or supplier
+     *
+     * @return array<string, mixed>
+     */
+    protected static function removeLogoIn(int $id, string $directory, string $for, string $cacheName): array
+    {
+        $files = [$directory . $id . '.jpg'];
+        // The formats PrestaShop 8.1 added are listed whether or not they are
+        // switched on: one switched off since the logo was stored still left
+        // its files.
+        foreach (ImageType::getImagesTypes($for) ?: [] as $type) {
+            foreach (['jpg', 'png', 'webp', 'avif'] as $format) {
+                $files[] = $directory . $id . '-' . stripslashes((string) $type['name']) . '.' . $format;
+                $files[] = $directory . $id . '-' . stripslashes((string) $type['name']) . '2x.' . $format;
+            }
+        }
+        $files[] = _PS_TMP_IMG_DIR_ . $cacheName . '_' . $id . '.jpg';
+        $files[] = _PS_TMP_IMG_DIR_ . $cacheName . '_mini_' . $id . '.jpg';
+
+        $left = 0;
+        foreach ($files as $file) {
+            if (is_file($file) && !@unlink($file)) {
+                ++$left;
+            }
+        }
+
+        return $left === 0 ? ['removed' => true] : ['refused' => 'the shop could not delete ' . $left . ' of its files'];
+    }
+
+    /**
      * What the merchant should know about the SEO of each language filled.
      *
      * @param array<string, mixed> $plan

@@ -50,7 +50,7 @@ class Somcp extends Module
     /** The one item under that entry; the settings pages are its tabs. */
     public const SETTINGS_ITEM = 'AdminSomcpSettings';
 
-    /** Where the "Support the project" button leads. */
+    /** Where the "Support us" button leads. */
     public const SPONSOR_URL = 'https://github.com/sponsors/novalo-dev';
 
     /** @var array<int, string> Classes loaded together, in dependency order. */
@@ -625,6 +625,11 @@ class Somcp extends Module
             ? SomcpAssistant::models($editing)
             : [];
 
+        // Read once: the lists go to the tables and their counts to the panel
+        // headings, and each read walks every tool class.
+        $tools = $this->toolList();
+        $prompts = $this->promptList();
+
         $this->context->smarty->assign([
             'somcp_form_action' => $this->selfUrl(),
             'somcp_pane' => $this->settingsPane,
@@ -667,8 +672,10 @@ class Somcp extends Module
             'somcp_endpoints' => SomcpConfig::contextEndpoints(),
             'somcp_issuer' => SomcpConfig::issuer(),
             'somcp_multistore' => Shop::isFeatureActive(),
-            'somcp_tools' => $this->toolList(),
-            'somcp_prompts' => $this->promptList(),
+            'somcp_tools' => $tools,
+            'somcp_tools_count' => count($tools),
+            'somcp_prompts' => $prompts,
+            'somcp_prompts_count' => count($prompts),
             'somcp_inheritable' => SomcpConfig::inheritableContext(),
             'somcp_inherit' => $this->inheritanceMap(),
             'somcp_consents' => SomcpOAuthServer::consents(),

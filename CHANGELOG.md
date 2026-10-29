@@ -80,10 +80,17 @@ the new permissions.
 **Built-in assistant.** "Powered by Neuron AI" now sits in the title of the
 "Your assistants" panel instead of under the settings form.
 
-**Supporting the project.** A "Support the project" button now sits beside the
-page title, on every page of the settings. It opens a short thank-you window with a link to
-the project's GitHub Sponsors page; it never opens on its own. The Help
-button beside it leads to the module's documentation.
+**Supporting the project.** A "Support us" button now sits beside the page
+title, on every page of the settings, drawn like the Help button next to it. It
+opens a short thank-you window with a link to the project's GitHub Sponsors
+page; it never opens on its own. The Help button leads to the module's
+documentation.
+
+**Tools and prompts.** The lists of available tools and of available prompts
+each have a panel of their own, the full width of the page like the Connected
+assistants list, with the number of tools or prompts in the panel title. The
+delay an assistant keeps the list is in a Settings panel under them, and one
+Save button at the bottom saves the three.
 
 **Logo.** The module has a new logo: a white pulse ending on an orange dot,
 on the dark background of the other O'So modules.

@@ -441,7 +441,7 @@ T = {
  "Après la mise à jour, reconnectez vos assistants pour que leur accès inclue les nouvelles permissions.",
  "Después de la actualización, vuelva a conectar sus asistentes para que su acceso incluya los nuevos permisos.",
  "Verbinden Sie Ihre Assistenten nach dem Update erneut, damit ihr Zugriff die neuen Berechtigungen umfasst."),
-"Support the project": ("Soutenir le projet", "Apoyar el proyecto", "Projekt unterstützen"),
+"Support us": ("Nous soutenir", "Apóyenos", "Unterstützen Sie uns"),
 "Thank you for using O'So MCP Server": (
  "Merci d'utiliser O'So MCP Server",
  "Gracias por usar O'So MCP Server",

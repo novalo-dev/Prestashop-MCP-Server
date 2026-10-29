@@ -98,8 +98,10 @@ abstract class SomcpSettingsController extends ModuleAdminController
         // lets a button carry on both 8 and 9.
         $this->page_header_toolbar_btn['somcp_sponsor'] = [
             'href' => Somcp::SPONSOR_URL,
-            'desc' => $this->module->l10n('Support the project'),
-            'class' => 'btn-primary',
+            'desc' => $this->module->l10n('Support us'),
+            // The class PrestaShop gives its own Help button, so the two sit
+            // side by side as one pair rather than one shouting over the other.
+            'class' => 'btn-outline-secondary',
             // Named explicitly: both header templates build the button id
             // from it, and the stylesheet finds the button by that id. Left
             // out, the legacy template took the class instead.

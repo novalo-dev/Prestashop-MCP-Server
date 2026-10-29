@@ -20,14 +20,10 @@
    sit in views/css and was only ever loaded by the consent screen, so none of
    these rules applied to the settings page at all. *}
 <style type="text/css">
-/* The heart of the two sponsor buttons: the one PrestaShop draws in the page
-   header, outside this module's markup (hence the selector on its id), and
-   the one of the thank-you window. Both are primary buttons, so the heart is
-   white like their text. Drawn as an image rather than taken from an icon
-   font: the back office does not load the same icon fonts on 8 and 9, and a
-   missing glyph left an empty gap in the button. */
-[id$="-somcp_sponsor"]::before,
-[id$="-somcp_sponsor"] > div::before,
+/* The heart of the Become a sponsor button, in the thank-you window. A primary
+   button, so the heart is white like its text. Drawn as an image rather than
+   taken from an icon font: the back office does not load the same icon fonts
+   on 8 and 9, and a missing glyph left an empty gap in the button. */
 .somcp-heart::before {
     content: "";
     display: inline-block;
@@ -42,14 +38,11 @@
     display: inline;
 }
 
-/* The legacy header template puts an icon box above the label, empty for a
-   button that has no PrestaShop icon, and the label in a div: the box goes,
-   and the heart moves into the div so it sits on the label's line. */
+/* The Support us button of the page header, drawn by PrestaShop outside this
+   module's markup (hence the selector on its id). The legacy header template
+   puts an icon box above every label, and the Help button beside it has none:
+   the box goes, so the two read as a pair. */
 [id$="-somcp_sponsor"] > i {
-    display: none;
-}
-
-[id$="-somcp_sponsor"]:has(> div)::before {
     display: none;
 }
 
@@ -349,7 +342,7 @@
    few modules would otherwise have a list long enough to push the Save button
    off the screen. The wrapper stays for the horizontal overflow on a narrow
    screen - and the table keeps its own display, because display:block on a
-   table makes it shrink to its content instead of filling the column. */
+   table makes it shrink to its content instead of filling the panel. */
 .somcp .somcp-tools-scroll {
     margin-top: 10px;
     overflow-x: auto;

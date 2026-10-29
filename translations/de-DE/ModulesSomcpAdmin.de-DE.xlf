@@ -542,10 +542,10 @@
       <source>After the update, reconnect your assistants so that their access includes the new permissions.</source>
       <target>Verbinden Sie Ihre Assistenten nach dem Update erneut, damit ihr Zugriff die neuen Berechtigungen umfasst.</target>
     </trans-unit>
-    <!-- Support the project -->
-    <trans-unit id="91674753fe472c121d80acd5a394cab7" resname="Support the project">
-      <source>Support the project</source>
-      <target>Projekt unterstützen</target>
+    <!-- Support us -->
+    <trans-unit id="68af1e9d9402fee977042693b6644fe4" resname="Support us">
+      <source>Support us</source>
+      <target>Unterstützen Sie uns</target>
     </trans-unit>
     <!-- Thank you for using O'So MCP Server -->
     <trans-unit id="76a253fa15847f44ae095f3ef3d181c4" resname="Thank you for using O&#x27;So MCP Server">

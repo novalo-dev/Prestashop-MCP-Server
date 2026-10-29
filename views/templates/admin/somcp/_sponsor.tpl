@@ -14,7 +14,7 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License v3.0 (AFL-3.0)
  *}
 
-{* Opened by the "Support the project" button PrestaShop draws in the page
+{* Opened by the "Support us" button PrestaShop draws in the page
    header, and only ever by a click: the page never interrupts the merchant to
    ask for money. A native dialog rather than the back office modal, because
    the Bootstrap script behind that modal is not the same on PrestaShop 8 and

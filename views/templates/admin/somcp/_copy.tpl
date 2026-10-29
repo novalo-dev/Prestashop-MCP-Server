@@ -140,9 +140,10 @@
         // The list of tools, a page at a time. Every row stays in the form -
         // hidden, not removed - because the checkboxes of a page nobody looked
         // at must still be submitted. Without a browser the whole list shows,
-        // which is the right thing to fall back to.
+        // which is the right thing to fall back to. Each list has a panel of
+        // its own, which is what scopes the rows to their pager.
         document.querySelectorAll('[data-somcp-pager]').forEach(function (nav) {
-            var group = nav.closest('.form-group');
+            var group = nav.closest('.panel');
             var rows = group ? group.querySelectorAll('.somcp-tools tbody tr') : [];
             var size = parseInt(nav.getAttribute('data-somcp-pager'), 10) || 5;
             var total = rows.length;
@@ -324,8 +325,10 @@
         // A setting that inherits from the level above is shown but not editable:
         // its value does not belong to this level, and it is not submitted either
         // - the module removes the row instead of writing what was on screen.
+        // A setting is its form group, or the whole panel for the tool and
+        // prompt lists, which have one panel each and no form group.
         document.querySelectorAll('[data-somcp-own]').forEach(function (box) {
-            var group = box.closest('.form-group');
+            var group = box.closest('.form-group, .panel');
             if (!group) {
                 return;
             }

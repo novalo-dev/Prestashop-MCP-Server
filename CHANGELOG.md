@@ -205,6 +205,17 @@ not served in HTTPS, no robots.txt, no sitemap. It only reads: these settings
 stay yours to change in the back office. It needs the permission
 `mcp.seo.read` and the `view` right on the back office Traffic & SEO page.
 
+**robots.txt.** The new tool `somcp_get_robots_txt` reads your shop's
+robots.txt file, the one PrestaShop generates from the Traffic & SEO page, and
+lays out its rules for each crawler and the sitemaps it declares. It points
+out what hurts your visibility: a group of rules that blocks the whole site, a
+rule that blocks your product or category pages (checked on the real address
+of one of your products and one of your categories, in each language), a file
+without a sitemap line, or a shop installed in a folder, where search engines
+never read the file. It only reads: nothing is changed. It needs the
+permission `mcp.seo.read` and the `view` right on the back office Traffic &
+SEO page.
+
 **Product search.** The new tool `somcp_search_products` finds products with
 the filters of the back office product list: identifier, name, reference,
 category, price without or with tax, quantity, status, EAN13, MPN, UPC and

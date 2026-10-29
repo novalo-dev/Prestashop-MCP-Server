@@ -1022,6 +1022,11 @@
       <source>Read the SEO and URL settings</source>
       <target>Leer los ajustes de SEO y URL</target>
     </trans-unit>
+    <!-- Read the robots.txt file -->
+    <trans-unit id="efb4442b8d63d68974536f8cbfd2375d" resname="Read the robots.txt file">
+      <source>Read the robots.txt file</source>
+      <target>Leer el archivo robots.txt</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

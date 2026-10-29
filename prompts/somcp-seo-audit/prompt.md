@@ -13,6 +13,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_audit_brand_seo`
 - `somcp_list_meta_pages`
 - `somcp_get_seo_settings`
+- `somcp_get_robots_txt`
 
 ## Know which shop you are in
 
@@ -27,7 +28,11 @@ installation has its own titles, descriptions and URLs.
    robots.txt, no sitemap) weigh on every page at once, so they come before any
    single title. Never propose to change these settings yourself: a wrong value
    breaks every address of the shop, so point the merchant to Shop Parameters >
-   Traffic & SEO and say what to check there.
+   Traffic & SEO and say what to check there. Then call
+   `somcp_get_robots_txt`: a group that blocks the whole site, or a rule that
+   blocks product or category pages, hides the shop from search engines
+   whatever its titles say. A `Disallow: /` aimed at one named crawler can be
+   the merchant's choice: ask before calling it a mistake.
 2. **Audit the pages.** Call `somcp_audit_product_seo` without `checks` for the
    whole picture, `somcp_audit_category_seo` for the category pages and
    `somcp_audit_cms_seo` for the CMS pages (delivery, legal notice...) and
@@ -99,3 +104,4 @@ installation has its own titles, descriptions and URLs.
 - "Which brands have no logo or description?"
 - "Quel est le titre de ma page d'accueil dans Google ?"
 - "Mes URL sont-elles bien réglées pour Google ?"
+- "Mon robots.txt bloque-t-il des pages ?"

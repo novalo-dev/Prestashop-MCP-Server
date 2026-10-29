@@ -2579,7 +2579,7 @@ None.
 - `warnings` names what costs rankings: friendly URLs off (`friendly_urls_off`), no canonical redirection (`no_canonical_redirect`), a shop not served in HTTPS (`not_https`, or `https_not_everywhere` on PrestaShop 8), no robots.txt (`no_robots_txt`), no sitemap module (`no_sitemap_module`).
 
 #### `somcp_get_robots_txt`
-**State**: to write · [issue #90](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/90)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
 **Does** - returns the shop's robots.txt and what it allows and blocks, rule by rule.
@@ -2590,11 +2590,13 @@ None.
 
 None.
 
-**Returns** - `present`, `content`, `groups` (per user agent: `allow`, `disallow`), `sitemaps` (declared sitemap URLs), `size`, `last_modified`, `warnings`.
+**Returns** - `present`, `content` (the file as it is), `groups` (one per group of the file, in its order: `user_agents`, `allow`, `disallow`, each rule as written), `sitemaps` (declared sitemap URLs), `size` (bytes), `last_modified`, `warnings` (each a `code` and `why`, with `user_agents`, `rule`, `url` and `language` when they apply). Without a file, `present` is false, `content`, `size` and `last_modified` are `null` and `groups` and `sitemaps` are empty.
 
 **Notes**
-- Read from the file at the shop root, the one PrestaShop writes.
-- `warnings` names a rule that blocks product or category pages, a whole-site `Disallow: /`, a missing sitemap line.
+- Read from `robots.txt` at the root of the PrestaShop installation, the file `Tools::generateRobotsFile()` writes. A multistore installation has one for every shop, holding a block of rules per shop folder. At most the first 500 KiB are read, what Google reads.
+- Groups follow RFC 9309: user-agent lines in a row share one group, a user-agent line after a rule starts a new one, `Sitemap` lines belong to the file, a rule before any user agent belongs to no group and is left out. Comments and other fields (`Crawl-delay`, `Host`) are not returned in `groups`; they stay in `content`.
+- `warnings`: `disallow_all` (a group whose rules block `/`: `Disallow: /`, `/*` or `*`), `blocks_products` and `blocks_categories` (a rule of a group blocking the address of a real page), `no_sitemap`, `not_at_domain_root` (the shop's `physical_uri` is not `/`: the file is served in that folder, where search engines never look), `too_large` (over 500 KiB), `no_robots_txt`.
+- The pages checked are the first active, visible product of the shop and its first active category below Home (the categories `somcp_audit_category_seo` audits), their address built with `Link` in each active language of the shop. Each group decides as search engines do: the longest matching pattern wins, `Allow` wins a tie, `*` matches anything and a final `$` ends the address; an empty `Disallow` blocks nothing. A group of `disallow_all` is not checked page by page.
 
 #### `somcp_generate_robots_txt`
 **State**: to write · [issue #91](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/91)

@@ -810,6 +810,10 @@ T = {
  "Lire les réglages SEO et URL",
  "Leer los ajustes de SEO y URL",
  "Die SEO- und URL-Einstellungen lesen"),
+"Read the robots.txt file": (
+ "Lire le fichier robots.txt",
+ "Leer el archivo robots.txt",
+ "Die Datei robots.txt lesen"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",

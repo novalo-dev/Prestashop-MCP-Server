@@ -47,7 +47,6 @@ use NeuronAI\Tools\ApprovalState;
 use NeuronAI\Tools\FrontendTool;
 use NeuronAI\Tools\ToolCall;
 use NeuronAI\Workflow\Persistence\DatabasePersistence;
-use NeuronAI\Workflow\WorkflowStatus;
 
 /*
  * SomcpAssistantChat - one employee's conversations with the assistant built
@@ -137,16 +136,11 @@ class SomcpAssistantChat
     private const SUMMARY_MARKER = '## Previous conversation summary:';
 
     /**
-     * @var int Seconds of Neuron AI's execution lease. While a run holds it, the
-     *          framework refuses a second run on the conversation - a reload or
-     *          another tab asking for the same step. It is renewed at every step,
-     *          so an answer may take longer than this; it only runs out on a
-     *          conversation whose PHP process died mid-step.
+     * @var int Seconds a conversation stays marked as busy. A move clears the
+     *          mark when it ends; this only frees a conversation whose PHP
+     *          process died mid-move.
      */
-    private const LEASE_TIMEOUT = 300;
-
-    /** @var callable|null Answers the chat before the model is called. */
-    private $early;
+    private const BUSY_TTL = 300;
 
     /**
      * What an employee may attach, and how each kind reaches the model. The
@@ -415,9 +409,7 @@ class SomcpAssistantChat
 
         $content = array_merge([new TextContent(Tools::substr($text, 0, 20000))], $blocks);
 
-        return $this->advance($thread, function (Agent $agent) use ($content, $thread, $text): AgentState {
-            $this->beforeModel($thread, $text);
-
+        return $this->advance($thread, static function (Agent $agent) use ($content): AgentState {
             return $agent->chat(new UserMessage($content));
         });
     }
@@ -601,7 +593,6 @@ class SomcpAssistantChat
             if ($run === null || !$run->interrupt instanceof ToolResultsRequest) {
                 return null;
             }
-            $this->beforeModel($thread);
 
             $done = $run->interrupt->getResults();
             $results = [];
@@ -631,13 +622,8 @@ class SomcpAssistantChat
             $clean[(string) $callId] = $decision === 'approve' ? 'approve' : ['reject', 'The employee refused this change.'];
         }
 
-        return $this->advance($thread, function (Agent $agent) use ($clean, $thread): ?AgentState {
-            if ($clean === []) {
-                return null;
-            }
-            $this->beforeModel($thread);
-
-            return $agent->submitApprovalDecisions($clean)->run();
+        return $this->advance($thread, static function (Agent $agent) use ($clean): ?AgentState {
+            return $clean === [] ? null : $agent->submitApprovalDecisions($clean)->run();
         });
     }
 
@@ -665,7 +651,7 @@ class SomcpAssistantChat
 
         $status = 'idle';
         $actions = [];
-        $busy = false;
+        $busy = $this->busy($thread);
         try {
             // Reading the run needs no provider: no model is called here.
             $run = $this->agent($thread, [])->inspect();
@@ -683,11 +669,8 @@ class SomcpAssistantChat
             } elseif ($run !== null && $run->interrupt instanceof ToolResultsRequest) {
                 $status = 'working';
             }
-            // A step still running - from before a page reload, or in another
-            // tab - holds the lease: the conversation is working, and the chat
-            // waits for it rather than asking for the same step again.
-            $busy = $run !== null && $run->status === WorkflowStatus::Running
-                && $run->leaseExpiresAt !== null && $run->leaseExpiresAt > time();
+            // A move still running - from before a page reload, or in another
+            // tab - is working too, whatever the stored run said before it.
             if ($status !== 'approval' && $busy) {
                 $status = 'working';
             }
@@ -712,52 +695,15 @@ class SomcpAssistantChat
     }
 
     /**
-     * Asks for the chat's answer to be sent before the model is called, rather
-     * than once it has answered. The request then goes on alone: the employee
-     * can reload or leave the page without stopping it, and the chat picks
-     * the answer up on its next look.
-     *
-     * @param callable $send function(array $view): void
-     */
-    public function answerEarly(callable $send): void
-    {
-        $this->early = $send;
-    }
-
-    /**
-     * Sends the early answer, once, right before the model is called: the
-     * conversation as it stands, working, with the message just sent.
-     *
-     * @param array<string, mixed> $thread
-     * @param string $pending the employee's message, not stored yet
-     */
-    private function beforeModel(array $thread, string $pending = ''): void
-    {
-        if ($this->early === null) {
-            return;
-        }
-        $send = $this->early;
-        $this->early = null;
-
-        $view = $this->view($thread);
-        if ($pending !== '') {
-            $view['messages'][] = ['role' => 'user', 'text' => $pending, 'files' => []];
-        }
-        $view['status'] = 'working';
-        $view['busy'] = true;
-        $send($view);
-    }
-
-    /**
      * Runs one move on the conversation and answers with its new state. Every
      * failure ends up as a sentence for the employee: the chat must never be
      * left spinning on an error it was not told about.
      *
-     * Only one move runs on a conversation at a time: Neuron AI's execution
-     * lease refuses a second run while one is in progress, which a reload or a
-     * second tab would otherwise start, paying for and writing the same answer
-     * twice. A step asked meanwhile just reports that the conversation is
-     * busy, and the chat asks again a moment later.
+     * Only one move runs on a conversation at a time. The chat keeps going
+     * after a page reload or in a second tab, and asking for the next step
+     * while the previous one is still with the model would pay for the same
+     * answer twice and write it twice; a step asked meanwhile just reports
+     * that the conversation is busy, and the chat asks again a moment later.
      *
      * @param array<string, mixed> $thread
      * @param callable $move function(Agent $agent, array $assistant): ?AgentState
@@ -775,30 +721,80 @@ class SomcpAssistantChat
         if (SomcpAssistant::overBudget()) {
             return $this->view($thread, self::t('The monthly spending cap is reached. Raise it in the module settings to keep chatting.'));
         }
-        return $this->view($thread, $this->move($thread, $move, $assistant, $quiet));
+        if (!$this->claim($thread)) {
+            return $this->view($thread, $quiet ? '' : self::t('The assistant is still answering. Wait for its reply.'));
+        }
+
+        try {
+            $error = $this->move($thread, $move, $assistant);
+        } finally {
+            Db::getInstance()->update(
+                'somcp_assistant_thread',
+                ['busy_until' => null],
+                '`id_thread` = ' . (int) $thread['id_thread'],
+                0,
+                true
+            );
+        }
+
+        // Drawn once the mark is cleared, or the answer would read as busy.
+        return $this->view($thread, $error);
     }
 
     /**
-     * The move itself.
+     * Marks the conversation busy, unless a move already holds it. One UPDATE
+     * both checks and takes, so two requests arriving together cannot both win.
+     *
+     * @param array<string, mixed> $thread
+     *
+     * @return bool
+     */
+    private function claim(array $thread): bool
+    {
+        $db = Db::getInstance();
+        $db->execute(
+            'UPDATE `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
+            . ' SET `busy_until` = DATE_ADD(NOW(), INTERVAL ' . (int) self::BUSY_TTL . ' SECOND)'
+            . ' WHERE `id_thread` = ' . (int) $thread['id_thread']
+            . ' AND (`busy_until` IS NULL OR `busy_until` < NOW())'
+        );
+
+        return (int) $db->Affected_Rows() === 1;
+    }
+
+    /**
+     * Whether a move is running on the conversation right now.
+     *
+     * @param array<string, mixed> $thread
+     *
+     * @return bool
+     */
+    private function busy(array $thread): bool
+    {
+        return (bool) Db::getInstance()->getValue(
+            'SELECT 1 FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
+            . ' WHERE `id_thread` = ' . (int) $thread['id_thread'] . ' AND `busy_until` >= NOW()'
+        );
+    }
+
+    /**
+     * The move itself, once the conversation is held.
      *
      * @param array<string, mixed> $thread
      * @param callable $move
      * @param array<string, mixed> $assistant
-     * @param bool $quiet
      *
      * @return string the sentence for the employee when it failed, '' otherwise
      */
-    private function move(array $thread, callable $move, array $assistant, bool $quiet): string
+    private function move(array $thread, callable $move, array $assistant): string
     {
         try {
             $state = $move($this->agent($thread, $assistant), $assistant);
-        } catch (RunInFlightException $e) {
-            // Refused because the conversation is held: by a step still
-            // running elsewhere, or by a change waiting for approval.
-            if ($e->status === WorkflowStatus::Running) {
-                return $quiet ? '' : self::t('The assistant is still answering. Wait for its reply.');
+            if ($state instanceof AgentState) {
+                $this->account($state->getSteps(), $assistant);
+                $this->remember($thread, $this->keepImages($state->getSteps()));
             }
-
+        } catch (RunInFlightException $e) {
             return self::t('Answer the change waiting for your approval first.');
         } catch (Throwable $e) {
             SomcpLogger::log(
@@ -811,14 +807,6 @@ class SomcpAssistantChat
 
             return self::t('The assistant could not answer. Check its key in the module settings, then try again.');
         }
-        // Nothing ran - a step asked while another process holds the run: what
-        // follows belongs to that process, and doing it here too would write
-        // the same messages to the memory twice.
-        if (!$state instanceof AgentState) {
-            return '';
-        }
-        $this->account($state->getSteps(), $assistant);
-        $this->remember($thread, $this->keepImages($state->getSteps()));
 
         Db::getInstance()->update(
             'somcp_assistant_thread',
@@ -1186,7 +1174,6 @@ class SomcpAssistantChat
             ->setThreadId((string) $thread['thread_id'])
             ->setMessageStore($this->store())
             ->setPersistence(new DatabasePersistence(self::pdo(), _DB_PREFIX_ . 'somcp_assistant_run'))
-            ->setLeaseTimeout(self::LEASE_TIMEOUT)
             // The history is kept to a token window, and past a threshold the
             // oldest messages are summarized by the model rather than cut, so a
             // long conversation keeps its gist without resending everything.

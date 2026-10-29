@@ -34,7 +34,7 @@ $methods = [
     'NeuronAI\Agent\Agent' => [
         'make', 'setThreadId', 'setMessageStore', 'setPersistence', 'setAiProvider', 'setInstructions',
         'setTools', 'toolMaxRuns', 'chat', 'inspect', 'submitToolResults', 'submitApprovalDecisions',
-        'resetConversation', 'setLeaseTimeout',
+        'resetConversation',
     ],
     'NeuronAI\Agent\AgentState' => ['getSteps', 'getMessage'],
     'NeuronAI\Agent\Interrupt\ApprovalRequest' => ['getActions'],
@@ -69,8 +69,7 @@ $constructors = [
 ];
 
 $properties = [
-    'NeuronAI\Workflow\WorkflowRunSnapshot' => ['interrupt', 'status', 'leaseExpiresAt'],
-    'NeuronAI\Exceptions\RunInFlightException' => ['status'],
+    'NeuronAI\Workflow\WorkflowRunSnapshot' => ['interrupt'],
     'NeuronAI\Agent\Interrupt\Action' => ['id', 'name', 'inputs'],
     'NeuronAI\Chat\Messages\Usage' => ['inputTokens', 'outputTokens'],
     'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
@@ -82,7 +81,6 @@ $classes = [
     'NeuronAI\Chat\Messages\ToolResultMessage',
     'NeuronAI\Tools\ApprovalState',
     'NeuronAI\Chat\Enums\SourceType',
-    'NeuronAI\Workflow\WorkflowStatus',
 ];
 
 $problems = [];

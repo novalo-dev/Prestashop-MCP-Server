@@ -58,7 +58,8 @@ function upgrade_module_1_1_0($module)
         }
     }
 
-    // The long-term memory marks how far each conversation was written.
+    // The long-term memory marks how far each conversation was written, and a
+    // conversation marks when a move is running on it.
     $thread = _DB_PREFIX_ . 'somcp_assistant_thread';
     $present = $db->executeS('SHOW TABLES LIKE "' . pSQL($thread) . '"');
     if (is_array($present) && $present !== []) {
@@ -82,11 +83,11 @@ function upgrade_module_1_1_0($module)
             );
             $db->execute('ALTER TABLE `' . bqSQL($thread) . '` DROP `memory_count`');
         }
-        // A pre-release copy marked a running move here; Neuron AI's own
-        // execution lease does it now, so the column goes.
+        // One move at a time per conversation, now that the chat carries on
+        // across page reloads and tabs.
         $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($thread) . '` LIKE "busy_until"');
-        if (is_array($column) && $column !== []) {
-            $db->execute('ALTER TABLE `' . bqSQL($thread) . '` DROP `busy_until`');
+        if (!is_array($column) || $column === []) {
+            $db->execute('ALTER TABLE `' . bqSQL($thread) . '` ADD `busy_until` DATETIME NULL DEFAULT NULL');
         }
     }
 

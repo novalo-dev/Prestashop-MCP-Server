@@ -249,6 +249,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_thread` (
     `title`          VARCHAR(255) NOT NULL DEFAULT '',
     `files`          TEXT         NULL COMMENT 'images generated in the conversation, JSON: name and upload reference',
     `memory_last`    VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'id of the last message written to the long-term memory',
+    `busy_until`     DATETIME     NULL DEFAULT NULL COMMENT 'set while a move runs on the conversation, so a reload or a second tab does not start it twice',
     `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `date_upd`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id_thread`),

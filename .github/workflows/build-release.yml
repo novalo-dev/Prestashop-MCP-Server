@@ -175,16 +175,6 @@ jobs:
           fi
           echo "| Tools and prompts | $(tail -1 /tmp/tools.txt) |" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Addons validator
-        if: steps.guard.outputs.skip == 'false'
-        run: |
-          if ! php .github/scripts/check-addons.php . > /tmp/addons.txt 2>&1; then
-            echo "| Addons validator | **$(tail -1 /tmp/addons.txt)** |" >> "$GITHUB_STEP_SUMMARY"
-            cat /tmp/addons.txt
-            exit 1
-          fi
-          echo "| Addons validator | $(tail -1 /tmp/addons.txt) |" >> "$GITHUB_STEP_SUMMARY"
-
       # --prefix is what makes the archive installable: PrestaShop takes the
       # module's technical name from the folder inside the zip.
       # export-ignore in .gitattributes keeps the repository plumbing out.

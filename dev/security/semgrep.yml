@@ -113,6 +113,37 @@ rules:
       # A modifier that makes the value safe, or an explicit nofilter, is fine.
       - pattern-not-regex: \{\$[^}]*(\|escape|\|intval|\|floatval|\|json_encode|\|count|\|@count|nofilter)[^}]*\}
 
+  - id: somcp-context-getcontext
+    languages: [php]
+    severity: ERROR
+    # PHP files only: Semgrep reads .tpl files as PHP too, and markup is
+    # exactly what a template is for.
+    paths:
+      include:
+        - "*.php"
+    message: >-
+      The Addons validator reports Context::getContext(): PrestaShop 9 moves
+      the context to Symfony. Read it through Somcp::legacyContext(), or
+      Somcp::currentShopId() for the shop - one way in, one place to change.
+    pattern-either:
+      - pattern: Context::getContext()
+      - pattern: \Context::getContext()
+
+  - id: somcp-html-in-php
+    languages: [php]
+    severity: ERROR
+    # PHP files only: Semgrep reads .tpl files as PHP too, and markup is
+    # exactly what a template is for.
+    paths:
+      include:
+        - "*.php"
+    message: >-
+      HTML written in PHP: the Addons validator refuses it. Put the markup in a
+      Smarty template under views/templates and let the PHP fill it.
+    patterns:
+      - pattern: '"..."'
+      - pattern-regex: <\s*/?\s*(a|b|body|br|button|code|div|em|form|h[1-6]|html|i|iframe|img|input|label|li|link|meta|nav|ol|option|p|pre|script|section|select|small|span|strong|style|svg|table|td|textarea|th|tr|ul)(\s|>|/)
+
   - id: somcp-removed-in-prestashop-9
     languages: [php]
     severity: ERROR

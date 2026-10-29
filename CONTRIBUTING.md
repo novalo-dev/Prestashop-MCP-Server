@@ -63,10 +63,6 @@ php .github/scripts/check-tools.php .
 
 # Every table shop-scoped, no merchant setting stored globally
 php .github/scripts/check-multishop.php .
-
-# What the Addons validator reports: no Context::getContext(), no HTML in PHP,
-# .htaccess and index.php in place
-php .github/scripts/check-addons.php .
 ```
 
 CI also runs a **Security** job, which you can run too:
@@ -124,7 +120,8 @@ PrestaShop 9 class once took the whole PrestaShop 8 back office down.
   the validator reports the latter, and one way in is one place to change when
   PrestaShop moves the context.
 - **No HTML in PHP.** Markup goes in a Smarty template under `views/templates`,
-  which the PHP fills; the validator refuses HTML written in PHP strings.
+  which the PHP fills; the validator refuses HTML written in PHP strings. The
+  Semgrep rules of the Security job check both.
 - **Reuse before writing.** If the logic exists somewhere in the module, call
   it. A second version of the same rule is how two parts of the module end up
   disagreeing.

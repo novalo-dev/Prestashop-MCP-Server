@@ -1978,18 +1978,22 @@ The quantities the storefront sells against, per product and combination.
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `threshold` | integer | no | each product's own low stock threshold when absent, 0 when it has none |
-| `active` | boolean | no | active products only, true by default |
+| `threshold` | integer | no | each product's own low stock level when absent, 0 when it has none |
+| `active` | boolean | no | enabled products only, true by default; false includes the disabled ones (**Filter by status**) |
+| `id_category` | integer | no | products associated with this category, its default one or not, from `somcp_list_categories` (**Filter by categories**) |
+| `id_supplier` | integer | no | products whose default supplier this is (`product.id_supplier`), from `somcp_list_suppliers` (**Filter by supplier**) |
+| `search` | string | no | part of the product name, of the product or combination reference, or of the supplier name (**Search products**) |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per line: `id_product`, `id_product_attribute`, `reference`, `name`, `quantity`, `threshold`. Plus `total_count`.
+**Returns** - per line: `id_product`, `id_product_attribute`, `reference`, `name`, `quantity`, `threshold`, `supplier` (the name of the default supplier, the **Supplier** column, `null` when none). Plus `returned`, `total_count` and `offset`.
 
 **Notes**
 - One line per thing that can be sold: a product without combinations (`id_product_attribute` 0), or each combination of a product that has some, listed from `product_attribute_shop`. A product with combinations has no line of its own: its quantity is only their total, which can look fine while one size is gone.
 - `quantity` is read from `stock_available`, restricted to the shop or its group by `StockAvailable::addSqlShopRestriction()`, as in `somcp_get_stock`. A combination without a stock row counts as zero.
-- Without `threshold`, a line is compared with its own `low_stock_threshold` - the combination's, or the product's for a product without combinations - and with 0 when none is set. `threshold` on each line is the level used.
+- Without `threshold`, a line is compared with its own low stock level (`low_stock_threshold`) - the combination's, or the product's for a product without combinations - and with 0 when none is set. `threshold` on each line is the level used.
 - `reference` is the combination's own on a combination line; `name` is the product's, in the shop default language. Attributes and the physical and reserved quantities are read with `somcp_get_stock`.
 - Lowest quantity first. A product still being created, or not in this shop, is left out.
+- The filters are those of the **Stock** tab of **Catalog > Stock**, the same on PrestaShop 8 and 9. `search` matches each line on its own: a combination is found by its own reference, without its other combinations. `total_count` counts with every filter applied.
 
 #### `somcp_set_stock_quantity`
 **State**: written

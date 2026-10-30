@@ -37,6 +37,12 @@ now returns its tags as well, so they can be read, changed and written back.
 
 ### Changed
 
+**Listing what runs low: the filters of the Stock page.** The list of low
+stock could only be narrowed by quantity and status. It now also filters by
+category, by default supplier, and by a search on the product name, the
+product or combination reference or the supplier name, as the Stock page of
+the back office does, and each line gives the name of its supplier.
+
 **Creating a product: packs, downloadable files, stock alerts and ecotax.**
 Creating a product used to leave a pack empty and a virtual product without
 its file, to be completed in the back office, and could not set the minimum

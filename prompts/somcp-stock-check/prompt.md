@@ -27,7 +27,11 @@ which may not be the one the merchant has in mind.
    or EAN13), then read its quantities with `somcp_get_stock`. Several matches:
    show them and let the merchant pick. Never choose one for them.
 2. **What runs low.** Use `somcp_list_low_stock`, with the threshold the
-   merchant gave, or without one to compare each line with its own alert level.
+   merchant gave, or without one to compare each line with its own low stock
+   level. Narrow it the way the Stock page does when the merchant asks: a
+   category (`id_category`, from `somcp_list_categories`), a supplier
+   (`id_supplier`, from `somcp_list_suppliers`) or a word of the name, the
+   reference or the supplier name (`search`).
    It returns one line per combination: read `somcp_get_stock` on a product to
    name its combinations by their attributes. Read the next page while
    `total_count` says there is more, before saying that is all.
@@ -42,7 +46,7 @@ which may not be the one the merchant has in mind.
 - A product with combinations has a quantity **per combination**, and the
   product line is their total. Name the combination by its attributes
   (Size: M, Color: Blue), not by its identifier.
-- `low_stock_threshold` is the alert level the merchant set. `null` means no
+- `low_stock_threshold` is the low stock level the merchant set. `null` means no
   alert is set, not an alert at zero.
 - `low_stock_alert` says whether the merchant gets an email at that level.
   `somcp_get_stock` also gives the reference (each combination has its own),

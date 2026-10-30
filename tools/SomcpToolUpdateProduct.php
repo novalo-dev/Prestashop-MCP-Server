@@ -75,6 +75,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         'available_now' => 'stock.available_now',
         'available_later' => 'stock.available_later',
         'available_date' => 'stock.available_date',
+        'minimal_quantity' => 'stock.minimal_quantity',
+        'low_stock_threshold' => 'stock.low_stock_threshold',
+        'low_stock_alert' => 'stock.low_stock_alert',
+        'pack_stock_type' => 'stock.pack_stock_type',
         'width' => 'shipping.width',
         'height' => 'shipping.height',
         'depth' => 'shipping.depth',
@@ -89,6 +93,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         'unit_price' => 'pricing.unit_price_tax_excl',
         'unity' => 'pricing.unity',
         'on_sale' => 'pricing.on_sale',
+        'ecotax' => 'pricing.ecotax_tax_excl',
         'meta_title' => 'seo.meta_title',
         'meta_description' => 'seo.meta_description',
         'meta_keywords' => 'seo.meta_keywords',
@@ -186,6 +191,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             . 'product has combinations, each of which has its own.';
         $properties['stock']['properties']['location']['description'] = 'Merchant. Where it is stored; refused while the '
             . 'product has combinations, each of which has its own.';
+        // Only written at creation for now.
+        unset($properties['pack'], $properties['virtual_file']);
         $properties['seo']['properties']['link_rewrite']['description'] = 'Assistant. The friendly URL, only in the '
             . 'languages given. On an active product the old address stops working: tell the merchant first. '
             . 'One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.';
@@ -410,7 +417,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $idShop = (int) $shop->id;
         $groups = [];
         foreach (array_keys(self::ACCEPTED) as $group) {
-            if (in_array($group, ['feature', 'customization_field', 'rule', 'supplier', 'image', 'combination'], true)) {
+            // The products of a pack and the file of a virtual product are
+            // only written at creation for now: given here, they are refused
+            // below as unknown rather than silently dropped.
+            if (in_array($group, self::NESTED, true) || in_array($group, ['pack', 'virtual_file'], true)) {
                 continue;
             }
             $groups[$group] = self::group($arguments, $group, $errors);
@@ -455,6 +465,9 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         // their position in this call.
         $combinations = self::planCombinations($arguments, $product, $languages, $idShop, $plan, $errors);
         self::planType($groups['basics'], $product, $combinations, $plan, $errors);
+        if (isset($plan['fields']['pack_stock_type']) && !($plan['fields']['cache_is_pack'] ?? (bool) $product->cache_is_pack)) {
+            $errors[] = 'stock.pack_stock_type: a pack only';
+        }
         self::planStock($product, $combinations, $idShop, $plan, $errors);
         self::planCategories($groups['categories'], $product, $shop, $plan, $errors);
         self::planSets($arguments, $groups, $product, $languages, $idShop, $plan, $errors);
@@ -2182,6 +2195,11 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
     {
         if ($field === 'additional_delivery_times') {
             $words = array_flip(self::DELIVERY_TIMES);
+
+            return $words[(int) $value] ?? $value;
+        }
+        if ($field === 'pack_stock_type') {
+            $words = array_flip(self::PACK_STOCK_TYPES);
 
             return $words[(int) $value] ?? $value;
         }

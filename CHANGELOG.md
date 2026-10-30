@@ -28,6 +28,16 @@ now returns its tags as well, so they can be read, changed and written back.
 
 ### Changed
 
+**Creating a product: packs, downloadable files, stock alerts and ecotax.**
+Creating a product used to leave a pack empty and a virtual product without
+its file, to be completed in the back office, and could not set the minimum
+quantity for sale, the low stock level and its email alert, the pack stock
+behaviour or the ecotax. A pack is now created with its products and their
+quantities, a virtual product with its downloadable file (by a public address
+or a file already on the shop) and its download limits, and all of these
+fields can be given, the low stock level on each combination too. Updating a
+product accepts the new stock fields and the ecotax as well.
+
 **The built-in assistant across pages.** Reloading or leaving a page while
 the assistant was answering made the new page wait until the answer was done.
 The page now loads at once: the answer carries on in the background and

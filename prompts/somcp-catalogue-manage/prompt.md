@@ -82,6 +82,12 @@ one that answered. The currency of the prices comes from there too.
    (`stock.pack_stock_type`), and the downloadable file settings of a virtual
    product (`virtual_file`, null without a file).
 
+A pack is created with its products (`pack.items`): find each one with
+`somcp_search_products`, take a combination from `somcp_get_product`, and let
+the merchant pick - never a guessed identifier. A pack cannot hold a pack. A
+virtual product is created with its file (`virtual_file`), given by `url` or
+`upload_ref` only, never by its content, with the file name customers see.
+
 ## Identifiers are never guessed
 
 Product, combination and category identifiers differ from one shop to the

@@ -939,6 +939,13 @@ The products and the categories they are sorted into: texts, prices, combination
 | | `out_of_stock` | merchant | deny, allow, or shop default |
 | | `available_now`, `available_later` | merchant | the merchant's text, or left out: the storefront then shows the shop's default label |
 | | `available_date` | merchant | a date, or left out: none |
+| | `minimal_quantity` (Minimum quantity for sale) | merchant | a whole number from 1, 1 by default, checked with `Product::$definition` |
+| | `low_stock_threshold` (Low stock level), `low_stock_alert` (email alert at that level) | merchant | a whole number, or `null` for none, stored the way the running version stores no level (`NULL` on 8, `0` on 9) |
+| | `pack_stock_type` (Pack quantities / Pack stock behavior) | merchant | `pack`, `products`, `both`, `default` (the default); refused unless `product_type` is `pack` |
+| `pack` | `items`, each: `id_product`, `id_product_attribute` (0 or left out for none), `quantity` (from 1) | merchant, from the shop | refused unless `product_type` is `pack`; the assistant finds the products with `somcp_search_products` and the combinations with `somcp_get_product`, the merchant picks; a product that is itself a pack, a combination of another product or the same item twice is refused; written with `Pack::addItem()` after the product |
+| `virtual_file` | `file` (`url` or `upload_ref`), `display_filename` (the Filename field) | merchant | both required; refused unless `product_type` is `virtual`; see **Images** for the two doors a file comes in through, without the image check and within the shop's maximum attachment size (`PS_ATTACHMENT_MAXIMUM_SIZE`), the limit of the back office; stored under `download/` with a name from `ProductDownload::getNewFilename()`, then a `ProductDownload` row |
+| | `nb_downloadable`, `nb_days_accessible` | merchant | whole numbers, 0 for unlimited (the default) |
+| | `date_expiration` | merchant | a date, YYYY-MM-DD, or `null`: none |
 | `shipping` | `width`, `height`, `depth`, `weight` | merchant | |
 | | `additional_delivery_times` | merchant | none, shop default, or this product's |
 | | `delivery_in_stock`, `delivery_out_stock` | merchant | used when `additional_delivery_times` is this product's, which they select when it is left out; refused next to another value |
@@ -947,6 +954,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | `pricing` | `price_tax_excl` | merchant | required |
 | | `id_tax_rules_group` | merchant, from the shop | id from `somcp_list_tax_rules`, never guessed; 0 for no tax; left out, the rule the back office preselects for a new product (the most used one), so a product is never sold without VAT by omission |
 | | `wholesale_price`, `unit_price_tax_excl`, `unity`, `on_sale` | merchant | |
+| | `ecotax_tax_excl` | merchant | a positive number; refused on PrestaShop 9 while the ecotax is switched off (`PS_USE_ECOTAX`), since the field is then not on the page; always taken on PrestaShop 8 |
 | `specific_prices` | `rules` as read by `somcp_get_product`, plus `priorities` | merchant | currency and country by ISO code, group from `somcp_list_customer_groups`; each written through `SpecificPrice::add()` for the shop of the token; a combination is named by its position in `combinations` (`combination`, from 0); a percentage `reduction` is the fraction PrestaShop stores, 0.2 for 20 %; a rule with neither a price nor a reduction is refused; `priorities` lists `id_shop`, `id_currency`, `id_country`, `id_group` once each (`id_customer`, always first, is left out) |
 | `seo` | `meta_title`, `meta_description`, `link_rewrite`, `redirect_type`, `id_type_redirected`, `meta_keywords`, `tags` | assistant | every language being filled; see **SEO** below |
 | `options` | `visibility`, `available_for_order`, `show_price`, `online_only`, `active` | merchant | `active` false by default |
@@ -955,7 +963,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | `images` | `url` or `upload_ref` | merchant | see **Images** below |
 | | `legend`, `cover`, `position`, `combinations` (positions in `combinations`) | merchant and assistant | legend in every language being filled; one cover at most, the first image that arrived otherwise |
 | `combinations` | `attributes` | merchant, from the shop | `id_attribute` values from `somcp_list_attributes`; two combinations with the same attributes are refused |
-| | `default_on`, `reference`, `mpn`, `upc`, `ean13`, `isbn`, `quantity`, `location`, `available_date`, `available_now`, `available_later`, `price_impact_tax_excl`, `unit_price_impact_tax_excl`, `weight_impact`, `wholesale_price`, `minimal_quantity` | merchant and assistant | same rules as the product's own fields; one combination is the default |
+| | `default_on`, `reference`, `mpn`, `upc`, `ean13`, `isbn`, `quantity`, `location`, `available_date`, `available_now`, `available_later`, `price_impact_tax_excl`, `unit_price_impact_tax_excl`, `weight_impact`, `wholesale_price`, `minimal_quantity`, `low_stock_threshold`, `low_stock_alert` | merchant and assistant | same rules as the product's own fields; one combination is the default |
 
 **SEO**
 - Fields: `meta_title`, `meta_description`, `link_rewrite`, `redirect_type`, `id_type_redirected`, `meta_keywords` where the column exists (PrestaShop 8; on 9 the field is refused with a clear message, not dropped silently), and `tags`.
@@ -970,12 +978,12 @@ The products and the categories they are sorted into: texts, prices, combination
 - That download is a new network request from the shop, so it is guarded: `https` on the standard port only, no credentials in the address, the host must resolve to a public address (no localhost, no private, link-local, shared, documentation or multicast range, IPv4 hidden in IPv6 included, checked after resolution and then pinned for the connection), no proxy, redirects not followed, 10 MB at most counted while reading, and the content must be a JPEG, PNG, GIF or WebP that `ImageManager` accepts. A refused image is reported in the answer and does not stop the creation.
 - Thumbnails generated through `ImageManager` for every image type, as the back office does, in JPEG and in each extra format switched on in the settings (PrestaShop 8.1 and later), with the fitment of each type on PrestaShop 9.
 
-**Returns** - `created`, `id_product`, `seo_warnings`, `images` (per image, its `url` or `upload_ref`: `id_image` or the reason it was refused), and the product as `somcp_get_product` returns it.
+**Returns** - `created`, `id_product`, `seo_warnings`, `images` (per image, its `url` or `upload_ref`: `id_image` or the reason it was refused), `pack_items` (per item, as given: `added` or the reason it was refused), `virtual_file` (its `url` or `upload_ref`: `added` or the reason it was refused; `null` when none was given), and the product as `somcp_get_product` returns it.
 
 **Notes**
 - Written through the core classes (`Product::add()`, `Combination`, `StockAvailable`, `SpecificPrice`, `Image`) so hooks fire and other modules see a normal product creation.
-- Everything or nothing for the product itself: if the product or a combination cannot be written, what was created is deleted and the call fails. Only images and SEO warnings are reported without failing.
-- Pack contents and the file of a virtual product are not written here: a `pack` or `virtual` product is created empty and completed in the back office.
+- Everything or nothing for the product itself: if the product or a combination cannot be written, what was created is deleted and the call fails. Only images, pack items, the downloadable file and SEO warnings are reported without failing: they are written after the product, every check done before the first write.
+- The name on disk of a downloadable file is never returned: it is what lets a customer download it.
 - Not replayable: the read tool to check is `somcp_search_products` with the reference.
 - Every problem is reported at once, before anything is written: unknown or computed fields, identifiers that do not exist in the shop, texts missing in a language, references already used, two combinations with the same attributes or two values of one attribute group. The rules of each field (`validate`, `size`, `values`) are read from the class definition of the running version through `ObjectModel::validateField()`, so an EAN13 is checked as PrestaShop 8 or 9 checks it.
 - Lists of identifiers (`categories`, `related_products`, `attachments`, `carriers`, combination `attributes`) take integers; the objects `somcp_get_product` returns are accepted too.
@@ -1019,6 +1027,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - The attributes of an existing combination do not change: the back office does not change them either. Remove the combination and add another.
 - The default combination moves with `default_on: true` on another one; `default_on: false` on the current default alone is refused. When the default one is removed, the first combination left becomes the default.
 - With combinations, `stock.quantity` and `stock.location` are refused: each combination has its own, and the core writes a product location on every combination row.
+- The `pack` and `virtual_file` groups of `somcp_create_product` are not taken here yet: the products of a pack and the file of a virtual product are changed in the back office. The new stock fields (`minimal_quantity`, `low_stock_threshold`, `low_stock_alert`, `pack_stock_type`, the last on a pack only) and `pricing.ecotax_tax_excl` are taken, with the rules of the creation, and the low stock level and alert of one combination through its item in `combinations`.
 - `link_rewrite` is only written in the languages given, never made again from a new name. Changed on an active product, the old URL stops working: the answer says so in `seo_warnings`, and the assistant tells the merchant before the call.
 - `tags` replace the product's tags in the languages given: the language's old tags go and the given ones take their place. A language left out keeps its tags, and a language whose tags are already exactly those given is not rewritten (it does not count as a change). Format and limits are those of `somcp_create_product`.
 - Two specific prices that would apply to the same customers, combination, quantity and dates are refused before anything is written: the database accepts only one.

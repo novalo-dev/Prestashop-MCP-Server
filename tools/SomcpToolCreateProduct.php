@@ -97,12 +97,17 @@ class SomcpToolCreateProduct
         'references' => ['reference', 'mpn', 'upc', 'ean13', 'isbn'],
         'condition' => ['condition', 'show_condition'],
         'customization' => ['fields'],
-        'stock' => ['quantity', 'location', 'out_of_stock', 'available_now', 'available_later', 'available_date'],
+        'stock' => [
+            'quantity', 'location', 'out_of_stock', 'available_now', 'available_later', 'available_date',
+            'minimal_quantity', 'low_stock_threshold', 'low_stock_alert', 'pack_stock_type',
+        ],
+        'pack' => ['items'],
+        'virtual_file' => ['file', 'display_filename', 'nb_downloadable', 'date_expiration', 'nb_days_accessible'],
         'shipping' => [
             'width', 'height', 'depth', 'weight', 'additional_delivery_times', 'delivery_in_stock',
             'delivery_out_stock', 'additional_shipping_cost', 'carriers',
         ],
-        'pricing' => ['price_tax_excl', 'id_tax_rules_group', 'wholesale_price', 'unit_price_tax_excl', 'unity', 'on_sale'],
+        'pricing' => ['price_tax_excl', 'id_tax_rules_group', 'wholesale_price', 'unit_price_tax_excl', 'unity', 'on_sale', 'ecotax_tax_excl'],
         'specific_prices' => ['rules', 'priorities'],
         'seo' => ['meta_title', 'meta_description', 'link_rewrite', 'redirect_type', 'id_type_redirected', 'meta_keywords', 'tags'],
         'options' => ['visibility', 'available_for_order', 'show_price', 'online_only', 'active'],
@@ -115,12 +120,21 @@ class SomcpToolCreateProduct
         ],
         'supplier' => ['id_supplier', 'combination', 'product_supplier_reference', 'product_supplier_price_te', 'currency'],
         'image' => ['url', 'upload_ref', 'legend', 'cover', 'position', 'combinations'],
+        'pack_item' => ['id_product', 'id_product_attribute', 'quantity'],
+        'file' => ['url', 'upload_ref'],
         'combination' => [
             'attributes', 'default_on', 'reference', 'mpn', 'upc', 'ean13', 'isbn', 'quantity', 'location',
             'available_date', 'available_now', 'available_later', 'price_impact_tax_excl',
             'unit_price_impact_tax_excl', 'weight_impact', 'wholesale_price', 'minimal_quantity',
+            'low_stock_threshold', 'low_stock_alert',
         ],
     ];
+
+    /** @var array<string, int> pack_stock_type as the merchant names it, to the values of Pack::STOCK_TYPE_*. */
+    protected const PACK_STOCK_TYPES = ['pack' => 0, 'products' => 1, 'both' => 2, 'default' => 3];
+
+    /** @var array<int, string> The groups that are items of a list or a field of a group, not groups of the call. */
+    protected const NESTED = ['feature', 'customization_field', 'rule', 'supplier', 'image', 'combination', 'pack_item', 'file'];
 
     /**
      * @var array<int, string> What somcp_get_product returns and this tool refuses: worked out by the shop, or
@@ -136,6 +150,7 @@ class SomcpToolCreateProduct
         'supplier.id_product_attribute', 'image.id_image', 'combination.id_product_attribute',
         'combination.price_impact_tax_incl', 'combination.unit_price_impact_tax_incl', 'combination.currency',
         'combination.images', 'feature.name', 'feature.custom', 'customization_field.id_customization_field',
+        'pricing.ecotax_tax_incl', 'pack_item.name', 'pack_item.reference', 'virtual_file.active',
     ];
 
     /**
@@ -149,8 +164,9 @@ class SomcpToolCreateProduct
             'Creates one product in this shop, inactive unless options.active says otherwise. Everything '
                 . 'somcp_get_product reads can be given, in the same groups and under the same names: texts, '
                 . 'categories, brand, related products, references, features, attachments, condition, '
-                . 'customization, stock, shipping and carriers, pricing and tax, specific prices, SEO, '
-                . 'options, suppliers, images and combinations. Only basics.name and pricing.price_tax_excl '
+                . 'customization, stock, the products of a pack, the downloadable file of a virtual product, '
+                . 'shipping and carriers, pricing and tax, specific prices, SEO, options, suppliers, images and '
+                . 'combinations. Only basics.name and pricing.price_tax_excl '
                 . 'are required. '
                 . 'Who fills each field is said at the start of its description, and is a rule for you: '
                 . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
@@ -166,7 +182,8 @@ class SomcpToolCreateProduct
                 . 'Every problem is reported at once and nothing is written until the whole call is valid. '
                 . 'Images are downloaded by the shop from public https addresses, or taken from a file already '
                 . 'on the shop by its upload_ref; one that cannot be had is reported in images and does not stop '
-                . 'the creation. '
+                . 'the creation. The products of a pack and the file of a virtual product are reported the same '
+                . 'way, in pack_items and virtual_file. '
                 . 'Do not use it to change an existing product, which is somcp_update_product. One product per '
                 . 'call: for several, call it once per product and report each result. '
                 . 'Not to be retried: if the answer is lost, search with somcp_search_products by the '
@@ -215,8 +232,8 @@ class SomcpToolCreateProduct
                             'type' => 'string',
                             'enum' => ['standard', 'combinations', 'pack', 'virtual'],
                             'description' => 'Merchant. combinations when combinations are given, standard '
-                                . 'otherwise. A pack or a virtual product is created empty: its contents or '
-                                . 'its file are added in the back office.',
+                                . 'otherwise. A pack takes its products in pack, a virtual product its file in '
+                                . 'virtual_file.',
                         ],
                         'name' => $text('Merchant. Required, 128 characters at most.'),
                         'description_short' => $text('Assistant. The summary, 100 to 200 characters.'),
@@ -329,7 +346,87 @@ class SomcpToolCreateProduct
                         'available_now' => $text('Merchant. Label when in stock; left out, the shop default label shows.'),
                         'available_later' => $text('Merchant. Label when out of stock and orders are accepted.'),
                         'available_date' => ['type' => 'string', 'description' => 'Merchant. Availability date, YYYY-MM-DD.'],
+                        'minimal_quantity' => [
+                            'type' => 'integer',
+                            'description' => 'Merchant. Minimum quantity for sale, 1 or more; 1 by default.',
+                        ],
+                        'low_stock_threshold' => [
+                            'type' => ['integer', 'null'],
+                            'description' => 'Merchant. Low stock level; null for none.',
+                        ],
+                        'low_stock_alert' => [
+                            'type' => 'boolean',
+                            'description' => 'Merchant. Send an email when the quantity reaches the low stock level.',
+                        ],
+                        'pack_stock_type' => [
+                            'type' => 'string',
+                            'enum' => ['pack', 'products', 'both', 'default'],
+                            'description' => 'Merchant. Pack stock behaviour: decrement the pack only, the products '
+                                . 'only, both, or the shop default. A pack only.',
+                        ],
                     ],
+                    'additionalProperties' => false,
+                ],
+                'pack' => [
+                    'type' => 'object',
+                    'description' => 'A pack only (product_type pack).',
+                    'properties' => [
+                        'items' => [
+                            'type' => 'array',
+                            'description' => 'Merchant, from the shop: the products of the pack, found with '
+                                . 'somcp_search_products. A pack cannot hold a pack.',
+                            'items' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'id_product' => ['type' => 'integer', 'description' => 'From somcp_search_products.'],
+                                    'id_product_attribute' => [
+                                        'type' => 'integer',
+                                        'description' => 'A combination of that product, from somcp_get_product; 0 or '
+                                            . 'left out for a product without combinations.',
+                                    ],
+                                    'quantity' => ['type' => 'integer', 'description' => '1 or more; 1 by default.'],
+                                ],
+                                'required' => ['id_product'],
+                                'additionalProperties' => false,
+                            ],
+                        ],
+                    ],
+                    'additionalProperties' => false,
+                ],
+                'virtual_file' => [
+                    'type' => 'object',
+                    'description' => 'A virtual product only (product_type virtual): the file customers download.',
+                    'properties' => [
+                        'file' => [
+                            'type' => 'object',
+                            'description' => 'Merchant. Required. url: a public https address the shop downloads '
+                                . '(no redirect); upload_ref: a file already on the shop - attached, deposited or '
+                                . 'generated in the built-in assistant. One of the two, never file content. Within '
+                                . 'the shop\'s maximum attachment size.',
+                            'properties' => [
+                                'url' => ['type' => 'string'],
+                                'upload_ref' => ['type' => 'string'],
+                            ],
+                            'additionalProperties' => false,
+                        ],
+                        'display_filename' => [
+                            'type' => 'string',
+                            'description' => 'Merchant. Required. The file name customers see.',
+                        ],
+                        'nb_downloadable' => [
+                            'type' => 'integer',
+                            'description' => 'Merchant. Number of allowed downloads, 0 for unlimited.',
+                        ],
+                        'date_expiration' => [
+                            'type' => ['string', 'null'],
+                            'description' => 'Merchant. Expiration date, YYYY-MM-DD; null for none.',
+                        ],
+                        'nb_days_accessible' => [
+                            'type' => 'integer',
+                            'description' => 'Merchant. Number of days the link works after the order, 0 for unlimited.',
+                        ],
+                    ],
+                    'required' => ['file', 'display_filename'],
                     'additionalProperties' => false,
                 ],
                 'shipping' => [
@@ -365,6 +462,11 @@ class SomcpToolCreateProduct
                         'unit_price_tax_excl' => ['type' => 'number', 'description' => 'Merchant. Price per unit, tax excluded.'],
                         'unity' => ['type' => 'string', 'description' => 'Merchant. The unit, for example per kilo.'],
                         'on_sale' => ['type' => 'boolean', 'description' => 'Merchant. Show the "on sale" flag.'],
+                        'ecotax_tax_excl' => [
+                            'type' => 'number',
+                            'description' => 'Merchant. Ecotax, tax excluded. Refused on PrestaShop 9 while the '
+                                . 'ecotax is switched off in the shop\'s tax settings.',
+                        ],
                     ],
                     'required' => ['price_tax_excl'],
                     'additionalProperties' => false,
@@ -518,6 +620,8 @@ class SomcpToolCreateProduct
                             'weight_impact' => ['type' => 'number'],
                             'wholesale_price' => ['type' => 'number'],
                             'minimal_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
+                            'low_stock_threshold' => ['type' => ['integer', 'null'], 'description' => 'Low stock level; null for none.'],
+                            'low_stock_alert' => ['type' => 'boolean', 'description' => 'Email at the low stock level.'],
                         ],
                         'required' => ['attributes'],
                         'additionalProperties' => false,
@@ -623,6 +727,8 @@ class SomcpToolCreateProduct
         }
 
         $images = self::images($product, $plan, $combinationIds, $idShop);
+        $packItems = self::writePack((int) $product->id, $plan['pack'] ?? []);
+        $virtualFile = $plan['virtual_file'] === null ? null : self::writeVirtualFile((int) $product->id, $plan['virtual_file']);
         $warnings = self::seoWarnings($product, $plan, $idShop);
 
         SomcpLogger::log(
@@ -641,6 +747,8 @@ class SomcpToolCreateProduct
             'id_product' => (int) $product->id,
             'seo_warnings' => $warnings === [] ? new stdClass() : $warnings,
             'images' => $images,
+            'pack_items' => $packItems,
+            'virtual_file' => $virtualFile,
             // Read back with the reading tool rather than echoed from the
             // arguments: what the assistant shows the merchant is what the shop
             // stored, defaults and generated URLs included.
@@ -667,7 +775,7 @@ class SomcpToolCreateProduct
         $idShop = (int) $shop->id;
         $groups = [];
         foreach (array_keys(self::ACCEPTED) as $group) {
-            if (in_array($group, ['feature', 'customization_field', 'rule', 'supplier', 'image', 'combination'], true)) {
+            if (in_array($group, self::NESTED, true)) {
                 continue;
             }
             $groups[$group] = self::group($arguments, $group, $errors);
@@ -716,6 +824,12 @@ class SomcpToolCreateProduct
         $plan['combinations'] = self::combinations($arguments['combinations'] ?? null, $languages, $groups['stock'], $errors);
         $count = count($plan['combinations']);
         self::productType($groups['basics'], $count, $plan, $errors);
+        $isPack = !empty($plan['fields']['cache_is_pack']);
+        if (isset($plan['fields']['pack_stock_type']) && !$isPack) {
+            $errors[] = 'stock.pack_stock_type: a pack only; give basics.product_type pack';
+        }
+        $plan['pack'] = self::packPlan($groups['pack'], $isPack, 0, $idShop, $errors);
+        $plan['virtual_file'] = self::virtualFilePlan($groups['virtual_file'], !empty($plan['fields']['is_virtual']), $errors);
         self::specificPrices($groups['specific_prices'], $count, $idShop, $plan, $errors);
         self::suppliers($groups['suppliers'], $count, $idShop, $plan, $errors);
         $plan['images'] = self::imagePlan($arguments['images'] ?? null, $count, $languages, $errors);
@@ -1198,6 +1312,190 @@ class SomcpToolCreateProduct
                 $plan['fields']['available_date'] = $date;
             }
         }
+        if (array_key_exists('minimal_quantity', $group)) {
+            $minimal = self::integer($group['minimal_quantity']);
+            if ($minimal === null || $minimal < 1 || $probe->validateField('minimal_quantity', $minimal) !== true) {
+                $errors[] = 'stock.minimal_quantity: a whole number, 1 or more';
+            } else {
+                $plan['fields']['minimal_quantity'] = $minimal;
+            }
+        }
+        self::lowStock($group, 'stock', $probe, $plan['fields'], $errors);
+        if (array_key_exists('pack_stock_type', $group)) {
+            $value = self::string($group['pack_stock_type']);
+            if ($value === null || !isset(self::PACK_STOCK_TYPES[$value])) {
+                $errors[] = 'stock.pack_stock_type: pack, products, both or default';
+            } else {
+                $plan['fields']['pack_stock_type'] = self::PACK_STOCK_TYPES[$value];
+            }
+        }
+    }
+
+    /**
+     * The low stock level and its alert, of the product or of one combination.
+     *
+     * @param array<string, mixed> $item
+     * @param string $path
+     * @param ObjectModel $probe a Product or a Combination, whose definition checks the values
+     * @param array<string, mixed> $fields
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function lowStock(array $item, string $path, ObjectModel $probe, array &$fields, array &$errors): void
+    {
+        if (array_key_exists('low_stock_threshold', $item)) {
+            if ($item['low_stock_threshold'] === null) {
+                // No level: PrestaShop 8 stores NULL, PrestaShop 9 stores 0,
+                // and the back office of each writes its own.
+                $fields['low_stock_threshold'] = version_compare(_PS_VERSION_, '9.0.0', '>=') ? 0 : null;
+            } else {
+                $threshold = self::integer($item['low_stock_threshold']);
+                if ($threshold === null || $probe->validateField('low_stock_threshold', $threshold) !== true) {
+                    $errors[] = $path . '.low_stock_threshold: a whole number, or null for none';
+                } else {
+                    $fields['low_stock_threshold'] = $threshold;
+                }
+            }
+        }
+        if (array_key_exists('low_stock_alert', $item)) {
+            $alert = self::bool($item['low_stock_alert']);
+            if ($alert === null) {
+                $errors[] = $path . '.low_stock_alert: true or false';
+            } else {
+                $fields['low_stock_alert'] = $alert;
+            }
+        }
+    }
+
+    /**
+     * The products of a pack, each checked against the shop as the back office checks it.
+     *
+     * @param array<string, mixed> $group
+     * @param bool $isPack
+     * @param int $idProduct the pack itself, 0 while it is being created
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return array<int, array{id_product: int, id_product_attribute: int, quantity: int}>|null null when not given
+     */
+    protected static function packPlan(array $group, bool $isPack, int $idProduct, int $idShop, array &$errors): ?array
+    {
+        if ($group === []) {
+            return null;
+        }
+        if (!$isPack) {
+            $errors[] = 'pack: a pack only; give basics.product_type pack';
+
+            return null;
+        }
+        $items = [];
+        $seen = [];
+        foreach (self::items($group['items'] ?? null, 'pack.items', $errors) as $i => $item) {
+            $path = 'pack.items[' . $i . ']';
+            self::onlyAccepted($item, 'pack_item', $path, $errors);
+            $id = self::integer($item['id_product'] ?? null);
+            $idAttribute = array_key_exists('id_product_attribute', $item) ? self::integer($item['id_product_attribute']) : 0;
+            $quantity = array_key_exists('quantity', $item) ? self::integer($item['quantity']) : 1;
+            if ($quantity === null || $quantity < 1) {
+                $errors[] = $path . '.quantity: a whole number, 1 or more';
+                continue;
+            }
+            if ($id === null || $id <= 0 || !Db::getInstance()->getValue(
+                'SELECT 1 FROM `' . _DB_PREFIX_ . 'product_shop` WHERE `id_product` = ' . (int) $id . ' AND `id_shop` = ' . (int) $idShop
+            )) {
+                $errors[] = $path . '.id_product: no such product in this shop. Take identifiers from somcp_search_products.';
+                continue;
+            }
+            // The back office offers neither the pack itself nor another
+            // pack: stock could then never be worked out.
+            if ($id === $idProduct || Pack::isPack($id)) {
+                $errors[] = $path . '.id_product: a pack cannot hold a pack, nor itself';
+                continue;
+            }
+            if ($idAttribute === null || $idAttribute < 0 || ($idAttribute > 0 && !Db::getInstance()->getValue(
+                'SELECT 1 FROM `' . _DB_PREFIX_ . 'product_attribute` WHERE `id_product_attribute` = ' . (int) $idAttribute
+                    . ' AND `id_product` = ' . (int) $id
+            ))) {
+                $errors[] = $path . '.id_product_attribute: not a combination of this product. Take it from somcp_get_product, 0 for none.';
+                continue;
+            }
+            // The pack table holds one row per product and combination.
+            if (isset($seen[$id . '-' . $idAttribute])) {
+                $errors[] = $path . ': this product is already in the pack; give its quantity once';
+                continue;
+            }
+            $seen[$id . '-' . $idAttribute] = true;
+            $items[] = ['id_product' => $id, 'id_product_attribute' => (int) $idAttribute, 'quantity' => $quantity];
+        }
+
+        return $items;
+    }
+
+    /**
+     * The downloadable file of a virtual product and its settings.
+     *
+     * @param array<string, mixed> $group
+     * @param bool $isVirtual
+     * @param array<int, string> $errors
+     *
+     * @return array<string, mixed>|null null when not given
+     */
+    protected static function virtualFilePlan(array $group, bool $isVirtual, array &$errors): ?array
+    {
+        if ($group === []) {
+            return null;
+        }
+        if (!$isVirtual) {
+            $errors[] = 'virtual_file: a virtual product only; give basics.product_type virtual';
+
+            return null;
+        }
+        $probe = new ProductDownload();
+        $plan = ['source' => null, 'fields' => []];
+
+        if (!array_key_exists('file', $group)) {
+            $errors[] = 'virtual_file.file: required, the url or upload_ref of the file';
+        } elseif (!is_array($group['file']) || ($group['file'] !== [] && array_is_list($group['file']))) {
+            $errors[] = 'virtual_file.file: an object with url or upload_ref';
+        } else {
+            self::onlyAccepted($group['file'], 'file', 'virtual_file.file', $errors);
+            $plan['source'] = self::imageSource($group['file'], 'virtual_file.file', $errors, 'file');
+        }
+
+        if (array_key_exists('display_filename', $group)) {
+            $name = trim((string) (self::string($group['display_filename']) ?? ''));
+            if ($name === '' || ($check = $probe->validateField('display_filename', $name)) !== true) {
+                $errors[] = 'virtual_file.display_filename: ' . ($name === '' ? 'the file name customers see' : self::reason($check));
+            } else {
+                $plan['fields']['display_filename'] = $name;
+            }
+        } elseif ($plan['source'] !== null) {
+            $errors[] = 'virtual_file.display_filename: required with a file, the name customers see';
+        }
+        foreach (['nb_downloadable', 'nb_days_accessible'] as $field) {
+            if (!array_key_exists($field, $group)) {
+                continue;
+            }
+            $number = self::integer($group[$field]);
+            if ($number === null || $number < 0 || $probe->validateField($field, $number) !== true) {
+                $errors[] = 'virtual_file.' . $field . ': a whole number, 0 for unlimited';
+            } else {
+                $plan['fields'][$field] = $number;
+            }
+        }
+        if (array_key_exists('date_expiration', $group)) {
+            if ($group['date_expiration'] === null) {
+                $plan['fields']['date_expiration'] = null;
+            } else {
+                $date = self::date($group['date_expiration'], 'virtual_file.date_expiration', $errors);
+                if ($date !== null) {
+                    $plan['fields']['date_expiration'] = $date . ' 00:00:00';
+                }
+            }
+        }
+
+        return $plan;
     }
 
     /**
@@ -1276,6 +1574,15 @@ class SomcpToolCreateProduct
         self::number($group, 'wholesale_price', 'wholesale_price', 'pricing', $probe, $plan, $errors);
         self::number($group, 'unit_price_tax_excl', 'unit_price', 'pricing', $probe, $plan, $errors);
         self::boolean($group, 'on_sale', 'pricing', $plan, $errors);
+        if (array_key_exists('ecotax_tax_excl', $group)) {
+            // PrestaShop 9 shows the field only with the ecotax switched on;
+            // PrestaShop 8 always shows it.
+            if (version_compare(_PS_VERSION_, '9.0.0', '>=') && !Configuration::get('PS_USE_ECOTAX')) {
+                $errors[] = 'pricing.ecotax_tax_excl: the ecotax is switched off in the shop\'s tax settings';
+            } else {
+                self::number($group, 'ecotax_tax_excl', 'ecotax', 'pricing', $probe, $plan, $errors);
+            }
+        }
 
         if (array_key_exists('unity', $group)) {
             $unity = self::string($group['unity']);
@@ -1489,6 +1796,7 @@ class SomcpToolCreateProduct
                 $combination['fields']['minimal_quantity'] = $minimal;
             }
         }
+        self::lowStock($item, $path, $probe, $combination['fields'], $errors);
         if (array_key_exists('quantity', $item)) {
             $quantity = self::integer($item['quantity']);
             if ($quantity === null) {
@@ -1878,10 +2186,11 @@ class SomcpToolCreateProduct
      * @param array<string, mixed> $item
      * @param string $path
      * @param array<int, string> $errors
+     * @param string $what what the file is, for the message
      *
      * @return array{url: string, upload_ref: string}|null
      */
-    protected static function imageSource(array $item, string $path, array &$errors): ?array
+    protected static function imageSource(array $item, string $path, array &$errors, string $what = 'image'): ?array
     {
         $url = trim((string) (self::string($item['url'] ?? null) ?? ''));
         $reference = trim((string) (self::string($item[SomcpUpload::ARG_REF] ?? null) ?? ''));
@@ -1891,7 +2200,7 @@ class SomcpToolCreateProduct
             return null;
         }
         if ($url === '' && $reference === '') {
-            $errors[] = $path . ': the public https address of the image (url), or the upload_ref of a file on the shop';
+            $errors[] = $path . ': the public https address of the ' . $what . ' (url), or the upload_ref of a file on the shop';
 
             return null;
         }
@@ -2635,6 +2944,83 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * Puts the products in the pack, and reports each one rather than failing.
+     *
+     * Written after the product, like the images: the pack exists by then,
+     * and a row the shop refuses is said in the answer instead of undoing
+     * the whole product.
+     *
+     * @param int $idProduct
+     * @param array<int, array{id_product: int, id_product_attribute: int, quantity: int}> $items
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected static function writePack(int $idProduct, array $items): array
+    {
+        $report = [];
+        foreach ($items as $item) {
+            try {
+                $added = Pack::addItem($idProduct, $item['id_product'], $item['quantity'], $item['id_product_attribute']);
+            } catch (Throwable $e) {
+                $added = false;
+            }
+            $report[] = $item + ($added ? ['added' => true] : ['refused' => 'the shop could not save it']);
+        }
+
+        return $report;
+    }
+
+    /**
+     * Stores the downloadable file of a virtual product, as the back office does.
+     *
+     * The file goes under the download folder with a name drawn by the core:
+     * that name is what lets a customer download it, so it is never returned.
+     *
+     * @param int $idProduct
+     * @param array<string, mixed> $plan
+     *
+     * @return array<string, mixed>
+     */
+    protected static function writeVirtualFile(int $idProduct, array $plan): array
+    {
+        $origin = self::imageOrigin($plan['source']);
+        $filename = ProductDownload::getNewFilename();
+        $target = _PS_DOWNLOAD_DIR_ . $filename;
+        // The limit the back office puts on a virtual product's file, in MB.
+        $maxBytes = (int) Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1048576 ?: self::IMAGE_MAX_BYTES;
+
+        try {
+            $refusal = ($plan['source']['upload_ref'] ?? '') !== ''
+                ? self::fromDeposit((string) $plan['source']['upload_ref'], $target, $maxBytes)
+                : self::download((string) $plan['source']['url'], $target, $maxBytes);
+            if ($refusal === '') {
+                $download = new ProductDownload();
+                self::fill($download, $plan['fields'] + [
+                    'id_product' => $idProduct,
+                    'filename' => $filename,
+                    'date_add' => date('Y-m-d H:i:s'),
+                    'nb_downloadable' => 0,
+                    'nb_days_accessible' => 0,
+                    'active' => true,
+                    'is_shareable' => false,
+                ]);
+                if (!$download->add()) {
+                    $refusal = 'the shop could not save it';
+                }
+            }
+        } catch (Throwable $e) {
+            $refusal = 'the shop could not save it';
+        }
+        if ($refusal !== '') {
+            @unlink($target);
+
+            return $origin + ['refused' => $refusal];
+        }
+
+        return $origin + ['added' => true];
+    }
+
+    /**
      * Every thumbnail of the image types of one kind of object, as the back office makes them.
      *
      * @param string $source the original, already written as JPEG
@@ -2697,10 +3083,11 @@ class SomcpToolCreateProduct
      *
      * @param string $url
      * @param string $target
+     * @param int $maxBytes the largest file accepted
      *
      * @return string empty on success, the reason otherwise
      */
-    protected static function download(string $url, string $target): string
+    protected static function download(string $url, string $target, int $maxBytes = self::IMAGE_MAX_BYTES): string
     {
         $parts = parse_url($url);
         if (!is_array($parts) || Tools::strtolower((string) ($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) {
@@ -2753,9 +3140,9 @@ class SomcpToolCreateProduct
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_USERAGENT => 'PrestaShop somcp',
-            CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use ($handle, &$size, &$tooLarge): int {
+            CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use ($handle, &$size, &$tooLarge, $maxBytes): int {
                 $size += strlen($chunk);
-                if ($size > self::IMAGE_MAX_BYTES) {
+                if ($size > $maxBytes) {
                     $tooLarge = true;
 
                     return 0;
@@ -2770,7 +3157,7 @@ class SomcpToolCreateProduct
         fclose($handle);
 
         if ($tooLarge) {
-            return 'the file is larger than 10 MB';
+            return self::tooLarge($maxBytes);
         }
         if ($done === false) {
             return 'the download failed';
@@ -2795,10 +3182,11 @@ class SomcpToolCreateProduct
      *
      * @param string $reference
      * @param string $target
+     * @param int $maxBytes the largest file accepted
      *
      * @return string empty on success, the reason otherwise
      */
-    protected static function fromDeposit(string $reference, string $target): string
+    protected static function fromDeposit(string $reference, string $target, int $maxBytes = self::IMAGE_MAX_BYTES): string
     {
         $employee = Somcp::legacyContext()->employee;
         $idEmployee = $employee instanceof Employee ? (int) $employee->id : 0;
@@ -2806,11 +3194,21 @@ class SomcpToolCreateProduct
         if ($files === []) {
             return 'no file of this account matches this upload_ref, or it expired or was already used';
         }
-        if (strlen($files[0]['contents']) > self::IMAGE_MAX_BYTES) {
-            return 'the file is larger than 10 MB';
+        if (strlen($files[0]['contents']) > $maxBytes) {
+            return self::tooLarge($maxBytes);
         }
 
         return @file_put_contents($target, $files[0]['contents']) === false ? 'the shop has no room to receive it' : '';
+    }
+
+    /**
+     * @param int $maxBytes
+     *
+     * @return string
+     */
+    protected static function tooLarge(int $maxBytes): string
+    {
+        return 'the file is larger than ' . rtrim(rtrim(number_format($maxBytes / 1048576, 1, '.', ''), '0'), '.') . ' MB';
     }
 
     /**

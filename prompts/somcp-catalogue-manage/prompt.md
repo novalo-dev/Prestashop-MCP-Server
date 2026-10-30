@@ -87,6 +87,9 @@ A pack is created with its products (`pack.items`): find each one with
 the merchant pick - never a guessed identifier. A pack cannot hold a pack. A
 virtual product is created with its file (`virtual_file`), given by `url` or
 `upload_ref` only, never by its content, with the file name customers see.
+Before taking a product out of a pack (`remove_pack_items`) or deleting the
+file of a virtual product (`remove_virtual_file`), name it to the merchant:
+customers who bought the file can no longer download it.
 
 ## Identifiers are never guessed
 

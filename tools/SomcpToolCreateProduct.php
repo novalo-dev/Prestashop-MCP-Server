@@ -1438,10 +1438,11 @@ class SomcpToolCreateProduct
      * @param array<string, mixed> $group
      * @param bool $isVirtual
      * @param array<int, string> $errors
+     * @param bool $fileRequired false when the product already has a file whose settings alone may change
      *
      * @return array<string, mixed>|null null when not given
      */
-    protected static function virtualFilePlan(array $group, bool $isVirtual, array &$errors): ?array
+    protected static function virtualFilePlan(array $group, bool $isVirtual, array &$errors, bool $fileRequired = true): ?array
     {
         if ($group === []) {
             return null;
@@ -1455,7 +1456,9 @@ class SomcpToolCreateProduct
         $plan = ['source' => null, 'fields' => []];
 
         if (!array_key_exists('file', $group)) {
-            $errors[] = 'virtual_file.file: required, the url or upload_ref of the file';
+            if ($fileRequired) {
+                $errors[] = 'virtual_file.file: required, the url or upload_ref of the file';
+            }
         } elseif (!is_array($group['file']) || ($group['file'] !== [] && array_is_list($group['file']))) {
             $errors[] = 'virtual_file.file: an object with url or upload_ref';
         } else {
@@ -1470,7 +1473,7 @@ class SomcpToolCreateProduct
             } else {
                 $plan['fields']['display_filename'] = $name;
             }
-        } elseif ($plan['source'] !== null) {
+        } elseif ($fileRequired && $plan['source'] !== null) {
             $errors[] = 'virtual_file.display_filename: required with a file, the name customers see';
         }
         foreach (['nb_downloadable', 'nb_days_accessible'] as $field) {
@@ -2984,15 +2987,10 @@ class SomcpToolCreateProduct
     protected static function writeVirtualFile(int $idProduct, array $plan): array
     {
         $origin = self::imageOrigin($plan['source']);
-        $filename = ProductDownload::getNewFilename();
-        $target = _PS_DOWNLOAD_DIR_ . $filename;
-        // The limit the back office puts on a virtual product's file, in MB.
-        $maxBytes = (int) Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1048576 ?: self::IMAGE_MAX_BYTES;
+        $filename = '';
 
         try {
-            $refusal = ($plan['source']['upload_ref'] ?? '') !== ''
-                ? self::fromDeposit((string) $plan['source']['upload_ref'], $target, $maxBytes)
-                : self::download((string) $plan['source']['url'], $target, $maxBytes);
+            $refusal = self::receiveFile($plan['source'], $filename);
             if ($refusal === '') {
                 $download = new ProductDownload();
                 self::fill($download, $plan['fields'] + [
@@ -3012,12 +3010,34 @@ class SomcpToolCreateProduct
             $refusal = 'the shop could not save it';
         }
         if ($refusal !== '') {
-            @unlink($target);
+            if ($filename !== '') {
+                @unlink(_PS_DOWNLOAD_DIR_ . $filename);
+            }
 
             return $origin + ['refused' => $refusal];
         }
 
         return $origin + ['added' => true];
+    }
+
+    /**
+     * Brings a downloadable file into the download folder, under a name drawn by the core.
+     *
+     * @param array{url: string, upload_ref: string} $source
+     * @param string $filename the name on disk, set even when the file is refused so it can be cleared
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    protected static function receiveFile(array $source, string &$filename): string
+    {
+        $filename = ProductDownload::getNewFilename();
+        $target = _PS_DOWNLOAD_DIR_ . $filename;
+        // The limit the back office puts on a virtual product's file, in MB.
+        $maxBytes = (int) Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1048576 ?: self::IMAGE_MAX_BYTES;
+
+        return ($source['upload_ref'] ?? '') !== ''
+            ? self::fromDeposit((string) $source['upload_ref'], $target, $maxBytes)
+            : self::download((string) $source['url'], $target, $maxBytes);
     }
 
     /**

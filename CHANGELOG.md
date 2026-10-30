@@ -35,8 +35,13 @@ quantity for sale, the low stock level and its email alert, the pack stock
 behaviour or the ecotax. A pack is now created with its products and their
 quantities, a virtual product with its downloadable file (by a public address
 or a file already on the shop) and its download limits, and all of these
-fields can be given, the low stock level on each combination too. Updating a
-product accepts the new stock fields and the ecotax as well.
+fields can be given, the low stock level on each combination too.
+
+**Changing a product: pack contents and downloadable file.** Changing a product
+can now set the same fields, and replace the products of a pack or take some
+out, and add, replace or delete the downloadable file of a virtual product or
+change its download limits alone. Before, these had to be changed in the back
+office.
 
 **The built-in assistant across pages.** Reloading or leaving a page while
 the assistant was answering made the new page wait until the answer was done.

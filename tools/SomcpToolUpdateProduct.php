@@ -138,17 +138,20 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                 . 'and a list that is a set (categories, related products, features, attachments, carriers, '
                 . 'customization fields) replaces the current one entirely when given. In combinations, images '
                 . 'and specific_prices, an item with its identifier changes that one, an item without adds one. '
+                . 'pack.items given replaces the contents of a pack; a file given in virtual_file replaces the '
+                . 'file of a virtual product, and its other fields change alone. '
                 . 'Removing is only ever explicit, through remove_combinations, remove_images, '
-                . 'remove_specific_prices and remove_suppliers; a removed combination takes its stock with it, '
-                . 'so name each one to the merchant first. Read the product with somcp_get_product before, show '
+                . 'remove_specific_prices, remove_suppliers, remove_pack_items and remove_virtual_file; a removed '
+                . 'combination takes its stock with it and a removed file can no longer be downloaded, so name '
+                . 'each one to the merchant first. Read the product with somcp_get_product before, show '
                 . 'the merchant what will change, and call once they agree. When languages is left out every '
                 . 'language of the shop is filled, so a text must then be given in each; to change one language, '
                 . 'pass languages with it alone. A product that still has combinations cannot become another '
                 . 'type. Changing link_rewrite on an active product breaks its old address: tell the merchant '
                 . 'before. Every problem is reported at once and nothing is written until the whole call is '
-                . 'valid; if writing still fails, the answer names what was already written. Images are handled '
-                . 'last and each is reported '
-                . 'in images without stopping the change. The answer gives each field changed with its old and '
+                . 'valid; if writing still fails, the answer names what was already written. Images, the pack '
+                . 'contents and the file are handled last and each is reported in images, pack_items and '
+                . 'virtual_file without stopping the change. The answer gives each field changed with its old and '
                 . 'new value. A call that would change nothing writes nothing and says changed: false. '
                 . 'Do not use it to create a product (somcp_create_product), to switch one on or off alone '
                 . '(somcp_set_product_active) or to delete one (somcp_delete_product). One product per call. '
@@ -191,8 +194,12 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             . 'product has combinations, each of which has its own.';
         $properties['stock']['properties']['location']['description'] = 'Merchant. Where it is stored; refused while the '
             . 'product has combinations, each of which has its own.';
-        // Only written at creation for now.
-        unset($properties['pack'], $properties['virtual_file']);
+        $properties['pack']['properties']['items']['description'] .= ' Given, the list replaces the pack\'s '
+            . 'contents entirely; to take some out without restating the others, use remove_pack_items.';
+        unset($properties['virtual_file']['required']);
+        $properties['virtual_file']['description'] = 'A virtual product only: the file customers download. Only '
+            . 'the fields given change. A file given replaces the current one; file and display_filename are '
+            . 'required when the product has no file yet.';
         $properties['seo']['properties']['link_rewrite']['description'] = 'Assistant. The friendly URL, only in the '
             . 'languages given. On an active product the old address stops working: tell the merchant first. '
             . 'One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.';
@@ -249,6 +256,25 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         foreach ($removals as $name => $description) {
             $properties[$name] = ['type' => 'array', 'description' => $description, 'items' => ['type' => 'integer']];
         }
+        $properties['remove_pack_items'] = [
+            'type' => 'array',
+            'description' => 'Merchant: products to take out of the pack, as pack.items of somcp_get_product names '
+                . 'them. Name each one to the merchant before the call. Not next to pack.',
+            'items' => [
+                'type' => 'object',
+                'properties' => [
+                    'id_product' => ['type' => 'integer'],
+                    'id_product_attribute' => ['type' => 'integer', 'description' => '0 or left out for none.'],
+                ],
+                'required' => ['id_product'],
+            ],
+        ];
+        $properties['remove_virtual_file'] = [
+            'type' => 'boolean',
+            'description' => 'Merchant: true deletes the downloadable file of the virtual product and its settings. '
+                . 'Customers who bought it can no longer download it: say so to the merchant before the call. '
+                . 'Not next to virtual_file.',
+        ];
 
         $schema['properties'] = [
             'id_product' => ['type' => 'integer', 'description' => 'The product to change, from somcp_search_products.'],
@@ -362,6 +388,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         // changed the object, and the images and warnings need what was stored.
         $stored = new Product((int) $product->id, false, null, $idShop);
         $images = self::applyImages($stored, $plan, $combinationIds, $idShop);
+        $packItems = $plan['pack'] === null ? null : self::replacePack((int) $product->id, $plan['pack']);
+        $virtualFile = $plan['virtual_file'] === null ? null : self::applyVirtualFile((int) $product->id, $plan['virtual_file']);
 
         if ($plan['index']) {
             // What the back office does after saving a product: one the search
@@ -391,6 +419,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             'changes' => $plan['changes'],
             'seo_warnings' => $warnings === [] ? new stdClass() : $warnings,
             'images' => $images,
+            'pack_items' => $packItems,
+            'virtual_file' => $virtualFile,
             'product' => self::read((int) $product->id, (string) $plan['read_language'], $context),
         ]);
     }
@@ -417,15 +447,12 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $idShop = (int) $shop->id;
         $groups = [];
         foreach (array_keys(self::ACCEPTED) as $group) {
-            // The products of a pack and the file of a virtual product are
-            // only written at creation for now: given here, they are refused
-            // below as unknown rather than silently dropped.
-            if (in_array($group, self::NESTED, true) || in_array($group, ['pack', 'virtual_file'], true)) {
+            if (in_array($group, self::NESTED, true)) {
                 continue;
             }
             $groups[$group] = self::group($arguments, $group, $errors);
         }
-        $lists = ['id_product', 'languages', 'related_products', 'features', 'attachments', 'images', 'combinations'];
+        $lists = ['id_product', 'languages', 'related_products', 'features', 'attachments', 'images', 'combinations', 'remove_pack_items', 'remove_virtual_file'];
         foreach (array_keys($arguments) as $key) {
             if (!isset($groups[$key]) && !in_array($key, $lists, true) && !isset(self::REMOVALS[$key])) {
                 $errors[] = $key . ': not a field of this tool';
@@ -465,9 +492,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         // their position in this call.
         $combinations = self::planCombinations($arguments, $product, $languages, $idShop, $plan, $errors);
         self::planType($groups['basics'], $product, $combinations, $plan, $errors);
-        if (isset($plan['fields']['pack_stock_type']) && !($plan['fields']['cache_is_pack'] ?? (bool) $product->cache_is_pack)) {
+        $isPack = (bool) ($plan['fields']['cache_is_pack'] ?? ((string) $product->getProductType() === PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\ProductType::TYPE_PACK));
+        $isVirtual = (bool) ($plan['fields']['is_virtual'] ?? (bool) $product->is_virtual);
+        if (isset($plan['fields']['pack_stock_type']) && !$isPack) {
             $errors[] = 'stock.pack_stock_type: a pack only';
         }
+        self::planPack($arguments, $groups['pack'], $product, $isPack, $idShop, $plan, $errors);
+        self::planVirtualFile($arguments, $groups['virtual_file'], $product, $isVirtual, $plan, $errors);
         self::planStock($product, $combinations, $idShop, $plan, $errors);
         self::planCategories($groups['categories'], $product, $shop, $plan, $errors);
         self::planSets($arguments, $groups, $product, $languages, $idShop, $plan, $errors);
@@ -670,12 +701,12 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             if ($current === $pack && $given !== $pack && Db::getInstance()->getValue(
                 'SELECT 1 FROM `' . _DB_PREFIX_ . 'pack` WHERE `id_product_pack` = ' . (int) $product->id
             )) {
-                $errors[] = 'basics.product_type: the pack still has contents; remove them in the back office first';
+                $errors[] = 'basics.product_type: the pack still has contents; remove them first with remove_pack_items, in a call of their own';
 
                 return;
             }
             if ($current === $virtual && $given !== $virtual && (int) ProductDownload::getIdFromIdProduct((int) $product->id, false) > 0) {
-                $errors[] = 'basics.product_type: the virtual product still has its file; remove it in the back office first';
+                $errors[] = 'basics.product_type: the virtual product still has its file; remove it first with remove_virtual_file, in a call of their own';
 
                 return;
             }
@@ -1750,6 +1781,231 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         }
 
         return $combinationIds;
+    }
+
+    /**
+     * The contents of a pack after the call: the list given, or the current one less the items removed.
+     *
+     * Compared with the pack table first, so the same list again writes nothing.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $group
+     * @param Product $product
+     * @param bool $isPack whether the product is a pack once the call is written
+     * @param int $idShop
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    private static function planPack(array $arguments, array $group, Product $product, bool $isPack, int $idShop, array &$plan, array &$errors): void
+    {
+        $plan['pack'] = null;
+        $removing = array_key_exists('remove_pack_items', $arguments);
+        if ($group === [] && !$removing) {
+            return;
+        }
+        if ($group !== [] && $removing) {
+            $errors[] = 'remove_pack_items: not next to pack.items, which already gives the whole list';
+
+            return;
+        }
+
+        $current = self::currentPack((int) $product->id);
+        if ($group !== []) {
+            $items = self::packPlan($group, $isPack, (int) $product->id, $idShop, $errors);
+            if ($items === null) {
+                return;
+            }
+            $wanted = [];
+            foreach ($items as $item) {
+                $wanted[$item['id_product'] . '-' . $item['id_product_attribute']] = $item;
+            }
+        } else {
+            if (!$isPack) {
+                $errors[] = 'remove_pack_items: a pack only';
+
+                return;
+            }
+            $wanted = $current;
+            foreach (self::items($arguments['remove_pack_items'], 'remove_pack_items', $errors) as $i => $item) {
+                $id = self::integer($item['id_product'] ?? null);
+                $idAttribute = array_key_exists('id_product_attribute', $item) ? self::integer($item['id_product_attribute']) : 0;
+                $key = (int) $id . '-' . (int) $idAttribute;
+                if ($id === null || $idAttribute === null || !isset($current[$key])) {
+                    $errors[] = 'remove_pack_items[' . $i . ']: not a product of this pack. Take it from pack.items of somcp_get_product.';
+                    continue;
+                }
+                unset($wanted[$key]);
+            }
+        }
+
+        ksort($wanted);
+        if ($wanted === $current) {
+            return;
+        }
+        $plan['pack'] = array_values($wanted);
+        self::record($plan, 'pack.items', array_values($current), array_values($wanted));
+    }
+
+    /**
+     * @param int $idProduct
+     *
+     * @return array<string, array{id_product: int, id_product_attribute: int, quantity: int}> keyed by product and combination, sorted
+     */
+    private static function currentPack(int $idProduct): array
+    {
+        $current = [];
+        foreach (Db::getInstance()->executeS(
+            'SELECT `id_product_item`, `id_product_attribute_item`, `quantity` FROM `' . _DB_PREFIX_ . 'pack`'
+            . ' WHERE `id_product_pack` = ' . (int) $idProduct
+        ) ?: [] as $row) {
+            $current[(int) $row['id_product_item'] . '-' . (int) $row['id_product_attribute_item']] = [
+                'id_product' => (int) $row['id_product_item'],
+                'id_product_attribute' => (int) $row['id_product_attribute_item'],
+                'quantity' => (int) $row['quantity'],
+            ];
+        }
+        ksort($current);
+
+        return $current;
+    }
+
+    /**
+     * The file of a virtual product to add, replace, change or remove.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $group
+     * @param Product $product
+     * @param bool $isVirtual whether the product is virtual once the call is written
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    private static function planVirtualFile(array $arguments, array $group, Product $product, bool $isVirtual, array &$plan, array &$errors): void
+    {
+        $plan['virtual_file'] = null;
+        $removing = array_key_exists('remove_virtual_file', $arguments);
+        if ($group === [] && !$removing) {
+            return;
+        }
+        $idDownload = (int) ProductDownload::getIdFromIdProduct((int) $product->id, false);
+
+        if ($removing) {
+            $remove = self::bool($arguments['remove_virtual_file']);
+            if ($remove === null) {
+                $errors[] = 'remove_virtual_file: true or false';
+            } elseif ($group !== []) {
+                $errors[] = 'remove_virtual_file: not next to virtual_file';
+            } elseif ($remove && $idDownload <= 0) {
+                $errors[] = 'remove_virtual_file: the product has no file';
+            } elseif ($remove) {
+                $download = new ProductDownload($idDownload);
+                $plan['virtual_file'] = ['remove' => $idDownload];
+                self::record($plan, 'virtual_file', ['display_filename' => (string) $download->display_filename], null);
+            }
+
+            return;
+        }
+
+        $file = self::virtualFilePlan($group, $isVirtual, $errors, $idDownload <= 0);
+        if ($file === null) {
+            return;
+        }
+        $existing = $idDownload > 0 ? new ProductDownload($idDownload) : null;
+        foreach ($file['fields'] as $field => $value) {
+            $old = $existing === null ? null : ($existing->{$field} ?? null);
+            if ($existing !== null && self::same($old, $value)) {
+                unset($file['fields'][$field]);
+                continue;
+            }
+            self::record($plan, 'virtual_file.' . $field, $old, $value);
+        }
+        // A file given always counts: an address or a reference cannot be
+        // compared with the stored file.
+        if ($file['source'] !== null) {
+            self::record($plan, 'virtual_file.file', null, self::imageOrigin($file['source']));
+        } elseif ($file['fields'] === []) {
+            return;
+        }
+        $file['id'] = $idDownload;
+        $plan['virtual_file'] = $file;
+    }
+
+    /**
+     * Replaces the contents of a pack, and reports each product rather than failing.
+     *
+     * @param int $idProduct
+     * @param array<int, array{id_product: int, id_product_attribute: int, quantity: int}> $items
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function replacePack(int $idProduct, array $items): array
+    {
+        // What the back office does on saving a pack: the rows go, the list
+        // given is written again.
+        Pack::deleteItems($idProduct);
+
+        return self::writePack($idProduct, $items);
+    }
+
+    /**
+     * Adds, replaces, changes or removes the file of a virtual product, and reports the outcome rather than failing.
+     *
+     * @param int $idProduct
+     * @param array<string, mixed> $file
+     *
+     * @return array<string, mixed>
+     */
+    private static function applyVirtualFile(int $idProduct, array $file): array
+    {
+        if (isset($file['remove'])) {
+            try {
+                // delete(true) takes the file on disk with the row.
+                $removed = (new ProductDownload((int) $file['remove']))->delete(true);
+            } catch (Throwable $e) {
+                $removed = false;
+            }
+
+            return $removed ? ['removed' => true] : ['refused' => 'the shop could not delete it'];
+        }
+        if ((int) $file['id'] <= 0) {
+            return self::writeVirtualFile($idProduct, $file);
+        }
+
+        $origin = $file['source'] === null ? [] : self::imageOrigin($file['source']);
+        $download = new ProductDownload((int) $file['id']);
+        $previous = basename((string) $download->filename);
+        $filename = '';
+        try {
+            if ($file['source'] !== null) {
+                $refusal = self::receiveFile($file['source'], $filename);
+                if ($refusal !== '') {
+                    @unlink(_PS_DOWNLOAD_DIR_ . $filename);
+
+                    return $origin + ['refused' => $refusal];
+                }
+                $download->filename = $filename;
+            }
+            self::fill($download, $file['fields']);
+            $saved = $download->update();
+        } catch (Throwable $e) {
+            $saved = false;
+        }
+        if (!$saved) {
+            if ($filename !== '') {
+                @unlink(_PS_DOWNLOAD_DIR_ . $filename);
+            }
+
+            return $origin + ['refused' => 'the shop could not save it'];
+        }
+        // The old file goes once the new one is in place, as in the back office.
+        if ($filename !== '' && $previous !== '' && $previous !== $filename) {
+            @unlink(_PS_DOWNLOAD_DIR_ . $previous);
+        }
+
+        return $origin + ['changed' => true];
     }
 
     /**

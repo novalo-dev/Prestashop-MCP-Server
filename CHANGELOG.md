@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Changing Home and the order of categories.** Changing a category used to
+refuse Home outright and could not change where a category stands in the list.
+Home can now be changed with the fields of its own form in the back office -
+name, Displayed, descriptions, images, SEO fields and group access - while it
+still cannot be moved, and on PrestaShop 9 only answers 404 or 410 while
+hidden. A category can also be given a new position among the categories of
+the same parent, as when you drag it in the list: the others shift, and with a
+new parent it is the place under that parent.
+
 **Product tags.** Creating or updating a product can now fill its tags (the
 Étiquettes field), given as a comma separated list per language. They are
 written to the shop's own tag field, which is separate from the meta keywords

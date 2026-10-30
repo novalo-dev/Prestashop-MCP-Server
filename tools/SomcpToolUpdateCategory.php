@@ -33,7 +33,9 @@ declare(strict_types=1);
  *
  * Every check runs before the write, which is a single Category::update() in
  * the shop of the token, so actionCategoryUpdate fires and the tree, the level
- * and the positions are worked out again by the core when the parent moves.
+ * and the positions are worked out again by the core when the parent moves. A
+ * position given follows, through Category::updatePosition(), where the drag
+ * and drop of the back office list ends, so the siblings shift with it.
  * Images come after, as at creation: one that cannot be fetched is reported
  * and does not undo the change.
  */
@@ -49,7 +51,7 @@ require_once __DIR__ . '/SomcpToolCreateCategory.php';
 class SomcpToolUpdateCategory extends SomcpToolCreateCategory
 {
     /** @var array<int, string> What this tool takes besides the fields of the creation. */
-    private const OWN_ARGUMENTS = ['id_category', 'remove_cover_image', 'remove_menu_thumbnails'];
+    private const OWN_ARGUMENTS = ['id_category', 'position', 'remove_cover_image', 'remove_menu_thumbnails'];
 
     /**
      * @return SomcpTool
@@ -69,7 +71,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
                 . 'a text must then be given in each; to change one language, pass languages with it alone. '
                 . 'The friendly URL is never made again from a new name: give link_rewrite to change it, and tell '
                 . 'the merchant first when the category is displayed, because its old address stops working. '
-                . 'The root category and Home cannot be changed here, and a category cannot be moved under '
+                . 'position places the category among those of the same parent, from 0, as somcp_get_category '
+                . 'numbers it; the others shift, as when the merchant drags it in the list. Home, the top category '
+                . 'of this shop, can be changed with the fields of its own form in the back office, but never '
+                . 'moved: id_parent and position are refused on it, and on PrestaShop 9 it only answers 404 or 410 '
+                . 'while hidden. The root category cannot be changed here, and a category cannot be moved under '
                 . 'itself or one of its subcategories. Show the merchant what will change and call once they '
                 . 'agree. Every problem is reported at once and nothing is written until the whole call is '
                 . 'valid. Images are downloaded by the shop from public https addresses after the change; one '
@@ -106,7 +112,8 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $properties['name']['description'] = 'Merchant. 128 characters at most, never empty, without < > { } (nor '
             . '; = # before PrestaShop 9.1). One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.';
         $properties['id_parent']['description'] = 'Merchant, from the shop: moves the category under this one, from '
-            . 'somcp_list_categories; never the root category, the category itself or one of its subcategories.' . $kept;
+            . 'somcp_list_categories; never the root category, the category itself or one of its subcategories. '
+            . 'Refused on Home.' . $kept;
         $properties['active']['description'] = 'Merchant. Displayed on the storefront.' . $kept;
         $properties['groups']['description'] = 'Merchant, from the shop: the customer groups that can see the '
             . 'category, from somcp_list_customer_groups. Given, it replaces the current set entirely.' . $kept;
@@ -122,6 +129,12 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             . 'replaces the current one. Downloaded by the shop: no redirect, 10 MB at most, JPEG, PNG, GIF or WebP.';
         $properties['menu_thumbnails']['description'] = 'Merchant. PrestaShop 8 only, refused on 9, which dropped '
             . 'them: up to 3 public https addresses, which replace the current menu thumbnails, downloaded like the cover.';
+        $properties['position'] = [
+            'type' => 'integer',
+            'description' => 'Merchant. The place among the categories of the same parent, from 0 as somcp_get_category '
+                . 'gives it (the back office list shows it plus 1); the others shift. With id_parent, the place under '
+                . 'the new parent. Refused on Home.' . $kept,
+        ];
         $properties['remove_cover_image'] = [
             'type' => 'boolean',
             'description' => 'Merchant. true removes the cover image. Not with cover_image, which already replaces it.',
@@ -156,18 +169,20 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         if ($category === null) {
             return SomcpTool::text('No category of this shop has this identifier. Nothing was changed. Find it with somcp_list_categories.', true);
         }
-        // The back office edits these through a form of their own, and a tree
-        // whose top moved would leave every category of the shop unreachable.
-        if (self::isTop($category, $shop)) {
+        // The Home of this shop has a form of its own in the back office and is
+        // changed with its fields; the root, and the Home of another shop, are
+        // not offered there at all.
+        $isHome = (int) $category->id === (int) $shop->id_category;
+        if (!$isHome && self::isTop($category, $shop)) {
             return SomcpTool::text(
-                'Category ' . (int) $category->id . ' is the root category or the Home of a shop, which is not '
-                    . 'changed here. Nothing was changed. The merchant changes it in the back office.',
+                'Category ' . (int) $category->id . ' is the root category or the Home of another shop, which is '
+                    . 'not changed here. Nothing was changed. The merchant changes it in the back office.',
                 true
             );
         }
 
         $errors = [];
-        $plan = self::planUpdate($arguments, $category, $shop, $errors);
+        $plan = self::planUpdate($arguments, $category, $shop, $isHome, $errors);
         if ($errors !== [] || $plan === null) {
             return SomcpTool::text(
                 "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
@@ -245,11 +260,12 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
      * @param array<string, mixed> $arguments
      * @param Category $category
      * @param Shop $shop
+     * @param bool $isHome whether the category is the Home of this shop
      * @param array<int, string> $errors
      *
      * @return array<string, mixed>|null
      */
-    private static function planUpdate(array $arguments, Category $category, Shop $shop, array &$errors): ?array
+    private static function planUpdate(array $arguments, Category $category, Shop $shop, bool $isHome, array &$errors): ?array
     {
         $idShop = (int) $shop->id;
         $idCategory = (int) $category->id;
@@ -277,13 +293,20 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             'moved' => [],
             'category' => [],
             'groups' => null,
+            'position' => null,
             'images' => self::imageUrls($arguments, $errors),
             'remove_cover' => false,
             'remove_thumbnails' => false,
             'replace_thumbnails' => false,
         ];
 
-        if (array_key_exists('id_parent', $arguments)) {
+        if ($isHome) {
+            self::homeLimits($arguments, $errors);
+        }
+
+        // Never planned on Home: a moved top would leave every category of the
+        // shop unreachable, and the form of Home has no parent.
+        if (!$isHome && array_key_exists('id_parent', $arguments)) {
             $idParent = self::parentCategory($arguments, $shop, $errors);
             if ($idParent === $idCategory || self::isBelow($idParent, $idCategory)) {
                 $errors[] = 'id_parent: a category cannot be moved under itself or one of its subcategories';
@@ -315,6 +338,10 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             }
         }
 
+        if (!$isHome && array_key_exists('position', $arguments)) {
+            self::planPosition($arguments['position'], $category, $idShop, $plan, $errors);
+        }
+
         self::planRedirect($arguments, $category, $idShop, $plan, $errors);
 
         $groups = $arguments['groups'] ?? null;
@@ -343,6 +370,84 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         }
 
         return $plan;
+    }
+
+    /**
+     * What the form of Home in the back office does not offer, refused on it.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    private static function homeLimits(array $arguments, array &$errors): void
+    {
+        if (array_key_exists('id_parent', $arguments)) {
+            $errors[] = 'id_parent: Home stays at the top of the shop\'s tree, it cannot be moved';
+        }
+        if (array_key_exists('position', $arguments)) {
+            $errors[] = 'position: Home stays at the top of the shop\'s tree, it has no place among other categories';
+        }
+        // On PrestaShop 8 the redirection fields are refused for every
+        // category by the creation's rules; only 9 needs the narrower check.
+        if (!isset(Category::$definition['fields']['redirect_type'])) {
+            return;
+        }
+        if (array_key_exists('redirect_type', $arguments)
+            && in_array((string) self::string($arguments['redirect_type']), ['301', '302'], true)) {
+            $errors[] = 'redirect_type: Home only answers 404 or 410 while it is not displayed, as its form in the back office offers';
+        }
+        if (array_key_exists('id_type_redirected', $arguments)) {
+            $errors[] = 'id_type_redirected: Home is never redirected; leave the field out';
+        }
+    }
+
+    /**
+     * The new place of the category among its siblings, checked against how many there are.
+     *
+     * The siblings are those of the parent it will have, so a position given
+     * with id_parent is a place under the new parent.
+     *
+     * @param mixed $value
+     * @param Category $category
+     * @param int $idShop
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    private static function planPosition($value, Category $category, int $idShop, array &$plan, array &$errors): void
+    {
+        $idParent = (int) ($plan['fields']['id_parent'] ?? $category->id_parent);
+        // Counted in the shop of the token, the positions the list shows there.
+        $others = (int) Db::getInstance()->getValue(
+            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'category` c
+            INNER JOIN `' . _DB_PREFIX_ . 'category_shop` cs ON cs.`id_category` = c.`id_category` AND cs.`id_shop` = ' . (int) $idShop . '
+            WHERE c.`id_parent` = ' . (int) $idParent . ' AND c.`id_category` != ' . (int) $category->id
+        );
+        $position = self::integer($value);
+        if ($position === null || $position < 0 || $position > $others) {
+            $errors[] = 'position: a whole number from 0 to ' . $others . ', the place among the categories of the same parent';
+
+            return;
+        }
+        $plan['position'] = $position;
+    }
+
+    /**
+     * Where the category stands among its siblings in the shop, from 0.
+     *
+     * @param int $idCategory
+     * @param int $idShop
+     *
+     * @return int
+     */
+    private static function currentPosition(int $idCategory, int $idShop): int
+    {
+        return (int) Db::getInstance()->getValue(
+            'SELECT `position` FROM `' . _DB_PREFIX_ . 'category_shop` WHERE `id_category` = ' . (int) $idCategory
+            . ' AND `id_shop` = ' . (int) $idShop
+        );
     }
 
     /**
@@ -507,6 +612,16 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             }
         }
 
+        if ($plan['position'] !== null) {
+            $old = self::currentPosition((int) $category->id, $idShop);
+            // Under a new parent the place always changes, even with the same number.
+            if ($old === $plan['position'] && !isset($plan['category']['id_parent'])) {
+                $plan['position'] = null;
+            } else {
+                self::record($plan, 'position', $old, $plan['position']);
+            }
+        }
+
         if ($plan['images'] === [] && !$plan['remove_cover'] && !$plan['remove_thumbnails']) {
             return;
         }
@@ -592,6 +707,26 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             Cache::clean('Category::getGroups_' . $idCategory);
         }
 
+        if ($plan['position'] !== null) {
+            $failure = self::applyPosition($idCategory, (int) $plan['position'], $idShop);
+            if ($failure !== '') {
+                SomcpLogger::log(
+                    'category_update_failed',
+                    SomcpLogger::OUTCOME_FAILURE,
+                    'category ' . $idCategory . ' position: ' . Tools::substr($failure, 0, 500),
+                    '',
+                    $idEmployee
+                );
+
+                return SomcpTool::text(
+                    'The category could not be moved to position ' . (int) $plan['position'] . ': ' . $failure
+                        . '. The other changes of this call may be saved and no image was touched. Read the category '
+                        . 'again, tell the merchant what it holds now, and do not call again before.',
+                    true
+                );
+            }
+        }
+
         $images = self::applyImages($category, $plan);
 
         $stored = new Category($idCategory, null, $idShop);
@@ -615,6 +750,34 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             // assistant shows the merchant is what the shop stored.
             'category' => self::category($idCategory, (int) $plan['languages']['fallback'], $idShop),
         ]);
+    }
+
+    /**
+     * Moves the category to its new place, as the drag and drop of the back office list does.
+     *
+     * Category::updatePosition() shifts the siblings and fires
+     * actionCategoryUpdate. It runs after update(), which has already put a
+     * category given a new parent at the end of its new siblings.
+     *
+     * @param int $idCategory
+     * @param int $position
+     * @param int $idShop
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    private static function applyPosition(int $idCategory, int $position, int $idShop): string
+    {
+        $current = self::currentPosition($idCategory, $idShop);
+        if ($current === $position) {
+            return '';
+        }
+        // Loaded again so id_parent is the one just written.
+        $category = new Category($idCategory, null, $idShop);
+        try {
+            return $category->updatePosition($position > $current, $position) ? '' : 'PrestaShop refused to save it';
+        } catch (Throwable $e) {
+            return $e->getMessage();
+        }
     }
 
     /**

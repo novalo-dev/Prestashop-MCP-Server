@@ -290,7 +290,11 @@ second call creates a second category.
    A new `link_rewrite` on a displayed category breaks the old address of its
    page: tell the merchant before.
 
-The root category and Home are changed in the back office, not here. When it
+`position` moves the category among those of the same parent, from 0 as
+`somcp_get_category` gives it; the others shift. Home can be changed like any
+category, except that it is never moved: no `id_parent` and no `position`, and
+on PrestaShop 9 only 404 or 410 while hidden. The root category is changed in
+the back office, not here. When it
 succeeds, show the merchant each change with its old and new value, the
 `seo_warnings`, and any image in `images` that was refused. `changed: false`
 means the category already held those values. On a lost answer, read the

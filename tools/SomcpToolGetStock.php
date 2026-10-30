@@ -48,8 +48,11 @@ class SomcpToolGetStock
                 . 'quantity is what can be sold, physical_quantity what is on the shelves, and '
                 . 'reserved_quantity what orders not shipped yet already hold. For a product with '
                 . 'combinations, the product line is the total and each combination comes with its '
-                . 'attributes (Size: M) and its own quantities; low_stock_threshold is the level the '
-                . 'merchant set for an alert, null when none is set. reserved_by lists the orders of '
+                . 'attributes (Size: M), its own reference and its own quantities; low_stock_threshold '
+                . 'is the level the merchant set for an alert, null when none is set, and '
+                . 'low_stock_alert says whether an email is sent at that level. The product line also '
+                . 'gives its reference, its default supplier (id_supplier, and supplier, its name, null '
+                . 'when none) and active, whether it is enabled. reserved_by lists the orders of '
                 . 'this shop that hold the reserved stock, each with its id_order, reference and the '
                 . 'quantity it holds; it is rebuilt from the orders still valid and not shipped, so its '
                 . 'total can differ from reserved_quantity in edge cases (partial refund or return). '
@@ -110,12 +113,22 @@ class SomcpToolGetStock
         return SomcpTool::json([
             'id_product' => (int) $product->id,
             'name' => (string) $product->name,
+            'reference' => (string) $product->reference,
+            // The default supplier, the one the Stock page shows in its
+            // Supplier column; the other suppliers of the product are
+            // somcp_get_product's.
+            'id_supplier' => (int) $product->id_supplier,
+            'supplier' => self::supplier((int) $product->id_supplier),
+            // Loaded for this shop, active is product_shop's, the Status the
+            // Stock page shows for this shop.
+            'active' => (bool) $product->active,
             'quantity' => $total['quantity'] ?? 0,
             'physical_quantity' => $total['physical_quantity'] ?? 0,
             'reserved_quantity' => $total['reserved_quantity'] ?? 0,
             // Loaded for this shop, the product carries the threshold of
             // product_shop, which is the one the back office edits.
             'low_stock_threshold' => SomcpCatalog::threshold($product->low_stock_threshold),
+            'low_stock_alert' => SomcpCatalog::lowStockAlert($product->low_stock_alert),
             // The product line sums every combination, so one order with two
             // sizes of the same product shows once, with both added together.
             'reserved_by' => self::byOrder($reservations),
@@ -141,7 +154,7 @@ class SomcpToolGetStock
     private static function combinations(int $idProduct, int $idLang, int $idShop, array $stock, array $reservations): array
     {
         $query = new DbQuery();
-        $query->select('pa.`id_product_attribute`, pas.`low_stock_threshold`');
+        $query->select('pa.`id_product_attribute`, pa.`reference`, pas.`low_stock_threshold`, pas.`low_stock_alert`');
         $query->from('product_attribute', 'pa');
         $query->innerJoin(
             'product_attribute_shop',
@@ -165,10 +178,12 @@ class SomcpToolGetStock
             $combinations[] = [
                 'id_product_attribute' => $id,
                 'attributes' => $attributes[$id] ?? [],
+                'reference' => (string) $row['reference'],
                 'quantity' => $stock[$id]['quantity'] ?? 0,
                 'physical_quantity' => $stock[$id]['physical_quantity'] ?? 0,
                 'reserved_quantity' => $stock[$id]['reserved_quantity'] ?? 0,
                 'low_stock_threshold' => SomcpCatalog::threshold($row['low_stock_threshold']),
+                'low_stock_alert' => SomcpCatalog::lowStockAlert($row['low_stock_alert']),
                 'reserved_by' => self::forAttribute($reservations, $id),
             ];
         }
@@ -268,6 +283,26 @@ class SomcpToolGetStock
         }
 
         return $lines;
+    }
+
+    /**
+     * The name of the product's default supplier, null when it has none.
+     *
+     * A supplier deleted since it was set leaves its identifier on the
+     * product; it reads as null too rather than as an empty name.
+     *
+     * @param int $idSupplier
+     *
+     * @return string|null
+     */
+    private static function supplier(int $idSupplier): ?string
+    {
+        if ($idSupplier <= 0) {
+            return null;
+        }
+        $name = Supplier::getNameById($idSupplier);
+
+        return is_string($name) && $name !== '' ? $name : null;
     }
 
     /**

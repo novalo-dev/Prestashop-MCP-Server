@@ -88,6 +88,12 @@ on it: alongside the reserved quantity, the orders holding that stock are
 listed, each with its number and reference and how many units it holds, for the
 product and for each of its combinations.
 
+**Stock of a product: the columns of the Stock page.** Reading a product's stock
+did not give what the Catalog > Stock page shows beside the quantities. It now
+also gives the reference of the product and of each combination, the default
+supplier and its name, whether the product is enabled, and whether the email
+alert at the low stock level is ticked, for the product and each combination.
+
 **Settings page.** The page was one long column of panels. It is now split
 into seven pages: Configuration, Tools and prompts, Access and security,
 Connected assistants, Built-in assistant, Security log, Help and updates.

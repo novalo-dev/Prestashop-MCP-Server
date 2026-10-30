@@ -44,6 +44,10 @@ which may not be the one the merchant has in mind.
   (Size: M, Color: Blue), not by its identifier.
 - `low_stock_threshold` is the alert level the merchant set. `null` means no
   alert is set, not an alert at zero.
+- `low_stock_alert` says whether the merchant gets an email at that level.
+  `somcp_get_stock` also gives the reference (each combination has its own),
+  the default `supplier` (`null` when none) and `active`, whether the product
+  is enabled: a disabled product does not sell, whatever its quantity.
 
 ## Changing quantities
 

@@ -469,7 +469,7 @@ class SomcpToolGetProduct
             // product_shop, the ones the back office edits.
             'minimal_quantity' => (int) $product->minimal_quantity,
             'low_stock_threshold' => SomcpCatalog::threshold($product->low_stock_threshold),
-            'low_stock_alert' => (bool) $product->low_stock_alert,
+            'low_stock_alert' => SomcpCatalog::lowStockAlert($product->low_stock_alert),
             // Only a pack has a stock behaviour; on any other product the
             // stored default would read as a setting the merchant never made.
             'pack_stock_type' => $isPack ? (self::PACK_STOCK_TYPES[(int) $product->pack_stock_type] ?? 'default') : null,
@@ -864,7 +864,7 @@ class SomcpToolGetProduct
                 'wholesale_price' => (float) $row['wholesale_price'],
                 'minimal_quantity' => (int) $row['minimal_quantity'],
                 'low_stock_threshold' => SomcpCatalog::threshold($row['low_stock_threshold']),
-                'low_stock_alert' => (bool) $row['low_stock_alert'],
+                'low_stock_alert' => SomcpCatalog::lowStockAlert($row['low_stock_alert']),
                 'currency' => $money['iso'],
                 'images' => $images[$id] ?? [],
             ];

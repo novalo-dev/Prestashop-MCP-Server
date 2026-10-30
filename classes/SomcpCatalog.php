@@ -45,6 +45,22 @@ class SomcpCatalog
     }
 
     /**
+     * Whether the merchant ticked the email alert at the low stock level.
+     *
+     * Read the same way for a product (product_shop) and a combination
+     * (product_attribute_shop), so somcp_get_product and somcp_get_stock never
+     * disagree on it.
+     *
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    public static function lowStockAlert($value): bool
+    {
+        return (bool) (int) $value;
+    }
+
+    /**
      * The rate of the ecotax, in percent, in the shop's default country.
      *
      * The ecotax has its own tax rule, set in the shop's tax settings, and the

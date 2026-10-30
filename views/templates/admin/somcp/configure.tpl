@@ -575,10 +575,6 @@
             <div class="panel-heading"><i class="icon-comments"></i> {l s='Your assistants' d='Modules.Somcp.Admin'} <span class="somcp-foot text-muted">- {l s='Powered by' d='Modules.Somcp.Admin'} <a href="https://github.com/neuron-core/neuron-ai" target="_blank" rel="noopener noreferrer">Neuron AI</a></span></div>
             <p class="help-block">{l s='The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.' d='Modules.Somcp.Admin'}</p>
         {if $somcp_assistants}
-            {* Wrapped because this panel has a footer: PrestaShop 9 then takes
-               the panel padding off and gives it to each child instead, which
-               a table ignores, so on its own it ran into the panel edges. *}
-            <div>
             <table class="table">
                 <thead>
                     <tr>
@@ -651,7 +647,6 @@
                 {/foreach}
                 </tbody>
             </table>
-            </div>
         {else}
             <p class="text-muted">{l s='No assistant yet. Add one with your own API key to get the chat.' d='Modules.Somcp.Admin'}</p>
         {/if}
@@ -661,8 +656,11 @@
             <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" id="somcp-assistant-action" hidden>
                 <input type="hidden" name="id_assistant" value="">
             </form>
-            <div class="panel-footer">
-                <a class="btn btn-default pull-right" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_assistant_add=1"><i class="process-icon-new"></i> {l s='Add an assistant' d='Modules.Somcp.Admin'}</a>
+            {* Under the list, not in a panel footer: a footer makes PrestaShop 9
+               move the panel padding onto each child, with wider side margins
+               than the tools and connected assistants panels have. *}
+            <div class="somcp-panel-actions">
+                <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_assistant_add=1"><i class="icon-plus"></i> {l s='Add an assistant' d='Modules.Somcp.Admin'}</a>
             </div>
         </div>
 

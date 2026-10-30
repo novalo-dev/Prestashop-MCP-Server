@@ -369,9 +369,12 @@
     text-align: center;
 }
 
-/* Paging, under the list. Hidden until the script takes over, so a page
-   without JavaScript shows the whole list rather than two dead buttons. */
-.somcp .somcp-tools-nav {
+/* Buttons under a list, on the right: the tool paging, and the button that
+   adds an assistant. The paging stays hidden until the script takes over, so
+   a page without JavaScript shows the whole list rather than two dead
+   buttons. */
+.somcp .somcp-tools-nav,
+.somcp .somcp-panel-actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;

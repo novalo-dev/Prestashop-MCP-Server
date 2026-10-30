@@ -229,6 +229,32 @@ jobs:
         run: |
           awk -v v="${{ steps.version.outputs.number }}" \
             '$0 ~ "^## " v " " {f=1; next} /^## /{f=0} f' CHANGELOG.md > NOTES.md
+          # The CHANGELOG is wrapped at 80 columns for reading in a file, but a
+          # release page keeps every line break, so each paragraph or list item
+          # came out as a column of short lines. They are joined back into one
+          # line each; headings, tables, rules and code blocks stay as written.
+          python3 - NOTES.md <<'PY'
+          import re
+          import sys
+
+          path = sys.argv[1]
+          out = []
+          fence = False
+          for line in open(path, encoding='utf-8').read().split('\n'):
+              text = line.strip()
+              if text.startswith('```'):
+                  fence = not fence
+                  out.append(line)
+                  continue
+              alone = (fence or text == '' or text.startswith(('#', '|', '---', '>'))
+                       or re.match(r'\s*([-*+]|\d+\.)\s', line))
+              before = out[-1].strip() if out else ''
+              if not alone and before and not before.startswith(('#', '|', '```', '---')):
+                  out[-1] = out[-1].rstrip() + ' ' + text
+              else:
+                  out.append(line)
+          open(path, 'w', encoding='utf-8').write('\n'.join(out))
+          PY
           {
             echo ""
             echo "---"

@@ -1207,7 +1207,7 @@ class SomcpToolCreateProduct
             $condition = self::string($group['condition']);
             // The values are the running version's: PrestaShop 9 added three.
             $values = (array) (Product::$definition['fields']['condition']['values'] ?? []);
-            if ($condition === null || ($check = $probe->validateField('condition', $condition)) !== true) {
+            if ($condition === null || $probe->validateField('condition', $condition) !== true) {
                 $errors[] = 'condition.condition: one of ' . implode(', ', $values) . ' on this version';
             } else {
                 $plan['fields']['condition'] = $condition;
@@ -1468,7 +1468,10 @@ class SomcpToolCreateProduct
 
         if (array_key_exists('display_filename', $group)) {
             $name = trim((string) (self::string($group['display_filename']) ?? ''));
-            if ($name === '' || ($check = $probe->validateField('display_filename', $name)) !== true) {
+            // Assigned before the test, not inside it: the validator reads a
+            // short-circuited assignment as a variable that may not exist.
+            $check = $name === '' ? false : $probe->validateField('display_filename', $name);
+            if ($check !== true) {
                 $errors[] = 'virtual_file.display_filename: ' . ($name === '' ? 'the file name customers see' : self::reason($check));
             } else {
                 $plan['fields']['display_filename'] = $name;
@@ -2445,7 +2448,7 @@ class SomcpToolCreateProduct
                 $errors[] = $where . ': nothing usable could be made from ' . $what . '; give one';
                 continue;
             }
-            if (!Validate::isLinkRewrite($rewrite) || ($check = $probe->validateField('link_rewrite', $rewrite, $idLang)) !== true) {
+            if (!Validate::isLinkRewrite($rewrite) || $probe->validateField('link_rewrite', $rewrite, $idLang) !== true) {
                 $errors[] = $where . ': "' . $rewrite . '" is not a valid friendly URL';
                 continue;
             }

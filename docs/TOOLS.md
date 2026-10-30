@@ -446,7 +446,7 @@ of a shipment, which this tool never does.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; a reference shared by several orders (a split cart) is refused with their identifiers |
 | `tracking_number` | string | yes | 64 characters at most, checked with `Validate::isTrackingNumber()`; `""` clears the number |
 | `id_order_carrier` | integer | no | which shipment, from `shipping.shipments` of `somcp_get_order`; required only when the order has more than one, refused with the list of shipments otherwise |
 
@@ -480,6 +480,15 @@ email is reported in `warning`, apart from the change, which did happen.
 The carrier field of the same window is left out: changing it recalculates the
 shipping cost and the order totals (`OrderAmountUpdater`), a different decision
 with a different risk.
+
+The order is found by the shared lookup of `somcp_get_order`
+(`SomcpToolGetOrder::find()`), always within the token's shop. A cart split
+across carriers gives its orders one reference, and each has its own page and
+its own **Edit shipping details** window: a reference shared by several orders
+is refused with each `id_order`, its current status and its carrier, before
+anything is written or sent. An unknown reference, or neither `id_order` nor
+`reference`, is refused with a pointer to `somcp_search_orders`. The number of
+each shipment is read back from `shipping.shipments` of `somcp_get_order`.
 
 #### `somcp_add_order_message`
 **State**: written

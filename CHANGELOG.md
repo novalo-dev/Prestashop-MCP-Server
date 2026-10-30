@@ -163,6 +163,13 @@ language.
 
 ### Fixed
 
+**Tracking number of a split order.** When a cart was split across carriers,
+its orders share one reference. Setting a tracking number by that reference
+used to write it on the newest of those orders and email that customer, without
+a word about the others. The call is now refused with the list of the orders,
+their status and their carrier, nothing is written and nobody is emailed, so
+the right order can be chosen by its identifier.
+
 **Deleting a conversation.** Deleting a conversation of the built-in
 assistant removed its messages but left behind what the long-term memory had
 kept of it, and the files attached or generated in it until the weekly purge.

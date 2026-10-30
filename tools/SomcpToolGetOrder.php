@@ -131,7 +131,8 @@ class SomcpToolGetOrder
      * Finds the order, and only within the shop the token belongs to.
      *
      * Public so the order tools that write find an order exactly as this one
-     * reads it.
+     * reads it. A reference shared by several orders gives the newest of them;
+     * find() is the lookup that refuses such a reference instead.
      *
      * @param array<string, mixed> $arguments
      *
@@ -139,28 +140,92 @@ class SomcpToolGetOrder
      */
     public static function locate(array $arguments): ?Order
     {
+        $orders = self::candidates($arguments);
+
+        return $orders === [] ? null : $orders[0];
+    }
+
+    /**
+     * Finds one order by id_order or reference, or explains why it cannot.
+     *
+     * A cart split across carriers gives its orders one reference, and each of
+     * them has its own page in the back office. Taking one of them would write
+     * on a parcel nobody chose, so a shared reference is answered with the
+     * list of its orders for the merchant to pick from.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return Order|string The order, or the error to send back as is
+     */
+    public static function find(array $arguments)
+    {
+        $byReference = (int) ($arguments['id_order'] ?? 0) <= 0;
+        if ($byReference && (!isset($arguments['reference']) || !is_string($arguments['reference'])
+            || trim($arguments['reference']) === '')) {
+            return 'Give id_order or reference. Find the order with somcp_search_orders.';
+        }
+
+        $orders = self::candidates($arguments);
+        if ($orders === []) {
+            return $byReference
+                ? 'No order of this shop has this reference. Find it with somcp_search_orders.'
+                : 'No order of this shop has this identifier. Find it with somcp_search_orders.';
+        }
+        if (count($orders) === 1) {
+            return $orders[0];
+        }
+
+        $listed = [];
+        foreach (array_reverse($orders) as $order) {
+            $state = new OrderState((int) $order->current_state, (int) $order->id_lang);
+            $carrier = new Carrier((int) $order->id_carrier, (int) $order->id_lang);
+            $listed[] = (int) $order->id . ' ('
+                . (Validate::isLoadedObject($state) ? (string) $state->name : '') . ', '
+                . (Validate::isLoadedObject($carrier) ? (string) $carrier->name : '') . ')';
+        }
+
+        return 'This reference belongs to ' . count($orders) . ' orders: ' . implode(', ', $listed)
+            . '. Give id_order to choose one of them.';
+    }
+
+    /**
+     * The orders of the token's shop that match id_order, or else reference,
+     * newest first.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return Order[]
+     */
+    private static function candidates(array $arguments): array
+    {
         $idShop = Somcp::currentShopId();
         $idOrder = (int) ($arguments['id_order'] ?? 0);
+        $ids = [];
 
-        if ($idOrder <= 0 && !empty($arguments['reference'])) {
-            $idOrder = (int) Db::getInstance()->getValue(
+        if ($idOrder > 0) {
+            $ids = [$idOrder];
+        } elseif (isset($arguments['reference']) && is_string($arguments['reference'])
+            && trim($arguments['reference']) !== '') {
+            $rows = Db::getInstance()->executeS(
                 'SELECT `id_order` FROM `' . _DB_PREFIX_ . "orders`
-                 WHERE `reference` = '" . pSQL((string) $arguments['reference']) . "'
-                   AND `id_shop` = " . $idShop . '
+                 WHERE `reference` = '" . pSQL(trim($arguments['reference'])) . "'
+                   AND `id_shop` = " . (int) $idShop . '
                  ORDER BY `id_order` DESC'
             );
+            foreach (is_array($rows) ? $rows : [] as $row) {
+                $ids[] = (int) $row['id_order'];
+            }
         }
 
-        if ($idOrder <= 0) {
-            return null;
+        $orders = [];
+        foreach ($ids as $id) {
+            $order = new Order($id);
+            if (Validate::isLoadedObject($order) && (int) $order->id_shop === $idShop) {
+                $orders[] = $order;
+            }
         }
 
-        $order = new Order($idOrder);
-        if (!Validate::isLoadedObject($order) || (int) $order->id_shop !== $idShop) {
-            return null;
-        }
-
-        return $order;
+        return $orders;
     }
 
     /**

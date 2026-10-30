@@ -12,6 +12,8 @@
     {"why": "a number that is not a string", "arguments": {"id_order": 3, "tracking_number": 12345}, "expect": "error", "contains": ["must be a string"]},
     {"why": "an empty number clears it", "arguments": {"id_order": 3, "tracking_number": ""}, "expect": "ok", "contains": ["\"changed\": true", "\"tracking_number\": \"\"", "\"customer_notified\": false"]},
     {"why": "cleared again, nothing changes", "arguments": {"id_order": 3, "tracking_number": ""}, "expect": "ok", "contains": ["\"changed\": false"]},
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "tracking_number": "SOMCP-TEST-4"}, "expect": "error", "contains": ["No order of this shop"]}
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "tracking_number": "SOMCP-TEST-4"}, "expect": "error", "contains": ["No order of this shop"]},
+    {"why": "a reference no order of the shop has", "arguments": {"reference": "SOMCPNONE", "tracking_number": "SOMCP-TEST-4"}, "expect": "error", "contains": ["No order of this shop has this reference", "somcp_search_orders", "Nothing was changed"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"tracking_number": "SOMCP-TEST-4"}, "expect": "error", "contains": ["Give id_order or reference", "Nothing was changed"]}
   ]
 }

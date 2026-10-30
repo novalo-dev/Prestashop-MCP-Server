@@ -68,7 +68,8 @@ class SomcpToolSetOrderTracking
                 . 'An empty tracking_number ("") clears the number and sends no email - only send it when the '
                 . 'merchant asked for the number to be removed. The carrier of the shipment is never changed, '
                 . 'and the order status is not touched: marking the order as shipped is somcp_set_order_status, '
-                . 'a separate decision. An order with several shipments needs id_order_carrier; without it the '
+                . 'a separate decision. A reference shared by several orders (a split cart) is refused with '
+                . 'their identifiers and nothing is written: ask the merchant which one, then give id_order. An order with several shipments needs id_order_carrier; without it the '
                 . 'call is refused with the list of shipments. When the shipment already has this number, '
                 . 'nothing is written and nobody is emailed (changed: false). One shipment per call. Not to be '
                 . 'retried on a lost answer: a second call could email the customer twice - read the order with '
@@ -82,7 +83,9 @@ class SomcpToolSetOrderTracking
                     ],
                     'reference' => [
                         'type' => 'string',
-                        'description' => 'Reference of the order, used when no identifier is known.',
+                        'description' => 'Reference of the order, used when no identifier is known. A '
+                            . 'reference shared by several orders (a split cart) is refused with their '
+                            . 'identifiers.',
                     ],
                     'tracking_number' => [
                         'type' => 'string',
@@ -143,9 +146,12 @@ class SomcpToolSetOrderTracking
             );
         }
 
-        $order = SomcpToolGetOrder::locate($arguments);
-        if ($order === null) {
-            return SomcpTool::text('No order of this shop matches what was given. Nothing was changed.', true);
+        // find() rather than locate(): the number emails the customer, so a
+        // reference shared by the orders of a split cart is refused with their
+        // list instead of landing on the newest of them.
+        $order = SomcpToolGetOrder::find($arguments);
+        if (!$order instanceof Order) {
+            return SomcpTool::text($order . ' Nothing was changed.', true);
         }
 
         $idLang = (int) $order->id_lang;

@@ -52,6 +52,9 @@ status change: it never moves the order to shipped, and
   sends nothing.
 - An order with several shipments needs `id_order_carrier`: the call is
   refused with the list, so ask the merchant which parcel it is.
+- A reference shared by several orders (a split cart) is refused with their
+  identifiers: ask the merchant which order the parcel belongs to, then call
+  again with `id_order`.
 - An empty number (`""`) removes it without any email. Only when the merchant
   asked for that.
 - The carrier of the shipment is never changed here.

@@ -55,6 +55,13 @@ now returns its tags as well, so they can be read, changed and written back.
 
 ### Changed
 
+**Listing brands: the columns and filters of the Brands list.** The list of
+brands gave the identifier and name only, so a switched-off brand could not be
+told apart without opening each one. Each brand now comes with what
+**Catalog > Brands & Suppliers > Brands** shows: whether it is enabled, its
+number of addresses and its number of products. The list can also be narrowed
+as on screen, to enabled or disabled brands and by part of the name.
+
 **Check and adjust stock prompt: categories and suppliers.** The guide offered
 to narrow what runs low by category or supplier without giving access to the
 lists those come from. It now includes the list of categories and the list of

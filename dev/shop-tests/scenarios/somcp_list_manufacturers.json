@@ -1,5 +1,10 @@
 {
   "calls": [
-    {"why": "lists the brands of the demo shop, with the ones somcp_create_manufacturer added before it", "arguments": {}, "expect": "ok", "contains": ["\"manufacturers\"", "\"count\"", "\"id_manufacturer\"", "Studio Design", "Graphic Corner"]}
+    {"why": "lists the brands of the demo shop, with the ones somcp_create_manufacturer added before it", "arguments": {}, "expect": "ok", "contains": ["\"manufacturers\"", "\"count\"", "\"id_manufacturer\"", "\"active\"", "\"addresses_count\"", "\"products_count\"", "Studio Design", "Graphic Corner"]},
+    {"why": "part of the name, in another case, as the Name filter", "arguments": {"name": "studio"}, "expect": "ok", "contains": ["Studio Design", "\"count\": 1"]},
+    {"why": "a name no brand holds", "arguments": {"name": "zzz-no-such-brand"}, "expect": "ok", "contains": ["\"manufacturers\": []", "\"count\": 0"]},
+    {"why": "enabled brands only, as Enabled: Yes", "arguments": {"active": true}, "expect": "ok", "contains": ["\"manufacturers\"", "\"active\": true"]},
+    {"why": "disabled brands only, as Enabled: No - none or a few, depending on what other scenarios left", "arguments": {"active": false}, "expect": "ok", "contains": ["\"manufacturers\"", "\"count\""]},
+    {"why": "both filters together", "arguments": {"active": true, "name": "Graphic"}, "expect": "ok", "contains": ["Graphic Corner"]}
   ]
 }

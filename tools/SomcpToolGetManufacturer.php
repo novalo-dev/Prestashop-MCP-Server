@@ -169,14 +169,29 @@ class SomcpToolGetManufacturer
             'meta_description' => SomcpToolCreateCategory::textOf($manufacturer->meta_description, $idLang),
             'meta_keywords' => isset(Manufacturer::$definition['fields']['meta_keywords']) ? SomcpToolCreateCategory::textOf($properties['meta_keywords'] ?? '', $idLang) : null,
             'logo' => $logo,
-            // The brand is on the product itself, not per shop: only the
-            // products of this shop are counted, as everywhere else.
-            'products_count' => (int) Db::getInstance()->getValue(
-                'SELECT COUNT(DISTINCT p.`id_product`) FROM `' . _DB_PREFIX_ . 'product` p'
-                . ' INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = p.`id_product` AND ps.`id_shop` = ' . (int) $idShop
-                . ' WHERE p.`id_manufacturer` = ' . (int) $idManufacturer
-            ),
+            'products_count' => self::productsCount($idManufacturer, $idShop),
         ];
+    }
+
+    /**
+     * The number of products of a brand in a shop, the Products column of the
+     * Brands list. Shared with somcp_list_manufacturers, so the list and the
+     * page of one brand never count differently.
+     *
+     * @param int $idManufacturer
+     * @param int $idShop
+     *
+     * @return int
+     */
+    public static function productsCount(int $idManufacturer, int $idShop): int
+    {
+        // The brand is on the product itself, not per shop: only the
+        // products of this shop are counted, as everywhere else.
+        return (int) Db::getInstance()->getValue(
+            'SELECT COUNT(DISTINCT p.`id_product`) FROM `' . _DB_PREFIX_ . 'product` p'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = p.`id_product` AND ps.`id_shop` = ' . (int) $idShop
+            . ' WHERE p.`id_manufacturer` = ' . (int) $idManufacturer
+        );
     }
 
     /**

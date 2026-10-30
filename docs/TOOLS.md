@@ -1227,16 +1227,20 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 **State**: written
 **Nature**: `acts(VIEW, 'AdminManufacturers')` · **Scope**: `mcp.catalog.read`
 
-**Does** - lists the brands of this shop: identifier and name, nothing else.
+**Does** - lists the brands of this shop as **Catalog > Brands & Suppliers > Brands** shows them: identifier, name, **Enabled**, **Addresses** and **Products**.
 
-**Do not use for** - everything about one brand (→ `somcp_get_manufacturer`), or the products of a brand (`somcp_search_products` has no brand filter; `somcp_get_product` names the brand of one product).
+**Do not use for** - everything about one brand, its logo included (→ `somcp_get_manufacturer`), or the products of a brand (`somcp_search_products` has no brand filter; `somcp_get_product` names the brand of one product).
 
-**Parameters** - none.
+**Parameters** - all optional, the filters of the list:
+- `active` (boolean) - `true` for enabled brands only, `false` for disabled ones only; left out, all of them (**All**).
+- `name` (string) - part of the brand name, case-insensitive (the **Name** filter).
 
-**Returns** - per brand: `id_manufacturer`, `name`. Plus `count`.
+**Returns** - per brand: `id_manufacturer`, `name`, `active` (**Enabled**), `addresses_count` (**Addresses**), `products_count` (**Products**). Plus `count`. Every brand matching the filters is returned, with no paging: the list stays short.
 
 **Notes**
-- Same shape as `somcp_list_categories`: the list an assistant reads before a write that takes a brand, which must never guess an identifier. Inactive ones are listed too, since a product can still point to them.
+- The list an assistant reads before a write that takes a brand, which must never guess an identifier. Disabled ones are listed too unless `active` is given, since a product can still point to them.
+- `addresses_count` leaves out deleted addresses (`address.deleted = 1`), kept by PrestaShop for the orders that used them and hidden from the list. `products_count` counts the products of the shop of the token whose brand this is, the same count as `somcp_get_manufacturer`.
+- Same columns, labels and filters on PrestaShop 8.0.1 and 9.0.0. Not here: **Delete** and **Delete selected** (no tool deletes a brand yet), and the **Logo** (read with `somcp_get_manufacturer`).
 - No `language` parameter, unlike the first draft of this entry: a brand name is not translated in PrestaShop (`Manufacturer::$name` has no `lang`, checked on 8.0.0 and 9.0.0), so it would change nothing.
 - Read through a query on `manufacturer` and `manufacturer_shop` in the shop of the token, rather than `Manufacturer::getManufacturers()`, which takes the shop from the global context and leaves out a brand with no row in the language asked for. Sorted by name, as the core does.
 

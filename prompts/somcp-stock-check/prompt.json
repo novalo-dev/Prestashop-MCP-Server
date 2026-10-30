@@ -9,7 +9,9 @@
     "somcp_list_low_stock",
     "somcp_get_stock",
     "somcp_search_products",
-    "somcp_set_stock_quantity"
+    "somcp_set_stock_quantity",
+    "somcp_list_categories",
+    "somcp_list_suppliers"
   ],
   "controller": "AdminStockManagement",
   "action": "view",

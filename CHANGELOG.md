@@ -37,6 +37,13 @@ now returns its tags as well, so they can be read, changed and written back.
 
 ### Changed
 
+**Check and adjust stock prompt: categories and suppliers.** The guide offered
+to narrow what runs low by category or supplier without giving access to the
+lists those come from. It now includes the list of categories and the list of
+suppliers, and says what to do on an account allowed stock but not the
+catalogue: ask for the product's reference or name, and leave the category and
+supplier filters aside.
+
 **Listing what runs low: the filters of the Stock page.** The list of low
 stock could only be narrowed by quantity and status. It now also filters by
 category, by default supplier, and by a search on the product name, the

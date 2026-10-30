@@ -11,6 +11,8 @@ quantities move with every order.
 - `somcp_get_stock`
 - `somcp_search_products`
 - `somcp_set_stock_quantity`
+- `somcp_list_categories`
+- `somcp_list_suppliers`
 
 ## Know which shop you are in
 
@@ -26,6 +28,10 @@ which may not be the one the merchant has in mind.
 1. **A named product.** Find it with `somcp_search_products` (name, reference
    or EAN13), then read its quantities with `somcp_get_stock`. Several matches:
    show them and let the merchant pick. Never choose one for them.
+   `somcp_search_products`, `somcp_list_categories` and `somcp_list_suppliers`
+   need catalogue access: without it, ask the merchant for the product's
+   reference or name instead of searching, and do not offer the category or
+   supplier filters.
 2. **What runs low.** Use `somcp_list_low_stock`, with the threshold the
    merchant gave, or without one to compare each line with its own low stock
    level. Narrow it the way the Stock page does when the merchant asks: a

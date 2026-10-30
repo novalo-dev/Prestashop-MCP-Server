@@ -68,7 +68,9 @@ one that answered. The currency of the prices comes from there too.
    combinations. When a product comes back with `matched_combinations`, the
    merchant was most likely holding that variant: say which one.
 3. Read `total_count`, not the length of the list. Twenty results out of four
-   hundred is not "twenty products".
+   hundred is not "twenty products". Each line already holds the name of the
+   default category (`category_default`) and the small cover image
+   (`cover_image`, null without one): do not read each product to learn them.
 4. When the merchant asks for several matches, show them the list and let them
    pick. Never choose one for them.
 5. To answer about one product - its description, carriers, images, suppliers,

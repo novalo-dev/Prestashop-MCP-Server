@@ -1,9 +1,12 @@
 {
   "calls": [
     {"why": "every product, newest first", "arguments": {}, "expect": "ok"},
-    {"why": "one product by identifier", "arguments": {"id_product": 1}, "expect": "ok"},
+    {"why": "one product by identifier, with its default category name and its small cover image", "arguments": {"id_product": 1}, "expect": "ok", "contains": ["\"category_default\"", "\"cover_image\"", "small_default"]},
     {"why": "by name, active only, sorted by price", "arguments": {"name": "shirt", "active": true, "sort": "price_asc"}, "expect": "ok"},
     {"why": "price, stock and category filters with paging", "arguments": {"price_tax_incl_min": 0, "price_tax_excl_max": 10000, "quantity_min": 0, "id_category": 2, "limit": 3, "offset": 1}, "expect": "ok"},
+    {"why": "a full page of 100", "arguments": {"limit": 100}, "expect": "ok", "contains": ["\"total_count\"", "\"cover_image\""]},
+    {"why": "in a language given by ISO code", "arguments": {"language": "en", "limit": 5}, "expect": "ok", "contains": ["\"category_default\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]},
     {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "any"}
   ]
 }

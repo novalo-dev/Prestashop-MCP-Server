@@ -108,6 +108,13 @@ Save button at the bottom saves the three.
 **Logo.** The module has a new logo: a white pulse ending on an orange dot,
 on the dark background of the other O'So modules.
 
+**Product search.** Each product found now comes with the name of its default
+category and the address of its small cover image, as the Category and Image
+columns of the back office product list show them, so the assistant no longer
+reads every product to tell them apart. A language the shop does not have is
+now refused with a clear message, instead of quietly searching the names in
+the default language.
+
 ### Fixed
 
 **Deleting a conversation.** Deleting a conversation of the built-in

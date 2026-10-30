@@ -54,8 +54,8 @@ class SomcpToolSearchProducts
             'Finds products of this shop with the filters of the back office product list - '
                 . 'identifier, name, reference, category, price without or with tax, quantity, '
                 . 'status, EAN13, MPN, UPC, ISBN - and returns a short line for each: reference, '
-                . 'name, base price without and with tax, total quantity, status and default '
-                . 'category. Every filter is optional and they combine. A reference or an EAN13 '
+                . 'name, base price without and with tax, total quantity, status, default category '
+                . '(identifier and name) and the small cover image URL (null without a cover). Every filter is optional and they combine. A reference or an EAN13 '
                 . 'also finds the product through one of its combinations, and says which ones '
                 . 'matched. Prices are the base price of the product, before specific prices and '
                 . 'combination impacts; the price with tax uses the tax rule of the shop default '
@@ -136,7 +136,8 @@ class SomcpToolSearchProducts
                     'language' => [
                         'type' => 'string',
                         'description' => 'ISO code of the language to read and search the names in, '
-                            . 'for example fr. The shop default is used otherwise.',
+                            . 'for example fr: one of the shop\'s active languages, refused otherwise. '
+                            . 'The shop default is used when left out.',
                     ],
                     'limit' => [
                         'type' => 'integer',
@@ -165,7 +166,14 @@ class SomcpToolSearchProducts
     {
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
-        $idLang = self::language($arguments);
+        $idLang = self::language($arguments, $idShop);
+        if ($idLang === null) {
+            return SomcpTool::text(
+                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
+                    . 'language out for the shop default.',
+                true
+            );
+        }
         $prices = self::priceExpressions($idShop);
 
         $count = self::query($arguments, $shop, $idLang, $prices);
@@ -176,7 +184,7 @@ class SomcpToolSearchProducts
         $offset = max(0, (int) ($arguments['offset'] ?? 0));
 
         $page = self::query($arguments, $shop, $idLang, $prices);
-        $page->select('p.`id_product`, p.`reference`, p.`ean13`, pl.`name`, ps.`active`, ps.`id_category_default`');
+        $page->select('p.`id_product`, p.`reference`, p.`ean13`, pl.`name`, pl.`link_rewrite`, ps.`active`, ps.`id_category_default`');
         $page->select($prices['tax_excl'] . ' AS `price_tax_excl`');
         $page->select($prices['tax_incl'] . ' AS `price_tax_incl`');
         $page->select('IFNULL(sa.`quantity`, 0) AS `quantity`');
@@ -187,6 +195,12 @@ class SomcpToolSearchProducts
         $matched = self::matchedCombinations($arguments, $idShop, array_map(static function (array $row): int {
             return (int) $row['id_product'];
         }, $rows));
+
+        $categories = self::categoryNames(array_map(static function (array $row): int {
+            return (int) $row['id_category_default'];
+        }, $rows), $idLang, $idShop);
+        $covers = self::covers($rows, $idShop);
+        $link = Somcp::legacyContext()->link ?? new Link();
 
         $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));
         $precision = Validate::isLoadedObject($currency) ? (int) $currency->precision : 2;
@@ -206,6 +220,12 @@ class SomcpToolSearchProducts
                 'quantity' => (int) $row['quantity'],
                 'active' => (bool) $row['active'],
                 'id_category_default' => (int) $row['id_category_default'],
+                'category_default' => $categories[(int) $row['id_category_default']] ?? '',
+                // The thumbnail of the Image column, so the assistant can show
+                // which product it means without reading each one.
+                'cover_image' => isset($covers[$id])
+                    ? SomcpProductImage::url($link, $id, (string) $row['link_rewrite'], $covers[$id], 'small')
+                    : null,
                 'ean13' => (string) $row['ean13'],
             ];
             if (isset($matched[$id])) {
@@ -425,6 +445,78 @@ class SomcpToolSearchProducts
     }
 
     /**
+     * The name of each default category of the page, in the language read.
+     *
+     * One query for the page rather than one per line: the Category column of
+     * the back office list is what an assistant is asked about, and a second
+     * call per product to learn it would be paying twenty times for one word.
+     *
+     * @param array<int, int> $ids
+     * @param int $idLang
+     * @param int $idShop
+     *
+     * @return array<int, string>
+     */
+    private static function categoryNames(array $ids, int $idLang, int $idShop): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if ($ids === []) {
+            return [];
+        }
+
+        $query = new DbQuery();
+        $query->select('cl.`id_category`, cl.`name`');
+        $query->from('category_lang', 'cl');
+        $query->where('cl.`id_category` IN (' . implode(',', $ids) . ')');
+        $query->where('cl.`id_lang` = ' . $idLang);
+        // Category names are stored per shop: the one the merchant sees is
+        // the one of the shop of the token.
+        $query->where('cl.`id_shop` = ' . $idShop);
+
+        $names = [];
+        foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
+            $names[(int) $row['id_category']] = (string) $row['name'];
+        }
+
+        return $names;
+    }
+
+    /**
+     * The cover image of each product of the page, in this shop.
+     *
+     * The cover is chosen per shop (`image_shop`), so a product can show a
+     * different one in each shop of the installation.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @param int $idShop
+     *
+     * @return array<int, int> image identifier per product identifier
+     */
+    private static function covers(array $rows, int $idShop): array
+    {
+        $ids = array_map(static function (array $row): int {
+            return (int) $row['id_product'];
+        }, $rows);
+        if ($ids === []) {
+            return [];
+        }
+
+        $query = new DbQuery();
+        $query->select('ims.`id_product`, ims.`id_image`');
+        $query->from('image_shop', 'ims');
+        $query->where('ims.`id_product` IN (' . implode(',', array_map('intval', $ids)) . ')');
+        $query->where('ims.`id_shop` = ' . $idShop);
+        $query->where('ims.`cover` = 1');
+
+        $covers = [];
+        foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
+            $covers[(int) $row['id_product']] = (int) $row['id_image'];
+        }
+
+        return $covers;
+    }
+
+    /**
      * A text filter, trimmed, or an empty string when it was not given.
      *
      * @param array<string, mixed> $arguments
@@ -478,22 +570,25 @@ class SomcpToolSearchProducts
     }
 
     /**
-     * The language to read and search the names in.
+     * The language to read and search the names in, or null when the caller
+     * named one the shop does not have.
+     *
+     * Refused rather than read in the default language, as the other read
+     * tools do: names searched in the wrong language find nothing, and the
+     * assistant would conclude the product does not exist.
      *
      * @param array<string, mixed> $arguments
+     * @param int $idShop
      *
-     * @return int
+     * @return int|null
      */
-    private static function language(array $arguments): int
+    private static function language(array $arguments, int $idShop): ?int
     {
-        $iso = self::text($arguments, 'language');
-        if ($iso !== '') {
-            $idLang = (int) Language::getIdByIso($iso);
-            if ($idLang > 0) {
-                return $idLang;
-            }
+        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
+            return (int) Somcp::legacyContext()->language->id;
         }
+        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
 
-        return (int) Somcp::legacyContext()->language->id;
+        return $languages === null ? null : (int) array_key_first($languages);
     }
 }

@@ -832,10 +832,10 @@ The products and the categories they are sorted into: texts, prices, combination
 | `upc` | string | no | part of the product's UPC barcode |
 | `isbn` | string | no | part of the product's ISBN |
 | `sort` | enum | no | `date_add_desc` (default), `name_asc`, `price_asc`, `price_desc`, `quantity_asc`, `quantity_desc` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, shop default otherwise; a code the shop does not have is refused |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per product: `id_product`, `reference`, `name`, `price_tax_excl`, `price_tax_incl`, `currency`, `quantity`, `active`, `id_category_default`, `ean13`. When the product was found through a combination's reference or EAN13: `matched_combinations`, a list of `id_product_attribute`, `reference`, `ean13` for the combinations that matched. Plus `returned`, `total_count` and `offset`.
+**Returns** - per product: `id_product`, `reference`, `name`, `price_tax_excl`, `price_tax_incl`, `currency`, `quantity`, `active`, `id_category_default`, `category_default` (the name of the default category in `language`, the Category column), `cover_image` (URL of the cover in the small image type, the Image column; `null` when the product has none), `ean13`. When the product was found through a combination's reference or EAN13: `matched_combinations`, a list of `id_product_attribute`, `reference`, `ean13` for the combinations that matched. Plus `returned`, `total_count` and `offset`.
 
 **Notes**
 - Read through a query (`DbQuery`), not through Product objects. Same columns as the back office product list: `product_shop` for price and status, `product_lang` for the name, `category_product` for the category, `stock_available` with `id_product_attribute = 0` for the quantity.
@@ -844,6 +844,8 @@ The products and the categories they are sorted into: texts, prices, combination
 - At least one filter is not required: without any, the tool lists the catalogue page by page.
 - Like the back office list, the prices add the ecotax when the shop uses it, and a product still being created (`state` other than saved) is left out. A tax rule with no rate for the default country counts as no tax.
 - Prices are rounded to the precision of the shop default currency, which is the currency they are stored in. With both `reference` and `ean13` given, a combination is listed in `matched_combinations` when it matches either one.
+- `category_default` and `cover_image` are read for the page only, one query each (`category_lang` and `image_shop` of the shop of the token), never one per product. The image URL is built by `SomcpProductImage::url()`, the code `somcp_get_product` uses, which follows the image name PrestaShop 8 and 9 each expect.
+- A `language` the shop does not have is refused, like the other read tools, rather than read in the default language.
 
 #### `somcp_get_product`
 **State**: written

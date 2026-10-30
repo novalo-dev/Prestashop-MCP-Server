@@ -381,8 +381,9 @@ class SomcpToolSearchProducts
         $taxExcl = 'ps.`price`';
         $taxIncl = 'ps.`price` * ' . $ratio;
         if ($useEcotax) {
-            // The ecotax has its own tax rule, set in the shop's tax settings.
-            $ecoRate = (float) ($rates[(int) Configuration::get('PS_ECOTAX_TAX_RULES_GROUP_ID', null, null, $idShop)] ?? 0);
+            // The ecotax has its own tax rule, read the way somcp_get_product
+            // reads it, so the two tools give the same amount.
+            $ecoRate = SomcpCatalog::ecotaxRate($idShop);
             $taxExcl = '(ps.`price` + ps.`ecotax`)';
             $taxIncl = '(ps.`price` * ' . $ratio . ' + ps.`ecotax` * ' . (1 + $ecoRate / 100) . ')';
         }

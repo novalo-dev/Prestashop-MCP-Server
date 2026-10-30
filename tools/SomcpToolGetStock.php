@@ -115,7 +115,7 @@ class SomcpToolGetStock
             'reserved_quantity' => $total['reserved_quantity'] ?? 0,
             // Loaded for this shop, the product carries the threshold of
             // product_shop, which is the one the back office edits.
-            'low_stock_threshold' => self::threshold($product->low_stock_threshold),
+            'low_stock_threshold' => SomcpCatalog::threshold($product->low_stock_threshold),
             // The product line sums every combination, so one order with two
             // sizes of the same product shows once, with both added together.
             'reserved_by' => self::byOrder($reservations),
@@ -168,7 +168,7 @@ class SomcpToolGetStock
                 'quantity' => $stock[$id]['quantity'] ?? 0,
                 'physical_quantity' => $stock[$id]['physical_quantity'] ?? 0,
                 'reserved_quantity' => $stock[$id]['reserved_quantity'] ?? 0,
-                'low_stock_threshold' => self::threshold($row['low_stock_threshold']),
+                'low_stock_threshold' => SomcpCatalog::threshold($row['low_stock_threshold']),
                 'reserved_by' => self::forAttribute($reservations, $id),
             ];
         }
@@ -268,21 +268,6 @@ class SomcpToolGetStock
         }
 
         return $lines;
-    }
-
-    /**
-     * The stored threshold, or null when the merchant set none.
-     *
-     * The column is nullable and null means no alert; reading it as 0 would
-     * tell the assistant an alert is set at zero.
-     *
-     * @param mixed $value
-     *
-     * @return int|null
-     */
-    private static function threshold($value): ?int
-    {
-        return $value === null || $value === '' ? null : (int) $value;
     }
 
     /**

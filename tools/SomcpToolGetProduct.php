@@ -47,6 +47,9 @@ class SomcpToolGetProduct
     /** @var array<int, string> Stored value of additional_delivery_times, as the merchant reads it. */
     private const DELIVERY_TIMES = [0 => 'none', 1 => 'default', 2 => 'product'];
 
+    /** @var array<int, string> pack_stock_type, the values of Pack::STOCK_TYPE_*, as the write tools take them. */
+    private const PACK_STOCK_TYPES = [0 => 'pack', 1 => 'products', 2 => 'both', 3 => 'default'];
+
     /** @var array<string, bool> Tables and columns already looked up during this request. */
     private static $schema = [];
 
@@ -61,9 +64,11 @@ class SomcpToolGetProduct
             'Returns everything the back office product page shows for one product of this shop, '
                 . 'grouped like its tabs: basics (type, name, summary, description), categories, '
                 . 'brand, related products, references (reference, MPN, UPC, EAN13, ISBN), '
-                . 'features, attachments, condition, customization, stock and its labels, shipping '
-                . 'and carriers, pricing and tax, specific prices and their priorities, SEO, '
-                . 'options, suppliers, images, and every combination with its own codes, stock and '
+                . 'features, attachments, condition, customization, stock and its labels (minimum '
+                . 'quantity, low stock level and alert, pack stock behaviour), the products of a pack, '
+                . 'the downloadable file settings of a virtual product, shipping and carriers, pricing, '
+                . 'tax and ecotax, specific prices and their priorities, SEO, options, suppliers, '
+                . 'images, and every combination with its own codes, stock, low stock level and '
                 . 'impacts. Prices are the product\'s own, before specific prices: those are listed '
                 . 'apart in specific_prices, so a promotion is never mistaken for the price. '
                 . 'Identify the product by its identifier, and optionally one of its combinations. '
@@ -84,8 +89,9 @@ class SomcpToolGetProduct
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the texts in, for example fr. '
-                            . 'The shop default is used otherwise.',
+                        'description' => 'ISO code of the language to read the texts in, for example fr: '
+                            . 'one of the shop\'s active languages, refused otherwise. The shop default is '
+                            . 'used when left out.',
                     ],
                 ],
                 'required' => ['id_product'],
@@ -107,7 +113,14 @@ class SomcpToolGetProduct
     {
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
-        $idLang = self::language($arguments);
+        $idLang = self::language($arguments, $idShop);
+        if ($idLang === null) {
+            return SomcpTool::text(
+                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
+                    . 'language out for the shop default.',
+                true
+            );
+        }
 
         $product = self::locate((int) ($arguments['id_product'] ?? 0), $idLang, $idShop);
         if ($product === null) {
@@ -130,6 +143,7 @@ class SomcpToolGetProduct
             'tax_ratio' => 1 + self::taxRate($product, $idShop) / 100,
         ];
         $stock = self::stockRows($product, $shop);
+        $isPack = (string) $product->getProductType() === 'pack';
 
         return SomcpTool::json([
             'basics' => [
@@ -161,9 +175,13 @@ class SomcpToolGetProduct
                 'show_condition' => (bool) $product->show_condition,
             ],
             'customization' => self::customization($product, $idLang, $idShop),
-            'stock' => self::stock($product, $stock[0] ?? null),
+            'stock' => self::stock($product, $stock[0] ?? null, $isPack),
+            'pack' => [
+                'items' => $isPack ? self::packItems($product, $idLang, $idShop) : [],
+            ],
+            'virtual_file' => self::virtualFile($product),
             'shipping' => self::shipping($product, $idLang, $money['iso']),
-            'pricing' => self::pricing($product, $money),
+            'pricing' => self::pricing($product, $money, $idShop),
             'specific_prices' => self::specificPrices($product, $idShop, $idCombination, $money['iso']),
             'seo' => self::seo($product, $idLang, $idShop),
             'options' => [
@@ -433,10 +451,11 @@ class SomcpToolGetProduct
     /**
      * @param Product $product
      * @param array{quantity: int, physical_quantity: int, reserved_quantity: int, location: string, out_of_stock: int}|null $row the row without combination
+     * @param bool $isPack
      *
      * @return array<string, mixed>
      */
-    private static function stock(Product $product, ?array $row): array
+    private static function stock(Product $product, ?array $row, bool $isPack): array
     {
         return [
             // The row without a combination holds the total of all of them.
@@ -446,6 +465,89 @@ class SomcpToolGetProduct
             'available_now' => (string) $product->available_now,
             'available_later' => (string) $product->available_later,
             'available_date' => self::date((string) $product->available_date),
+            // Loaded for this shop, the product carries the values of
+            // product_shop, the ones the back office edits.
+            'minimal_quantity' => (int) $product->minimal_quantity,
+            'low_stock_threshold' => SomcpCatalog::threshold($product->low_stock_threshold),
+            'low_stock_alert' => (bool) $product->low_stock_alert,
+            // Only a pack has a stock behaviour; on any other product the
+            // stored default would read as a setting the merchant never made.
+            'pack_stock_type' => $isPack ? (self::PACK_STOCK_TYPES[(int) $product->pack_stock_type] ?? 'default') : null,
+        ];
+    }
+
+    /**
+     * The products in a pack, each with its combination and quantity.
+     *
+     * Read from the table rather than with Pack::getItems(), which loads a
+     * full Product per item for a name and a reference.
+     *
+     * @param Product $product
+     * @param int $idLang
+     * @param int $idShop
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function packItems(Product $product, int $idLang, int $idShop): array
+    {
+        $query = new DbQuery();
+        $query->select('pk.`id_product_item`, pk.`id_product_attribute_item`, pk.`quantity`, p.`reference`, pl.`name`');
+        $query->from('pack', 'pk');
+        $query->leftJoin('product', 'p', 'p.`id_product` = pk.`id_product_item`');
+        $query->leftJoin(
+            'product_lang',
+            'pl',
+            'pl.`id_product` = pk.`id_product_item` AND pl.`id_lang` = ' . $idLang . ' AND pl.`id_shop` = ' . $idShop
+        );
+        $query->where('pk.`id_product_pack` = ' . (int) $product->id);
+        $query->orderBy('pk.`id_product_item` ASC, pk.`id_product_attribute_item` ASC');
+
+        $items = [];
+        foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
+            $items[] = [
+                'id_product' => (int) $row['id_product_item'],
+                'id_product_attribute' => (int) $row['id_product_attribute_item'],
+                'name' => (string) ($row['name'] ?? ''),
+                'reference' => (string) ($row['reference'] ?? ''),
+                'quantity' => (int) $row['quantity'],
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * The settings of the downloadable file of a virtual product, or null
+     * when it has none.
+     *
+     * The name on disk and the file itself are never returned: the name is
+     * the secret that lets a customer download it.
+     *
+     * @param Product $product
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function virtualFile(Product $product): ?array
+    {
+        $query = new DbQuery();
+        $query->select('pd.`display_filename`, pd.`nb_downloadable`, pd.`date_expiration`, pd.`nb_days_accessible`, pd.`active`');
+        $query->from('product_download', 'pd');
+        $query->where('pd.`id_product` = ' . (int) $product->id);
+        // The back office shows the latest file, active or not.
+        $query->orderBy('pd.`id_product_download` DESC');
+        $row = Db::getInstance()->getRow($query);
+        if (!is_array($row) || $row === []) {
+            return null;
+        }
+
+        $expiration = self::date((string) ($row['date_expiration'] ?? ''));
+
+        return [
+            'display_filename' => (string) $row['display_filename'],
+            'nb_downloadable' => (int) $row['nb_downloadable'],
+            'date_expiration' => $expiration === null ? null : date('c', (int) strtotime($expiration)),
+            'nb_days_accessible' => (int) $row['nb_days_accessible'],
+            'active' => (bool) $row['active'],
         ];
     }
 
@@ -493,12 +595,14 @@ class SomcpToolGetProduct
     /**
      * @param Product $product
      * @param array{iso: string, precision: int, tax_ratio: float} $money
+     * @param int $idShop
      *
      * @return array<string, mixed>
      */
-    private static function pricing(Product $product, array $money): array
+    private static function pricing(Product $product, array $money, int $idShop): array
     {
         $group = new TaxRulesGroup((int) $product->id_tax_rules_group);
+        $ecotax = (float) $product->ecotax;
 
         return [
             'price_tax_excl' => (float) $product->price,
@@ -511,6 +615,10 @@ class SomcpToolGetProduct
             'unit_price_tax_incl' => round((float) $product->unit_price * $money['tax_ratio'], $money['precision']),
             'unity' => (string) $product->unity,
             'on_sale' => (bool) $product->on_sale,
+            // Stored without tax; the back office shows it with the ecotax's
+            // own tax rule, the one somcp_search_products adds to its prices.
+            'ecotax_tax_excl' => $ecotax,
+            'ecotax_tax_incl' => round($ecotax * (1 + SomcpCatalog::ecotaxRate($idShop) / 100), $money['precision']),
             'currency' => $money['iso'],
         ];
     }
@@ -698,7 +806,7 @@ class SomcpToolGetProduct
         $query = new DbQuery();
         $query->select('pa.`id_product_attribute`, pa.`reference`, pa.`mpn`, pa.`upc`, pa.`ean13`, pa.`isbn`');
         $query->select('pas.`default_on`, pas.`price`, pas.`unit_price_impact`, pas.`weight`, pas.`wholesale_price`');
-        $query->select('pas.`minimal_quantity`, pas.`available_date`');
+        $query->select('pas.`minimal_quantity`, pas.`low_stock_threshold`, pas.`low_stock_alert`, pas.`available_date`');
         if ($labels) {
             $query->select('pal.`available_now`, pal.`available_later`');
         }
@@ -755,6 +863,8 @@ class SomcpToolGetProduct
                 'weight_impact' => (float) $row['weight'],
                 'wholesale_price' => (float) $row['wholesale_price'],
                 'minimal_quantity' => (int) $row['minimal_quantity'],
+                'low_stock_threshold' => SomcpCatalog::threshold($row['low_stock_threshold']),
+                'low_stock_alert' => (bool) $row['low_stock_alert'],
                 'currency' => $money['iso'],
                 'images' => $images[$id] ?? [],
             ];
@@ -898,22 +1008,25 @@ class SomcpToolGetProduct
     }
 
     /**
-     * The language to read the texts in.
+     * The language to read the texts in, or null when the caller named one
+     * the shop does not have.
+     *
+     * Refused rather than read in the default language, as the other read
+     * tools do: texts in another language than asked would be taken back by
+     * the write tools into the wrong one.
      *
      * @param array<string, mixed> $arguments
+     * @param int $idShop
      *
-     * @return int
+     * @return int|null
      */
-    private static function language(array $arguments): int
+    private static function language(array $arguments, int $idShop): ?int
     {
-        $iso = isset($arguments['language']) && is_scalar($arguments['language']) ? trim((string) $arguments['language']) : '';
-        if ($iso !== '') {
-            $idLang = (int) Language::getIdByIso($iso);
-            if ($idLang > 0) {
-                return $idLang;
-            }
+        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
+            return (int) Somcp::legacyContext()->language->id;
         }
+        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
 
-        return (int) Somcp::legacyContext()->language->id;
+        return $languages === null ? null : (int) array_key_first($languages);
     }
 }

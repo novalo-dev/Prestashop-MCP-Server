@@ -115,6 +115,16 @@ reads every product to tell them apart. A language the shop does not have is
 now refused with a clear message, instead of quietly searching the names in
 the default language.
 
+**Reading a product.** Reading one product now also returns what the product
+page shows and the read left out: the minimum quantity for sale, the low stock
+level and its email alert (for the product and for each combination), the
+products of a pack with their quantity and the pack's stock behaviour, the
+downloadable file settings of a virtual product (the file name shown, the
+number of downloads, the expiration date and the number of days), and the
+ecotax with and without tax. A language the shop does not have is now refused
+with a clear message, instead of quietly reading the product in the default
+language.
+
 ### Fixed
 
 **Deleting a conversation.** Deleting a conversation of the built-in

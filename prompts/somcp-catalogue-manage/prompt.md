@@ -76,7 +76,11 @@ one that answered. The currency of the prices comes from there too.
 5. To answer about one product - its description, carriers, images, suppliers,
    a combination - read it with `somcp_get_product`, by the identifier the
    search returned. When the search named a matching combination, pass its
-   `id_product_attribute` too.
+   `id_product_attribute` too. The read also holds the minimum quantity for
+   sale and the low stock level and alert (`stock`, and on each combination),
+   the products of a pack (`pack.items`) and its stock behaviour
+   (`stock.pack_stock_type`), and the downloadable file settings of a virtual
+   product (`virtual_file`, null without a file).
 
 ## Identifiers are never guessed
 
@@ -162,7 +166,8 @@ The prices returned are the base price of the product, before specific prices,
 discounts and combination impacts. A customer may pay something else: say so
 when the merchant asks what a customer pays. `somcp_get_product` lists the
 specific prices apart, with who they apply to and when: never present one of
-them as the product's price.
+them as the product's price. The ecotax is apart too (`ecotax_tax_excl`,
+`ecotax_tax_incl`), and is not included in `price_tax_incl`.
 
 ## Changing products
 

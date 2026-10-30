@@ -517,7 +517,9 @@
     // The opening line of an empty conversation, drawn once per conversation
     // so it does not change each time the chat redraws it.
     function opening(threadId) {
-        var lines = text.hellos || [];
+        // The single line of earlier versions, if the page comes from one: an
+        // empty bubble is worse than the old wording.
+        var lines = text.hellos || (text.hello ? [text.hello] : []);
         if (!(threadId in state.openings)) {
             state.openings[threadId] = lines.length ? lines[Math.floor(Math.random() * lines.length)] : '';
         }

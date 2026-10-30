@@ -203,6 +203,11 @@ language.
 
 ### Fixed
 
+**Built-in assistant behind a CDN.** A shop served through a CDN could keep
+handing out the previous script of the chat after the module was updated,
+which left its opening line empty. The address of the chat's script and style
+now changes whenever the files do, so the new ones are always loaded.
+
 **Tracking number of a split order.** When a cart was split across carriers,
 its orders share one reference. Setting a tracking number by that reference
 used to write it on the newest of those orders and email that customer, without

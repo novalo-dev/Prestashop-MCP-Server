@@ -413,13 +413,20 @@ class Somcp extends Module
         ];
 
         $base = $this->_path . 'views/';
-        $version = urlencode($this->version);
+        // The file's own date rides along with the module version: builds of
+        // one version share its number, and a CDN in front of the shop kept
+        // serving the script of the previous build under the same address.
+        $stamp = function (string $file): string {
+            $path = _PS_MODULE_DIR_ . $this->name . '/views/' . $file;
+
+            return urlencode($this->version) . '-' . (is_file($path) ? (int) filemtime($path) : 0);
+        };
 
         $this->context->smarty->assign([
             // Encoded here, escaped by the template into an attribute.
             'somcp_assistant_config' => (string) json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
-            'somcp_assistant_css' => $base . 'css/assistant.css?v=' . $version,
-            'somcp_assistant_js' => $base . 'js/assistant.js?v=' . $version,
+            'somcp_assistant_css' => $base . 'css/assistant.css?v=' . $stamp('css/assistant.css'),
+            'somcp_assistant_js' => $base . 'js/assistant.js?v=' . $stamp('js/assistant.js'),
         ]);
 
         return $this->context->smarty->fetch(_PS_MODULE_DIR_ . 'somcp/views/templates/hook/assistant_head.tpl');

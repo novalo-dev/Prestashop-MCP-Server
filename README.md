@@ -73,9 +73,18 @@ calling the shop's own addresses.
 
 ## Tools
 
+Grouped by back office page, each object's reads before its writes. A new tool goes in the table of its page.
+
+### Connection
+
 | Tool | Scope | Back office right | Nature |
 |---|---|---|---|
 | `somcp_ping` | `mcp.access` | none | read |
+
+### Orders
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
 | `somcp_search_orders` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_get_order` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_list_order_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
@@ -84,63 +93,113 @@ calling the shop's own addresses.
 | `somcp_add_order_message` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_set_order_note` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_add_order_payment` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+
+### Catalog - Products
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
 | `somcp_search_products` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
 | `somcp_get_product` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
-| `somcp_list_categories` | `mcp.catalog.read` | `view` on `AdminCategories` | read |
-| `somcp_get_category` | `mcp.catalog.read` | `view` on `AdminCategories` | read |
-| `somcp_list_manufacturers` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
-| `somcp_get_manufacturer` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
-| `somcp_list_manufacturer_addresses` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
-| `somcp_get_manufacturer_address` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
-| `somcp_list_suppliers` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
-| `somcp_get_supplier` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
-| `somcp_list_attributes` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
-| `somcp_get_attribute_group` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
-| `somcp_get_attribute_value` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
-| `somcp_list_features` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
-| `somcp_get_feature` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
-| `somcp_get_feature_value` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
-| `somcp_list_attachments` | `mcp.catalog.read` | `view` on `AdminAttachments` | read |
-| `somcp_list_tax_rules` | `mcp.catalog.read` | `view` on `AdminTaxRulesGroup` | read |
 | `somcp_create_product` | `mcp.catalog.write` | `add` on `AdminProducts` | write |
 | `somcp_update_product` | `mcp.catalog.write` | `edit` on `AdminProducts` | write |
 | `somcp_set_product_active` | `mcp.catalog.write` | `edit` on `AdminProducts` | write |
 | `somcp_delete_product` | `mcp.catalog.write` | `delete` on `AdminProducts` | write |
+
+### Catalog - Categories
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_categories` | `mcp.catalog.read` | `view` on `AdminCategories` | read |
+| `somcp_get_category` | `mcp.catalog.read` | `view` on `AdminCategories` | read |
 | `somcp_create_category` | `mcp.catalog.write` | `add` on `AdminCategories` | write |
 | `somcp_update_category` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
 | `somcp_set_category_active` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
+
+### Catalog - Brands
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_manufacturers` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
+| `somcp_get_manufacturer` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
 | `somcp_create_manufacturer` | `mcp.catalog.write` | `add` on `AdminManufacturers` | write |
 | `somcp_update_manufacturer` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
 | `somcp_set_manufacturer_active` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
+| `somcp_list_manufacturer_addresses` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
+| `somcp_get_manufacturer_address` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
 | `somcp_create_manufacturer_address` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
 | `somcp_update_manufacturer_address` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
 | `somcp_delete_manufacturer_address` | `mcp.catalog.write` | `delete` on `AdminManufacturers` | write |
+
+### Catalog - Suppliers
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_suppliers` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
+| `somcp_get_supplier` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
 | `somcp_create_supplier` | `mcp.catalog.write` | `add` on `AdminSuppliers` | write |
 | `somcp_update_supplier` | `mcp.catalog.write` | `edit` on `AdminSuppliers` | write |
 | `somcp_set_supplier_active` | `mcp.catalog.write` | `edit` on `AdminSuppliers` | write |
+
+### Catalog - Attributes
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_attributes` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
+| `somcp_get_attribute_group` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
 | `somcp_create_attribute_group` | `mcp.catalog.write` | `add` on `AdminAttributesGroups` | write |
 | `somcp_update_attribute_group` | `mcp.catalog.write` | `edit` on `AdminAttributesGroups` | write |
+| `somcp_get_attribute_value` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
 | `somcp_create_attribute_value` | `mcp.catalog.write` | `add` on `AdminAttributesGroups` | write |
 | `somcp_update_attribute_value` | `mcp.catalog.write` | `edit` on `AdminAttributesGroups` | write |
+
+### Catalog - Features
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_features` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
+| `somcp_get_feature` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
 | `somcp_create_feature` | `mcp.catalog.write` | `add` on `AdminFeatures` | write |
 | `somcp_update_feature` | `mcp.catalog.write` | `edit` on `AdminFeatures` | write |
+| `somcp_get_feature_value` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
 | `somcp_create_feature_value` | `mcp.catalog.write` | `add` on `AdminFeatures` | write |
 | `somcp_update_feature_value` | `mcp.catalog.write` | `edit` on `AdminFeatures` | write |
+
+### Catalog - Files and taxes
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_attachments` | `mcp.catalog.read` | `view` on `AdminAttachments` | read |
+| `somcp_list_tax_rules` | `mcp.catalog.read` | `view` on `AdminTaxRulesGroup` | read |
+
+### Stock
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
 | `somcp_get_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 | `somcp_list_low_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 | `somcp_set_stock_quantity` | `mcp.stock.write` | `edit` on `AdminStockManagement` | write |
+
+### Customers
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
 | `somcp_search_customers` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
 | `somcp_get_customer` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
+
+### SEO
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_get_seo_settings` | `mcp.seo.read` | `view` on `AdminMeta` | read |
+| `somcp_list_meta_pages` | `mcp.seo.read` | `view` on `AdminMeta` | read |
+| `somcp_audit_page` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_audit_product_seo` | `mcp.seo.read` | `view` on `AdminProducts` | read |
 | `somcp_audit_category_seo` | `mcp.seo.read` | `view` on `AdminCategories` | read |
 | `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |
 | `somcp_audit_brand_seo` | `mcp.seo.read` | `view` on `AdminManufacturers` | read |
 | `somcp_update_cms_seo` | `mcp.seo.write` | `edit` on `AdminCmsContent` | write |
-| `somcp_list_meta_pages` | `mcp.seo.read` | `view` on `AdminMeta` | read |
-| `somcp_get_seo_settings` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_get_robots_txt` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_generate_robots_txt` | `mcp.seo.write` | `add`, `edit` and `delete` on `AdminMeta` | write |
-| `somcp_audit_page` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running

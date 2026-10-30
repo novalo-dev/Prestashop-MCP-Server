@@ -89,6 +89,12 @@ function upgrade_module_1_1_0($module)
         if (!is_array($column) || $column === []) {
             $db->execute('ALTER TABLE `' . bqSQL($thread) . '` ADD `busy_until` DATETIME NULL DEFAULT NULL');
         }
+        // The message being answered, so a page reloaded meanwhile still
+        // shows it.
+        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($thread) . '` LIKE "pending"');
+        if (!is_array($column) || $column === []) {
+            $db->execute('ALTER TABLE `' . bqSQL($thread) . '` ADD `pending` TEXT NULL');
+        }
     }
 
     return $module->installDatabase() && $module->installTabs();

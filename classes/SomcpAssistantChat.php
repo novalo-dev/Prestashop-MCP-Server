@@ -408,10 +408,14 @@ class SomcpAssistantChat
         }
 
         $content = array_merge([new TextContent(Tools::substr($text, 0, 20000))], $blocks);
+        $names = [];
+        foreach ($files as $file) {
+            $names[] = Tools::substr(basename(str_replace('\\', '/', (string) $file['name'])), 0, 120);
+        }
 
         return $this->advance($thread, static function (Agent $agent) use ($content): AgentState {
             return $agent->chat(new UserMessage($content));
-        });
+        }, false, ['text' => $text === '(files attached)' ? '' : Tools::substr($text, 0, 20000), 'files' => $names]);
     }
 
     /**
@@ -651,7 +655,20 @@ class SomcpAssistantChat
 
         $status = 'idle';
         $actions = [];
-        $busy = $this->busy($thread);
+        $running = $this->running($thread);
+        $busy = $running !== null;
+        // The framework stores the message with the answer, at the end of the
+        // move: until then a page reloaded meanwhile would show the answer
+        // coming without the question. The copy kept on the conversation fills
+        // the gap, unless the stored one is already the last thing said - the
+        // same text sent twice in a row then shows once until the answer.
+        $asked = $running['pending'] ?? null;
+        if ($asked !== null) {
+            $last = end($messages);
+            if (!is_array($last) || $last['role'] !== 'user' || $last['text'] !== $asked['text']) {
+                $messages[] = ['role' => 'user', 'text' => $asked['text'], 'files' => $asked['files']];
+            }
+        }
         try {
             // Reading the run needs no provider: no model is called here.
             $run = $this->agent($thread, [])->inspect();
@@ -709,10 +726,13 @@ class SomcpAssistantChat
      * @param callable $move function(Agent $agent, array $assistant): ?AgentState
      * @param bool $quiet true for a step the chat asks for by itself: finding
      *                    the conversation busy is then no error to show
+     * @param array{text:string, files:array<int, string>}|null $asked the
+     *                    message this move answers, kept on the conversation
+     *                    while it runs
      *
      * @return array<string, mixed>
      */
-    private function advance(array $thread, callable $move, bool $quiet = false): array
+    private function advance(array $thread, callable $move, bool $quiet = false, ?array $asked = null): array
     {
         $assistant = $this->assistantOf($thread);
         if ($assistant === null) {
@@ -724,13 +744,22 @@ class SomcpAssistantChat
         if (!$this->claim($thread)) {
             return $this->view($thread, $quiet ? '' : self::t('The assistant is still answering. Wait for its reply.'));
         }
+        if ($asked !== null) {
+            Db::getInstance()->update(
+                'somcp_assistant_thread',
+                ['pending' => pSQL((string) json_encode($asked, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), true)],
+                '`id_thread` = ' . (int) $thread['id_thread'],
+                0,
+                true
+            );
+        }
 
         try {
             $error = $this->move($thread, $move, $assistant);
         } finally {
             Db::getInstance()->update(
                 'somcp_assistant_thread',
-                ['busy_until' => null],
+                ['busy_until' => null, 'pending' => null],
                 '`id_thread` = ' . (int) $thread['id_thread'],
                 0,
                 true
@@ -763,18 +792,31 @@ class SomcpAssistantChat
     }
 
     /**
-     * Whether a move is running on the conversation right now.
+     * The move running on the conversation right now, with the message it
+     * answers, or null when none is.
      *
      * @param array<string, mixed> $thread
      *
-     * @return bool
+     * @return array{pending: array{text:string, files:array<int, string>}|null}|null
      */
-    private function busy(array $thread): bool
+    private function running(array $thread): ?array
     {
-        return (bool) Db::getInstance()->getValue(
-            'SELECT 1 FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
+        $row = Db::getInstance()->getRow(
+            'SELECT `pending` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
             . ' WHERE `id_thread` = ' . (int) $thread['id_thread'] . ' AND `busy_until` >= NOW()'
         );
+        if (!is_array($row)) {
+            return null;
+        }
+        $pending = json_decode((string) $row['pending'], true);
+        if (!is_array($pending) || !isset($pending['text'])) {
+            return ['pending' => null];
+        }
+
+        return ['pending' => [
+            'text' => (string) $pending['text'],
+            'files' => array_values(array_map('strval', (array) ($pending['files'] ?? []))),
+        ]];
     }
 
     /**

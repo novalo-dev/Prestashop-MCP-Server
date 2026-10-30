@@ -245,6 +245,24 @@
     background: #f4f6f7;
 }
 
+/* A conversation whose answer landed while another one was on screen: a dot
+   before its title, and on the button that unfolds the list. */
+#somcp-chat .somcp-thread.somcp-unread .somcp-thread-open::before,
+#somcp-chat.somcp-has-unread .somcp-chat-menu::after {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: #25b9d7;
+    vertical-align: middle;
+}
+
+#somcp-chat.somcp-has-unread .somcp-chat-menu::after {
+    margin: 0 0 0 4px;
+}
+
 #somcp-chat .somcp-thread-open {
     flex: 1;
     min-width: 0;

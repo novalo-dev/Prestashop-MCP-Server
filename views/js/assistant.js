@@ -45,7 +45,18 @@
     // times: the server frees a conversation whose move died after 5 minutes.
     var BUSY_DELAY = 2000;
     var MAX_WAITS = 160;
-    var state = { view: null, threads: [], assistants: [], busy: false, steps: 0, waits: 0 };
+    // A conversation left while it was being answered is watched every
+    // WATCH_DELAY, up to MAX_WATCHES times, to mark it once the answer lands.
+    var WATCH_DELAY = 5000;
+    var MAX_WATCHES = 60;
+    // busy: an action of the employee is on its way (send, approve, open...).
+    // shown: the conversation on screen, the only one whose replies may
+    // replace what is drawn. ticket and round: the latest action and the
+    // latest background check; a reply to an older one is stale.
+    var state = {
+        view: null, threads: [], assistants: [], busy: false, steps: 0, waits: 0,
+        shown: '', ticket: 0, round: 0, left: {}, unread: {}, watches: 0, drawn: ''
+    };
     var panel;
     var body;
     var input;
@@ -167,21 +178,137 @@
 
     function absorb(json) {
         state.view = json.view;
-        state.threads = json.threads || [];
-        state.assistants = json.assistants || [];
-        remember(state.view ? state.view.thread_id : '');
+        state.shown = state.view ? state.view.thread_id : '';
+        delete state.unread[state.shown];
+        delete state.left[state.shown];
+        list(json);
+        remember(state.shown);
         render();
     }
 
+    // The conversation list and assistants of a reply, without touching the
+    // conversation on screen.
+    function list(json) {
+        state.threads = json.threads || [];
+        state.assistants = json.assistants || [];
+    }
+
+    // Before another conversation is opened: the checks on the one on screen
+    // stop, and if it was still being answered it is watched for its answer
+    // rather than pulled back on screen when the answer lands.
+    function leave() {
+        state.round += 1;
+        var view = state.view;
+        if (view && view.thread_id && view.status === 'working') {
+            state.left[view.thread_id] = true;
+            state.watches = 0;
+            watch();
+        }
+    }
+
+    // Reads each conversation left mid-answer, without showing it, and marks
+    // it in the list once it is no longer being answered.
+    function watch() {
+        if (state.watching || !Object.keys(state.left).length || state.watches >= MAX_WATCHES) {
+            return;
+        }
+        state.watching = true;
+        window.setTimeout(function () {
+            state.watches += 1;
+            Promise.all(Object.keys(state.left).map(function (threadId) {
+                return request('load', { thread_id: threadId }).then(function (json) {
+                    if (json.view && json.view.thread_id === threadId && json.view.status !== 'working'
+                        && state.left[threadId] && threadId !== state.shown) {
+                        delete state.left[threadId];
+                        state.unread[threadId] = true;
+                    }
+                }, function () {
+                    // Gone or unreachable: no longer watched.
+                    delete state.left[threadId];
+                });
+            })).then(function () {
+                state.watching = false;
+                drawThreads();
+                watch();
+            });
+        }, WATCH_DELAY);
+    }
+
+    // What follows a reply on the conversation on screen. A move running on
+    // the server is waited for, a step left to take is taken - both in the
+    // background: the field stays free and the page does not move.
+    function next() {
+        var view = state.view;
+        if (!view || view.status !== 'working') {
+            return;
+        }
+        if (view.busy) {
+            if (state.waits < MAX_WAITS) {
+                state.waits += 1;
+                follow(view.thread_id, BUSY_DELAY);
+            }
+            return;
+        }
+        if (state.steps < MAX_STEPS) {
+            state.steps += 1;
+            follow(view.thread_id, 0);
+        }
+    }
+
+    function follow(threadId, delay) {
+        state.round += 1;
+        var round = state.round;
+        var current = function () {
+            return round === state.round && threadId === state.shown && !state.busy;
+        };
+        window.setTimeout(function () {
+            if (!current()) {
+                return;
+            }
+            request('step', { thread_id: threadId })
+                .then(function (json) {
+                    if (!current()) {
+                        list(json);
+                        drawThreads();
+                        return;
+                    }
+                    absorb(json);
+                    next();
+                })
+                .catch(function () {
+                    if (current()) {
+                        render(text.failed);
+                    }
+                });
+        }, delay);
+    }
+
     function run(action, data) {
-        if (state.busy) {
+        // Opening, starting or deleting a conversation is never held up by a
+        // reply still on its way: that reply goes on on the server, and when
+        // it comes back it no longer replaces the conversation on screen.
+        var navigating = action === 'load' || action === 'new' || action === 'delete';
+        if (state.busy && !navigating) {
             return Promise.resolve();
         }
+        if (navigating) {
+            leave();
+            if (action === 'load') {
+                state.shown = data.thread_id || '';
+            }
+        }
+        state.ticket += 1;
+        var ticket = state.ticket;
         state.busy = true;
         render();
 
         return request(action, data)
             .then(function (json) {
+                if (ticket !== state.ticket) {
+                    list(json);
+                    drawThreads();
+                    return null;
+                }
                 state.busy = false;
                 absorb(json);
                 // A message the assistant could not answer is not kept by the
@@ -195,28 +322,15 @@
                         drawPending();
                     }
                 }
-                if (action !== 'step') {
-                    state.steps = 0;
-                    state.waits = 0;
-                }
-                if (state.view && state.view.status === 'working' && state.view.busy && state.waits < MAX_WAITS) {
-                    // Not a step of ours: the one running is waited for, and
-                    // its answer comes with the next reply.
-                    state.waits += 1;
-                    var threadId = state.view.thread_id;
-                    return new Promise(function (resolve) {
-                        window.setTimeout(resolve, BUSY_DELAY);
-                    }).then(function () {
-                        return run('step', { thread_id: threadId });
-                    });
-                }
-                if (state.view && state.view.status === 'working' && state.steps < MAX_STEPS) {
-                    state.steps += 1;
-                    return run('step', { thread_id: state.view.thread_id });
-                }
+                state.steps = 0;
+                state.waits = 0;
+                next();
                 return null;
             })
             .catch(function () {
+                if (ticket !== state.ticket) {
+                    return;
+                }
                 state.busy = false;
                 if (action === 'send' && data.text && input.value === '') {
                     input.value = data.text;
@@ -345,33 +459,35 @@
             return;
         }
         var view = state.view;
-
-        body.innerHTML = '';
-        if (!view || !view.messages.length) {
-            body.appendChild(drawMessage({ role: 'assistant', text: text.hello }));
-        }
-        if (view) {
-            view.messages.forEach(function (message) {
-                body.appendChild(drawMessage(message));
-            });
-            if (view.status === 'approval' && view.actions.length) {
-                body.appendChild(drawApproval(view.actions));
-            }
-        }
-        if (state.busy || (view && view.status === 'working')) {
-            body.appendChild(el('div', 'somcp-typing', text.working));
-        }
+        var working = state.busy || (view && view.status === 'working');
         var problem = error || (view && view.error);
-        if (problem) {
-            body.appendChild(el('div', 'somcp-error', problem));
+
+        // Drawn again only when something changed: the background checks
+        // bring the same conversation back every two seconds, and redrawing it
+        // each time made the page jump. Someone reading higher up stays there.
+        var drawn = JSON.stringify([view, working, problem, state.busy]);
+        if (drawn !== state.drawn) {
+            state.drawn = drawn;
+            drawBody(view, working, problem);
         }
-        body.scrollTop = body.scrollHeight;
 
         var waiting = view && view.status === 'approval';
-        input.disabled = state.busy || waiting;
-        sendButton.disabled = state.busy || waiting;
+        // The field stays free while an answer is coming, so the next message
+        // can be written meanwhile; only sending it waits.
+        input.disabled = waiting;
+        sendButton.disabled = working || waiting;
         drawPending();
 
+        // The picker and the list are rebuilt only when they changed too: a
+        // menu rebuilt under the pointer closes, and a click on a row being
+        // replaced is lost.
+        var choices = JSON.stringify([state.assistants, view ? view.id_assistant : 0]);
+        if (choices === state.choices) {
+            drawThreads();
+            drawSpent(view);
+            return;
+        }
+        state.choices = choices;
         picker.innerHTML = '';
         var automatic = el('option', '', text.defaultAssistant);
         automatic.value = '0';
@@ -387,19 +503,52 @@
         }
 
         drawThreads();
+        drawSpent(view);
+    }
 
-        var spentNode = foot.firstChild;
+    function drawSpent(view) {
         if (view) {
-            spentNode.textContent = view.budget > 0
+            foot.firstChild.textContent = view.budget > 0
                 ? text.spentOf.replace('%spent%', money(view.spent)).replace('%budget%', money(view.budget))
                 : text.spent.replace('%spent%', money(view.spent));
         }
+    }
+
+    function drawBody(view, working, problem) {
+        var bottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+        var top = body.scrollTop;
+        body.innerHTML = '';
+        if (!view || !view.messages.length) {
+            body.appendChild(drawMessage({ role: 'assistant', text: text.hello }));
+        }
+        if (view) {
+            view.messages.forEach(function (message) {
+                body.appendChild(drawMessage(message));
+            });
+            if (view.status === 'approval' && view.actions.length) {
+                body.appendChild(drawApproval(view.actions));
+            }
+        }
+        if (working) {
+            body.appendChild(el('div', 'somcp-typing', text.working));
+        }
+        if (problem) {
+            body.appendChild(el('div', 'somcp-error', problem));
+        }
+        body.scrollTop = bottom ? body.scrollHeight : top;
     }
 
     // The conversations, in a bar sliding in from the left of the chat: the
     // new one on top, then each conversation with its own bin.
     function drawThreads() {
         var view = state.view;
+        var drawn = JSON.stringify([state.threads, view ? view.thread_id : '', state.unread]);
+        if (drawn === state.listed) {
+            return;
+        }
+        state.listed = drawn;
+        // The list is folded most of the time: its button carries the mark too.
+        panel.classList.toggle('somcp-has-unread', Object.keys(state.unread).length > 0);
         threadList.innerHTML = '';
         var fresh = el('button', 'somcp-chat-newthread', '+ ' + text.newThread);
         fresh.type = 'button';
@@ -411,7 +560,9 @@
         var title = el('div', 'somcp-chat-threads-title', text.threads);
         threadList.appendChild(title);
         state.threads.forEach(function (thread) {
-            var row = el('div', 'somcp-thread' + (view && view.thread_id === thread.thread_id ? ' somcp-current' : ''));
+            var row = el('div', 'somcp-thread'
+                + (view && view.thread_id === thread.thread_id ? ' somcp-current' : '')
+                + (state.unread[thread.thread_id] ? ' somcp-unread' : ''));
             var open = el('button', 'somcp-thread-open', thread.title || thread.date);
             open.type = 'button';
             open.title = thread.title || thread.date;
@@ -451,7 +602,7 @@
         panel.setAttribute('aria-label', text.title);
 
         var head = el('div', 'somcp-chat-head');
-        var menu = el('button', '', '☰');
+        var menu = el('button', 'somcp-chat-menu', '☰');
         menu.type = 'button';
         menu.title = text.threads;
         menu.addEventListener('click', function () {
@@ -623,7 +774,7 @@
 
     function submit() {
         var message = input.value.trim();
-        if ((!message && !pending.length) || state.busy) {
+        if ((!message && !pending.length) || sendButton.disabled) {
             return;
         }
         var tooBig = pending.filter(function (file) {

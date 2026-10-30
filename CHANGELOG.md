@@ -94,8 +94,11 @@ office.
 the assistant was answering made the new page wait until the answer was done.
 The page now loads at once: the answer carries on in the background and
 appears in the chat - or the change waiting for approval does - when it is
-ready. The chat also stays open from one back office page to the next, in the
-same browser tab.
+ready, with your message shown above it all along. The chat also stays open
+from one back office page to the next, in the same browser tab. While an
+answer is coming you can already write the next message, and open another
+conversation without being sent back to the one being answered: that one gets
+a dot in the list of conversations when its answer is in.
 
 **The built-in assistant knows the time.** It was given the date only, so it
 greeted again in the middle of a conversation and spoke the same way morning

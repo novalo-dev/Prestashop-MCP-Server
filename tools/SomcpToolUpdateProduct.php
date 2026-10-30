@@ -1982,7 +1982,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             if ($file['source'] !== null) {
                 $refusal = self::receiveFile($file['source'], $filename);
                 if ($refusal !== '') {
-                    @unlink(_PS_DOWNLOAD_DIR_ . $filename);
+                    self::dropDownload($filename);
 
                     return $origin + ['refused' => $refusal];
                 }
@@ -1994,15 +1994,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $saved = false;
         }
         if (!$saved) {
-            if ($filename !== '') {
-                @unlink(_PS_DOWNLOAD_DIR_ . $filename);
-            }
+            self::dropDownload($filename);
 
             return $origin + ['refused' => 'the shop could not save it'];
         }
         // The old file goes once the new one is in place, as in the back office.
         if ($filename !== '' && $previous !== '' && $previous !== $filename) {
-            @unlink(_PS_DOWNLOAD_DIR_ . $previous);
+            self::dropDownload($previous);
         }
 
         return $origin + ['changed' => true];

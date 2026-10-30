@@ -3010,9 +3010,7 @@ class SomcpToolCreateProduct
             $refusal = 'the shop could not save it';
         }
         if ($refusal !== '') {
-            if ($filename !== '') {
-                @unlink(_PS_DOWNLOAD_DIR_ . $filename);
-            }
+            self::dropDownload($filename);
 
             return $origin + ['refused' => $refusal];
         }
@@ -3035,9 +3033,26 @@ class SomcpToolCreateProduct
         // The limit the back office puts on a virtual product's file, in MB.
         $maxBytes = (int) Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1048576 ?: self::IMAGE_MAX_BYTES;
 
-        return ($source['upload_ref'] ?? '') !== ''
+        return $source['upload_ref'] !== ''
             ? self::fromDeposit((string) $source['upload_ref'], $target, $maxBytes)
             : self::download((string) $source['url'], $target, $maxBytes);
+    }
+
+    /**
+     * Clears a downloadable file that was drawn a name but is not kept.
+     *
+     * A refused file may never have reached the disk (an upload_ref that
+     * matches nothing), so it is only removed when it is there.
+     *
+     * @param string $filename the name on disk, empty when none was drawn
+     *
+     * @return void
+     */
+    protected static function dropDownload(string $filename): void
+    {
+        if ($filename !== '' && is_file(_PS_DOWNLOAD_DIR_ . $filename)) {
+            @unlink(_PS_DOWNLOAD_DIR_ . $filename);
+        }
     }
 
     /**

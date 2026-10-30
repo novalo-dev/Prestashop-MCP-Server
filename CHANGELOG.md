@@ -55,6 +55,11 @@ now returns its tags as well, so they can be read, changed and written back.
 
 ### Changed
 
+**Opening line of the built-in assistant.** An empty conversation opened with
+"Hello!", whatever the time, so it said hello at eleven at night. It now opens
+with one of several lines, such as "Where shall we start?" or "Your shop is
+waiting for your instructions.", drawn at random for each new conversation.
+
 **Listing brands: the columns and filters of the Brands list.** The list of
 brands gave the identifier and name only, so a switched-off brand could not be
 told apart without opening each one. Each brand now comes with what

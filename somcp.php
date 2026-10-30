@@ -380,7 +380,17 @@ class Somcp extends Module
                 'settings' => $this->l10n('Module settings'),
                 'placeholder' => $this->l10n('Write your message...'),
                 'send' => $this->l10n('Send'),
-                'hello' => $this->l10n('Hello! What can I do for the shop?'),
+                // Several openings, one drawn at random for each empty
+                // conversation, none of them a greeting: a "good morning"
+                // shown at eleven at night read as broken.
+                'hellos' => [
+                    $this->l10n('What can I do for the shop?'),
+                    $this->l10n('Where shall we start?'),
+                    $this->l10n('How can I help you?'),
+                    $this->l10n('Shall we start a new adventure?'),
+                    $this->l10n('Your shop is waiting for your instructions.'),
+                    $this->l10n('What are we working on?'),
+                ],
                 'newThread' => $this->l10n('New conversation'),
                 'threads' => $this->l10n('Conversations'),
                 'deleteThread' => $this->l10n('Delete this conversation'),

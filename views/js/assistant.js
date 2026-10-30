@@ -55,7 +55,7 @@
     // latest background check; a reply to an older one is stale.
     var state = {
         view: null, threads: [], assistants: [], busy: false, steps: 0, waits: 0,
-        shown: '', ticket: 0, round: 0, left: {}, unread: {}, watches: 0, drawn: ''
+        shown: '', ticket: 0, round: 0, left: {}, unread: {}, watches: 0, drawn: '', openings: {}
     };
     var panel;
     var body;
@@ -514,12 +514,22 @@
         }
     }
 
+    // The opening line of an empty conversation, drawn once per conversation
+    // so it does not change each time the chat redraws it.
+    function opening(threadId) {
+        var lines = text.hellos || [];
+        if (!(threadId in state.openings)) {
+            state.openings[threadId] = lines.length ? lines[Math.floor(Math.random() * lines.length)] : '';
+        }
+        return state.openings[threadId];
+    }
+
     function drawBody(view, working, problem) {
         var bottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
         var top = body.scrollTop;
         body.innerHTML = '';
         if (!view || !view.messages.length) {
-            body.appendChild(drawMessage({ role: 'assistant', text: text.hello }));
+            body.appendChild(drawMessage({ role: 'assistant', text: opening(view ? view.thread_id : '') }));
         }
         if (view) {
             view.messages.forEach(function (message) {

@@ -1657,10 +1657,35 @@
       <source>Write your message...</source>
       <target>Écrivez votre message…</target>
     </trans-unit>
-    <!-- Hello! What can I do for the shop? -->
-    <trans-unit id="15a7e05a7d47782999e55459c9576efb" resname="Hello! What can I do for the shop?">
-      <source>Hello! What can I do for the shop?</source>
-      <target>Bonjour ! Que puis-je faire pour la boutique ?</target>
+    <!-- What can I do for the shop? -->
+    <trans-unit id="aa670ddff54665df012bc37665ce1964" resname="What can I do for the shop?">
+      <source>What can I do for the shop?</source>
+      <target>Que puis-je faire pour la boutique ?</target>
+    </trans-unit>
+    <!-- Where shall we start? -->
+    <trans-unit id="88008accb50d371d2a13dbf9422f3af0" resname="Where shall we start?">
+      <source>Where shall we start?</source>
+      <target>Par où commencer ?</target>
+    </trans-unit>
+    <!-- How can I help you? -->
+    <trans-unit id="2673bdac54e0e6296fa3a02c9b2704ac" resname="How can I help you?">
+      <source>How can I help you?</source>
+      <target>Comment puis-je vous aider ?</target>
+    </trans-unit>
+    <!-- Shall we start a new adventure? -->
+    <trans-unit id="fec3388078e8d64309dc77d9d74fe5ce" resname="Shall we start a new adventure?">
+      <source>Shall we start a new adventure?</source>
+      <target>Alors, on se lance dans une nouvelle aventure ?</target>
+    </trans-unit>
+    <!-- Your shop is waiting for your instructions. -->
+    <trans-unit id="b76e24494daef534694802bb5bcf9ff4" resname="Your shop is waiting for your instructions.">
+      <source>Your shop is waiting for your instructions.</source>
+      <target>Votre boutique attend vos instructions.</target>
+    </trans-unit>
+    <!-- What are we working on? -->
+    <trans-unit id="53210fe9b12b81f24f876af5586647d8" resname="What are we working on?">
+      <source>What are we working on?</source>
+      <target>Sur quoi travaille-t-on ?</target>
     </trans-unit>
     <!-- New conversation -->
     <trans-unit id="573ffea6fec9bfdbf9bf4f85e8562d78" resname="New conversation">

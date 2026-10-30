@@ -1307,10 +1307,30 @@ T = {
  "Écrivez votre message…",
  "Escriba su mensaje…",
  "Schreiben Sie Ihre Nachricht…"),
-"Hello! What can I do for the shop?": (
- "Bonjour ! Que puis-je faire pour la boutique ?",
- "¡Hola! ¿Qué puedo hacer por la tienda?",
- "Hallo! Was kann ich für den Shop tun?"),
+"What can I do for the shop?": (
+ "Que puis-je faire pour la boutique ?",
+ "¿Qué puedo hacer por la tienda?",
+ "Was kann ich für den Shop tun?"),
+"Where shall we start?": (
+ "Par où commencer ?",
+ "¿Por dónde empezamos?",
+ "Womit fangen wir an?"),
+"How can I help you?": (
+ "Comment puis-je vous aider ?",
+ "¿En qué puedo ayudarle?",
+ "Wie kann ich Ihnen helfen?"),
+"Shall we start a new adventure?": (
+ "Alors, on se lance dans une nouvelle aventure ?",
+ "¿Empezamos una nueva aventura?",
+ "Starten wir ein neues Abenteuer?"),
+"Your shop is waiting for your instructions.": (
+ "Votre boutique attend vos instructions.",
+ "Su tienda espera sus instrucciones.",
+ "Ihr Shop wartet auf Ihre Anweisungen."),
+"What are we working on?": (
+ "Sur quoi travaille-t-on ?",
+ "¿En qué trabajamos?",
+ "Woran arbeiten wir?"),
 "New conversation": (
  "Nouvelle conversation",
  "Nueva conversación",

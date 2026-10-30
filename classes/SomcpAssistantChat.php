@@ -960,16 +960,21 @@ class SomcpAssistantChat
     }
 
     /**
-     * The conversations of this employee on this shop, newest first: the memory
-     * reads only these, so one employee never retrieves another's.
+     * The other conversations of this employee on this shop, newest first: the
+     * memory reads only these, so one employee never retrieves another's. The
+     * one being answered is left out - it is already in the history - so
+     * whatever the memory brings back comes from an earlier conversation.
+     *
+     * @param string $current the id of the conversation being answered
      *
      * @return array<int, string>
      */
-    private function employeeThreadIds(): array
+    private function employeeThreadIds(string $current): array
     {
         $rows = Db::getInstance()->executeS(
             'SELECT `thread_id` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
             . ' WHERE `id_employee` = ' . (int) $this->employee->id . ' AND `id_shop` = ' . (int) $this->idShop
+            . ' AND `thread_id` <> \'' . pSQL($current) . '\''
             . ' ORDER BY `date_upd` DESC LIMIT ' . self::MAX_THREADS
         );
 
@@ -1209,7 +1214,7 @@ class SomcpAssistantChat
         // not - a provider and a borrowed key are enough for retrieval to build,
         // so without this the memory would read even while switched off.
         $memory = ($assistant !== [] && SomcpAssistantMemory::enabled($this->idShop))
-            ? SomcpAssistantMemory::retrieval($this->idShop, $this->employeeThreadIds())
+            ? SomcpAssistantMemory::retrieval($this->idShop, $this->employeeThreadIds((string) $thread['thread_id']))
             : null;
 
         $agent = ($memory !== null ? RAG::make() : Agent::make())
@@ -1232,7 +1237,7 @@ class SomcpAssistantChat
 
         if ($assistant !== []) {
             $agent->setAiProvider($this->provider($assistant))
-                ->setInstructions($this->instructions($assistant, $thread))
+                ->setInstructions($this->instructions($assistant, $thread, $memory !== null))
                 ->setTools($this->tools($assistant));
         }
         $agent->toolMaxRuns(self::MAX_TOOL_RUNS);
@@ -1400,10 +1405,12 @@ class SomcpAssistantChat
 
     /**
      * @param array<string, mixed> $assistant
+     * @param array<string, mixed> $thread
+     * @param bool $memory true when the memory feeds this turn
      *
      * @return string
      */
-    private function instructions(array $assistant, array $thread = []): string
+    private function instructions(array $assistant, array $thread = [], bool $memory = false): string
     {
         // Kept terse on purpose: this text is paid for on every model call.
         $shop = Somcp::legacyContext()->shop;
@@ -1452,6 +1459,14 @@ class SomcpAssistantChat
             foreach ($generated as $file) {
                 $lines[] = '- ' . $file['name'] . ', upload_ref: ' . $file['ref'];
             }
+        }
+
+        if ($memory) {
+            // The framework hands the recalled passages over with the message,
+            // labelled only with a source type and a thread id. Unframed, the
+            // model read them as the conversation in progress and carried on an
+            // old topic in a new conversation.
+            $lines[] = 'Text in <EXTRA-CONTEXT> with Source Type conversation is recalled from your past conversations with this employee, not this one. Use it only when their message needs it, say it comes from an earlier exchange, and never resume a past topic on your own.';
         }
 
         $custom = trim(SomcpAssistant::instructions());

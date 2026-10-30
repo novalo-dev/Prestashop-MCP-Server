@@ -217,6 +217,12 @@ followed could be left out of it for good, and the summary could be kept as
 if the employee had written it. The memory now picks up exactly after the last
 message it kept, and leaves the summary out.
 
+**Memory in a new conversation.** With the long-term memory on, a new
+conversation could carry on the topic of an older one, as if it were its
+continuation. The assistant now knows what it recalls comes from earlier
+conversations: it uses it only when your message calls for it and says so,
+and the conversation you are in is no longer searched as a memory of itself.
+
 **Summary shown as your message.** When a long conversation was summarized to
 keep the cost down, the summary appeared as a message from the employee,
 headed "Previous conversation summary". It now shows as a discreet

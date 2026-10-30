@@ -137,6 +137,11 @@
       <source>Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements</source>
       <target>Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements</target>
     </trans-unit>
+    <!-- Read the customers of this shop: names, email addresses, groups and what they spent -->
+    <trans-unit id="d93f8c511a82224874c7b26fa597f770" resname="Read the customers of this shop: names, email addresses, groups and what they spent">
+      <source>Read the customers of this shop: names, email addresses, groups and what they spent</source>
+      <target>Read the customers of this shop: names, email addresses, groups and what they spent</target>
+    </trans-unit>
     <!-- Outgoing HTTP requests -->
     <trans-unit id="44dc1cd9380e6350a77f6d24def569f7" resname="Outgoing HTTP requests">
       <source>Outgoing HTTP requests</source>
@@ -967,6 +972,11 @@
       <source>List low stock</source>
       <target>List low stock</target>
     </trans-unit>
+    <!-- Search customers -->
+    <trans-unit id="8c21c47c1d902c8a2a72183ab53387d3" resname="Search customers">
+      <source>Search customers</source>
+      <target>Search customers</target>
+    </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">
       <source>Change the status of an order</source>
@@ -1172,6 +1182,11 @@
       <source>Check and adjust stock</source>
       <target>Check and adjust stock</target>
     </trans-unit>
+    <!-- Find a customer -->
+    <trans-unit id="cab867c17f596a6061acb3d48ace9019" resname="Find a customer">
+      <source>Find a customer</source>
+      <target>Find a customer</target>
+    </trans-unit>
     <!-- Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in. -->
     <trans-unit id="911ba9aa6db02bd840aa72147dc37333" resname="Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.">
       <source>Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.</source>
@@ -1197,6 +1212,11 @@
       <source>See what runs low in the PrestaShop shop and set quantities, one product or combination at a time.</source>
       <target>See what runs low in the PrestaShop shop and set quantities, one product or combination at a time.</target>
     </trans-unit>
+    <!-- Find a customer of the PrestaShop shop, read their account and orders, and update it when asked. -->
+    <trans-unit id="d5c2c95f9209068bd3d99558398492f0" resname="Find a customer of the PrestaShop shop, read their account and orders, and update it when asked.">
+      <source>Find a customer of the PrestaShop shop, read their account and orders, and update it when asked.</source>
+      <target>Find a customer of the PrestaShop shop, read their account and orders, and update it when asked.</target>
+    </trans-unit>
     <!-- Order reference, number or customer name -->
     <trans-unit id="257b671f0fd599af83977738ac7c7bea" resname="Order reference, number or customer name">
       <source>Order reference, number or customer name</source>
@@ -1221,6 +1241,11 @@
     <trans-unit id="ba75fdf3c14d9e665cdcb4c037d2559f" resname="Quantity at or under which a product counts as low">
       <source>Quantity at or under which a product counts as low</source>
       <target>Quantity at or under which a product counts as low</target>
+    </trans-unit>
+    <!-- Name, email or company of the customer -->
+    <trans-unit id="232a5b0fe17bf344acfb54c0adbe9b75" resname="Name, email or company of the customer">
+      <source>Name, email or company of the customer</source>
+      <target>Name, email or company of the customer</target>
     </trans-unit>
     <!-- Send a file to your assistant -->
     <trans-unit id="bc445a0e56169dfb1aa11611f145dff9" resname="Send a file to your assistant">

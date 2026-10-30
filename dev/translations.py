@@ -117,6 +117,10 @@ T = {
  "Modifier le stock de cette boutique : régler les quantités des produits et des déclinaisons, enregistrées comme mouvements de stock",
  "Modificar el stock de esta tienda: ajustar las cantidades de los productos y de las combinaciones, registradas como movimientos de stock",
  "Den Bestand dieses Shops ändern: Mengen der Produkte und Kombinationen festlegen, als Lagerbewegungen erfasst"),
+"Read the customers of this shop: names, email addresses, groups and what they spent": (
+ "Lire les clients de cette boutique : noms, adresses e-mail, groupes et montant de leurs achats",
+ "Leer los clientes de esta tienda: nombres, direcciones de correo electrónico, grupos y lo que han gastado",
+ "Die Kunden dieses Shops lesen: Namen, E-Mail-Adressen, Gruppen und ihre Umsätze"),
 "Outgoing HTTP requests": (
  "Requêtes HTTP sortantes",
  "Peticiones HTTP salientes",
@@ -766,6 +770,10 @@ T = {
  "Lister les stocks bas",
  "Listar el stock bajo",
  "Niedrigen Bestand auflisten"),
+"Search customers": (
+ "Rechercher des clients",
+ "Buscar clientes",
+ "Kunden suchen"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",
@@ -930,6 +938,10 @@ T = {
  "Vérifier et ajuster le stock",
  "Comprobar y ajustar el stock",
  "Bestand prüfen und anpassen"),
+"Find a customer": (
+ "Trouver un client",
+ "Buscar un cliente",
+ "Einen Kunden finden"),
 "Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.": (
  "Vérifier que la connexion à la boutique PrestaShop fonctionne, et indiquer ce qu'elle atteint : quelle boutique, quel compte, dans quelle langue et quelle devise arrivent les réponses.",
  "Comprobar que la conexión con la tienda PrestaShop funciona e indicar a qué llega: qué tienda, qué cuenta, en qué idioma y moneda llegan las respuestas.",
@@ -950,6 +962,10 @@ T = {
  "Voir ce qui manque dans la boutique PrestaShop et régler les quantités, un produit ou une déclinaison à la fois.",
  "Ver lo que escasea en la tienda PrestaShop y ajustar las cantidades, un producto o una combinación cada vez.",
  "Sehen, was im PrestaShop-Shop knapp wird, und Mengen festlegen, ein Produkt oder eine Kombination nach der anderen."),
+"Find a customer of the PrestaShop shop, read their account and orders, and update it when asked.": (
+ "Trouver un client de la boutique PrestaShop, lire son compte et ses commandes, et le modifier sur demande.",
+ "Buscar un cliente de la tienda PrestaShop, leer su cuenta y sus pedidos, y modificarla cuando se pida.",
+ "Einen Kunden des PrestaShop-Shops finden, sein Konto und seine Bestellungen lesen und es auf Anfrage ändern."),
 "Order reference, number or customer name": (
  "Référence, numéro de commande ou nom du client",
  "Referencia, número de pedido o nombre del cliente",
@@ -970,6 +986,10 @@ T = {
  "Quantité à partir de laquelle un produit est considéré en stock bas",
  "Cantidad a partir de la cual un producto se considera con stock bajo",
  "Menge, ab der ein Produkt als knapp gilt"),
+"Name, email or company of the customer": (
+ "Nom, e-mail ou société du client",
+ "Nombre, correo electrónico o empresa del cliente",
+ "Name, E-Mail oder Firma des Kunden"),
 "Send a file to your assistant": (
  "Envoyer un fichier à votre assistant",
  "Enviar un archivo a su asistente",

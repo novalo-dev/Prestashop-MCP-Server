@@ -129,6 +129,7 @@ calling the shop's own addresses.
 | `somcp_get_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 | `somcp_list_low_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
 | `somcp_set_stock_quantity` | `mcp.stock.write` | `edit` on `AdminStockManagement` | write |
+| `somcp_search_customers` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
 | `somcp_audit_product_seo` | `mcp.seo.read` | `view` on `AdminProducts` | read |
 | `somcp_audit_category_seo` | `mcp.seo.read` | `view` on `AdminCategories` | read |
 | `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |

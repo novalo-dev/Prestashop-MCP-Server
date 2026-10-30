@@ -53,6 +53,9 @@ class SomcpScope
     /** @var string Changing stock: setting or moving the quantities of products and combinations. */
     public const STOCK_WRITE = 'mcp.stock.write';
 
+    /** @var string Reading customers: their accounts, as the back office lists them. */
+    public const CUSTOMERS_READ = 'mcp.customers.read';
+
     /** @var string Reading how the shop appears to search engines. */
     public const SEO_READ = 'mcp.seo.read';
 
@@ -66,7 +69,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::SEO_READ, self::SEO_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::SEO_READ, self::SEO_WRITE];
     }
 
     /**
@@ -243,6 +246,8 @@ class SomcpScope
                 return $module->l10n('Read the stock of this shop: quantities of products and combinations');
             case self::STOCK_WRITE:
                 return $module->l10n('Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements');
+            case self::CUSTOMERS_READ:
+                return $module->l10n('Read the customers of this shop: names, email addresses, groups and what they spent');
             case self::SEO_READ:
                 return $module->l10n('Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages');
             case self::SEO_WRITE:

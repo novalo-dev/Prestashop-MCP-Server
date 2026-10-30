@@ -2037,26 +2037,38 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 **Not here**: the orders themselves (→ Orders).
 
 #### `somcp_search_customers`
-**State**: draft · [issue #15](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/15)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminCustomers')` · **Scope**: `mcp.customers.read`
 
-**Does** - finds customers by name, email, company or registration date, and returns one short line each.
+**Does** - finds customers of this shop, as the list of **Customers > Customers**, with the filters of that list, and returns one short line each.
 
-**Do not use for** - reading a customer already identified (→ `somcp_get_customer`), or their orders (→ `somcp_search_orders` with `customer_email`).
+**Do not use for** - reading one customer already identified (→ `somcp_get_customer`), or their orders (→ `somcp_search_orders` with `customer_email`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `query` | string | no | name, email or company, whole or partial |
-| `date_from` / `date_to` | string | no | registration date |
-| `active` | boolean | no |  |
-| `newsletter` | boolean | no |  |
+| `query` | string | no | words matched against first name, last name, email, and company when B2B mode is on, each word in at least one of them, as the header search **Customers by name**: "doe pub@" finds John DOE |
+| `email` | string | no | exact email address |
+| `id_default_group` | integer | no | default group (**Group** filter) |
+| `id_gender` | integer | no | social title (**Social title** filter) |
+| `active` / `newsletter` / `partner_offers` | boolean | no | each left out = All, as the list |
+| `is_guest` | boolean | no | `false` registered accounts only, `true` guests only; both when left out |
+| `date_from` / `date_to` | string | no | **Registration**, YYYY-MM-DD, both included (`00:00:00` and `23:59:59`, as the grid) |
+| `sort` | string | no | `date_add` (default), `last_visit`, `sales`, `lastname`, `id_customer` |
+| `order` | string | no | `desc` (default) or `asc` |
+| `language` | string | no | ISO code of one of the shop's active languages, for the social title and group names; refused otherwise; the shop default language when left out |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per customer: `id_customer`, `name`, `email`, `company`, `date_add`, `active`, `orders_count`. Plus `total_count`.
+**Returns** - per customer: `id_customer`, `social_title` (empty when none), `firstname`, `lastname`, `email`, `company` (empty when none), `id_default_group`, `default_group` (name), `sales_tax_incl`, `sales_currency` (ISO code of the default currency), `active`, `newsletter`, `partner_offers`, `date_add` (ISO 8601), `last_visit` (ISO 8601, `null` when never), `is_guest`. Plus `returned`, `total_count`, `offset` and `language` (the ISO code the names were read in).
 
-**Notes** - the list stays plain: no address, no phone. Those come with one named customer.
+**Notes**
+- The list stays plain: no address, no phone, no birthday, no note. Those come with one named customer (`somcp_get_customer`).
+- Built with `DbQuery` on the tables and conditions of `CustomerQueryBuilder`: a customer deleted with their data kept (`deleted = 1`) is left out, as the list leaves them out. `Customer::searchByName()` is not called: it does not filter `deleted`, and takes a third argument on PrestaShop 9 only; its word-by-word condition is reproduced.
+- Shop: the customers of the token's shop (`c.id_shop`), as the grid, even in a multistore with **Share customers** on.
+- `sales_tax_incl` sums `total_paid_tax_incl / conversion_rate` of the customer's valid orders in this shop, `0` when none (the grid shows "--"). PrestaShop 8.0 sums `total_paid_real` on its **Sales** column instead, so the figure can differ from the 8.0 screen for an order not fully paid; 9.0 sums the same total as the tool.
+- `last_visit` is the latest `connections.date_add` of a visitor tied to the customer, as the **Last visit** column.
+- A read: nothing written, nothing to retry.
 
 #### `somcp_get_customer`
 **State**: draft · [issue #16](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/16)
@@ -3110,7 +3122,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-order-status-change` | Orders | written |
 | `somcp-catalogue-manage` | Catalogue | written |
 | `somcp-stock-check` | Stock | written |
-| `somcp-customer-lookup` | Customers | draft · [issue #38](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/38) |
+| `somcp-customer-lookup` | Customers | written |
 | `somcp-sales-report` | Statistics | draft · [issue #39](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/39) |
 | `somcp-content-pages` | Content | draft · [issue #40](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/40) |
 | `somcp-modules-review` | Modules | draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41) |
@@ -3149,7 +3161,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 **The guide must say** - start from `somcp_list_low_stock` or a named product; a quantity is per combination when the product has some; a `delta` moves stock and is never retried: on a lost answer, read `somcp_get_stock` first.
 
 #### `somcp-customer-lookup`
-**State**: draft · [issue #38](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/38)
+**State**: written
 **Section**: Customers · **Scope**: `mcp.customers.read` · **Permission**: `view` on `AdminCustomers`
 
 **Title** - Find a customer

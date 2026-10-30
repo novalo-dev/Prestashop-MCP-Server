@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Finding customers.** The new tool `somcp_search_customers` lists the
+customers of the shop as **Customers > Customers** does, with the filters of
+that list: name, email or company, group, social title, enabled, newsletter,
+partner offers, guest accounts and registration dates. Each line gives the
+default group, what the customer spent, their registration and their last
+visit; customers deleted with their data kept are left out, as on screen. It
+comes with a new permission to grant, reading customers, and a new guide,
+**Find a customer**, which also opens their orders.
+
 **Changing Home and the order of categories.** Changing a category used to
 refuse Home outright and could not change where a category stands in the list.
 Home can now be changed with the fields of its own form in the back office -

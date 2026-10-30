@@ -352,14 +352,15 @@ class SomcpToolSearchCustomers
      * [id_lang, iso], or null for a code the shop does not have.
      *
      * Left out, it is the shop default rather than the context language, which
-     * on an MCP call follows the client's browser header.
+     * on an MCP call follows the client's browser header. Public so the other
+     * customer tools read their names in the same language for the same input.
      *
      * @param array<string, mixed> $arguments
      * @param int $idShop
      *
      * @return array{0: int, 1: string}|null
      */
-    private static function language(array $arguments, int $idShop): ?array
+    public static function language(array $arguments, int $idShop): ?array
     {
         if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
             $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
@@ -375,13 +376,14 @@ class SomcpToolSearchCustomers
     }
 
     /**
-     * A database date as ISO 8601, or null when there is none.
+     * A database date as ISO 8601, or null when there is none. Public so every
+     * customer tool gives its dates in the same form.
      *
      * @param mixed $value
      *
      * @return string|null
      */
-    private static function isoDate($value): ?string
+    public static function isoDate($value): ?string
     {
         if (!is_string($value) || $value === '' || strpos($value, '0000-00-00') === 0) {
             return null;

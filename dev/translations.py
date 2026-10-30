@@ -774,6 +774,10 @@ T = {
  "Rechercher des clients",
  "Buscar clientes",
  "Kunden suchen"),
+"Get a customer": (
+ "Lire un client",
+ "Leer un cliente",
+ "Einen Kunden abrufen"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",

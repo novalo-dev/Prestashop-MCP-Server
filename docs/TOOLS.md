@@ -2071,23 +2071,49 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 - A read: nothing written, nothing to retry.
 
 #### `somcp_get_customer`
-**State**: draft · [issue #16](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/16)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminCustomers')` · **Scope**: `mcp.customers.read`
 
-**Does** - returns everything about one customer: account, groups, addresses, and a summary of their orders.
+**Does** - returns everything the page of one customer shows, **Customers > Customers > View**: account, groups, addresses, orders, carts, purchased and viewed products, vouchers, messages, last emails and last connections.
 
-**Do not use for** - looking for customers (→ `somcp_search_customers`).
+**Do not use for** - looking for customers (→ `somcp_search_customers`), or reading one order of theirs (→ `somcp_get_order`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_customer` | integer | one of the two |  |
-| `email` | string | one of the two | exact |
+| `id_customer` | integer | one of the two | from `somcp_search_customers` or `somcp_get_order`; used first when both are given |
+| `email` | string | one of the two | exact; an email shared by several accounts of the shop (a guest and a registered account) is refused with the `id_customer` of each |
+| `language` | string | no | ISO code of one of the shop's active languages, for the social title, group, country, order status and product names; refused otherwise; the shop default language when left out |
 
-**Returns** - `customer` (name, email, birthday, company, groups, newsletter, optin, active, dates), `addresses`, `orders` (count, total spent, last order), `messages_count`.
+A customer of another shop, or deleted with their data kept (`deleted = 1`), answers as unknown: `No customer <id> in this shop. Find one with somcp_search_customers.`
 
-**Notes** - never the password hash, the secure key or the reset token.
+**Returns**
+- `customer`: `id_customer`, `firstname`, `lastname`, `email`, `id_gender`, `social_title`, `birthday` (`YYYY-MM-DD`, `null` when none), `age` (`null` when no birthday), `date_add`, `last_visit` (`null` when never), `customer_language` (ISO code of the language the customer uses), `newsletter`, `newsletter_date_add`, `partner_offers`, `date_upd`, `active`, `is_guest`, `private_note` (as `somcp_get_order` names it), and the B2B fields, always given and empty when unset: `company`, `siret`, `ape`, `website`, `allowed_outstanding_amount` with `currency` (the default currency), `max_payment_days`, `id_risk`, `risk`.
+- `groups`: each `id_group`, `name`, `default`.
+- `addresses`: each `id_address`, `alias`, `company`, `firstname`, `lastname`, `address1`, `address2`, `postcode`, `city`, `state`, `country`, `country_iso`, `phone`, `phone_mobile`, `vat_number`, `dni`, `other` (the names of the addresses of `somcp_get_order`).
+- `orders`: `count`, `valid_count`, `valid_total_tax_incl` with `currency` (**for a total amount of**, `SUM(total_paid_tax_incl / conversion_rate)` of the valid orders, in the default currency), `invalid_count`, `sales_rank` (`null` with no valid order), and `latest`, the 10 newest: `id_order`, `reference`, `date_add`, `payment`, `status` (`id_order_state`, `name`), `products_count` (units ordered), `total_paid_tax_incl`, `currency` (the order's). More with `somcp_search_orders` (`customer_email`).
+- `carts`: `count` and `latest`, the 10 newest: `id_cart`, `date_add`, `carrier`, `total_tax_incl` (`null` when the cart cannot be priced any more), `currency`, `id_order` (`null` when not ordered).
+- `purchased_products`: the 10 newest order lines, every order valid or not: `date_add`, `id_order`, `valid`, `id_product`, `id_product_attribute`, `name` (with its combination), `quantity`.
+- `viewed_products`: the 10 product pages most recently visited: `id_product`, `name`.
+- `vouchers`: the cart rules reserved to this customer, each `id_cart_rule`, `name`, `code`, `quantity`, `date_to`, `active`.
+- `messages_count`: the customer's messages (`CustomerThread::getCustomerMessages()`).
+- `last_emails`: the 10 newest, each `date_add`, `template`, `subject`, `language`.
+- `last_connections`: the 10 newest, each `date_add`, `pages_viewed`, `total_time`, `origin` (the referrer), `ip_address`.
+
+Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
+
+**Notes**
+- A detail gives everything, because one named customer was asked for. Never the password hash, `secure_key`, `reset_password_token` or `reset_password_validity`, which the page does not show either.
+- The **Wishlist** block comes from the `blockwishlist` module, not the core: left out.
+- Read only: the private note, the groups and the account are written by `somcp_update_customer`.
+- `sales_rank` counts, as the page's handler, the customers whose valid orders sum a higher `total_paid_real`, within this shop.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0**
+- **Valid orders: for a total amount of**: 8.0.1 sums `total_paid_real`, 9.0.0 `total_paid_tax_incl`; the tool returns the tax included total on both, as `somcp_search_customers` does for **Sales**.
+- **Purchased products**: 8.0.1 lists the valid orders only, 9.0.0 every order; the tool lists every order's lines on both, with `valid`. **Viewed products** is shown on 8.0.1 only; returned on both.
+- 9.0.0 shows **Customer type** (`is_guest`, returned on both) and marks the default group.
 
 #### `somcp_create_customer`
 **State**: draft · [issue #17](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/17)

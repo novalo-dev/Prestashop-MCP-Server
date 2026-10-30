@@ -977,6 +977,11 @@
       <source>Search customers</source>
       <target>Search customers</target>
     </trans-unit>
+    <!-- Get a customer -->
+    <trans-unit id="15c2a7ef751744ce1c5381a10f559813" resname="Get a customer">
+      <source>Get a customer</source>
+      <target>Get a customer</target>
+    </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">
       <source>Change the status of an order</source>

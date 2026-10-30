@@ -7,6 +7,7 @@ Never answer from memory or from an earlier answer: accounts change.
 
 - `somcp_ping`
 - `somcp_search_customers`
+- `somcp_get_customer`
 - `somcp_search_orders`
 
 ## Know which shop you are in
@@ -28,8 +29,13 @@ customers between shops.
    each (name, email, registration date) and let the merchant pick. Never
    choose one for them. Read the next page while `total_count` says there is
    more, before saying that is all.
-3. **Their orders.** Read them with `somcp_search_orders`, passing the
-   customer's email as `customer_email`.
+3. **Their account.** Read the one picked with `somcp_get_customer`, by its
+   `id_customer`: addresses, groups, private note, the newest orders and
+   carts, vouchers, last emails and connections. An email shared by several
+   accounts is refused with the `id_customer` of each: ask which one.
+4. **More orders.** `somcp_get_customer` gives the 10 newest; read the others
+   with `somcp_search_orders`, passing the customer's email as
+   `customer_email`.
 
 ## Reading the list
 
@@ -38,6 +44,9 @@ customers between shops.
 - `sales_tax_incl` is what the customer spent in valid orders, tax included, in
   `sales_currency`. Say both.
 - `last_visit` is `null` when the customer never came back after registering.
+- In `somcp_get_customer`, `orders.valid_total_tax_incl` is in `orders.currency`
+  (the default currency), each order's total in its own `currency`.
+  `purchased_products` lists every order's lines: `valid` says which counted.
 - Filters follow the Customers list of the back office: `active`, `newsletter`,
   `partner_offers`, `id_default_group`, `id_gender`, and the registration dates
   `date_from` and `date_to`.
@@ -47,6 +56,8 @@ customers between shops.
 - Give only what the merchant asked for: an email address or a name stays in
   the answer it was asked for, and is not repeated elsewhere.
 - No password ever goes through the conversation.
+- The IP addresses of `last_connections` are personal data: give them only
+  when asked.
 
 ## Do not use when
 

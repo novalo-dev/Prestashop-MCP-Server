@@ -27,6 +27,15 @@ visit; customers deleted with their data kept are left out, as on screen. It
 comes with a new permission to grant, reading customers, and a new guide,
 **Find a customer**, which also opens their orders.
 
+**Reading a customer.** The new tool `somcp_get_customer` reads one customer
+as their page in **Customers > Customers** shows it: the account with its
+private note and B2B fields, groups, addresses, a summary of the orders with
+the newest ones, carts, purchased and viewed products, the vouchers reserved
+to them, messages, last emails and last connections. Ask for them by
+identifier or by email; an email shared by several accounts is refused with
+the identifier of each, so the right person is picked. The guide **Find a
+customer** now opens it.
+
 **Changing Home and the order of categories.** Changing a category used to
 refuse Home outright and could not change where a category stands in the list.
 Home can now be changed with the fields of its own form in the back office -

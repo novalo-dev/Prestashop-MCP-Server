@@ -1,0 +1,21 @@
+{
+  "calls": [
+    {"why": "the names, social title, birthday and private note of the first customer, whoever the demo data made it", "arguments": {"id_customer": 1, "firstname": "Somcp", "lastname": "Updated", "id_gender": 1, "birthday": "1985-03-12", "private_note": "Shop test: prefers morning delivery."}, "expect": "ok", "contains": ["\"changed\": true", "\"id_customer\": 1", "\"field\": \"firstname\"", "\"new\": \"Somcp\"", "\"lastname\": \"Updated\"", "\"birthday\": \"1985-03-12\"", "\"private_note\": \"Shop test: prefers morning delivery.\""]},
+    {"why": "the same values again change nothing", "arguments": {"id_customer": 1, "firstname": "Somcp", "lastname": "Updated", "id_gender": 1, "birthday": "1985-03-12", "private_note": "Shop test: prefers morning delivery."}, "expect": "ok", "contains": ["\"changed\": false", "Nothing was written"]},
+    {"why": "the newsletter switched on", "arguments": {"id_customer": 1, "newsletter": true, "partner_offers": true}, "expect": "any", "contains": []},
+    {"why": "the newsletter switched off clears its date", "arguments": {"id_customer": 1, "newsletter": false}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"newsletter\"", "\"newsletter\": false", "\"newsletter_date_add\": null"]},
+    {"why": "the birthday, the social title and the note cleared", "arguments": {"id_customer": 1, "birthday": null, "id_gender": 0, "private_note": ""}, "expect": "ok", "contains": ["\"changed\": true", "\"birthday\": null", "\"id_gender\": 0", "\"private_note\": \"\""]},
+    {"why": "every group of a standard shop, the Customer group as default", "arguments": {"id_customer": 1, "group_ids": [1, 2, 3], "id_default_group": 3}, "expect": "ok", "contains": ["\"id_customer\": 1"]},
+    {"why": "a default group outside the groups after the change", "arguments": {"id_customer": 1, "group_ids": [3], "id_default_group": 1}, "expect": "error", "contains": ["Nothing was changed", "id_default_group: 1 must be one of the customer's groups after the change (3)"]},
+    {"why": "a group the shop does not have", "arguments": {"id_customer": 1, "group_ids": [999999]}, "expect": "error", "contains": ["group_ids: 999999 is not a group of this shop"]},
+    {"why": "the email of the registered account somcp_create_customer made", "arguments": {"id_customer": 1, "email": "somcp-create-1@example.com"}, "expect": "error", "contains": ["email: already used by the registered account id_customer"]},
+    {"why": "a name with digits and an email that is not one", "arguments": {"id_customer": 1, "firstname": "Somcp2", "email": "not an email"}, "expect": "error", "contains": ["firstname: required, letters", "email: required, a valid email address"]},
+    {"why": "a social title the shop does not have, refused with the list", "arguments": {"id_customer": 1, "id_gender": 99}, "expect": "error", "contains": ["id_gender: not a social title of this shop, which has "]},
+    {"why": "a birthday in another format", "arguments": {"id_customer": 1, "birthday": "12/03/1985"}, "expect": "error", "contains": ["birthday: a date in the past, YYYY-MM-DD"]},
+    {"why": "B2B fields while B2B mode is off, as on a fresh shop", "arguments": {"id_customer": 1, "company": "Somcp Ltd", "max_payment_days": 30}, "expect": "error", "contains": ["company, max_payment_days: B2B fields, taken only when B2B mode is on"]},
+    {"why": "a boolean given as a string", "arguments": {"id_customer": 1, "active": "false"}, "expect": "error", "contains": ["active: true or false"]},
+    {"why": "a private note with a script", "arguments": {"id_customer": 1, "private_note": "<script>alert(1)</script>"}, "expect": "error", "contains": ["private_note: a text, without HTML tags or scripts"]},
+    {"why": "the guest flag, a computed field and a field this tool does not know", "arguments": {"id_customer": 1, "is_guest": true, "date_add": "2020-01-01", "password": "secret"}, "expect": "error", "contains": ["is_guest: worked out by the shop or changed elsewhere", "date_add: worked out by the shop", "password: not a field of this tool"]},
+    {"why": "a customer that does not exist", "arguments": {"id_customer": 999999, "firstname": "Somcp"}, "expect": "error", "contains": ["No customer 999999 in this shop. Find one with somcp_search_customers."]}
+  ]
+}

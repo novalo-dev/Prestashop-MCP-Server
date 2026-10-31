@@ -646,10 +646,14 @@ T = {
  "Créer un client",
  "Crear un cliente",
  "Einen Kunden anlegen"),
-"Change the customers of this shop: create customer accounts": (
- "Modifier les clients de cette boutique : créer des comptes clients",
- "Modificar los clientes de esta tienda: crear cuentas de cliente",
- "Die Kunden dieses Shops ändern: Kundenkonten anlegen"),
+"Change a customer": (
+ "Modifier un client",
+ "Modificar un cliente",
+ "Einen Kunden ändern"),
+"Change the customers of this shop: create and edit customer accounts": (
+ "Modifier les clients de cette boutique : créer et modifier des comptes clients",
+ "Modificar los clientes de esta tienda: crear y modificar cuentas de cliente",
+ "Die Kunden dieses Shops ändern: Kundenkonten anlegen und bearbeiten"),
 "Create a supplier": (
  "Créer un fournisseur",
  "Crear un proveedor",

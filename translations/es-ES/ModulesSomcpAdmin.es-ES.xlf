@@ -817,10 +817,15 @@
       <source>Create a customer</source>
       <target>Crear un cliente</target>
     </trans-unit>
-    <!-- Change the customers of this shop: create customer accounts -->
-    <trans-unit id="ca39b9ed375d85262cf0bb66a6a64d40" resname="Change the customers of this shop: create customer accounts">
-      <source>Change the customers of this shop: create customer accounts</source>
-      <target>Modificar los clientes de esta tienda: crear cuentas de cliente</target>
+    <!-- Change a customer -->
+    <trans-unit id="0779af6732b299a0fcd514f3723c3e72" resname="Change a customer">
+      <source>Change a customer</source>
+      <target>Modificar un cliente</target>
+    </trans-unit>
+    <!-- Change the customers of this shop: create and edit customer accounts -->
+    <trans-unit id="3d5015d706bfc2e7af6f198d5b27422d" resname="Change the customers of this shop: create and edit customer accounts">
+      <source>Change the customers of this shop: create and edit customer accounts</source>
+      <target>Modificar los clientes de esta tienda: crear y modificar cuentas de cliente</target>
     </trans-unit>
     <!-- Create a supplier -->
     <trans-unit id="63ea2652f1e2b02ae526b7a3777d682f" resname="Create a supplier">

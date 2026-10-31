@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Changing a customer.** The new tool `somcp_update_customer` changes one
+customer account, as Customers > Customers > Edit does: name, email, social
+title, birthday, enabled, partner offers, newsletter, groups and default
+group, the private note of the customer page, and the B2B fields when B2B mode
+is on. Only the fields given change, the answer lists each one with its old and
+new value, and a call that changes nothing writes nothing. The password is
+never touched. It needs the permission `mcp.customers.write` and the `edit`
+right on the back office Customers page.
+
 **Creating a customer.** The new tool `somcp_create_customer` creates one
 customer account, as Customers > Customers > Add new customer does: name,
 email, guest account, social title, birthday, enabled, partner offers,

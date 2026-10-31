@@ -252,7 +252,7 @@ class SomcpScope
             case self::CUSTOMERS_READ:
                 return $module->l10n('Read the customers of this shop: names, email addresses, groups and what they spent');
             case self::CUSTOMERS_WRITE:
-                return $module->l10n('Change the customers of this shop: create customer accounts');
+                return $module->l10n('Change the customers of this shop: create and edit customer accounts');
             case self::SEO_READ:
                 return $module->l10n('Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages');
             case self::SEO_WRITE:

@@ -10,7 +10,8 @@
     "somcp_search_customers",
     "somcp_get_customer",
     "somcp_search_orders",
-    "somcp_create_customer"
+    "somcp_create_customer",
+    "somcp_update_customer"
   ],
   "controller": "AdminCustomers",
   "action": "view",

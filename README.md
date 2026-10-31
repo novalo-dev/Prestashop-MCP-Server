@@ -85,8 +85,10 @@ security log, help and updates, and the chat.
 
 The shop has to be reachable over **HTTPS**, with **friendly URLs** enabled, and
 installed at the **root of its domain**: OAuth anchors one of its discovery
-documents there. The diagnostic button in the settings checks all of this by
-calling the shop's own addresses.
+documents there. The diagnostic button in the settings checks the friendly URLs,
+the location and the addresses an assistant calls, from the outside. The full
+list of requirements is on the
+[wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki#requirements).
 
 ## Tools
 
@@ -254,8 +256,8 @@ changing an order status, managing products, checking stock, and auditing SEO. D
 
 3. Copy the **address to give to your assistant**. It looks like
    `https://your-shop.example/module/somcp/mcp`.
-4. Press **Run the diagnostic**. Every line should be green before you connect a
-   client.
+4. Press **Run the diagnostic**. No line should be red before you connect an
+   assistant; a warning, such as a shop in maintenance, does not stop it.
 
 A local shop needs a public HTTPS address for an MCP client to reach it: use a
 tunnel such as `cloudflared` or `ngrok` and set the shop's domain to it.
@@ -272,23 +274,18 @@ the shop's MCP address, shown on the module's configuration page. The ones
 below can. Where to paste the address in each of them:
 [Connect an assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant).
 
-| Assistant | Type |
-|---|---|
-| Claude (web, desktop, mobile) | Chat |
-| ChatGPT | Chat |
-| Le Chat (Mistral) | Chat |
-| Dust | Team chat |
-| Claude Code | Command line |
-| Codex (OpenAI) | Command line |
-| Gemini CLI (Google) | Command line |
-| GitHub Copilot CLI | Command line |
-| Cursor | Code editor |
-| VS Code (GitHub Copilot) | Code editor |
-| Windsurf (Devin Desktop) | Code editor |
-| Zed | Code editor |
-| n8n Cloud | Automation |
-| n8n self-hosted | Automation |
-| Make | Automation |
+- **Chat:** [Claude](https://claude.ai) (web, desktop, mobile),
+  [ChatGPT](https://chatgpt.com), [Le Chat](https://chat.mistral.ai) (Mistral),
+  [Dust](https://dust.tt)
+- **Command line:** [Claude Code](https://claude.com/product/claude-code),
+  [Codex](https://openai.com/codex/) (OpenAI),
+  [Gemini CLI](https://geminicli.com) (Google),
+  [GitHub Copilot CLI](https://github.com/features/copilot/cli)
+- **Code editor:** [Cursor](https://cursor.com),
+  [VS Code](https://code.visualstudio.com) (GitHub Copilot),
+  [Windsurf](https://devin.ai/desktop) (Devin Desktop), [Zed](https://zed.dev)
+- **Automation:** [n8n](https://n8n.io) (Cloud and self-hosted),
+  [Make](https://www.make.com)
 
 ## Security model
 
@@ -314,6 +311,9 @@ Found a vulnerability? Please do not open an issue: see [SECURITY.md](SECURITY.m
 
 ## Documentation
 
+- [Wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki): the module
+  documentation for merchants - requirements, installation, configuration,
+  connecting an assistant and the built-in assistant.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how a request travels through
   the module, OAuth, MCP, multistore, data.
 - [docs/EXTENDING.md](docs/EXTENDING.md): publish tools and prompts from your

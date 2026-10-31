@@ -28,6 +28,12 @@ each other. The prompt **Change an order status** names it too.
 
 ### Changed
 
+**Meet our contributors: wider cards.** On the cards after the top
+contributor, the number of contributions and the share of the commits were
+cut over four short lines. Every card now has the width of the top one, so
+each keeps to a line, and the others come six at a time with Previous and
+Next.
+
 **The list of files shows descriptions and can be filtered.**
 `somcp_list_attachments` now returns the **Description** of each file beside
 its name, which tells two manuals or two data sheets apart, and filters on

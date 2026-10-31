@@ -495,7 +495,8 @@
 }
 
 /* Meet our contributors: one row that never wraps - the top contributor,
-   then a page of nine, then the link to everyone past ten. */
+   then a page of six, then the link to everyone past seven. Every card has
+   the width of the top one, so a count and a share each keep to one line. */
 .somcp .somcp-contributors {
     display: flex;
     flex-wrap: nowrap;
@@ -509,11 +510,11 @@
     box-sizing: border-box;
     display: flex;
     /* Narrower screens shrink the cards rather than cut the last one off. */
-    flex: 0 1 84px;
+    flex: 0 1 112px;
     flex-direction: column;
-    min-width: 64px;
+    min-width: 88px;
     align-items: center;
-    width: 84px;
+    width: 112px;
     padding: 8px 4px;
     border: 1px solid #dbe6e9;
     border-radius: 4px;

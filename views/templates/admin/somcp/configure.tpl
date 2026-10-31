@@ -871,8 +871,8 @@
     {if $somcp_contributors}
         {* The first card goes to whoever has contributed the most, read from
            GitHub each time: the place follows the work, not a title. The
-           others are paged nine at a time so the row never wraps, and past
-           ten people the last slot links to GitHub's full list. *}
+           others are paged six at a time so the row never wraps, and past
+           seven people the last slot links to GitHub's full list. *}
         {assign var=somcp_people value=$somcp_contributors|@count}
         <div class="panel">
             <div class="panel-heading"><i class="icon-group"></i> {l s='Meet our contributors' d='Modules.Somcp.Admin'}</div>
@@ -900,7 +900,7 @@
                 </div>
                 {if $smarty.foreach.people.first && $somcp_people > 1}<div class="somcp-contributors-sep"></div>{/if}
             {/foreach}
-            {if $somcp_people > 10}
+            {if $somcp_people > 7}
                 <a class="somcp-contributor somcp-contributor-all" href="{$somcp_repository|escape:'html':'UTF-8'}/graphs/contributors" target="_blank" rel="noopener noreferrer">
                     <span class="somcp-contributor-total">{$somcp_people|intval}</span>
                     {l s='See all contributors' d='Modules.Somcp.Admin'} <i class="icon-external-link"></i>
@@ -911,7 +911,7 @@
                 <a class="btn btn-default" href="{$somcp_repository|escape:'html':'UTF-8'}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">
                     <i class="icon-code-fork"></i> {l s='Become a contributor' d='Modules.Somcp.Admin'}
                 </a>
-                <div class="somcp-tools-nav" data-somcp-pager="9" hidden>
+                <div class="somcp-tools-nav" data-somcp-pager="6" hidden>
                     <button type="button" class="btn btn-default btn-sm" data-somcp-page="-1">
                         &laquo; {l s='Previous' d='Modules.Somcp.Admin'}
                     </button>

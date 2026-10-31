@@ -92,22 +92,21 @@ abstract class SomcpSettingsController extends ModuleAdminController
 
         $this->page_header_toolbar_title = $this->module->displayName;
 
-        // A link to the sponsor page that opens the thank-you window instead
-        // when the browser can show it: the window is drawn by the page, the
-        // button by PrestaShop, and this onclick is the only thing PrestaShop
-        // lets a button carry on both 8 and 9.
+        // A plain link to the sponsor page. The settings script turns a click
+        // on it into the thank-you window, finding it by this address: since
+        // PrestaShop 8.1 the header rebuilds every button and overwrites its
+        // imgclass with its class, so neither the id nor an onclick can be
+        // relied on, while the href is printed as given on every version.
         $this->page_header_toolbar_btn['somcp_sponsor'] = [
             'href' => Somcp::SPONSOR_URL,
             'desc' => $this->module->l10n('Support us'),
             // The class PrestaShop gives its own Help button, so the two sit
             // side by side as one pair rather than one shouting over the other.
             'class' => 'btn-outline-secondary',
-            // Named explicitly: both header templates build the button id
-            // from it, and the stylesheet finds the button by that id. Left
-            // out, the legacy template took the class instead.
-            'imgclass' => 'somcp_sponsor',
+            // Printed by the header template itself, in the icon font of the
+            // back office, as its own buttons are.
+            'icon' => 'icon-heart',
             'target' => true,
-            'js' => "var d=document.querySelector('[data-somcp-sponsor]');if(d&&d.showModal){d.showModal();return false;}",
         ];
 
         parent::initPageHeaderToolbar();

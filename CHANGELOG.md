@@ -58,6 +58,14 @@ Before, it gave only identifiers and names, and on PrestaShop 9 listed the
 values in another order than the back office. `somcp_get_feature_value` also
 gives the position of the value on PrestaShop 9.
 
+### Fixed
+
+**Support us button on PrestaShop 8.1 and later.** The button opened GitHub
+straight away instead of the thank-you window, and showed no icon, because
+PrestaShop rebuilds the buttons of the page header and dropped what the module
+gave this one. It now opens the window on every version, with a heart in front
+of its label drawn the way PrestaShop draws the icons of its own buttons.
+
 ## 1.1.2 - 2026-10-31
 
 ### Added

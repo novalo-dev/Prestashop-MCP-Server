@@ -38,14 +38,6 @@
     display: inline;
 }
 
-/* The Support us button of the page header, drawn by PrestaShop outside this
-   module's markup (hence the selector on its id). The legacy header template
-   puts an icon box above every label, and the Help button beside it has none:
-   the box goes, so the two read as a pair. */
-[id$="-somcp_sponsor"] > i {
-    display: none;
-}
-
 /* A native dialog dressed as the back office modal. Its own box is cleared so
    only modal-content draws the frame. */
 .somcp .somcp-sponsor {

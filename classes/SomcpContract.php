@@ -154,7 +154,7 @@ class SomcpContract
 
         $scopes = self::qualifiedScopes($definition['scopes'] ?? [], $module);
         if ($scopes === null) {
-            return self::refused('tool_declaration_refused', $module, $name, 'its scopes are not a list of names');
+            return self::refused('tool_declaration_refused', $module, $name, 'its scopes are not a list of names of its own');
         }
         // Every tool of this server sits behind the basic connection scope.
         // A declaration listing none of its own would otherwise be reachable
@@ -219,7 +219,7 @@ class SomcpContract
         $acts = self::acts($definition['permission'] ?? null);
         $arguments = self::arguments($definition['arguments'] ?? []);
         if ($scopes === null || $acts === null || $arguments === null) {
-            return self::refusedPrompt($module, $name, 'its scopes, its permission or its arguments are malformed');
+            return self::refusedPrompt($module, $name, 'its scopes are not its own, or its permission or its arguments are malformed');
         }
 
         $tools = [];
@@ -431,13 +431,16 @@ class SomcpContract
      *
      * A name the module already wrote in full - mcp.mymodule.tickets.read -
      * is taken as it is, so a module can move to arrays without rewriting
-     * every scope it already uses. Whether it was declared is the registry's
-     * check, made for objects and arrays alike.
+     * every scope it already uses. Only under its own prefix, though: the
+     * registry accepts any core scope, so a full name left unchecked would let
+     * a module require mcp.orders.read and slip its tool behind a consent line
+     * the merchant gave for somcp's own tools. Whether the scope was declared
+     * is the registry's check, made for objects and arrays alike.
      *
      * @param mixed $scopes
      * @param string $module
      *
-     * @return array<int, string>|null null when the value is not a list of names
+     * @return array<int, string>|null null when the value is not a list of the module's own names
      */
     private static function qualifiedScopes($scopes, string $module): ?array
     {
@@ -445,6 +448,10 @@ class SomcpContract
             return null;
         }
 
+        $own = SomcpToolRegistry::scopePrefix($module);
+        if ($own === '') {
+            return null;
+        }
         $qualified = [];
         foreach ($scopes as $scope) {
             if (!is_string($scope) || trim($scope) === '') {
@@ -453,7 +460,9 @@ class SomcpContract
             $full = strncmp($scope, 'mcp.', 4) === 0
                 ? $scope
                 : SomcpToolRegistry::qualifyScope($scope, $module);
-            if ($full === '') {
+            // mcp.access is added to every tool anyway, so writing it out
+            // borrows nothing.
+            if ($full === '' || ($full !== SomcpScope::ACCESS && strncmp($full, $own, strlen($own)) !== 0)) {
                 return null;
             }
             $qualified[] = $full;

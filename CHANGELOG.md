@@ -52,6 +52,16 @@ ChatGPT or Le Chat, and the README keeps the one full list of compatible
 assistants, with the page where each AI provider of the built-in assistant
 gives out its API keys.
 
+### Security
+
+**A module's tools only ask for its own permissions.** A module publishing
+tools or prompts through somcp could have them require one of somcp's own
+permissions, such as reading the orders, and declare no back office right. The
+merchant was then never asked about that module on the consent screen, and an
+employee without access to the Orders page could still use its tools. A tool or
+prompt that asks for a permission its module did not declare is now refused and
+noted in the somcp log.
+
 ## 1.1.0 - 2026-10-31
 
 ### Added

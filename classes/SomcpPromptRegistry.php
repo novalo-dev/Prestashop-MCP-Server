@@ -83,11 +83,13 @@ class SomcpPromptRegistry
      */
     public function register(SomcpPrompt $prompt): bool
     {
-        $unknown = array_diff(
-            $prompt->getRequiredScopes(),
-            SomcpScope::core(),
-            array_keys(SomcpToolRegistry::getInstance()->declaredScopes())
-        );
+        // Same rule as for tools: another module leans on its own scopes and
+        // the connection scope, never on a core one it did not declare.
+        $tools = SomcpToolRegistry::getInstance();
+        $allowed = $this->registering === ''
+            ? array_merge(SomcpScope::core(), array_keys($tools->declaredScopes()))
+            : array_merge([SomcpScope::ACCESS], $tools->scopesOf($this->registering));
+        $unknown = array_diff($prompt->getRequiredScopes(), $allowed);
         if ($unknown !== []) {
             self::refuse('prompt_scope_unknown', $prompt->getName() . ' asks for ' . implode(' ', $unknown));
 

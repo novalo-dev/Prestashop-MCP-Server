@@ -83,7 +83,9 @@ Declare your own scopes rather than reusing somcp's (`mcp.access`,
 `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`, `mcp.stock.read`, `mcp.stock.write`, `mcp.seo.read`, `mcp.seo.write`). Someone who let an assistant read their
 orders has not let it read their customers, and the consent screen has to be
 able to ask the two questions separately. A module cannot declare a name that
-belongs to somcp: it is refused and logged.
+belongs to somcp, nor give a tool or a prompt a full name outside its own
+prefix (`mcp.orders.read`, or another module's `mcp.othermodule.x`): either is
+refused and logged.
 
 Every tool and prompt you publish also requires `mcp.access`, the scope every
 token carries. somcp adds it for you.

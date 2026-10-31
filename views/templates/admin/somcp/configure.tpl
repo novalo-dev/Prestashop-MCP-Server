@@ -882,7 +882,7 @@
                 <div class="somcp-contributor{if $smarty.foreach.people.first} somcp-contributor-top{/if}"{if !$smarty.foreach.people.first} data-somcp-paged{/if}>
                     <a href="{$person.profile|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer" title="{$person.login|escape:'html':'UTF-8'}">
                     {if $person.avatar}
-                        <img src="{$person.avatar|escape:'html':'UTF-8'}" alt="" width="{if $smarty.foreach.people.first}48{else}40{/if}" height="{if $smarty.foreach.people.first}48{else}40{/if}" loading="lazy" referrerpolicy="no-referrer">
+                        <img src="{$person.avatar|escape:'html':'UTF-8'}" alt="" width="48" height="48" loading="lazy" referrerpolicy="no-referrer">
                     {/if}
                         <span class="somcp-contributor-name">{$person.login|escape:'html':'UTF-8'}</span>
                     </a>

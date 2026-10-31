@@ -52,10 +52,11 @@ multistore boundary, and the contract with other modules first.
 ## Clients
 
 The clients the module works with are listed once, under
-[Compatible clients](README.md#compatible-clients) in the README. Wanted:
+[Compatible assistants](README.md#compatible-assistants) in the README. Wanted:
 
 - For a client of that list: connect, run the tools, report what works and
-  document its exact configuration in the README.
+  document its exact configuration for the
+  [wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant).
 - Any MCP client with OAuth support missing from the list.
 
 A client that behaves differently from the specification is worth an issue

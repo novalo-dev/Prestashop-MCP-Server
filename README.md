@@ -13,7 +13,7 @@
 
 A PrestaShop module that turns a shop into an [MCP](https://modelcontextprotocol.io)
 server. Claude, ChatGPT, Le Chat or any MCP-compatible assistant
-([full list](#compatible-clients)) can then work with the shop's orders
+([full list](#compatible-assistants)) can then work with the shop's orders
 and catalogue, through a standard protocol, with OAuth 2.1 and the employee's
 own back office permissions, instead of a database login or an API key that can
 do everything.
@@ -261,45 +261,30 @@ change the database schema; the upgrade for existing shops is written when the
 next release is published, so on a development shop, reinstall the module when a
 pull request says its schema changed.
 
-## Connect a client
-
-**Claude (web or desktop).** Add a custom connector and paste the MCP address.
-Claude walks you through the OAuth sign-in, which lands on the consent screen
-of your back office. See
-[Get started with custom connectors](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
-
-**Claude Code.**
-
-```bash
-claude mcp add --transport http prestashop https://your-shop.example/module/somcp/mcp
-```
-
-Then run `/mcp` inside Claude Code to sign in. See the
-[Claude Code MCP documentation](https://code.claude.com/docs/en/mcp).
-
-### Compatible clients
+## Compatible assistants
 
 Any assistant that connects to a remote MCP server over HTTP with OAuth uses
-the same address. The ones below can; each one's own documentation says where
-to paste it.
+the shop's MCP address, shown on the module's configuration page. The ones
+below can. Where to paste the address in each of them:
+[Connect an assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant).
 
-| Client | Type | How to add the address |
-|---|---|---|
-| Claude (web, desktop, mobile) | Chat | Custom connector |
-| ChatGPT | Chat | Developer mode, apps and connectors |
-| Le Chat (Mistral) | Chat | Custom connector |
-| Dust | Team chat | Add an MCP server |
-| Claude Code | Command line | `claude mcp add --transport http` |
-| Codex (OpenAI) | Command line | `[mcp_servers]` in `config.toml`, then `codex mcp login` |
-| Gemini CLI (Google) | Command line | MCP servers in Gemini CLI |
-| GitHub Copilot CLI | Command line | Add an MCP server |
-| Cursor | Code editor | Model Context Protocol settings |
-| VS Code (GitHub Copilot) | Code editor | Add and manage MCP servers |
-| Windsurf (Devin Desktop) | Code editor | Cascade MCP integration |
-| Zed | Code editor | MCP context servers |
-| n8n Cloud | Automation | MCP Client node; connects in one click |
-| n8n self-hosted | Automation | MCP Client node; add its domain to the allowed hosts of the settings, nothing to do on `localhost` |
-| Make | Automation | MCP connection; connects in one click |
+| Assistant | Type |
+|---|---|
+| Claude (web, desktop, mobile) | Chat |
+| ChatGPT | Chat |
+| Le Chat (Mistral) | Chat |
+| Dust | Team chat |
+| Claude Code | Command line |
+| Codex (OpenAI) | Command line |
+| Gemini CLI (Google) | Command line |
+| GitHub Copilot CLI | Command line |
+| Cursor | Code editor |
+| VS Code (GitHub Copilot) | Code editor |
+| Windsurf (Devin Desktop) | Code editor |
+| Zed | Code editor |
+| n8n Cloud | Automation |
+| n8n self-hosted | Automation |
+| Make | Automation |
 
 ## Security model
 

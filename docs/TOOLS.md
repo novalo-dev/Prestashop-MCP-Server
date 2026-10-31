@@ -1794,7 +1794,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 **State**: written
 **Nature**: `acts(VIEW, 'AdminFeatures')` · **Scope**: `mcp.catalog.read`
 
-**Does** - lists the features (Material, Composition...) and, under each, its predefined values: identifier and name, nothing else. A cascade, like the attributes.
+**Does** - lists the features (Material, Composition...) and, under each, its predefined values: identifier, name and the position and count the back office lists show. A cascade, like the attributes.
 
 **Do not use for** - everything about one feature or one value (→ `somcp_get_feature`, `somcp_get_feature_value`), or the features of a product (→ `somcp_get_product`).
 
@@ -1805,11 +1805,12 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature` | integer | no | one feature only |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `features`, per feature: `id_feature`, `name`, and its `values`: `id_feature_value`, `value`. Plus `count`, the number of features. An `id_feature` that is not a feature of this shop is an error, not an empty list.
+**Returns** - `features`, per feature: `id_feature`, `name`, `position` (0 for the first, as `somcp_get_feature` returns it), `values_count` (the **Values** column: its predefined values), and its `values`: `id_feature_value`, `value`, and on PrestaShop 9 `position`. Plus `count`, the number of features. An `id_feature` that is not a feature of this shop is an error, not an empty list.
 
 **Notes**
 - Predefined values only (`custom` = 0, or NULL, which the core reads the same way). A custom value typed on one product belongs to that product and is read with `somcp_get_product`.
-- Read through queries on `feature`, `feature_shop`, `feature_value` and their language tables in the shop of the token, rather than `Feature::getFeatures()` and `FeatureValue::getFeatureValuesWithLang()`, which take the shop from the global context. Features are sorted by position, as the back office does; values by identifier, since `feature_value` only has a position from PrestaShop 9 on.
+- Read through queries on `feature`, `feature_shop`, `feature_value` and their language tables in the shop of the token, rather than `Feature::getFeatures()` and `FeatureValue::getFeatureValuesWithLang()`, which take the shop from the global context. Features are sorted by position, as the back office does.
+- Values differ between versions: `feature_value.position` only exists from PrestaShop 9 on, where the value list shows **Position** and **Rearrange**. There, values are sorted by position then identifier, as the back office does, and carry `position`; on PrestaShop 8 they are sorted by identifier and the key is left out, rather than a 0 that would read as "first". The version test is `SomcpCatalog::featureValuesHavePosition()`, shared with `somcp_get_feature_value` and `somcp_update_feature_value`.
 
 #### `somcp_get_feature`
 **State**: written
@@ -1896,11 +1897,12 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. A value that is not one of this shop is an error.
+**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). A value that is not one of this shop is an error.
 
 **Notes**
 - Read through `FeatureValue` and `Feature`. `feature_value` has no shop table: a value belongs to the shops of its feature, so its feature must be in `feature_shop` for the shop of the token, the test `somcp_get_feature` makes.
 - A custom value (`custom` = 1) is refused with its own message: it belongs to one product, and is read with `somcp_get_product`. `custom` NULL is predefined, as the core reads it.
+- `position` is read from `feature_value` on PrestaShop 9 only, the version test `somcp_list_features` uses (`SomcpCatalog::featureValuesHavePosition()`); on PrestaShop 8 the column does not exist and the key is left out.
 - The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_feature_value_lang_value`, the table its form reads; a value the form was never saved for has no row there, and gives `''`, as the form shows it.
 
 #### `somcp_create_feature_value`

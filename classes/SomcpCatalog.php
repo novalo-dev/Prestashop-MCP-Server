@@ -83,4 +83,19 @@ class SomcpCatalog
 
         return (float) ($rates[(int) Configuration::get('PS_ECOTAX_TAX_RULES_GROUP_ID', null, null, $idShop)] ?? 0);
     }
+
+    /**
+     * Whether the running version gives feature values a position.
+     *
+     * PrestaShop 9 added feature_value.position, with the back office order
+     * and the Rearrange button that go with it; PrestaShop 8 has neither. The
+     * tools that list, read or move feature values all ask here, so they never
+     * disagree on which versions have it.
+     *
+     * @return bool
+     */
+    public static function featureValuesHavePosition(): bool
+    {
+        return version_compare(_PS_VERSION_, '9.0.0', '>=');
+    }
 }

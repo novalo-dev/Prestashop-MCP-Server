@@ -25,6 +25,14 @@ the columns of **Catalog > Attributes & Features > Attributes**. Before, it
 gave only identifiers and names, so a group's order or a value's colour had to
 be read one by one.
 
+**The feature list shows what the back office shows.** `somcp_list_features`
+now gives, for each feature, its position and its number of values - the
+columns of **Catalog > Attributes & Features > Features** - and on PrestaShop 9
+the position of each value, with the values in the order of the back office.
+Before, it gave only identifiers and names, and on PrestaShop 9 listed the
+values in another order than the back office. `somcp_get_feature_value` also
+gives the position of the value on PrestaShop 9.
+
 ## 1.1.2 - 2026-10-31
 
 ### Added

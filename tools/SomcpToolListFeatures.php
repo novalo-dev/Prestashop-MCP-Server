@@ -19,7 +19,8 @@ declare(strict_types=1);
 
 /*
  * somcp_list_features - the features of this shop and their predefined
- * values, identifier and name.
+ * values: identifier, name and the position and count the back office lists
+ * show.
  *
  * Kept that short on purpose, like somcp_list_attributes: it is the list an
  * assistant reads before a call that takes feature values - a product created
@@ -43,7 +44,9 @@ class SomcpToolListFeatures
             'somcp_list_features',
             Somcp::t('List features'),
             'Lists the features of this shop (Composition, Material...) and, under each, its '
-                . 'predefined values: identifier and name, nothing else. Call it before any call that '
+                . 'predefined values: identifier, name and position, and for each feature the number of '
+                . 'its predefined values. Positions start at 0 and give the back office order; values only '
+                . 'have one from PrestaShop 9 on, where the key is left out before. Call it before any call that '
                 . 'takes feature values - creating or changing a product - and take the id_feature and '
                 . 'id_feature_value from here: identifiers are specific to each shop, so never assume '
                 . 'one. Custom values, typed on one product, are not listed: they belong to that product. '
@@ -98,7 +101,7 @@ class SomcpToolListFeatures
         // the global context: here it comes from the token and is passed
         // explicitly.
         $query = new DbQuery();
-        $query->select('f.`id_feature`, fl.`name`');
+        $query->select('f.`id_feature`, f.`position`, fl.`name`');
         $query->from('feature', 'f');
         $query->innerJoin(
             'feature_shop',
@@ -123,6 +126,10 @@ class SomcpToolListFeatures
             $features[(int) $row['id_feature']] = [
                 'id_feature' => (int) $row['id_feature'],
                 'name' => (string) ($row['name'] ?? ''),
+                // Under the name and from the same column as
+                // somcp_get_feature, so a list row compares with a read one.
+                'position' => (int) $row['position'],
+                'values_count' => 0,
                 'values' => [],
             ];
         }
@@ -137,8 +144,10 @@ class SomcpToolListFeatures
         if ($features !== []) {
             // feature_value has no shop table: a value belongs to the shops
             // of its feature, which the query above already filtered.
+            // feature_value.position only exists from PrestaShop 9 on.
+            $positions = SomcpCatalog::featureValuesHavePosition();
             $values = new DbQuery();
-            $values->select('v.`id_feature_value`, v.`id_feature`, vl.`value`');
+            $values->select('v.`id_feature_value`, v.`id_feature`, vl.`value`' . ($positions ? ', v.`position`' : ''));
             $values->from('feature_value', 'v');
             $values->leftJoin(
                 'feature_value_lang',
@@ -148,15 +157,26 @@ class SomcpToolListFeatures
             $values->where('v.`id_feature` IN (' . implode(',', array_map('intval', array_keys($features))) . ')');
             // custom is nullable: the core treats NULL as predefined too.
             $values->where('(v.`custom` = 0 OR v.`custom` IS NULL)');
-            // By identifier: feature_value only has a position column from
-            // PrestaShop 9 on, and this has to run on 8.0 as well.
-            $values->orderBy('v.`id_feature_value` ASC');
+            // The back office order: by position where values have one, by
+            // identifier on PrestaShop 8, which lists them that way.
+            $values->orderBy(($positions ? 'v.`position` ASC, ' : '') . 'v.`id_feature_value` ASC');
 
             foreach (Db::getInstance()->executeS($values) ?: [] as $row) {
-                $features[(int) $row['id_feature']]['values'][] = [
+                $value = [
                     'id_feature_value' => (int) $row['id_feature_value'],
                     'value' => (string) ($row['value'] ?? ''),
                 ];
+                // Left out rather than 0 on PrestaShop 8: there is no position
+                // there, and a 0 would read as "first".
+                if ($positions) {
+                    $value['position'] = (int) $row['position'];
+                }
+                $features[(int) $row['id_feature']]['values'][] = $value;
+            }
+            // The Values column of the back office list: the predefined values
+            // of the feature, the same rows as listed under it.
+            foreach ($features as $id => $feature) {
+                $features[$id]['values_count'] = count($feature['values']);
             }
         }
 

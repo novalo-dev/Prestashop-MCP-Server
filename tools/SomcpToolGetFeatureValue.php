@@ -53,7 +53,8 @@ class SomcpToolGetFeatureValue
                 . 'of this shop (Cotton under Composition...): its text, the feature it belongs to with that '
                 . 'feature\'s name, and the faceted search fields of that form - url_name (the word used in '
                 . 'filtered URLs) and meta_title - which are null when the faceted search module is not '
-                . 'installed. Identify the value by its identifier, from somcp_list_features: never guess one. '
+                . 'installed. From PrestaShop 9 on it also gives the position of the value among those of its '
+                . 'feature (0 for the first), a key left out before, where values have no position. Identify the value by its identifier, from somcp_list_features: never guess one. '
                 . 'A custom value, typed on one product only, is refused: read it with somcp_get_product. '
                 . 'Do not use it for the list of features and values, which is somcp_list_features, or for '
                 . 'the feature itself, which is somcp_get_feature.',
@@ -152,6 +153,16 @@ class SomcpToolGetFeatureValue
             'url_name' => null,
             'meta_title' => null,
         ];
+
+        // Only PrestaShop 9 gives values a position, and its FeatureValue has
+        // a property PrestaShop 8 lacks: read from the table, under the name
+        // somcp_list_features uses, and left out where the column is missing.
+        if (SomcpCatalog::featureValuesHavePosition()) {
+            $result['position'] = (int) Db::getInstance()->getValue(
+                'SELECT `position` FROM `' . _DB_PREFIX_ . 'feature_value`'
+                . ' WHERE `id_feature_value` = ' . (int) $idFeatureValue
+            );
+        }
 
         // These two fields are added to the form by ps_facetedsearch and live
         // in its own table, which only exists while it is installed.

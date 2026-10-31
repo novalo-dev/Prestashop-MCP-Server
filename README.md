@@ -62,8 +62,6 @@ us. See [Where to help](#where-to-help).
   `2026-07-28` revision, with questions in the middle of a call, and the
   `2025-11-25`, `2025-06-18` and `2025-03-26` revisions.
 
-![The module settings in the back office: the address to give to an assistant, and the diagnostic calling the shop's own OAuth and MCP addresses, all green](docs/images/diagnostic.png)
-
 ## Screenshots
 
 The settings pages on PrestaShop 9.1, one after the other: configuration, tools

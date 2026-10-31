@@ -659,6 +659,32 @@ twice. A lost answer is checked with `somcp_get_order`, whose `payments` lists
 it. The card fields of `order_payment` (`card_number`, `card_brand`,
 `card_expiration`, `card_holder`) are not on the screen and are not taken.
 
+#### `somcp_list_return_statuses`
+**State**: written
+**Nature**: `acts(VIEW, 'AdminStatuses')` · **Scope**: `mcp.orders.read`
+
+**Does** - lists the return statuses of this shop: the steps a merchandise
+return goes through, each with its identifier, its name, its colour and
+whether it can be removed.
+
+**Do not use for** - order statuses (→ `somcp_list_order_statuses`): a return
+status is not an order status, and its identifiers are never order status
+identifiers.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code of the language to read the names in; one the shop does not have is refused, as `somcp_list_meta_pages` refuses it |
+
+**Returns** - per status: `id_order_return_state`, `name`, `color`, `removable`
+(false for the five built-in statuses, 1 to 5). Plus `count` and `language_id`.
+
+**Notes** - read with `OrderReturnState::getOrderReturnStates($idLang)`. The
+five statuses every shop starts with cannot be deleted, on PrestaShop 8 or 9:
+8.0.1 skips Delete on 1 to 5, 9.0.0 computes the same rows as unremovable.
+Same table and same rows on both versions.
+
 ### Billing
 
 The accounting records an order produces: invoices, credit slips, delivery

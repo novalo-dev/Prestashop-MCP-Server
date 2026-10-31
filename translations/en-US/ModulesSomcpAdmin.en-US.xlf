@@ -737,6 +737,11 @@
       <source>List order statuses</source>
       <target>List order statuses</target>
     </trans-unit>
+    <!-- List return statuses -->
+    <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
+      <source>List return statuses</source>
+      <target>List return statuses</target>
+    </trans-unit>
     <!-- Test the connection -->
     <trans-unit id="660fc9e01f52fb7f8a715e51167c4f8d" resname="Test the connection">
       <source>Test the connection</source>

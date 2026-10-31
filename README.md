@@ -95,6 +95,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_search_orders` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_get_order` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_list_order_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
+| `somcp_list_return_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
 | `somcp_set_order_status` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_set_order_tracking` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_add_order_message` | `mcp.orders.write` | `edit` on `AdminOrders` | write |

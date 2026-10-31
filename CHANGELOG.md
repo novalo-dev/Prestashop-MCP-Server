@@ -14,6 +14,18 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+### Added
+
+**Listing return statuses.** The new tool `somcp_list_return_statuses` lists
+the return statuses of the shop, the steps a merchandise return goes through,
+with each status's identifier, its name, its colour and whether it can be
+removed. The five statuses every shop starts with cannot be removed, on
+PrestaShop 8 and 9 alike. A language the shop does not have is refused, as in
+`somcp_list_meta_pages`. The prompt **Change an order status** names it too,
+so a return status is never mistaken for an order status.
+
 ## 1.1.1 - 2026-10-31
 
 ### Added

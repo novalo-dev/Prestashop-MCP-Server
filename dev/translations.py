@@ -582,6 +582,10 @@ T = {
  "Lister les statuts de commande",
  "Listar los estados de pedido",
  "Bestellstatus auflisten"),
+"List return statuses": (
+ "Lister les statuts de retour",
+ "Listar los estados de devolución",
+ "Rückgabestatus auflisten"),
 "Test the connection": (
  "Tester la connexion",
  "Probar la conexión",

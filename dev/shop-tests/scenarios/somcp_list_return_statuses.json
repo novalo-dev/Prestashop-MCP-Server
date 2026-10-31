@@ -1,0 +1,35 @@
+{
+  "calls": [
+    {
+      "why": "lists the return statuses of the demo shop",
+      "arguments": {},
+      "expect": "ok",
+      "contains": [
+        "\"statuses\"",
+        "\"count\": 5",
+        "\"id_order_return_state\": 1",
+        "\"removable\": false"
+      ]
+    },
+    {
+      "why": "in a given language",
+      "arguments": {
+        "language": "en"
+      },
+      "expect": "ok",
+      "contains": [
+        "\"name\": \"Package received\""
+      ]
+    },
+    {
+      "why": "a language the shop does not have",
+      "arguments": {
+        "language": "zz"
+      },
+      "expect": "error",
+      "contains": [
+        "not one of the shop's"
+      ]
+    }
+  ]
+}

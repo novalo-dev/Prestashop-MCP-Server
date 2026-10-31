@@ -9,6 +9,7 @@ Never answer from memory or from an earlier answer: accounts change.
 - `somcp_search_customers`
 - `somcp_get_customer`
 - `somcp_search_orders`
+- `somcp_create_customer`
 
 ## Know which shop you are in
 
@@ -36,6 +37,17 @@ customers between shops.
 4. **More orders.** `somcp_get_customer` gives the 10 newest; read the others
    with `somcp_search_orders`, passing the customer's email as
    `customer_email`.
+
+## Creating an account
+
+When the merchant asks for a new customer, first read `somcp_search_customers`
+with the email: a registered email is used by one account only. Then call
+`somcp_create_customer` with what the merchant gave: first name, last name and
+email are required, every other field is theirs to choose, never yours to
+invent. No password goes through the conversation: tell the merchant the
+customer chooses theirs with "Forgot your password?" on the shop, and that no
+email is sent. If the answer is lost, search the email again before calling a
+second time.
 
 ## Reading the list
 

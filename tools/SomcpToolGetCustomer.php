@@ -113,8 +113,7 @@ class SomcpToolGetCustomer
         }
         $customer = $found;
 
-        $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));
-        $currencyIso = Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '';
+        $currencyIso = self::currencyIso($idShop);
 
         return SomcpTool::json([
             'customer' => self::account($customer, $idLang, $currencyIso),
@@ -183,7 +182,24 @@ class SomcpToolGetCustomer
     }
 
     /**
+     * The ISO code of the shop's default currency, the one the amounts of the page are in.
+     *
+     * @param int $idShop
+     *
+     * @return string
+     */
+    public static function currencyIso(int $idShop): string
+    {
+        $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));
+
+        return Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '';
+    }
+
+    /**
      * The header block of the page, and the B2B fields of the edit form.
+     *
+     * Shared with somcp_create_customer, which answers with the account it
+     * wrote in this same shape, so a creation reads like a detail.
      *
      * @param Customer $customer
      * @param int $idLang
@@ -191,7 +207,7 @@ class SomcpToolGetCustomer
      *
      * @return array<string, mixed>
      */
-    private static function account(Customer $customer, int $idLang, string $currencyIso): array
+    public static function account(Customer $customer, int $idLang, string $currencyIso): array
     {
         $gender = new Gender((int) $customer->id_gender, $idLang);
         $stats = $customer->getStats();

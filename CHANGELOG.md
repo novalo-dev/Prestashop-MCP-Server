@@ -16,6 +16,17 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Creating a customer.** The new tool `somcp_create_customer` creates one
+customer account, as Customers > Customers > Add new customer does: name,
+email, guest account, social title, birthday, enabled, partner offers,
+newsletter, groups and default group, and the B2B fields when B2B mode is on.
+No password goes through the conversation: the customer chooses theirs with
+"Forgot your password?" on the shop, and no email is sent. It needs the new
+permission `mcp.customers.write`, which the consent screen describes as
+changing the customers, and the `add` right on the back office Customers page.
+
 ### Changed
 
 **Assistants named the same way everywhere.** The module description, the

@@ -812,6 +812,16 @@
       <source>Get a supplier</source>
       <target>Einen Lieferanten abrufen</target>
     </trans-unit>
+    <!-- Create a customer -->
+    <trans-unit id="2041c227092f93cd579dc1cf5efab8e6" resname="Create a customer">
+      <source>Create a customer</source>
+      <target>Einen Kunden anlegen</target>
+    </trans-unit>
+    <!-- Change the customers of this shop: create customer accounts -->
+    <trans-unit id="ca39b9ed375d85262cf0bb66a6a64d40" resname="Change the customers of this shop: create customer accounts">
+      <source>Change the customers of this shop: create customer accounts</source>
+      <target>Die Kunden dieses Shops ändern: Kundenkonten anlegen</target>
+    </trans-unit>
     <!-- Create a supplier -->
     <trans-unit id="63ea2652f1e2b02ae526b7a3777d682f" resname="Create a supplier">
       <source>Create a supplier</source>

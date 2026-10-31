@@ -642,6 +642,14 @@ T = {
  "Lire un fournisseur",
  "Leer un proveedor",
  "Einen Lieferanten abrufen"),
+"Create a customer": (
+ "Créer un client",
+ "Crear un cliente",
+ "Einen Kunden anlegen"),
+"Change the customers of this shop: create customer accounts": (
+ "Modifier les clients de cette boutique : créer des comptes clients",
+ "Modificar los clientes de esta tienda: crear cuentas de cliente",
+ "Die Kunden dieses Shops ändern: Kundenkonten anlegen"),
 "Create a supplier": (
  "Créer un fournisseur",
  "Crear un proveedor",

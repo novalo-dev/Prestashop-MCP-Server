@@ -1493,16 +1493,20 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 **State**: written
 **Nature**: `acts(VIEW, 'AdminSuppliers')` · **Scope**: `mcp.catalog.read`
 
-**Does** - lists the suppliers of this shop: identifier and name, nothing else.
+**Does** - lists the suppliers of this shop as **Catalog > Brands & Suppliers > Suppliers** shows them: identifier, name, **Number of products** and **Enabled**.
 
-**Do not use for** - everything about one supplier (→ `somcp_get_supplier`), or the products of a supplier (`somcp_search_products` has no supplier filter; `somcp_get_product` names the suppliers of one product).
+**Do not use for** - everything about one supplier, its logo included (→ `somcp_get_supplier`), or the products of a supplier (`somcp_search_products` has no supplier filter; `somcp_get_product` names the suppliers of one product).
 
-**Parameters** - none.
+**Parameters** - all optional, the filters of the list:
+- `active` (boolean) - `true` for enabled suppliers only, `false` for disabled ones only; left out, all of them (**All**).
+- `name` (string) - part of the supplier name, case-insensitive (the **Name** filter).
 
-**Returns** - per supplier: `id_supplier`, `name`. Plus `count`.
+**Returns** - per supplier: `id_supplier`, `name`, `active` (**Enabled**), `products_count` (**Number of products**). Plus `count`. Every supplier matching the filters is returned, with no paging: the list stays short.
 
 **Notes**
-- Same shape as `somcp_list_categories`: the list an assistant reads before a write that takes a supplier, which must never guess an identifier. Inactive ones are listed too, since a product can still point to them.
+- The list an assistant reads before a write that takes a supplier, which must never guess an identifier. Disabled ones are listed too unless `active` is given, since a product can still point to them.
+- `products_count` counts the products of the shop of the token in `product_supplier`, one per product, the same count as `somcp_get_supplier`: a product can have several suppliers.
+- Same columns, labels and filters on PrestaShop 8.0.1 and 9.0.0. Not here: **Delete** and **Delete selected** (no tool deletes a supplier yet), and the **Logo** (read with `somcp_get_supplier`).
 - No `language` parameter, unlike the first draft of this entry: a supplier name is not translated in PrestaShop (`Supplier::$name` has no `lang`, checked on 8.0.0 and 9.0.0), so it would change nothing.
 - Read through a query on `supplier` and `supplier_shop` in the shop of the token, rather than `Supplier::getSuppliers()`, which takes the shop from the global context and leaves inactive suppliers out by default. Sorted by name, as the core does.
 
@@ -2146,51 +2150,101 @@ Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
 - 9.0.0 shows **Customer type** (`is_guest`, returned on both) and marks the default group.
 
 #### `somcp_create_customer`
-**State**: draft · [issue #17](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/17)
+**State**: written
 **Nature**: `acts(ADD, 'AdminCustomers')` · **Scope**: `mcp.customers.write`
 
-**Does** - creates one customer account.
+**Does** - creates one customer account, as the form **Customers > Customers > Add new customer** does.
 
-**Do not use for** - creating a guest checkout, or an address alone.
+**Do not use for** - changing an account (→ `somcp_update_customer`), or adding an address (not covered yet).
 
-**Parameters**
+**Parameters** - the names `somcp_get_customer` returns, so an account read there can be given back. Every field is the merchant's.
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `firstname` | string | yes |  |
-| `lastname` | string | yes |  |
-| `email` | string | yes | refused if it already exists |
-| `id_default_group` | integer | no | Customer by default |
-| `newsletter` | boolean | no | false by default |
-| `send_welcome_email` | boolean | no | false by default |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `firstname` | **First name** | string | yes | letters, the dot and spaces only (`Validate::isCustomerName`) |
+| `lastname` | **Last name** | string | yes | same rule |
+| `email` | **Email** | string | yes | refused when a registered account of this shop already uses it, with that account's `id_customer` |
+| `is_guest` | **Guest account** (9.0.0 only on screen) | boolean | no | `false` by default; a guest has no password and may share its email with other guests |
+| `id_gender` | **Social title** | integer | no | `id_gender` of the shop; an unknown one is refused with the list of the shop's social titles and their identifiers |
+| `birthday` | **Birthday** | string | no | `YYYY-MM-DD`, in the past |
+| `active` | **Enabled** | boolean | no | `true` by default |
+| `partner_offers` | **Partner offers** | boolean | no | `false` by default (`optin`) |
+| `newsletter` | **Newsletter** column of the list | boolean | no | `false` by default; when `true`, writes `newsletter_date_add` and the registration IP as the list's switch does |
+| `group_ids` | **Group access** | array of integers | no | every group of the shop by default, as the form preselects them |
+| `id_default_group` | **Default customer group** | integer | no | `PS_CUSTOMER_GROUP` (Customer) by default; must be in `group_ids` |
+| `company` | **Company** (B2B) | string | no | B2B fields: refused when B2B mode is off |
+| `siret` | **SIRET** (B2B) | string | no | `Validate::isSiret` |
+| `ape` | **APE** (B2B) | string | no | `Validate::isApe` |
+| `website` | **Website** (B2B) | string | no | `Validate::isUrl` |
+| `allowed_outstanding_amount` | **Allowed outstanding amount** (B2B) | number | no | in the shop's default currency, 0 or more |
+| `max_payment_days` | **Maximum number of payment days** (B2B) | integer | no | 0 or more |
+| `id_risk` | **Risk rating** (B2B) | integer | no | `1` None, `2` Low, `3` Medium, `4` High on a standard shop (`risk`) |
 
-**Returns** - `created`, `id_customer`.
+**Returns** - `created: true`, `id_customer`, `password` (what the customer does to get one), and `customer`: the account read back with the header block of `somcp_get_customer` (`SomcpToolGetCustomer::account()`, shared, not a copy), so the answer shows what the shop stored.
 
-**Notes** - no password goes through the assistant: the account is created with a random one, and the customer sets theirs through the usual reset link. Not replayable: the read tool to check is `somcp_search_customers` with the email.
+**Errors** - every refused field listed in one answer, nothing written: `Nothing was created. Correct these and call again:` then one line per field.
+
+**Notes**
+- **Password**: no password goes through the assistant. The tool hashes a random one, as `AddCustomerHandler` hashes the typed one, and the customer sets theirs with **Forgot your password?** on the shop.
+- **No email is sent**: the back office form sends none on either version.
+- **B2B fields**: shown by the form only when **Enable B2B mode** is on (**Shop Parameters > Customer Settings**); refused when it is off, with that path in the error.
+- **Required fields**: the fields made mandatory with **Set required fields for this section** (`required_field`, **Partner offers** among them) are enforced, read on the account itself rather than on the posted form as `validateFieldsRequiredDatabase()` does.
+- **Language**: the account takes the shop's default language, as the form, which has no language field.
+- The customer is created in the shop of the token (`id_shop`, `id_shop_group`), and the groups are written explicitly after `add()`.
+- Not replayable: on a lost answer, read `somcp_search_customers` with the email before calling again.
+
+**Differences between 8.0.1 and 9.0.0**
+- **Guest account** switch on 9.0.0 only; the tool takes `is_guest` on both.
+- Email check: 9.0.0 checks the email only for a registered account, 8.0.1 always; both use `Customer::getByEmail()`, which ignores guests, so the result is the same: a registered email is unique within the shop, a guest email is not.
+- 9.0.0 calls `updateGroup()` after `add()`; 8.0.1 relies on `groupBox`. The tool writes the groups explicitly on both.
 
 #### `somcp_update_customer`
-**State**: draft · [issue #18](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/18)
+**State**: written
 **Nature**: `acts(EDIT, 'AdminCustomers')` · **Scope**: `mcp.customers.write`
 
-**Does** - changes one customer's account: name, email, company, birthday, groups, newsletter, active.
+**Does** - changes one customer account, as the form **Customers > Customers > Edit** does, plus the private note of the customer page and the **Newsletter** / **Partner offers** switches of the list.
 
-**Do not use for** - addresses, which are not covered yet.
+**Do not use for** - creating an account (→ `somcp_create_customer`), or changing an address (not covered yet).
 
-**Parameters**
+**Parameters** - only `id_customer` is required; every other field is left as it is when absent. The names are those `somcp_get_customer` returns, so a value read there can be given back. Every value is the merchant's.
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `id_customer` | integer | yes |  |
-| `firstname` / `lastname` | string | no |  |
-| `email` | string | no | refused if another account uses it |
-| `company` | string | no |  |
-| `birthday` | string | no | `YYYY-MM-DD` |
-| `newsletter` | boolean | no |  |
-| `active` | boolean | no |  |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_customer` | - | integer | yes | from `somcp_search_customers` |
+| `firstname` | **First name** | string | no | letters, the dot and spaces only (`Validate::isCustomerName`) |
+| `lastname` | **Last name** | string | no | same rule |
+| `email` | **Email** | string | no | refused when another registered account of this shop uses it, with that account's `id_customer` |
+| `id_gender` | **Social title** | integer | no | `0` clears it; an unknown one is refused with the list of the shop's social titles and their identifiers |
+| `birthday` | **Birthday** | string or null | no | `YYYY-MM-DD`, in the past; `null` clears it |
+| `active` | **Enabled** | boolean | no | |
+| `partner_offers` | **Partner offers** | boolean | no | `optin` |
+| `newsletter` | **Newsletter** column of the list | boolean | no | as the list's switch: `newsletter_date_add` and the registration IP set on subscription, cleared on unsubscription |
+| `group_ids` | **Group access** | array of integers | no | the full list after the change, not a difference |
+| `id_default_group` | **Default customer group** | integer | no | must be in the groups after the change |
+| `private_note` | **Add a private note** (customer page) | string | no | the note `somcp_get_customer` and `somcp_get_order` return; empty string clears it |
+| `company` | **Company** (B2B) | string | no | B2B fields: refused when B2B mode is off |
+| `siret` | **SIRET** (B2B) | string | no | `Validate::isSiret` |
+| `ape` | **APE** (B2B) | string | no | `Validate::isApe` |
+| `website` | **Website** (B2B) | string | no | `Validate::isUrl` |
+| `allowed_outstanding_amount` | **Allowed outstanding amount** (B2B) | number | no | in the shop's default currency, 0 or more |
+| `max_payment_days` | **Maximum number of payment days** (B2B) | integer | no | 0 or more |
+| `id_risk` | **Risk rating** (B2B) | integer | no | `1` None, `2` Low, `3` Medium, `4` High on a standard shop (`risk`) |
 
-**Returns** - `changed`, the fields written with their old and new values.
+**Returns** - `changed: true`, `id_customer`, `changes` (each field written with `old` and `new`), and `customer`: the account read back with the header block of `somcp_get_customer` (`SomcpToolGetCustomer::account()`, shared, not a copy). When every value given is already stored: `changed: false` and `reason`, nothing written.
 
-**Notes** - never the password.
+**Errors** - every refused field listed in one answer, nothing written: `Nothing was changed. Correct these and call again:` then one line per field. Unknown customer, of another shop, or deleted with "keep the data": `No customer <id> in this shop. Find one with somcp_search_customers.`, the same sentence as `somcp_get_customer`.
+
+**Notes**
+- **Same rules as the creation**: names, email, social title, birthday, B2B fields and required fields are checked by the functions of `somcp_create_customer`, called rather than copied.
+- **Password**: the form has one; the tool never writes it. The customer sets theirs with **Forgot your password?** on the shop.
+- **B2B fields**: shown only when **Enable B2B mode** is on (**Shop Parameters > Customer Settings**). Refused when it is off, with that path in the error.
+- **Guest account**: the edit form has no **Guest account** switch on either version; turning a guest into a registered account is the customer page's **Transform to a customer account** button, outside this tool (`is_guest` is refused).
+- **Required fields**: those set with **Set required fields for this section** (`required_field`) are enforced on the account after the change, as `assertRequiredFieldsAreNotMissing()` does.
+- One customer per call. Not replayable: on a lost answer, read `somcp_get_customer` before calling again; the description says so.
+
+**Differences between 8.0.1 and 9.0.0**
+- The edit form has the same fields on both versions (with and without B2B mode); 9.0.0 adds the hint "Password should be at least 5 characters long." and the count in **Select all (3)**.
+- **Customer type** (guest or registered) is shown on the customer page of 9.0.0 only; the tool behaves the same on both.
 
 ### Statistics
 
@@ -3218,7 +3272,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-customer-lookup`
 **State**: written
-**Section**: Customers · **Scope**: `mcp.customers.read` · **Permission**: `view` on `AdminCustomers`
+**Section**: Customers · **Scope**: `mcp.customers.read`, `mcp.customers.write` · **Permission**: `view` on `AdminCustomers`
 
 **Title** - Find a customer
 

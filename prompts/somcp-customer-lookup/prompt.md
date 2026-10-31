@@ -10,6 +10,7 @@ Never answer from memory or from an earlier answer: accounts change.
 - `somcp_get_customer`
 - `somcp_search_orders`
 - `somcp_create_customer`
+- `somcp_update_customer`
 
 ## Know which shop you are in
 
@@ -48,6 +49,17 @@ invent. No password goes through the conversation: tell the merchant the
 customer chooses theirs with "Forgot your password?" on the shop, and that no
 email is sent. If the answer is lost, search the email again before calling a
 second time.
+
+## Changing an account
+
+When the merchant asks to change a customer, find the `id_customer` with
+`somcp_search_customers`, read the account with `somcp_get_customer`, then call
+`somcp_update_customer` with only the fields the merchant wants changed, under
+the names `somcp_get_customer` returns. `group_ids` is the full list of groups
+after the change, not the groups to add. Tell the merchant each change from the
+answer's `changes`, old and new value. The password is never changed here: the
+customer uses "Forgot your password?" on the shop. If the answer is lost, read
+`somcp_get_customer` again before calling a second time.
 
 ## Reading the list
 

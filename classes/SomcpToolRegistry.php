@@ -93,13 +93,21 @@ class SomcpToolRegistry
         // the server does not know is one the merchant can never grant, so it
         // would sit in the listing reaching nothing. It used to be accepted and
         // silently unreachable, which is the worst of both.
-        $unknown = array_diff($tool->getRequiredScopes(), SomcpScope::core(), array_keys($this->scopes));
+        //
+        // Another module may only lean on its own scopes, plus the connection
+        // scope every tool carries. Granting it the core ones would let its
+        // tool hide behind a consent line the merchant gave for ours, which is
+        // exactly what declareScope() refuses when the name is declared.
+        $allowed = $this->registering === ''
+            ? array_merge(SomcpScope::core(), array_keys($this->scopes))
+            : array_merge([SomcpScope::ACCESS], $this->scopesOf($this->registering));
+        $unknown = array_diff($tool->getRequiredScopes(), $allowed);
         if ($unknown !== []) {
             SomcpLogger::log(
                 'tool_scope_unknown',
                 SomcpLogger::OUTCOME_FAILURE,
                 $tool->getName() . ' asks for ' . implode(' ', $unknown)
-                    . ($this->registering === '' ? '' : ', declare it first with declareScope()')
+                    . ($this->registering === '' ? '' : ', a module can only require the scopes it declared with declareScope()')
             );
 
             return false;
@@ -199,6 +207,45 @@ class SomcpToolRegistry
     public function declaredScopes(): array
     {
         return $this->scopes;
+    }
+
+    /**
+     * The scopes a module declared, under its own prefix.
+     *
+     * Public for the prompt registry, which holds a module to the same rule.
+     *
+     * @param string $module folder of the module
+     *
+     * @return array<int, string>
+     */
+    public function scopesOf(string $module): array
+    {
+        $own = self::scopePrefix($module);
+        if ($own === '') {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_keys($this->scopes),
+            static function (string $scope) use ($own): bool {
+                return strncmp($scope, $own, strlen($own)) === 0;
+            }
+        ));
+    }
+
+    /**
+     * The prefix every scope of a module starts with, mcp.mymodule.
+     *
+     * Read from qualifyScope() rather than rebuilt, so the two can never
+     * disagree on how a folder is cleaned.
+     *
+     * @param string $module folder of the module
+     *
+     * @return string the prefix, or an empty string when the folder is unusable
+     */
+    public static function scopePrefix(string $module): string
+    {
+        return substr(self::qualifyScope('x', $module), 0, -1);
     }
 
     /**

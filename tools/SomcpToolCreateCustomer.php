@@ -69,8 +69,11 @@ class SomcpToolCreateCustomer
         'id_risk' => 'id_risk',
     ];
 
-    /** @var array<string, string> The plain texts, with what the running version's Customer accepts. */
-    private const TEXTS = [
+    /**
+     * @var array<string, string> The plain texts, with what the running version's Customer accepts. Shared
+     *                            with somcp_update_customer, so both tools refuse a value in the same words.
+     */
+    public const TEXTS = [
         'firstname' => 'required, letters, spaces and dots only, 255 characters at most',
         'lastname' => 'required, letters, spaces and dots only, 255 characters at most',
         'email' => 'required, a valid email address, 255 characters at most',
@@ -330,7 +333,7 @@ class SomcpToolCreateCustomer
      *
      * @return void
      */
-    private static function gender(array $arguments, Customer $customer, array &$errors): void
+    public static function gender(array $arguments, Customer $customer, array &$errors): void
     {
         if (!array_key_exists('id_gender', $arguments) || $arguments['id_gender'] === null) {
             return;
@@ -363,7 +366,7 @@ class SomcpToolCreateCustomer
      *
      * @return void
      */
-    private static function birthday(array $arguments, Customer $customer, array &$errors): void
+    public static function birthday(array $arguments, Customer $customer, array &$errors): void
     {
         if (!array_key_exists('birthday', $arguments) || $arguments['birthday'] === null || $arguments['birthday'] === '') {
             return;
@@ -444,7 +447,7 @@ class SomcpToolCreateCustomer
      *
      * @return void
      */
-    private static function b2b(array $arguments, Customer $customer, int $idShop, array &$errors): void
+    public static function b2b(array $arguments, Customer $customer, int $idShop, array &$errors): void
     {
         $given = array_values(array_intersect(array_keys(self::B2B), array_keys($arguments)));
         if ($given === []) {
@@ -502,17 +505,20 @@ class SomcpToolCreateCustomer
      *
      * Guests are left out, as Customer::getByEmail() leaves them out for the
      * core handler: two guests, or a guest and an account, may share an email.
+     * somcp_update_customer leaves out the account it changes, which may keep
+     * its own email.
      *
      * @param string $email
      * @param int $idShop
+     * @param int $exceptIdCustomer
      *
      * @return int
      */
-    private static function registeredWith(string $email, int $idShop): int
+    public static function registeredWith(string $email, int $idShop, int $exceptIdCustomer = 0): int
     {
         return (int) Db::getInstance()->getValue('SELECT `id_customer` FROM `' . _DB_PREFIX_ . 'customer`'
             . " WHERE `email` = '" . pSQL($email) . "' AND `is_guest` = 0 AND `deleted` = 0"
-            . ' AND `id_shop` = ' . $idShop . ' ORDER BY `id_customer`');
+            . ' AND `id_shop` = ' . $idShop . ' AND `id_customer` != ' . $exceptIdCustomer . ' ORDER BY `id_customer`');
     }
 
     /**
@@ -527,7 +533,7 @@ class SomcpToolCreateCustomer
      *
      * @return void
      */
-    private static function requiredFields(Customer $customer, array &$errors): void
+    public static function requiredFields(Customer $customer, array &$errors): void
     {
         // The names the merchant passes, where they differ from the property.
         $names = ['optin' => 'partner_offers', 'outstanding_allow_amount' => 'allowed_outstanding_amount'];
@@ -564,6 +570,10 @@ class SomcpToolCreateCustomer
                 // Written explicitly, as PrestaShop 9's handler does: 8 relies
                 // on groupBox inside add(), which hooks may have changed.
                 $customer->updateGroup($groupIds);
+                // The core keeps the customer's groups in a static cache that
+                // updateGroup() leaves stale: any later read in the same
+                // process would still see the groups before the change.
+                Customer::resetStaticCache();
             }
         } catch (Throwable $e) {
             $done = (int) $customer->id > 0;

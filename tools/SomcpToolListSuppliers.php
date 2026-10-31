@@ -18,12 +18,13 @@
 declare(strict_types=1);
 
 /*
- * somcp_list_suppliers - the suppliers of this shop, identifier and name.
+ * somcp_list_suppliers - the suppliers of this shop, as the Suppliers list of
+ * the back office: identifier, name, enabled, number of products.
  *
- * Kept that short on purpose, like somcp_list_manufacturers: it is the list an
- * assistant reads before a call that takes a supplier - a product created or
- * changed - so that it never guesses an identifier. Everything else about one
- * supplier is the job of somcp_get_supplier.
+ * Kept to the columns of that list, like somcp_list_manufacturers: it is the
+ * list an assistant reads before a call that takes a supplier - a product
+ * created or changed - so that it never guesses an identifier. Everything else
+ * about one supplier, its logo included, is the job of somcp_get_supplier.
  *
  * It takes no language: a supplier name is not translated in PrestaShop, it
  * sits in the supplier table itself, so a language would change nothing.
@@ -43,16 +44,27 @@ class SomcpToolListSuppliers
         return new SomcpTool(
             'somcp_list_suppliers',
             Somcp::t('List suppliers'),
-            'Lists the suppliers of this shop: identifier and name, nothing else. '
+            'Lists the suppliers of this shop, as the Suppliers list of the back office: identifier, '
+                . 'name, whether it is enabled (active) and its number of products. Every supplier '
+                . 'matching the filters is returned, sorted by name. '
                 . 'Call it before any call that takes a supplier - creating or changing a product - and '
                 . 'take the identifier from here: supplier identifiers are specific to each shop, so '
-                . 'never assume one. Suppliers that are switched off are listed too, since a product '
-                . 'can still point to them; the list does not say which. Everything else about one '
-                . 'supplier is read with somcp_get_supplier when the shop offers it. Do not use it '
-                . 'to find the products of a supplier: it lists suppliers only.',
+                . 'never assume one. Suppliers that are switched off are listed too unless active is '
+                . 'given, since a product can still point to them. Everything else about one supplier, '
+                . 'its logo included, is read with somcp_get_supplier. Do not use it to find the '
+                . 'products of a supplier: it lists suppliers only.',
             [
                 'type' => 'object',
-                'properties' => new stdClass(),
+                'properties' => [
+                    'active' => [
+                        'type' => 'boolean',
+                        'description' => 'true for enabled suppliers only, false for disabled ones only. Left out, all of them.',
+                    ],
+                    'name' => [
+                        'type' => 'string',
+                        'description' => 'Part of the supplier name, case-insensitive.',
+                    ],
+                ],
                 'additionalProperties' => false,
             ],
             [SomcpScope::CATALOG_READ],
@@ -76,18 +88,31 @@ class SomcpToolListSuppliers
         // A query rather than Supplier::getSuppliers(), which reads the shop
         // from the global context and leaves inactive suppliers out unless
         // asked: here the shop comes from the token, and a supplier switched
-        // off must still be listed. Same order as the core.
+        // off must still be listed unless the filter says otherwise. Same
+        // order as the core.
         $query = new DbQuery();
-        $query->select('s.`id_supplier`, s.`name`');
+        $query->select('s.`id_supplier`, s.`name`, s.`active`');
         $query->from('supplier', 's');
         $query->innerJoin('supplier_shop', 'ss', 'ss.`id_supplier` = s.`id_supplier` AND ss.`id_shop` = ' . $idShop);
+        // The same two filters as the list: Enabled (All / Yes / No) and Name.
+        if (isset($arguments['active']) && is_bool($arguments['active'])) {
+            $query->where('s.`active` = ' . (int) $arguments['active']);
+        }
+        $name = isset($arguments['name']) && is_scalar($arguments['name']) ? trim((string) $arguments['name']) : '';
+        if ($name !== '') {
+            $query->where("s.`name` LIKE '%" . pSQL($name) . "%'");
+        }
         $query->orderBy('s.`name` ASC, s.`id_supplier` ASC');
 
         $suppliers = [];
         foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
+            $idSupplier = (int) $row['id_supplier'];
             $suppliers[] = [
-                'id_supplier' => (int) $row['id_supplier'],
+                'id_supplier' => $idSupplier,
                 'name' => (string) ($row['name'] ?? ''),
+                'active' => (bool) $row['active'],
+                // Counted the way the page of one supplier counts them.
+                'products_count' => SomcpToolGetSupplier::productsCount($idSupplier, $idShop),
             ];
         }
 

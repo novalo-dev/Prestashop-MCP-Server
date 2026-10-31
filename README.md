@@ -193,6 +193,8 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 |---|---|---|---|
 | `somcp_search_customers` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
 | `somcp_get_customer` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
+| `somcp_create_customer` | `mcp.customers.write` | `add` on `AdminCustomers` | write |
+| `somcp_update_customer` | `mcp.customers.write` | `edit` on `AdminCustomers` | write |
 
 ### SEO
 
@@ -299,7 +301,8 @@ to paste it.
   configurable. Refresh tokens rotate; presenting an old one revokes the grant.
 - **Scopes** say what an assistant may do: `mcp.access` to connect,
   `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
-  `mcp.stock.read`, `mcp.stock.write`, `mcp.seo.read`, `mcp.seo.write`. Other
+  `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
+  `mcp.seo.read`, `mcp.seo.write`. Other
   modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's

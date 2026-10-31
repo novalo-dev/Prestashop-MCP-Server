@@ -309,8 +309,9 @@ dev/package/prune.sh build/somcp
 
 The version of Neuron AI is pinned in `composer.json`. The CI **Dependencies**
 job checks it for known vulnerabilities, checks the part of its API the
-assistant calls (`dev/package/contract.php`) and that every class of the pruned
-archive still loads; the weekly **Dependencies** workflow opens an issue when a
+assistant calls (`dev/package/contract.php`), that every class of the pruned
+archive still loads and that every Neuron class the module names is still in
+it (`dev/package/loads.php`), both on the pruned copy; the weekly **Dependencies** workflow opens an issue when a
 newer version is out.
 
 ## Security

@@ -4,16 +4,19 @@
 #
 # What goes here is code the built-in assistant never calls and that would
 # put shell, process or eval calls in a merchant's shop for nothing: running a
-# local MCP server, the file system and database toolkits, retrieval and
-# evaluation, the command line, the test fakes. Also the adapters for
-# libraries the module does not ship (Guzzle, Amp, Laravel, Redis).
+# local MCP server, the file system and database toolkits, evaluation, the
+# command line, the test fakes. Also the adapters for libraries the module
+# does not ship (Guzzle, Amp, Laravel, Redis).
+#
+# src/RAG stays: the assistant's memory is built on it. A path that the
+# module's own code names is refused by dev/package/loads.php, so pruning a
+# part still in use fails the CI instead of a merchant's chat.
 bin
 neuron-core/neuron-ai/bin
 neuron-core/neuron-ai/skills
 neuron-core/neuron-ai/upgrade
 neuron-core/neuron-ai/README.md
 neuron-core/neuron-ai/src/MCP
-neuron-core/neuron-ai/src/RAG
 neuron-core/neuron-ai/src/Evaluation
 neuron-core/neuron-ai/src/Console
 neuron-core/neuron-ai/src/Testing

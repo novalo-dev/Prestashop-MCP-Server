@@ -582,6 +582,10 @@ T = {
  "Lister les statuts de commande",
  "Listar los estados de pedido",
  "Bestellstatus auflisten"),
+"List return statuses": (
+ "Lister les statuts de retour",
+ "Listar los estados de devoluci\u00f3n",
+ "R\u00fcckgabestatus auflisten"),
 "Test the connection": (
  "Tester la connexion",
  "Probar la conexión",
@@ -642,14 +646,6 @@ T = {
  "Lire un fournisseur",
  "Leer un proveedor",
  "Einen Lieferanten abrufen"),
-"Create a customer": (
- "Créer un client",
- "Crear un cliente",
- "Einen Kunden anlegen"),
-"Change the customers of this shop: create customer accounts": (
- "Modifier les clients de cette boutique : créer des comptes clients",
- "Modificar los clientes de esta tienda: crear cuentas de cliente",
- "Die Kunden dieses Shops ändern: Kundenkonten anlegen"),
 "Create a supplier": (
  "Créer un fournisseur",
  "Crear un proveedor",

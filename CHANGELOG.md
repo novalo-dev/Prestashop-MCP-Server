@@ -26,6 +26,15 @@ does. A name another return status already has in that language is
 refused, so two steps can never wear the same label and be mistaken for
 each other. The prompt **Change an order status** names it too.
 
+### Changed
+
+**The attribute list shows what the back office shows.** `somcp_list_attributes`
+now gives, for each attribute group, its type, its position and its number of
+values, and for each value its position and, in a colour group, its colour -
+the columns of **Catalog > Attributes & Features > Attributes**. Before, it
+gave only identifiers and names, so a group's order or a value's colour had to
+be read one by one.
+
 ## 1.1.2 - 2026-10-31
 
 ### Added

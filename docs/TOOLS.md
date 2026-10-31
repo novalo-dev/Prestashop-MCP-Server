@@ -1662,7 +1662,7 @@ The name and every contact field are one string each, the same in every language
 **State**: written
 **Nature**: `acts(VIEW, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.read`
 
-**Does** - lists the attribute groups (Size, Colour...) and, under each, its values: identifier and name, nothing else. A cascade, like the categories.
+**Does** - lists the attribute groups (Size, Colour...) and, under each, its values: identifier, name and position, plus the type and the number of values of each group and the colour of each value of a colour group. A cascade, like the categories.
 
 **Do not use for** - everything about one group or one value (→ `somcp_get_attribute_group`, `somcp_get_attribute_value`), or the combinations of a product (→ `somcp_get_product`).
 
@@ -1673,7 +1673,7 @@ The name and every contact field are one string each, the same in every language
 | `id_attribute_group` | integer | no | one group only |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `attribute_groups`, per group: `id_attribute_group`, `name`, and its `values`: `id_attribute`, `name`. Plus `count`, the number of groups. An `id_attribute_group` that is not a group of this shop is an error, not an empty list.
+**Returns** - `attribute_groups`, per group: `id_attribute_group`, `name`, `group_type` (`select`, `radio` or `color`), `position` (0 for the first, the **Position** column), `values_count` (the **Values** column), and its `values`: `id_attribute`, `name`, `position`, `color` (`#RRGGBB`, `null` outside a group of type `color`). The fields keep the names of `somcp_get_attribute_group` and `somcp_get_attribute_value`. Plus `count`, the number of groups. An `id_attribute_group` that is not a group of this shop is an error, not an empty list.
 
 **Notes**
 - A combination is a set of `id_attribute`, never of names: names are translated and two groups can hold the same value name.

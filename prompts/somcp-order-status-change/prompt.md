@@ -8,6 +8,12 @@ of it can be undone by calling again.
 
 - `somcp_ping`
 - `somcp_list_order_statuses`
+- `somcp_list_return_statuses`
+
+`somcp_list_return_statuses` is named here only so the two are never
+confused: it lists the steps of a merchandise return. A return status is
+not an order status, and its identifiers must never be passed as a
+`status_id`.
 - `somcp_get_order`
 - `somcp_set_order_status`
 - `somcp_set_order_tracking`

@@ -868,6 +868,63 @@
         {/if}
         </div>
 
+    {if $somcp_contributors}
+        {* The first card goes to whoever has contributed the most, read from
+           GitHub each time: the place follows the work, not a title. The
+           others are paged nine at a time so the row never wraps, and past
+           ten people the last slot links to GitHub's full list. *}
+        {assign var=somcp_people value=$somcp_contributors|@count}
+        <div class="panel">
+            <div class="panel-heading"><i class="icon-group"></i> {l s='Meet our contributors' d='Modules.Somcp.Admin'}</div>
+            <p class="help-block">{l s='Everyone who helped build this module, as GitHub counts the commits of the published code.' d='Modules.Somcp.Admin'}</p>
+            <div class="somcp-contributors">
+            {foreach from=$somcp_contributors item=person name=people}
+                <div class="somcp-contributor{if $smarty.foreach.people.first} somcp-contributor-top{/if}"{if !$smarty.foreach.people.first} data-somcp-paged{/if}>
+                    <a href="{$person.profile|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer" title="{$person.login|escape:'html':'UTF-8'}">
+                    {if $person.avatar}
+                        <img src="{$person.avatar|escape:'html':'UTF-8'}" alt="" width="{if $smarty.foreach.people.first}48{else}40{/if}" height="{if $smarty.foreach.people.first}48{else}40{/if}" loading="lazy" referrerpolicy="no-referrer">
+                    {/if}
+                        <span class="somcp-contributor-name">{$person.login|escape:'html':'UTF-8'}</span>
+                    </a>
+                    <span class="somcp-contributor-share">
+                    {if $person.contributions == 1}
+                        {l s='1 contribution' d='Modules.Somcp.Admin'}
+                    {else}
+                        {l s='%count% contributions' sprintf=['%count%' => $person.contributions|intval] d='Modules.Somcp.Admin'}
+                    {/if}
+                        <br>{l s='%percent%% of the commits' sprintf=['%percent%' => $person.percent_shown] d='Modules.Somcp.Admin'}
+                    </span>
+                {if $smarty.foreach.people.first}
+                    <span class="badge somcp-contributor-badge">{l s='Top contributor' d='Modules.Somcp.Admin'}</span>
+                {/if}
+                </div>
+                {if $smarty.foreach.people.first && $somcp_people > 1}<div class="somcp-contributors-sep"></div>{/if}
+            {/foreach}
+            {if $somcp_people > 10}
+                <a class="somcp-contributor somcp-contributor-all" href="{$somcp_repository|escape:'html':'UTF-8'}/graphs/contributors" target="_blank" rel="noopener noreferrer">
+                    <span class="somcp-contributor-total">{$somcp_people|intval}</span>
+                    {l s='See all contributors' d='Modules.Somcp.Admin'} <i class="icon-external-link"></i>
+                </a>
+            {/if}
+            </div>
+            <div class="somcp-contributors-bar">
+                <a class="btn btn-default" href="{$somcp_repository|escape:'html':'UTF-8'}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">
+                    <i class="icon-code-fork"></i> {l s='Become a contributor' d='Modules.Somcp.Admin'}
+                </a>
+                <div class="somcp-tools-nav" data-somcp-pager="9" hidden>
+                    <button type="button" class="btn btn-default btn-sm" data-somcp-page="-1">
+                        &laquo; {l s='Previous' d='Modules.Somcp.Admin'}
+                    </button>
+                    <span class="somcp-tools-count"
+                          data-somcp-range="{l s='Contributors %from% to %to% of %total%' d='Modules.Somcp.Admin' js=1}"></span>
+                    <button type="button" class="btn btn-default btn-sm" data-somcp-page="1">
+                        {l s='Next' d='Modules.Somcp.Admin'} &raquo;
+                    </button>
+                </div>
+            </div>
+        </div>
+    {/if}
+
         <div class="panel">
             <div class="panel-heading"><i class="icon-comments"></i> {l s='Share your feedback' d='Modules.Somcp.Admin'}</div>
             <p>{l s='A bug, an idea, a tool you are missing? The module is built in the open on GitHub: tell us there.' d='Modules.Somcp.Admin'}</p>

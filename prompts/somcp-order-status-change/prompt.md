@@ -8,6 +8,7 @@ of it can be undone by calling again.
 
 - `somcp_ping`
 - `somcp_list_order_statuses`
+- `somcp_list_return_statuses`
 - `somcp_get_order`
 - `somcp_set_order_status`
 - `somcp_set_order_tracking`
@@ -30,6 +31,8 @@ an email sent to someone else's customer.
    several, handle them one at a time - see below.
 2. Call `somcp_list_order_statuses`. Always, even if you called it a moment
    ago in this conversation: the merchant may have changed a status since.
+   Not `somcp_list_return_statuses`: those are the steps of a merchandise
+   return, not of an order, and their identifiers are never a `status_id`.
 3. Pick the target status by its **role**, not by its name. `shipped`,
    `delivered`, `refunded`, `canceled`, `payment_accepted`. The name is
    translated and renameable; the role is not.

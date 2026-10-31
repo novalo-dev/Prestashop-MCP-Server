@@ -137,14 +137,15 @@
             });
         });
 
-        // The list of tools, a page at a time. Every row stays in the form -
-        // hidden, not removed - because the checkboxes of a page nobody looked
-        // at must still be submitted. Without a browser the whole list shows,
-        // which is the right thing to fall back to. Each list has a panel of
-        // its own, which is what scopes the rows to their pager.
+        // The lists of tools and prompts, a page at a time. Every row stays in
+        // the form - hidden, not removed - because the checkboxes of a page
+        // nobody looked at must still be submitted. Without a browser the whole
+        // list shows, which is the right thing to fall back to. Each list has a
+        // panel of its own, which is what scopes the rows to their pager. The
+        // contributor cards marked data-somcp-paged go through the same pager.
         document.querySelectorAll('[data-somcp-pager]').forEach(function (nav) {
             var group = nav.closest('.panel');
-            var rows = group ? group.querySelectorAll('.somcp-tools tbody tr') : [];
+            var rows = group ? group.querySelectorAll('.somcp-tools tbody tr, [data-somcp-paged]') : [];
             var size = parseInt(nav.getAttribute('data-somcp-pager'), 10) || 5;
             var total = rows.length;
 

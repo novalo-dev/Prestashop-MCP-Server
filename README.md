@@ -95,6 +95,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_search_orders` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_get_order` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_list_order_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
+| `somcp_list_return_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
 | `somcp_set_order_status` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_set_order_tracking` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_add_order_message` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
@@ -333,6 +334,29 @@ now is reach: more of PrestaShop exposed as tools, more clients tested, more
 languages. [ROADMAP.md](ROADMAP.md) lists concrete pieces of work, and
 [CONTRIBUTING.md](CONTRIBUTING.md) explains how to set up, what a pull request
 needs, and which contributions fit.
+
+## Contributors
+
+Everyone who helped build the module, the top contributor first. The pictures
+come straight from GitHub and follow each profile; the shares of the commits
+are refreshed at each release. The settings page of the module shows the same list, read from
+GitHub, under **Help and updates > Meet our contributors**.
+
+<table>
+  <tr>
+    <td align="center" width="140">
+      <a href="https://github.com/novalo-dev"><img src="https://github.com/novalo-dev.png?size=96" width="64" height="64" alt=""><br><b>novalo-dev</b></a><br>
+      <sub>215 contributions · 95%</sub><br>
+      <sub><i>Top contributor</i></sub>
+    </td>
+    <td align="center" width="140">
+      <a href="https://github.com/Ptraaah"><img src="https://github.com/Ptraaah.png?size=96" width="64" height="64" alt=""><br><b>Ptraaah</b></a><br>
+      <sub>12 contributions · 5.3%</sub>
+    </td>
+  </tr>
+</table>
+
+Want to be next? [CONTRIBUTING.md](CONTRIBUTING.md) explains how.
 
 ## License
 

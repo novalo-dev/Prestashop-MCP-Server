@@ -484,6 +484,123 @@
     cursor: not-allowed;
 }
 
+/* An icon in a button keeps a gap before its label. Inside an alert the back
+   office lays the icon out its own way, and on the update notice it ran into
+   the first letter of Download the zip and See what is new. */
+.somcp .btn > [class^="icon-"],
+.somcp .btn > [class*=" icon-"] {
+    display: inline-block;
+    position: static;
+    margin-right: 4px;
+}
+
+/* Meet our contributors: one row that never wraps - the top contributor,
+   then a page of nine, then the link to everyone past ten. */
+.somcp .somcp-contributors {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    overflow: hidden;
+    margin: 0;
+}
+
+.somcp .somcp-contributor {
+    box-sizing: border-box;
+    display: flex;
+    /* Narrower screens shrink the cards rather than cut the last one off. */
+    flex: 0 1 84px;
+    flex-direction: column;
+    min-width: 64px;
+    align-items: center;
+    width: 84px;
+    padding: 8px 4px;
+    border: 1px solid #dbe6e9;
+    border-radius: 4px;
+    font-size: 11px;
+    text-align: center;
+}
+
+.somcp .somcp-contributor[hidden] {
+    display: none;
+}
+
+.somcp .somcp-contributor > a {
+    width: 100%;
+}
+
+.somcp .somcp-contributor img {
+    display: block;
+    margin: 0 auto 5px;
+    border-radius: 50%;
+}
+
+.somcp .somcp-contributor-name {
+    display: block;
+    overflow: hidden;
+    font-weight: bold;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.somcp .somcp-contributor-share {
+    margin-top: 2px;
+    color: #6c868e;
+    font-size: 10.5px;
+    line-height: 1.3;
+}
+
+.somcp .somcp-contributor-top {
+    flex: 0 0 112px;
+    width: 112px;
+    border-color: #25b9d7;
+    background: #f4fbfd;
+}
+
+.somcp .somcp-contributor-badge {
+    margin-top: 5px;
+    background: #25b9d7;
+    font-size: 9.5px;
+}
+
+.somcp .somcp-contributors-sep {
+    flex: 0 0 1px;
+    margin: 0 2px;
+    background: #dbe6e9;
+}
+
+/* Pushed to the right end of the row whatever the page holds. */
+.somcp .somcp-contributor-all {
+    flex-shrink: 0;
+    justify-content: center;
+    margin-left: auto;
+    border-style: dashed;
+    border-color: #25b9d7;
+    font-weight: bold;
+}
+
+.somcp .somcp-contributor-total {
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 6px;
+    border-radius: 50%;
+    background: #e8f7fb;
+    font-size: 13px;
+    line-height: 40px;
+}
+
+.somcp .somcp-contributors-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+.somcp .somcp-contributors-bar .somcp-tools-nav {
+    margin-top: 0;
+}
+
 /* A tool that changes something, marked where the merchant decides whether to
    offer it at all. */
 .somcp .somcp-writes {

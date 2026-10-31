@@ -14,6 +14,36 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## 1.1.2 - 2026-10-31
+
+### Added
+
+**Listing return statuses.** The new tool `somcp_list_return_statuses` lists
+the return statuses of the shop, the steps a merchandise return goes through,
+with each status's identifier, its name, its colour and whether it can be
+removed. The five statuses every shop starts with cannot be removed, on
+PrestaShop 8 and 9 alike. A language the shop does not have is refused, as in
+`somcp_list_meta_pages`. The prompt **Change an order status** names it too,
+so a return status is never mistaken for an order status. Thanks to
+@Ptraaah, whose first contribution this is.
+
+**Meet our contributors.** The Help and updates tab now thanks the people who
+build the module: each one with their GitHub profile picture, their number of
+contributions and their share of the commits, and a link to their profile. The
+first card goes to the top contributor, whoever that is at the time. The others
+follow on one row, nine at a time with Previous and Next once there are more,
+and past ten people a last card leads to the full list on GitHub.
+The list is read from GitHub once a day, like the check for a new version, so
+a new contributor or a new profile picture shows without updating the module.
+With that check switched off, nothing is asked of GitHub, not even the
+pictures: the list shipped with the module is shown without them.
+
+### Fixed
+
+**Buttons of the update notice.** On the notice of a new version, the icon of
+Download the zip and of See what is new ran into the first letter of the
+button. It now sits apart from the label, as on the other buttons.
+
 ## 1.1.1 - 2026-10-31
 
 ### Added

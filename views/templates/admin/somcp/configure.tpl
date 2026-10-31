@@ -83,12 +83,14 @@
                         <td class="somcp-status somcp-status-{$check.status|escape:'html':'UTF-8'}">
                             {if $check.status === 'ok'}<i class="icon-check"></i>
                             {elseif $check.status === 'warning'}<i class="icon-warning"></i>
+                            {elseif $check.status === 'skipped'}<i class="icon-minus"></i>
                             {else}<i class="icon-remove"></i>{/if}
                         </td>
                         <th>{$check.label|escape:'html':'UTF-8'}</th>
                         <td>
                             {$check.detail|escape:'html':'UTF-8'}
                             {if $check.url}<br><code>{$check.url|escape:'html':'UTF-8'}</code>{/if}
+                            {if $check.fix}<br><a href="{$check.fix|escape:'html':'UTF-8'}" target="_blank" rel="noopener">{l s='Go to the setting' d='Modules.Somcp.Admin'} <i class="icon-external-link"></i></a>{/if}
                         </td>
                     </tr>
                 {/foreach}

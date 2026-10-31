@@ -85,8 +85,9 @@ security log, help and updates, and the chat.
 
 The shop has to be reachable over **HTTPS**, with **friendly URLs** enabled, and
 installed at the **root of its domain**: OAuth anchors one of its discovery
-documents there. The diagnostic button in the settings checks the friendly URLs,
-the location and the addresses an assistant calls, from the outside. The full
+documents there. The diagnostic button in the settings checks the certificate,
+the SSL setting, the friendly URLs, the location and the addresses an assistant
+calls, from the outside. The full
 list of requirements is on the
 [wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki#requirements).
 

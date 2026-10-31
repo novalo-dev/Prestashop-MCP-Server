@@ -157,6 +157,66 @@ T = {
  "La boutique se trouve à la racine de son domaine.",
  "La tienda está en la raíz de su dominio.",
  "Der Shop liegt im Stammverzeichnis seiner Domain."),
+"HTTPS certificate": (
+ "Certificat HTTPS",
+ "Certificado HTTPS",
+ "HTTPS-Zertifikat"),
+"The certificate is valid.": (
+ "Le certificat est valide.",
+ "El certificado es válido.",
+ "Das Zertifikat ist gültig."),
+"This shop runs on a local address, which assistants cannot reach. To test it, give it a public HTTPS address with a tunnel such as cloudflared or ngrok, and set the shop domain to it.": (
+ "Cette boutique tourne sur une adresse locale, que les assistants ne peuvent pas joindre. Pour la tester, donnez-lui une adresse HTTPS publique avec un tunnel comme cloudflared ou ngrok, et réglez le domaine de la boutique sur cette adresse.",
+ "Esta tienda funciona en una dirección local, que los asistentes no pueden alcanzar. Para probarla, dele una dirección HTTPS pública con un túnel como cloudflared o ngrok, y configure el dominio de la tienda con ella.",
+ "Dieser Shop läuft unter einer lokalen Adresse, die Assistenten nicht erreichen können. Um ihn zu testen, geben Sie ihm mit einem Tunnel wie cloudflared oder ngrok eine öffentliche HTTPS-Adresse und stellen Sie die Shop-Domain darauf ein."),
+"The certificate is refused: %reason%. Assistants only connect to a shop whose certificate is valid. Install or renew it from your hosting panel.": (
+ "Le certificat est refusé : %reason%. Les assistants ne se connectent qu'à une boutique dont le certificat est valide. Installez-le ou renouvelez-le depuis le panneau de votre hébergeur.",
+ "El certificado es rechazado: %reason%. Los asistentes solo se conectan a una tienda cuyo certificado es válido. Instálelo o renuévelo desde el panel de su alojamiento.",
+ "Das Zertifikat wird abgelehnt: %reason%. Assistenten verbinden sich nur mit einem Shop, dessen Zertifikat gültig ist. Installieren oder erneuern Sie es in der Verwaltung Ihres Hosters."),
+"Nothing answers over HTTPS on this domain. Assistants only connect over HTTPS: enable a certificate for it from your hosting panel.": (
+ "Rien ne répond en HTTPS sur ce domaine. Les assistants ne se connectent qu'en HTTPS : activez un certificat pour ce domaine depuis le panneau de votre hébergeur.",
+ "Nada responde por HTTPS en este dominio. Los asistentes solo se conectan por HTTPS: active un certificado para él desde el panel de su alojamiento.",
+ "Unter dieser Domain antwortet nichts über HTTPS. Assistenten verbinden sich nur über HTTPS: Aktivieren Sie in der Verwaltung Ihres Hosters ein Zertifikat für diese Domain."),
+"The shop could not be reached over HTTPS: %reason%.": (
+ "La boutique n'a pas pu être jointe en HTTPS : %reason%.",
+ "No se ha podido acceder a la tienda por HTTPS: %reason%.",
+ "Der Shop war über HTTPS nicht erreichbar: %reason%."),
+"SSL in PrestaShop": (
+ "SSL dans PrestaShop",
+ "SSL en PrestaShop",
+ "SSL in PrestaShop"),
+"SSL is enabled.": (
+ "Le SSL est activé.",
+ "El SSL está activado.",
+ "SSL ist aktiviert."),
+"SSL is disabled, which is fine on a local shop. Enable it before the shop goes online.": (
+ "Le SSL est désactivé, ce qui convient pour une boutique locale. Activez-le avant la mise en ligne.",
+ "El SSL está desactivado, lo que es aceptable en una tienda local. Actívelo antes de poner la tienda en línea.",
+ "SSL ist deaktiviert, was für einen lokalen Shop in Ordnung ist. Aktivieren Sie es, bevor der Shop online geht."),
+"SSL is disabled. The shop and its back office answer over plain HTTP, and employees sign in unencrypted. Enable it in Shop parameters, General.": (
+ "Le SSL est désactivé. La boutique et son back-office répondent en HTTP simple, et les employés se connectent sans chiffrement. Activez-le dans Paramètres de la boutique, Général.",
+ "El SSL está desactivado. La tienda y su back office responden por HTTP sin cifrar, y los empleados inician sesión sin cifrado. Actívelo en Parámetros de la tienda, General.",
+ "SSL ist deaktiviert. Der Shop und sein Backoffice antworten über unverschlüsseltes HTTP, und Mitarbeiter melden sich unverschlüsselt an. Aktivieren Sie es unter Shop-Parameter, Allgemein."),
+"This address answered %status% instead of 200. Assistants read it to find out where to sign in, so none of them can connect until it works.": (
+ "Cette adresse a répondu %status% au lieu de 200. Les assistants la lisent pour savoir où se connecter : aucun ne peut se connecter tant qu'elle ne fonctionne pas.",
+ "Esta dirección respondió %status% en lugar de 200. Los asistentes la leen para saber dónde iniciar sesión: ninguno puede conectarse hasta que funcione.",
+ "Diese Adresse hat mit %status% statt 200 geantwortet. Assistenten lesen sie, um zu erfahren, wo sie sich anmelden: Keiner kann sich verbinden, solange sie nicht funktioniert."),
+"This address could not be reached: %reason%.": (
+ "Cette adresse n'a pas pu être jointe : %reason%.",
+ "No se ha podido acceder a esta dirección: %reason%.",
+ "Diese Adresse war nicht erreichbar: %reason%."),
+"The maintenance page answered instead of the module: this address does not reach it.": (
+ "La page de maintenance a répondu à la place du module : cette adresse ne l'atteint pas.",
+ "La página de mantenimiento respondió en lugar del módulo: esta dirección no llega hasta él.",
+ "Die Wartungsseite hat statt des Moduls geantwortet: Diese Adresse erreicht es nicht."),
+"Not checked: fix %causes% above first.": (
+ "Non vérifié : corrigez d'abord %causes% ci-dessus.",
+ "No comprobado: corrija primero %causes% más arriba.",
+ "Nicht geprüft: Beheben Sie zuerst %causes% oben."),
+"Go to the setting": (
+ "Aller au réglage",
+ "Ir al ajuste",
+ "Zur Einstellung"),
 "Consent screen": (
  "Écran d'autorisation",
  "Pantalla de autorización",

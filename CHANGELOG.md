@@ -28,6 +28,18 @@ each other. The prompt **Change an order status** names it too.
 
 ### Changed
 
+**The diagnostic names the real cause.** With friendly URLs off, the three
+address lines below also failed, each blaming something else - a rewrite rule,
+an error 503 - and sent the merchant after problems that did not exist. When a
+line every address depends on fails (the shop disabled, friendly URLs off, no
+valid certificate), the addresses are now marked **Not checked** and point to
+that line. Two lines are new: **HTTPS certificate**, which says when the
+certificate is expired, self-signed, issued for another domain or missing, and
+**SSL in PrestaShop**, red when SSL is off - only a warning on a shop running
+on a local address. A failing setting now comes with **Go to the setting**,
+which opens the PrestaShop page where it is changed, and an address answered by
+the maintenance page says so.
+
 **Meet our contributors: wider cards.** On the cards after the top
 contributor, the number of contributions and the share of the commits were
 cut over four short lines. Every card now has the width of the top one, so

@@ -177,6 +177,10 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     color: #e08f95;
 }
 
+.somcp .somcp-status-skipped {
+    color: #a0a0a0;
+}
+
 .somcp .somcp-log code {
     white-space: nowrap;
 }

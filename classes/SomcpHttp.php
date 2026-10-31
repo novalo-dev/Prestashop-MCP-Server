@@ -293,13 +293,13 @@ class SomcpHttp
      * @param string|null $jsonBody when given, the request is a POST carrying this JSON
      * @param int $maxBytes largest body read; 0 keeps the default cap
      *
-     * @return array{status:int, body:string, headers:array<string,string>, error:string}
+     * @return array{status:int, body:string, headers:array<string,string>, error:string, errno:int, reason:string}
      */
     public static function fetch(string $url, bool $guard = true, array $extraHeaders = [], ?string $jsonBody = null, int $maxBytes = 0): array
     {
         $limit = $maxBytes > 0 ? $maxBytes : self::MAX_FETCH_BYTES;
         $fail = static function (string $message): array {
-            return ['status' => 0, 'body' => '', 'headers' => [], 'error' => $message];
+            return ['status' => 0, 'body' => '', 'headers' => [], 'error' => $message, 'errno' => 0, 'reason' => ''];
         };
 
         if (!function_exists('curl_init')) {
@@ -355,12 +355,12 @@ class SomcpHttp
      * @param int $timeout seconds, at least 1
      * @param int $maxBytes largest body read
      *
-     * @return array{status:int, body:string, headers:array<string,string>, error:string, truncated:bool}
+     * @return array{status:int, body:string, headers:array<string,string>, error:string, errno:int, reason:string, truncated:bool}
      */
     public static function fetchShopPage(string $url, array $hosts, int $timeout, int $maxBytes): array
     {
         $fail = static function (string $message): array {
-            return ['status' => 0, 'body' => '', 'headers' => [], 'error' => $message, 'truncated' => false];
+            return ['status' => 0, 'body' => '', 'headers' => [], 'error' => $message, 'errno' => 0, 'reason' => '', 'truncated' => false];
         };
 
         if (!function_exists('curl_init')) {
@@ -446,7 +446,7 @@ class SomcpHttp
      * @param int $limit largest body read, in bytes
      * @param int $timeout seconds
      *
-     * @return array{status:int, body:string, headers:array<string,string>, error:string}
+     * @return array{status:int, body:string, headers:array<string,string>, error:string, errno:int, reason:string}
      */
     private static function exchange(string $url, array $resolve, array $headers, ?string $jsonBody, int $limit, int $timeout): array
     {
@@ -493,13 +493,20 @@ class SomcpHttp
 
         curl_exec($ch);
         $error = (string) curl_error($ch);
+        $errno = (int) curl_errno($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $failed = $error !== '' && $status === 0;
 
+        // errno and reason are kept for the diagnostic, which has to tell a
+        // refused certificate from a missing route; callers that only need
+        // to know the call failed keep reading error.
         return [
             'status' => $status,
             'body' => $received,
             'headers' => $responseHeaders,
-            'error' => $error !== '' && $status === 0 ? 'transport' : '',
+            'error' => $failed ? 'transport' : '',
+            'errno' => $failed ? $errno : 0,
+            'reason' => $failed ? $error : '',
         ];
     }
 

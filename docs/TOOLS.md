@@ -685,6 +685,44 @@ five statuses every shop starts with cannot be deleted, on PrestaShop 8 or 9:
 8.0.1 skips Delete on 1 to 5, 9.0.0 computes the same rows as unremovable.
 Same table and same rows on both versions.
 
+#### `somcp_create_return_status`
+**State**: written
+**Nature**: `acts(ADD, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
+
+**Does** - creates one return status: a step a merchandise return goes
+through, with its name in the languages being filled and its colour.
+
+**Do not use for** - the statuses of an order (→ `somcp_list_order_statuses`):
+a return status is not an order status, and its identifiers are never order
+status identifiers. No tool creates an order status.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `languages` | array of strings | no | ISO codes of the languages to fill; all the shop's active languages by default |
+| `name` | object by ISO code | yes | the name of the step, one text per language being filled; a language of the shop left out of `languages` takes the default language's text |
+| `color` | string | no | the colour the status is highlighted in, a hex code `#RRGGBB` |
+
+**Returns** - `created`, `id_order_return_state`, and `status`, the status as
+`somcp_list_return_statuses` lists it.
+
+**Notes** - the **Add new return status** form of **Shop Parameters > Order
+Settings > Statuses**, read in full on 8.0.1 and 9.0.0: two fields, the name
+and the colour, and no difference between the versions. The name follows the
+rules of `somcp_create_feature`: required in the default language - every
+language being filled - `Validate::isGenericName()`, 64 characters at most.
+A name another return status already has in that language is refused, so the
+merchant can tell the steps apart; PrestaShop itself accepts the duplicate.
+The colour is checked as `somcp_create_attribute_value` checks a swatch -
+`#RRGGBB` only, because `Validate::isColor()` alone lets a bare word
+through; left out, the status is stored without a colour, as the form
+allows. Written through `OrderReturnState::add()`, as 8.0.1
+(`AdminStatusesController`) and 9.0.0 (`AddOrderReturnStateHandler`) do.
+Return statuses are not tied to a shop: the table has no shop column. Every
+problem is reported at once, before anything is written. Not replayable: a
+lost answer is checked with `somcp_list_return_statuses`.
+
 ### Billing
 
 The accounting records an order produces: invoices, credit slips, delivery

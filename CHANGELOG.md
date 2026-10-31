@@ -14,6 +14,17 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+### Changed
+
+**The attribute list shows what the back office shows.** `somcp_list_attributes`
+now gives, for each attribute group, its type, its position and its number of
+values, and for each value its position and, in a colour group, its colour -
+the columns of **Catalog > Attributes & Features > Attributes**. Before, it
+gave only identifiers and names, so a group's order or a value's colour had to
+be read one by one.
+
 ## 1.1.2 - 2026-10-31
 
 ### Added

@@ -737,6 +737,11 @@
       <source>List order statuses</source>
       <target>Listar los estados de pedido</target>
     </trans-unit>
+    <!-- List return statuses -->
+    <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
+      <source>List return statuses</source>
+      <target>Listar los estados de devolución</target>
+    </trans-unit>
     <!-- Test the connection -->
     <trans-unit id="660fc9e01f52fb7f8a715e51167c4f8d" resname="Test the connection">
       <source>Test the connection</source>
@@ -811,16 +816,6 @@
     <trans-unit id="2125627ab97ff410637f507da9323cb6" resname="Get a supplier">
       <source>Get a supplier</source>
       <target>Leer un proveedor</target>
-    </trans-unit>
-    <!-- Create a customer -->
-    <trans-unit id="2041c227092f93cd579dc1cf5efab8e6" resname="Create a customer">
-      <source>Create a customer</source>
-      <target>Crear un cliente</target>
-    </trans-unit>
-    <!-- Change the customers of this shop: create customer accounts -->
-    <trans-unit id="ca39b9ed375d85262cf0bb66a6a64d40" resname="Change the customers of this shop: create customer accounts">
-      <source>Change the customers of this shop: create customer accounts</source>
-      <target>Modificar los clientes de esta tienda: crear cuentas de cliente</target>
     </trans-unit>
     <!-- Create a supplier -->
     <trans-unit id="63ea2652f1e2b02ae526b7a3777d682f" resname="Create a supplier">

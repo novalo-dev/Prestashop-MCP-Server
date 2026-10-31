@@ -26,6 +26,14 @@ does. A name another return status already has in that language is
 refused, so two steps can never wear the same label and be mistaken for
 each other. The prompt **Change an order status** names it too.
 
+**Changing return statuses.** The new tool `somcp_update_return_status`
+changes the name or the colour of one return status, as its **Edit** form
+of **Shop Parameters > Order Settings > Statuses** does. Only what is
+given changes: a language left out keeps its text, and a call that would
+change nothing writes nothing and says so. A name another return status
+already has in that language is refused, as at creation. The prompt
+**Change an order status** names it too.
+
 ### Changed
 
 **The attribute list shows what the back office shows.** `somcp_list_attributes`

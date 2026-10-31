@@ -9,6 +9,7 @@ of it can be undone by calling again.
 - `somcp_ping`
 - `somcp_list_order_statuses`
 - `somcp_list_return_statuses`
+- `somcp_create_return_status`
 - `somcp_get_order`
 - `somcp_set_order_status`
 - `somcp_set_order_tracking`
@@ -106,6 +107,21 @@ wants it.
 - When the order has an invoice, `id_order_invoice` is required: take it from
   `documents.invoices` of `somcp_get_order`, never guess it.
 - A refund is not a negative payment: it is refused.
+
+## A new return status
+
+When the merchant wants a step a return does not have yet, create it with
+`somcp_create_return_status`: the name in the languages being filled, and
+a colour.
+
+- Read `somcp_list_return_statuses` first. A name another return status
+  already has in the same language is refused: two steps with one label
+  could not be told apart.
+- It is a shop setting, not a change to any order or return: nothing is
+  emailed and nothing moves. A return status is never an order status, so
+  creating one never gives an order a new `status_id`.
+- Not to be retried: if the answer is lost, read
+  `somcp_list_return_statuses` and look for the name before anything else.
 
 ## Several orders
 

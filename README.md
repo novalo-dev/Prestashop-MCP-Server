@@ -64,6 +64,14 @@ us. See [Where to help](#where-to-help).
 
 ![The module settings in the back office: the address to give to an assistant, and the diagnostic calling the shop's own OAuth and MCP addresses, all green](docs/images/diagnostic.png)
 
+## Screenshots
+
+The settings pages on PrestaShop 9.1, one after the other: configuration, tools
+and prompts, access and security, connected assistants, built-in assistant,
+security log, help and updates, and the chat.
+
+![The settings pages of O'So MCP Server, one after the other](docs/images/somcp-tour.gif)
+
 ## Compatibility
 
 | | |

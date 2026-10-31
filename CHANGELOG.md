@@ -28,6 +28,15 @@ each other. The prompt **Change an order status** names it too.
 
 ### Changed
 
+**The list of files shows descriptions and can be filtered.**
+`somcp_list_attachments` now returns the **Description** of each file beside
+its name, which tells two manuals or two data sheets apart, and filters on
+part of the **Name** or of the **File** as the list of **Catalog > Files**
+does. A language the shop does not have used to be silently replaced by
+another one; it is now refused with the list of the shop's languages, the
+shop default language is used when none is given, and the answer says which
+language the names and descriptions are in.
+
 **The attribute list shows what the back office shows.** `somcp_list_attributes`
 now gives, for each attribute group, its type, its position and its number of
 values, and for each value its position and, in a colour group, its colour -

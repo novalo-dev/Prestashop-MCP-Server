@@ -2006,9 +2006,11 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `name` | string | no | part of the name (Name), case-insensitive, in the language read |
+| `file_name` | string | no | part of the name the file was uploaded under (File), case-insensitive |
+| `language` | string | no | ISO code of one of the shop's active languages; the shop default when left out; any other code is refused |
 
-**Returns** - `attachments`, per file: `id_attachment` (ID), `name` (Name), `file_name` (File), `file_size` (Size, in bytes), `products_count` (Products), `mime`, `download_url`. Plus `count`, the number of files.
+**Returns** - `attachments`, per file: `id_attachment` (ID), `name` (Name), `description` (Description of the form, in the same language), `file_name` (File), `file_size` (Size, in bytes), `products_count` (Products), `mime`, `download_url`. Plus `count`, the number of files, and `language`, the ISO code the names and descriptions were read in.
 
 **Notes**
 - The file itself never travels through the conversation. `download_url` is the storefront link PrestaShop already gives customers on a product page, built with `Link::getPageLink('attachment', true, null, 'id_attachment=N')`; the `attachment` front controller sends the file. The merchant opens it in a browser to download or preview it.
@@ -2016,6 +2018,8 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 - Columns of `attachment` and `attachment_lang`; `products_count` from `product_attachment`. `file_name` is the name the file was uploaded under; the back office File column shows the name it is stored under on disk, which means nothing to a merchant.
 - Files have no shop of their own in PrestaShop: every shop sees the same list, as in the back office. `products_count` only counts products of the shop of the token (`product_shop`), so a count never reaches into another shop.
 - A file with no name in the language read is still listed, with an empty `name`, rather than missing from the only list of identifiers.
+- Filters as the back office list does: `name` on the translated name, `file_name` on the uploaded name. Left out, every file is listed.
+- The language follows the shared rule: the shop default when left out (never the language of the client's browser), refused with the list of the shop's languages when unknown, inactive or not a string, and named in the answer so a text can be given back keyed by its ISO code.
 - Lists only, never uploads: files do not travel through the conversation.
 
 ### Stock

@@ -206,6 +206,9 @@ class SomcpToolUpdateCustomer
         $before = SomcpToolGetCustomer::account($customer, $idLang, $currencyIso);
         $groupsBefore = array_map('intval', $customer->getGroups());
         sort($groupsBefore);
+        // Kept before plan() moves it: the account read has no default group
+        // to compare with afterwards.
+        $defaultBefore = (int) $customer->id_default_group;
 
         $errors = [];
         $groupIds = self::plan($arguments, $customer, $groupsBefore, $idShop, $errors);
@@ -216,7 +219,7 @@ class SomcpToolUpdateCustomer
             );
         }
 
-        $changes = self::changes($arguments, $before, $customer, $groupsBefore, $groupIds);
+        $changes = self::changes($arguments, $before, $customer, $groupsBefore, $groupIds, $defaultBefore);
         if ($changes === []) {
             return SomcpTool::json([
                 'changed' => false,
@@ -265,7 +268,9 @@ class SomcpToolUpdateCustomer
                 continue;
             }
             $customer->{$field} = $value;
-            $emailGiven = $emailGiven || $field === 'email';
+            if ($field === 'email') {
+                $emailGiven = true;
+            }
         }
 
         if ($emailGiven) {
@@ -404,10 +409,11 @@ class SomcpToolUpdateCustomer
      * @param Customer $customer
      * @param array<int, int> $groupsBefore
      * @param array<int, int>|null $groupIds
+     * @param int $defaultBefore
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function changes(array $arguments, array $before, Customer $customer, array $groupsBefore, ?array $groupIds): array
+    private static function changes(array $arguments, array $before, Customer $customer, array $groupsBefore, ?array $groupIds, int $defaultBefore): array
     {
         // The account as it would be read after the write, compared with the
         // same function, so old and new always share one shape.
@@ -419,7 +425,9 @@ class SomcpToolUpdateCustomer
 
         $changes = [];
         foreach (self::ARGUMENTS as $field) {
-            if ($field === 'id_customer' || $field === 'group_ids' || !array_key_exists($field, $arguments)) {
+            // The groups are not part of the account read, so they are
+            // compared on their own below.
+            if (in_array($field, ['id_customer', 'group_ids', 'id_default_group'], true) || !array_key_exists($field, $arguments)) {
                 continue;
             }
             if ($before[$field] !== $after[$field]) {
@@ -428,6 +436,9 @@ class SomcpToolUpdateCustomer
         }
         if ($groupIds !== null && $groupIds !== $groupsBefore) {
             $changes[] = ['field' => 'group_ids', 'old' => $groupsBefore, 'new' => $groupIds];
+        }
+        if ((int) $customer->id_default_group !== $defaultBefore) {
+            $changes[] = ['field' => 'id_default_group', 'old' => $defaultBefore, 'new' => (int) $customer->id_default_group];
         }
 
         return $changes;

@@ -29,7 +29,10 @@ so a return status is never mistaken for an order status. Thanks to
 
 **Meet our contributors.** The Help and updates tab now thanks the people who
 build the module: each one with their GitHub profile picture, their number of
-contributions and their share of the commits, and a link to their profile.
+contributions and their share of the commits, and a link to their profile. The
+first card goes to the top contributor, whoever that is at the time. The others
+follow on one row, nine at a time with Previous and Next once there are more,
+and past ten people a last card leads to the full list on GitHub.
 The list is read from GitHub once a day, like the check for a new version, so
 a new contributor or a new profile picture shows without updating the module.
 With that check switched off, nothing is asked of GitHub, not even the

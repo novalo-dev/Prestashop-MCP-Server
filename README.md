@@ -337,16 +337,17 @@ needs, and which contributions fit.
 
 ## Contributors
 
-Everyone who helped build the module. The pictures come straight from GitHub
-and follow each profile; the shares of the commits are refreshed at each
-release. The settings page of the module shows the same list, read from
+Everyone who helped build the module, the top contributor first. The pictures
+come straight from GitHub and follow each profile; the shares of the commits
+are refreshed at each release. The settings page of the module shows the same list, read from
 GitHub, under **Help and updates > Meet our contributors**.
 
 <table>
   <tr>
     <td align="center" width="140">
       <a href="https://github.com/novalo-dev"><img src="https://github.com/novalo-dev.png?size=96" width="64" height="64" alt=""><br><b>novalo-dev</b></a><br>
-      <sub>210 contributions · 95%</sub>
+      <sub>210 contributions · 95%</sub><br>
+      <sub><i>Top contributor</i></sub>
     </td>
     <td align="center" width="140">
       <a href="https://github.com/Ptraaah"><img src="https://github.com/Ptraaah.png?size=96" width="64" height="64" alt=""><br><b>Ptraaah</b></a><br>

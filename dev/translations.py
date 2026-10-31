@@ -1187,6 +1187,18 @@ T = {
  "Devenir contributeur",
  "Hazte colaborador",
  "Mitwirken"),
+"Top contributor": (
+ "Top contributeur",
+ "Principal colaborador",
+ "Top-Mitwirkender"),
+"See all contributors": (
+ "Voir tous les contributeurs",
+ "Ver todos los colaboradores",
+ "Alle Mitwirkenden ansehen"),
+"Contributors %from% to %to% of %total%": (
+ "Contributeurs %from% à %to% sur %total%",
+ "Colaboradores %from% a %to% de %total%",
+ "Mitwirkende %from% bis %to% von %total%"),
 "Give feedback": (
  "Donner mon avis",
  "Dar mi opinión",

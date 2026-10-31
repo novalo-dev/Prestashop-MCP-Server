@@ -1507,6 +1507,21 @@
       <source>Become a contributor</source>
       <target>Hazte colaborador</target>
     </trans-unit>
+    <!-- Top contributor -->
+    <trans-unit id="ce33d9afc4b68a7395bb9a91d8f5fb59" resname="Top contributor">
+      <source>Top contributor</source>
+      <target>Principal colaborador</target>
+    </trans-unit>
+    <!-- See all contributors -->
+    <trans-unit id="86c8fdb93216e537fa691e0c39d589f7" resname="See all contributors">
+      <source>See all contributors</source>
+      <target>Ver todos los colaboradores</target>
+    </trans-unit>
+    <!-- Contributors %from% to %to% of %total% -->
+    <trans-unit id="cee0e966dc8ede2629d56af3597ac248" resname="Contributors %from% to %to% of %total%">
+      <source>Contributors %from% to %to% of %total%</source>
+      <target>Colaboradores %from% a %to% de %total%</target>
+    </trans-unit>
     <!-- Give feedback -->
     <trans-unit id="70aaba87e569caaf0a02a08c79916a85" resname="Give feedback">
       <source>Give feedback</source>

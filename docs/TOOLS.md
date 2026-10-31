@@ -723,6 +723,27 @@ Return statuses are not tied to a shop: the table has no shop column. Every
 problem is reported at once, before anything is written. Not replayable: a
 lost answer is checked with `somcp_list_return_statuses`.
 
+#### `somcp_update_return_status`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes the name or the colour of one return status, as its **Edit** form on **Shop Parameters > Order Settings > Statuses** does. Only what is given changes.
+
+**Do not use for** - creating one (→ `somcp_create_return_status`), or the statuses of an order: a return status is not an order status, and its identifiers are never order status identifiers.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order_return_state` | integer | yes | from `somcp_list_return_statuses`, never guessed |
+| `languages` | array of strings | no | ISO codes of the languages to fill; all the shop's active languages by default |
+| `name` | object by ISO code | no | the new name of the step, one text per language being filled; a language left out of `languages` keeps its text |
+| `color` | string | no | the colour the status is highlighted in, a hex code `#RRGGBB` |
+
+**Returns** - `changed`, `id_order_return_state`, `changes` (per field its old and new value, a name per language: `name (en)`), and `status`, the status as `somcp_list_return_statuses` lists it. A call that would change nothing writes nothing and answers `changed: false`, with empty `changes` and a `reason`.
+
+**Notes** - the **Edit** form of a return status, read in full on 8.0.1 and 9.0.0: the same two fields as the **Add new return status** form, and no difference between the versions. The name follows the rules of `somcp_create_return_status`: required in every language being filled, `Validate::isGenericName()`, 64 characters at most. A name another return status already has in that language is refused, so the merchant can tell the steps apart; the status's own name is not a duplicate. The colour is checked as at creation - `#RRGGBB` only. Every return status can be edited, the five built-in ones (1 to 5) included, on both versions. Written through `OrderReturnState::update()`, as the back office edit does. Return statuses are not tied to a shop: the table has no shop column. Every problem is reported at once, before anything is written. Not replayable: a lost answer is checked with `somcp_list_return_statuses`.
+
 ### Billing
 
 The accounting records an order produces: invoices, credit slips, delivery

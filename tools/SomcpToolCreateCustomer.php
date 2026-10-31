@@ -570,6 +570,10 @@ class SomcpToolCreateCustomer
                 // Written explicitly, as PrestaShop 9's handler does: 8 relies
                 // on groupBox inside add(), which hooks may have changed.
                 $customer->updateGroup($groupIds);
+                // The core keeps the customer's groups in a static cache that
+                // updateGroup() leaves stale: any later read in the same
+                // process would still see the groups before the change.
+                Customer::resetStaticCache();
             }
         } catch (Throwable $e) {
             $done = (int) $customer->id > 0;

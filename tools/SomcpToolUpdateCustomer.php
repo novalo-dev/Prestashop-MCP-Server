@@ -467,6 +467,10 @@ class SomcpToolUpdateCustomer
                 // The full list replaces the current one, as the form's Group
                 // access does.
                 $customer->updateGroup($groupIds);
+                // The core keeps the customer's groups in a static cache that
+                // updateGroup() leaves stale: any later read in the same
+                // process would still see the groups before the change.
+                Customer::resetStaticCache();
             }
         } catch (Throwable $e) {
             $failure = $e->getMessage();

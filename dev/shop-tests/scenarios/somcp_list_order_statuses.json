@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "lists the statuses of the demo shop", "arguments": {}, "expect": "ok"},
+    {"why": "in a given language", "arguments": {"language": "en"}, "expect": "ok"}
+  ]
+}

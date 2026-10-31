@@ -1,0 +1,23 @@
+{
+  "calls": [
+    {"why": "the first page, most recently registered first", "arguments": {}, "expect": "ok", "contains": ["\"customers\"", "\"total_count\"", "\"offset\": 0", "\"sales_currency\"", "\"last_visit\"", "\"language\""]},
+    {"why": "each word found in the name or the email, as the back office search", "arguments": {"query": "doe pub@"}, "expect": "ok", "contains": ["pub@prestashop.com", "\"lastname\": \"DOE\""]},
+    {"why": "an exact email", "arguments": {"email": "pub@prestashop.com"}, "expect": "ok", "contains": ["pub@prestashop.com", "\"total_count\": 1"]},
+    {"why": "an email nobody has lists nothing", "arguments": {"email": "nobody-zz@example.invalid"}, "expect": "ok", "contains": ["\"customers\": []", "\"total_count\": 0"]},
+    {"why": "words that match nobody list nothing", "arguments": {"query": "no-such-customer-zz"}, "expect": "ok", "contains": ["\"customers\": []", "\"total_count\": 0"]},
+    {"why": "a default group that does not exist lists nothing", "arguments": {"id_default_group": 999999}, "expect": "ok", "contains": ["\"customers\": []", "\"total_count\": 0"]},
+    {"why": "the customers of the Customer group", "arguments": {"id_default_group": 3}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "a social title", "arguments": {"id_gender": 1}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "enabled accounts, subscribed to the newsletter, registered ones only", "arguments": {"active": true, "newsletter": true, "partner_offers": false, "is_guest": false}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "guest accounts only", "arguments": {"is_guest": true}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "a registration period in the future lists nothing", "arguments": {"date_from": "2999-01-01", "date_to": "2999-12-31"}, "expect": "ok", "contains": ["\"customers\": []", "\"total_count\": 0"]},
+    {"why": "a registration period that covers the demo data", "arguments": {"date_from": "2000-01-01", "date_to": "2999-12-31"}, "expect": "ok", "contains": ["pub@prestashop.com"]},
+    {"why": "sorted by sales", "arguments": {"sort": "sales", "order": "desc"}, "expect": "ok", "contains": ["\"sales_tax_incl\""]},
+    {"why": "sorted by last visit, oldest first", "arguments": {"sort": "last_visit", "order": "asc"}, "expect": "ok", "contains": ["\"customers\""]},
+    {"why": "sorted by last name", "arguments": {"sort": "lastname", "order": "asc", "limit": 1}, "expect": "ok", "contains": ["\"returned\": 1"]},
+    {"why": "the names in the shop language given by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's"]},
+    {"why": "the next page", "arguments": {"limit": 1, "offset": 1}, "expect": "ok", "contains": ["\"offset\": 1"]},
+    {"why": "a limit over the cap is brought back to 100", "arguments": {"limit": 500}, "expect": "ok", "contains": ["\"customers\""]}
+  ]
+}

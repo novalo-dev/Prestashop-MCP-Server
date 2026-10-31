@@ -39,17 +39,22 @@ class Somcp extends Module
     private const ESSENTIAL_HOOKS = ['moduleRoutes'];
 
     /** @var array<int, string> Hooks the module works without, in a reduced way. */
-    private const OPTIONAL_HOOKS = ['displayBackOfficeHeader'];
+    private const OPTIONAL_HOOKS = ['displayBackOfficeHeader', 'displayBackOfficeTop'];
 
     /** @var string Key the settings page leaves a message under, for the page after the redirect. */
     private const FLASH_KEY = 'somcp_flash';
 
     /**
-     * Where the module is built in the open. The settings page links to it for
-     * feedback and for the source, so a merchant who hits a problem reports it
-     * where the developers who can fix it will read it.
+     * The menu entry of development builds, under Configure. No longer
+     * installed: kept to remove it from the shops that have it.
      */
-    private const REPOSITORY = 'https://github.com/novalo-dev/Prestashop-MCP-Server';
+    public const LEGACY_PARENT = 'AdminSomcpParent';
+
+    /** The module's item under Shop Parameters; the settings pages are its tabs. */
+    public const SETTINGS_ITEM = 'AdminSomcpSettings';
+
+    /** Where the "Support us" button leads. */
+    public const SPONSOR_URL = 'https://github.com/sponsors/novalo-dev';
 
     /** @var array<int, string> Classes loaded together, in dependency order. */
     private const CLASSES = [
@@ -70,11 +75,17 @@ class Somcp extends Module
         'SomcpElicitation',
         'SomcpUpload',
         'SomcpTool',
+        'SomcpProductImage',
+        'SomcpCatalog',
         'SomcpToolRegistry',
         'SomcpPrompt',
         'SomcpPromptRegistry',
         'SomcpContract',
         'SomcpDiagnostic',
+        'SomcpUpdate',
+        'SomcpAssistant',
+        'SomcpAssistantMemory',
+        'SomcpAssistantChat',
     ];
 
     /** @var array<int, string> */
@@ -83,11 +94,14 @@ class Somcp extends Module
     /** @var array<int, string> */
     private $pageErrors = [];
 
+    /** @var string The settings page being drawn, a key of settingsPages(). */
+    private $settingsPane = 'config';
+
     public function __construct()
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '1.0.0';
+        $this->version = '1.1.0';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -280,6 +294,9 @@ class Somcp extends Module
         $this->undeclareToolHook();
         SomcpUpload::removeStore();
         SomcpConfig::purge();
+        SomcpUpdate::purge();
+        SomcpAssistant::purge();
+        SomcpAssistantMemory::purge();
 
         return parent::uninstall();
     }
@@ -314,12 +331,17 @@ class Somcp extends Module
     }
 
     /**
-     * Keeps track of the administration folder name.
+     * Keeps track of the administration folder name, and puts the chat button
+     * of the built-in assistant on every back office page.
      *
      * A front controller has no _PS_ADMIN_DIR_, so the authorization endpoint
      * could not build the address of the consent screen without this. The value
      * is refreshed on every back office page because PrestaShop renames that
      * folder by itself the first time a shop is used.
+     *
+     * The chat is written straight into the page head rather than added through
+     * the controller's media list: pages built on Symfony have no such list,
+     * and this hook output reaches the head of both kinds of page.
      *
      * @return string
      */
@@ -328,21 +350,182 @@ class Somcp extends Module
         self::bootClasses();
         SomcpBackOffice::rememberAdminDir();
 
-        return '';
+        $employee = $this->context->employee;
+        if (!$employee instanceof Employee || (int) $employee->id <= 0
+            || !SomcpAssistantChat::available()
+            || SomcpAssistant::leader() === null
+            || !SomcpAssistant::mayUse((int) $employee->id_profile)) {
+            return '';
+        }
+
+        $config = [
+            'endpoint' => $this->context->link->getAdminLink(SomcpBackOffice::ASSISTANT_CONTROLLER, true, [], ['ajax' => 1]),
+            'neuron' => 'https://github.com/neuron-core/neuron-ai',
+            // Symfony pages keep their legacy name here too, e.g. AdminOrders.
+            'page' => isset($this->context->controller->controller_name) ? (string) $this->context->controller->controller_name : (string) Tools::getValue('controller'),
+            'maxFiles' => SomcpAssistantChat::MAX_FILES,
+            'maxFileBytes' => SomcpAssistantChat::MAX_FILE_BYTES,
+            // The gear in the chat header opens the module settings, in a new
+            // tab so the page the employee is on is not lost.
+            'settingsUrl' => $this->context->link->getAdminLink('AdminModules', true, [], ['configure' => 'somcp']),
+            'text' => [
+                'title' => $this->l10n('Built-in assistant'),
+                'subtitle' => $this->l10n('Acts with your rights and asks before any change'),
+                'open' => $this->l10n('Open the built-in assistant'),
+                'button' => $this->l10n('Assistant'),
+                'enlarge' => $this->l10n('Enlarge'),
+                'reduce' => $this->l10n('Reduce'),
+                'mistakes' => $this->l10n('This is an AI and can make mistakes.'),
+                'close' => $this->l10n('Close'),
+                'settings' => $this->l10n('Module settings'),
+                'placeholder' => $this->l10n('Write your message...'),
+                'send' => $this->l10n('Send'),
+                // Several openings, one drawn at random for each empty
+                // conversation, none of them a greeting: a "good morning"
+                // shown at eleven at night read as broken.
+                'hellos' => [
+                    $this->l10n('What can I do for the shop?'),
+                    $this->l10n('Where shall we start?'),
+                    $this->l10n('How can I help you?'),
+                    $this->l10n('Shall we start a new adventure?'),
+                    $this->l10n('Your shop is waiting for your instructions.'),
+                    $this->l10n('What are we working on?'),
+                ],
+                'newThread' => $this->l10n('New conversation'),
+                'threads' => $this->l10n('Conversations'),
+                'deleteThread' => $this->l10n('Delete this conversation'),
+                'defaultAssistant' => $this->l10n('Default assistant'),
+                'approvalTitle' => $this->l10n('Confirmation requested'),
+                'approve' => $this->l10n('Approve'),
+                'refuse' => $this->l10n('Refuse'),
+                'approved' => $this->l10n('Approved'),
+                'refused' => $this->l10n('Refused'),
+                'working' => $this->l10n('Working...'),
+                'summarized' => $this->l10n('Earlier messages were summarized to keep the cost down.'),
+                'spent' => $this->l10n('This month: %spent%'),
+                'spentOf' => $this->l10n('This month: %spent% of %budget%'),
+                'failed' => $this->l10n('Something went wrong. Try again.'),
+                'poweredBy' => $this->l10n('Powered by'),
+                'attach' => $this->l10n('Attach files from your computer'),
+                'removeFile' => $this->l10n('Remove this file'),
+                'fileTooBig' => $this->l10n('This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.'),
+            ],
+        ];
+
+        $base = $this->_path . 'views/';
+        // The file's own date rides along with the module version: builds of
+        // one version share its number, and a CDN in front of the shop kept
+        // serving the script of the previous build under the same address.
+        $stamp = function (string $file): string {
+            $path = _PS_MODULE_DIR_ . $this->name . '/views/' . $file;
+
+            return urlencode($this->version) . '-' . (is_file($path) ? (int) filemtime($path) : 0);
+        };
+
+        $this->context->smarty->assign([
+            // Encoded here, escaped by the template into an attribute.
+            'somcp_assistant_config' => (string) json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
+            'somcp_assistant_css' => $base . 'css/assistant.css?v=' . $stamp('css/assistant.css'),
+            'somcp_assistant_js' => $base . 'js/assistant.js?v=' . $stamp('js/assistant.js'),
+        ]);
+
+        return $this->context->smarty->fetch(_PS_MODULE_DIR_ . 'somcp/views/templates/hook/assistant_head.tpl');
     }
 
     /**
-     * The settings page.
+     * The button that opens the built-in assistant, in the back office header.
      *
-     * Everything lives here, in one page with one Save button: a module whose
-     * whole job is one endpoint and one authorization flow does not need tabs.
+     * displayBackOfficeTop is printed inside the header bar on legacy pages and
+     * on Symfony pages alike, on PrestaShop 8 and 9, so the button is written
+     * by the server where the header is built rather than slipped in by a
+     * script looking for its place. The hook prints it at the end of the bar;
+     * the chat script then sets it right after "View my shop", where the
+     * merchant looks for it, and leaves it where it is if that link is absent.
+     *
+     * @return string
+     */
+    public function hookDisplayBackOfficeTop(): string
+    {
+        self::bootClasses();
+
+        $employee = $this->context->employee;
+        if (!$employee instanceof Employee || (int) $employee->id <= 0
+            || !SomcpAssistantChat::available()
+            || SomcpAssistant::leader() === null
+            || !SomcpAssistant::mayUse((int) $employee->id_profile)) {
+            return '';
+        }
+
+        return $this->context->smarty->fetch(_PS_MODULE_DIR_ . 'somcp/views/templates/hook/assistant_button.tpl');
+    }
+
+    /**
+     * The Configure button of the module manager.
+     *
+     * The settings are split into pages of the module, one per tab, so that
+     * PrestaShop draws the tabs under the page title as on its own pages; this
+     * only sends the merchant to the first of them. A shop whose pages are
+     * missing or misplaced - installed from an earlier copy - gets them put
+     * right here, and
+     * falls back to drawing the first page in place if they still cannot be
+     * created, rather than leaving the merchant on an error.
      *
      * @return string
      */
     public function getContent(): string
     {
         self::bootClasses();
+
+        // Puts back any page that is missing or out of place; every step
+        // leaves alone what is already right, so this costs a few reads.
+        $first = self::settingsPages()['config'][0];
+        $this->installTabs();
+        if (Tab::getIdFromClassName($first)) {
+            SomcpHttp::redirect($this->context->link->getAdminLink($first));
+        }
+
+        return $this->renderSettings('config');
+    }
+
+    /**
+     * The settings pages: pane of the template => controller and the tab label
+     * shown in the menu, in the order of the tabs.
+     *
+     * A method rather than a constant for the reason given on hiddenTabs().
+     *
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function settingsPages(): array
+    {
+        return [
+            'config' => ['AdminSomcpConfig', 'Configuration'],
+            'tools' => ['AdminSomcpTools', 'Tools and prompts'],
+            'access' => ['AdminSomcpAccess', 'Access and security'],
+            'assistants' => ['AdminSomcpConnected', 'Connected assistants'],
+            'assistant' => ['AdminSomcpBuiltin', 'Built-in assistant'],
+            'log' => ['AdminSomcpLog', 'Security log'],
+            'help' => ['AdminSomcpHelp', 'Help and updates'],
+        ];
+    }
+
+    /**
+     * One settings page.
+     *
+     * Every pane is drawn on every page and only the asked one is shown: the
+     * settings form spans two panes, and a pane left out would post its fields
+     * empty. Every action posts back to the page it came from and is
+     * redirected there, so a reload never repeats it.
+     *
+     * @param string $pane a key of settingsPages()
+     *
+     * @return string
+     */
+    public function renderSettings(string $pane): string
+    {
+        self::bootClasses();
         SomcpBackOffice::rememberAdminDir();
+
+        $this->settingsPane = isset(self::settingsPages()[$pane]) ? $pane : 'config';
 
         // A second chance for the deposits to be cleared. The purge otherwise
         // runs only when a new file request is opened, so a shop where nobody
@@ -374,6 +557,60 @@ class Somcp extends Module
             $this->flash($this->trans('The log has been emptied.', [], 'Modules.Somcp.Admin'));
             $this->redirectToSelf();
         }
+        if (Tools::isSubmit('submitSomcpAssistant')) {
+            $this->saveAssistant();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantTest')) {
+            $tested = SomcpAssistant::get((int) Tools::getValue('id_assistant'));
+            $model = $tested !== null ? SomcpAssistant::test($tested) : '';
+            if ($model !== '') {
+                $this->flash($this->trans('The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
+            } else {
+                $this->flash($this->trans('The provider refused the key or did not answer. Check the key and try again.', [], 'Modules.Somcp.Admin'), true);
+            }
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantDelete')) {
+            SomcpAssistant::delete((int) Tools::getValue('id_assistant'));
+            $this->flash($this->trans('The assistant has been removed.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantDefault')) {
+            SomcpAssistant::makeDefault((int) Tools::getValue('id_assistant'));
+            $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantSettings')) {
+            SomcpAssistant::saveSettings(
+                (float) str_replace(',', '.', (string) Tools::getValue('SOMCP_ASSISTANT_BUDGET')),
+                (string) Tools::getValue('SOMCP_ASSISTANT_INSTRUCTIONS'),
+                (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE')
+            );
+            SomcpAssistantMemory::save(
+                (int) self::currentShopId(),
+                Tools::getValue('SOMCP_EMB_ON') === '1',
+                (string) Tools::getValue('SOMCP_EMB_PROVIDER'),
+                (string) Tools::getValue('SOMCP_EMB_KEY')
+            );
+            $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpUpdateSwitch')) {
+            SomcpUpdate::setOn(Tools::getValue(SomcpUpdate::CHECK) === '1');
+            $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpUpdateCheck')) {
+            $checked = SomcpUpdate::state($this->version, true);
+            if ($checked['failed']) {
+                $this->flash($this->trans('GitHub could not be reached. Try again later.', [], 'Modules.Somcp.Admin'));
+            } elseif ($checked['available']) {
+                $this->flash($this->trans('Version %version% is available.', ['%version%' => $checked['latest']], 'Modules.Somcp.Admin'));
+            } else {
+                $this->flash($this->trans('You have the latest version.', [], 'Modules.Somcp.Admin'));
+            }
+            $this->redirectToSelf();
+        }
         if (Tools::isSubmit('submitSomcpDiagnostic')) {
             // Redirected like every other action on this page, with the chosen
             // shop carried in the address. Running the checks straight from the
@@ -400,12 +637,53 @@ class Somcp extends Module
 
         $this->readFlash();
 
+        $update = SomcpUpdate::state($this->version);
+
+        // The model list for the Custom level: read from the provider only when
+        // an existing assistant with a key is open for editing, so the settings
+        // page never calls a provider just to be shown.
+        $editing = $this->assistantBeingEdited();
+        $editModels = ($editing !== null && !empty($editing['has_key']) && (int) $editing['id_assistant'] > 0)
+            ? SomcpAssistant::models($editing)
+            : [];
+
+        // Read once: the lists go to the tables and their counts to the panel
+        // headings, and each read walks every tool class.
+        $tools = $this->toolList();
+        $prompts = $this->promptList();
+
         $this->context->smarty->assign([
             'somcp_form_action' => $this->selfUrl(),
+            'somcp_pane' => $this->settingsPane,
+            'somcp_sponsor_url' => self::SPONSOR_URL,
             'somcp_name' => $this->displayName,
             'somcp_version' => $this->version,
-            'somcp_repository' => self::REPOSITORY,
+            'somcp_repository' => SomcpUpdate::REPOSITORY,
+            'somcp_update' => $update,
+            'somcp_assistants' => SomcpAssistant::all(),
+            'somcp_assistant_costs' => SomcpAssistant::monthCosts(),
+            'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts()),
+            'somcp_assistant_budget' => SomcpAssistant::budget(),
+            'somcp_assistant_instructions' => SomcpAssistant::instructions(),
+            'somcp_assistant_profile' => (int) Configuration::get(SomcpAssistant::PROFILE, null, null, (int) self::currentShopId()),
+            'somcp_assistant_providers' => SomcpAssistant::providers(),
+            'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
+            'somcp_assistant_edit' => $editing,
+            'somcp_assistant_models' => $editModels,
+            'somcp_memory_on' => SomcpAssistantMemory::on((int) self::currentShopId()),
+            'somcp_memory_selectable' => SomcpAssistantMemory::selectable((int) self::currentShopId()),
+            'somcp_memory_provider' => SomcpAssistantMemory::providerId((int) self::currentShopId()),
+            'somcp_memory_has_own_key' => Configuration::get(SomcpAssistantMemory::KEY, null, null, (int) self::currentShopId()) !== false
+                && (string) Configuration::get(SomcpAssistantMemory::KEY, null, null, (int) self::currentShopId()) !== '',
+            'somcp_assistant_ready' => SomcpAssistantChat::available(),
+            // Formatted here, in the employee's language, rather than in the
+            // template: Smarty's date modifier knows nothing of the back
+            // office date formats.
+            'somcp_update_checked' => $update['checked'] > 0
+                ? date((string) $this->context->language->date_format_full, $update['checked'])
+                : '',
             'somcp_settings' => $this->currentSettings(),
+            'somcp_redirect_suggestions' => SomcpOAuthClient::KNOWN_HOSTS,
             'somcp_profiles' => Profile::getProfiles((int) $this->context->language->id),
             'somcp_diagnostic' => $diagnostic,
             // One shop is diagnosed at a time: the checks are real HTTP calls,
@@ -416,8 +694,10 @@ class Somcp extends Module
             'somcp_endpoints' => SomcpConfig::contextEndpoints(),
             'somcp_issuer' => SomcpConfig::issuer(),
             'somcp_multistore' => Shop::isFeatureActive(),
-            'somcp_tools' => $this->toolList(),
-            'somcp_prompts' => $this->promptList(),
+            'somcp_tools' => $tools,
+            'somcp_tools_count' => count($tools),
+            'somcp_prompts' => $prompts,
+            'somcp_prompts_count' => count($prompts),
             'somcp_inheritable' => SomcpConfig::inheritableContext(),
             'somcp_inherit' => $this->inheritanceMap(),
             'somcp_consents' => SomcpOAuthServer::consents(),
@@ -429,6 +709,48 @@ class Somcp extends Module
         return $this->context->smarty->fetch(
             _PS_MODULE_DIR_ . 'somcp/views/templates/admin/somcp/configure.tpl'
         );
+    }
+
+    /**
+     * Saves the assistant form of the Built-in assistant tab.
+     */
+    private function saveAssistant(): void
+    {
+        $idAssistant = SomcpAssistant::save((int) Tools::getValue('id_assistant'), [
+            'provider' => (string) Tools::getValue('somcp_assistant_provider'),
+            'api_key' => (string) Tools::getValue('somcp_assistant_key'),
+            'level' => (string) Tools::getValue('somcp_assistant_level'),
+            'model' => (string) Tools::getValue('somcp_assistant_model'),
+            'role' => (string) Tools::getValue('somcp_assistant_role'),
+            'active' => Tools::getValue('somcp_assistant_active') === '1',
+        ]);
+
+        // Tested right away: a key pasted with a stray space or for the wrong
+        // provider is better found here than on the first message in the chat.
+        $saved = SomcpAssistant::get($idAssistant);
+        $model = $saved !== null ? SomcpAssistant::test($saved) : '';
+        if ($model !== '') {
+            $this->flash($this->trans('Assistant saved. The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
+        } else {
+            $this->flash($this->trans('Assistant saved, but the provider refused the key or did not answer. Check the key.', [], 'Modules.Somcp.Admin'), true);
+        }
+        $this->redirectToSelf();
+    }
+
+    /**
+     * The assistant open in the form: an existing one when the merchant clicked
+     * Edit, a blank one when they clicked Add, null when the form is closed.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function assistantBeingEdited(): ?array
+    {
+        if (Tools::getValue('somcp_assistant_add') === '1') {
+            return ['id_assistant' => 0, 'provider' => 'anthropic', 'has_key' => false, 'level' => SomcpAssistant::LEVEL_ECONOMY, 'model' => '', 'role' => '', 'active' => true];
+        }
+        $idAssistant = (int) Tools::getValue('somcp_assistant_edit');
+
+        return $idAssistant > 0 ? SomcpAssistant::get($idAssistant) : null;
     }
 
     /**
@@ -721,13 +1043,15 @@ class Somcp extends Module
      *
      * @param string $message
      */
-    private function flash(string $message): void
+    private function flash(string $message, bool $isError = false): void
     {
         // The employee cookie is capped at 4096 bytes, so a long message is cut
-        // rather than left to break the whole cookie.
+        // rather than left to break the whole cookie. A leading E or S carries
+        // the kind across the redirect, so a failure lands in a red banner
+        // rather than the green one every message used to get.
         // Through the magic accessor explicitly: the key is the module's own,
         // so it is not declared on Cookie and static analysis rightly says so.
-        $this->context->cookie->__set(self::FLASH_KEY, Tools::substr($message, 0, 500));
+        $this->context->cookie->__set(self::FLASH_KEY, ($isError ? 'E' : 'S') . Tools::substr($message, 0, 500));
         $this->context->cookie->write();
     }
 
@@ -736,9 +1060,14 @@ class Somcp extends Module
      */
     private function readFlash(): void
     {
-        $message = (string) $this->context->cookie->__get(self::FLASH_KEY);
-        if ($message !== '') {
-            $this->confirmations[] = $message;
+        $stored = (string) $this->context->cookie->__get(self::FLASH_KEY);
+        if ($stored !== '') {
+            $message = Tools::substr($stored, 1);
+            if (Tools::substr($stored, 0, 1) === 'E') {
+                $this->pageErrors[] = $message;
+            } else {
+                $this->confirmations[] = $message;
+            }
             $this->context->cookie->__unset(self::FLASH_KEY);
             $this->context->cookie->write();
         }
@@ -751,6 +1080,12 @@ class Somcp extends Module
      */
     private function selfUrl(array $extra = []): string
     {
+        $controller = self::settingsPages()[$this->settingsPane][0];
+        if (Tab::getIdFromClassName($controller)) {
+            return $this->context->link->getAdminLink($controller, true, [], $extra);
+        }
+
+        // The pages are missing: the settings are drawn by the Configure page.
         return $this->context->link->getAdminLink('AdminModules', true, [], array_merge([
             'configure' => $this->name,
             'tab_module' => $this->tab,
@@ -770,9 +1105,13 @@ class Somcp extends Module
     }
 
     /**
+     * Creates the module tables. Every statement is CREATE TABLE IF NOT EXISTS,
+     * so an upgrade script calls this to add the tables of a new version
+     * without touching the ones a shop already has.
+     *
      * @return bool
      */
-    private function installDatabase(): bool
+    public function installDatabase(): bool
     {
         return $this->runSqlFile('install.sql');
     }
@@ -839,6 +1178,7 @@ class Somcp extends Module
         return [
             SomcpBackOffice::CONSENT_CONTROLLER,
             SomcpBackOffice::UPLOAD_CONTROLLER,
+            SomcpBackOffice::ASSISTANT_CONTROLLER,
         ];
     }
 
@@ -870,7 +1210,162 @@ class Somcp extends Module
             }
         }
 
+        return $this->installSettingsTabs();
+    }
+
+    /**
+     * The settings pages and the menu item above them.
+     *
+     * One item, MCP server, under Shop Parameters right after General, with
+     * the settings as its pages: a setting of the shop among the others
+     * rather than an entry of its own in the side menu. That depth is what
+     * makes PrestaShop draw the pages as tabs under the page title, on 8 and
+     * 9 alike, as for Contacts and Stores under Shop Parameters > Contact.
+     *
+     * Every tab is put where it belongs whether it is new or not, so a shop
+     * that got the pages from an earlier development build, under Modules or
+     * under an entry of their own, has them moved rather than left there. The
+     * labels live in ps_tab_lang, where trans() never runs, so each language
+     * gets its own from the module catalogues.
+     *
+     * @return bool
+     */
+    private function installSettingsTabs(): bool
+    {
+        $shopParameters = (int) Tab::getIdFromClassName('ShopParameters');
+
+        $idItem = $this->placeTab(self::SETTINGS_ITEM, $shopParameters > 0 ? $shopParameters : -1, 'MCP server', '');
+        if ($idItem <= 0) {
+            return false;
+        }
+        $this->placeAfter($idItem, 'AdminParentPreferences');
+
+        foreach (self::settingsPages() as [$controller, $label]) {
+            if ($this->placeTab($controller, $idItem, $label, '') <= 0) {
+                return false;
+            }
+        }
+
+        // Only once the item has left it: deleting a tab leaves its children
+        // pointing at nothing.
+        $idLegacy = (int) Tab::getIdFromClassName(self::LEGACY_PARENT);
+        if ($idLegacy > 0) {
+            (new Tab($idLegacy))->delete();
+        }
+
         return true;
+    }
+
+    /**
+     * Moves a tab right after a sibling, General for the MCP server item.
+     *
+     * Done with PrestaShop's own method, which shifts the tabs in between, so
+     * the positions stay a clean run. Left where it is when the sibling is not
+     * under the same parent, as on a shop that reorganised its menu.
+     *
+     * @param int $idTab
+     * @param string $sibling class name of the tab to follow
+     */
+    private function placeAfter(int $idTab, string $sibling): void
+    {
+        $tab = new Tab($idTab);
+        $idSibling = (int) Tab::getIdFromClassName($sibling);
+        if ($idSibling <= 0) {
+            return;
+        }
+
+        $before = new Tab($idSibling);
+        if ((int) $before->id_parent !== (int) $tab->id_parent) {
+            return;
+        }
+
+        // Once the item leaves its place the tabs after it move up by one,
+        // so the target is the sibling's own place when the item comes from
+        // behind it, and the one after when it comes from in front.
+        $target = (int) $tab->position > (int) $before->position
+            ? (int) $before->position + 1
+            : (int) $before->position;
+        if ((int) $tab->position !== $target) {
+            $tab->updatePosition((int) $tab->position < $target, $target);
+        }
+    }
+
+    /**
+     * Creates a tab of the module, or moves an existing one under the given
+     * parent.
+     *
+     * @param string $controller the tab class name
+     * @param int $idParent
+     * @param string|null $label English label, translated per language; null
+     *                           for the module name, which is not translated
+     * @param string $icon material icon of a main menu entry, or ''
+     *
+     * @return int the tab id, 0 on failure
+     */
+    private function placeTab(string $controller, int $idParent, ?string $label, string $icon): int
+    {
+        $idTab = (int) Tab::getIdFromClassName($controller);
+        if ($idTab > 0) {
+            $tab = new Tab($idTab);
+            if ((int) $tab->id_parent !== $idParent || (string) $tab->icon !== $icon) {
+                $tab->id_parent = $idParent;
+                $tab->icon = $icon;
+                if (!$tab->update()) {
+                    return 0;
+                }
+            }
+
+            return $idTab;
+        }
+
+        $tab = new Tab();
+        $tab->class_name = $controller;
+        $tab->module = $this->name;
+        $tab->active = true;
+        $tab->id_parent = $idParent;
+        $tab->icon = $icon;
+        $tab->name = [];
+        foreach (Language::getLanguages(false) as $language) {
+            $tab->name[(int) $language['id_lang']] = $label === null
+                ? $this->displayName
+                : self::catalogueLabel($label, (string) $language['locale']);
+        }
+
+        return $tab->add() ? (int) $tab->id : 0;
+    }
+
+    /**
+     * A label in the given locale, read from the module's own catalogue.
+     *
+     * Read from the file rather than asked of the translator: the translator
+     * only has the catalogue of the language the page is in, and the tab of
+     * every other language would be written in English.
+     *
+     * @param string $source the English label
+     * @param string $locale e.g. fr-FR
+     *
+     * @return string
+     */
+    private static function catalogueLabel(string $source, string $locale): string
+    {
+        $file = _PS_MODULE_DIR_ . 'somcp/translations/' . basename($locale) . '/ModulesSomcpAdmin.' . basename($locale) . '.xlf';
+        if (!is_file($file)) {
+            return $source;
+        }
+
+        $xml = @simplexml_load_file($file);
+        if ($xml === false) {
+            return $source;
+        }
+
+        foreach ($xml->xpath('//*[local-name()="trans-unit"]') ?: [] as $unit) {
+            $children = $unit->children('urn:oasis:names:tc:xliff:document:1.2');
+            if ((string) $children->source === $source && trim((string) $children->target) !== '') {
+                return (string) $children->target;
+            }
+        }
+
+        return $source;
     }
 
     /**
@@ -880,7 +1375,14 @@ class Somcp extends Module
     {
         $removed = true;
 
-        foreach (self::hiddenTabs() as $controller) {
+        // The pages before their menu item, so none is left orphaned.
+        $controllers = array_merge(
+            array_column(self::settingsPages(), 0),
+            [self::SETTINGS_ITEM, self::LEGACY_PARENT],
+            self::hiddenTabs()
+        );
+
+        foreach ($controllers as $controller) {
             $idTab = (int) Tab::getIdFromClassName($controller);
             if ($idTab <= 0) {
                 continue;

@@ -80,7 +80,7 @@ with your folder (`mcp.mymodule.customers.read`). The label is what the
 merchant reads, so it goes through your translations.
 
 Declare your own scopes rather than reusing somcp's (`mcp.access`,
-`mcp.orders.read`, `mcp.orders.write`). Someone who let an assistant read their
+`mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`, `mcp.stock.read`, `mcp.stock.write`, `mcp.seo.read`, `mcp.seo.write`). Someone who let an assistant read their
 orders has not let it read their customers, and the consent screen has to be
 able to ask the two questions separately. A module cannot declare a name that
 belongs to somcp: it is refused and logged.
@@ -228,7 +228,36 @@ and the assistant gets a generic error. An exception thrown by your handler is
 caught, logged, and reported without its message, which could contain a query
 or a path.
 
+**Multistore.** `$context['id_shop']` is the shop the call is for; read and
+write only that shop's data with it. If your module keeps its own tables, give
+each one an `id_shop` and scope every query to this shop - the same rule somcp
+holds itself to, so a tool behaves the same whether the shop is one of many or
+on its own.
+
 ---
+
+## Files: the two doors
+
+A tool never receives file bytes in an argument: a model writing base64 token
+by token corrupts files, costs a fortune, and turns every argument into a way
+in. somcp lets a file into the shop through two doors only.
+
+1. **A deposit**, read through `upload_ref`. The file is checked against its
+   extension by its bytes, belongs to the employee the assistant acts for, and
+   is used once. Your tool asks for it with `upload` and `accepts_files`, below;
+   in the built-in assistant, a file the employee attached is already a deposit
+   and comes with its `upload_ref`.
+2. **A public https address the shop downloads itself**, as the product tools
+   do for images. Download it with somcp's guard on (no private address, no
+   redirect, size capped), never with a bare `file_get_contents()`.
+
+Out of the shop, a file goes as a link your module serves: signed, expiring,
+answering 404 to anything else. Never as bytes in a tool result.
+
+| | Assistant connected over MCP | Built-in assistant |
+|---|---|---|
+| Shop to assistant | links in the tool result | links in the tool result; files the employee attaches go through somcp |
+| Assistant to shop | deposit page, or a public address | `upload_ref` of an attached file, or a public address |
 
 ## Asking the merchant for files
 
@@ -280,6 +309,12 @@ asks again, which opens a fresh deposit.
 `accepts_files` matters: it declares the `upload_ref` argument the assistant
 uses to come back with the deposit. Without it, a client that validates
 arguments refuses the second call.
+
+In the built-in assistant, a file the employee attached to a message is
+already a deposit, named to the model with its `upload_ref`. The model can call
+your tool with that reference straight away: your handler receives the file in
+`$context['files']` on the first call, with no deposit page. It gets a copy,
+so the conversation keeps showing the file.
 
 ---
 

@@ -1,0 +1,61 @@
+{
+  "title": "Manage products",
+  "description": "Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.",
+  "scopes": [
+    "mcp.catalog.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_search_products",
+    "somcp_get_product",
+    "somcp_list_categories",
+    "somcp_get_category",
+    "somcp_list_manufacturers",
+    "somcp_get_manufacturer",
+    "somcp_list_manufacturer_addresses",
+    "somcp_get_manufacturer_address",
+    "somcp_list_suppliers",
+    "somcp_get_supplier",
+    "somcp_list_attributes",
+    "somcp_get_attribute_group",
+    "somcp_get_attribute_value",
+    "somcp_list_features",
+    "somcp_get_feature",
+    "somcp_get_feature_value",
+    "somcp_list_attachments",
+    "somcp_list_tax_rules",
+    "somcp_create_product",
+    "somcp_update_product",
+    "somcp_set_product_active",
+    "somcp_delete_product",
+    "somcp_create_category",
+    "somcp_update_category",
+    "somcp_set_category_active",
+    "somcp_create_manufacturer",
+    "somcp_update_manufacturer",
+    "somcp_set_manufacturer_active",
+    "somcp_create_manufacturer_address",
+    "somcp_update_manufacturer_address",
+    "somcp_delete_manufacturer_address",
+    "somcp_create_supplier",
+    "somcp_update_supplier",
+    "somcp_set_supplier_active",
+    "somcp_create_attribute_group",
+    "somcp_update_attribute_group",
+    "somcp_create_attribute_value",
+    "somcp_update_attribute_value",
+    "somcp_create_feature",
+    "somcp_update_feature",
+    "somcp_create_feature_value",
+    "somcp_update_feature_value"
+  ],
+  "controller": "AdminProducts",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "product",
+      "description": "Name, reference or EAN13 of a product",
+      "required": false
+    }
+  ]
+}

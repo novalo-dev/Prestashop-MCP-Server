@@ -527,52 +527,37 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
             );
         }
 
-        try {
-            $result = $tool->call($arguments, [
-                // The shop this call is answered for, decided here and never
-                // read from the assistant. Handed down so a module asks the
-                // context instead of calling into this one to find out.
-                'id_shop' => Somcp::currentShopId(),
-                'id_employee' => $idEmployee,
-                'id_lang' => self::languageOf($idEmployee),
-                'id_client' => (int) $tokenRow['id_client'],
-                'scopes' => (string) $tokenRow['scopes'],
-                // What the client fetched since the first half of this call,
-                // and what the tool asked to have handed back. Both are empty
-                // on a first call, which is how a tool tells the two apart.
-                'responses' => $modern && is_array($params['inputResponses'] ?? null)
-                    ? $params['inputResponses']
-                    : [],
-                'resumed' => $modern
-                    ? SomcpRequestState::open(
-                        (string) ($params['requestState'] ?? ''),
-                        $name,
-                        $arguments,
-                        $idEmployee
-                    ) ?? []
-                    : [],
-                'capabilities' => $modern ? SomcpProtocol::clientCapabilities($params) : [],
-                // The arguments again, beside the handler's own copy. A tool
-                // resuming a step the client could not carry for it reads what
-                // the merchant was asked to pass back by hand, and the shared
-                // helpers that do that are given the context, not the
-                // arguments.
-                'arguments' => $arguments,
-            ]);
-        } catch (Throwable $e) {
-            SomcpLogger::log(
-                'tool_failed',
-                SomcpLogger::OUTCOME_FAILURE,
-                $name . ': ' . Tools::substr($e->getMessage(), 0, 200),
-                '',
-                $idEmployee
-            );
-
-            // The message itself stays out of the answer: an exception from deep
-            // inside PrestaShop can carry a query or a path, and the caller is a
-            // third party.
-            $result = SomcpTool::text('The tool failed while running.', true);
-        }
+        $result = SomcpToolRegistry::run($tool, $arguments, [
+            // The shop this call is answered for, decided here and never
+            // read from the assistant. Handed down so a module asks the
+            // context instead of calling into this one to find out.
+            'id_shop' => Somcp::currentShopId(),
+            'id_employee' => $idEmployee,
+            'id_lang' => self::languageOf($idEmployee),
+            'id_client' => (int) $tokenRow['id_client'],
+            'scopes' => (string) $tokenRow['scopes'],
+            // What the client fetched since the first half of this call,
+            // and what the tool asked to have handed back. Both are empty
+            // on a first call, which is how a tool tells the two apart.
+            'responses' => $modern && is_array($params['inputResponses'] ?? null)
+                ? $params['inputResponses']
+                : [],
+            'resumed' => $modern
+                ? SomcpRequestState::open(
+                    (string) ($params['requestState'] ?? ''),
+                    $name,
+                    $arguments,
+                    $idEmployee
+                ) ?? []
+                : [],
+            'capabilities' => $modern ? SomcpProtocol::clientCapabilities($params) : [],
+            // The arguments again, beside the handler's own copy. A tool
+            // resuming a step the client could not carry for it reads what
+            // the merchant was asked to pass back by hand, and the shared
+            // helpers that do that are given the context, not the
+            // arguments.
+            'arguments' => $arguments,
+        ]);
 
         if (SomcpTool::isInputRequired($result)) {
             return $this->askResult(

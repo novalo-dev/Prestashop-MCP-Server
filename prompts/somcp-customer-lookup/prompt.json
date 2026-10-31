@@ -1,0 +1,22 @@
+{
+  "title": "Find a customer",
+  "description": "Find a customer of the PrestaShop shop, read their account and orders, and update it when asked.",
+  "scopes": [
+    "mcp.customers.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_search_customers",
+    "somcp_get_customer",
+    "somcp_search_orders"
+  ],
+  "controller": "AdminCustomers",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "customer",
+      "description": "Name, email or company of the customer",
+      "required": false
+    }
+  ]
+}

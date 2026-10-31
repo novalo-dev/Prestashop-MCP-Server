@@ -31,8 +31,9 @@ MCP client connects from the outside.
 2. Give it a public HTTPS address with a tunnel (`cloudflared tunnel --url
    http://localhost:8080`, or `ngrok http 8080`), set that domain as the shop
    domain, and enable friendly URLs.
-3. Clone this repository into `modules/somcp` (the folder name matters) and
-   install the module.
+3. Clone this repository into `modules/somcp` (the folder name matters), run
+   `composer install` in it for Neuron AI, which runs the built-in assistant,
+   and install the module.
 4. Press **Run the diagnostic** in the module settings: every line green means
    a client can connect.
 
@@ -59,7 +60,44 @@ php .github/scripts/check-translations.php .
 
 # Every tool in the README, its entry, its scope, the CHANGELOG and a prompt
 php .github/scripts/check-tools.php .
+
+# Every table shop-scoped, no merchant setting stored globally
+php .github/scripts/check-multishop.php .
 ```
+
+CI also runs a **Security** job, which you can run too:
+
+```bash
+# Semgrep: its PHP rules and the module's own (pip install semgrep)
+semgrep scan --metrics=off --config p/php --config dev/security/semgrep.yml \
+  somcp.php classes controllers src tools views config prompts
+
+# Psalm taint analysis, from every tool's arguments and every request read
+# (psalm.phar from the Psalm releases on GitHub)
+php dev/security/make-entry.php && (cd dev/security && php psalm.phar --taint-analysis)
+
+# Gitleaks, over the whole history
+gitleaks git .
+```
+
+A finding is fixed, not silenced: escape with `pSQL()` or cast, print with
+`|escape`, and never commit a key. If one is truly a false positive, say why
+in the pull request before adding any `nosemgrep` or `@psalm-suppress`.
+
+The shop test also checks permissions: every tool is refused to an employee
+whose profile has no right, to an account that does not exist and to a token
+without its scope. Only `somcp_ping` may skip `SomcpTool::acts()`.
+
+CI also installs every published PrestaShop 8 and 9, with each PHP version
+that release accepts, runs PHPStan against that release on that PHP, and
+calls every tool there through
+`dev/shop-tests/run.php`, following its scenario in
+`dev/shop-tests/scenarios/`. Each call says what it expects: `ok`, `error`
+(the tool answers with `isError`), `input` (the tool asks the client first) or
+`any` (a write whose outcome depends on the demo data), and optionally
+`contains`, text the answer must hold. A notice raised from a file of the
+module fails the call too. PrestaShop 8 also runs on PHP 8.2 and later, which
+it does not support: those runs report without failing CI.
 
 CI also lints every file on PHP 8.1 to 8.4 and compiles `config/services.yml`
 with the Symfony versions of PrestaShop 8 (4.4) and 9 (6.4), with and without
@@ -78,6 +116,15 @@ PrestaShop 9 class once took the whole PrestaShop 8 back office down.
 - **Every PHP file of the module** starts with the license header and refuses to run outside
   PrestaShop (`if (!defined('_PS_VERSION_')) { exit; }`): the Addons validator
   checks both.
+- **The context through `Somcp::legacyContext()`**, never `Context::getContext()`:
+  the validator reports the latter, and one way in is one place to change when
+  PrestaShop moves the context.
+- **No HTML in PHP.** Markup goes in a Smarty template under `views/templates`,
+  which the PHP fills; the validator refuses HTML written in PHP strings. The
+  Semgrep rules of the Security job check both.
+- **No `nofilter` in a template.** The validator refuses it. Every variable is
+  escaped for where it lands; data for a script goes in an escaped `data-`
+  attribute that the script parses. Semgrep checks this too.
 - **Reuse before writing.** If the logic exists somewhere in the module, call
   it. A second version of the same rule is how two parts of the module end up
   disagreeing.
@@ -85,6 +132,38 @@ PrestaShop 9 class once took the whole PrestaShop 8 back office down.
   token, no code, no client secret, not even truncated.
 - **The shop comes from the token**, never from an argument. The employee's
   rights are checked on every call.
+- **Everything belongs to a shop.** Every table the module creates carries an
+  `id_shop`, unless it is the child of one that does and is reached only through
+  its parent's id (`somcp_upload_file`, `somcp_assistant_message`,
+  `somcp_assistant_run`). Every read and write is scoped to the shop in context.
+  A merchant setting is stored per shop with `Configuration::updateValue(...,
+  $idShop)` and read with `Configuration::get($key, null, null, $idShop)` -
+  never `getGlobalValue` / `updateGlobalValue`, which are for the module's own
+  state and minted secrets, the same on every shop. `check-multishop.php`
+  enforces the table rule and guards the assistant's settings; it runs in CI.
+- **Files enter the shop through two doors, and no third.** No tool takes file
+  bytes in an argument - no base64, no data URL. A file comes in either as a
+  **deposit**, read through `upload_ref` (`SomcpUpload`: bytes checked against
+  the extension, tied to one employee, single use), or as a **public https
+  address the shop downloads itself** through `SomcpHttp::fetch()` with its
+  address guard on. It works the same for an assistant connected over MCP and
+  for the built-in assistant, where a file the employee attached is already a
+  deposit. Going the other way, a tool hands a file out as a link of its own,
+  signed and expiring, never as bytes. See
+  [Files: the two doors](docs/EXTENDING.md#files-the-two-doors).
+- **Data goes through the PrestaShop core**, never the Webservice REST API. The
+  module runs inside the shop, so a tool reads and writes with the core classes
+  the back office uses (`ObjectModel`, `OrderHistory`, the services) - hooks
+  fire and validation runs exactly as on screen. The Webservice is for callers
+  outside the shop and would skip part of that.
+- **The built-in assistant is held to every rule here.** Its code
+  (`SomcpAssistant`, `SomcpAssistantChat`, `AdminSomcpAssistantController`) uses
+  the same tool contract, the same shop-from-token and employee-rights checks,
+  the same four-language strings and the same core classes as everything else -
+  no second data path, no Webservice, no hardcoded text. A capability added for
+  assistants connected over MCP is added for the built-in one in the same
+  change, and the reverse. The chat makes one model call per HTTP request; the
+  step loop lives in the browser, not in a long-running PHP process.
 
 ## Writing a tool, from A to Z
 
@@ -96,6 +175,10 @@ say so in the issue before writing something else.
 Only entries marked **to write** can be taken. An entry marked **draft**, whose
 issue carries the `draft` label, waits for the maintainer to approve its
 design: do not start it.
+
+A tool needs nothing more to reach the built-in assistant: the chat offers
+every tool of the registry the employee may use, and asks for approval before
+any tool whose `acts()` is not a `view`.
 
 1. **Take the issue.** Comment on it so nobody else starts the same tool. Read
    the [shared conventions](docs/TOOLS.md#shared-conventions) and the entry.
@@ -125,7 +208,10 @@ design: do not start it.
      and in the guide `prompt.md`.
 7. **Test** on PrestaShop 8 and 9, multistore included if you can, with a real
    MCP client: the call that should work, the account without the permission,
-   and for a write, the call that changes nothing.
+   and for a write, the call that changes nothing. Then write its **scenario**,
+   `dev/shop-tests/scenarios/<tool name>.json`: the calls CI makes on every
+   published PrestaShop 8 and 9 with their demo data (see Checks). A tool
+   without one fails CI.
 8. **Run the checks** listed above, then open the pull request with
    `Closes #<issue>` in its description. Sign the CLA when the bot asks.
 9. **Review.** CI must be green. The maintainer reviews, may build a test zip
@@ -210,11 +296,22 @@ that module), reformatting unrelated code.
 ## Building the Addons package
 
 Files only useful to developers are marked `export-ignore` in
-`.gitattributes`, so the package is built straight from git:
+`.gitattributes`. The builds lay the module out from git, add its Composer
+dependencies, then remove what the module never runs, listed in
+`dev/package/prune.txt`:
 
 ```bash
-git archive --format=zip --prefix=somcp/ -o somcp.zip HEAD
+mkdir -p build && git archive --prefix=somcp/ HEAD | tar -x -C build
+composer install --working-dir=build/somcp --no-dev --no-scripts --no-plugins --optimize-autoloader
+dev/package/prune.sh build/somcp
+(cd build && zip -qr ../somcp.zip somcp)
 ```
+
+The version of Neuron AI is pinned in `composer.json`. The CI **Dependencies**
+job checks it for known vulnerabilities, checks the part of its API the
+assistant calls (`dev/package/contract.php`) and that every class of the pruned
+archive still loads; the weekly **Dependencies** workflow opens an issue when a
+newer version is out.
 
 ## Security
 

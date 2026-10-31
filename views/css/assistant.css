@@ -1,0 +1,597 @@
+/*
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License version 3.0
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * https://opensource.org/licenses/AFL-3.0
+ * If you did not receive a copy of the license and are unable to obtain
+ * it through the world-wide-web, please send an email to
+ * contact@novalo.fr so we can send you a copy immediately.
+ *
+ * @author    Novalo <contact@novalo.fr>
+ * @copyright 2026 Novalo
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License v3.0 (AFL-3.0)
+ */
+
+/* The chat of the built-in assistant. PrestaShop has no chat component, so
+   this one is drawn here, in the back office primary colour. Every rule is
+   scoped to the chat's own ids so nothing leaks onto the page around it. */
+
+/* The header link, printed by the displayBackOfficeTop hook: drawn like
+   "View my shop" beside it, in that link's colour and icon size, and with its
+   own spacing so it never touches its neighbour. */
+#somcp-chat-component {
+    display: flex;
+    align-items: center;
+    margin: 0 8px;
+}
+
+#somcp-chat-button.somcp-header-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 4px;
+    /* Set by the script from the link beside it; grey until then. */
+    color: var(--somcp-header-color, #6c868e);
+    font-size: 0.875rem;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+/* A click leaves no ring and no lasting colour, as on "View my shop": the
+   focus is marked only when it comes from the keyboard. */
+#somcp-chat-button.somcp-header-link:hover,
+#somcp-chat-button.somcp-header-link:focus-visible {
+    color: #25b9d7;
+    text-decoration: none;
+}
+
+#somcp-chat-button.somcp-header-link:focus,
+#somcp-chat-button.somcp-header-link:active {
+    outline: 0;
+    box-shadow: none;
+    text-decoration: none;
+}
+
+#somcp-chat-button.somcp-header-link:focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 2px;
+}
+
+#somcp-chat-button.somcp-header-link .material-icons {
+    font-size: 1.25rem;
+}
+
+#somcp-chat-button.somcp-floating {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 10000;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #25b9d7;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+}
+
+#somcp-chat {
+    position: fixed;
+    top: 64px;
+    right: 22px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    width: 600px;
+    max-width: calc(100vw - 32px);
+    height: calc(100vh - 90px);
+    max-height: 760px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    font-size: 13px;
+    color: #363a41;
+}
+
+#somcp-chat[hidden] {
+    display: none;
+}
+
+#somcp-chat .somcp-chat-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #25b9d7;
+    color: #fff;
+}
+
+#somcp-chat .somcp-chat-head b {
+    display: block;
+    font-size: 14px;
+}
+
+#somcp-chat .somcp-chat-head small {
+    display: block;
+    opacity: 0.9;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+#somcp-chat .somcp-chat-head .somcp-chat-who {
+    flex: 1;
+    min-width: 0;
+}
+
+/* !important against the back office's own select styles, which paint
+   every select white and left the chosen assistant white on white. */
+#somcp-chat .somcp-chat-head select {
+    width: auto;
+    max-width: 150px;
+    height: 26px;
+    margin: 0;
+    padding: 0 6px;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #fff !important;
+    font-size: 12px;
+    box-shadow: none !important;
+}
+
+#somcp-chat .somcp-chat-head select option {
+    color: #363a41;
+}
+
+/* All header buttons share one exact square so they line up to the pixel,
+   whatever glyph each one carries. */
+#somcp-chat .somcp-chat-head button {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #fff;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* The conversations: a bar sliding in from the left over the messages,
+   with a shade behind it that closes it. */
+#somcp-chat .somcp-chat-shade {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    display: none;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+#somcp-chat.somcp-threads-open .somcp-chat-shade {
+    display: block;
+}
+
+#somcp-chat .somcp-chat-threads {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    width: 270px;
+    max-width: 85%;
+    overflow-y: auto;
+    background: #fff;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+    transform: translateX(-105%);
+    transition: transform 0.2s ease;
+}
+
+#somcp-chat.somcp-threads-open .somcp-chat-threads {
+    transform: translateX(0);
+}
+
+#somcp-chat .somcp-chat-newthread {
+    margin: 12px;
+    padding: 8px 12px;
+    border: 1px solid #25b9d7;
+    border-radius: 8px;
+    background: #fff;
+    color: #25b9d7;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-chat-newthread:hover {
+    background: #f4fcfd;
+}
+
+#somcp-chat .somcp-chat-threads-title {
+    padding: 4px 14px;
+    color: #9aa8ad;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+#somcp-chat .somcp-thread {
+    display: flex;
+    align-items: center;
+    margin: 0 6px;
+    border-radius: 6px;
+}
+
+#somcp-chat .somcp-thread:hover,
+#somcp-chat .somcp-thread.somcp-current {
+    background: #f4f6f7;
+}
+
+/* A conversation whose answer landed while another one was on screen: a dot
+   before its title, and on the button that unfolds the list. */
+#somcp-chat .somcp-thread.somcp-unread .somcp-thread-open::before,
+#somcp-chat.somcp-has-unread .somcp-chat-menu::after {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: #25b9d7;
+    vertical-align: middle;
+}
+
+#somcp-chat.somcp-has-unread .somcp-chat-menu::after {
+    margin: 0 0 0 4px;
+}
+
+#somcp-chat .somcp-thread-open {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 8px;
+    overflow: hidden;
+    border: 0;
+    background: none;
+    color: #363a41;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-thread-delete {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 4px 6px;
+    border: 0;
+    background: none;
+    color: #9aa8ad;
+    cursor: pointer;
+    visibility: hidden;
+}
+
+#somcp-chat .somcp-thread:hover .somcp-thread-delete,
+#somcp-chat .somcp-thread.somcp-current .somcp-thread-delete {
+    visibility: visible;
+}
+
+#somcp-chat .somcp-thread-delete:hover {
+    color: #c05c67;
+}
+
+#somcp-chat .somcp-thread-delete .material-icons {
+    font-size: 18px;
+}
+
+#somcp-chat .somcp-chat-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 9px;
+    padding: 14px;
+    overflow-y: auto;
+    background: #f4f6f7;
+}
+
+#somcp-chat .somcp-msg {
+    max-width: 86%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+#somcp-chat .somcp-msg p {
+    margin: 0 0 6px;
+}
+
+#somcp-chat .somcp-msg p:last-child,
+#somcp-chat .somcp-msg ul:last-child {
+    margin-bottom: 0;
+}
+
+#somcp-chat .somcp-msg ul {
+    margin: 0 0 6px 18px;
+    padding: 0;
+}
+
+#somcp-chat .somcp-msg code {
+    padding: 0 3px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.06);
+    font-size: 12px;
+}
+
+#somcp-chat .somcp-msg-user {
+    align-self: flex-end;
+    border-bottom-right-radius: 3px;
+    background: #25b9d7;
+    color: #fff;
+}
+
+#somcp-chat .somcp-msg-user a {
+    color: #fff;
+}
+
+#somcp-chat .somcp-msg-assistant {
+    align-self: flex-start;
+    border: 1px solid #e3e8ea;
+    border-bottom-left-radius: 3px;
+    background: #fff;
+}
+
+#somcp-chat .somcp-tool {
+    align-self: flex-start;
+    padding: 3px 10px;
+    border: 1px dashed #cfd8dc;
+    border-radius: 10px;
+    background: #fff;
+    color: #6c868e;
+    font-size: 11px;
+}
+
+#somcp-chat .somcp-approval {
+    padding: 10px 12px;
+    border: 1px solid #f0c36d;
+    border-radius: 10px;
+    background: #fff8e6;
+}
+
+#somcp-chat .somcp-approval b {
+    display: block;
+    margin-bottom: 4px;
+}
+
+#somcp-chat .somcp-approval ul {
+    margin: 4px 0 8px 18px;
+    padding: 0;
+}
+
+#somcp-chat .somcp-approval pre {
+    max-height: 120px;
+    margin: 2px 0 0;
+    padding: 4px 6px;
+    overflow: auto;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.04);
+    font-size: 11px;
+    white-space: pre-wrap;
+}
+
+#somcp-chat .somcp-approval button {
+    margin-right: 6px;
+    padding: 5px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-approve {
+    border: 1px solid #70b580;
+    background: #70b580;
+    color: #fff;
+}
+
+#somcp-chat .somcp-refuse {
+    border: 1px solid #c05c67;
+    background: #fff;
+    color: #c05c67;
+}
+
+#somcp-chat .somcp-error {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #fbe9eb;
+    color: #a33a46;
+}
+
+#somcp-chat .somcp-typing {
+    align-self: flex-start;
+    color: #6c868e;
+    font-style: italic;
+}
+
+#somcp-chat.somcp-chat-wide {
+    width: 860px;
+    height: calc(100vh - 90px);
+    max-height: none;
+}
+
+#somcp-chat .somcp-composer {
+    margin: 10px 12px 0;
+    padding: 8px 10px 6px;
+    border: 1px solid #dfe3e5;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+#somcp-chat .somcp-composer:focus-within {
+    border-color: #bbcdd2;
+}
+
+#somcp-chat .somcp-composer textarea {
+    display: block;
+    width: 100%;
+    min-height: 24px;
+    max-height: 200px;
+    padding: 4px 2px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    resize: none;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+#somcp-chat .somcp-composer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+#somcp-chat .somcp-composer-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-attach {
+    background: none;
+    color: #6c868e;
+    font-size: 22px;
+    line-height: 1;
+}
+
+#somcp-chat .somcp-attach:hover {
+    background: #f4f6f7;
+}
+
+#somcp-chat .somcp-send {
+    background: #25b9d7;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+#somcp-chat .somcp-send:disabled {
+    background: #bbcdd2;
+    cursor: default;
+}
+
+#somcp-chat .somcp-chat-warning {
+    padding: 6px 14px 0;
+    color: #9aa8ad;
+    font-size: 11px;
+    text-align: center;
+}
+
+#somcp-chat .somcp-chat-foot {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 14px 8px;
+    color: #9aa8ad;
+    font-size: 10.5px;
+}
+
+#somcp-chat .somcp-chat-foot a {
+    color: #25b9d7;
+}
+
+#somcp-chat .somcp-msg-file {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+#somcp-chat .somcp-chat-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 0 6px;
+}
+
+#somcp-chat .somcp-chat-files[hidden] {
+    display: none;
+}
+
+#somcp-chat .somcp-file-chip {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 2px 4px 2px 8px;
+    overflow: hidden;
+    border: 1px solid #dfe3e5;
+    border-radius: 12px;
+    background: #f4f6f7;
+    font-size: 11px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#somcp-chat .somcp-file-chip button {
+    margin-left: 2px;
+    padding: 0 4px;
+    border: 0;
+    background: none;
+    color: #6c868e;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-msg-image {
+    display: block;
+    max-width: 100%;
+    max-height: 260px;
+    margin-top: 6px;
+    border-radius: 8px;
+}
+
+/* The note that stands for the oldest messages once they were summarized:
+   quieter than a message, since nobody in the conversation wrote it. */
+#somcp-chat .somcp-summary {
+    margin: 4px 0 10px;
+    color: #6c868e;
+    font-size: 12px;
+}
+
+#somcp-chat .somcp-summary > summary {
+    cursor: pointer;
+    font-style: italic;
+}
+
+#somcp-chat .somcp-summary-text {
+    margin-top: 6px;
+    padding: 8px 10px;
+    border-left: 2px solid #dfe3e6;
+    background: #f8f9fa;
+}

@@ -1,0 +1,17 @@
+{
+  "calls": [
+    {"why": "a new meta description for the delivery page, in one language", "arguments": {"id_cms": 1, "meta_description": {"en": "Delivery times, carriers and shipping costs of the shop"}}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"meta_description\"", "\"previous\"", "\"seo_warnings\"", "\"seo_title\""]},
+    {"why": "the same value again changes nothing", "arguments": {"id_cms": 1, "meta_description": {"en": "Delivery times, carriers and shipping costs of the shop"}}, "expect": "ok", "contains": ["\"changed\": false"]},
+    {"why": "a meta title, which becomes the title search engines read", "arguments": {"id_cms": 1, "meta_title": {"en": "Delivery and shipping"}}, "expect": "ok", "contains": ["\"changed\": true", "\"seo_title\": \"Delivery and shipping\""]},
+    {"why": "an empty meta title removes it, and the page title is read again", "arguments": {"id_cms": 1, "meta_title": {"en": ""}}, "expect": "ok", "contains": ["\"changed\": true", "\"meta_title\": \"\""]},
+    {"why": "a new friendly URL on a displayed page warns that the old address stops working", "arguments": {"id_cms": 1, "link_rewrite": {"en": "Delivery Terms"}}, "expect": "ok", "contains": ["\"new\": \"delivery-terms\"", "old address"]},
+    {"why": "the friendly URL put back", "arguments": {"id_cms": 1, "link_rewrite": {"en": "delivery"}}, "expect": "ok", "contains": ["\"changed\": true", "\"new\": \"delivery\""]},
+    {"why": "a page that does not exist", "arguments": {"id_cms": 999999, "meta_description": {"en": "x"}}, "expect": "error", "contains": ["No CMS page of this shop"]},
+    {"why": "a meta title over 70 characters", "arguments": {"id_cms": 1, "meta_title": {"en": "A meta title that goes on and on well beyond what any search result shows"}}, "expect": "error", "contains": ["70 characters at most"]},
+    {"why": "a language the shop does not have", "arguments": {"id_cms": 1, "meta_description": {"zz": "x"}}, "expect": "error", "contains": ["not an active language"]},
+    {"why": "a text given without its language", "arguments": {"id_cms": 1, "meta_description": "x"}, "expect": "error", "contains": ["keyed by ISO code"]},
+    {"why": "indexation given as a word", "arguments": {"id_cms": 1, "indexation": "yes"}, "expect": "error", "contains": ["indexation: true or false"]},
+    {"why": "a field of the page this tool does not write", "arguments": {"id_cms": 1, "content": {"en": "x"}}, "expect": "error", "contains": ["content: not a field of this tool"]},
+    {"why": "characters PrestaShop refuses in a meta description", "arguments": {"id_cms": 1, "meta_description": {"en": "<script>x</script>"}}, "expect": "error", "contains": ["Nothing was changed"]}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "every order, newest first", "arguments": {}, "expect": "ok", "contains": ["total_paid_tax_incl", "new_client", "delivery_country_iso", "status_color", "company"]},
+    {"why": "one order by identifier", "arguments": {"id_order": 1}, "expect": "ok"},
+    {"why": "filters, sort and paging together", "arguments": {"date_from": "2000-01-01", "total_min": 0, "only_valid": false, "limit": 2, "offset": 1}, "expect": "ok"},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "any"},
+    {"why": "orders of new clients only", "arguments": {"new_client": true}, "expect": "ok", "contains": ["total_count"]},
+    {"why": "orders of returning clients only", "arguments": {"new_client": false}, "expect": "ok", "contains": ["total_count"]},
+    {"why": "orders delivered to one country", "arguments": {"delivery_country": "US"}, "expect": "ok", "contains": ["total_count"]},
+    {"why": "a country code that does not exist", "arguments": {"delivery_country": "ZZ"}, "expect": "error"},
+    {"why": "orders of a company, cheapest first", "arguments": {"company": "a", "sort": "total_asc"}, "expect": "ok", "contains": ["total_count"]},
+    {"why": "amount range on the tax included total", "arguments": {"total_min": 1, "total_max": 100000, "sort": "total_desc"}, "expect": "ok"}
+  ]
+}

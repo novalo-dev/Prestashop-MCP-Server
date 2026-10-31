@@ -1,0 +1,13 @@
+{
+  "calls": [
+    {"why": "the second Paris address of Studio Design, added by the scenario of somcp_create_manufacturer_address after the six demo addresses", "arguments": {"id_address": 9}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_address\": 9", "\"manufacturer_name\": \"Studio Design\"", "\"city\": \"Paris\""]},
+    {"why": "deleted again, nothing changes", "arguments": {"id_address": 9}, "expect": "error", "contains": ["No brand address of this shop", "Nothing was deleted"]},
+    {"why": "the San Francisco address of Graphic Corner, with the identifier as a string", "arguments": {"id_address": "8"}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_address\": 8", "\"manufacturer_name\": \"Graphic Corner\"", "\"city\": \"San Francisco\""]},
+    {"why": "a customer address is refused", "arguments": {"id_address": 1}, "expect": "error", "contains": ["No brand address of this shop", "Nothing was deleted"]},
+    {"why": "a supplier address is refused", "arguments": {"id_address": 3}, "expect": "error", "contains": ["No brand address of this shop", "Nothing was deleted"]},
+    {"why": "an address that does not exist", "arguments": {"id_address": 999999}, "expect": "error", "contains": ["No brand address of this shop"]},
+    {"why": "an address identifier that is not a number", "arguments": {"id_address": "4 OR 1=1"}, "expect": "error", "contains": ["No brand address of this shop"]},
+    {"why": "an address identifier given as a list", "arguments": {"id_address": [4]}, "expect": "error", "contains": ["No brand address of this shop"]},
+    {"why": "no identifier", "arguments": {}, "expect": "error", "contains": ["No brand address of this shop"]}
+  ]
+}

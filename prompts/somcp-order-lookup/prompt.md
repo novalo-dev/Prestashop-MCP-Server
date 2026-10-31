@@ -29,7 +29,10 @@ week" and "€ 240" mean nothing until you know which shop said them.
    call `somcp_list_order_statuses` **first** and take the identifier from
    there. Status identifiers differ from one shop to the next.
 3. Call `somcp_search_orders` with the filters that match what was asked, and
-   nothing more. An unasked-for filter silently hides orders.
+   nothing more. An unasked-for filter silently hides orders. Besides
+   reference, customer, dates, status, amount and payment method, it filters
+   on `new_client` ("first orders", "returning customers"), `delivery_country`
+   as an ISO code ("orders shipped to Belgium" is `BE`) and `company`.
 4. Read `total_count`, not the length of the list. Twenty results out of three
    hundred is not "twenty orders".
 5. Call `somcp_get_order` only for an order the merchant named, or one they
@@ -48,11 +51,20 @@ you can infer - ask rather than assume.
 ## What to report
 
 For a list: the reference, the date, the customer, the amount paid with its
-currency, and the status. Not the addresses, not the phone numbers. The
+currency, and the status. The delivery country, the company and whether the
+customer was new when they matter to the question. Not the addresses, not the phone numbers. The
 merchant asked what came in, not for their address book.
 
 For one order: answer the question that was asked. A merchant asking whether an
 order was paid does not want the product lines read out.
+
+`somcp_get_order` returns what the order page shows: the order note and the
+gift message, the customer's valid orders, total spent and private note, each
+product line with its stock location, quantity in stock now, refunds and
+customizations, each shipment with its tracking number, the payments, the
+invoices, delivery slips and credit slips, and the messages. Each message says
+in `from` whether the shop or the customer wrote it: never present the shop's
+answer as the customer's request.
 
 Always say the currency with an amount, and whether a total is with or without
 tax - the field names say which.

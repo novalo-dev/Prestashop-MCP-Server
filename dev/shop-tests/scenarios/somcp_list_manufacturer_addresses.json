@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "lists the brand addresses of the demo shop, with the one of Studio Design", "arguments": {}, "expect": "ok", "contains": ["\"addresses\"", "\"count\"", "\"id_address\"", "\"manufacturer_name\"", "\"lastname\"", "\"firstname\"", "\"postcode\"", "\"city\"", "\"country\"", "Studio Design"]},
+    {"why": "the addresses of one brand, Studio Design", "arguments": {"id_manufacturer": 1}, "expect": "ok", "contains": ["\"id_manufacturer\": 1", "Studio Design", "New York", "10154", "\"country\": \"US\"", "\"count\""]},
+    {"why": "the brand identifier as a numeric string", "arguments": {"id_manufacturer": "1"}, "expect": "ok", "contains": ["\"id_manufacturer\": 1"]},
+    {"why": "a brand without address gives an empty list", "arguments": {"id_manufacturer": 2}, "expect": "ok", "contains": ["\"addresses\"", "\"count\""]},
+    {"why": "a brand that does not exist", "arguments": {"id_manufacturer": 999999}, "expect": "error", "contains": ["No brand of this shop"]},
+    {"why": "a brand identifier of zero", "arguments": {"id_manufacturer": 0}, "expect": "error", "contains": ["No brand of this shop"]},
+    {"why": "a brand identifier that is not a number", "arguments": {"id_manufacturer": [1]}, "expect": "error", "contains": ["No brand of this shop"]}
+  ]
+}

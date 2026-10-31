@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "the address of Studio Design in the demo shop, with every field of the brand address form", "arguments": {"id_address": 4}, "expect": "ok", "contains": ["\"id_address\": 4", "\"id_manufacturer\": 1", "Studio Design", "\"lastname\"", "\"firstname\"", "\"address1\"", "\"address2\"", "\"postcode\": \"10154\"", "New York", "\"country\": \"US\"", "\"state\": \"NY\"", "\"dni\"", "\"phone\"", "\"phone_mobile\"", "\"other\""]},
+    {"why": "the address identifier as a numeric string", "arguments": {"id_address": "4"}, "expect": "ok", "contains": ["\"id_address\": 4", "Studio Design"]},
+    {"why": "a customer address is refused", "arguments": {"id_address": 1}, "expect": "error", "contains": ["No brand address of this shop"]},
+    {"why": "a supplier address is refused", "arguments": {"id_address": 3}, "expect": "error", "contains": ["No brand address of this shop"]},
+    {"why": "an address that does not exist", "arguments": {"id_address": 999999}, "expect": "error", "contains": ["No brand address of this shop"]},
+    {"why": "an address identifier of zero", "arguments": {"id_address": 0}, "expect": "error", "contains": ["No brand address of this shop"]},
+    {"why": "an address identifier that is not a number", "arguments": {"id_address": [4]}, "expect": "error", "contains": ["No brand address of this shop"]}
+  ]
+}

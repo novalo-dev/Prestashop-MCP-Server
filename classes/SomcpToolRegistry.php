@@ -335,6 +335,40 @@ class SomcpToolRegistry
     }
 
     /**
+     * Runs a tool and turns anything it throws into a tool error.
+     *
+     * Shared by the MCP endpoint and the assistant built into the back office,
+     * so a tool behaves the same way whichever of the two calls it, and a
+     * failure is logged once, in one shape.
+     *
+     * The exception message stays out of the result: an exception from deep
+     * inside PrestaShop can carry a query or a path, and the caller reads the
+     * result back to a model.
+     *
+     * @param SomcpTool $tool
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $context
+     *
+     * @return array<string, mixed> a CallToolResult
+     */
+    public static function run(SomcpTool $tool, array $arguments, array $context): array
+    {
+        try {
+            return $tool->call($arguments, $context);
+        } catch (Throwable $e) {
+            SomcpLogger::log(
+                'tool_failed',
+                SomcpLogger::OUTCOME_FAILURE,
+                $tool->getName() . ': ' . Tools::substr($e->getMessage(), 0, 200),
+                '',
+                (int) ($context['id_employee'] ?? 0)
+            );
+
+            return SomcpTool::text('The tool failed while running.', true);
+        }
+    }
+
+    /**
      * Whether the merchant left this tool switched on for this shop.
      *
      * Separate from the permission check: a permission says what an account may

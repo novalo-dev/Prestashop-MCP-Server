@@ -1,3 +1,9 @@
+# The module's dependencies (Neuron AI for the built-in assistant), installed
+# with: composer install. The builds add them to the archive; the version is
+# pinned in composer.json, so no lock file is kept.
+/vendor/
+/composer.lock
+
 # Development tools, installed with: composer install --working-dir=dev/tools
 /dev/tools/vendor/
 /dev/tools/composer.lock
@@ -23,3 +29,6 @@ Thumbs.db
 /node_modules/
 /package.json
 /package-lock.json
+
+# Psalm entry point, written by dev/security/make-entry.php
+/dev/security/entry.generated.php

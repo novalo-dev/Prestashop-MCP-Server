@@ -1,0 +1,55 @@
+name: Sponsor label
+
+# Sponsors are promised that their issues are read first. This marks every
+# issue a sponsor opens with the `sponsor` label, so the maintainer and the
+# scheduled tasks can find them at a glance.
+#
+# Only GitHub's GraphQL API tells whether someone sponsors the maintainer, and
+# only with a token of the maintainer's own account: SPONSORS_TOKEN, a classic
+# token with the read:user scope. The label itself is written with the
+# repository token, which needs nothing more than issues: write.
+#
+# GitHub runs workflows triggered by issues from the default branch only, so
+# this one acts once it is on main.
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    # The maintainer does not sponsor himself, and bots never do.
+    if: github.event.issue.user.login != github.repository_owner && github.event.issue.user.type == 'User'
+    steps:
+      - name: Check whether the author sponsors the maintainer
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.SPONSORS_TOKEN }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "SPONSORS_TOKEN is not set: nothing to check." >> "$GITHUB_STEP_SUMMARY"
+            echo "sponsor=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # "Viewer" is the owner of the token, the maintainer. A label is
+          # public, so a sponsor who chose to stay private gets none: putting
+          # it on their issue would tell everyone what they kept to themselves.
+          LEVEL=$(gh api graphql -f query='query($login: String!) { user(login: $login) { sponsorshipForViewerAsSponsorable(activeOnly: true) { privacyLevel } } }' \
+            -f login="$AUTHOR" --jq '.data.user.sponsorshipForViewerAsSponsorable.privacyLevel // ""')
+          if [ "$LEVEL" = "PUBLIC" ]; then
+            echo "sponsor=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sponsor=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Add the sponsor label
+        if: steps.check.outputs.sponsor == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+        # Adding a label that does not exist yet creates it.
+        run: gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$NUMBER/labels" -f "labels[]=sponsor" --silent

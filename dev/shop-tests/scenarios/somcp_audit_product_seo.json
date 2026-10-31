@@ -1,0 +1,15 @@
+{
+  "calls": [
+    {"why": "the whole audit of the demo catalogue, every check and language", "arguments": {}, "expect": "ok", "contains": ["\"total_count\"", "\"counts\"", "\"meta_title_missing\"", "\"no_gtin\"", "\"active_only\": true"]},
+    {"why": "one language, by its ISO code, one entry per page", "arguments": {"language": "en", "limit": 1}, "expect": "ok", "contains": ["\"returned\": 1", "\"language\": \"en\""]},
+    {"why": "the ISO code in capitals is the same language", "arguments": {"language": "EN", "limit": 1}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "one check only, the others left out of the counts", "arguments": {"checks": ["no_gtin"], "limit": 5}, "expect": "ok", "contains": ["\"no_gtin\""]},
+    {"why": "inactive products included, with the redirection check", "arguments": {"active": false, "checks": ["inactive_without_redirect", "no_brand"]}, "expect": "ok", "contains": ["\"active_only\": false", "\"inactive_without_redirect\""]},
+    {"why": "the redirection check is dropped for active products only", "arguments": {"checks": ["inactive_without_redirect"]}, "expect": "ok", "contains": ["\"total_count\": 0", "\"returned\": 0"]},
+    {"why": "the duplicate and length checks together", "arguments": {"checks": ["meta_title_duplicate", "link_rewrite_duplicate", "meta_title_too_long", "meta_description_short", "meta_description_long", "description_short", "image_legend_missing", "no_image"]}, "expect": "ok", "contains": ["\"link_rewrite_duplicate\""]},
+    {"why": "a page far beyond the end is empty, not an error", "arguments": {"offset": 100000}, "expect": "ok", "contains": ["\"returned\": 0"]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]},
+    {"why": "a check that does not exist", "arguments": {"checks": ["meta_keywords"]}, "expect": "error", "contains": ["checks must be a list"]},
+    {"why": "checks given as a string", "arguments": {"checks": "no_gtin"}, "expect": "error", "contains": ["checks must be a list"]}
+  ]
+}

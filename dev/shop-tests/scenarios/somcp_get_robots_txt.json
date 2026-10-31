@@ -1,0 +1,5 @@
+{
+  "calls": [
+    {"why": "the robots.txt of the demo shop, whether the install wrote one or not", "arguments": {}, "expect": "ok", "contains": ["\"present\"", "\"content\"", "\"groups\"", "\"sitemaps\"", "\"size\"", "\"last_modified\"", "\"warnings\""]}
+  ]
+}

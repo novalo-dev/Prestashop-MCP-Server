@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "a demo poster taken offline", "arguments": {"id_product": 3, "active": false}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": false"]},
+    {"why": "taken offline again, nothing changes", "arguments": {"id_product": 3, "active": false}, "expect": "ok", "contains": ["\"changed\": false", "already offline"]},
+    {"why": "put back online, with the identifier as a string", "arguments": {"id_product": "3", "active": true}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": true"]},
+    {"why": "put online again, nothing changes", "arguments": {"id_product": 3, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "already online"]},
+    {"why": "a status given as a string is refused", "arguments": {"id_product": 3, "active": "false"}, "expect": "error", "contains": ["true or false"]},
+    {"why": "a product that does not exist", "arguments": {"id_product": 999999, "active": false}, "expect": "error", "contains": ["No product"]}
+  ]
+}

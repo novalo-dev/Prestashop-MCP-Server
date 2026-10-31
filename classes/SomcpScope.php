@@ -19,11 +19,11 @@ declare(strict_types=1);
 /*
  * SomcpScope - the permissions a token can carry.
  *
- * Only `mcp.access` exists in this version. The scopes that gate products,
- * orders or customers are added together with the tools that need them, not
- * before: a scope advertised in the metadata but enforced nowhere is a promise
- * the server does not keep, and a client that asks for it gets a token that
- * grants more than the shop can honour.
+ * The scopes that gate products, orders or customers are added together
+ * with the tools that need them, not before: a scope advertised in the
+ * metadata but enforced nowhere is a promise the server does not keep, and a
+ * client that asks for it gets a token that grants more than the shop can
+ * honour.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -41,6 +41,27 @@ class SomcpScope
     /** @var string Acting on orders: statuses, notes, documents. */
     public const ORDERS_WRITE = 'mcp.orders.write';
 
+    /** @var string Reading the catalogue: products, categories, brands, suppliers. */
+    public const CATALOG_READ = 'mcp.catalog.read';
+
+    /** @var string Changing the catalogue: products, categories and brands. */
+    public const CATALOG_WRITE = 'mcp.catalog.write';
+
+    /** @var string Reading stock: the quantities of products and combinations. */
+    public const STOCK_READ = 'mcp.stock.read';
+
+    /** @var string Changing stock: setting or moving the quantities of products and combinations. */
+    public const STOCK_WRITE = 'mcp.stock.write';
+
+    /** @var string Reading customers: their accounts, as the back office lists them. */
+    public const CUSTOMERS_READ = 'mcp.customers.read';
+
+    /** @var string Reading how the shop appears to search engines. */
+    public const SEO_READ = 'mcp.seo.read';
+
+    /** @var string Changing how the shop appears to search engines. */
+    public const SEO_WRITE = 'mcp.seo.write';
+
     /**
      * The scopes this module owns.
      *
@@ -48,7 +69,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::SEO_READ, self::SEO_WRITE];
     }
 
     /**
@@ -71,7 +92,7 @@ class SomcpScope
      * The scopes other modules brought, if the registry is there to ask.
      *
      * The module loads its classes together, so it normally is. The guard is
-     * for the boot that stopped short: a discovery document listing our three
+     * for the boot that stopped short: a discovery document listing our own
      * scopes is a document a client can still work from, while a fatal error
      * on the well-known address takes the whole server down.
      *
@@ -217,6 +238,20 @@ class SomcpScope
                 return $module->l10n(
                     'Change the orders of this shop, which can email your customers'
                 );
+            case self::CATALOG_READ:
+                return $module->l10n('Read the catalogue of this shop: products, prices and categories');
+            case self::CATALOG_WRITE:
+                return $module->l10n('Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock');
+            case self::STOCK_READ:
+                return $module->l10n('Read the stock of this shop: quantities of products and combinations');
+            case self::STOCK_WRITE:
+                return $module->l10n('Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements');
+            case self::CUSTOMERS_READ:
+                return $module->l10n('Read the customers of this shop: names, email addresses, groups and what they spent');
+            case self::SEO_READ:
+                return $module->l10n('Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages');
+            case self::SEO_WRITE:
+                return $module->l10n('Change the shop\'s SEO settings, page titles and descriptions, robots.txt and llms.txt');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

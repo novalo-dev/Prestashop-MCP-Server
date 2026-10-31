@@ -1,0 +1,18 @@
+{
+  "calls": [
+    {"why": "each line against its own alert level, active products only", "arguments": {}, "expect": "ok", "contains": ["\"lines\"", "\"total_count\"", "\"offset\": 0"]},
+    {"why": "a threshold above every demo quantity fills a full first page", "arguments": {"threshold": 1000000}, "expect": "ok", "contains": ["\"id_product_attribute\"", "\"reference\"", "\"threshold\": 1000000", "\"returned\": 20"]},
+    {"why": "a threshold under every quantity lists nothing", "arguments": {"threshold": -1000000}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
+    {"why": "inactive products included", "arguments": {"threshold": 1000000, "active": false}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "the next page", "arguments": {"threshold": 1000000, "limit": 5, "offset": 5}, "expect": "ok", "contains": ["\"returned\": 5", "\"offset\": 5"]},
+    {"why": "a limit over the cap is brought back to 100", "arguments": {"threshold": 1000000, "limit": 500}, "expect": "ok", "contains": ["\"lines\""]},
+    {"why": "each line names its default supplier", "arguments": {"threshold": 1000000, "limit": 5}, "expect": "ok", "contains": ["\"supplier\""]},
+    {"why": "the products of one category", "arguments": {"threshold": 1000000, "id_category": 3}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "a category that does not exist lists nothing", "arguments": {"threshold": 1000000, "id_category": 999999}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
+    {"why": "the products of one default supplier", "arguments": {"threshold": 1000000, "id_supplier": 1}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "a supplier that does not exist lists nothing", "arguments": {"threshold": 1000000, "id_supplier": 999999}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
+    {"why": "a search on the name", "arguments": {"threshold": 1000000, "search": "mug"}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "a search that matches nothing", "arguments": {"threshold": 1000000, "search": "no-such-product-zz"}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
+    {"why": "every filter together, past the first page", "arguments": {"threshold": 1000000, "active": false, "id_category": 2, "id_supplier": 1, "search": "a", "limit": 2, "offset": 2}, "expect": "ok", "contains": ["\"offset\": 2"]}
+  ]
+}

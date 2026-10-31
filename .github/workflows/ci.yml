@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 permissions:
@@ -49,6 +49,9 @@ jobs:
         run: dev/tools/vendor/bin/php-cs-fixer fix --dry-run --using-cache=no --format=checkstyle | cs2pr
 
   phpstan:
+    # Kept beside the analysis in the shop job, which covers every release:
+    # these two names are required checks of the main branch ruleset, and a
+    # required check that never reports blocks every merge.
     name: PHPStan on PrestaShop ${{ matrix.prestashop }}
     runs-on: ubuntu-latest
     strategy:
@@ -65,6 +68,10 @@ jobs:
           coverage: none
       - name: Install dev tools
         run: composer install --working-dir=dev/tools --no-interaction --no-progress
+      # The module's own dependencies, which PHPStan reads to check the calls
+      # the built-in assistant makes to Neuron AI.
+      - name: Install the module dependencies
+        run: composer install --no-dev --no-interaction --no-progress
       - name: Analyse inside the PrestaShop image
         run: |
           docker run --rm \
@@ -108,6 +115,19 @@ jobs:
       - name: Every tool documented, scoped and in a prompt
         run: php .github/scripts/check-tools.php .
 
+  multishop:
+    name: Multistore
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: none
+      - name: Every table shop-scoped, no merchant setting stored globally
+        run: php .github/scripts/check-multishop.php .
+
   container:
     name: Symfony container on Symfony ${{ matrix.symfony }}
     runs-on: ubuntu-latest
@@ -137,5 +157,382 @@ jobs:
             symfony/yaml:^${{ matrix.symfony }} \
             symfony/routing:^${{ matrix.symfony }} \
             symfony/http-foundation:^${{ matrix.symfony }}
+      # The module's own autoloader, which the script loads: Composer writes
+      # it, as the builds do for the archive.
+      - name: Module dependencies
+        run: composer install --no-dev --no-interaction --no-progress
       - name: Compile services.yml and resolve routes.yml
         run: php .github/scripts/compile-container.php "$RUNNER_TEMP/sf/vendor" .
+
+
+  security:
+    # PHP has no CodeQL support, so the security checks are put together:
+    # Semgrep with its PHP rules and PrestaShop's own (request data reaching a
+    # query, command execution, unserialize, unescaped Smarty output), Psalm's
+    # taint analysis to follow data from a request or a tool's arguments
+    # across functions to a query, an echo or a file, and Gitleaks over the
+    # whole history for a key or a token committed by mistake.
+    name: Security
+    runs-on: ubuntu-latest
+    env:
+      SEMGREP_VERSION: '1.182.1'
+      PSALM_VERSION: '6.20.1'
+      GITLEAKS_VERSION: '8.30.1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Every commit, not only the last one: a secret removed in a later
+          # commit is still published in the history.
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: none
+      - name: Semgrep
+        run: |
+          pip install --quiet "semgrep==$SEMGREP_VERSION"
+          semgrep scan --metrics=off --error \
+            --config p/php --config dev/security/semgrep.yml \
+            somcp.php classes controllers src tools views config prompts
+      - name: Psalm taint analysis
+        run: |
+          curl -fsSL -o /tmp/psalm.phar "https://github.com/vimeo/psalm/releases/download/$PSALM_VERSION/psalm.phar"
+          php dev/security/make-entry.php
+          cd dev/security
+          php /tmp/psalm.phar --no-cache --no-progress --taint-analysis --output-format=github
+      - name: Gitleaks
+        run: |
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v$GITLEAKS_VERSION/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz -C /tmp gitleaks
+          /tmp/gitleaks git --no-banner --redact --exit-code 1 .
+  dependencies:
+    # Neuron AI runs the built-in assistant, and it moves fast: the version is
+    # pinned in composer.json, nothing changes without a commit, and this job
+    # watches what the pin brings in. Known vulnerabilities fail it. So does a
+    # class of the pruned archive that no longer loads, or a part of Neuron's
+    # API the module calls that is gone or changed shape - which is how an
+    # upgrade that would break the chat shows up here and not in a shop.
+    # The weekly Dependencies workflow says when a newer version is out.
+    name: Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+      - name: composer.json is valid
+        run: composer validate --no-check-publish --no-check-lock
+      - name: Install
+        run: composer install --no-dev --no-interaction --no-progress --optimize-autoloader
+      - name: Known vulnerabilities
+        run: composer audit --no-dev --locked --abandoned=report
+      - name: The API the assistant calls is still there
+        run: php dev/package/contract.php .
+      - name: Every class of the pruned archive loads
+        run: |
+          mkdir -p /tmp/pack/somcp
+          git archive HEAD | tar -x -C /tmp/pack/somcp
+          cp -r vendor /tmp/pack/somcp/vendor
+          dev/package/prune.sh /tmp/pack/somcp
+          php dev/package/loads.php /tmp/pack/somcp
+
+  shop:
+    # Every tool called for real, then PHPStan, on each published PrestaShop
+    # 8 and 9 with each PHP version that release accepts. The other jobs read
+    # the code on its own; this one runs it against a database and analyses
+    # it against that release's classes, which is where a column PrestaShop
+    # 8.0 lacks or a method PrestaShop 9 removed actually shows up.
+    #
+    # PrestaShop 8 refuses PHP above 8.1. Merchants run it there anyway, so
+    # those pairs run too, but marked unsupported: a failing step shows in
+    # orange with its annotations, and the job itself stays green, since the
+    # core may be what breaks. Tolerated on each step rather than on the job:
+    # a failed job counts against the commit even when the run is allowed to
+    # pass, and every commit would show a red cross for PrestaShop's sake.
+    name: PrestaShop ${{ matrix.prestashop }} on PHP ${{ matrix.php }}${{ matrix.unsupported && ' (unsupported by PrestaShop)' || '' }}
+    needs: [lint, tools, security, dependencies]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { prestashop: '8.0.0', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.0', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.0', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.0', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.0', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.1', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.1', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.1', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.1', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.1', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.2', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.2', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.2', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.2', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.2', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.3', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.3', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.3', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.3', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.3', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.4', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.4', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.4', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.4', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.4', php: '8.5', unsupported: true }
+          - { prestashop: '8.0.5', php: '8.1', unsupported: false }
+          - { prestashop: '8.0.5', php: '8.2', unsupported: true }
+          - { prestashop: '8.0.5', php: '8.3', unsupported: true }
+          - { prestashop: '8.0.5', php: '8.4', unsupported: true }
+          - { prestashop: '8.0.5', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.0', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.0', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.0', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.0', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.0', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.1', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.1', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.1', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.1', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.1', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.2', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.2', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.2', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.2', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.2', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.3', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.3', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.3', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.3', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.3', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.4', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.4', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.4', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.4', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.4', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.5', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.5', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.5', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.5', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.5', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.6', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.6', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.6', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.6', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.6', php: '8.5', unsupported: true }
+          - { prestashop: '8.1.7', php: '8.1', unsupported: false }
+          - { prestashop: '8.1.7', php: '8.2', unsupported: true }
+          - { prestashop: '8.1.7', php: '8.3', unsupported: true }
+          - { prestashop: '8.1.7', php: '8.4', unsupported: true }
+          - { prestashop: '8.1.7', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.0', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.0', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.0', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.0', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.0', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.1', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.1', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.1', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.1', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.1', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.2', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.2', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.2', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.2', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.2', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.3', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.3', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.3', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.3', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.3', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.4', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.4', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.4', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.4', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.4', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.5', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.5', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.5', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.5', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.5', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.6', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.6', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.6', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.6', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.6', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.7', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.7', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.7', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.7', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.7', php: '8.5', unsupported: true }
+          - { prestashop: '8.2.8', php: '8.1', unsupported: false }
+          - { prestashop: '8.2.8', php: '8.2', unsupported: true }
+          - { prestashop: '8.2.8', php: '8.3', unsupported: true }
+          - { prestashop: '8.2.8', php: '8.4', unsupported: true }
+          - { prestashop: '8.2.8', php: '8.5', unsupported: true }
+          - { prestashop: '9.0.0', php: '8.1', unsupported: false }
+          - { prestashop: '9.0.0', php: '8.2', unsupported: false }
+          - { prestashop: '9.0.0', php: '8.3', unsupported: false }
+          - { prestashop: '9.0.0', php: '8.4', unsupported: false }
+          - { prestashop: '9.0.1', php: '8.1', unsupported: false }
+          - { prestashop: '9.0.1', php: '8.2', unsupported: false }
+          - { prestashop: '9.0.1', php: '8.3', unsupported: false }
+          - { prestashop: '9.0.1', php: '8.4', unsupported: false }
+          - { prestashop: '9.0.2', php: '8.1', unsupported: false }
+          - { prestashop: '9.0.2', php: '8.2', unsupported: false }
+          - { prestashop: '9.0.2', php: '8.3', unsupported: false }
+          - { prestashop: '9.0.2', php: '8.4', unsupported: false }
+          - { prestashop: '9.0.3', php: '8.1', unsupported: false }
+          - { prestashop: '9.0.3', php: '8.2', unsupported: false }
+          - { prestashop: '9.0.3', php: '8.3', unsupported: false }
+          - { prestashop: '9.0.3', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.0', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.1', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.2', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.3', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.4', php: '8.5', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.1', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.2', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.3', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.4', unsupported: false }
+          - { prestashop: '9.1.5', php: '8.5', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.1', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.2', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.3', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.4', unsupported: false }
+          - { prestashop: '9.2.0', php: '8.5', unsupported: false }
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: prestashop
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: module
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, intl, gd, zip, pdo_mysql, curl, xml, dom, simplexml, fileinfo, iconv, bcmath, openssl
+          ini-values: memory_limit=1G
+          coverage: none
+          tools: composer
+      # PrestaShop 9 is published as a zip only behind a form on
+      # prestashop.com, so every version is built the same way from its tag:
+      # the sources, then the dependencies from the tag's own composer.lock.
+      - name: PrestaShop ${{ matrix.prestashop }} sources
+        run: git clone --quiet --depth 1 --branch "${{ matrix.prestashop }}" https://github.com/PrestaShop/PrestaShop.git shop
+      # One cache per PrestaShop version, shared by its PHP versions: the
+      # packages downloaded depend on the lock file only, and a key per PHP
+      # version stored the same files up to five times, past GitHub's 10 GB.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ matrix.prestashop }}-${{ hashFiles('shop/composer.lock') }}
+      - name: Dependencies
+        continue-on-error: ${{ matrix.unsupported }}
+        id: deps
+        working-directory: shop
+        run: composer install --no-interaction --no-progress --prefer-dist
+      # The themes come from Composer as sources, without the built
+      # assets the installer insists on finding. Nothing here renders the
+      # storefront, so empty files are enough to let the install through.
+      - name: Theme assets the installer checks for
+        continue-on-error: ${{ matrix.unsupported }}
+        working-directory: shop
+        run: |
+          for theme in themes/*/; do
+            [ -f "$theme/config/theme.yml" ] || continue
+            mkdir -p "$theme/assets/js" "$theme/assets/css"
+            [ -f "$theme/assets/js/theme.js" ] || touch "$theme/assets/js/theme.js"
+            [ -f "$theme/assets/css/theme.css" ] || touch "$theme/assets/css/theme.css"
+          done
+      - name: Install the shop with its demo data
+        continue-on-error: ${{ matrix.unsupported }}
+        working-directory: shop
+        run: |
+          # The installer downloads the currency feed from api.prestashop.com
+          # and aborts when that host does not answer, which fails one pair
+          # out of the matrix for a reason unrelated to the module. It drops
+          # its own tables before starting (db_clear), so a second attempt
+          # starts clean.
+          # Logs are not readable from outside the run, so the end of a failed
+          # install is repeated as one annotation, where the summary shows it.
+          set -o pipefail
+          for attempt in 1 2 3; do
+            php -d memory_limit=1G install-dev/index_cli.php \
+              --domain=localhost --db_server=127.0.0.1 --db_user=root --db_password=root \
+              --db_name=prestashop --prefix=ps_ --language=en --country=fr --ssl=0 --fixtures=1 \
+              --email=demo@example.com --password=Somcp-shop-test-1 2>&1 | tee ../install.log \
+              && exit 0
+            echo "Install attempt $attempt failed"
+            sleep 15
+          done
+          echo "::error title=Install failed::$(tail -n 40 ../install.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"
+          exit 1
+      - name: Install somcp
+        continue-on-error: ${{ matrix.unsupported }}
+        run: |
+          # The module as a merchant receives it: git archive leaves out what
+          # export-ignore keeps out of the package.
+          mkdir shop/modules/somcp
+          git -C module archive HEAD | tar -x -C shop/modules/somcp
+          # The builds add vendor/ the same way. Not pruned here: the test of
+          # the assistant drives it with Neuron AI's own fake provider, which
+          # the archive leaves out. The dependency job checks the pruned copy.
+          composer install --working-dir=shop/modules/somcp --no-dev --no-interaction --no-progress --optimize-autoloader
+          set -o pipefail
+          php shop/bin/console prestashop:module install somcp 2>&1 | tee module.log \
+            || { echo "::error title=Module install failed::$(tail -n 40 module.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
+      - name: Call every tool
+        continue-on-error: ${{ matrix.unsupported }}
+        run: php module/dev/shop-tests/run.php shop
+      # The same PrestaShop sources, so each release is analysed against its
+      # own classes; PHPStan targets the PHP it runs on, so each pair is a
+      # different analysis. It runs even when a tool call failed above, so a
+      # run reports both kinds of problem at once.
+      - name: Install dev tools
+        continue-on-error: ${{ matrix.unsupported }}
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        run: composer install --working-dir=module/dev/tools --no-interaction --no-progress
+      - name: Module dependencies for PHPStan
+        continue-on-error: ${{ matrix.unsupported }}
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        run: composer install --working-dir=module --no-dev --no-interaction --no-progress
+      - name: PHPStan
+        continue-on-error: ${{ matrix.unsupported }}
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        working-directory: module
+        env:
+          _PS_ROOT_DIR_: ${{ github.workspace }}/shop
+        run: php -d memory_limit=1G dev/tools/vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress --error-format=github

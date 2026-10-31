@@ -12,11 +12,14 @@
 [![Contributors](https://img.shields.io/github/contributors/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Contributors)](https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors)
 
 A PrestaShop module that turns a shop into an [MCP](https://modelcontextprotocol.io)
-server. Claude, ChatGPT or any MCP client can then work with the shop's orders,
-through a standard protocol, with OAuth 2.1 and the employee's own back office
-permissions, instead of a database login or an API key that can do everything.
+server. Claude, ChatGPT or any MCP client can then work with the shop's orders
+and catalogue, through a standard protocol, with OAuth 2.1 and the employee's
+own back office permissions, instead of a database login or an API key that can
+do everything.
 
 The module folder is `somcp`; in the back office it is called **O'So MCP Server**.
+
+https://github.com/user-attachments/assets/cf0b0e3f-1172-4ba9-aad1-11a6298aadf7
 
 This repository is looking for PrestaShop developers who want to build it with
 us. See [Where to help](#where-to-help).
@@ -25,9 +28,8 @@ us. See [Where to help](#where-to-help).
 
 ## What it does
 
-- **Serves MCP from inside PrestaShop.** No separate service, no Node process,
-  no dependency beyond PrestaShop itself. The endpoint is a module front
-  controller.
+- **Serves MCP from inside PrestaShop.** No separate service, no Node process.
+  The endpoint is a module front controller.
 - **Runs its own OAuth 2.1 authorization server**: discovery documents (RFC 9728
   and RFC 8414), PKCE S256, dynamic client registration and client ID metadata
   documents, refresh token rotation with reuse detection. Tokens are stored
@@ -43,6 +45,12 @@ us. See [Where to help](#where-to-help).
 - **Lets any module publish tools and prompts** through two hooks, by returning
   arrays. No dependency on somcp's classes, so those modules still pass the
   Addons validator. See [docs/EXTENDING.md](docs/EXTENDING.md).
+- **Has a built-in assistant in the back office.** A chat button at the top
+  right of every page opens a conversation with the AI the merchant connected
+  with their own API key (Claude, ChatGPT, Gemini, Mistral, DeepSeek, Grok,
+  or Cohere). It uses the same tools, with the rights of the employee
+  signed in, and asks for approval before any change. Several assistants can
+  share the work by role. Runs on [Neuron AI](https://github.com/neuron-core/neuron-ai).
 - **Speaks both eras of the protocol** from one endpoint: the stateless
   `2026-07-28` revision, with questions in the middle of a call, and the
   `2025-11-25`, `2025-06-18` and `2025-03-26` revisions.
@@ -65,13 +73,133 @@ calling the shop's own addresses.
 
 ## Tools
 
+Grouped by back office page, each object's reads before its writes. A new tool goes in the table of its page.
+
+### Connection
+
 | Tool | Scope | Back office right | Nature |
 |---|---|---|---|
 | `somcp_ping` | `mcp.access` | none | read |
+
+### Orders
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
 | `somcp_search_orders` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_get_order` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_list_order_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
 | `somcp_set_order_status` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+| `somcp_set_order_tracking` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+| `somcp_add_order_message` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+| `somcp_set_order_note` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+| `somcp_add_order_payment` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+
+### Catalog - Products
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_search_products` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
+| `somcp_get_product` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
+| `somcp_create_product` | `mcp.catalog.write` | `add` on `AdminProducts` | write |
+| `somcp_update_product` | `mcp.catalog.write` | `edit` on `AdminProducts` | write |
+| `somcp_set_product_active` | `mcp.catalog.write` | `edit` on `AdminProducts` | write |
+| `somcp_delete_product` | `mcp.catalog.write` | `delete` on `AdminProducts` | write |
+
+### Catalog - Categories
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_categories` | `mcp.catalog.read` | `view` on `AdminCategories` | read |
+| `somcp_get_category` | `mcp.catalog.read` | `view` on `AdminCategories` | read |
+| `somcp_create_category` | `mcp.catalog.write` | `add` on `AdminCategories` | write |
+| `somcp_update_category` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
+| `somcp_set_category_active` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
+
+### Catalog - Brands
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_manufacturers` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
+| `somcp_get_manufacturer` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
+| `somcp_create_manufacturer` | `mcp.catalog.write` | `add` on `AdminManufacturers` | write |
+| `somcp_update_manufacturer` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
+| `somcp_set_manufacturer_active` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
+| `somcp_list_manufacturer_addresses` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
+| `somcp_get_manufacturer_address` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
+| `somcp_create_manufacturer_address` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
+| `somcp_update_manufacturer_address` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
+| `somcp_delete_manufacturer_address` | `mcp.catalog.write` | `delete` on `AdminManufacturers` | write |
+
+### Catalog - Suppliers
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_suppliers` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
+| `somcp_get_supplier` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
+| `somcp_create_supplier` | `mcp.catalog.write` | `add` on `AdminSuppliers` | write |
+| `somcp_update_supplier` | `mcp.catalog.write` | `edit` on `AdminSuppliers` | write |
+| `somcp_set_supplier_active` | `mcp.catalog.write` | `edit` on `AdminSuppliers` | write |
+
+### Catalog - Attributes
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_attributes` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
+| `somcp_get_attribute_group` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
+| `somcp_create_attribute_group` | `mcp.catalog.write` | `add` on `AdminAttributesGroups` | write |
+| `somcp_update_attribute_group` | `mcp.catalog.write` | `edit` on `AdminAttributesGroups` | write |
+| `somcp_get_attribute_value` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
+| `somcp_create_attribute_value` | `mcp.catalog.write` | `add` on `AdminAttributesGroups` | write |
+| `somcp_update_attribute_value` | `mcp.catalog.write` | `edit` on `AdminAttributesGroups` | write |
+
+### Catalog - Features
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_features` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
+| `somcp_get_feature` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
+| `somcp_create_feature` | `mcp.catalog.write` | `add` on `AdminFeatures` | write |
+| `somcp_update_feature` | `mcp.catalog.write` | `edit` on `AdminFeatures` | write |
+| `somcp_get_feature_value` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
+| `somcp_create_feature_value` | `mcp.catalog.write` | `add` on `AdminFeatures` | write |
+| `somcp_update_feature_value` | `mcp.catalog.write` | `edit` on `AdminFeatures` | write |
+
+### Catalog - Files and taxes
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_attachments` | `mcp.catalog.read` | `view` on `AdminAttachments` | read |
+| `somcp_list_tax_rules` | `mcp.catalog.read` | `view` on `AdminTaxRulesGroup` | read |
+
+### Stock
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_get_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
+| `somcp_list_low_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
+| `somcp_set_stock_quantity` | `mcp.stock.write` | `edit` on `AdminStockManagement` | write |
+
+### Customers
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_search_customers` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
+| `somcp_get_customer` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
+
+### SEO
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_get_seo_settings` | `mcp.seo.read` | `view` on `AdminMeta` | read |
+| `somcp_list_meta_pages` | `mcp.seo.read` | `view` on `AdminMeta` | read |
+| `somcp_audit_page` | `mcp.seo.read` | `view` on `AdminMeta` | read |
+| `somcp_audit_product_seo` | `mcp.seo.read` | `view` on `AdminProducts` | read |
+| `somcp_audit_category_seo` | `mcp.seo.read` | `view` on `AdminCategories` | read |
+| `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |
+| `somcp_audit_brand_seo` | `mcp.seo.read` | `view` on `AdminManufacturers` | read |
+| `somcp_update_cms_seo` | `mcp.seo.write` | `edit` on `AdminCmsContent` | write |
+| `somcp_get_robots_txt` | `mcp.seo.read` | `view` on `AdminMeta` | read |
+| `somcp_generate_robots_txt` | `mcp.seo.write` | `add`, `edit` and `delete` on `AdminMeta` | write |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running
@@ -83,8 +211,8 @@ and only says what the assistant is connected to (shop, account, language,
 currency), so an assistant can always tell which account it is using, even one
 with no rights at all.
 
-Three prompts ship with the module: checking the connection, finding an order,
-and changing an order status. Details of every tool are in
+Six prompts ship with the module: checking the connection, finding an order,
+changing an order status, managing products, checking stock, and auditing SEO. Details of every tool are in
 [docs/TOOLS.md](docs/TOOLS.md).
 
 ## Install for development
@@ -96,7 +224,13 @@ and changing an order status. Details of every tool are in
    git clone https://github.com/novalo-dev/Prestashop-MCP-Server.git somcp
    ```
 
-2. Install it from **Modules > Module Manager**, then open its settings.
+2. Install the module's dependencies, then install it from **Modules > Module
+   Manager** and open its settings:
+
+   ```bash
+   cd somcp && composer install --no-dev
+   ```
+
 3. Copy the **address to give to your assistant**. It looks like
    `https://your-shop.example/module/somcp/mcp`.
 4. Press **Run the diagnostic**. Every line should be green before you connect a
@@ -137,8 +271,10 @@ welcome, see the roadmap.
   access tokens one hour and refresh tokens thirty days by default, both
   configurable. Refresh tokens rotate; presenting an old one revokes the grant.
 - **Scopes** say what an assistant may do: `mcp.access` to connect,
-  `mcp.orders.read`, `mcp.orders.write`. Other modules declare their own scopes
-  rather than borrowing these.
+  `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
+  `mcp.stock.read`, `mcp.stock.write`, `mcp.seo.read`, `mcp.seo.write`. Other
+  modules
+  declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's
   current profile, and the shop always comes from the token, never from the
   request.

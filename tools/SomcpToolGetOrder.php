@@ -44,11 +44,17 @@ class SomcpToolGetOrder
         return new SomcpTool(
             'somcp_get_order',
             Somcp::t('Get an order'),
-            'Returns everything about one order of this shop: the customer and how to reach them, '
-                . 'both addresses, every product line with its quantity and prices, discounts, '
-                . 'carrier and shipping, payments received, the current status and how it got '
-                . 'there, the invoices and credit slips it produced, the messages exchanged, and '
-                . 'the totals. Identify the order by its identifier or its reference. '
+            'Returns everything about one order of this shop, as its page in the back office shows '
+                . 'it: the order note, the cart it came from, gift wrapping and gift message, recycled '
+                . 'packaging; the customer, how to reach them, their valid orders and total spent, and '
+                . 'the private note on them; both addresses; every product line with its quantity, '
+                . 'prices, tax rate, identifiers (EAN-13, ISBN, UPC, MPN, supplier reference), stock '
+                . 'location, quantity in stock now, refunded and returned quantities and '
+                . 'customizations; discounts; each shipment with its carrier, weight, cost and '
+                . 'tracking number; payments received; the current status and how it got there; the '
+                . 'invoices, delivery slips and credit slips it produced; the messages exchanged, each '
+                . 'saying whether the shop or the customer wrote it; and the totals. Identify the order '
+                . 'by its identifier or its reference. '
                 . 'Do not use it to look for orders - somcp_search_orders finds them, and this '
                 . 'tool reads one you have already identified.',
             [
@@ -98,19 +104,25 @@ class SomcpToolGetOrder
                 'language_id' => $idLang,
                 'payment_method' => (string) $order->payment,
                 'status' => self::status($order, $idLang),
+                // The Order note of the Status tab, written by the shop.
+                'note' => (string) $order->note,
+                'id_cart' => (int) $order->id_cart,
+                'gift' => (bool) $order->gift,
+                'gift_message' => (string) $order->gift_message,
+                'recycled_packaging' => (bool) $order->recyclable,
             ],
-            'customer' => self::customer($customer),
+            'customer' => self::customer($customer, $order, $idLang, (string) $currency->iso_code),
             'addresses' => [
                 'delivery' => self::address((int) $order->id_address_delivery, $idLang),
                 'invoice' => self::address((int) $order->id_address_invoice, $idLang),
             ],
-            'products' => self::products($order),
+            'products' => self::products($order, $idLang),
             'discounts' => self::discounts($order),
             'shipping' => self::shipping($order, $idLang),
             'totals' => self::totals($order),
             'payments' => self::payments($order),
             'history' => self::history($order, $idLang),
-            'documents' => self::documents($order),
+            'documents' => self::documents($order, $idLang),
             'messages' => self::messages($order),
         ]);
     }
@@ -118,34 +130,102 @@ class SomcpToolGetOrder
     /**
      * Finds the order, and only within the shop the token belongs to.
      *
+     * Public so the order tools that write find an order exactly as this one
+     * reads it. A reference shared by several orders gives the newest of them;
+     * find() is the lookup that refuses such a reference instead.
+     *
      * @param array<string, mixed> $arguments
      *
      * @return Order|null
      */
-    private static function locate(array $arguments): ?Order
+    public static function locate(array $arguments): ?Order
+    {
+        $orders = self::candidates($arguments);
+
+        return $orders === [] ? null : $orders[0];
+    }
+
+    /**
+     * Finds one order by id_order or reference, or explains why it cannot.
+     *
+     * A cart split across carriers gives its orders one reference, and each of
+     * them has its own page in the back office. Taking one of them would write
+     * on a parcel nobody chose, so a shared reference is answered with the
+     * list of its orders for the merchant to pick from.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return Order|string The order, or the error to send back as is
+     */
+    public static function find(array $arguments)
+    {
+        $byReference = (int) ($arguments['id_order'] ?? 0) <= 0;
+        if ($byReference && (!isset($arguments['reference']) || !is_string($arguments['reference'])
+            || trim($arguments['reference']) === '')) {
+            return 'Give id_order or reference. Find the order with somcp_search_orders.';
+        }
+
+        $orders = self::candidates($arguments);
+        if ($orders === []) {
+            return $byReference
+                ? 'No order of this shop has this reference. Find it with somcp_search_orders.'
+                : 'No order of this shop has this identifier. Find it with somcp_search_orders.';
+        }
+        if (count($orders) === 1) {
+            return $orders[0];
+        }
+
+        $listed = [];
+        foreach (array_reverse($orders) as $order) {
+            $state = new OrderState((int) $order->current_state, (int) $order->id_lang);
+            $carrier = new Carrier((int) $order->id_carrier, (int) $order->id_lang);
+            $listed[] = (int) $order->id . ' ('
+                . (Validate::isLoadedObject($state) ? (string) $state->name : '') . ', '
+                . (Validate::isLoadedObject($carrier) ? (string) $carrier->name : '') . ')';
+        }
+
+        return 'This reference belongs to ' . count($orders) . ' orders: ' . implode(', ', $listed)
+            . '. Give id_order to choose one of them.';
+    }
+
+    /**
+     * The orders of the token's shop that match id_order, or else reference,
+     * newest first.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return Order[]
+     */
+    private static function candidates(array $arguments): array
     {
         $idShop = Somcp::currentShopId();
         $idOrder = (int) ($arguments['id_order'] ?? 0);
+        $ids = [];
 
-        if ($idOrder <= 0 && !empty($arguments['reference'])) {
-            $idOrder = (int) Db::getInstance()->getValue(
+        if ($idOrder > 0) {
+            $ids = [$idOrder];
+        } elseif (isset($arguments['reference']) && is_string($arguments['reference'])
+            && trim($arguments['reference']) !== '') {
+            $rows = Db::getInstance()->executeS(
                 'SELECT `id_order` FROM `' . _DB_PREFIX_ . "orders`
-                 WHERE `reference` = '" . pSQL((string) $arguments['reference']) . "'
-                   AND `id_shop` = " . $idShop . '
+                 WHERE `reference` = '" . pSQL(trim($arguments['reference'])) . "'
+                   AND `id_shop` = " . (int) $idShop . '
                  ORDER BY `id_order` DESC'
             );
+            foreach (is_array($rows) ? $rows : [] as $row) {
+                $ids[] = (int) $row['id_order'];
+            }
         }
 
-        if ($idOrder <= 0) {
-            return null;
+        $orders = [];
+        foreach ($ids as $id) {
+            $order = new Order($id);
+            if (Validate::isLoadedObject($order) && (int) $order->id_shop === $idShop) {
+                $orders[] = $order;
+            }
         }
 
-        $order = new Order($idOrder);
-        if (!Validate::isLoadedObject($order) || (int) $order->id_shop !== $idShop) {
-            return null;
-        }
-
-        return $order;
+        return $orders;
     }
 
     /**
@@ -168,18 +248,28 @@ class SomcpToolGetOrder
 
     /**
      * @param Customer $customer
+     * @param Order $order
+     * @param int $idLang
+     * @param string $currency ISO code of the order's currency
      *
      * @return array<string, mixed>
      */
-    private static function customer(Customer $customer): array
+    private static function customer(Customer $customer, Order $order, int $idLang, string $currency): array
     {
         if (!Validate::isLoadedObject($customer)) {
             // A guest order, or an account deleted since.
             return ['id_customer' => 0];
         }
 
+        $gender = new Gender((int) $customer->id_gender, $idLang);
+        // The figures of the customer block of the order page, from the same
+        // core method: valid orders, and their total converted from each
+        // order's rate into the default currency, then into this order's.
+        $stats = $customer->getStats();
+
         return [
             'id_customer' => (int) $customer->id,
+            'title' => Validate::isLoadedObject($gender) ? (string) $gender->name : '',
             'firstname' => (string) $customer->firstname,
             'lastname' => (string) $customer->lastname,
             'email' => (string) $customer->email,
@@ -187,6 +277,12 @@ class SomcpToolGetOrder
             'is_guest' => (bool) $customer->is_guest,
             'newsletter' => (bool) $customer->newsletter,
             'date_add' => (string) $customer->date_add,
+            'valid_orders_count' => (int) ($stats['nb_orders'] ?? 0),
+            'total_spent' => (float) Tools::convertPrice((float) ($stats['total_orders'] ?? 0), (int) $order->id_currency),
+            'total_spent_currency' => $currency,
+            // Read only here: it is on the order page, but writing it is the
+            // business of the customer tools.
+            'private_note' => (string) $customer->note,
         ];
     }
 
@@ -223,28 +319,90 @@ class SomcpToolGetOrder
 
     /**
      * @param Order $order
+     * @param int $idLang
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function products(Order $order): array
+    private static function products(Order $order, int $idLang): array
     {
         $lines = [];
+        // getProducts() already adds what the Products table of the order page
+        // shows beside order_detail: the stock location and the quantity in
+        // stock now (current_stock), and the customizations of the line.
         foreach ($order->getProducts() as $product) {
             $lines[] = [
                 'id_product' => (int) $product['product_id'],
                 'id_product_attribute' => (int) $product['product_attribute_id'],
                 'reference' => (string) $product['product_reference'],
+                'supplier_reference' => (string) $product['product_supplier_reference'],
+                // Strings: an EAN-13 can start with zeros, and the column is
+                // wider on PrestaShop 9 than on 8.
+                'ean13' => (string) $product['product_ean13'],
+                'isbn' => (string) $product['product_isbn'],
+                'upc' => (string) $product['product_upc'],
+                'mpn' => (string) ($product['product_mpn'] ?? ''),
                 'name' => (string) $product['product_name'],
                 'quantity' => (int) $product['product_quantity'],
                 'quantity_refunded' => (int) $product['product_quantity_refunded'],
+                'quantity_returned' => (int) $product['product_quantity_return'],
+                'refunded_tax_excluded' => (float) ($product['total_refunded_tax_excl'] ?? 0),
+                'refunded_tax_included' => (float) ($product['total_refunded_tax_incl'] ?? 0),
+                // Now, not product_quantity_in_stock, which is the quantity at
+                // the time of the order.
+                'quantity_in_stock_now' => (int) ($product['current_stock'] ?? 0),
+                'stock_location' => (string) ($product['location'] ?? ''),
+                'tax_name' => (string) $product['tax_name'],
+                'tax_rate' => (float) $product['tax_rate'],
                 'unit_price_tax_excluded' => (float) $product['unit_price_tax_excl'],
                 'unit_price_tax_included' => (float) $product['unit_price_tax_incl'],
                 'total_tax_excluded' => (float) $product['total_price_tax_excl'],
                 'total_tax_included' => (float) $product['total_price_tax_incl'],
+                'customizations' => self::customizations($product),
             ];
         }
 
         return $lines;
+    }
+
+    /**
+     * The customizations of one product line, flattened.
+     *
+     * The core nests them by delivery address, customization and field type;
+     * an assistant only needs which field received which value.
+     *
+     * @param array<string, mixed> $product a line of Order::getProducts()
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function customizations(array $product): array
+    {
+        $customizations = [];
+        if (empty($product['customizedDatas']) || !is_array($product['customizedDatas'])) {
+            return $customizations;
+        }
+
+        foreach ($product['customizedDatas'] as $byCustomization) {
+            if (!is_array($byCustomization)) {
+                continue;
+            }
+            foreach ($byCustomization as $idCustomization => $customization) {
+                if (!is_array($customization) || empty($customization['datas']) || !is_array($customization['datas'])) {
+                    continue;
+                }
+                foreach ($customization['datas'] as $type => $fields) {
+                    foreach ((array) $fields as $field) {
+                        $customizations[] = [
+                            'id_customization' => (int) $idCustomization,
+                            'type' => (int) $type === (int) Product::CUSTOMIZE_FILE ? 'file' : 'text',
+                            'name' => (string) ($field['name'] ?? ''),
+                            'value' => (string) ($field['value'] ?? ''),
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $customizations;
     }
 
     /**
@@ -289,7 +447,54 @@ class SomcpToolGetOrder
             'weight' => (float) $order->getTotalWeight(),
             'shipping_tax_excluded' => (float) $order->total_shipping_tax_excl,
             'shipping_tax_included' => (float) $order->total_shipping_tax_incl,
+            'shipments' => self::shipments($order, $idLang),
         ];
+    }
+
+    /**
+     * One entry per shipment, as the Carriers tab lists them.
+     *
+     * Read from the order's OrderCarrier rows rather than getShipping(), which
+     * groups by carrier: two parcels with the same carrier would become one,
+     * and a tracking number could then not be set on the right shipment.
+     * somcp_set_order_tracking lists the shipments to choose from with this
+     * same reading, so the two tools never disagree on what a shipment is.
+     *
+     * @param Order $order
+     * @param int $idLang
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function shipments(Order $order, int $idLang): array
+    {
+        $collection = new PrestaShopCollection('OrderCarrier');
+        $collection->where('id_order', '=', (int) $order->id);
+        $collection->orderBy('id_order_carrier', 'asc');
+
+        $shipments = [];
+        foreach ($collection->getResults() as $orderCarrier) {
+            if (!$orderCarrier instanceof OrderCarrier) {
+                continue;
+            }
+            $carrier = new Carrier((int) $orderCarrier->id_carrier, $idLang);
+            $tracking = (string) $orderCarrier->tracking_number;
+            $url = Validate::isLoadedObject($carrier) ? (string) $carrier->url : '';
+
+            $shipments[] = [
+                'id_order_carrier' => (int) $orderCarrier->id,
+                'date' => (string) $orderCarrier->date_add,
+                'carrier' => Validate::isLoadedObject($carrier) ? (string) $carrier->name : '',
+                'weight' => (float) $orderCarrier->weight,
+                'shipping_cost_tax_excluded' => (float) $orderCarrier->shipping_cost_tax_excl,
+                'shipping_cost_tax_included' => (float) $orderCarrier->shipping_cost_tax_incl,
+                'tracking_number' => $tracking,
+                // As the order page builds it: the carrier's address with @
+                // standing for the number, and nothing until there is one.
+                'tracking_url' => $url !== '' && $tracking !== '' ? str_replace('@', $tracking, $url) : '',
+            ];
+        }
+
+        return $shipments;
     }
 
     /**
@@ -306,7 +511,10 @@ class SomcpToolGetOrder
             'discounts_tax_included' => (float) $order->total_discounts_tax_incl,
             'shipping_tax_excluded' => (float) $order->total_shipping_tax_excl,
             'shipping_tax_included' => (float) $order->total_shipping_tax_incl,
+            'wrapping_tax_excluded' => (float) $order->total_wrapping_tax_excl,
             'wrapping_tax_included' => (float) $order->total_wrapping_tax_incl,
+            // The Taxes line of the totals on the order page.
+            'taxes' => (float) $order->total_paid_tax_incl - (float) $order->total_paid_tax_excl,
             'total_tax_excluded' => (float) $order->total_paid_tax_excl,
             'total_tax_included' => (float) $order->total_paid_tax_incl,
             'total_paid' => (float) $order->total_paid,
@@ -323,11 +531,31 @@ class SomcpToolGetOrder
     {
         $payments = [];
         foreach ($order->getOrderPayments() as $payment) {
+            $currency = new Currency((int) $payment->id_currency);
+            $invoice = $payment->getOrderInvoice((int) $order->id);
+
+            // The Employee column exists on PrestaShop 9 only: the property
+            // is not there on 8, where the payment says nothing of who took it.
+            $employee = '';
+            if (property_exists($payment, 'id_employee') && (int) $payment->id_employee > 0) {
+                $who = new Employee((int) $payment->id_employee);
+                if (Validate::isLoadedObject($who)) {
+                    $employee = trim((string) $who->firstname . ' ' . (string) $who->lastname);
+                }
+            }
+
+            // No card number, holder or expiry: the order page does not show
+            // them, and they have no business leaving the shop.
             $payments[] = [
                 'date' => (string) $payment->date_add,
                 'amount' => (float) $payment->amount,
+                'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',
                 'payment_method' => (string) $payment->payment_method,
                 'transaction_id' => (string) $payment->transaction_id,
+                'invoice_number' => $invoice instanceof OrderInvoice
+                    ? (string) $invoice->getInvoiceNumberFormatted((int) $order->id_lang, (int) $order->id_shop)
+                    : '',
+                'employee' => $employee,
             ];
         }
 
@@ -357,10 +585,11 @@ class SomcpToolGetOrder
 
     /**
      * @param Order $order
+     * @param int $idLang
      *
      * @return array<string, array<int, array<string, mixed>>>
      */
-    private static function documents(Order $order): array
+    private static function documents(Order $order, int $idLang): array
     {
         $invoices = [];
         foreach ($order->getInvoicesCollection() as $invoice) {
@@ -373,6 +602,8 @@ class SomcpToolGetOrder
             }
 
             $invoices[] = [
+                // So a billing tool can point to this invoice later.
+                'id_order_invoice' => (int) $invoice->id,
                 'number' => (string) $invoice->getInvoiceNumberFormatted((int) $order->id_lang),
                 'date' => (string) $invoice->date_add,
                 'total_tax_excluded' => (float) $invoice->total_paid_tax_excl,
@@ -390,7 +621,25 @@ class SomcpToolGetOrder
             ];
         }
 
-        return ['invoices' => $invoices, 'credit_slips' => $slips];
+        // The Documents tab lists delivery slips beside invoices: they are
+        // order_invoice rows with a delivery number, numbered with the shop's
+        // prefix the way the order page formats them.
+        $prefix = (string) Configuration::get('PS_DELIVERY_PREFIX', $idLang, null, (int) $order->id_shop);
+        $deliverySlips = [];
+        foreach ($order->getDeliverySlipsCollection() as $deliverySlip) {
+            if (!$deliverySlip instanceof OrderInvoice) {
+                continue;
+            }
+
+            $deliverySlips[] = [
+                'id_order_invoice' => (int) $deliverySlip->id,
+                'number' => sprintf('%s%06d', $prefix, (int) $deliverySlip->delivery_number),
+                'date' => (string) $deliverySlip->delivery_date,
+                'total_tax_included' => (float) $deliverySlip->total_paid_tax_incl,
+            ];
+        }
+
+        return ['invoices' => $invoices, 'delivery_slips' => $deliverySlips, 'credit_slips' => $slips];
     }
 
     /**
@@ -402,9 +651,16 @@ class SomcpToolGetOrder
     {
         $messages = [];
         foreach (CustomerMessage::getMessagesByOrderId((int) $order->id, false) as $message) {
+            // Without who wrote it, an assistant cannot tell what the shop
+            // answered from what the customer asked.
+            $byEmployee = (int) $message['id_employee'] > 0;
             $messages[] = [
                 'date' => (string) $message['date_add'],
                 'private' => (bool) $message['private'],
+                'from' => $byEmployee ? 'employee' : 'customer',
+                'from_name' => $byEmployee
+                    ? trim((string) $message['efirstname'] . ' ' . (string) $message['elastname'])
+                    : trim((string) $message['cfirstname'] . ' ' . (string) $message['clastname']),
                 'message' => (string) $message['message'],
             ];
         }

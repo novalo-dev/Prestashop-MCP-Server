@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "the pages of the demo shop in its default language", "arguments": {}, "expect": "ok", "contains": ["\"pages\"", "\"count\"", "\"page\": \"index\"", "\"page\": \"contact\"", "\"url_rewrite\"", "\"configurable\": true", "\"configurable\": false"]},
+    {"why": "one language, by its ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"page\": \"best-sales\""]},
+    {"why": "the ISO code in capitals is the same language", "arguments": {"language": "EN"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]},
+    {"why": "a language given as a number rather than an ISO code", "arguments": {"language": 12}, "expect": "error", "contains": ["not one of the shop's"]}
+  ]
+}

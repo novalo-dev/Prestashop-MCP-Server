@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "the home page by its path; the test shop has no web server running, so whether it answers depends on the runner", "arguments": {"url": "/"}, "expect": "any"},
+    {"why": "a full address on the shop's own domain, same caveat", "arguments": {"url": "http://localhost/en/"}, "expect": "any"},
+    {"why": "a page of the shop that does not exist, same caveat", "arguments": {"url": "/en/no-such-page-somcp-test"}, "expect": "any"},
+    {"why": "another site is refused before any request", "arguments": {"url": "https://example.com/"}, "expect": "error", "contains": ["not an address of this shop"]},
+    {"why": "the shop's host on another port is refused", "arguments": {"url": "http://localhost:8081/"}, "expect": "error", "contains": ["not an address of this shop"]},
+    {"why": "an internal address that is not one of the shop's domains is refused", "arguments": {"url": "http://127.0.0.1/"}, "expect": "error", "contains": ["not an address of this shop"]},
+    {"why": "a path naming another host is refused", "arguments": {"url": "//example.com/"}, "expect": "error", "contains": ["url must be"]},
+    {"why": "an address carrying credentials is refused", "arguments": {"url": "http://user:secret@localhost/"}, "expect": "error", "contains": ["url must be"]},
+    {"why": "a scheme other than http and https is refused", "arguments": {"url": "file:///etc/passwd"}, "expect": "error", "contains": ["url must be"]},
+    {"why": "an empty url is refused", "arguments": {"url": ""}, "expect": "error", "contains": ["url must be"]}
+  ]
+}

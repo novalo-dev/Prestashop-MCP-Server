@@ -55,7 +55,9 @@ jobs:
         with:
           ref: main
           path: .trusted
-          sparse-checkout: .github/scripts
+          sparse-checkout: |
+            .github/scripts
+            dev/package
           persist-credentials: false
 
       - name: Name the build
@@ -84,7 +86,28 @@ jobs:
         with:
           php-version: '8.1'
           coverage: none
-          tools: none
+          tools: composer
+
+      # The dependencies the module ships, Neuron AI for the built-in
+      # assistant, resolved as a merchant's archive carries them. Scripts and
+      # plugins are off: composer.json comes from the code under test, and
+      # nothing it names may run here.
+      - name: Dependencies
+        run: |
+          composer install --working-dir=build/somcp --no-dev --no-interaction --no-progress \
+            --no-scripts --no-plugins --optimize-autoloader
+          rm -f build/somcp/composer.lock
+          # The pruning script is main's, like the check script: it runs, the
+          # code under test only gives it data.
+          if [ -x .trusted/dev/package/prune.sh ]; then
+            cp dev/package/prune.txt .trusted/dev/package/prune.txt 2>/dev/null || true
+            .trusted/dev/package/prune.sh build/somcp
+          else
+            echo "::warning::main has no dev/package/prune.sh yet, the vendor folder is not pruned"
+            find build/somcp/vendor -type d | while IFS= read -r dir; do
+              [ -e "$dir/index.php" ] || cp build/somcp/index.php "$dir/index.php"
+            done
+          fi
 
       - name: Check, without blocking
         continue-on-error: true
@@ -133,8 +156,14 @@ jobs:
         with:
           name: ${{ steps.name.outputs.artifact }}
           path: build/
-          retention-days: 14
+          # The repository keeps artifacts one day: anyone can download them
+          # from a public repository, so a test build does not linger.
+          retention-days: 1
           if-no-files-found: error
+          # The action leaves out files whose name starts with a dot unless
+          # told otherwise, and the module's .htaccess is one: without it the
+          # Addons validator reports the folder as listable.
+          include-hidden-files: true
 
       - name: How to use it
         run: |

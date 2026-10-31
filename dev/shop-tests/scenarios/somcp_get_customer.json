@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "the demo customer by email, every block of the page", "arguments": {"email": "pub@prestashop.com"}, "expect": "ok", "contains": ["\"email\": \"pub@prestashop.com\"", "\"lastname\": \"DOE\"", "\"groups\"", "\"addresses\"", "\"country_iso\"", "\"orders\"", "\"valid_total_tax_incl\"", "\"sales_rank\"", "\"carts\"", "\"purchased_products\"", "\"viewed_products\"", "\"vouchers\"", "\"messages_count\"", "\"last_emails\"", "\"last_connections\"", "\"private_note\"", "\"language\""]},
+    {"why": "the demo customer is a registered account, not a guest", "arguments": {"email": "pub@prestashop.com"}, "expect": "ok", "contains": ["\"is_guest\": false"]},
+    {"why": "the names in the shop language given by its code", "arguments": {"email": "pub@prestashop.com", "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have is refused", "arguments": {"email": "pub@prestashop.com", "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's"]},
+    {"why": "a customer that does not exist", "arguments": {"id_customer": 999999}, "expect": "error", "contains": ["No customer 999999 in this shop"]},
+    {"why": "an email nobody has", "arguments": {"email": "nobody-zz@example.invalid"}, "expect": "error", "contains": ["No customer with this email in this shop"]},
+    {"why": "neither an identifier nor an email", "arguments": {}, "expect": "error", "contains": ["Give id_customer or email"]},
+    {"why": "the first customer by identifier, whoever the demo data made it", "arguments": {"id_customer": 1}, "expect": "any", "contains": []}
+  ]
+}

@@ -20,28 +20,84 @@
    sit in views/css and was only ever loaded by the consent screen, so none of
    these rules applied to the settings page at all. *}
 <style type="text/css">
-/* Tabs and panels are PrestaShop's own; only the spacing between them and
-   the hidden state of a pane are set here. A pane is hidden, never removed,
-   because the settings form spans two of them and posts every field. */
-.somcp .somcp-tabs {
-    margin-bottom: 15px;
+/* The heart of the Become a sponsor button, in the thank-you window. A primary
+   button, so the heart is white like its text. Drawn as an image rather than
+   taken from an icon font: the back office does not load the same icon fonts
+   on 8 and 9, and a missing glyph left an empty gap in the button. */
+.somcp-heart::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 13px;
+    margin-right: 7px;
+    vertical-align: -1px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 15'%3E%3Cpath fill='%23fff' d='M8 14.5 1.6 8.1A4 4 0 0 1 8 2.9a4 4 0 0 1 6.4 5.2Z'/%3E%3C/svg%3E") no-repeat center / contain;
 }
 
+.somcp-heart {
+    display: inline;
+}
+
+/* The Support us button of the page header, drawn by PrestaShop outside this
+   module's markup (hence the selector on its id). The legacy header template
+   puts an icon box above every label, and the Help button beside it has none:
+   the box goes, so the two read as a pair. */
+[id$="-somcp_sponsor"] > i {
+    display: none;
+}
+
+/* A native dialog dressed as the back office modal. Its own box is cleared so
+   only modal-content draws the frame. */
+.somcp .somcp-sponsor {
+    width: 520px;
+    max-width: calc(100% - 32px);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+}
+
+.somcp .somcp-sponsor::backdrop {
+    background: rgba(0, 0, 0, .45);
+}
+
+.somcp .somcp-sponsor .modal-body {
+    text-align: center;
+    padding: 24px 28px;
+}
+
+.somcp .somcp-sponsor-heart {
+    display: block;
+    width: 110px;
+    height: 102px;
+    margin: 0 auto 12px;
+    color: #db61a2;
+}
+
+/* A pane is hidden, never removed: the settings form spans two of them and
+   posts every field from whichever page holds the Save button. */
 .somcp .somcp-pane[hidden] {
     display: none;
 }
 
 /* The back office draws a heavy outline on every focused link and button
-   (.bootstrap a:focus), and a clicked tab keeps the focus, so the box stayed
-   around it until the merchant clicked elsewhere. It is dropped for a mouse
-   click only: :focus-visible keeps it for someone moving with the keyboard. */
-.somcp .somcp-tabs a:focus:not(:focus-visible),
+   (.bootstrap a:focus), and a clicked button keeps the focus, so the box
+   stayed around it until the merchant clicked elsewhere. It is dropped for a
+   mouse click only: :focus-visible keeps it for someone moving with the
+   keyboard. */
 .somcp .btn:focus:not(:focus-visible) {
     outline: 0;
 }
 
 .somcp .somcp-foot {
     font-size: 12px;
+}
+
+/* The credit now sits in a panel title, which the back office writes in
+   capitals and bold: undone here so it keeps its footnote look. */
+.somcp .panel-heading .somcp-foot {
+    font-weight: normal;
+    text-transform: none;
 }
 
 /* Address block: one row per shop, the shop name as a quiet heading above
@@ -286,7 +342,7 @@
    few modules would otherwise have a list long enough to push the Save button
    off the screen. The wrapper stays for the horizontal overflow on a narrow
    screen - and the table keeps its own display, because display:block on a
-   table makes it shrink to its content instead of filling the column. */
+   table makes it shrink to its content instead of filling the panel. */
 .somcp .somcp-tools-scroll {
     margin-top: 10px;
     overflow-x: auto;
@@ -313,9 +369,12 @@
     text-align: center;
 }
 
-/* Paging, under the list. Hidden until the script takes over, so a page
-   without JavaScript shows the whole list rather than two dead buttons. */
-.somcp .somcp-tools-nav {
+/* Buttons under a list, on the right: the tool paging, and the button that
+   adds an assistant. The paging stays hidden until the script takes over, so
+   a page without JavaScript shows the whole list rather than two dead
+   buttons. */
+.somcp .somcp-tools-nav,
+.somcp .somcp-panel-actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -332,6 +391,97 @@
 .somcp .somcp-tools-count {
     color: #6c868e;
     font-size: 12px;
+}
+
+/* Host names as tags, drawn like the tags of a product page: a field that
+   grows with its content, one pill per name, the typing area after the last. */
+.somcp .somcp-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    height: auto;
+    min-height: 34px;
+    padding: 3px 6px;
+    cursor: text;
+}
+
+.somcp .somcp-tags.is-disabled {
+    background: #eee;
+    cursor: not-allowed;
+}
+
+.somcp .somcp-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px 2px 8px;
+    border-radius: 3px;
+    background: #25b9d7;
+    color: #fff;
+    font-size: 12px;
+    line-height: 18px;
+}
+
+.somcp .somcp-tags.is-disabled .somcp-tag {
+    background: #a8b4bd;
+}
+
+.somcp .somcp-tag-remove {
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 2px;
+    opacity: .8;
+    cursor: pointer;
+}
+
+.somcp .somcp-tag-remove:hover {
+    opacity: 1;
+}
+
+.somcp .somcp-tags-input {
+    flex: 1 0 120px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    min-height: 24px;
+    padding: 0 2px;
+}
+
+/* The suggestions under the field: quiet outlined pills, so they read as
+   something on offer rather than something already chosen. */
+.somcp .somcp-tags-suggest {
+    margin: 8px 0 0;
+    font-size: 12px;
+}
+
+.somcp .somcp-tags-suggest[hidden],
+.somcp .somcp-tag-suggest[hidden] {
+    display: none;
+}
+
+.somcp .somcp-tag-suggest {
+    margin: 2px 4px 2px 0;
+    padding: 1px 8px;
+    border: 1px dashed #bfc9d4;
+    border-radius: 3px;
+    background: #fff;
+    color: #363a41;
+    font-size: 12px;
+    line-height: 18px;
+    cursor: pointer;
+}
+
+.somcp .somcp-tag-suggest:hover {
+    border-color: #25b9d7;
+}
+
+.somcp .somcp-tag-suggest[disabled] {
+    opacity: .5;
+    cursor: not-allowed;
 }
 
 /* A tool that changes something, marked where the merchant decides whether to

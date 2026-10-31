@@ -1,8 +1,9 @@
 # Static analysis against a real PrestaShop.
 #
 # Needs the dev tools (composer install --working-dir=dev/tools) and the path
-# of a PrestaShop folder in _PS_ROOT_DIR_ - an installed shop, or the files of
-# the prestashop/prestashop docker image, which is what CI uses:
+# of a PrestaShop folder in _PS_ROOT_DIR_ - an installed shop, or the sources
+# of a release with their Composer dependencies, which is what CI analyses
+# against, one release and one PHP version per shop job:
 #
 #   _PS_ROOT_DIR_=/path/to/prestashop dev/tools/vendor/bin/phpstan analyse -c phpstan.dist.neon
 includes:
@@ -20,6 +21,11 @@ parameters:
         - vendor
         - dev
         - docs
+    # Read, not analysed: the built-in assistant calls Neuron AI, which
+    # composer install puts in vendor/ - CI installs it before this runs.
+    scanDirectories:
+        - vendor/neuron-core/neuron-ai/src
+        - vendor/psr/event-dispatcher/src
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         # StockAvailable::dependsOnStock() exists on 8 and was removed on 9.

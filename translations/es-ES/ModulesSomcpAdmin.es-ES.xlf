@@ -117,6 +117,31 @@
       <source>Change the orders of this shop, which can email your customers</source>
       <target>Modificar los pedidos de esta tienda, lo que puede enviar correos electrónicos a sus clientes</target>
     </trans-unit>
+    <!-- Read the catalogue of this shop: products, prices and categories -->
+    <trans-unit id="9078d9527c0914dcf527a5185e6f51e3" resname="Read the catalogue of this shop: products, prices and categories">
+      <source>Read the catalogue of this shop: products, prices and categories</source>
+      <target>Leer el catálogo de esta tienda: productos, precios y categorías</target>
+    </trans-unit>
+    <!-- Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock -->
+    <trans-unit id="b899aa8fd14f1c23b340015106ee5e73" resname="Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock">
+      <source>Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock</source>
+      <target>Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear y editar marcas, crear, editar y eliminar sus direcciones, crear y editar proveedores, crear y editar grupos de atributos, crear y editar valores de atributos, crear y editar características y sus valores, cambiar precios y stock</target>
+    </trans-unit>
+    <!-- Read the stock of this shop: quantities of products and combinations -->
+    <trans-unit id="44aed62b337ebd9f1875feb664e23563" resname="Read the stock of this shop: quantities of products and combinations">
+      <source>Read the stock of this shop: quantities of products and combinations</source>
+      <target>Leer el stock de esta tienda: cantidades de los productos y de las combinaciones</target>
+    </trans-unit>
+    <!-- Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements -->
+    <trans-unit id="0a173388b665e6b8dc6accf83d2355ea" resname="Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements">
+      <source>Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements</source>
+      <target>Modificar el stock de esta tienda: ajustar las cantidades de los productos y de las combinaciones, registradas como movimientos de stock</target>
+    </trans-unit>
+    <!-- Read the customers of this shop: names, email addresses, groups and what they spent -->
+    <trans-unit id="d93f8c511a82224874c7b26fa597f770" resname="Read the customers of this shop: names, email addresses, groups and what they spent">
+      <source>Read the customers of this shop: names, email addresses, groups and what they spent</source>
+      <target>Leer los clientes de esta tienda: nombres, direcciones de correo electrónico, grupos y lo que han gastado</target>
+    </trans-unit>
     <!-- Outgoing HTTP requests -->
     <trans-unit id="44dc1cd9380e6350a77f6d24def569f7" resname="Outgoing HTTP requests">
       <source>Outgoing HTTP requests</source>
@@ -512,10 +537,55 @@
       <source>Only allow these return addresses</source>
       <target>Permitir solo estas direcciones de retorno</target>
     </trans-unit>
-    <!-- Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed. -->
-    <trans-unit id="8a0560036353c28ddab19dc97488ea5f" resname="Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed.">
-      <source>Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed.</source>
-      <target>Nombres de dominio separados por espacios, por ejemplo claude.ai chatgpt.com. Déjelo vacío para aceptar cualquier dirección registrada por una aplicación. Los asistentes de escritorio usan su propio ordenador y siempre están permitidos.</target>
+    <!-- Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added. -->
+    <trans-unit id="71a7f567b7fef6921759d852d43111be" resname="Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.">
+      <source>Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.</source>
+      <target>Escriba un nombre de dominio, por ejemplo claude.ai, y pulse Intro. Déjelo vacío para aceptar cualquier dirección registrada por una aplicación. Los asistentes de escritorio y los agentes de código usan su propio ordenador y siempre están permitidos; un n8n autoalojado necesita que se añada su propio nombre de dominio.</target>
+    </trans-unit>
+    <!-- After the update, reconnect your assistants so that their access includes the new permissions. -->
+    <trans-unit id="8f877834ba5aff2460d728d322ee9fac" resname="After the update, reconnect your assistants so that their access includes the new permissions.">
+      <source>After the update, reconnect your assistants so that their access includes the new permissions.</source>
+      <target>Después de la actualización, vuelva a conectar sus asistentes para que su acceso incluya los nuevos permisos.</target>
+    </trans-unit>
+    <!-- Support us -->
+    <trans-unit id="68af1e9d9402fee977042693b6644fe4" resname="Support us">
+      <source>Support us</source>
+      <target>Apóyenos</target>
+    </trans-unit>
+    <!-- Thank you for using O'So MCP Server -->
+    <trans-unit id="76a253fa15847f44ae095f3ef3d181c4" resname="Thank you for using O&#x27;So MCP Server">
+      <source>Thank you for using O'So MCP Server</source>
+      <target>Gracias por usar O'So MCP Server</target>
+    </trans-unit>
+    <!-- The module is free and open source. Your support funds new tools, tests on every PrestaShop version and updates. -->
+    <trans-unit id="ed36715d1ac3716b88da00e6067e97fd" resname="The module is free and open source. Your support funds new tools, tests on every PrestaShop version and updates.">
+      <source>The module is free and open source. Your support funds new tools, tests on every PrestaShop version and updates.</source>
+      <target>El módulo es gratuito y de código abierto. Su apoyo financia las nuevas herramientas, las pruebas en cada versión de PrestaShop y las actualizaciones.</target>
+    </trans-unit>
+    <!-- A monthly or one-time donation, of the amount you choose, on GitHub Sponsors. -->
+    <trans-unit id="5522c8e55cc644118fe7a6ba8fda22f3" resname="A monthly or one-time donation, of the amount you choose, on GitHub Sponsors.">
+      <source>A monthly or one-time donation, of the amount you choose, on GitHub Sponsors.</source>
+      <target>Una donación mensual o puntual, del importe que usted elija, en GitHub Sponsors.</target>
+    </trans-unit>
+    <!-- Later -->
+    <trans-unit id="61057a0c84605444201929bdd72014f0" resname="Later">
+      <source>Later</source>
+      <target>Más tarde</target>
+    </trans-unit>
+    <!-- Become a sponsor on GitHub -->
+    <trans-unit id="2c5b047a10df567d03789f02cb090c7f" resname="Become a sponsor on GitHub">
+      <source>Become a sponsor on GitHub</source>
+      <target>Hacerse patrocinador en GitHub</target>
+    </trans-unit>
+    <!-- Add a host name -->
+    <trans-unit id="2bed13153045be161310c84e504b78d7" resname="Add a host name">
+      <source>Add a host name</source>
+      <target>Añadir un nombre de dominio</target>
+    </trans-unit>
+    <!-- Clients the module works with: -->
+    <trans-unit id="b711af46aae7d8d58fee4ab1b1d3a303" resname="Clients the module works with:">
+      <source>Clients the module works with:</source>
+      <target>Clientes compatibles con el módulo:</target>
     </trans-unit>
     <!-- Keep a security log -->
     <trans-unit id="321e5c4b4dcb88e9e562f3ee8923d55f" resname="Keep a security log">
@@ -677,10 +747,340 @@
       <source>Search orders</source>
       <target>Buscar pedidos</target>
     </trans-unit>
+    <!-- List categories -->
+    <trans-unit id="212f7cc9644cdd793a6e5cc3edda6d90" resname="List categories">
+      <source>List categories</source>
+      <target>Listar las categorías</target>
+    </trans-unit>
+    <!-- List brands -->
+    <trans-unit id="6ad9cfcb9b571235ec0114870ac1badd" resname="List brands">
+      <source>List brands</source>
+      <target>Listar las marcas</target>
+    </trans-unit>
+    <!-- List brand addresses -->
+    <trans-unit id="ae2bb779edfef0cc1062ff843523d7cc" resname="List brand addresses">
+      <source>List brand addresses</source>
+      <target>Listar las direcciones de las marcas</target>
+    </trans-unit>
+    <!-- Get a brand address -->
+    <trans-unit id="4649e722f94b5fa062a54b4f349c94d7" resname="Get a brand address">
+      <source>Get a brand address</source>
+      <target>Leer una dirección de marca</target>
+    </trans-unit>
+    <!-- Add a brand address -->
+    <trans-unit id="6cb97c44fcf408bea6926a9eff4f139a" resname="Add a brand address">
+      <source>Add a brand address</source>
+      <target>Añadir una dirección de marca</target>
+    </trans-unit>
+    <!-- Change a brand address -->
+    <trans-unit id="d43f37faa7918910db2405a2cd150296" resname="Change a brand address">
+      <source>Change a brand address</source>
+      <target>Modificar una dirección de marca</target>
+    </trans-unit>
+    <!-- Delete a brand address -->
+    <trans-unit id="9250c2e411837a4cf6d9dad5f4a80d20" resname="Delete a brand address">
+      <source>Delete a brand address</source>
+      <target>Eliminar una dirección de marca</target>
+    </trans-unit>
+    <!-- Get a brand -->
+    <trans-unit id="9f43ab513afa1940c0b205bd0400e292" resname="Get a brand">
+      <source>Get a brand</source>
+      <target>Leer una marca</target>
+    </trans-unit>
+    <!-- Create a brand -->
+    <trans-unit id="98c2d0b867d6335d424c5ed7e5ce5e5a" resname="Create a brand">
+      <source>Create a brand</source>
+      <target>Crear una marca</target>
+    </trans-unit>
+    <!-- Change a brand -->
+    <trans-unit id="821df97a4aeda434036c872f6b1674c7" resname="Change a brand">
+      <source>Change a brand</source>
+      <target>Modificar una marca</target>
+    </trans-unit>
+    <!-- Enable or disable a brand -->
+    <trans-unit id="3d044ca497e3181012c93914cdf5ce7f" resname="Enable or disable a brand">
+      <source>Enable or disable a brand</source>
+      <target>Activar o desactivar una marca</target>
+    </trans-unit>
+    <!-- List suppliers -->
+    <trans-unit id="9612da082bad7b857b8bedea2743be00" resname="List suppliers">
+      <source>List suppliers</source>
+      <target>Listar los proveedores</target>
+    </trans-unit>
+    <!-- Get a supplier -->
+    <trans-unit id="2125627ab97ff410637f507da9323cb6" resname="Get a supplier">
+      <source>Get a supplier</source>
+      <target>Leer un proveedor</target>
+    </trans-unit>
+    <!-- Create a supplier -->
+    <trans-unit id="63ea2652f1e2b02ae526b7a3777d682f" resname="Create a supplier">
+      <source>Create a supplier</source>
+      <target>Crear un proveedor</target>
+    </trans-unit>
+    <!-- Change a supplier -->
+    <trans-unit id="eafd683d423b6d2747c92c4755a7afd7" resname="Change a supplier">
+      <source>Change a supplier</source>
+      <target>Modificar un proveedor</target>
+    </trans-unit>
+    <!-- Enable or disable a supplier -->
+    <trans-unit id="2e9ddb054559204b4524f4cbe705ffef" resname="Enable or disable a supplier">
+      <source>Enable or disable a supplier</source>
+      <target>Activar o desactivar un proveedor</target>
+    </trans-unit>
+    <!-- List attributes -->
+    <trans-unit id="54ffb845ff62b05780e0e7edcf23707a" resname="List attributes">
+      <source>List attributes</source>
+      <target>Listar los atributos</target>
+    </trans-unit>
+    <!-- Get an attribute group -->
+    <trans-unit id="17cf4f61618a32a66feee4a10b3acd1f" resname="Get an attribute group">
+      <source>Get an attribute group</source>
+      <target>Leer un grupo de atributos</target>
+    </trans-unit>
+    <!-- Get an attribute value -->
+    <trans-unit id="9099cf97a7f3fecc0c9341cf69934bdf" resname="Get an attribute value">
+      <source>Get an attribute value</source>
+      <target>Leer un valor de atributo</target>
+    </trans-unit>
+    <!-- Create an attribute group -->
+    <trans-unit id="5f2d757cc4ba9ca446e73099f5ac400e" resname="Create an attribute group">
+      <source>Create an attribute group</source>
+      <target>Crear un grupo de atributos</target>
+    </trans-unit>
+    <!-- Change an attribute group -->
+    <trans-unit id="109370821cac3714233c74ff5189867c" resname="Change an attribute group">
+      <source>Change an attribute group</source>
+      <target>Modificar un grupo de atributos</target>
+    </trans-unit>
+    <!-- Create an attribute value -->
+    <trans-unit id="4a71935641e02b647979308587afe33c" resname="Create an attribute value">
+      <source>Create an attribute value</source>
+      <target>Crear un valor de atributo</target>
+    </trans-unit>
+    <!-- Change an attribute value -->
+    <trans-unit id="e14e40ddabbadba30da1cfa07d96637a" resname="Change an attribute value">
+      <source>Change an attribute value</source>
+      <target>Modificar un valor de atributo</target>
+    </trans-unit>
+    <!-- List features -->
+    <trans-unit id="6009a2cf3b6dc4a7df637cb89db902f8" resname="List features">
+      <source>List features</source>
+      <target>Listar las características</target>
+    </trans-unit>
+    <!-- Get a feature -->
+    <trans-unit id="caa1ac0d6769467502a4e9232ae77723" resname="Get a feature">
+      <source>Get a feature</source>
+      <target>Leer una característica</target>
+    </trans-unit>
+    <!-- Create a feature -->
+    <trans-unit id="547707fbc6f7f80cde82c4911e1968dc" resname="Create a feature">
+      <source>Create a feature</source>
+      <target>Crear una característica</target>
+    </trans-unit>
+    <!-- Change a feature -->
+    <trans-unit id="5dcc5573a5a7c44bc6e3559b201dcce0" resname="Change a feature">
+      <source>Change a feature</source>
+      <target>Modificar una característica</target>
+    </trans-unit>
+    <!-- Get a feature value -->
+    <trans-unit id="a126d0a87f1a32d0e18a1a2a18443bd2" resname="Get a feature value">
+      <source>Get a feature value</source>
+      <target>Leer un valor de característica</target>
+    </trans-unit>
+    <!-- Create a feature value -->
+    <trans-unit id="f9219608e422ac712c2f6edf40f28cb7" resname="Create a feature value">
+      <source>Create a feature value</source>
+      <target>Crear un valor de característica</target>
+    </trans-unit>
+    <!-- Change a feature value -->
+    <trans-unit id="8ad418b0251d4b5b083f0e1f1bdb41b4" resname="Change a feature value">
+      <source>Change a feature value</source>
+      <target>Modificar un valor de característica</target>
+    </trans-unit>
+    <!-- List tax rules -->
+    <trans-unit id="7e8244819dc9fb2b17e66f14264cf391" resname="List tax rules">
+      <source>List tax rules</source>
+      <target>Listar las reglas de impuestos</target>
+    </trans-unit>
+    <!-- List files -->
+    <trans-unit id="92f00b54c2461cd9c23db65a88cd11e1" resname="List files">
+      <source>List files</source>
+      <target>Listar los archivos</target>
+    </trans-unit>
+    <!-- Search products -->
+    <trans-unit id="437ac95a91364eb49587af5e146b1745" resname="Search products">
+      <source>Search products</source>
+      <target>Buscar productos</target>
+    </trans-unit>
+    <!-- Get a product -->
+    <trans-unit id="96ee562d63ac925506398e4fe253c056" resname="Get a product">
+      <source>Get a product</source>
+      <target>Leer un producto</target>
+    </trans-unit>
+    <!-- Create a product -->
+    <trans-unit id="7103cc73421e986bc200e6ef8c7392ed" resname="Create a product">
+      <source>Create a product</source>
+      <target>Crear un producto</target>
+    </trans-unit>
+    <!-- Change a product -->
+    <trans-unit id="85221eebca91d164871f6305e28cb859" resname="Change a product">
+      <source>Change a product</source>
+      <target>Modificar un producto</target>
+    </trans-unit>
+    <!-- Switch a product on or off -->
+    <trans-unit id="5d895faf06a520cd682722110ca8e4c6" resname="Switch a product on or off">
+      <source>Switch a product on or off</source>
+      <target>Activar o desactivar un producto</target>
+    </trans-unit>
+    <!-- Delete a product -->
+    <trans-unit id="c7cb9daf3caa20adc61e4f518e72e296" resname="Delete a product">
+      <source>Delete a product</source>
+      <target>Eliminar un producto</target>
+    </trans-unit>
+    <!-- Get a category -->
+    <trans-unit id="55b9a369c6673af09d5f52a5f1fd9a45" resname="Get a category">
+      <source>Get a category</source>
+      <target>Leer una categoría</target>
+    </trans-unit>
+    <!-- Create a category -->
+    <trans-unit id="cff15d43797962a1e28c0515ab556743" resname="Create a category">
+      <source>Create a category</source>
+      <target>Crear una categoría</target>
+    </trans-unit>
+    <!-- Change a category -->
+    <trans-unit id="fdca271b592029bd8413fe87b78de085" resname="Change a category">
+      <source>Change a category</source>
+      <target>Modificar una categoría</target>
+    </trans-unit>
+    <!-- Show or hide a category -->
+    <trans-unit id="01f0fe87fdbb9f5205fff7006353e7be" resname="Show or hide a category">
+      <source>Show or hide a category</source>
+      <target>Mostrar u ocultar una categoría</target>
+    </trans-unit>
+    <!-- Get the stock of a product -->
+    <trans-unit id="5ce4c0ce8e0b1778f0a99f54abdd5230" resname="Get the stock of a product">
+      <source>Get the stock of a product</source>
+      <target>Leer el stock de un producto</target>
+    </trans-unit>
+    <!-- Set the stock of a product -->
+    <trans-unit id="dd0ca3a77054d75601481e1fbdd2e144" resname="Set the stock of a product">
+      <source>Set the stock of a product</source>
+      <target>Ajustar el stock de un producto</target>
+    </trans-unit>
+    <!-- List low stock -->
+    <trans-unit id="dc73d6f241e06132c512404f453a5adc" resname="List low stock">
+      <source>List low stock</source>
+      <target>Listar el stock bajo</target>
+    </trans-unit>
+    <!-- Search customers -->
+    <trans-unit id="8c21c47c1d902c8a2a72183ab53387d3" resname="Search customers">
+      <source>Search customers</source>
+      <target>Buscar clientes</target>
+    </trans-unit>
+    <!-- Get a customer -->
+    <trans-unit id="15c2a7ef751744ce1c5381a10f559813" resname="Get a customer">
+      <source>Get a customer</source>
+      <target>Leer un cliente</target>
+    </trans-unit>
     <!-- Change the status of an order -->
     <trans-unit id="66552223a3758445711444bb2e8d2e8c" resname="Change the status of an order">
       <source>Change the status of an order</source>
       <target>Cambiar el estado de un pedido</target>
+    </trans-unit>
+    <!-- Set the tracking number of an order -->
+    <trans-unit id="300260bdd7dcacd0806901944cd946f8" resname="Set the tracking number of an order">
+      <source>Set the tracking number of an order</source>
+      <target>Indicar el número de seguimiento de un pedido</target>
+    </trans-unit>
+    <!-- Add a message to an order -->
+    <trans-unit id="c336eae6c62dfc77a0f7a99f52e6ba5b" resname="Add a message to an order">
+      <source>Add a message to an order</source>
+      <target>Añadir un mensaje a un pedido</target>
+    </trans-unit>
+    <!-- Set the private note of an order -->
+    <trans-unit id="c197c87dddd5f3e7009d2b50e1a6dcd8" resname="Set the private note of an order">
+      <source>Set the private note of an order</source>
+      <target>Indicar la nota privada de un pedido</target>
+    </trans-unit>
+    <!-- Record a payment for an order -->
+    <trans-unit id="07b372bf62c3cccfdf5b3bf7c6ce8b8d" resname="Record a payment for an order">
+      <source>Record a payment for an order</source>
+      <target>Registrar un pago de un pedido</target>
+    </trans-unit>
+    <!-- Audit the SEO of products -->
+    <trans-unit id="6cf0dd16e3dec0f64c02b9f6dbc7ddbf" resname="Audit the SEO of products">
+      <source>Audit the SEO of products</source>
+      <target>Auditar el SEO de los productos</target>
+    </trans-unit>
+    <!-- Audit the SEO of categories -->
+    <trans-unit id="2bd95da408d15d1245d1fdb632f0884a" resname="Audit the SEO of categories">
+      <source>Audit the SEO of categories</source>
+      <target>Auditar el SEO de las categorías</target>
+    </trans-unit>
+    <!-- Audit the SEO of CMS pages -->
+    <trans-unit id="a51707660b4abe62470a906cadba7686" resname="Audit the SEO of CMS pages">
+      <source>Audit the SEO of CMS pages</source>
+      <target>Auditar el SEO de las páginas CMS</target>
+    </trans-unit>
+    <!-- Audit the SEO of brands -->
+    <trans-unit id="b2af7eac503fe87ac309c4ddeb1995b5" resname="Audit the SEO of brands">
+      <source>Audit the SEO of brands</source>
+      <target>Auditar el SEO de las marcas</target>
+    </trans-unit>
+    <!-- List the shop pages and their SEO -->
+    <trans-unit id="5c7906132b64fb8c0ca2df517f685f09" resname="List the shop pages and their SEO">
+      <source>List the shop pages and their SEO</source>
+      <target>Listar las páginas de la tienda y su SEO</target>
+    </trans-unit>
+    <!-- Read the SEO and URL settings -->
+    <trans-unit id="a14a0fee0820a2cd10bb3f6a9749f5ba" resname="Read the SEO and URL settings">
+      <source>Read the SEO and URL settings</source>
+      <target>Leer los ajustes de SEO y URL</target>
+    </trans-unit>
+    <!-- Read the robots.txt file -->
+    <trans-unit id="efb4442b8d63d68974536f8cbfd2375d" resname="Read the robots.txt file">
+      <source>Read the robots.txt file</source>
+      <target>Leer el archivo robots.txt</target>
+    </trans-unit>
+    <!-- Audit a public page of the shop -->
+    <trans-unit id="03464755b872980ba2e56cafbf6148fe" resname="Audit a public page of the shop">
+      <source>Audit a public page of the shop</source>
+      <target>Auditar una página pública de la tienda</target>
+    </trans-unit>
+    <!-- Generate the robots.txt file -->
+    <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
+      <source>Generate the robots.txt file</source>
+      <target>Generar el archivo robots.txt</target>
+    </trans-unit>
+    <!-- Change the SEO of a CMS page -->
+    <trans-unit id="39a2ae54e85acae56f94b93320441737" resname="Change the SEO of a CMS page">
+      <source>Change the SEO of a CMS page</source>
+      <target>Cambiar el SEO de una página CMS</target>
+    </trans-unit>
+    <!-- Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt -->
+    <trans-unit id="23d7a2f44f6eb2b665723de3eb177aa3" resname="Change the shop&#x27;s SEO settings, page titles and descriptions, robots.txt and llms.txt">
+      <source>Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt</source>
+      <target>Cambiar los ajustes de SEO de la tienda, los títulos y descripciones de las páginas, el robots.txt y el llms.txt</target>
+    </trans-unit>
+    <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
+    <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
+      <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>
+      <target>Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas</target>
+    </trans-unit>
+    <!-- Audit and improve SEO -->
+    <trans-unit id="f93114658d1c5849142cfeab5102bcb3" resname="Audit and improve SEO">
+      <source>Audit and improve SEO</source>
+      <target>Auditar y mejorar el SEO</target>
+    </trans-unit>
+    <!-- Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards. -->
+    <trans-unit id="3517f4a4fa12b555e690b749ef6f0b7d" resname="Find what holds the shop back in search results, fix it with the merchant&#x27;s approval, and check the public pages afterwards.">
+      <source>Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards.</source>
+      <target>Encontrar lo que frena a la tienda en los resultados de búsqueda, corregirlo con la aprobación del comerciante y comprobar después las páginas públicas.</target>
+    </trans-unit>
+    <!-- Products, categories, pages or the whole shop -->
+    <trans-unit id="ed839806982bd08c386374db52525bbe" resname="Products, categories, pages or the whole shop">
+      <source>Products, categories, pages or the whole shop</source>
+      <target>Productos, categorías, páginas o toda la tienda</target>
     </trans-unit>
     <!-- view -->
     <trans-unit id="1bda80f2be4d3658e0baa43fbe7ae8c1" resname="view">
@@ -777,6 +1177,21 @@
       <source>Change an order status</source>
       <target>Cambiar el estado de un pedido</target>
     </trans-unit>
+    <!-- Manage products -->
+    <trans-unit id="93b46287befd343af1d5eaeb7d18655d" resname="Manage products">
+      <source>Manage products</source>
+      <target>Gestionar los productos</target>
+    </trans-unit>
+    <!-- Check and adjust stock -->
+    <trans-unit id="f522c8316bb101ad6052425e7f80271a" resname="Check and adjust stock">
+      <source>Check and adjust stock</source>
+      <target>Comprobar y ajustar el stock</target>
+    </trans-unit>
+    <!-- Find a customer -->
+    <trans-unit id="cab867c17f596a6061acb3d48ace9019" resname="Find a customer">
+      <source>Find a customer</source>
+      <target>Buscar un cliente</target>
+    </trans-unit>
     <!-- Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in. -->
     <trans-unit id="911ba9aa6db02bd840aa72147dc37333" resname="Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.">
       <source>Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.</source>
@@ -792,6 +1207,21 @@
       <source>Change the status of an order in the PrestaShop shop, one order at a time, with the checks that keep a customer from being emailed twice.</source>
       <target>Cambiar el estado de un pedido en la tienda PrestaShop, un pedido cada vez, con las comprobaciones que evitan enviar dos veces un correo al cliente.</target>
     </trans-unit>
+    <!-- Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier. -->
+    <trans-unit id="1029b5f99933d5e26b2c0ad1262de26e" resname="Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.">
+      <source>Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.</source>
+      <target>Buscar, leer y modificar los productos y las categorías de la tienda PrestaShop, uno cada vez, sin adivinar ningún identificador.</target>
+    </trans-unit>
+    <!-- See what runs low in the PrestaShop shop and set quantities, one product or combination at a time. -->
+    <trans-unit id="5ca2db14220758c1f69e0977d95afd08" resname="See what runs low in the PrestaShop shop and set quantities, one product or combination at a time.">
+      <source>See what runs low in the PrestaShop shop and set quantities, one product or combination at a time.</source>
+      <target>Ver lo que escasea en la tienda PrestaShop y ajustar las cantidades, un producto o una combinación cada vez.</target>
+    </trans-unit>
+    <!-- Find a customer of the PrestaShop shop, read their account and orders, and update it when asked. -->
+    <trans-unit id="d5c2c95f9209068bd3d99558398492f0" resname="Find a customer of the PrestaShop shop, read their account and orders, and update it when asked.">
+      <source>Find a customer of the PrestaShop shop, read their account and orders, and update it when asked.</source>
+      <target>Buscar un cliente de la tienda PrestaShop, leer su cuenta y sus pedidos, y modificarla cuando se pida.</target>
+    </trans-unit>
     <!-- Order reference, number or customer name -->
     <trans-unit id="257b671f0fd599af83977738ac7c7bea" resname="Order reference, number or customer name">
       <source>Order reference, number or customer name</source>
@@ -806,6 +1236,21 @@
     <trans-unit id="7ba9173fdf75ebd71504c07fbbcb944f" resname="Status to set">
       <source>Status to set</source>
       <target>Estado que aplicar</target>
+    </trans-unit>
+    <!-- Name, reference or EAN13 of a product -->
+    <trans-unit id="8befea239b14adb58304a3298ac62cb9" resname="Name, reference or EAN13 of a product">
+      <source>Name, reference or EAN13 of a product</source>
+      <target>Nombre, referencia o EAN13 de un producto</target>
+    </trans-unit>
+    <!-- Quantity at or under which a product counts as low -->
+    <trans-unit id="ba75fdf3c14d9e665cdcb4c037d2559f" resname="Quantity at or under which a product counts as low">
+      <source>Quantity at or under which a product counts as low</source>
+      <target>Cantidad a partir de la cual un producto se considera con stock bajo</target>
+    </trans-unit>
+    <!-- Name, email or company of the customer -->
+    <trans-unit id="232a5b0fe17bf344acfb54c0adbe9b75" resname="Name, email or company of the customer">
+      <source>Name, email or company of the customer</source>
+      <target>Nombre, correo electrónico o empresa del cliente</target>
     </trans-unit>
     <!-- Send a file to your assistant -->
     <trans-unit id="bc445a0e56169dfb1aa11611f145dff9" resname="Send a file to your assistant">
@@ -1021,6 +1466,601 @@
     <trans-unit id="a98df7359ac52361af81fa897d556a6a" resname="Source code">
       <source>Source code</source>
       <target>Código fuente</target>
+    </trans-unit>
+    <!-- Help and updates -->
+    <trans-unit id="662572f2794af4eb6c7df2761ebaacbe" resname="Help and updates">
+      <source>Help and updates</source>
+      <target>Ayuda y actualizaciones</target>
+    </trans-unit>
+    <!-- Updates -->
+    <trans-unit id="9ac41b6a577daadd588f0fcde0071e8b" resname="Updates">
+      <source>Updates</source>
+      <target>Actualizaciones</target>
+    </trans-unit>
+    <!-- Installed version -->
+    <trans-unit id="569df326497fb0d637986f21ddcb378f" resname="Installed version">
+      <source>Installed version</source>
+      <target>Versión instalada</target>
+    </trans-unit>
+    <!-- Latest version -->
+    <trans-unit id="9ca445b9db010a99239196af5ac3a8b9" resname="Latest version">
+      <source>Latest version</source>
+      <target>Última versión</target>
+    </trans-unit>
+    <!-- Unknown: GitHub could not be reached. -->
+    <trans-unit id="b52b1137f78f5c1ea0abeaca5741ff5f" resname="Unknown: GitHub could not be reached.">
+      <source>Unknown: GitHub could not be reached.</source>
+      <target>Desconocida: no se ha podido contactar con GitHub.</target>
+    </trans-unit>
+    <!-- Checked on %date% -->
+    <trans-unit id="c4218fc240cd8faefc25f1508067730c" resname="Checked on %date%">
+      <source>Checked on %date%</source>
+      <target>Comprobado el %date%</target>
+    </trans-unit>
+    <!-- Check for new versions -->
+    <trans-unit id="f4fe9b96de22e5af7ac03c4d864ec5d4" resname="Check for new versions">
+      <source>Check for new versions</source>
+      <target>Buscar nuevas versiones</target>
+    </trans-unit>
+    <!-- Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you. -->
+    <trans-unit id="d134110250c958e754f1c91ffa6655d8" resname="Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you.">
+      <source>Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you.</source>
+      <target>Una vez al día, mientras tiene esta página abierta, el módulo consulta a GitHub la última versión publicada. No se descarga ni se instala nada sin usted.</target>
+    </trans-unit>
+    <!-- Check now -->
+    <trans-unit id="2c872e677f8b5831f20a66c65e7f8966" resname="Check now">
+      <source>Check now</source>
+      <target>Comprobar ahora</target>
+    </trans-unit>
+    <!-- Version %version% is available. -->
+    <trans-unit id="8905002ce4822972c2271fabbcd7e154" resname="Version %version% is available.">
+      <source>Version %version% is available.</source>
+      <target>La versión %version% está disponible.</target>
+    </trans-unit>
+    <!-- What is new: -->
+    <trans-unit id="838b0198e0bb3c42d28b59ce2d48da7e" resname="What is new:">
+      <source>What is new:</source>
+      <target>Novedades:</target>
+    </trans-unit>
+    <!-- and %count% more -->
+    <trans-unit id="770d850345e31be0c33bd14f0e6f7275" resname="and %count% more">
+      <source>and %count% more</source>
+      <target>y %count% más</target>
+    </trans-unit>
+    <!-- Download the zip -->
+    <trans-unit id="edcb4d7773cb33d7fd22a9417412ba51" resname="Download the zip">
+      <source>Download the zip</source>
+      <target>Descargar el zip</target>
+    </trans-unit>
+    <!-- See what is new -->
+    <trans-unit id="f22c6a5299272fb2676f3a10381289fa" resname="See what is new">
+      <source>See what is new</source>
+      <target>Ver las novedades</target>
+    </trans-unit>
+    <!-- To update, open Modules &gt; Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants. -->
+    <trans-unit id="78e3d108df69c7b61ca5b48a5805bf7b" resname="To update, open Modules &gt; Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.">
+      <source>To update, open Modules &gt; Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.</source>
+      <target>Para actualizar, abra Módulos &gt; Gestor de módulos, haga clic en Subir un módulo y suelte el zip. PrestaShop sustituye el módulo en su sitio y conserva sus ajustes y sus asistentes conectados.</target>
+    </trans-unit>
+    <!-- You have the latest version. -->
+    <trans-unit id="d02d85c9bbc932be313327b47cd28e9a" resname="You have the latest version.">
+      <source>You have the latest version.</source>
+      <target>Tiene la última versión.</target>
+    </trans-unit>
+    <!-- GitHub could not be reached. Try again later. -->
+    <trans-unit id="3a7ca167574392411556624991549e2e" resname="GitHub could not be reached. Try again later.">
+      <source>GitHub could not be reached. Try again later.</source>
+      <target>No se ha podido contactar con GitHub. Inténtelo más tarde.</target>
+    </trans-unit>
+    <!-- Built-in assistant -->
+    <trans-unit id="c27bb80ef4449445971f7928c2e519b3" resname="Built-in assistant">
+      <source>Built-in assistant</source>
+      <target>Asistente integrado</target>
+    </trans-unit>
+    <!-- Acts with your rights and asks before any change -->
+    <trans-unit id="f61effb71b3429653b792c1774b19bf5" resname="Acts with your rights and asks before any change">
+      <source>Acts with your rights and asks before any change</source>
+      <target>Actúa con sus derechos y pregunta antes de cualquier cambio</target>
+    </trans-unit>
+    <!-- Open the built-in assistant -->
+    <trans-unit id="1b72d410632684cbac420a95d9a3cebc" resname="Open the built-in assistant">
+      <source>Open the built-in assistant</source>
+      <target>Abrir el asistente integrado</target>
+    </trans-unit>
+    <!-- Close -->
+    <trans-unit id="d3d2e617335f08df83599665eef8a418" resname="Close">
+      <source>Close</source>
+      <target>Cerrar</target>
+    </trans-unit>
+    <!-- Module settings -->
+    <trans-unit id="1a11db3d2781e8ee1401eab17b296b6a" resname="Module settings">
+      <source>Module settings</source>
+      <target>Ajustes del módulo</target>
+    </trans-unit>
+    <!-- Custom -->
+    <trans-unit id="90589c47f06eb971d548591f23c285af" resname="Custom">
+      <source>Custom</source>
+      <target>Personalizado</target>
+    </trans-unit>
+    <!-- Memory -->
+    <trans-unit id="4789f23283b3a61f858b641a1bef19a3" resname="Memory">
+      <source>Memory</source>
+      <target>Memoria</target>
+    </trans-unit>
+    <!-- Off -->
+    <trans-unit id="d15305d7a4e34e02489c74a5ef542f36" resname="Off">
+      <source>Off</source>
+      <target>Desactivada</target>
+    </trans-unit>
+    <!-- Voyage key -->
+    <trans-unit id="fe0d1d62f580b13b46e8226ba0cae9d3" resname="Voyage key">
+      <source>Voyage key</source>
+      <target>Clave de Voyage</target>
+    </trans-unit>
+    <!-- Embeddings provider -->
+    <trans-unit id="e724fc35b17d8dc034ab062d85fdcd6e" resname="Embeddings provider">
+      <source>Embeddings provider</source>
+      <target>Proveedor de embeddings</target>
+    </trans-unit>
+    <!-- special provider for the memory -->
+    <trans-unit id="c1a863ef45c3f511bbf3b5cf9ae3c699" resname="special provider for the memory">
+      <source>special provider for the memory</source>
+      <target>proveedor especial para la memoria</target>
+    </trans-unit>
+    <!-- Get a key at -->
+    <trans-unit id="85342df2efd0f67ea78bbd6c7959c2e0" resname="Get a key at">
+      <source>Get a key at</source>
+      <target>Obtenga una clave en</target>
+    </trans-unit>
+    <!-- Stored encrypted. Leave empty to keep the saved one. -->
+    <trans-unit id="3181d32df987db56e03601ae0247eef0" resname="Stored encrypted. Leave empty to keep the saved one.">
+      <source>Stored encrypted. Leave empty to keep the saved one.</source>
+      <target>Almacenada cifrada. Deje vacío para conservar la guardada.</target>
+    </trans-unit>
+    <!-- Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default. -->
+    <trans-unit id="e6be38824f5e043cae612f12e13f70c3" resname="Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.">
+      <source>Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.</source>
+      <target>Permite al asistente recordar conversaciones pasadas y recuperarlas más tarde, cada una reservada al empleado que la tuvo. Las codifica con un proveedor - un proveedor de chat ya configurado, o Voyage - y se factura. Desactivada por defecto.</target>
+    </trans-unit>
+    <!-- The chat providers already set up lend their key. Voyage is embeddings only, so it asks for its own key below. -->
+    <trans-unit id="5b5e404fa0d42e07c7c00ce3cf6c9339" resname="The chat providers already set up lend their key. Voyage is embeddings only, so it asks for its own key below.">
+      <source>The chat providers already set up lend their key. Voyage is embeddings only, so it asks for its own key below.</source>
+      <target>Los proveedores de chat ya configurados prestan su clave. Voyage solo hace embeddings, por lo que pide su propia clave abajo.</target>
+    </trans-unit>
+    <!-- Set up a chat assistant first (OpenAI, Gemini, Mistral or Cohere), or pick Voyage, to give the memory a key. -->
+    <trans-unit id="42ad8d60791cf0b06663b87e582a20e9" resname="Set up a chat assistant first (OpenAI, Gemini, Mistral or Cohere), or pick Voyage, to give the memory a key.">
+      <source>Set up a chat assistant first (OpenAI, Gemini, Mistral or Cohere), or pick Voyage, to give the memory a key.</source>
+      <target>Configure primero un asistente de chat (OpenAI, Gemini, Mistral o Cohere), o elija Voyage, para dar una clave a la memoria.</target>
+    </trans-unit>
+    <!-- A key is saved. Leave empty to keep it. -->
+    <trans-unit id="4b513934268ebc4a63939194f8e9870e" resname="A key is saved. Leave empty to keep it.">
+      <source>A key is saved. Leave empty to keep it.</source>
+      <target>Hay una clave guardada. Deje vacío para conservarla.</target>
+    </trans-unit>
+    <!-- choose the exact model yourself from the list below -->
+    <trans-unit id="aa88b893d9a68dfbe5b78a49e4f32eb9" resname="choose the exact model yourself from the list below">
+      <source>choose the exact model yourself from the list below</source>
+      <target>elija usted mismo el modelo exacto en la lista de abajo</target>
+    </trans-unit>
+    <!-- Pick the model this assistant runs. The list comes from your provider. -->
+    <trans-unit id="988ce2b86e244bb3a3da21c86329af98" resname="Pick the model this assistant runs. The list comes from your provider.">
+      <source>Pick the model this assistant runs. The list comes from your provider.</source>
+      <target>Elija el modelo que usa este asistente. La lista proviene de su proveedor.</target>
+    </trans-unit>
+    <!-- Save this assistant with a working key first, then edit it to choose a model here. -->
+    <trans-unit id="bd1281829938c96b41346fb580e4794e" resname="Save this assistant with a working key first, then edit it to choose a model here.">
+      <source>Save this assistant with a working key first, then edit it to choose a model here.</source>
+      <target>Guarde primero este asistente con una clave válida y luego edítelo para elegir un modelo aquí.</target>
+    </trans-unit>
+    <!-- Write your message... -->
+    <trans-unit id="869a3d44483465d3f21681c6bcf47ebd" resname="Write your message...">
+      <source>Write your message...</source>
+      <target>Escriba su mensaje…</target>
+    </trans-unit>
+    <!-- What can I do for the shop? -->
+    <trans-unit id="aa670ddff54665df012bc37665ce1964" resname="What can I do for the shop?">
+      <source>What can I do for the shop?</source>
+      <target>¿Qué puedo hacer por la tienda?</target>
+    </trans-unit>
+    <!-- Where shall we start? -->
+    <trans-unit id="88008accb50d371d2a13dbf9422f3af0" resname="Where shall we start?">
+      <source>Where shall we start?</source>
+      <target>¿Por dónde empezamos?</target>
+    </trans-unit>
+    <!-- How can I help you? -->
+    <trans-unit id="2673bdac54e0e6296fa3a02c9b2704ac" resname="How can I help you?">
+      <source>How can I help you?</source>
+      <target>¿En qué puedo ayudarle?</target>
+    </trans-unit>
+    <!-- Shall we start a new adventure? -->
+    <trans-unit id="fec3388078e8d64309dc77d9d74fe5ce" resname="Shall we start a new adventure?">
+      <source>Shall we start a new adventure?</source>
+      <target>¿Empezamos una nueva aventura?</target>
+    </trans-unit>
+    <!-- Your shop is waiting for your instructions. -->
+    <trans-unit id="b76e24494daef534694802bb5bcf9ff4" resname="Your shop is waiting for your instructions.">
+      <source>Your shop is waiting for your instructions.</source>
+      <target>Su tienda espera sus instrucciones.</target>
+    </trans-unit>
+    <!-- What are we working on? -->
+    <trans-unit id="53210fe9b12b81f24f876af5586647d8" resname="What are we working on?">
+      <source>What are we working on?</source>
+      <target>¿En qué trabajamos?</target>
+    </trans-unit>
+    <!-- New conversation -->
+    <trans-unit id="573ffea6fec9bfdbf9bf4f85e8562d78" resname="New conversation">
+      <source>New conversation</source>
+      <target>Nueva conversación</target>
+    </trans-unit>
+    <!-- Conversations -->
+    <trans-unit id="f004c5e3e7d457125a022d239dce8b8e" resname="Conversations">
+      <source>Conversations</source>
+      <target>Conversaciones</target>
+    </trans-unit>
+    <!-- Delete this conversation -->
+    <trans-unit id="49ebed8ecd50e58d994a84edc11c5692" resname="Delete this conversation">
+      <source>Delete this conversation</source>
+      <target>Eliminar esta conversación</target>
+    </trans-unit>
+    <!-- Default assistant -->
+    <trans-unit id="1cc614a623e7431a0f4240f034523c00" resname="Default assistant">
+      <source>Default assistant</source>
+      <target>Asistente predeterminado</target>
+    </trans-unit>
+    <!-- Confirmation requested -->
+    <trans-unit id="b4bfecd0d321f54ddb01ac288f33cdc9" resname="Confirmation requested">
+      <source>Confirmation requested</source>
+      <target>Confirmación solicitada</target>
+    </trans-unit>
+    <!-- Approve -->
+    <trans-unit id="6f7351657f795bc1357a53142b1184cc" resname="Approve">
+      <source>Approve</source>
+      <target>Aprobar</target>
+    </trans-unit>
+    <!-- Approved -->
+    <trans-unit id="6f8063417ab31f38d864c28302f3de2f" resname="Approved">
+      <source>Approved</source>
+      <target>Aprobado</target>
+    </trans-unit>
+    <!-- Refused -->
+    <trans-unit id="f48b206184b7442983452ea4c3e88a3a" resname="Refused">
+      <source>Refused</source>
+      <target>Rechazado</target>
+    </trans-unit>
+    <!-- Working... -->
+    <trans-unit id="9c8a77ee3bca206e3dfab19d94eb5127" resname="Working...">
+      <source>Working...</source>
+      <target>Trabajando…</target>
+    </trans-unit>
+    <!-- Earlier messages were summarized to keep the cost down. -->
+    <trans-unit id="efa33594f015284d5ecdc2839de6bedf" resname="Earlier messages were summarized to keep the cost down.">
+      <source>Earlier messages were summarized to keep the cost down.</source>
+      <target>Los mensajes más antiguos se han resumido para reducir el coste.</target>
+    </trans-unit>
+    <!-- The assistant is still answering. Wait for its reply. -->
+    <trans-unit id="9854012be358334cb6933b74106635d0" resname="The assistant is still answering. Wait for its reply.">
+      <source>The assistant is still answering. Wait for its reply.</source>
+      <target>El asistente aún está respondiendo. Espere su respuesta.</target>
+    </trans-unit>
+    <!-- This month: %spent% -->
+    <trans-unit id="a75e924a56bc92c5ccb7c910e9cbc75b" resname="This month: %spent%">
+      <source>This month: %spent%</source>
+      <target>Este mes: %spent%</target>
+    </trans-unit>
+    <!-- This month: %spent% of %budget% -->
+    <trans-unit id="70e97c664623ca21a39ca0e93ce4a44e" resname="This month: %spent% of %budget%">
+      <source>This month: %spent% of %budget%</source>
+      <target>Este mes: %spent% de %budget%</target>
+    </trans-unit>
+    <!-- Something went wrong. Try again. -->
+    <trans-unit id="31a5bcc383c3f166b58b66b16feb347a" resname="Something went wrong. Try again.">
+      <source>Something went wrong. Try again.</source>
+      <target>Algo ha fallado. Inténtelo de nuevo.</target>
+    </trans-unit>
+    <!-- Powered by -->
+    <trans-unit id="7a52e36bf4a1caa031c75a742fb9927a" resname="Powered by">
+      <source>Powered by</source>
+      <target>Con la tecnología de</target>
+    </trans-unit>
+    <!-- The key works. Model in use: %model%. -->
+    <trans-unit id="cf878182d20a22f15020e32a348148e9" resname="The key works. Model in use: %model%.">
+      <source>The key works. Model in use: %model%.</source>
+      <target>La clave funciona. Modelo en uso: %model%.</target>
+    </trans-unit>
+    <!-- The provider refused the key or did not answer. Check the key and try again. -->
+    <trans-unit id="65369c127c60eb0121b36f7ab479ec3d" resname="The provider refused the key or did not answer. Check the key and try again.">
+      <source>The provider refused the key or did not answer. Check the key and try again.</source>
+      <target>El proveedor ha rechazado la clave o no ha respondido. Compruebe la clave e inténtelo de nuevo.</target>
+    </trans-unit>
+    <!-- The assistant has been removed. -->
+    <trans-unit id="5d727fa3a7fe4e8d0178e29760ad40a7" resname="The assistant has been removed.">
+      <source>The assistant has been removed.</source>
+      <target>El asistente se ha eliminado.</target>
+    </trans-unit>
+    <!-- Assistant saved. The key works. Model in use: %model%. -->
+    <trans-unit id="17a31ca60217fef3537e2962885220af" resname="Assistant saved. The key works. Model in use: %model%.">
+      <source>Assistant saved. The key works. Model in use: %model%.</source>
+      <target>Asistente guardado. La clave funciona. Modelo en uso: %model%.</target>
+    </trans-unit>
+    <!-- Assistant saved, but the provider refused the key or did not answer. Check the key. -->
+    <trans-unit id="c131e8a695b79a521918d0bc52b5bfd5" resname="Assistant saved, but the provider refused the key or did not answer. Check the key.">
+      <source>Assistant saved, but the provider refused the key or did not answer. Check the key.</source>
+      <target>Asistente guardado, pero el proveedor ha rechazado la clave o no ha respondido. Compruebe la clave.</target>
+    </trans-unit>
+    <!-- No assistant is switched on. Add one in the module settings. -->
+    <trans-unit id="d7268d8ca828f5832b38fa829d36d0d5" resname="No assistant is switched on. Add one in the module settings.">
+      <source>No assistant is switched on. Add one in the module settings.</source>
+      <target>No hay ningún asistente activado. Añada uno en los ajustes del módulo.</target>
+    </trans-unit>
+    <!-- The monthly spending cap is reached. Raise it in the module settings to keep chatting. -->
+    <trans-unit id="48633de4aae59072250413a205b4814a" resname="The monthly spending cap is reached. Raise it in the module settings to keep chatting.">
+      <source>The monthly spending cap is reached. Raise it in the module settings to keep chatting.</source>
+      <target>Se ha alcanzado el límite mensual de gasto. Auméntelo en los ajustes del módulo para seguir.</target>
+    </trans-unit>
+    <!-- Answer the change waiting for your approval first. -->
+    <trans-unit id="67409127c5e8655e91544f4feb7ce0b7" resname="Answer the change waiting for your approval first.">
+      <source>Answer the change waiting for your approval first.</source>
+      <target>Responda primero al cambio que espera su aprobación.</target>
+    </trans-unit>
+    <!-- The assistant could not answer. Check its key in the module settings, then try again. -->
+    <trans-unit id="5434f7febd02d67b759ba0e511edd1d9" resname="The assistant could not answer. Check its key in the module settings, then try again.">
+      <source>The assistant could not answer. Check its key in the module settings, then try again.</source>
+      <target>El asistente no ha podido responder. Compruebe su clave en los ajustes del módulo e inténtelo de nuevo.</target>
+    </trans-unit>
+    <!-- Ask another assistant -->
+    <trans-unit id="615e05ec7bda738caa966dbd0c13fce5" resname="Ask another assistant">
+      <source>Ask another assistant</source>
+      <target>Preguntar a otro asistente</target>
+    </trans-unit>
+    <!-- The files of the assistant are missing from this copy of the module. Install the module from its release zip. -->
+    <trans-unit id="0f3a1d570c146da3187f66185c9c4fb5" resname="The files of the assistant are missing from this copy of the module. Install the module from its release zip.">
+      <source>The files of the assistant are missing from this copy of the module. Install the module from its release zip.</source>
+      <target>Faltan los archivos del asistente en esta copia del módulo. Instale el módulo desde el zip de su versión.</target>
+    </trans-unit>
+    <!-- In development: the built-in assistant is unstable and may change or stop working without notice. -->
+    <trans-unit id="da4b870d7d4d80d82b60dd7df6e742ab" resname="In development: the built-in assistant is unstable and may change or stop working without notice.">
+      <source>In development: the built-in assistant is unstable and may change or stop working without notice.</source>
+      <target>En desarrollo: el asistente integrado es inestable y puede cambiar o dejar de funcionar sin previo aviso.</target>
+    </trans-unit>
+    <!-- Edit the assistant -->
+    <trans-unit id="1bfb39f857ef076837da95e30de22458" resname="Edit the assistant">
+      <source>Edit the assistant</source>
+      <target>Editar el asistente</target>
+    </trans-unit>
+    <!-- Add an assistant -->
+    <trans-unit id="2c3ecf1cd0b57db8889f202e1e59a334" resname="Add an assistant">
+      <source>Add an assistant</source>
+      <target>Añadir un asistente</target>
+    </trans-unit>
+    <!-- Assistant -->
+    <trans-unit id="9b1363da9503dbd4142c0274a88e8d4b" resname="Assistant">
+      <source>Assistant</source>
+      <target>Asistente</target>
+    </trans-unit>
+    <!-- API key -->
+    <trans-unit id="656a6828d7ef1bb791e42087c4b5ee6e" resname="API key">
+      <source>API key</source>
+      <target>Clave API</target>
+    </trans-unit>
+    <!-- Leave empty to keep the key already saved. -->
+    <trans-unit id="6dcead59cd7bc1003765f0be8baf139c" resname="Leave empty to keep the key already saved.">
+      <source>Leave empty to keep the key already saved.</source>
+      <target>Déjelo vacío para conservar la clave ya guardada.</target>
+    </trans-unit>
+    <!-- The key is stored encrypted on your shop and only sent to the provider you picked. -->
+    <trans-unit id="441494555b9f573eb690bbec8bac0ef8" resname="The key is stored encrypted on your shop and only sent to the provider you picked.">
+      <source>The key is stored encrypted on your shop and only sent to the provider you picked.</source>
+      <target>La clave se guarda cifrada en su tienda y solo se envía al proveedor elegido.</target>
+    </trans-unit>
+    <!-- Level -->
+    <trans-unit id="a0db49ba470c1c9ae2128c3470339153" resname="Level">
+      <source>Level</source>
+      <target>Nivel</target>
+    </trans-unit>
+    <!-- Economy -->
+    <trans-unit id="8afc1f2760cfc2d63b8f0e9ddb1b6f39" resname="Economy">
+      <source>Economy</source>
+      <target>Económico</target>
+    </trans-unit>
+    <!-- fast and inexpensive, enough for most tasks -->
+    <trans-unit id="f2d33646b94d7181862110dbcc561266" resname="fast and inexpensive, enough for most tasks">
+      <source>fast and inexpensive, enough for most tasks</source>
+      <target>rápido y económico, suficiente para la mayoría de tareas</target>
+    </trans-unit>
+    <!-- Balanced -->
+    <trans-unit id="c6589f5236c0c434d0c63dc5f9a856f2" resname="Balanced">
+      <source>Balanced</source>
+      <target>Equilibrado</target>
+    </trans-unit>
+    <!-- finer for texts and SEO -->
+    <trans-unit id="58cac80fbf300c70df5a959d3c49cf38" resname="finer for texts and SEO">
+      <source>finer for texts and SEO</source>
+      <target>más fino para los textos y el SEO</target>
+    </trans-unit>
+    <!-- Powerful -->
+    <trans-unit id="42f7a5c8ba7f943ae22164aa3e3a04f8" resname="Powerful">
+      <source>Powerful</source>
+      <target>Potente</target>
+    </trans-unit>
+    <!-- the most capable, clearly more expensive -->
+    <trans-unit id="6464048b53fb01bfc8eace3c615d777d" resname="the most capable, clearly more expensive">
+      <source>the most capable, clearly more expensive</source>
+      <target>el más capaz, claramente más caro</target>
+    </trans-unit>
+    <!-- The module always takes the newest model of the chosen level, without an update. -->
+    <trans-unit id="56f1cef7ae8b6076e60a08be4ca33826" resname="The module always takes the newest model of the chosen level, without an update.">
+      <source>The module always takes the newest model of the chosen level, without an update.</source>
+      <target>El módulo siempre usa el modelo más reciente del nivel elegido, sin actualización.</target>
+    </trans-unit>
+    <!-- Role -->
+    <trans-unit id="bbbabdbe1b262f75d99d62880b953be1" resname="Role">
+      <source>Role</source>
+      <target>Función</target>
+    </trans-unit>
+    <!-- For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role. -->
+    <trans-unit id="5f9ba197a927c22de53436204b702e04" resname="For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.">
+      <source>For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.</source>
+      <target>Por ejemplo: SEO y fichas de producto. Opcional: con un solo asistente activado, lo hace todo. Con varios, el predeterminado encarga a cada uno el trabajo de su función.</target>
+    </trans-unit>
+    <!-- Active -->
+    <trans-unit id="4d3d769b812b6faa6b76e1a8abaece2d" resname="Active">
+      <source>Active</source>
+      <target>Activo</target>
+    </trans-unit>
+    <!-- Exact model -->
+    <trans-unit id="bf05ac87def68c6d9b3cf7d4f81c246e" resname="Exact model">
+      <source>Exact model</source>
+      <target>Modelo exacto</target>
+    </trans-unit>
+    <!-- Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1. -->
+    <trans-unit id="c6df3fe810b0ad814ae4c660f3dbc1ec" resname="Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.">
+      <source>Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.</source>
+      <target>Avanzado. Déjelo vacío para seguir el nivel. Obligatorio para Ollama si su servidor tiene varios modelos. Para un asistente que crea imágenes, un modelo de imágenes como gemini-2.5-flash-image o gpt-image-1.</target>
+    </trans-unit>
+    <!-- Cancel -->
+    <trans-unit id="ea4788705e6873b424c65e91c2846b19" resname="Cancel">
+      <source>Cancel</source>
+      <target>Cancelar</target>
+    </trans-unit>
+    <!-- Your assistants -->
+    <trans-unit id="c41fc3a0a61d4d6383c71707722debfe" resname="Your assistants">
+      <source>Your assistants</source>
+      <target>Sus asistentes</target>
+    </trans-unit>
+    <!-- The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role. -->
+    <trans-unit id="35b449823f65726fb1102525b7587a57" resname="The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.">
+      <source>The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.</source>
+      <target>El chat se abre con el botón de arriba a la derecha de cada página del back office. Actúa con los derechos del empleado conectado y pide aprobación antes de cualquier cambio. Un solo asistente activado lo hace todo; con varios, cada uno asume su función.</target>
+    </trans-unit>
+    <!-- Model -->
+    <trans-unit id="a559b87068921eec05086ce5485e9784" resname="Model">
+      <source>Model</source>
+      <target>Modelo</target>
+    </trans-unit>
+    <!-- This month -->
+    <trans-unit id="96165d6df5c2fc0a2d2049848c130c1c" resname="This month">
+      <source>This month</source>
+      <target>Este mes</target>
+    </trans-unit>
+    <!-- Default -->
+    <trans-unit id="7a1920d61156abc05a60135aefe8bc67" resname="Default">
+      <source>Default</source>
+      <target>Predeterminado</target>
+    </trans-unit>
+    <!-- Everything -->
+    <trans-unit id="709468af25e91284821d1bdbfdded24c" resname="Everything">
+      <source>Everything</source>
+      <target>Todo</target>
+    </trans-unit>
+    <!-- not checked yet -->
+    <trans-unit id="1c678d76e38553d0bc3f67ec7adbd34d" resname="not checked yet">
+      <source>not checked yet</source>
+      <target>aún sin comprobar</target>
+    </trans-unit>
+    <!-- Edit -->
+    <trans-unit id="7dce122004969d56ae2e0245cb754d35" resname="Edit">
+      <source>Edit</source>
+      <target>Editar</target>
+    </trans-unit>
+    <!-- Test the key -->
+    <trans-unit id="288e74b212129652c0f28a2bde40c789" resname="Test the key">
+      <source>Test the key</source>
+      <target>Probar la clave</target>
+    </trans-unit>
+    <!-- Make default -->
+    <trans-unit id="630aa22e854b4dbaff60cd67bc227f3e" resname="Make default">
+      <source>Make default</source>
+      <target>Establecer como predeterminado</target>
+    </trans-unit>
+    <!-- Remove this assistant? -->
+    <trans-unit id="358cb949fbc46a2c67de0669a7498613" resname="Remove this assistant?">
+      <source>Remove this assistant?</source>
+      <target>¿Eliminar este asistente?</target>
+    </trans-unit>
+    <!-- No assistant yet. Add one with your own API key to get the chat. -->
+    <trans-unit id="d99e3c3fa39a62b3977697162ab8d118" resname="No assistant yet. Add one with your own API key to get the chat.">
+      <source>No assistant yet. Add one with your own API key to get the chat.</source>
+      <target>Todavía no hay ningún asistente. Añada uno con su propia clave API para tener el chat.</target>
+    </trans-unit>
+    <!-- Monthly cap, all assistants -->
+    <trans-unit id="8a628fe3e633b015f7c84ebab16b1aa0" resname="Monthly cap, all assistants">
+      <source>Monthly cap, all assistants</source>
+      <target>Límite mensual, todos los asistentes</target>
+    </trans-unit>
+    <!-- This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap. -->
+    <trans-unit id="6c3a2e01add43a2ffb653aa9f54b8014" resname="This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.">
+      <source>This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.</source>
+      <target>Este mes: unos %spent% $. El chat se detiene al alcanzar el límite. 0 para ningún límite.</target>
+    </trans-unit>
+    <!-- Estimated in US dollars from the public prices of each provider, the currency they bill in. -->
+    <trans-unit id="2fe36cf51a6d1f5bc7d02e0dc907d29f" resname="Estimated in US dollars from the public prices of each provider, the currency they bill in.">
+      <source>Estimated in US dollars from the public prices of each provider, the currency they bill in.</source>
+      <target>Estimado en dólares estadounidenses según los precios públicos de cada proveedor, la moneda en la que facturan.</target>
+    </trans-unit>
+    <!-- Instructions for the shop -->
+    <trans-unit id="ac3cf63cabfdaa88ed5311ebdc3a9e42" resname="Instructions for the shop">
+      <source>Instructions for the shop</source>
+      <target>Instrucciones de la tienda</target>
+    </trans-unit>
+    <!-- Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style. -->
+    <trans-unit id="c8eee4569b3cb5dd6db0936d3e751142" resname="Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.">
+      <source>Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.</source>
+      <target>Se añaden a cada conversación, para todos los asistentes. Por ejemplo: cómo dirigirse a los clientes, plazos de entrega, estilo de la casa.</target>
+    </trans-unit>
+    <!-- Attach files from your computer -->
+    <trans-unit id="acc8bbaac5f20a0f0701bfd65343c247" resname="Attach files from your computer">
+      <source>Attach files from your computer</source>
+      <target>Adjuntar archivos desde su ordenador</target>
+    </trans-unit>
+    <!-- Remove this file -->
+    <trans-unit id="432f7f7e33afb218c2173c2a19c2ba75" resname="Remove this file">
+      <source>Remove this file</source>
+      <target>Quitar este archivo</target>
+    </trans-unit>
+    <!-- Up to 5 files per message. -->
+    <trans-unit id="b5d629efcbcbb1282dd85f24fa6bf990" resname="Up to 5 files per message.">
+      <source>Up to 5 files per message.</source>
+      <target>Hasta 5 archivos por mensaje.</target>
+    </trans-unit>
+    <!-- This file cannot be sent: only images, PDF and text files up to 5 MB are accepted. -->
+    <trans-unit id="d7f16843e9d4108edf57774e73baef0e" resname="This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.">
+      <source>This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.</source>
+      <target>Este archivo no se puede enviar: solo se aceptan imágenes, PDF y archivos de texto de hasta 5 MB.</target>
+    </trans-unit>
+    <!-- Images -->
+    <trans-unit id="fff0d600f8a0b5e19e88bfb821dd1157" resname="Images">
+      <source>Images</source>
+      <target>Imágenes</target>
+    </trans-unit>
+    <!-- creates pictures; it never leads the chat, the default assistant asks it for them -->
+    <trans-unit id="959c4849b6eb58bc8186bf8f7b6b569b" resname="creates pictures; it never leads the chat, the default assistant asks it for them">
+      <source>creates pictures; it never leads the chat, the default assistant asks it for them</source>
+      <target>crea imágenes; nunca dirige el chat, el asistente predeterminado se las pide</target>
+    </trans-unit>
+    <!-- Enlarge -->
+    <trans-unit id="fe0475f9d22f9d4ff86c0648dc8b9c01" resname="Enlarge">
+      <source>Enlarge</source>
+      <target>Ampliar</target>
+    </trans-unit>
+    <!-- Reduce -->
+    <trans-unit id="ec4875f03ff0bb0b26cf76ac7f41e3c8" resname="Reduce">
+      <source>Reduce</source>
+      <target>Reducir</target>
+    </trans-unit>
+    <!-- This is an AI and can make mistakes. -->
+    <trans-unit id="3606ebb3f5c20193228f58641f791867" resname="This is an AI and can make mistakes.">
+      <source>This is an AI and can make mistakes.</source>
+      <target>Esto es una IA y puede cometer errores.</target>
+    </trans-unit>
+    <!-- Employees allowed to use the built-in assistant -->
+    <trans-unit id="491a80a6822010d378b6745fd55cdd2d" resname="Employees allowed to use the built-in assistant">
+      <source>Employees allowed to use the built-in assistant</source>
+      <target>Empleados autorizados a usar el asistente integrado</target>
+    </trans-unit>
+    <!-- The chat acts with the rights of the employee using it, never more. Administrators always have it. -->
+    <trans-unit id="47f0d7d7abbdb279f4bda78eda35cfd3" resname="The chat acts with the rights of the employee using it, never more. Administrators always have it.">
+      <source>The chat acts with the rights of the employee using it, never more. Administrators always have it.</source>
+      <target>El chat actúa con los derechos del empleado que lo usa, nunca más. Los administradores siempre tienen acceso.</target>
     </trans-unit>
     <!-- Open source under the AFL-3.0 licence -->
     <trans-unit id="c670648db949fca4d11ac24fa3806100" resname="Open source under the AFL-3.0 licence">

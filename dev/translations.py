@@ -101,6 +101,26 @@ T = {
  "Modifier les commandes de cette boutique, ce qui peut envoyer des e-mails à vos clients",
  "Modificar los pedidos de esta tienda, lo que puede enviar correos electrónicos a sus clientes",
  "Die Bestellungen dieses Shops ändern, wodurch E-Mails an Ihre Kunden gesendet werden können"),
+"Read the catalogue of this shop: products, prices and categories": (
+ "Lire le catalogue de cette boutique : produits, prix et catégories",
+ "Leer el catálogo de esta tienda: productos, precios y categorías",
+ "Den Katalog dieses Shops lesen: Produkte, Preise und Kategorien"),
+"Change the catalogue of this shop: create, edit and delete products, create and edit categories, create and edit brands, create, edit and delete their addresses, create and edit suppliers, create and edit attribute groups, create and edit attribute values, create and edit features and their values, change prices and stock": (
+ "Modifier le catalogue de cette boutique : créer, modifier et supprimer les produits, créer et modifier les catégories, créer et modifier les marques, créer, modifier et supprimer leurs adresses, créer et modifier les fournisseurs, créer et modifier les groupes d'attributs, créer et modifier les valeurs d'attributs, créer et modifier les caractéristiques et leurs valeurs, modifier les prix et le stock",
+ "Modificar el catálogo de esta tienda: crear, editar y eliminar productos, crear y editar categorías, crear y editar marcas, crear, editar y eliminar sus direcciones, crear y editar proveedores, crear y editar grupos de atributos, crear y editar valores de atributos, crear y editar características y sus valores, cambiar precios y stock",
+ "Den Katalog dieses Shops ändern: Produkte anlegen, bearbeiten und löschen, Kategorien anlegen und bearbeiten, Marken anlegen und bearbeiten, ihre Adressen anlegen, bearbeiten und löschen, Lieferanten anlegen und bearbeiten, Attributgruppen anlegen und bearbeiten, Attributwerte anlegen und bearbeiten, Merkmale und ihre Werte anlegen und bearbeiten, Preise und Bestand ändern"),
+"Read the stock of this shop: quantities of products and combinations": (
+ "Lire le stock de cette boutique : quantités des produits et des déclinaisons",
+ "Leer el stock de esta tienda: cantidades de los productos y de las combinaciones",
+ "Den Bestand dieses Shops lesen: Mengen der Produkte und Kombinationen"),
+"Change the stock of this shop: set the quantities of products and combinations, recorded as stock movements": (
+ "Modifier le stock de cette boutique : régler les quantités des produits et des déclinaisons, enregistrées comme mouvements de stock",
+ "Modificar el stock de esta tienda: ajustar las cantidades de los productos y de las combinaciones, registradas como movimientos de stock",
+ "Den Bestand dieses Shops ändern: Mengen der Produkte und Kombinationen festlegen, als Lagerbewegungen erfasst"),
+"Read the customers of this shop: names, email addresses, groups and what they spent": (
+ "Lire les clients de cette boutique : noms, adresses e-mail, groupes et montant de leurs achats",
+ "Leer los clientes de esta tienda: nombres, direcciones de correo electrónico, grupos y lo que han gastado",
+ "Die Kunden dieses Shops lesen: Namen, E-Mail-Adressen, Gruppen und ihre Umsätze"),
 "Outgoing HTTP requests": (
  "Requêtes HTTP sortantes",
  "Peticiones HTTP salientes",
@@ -417,10 +437,31 @@ T = {
  "N'autoriser que ces adresses de retour",
  "Permitir solo estas direcciones de retorno",
  "Nur diese Rückleitungsadressen zulassen"),
-"Host names separated by spaces, for example claude.ai chatgpt.com. Leave empty to accept any address an application registers. Desktop assistants use your own computer and are always allowed.": (
- "Noms de domaine séparés par des espaces, par exemple claude.ai chatgpt.com. Laissez vide pour accepter toute adresse enregistrée par une application. Les assistants de bureau passent par votre propre ordinateur et sont toujours autorisés.",
- "Nombres de dominio separados por espacios, por ejemplo claude.ai chatgpt.com. Déjelo vacío para aceptar cualquier dirección registrada por una aplicación. Los asistentes de escritorio usan su propio ordenador y siempre están permitidos.",
- "Hostnamen durch Leerzeichen getrennt, zum Beispiel claude.ai chatgpt.com. Leer lassen, um jede von einer Anwendung eingetragene Adresse zu akzeptieren. Desktop-Assistenten laufen über Ihren eigenen Rechner und sind immer erlaubt."),
+"Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.": (
+ "Saisissez un nom de domaine, par exemple claude.ai, puis appuyez sur Entrée. Laissez vide pour accepter toute adresse enregistrée par une application. Les assistants de bureau et les agents de code passent par votre propre ordinateur et sont toujours autorisés ; un n8n auto-hébergé demande d'ajouter son propre nom de domaine.",
+ "Escriba un nombre de dominio, por ejemplo claude.ai, y pulse Intro. Déjelo vacío para aceptar cualquier dirección registrada por una aplicación. Los asistentes de escritorio y los agentes de código usan su propio ordenador y siempre están permitidos; un n8n autoalojado necesita que se añada su propio nombre de dominio.",
+ "Geben Sie einen Hostnamen ein, zum Beispiel claude.ai, und drücken Sie Enter. Leer lassen, um jede von einer Anwendung eingetragene Adresse zu akzeptieren. Desktop-Assistenten und Coding-Agenten laufen über Ihren eigenen Rechner und sind immer erlaubt; für ein selbst gehostetes n8n muss sein eigener Hostname hinzugefügt werden."),
+"After the update, reconnect your assistants so that their access includes the new permissions.": (
+ "Après la mise à jour, reconnectez vos assistants pour que leur accès inclue les nouvelles permissions.",
+ "Después de la actualización, vuelva a conectar sus asistentes para que su acceso incluya los nuevos permisos.",
+ "Verbinden Sie Ihre Assistenten nach dem Update erneut, damit ihr Zugriff die neuen Berechtigungen umfasst."),
+"Support us": ("Nous soutenir", "Apóyenos", "Unterstützen Sie uns"),
+"Thank you for using O'So MCP Server": (
+ "Merci d'utiliser O'So MCP Server",
+ "Gracias por usar O'So MCP Server",
+ "Danke, dass Sie O'So MCP Server verwenden"),
+"The module is free and open source. Your support funds new tools, tests on every PrestaShop version and updates.": (
+ "Le module est gratuit et open source. Votre soutien finance les nouveaux outils, les tests sur chaque version de PrestaShop et les mises à jour.",
+ "El módulo es gratuito y de código abierto. Su apoyo financia las nuevas herramientas, las pruebas en cada versión de PrestaShop y las actualizaciones.",
+ "Das Modul ist kostenlos und Open Source. Ihre Unterstützung finanziert neue Werkzeuge, Tests auf jeder PrestaShop-Version und Updates."),
+"A monthly or one-time donation, of the amount you choose, on GitHub Sponsors.": (
+ "Un don mensuel ou ponctuel, du montant de votre choix, sur GitHub Sponsors.",
+ "Una donación mensual o puntual, del importe que usted elija, en GitHub Sponsors.",
+ "Eine monatliche oder einmalige Spende in der Höhe Ihrer Wahl, über GitHub Sponsors."),
+"Later": ("Plus tard", "Más tarde", "Später"),
+"Become a sponsor on GitHub": ("Devenir sponsor sur GitHub", "Hacerse patrocinador en GitHub", "Sponsor auf GitHub werden"),
+"Add a host name": ("Ajouter un nom de domaine", "Añadir un nombre de dominio", "Hostnamen hinzufügen"),
+"Clients the module works with:": ("Clients compatibles avec le module :", "Clientes compatibles con el módulo:", "Mit dem Modul kompatible Clients:"),
 "Keep a security log": (
  "Tenir un journal de sécurité",
  "Mantener un registro de seguridad",
@@ -549,10 +590,274 @@ T = {
  "Rechercher des commandes",
  "Buscar pedidos",
  "Bestellungen suchen"),
+"List categories": (
+ "Lister les catégories",
+ "Listar las categorías",
+ "Kategorien auflisten"),
+"List brands": (
+ "Lister les marques",
+ "Listar las marcas",
+ "Marken auflisten"),
+"List brand addresses": (
+ "Lister les adresses des marques",
+ "Listar las direcciones de las marcas",
+ "Markenadressen auflisten"),
+"Get a brand address": (
+ "Lire une adresse de marque",
+ "Leer una dirección de marca",
+ "Markenadresse lesen"),
+"Add a brand address": (
+ "Ajouter une adresse de marque",
+ "Añadir una dirección de marca",
+ "Markenadresse hinzufügen"),
+"Change a brand address": (
+ "Modifier une adresse de marque",
+ "Modificar una dirección de marca",
+ "Markenadresse ändern"),
+"Delete a brand address": (
+ "Supprimer une adresse de marque",
+ "Eliminar una dirección de marca",
+ "Markenadresse löschen"),
+"Get a brand": (
+ "Lire une marque",
+ "Leer una marca",
+ "Eine Marke abrufen"),
+"Create a brand": (
+ "Créer une marque",
+ "Crear una marca",
+ "Eine Marke anlegen"),
+"Change a brand": (
+ "Modifier une marque",
+ "Modificar una marca",
+ "Eine Marke ändern"),
+"Enable or disable a brand": (
+ "Activer ou désactiver une marque",
+ "Activar o desactivar una marca",
+ "Eine Marke aktivieren oder deaktivieren"),
+"List suppliers": (
+ "Lister les fournisseurs",
+ "Listar los proveedores",
+ "Lieferanten auflisten"),
+"Get a supplier": (
+ "Lire un fournisseur",
+ "Leer un proveedor",
+ "Einen Lieferanten abrufen"),
+"Create a supplier": (
+ "Créer un fournisseur",
+ "Crear un proveedor",
+ "Einen Lieferanten anlegen"),
+"Change a supplier": (
+ "Modifier un fournisseur",
+ "Modificar un proveedor",
+ "Einen Lieferanten ändern"),
+"Enable or disable a supplier": (
+ "Activer ou désactiver un fournisseur",
+ "Activar o desactivar un proveedor",
+ "Einen Lieferanten aktivieren oder deaktivieren"),
+"List attributes": (
+ "Lister les attributs",
+ "Listar los atributos",
+ "Attribute auflisten"),
+"Get an attribute group": (
+ "Lire un groupe d'attributs",
+ "Leer un grupo de atributos",
+ "Eine Attributgruppe abrufen"),
+"Get an attribute value": (
+ "Lire une valeur d'attribut",
+ "Leer un valor de atributo",
+ "Einen Attributwert abrufen"),
+"Create an attribute group": (
+ "Créer un groupe d'attributs",
+ "Crear un grupo de atributos",
+ "Eine Attributgruppe anlegen"),
+"Change an attribute group": (
+ "Modifier un groupe d'attributs",
+ "Modificar un grupo de atributos",
+ "Eine Attributgruppe ändern"),
+"Create an attribute value": (
+ "Créer une valeur d'attribut",
+ "Crear un valor de atributo",
+ "Einen Attributwert anlegen"),
+"Change an attribute value": (
+ "Modifier une valeur d'attribut",
+ "Modificar un valor de atributo",
+ "Einen Attributwert ändern"),
+"List features": (
+ "Lister les caractéristiques",
+ "Listar las características",
+ "Merkmale auflisten"),
+"Get a feature": (
+ "Lire une caractéristique",
+ "Leer una característica",
+ "Ein Merkmal abrufen"),
+"Create a feature": (
+ "Créer une caractéristique",
+ "Crear una característica",
+ "Ein Merkmal anlegen"),
+"Change a feature": (
+ "Modifier une caractéristique",
+ "Modificar una característica",
+ "Ein Merkmal ändern"),
+"Get a feature value": (
+ "Lire une valeur de caractéristique",
+ "Leer un valor de característica",
+ "Einen Merkmalswert abrufen"),
+"Create a feature value": (
+ "Créer une valeur de caractéristique",
+ "Crear un valor de característica",
+ "Einen Merkmalswert anlegen"),
+"Change a feature value": (
+ "Modifier une valeur de caractéristique",
+ "Modificar un valor de característica",
+ "Einen Merkmalswert ändern"),
+"List tax rules": (
+    "Lister les règles de taxes",
+    "Listar las reglas de impuestos",
+    "Steuerregeln auflisten"),
+"List files": (
+ "Lister les fichiers",
+ "Listar los archivos",
+ "Dateien auflisten"),
+"Search products": (
+ "Rechercher des produits",
+ "Buscar productos",
+ "Produkte suchen"),
+"Get a product": (
+ "Lire un produit",
+ "Leer un producto",
+ "Ein Produkt abrufen"),
+"Create a product": (
+ "Créer un produit",
+ "Crear un producto",
+ "Ein Produkt anlegen"),
+"Change a product": (
+ "Modifier un produit",
+ "Modificar un producto",
+ "Ein Produkt ändern"),
+"Switch a product on or off": (
+ "Activer ou désactiver un produit",
+ "Activar o desactivar un producto",
+ "Ein Produkt aktivieren oder deaktivieren"),
+"Delete a product": (
+ "Supprimer un produit",
+ "Eliminar un producto",
+ "Ein Produkt löschen"),
+"Get a category": (
+ "Lire une catégorie",
+ "Leer una categoría",
+ "Eine Kategorie abrufen"),
+"Create a category": (
+ "Créer une catégorie",
+ "Crear una categoría",
+ "Eine Kategorie anlegen"),
+"Change a category": (
+ "Modifier une catégorie",
+ "Modificar una categoría",
+ "Eine Kategorie ändern"),
+"Show or hide a category": (
+ "Afficher ou masquer une catégorie",
+ "Mostrar u ocultar una categoría",
+ "Eine Kategorie ein- oder ausblenden"),
+"Get the stock of a product": (
+ "Lire le stock d'un produit",
+ "Leer el stock de un producto",
+ "Den Bestand eines Produkts abrufen"),
+"Set the stock of a product": (
+ "Régler le stock d'un produit",
+ "Ajustar el stock de un producto",
+ "Den Bestand eines Produkts festlegen"),
+"List low stock": (
+ "Lister les stocks bas",
+ "Listar el stock bajo",
+ "Niedrigen Bestand auflisten"),
+"Search customers": (
+ "Rechercher des clients",
+ "Buscar clientes",
+ "Kunden suchen"),
+"Get a customer": (
+ "Lire un client",
+ "Leer un cliente",
+ "Einen Kunden abrufen"),
 "Change the status of an order": (
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",
  "Den Status einer Bestellung ändern"),
+"Set the tracking number of an order": (
+ "Renseigner le numéro de suivi d'une commande",
+ "Indicar el número de seguimiento de un pedido",
+ "Die Sendungsnummer einer Bestellung eintragen"),
+"Add a message to an order": (
+ "Ajouter un message à une commande",
+ "Añadir un mensaje a un pedido",
+ "Einer Bestellung eine Nachricht hinzufügen"),
+"Set the private note of an order": (
+ "Renseigner la note privée d'une commande",
+ "Indicar la nota privada de un pedido",
+ "Die private Notiz einer Bestellung eintragen"),
+"Record a payment for an order": (
+ "Enregistrer un paiement pour une commande",
+ "Registrar un pago de un pedido",
+ "Eine Zahlung für eine Bestellung erfassen"),
+"Audit the SEO of products": (
+ "Auditer le SEO des produits",
+ "Auditar el SEO de los productos",
+ "Das SEO der Produkte prüfen"),
+"Audit the SEO of categories": (
+ "Auditer le SEO des catégories",
+ "Auditar el SEO de las categorías",
+ "Das SEO der Kategorien prüfen"),
+"Audit the SEO of CMS pages": (
+ "Auditer le SEO des pages CMS",
+ "Auditar el SEO de las páginas CMS",
+ "Das SEO der CMS-Seiten prüfen"),
+"Audit the SEO of brands": (
+ "Auditer le SEO des marques",
+ "Auditar el SEO de las marcas",
+ "Das SEO der Marken prüfen"),
+"List the shop pages and their SEO": (
+ "Lister les pages de la boutique et leur SEO",
+ "Listar las páginas de la tienda y su SEO",
+ "Die Seiten des Shops und ihr SEO auflisten"),
+"Read the SEO and URL settings": (
+ "Lire les réglages SEO et URL",
+ "Leer los ajustes de SEO y URL",
+ "Die SEO- und URL-Einstellungen lesen"),
+"Read the robots.txt file": (
+ "Lire le fichier robots.txt",
+ "Leer el archivo robots.txt",
+ "Die Datei robots.txt lesen"),
+"Audit a public page of the shop": (
+ "Auditer une page publique de la boutique",
+ "Auditar una página pública de la tienda",
+ "Eine öffentliche Seite des Shops prüfen"),
+"Generate the robots.txt file": (
+ "Générer le fichier robots.txt",
+ "Generar el archivo robots.txt",
+ "Die Datei robots.txt erzeugen"),
+"Change the SEO of a CMS page": (
+ "Modifier le SEO d'une page CMS",
+ "Cambiar el SEO de una página CMS",
+ "Das SEO einer CMS-Seite ändern"),
+"Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt": (
+ "Modifier les réglages SEO de la boutique, les titres et descriptions des pages, le robots.txt et le llms.txt",
+ "Cambiar los ajustes de SEO de la tienda, los títulos y descripciones de las páginas, el robots.txt y el llms.txt",
+ "Die SEO-Einstellungen des Shops, die Titel und Beschreibungen der Seiten, die robots.txt und die llms.txt ändern"),
+"Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
+ "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
+ "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",
+ "Lesen, wie der Shop für Suchmaschinen erscheint: Titel, Beschreibungen, URLs, robots.txt, Sitemap und öffentliche Seiten"),
+"Audit and improve SEO": (
+ "Auditer et améliorer le SEO",
+ "Auditar y mejorar el SEO",
+ "SEO prüfen und verbessern"),
+"Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards.": (
+ "Trouver ce qui freine la boutique dans les résultats de recherche, le corriger avec l'accord du marchand, puis vérifier les pages publiques.",
+ "Encontrar lo que frena a la tienda en los resultados de búsqueda, corregirlo con la aprobación del comerciante y comprobar después las páginas públicas.",
+ "Finden, was den Shop in den Suchergebnissen bremst, es mit Zustimmung des Händlers beheben und danach die öffentlichen Seiten prüfen."),
+"Products, categories, pages or the whole shop": (
+ "Produits, catégories, pages ou toute la boutique",
+ "Productos, categorías, páginas o toda la tienda",
+ "Produkte, Kategorien, Seiten oder der ganze Shop"),
 "view": (
  "voir",
  "ver",
@@ -629,6 +934,18 @@ T = {
  "Changer le statut d'une commande",
  "Cambiar el estado de un pedido",
  "Den Status einer Bestellung ändern"),
+"Manage products": (
+ "Gérer les produits",
+ "Gestionar los productos",
+ "Produkte verwalten"),
+"Check and adjust stock": (
+ "Vérifier et ajuster le stock",
+ "Comprobar y ajustar el stock",
+ "Bestand prüfen und anpassen"),
+"Find a customer": (
+ "Trouver un client",
+ "Buscar un cliente",
+ "Einen Kunden finden"),
 "Check that the connection to the PrestaShop shop works, and report what it reached - which shop, which account, which language and currency the answers are in.": (
  "Vérifier que la connexion à la boutique PrestaShop fonctionne, et indiquer ce qu'elle atteint : quelle boutique, quel compte, dans quelle langue et quelle devise arrivent les réponses.",
  "Comprobar que la conexión con la tienda PrestaShop funciona e indicar a qué llega: qué tienda, qué cuenta, en qué idioma y moneda llegan las respuestas.",
@@ -641,6 +958,18 @@ T = {
  "Changer le statut d'une commande dans la boutique PrestaShop, une commande à la fois, avec les vérifications qui évitent d'envoyer deux fois un e-mail au client.",
  "Cambiar el estado de un pedido en la tienda PrestaShop, un pedido cada vez, con las comprobaciones que evitan enviar dos veces un correo al cliente.",
  "Den Status einer Bestellung im PrestaShop-Shop ändern, eine Bestellung nach der anderen, mit den Prüfungen, die verhindern, dass ein Kunde zweimal eine E-Mail erhält."),
+"Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.": (
+ "Trouver, lire et modifier les produits et les catégories de la boutique PrestaShop, un à la fois, sans deviner d'identifiant.",
+ "Buscar, leer y modificar los productos y las categorías de la tienda PrestaShop, uno cada vez, sin adivinar ningún identificador.",
+ "Produkte und Kategorien im PrestaShop-Shop finden, lesen und ändern, eins nach dem anderen, ohne eine Kennung zu erraten."),
+"See what runs low in the PrestaShop shop and set quantities, one product or combination at a time.": (
+ "Voir ce qui manque dans la boutique PrestaShop et régler les quantités, un produit ou une déclinaison à la fois.",
+ "Ver lo que escasea en la tienda PrestaShop y ajustar las cantidades, un producto o una combinación cada vez.",
+ "Sehen, was im PrestaShop-Shop knapp wird, und Mengen festlegen, ein Produkt oder eine Kombination nach der anderen."),
+"Find a customer of the PrestaShop shop, read their account and orders, and update it when asked.": (
+ "Trouver un client de la boutique PrestaShop, lire son compte et ses commandes, et le modifier sur demande.",
+ "Buscar un cliente de la tienda PrestaShop, leer su cuenta y sus pedidos, y modificarla cuando se pida.",
+ "Einen Kunden des PrestaShop-Shops finden, sein Konto und seine Bestellungen lesen und es auf Anfrage ändern."),
 "Order reference, number or customer name": (
  "Référence, numéro de commande ou nom du client",
  "Referencia, número de pedido o nombre del cliente",
@@ -653,6 +982,18 @@ T = {
  "Statut à appliquer",
  "Estado que aplicar",
  "Zu setzender Status"),
+"Name, reference or EAN13 of a product": (
+ "Nom, référence ou EAN13 d'un produit",
+ "Nombre, referencia o EAN13 de un producto",
+ "Name, Referenz oder EAN13 eines Produkts"),
+"Quantity at or under which a product counts as low": (
+ "Quantité à partir de laquelle un produit est considéré en stock bas",
+ "Cantidad a partir de la cual un producto se considera con stock bajo",
+ "Menge, ab der ein Produkt als knapp gilt"),
+"Name, email or company of the customer": (
+ "Nom, e-mail ou société du client",
+ "Nombre, correo electrónico o empresa del cliente",
+ "Name, E-Mail oder Firma des Kunden"),
 "Send a file to your assistant": (
  "Envoyer un fichier à votre assistant",
  "Enviar un archivo a su asistente",
@@ -814,6 +1155,482 @@ T = {
  "Code source",
  "Código fuente",
  "Quellcode"),
+"Help and updates": (
+ "Aide et mises à jour",
+ "Ayuda y actualizaciones",
+ "Hilfe und Updates"),
+"Updates": (
+ "Mises à jour",
+ "Actualizaciones",
+ "Updates"),
+"Installed version": (
+ "Version installée",
+ "Versión instalada",
+ "Installierte Version"),
+"Latest version": (
+ "Dernière version",
+ "Última versión",
+ "Neueste Version"),
+"Unknown: GitHub could not be reached.": (
+ "Inconnue : GitHub n'a pas pu être joint.",
+ "Desconocida: no se ha podido contactar con GitHub.",
+ "Unbekannt: GitHub war nicht erreichbar."),
+"Checked on %date%": (
+ "Vérifié le %date%",
+ "Comprobado el %date%",
+ "Geprüft am %date%"),
+"Check for new versions": (
+ "Rechercher les nouvelles versions",
+ "Buscar nuevas versiones",
+ "Nach neuen Versionen suchen"),
+"Once a day, while you have this page open, the module asks GitHub for the latest published version. Nothing is downloaded or installed without you.": (
+ "Une fois par jour, lorsque vous ouvrez cette page, le module demande à GitHub la dernière version publiée. Rien n'est téléchargé ni installé sans vous.",
+ "Una vez al día, mientras tiene esta página abierta, el módulo consulta a GitHub la última versión publicada. No se descarga ni se instala nada sin usted.",
+ "Einmal am Tag, während Sie diese Seite geöffnet haben, fragt das Modul GitHub nach der neuesten veröffentlichten Version. Ohne Sie wird nichts heruntergeladen oder installiert."),
+"Check now": (
+ "Vérifier maintenant",
+ "Comprobar ahora",
+ "Jetzt prüfen"),
+"Version %version% is available.": (
+ "La version %version% est disponible.",
+ "La versión %version% está disponible.",
+ "Version %version% ist verfügbar."),
+"What is new:": (
+ "Les nouveautés :",
+ "Novedades:",
+ "Neuerungen:"),
+"and %count% more": (
+ "et %count% autres",
+ "y %count% más",
+ "und %count% weitere"),
+"Download the zip": (
+ "Télécharger le zip",
+ "Descargar el zip",
+ "Zip herunterladen"),
+"See what is new": (
+ "Voir les nouveautés",
+ "Ver las novedades",
+ "Neuerungen ansehen"),
+"To update, open Modules > Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.": (
+ "Pour mettre à jour, ouvrez Modules > Gestionnaire de modules, cliquez sur Installer un module et déposez le zip. PrestaShop remplace le module sur place et conserve vos réglages et vos assistants connectés.",
+ "Para actualizar, abra Módulos > Gestor de módulos, haga clic en Subir un módulo y suelte el zip. PrestaShop sustituye el módulo en su sitio y conserva sus ajustes y sus asistentes conectados.",
+ "Zum Aktualisieren öffnen Sie Module > Modul-Manager, klicken auf Modul hochladen und legen die Zip-Datei ab. PrestaShop ersetzt das Modul an Ort und Stelle und behält Ihre Einstellungen und verbundenen Assistenten."),
+"You have the latest version.": (
+ "Vous avez la dernière version.",
+ "Tiene la última versión.",
+ "Sie haben die neueste Version."),
+"GitHub could not be reached. Try again later.": (
+ "GitHub n'a pas pu être joint. Réessayez plus tard.",
+ "No se ha podido contactar con GitHub. Inténtelo más tarde.",
+ "GitHub war nicht erreichbar. Versuchen Sie es später erneut."),
+"Built-in assistant": (
+ "Assistant intégré",
+ "Asistente integrado",
+ "Integrierter Assistent"),
+"Acts with your rights and asks before any change": (
+ "Agit avec vos droits et demande avant toute modification",
+ "Actúa con sus derechos y pregunta antes de cualquier cambio",
+ "Handelt mit Ihren Rechten und fragt vor jeder Änderung"),
+"Open the built-in assistant": (
+ "Ouvrir l'assistant intégré",
+ "Abrir el asistente integrado",
+ "Integrierten Assistenten öffnen"),
+"Close": (
+ "Fermer",
+ "Cerrar",
+ "Schließen"),
+"Module settings": (
+ "Réglages du module",
+ "Ajustes del módulo",
+ "Moduleinstellungen"),
+"Custom": (
+ "Personnalisé",
+ "Personalizado",
+ "Benutzerdefiniert"),
+"Memory": (
+ "Mémoire",
+ "Memoria",
+ "Gedächtnis"),
+"Off": (
+ "Désactivée",
+ "Desactivada",
+ "Aus"),
+"Voyage key": (
+ "Clé Voyage",
+ "Clave de Voyage",
+ "Voyage-Schlüssel"),
+"Embeddings provider": (
+ "Fournisseur d'embeddings",
+ "Proveedor de embeddings",
+ "Embeddings-Anbieter"),
+"special provider for the memory": (
+ "fournisseur spécial pour la mémoire",
+ "proveedor especial para la memoria",
+ "Spezialanbieter für das Gedächtnis"),
+"Get a key at": (
+ "Obtenez une clé sur",
+ "Obtenga una clave en",
+ "Holen Sie sich einen Schlüssel unter"),
+"Stored encrypted. Leave empty to keep the saved one.": (
+ "Stockée chiffrée. Laissez vide pour garder celle enregistrée.",
+ "Almacenada cifrada. Deje vacío para conservar la guardada.",
+ "Verschlüsselt gespeichert. Leer lassen, um den gespeicherten zu behalten."),
+"Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.": (
+ "Permet à l'assistant de se souvenir des conversations passées et de les retrouver plus tard, chacune réservée à l'employé qui l'a eue. Il les encode avec un fournisseur - un fournisseur de chat déjà configuré, ou Voyage - et c'est facturé. Désactivée par défaut.",
+ "Permite al asistente recordar conversaciones pasadas y recuperarlas más tarde, cada una reservada al empleado que la tuvo. Las codifica con un proveedor - un proveedor de chat ya configurado, o Voyage - y se factura. Desactivada por defecto.",
+ "Ermöglicht dem Assistenten, sich an frühere Gespräche zu erinnern und sie später abzurufen, jedes dem Mitarbeiter vorbehalten, der es geführt hat. Es kodiert sie mit einem Anbieter - einem bereits eingerichteten Chat-Anbieter oder Voyage - und das wird berechnet. Standardmäßig aus."),
+"The chat providers already set up lend their key. Voyage is embeddings only, so it asks for its own key below.": (
+ "Les fournisseurs de chat déjà configurés prêtent leur clé. Voyage ne fait que des embeddings, il demande donc sa propre clé ci-dessous.",
+ "Los proveedores de chat ya configurados prestan su clave. Voyage solo hace embeddings, por lo que pide su propia clave abajo.",
+ "Die bereits eingerichteten Chat-Anbieter leihen ihren Schlüssel. Voyage macht nur Embeddings und fragt daher unten nach seinem eigenen Schlüssel."),
+"Set up a chat assistant first (OpenAI, Gemini, Mistral or Cohere), or pick Voyage, to give the memory a key.": (
+ "Configurez d'abord un assistant chat (OpenAI, Gemini, Mistral ou Cohere), ou choisissez Voyage, pour donner une clé à la mémoire.",
+ "Configure primero un asistente de chat (OpenAI, Gemini, Mistral o Cohere), o elija Voyage, para dar una clave a la memoria.",
+ "Richten Sie zuerst einen Chat-Assistenten ein (OpenAI, Gemini, Mistral oder Cohere) oder wählen Sie Voyage, um dem Gedächtnis einen Schlüssel zu geben."),
+"A key is saved. Leave empty to keep it.": (
+ "Une clé est enregistrée. Laissez vide pour la garder.",
+ "Hay una clave guardada. Deje vacío para conservarla.",
+ "Ein Schlüssel ist gespeichert. Leer lassen, um ihn zu behalten."),
+"choose the exact model yourself from the list below": (
+ "choisissez vous-même le modèle exact dans la liste ci-dessous",
+ "elija usted mismo el modelo exacto en la lista de abajo",
+ "wählen Sie das genaue Modell selbst aus der Liste unten"),
+"Pick the model this assistant runs. The list comes from your provider.": (
+ "Choisissez le modèle utilisé par cet assistant. La liste vient de votre fournisseur.",
+ "Elija el modelo que usa este asistente. La lista proviene de su proveedor.",
+ "Wählen Sie das Modell dieses Assistenten. Die Liste stammt von Ihrem Anbieter."),
+"Save this assistant with a working key first, then edit it to choose a model here.": (
+ "Enregistrez d'abord cet assistant avec une clé valide, puis modifiez-le pour choisir un modèle ici.",
+ "Guarde primero este asistente con una clave válida y luego edítelo para elegir un modelo aquí.",
+ "Speichern Sie diesen Assistenten zuerst mit einem gültigen Schlüssel und bearbeiten Sie ihn dann, um hier ein Modell zu wählen."),
+"Write your message...": (
+ "Écrivez votre message…",
+ "Escriba su mensaje…",
+ "Schreiben Sie Ihre Nachricht…"),
+"What can I do for the shop?": (
+ "Que puis-je faire pour la boutique ?",
+ "¿Qué puedo hacer por la tienda?",
+ "Was kann ich für den Shop tun?"),
+"Where shall we start?": (
+ "Par où commencer ?",
+ "¿Por dónde empezamos?",
+ "Womit fangen wir an?"),
+"How can I help you?": (
+ "Comment puis-je vous aider ?",
+ "¿En qué puedo ayudarle?",
+ "Wie kann ich Ihnen helfen?"),
+"Shall we start a new adventure?": (
+ "Alors, on se lance dans une nouvelle aventure ?",
+ "¿Empezamos una nueva aventura?",
+ "Starten wir ein neues Abenteuer?"),
+"Your shop is waiting for your instructions.": (
+ "Votre boutique attend vos instructions.",
+ "Su tienda espera sus instrucciones.",
+ "Ihr Shop wartet auf Ihre Anweisungen."),
+"What are we working on?": (
+ "Sur quoi travaille-t-on ?",
+ "¿En qué trabajamos?",
+ "Woran arbeiten wir?"),
+"New conversation": (
+ "Nouvelle conversation",
+ "Nueva conversación",
+ "Neues Gespräch"),
+"Conversations": (
+ "Conversations",
+ "Conversaciones",
+ "Gespräche"),
+"Delete this conversation": (
+ "Supprimer cette conversation",
+ "Eliminar esta conversación",
+ "Dieses Gespräch löschen"),
+"Default assistant": (
+ "Assistant par défaut",
+ "Asistente predeterminado",
+ "Standardassistent"),
+"Confirmation requested": (
+ "Confirmation demandée",
+ "Confirmación solicitada",
+ "Bestätigung erforderlich"),
+"Approve": (
+ "Approuver",
+ "Aprobar",
+ "Genehmigen"),
+"Approved": (
+ "Approuvé",
+ "Aprobado",
+ "Genehmigt"),
+"Refused": (
+ "Refusé",
+ "Rechazado",
+ "Abgelehnt"),
+"Working...": (
+ "En cours…",
+ "Trabajando…",
+ "In Arbeit…"),
+"Earlier messages were summarized to keep the cost down.": (
+ "Les messages plus anciens ont été résumés pour réduire le coût.",
+ "Los mensajes más antiguos se han resumido para reducir el coste.",
+ "Ältere Nachrichten wurden zusammengefasst, um die Kosten zu senken."),
+"The assistant is still answering. Wait for its reply.": (
+ "L'assistant est encore en train de répondre. Attendez sa réponse.",
+ "El asistente aún está respondiendo. Espere su respuesta.",
+ "Der Assistent antwortet noch. Warten Sie seine Antwort ab."),
+"This month: %spent%": (
+ "Ce mois-ci : %spent%",
+ "Este mes: %spent%",
+ "Diesen Monat: %spent%"),
+"This month: %spent% of %budget%": (
+ "Ce mois-ci : %spent% sur %budget%",
+ "Este mes: %spent% de %budget%",
+ "Diesen Monat: %spent% von %budget%"),
+"Something went wrong. Try again.": (
+ "Un problème est survenu. Réessayez.",
+ "Algo ha fallado. Inténtelo de nuevo.",
+ "Etwas ist schiefgelaufen. Versuchen Sie es erneut."),
+"Powered by": (
+ "Propulsé par",
+ "Con la tecnología de",
+ "Bereitgestellt von"),
+"The key works. Model in use: %model%.": (
+ "La clé fonctionne. Modèle utilisé : %model%.",
+ "La clave funciona. Modelo en uso: %model%.",
+ "Der Schlüssel funktioniert. Verwendetes Modell: %model%."),
+"The provider refused the key or did not answer. Check the key and try again.": (
+ "Le fournisseur a refusé la clé ou n'a pas répondu. Vérifiez la clé et réessayez.",
+ "El proveedor ha rechazado la clave o no ha respondido. Compruebe la clave e inténtelo de nuevo.",
+ "Der Anbieter hat den Schlüssel abgelehnt oder nicht geantwortet. Prüfen Sie den Schlüssel und versuchen Sie es erneut."),
+"The assistant has been removed.": (
+ "L'assistant a été retiré.",
+ "El asistente se ha eliminado.",
+ "Der Assistent wurde entfernt."),
+"Assistant saved. The key works. Model in use: %model%.": (
+ "Assistant enregistré. La clé fonctionne. Modèle utilisé : %model%.",
+ "Asistente guardado. La clave funciona. Modelo en uso: %model%.",
+ "Assistent gespeichert. Der Schlüssel funktioniert. Verwendetes Modell: %model%."),
+"Assistant saved, but the provider refused the key or did not answer. Check the key.": (
+ "Assistant enregistré, mais le fournisseur a refusé la clé ou n'a pas répondu. Vérifiez la clé.",
+ "Asistente guardado, pero el proveedor ha rechazado la clave o no ha respondido. Compruebe la clave.",
+ "Assistent gespeichert, aber der Anbieter hat den Schlüssel abgelehnt oder nicht geantwortet. Prüfen Sie den Schlüssel."),
+"No assistant is switched on. Add one in the module settings.": (
+ "Aucun assistant n'est activé. Ajoutez-en un dans les réglages du module.",
+ "No hay ningún asistente activado. Añada uno en los ajustes del módulo.",
+ "Kein Assistent ist aktiviert. Fügen Sie in den Moduleinstellungen einen hinzu."),
+"The monthly spending cap is reached. Raise it in the module settings to keep chatting.": (
+ "Le plafond mensuel de dépenses est atteint. Relevez-le dans les réglages du module pour continuer.",
+ "Se ha alcanzado el límite mensual de gasto. Auméntelo en los ajustes del módulo para seguir.",
+ "Die monatliche Ausgabengrenze ist erreicht. Erhöhen Sie sie in den Moduleinstellungen, um weiterzumachen."),
+"Answer the change waiting for your approval first.": (
+ "Répondez d'abord à la modification qui attend votre accord.",
+ "Responda primero al cambio que espera su aprobación.",
+ "Beantworten Sie zuerst die Änderung, die auf Ihre Genehmigung wartet."),
+"The assistant could not answer. Check its key in the module settings, then try again.": (
+ "L'assistant n'a pas pu répondre. Vérifiez sa clé dans les réglages du module, puis réessayez.",
+ "El asistente no ha podido responder. Compruebe su clave en los ajustes del módulo e inténtelo de nuevo.",
+ "Der Assistent konnte nicht antworten. Prüfen Sie seinen Schlüssel in den Moduleinstellungen und versuchen Sie es erneut."),
+"Ask another assistant": (
+ "Demander à un autre assistant",
+ "Preguntar a otro asistente",
+ "Einen anderen Assistenten fragen"),
+"The files of the assistant are missing from this copy of the module. Install the module from its release zip.": (
+ "Les fichiers de l'assistant manquent dans cette copie du module. Installez le module depuis le zip de sa version.",
+ "Faltan los archivos del asistente en esta copia del módulo. Instale el módulo desde el zip de su versión.",
+ "In dieser Kopie des Moduls fehlen die Dateien des Assistenten. Installieren Sie das Modul aus dem Zip seiner Version."),
+"In development: the built-in assistant is unstable and may change or stop working without notice.": (
+ "En cours de développement : l'assistant intégré est instable et peut changer ou cesser de fonctionner sans préavis.",
+ "En desarrollo: el asistente integrado es inestable y puede cambiar o dejar de funcionar sin previo aviso.",
+ "In Entwicklung: Der integrierte Assistent ist instabil und kann sich ohne Vorankündigung ändern oder ausfallen."),
+"Edit the assistant": (
+ "Modifier l'assistant",
+ "Editar el asistente",
+ "Assistenten bearbeiten"),
+"Add an assistant": (
+ "Ajouter un assistant",
+ "Añadir un asistente",
+ "Assistenten hinzufügen"),
+"Assistant": (
+ "Assistant",
+ "Asistente",
+ "Assistent"),
+"API key": (
+ "Clé API",
+ "Clave API",
+ "API-Schlüssel"),
+"Leave empty to keep the key already saved.": (
+ "Laissez vide pour garder la clé déjà enregistrée.",
+ "Déjelo vacío para conservar la clave ya guardada.",
+ "Leer lassen, um den bereits gespeicherten Schlüssel zu behalten."),
+"The key is stored encrypted on your shop and only sent to the provider you picked.": (
+ "La clé est stockée chiffrée sur votre boutique et envoyée uniquement au fournisseur choisi.",
+ "La clave se guarda cifrada en su tienda y solo se envía al proveedor elegido.",
+ "Der Schlüssel wird verschlüsselt in Ihrem Shop gespeichert und nur an den gewählten Anbieter gesendet."),
+"Level": (
+ "Niveau",
+ "Nivel",
+ "Stufe"),
+"Economy": (
+ "Économique",
+ "Económico",
+ "Sparsam"),
+"fast and inexpensive, enough for most tasks": (
+ "rapide et peu cher, suffit pour la plupart des tâches",
+ "rápido y económico, suficiente para la mayoría de tareas",
+ "schnell und günstig, reicht für die meisten Aufgaben"),
+"Balanced": (
+ "Équilibré",
+ "Equilibrado",
+ "Ausgewogen"),
+"finer for texts and SEO": (
+ "plus fin pour les textes et le SEO",
+ "más fino para los textos y el SEO",
+ "feiner für Texte und SEO"),
+"Powerful": (
+ "Puissant",
+ "Potente",
+ "Leistungsstark"),
+"the most capable, clearly more expensive": (
+ "le plus capable, nettement plus cher",
+ "el más capaz, claramente más caro",
+ "der leistungsfähigste, deutlich teurer"),
+"The module always takes the newest model of the chosen level, without an update.": (
+ "Le module prend toujours le modèle le plus récent du niveau choisi, sans mise à jour.",
+ "El módulo siempre usa el modelo más reciente del nivel elegido, sin actualización.",
+ "Das Modul nimmt immer das neueste Modell der gewählten Stufe, ohne Update."),
+"Role": (
+ "Rôle",
+ "Función",
+ "Rolle"),
+"For example: SEO and product pages. Optional: with one assistant switched on, it does everything. With several, the default one hands each the work of its role.": (
+ "Par exemple : SEO et fiches produits. Facultatif : avec un seul assistant activé, il fait tout. Avec plusieurs, celui par défaut confie à chacun le travail de son rôle.",
+ "Por ejemplo: SEO y fichas de producto. Opcional: con un solo asistente activado, lo hace todo. Con varios, el predeterminado encarga a cada uno el trabajo de su función.",
+ "Zum Beispiel: SEO und Produktseiten. Optional: Ist nur ein Assistent aktiviert, erledigt er alles. Bei mehreren gibt der Standardassistent jedem die Arbeit seiner Rolle."),
+"Active": (
+ "Actif",
+ "Activo",
+ "Aktiv"),
+"Exact model": (
+ "Modèle exact",
+ "Modelo exacto",
+ "Genaues Modell"),
+"Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.": (
+ "Avancé. Laissez vide pour suivre le niveau. Obligatoire pour Ollama si votre serveur a plusieurs modèles. Pour un assistant qui crée des images, un modèle d'images comme gemini-2.5-flash-image ou gpt-image-1.",
+ "Avanzado. Déjelo vacío para seguir el nivel. Obligatorio para Ollama si su servidor tiene varios modelos. Para un asistente que crea imágenes, un modelo de imágenes como gemini-2.5-flash-image o gpt-image-1.",
+ "Erweitert. Leer lassen, um der Stufe zu folgen. Für Ollama erforderlich, wenn Ihr Server mehrere Modelle hat. Für einen Assistenten, der Bilder erstellt, ein Bildmodell wie gemini-2.5-flash-image oder gpt-image-1."),
+"Cancel": (
+ "Annuler",
+ "Cancelar",
+ "Abbrechen"),
+"Your assistants": (
+ "Vos assistants",
+ "Sus asistentes",
+ "Ihre Assistenten"),
+"The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.": (
+ "Le chat s'ouvre avec le bouton en haut à droite de chaque page du back-office. Il agit avec les droits de l'employé connecté et demande votre accord avant toute modification. Un seul assistant activé fait tout ; avec plusieurs, chacun prend son rôle.",
+ "El chat se abre con el botón de arriba a la derecha de cada página del back office. Actúa con los derechos del empleado conectado y pide aprobación antes de cualquier cambio. Un solo asistente activado lo hace todo; con varios, cada uno asume su función.",
+ "Der Chat öffnet sich über die Schaltfläche oben rechts auf jeder Back-Office-Seite. Er handelt mit den Rechten des angemeldeten Mitarbeiters und fragt vor jeder Änderung nach Genehmigung. Ein aktivierter Assistent erledigt alles; bei mehreren übernimmt jeder seine Rolle."),
+"Model": (
+ "Modèle",
+ "Modelo",
+ "Modell"),
+"This month": (
+ "Ce mois-ci",
+ "Este mes",
+ "Diesen Monat"),
+"Default": (
+ "Par défaut",
+ "Predeterminado",
+ "Standard"),
+"Everything": (
+ "Tout",
+ "Todo",
+ "Alles"),
+"not checked yet": (
+ "pas encore vérifié",
+ "aún sin comprobar",
+ "noch nicht geprüft"),
+"Edit": (
+ "Modifier",
+ "Editar",
+ "Bearbeiten"),
+"Test the key": (
+ "Tester la clé",
+ "Probar la clave",
+ "Schlüssel testen"),
+"Make default": (
+ "Mettre par défaut",
+ "Establecer como predeterminado",
+ "Als Standard festlegen"),
+"Remove this assistant?": (
+ "Retirer cet assistant ?",
+ "¿Eliminar este asistente?",
+ "Diesen Assistenten entfernen?"),
+"No assistant yet. Add one with your own API key to get the chat.": (
+ "Aucun assistant pour l'instant. Ajoutez-en un avec votre propre clé API pour avoir le chat.",
+ "Todavía no hay ningún asistente. Añada uno con su propia clave API para tener el chat.",
+ "Noch kein Assistent. Fügen Sie einen mit Ihrem eigenen API-Schlüssel hinzu, um den Chat zu erhalten."),
+"Monthly cap, all assistants": (
+ "Plafond mensuel, tous assistants",
+ "Límite mensual, todos los asistentes",
+ "Monatliche Grenze, alle Assistenten"),
+"This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.": (
+ "Ce mois-ci : environ %spent% $. Le chat s'arrête quand le plafond est atteint. 0 pour aucun plafond.",
+ "Este mes: unos %spent% $. El chat se detiene al alcanzar el límite. 0 para ningún límite.",
+ "Diesen Monat: etwa %spent% $. Der Chat stoppt, wenn die Grenze erreicht ist. 0 für keine Grenze."),
+"Estimated in US dollars from the public prices of each provider, the currency they bill in.": (
+ "Estimé en dollars américains d'après les prix publics de chaque fournisseur, la devise dans laquelle ils facturent.",
+ "Estimado en dólares estadounidenses según los precios públicos de cada proveedor, la moneda en la que facturan.",
+ "Geschätzt in US-Dollar nach den öffentlichen Preisen der Anbieter, der Währung, in der sie abrechnen."),
+"Instructions for the shop": (
+ "Consignes de la boutique",
+ "Instrucciones de la tienda",
+ "Anweisungen des Shops"),
+"Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.": (
+ "Ajoutées à chaque conversation, pour tous les assistants. Par exemple : comment s'adresser aux clients, délais de livraison, style maison.",
+ "Se añaden a cada conversación, para todos los asistentes. Por ejemplo: cómo dirigirse a los clientes, plazos de entrega, estilo de la casa.",
+ "Werden jedem Gespräch für alle Assistenten hinzugefügt. Zum Beispiel: Anrede der Kunden, Lieferzeiten, Hausstil."),
+"Attach files from your computer": (
+ "Joindre des fichiers depuis votre ordinateur",
+ "Adjuntar archivos desde su ordenador",
+ "Dateien von Ihrem Computer anhängen"),
+"Remove this file": (
+ "Retirer ce fichier",
+ "Quitar este archivo",
+ "Diese Datei entfernen"),
+"Up to 5 files per message.": (
+ "5 fichiers au maximum par message.",
+ "Hasta 5 archivos por mensaje.",
+ "Höchstens 5 Dateien pro Nachricht."),
+"This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.": (
+ "Ce fichier ne peut pas être envoyé : seuls les images, les PDF et les fichiers texte jusqu'à 5 Mo sont acceptés.",
+ "Este archivo no se puede enviar: solo se aceptan imágenes, PDF y archivos de texto de hasta 5 MB.",
+ "Diese Datei kann nicht gesendet werden: Es werden nur Bilder, PDF- und Textdateien bis 5 MB angenommen."),
+"Images": (
+ "Images",
+ "Imágenes",
+ "Bilder"),
+"creates pictures; it never leads the chat, the default assistant asks it for them": (
+ "crée des visuels ; il ne mène jamais le chat, l'assistant par défaut les lui demande",
+ "crea imágenes; nunca dirige el chat, el asistente predeterminado se las pide",
+ "erstellt Bilder; er führt nie den Chat, der Standardassistent bittet ihn darum"),
+"Enlarge": (
+ "Agrandir",
+ "Ampliar",
+ "Vergrößern"),
+"Reduce": (
+ "Réduire",
+ "Reducir",
+ "Verkleinern"),
+"This is an AI and can make mistakes.": (
+ "Ceci est une IA et peut commettre des erreurs.",
+ "Esto es una IA y puede cometer errores.",
+ "Dies ist eine KI und kann Fehler machen."),
+"Employees allowed to use the built-in assistant": (
+ "Employés autorisés à utiliser l'assistant intégré",
+ "Empleados autorizados a usar el asistente integrado",
+ "Mitarbeiter, die den integrierten Assistenten nutzen dürfen"),
+"The chat acts with the rights of the employee using it, never more. Administrators always have it.": (
+ "Le chat agit avec les droits de l'employé qui l'utilise, jamais plus. Les administrateurs y ont toujours accès.",
+ "El chat actúa con los derechos del empleado que lo usa, nunca más. Los administradores siempre tienen acceso.",
+ "Der Chat handelt mit den Rechten des Mitarbeiters, der ihn nutzt, nie mit mehr. Administratoren haben immer Zugriff."),
 "Open source under the AFL-3.0 licence": (
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",

@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "the file written again from the core's rules", "arguments": {}, "expect": "ok", "contains": ["\"changed\"", "\"previous_content\"", "\"content\"", "User-agent: *", "Disallow: /*?order="]},
+    {"why": "a second call right after writes the same file and changes nothing", "arguments": {}, "expect": "ok", "contains": ["\"changed\": false"]}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "a demo supplier, Fashion supplier", "arguments": {"id_supplier": 1}, "expect": "ok", "contains": ["\"id_supplier\": 1", "Fashion supplier", "\"active\"", "\"description\"", "\"phone\"", "\"phone_mobile\"", "\"address1\"", "\"address2\"", "\"postcode\"", "\"city\"", "\"country\"", "\"state\"", "\"dni\"", "\"meta_title\"", "\"meta_description\"", "\"meta_keywords\"", "\"logo\"", "\"products_count\""]},
+    {"why": "the other demo supplier, in a language given by ISO code", "arguments": {"id_supplier": 2, "language": "en"}, "expect": "ok", "contains": ["\"id_supplier\": 2", "Accessories supplier"]},
+    {"why": "a language the shop does not have falls back on the default one", "arguments": {"id_supplier": 1, "language": "zz"}, "expect": "ok", "contains": ["\"id_supplier\": 1"]},
+    {"why": "the identifier as a numeric string", "arguments": {"id_supplier": "2"}, "expect": "ok", "contains": ["\"id_supplier\": 2"]},
+    {"why": "a supplier that does not exist", "arguments": {"id_supplier": 999999}, "expect": "error", "contains": ["No supplier of this shop"]},
+    {"why": "no identifier", "arguments": {"id_supplier": 0}, "expect": "error", "contains": ["No supplier of this shop"]},
+    {"why": "an identifier that is not a number", "arguments": {"id_supplier": [1]}, "expect": "error", "contains": ["No supplier of this shop"]}
+  ]
+}

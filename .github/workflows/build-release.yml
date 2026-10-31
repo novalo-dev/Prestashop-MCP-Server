@@ -137,7 +137,7 @@ jobs:
         with:
           php-version: '8.1'
           coverage: none
-          tools: none
+          tools: composer
 
       - name: PHP syntax
         if: steps.guard.outputs.skip == 'false'
@@ -183,7 +183,16 @@ jobs:
         if: steps.guard.outputs.skip == 'false'
         run: |
           NAME="OSo-MCP-Server-${{ steps.version.outputs.number }}.zip"
-          git archive --format=zip --prefix=somcp/ -o "$NAME" HEAD
+          # The archive is laid out, given its Composer dependencies, pruned
+          # of what the module never runs, then zipped: the shop has no
+          # Composer, so vendor/ ships inside the module.
+          mkdir -p /tmp/pack
+          git archive --format=tar --prefix=somcp/ HEAD | tar -x -C /tmp/pack
+          composer install --working-dir=/tmp/pack/somcp --no-dev --no-interaction --no-progress \
+            --no-scripts --no-plugins --optimize-autoloader
+          rm -f /tmp/pack/somcp/composer.lock
+          dev/package/prune.sh /tmp/pack/somcp
+          (cd /tmp/pack && zip -qr "$GITHUB_WORKSPACE/$NAME" somcp)
           N=$(unzip -l "$NAME" | tail -1 | awk '{print $2}')
           SIZE=$(du -h "$NAME" | cut -f1)
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
@@ -193,7 +202,7 @@ jobs:
         if: steps.guard.outputs.skip == 'false'
         run: |
           NAME="${{ steps.build.outputs.name }}"
-          for f in somcp/somcp.php somcp/config.xml somcp/CHANGELOG.md somcp/LICENSE.txt; do
+          for f in somcp/somcp.php somcp/config.xml somcp/CHANGELOG.md somcp/LICENSE.txt somcp/.htaccess; do
             if ! unzip -l "$NAME" "$f" > /dev/null 2>&1; then
               echo "| Archive contents | **$f is missing** |" >> "$GITHUB_STEP_SUMMARY"
               echo "::error::$f missing from the archive"; exit 1
@@ -220,6 +229,32 @@ jobs:
         run: |
           awk -v v="${{ steps.version.outputs.number }}" \
             '$0 ~ "^## " v " " {f=1; next} /^## /{f=0} f' CHANGELOG.md > NOTES.md
+          # The CHANGELOG is wrapped at 80 columns for reading in a file, but a
+          # release page keeps every line break, so each paragraph or list item
+          # came out as a column of short lines. They are joined back into one
+          # line each; headings, tables, rules and code blocks stay as written.
+          python3 - NOTES.md <<'PY'
+          import re
+          import sys
+
+          path = sys.argv[1]
+          out = []
+          fence = False
+          for line in open(path, encoding='utf-8').read().split('\n'):
+              text = line.strip()
+              if text.startswith('```'):
+                  fence = not fence
+                  out.append(line)
+                  continue
+              alone = (fence or text == '' or text.startswith(('#', '|', '---', '>'))
+                       or re.match(r'\s*([-*+]|\d+\.)\s', line))
+              before = out[-1].strip() if out else ''
+              if not alone and before and not before.startswith(('#', '|', '```', '---')):
+                  out[-1] = out[-1].rstrip() + ' ' + text
+              else:
+                  out.append(line)
+          open(path, 'w', encoding='utf-8').write('\n'.join(out))
+          PY
           {
             echo ""
             echo "---"

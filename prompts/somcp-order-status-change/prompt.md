@@ -10,6 +10,10 @@ of it can be undone by calling again.
 - `somcp_list_order_statuses`
 - `somcp_get_order`
 - `somcp_set_order_status`
+- `somcp_set_order_tracking`
+- `somcp_add_order_message`
+- `somcp_set_order_note`
+- `somcp_add_order_payment`
 
 ## Know which shop you are in
 
@@ -36,6 +40,70 @@ an email sent to someone else's customer.
 6. Report what came back: the previous status, the new one, and whether the
    customer was emailed.
 
+## Tracking number
+
+When the merchant gives the parcel number, call `somcp_set_order_tracking`
+with the order and `tracking_number`. It is its own call, not part of the
+status change: it never moves the order to shipped, and
+`somcp_set_order_status` never sets a number.
+
+- A new number **emails the customer** the in transit message. Say so before
+  calling. Sending the number the shipment already has changes nothing and
+  sends nothing.
+- An order with several shipments needs `id_order_carrier`: the call is
+  refused with the list, so ask the merchant which parcel it is.
+- A reference shared by several orders (a split cart) is refused with their
+  identifiers: ask the merchant which order the parcel belongs to, then call
+  again with `id_order`.
+- An empty number (`""`) removes it without any email. Only when the merchant
+  asked for that.
+- The carrier of the shipment is never changed here.
+
+When the merchant says an order has left with its number, set the number
+first, then the shipped status: the shipped email then carries the tracking
+link.
+
+## Writing to the customer
+
+When the customer should hear about the order in the merchant's own words -
+typically after a status change, to explain a delay or what happens next -
+call `somcp_add_order_message` with the order, `message` and
+`display_to_customer`.
+
+- `display_to_customer: true` **emails the customer** and shows the message in
+  their account. Say so before calling.
+- `display_to_customer: false` keeps it private to the shop: nobody is emailed.
+- There is no default: if the merchant has not said whether the customer
+  should see it, ask.
+- Plain text, 1200 characters at most. A status email the shop already sends
+  does not need a message repeating it.
+
+## A note for the shop only
+
+When the merchant wants to remember something about the order without telling
+the customer - a call to make, a parcel to check - call `somcp_set_order_note`
+with the order and `note`. Nobody is emailed.
+
+- The note **replaces** the current one: there is no append. To add a line,
+  read `order.note` with `somcp_get_order` first and send the whole new text.
+- An empty note (`""`) clears it. Only when the merchant asked for that.
+- A message the customer should read is `somcp_add_order_message`, not a note.
+
+## A payment received
+
+When the merchant says money arrived for an order - a bank wire, a cheque, a
+part payment - record the payment first with `somcp_add_order_payment` (the
+order, `amount`, `payment_method`, and `currency` or `payment_date` when they
+are not the order's currency or today), then change the status if the merchant
+wants it.
+
+- Recording a payment **never changes the status**. Read `remaining` in the
+  answer: tell the merchant whether the order is now fully paid, and offer the
+  paid status only then, through the workflow above.
+- When the order has an invoice, `id_order_invoice` is required: take it from
+  `documents.invoices` of `somcp_get_order`, never guess it.
+- A refund is not a negative payment: it is refused.
+
 ## Several orders
 
 One call per order. Never present a batch as one action.
@@ -48,6 +116,12 @@ that failed.
 ## If an answer is lost
 
 **Do not repeat the call.** Call `somcp_get_order` and read the current status.
+It also gives each shipment with its tracking number, the messages of the
+order, its note, its payments and the documents it produced, so you can see
+whether an invoice or a delivery slip came with the change, or whether a
+message, a note or a payment was saved. A message or a payment is never refused
+as a repeat: a message sent twice reaches the customer twice, a payment
+recorded twice is counted twice.
 
 A repeated call is the likeliest way this ends with a customer receiving two
 emails. The shop refuses a status the order already has, which catches most of

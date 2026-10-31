@@ -1,0 +1,15 @@
+{
+  "calls": [
+    {"why": "a demo product with combinations and a specific price", "arguments": {"id_product": 1}, "expect": "ok", "contains": ["\"basics\"", "\"combinations\"", "\"specific_prices\"", "\"carriers\"", "\"tags\""]},
+    {"why": "the stock settings of the product and of each combination, and the ecotax", "arguments": {"id_product": 1}, "expect": "ok", "contains": ["\"minimal_quantity\"", "\"low_stock_threshold\"", "\"low_stock_alert\"", "\"pack_stock_type\": null", "\"ecotax_tax_excl\"", "\"ecotax_tax_incl\""]},
+    {"why": "in a language given by ISO code", "arguments": {"id_product": 1, "language": "en"}, "expect": "ok", "contains": ["\"id_product\": 1"]},
+    {"why": "a language the shop does not have", "arguments": {"id_product": 2, "language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]},
+    {"why": "a virtual product, with its downloadable file settings or null", "arguments": {"id_product": 12}, "expect": "ok", "contains": ["\"virtual_file\""]},
+    {"why": "a pack, with its products and its stock behaviour", "arguments": {"id_product": 15}, "expect": "ok", "contains": ["\"pack\"", "\"items\"", "\"pack_stock_type\""]},
+    {"why": "the customizable demo product", "arguments": {"id_product": 19}, "expect": "ok", "contains": ["\"customization\""]},
+    {"why": "one combination, whose identifier depends on how the demo data was numbered", "arguments": {"id_product": 1, "id_product_attribute": 1}, "expect": "any"},
+    {"why": "a combination that does not belong to the product", "arguments": {"id_product": 1, "id_product_attribute": 999999}, "expect": "error"},
+    {"why": "a product that does not exist", "arguments": {"id_product": 999999}, "expect": "error"},
+    {"why": "no identifier", "arguments": {"id_product": 0}, "expect": "error"}
+  ]
+}

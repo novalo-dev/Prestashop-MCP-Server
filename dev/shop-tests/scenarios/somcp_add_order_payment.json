@@ -1,0 +1,21 @@
+{
+  "calls": [
+    {"why": "a part payment on a demo order without invoice, in the order's currency", "arguments": {"id_order": 4, "amount": 10, "payment_method": "Bank wire"}, "expect": "ok", "contains": ["\"added\": true", "\"payment_method\": \"Bank wire\"", "\"remaining\": 11.3,", "\"total_paid_real\": 10,", "\"id_order_payment\"", "\"warning\": null"]},
+    {"why": "the rest, found by its reference, with a date, a transaction ID and an invoice the order does not have, which is ignored", "arguments": {"reference": "FFATNOMMJ", "amount": "11.30", "payment_method": "Cheque", "payment_date": "2026-10-01T12:00:00+00:00", "transaction_id": "  CHQ-0042 ", "id_order_invoice": 1}, "expect": "ok", "contains": ["\"added\": true", "\"transaction_id\": \"CHQ-0042\"", "\"remaining\": 0,", "\"reference\": \"FFATNOMMJ\"", "\"payment_date\": \"2026-10-01"]},
+    {"why": "more than is due never leaves a negative remaining", "arguments": {"id_order": 4, "amount": 5.5, "payment_method": "Bank wire", "payment_date": "2026-10-02"}, "expect": "ok", "contains": ["\"added\": true", "\"remaining\": 0,", "\"payment_date\": \"2026-10-02 "]},
+    {"why": "a negative amount is refused", "arguments": {"id_order": 4, "amount": -5, "payment_method": "Bank wire"}, "expect": "error", "contains": ["greater than 0", "Nothing was recorded"]},
+    {"why": "a zero amount is refused", "arguments": {"id_order": 4, "amount": 0, "payment_method": "Bank wire"}, "expect": "error", "contains": ["greater than 0"]},
+    {"why": "an amount that is not a number", "arguments": {"id_order": 4, "amount": "ten", "payment_method": "Bank wire"}, "expect": "error", "contains": ["amount must be a number"]},
+    {"why": "the amount left out", "arguments": {"id_order": 4, "payment_method": "Bank wire"}, "expect": "error", "contains": ["amount must be a number"]},
+    {"why": "a payment method holding a character PrestaShop refuses", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank <wire>"}, "expect": "error", "contains": ["without < > = { }"]},
+    {"why": "a payment method of spaces only", "arguments": {"id_order": 4, "amount": 1, "payment_method": "   "}, "expect": "error", "contains": ["payment_method is required"]},
+    {"why": "the payment method left out", "arguments": {"id_order": 4, "amount": 1}, "expect": "error", "contains": ["payment_method is required"]},
+    {"why": "a currency the shop does not have", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "currency": "XYZ"}, "expect": "error", "contains": ["currency does not exist"]},
+    {"why": "a relative date is not read", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "payment_date": "tomorrow"}, "expect": "error", "contains": ["ISO 8601"]},
+    {"why": "a day that does not exist is not shifted", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "payment_date": "2026-02-31"}, "expect": "error", "contains": ["ISO 8601"]},
+    {"why": "a transaction ID longer than the field", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "transaction_id": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"}, "expect": "error", "contains": ["254 characters"]},
+    {"why": "a transaction ID that is not a string", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "transaction_id": 42}, "expect": "error", "contains": ["transaction_id must be a string"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["No order of this shop"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["No order of this shop"]}
+  ]
+}

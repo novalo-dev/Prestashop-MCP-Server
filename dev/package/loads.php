@@ -22,6 +22,10 @@ declare(strict_types=1);
  * it is declared; one that nothing references would only fail in a shop, the
  * day something did. So all of them are declared here, once.
  *
+ * Then every Neuron class the module's own code names must still be there.
+ * Loading what is left proves nothing about what was taken away: the memory
+ * shipped with src/RAG pruned, and only the merchant's chat found out.
+ *
  * Usage: php dev/package/loads.php <module folder>
  */
 
@@ -48,6 +52,33 @@ foreach ($classmap as $class => $file) {
         $failed[] = $class . ': ' . $e->getMessage();
     }
 }
+
+// Read as PHP tokens, so a name in a comment or a string does not count.
+$named = [];
+$code = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($module, FilesystemIterator::SKIP_DOTS));
+foreach ($code as $file) {
+    $path = substr($file->getPathname(), strlen($module) + 1);
+    if ($file->getExtension() !== 'php' || preg_match('#^(vendor|dev)/#', $path)) {
+        continue;
+    }
+    foreach (token_get_all((string) file_get_contents($file->getPathname())) as $token) {
+        if (is_array($token) && in_array($token[0], [T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED], true)
+            && strpos(ltrim($token[1], '\\'), 'NeuronAI\\') === 0) {
+            $named[ltrim($token[1], '\\')][] = $path . ':' . $token[2];
+        }
+    }
+}
+foreach ($named as $class => $places) {
+    try {
+        $exists = class_exists($class) || interface_exists($class) || trait_exists($class) || enum_exists($class);
+    } catch (Throwable $e) {
+        $exists = false;
+    }
+    if (!$exists) {
+        $failed[] = $class . ': used by ' . $places[0] . ' but missing from the archive (see dev/package/prune.txt)';
+    }
+}
+echo count($named) . ' Neuron classes named by the module' . PHP_EOL;
 
 foreach ($failed as $line) {
     echo '::error::' . $line . PHP_EOL;

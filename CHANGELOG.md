@@ -52,6 +52,14 @@ ChatGPT or Le Chat, and the README keeps the one full list of compatible
 assistants, with the page where each AI provider of the built-in assistant
 gives out its API keys.
 
+### Fixed
+
+**The assistant's memory works in the installed module.** With the memory
+switched on, the built-in assistant stopped with an error in a shop that
+installed the module from its archive: part of the library the memory relies on
+was left out of the package. The archive now carries it, and the checks run
+before each release look at the package as merchants receive it.
+
 ### Security
 
 **A module's tools only ask for its own permissions.** A module publishing

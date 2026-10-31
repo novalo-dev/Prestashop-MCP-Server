@@ -20,9 +20,11 @@ declare(strict_types=1);
  * The part of Neuron AI the built-in assistant calls, checked by reflection.
  *
  * Every class, method and constructor parameter listed here is one that
- * classes/SomcpAssistantChat.php relies on. A new version of Neuron that
- * renames, removes or reshapes one of them fails here, in CI, instead of in
- * the chat of a merchant. Keep the list in step with that file.
+ * classes/SomcpAssistantChat.php or classes/SomcpAssistantMemory.php relies
+ * on. A new version of Neuron that renames, removes or reshapes one of them
+ * fails here, in CI, instead of in the chat of a merchant. Keep the list in
+ * step with those two files. The CI runs it on the pruned archive, so a part
+ * left out of the module is caught here too.
  *
  * Usage: php dev/package/contract.php <module folder>
  */
@@ -46,6 +48,13 @@ $methods = [
     'NeuronAI\Tools\ToolCall' => ['getName', 'getCallId', 'getInputs', 'getApprovalState', 'hasResult', 'getResult'],
     'NeuronAI\Chat\Messages\Message' => ['getContent', 'getUsage', 'getContentBlocks'],
     'NeuronAI\Workflow\Persistence\DatabasePersistence' => ['get'],
+    // The memory.
+    'NeuronAI\RAG\RAG' => ['make', 'setRetrieval'],
+    'NeuronAI\RAG\Document' => ['setSourceType', 'setSourceName'],
+    'NeuronAI\RAG\VectorStore\FileVectorStore' => ['addDocuments', 'delete'],
+    'NeuronAI\RAG\VectorStore\Filter\FilterGroup' => ['and'],
+    'NeuronAI\RAG\VectorStore\Filter\Filter' => ['eq'],
+    'NeuronAI\RAG\Embeddings\OpenAIEmbeddingsProvider' => ['embedDocuments'],
 ];
 
 // Constructor parameters by position, as the assistant passes them.
@@ -66,6 +75,14 @@ $constructors = [
     'NeuronAI\Chat\History\SQLMessageStore' => ['pdo', 'table'],
     'NeuronAI\Workflow\Persistence\DatabasePersistence' => ['pdo', 'table'],
     'NeuronAI\Chat\Messages\UserMessage' => ['content'],
+    'NeuronAI\RAG\Document' => ['content'],
+    'NeuronAI\RAG\VectorStore\FileVectorStore' => ['directory', 'topK', 'name'],
+    'NeuronAI\RAG\Retrieval\SemanticMemoryRetrieval' => ['vectorStore', 'embeddingProvider', 'threadIds'],
+    'NeuronAI\RAG\Embeddings\OpenAIEmbeddingsProvider' => ['key', 'model'],
+    'NeuronAI\RAG\Embeddings\GeminiEmbeddingsProvider' => ['key', 'model'],
+    'NeuronAI\RAG\Embeddings\MistralEmbeddingsProvider' => ['key', 'model'],
+    'NeuronAI\RAG\Embeddings\CohereEmbeddingsProvider' => ['key', 'model'],
+    'NeuronAI\RAG\Embeddings\VoyageEmbeddingsProvider' => ['key', 'model'],
 ];
 
 $properties = [
@@ -84,6 +101,13 @@ $classes = [
 ];
 
 $problems = [];
+
+// Read by the memory: it must say the same as SomcpAssistantMemory::SOURCE_TYPE,
+// or recalled passages are tagged with a type the instructions do not name.
+if (!defined('NeuronAI\RAG\Retrieval\SemanticMemoryRetrieval::SOURCE_TYPE')
+    || constant('NeuronAI\RAG\Retrieval\SemanticMemoryRetrieval::SOURCE_TYPE') !== 'conversation') {
+    $problems[] = 'SemanticMemoryRetrieval::SOURCE_TYPE is no longer conversation: compare it with SomcpAssistantMemory::SOURCE_TYPE';
+}
 
 foreach ($classes as $class) {
     if (!class_exists($class) && !enum_exists($class)) {

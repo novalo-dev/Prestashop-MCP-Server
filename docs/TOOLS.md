@@ -824,6 +824,7 @@ them out before we see them. Removed rather than left lying.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `active` | boolean | no | true by default, enabled rules only; false lists disabled ones too |
+| `name` | string | no | part of the rule name (the **Name** filter of the list), case-insensitive; left out, every rule |
 
 **Returns** - per rule: `id_tax_rules_group`, `name`, `active`, `rate` in the default country, `country` (ISO code of that country). Plus `count`, and `taxes_enabled`: false when the shop has taxes switched off, so that no rule applies.
 
@@ -831,7 +832,8 @@ them out before we see them. Removed rather than left lying.
 - Scope `mcp.catalog.read`, not a configuration one: it is read to price a product. The rate depends on the country; the one returned is the one the back office product page shows.
 - The rate comes from `TaxRulesGroup::getAssociatedTaxRatesByIdCountry()` for `PS_COUNTRY_DEFAULT` of the shop of the token, the same call `somcp_get_product` and `somcp_search_products` make, so the three tools agree. A rule with nothing for that country gives 0.
 - `taxes_enabled` added to the first draft of this entry: with `PS_TAX` off, `somcp_get_product` gives a rate of 0 whatever the rule, and an assistant reading 20 here would otherwise price tax included wrongly.
-- Read through a query on `tax_rules_group` and `tax_rules_group_shop` in the shop of the token, rather than `TaxRulesGroup::getTaxRulesGroups()`, which takes the shop from the global context. Rules deleted in the back office (`deleted = 1`, kept for the orders that used them) are left out. Sorted by name, as the core does.
+- Read through a query on `tax_rules_group` and `tax_rules_group_shop` in the shop of the token, rather than `TaxRulesGroup::getTaxRulesGroups()`, which takes the shop from the global context. Rules deleted in the back office (`deleted = 1`, kept for the orders that used them) are left out. Sorted by identifier, the order of **International > Taxes > Tax Rules** (the product page drop-down sorts by name, the list the merchant manages them in does not).
+- `name` filters as the **Name** column of that list does, the same parameter as `somcp_list_manufacturers`, `somcp_list_suppliers` and `somcp_list_attachments`.
 
 #### `somcp_list_customer_groups`
 **State**: draft · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)

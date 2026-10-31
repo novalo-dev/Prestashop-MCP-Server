@@ -2,6 +2,8 @@
   "calls": [
     {"why": "lists the enabled tax rules of the demo shop with their rate in France, its default country", "arguments": {}, "expect": "ok", "contains": ["\"rules\"", "\"id_tax_rules_group\"", "\"name\"", "\"active\": true", "\"rate\"", "\"country\": \"FR\"", "\"count\"", "\"taxes_enabled\": true"]},
     {"why": "disabled rules listed too", "arguments": {"active": false}, "expect": "ok", "contains": ["\"rules\"", "\"country\": \"FR\""]},
-    {"why": "enabled rules only, said explicitly", "arguments": {"active": true}, "expect": "ok", "contains": ["\"active\": true"]}
+    {"why": "enabled rules only, said explicitly", "arguments": {"active": true}, "expect": "ok", "contains": ["\"active\": true"]},
+    {"why": "finds a rule by part of its name, whatever the case", "arguments": {"name": "fr taux standard"}, "expect": "ok", "contains": ["\"name\": \"FR Taux standard"]},
+    {"why": "a name no rule carries gives an empty list", "arguments": {"name": "no such tax rule"}, "expect": "ok", "contains": ["\"rules\": []", "\"count\": 0"]}
   ]
 }

@@ -28,6 +28,12 @@ each other. The prompt **Change an order status** names it too.
 
 ### Changed
 
+**Tax rules: found by name, in the order of the list.** With the fifty or so
+rules a localization pack creates, the assistant had to read them all to find
+one. `somcp_list_tax_rules` now takes part of a rule name, as the **Name**
+filter of **International > Taxes > Tax Rules** does, and lists the rules in
+the order of that page - by identifier - instead of by name.
+
 **The diagnostic names the real cause.** With friendly URLs off, the three
 address lines below also failed, each blaming something else - a rewrite rule,
 an error 503 - and sent the merchant after problems that did not exist. When a

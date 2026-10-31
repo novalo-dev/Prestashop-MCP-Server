@@ -1477,6 +1477,36 @@
       <source>A bug, an idea, a tool you are missing? The module is built in the open on GitHub: tell us there.</source>
       <target>Un bug, une idée, un outil qui vous manque ? Le module est développé en open source sur GitHub : dites-le-nous là-bas.</target>
     </trans-unit>
+    <!-- Meet our contributors -->
+    <trans-unit id="57b3a908eb9c5dde170fa005060fa564" resname="Meet our contributors">
+      <source>Meet our contributors</source>
+      <target>Découvrez nos contributeurs</target>
+    </trans-unit>
+    <!-- Everyone who helped build this module, as GitHub counts the commits of the published code. -->
+    <trans-unit id="9410ed3a076fc010671b7c397b65c69c" resname="Everyone who helped build this module, as GitHub counts the commits of the published code.">
+      <source>Everyone who helped build this module, as GitHub counts the commits of the published code.</source>
+      <target>Toutes les personnes qui ont contribué à ce module, d'après le décompte des commits du code publié sur GitHub.</target>
+    </trans-unit>
+    <!-- 1 contribution -->
+    <trans-unit id="ed75b94cde47bcdb319c1f9f5b7fe3cb" resname="1 contribution">
+      <source>1 contribution</source>
+      <target>1 contribution</target>
+    </trans-unit>
+    <!-- %count% contributions -->
+    <trans-unit id="9c70d4be2cf9ff2242f14e121118e2b8" resname="%count% contributions">
+      <source>%count% contributions</source>
+      <target>%count% contributions</target>
+    </trans-unit>
+    <!-- %percent%% of the commits -->
+    <trans-unit id="b9fc175051fd71ecdf2861fc8a193de7" resname="%percent%% of the commits">
+      <source>%percent%% of the commits</source>
+      <target>%percent% % des commits</target>
+    </trans-unit>
+    <!-- Become a contributor -->
+    <trans-unit id="f77ccda86d6b5a824f5f75e31d54474d" resname="Become a contributor">
+      <source>Become a contributor</source>
+      <target>Devenir contributeur</target>
+    </trans-unit>
     <!-- Give feedback -->
     <trans-unit id="70aaba87e569caaf0a02a08c79916a85" resname="Give feedback">
       <source>Give feedback</source>

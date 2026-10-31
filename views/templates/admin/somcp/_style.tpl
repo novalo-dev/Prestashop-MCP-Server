@@ -484,6 +484,53 @@
     cursor: not-allowed;
 }
 
+/* An icon in a button keeps a gap before its label. Inside an alert the back
+   office lays the icon out its own way, and on the update notice it ran into
+   the first letter of Download the zip and See what is new. */
+.somcp .btn > [class^="icon-"],
+.somcp .btn > [class*=" icon-"] {
+    display: inline-block;
+    position: static;
+    margin-right: 4px;
+}
+
+/* Meet our contributors: one card per person, as many per row as fit. */
+.somcp .somcp-contributors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 0 15px;
+    padding: 0;
+    list-style: none;
+}
+
+.somcp .somcp-contributor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 140px;
+    padding: 10px;
+    border: 1px solid #dbe6e9;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.somcp .somcp-contributor img {
+    display: block;
+    margin: 0 auto 6px;
+    border-radius: 50%;
+}
+
+.somcp .somcp-contributor-name {
+    font-weight: bold;
+    word-break: break-all;
+}
+
+.somcp .somcp-contributor-share {
+    font-size: 12px;
+    color: #6c868e;
+}
+
 /* A tool that changes something, marked where the merchant decides whether to
    offer it at all. */
 .somcp .somcp-writes {

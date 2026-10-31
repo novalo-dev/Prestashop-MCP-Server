@@ -868,6 +868,36 @@
         {/if}
         </div>
 
+    {if $somcp_contributors}
+        <div class="panel">
+            <div class="panel-heading"><i class="icon-group"></i> {l s='Meet our contributors' d='Modules.Somcp.Admin'}</div>
+            <p class="help-block">{l s='Everyone who helped build this module, as GitHub counts the commits of the published code.' d='Modules.Somcp.Admin'}</p>
+            <ul class="somcp-contributors">
+            {foreach from=$somcp_contributors item=person}
+                <li class="somcp-contributor">
+                    <a href="{$person.profile|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">
+                    {if $person.avatar}
+                        <img src="{$person.avatar|escape:'html':'UTF-8'}" alt="" width="48" height="48" loading="lazy" referrerpolicy="no-referrer">
+                    {/if}
+                        <span class="somcp-contributor-name">{$person.login|escape:'html':'UTF-8'}</span>
+                    </a>
+                    <span class="somcp-contributor-share">
+                    {if $person.contributions == 1}
+                        {l s='1 contribution' d='Modules.Somcp.Admin'}
+                    {else}
+                        {l s='%count% contributions' sprintf=['%count%' => $person.contributions|intval] d='Modules.Somcp.Admin'}
+                    {/if}
+                        &middot; {l s='%percent%% of the commits' sprintf=['%percent%' => $person.percent_shown] d='Modules.Somcp.Admin'}
+                    </span>
+                </li>
+            {/foreach}
+            </ul>
+            <a class="btn btn-default" href="{$somcp_repository|escape:'html':'UTF-8'}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">
+                <i class="icon-code-fork"></i> {l s='Become a contributor' d='Modules.Somcp.Admin'}
+            </a>
+        </div>
+    {/if}
+
         <div class="panel">
             <div class="panel-heading"><i class="icon-comments"></i> {l s='Share your feedback' d='Modules.Somcp.Admin'}</div>
             <p>{l s='A bug, an idea, a tool you are missing? The module is built in the open on GitHub: tell us there.' d='Modules.Somcp.Admin'}</p>

@@ -83,6 +83,7 @@ class Somcp extends Module
         'SomcpContract',
         'SomcpDiagnostic',
         'SomcpUpdate',
+        'SomcpContributors',
         'SomcpAssistant',
         'SomcpAssistantMemory',
         'SomcpAssistantChat',
@@ -136,6 +137,27 @@ class Somcp extends Module
                 require_once _PS_MODULE_DIR_ . 'somcp/classes/' . $class . '.php';
             }
         }
+    }
+
+    /**
+     * The contributors for the Help tab, each share written the way the
+     * employee's language writes numbers (2.1 in English, 2,1 in French).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function contributorsShown(): array
+    {
+        $people = SomcpContributors::all();
+        foreach ($people as &$person) {
+            try {
+                $person['percent_shown'] = $this->context->getCurrentLocale()->formatNumber($person['percent']);
+            } catch (Throwable $e) {
+                $person['percent_shown'] = (string) $person['percent'];
+            }
+        }
+        unset($person);
+
+        return $people;
     }
 
     /**
@@ -295,6 +317,7 @@ class Somcp extends Module
         SomcpUpload::removeStore();
         SomcpConfig::purge();
         SomcpUpdate::purge();
+        SomcpContributors::purge();
         SomcpAssistant::purge();
         SomcpAssistantMemory::purge();
 
@@ -602,6 +625,9 @@ class Somcp extends Module
         }
         if (Tools::isSubmit('submitSomcpUpdateCheck')) {
             $checked = SomcpUpdate::state($this->version, true);
+            // The same button refreshes the contributors: both come from
+            // GitHub, and a merchant pressing it expects the page up to date.
+            SomcpContributors::all(true);
             if ($checked['failed']) {
                 $this->flash($this->trans('GitHub could not be reached. Try again later.', [], 'Modules.Somcp.Admin'));
             } elseif ($checked['available']) {
@@ -660,6 +686,7 @@ class Somcp extends Module
             'somcp_version' => $this->version,
             'somcp_repository' => SomcpUpdate::REPOSITORY,
             'somcp_update' => $update,
+            'somcp_contributors' => $this->contributorsShown(),
             'somcp_assistants' => SomcpAssistant::all(),
             'somcp_assistant_costs' => SomcpAssistant::monthCosts(),
             'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts()),

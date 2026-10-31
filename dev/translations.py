@@ -1163,6 +1163,30 @@ T = {
  "Un bug, une idée, un outil qui vous manque ? Le module est développé en open source sur GitHub : dites-le-nous là-bas.",
  "¿Un error, una idea, una herramienta que echa en falta? El módulo se desarrolla en abierto en GitHub: cuéntenoslo allí.",
  "Ein Fehler, eine Idee, ein fehlendes Tool? Das Modul wird offen auf GitHub entwickelt: Sagen Sie es uns dort."),
+"Meet our contributors": (
+ "Découvrez nos contributeurs",
+ "Conozca a nuestros colaboradores",
+ "Unsere Mitwirkenden"),
+"Everyone who helped build this module, as GitHub counts the commits of the published code.": (
+ "Toutes les personnes qui ont contribué à ce module, d'après le décompte des commits du code publié sur GitHub.",
+ "Todas las personas que han contribuido a este módulo, según el recuento de commits del código publicado en GitHub.",
+ "Alle, die an diesem Modul mitgewirkt haben, gezählt nach den Commits des veröffentlichten Codes auf GitHub."),
+"1 contribution": (
+ "1 contribution",
+ "1 contribución",
+ "1 Beitrag"),
+"%count% contributions": (
+ "%count% contributions",
+ "%count% contribuciones",
+ "%count% Beiträge"),
+"%percent%% of the commits": (
+ "%percent% % des commits",
+ "%percent% % de los commits",
+ "%percent% % der Commits"),
+"Become a contributor": (
+ "Devenir contributeur",
+ "Hazte colaborador",
+ "Mitwirken"),
 "Give feedback": (
  "Donner mon avis",
  "Dar mi opinión",

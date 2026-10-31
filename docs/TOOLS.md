@@ -1467,16 +1467,20 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 **State**: written
 **Nature**: `acts(VIEW, 'AdminSuppliers')` · **Scope**: `mcp.catalog.read`
 
-**Does** - lists the suppliers of this shop: identifier and name, nothing else.
+**Does** - lists the suppliers of this shop as **Catalog > Brands & Suppliers > Suppliers** shows them: identifier, name, **Number of products** and **Enabled**.
 
-**Do not use for** - everything about one supplier (→ `somcp_get_supplier`), or the products of a supplier (`somcp_search_products` has no supplier filter; `somcp_get_product` names the suppliers of one product).
+**Do not use for** - everything about one supplier, its logo included (→ `somcp_get_supplier`), or the products of a supplier (`somcp_search_products` has no supplier filter; `somcp_get_product` names the suppliers of one product).
 
-**Parameters** - none.
+**Parameters** - all optional, the filters of the list:
+- `active` (boolean) - `true` for enabled suppliers only, `false` for disabled ones only; left out, all of them (**All**).
+- `name` (string) - part of the supplier name, case-insensitive (the **Name** filter).
 
-**Returns** - per supplier: `id_supplier`, `name`. Plus `count`.
+**Returns** - per supplier: `id_supplier`, `name`, `active` (**Enabled**), `products_count` (**Number of products**). Plus `count`. Every supplier matching the filters is returned, with no paging: the list stays short.
 
 **Notes**
-- Same shape as `somcp_list_categories`: the list an assistant reads before a write that takes a supplier, which must never guess an identifier. Inactive ones are listed too, since a product can still point to them.
+- The list an assistant reads before a write that takes a supplier, which must never guess an identifier. Disabled ones are listed too unless `active` is given, since a product can still point to them.
+- `products_count` counts the products of the shop of the token in `product_supplier`, one per product, the same count as `somcp_get_supplier`: a product can have several suppliers.
+- Same columns, labels and filters on PrestaShop 8.0.1 and 9.0.0. Not here: **Delete** and **Delete selected** (no tool deletes a supplier yet), and the **Logo** (read with `somcp_get_supplier`).
 - No `language` parameter, unlike the first draft of this entry: a supplier name is not translated in PrestaShop (`Supplier::$name` has no `lang`, checked on 8.0.0 and 9.0.0), so it would change nothing.
 - Read through a query on `supplier` and `supplier_shop` in the shop of the token, rather than `Supplier::getSuppliers()`, which takes the shop from the global context and leaves inactive suppliers out by default. Sorted by name, as the core does.
 

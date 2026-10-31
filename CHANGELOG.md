@@ -38,6 +38,13 @@ changing the customers, and the `add` right on the back office Customers page.
 
 ### Changed
 
+**Listing suppliers: the columns and filters of the Suppliers list.** The list
+of suppliers gave the identifier and name only, so a switched-off supplier
+could not be told apart without opening each one. Each supplier now comes with
+what **Catalog > Brands & Suppliers > Suppliers** shows: whether it is enabled
+and its number of products. The list can also be narrowed as on screen, to
+enabled or disabled suppliers and by part of the name.
+
 **Assistants named the same way everywhere.** The module description, the
 settings page, the README and the bug form each named a different set of
 assistants, and some named one the others did not. They now all say Claude,

@@ -1,5 +1,10 @@
 {
   "calls": [
-    {"why": "lists the suppliers of the demo shop, with the ones somcp_create_supplier added before it", "arguments": {}, "expect": "ok", "contains": ["\"suppliers\"", "\"count\"", "\"id_supplier\"", "Fashion supplier", "Accessories supplier"]}
+    {"why": "lists the suppliers of the demo shop, with the ones somcp_create_supplier added before it", "arguments": {}, "expect": "ok", "contains": ["\"suppliers\"", "\"count\"", "\"id_supplier\"", "\"active\"", "\"products_count\"", "Fashion supplier", "Accessories supplier"]},
+    {"why": "part of the name, in another case, as the Name filter", "arguments": {"name": "fashion"}, "expect": "ok", "contains": ["Fashion supplier"]},
+    {"why": "a name no supplier holds", "arguments": {"name": "zzz-no-such-supplier"}, "expect": "ok", "contains": ["\"suppliers\": []", "\"count\": 0"]},
+    {"why": "enabled suppliers only, as Enabled: Yes", "arguments": {"active": true}, "expect": "ok", "contains": ["\"suppliers\"", "\"active\": true"]},
+    {"why": "disabled suppliers only, as Enabled: No - none or a few, depending on what other scenarios left", "arguments": {"active": false}, "expect": "ok", "contains": ["\"suppliers\"", "\"count\""]},
+    {"why": "both filters together", "arguments": {"active": true, "name": "Accessories"}, "expect": "ok", "contains": ["Accessories supplier"]}
   ]
 }

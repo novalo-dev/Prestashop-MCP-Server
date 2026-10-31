@@ -63,6 +63,10 @@ php .github/scripts/check-tools.php .
 
 # Every table shop-scoped, no merchant setting stored globally
 php .github/scripts/check-multishop.php .
+
+# Every PHP, JS, CSS and template file with the module's licence header
+# (add --fix to write it into the files that lack it, then commit)
+php .github/scripts/check-headers.php .
 ```
 
 CI also runs a **Security** job, which you can run too:

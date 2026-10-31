@@ -13,10 +13,10 @@ T = {
  "O'So MCP Server",
  "O'So MCP Server",
  "O'So MCP Server"),
-"Lets AI assistants such as Claude, ChatGPT or Cursor connect to this shop, with each employee approving what they may do.": (
- "Permet aux assistants IA comme Claude, ChatGPT ou Cursor de se connecter à cette boutique, chaque employé validant ce qu'ils ont le droit de faire.",
- "Permite que asistentes de IA como Claude, ChatGPT o Cursor se conecten a esta tienda, y cada empleado aprueba lo que pueden hacer.",
- "Ermöglicht KI-Assistenten wie Claude, ChatGPT oder Cursor, sich mit diesem Shop zu verbinden, wobei jeder Mitarbeiter freigibt, was sie tun dürfen."),
+"Lets AI assistants such as Claude, ChatGPT or Le Chat connect to this shop, with each employee approving what they may do.": (
+ "Permet aux assistants IA comme Claude, ChatGPT ou Le Chat de se connecter à cette boutique, chaque employé validant ce qu'ils ont le droit de faire.",
+ "Permite que asistentes de IA como Claude, ChatGPT o Le Chat se conecten a esta tienda, y cada empleado aprueba lo que pueden hacer.",
+ "Ermöglicht KI-Assistenten wie Claude, ChatGPT oder Le Chat, sich mit diesem Shop zu verbinden, wobei jeder Mitarbeiter freigibt, was sie tun dürfen."),
 "Uninstalling deletes every connected assistant, approval and token. Assistants connected right now lose their access immediately. Continue?": (
  "La désinstallation supprime tous les assistants connectés, les autorisations et les jetons. Les assistants connectés en ce moment perdent leur accès immédiatement. Continuer ?",
  "La desinstalación elimina todos los asistentes conectados, las autorizaciones y los tokens. Los asistentes conectados ahora mismo pierden su acceso de inmediato. ¿Continuar?",
@@ -257,10 +257,10 @@ T = {
  "Adresse à donner à votre assistant",
  "Dirección que debe dar a su asistente",
  "Adresse für Ihren Assistenten"),
-"Paste this address into Claude, ChatGPT, Cursor or any other assistant that speaks MCP. It will ask you to sign in to this shop and to approve the connection.": (
- "Collez cette adresse dans Claude, ChatGPT, Cursor ou tout autre assistant qui parle MCP. Il vous demandera de vous connecter à cette boutique et d'autoriser la connexion.",
- "Pegue esta dirección en Claude, ChatGPT, Cursor o cualquier otro asistente que hable MCP. Le pedirá que inicie sesión en esta tienda y que autorice la conexión.",
- "Fügen Sie diese Adresse in Claude, ChatGPT, Cursor oder einen anderen Assistenten ein, der MCP spricht. Er wird Sie bitten, sich in diesem Shop anzumelden und die Verbindung freizugeben."),
+"Paste this address into Claude, ChatGPT, Le Chat or any other MCP-compatible assistant. It will ask you to sign in to this shop and to approve the connection.": (
+ "Collez cette adresse dans Claude, ChatGPT, Le Chat ou tout autre assistant compatible MCP. Il vous demandera de vous connecter à cette boutique et d'autoriser la connexion.",
+ "Pegue esta dirección en Claude, ChatGPT, Le Chat o cualquier otro asistente compatible con MCP. Le pedirá que inicie sesión en esta tienda y que autorice la conexión.",
+ "Fügen Sie diese Adresse in Claude, ChatGPT, Le Chat oder einen anderen MCP-kompatiblen Assistenten ein. Er wird Sie bitten, sich in diesem Shop anzumelden und die Verbindung freizugeben."),
 "Authorization server:": (
  "Serveur d'autorisation :",
  "Servidor de autorización:",

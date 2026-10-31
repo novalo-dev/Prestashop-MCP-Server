@@ -14,6 +14,17 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+### Changed
+
+**Assistants named the same way everywhere.** The module description, the
+settings page, the README and the bug form each named a different set of
+assistants, and some named one the others did not. They now all say Claude,
+ChatGPT or Le Chat, and the README keeps the one full list of compatible
+assistants, with the page where each AI provider of the built-in assistant
+gives out its API keys.
+
 ## 1.1.0 - 2026-10-31
 
 ### Added

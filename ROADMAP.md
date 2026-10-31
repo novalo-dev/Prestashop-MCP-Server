@@ -51,11 +51,12 @@ multistore boundary, and the contract with other modules first.
 
 ## Clients
 
-somcp has been used with Claude, Claude Code and ChatGPT. Wanted:
+The clients the module works with are listed once, under
+[Compatible clients](README.md#compatible-clients) in the README. Wanted:
 
-- **Cursor** and **VS Code**: connect, run the tools, report what works and
-  document the exact configuration in the README.
-- Any other MCP client with OAuth support.
+- For a client of that list: connect, run the tools, report what works and
+  document its exact configuration in the README.
+- Any MCP client with OAuth support missing from the list.
 
 A client that behaves differently from the specification is worth an issue
 even if you do not have a fix: the module already works around one client that

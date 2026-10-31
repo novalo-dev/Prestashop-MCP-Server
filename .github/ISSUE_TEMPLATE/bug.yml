@@ -41,7 +41,7 @@ body:
     id: client
     attributes:
       label: MCP client and version
-      placeholder: Claude desktop, Claude Code 2.x, ChatGPT developer mode, ...
+      placeholder: Claude desktop, Claude Code 2.x, ChatGPT, Le Chat, Cursor, n8n, ...
     validations:
       required: true
   - type: dropdown

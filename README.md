@@ -12,7 +12,8 @@
 [![Contributors](https://img.shields.io/github/contributors/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Contributors)](https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors)
 
 A PrestaShop module that turns a shop into an [MCP](https://modelcontextprotocol.io)
-server. Claude, ChatGPT or any MCP client can then work with the shop's orders
+server. Claude, ChatGPT, Le Chat or any MCP-compatible assistant
+([full list](#compatible-clients)) can then work with the shop's orders
 and catalogue, through a standard protocol, with OAuth 2.1 and the employee's
 own back office permissions, instead of a database login or an API key that can
 do everything.
@@ -47,8 +48,14 @@ us. See [Where to help](#where-to-help).
   Addons validator. See [docs/EXTENDING.md](docs/EXTENDING.md).
 - **Has a built-in assistant in the back office.** A chat button at the top
   right of every page opens a conversation with the AI the merchant connected
-  with their own API key (Claude, ChatGPT, Gemini, Mistral, DeepSeek, Grok,
-  or Cohere). It uses the same tools, with the rights of the employee
+  with their own API key: [Claude](https://console.anthropic.com/settings/keys),
+  [ChatGPT](https://platform.openai.com/api-keys),
+  [Gemini](https://aistudio.google.com/apikey),
+  [Mistral](https://console.mistral.ai/api-keys),
+  [DeepSeek](https://platform.deepseek.com/api_keys),
+  [Grok](https://console.x.ai) or
+  [Cohere](https://dashboard.cohere.com/api-keys) - each link opens the page
+  where that provider gives out keys. It uses the same tools, with the rights of the employee
   signed in, and asks for approval before any change. Several assistants can
   share the work by role. Runs on [Neuron AI](https://github.com/neuron-core/neuron-ai).
 - **Speaks both eras of the protocol** from one endpoint: the stateless
@@ -260,10 +267,29 @@ claude mcp add --transport http prestashop https://your-shop.example/module/somc
 Then run `/mcp` inside Claude Code to sign in. See the
 [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp).
 
-**Other clients.** Any MCP client that supports remote servers over HTTP with
-OAuth should work with the same address. ChatGPT has been used against it in
-developer mode. Cursor and VS Code have not been tested yet: reports are
-welcome, see the roadmap.
+### Compatible clients
+
+Any assistant that connects to a remote MCP server over HTTP with OAuth uses
+the same address. The ones below can; each one's own documentation says where
+to paste it.
+
+| Client | Type | How to add the address |
+|---|---|---|
+| Claude (web, desktop, mobile) | Chat | Custom connector |
+| ChatGPT | Chat | Developer mode, apps and connectors |
+| Le Chat (Mistral) | Chat | Custom connector |
+| Dust | Team chat | Add an MCP server |
+| Claude Code | Command line | `claude mcp add --transport http` |
+| Codex (OpenAI) | Command line | `[mcp_servers]` in `config.toml`, then `codex mcp login` |
+| Gemini CLI (Google) | Command line | MCP servers in Gemini CLI |
+| GitHub Copilot CLI | Command line | Add an MCP server |
+| Cursor | Code editor | Model Context Protocol settings |
+| VS Code (GitHub Copilot) | Code editor | Add and manage MCP servers |
+| Windsurf (Devin Desktop) | Code editor | Cascade MCP integration |
+| Zed | Code editor | MCP context servers |
+| n8n Cloud | Automation | MCP Client node; connects in one click |
+| n8n self-hosted | Automation | MCP Client node; add its domain to the allowed hosts of the settings, nothing to do on `localhost` |
+| Make | Automation | MCP connection; connects in one click |
 
 ## Security model
 

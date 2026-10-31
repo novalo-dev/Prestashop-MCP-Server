@@ -3,7 +3,7 @@
     <name>somcp</name>
     <displayName><![CDATA[O'So MCP Server]]></displayName>
     <version><![CDATA[1.1.0]]></version>
-    <description><![CDATA[Lets AI assistants such as Claude, ChatGPT or Cursor connect to this shop, with each employee approving what they may do.]]></description>
+    <description><![CDATA[Lets AI assistants such as Claude, ChatGPT or Le Chat connect to this shop, with each employee approving what they may do.]]></description>
     <author><![CDATA[Novalo]]></author>
     <tab><![CDATA[administration]]></tab>
     <confirmUninstall><![CDATA[Uninstalling deletes every connected assistant, approval and token. Assistants connected right now lose their access immediately. Continue?]]></confirmUninstall>

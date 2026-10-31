@@ -16,6 +16,16 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Creating return statuses.** The new tool `somcp_create_return_status`
+adds one return status - a step a merchandise return goes through - with
+its name in the languages being filled and its colour, as the **Add new
+return status** form of **Shop Parameters > Order Settings > Statuses**
+does. A name another return status already has in that language is
+refused, so two steps can never wear the same label and be mistaken for
+each other. The prompt **Change an order status** names it too.
+
 ### Changed
 
 **The attribute list shows what the back office shows.** `somcp_list_attributes`

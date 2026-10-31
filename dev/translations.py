@@ -586,6 +586,10 @@ T = {
  "Lister les statuts de retour",
  "Listar los estados de devolución",
  "Rückgabestatus auflisten"),
+"Create a return status": (
+ "Créer un statut de retour",
+ "Crear un estado de devolución",
+ "Einen Rückgabestatus anlegen"),
 "Test the connection": (
  "Tester la connexion",
  "Probar la conexión",

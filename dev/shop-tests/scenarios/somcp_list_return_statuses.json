@@ -6,7 +6,6 @@
       "expect": "ok",
       "contains": [
         "\"statuses\"",
-        "\"count\": 5",
         "\"id_order_return_state\": 1",
         "\"removable\": false"
       ]

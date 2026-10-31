@@ -38,6 +38,16 @@
     display: inline;
 }
 
+/* The heart of the Support us button of the page header is PrestaShop's own
+   icon, but its template only spaces the process-icon set from the label.
+   The button is found by its address: PrestaShop rewrites its id. Only the
+   settings page has the button, and only it is given the address. */
+{if isset($somcp_sponsor_url)}
+a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
+    margin-right: 6px;
+}
+{/if}
+
 /* A native dialog dressed as the back office modal. Its own box is cleared so
    only modal-content draws the frame. */
 .somcp .somcp-sponsor {

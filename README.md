@@ -5,6 +5,7 @@
 [![MCP](.github/badges/mcp.svg)](https://modelcontextprotocol.io)
 ![Multistore](.github/badges/multistore.svg)
 [![License](.github/badges/license.svg)](LICENSE.txt)
+[![Docs](.github/badges/docs.svg)](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
 ![Version](.github/badges/version.svg)
 [![PRs welcome](.github/badges/prs.svg)](CONTRIBUTING.md)
 [![Stars](https://img.shields.io/github/stars/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Stars)](https://github.com/novalo-dev/Prestashop-MCP-Server/stargazers)
@@ -19,6 +20,9 @@ own back office permissions, instead of a database login or an API key that can
 do everything.
 
 The module folder is `somcp`; in the back office it is called **O'So MCP Server**.
+
+The module documentation - requirements, installation, configuration and how
+to connect each assistant - is on the [wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki).
 
 https://github.com/user-attachments/assets/cf0b0e3f-1172-4ba9-aad1-11a6298aadf7
 

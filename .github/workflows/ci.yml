@@ -209,8 +209,9 @@ jobs:
     # Neuron AI runs the built-in assistant, and it moves fast: the version is
     # pinned in composer.json, nothing changes without a commit, and this job
     # watches what the pin brings in. Known vulnerabilities fail it. So does a
-    # class of the pruned archive that no longer loads, or a part of Neuron's
-    # API the module calls that is gone or changed shape - which is how an
+    # class of the pruned archive that no longer loads, a class the module
+    # names that was pruned away, or a part of Neuron's API the module calls
+    # that is gone or changed shape - which is how an
     # upgrade that would break the chat shows up here and not in a shop.
     # The weekly Dependencies workflow says when a newer version is out.
     name: Dependencies
@@ -228,15 +229,19 @@ jobs:
         run: composer install --no-dev --no-interaction --no-progress --optimize-autoloader
       - name: Known vulnerabilities
         run: composer audit --no-dev --locked --abandoned=report
-      - name: The API the assistant calls is still there
-        run: php dev/package/contract.php .
-      - name: Every class of the pruned archive loads
+      # Both checks read the pruned copy, the one merchants install: run on
+      # the full vendor folder, they once passed while the archive had lost
+      # the classes the assistant's memory is built on.
+      - name: Prune a copy the way the builds do
         run: |
           mkdir -p /tmp/pack/somcp
           git archive HEAD | tar -x -C /tmp/pack/somcp
           cp -r vendor /tmp/pack/somcp/vendor
           dev/package/prune.sh /tmp/pack/somcp
-          php dev/package/loads.php /tmp/pack/somcp
+      - name: The API the assistant calls is still there
+        run: php dev/package/contract.php /tmp/pack/somcp
+      - name: Every class of the pruned archive loads, and every class the module names is in it
+        run: php dev/package/loads.php /tmp/pack/somcp
 
   shop:
     # Every tool called for real, then PHPStan, on each published PrestaShop

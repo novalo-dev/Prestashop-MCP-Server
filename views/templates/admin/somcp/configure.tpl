@@ -58,7 +58,7 @@
 
         <div class="panel">
             <div class="panel-heading"><i class="icon-link"></i> {l s='Address to give to your assistant' d='Modules.Somcp.Admin'}</div>
-            <p>{l s='Paste this address into Claude, ChatGPT, Cursor or any other assistant that speaks MCP. It will ask you to sign in to this shop and to approve the connection.' d='Modules.Somcp.Admin'}</p>
+            <p>{l s='Paste this address into Claude, ChatGPT, Le Chat or any other MCP-compatible assistant. It will ask you to sign in to this shop and to approve the connection.' d='Modules.Somcp.Admin'}</p>
         {include file='./_endpoints.tpl'}
 
         <p class="somcp-note">

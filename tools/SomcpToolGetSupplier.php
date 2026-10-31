@@ -175,16 +175,31 @@ class SomcpToolGetSupplier
             'meta_description' => SomcpToolCreateCategory::textOf($supplier->meta_description, $idLang),
             'meta_keywords' => isset(Supplier::$definition['fields']['meta_keywords']) ? SomcpToolCreateCategory::textOf($properties['meta_keywords'] ?? '', $idLang) : null,
             'logo' => $logo,
-            // Counted on product_supplier, as the back office supplier list
-            // does: a product can have several suppliers, and the one it
-            // names by default is only one of them. Only the products of this
-            // shop are counted, as everywhere else.
-            'products_count' => (int) Db::getInstance()->getValue(
-                'SELECT COUNT(DISTINCT psu.`id_product`) FROM `' . _DB_PREFIX_ . 'product_supplier` psu'
-                . ' INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = psu.`id_product` AND ps.`id_shop` = ' . (int) $idShop
-                . ' WHERE psu.`id_supplier` = ' . (int) $idSupplier
-            ),
+            'products_count' => self::productsCount($idSupplier, $idShop),
         ];
+    }
+
+    /**
+     * The number of products of this shop linked to a supplier, shared with
+     * somcp_list_suppliers so that the list and the page of one supplier
+     * always give the same figure.
+     *
+     * @param int $idSupplier
+     * @param int $idShop
+     *
+     * @return int
+     */
+    public static function productsCount(int $idSupplier, int $idShop): int
+    {
+        // Counted on product_supplier, as the back office supplier list
+        // does: a product can have several suppliers, and the one it names by
+        // default is only one of them. Only the products of this shop are
+        // counted, as everywhere else.
+        return (int) Db::getInstance()->getValue(
+            'SELECT COUNT(DISTINCT psu.`id_product`) FROM `' . _DB_PREFIX_ . 'product_supplier` psu'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = psu.`id_product` AND ps.`id_shop` = ' . (int) $idShop
+            . ' WHERE psu.`id_supplier` = ' . (int) $idSupplier
+        );
     }
 
     /**

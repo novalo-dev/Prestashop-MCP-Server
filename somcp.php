@@ -101,7 +101,7 @@ class Somcp extends Module
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '1.1.0';
+        $this->version = '1.1.1';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -111,7 +111,7 @@ class Somcp extends Module
 
         $this->displayName = $this->trans('O\'So MCP Server', [], 'Modules.Somcp.Admin');
         $this->description = $this->trans(
-            'Lets AI assistants such as Claude, ChatGPT or Cursor connect to this shop, with each employee approving what they may do.',
+            'Lets AI assistants such as Claude, ChatGPT or Le Chat connect to this shop, with each employee approving what they may do.',
             [],
             'Modules.Somcp.Admin'
         );

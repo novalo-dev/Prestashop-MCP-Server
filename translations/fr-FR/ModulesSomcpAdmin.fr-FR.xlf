@@ -7,10 +7,10 @@
       <source>O'So MCP Server</source>
       <target>O'So MCP Server</target>
     </trans-unit>
-    <!-- Lets AI assistants such as Claude, ChatGPT or Cursor connect to this shop, with each employee approving what they may do. -->
-    <trans-unit id="1290c6ded80920ecedf49af62b77d231" resname="Lets AI assistants such as Claude, ChatGPT or Cursor connect to this shop, with each employee approving what they may do.">
-      <source>Lets AI assistants such as Claude, ChatGPT or Cursor connect to this shop, with each employee approving what they may do.</source>
-      <target>Permet aux assistants IA comme Claude, ChatGPT ou Cursor de se connecter à cette boutique, chaque employé validant ce qu'ils ont le droit de faire.</target>
+    <!-- Lets AI assistants such as Claude, ChatGPT or Le Chat connect to this shop, with each employee approving what they may do. -->
+    <trans-unit id="9d1fc41b76e6431ef0d8a17f69aac1eb" resname="Lets AI assistants such as Claude, ChatGPT or Le Chat connect to this shop, with each employee approving what they may do.">
+      <source>Lets AI assistants such as Claude, ChatGPT or Le Chat connect to this shop, with each employee approving what they may do.</source>
+      <target>Permet aux assistants IA comme Claude, ChatGPT ou Le Chat de se connecter à cette boutique, chaque employé validant ce qu'ils ont le droit de faire.</target>
     </trans-unit>
     <!-- Uninstalling deletes every connected assistant, approval and token. Assistants connected right now lose their access immediately. Continue? -->
     <trans-unit id="b17b5c231379ed57cdf75f825772084b" resname="Uninstalling deletes every connected assistant, approval and token. Assistants connected right now lose their access immediately. Continue?">
@@ -312,10 +312,10 @@
       <source>Address to give to your assistant</source>
       <target>Adresse à donner à votre assistant</target>
     </trans-unit>
-    <!-- Paste this address into Claude, ChatGPT, Cursor or any other assistant that speaks MCP. It will ask you to sign in to this shop and to approve the connection. -->
-    <trans-unit id="68e1e32abebb94d2b0097f01474bf346" resname="Paste this address into Claude, ChatGPT, Cursor or any other assistant that speaks MCP. It will ask you to sign in to this shop and to approve the connection.">
-      <source>Paste this address into Claude, ChatGPT, Cursor or any other assistant that speaks MCP. It will ask you to sign in to this shop and to approve the connection.</source>
-      <target>Collez cette adresse dans Claude, ChatGPT, Cursor ou tout autre assistant qui parle MCP. Il vous demandera de vous connecter à cette boutique et d'autoriser la connexion.</target>
+    <!-- Paste this address into Claude, ChatGPT, Le Chat or any other MCP-compatible assistant. It will ask you to sign in to this shop and to approve the connection. -->
+    <trans-unit id="f7b9237081dd6d7f16e41026d5f351cd" resname="Paste this address into Claude, ChatGPT, Le Chat or any other MCP-compatible assistant. It will ask you to sign in to this shop and to approve the connection.">
+      <source>Paste this address into Claude, ChatGPT, Le Chat or any other MCP-compatible assistant. It will ask you to sign in to this shop and to approve the connection.</source>
+      <target>Collez cette adresse dans Claude, ChatGPT, Le Chat ou tout autre assistant compatible MCP. Il vous demandera de vous connecter à cette boutique et d'autoriser la connexion.</target>
     </trans-unit>
     <!-- Authorization server: -->
     <trans-unit id="d4edc75f9b6c7005cace0159f0c5f12a" resname="Authorization server:">
@@ -811,6 +811,21 @@
     <trans-unit id="2125627ab97ff410637f507da9323cb6" resname="Get a supplier">
       <source>Get a supplier</source>
       <target>Lire un fournisseur</target>
+    </trans-unit>
+    <!-- Create a customer -->
+    <trans-unit id="2041c227092f93cd579dc1cf5efab8e6" resname="Create a customer">
+      <source>Create a customer</source>
+      <target>Créer un client</target>
+    </trans-unit>
+    <!-- Change a customer -->
+    <trans-unit id="0779af6732b299a0fcd514f3723c3e72" resname="Change a customer">
+      <source>Change a customer</source>
+      <target>Modifier un client</target>
+    </trans-unit>
+    <!-- Change the customers of this shop: create and edit customer accounts -->
+    <trans-unit id="3d5015d706bfc2e7af6f198d5b27422d" resname="Change the customers of this shop: create and edit customer accounts">
+      <source>Change the customers of this shop: create and edit customer accounts</source>
+      <target>Modifier les clients de cette boutique : créer et modifier des comptes clients</target>
     </trans-unit>
     <!-- Create a supplier -->
     <trans-unit id="63ea2652f1e2b02ae526b7a3777d682f" resname="Create a supplier">

@@ -1,0 +1,19 @@
+{
+  "calls": [
+    {"why": "a status in two languages, with its colour", "arguments": {"color": "#3C8DBC", "languages": ["en", "fr"], "name": {"en": "Somcp awaiting inspection", "fr": "Somcp en attente d'inspection"}}, "expect": "ok", "contains": ["\"created\": true", "\"id_order_return_state\"", "\"name\": \"Somcp awaiting inspection\"", "\"color\": \"#3C8DBC\"", "\"removable\": true"]},
+    {"why": "the name as one string when one language is filled", "arguments": {"color": "#00A65A", "languages": ["en"], "name": "Somcp plain status"}, "expect": "ok", "contains": ["\"created\": true", "\"name\": \"Somcp plain status\""]},
+    {"why": "no colour, as the form allows", "arguments": {"languages": ["en"], "name": {"en": "Somcp colourless"}}, "expect": "ok", "contains": ["\"created\": true", "\"name\": \"Somcp colourless\"", "\"color\": \"\""]},
+    {"why": "the same name again is refused, two steps could not be told apart", "arguments": {"languages": ["en"], "name": {"en": "Somcp awaiting inspection"}}, "expect": "error", "contains": ["Nothing was created", "already has this name", "id_order_return_state"]},
+    {"why": "the name of a built-in status", "arguments": {"color": "#E84C3D", "languages": ["en"], "name": {"en": "Package received"}}, "expect": "error", "contains": ["Nothing was created", "name (en): a return status already has this name, id_order_return_state 3"]},
+    {"why": "a colour that is not a hex code", "arguments": {"color": "red", "languages": ["en"], "name": {"en": "Somcp red"}}, "expect": "error", "contains": ["Nothing was created", "color: a hex code such as #E84C3D"]},
+    {"why": "a short hex code", "arguments": {"color": "#12345", "languages": ["en"], "name": {"en": "Somcp short"}}, "expect": "error", "contains": ["color: a hex code such as #E84C3D"]},
+    {"why": "no name", "arguments": {"color": "#E84C3D", "languages": ["en"]}, "expect": "error", "contains": ["Nothing was created", "name: required"]},
+    {"why": "an empty name", "arguments": {"languages": ["en"], "name": {"en": "  "}}, "expect": "error", "contains": ["name: missing in en"]},
+    {"why": "a name too long", "arguments": {"languages": ["en"], "name": {"en": "Somcp return status whose name goes on past the sixty four characters allowed"}}, "expect": "error", "contains": ["name (en): 64 characters at most"]},
+    {"why": "forbidden characters in the name", "arguments": {"languages": ["en"], "name": {"en": "Somcp <bad>"}}, "expect": "error", "contains": ["name (en): a character PrestaShop refuses in a return status name"]},
+    {"why": "a text in a language not being filled", "arguments": {"languages": ["en"], "name": {"fr": "Retour"}}, "expect": "error", "contains": ["\"fr\" is not among the languages being filled"]},
+    {"why": "a name missing in one language being filled", "arguments": {"languages": ["en", "fr"], "name": {"en": "Somcp half named"}}, "expect": "error", "contains": ["name: missing in fr"]},
+    {"why": "a computed field and a field this tool does not know", "arguments": {"id_order_return_state": 9, "languages": ["en"], "name": {"en": "Somcp extra"}, "template": "x"}, "expect": "error", "contains": ["id_order_return_state: worked out by the shop", "template: not a field of this tool"]},
+    {"why": "a language the shop does not have", "arguments": {"languages": ["zz"], "name": {"en": "Somcp"}}, "expect": "error", "contains": ["not an active language"]}
+  ]
+}

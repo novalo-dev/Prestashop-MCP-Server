@@ -18,23 +18,13 @@ are:
 
 ### Added
 
-**Creating a customer.** The new tool `somcp_create_customer` creates one
-customer account, as Customers > Customers > Add new customer does: name,
-email, guest account, social title, birthday, enabled, partner offers,
-newsletter, groups and default group, and the B2B fields when B2B mode is on.
-No password goes through the conversation: the customer chooses theirs with
-"Forgot your password?" on the shop, and no email is sent. It needs the new
-permission `mcp.customers.write`, which the consent screen describes as
-changing the customers, and the `add` right on the back office Customers page.
-
-### Changed
-
-**Assistants named the same way everywhere.** The module description, the
-settings page, the README and the bug form each named a different set of
-assistants, and some named one the others did not. They now all say Claude,
-ChatGPT or Le Chat, and the README keeps the one full list of compatible
-assistants, with the page where each AI provider of the built-in assistant
-gives out its API keys.
+**Listing return statuses.** The new tool `somcp_list_return_statuses` lists
+the return statuses of the shop, the steps a merchandise return goes through,
+with each status's identifier, its name, its colour and whether it can be
+removed. The five statuses every shop starts with cannot be removed, on
+PrestaShop 8 and 9 alike. A language the shop does not have is refused, as in
+`somcp_list_meta_pages`. The prompt **Change an order status** names it too,
+so a return status is never mistaken for an order status.
 
 ## 1.1.0 - 2026-10-31
 
@@ -74,6 +64,221 @@ and exists on every PrestaShop version; the shop creates the tags it does not
 have yet. On an update, the tags given replace the product's tags in those
 languages, and a language left out keeps the ones it had. Reading a product
 now returns its tags as well, so they can be read, changed and written back.
+
+### Changed
+
+**Opening line of the built-in assistant.** An empty conversation opened with
+"Hello!", whatever the time, so it said hello at eleven at night. It now opens
+with one of several lines, such as "Where shall we start?" or "Your shop is
+waiting for your instructions.", drawn at random for each new conversation.
+
+**Listing brands: the columns and filters of the Brands list.** The list of
+brands gave the identifier and name only, so a switched-off brand could not be
+told apart without opening each one. Each brand now comes with what
+**Catalog > Brands & Suppliers > Brands** shows: whether it is enabled, its
+number of addresses and its number of products. The list can also be narrowed
+as on screen, to enabled or disabled brands and by part of the name.
+
+**Check and adjust stock prompt: categories and suppliers.** The guide offered
+to narrow what runs low by category or supplier without giving access to the
+lists those come from. It now includes the list of categories and the list of
+suppliers, and says what to do on an account allowed stock but not the
+catalogue: ask for the product's reference or name, and leave the category and
+supplier filters aside.
+
+**Listing what runs low: the filters of the Stock page.** The list of low
+stock could only be narrowed by quantity and status. It now also filters by
+category, by default supplier, and by a search on the product name, the
+product or combination reference or the supplier name, as the Stock page of
+the back office does, and each line gives the name of its supplier.
+
+**Creating a product: packs, downloadable files, stock alerts and ecotax.**
+Creating a product used to leave a pack empty and a virtual product without
+its file, to be completed in the back office, and could not set the minimum
+quantity for sale, the low stock level and its email alert, the pack stock
+behaviour or the ecotax. A pack is now created with its products and their
+quantities, a virtual product with its downloadable file (by a public address
+or a file already on the shop) and its download limits, and all of these
+fields can be given, the low stock level on each combination too.
+
+**Changing a product: pack contents and downloadable file.** Changing a product
+can now set the same fields, and replace the products of a pack or take some
+out, and add, replace or delete the downloadable file of a virtual product or
+change its download limits alone. Before, these had to be changed in the back
+office.
+
+**The built-in assistant across pages.** Reloading or leaving a page while
+the assistant was answering made the new page wait until the answer was done.
+The page now loads at once: the answer carries on in the background and
+appears in the chat - or the change waiting for approval does - when it is
+ready, with your message shown above it all along. The chat also stays open
+from one back office page to the next, in the same browser tab. While an
+answer is coming you can already write the next message, and open another
+conversation without being sent back to the one being answered: that one gets
+a dot in the list of conversations when its answer is in.
+
+**The built-in assistant knows the time.** It was given the date only, so it
+greeted again in the middle of a conversation and spoke the same way morning
+and night. It now has the shop's date and time, suits its tone to the time of
+day, and greets only to open a conversation.
+
+**Reading an order.** Reading one order now returns what its page in the back
+office shows and was missing: the order note, the cart it came from, gift
+wrapping, the gift message and recycled packaging; the customer's title, their
+number of valid orders, the total they have spent and the private note on them;
+for each product, its EAN-13, ISBN, UPC, MPN and supplier reference, its tax
+rate, its stock location, the quantity in stock now, the amounts refunded, the
+quantity returned and its customizations; each shipment on its own line with
+its carrier, weight, cost, tracking number and tracking link; the taxes and the
+wrapping without tax in the totals; the currency, invoice and employee of each
+payment; the delivery slips; and, for each message, whether the shop or the
+customer wrote it. Card details of payments are still never returned.
+
+**Searching orders.** The order search now covers what the Orders list of the
+back office shows: whether the customer was ordering for the first time (the
+New client column), the delivery country and the customer's company can be
+returned and searched on, and each order comes with the colour of its status.
+The amount returned and the amount filters now use the Total column of that
+list, tax included, and say so in their name.
+
+**Stock of a product.** Reading a product's stock now also shows who is waiting
+on it: alongside the reserved quantity, the orders holding that stock are
+listed, each with its number and reference and how many units it holds, for the
+product and for each of its combinations.
+
+**Stock of a product: the columns of the Stock page.** Reading a product's stock
+did not give what the Catalog > Stock page shows beside the quantities. It now
+also gives the reference of the product and of each combination, the default
+supplier and its name, whether the product is enabled, and whether the email
+alert at the low stock level is ticked, for the product and each combination.
+
+**Settings page.** The page was one long column of panels. It is now split
+into seven pages: Configuration, Tools and prompts, Access and security,
+Connected assistants, Built-in assistant, Security log, Help and updates.
+PrestaShop shows the seven pages as tabs under the page title, as it does for
+Contacts and Stores, with the module's buttons beside the title. They open
+from Shop Parameters > MCP server, right after General, and from the Configure
+button of the module manager, which leads to the first page; each page has its
+own address.
+The switch that turns the MCP server on and off leads the first tab and saves
+as soon as it moves, without a trip to the Save button. The address to give an
+assistant now sits in a regular back office field with its Copy button, on
+the settings page and on the page shown to employees who may only connect an
+assistant. Saving brings you back to the page you were on. Every setting
+keeps its meaning and is saved the same way.
+
+**Return addresses.** "Only allow these return addresses" used to be a plain
+text field where host names had to be typed separated by spaces. Each address
+is now a tag, as for a product's tags: type it and press Enter, remove it with
+its cross. Under the field, the clients the module works with (Claude,
+ChatGPT, Make, n8n Cloud, VS Code, Cursor, Mistral's Le Chat) can be added in one click. The
+setting is saved as before.
+
+**Updates.** When a new version is available, a second notice under it reminds
+you to reconnect your assistants after updating, so that their access includes
+the new permissions.
+
+**Built-in assistant.** "Powered by Neuron AI" now sits in the title of the
+"Your assistants" panel instead of under the settings form.
+
+**Supporting the project.** A "Support us" button now sits beside the page
+title, on every page of the settings, drawn like the Help button next to it. It
+opens a short thank-you window with a link to the project's GitHub Sponsors
+page; it never opens on its own. The Help button leads to the module's
+documentation.
+
+**Tools and prompts.** The lists of available tools and of available prompts
+each have a panel of their own, the full width of the page like the Connected
+assistants list, with the number of tools or prompts in the panel title. The
+delay an assistant keeps the list is in a Settings panel under them, and one
+Save button at the bottom saves the three.
+
+**Logo.** The module has a new logo: a white pulse ending on an orange dot,
+on the dark background of the other O'So modules.
+
+**Product search.** Each product found now comes with the name of its default
+category and the address of its small cover image, as the Category and Image
+columns of the back office product list show them, so the assistant no longer
+reads every product to tell them apart. A language the shop does not have is
+now refused with a clear message, instead of quietly searching the names in
+the default language.
+
+**Reading a product.** Reading one product now also returns what the product
+page shows and the read left out: the minimum quantity for sale, the low stock
+level and its email alert (for the product and for each combination), the
+products of a pack with their quantity and the pack's stock behaviour, the
+downloadable file settings of a virtual product (the file name shown, the
+number of downloads, the expiration date and the number of days), and the
+ecotax with and without tax. A language the shop does not have is now refused
+with a clear message, instead of quietly reading the product in the default
+language.
+
+### Fixed
+
+**Built-in assistant behind a CDN.** A shop served through a CDN could keep
+handing out the previous script of the chat after the module was updated,
+which left its opening line empty. The address of the chat's script and style
+now changes whenever the files do, so the new ones are always loaded.
+
+**Tracking number of a split order.** When a cart was split across carriers,
+its orders share one reference. Setting a tracking number by that reference
+used to write it on the newest of those orders and email that customer, without
+a word about the others. The call is now refused with the list of the orders,
+their status and their carrier, nothing is written and nobody is emailed, so
+the right order can be chosen by its identifier.
+
+**Deleting a conversation.** Deleting a conversation of the built-in
+assistant removed its messages but left behind what the long-term memory had
+kept of it, and the files attached or generated in it until the weekly purge.
+Both now go with the conversation. Uninstalling the module also removes the
+memory's folder, which used to stay on the server.
+
+**Memory after a summary.** Once a long conversation was summarized, the
+long-term memory lost count of what it had already kept: the messages that
+followed could be left out of it for good, and the summary could be kept as
+if the employee had written it. The memory now picks up exactly after the last
+message it kept, and leaves the summary out.
+
+**Memory in a new conversation.** With the long-term memory on, a new
+conversation could carry on the topic of an older one, as if it were its
+continuation. The assistant now knows what it recalls comes from earlier
+conversations: it uses it only when your message calls for it and says so,
+and the conversation you are in is no longer searched as a memory of itself.
+
+**Summary shown as your message.** When a long conversation was summarized to
+keep the cost down, the summary appeared as a message from the employee,
+headed "Previous conversation summary". It now shows as a discreet
+note saying the earlier messages were summarized, which unfolds to the
+summary.
+
+**Documents the module downloads.** When the module reads a document from
+another site - the description a client publishes about itself when it
+connects, the list of models of a provider in the chat settings, the check for
+a new version - a document of more than about 16 KB was cut off as soon as one
+of its parts held an accented letter or an "&", and then read as broken. Such
+documents are now read in full, up to the usual size limit.
+
+**Assistant button in the header.** On a multistore shop, the pages where the
+shop list replaces "View my shop" left the button at the far right of the
+header, on PrestaShop 9 it was drawn in a grey that does not match the
+header, and a click left a ring and a highlight on it. It now sits right after
+the shop list or "View my shop" - or just before the notification bell on a
+page that shows neither - in the same colour as that link, and a click leaves
+it as it was.
+
+**Your assistants list.** On PrestaShop 9 the list of assistants in the
+Built-in assistant tab ran into the edges of its panel. It now has the same
+margins as the other lists.
+
+**PrestaShop Addons validation.** The validator reported the built-in
+assistant's button and loader as HTML written in PHP, four places reading the
+shop context the way PrestaShop 9 deprecates, and, in the test builds, a
+missing `.htaccess`, then the assistant's settings printed without escaping.
+The button and the loader are now Smarty templates, the context is read the
+module's usual way, the settings are escaped like every other value, and the
+test builds carry the `.htaccess` again. Nothing changes on screen.
+
+### Added
 
 **Tracking numbers.** The new tool `somcp_set_order_tracking` sets the tracking
 number of an order's shipment, like the Tracking number field of the Edit
@@ -795,219 +1000,6 @@ keeps your settings and connected assistants. The module asks GitHub at most
 once a day, only while an administrator has the settings page open, and a
 Check now button asks again on demand. It never downloads or installs anything
 by itself. A switch in the same tab turns the check off.
-
-### Changed
-
-**Opening line of the built-in assistant.** An empty conversation opened with
-"Hello!", whatever the time, so it said hello at eleven at night. It now opens
-with one of several lines, such as "Where shall we start?" or "Your shop is
-waiting for your instructions.", drawn at random for each new conversation.
-
-**Listing brands: the columns and filters of the Brands list.** The list of
-brands gave the identifier and name only, so a switched-off brand could not be
-told apart without opening each one. Each brand now comes with what
-**Catalog > Brands & Suppliers > Brands** shows: whether it is enabled, its
-number of addresses and its number of products. The list can also be narrowed
-as on screen, to enabled or disabled brands and by part of the name.
-
-**Check and adjust stock prompt: categories and suppliers.** The guide offered
-to narrow what runs low by category or supplier without giving access to the
-lists those come from. It now includes the list of categories and the list of
-suppliers, and says what to do on an account allowed stock but not the
-catalogue: ask for the product's reference or name, and leave the category and
-supplier filters aside.
-
-**Listing what runs low: the filters of the Stock page.** The list of low
-stock could only be narrowed by quantity and status. It now also filters by
-category, by default supplier, and by a search on the product name, the
-product or combination reference or the supplier name, as the Stock page of
-the back office does, and each line gives the name of its supplier.
-
-**Creating a product: packs, downloadable files, stock alerts and ecotax.**
-Creating a product used to leave a pack empty and a virtual product without
-its file, to be completed in the back office, and could not set the minimum
-quantity for sale, the low stock level and its email alert, the pack stock
-behaviour or the ecotax. A pack is now created with its products and their
-quantities, a virtual product with its downloadable file (by a public address
-or a file already on the shop) and its download limits, and all of these
-fields can be given, the low stock level on each combination too.
-
-**Changing a product: pack contents and downloadable file.** Changing a product
-can now set the same fields, and replace the products of a pack or take some
-out, and add, replace or delete the downloadable file of a virtual product or
-change its download limits alone. Before, these had to be changed in the back
-office.
-
-**The built-in assistant across pages.** Reloading or leaving a page while
-the assistant was answering made the new page wait until the answer was done.
-The page now loads at once: the answer carries on in the background and
-appears in the chat - or the change waiting for approval does - when it is
-ready, with your message shown above it all along. The chat also stays open
-from one back office page to the next, in the same browser tab. While an
-answer is coming you can already write the next message, and open another
-conversation without being sent back to the one being answered: that one gets
-a dot in the list of conversations when its answer is in.
-
-**The built-in assistant knows the time.** It was given the date only, so it
-greeted again in the middle of a conversation and spoke the same way morning
-and night. It now has the shop's date and time, suits its tone to the time of
-day, and greets only to open a conversation.
-
-**Reading an order.** Reading one order now returns what its page in the back
-office shows and was missing: the order note, the cart it came from, gift
-wrapping, the gift message and recycled packaging; the customer's title, their
-number of valid orders, the total they have spent and the private note on them;
-for each product, its EAN-13, ISBN, UPC, MPN and supplier reference, its tax
-rate, its stock location, the quantity in stock now, the amounts refunded, the
-quantity returned and its customizations; each shipment on its own line with
-its carrier, weight, cost, tracking number and tracking link; the taxes and the
-wrapping without tax in the totals; the currency, invoice and employee of each
-payment; the delivery slips; and, for each message, whether the shop or the
-customer wrote it. Card details of payments are still never returned.
-
-**Searching orders.** The order search now covers what the Orders list of the
-back office shows: whether the customer was ordering for the first time (the
-New client column), the delivery country and the customer's company can be
-returned and searched on, and each order comes with the colour of its status.
-The amount returned and the amount filters now use the Total column of that
-list, tax included, and say so in their name.
-
-**Stock of a product.** Reading a product's stock now also shows who is waiting
-on it: alongside the reserved quantity, the orders holding that stock are
-listed, each with its number and reference and how many units it holds, for the
-product and for each of its combinations.
-
-**Stock of a product: the columns of the Stock page.** Reading a product's stock
-did not give what the Catalog > Stock page shows beside the quantities. It now
-also gives the reference of the product and of each combination, the default
-supplier and its name, whether the product is enabled, and whether the email
-alert at the low stock level is ticked, for the product and each combination.
-
-**Settings page.** The page was one long column of panels. It is now split
-into seven pages: Configuration, Tools and prompts, Access and security,
-Connected assistants, Built-in assistant, Security log, Help and updates.
-PrestaShop shows the seven pages as tabs under the page title, as it does for
-Contacts and Stores, with the module's buttons beside the title. They open
-from Shop Parameters > MCP server, right after General, and from the Configure
-button of the module manager, which leads to the first page; each page has its
-own address.
-The switch that turns the MCP server on and off leads the first tab and saves
-as soon as it moves, without a trip to the Save button. The address to give an
-assistant now sits in a regular back office field with its Copy button, on
-the settings page and on the page shown to employees who may only connect an
-assistant. Saving brings you back to the page you were on. Every setting
-keeps its meaning and is saved the same way.
-
-**Return addresses.** "Only allow these return addresses" used to be a plain
-text field where host names had to be typed separated by spaces. Each address
-is now a tag, as for a product's tags: type it and press Enter, remove it with
-its cross. Under the field, the clients the module works with (Claude,
-ChatGPT, Make, n8n Cloud, VS Code, Cursor, Mistral's Le Chat) can be added in one click. The
-setting is saved as before.
-
-**Updates.** When a new version is available, a second notice under it reminds
-you to reconnect your assistants after updating, so that their access includes
-the new permissions.
-
-**Built-in assistant.** "Powered by Neuron AI" now sits in the title of the
-"Your assistants" panel instead of under the settings form.
-
-**Supporting the project.** A "Support us" button now sits beside the page
-title, on every page of the settings, drawn like the Help button next to it. It
-opens a short thank-you window with a link to the project's GitHub Sponsors
-page; it never opens on its own. The Help button leads to the module's
-documentation.
-
-**Tools and prompts.** The lists of available tools and of available prompts
-each have a panel of their own, the full width of the page like the Connected
-assistants list, with the number of tools or prompts in the panel title. The
-delay an assistant keeps the list is in a Settings panel under them, and one
-Save button at the bottom saves the three.
-
-**Logo.** The module has a new logo: a white pulse ending on an orange dot,
-on the dark background of the other O'So modules.
-
-**Product search.** Each product found now comes with the name of its default
-category and the address of its small cover image, as the Category and Image
-columns of the back office product list show them, so the assistant no longer
-reads every product to tell them apart. A language the shop does not have is
-now refused with a clear message, instead of quietly searching the names in
-the default language.
-
-**Reading a product.** Reading one product now also returns what the product
-page shows and the read left out: the minimum quantity for sale, the low stock
-level and its email alert (for the product and for each combination), the
-products of a pack with their quantity and the pack's stock behaviour, the
-downloadable file settings of a virtual product (the file name shown, the
-number of downloads, the expiration date and the number of days), and the
-ecotax with and without tax. A language the shop does not have is now refused
-with a clear message, instead of quietly reading the product in the default
-language.
-
-### Fixed
-
-**Built-in assistant behind a CDN.** A shop served through a CDN could keep
-handing out the previous script of the chat after the module was updated,
-which left its opening line empty. The address of the chat's script and style
-now changes whenever the files do, so the new ones are always loaded.
-
-**Tracking number of a split order.** When a cart was split across carriers,
-its orders share one reference. Setting a tracking number by that reference
-used to write it on the newest of those orders and email that customer, without
-a word about the others. The call is now refused with the list of the orders,
-their status and their carrier, nothing is written and nobody is emailed, so
-the right order can be chosen by its identifier.
-
-**Deleting a conversation.** Deleting a conversation of the built-in
-assistant removed its messages but left behind what the long-term memory had
-kept of it, and the files attached or generated in it until the weekly purge.
-Both now go with the conversation. Uninstalling the module also removes the
-memory's folder, which used to stay on the server.
-
-**Memory after a summary.** Once a long conversation was summarized, the
-long-term memory lost count of what it had already kept: the messages that
-followed could be left out of it for good, and the summary could be kept as
-if the employee had written it. The memory now picks up exactly after the last
-message it kept, and leaves the summary out.
-
-**Memory in a new conversation.** With the long-term memory on, a new
-conversation could carry on the topic of an older one, as if it were its
-continuation. The assistant now knows what it recalls comes from earlier
-conversations: it uses it only when your message calls for it and says so,
-and the conversation you are in is no longer searched as a memory of itself.
-
-**Summary shown as your message.** When a long conversation was summarized to
-keep the cost down, the summary appeared as a message from the employee,
-headed "Previous conversation summary". It now shows as a discreet
-note saying the earlier messages were summarized, which unfolds to the
-summary.
-
-**Documents the module downloads.** When the module reads a document from
-another site - the description a client publishes about itself when it
-connects, the list of models of a provider in the chat settings, the check for
-a new version - a document of more than about 16 KB was cut off as soon as one
-of its parts held an accented letter or an "&", and then read as broken. Such
-documents are now read in full, up to the usual size limit.
-
-**Assistant button in the header.** On a multistore shop, the pages where the
-shop list replaces "View my shop" left the button at the far right of the
-header, on PrestaShop 9 it was drawn in a grey that does not match the
-header, and a click left a ring and a highlight on it. It now sits right after
-the shop list or "View my shop" - or just before the notification bell on a
-page that shows neither - in the same colour as that link, and a click leaves
-it as it was.
-
-**Your assistants list.** On PrestaShop 9 the list of assistants in the
-Built-in assistant tab ran into the edges of its panel. It now has the same
-margins as the other lists.
-
-**PrestaShop Addons validation.** The validator reported the built-in
-assistant's button and loader as HTML written in PHP, four places reading the
-shop context the way PrestaShop 9 deprecates, and, in the test builds, a
-missing `.htaccess`, then the assistant's settings printed without escaping.
-The button and the loader are now Smarty templates, the context is read the
-module's usual way, the settings are escaped like every other value, and the
-test builds carry the `.htaccess` again. Nothing changes on screen.
 
 ## 1.0.0 - Initial version
 

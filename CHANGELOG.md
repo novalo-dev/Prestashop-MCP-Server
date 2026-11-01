@@ -37,6 +37,19 @@ separators and blocks of code in an answer of the built-in assistant now show
 as such, instead of the raw `###`, `|` and `---` they were written with. A
 wide table scrolls sideways inside the chat.
 
+### Fixed
+
+**The built-in assistant no longer freezes after a slow answer.** When the AI
+service took longer to answer than the shop allows a page to run - often 30
+seconds, and on Windows the wait counts - the request was stopped mid-way
+without a trace: the chat showed "Working..." then nothing, and every new
+message was refused for ten minutes with "Answer the change waiting for your
+approval first", though no change was waiting. The chat now asks the shop for
+the time an answer needs where the host allows it, stops waiting for the AI
+service before the shop stops the page, and reports a slow answer as an error
+you can retry. While an earlier step still holds a conversation, the chat says
+so and waits, and the conversation is freed after five minutes instead of ten.
+
 ## 1.1.3 - 2026-11-01
 
 ### Added

@@ -2007,6 +2007,11 @@
       <source>Choose the assistant</source>
       <target>Assistenten wählen</target>
     </trans-unit>
+    <!-- The assistant is still finishing its previous step. Try again in a few minutes. -->
+    <trans-unit id="796b53bbfd719b31ac58b2af5ccf0142" resname="The assistant is still finishing its previous step. Try again in a few minutes.">
+      <source>The assistant is still finishing its previous step. Try again in a few minutes.</source>
+      <target>Der Assistent schließt noch seinen vorherigen Schritt ab. Versuchen Sie es in ein paar Minuten erneut.</target>
+    </trans-unit>
     <!-- This prompt is not available. -->
     <trans-unit id="2b1cf2c0709f388f368c31a09916e973" resname="This prompt is not available.">
       <source>This prompt is not available.</source>

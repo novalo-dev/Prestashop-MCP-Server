@@ -109,6 +109,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
             session_write_close();
         }
         ignore_user_abort(true);
+        SomcpAssistantChat::allowTime();
 
         $chat = new SomcpAssistantChat($this->context->employee, Somcp::currentShopId());
         $chat->openOn((string) Tools::getValue('page'));

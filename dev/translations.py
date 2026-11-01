@@ -1587,6 +1587,10 @@ T = {
  "Choisir l'assistant",
  "Elegir el asistente",
  "Assistenten wählen"),
+"The assistant is still finishing its previous step. Try again in a few minutes.": (
+ "L'assistant termine encore son étape précédente. Réessayez dans quelques minutes.",
+ "El asistente aún está terminando su paso anterior. Inténtelo de nuevo en unos minutos.",
+ "Der Assistent schließt noch seinen vorherigen Schritt ab. Versuchen Sie es in ein paar Minuten erneut."),
 "This prompt is not available.": (
  "Ce prompt n'est pas disponible.",
  "Este prompt no está disponible.",

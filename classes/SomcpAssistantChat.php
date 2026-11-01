@@ -33,6 +33,7 @@ use NeuronAI\Chat\Messages\ToolCallMessage;
 use NeuronAI\Chat\Messages\ToolResultMessage;
 use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Exceptions\RunInFlightException;
+use NeuronAI\HttpClient\Curl\CurlHttpClient;
 use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Providers\Anthropic\Anthropic;
 use NeuronAI\Providers\Cohere\Cohere;
@@ -47,6 +48,7 @@ use NeuronAI\Tools\ApprovalState;
 use NeuronAI\Tools\FrontendTool;
 use NeuronAI\Tools\ToolCall;
 use NeuronAI\Workflow\Persistence\DatabasePersistence;
+use NeuronAI\Workflow\WorkflowStatus;
 
 /*
  * SomcpAssistantChat - one employee's conversations with the assistant built
@@ -148,6 +150,19 @@ class SomcpAssistantChat
      *          process died mid-move.
      */
     private const BUSY_TTL = 300;
+
+    /**
+     * @var int Seconds a request of the chat asks PHP for: one model call and
+     *          the tools around it. Many hosts stop a script after 30, and on
+     *          Windows the clock runs while the script waits on the provider.
+     */
+    private const REQUEST_SECONDS = 180;
+
+    /** @var int Seconds kept back from that time for the tools before the call and the run written after it. */
+    private const MARGIN_SECONDS = 20;
+
+    /** @var int Shortest wait for a provider: below it, every long answer would be cut. */
+    private const MIN_PROVIDER_SECONDS = 20;
 
     /**
      * What an employee may attach, and how each kind reaches the model. The
@@ -747,6 +762,14 @@ class SomcpAssistantChat
                 }
             } elseif ($run !== null && $run->interrupt instanceof ToolResultsRequest) {
                 $status = 'working';
+            } elseif ($run !== null && $run->interrupt === null && $run->status === WorkflowStatus::Running
+                && $run->leaseExpiresAt !== null && $run->leaseExpiresAt > time()) {
+                // A step holds the run, or died holding it, until its lease
+                // runs out: nothing sent meanwhile would be accepted, so the
+                // chat shows it working and waits instead of offering a field
+                // that would be refused.
+                $status = 'working';
+                $busy = true;
             }
             // A move still running - from before a page reload, or in another
             // tab - is working too, whatever the stored run said before it.
@@ -898,7 +921,12 @@ class SomcpAssistantChat
                 $this->remember($thread, $this->keepImages($state->getSteps()));
             }
         } catch (RunInFlightException $e) {
-            return self::t('Answer the change waiting for your approval first.');
+            // Neuron refuses a new move both while a change waits for the
+            // employee and while an earlier step still holds the run - or
+            // died holding it. Only the first is answered from the card.
+            return $e->interrupt instanceof ApprovalRequest
+                ? self::t('Answer the change waiting for your approval first.')
+                : self::t('The assistant is still finishing its previous step. Try again in a few minutes.');
         } catch (Throwable $e) {
             SomcpLogger::log(
                 'assistant_failed',
@@ -1282,6 +1310,10 @@ class SomcpAssistantChat
             ->setThreadId((string) $thread['thread_id'])
             ->setMessageStore($this->store())
             ->setPersistence(new DatabasePersistence(self::pdo(), _DB_PREFIX_ . 'somcp_assistant_run'))
+            // A step whose PHP process died keeps the run held until this
+            // lease runs out: the same five minutes as the conversation's own
+            // busy mark, rather than Neuron's ten, so both free together.
+            ->setLeaseTimeout(self::BUSY_TTL)
             // The history is kept to a token window, and past a threshold the
             // oldest messages are summarized by the model rather than cut, so a
             // long conversation keeps its gist without resending everything.
@@ -1327,6 +1359,54 @@ class SomcpAssistantChat
             return self::$providerOverride;
         }
 
+        // Neuron's client waits five minutes for an answer, longer than PHP
+        // lets most scripts live: PHP then killed the request mid-call, with
+        // nothing logged, and the run stayed held until its lease ran out.
+        // A wait that ends inside PHP's time fails as an error instead, which
+        // is logged, told to the employee and frees the conversation.
+        return $this->connect($assistant, $delegated)
+            ->setHttpClient(new CurlHttpClient([], self::providerTimeout()));
+    }
+
+    /**
+     * Gives the request the time one model call needs, where the host allows
+     * it. Called before any move; set_time_limit() may be disabled, in which
+     * case providerTimeout() reads the limit as it stands.
+     *
+     * @return void
+     */
+    public static function allowTime(): void
+    {
+        $limit = (int) ini_get('max_execution_time');
+        if ($limit > 0 && $limit < self::REQUEST_SECONDS && function_exists('set_time_limit')) {
+            @set_time_limit(self::REQUEST_SECONDS);
+        }
+    }
+
+    /**
+     * How long to wait for a provider: what PHP still grants this request,
+     * less a margin.
+     *
+     * @return float seconds
+     */
+    private static function providerTimeout(): float
+    {
+        $limit = (int) ini_get('max_execution_time');
+        $granted = $limit > 0 ? min($limit, self::REQUEST_SECONDS) : self::REQUEST_SECONDS;
+
+        return (float) max(self::MIN_PROVIDER_SECONDS, $granted - self::MARGIN_SECONDS);
+    }
+
+    /**
+     * The provider of an assistant, as Neuron builds it.
+     *
+     * @param array<string, mixed> $assistant
+     * @param bool $delegated
+     *
+     * @return AIProviderInterface
+     */
+    private function connect(array $assistant, bool $delegated): AIProviderInterface
+    {
         $key = SomcpAssistant::key($assistant);
         $model = SomcpAssistant::model($assistant);
         if ($model === '') {

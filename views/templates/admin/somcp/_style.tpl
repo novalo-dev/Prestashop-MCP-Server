@@ -126,6 +126,91 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     margin-left: 6px;
 }
 
+/* Bootstrap's buttons set display themselves and would show through the
+   hidden attribute the pairing screen toggles. */
+.somcp .somcp-relay-steps [hidden] {
+    display: none !important;
+}
+
+/* The pairing of a local assistant: one row per step, its mark telling
+   whether it is done, being checked, given up, or the one to do now. */
+.somcp .somcp-relay-progress .progress {
+    height: 8px;
+    margin: 16px 0;
+}
+
+.somcp .somcp-relay-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.somcp .somcp-relay-steps > li {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid #eef0f3;
+    color: #6c7a89;
+}
+
+.somcp .somcp-relay-steps > li:first-child {
+    border-top: 0;
+}
+
+.somcp .somcp-relay-steps > li p {
+    margin: 6px 0 0;
+}
+
+.somcp .somcp-relay-steps > li > div {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.somcp .somcp-relay-mark {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    border-radius: 50%;
+    border: 2px solid #c9ced6;
+    box-sizing: border-box;
+}
+
+.somcp .somcp-relay-steps > li.is-done,
+.somcp .somcp-relay-steps > li.is-checking,
+.somcp .somcp-relay-steps > li.is-current,
+.somcp .somcp-relay-steps > li.is-failed {
+    color: inherit;
+}
+
+.somcp .is-done > .somcp-relay-mark {
+    border-color: #4cbb6c;
+    background: #4cbb6c url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+
+.somcp .is-checking > .somcp-relay-mark {
+    border-color: #25b9d7;
+    border-right-color: transparent;
+    animation: somcp-relay-spin 0.9s linear infinite;
+}
+
+.somcp .is-current > .somcp-relay-mark {
+    border-color: #25b9d7;
+    background: #25b9d7;
+    box-shadow: inset 0 0 0 4px #fff;
+}
+
+.somcp .is-failed > .somcp-relay-mark {
+    border-color: #e08f95;
+    background: #e08f95;
+}
+
+@keyframes somcp-relay-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Read aloud or copied by hand into the relay: big enough to read from a
    step back, and in a font where letters and digits cannot be mistaken. */
 .somcp .somcp-relay-code code {

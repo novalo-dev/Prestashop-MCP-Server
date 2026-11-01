@@ -401,6 +401,24 @@ class SomcpRelay
     }
 
     /**
+     * Where the pairing of a relay stands: its code waits to be typed, the
+     * code expired, the relay is linked and its models are awaited, or
+     * models able to call tools are there to choose from.
+     *
+     * @param array<string, mixed> $relay
+     *
+     * @return string code, expired, wait or ready
+     */
+    public static function stage(array $relay): string
+    {
+        if (!$relay['paired']) {
+            return $relay['code'] !== '' ? 'code' : 'expired';
+        }
+
+        return self::toolModels($relay) !== [] ? 'ready' : 'wait';
+    }
+
+    /**
      * The models of a relay that passed its tool test, the only ones a local
      * assistant may run.
      *

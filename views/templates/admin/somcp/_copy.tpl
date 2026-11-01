@@ -380,11 +380,57 @@
             });
         });
 
-        // The local assistant screen waits for the relay - for the code to be
-        // typed, then for its models - and has nothing to type meanwhile, so
-        // it reloads itself. The server shows the next step when it comes.
-        if (document.querySelector('[data-somcp-relay-wait]')) {
-            setTimeout(function () { window.location.reload(); }, 5000);
+        // The pairing of a local assistant checks itself: every few seconds
+        // it asks where the relay stands, and once that moved on - linked,
+        // then models found - the page is drawn again at the new step. The
+        // wait for models gives up after a few minutes, with Retry to start
+        // it again; an expired code has its own Retry, a new code.
+        var pairing = document.querySelector('[data-somcp-relay-status]');
+        if (pairing) {
+            var stage = pairing.getAttribute('data-somcp-relay-stage');
+            var statusUrl = pairing.getAttribute('data-somcp-relay-status');
+            var aiStep = pairing.querySelector('[data-somcp-relay-ai]');
+            var retry = pairing.querySelector('[data-somcp-relay-retry]');
+            var gaveUp = pairing.querySelector('[data-somcp-relay-gaveup]');
+            var waiting = pairing.querySelector('[data-somcp-relay-waiting]');
+            var timer = null;
+            var stopAt = 0;
+            var check = function () {
+                if (stopAt && Date.now() > stopAt) {
+                    clearInterval(timer);
+                    timer = null;
+                    if (aiStep) { aiStep.className = 'is-failed'; }
+                    if (waiting) { waiting.hidden = true; }
+                    if (gaveUp) { gaveUp.hidden = false; }
+                    if (retry) { retry.hidden = false; }
+                    return;
+                }
+                fetch(statusUrl, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+                    .then(function (response) { return response.json(); })
+                    .then(function (answer) {
+                        if (answer && answer.stage && answer.stage !== stage) {
+                            window.location.reload();
+                        }
+                    })
+                    .catch(function () {});
+            };
+            var start = function () {
+                // The code waits until it expires, which the server reports;
+                // the models are waited for five minutes.
+                stopAt = stage === 'wait' ? Date.now() + 5 * 60 * 1000 : 0;
+                if (aiStep && stage === 'wait') { aiStep.className = 'is-checking'; }
+                if (waiting) { waiting.hidden = false; }
+                if (gaveUp) { gaveUp.hidden = true; }
+                if (retry) { retry.hidden = true; }
+                if (!timer) { timer = setInterval(check, 3000); }
+                check();
+            };
+            if (stage === 'code' || stage === 'wait') {
+                start();
+            }
+            if (retry) {
+                retry.addEventListener('click', start);
+            }
         }
 
         document.querySelectorAll('[data-somcp-copy]').forEach(function (button) {

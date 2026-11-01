@@ -65,9 +65,11 @@ download and run there. Your conversations and your shop data then go to your
 computer instead of an AI company, with no key to pay for. The relay calls your
 shop, never the other way round, so nothing has to be opened on your network,
 and it works whether your shop is hosted online or next to you. The screen
-gives a code valid ten minutes, once, and the command to type it; the relay
-then tests the models of your AI, and only those able to call the shop's tools
-are offered. The list of assistants shows whether the relay is online, and
+opens on a code valid ten minutes, once, with the command to paste in the
+relay, and a progress bar that moves on by itself: the relay linked, your AI
+tested, the model to choose. Nothing to click while it waits; **Retry** shows
+only when a step gave up, such as a code that expired. Only the models of your
+AI able to call the shop's tools are offered. The list of assistants shows whether the relay is online, and
 **Test the connection** checks it. Removing the local assistant unlinks the
 relay at once.
 

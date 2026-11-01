@@ -662,13 +662,20 @@ class Somcp extends Module
         if (Tools::isSubmit('submitSomcpAssistant')) {
             $this->saveAssistant();
         }
-        if (Tools::isSubmit('submitSomcpRelayCode')) {
-            // Same rule as the assistant form: an inheriting level shows the
-            // assistants above read-only.
+        // Add a local assistant, or Retry once a code expired: the code is
+        // made at once, there is nothing to choose before it. An inheriting
+        // level shows the assistants above read-only, as for the form.
+        if (Tools::getValue('somcp_local_add') === '1') {
             if (!SomcpAssistant::editedState()['own']) {
                 $this->redirectToSelf();
             }
             $this->redirectToSelf(['somcp_relay' => SomcpRelay::createPairing()]);
+        }
+        // What the pairing screen checks every few seconds, so it moves on by
+        // itself as the relay links, then reports its models.
+        if ((int) Tools::getValue('somcp_relay_status') > 0) {
+            $relay = SomcpRelay::edited((int) Tools::getValue('somcp_relay_status'));
+            SomcpHttp::json(['stage' => $relay !== null ? SomcpRelay::stage($relay) : 'gone']);
         }
         if (Tools::isSubmit('submitSomcpLocalAssistant')) {
             $this->saveLocalAssistant();
@@ -983,14 +990,10 @@ class Somcp extends Module
         if (!SomcpAssistant::editedState()['own']) {
             return null;
         }
-        $relay = null;
         $assistant = null;
-        $step = 'start';
         if ($editing !== null && !empty($editing['local'])) {
             $assistant = $editing;
             $relay = SomcpRelay::get((int) $editing['id_relay']);
-        } elseif (Tools::getValue('somcp_local_add') === '1') {
-            // The first step: download the relay, then generate a code.
         } elseif ((int) Tools::getValue('somcp_relay') > 0) {
             $relay = SomcpRelay::edited((int) Tools::getValue('somcp_relay'));
             if ($relay === null) {
@@ -1000,26 +1003,26 @@ class Somcp extends Module
             return null;
         }
 
-        if ($relay !== null) {
-            if ($relay['paired']) {
-                $step = $assistant !== null ? 'edit' : 'models';
-            } else {
-                $step = $relay['code'] !== '' ? 'code' : 'expired';
-            }
-        } elseif ($assistant !== null) {
+        if ($assistant !== null) {
             // Its relay is gone: only removing the assistant is left.
-            $step = 'lost';
+            $step = $relay !== null ? 'edit' : 'lost';
+        } else {
+            $step = 'pairing';
         }
         $shop = rtrim((string) $this->context->shop->getBaseURL(true), '/');
 
         return [
             'step' => $step,
+            // code, expired, wait or ready: what the progress shows, and
+            // what the page compares with each check to know it moved on.
+            'stage' => $relay !== null ? SomcpRelay::stage($relay) : 'gone',
             'relay' => $relay,
             'online' => $relay !== null && $relay['paired'] && SomcpRelay::online($relay),
             'models' => $relay !== null ? SomcpRelay::toolModels($relay) : [],
+            'model_count' => $relay !== null ? count(SomcpRelay::toolModels($relay)) : 0,
             'assistant' => $assistant ?? ['id_assistant' => 0, 'model' => '', 'role' => '', 'active' => true, 'token_cap' => 0],
             'command' => $relay !== null && $relay['code'] !== '' ? 'somcp-relay pair ' . $shop . ' ' . $relay['code'] : '',
-            'minutes' => $relay !== null ? max(1, (int) ceil(($relay['code_expires'] - time()) / 60)) : 0,
+            'status_url' => $relay !== null ? $this->selfUrl(['somcp_relay_status' => (int) $relay['id_relay']]) : '',
             'download' => SomcpRelay::DOWNLOAD_URL,
         ];
     }

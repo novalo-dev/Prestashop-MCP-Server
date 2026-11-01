@@ -2652,40 +2652,10 @@
       <source>Download somcp-relay</source>
       <target>Descargar somcp-relay</target>
     </trans-unit>
-    <!-- Generate a pairing code below and type it in the relay. -->
-    <trans-unit id="df98f4267691414d270ea0f571d648c9" resname="Generate a pairing code below and type it in the relay.">
-      <source>Generate a pairing code below and type it in the relay.</source>
-      <target>Genere un código de vinculación aquí abajo e introdúzcalo en el relé.</target>
-    </trans-unit>
-    <!-- In the relay, type the address of your AI and click Test. The models that can call tools then appear here. -->
-    <trans-unit id="5b5142efaa70153ba91a39248c335f43" resname="In the relay, type the address of your AI and click Test. The models that can call tools then appear here.">
-      <source>In the relay, type the address of your AI and click Test. The models that can call tools then appear here.</source>
-      <target>En el relé, introduzca la dirección de su IA y haga clic en Probar. Los modelos capaces de llamar a herramientas aparecerán entonces aquí.</target>
-    </trans-unit>
-    <!-- Generate a pairing code -->
-    <trans-unit id="ff09e90f29f09abd0bafbf1effd2868c" resname="Generate a pairing code">
-      <source>Generate a pairing code</source>
-      <target>Generar un código de vinculación</target>
-    </trans-unit>
     <!-- Type this code in somcp-relay with the address of this shop, or run this command on your computer: -->
     <trans-unit id="d1b028b8a25da9719ae205d669cac276" resname="Type this code in somcp-relay with the address of this shop, or run this command on your computer:">
       <source>Type this code in somcp-relay with the address of this shop, or run this command on your computer:</source>
       <target>Introduzca este código en somcp-relay con la dirección de esta tienda, o ejecute este comando en su ordenador:</target>
-    </trans-unit>
-    <!-- Valid once, for %minutes% more minutes. This page refreshes on its own until the relay is linked. -->
-    <trans-unit id="5c3fa069ca899e8657d0f5a08f4bb389" resname="Valid once, for %minutes% more minutes. This page refreshes on its own until the relay is linked.">
-      <source>Valid once, for %minutes% more minutes. This page refreshes on its own until the relay is linked.</source>
-      <target>Válido una sola vez, durante %minutes% minutos más. Esta página se actualiza sola hasta que el relé quede vinculado.</target>
-    </trans-unit>
-    <!-- This code has expired. Generate a new one. -->
-    <trans-unit id="0c2649d49fe9bc003d953927dbca1018" resname="This code has expired. Generate a new one.">
-      <source>This code has expired. Generate a new one.</source>
-      <target>Este código ha caducado. Genere uno nuevo.</target>
-    </trans-unit>
-    <!-- Generate a new code -->
-    <trans-unit id="3953b319b53db12827ef7d3ba2adfbc7" resname="Generate a new code">
-      <source>Generate a new code</source>
-      <target>Generar un código nuevo</target>
     </trans-unit>
     <!-- The relay of this assistant was unlinked. Remove the assistant, then add it again. -->
     <trans-unit id="5919636ca7cd8fdb090c0bf0cb7b5b45" resname="The relay of this assistant was unlinked. Remove the assistant, then add it again.">
@@ -2702,11 +2672,6 @@
       <source>The relay is linked.</source>
       <target>El relé está vinculado.</target>
     </trans-unit>
-    <!-- Waiting for a model that can call tools: in somcp-relay, type the address of your AI and click Test, then keep the relay running. This page refreshes on its own. -->
-    <trans-unit id="54bc8af82cb1b651cc7d8311a3e6ee61" resname="Waiting for a model that can call tools: in somcp-relay, type the address of your AI and click Test, then keep the relay running. This page refreshes on its own.">
-      <source>Waiting for a model that can call tools: in somcp-relay, type the address of your AI and click Test, then keep the relay running. This page refreshes on its own.</source>
-      <target>Esperando un modelo capaz de llamar a herramientas: en somcp-relay, introduzca la dirección de su IA y haga clic en Probar, y deje el relé en marcha. Esta página se actualiza sola.</target>
-    </trans-unit>
     <!-- Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop. -->
     <trans-unit id="6193d48aaec5db19a8859f392bda283e" resname="Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop.">
       <source>Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop.</source>
@@ -2716,6 +2681,51 @@
     <trans-unit id="bee69ed4e82553c23089241dba636486" resname="The model %model% no longer passes the relay tool test: pick another one.">
       <source>The model %model% no longer passes the relay tool test: pick another one.</source>
       <target>El modelo %model% ya no supera la prueba de herramientas del relé: elija otro.</target>
+    </trans-unit>
+    <!-- Link somcp-relay -->
+    <trans-unit id="c29071b528f8b3486d4d326430a1bb95" resname="Link somcp-relay">
+      <source>Link somcp-relay</source>
+      <target>Vincular somcp-relay</target>
+    </trans-unit>
+    <!-- Single use, valid 10 minutes. Checked automatically: nothing to click while it waits. -->
+    <trans-unit id="e3557933bd09163b6cfeca5f97c3f6e6" resname="Single use, valid 10 minutes. Checked automatically: nothing to click while it waits.">
+      <source>Single use, valid 10 minutes. Checked automatically: nothing to click while it waits.</source>
+      <target>Un solo uso, válido 10 minutos. Se comprueba automáticamente: no hay que hacer clic mientras espera.</target>
+    </trans-unit>
+    <!-- The code expired before somcp-relay used it. -->
+    <trans-unit id="ebf85e4e695412dbce3ea8825fbda853" resname="The code expired before somcp-relay used it.">
+      <source>The code expired before somcp-relay used it.</source>
+      <target>El código caducó antes de que somcp-relay lo usara.</target>
+    </trans-unit>
+    <!-- Retry -->
+    <trans-unit id="6327b4e59f58137083214a1fec358855" resname="Retry">
+      <source>Retry</source>
+      <target>Reintentar</target>
+    </trans-unit>
+    <!-- Test your AI -->
+    <trans-unit id="1968f2228f0a3c4c90a8a0771bdacf36" resname="Test your AI">
+      <source>Test your AI</source>
+      <target>Probar su IA</target>
+    </trans-unit>
+    <!-- Waiting for somcp-relay to test your AI: in the relay, type the address of your AI and click Test. -->
+    <trans-unit id="31a808de8e61508f4216171e1c7f5515" resname="Waiting for somcp-relay to test your AI: in the relay, type the address of your AI and click Test.">
+      <source>Waiting for somcp-relay to test your AI: in the relay, type the address of your AI and click Test.</source>
+      <target>Esperando a que somcp-relay pruebe su IA: en el relé, introduzca la dirección de su IA y haga clic en Probar.</target>
+    </trans-unit>
+    <!-- Still no model able to call tools. Check that somcp-relay is running and that your AI passed its test, then retry. -->
+    <trans-unit id="6b63b6ad171760693ecbb1ebb5c8c3c1" resname="Still no model able to call tools. Check that somcp-relay is running and that your AI passed its test, then retry.">
+      <source>Still no model able to call tools. Check that somcp-relay is running and that your AI passed its test, then retry.</source>
+      <target>Todavía no hay ningún modelo capaz de llamar a herramientas. Compruebe que somcp-relay está en marcha y que su IA ha superado la prueba, y vuelva a intentarlo.</target>
+    </trans-unit>
+    <!-- Models able to call tools: %count%. -->
+    <trans-unit id="37ca6b0fb9ea45f9b6e996632f4d5a6e" resname="Models able to call tools: %count%.">
+      <source>Models able to call tools: %count%.</source>
+      <target>Modelos capaces de llamar a herramientas: %count%.</target>
+    </trans-unit>
+    <!-- Choose the model -->
+    <trans-unit id="c74d6d296e0bb7c2af0df8e5b86d7d07" resname="Choose the model">
+      <source>Choose the model</source>
+      <target>Elegir el modelo</target>
     </trans-unit>
     </body>
   </file>

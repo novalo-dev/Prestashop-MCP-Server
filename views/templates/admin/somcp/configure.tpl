@@ -584,9 +584,10 @@
     {/if}
 
     {* A local assistant: an AI on the merchant's computer, reached through
-       somcp-relay. The steps follow the relay - download it, type the code it
-       asks for, then pick one of the models it found able to call tools. The
-       waiting steps reload on their own (data-somcp-relay-wait). *}
+       somcp-relay. While it pairs, a progress bar follows the relay: the code
+       to type, then the relay testing the AI, then the model to choose. Each
+       step is checked on its own every few seconds (data-somcp-relay-*):
+       nothing to click while it waits, and Retry only once a check gave up. *}
     {if $somcp_local}
         <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="defaultForm form-horizontal">
             <input type="hidden" name="id_assistant" value="{$somcp_local.assistant.id_assistant|intval}">
@@ -599,63 +600,79 @@
                         {if $somcp_local.online}<span class="badge badge-success">{l s='Online' d='Modules.Somcp.Admin'}</span>{else}<span class="badge badge-danger">{l s='Offline' d='Modules.Somcp.Admin'}</span>{/if}
                     {/if}
                 </div>
-            {if $somcp_local.step === 'start'}
-                <p>{l s='A local assistant answers with an AI running on your own computer: Ollama, LM Studio or any software that speaks the OpenAI API. Your conversations and your shop data go to your computer, not to an AI company, and there is no key to pay for.' d='Modules.Somcp.Admin'}</p>
-                <p>{l s='The link goes through somcp-relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.' d='Modules.Somcp.Admin'}</p>
-                <ol>
-                    <li>{l s='Download somcp-relay for your computer and run it.' d='Modules.Somcp.Admin'} <a href="{$somcp_local.download|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer"><i class="icon-download"></i> {l s='Download somcp-relay' d='Modules.Somcp.Admin'}</a></li>
-                    <li>{l s='Generate a pairing code below and type it in the relay.' d='Modules.Somcp.Admin'}</li>
-                    <li>{l s='In the relay, type the address of your AI and click Test. The models that can call tools then appear here.' d='Modules.Somcp.Admin'}</li>
-                </ol>
-                <div class="panel-footer">
-                    <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}"><i class="process-icon-cancel"></i> {l s='Cancel' d='Modules.Somcp.Admin'}</a>
-                    <button type="submit" name="submitSomcpRelayCode" value="1" class="btn btn-default pull-right"><i class="process-icon-ok"></i> {l s='Generate a pairing code' d='Modules.Somcp.Admin'}</button>
-                </div>
-            {elseif $somcp_local.step === 'code'}
-                <div data-somcp-relay-wait="1">
-                    <p>{l s='Type this code in somcp-relay with the address of this shop, or run this command on your computer:' d='Modules.Somcp.Admin'}</p>
-                    <p class="somcp-relay-code"><code>{$somcp_local.relay.code|escape:'html':'UTF-8'}</code></p>
-                    <div class="input-group">
-                        <input type="text" id="somcp-relay-command" class="form-control" readonly value="{$somcp_local.command|escape:'html':'UTF-8'}">
-                        <span class="input-group-btn">
-                            <button type="button" class="btn btn-default" data-somcp-copy="somcp-relay-command"><i class="icon-copy"></i> {l s='Copy' d='Modules.Somcp.Admin'}</button>
-                        </span>
-                    </div>
-                    <p class="help-block">{l s='Valid once, for %minutes% more minutes. This page refreshes on its own until the relay is linked.' sprintf=['%minutes%' => $somcp_local.minutes] d='Modules.Somcp.Admin'}</p>
-                    <p><a href="{$somcp_local.download|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer"><i class="icon-download"></i> {l s='Download somcp-relay' d='Modules.Somcp.Admin'}</a></p>
-                </div>
-                <div class="panel-footer">
-                    <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}"><i class="process-icon-cancel"></i> {l s='Cancel' d='Modules.Somcp.Admin'}</a>
-                </div>
-            {elseif $somcp_local.step === 'expired'}
-                <p class="alert alert-warning">{l s='This code has expired. Generate a new one.' d='Modules.Somcp.Admin'}</p>
-                <div class="panel-footer">
-                    <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}"><i class="process-icon-cancel"></i> {l s='Cancel' d='Modules.Somcp.Admin'}</a>
-                    <button type="submit" name="submitSomcpRelayCode" value="1" class="btn btn-default pull-right"><i class="process-icon-refresh"></i> {l s='Generate a new code' d='Modules.Somcp.Admin'}</button>
-                </div>
-            {elseif $somcp_local.step === 'lost'}
+            {if $somcp_local.step === 'lost'}
                 <p class="alert alert-danger">{l s='The relay of this assistant was unlinked. Remove the assistant, then add it again.' d='Modules.Somcp.Admin'}</p>
                 <div class="panel-footer">
                     <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}"><i class="process-icon-cancel"></i> {l s='Cancel' d='Modules.Somcp.Admin'}</a>
                 </div>
-            {elseif !$somcp_local.models}
-                <div data-somcp-relay-wait="1">
-                    <p>{if $somcp_local.relay.software}{l s='The relay is linked to %software%.' sprintf=['%software%' => $somcp_local.relay.software] d='Modules.Somcp.Admin'}{else}{l s='The relay is linked.' d='Modules.Somcp.Admin'}{/if}</p>
-                    <p class="alert alert-info">{l s='Waiting for a model that can call tools: in somcp-relay, type the address of your AI and click Test, then keep the relay running. This page refreshes on its own.' d='Modules.Somcp.Admin'}</p>
-                </div>
-                <div class="panel-footer">
-                    <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}"><i class="process-icon-cancel"></i> {l s='Cancel' d='Modules.Somcp.Admin'}</a>
-                </div>
             {else}
-                {if $somcp_local.relay.software}<p>{l s='The relay is linked to %software%.' sprintf=['%software%' => $somcp_local.relay.software] d='Modules.Somcp.Admin'}</p>{/if}
+                {if $somcp_local.step === 'pairing'}
+                    {assign var=stage value=$somcp_local.stage}
+                    <p>{l s='A local assistant answers with an AI running on your own computer: Ollama, LM Studio or any software that speaks the OpenAI API. Your conversations and your shop data go to your computer, not to an AI company, and there is no key to pay for.' d='Modules.Somcp.Admin'}</p>
+                    <p class="help-block">{l s='The link goes through somcp-relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.' d='Modules.Somcp.Admin'}</p>
+                    <div class="somcp-relay-progress" data-somcp-relay-stage="{$stage|escape:'html':'UTF-8'}" data-somcp-relay-status="{$somcp_local.status_url|escape:'html':'UTF-8'}">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-success" role="progressbar" style="width: {if $stage === 'ready'}66{elseif $stage === 'wait'}33{else}0{/if}%"></div>
+                        </div>
+                        <ol class="somcp-relay-steps">
+                            <li class="{if $stage === 'code'}is-checking{elseif $stage === 'expired'}is-failed{else}is-done{/if}">
+                                <span class="somcp-relay-mark"></span>
+                                <div>
+                                    <strong>{l s='Link somcp-relay' d='Modules.Somcp.Admin'}</strong>
+                                    {if $stage === 'code'}
+                                        <p>{l s='Download somcp-relay for your computer and run it.' d='Modules.Somcp.Admin'} <a href="{$somcp_local.download|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer"><i class="icon-download"></i> {l s='Download somcp-relay' d='Modules.Somcp.Admin'}</a></p>
+                                        <p>{l s='Type this code in somcp-relay with the address of this shop, or run this command on your computer:' d='Modules.Somcp.Admin'}</p>
+                                        <p class="somcp-relay-code"><code>{$somcp_local.relay.code|escape:'html':'UTF-8'}</code></p>
+                                        <div class="input-group">
+                                            <input type="text" id="somcp-relay-command" class="form-control" readonly value="{$somcp_local.command|escape:'html':'UTF-8'}">
+                                            <span class="input-group-btn">
+                                                <button type="button" class="btn btn-default" data-somcp-copy="somcp-relay-command"><i class="icon-copy"></i> {l s='Copy' d='Modules.Somcp.Admin'}</button>
+                                            </span>
+                                        </div>
+                                        <p class="help-block">{l s='Single use, valid 10 minutes. Checked automatically: nothing to click while it waits.' d='Modules.Somcp.Admin'}</p>
+                                    {elseif $stage === 'expired'}
+                                        <p class="text-danger">{l s='The code expired before somcp-relay used it.' d='Modules.Somcp.Admin'}</p>
+                                        <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_local_add=1"><i class="icon-refresh"></i> {l s='Retry' d='Modules.Somcp.Admin'}</a>
+                                    {else}
+                                        <p>{if $somcp_local.relay.software}{l s='The relay is linked to %software%.' sprintf=['%software%' => $somcp_local.relay.software] d='Modules.Somcp.Admin'}{else}{l s='The relay is linked.' d='Modules.Somcp.Admin'}{/if}</p>
+                                    {/if}
+                                </div>
+                            </li>
+                            <li class="{if $stage === 'wait'}is-checking{elseif $stage === 'ready'}is-done{/if}" data-somcp-relay-ai>
+                                <span class="somcp-relay-mark"></span>
+                                <div>
+                                    <strong>{l s='Test your AI' d='Modules.Somcp.Admin'}</strong>
+                                    {if $stage === 'wait'}
+                                        <p data-somcp-relay-waiting>{l s='Waiting for somcp-relay to test your AI: in the relay, type the address of your AI and click Test.' d='Modules.Somcp.Admin'}</p>
+                                        <p class="text-danger" data-somcp-relay-gaveup hidden>{l s='Still no model able to call tools. Check that somcp-relay is running and that your AI passed its test, then retry.' d='Modules.Somcp.Admin'}</p>
+                                        <button type="button" class="btn btn-default" data-somcp-relay-retry hidden><i class="icon-refresh"></i> {l s='Retry' d='Modules.Somcp.Admin'}</button>
+                                    {elseif $stage === 'ready'}
+                                        <p>{l s='Models able to call tools: %count%.' sprintf=['%count%' => $somcp_local.model_count] d='Modules.Somcp.Admin'}</p>
+                                    {/if}
+                                </div>
+                            </li>
+                            <li class="{if $stage === 'ready'}is-current{/if}">
+                                <span class="somcp-relay-mark"></span>
+                                <div><strong>{l s='Choose the model' d='Modules.Somcp.Admin'}</strong></div>
+                            </li>
+                        </ol>
+                    </div>
+                {elseif $somcp_local.relay.software}
+                    <p>{l s='The relay is linked to %software%.' sprintf=['%software%' => $somcp_local.relay.software] d='Modules.Somcp.Admin'}</p>
+                {/if}
+                {if $somcp_local.step === 'edit' || $somcp_local.stage === 'ready'}
                 <div class="form-group">
                     <label class="control-label col-lg-3 required">{l s='Model' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
+                        {if $somcp_local.models}
                         <select name="somcp_assistant_model" class="form-control" required>
                         {foreach from=$somcp_local.models item=model}
                             <option value="{$model|escape:'html':'UTF-8'}"{if $model === $somcp_local.assistant.model} selected{/if}>{$model|escape:'html':'UTF-8'}</option>
                         {/foreach}
                         </select>
+                        {else}
+                        <input type="hidden" name="somcp_assistant_model" value="">
+                        {/if}
                         <p class="help-block">{l s='Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop.' d='Modules.Somcp.Admin'}</p>
                         {if $somcp_local.assistant.model && !in_array($somcp_local.assistant.model, $somcp_local.models)}
                             <p class="help-block text-danger">{l s='The model %model% no longer passes the relay tool test: pick another one.' sprintf=['%model%' => $somcp_local.assistant.model] d='Modules.Somcp.Admin'}</p>
@@ -691,9 +708,12 @@
                         </span>
                     </div>
                 </div>
+                {/if}
                 <div class="panel-footer">
                     <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}"><i class="process-icon-cancel"></i> {l s='Cancel' d='Modules.Somcp.Admin'}</a>
+                {if ($somcp_local.step === 'edit' && $somcp_local.models) || $somcp_local.stage === 'ready'}
                     <button type="submit" name="submitSomcpLocalAssistant" value="1" class="btn btn-default pull-right"><i class="process-icon-save"></i> {l s='Save' d='Modules.Somcp.Admin'}</button>
+                {/if}
                 </div>
             {/if}
             </div>

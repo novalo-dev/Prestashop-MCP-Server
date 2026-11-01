@@ -2103,34 +2103,10 @@ T = {
  "Télécharger somcp-relay",
  "Descargar somcp-relay",
  "somcp-relay herunterladen"),
-"Generate a pairing code below and type it in the relay.": (
- "Générez un code d'appairage ci-dessous et saisissez-le dans le relais.",
- "Genere un código de vinculación aquí abajo e introdúzcalo en el relé.",
- "Erzeugen Sie unten einen Kopplungscode und geben Sie ihn im Relay ein."),
-"In the relay, type the address of your AI and click Test. The models that can call tools then appear here.": (
- "Dans le relais, saisissez l'adresse de votre IA et cliquez sur Tester. Les modèles capables d'appeler des outils apparaissent alors ici.",
- "En el relé, introduzca la dirección de su IA y haga clic en Probar. Los modelos capaces de llamar a herramientas aparecerán entonces aquí.",
- "Geben Sie im Relay die Adresse Ihrer KI ein und klicken Sie auf Testen. Die Modelle, die Werkzeuge aufrufen können, erscheinen dann hier."),
-"Generate a pairing code": (
- "Générer un code d'appairage",
- "Generar un código de vinculación",
- "Kopplungscode erzeugen"),
 "Type this code in somcp-relay with the address of this shop, or run this command on your computer:": (
  "Saisissez ce code dans somcp-relay avec l'adresse de cette boutique, ou lancez cette commande sur votre ordinateur :",
  "Introduzca este código en somcp-relay con la dirección de esta tienda, o ejecute este comando en su ordenador:",
  "Geben Sie diesen Code mit der Adresse dieses Shops in somcp-relay ein, oder führen Sie diesen Befehl auf Ihrem Computer aus:"),
-"Valid once, for %minutes% more minutes. This page refreshes on its own until the relay is linked.": (
- "Valable une seule fois, encore %minutes% minutes. Cette page se rafraîchit seule jusqu'à ce que le relais soit lié.",
- "Válido una sola vez, durante %minutes% minutos más. Esta página se actualiza sola hasta que el relé quede vinculado.",
- "Einmal gültig, noch %minutes% Minuten. Diese Seite aktualisiert sich selbst, bis das Relay verbunden ist."),
-"This code has expired. Generate a new one.": (
- "Ce code a expiré. Générez-en un nouveau.",
- "Este código ha caducado. Genere uno nuevo.",
- "Dieser Code ist abgelaufen. Erzeugen Sie einen neuen."),
-"Generate a new code": (
- "Générer un nouveau code",
- "Generar un código nuevo",
- "Neuen Code erzeugen"),
 "The relay of this assistant was unlinked. Remove the assistant, then add it again.": (
  "Le relais de cet assistant a été délié. Supprimez l'assistant, puis ajoutez-le à nouveau.",
  "El relé de este asistente se ha desvinculado. Elimine el asistente y vuelva a añadirlo.",
@@ -2143,10 +2119,6 @@ T = {
  "Le relais est lié.",
  "El relé está vinculado.",
  "Das Relay ist verbunden."),
-"Waiting for a model that can call tools: in somcp-relay, type the address of your AI and click Test, then keep the relay running. This page refreshes on its own.": (
- "En attente d'un modèle capable d'appeler des outils : dans somcp-relay, saisissez l'adresse de votre IA et cliquez sur Tester, puis laissez le relais tourner. Cette page se rafraîchit seule.",
- "Esperando un modelo capaz de llamar a herramientas: en somcp-relay, introduzca la dirección de su IA y haga clic en Probar, y deje el relé en marcha. Esta página se actualiza sola.",
- "Warten auf ein Modell, das Werkzeuge aufrufen kann: Geben Sie in somcp-relay die Adresse Ihrer KI ein, klicken Sie auf Testen und lassen Sie das Relay laufen. Diese Seite aktualisiert sich selbst."),
 "Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop.": (
  "Seuls les modèles qui ont réussi le test des outils du relais sont proposés : un modèle incapable d'appeler des outils ne peut pas agir sur votre boutique.",
  "Solo se ofrecen los modelos que han superado la prueba de herramientas del relé: un modelo que no puede llamar a herramientas no puede actuar en su tienda.",
@@ -2155,6 +2127,42 @@ T = {
  "Le modèle %model% ne réussit plus le test des outils du relais : choisissez-en un autre.",
  "El modelo %model% ya no supera la prueba de herramientas del relé: elija otro.",
  "Das Modell %model% besteht den Werkzeugtest des Relays nicht mehr: Wählen Sie ein anderes."),
+"Link somcp-relay": (
+ "Lier somcp-relay",
+ "Vincular somcp-relay",
+ "somcp-relay verbinden"),
+"Single use, valid 10 minutes. Checked automatically: nothing to click while it waits.": (
+ "Usage unique, valable 10 minutes. Vérifié automatiquement : rien à cliquer pendant l'attente.",
+ "Un solo uso, válido 10 minutos. Se comprueba automáticamente: no hay que hacer clic mientras espera.",
+ "Einmalig, 10 Minuten gültig. Wird automatisch geprüft: Während des Wartens ist nichts zu klicken."),
+"The code expired before somcp-relay used it.": (
+ "Le code a expiré avant que somcp-relay ne l'utilise.",
+ "El código caducó antes de que somcp-relay lo usara.",
+ "Der Code ist abgelaufen, bevor somcp-relay ihn verwendet hat."),
+"Retry": (
+ "Réessayer",
+ "Reintentar",
+ "Erneut versuchen"),
+"Test your AI": (
+ "Tester votre IA",
+ "Probar su IA",
+ "Ihre KI testen"),
+"Waiting for somcp-relay to test your AI: in the relay, type the address of your AI and click Test.": (
+ "En attente du test de votre IA par somcp-relay : dans le relais, saisissez l'adresse de votre IA et cliquez sur Tester.",
+ "Esperando a que somcp-relay pruebe su IA: en el relé, introduzca la dirección de su IA y haga clic en Probar.",
+ "Warten, bis somcp-relay Ihre KI testet: Geben Sie im Relay die Adresse Ihrer KI ein und klicken Sie auf Testen."),
+"Still no model able to call tools. Check that somcp-relay is running and that your AI passed its test, then retry.": (
+ "Toujours aucun modèle capable d'appeler des outils. Vérifiez que somcp-relay tourne et que votre IA a réussi son test, puis réessayez.",
+ "Todavía no hay ningún modelo capaz de llamar a herramientas. Compruebe que somcp-relay está en marcha y que su IA ha superado la prueba, y vuelva a intentarlo.",
+ "Noch immer kein Modell, das Werkzeuge aufrufen kann. Prüfen Sie, ob somcp-relay läuft und Ihre KI den Test bestanden hat, und versuchen Sie es erneut."),
+"Models able to call tools: %count%.": (
+ "Modèles capables d'appeler des outils : %count%.",
+ "Modelos capaces de llamar a herramientas: %count%.",
+ "Modelle, die Werkzeuge aufrufen können: %count%."),
+"Choose the model": (
+ "Choisir le modèle",
+ "Elegir el modelo",
+ "Modell wählen"),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

@@ -1042,7 +1042,9 @@ class SomcpAssistantChat
             // public prices, shown as such.
             'tokens' => array_sum(SomcpAssistant::monthTokens()),
             'token_cap' => SomcpAssistant::tokenCap(),
-            'spent' => round(array_sum(SomcpAssistant::monthCosts()), 2),
+            // Four decimals, as the chat shows it: a conversation costs
+            // fractions of a cent.
+            'spent' => round(array_sum(SomcpAssistant::monthCosts()), 4),
         ];
     }
 

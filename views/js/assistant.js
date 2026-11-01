@@ -375,8 +375,10 @@
         }
     }
 
+    // Four decimals: a conversation costs fractions of a cent, which two
+    // decimals showed as $0.00.
     function money(value) {
-        return '$' + Number(value || 0).toFixed(2);
+        return '$' + Number(value || 0).toFixed(4);
     }
 
     function absorb(json) {

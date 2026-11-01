@@ -99,7 +99,8 @@ instead of an estimate in US dollars that went stale whenever a price
 changed and counted an unknown model as free. Each assistant can also have
 a monthly cap of its own, useful to keep a powerful model below an economy
 one. The chat shows the tokens of the month against the cap, with the
-estimated cost beside them, marked as an estimate. A cap set in dollars
+estimated cost beside them, marked as an estimate and given to four decimals,
+since a conversation costs fractions of a cent. A cap set in dollars
 before is converted on upgrade at the highest price among your assistants,
 so it is never looser than it was.
 

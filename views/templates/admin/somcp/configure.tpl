@@ -640,7 +640,7 @@
                         </td>
                         <td class="text-right">
                             {if isset($somcp_assistant_tokens[$assistant.id_assistant])}{$somcp_assistant_tokens[$assistant.id_assistant]|escape:'html':'UTF-8'}{else}0{/if}{if $assistant.token_cap} / {$assistant.token_cap_label|escape:'html':'UTF-8'}{/if} {l s='tokens' d='Modules.Somcp.Admin'}
-                            <br><small class="text-muted">{l s='about' d='Modules.Somcp.Admin'} ${if isset($somcp_assistant_costs[$assistant.id_assistant])}{$somcp_assistant_costs[$assistant.id_assistant]|floatval|string_format:'%.2f'}{else}0.00{/if}</small>
+                            <br><small class="text-muted">{l s='about' d='Modules.Somcp.Admin'} ${if isset($somcp_assistant_costs[$assistant.id_assistant])}{$somcp_assistant_costs[$assistant.id_assistant]|floatval|string_format:'%.4f'}{else}0.0000{/if}</small>
                         </td>
                         <td class="text-center">
                             {if $assistant.active}<i class="icon-check text-success"></i>{else}<i class="icon-remove text-danger"></i>{/if}
@@ -728,7 +728,7 @@
                         </div>
                         <p class="help-block">
                             {l s='This month: %tokens% tokens, counted exactly as the providers report them. The chat stops when the cap is reached, on each shop. 0 for no cap.' sprintf=['%tokens%' => $somcp_assistant_used] d='Modules.Somcp.Admin'}
-                            {l s='About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.' sprintf=['%spent%' => ($somcp_assistant_spent|string_format:'%.2f')] d='Modules.Somcp.Admin'}
+                            {l s='About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.' sprintf=['%spent%' => ($somcp_assistant_spent|string_format:'%.4f')] d='Modules.Somcp.Admin'}
                         </p>
                     </div>
                 </div>

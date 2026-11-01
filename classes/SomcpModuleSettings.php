@@ -261,7 +261,7 @@ class SomcpModuleSettings
             if ((int) $value <= 0) {
                 return '0 (every employee)';
             }
-            foreach (Profile::getProfiles((int) Context::getContext()->language->id) as $profile) {
+            foreach (Profile::getProfiles((int) Somcp::legacyContext()->language->id) as $profile) {
                 if ((int) $profile['id_profile'] === (int) $value) {
                     return (int) $value . ' (' . $profile['name'] . ')';
                 }

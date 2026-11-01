@@ -14,7 +14,7 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
-## Unreleased
+## 1.2.0 - 2026-11-01
 
 ### Changed
 

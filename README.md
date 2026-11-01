@@ -253,7 +253,9 @@ with no rights at all.
 
 Nine prompts ship with the module: checking the connection, finding an order,
 changing an order status, managing products, checking stock, finding a customer,
-auditing SEO, reporting sales, and reading content pages. Details of every tool are in
+auditing SEO, reporting sales, and reading content pages. The built-in assistant
+offers them too, each with its icon: those of the back office page open first, and
+any of them from the + of its field. Details of every tool are in
 [docs/TOOLS.md](docs/TOOLS.md).
 
 ## Install for development

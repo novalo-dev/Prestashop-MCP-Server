@@ -131,7 +131,12 @@ cache lifetime (a setting, five minutes by default) and `cacheScope: private`.
   schemas so that one broken module cannot empty `tools/list` for everyone.
 - `SomcpPrompt` and `SomcpPromptRegistry` do the same for prompts, from
   `prompts/<name>/prompt.md` + `prompt.json`, and from
-  `actionSomcpRegisterPrompts`.
+  `actionSomcpRegisterPrompts`. A prompt also names its icon, drawn by the
+  built-in chat from `PROMPT_ICONS` in `views/js/assistant.js`, and its back
+  office page comes from the permission it requires. The chat lists the prompts
+  the employee may use (`SomcpAssistantChat::prompts()`), suggests those of the
+  page open first, and sends a picked prompt's guide in the same message as the
+  employee's words, so only the conversations that use a guide pay for it.
 - `SomcpContract` is the translation layer for other modules: they return
   arrays from the hooks and from their handlers, and it turns those into tools,
   prompts and results. See [EXTENDING.md](EXTENDING.md).

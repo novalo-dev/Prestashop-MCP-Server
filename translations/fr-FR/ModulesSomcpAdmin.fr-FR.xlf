@@ -2532,6 +2532,11 @@
       <source>Change a module setting</source>
       <target>Modifier un réglage du module</target>
     </trans-unit>
+    <!-- Find a tool -->
+    <trans-unit id="f06726ece998fcb6cd7e9d2f20f99294" resname="Find a tool">
+      <source>Find a tool</source>
+      <target>Trouver un outil</target>
+    </trans-unit>
     <!-- Sources -->
     <trans-unit id="fb61758d0f0fda4ba867c3d5a46c16a7" resname="Sources">
       <source>Sources</source>

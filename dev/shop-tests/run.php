@@ -266,13 +266,15 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
     $call = static function (string $name, string $id, array $inputs): NeuronAI\Chat\Messages\ToolCallMessage {
         return new NeuronAI\Chat\Messages\ToolCallMessage(null, [new NeuronAI\Tools\ToolCall($name, $id, $inputs, null, true)]);
     };
-    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+    $fake = new NeuronAI\Testing\FakeAIProvider(
+        $call(SomcpAssistantChat::FIND_TOOL, 'call_find', ['load' => ['somcp_set_order_status']]),
         $call('somcp_ping', 'call_ping', []),
         $call('somcp_set_order_status', 'call_refused', ['id_order' => 2, 'status_id' => $status === 8 ? 6 : 8]),
         new NeuronAI\Chat\Messages\AssistantMessage('Nothing was changed.'),
         $call('somcp_set_order_status', 'call_approved', ['id_order' => 2, 'status_id' => $status]),
         new NeuronAI\Chat\Messages\AssistantMessage('Done.')
-    ));
+    );
+    SomcpAssistantChat::overrideProvider($fake);
     $idAssistant = SomcpAssistant::save(0, [
         'provider' => 'anthropic', 'api_key' => 'test-key', 'level' => 'economy',
         'model' => 'claude-shop-test', 'role' => '', 'active' => true,
@@ -287,7 +289,20 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
     };
 
     try {
+        // The shop's tools load on demand: the first call offers the finder
+        // and the base tools, not the 76 descriptions; the status tool is
+        // loaded by the finder, then offered and called.
         $view = $chat->send($thread, 'Check the connection, then change order 2.');
+        $expect($view, 'working', 'the finder waits for the next step');
+        ++$assistantChecks;
+        $first = $fake->getRecorded()[0]->tools ?? [];
+        $names = array_map(static function ($tool): string {
+            return (string) $tool->getName();
+        }, $first);
+        if (!in_array(SomcpAssistantChat::FIND_TOOL, $names, true) || in_array('somcp_set_order_status', $names, true) || count($names) > 6) {
+            $failures[] = 'assistant: the first call offers ' . count($names) . ' tools instead of the finder and the base tools';
+        }
+        $view = $chat->step($thread);
         $expect($view, 'working', 'a read-only tool waits for the next step');
         $view = $chat->step($thread);
         $expect($view, 'approval', 'a change asks for approval');
@@ -345,6 +360,7 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
         new NeuronAI\Chat\Messages\AssistantMessage('Image added.')
     ));
     $thread = $chat->newThread(0);
+    $chat->loadTools($thread, ['somcp_update_product']);
     $before = count(Image::getImages((int) $context->language->id, 1));
 
     try {

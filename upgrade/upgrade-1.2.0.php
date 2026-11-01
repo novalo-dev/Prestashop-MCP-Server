@@ -51,6 +51,9 @@ function upgrade_module_1_2_0($module)
             'think' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `memory_last`',
             'web_search' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `think`',
             'memory' => 'TINYINT(1) NOT NULL DEFAULT 1 AFTER `web_search`',
+            // The shop tools a conversation loaded: the chat no longer sends
+            // every tool's description on every call.
+            'tools' => 'TEXT NULL AFTER `memory`',
         ];
         foreach ($switches as $name => $definition) {
             $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($thread) . '` LIKE "' . pSQL($name) . '"');

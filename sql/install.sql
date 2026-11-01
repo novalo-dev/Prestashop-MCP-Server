@@ -260,6 +260,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_thread` (
     `think`          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'deep thinking asked for this conversation',
     `web_search`     TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'web search allowed in this conversation',
     `memory`         TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '0 when the employee switched the memory off for this conversation',
+    `tools`          TEXT         NULL COMMENT 'shop tools the model loaded in this conversation, JSON list of names',
     `busy_until`     DATETIME     NULL DEFAULT NULL COMMENT 'set while a move runs on the conversation, so a reload or a second tab does not start it twice',
     `pending`        TEXT         NULL COMMENT 'the message being answered, JSON: text and file names, shown until the framework has stored it',
     `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

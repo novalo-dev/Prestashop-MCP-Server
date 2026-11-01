@@ -103,6 +103,17 @@ estimated cost beside them, marked as an estimate. A cap set in dollars
 before is converted on upgrade at the highest price among your assistants,
 so it is never looser than it was.
 
+**The built-in assistant spends a fraction of the tokens.** Every message
+sent the full description of all the shop's tools to the AI service - some
+50,000 tokens, a plain hello included, and twice that when a tool was used.
+The assistant now starts with a tool finder: it looks up the tools a request
+needs by keyword and loads only those, which the conversation keeps for the
+messages that follow. A hello now costs a few thousand tokens. A prompt
+started from the **+** menu loads the tools its guide walks through. Tools
+switched off on the **Tools and prompts** tab, or beyond the employee's
+rights, cannot be found nor loaded. Assistants connected over MCP still see
+the whole list, as before.
+
 ### Fixed
 
 **The built-in assistant no longer freezes after a slow answer.** When the AI

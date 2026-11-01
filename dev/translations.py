@@ -2007,6 +2007,10 @@ T = {
  "Modifier un réglage du module",
  "Cambiar un ajuste del módulo",
  "Eine Moduleinstellung ändern"),
+"Find a tool": (
+ "Trouver un outil",
+ "Buscar una herramienta",
+ "Ein Werkzeug finden"),
 "Sources": (
  "Sources",
  "Fuentes",

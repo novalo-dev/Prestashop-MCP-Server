@@ -109,6 +109,23 @@ class SomcpAssistantChat
     public const SETTINGS_READ_TOOL = 'somcp_get_module_settings';
     public const SETTINGS_WRITE_TOOL = 'somcp_update_module_setting';
 
+    /**
+     * The chat's door to the shop's tools. Sending every tool's description
+     * on every call cost some 50,000 tokens, a plain hello included; the model
+     * now starts with this one and the BASE_TOOLS, finds the others by
+     * keyword and loads those it needs, which the conversation keeps.
+     */
+    public const FIND_TOOL = 'somcp_find_tools';
+
+    /** @var array<int, string> The shop tools offered from the first message. */
+    private const BASE_TOOLS = ['somcp_ping'];
+
+    /** Tools a conversation keeps loaded; past this, the oldest go. */
+    private const MAX_LOADED = 15;
+
+    /** Tools a search lists at most. */
+    private const MAX_FOUND = 20;
+
     /** Starts the list of pages a search read, in what the tool returns. */
     private const SOURCES_MARKER = 'Sources:';
 
@@ -664,6 +681,11 @@ class SomcpAssistantChat
                 return $this->view($thread, self::t('This prompt is not available.'));
             }
             $guide = (string) ($rendered['messages'][0]['content']['text'] ?? '');
+            // The guide names the tools it walks through: loaded now, the
+            // model can follow it without searching for them first.
+            if (preg_match_all('/\bsomcp_[a-z0-9_]+\b/', $guide, $named)) {
+                $this->loadTools($thread, $named[0]);
+            }
             if ($text === '') {
                 $text = $prompt->getTitle();
             }
@@ -890,6 +912,11 @@ class SomcpAssistantChat
                     $results[$callId] = $this->execute($call, $assistant, $thread);
                 }
             }
+
+            // Tools loaded by this step are offered from the next model call
+            // on: Neuron builds the list again for every segment it runs.
+            $fresh = $this->thread((string) $thread['thread_id']) ?? $thread;
+            $agent->setTools($this->tools($assistant, $fresh, $this->switches($fresh, $assistant)));
 
             return $agent->submitToolResults($results)->run();
         }, true);
@@ -1340,6 +1367,9 @@ class SomcpAssistantChat
         if ($name === self::SEARCH_TOOL) {
             return $this->searchWeb($arguments, $assistant, $thread);
         }
+        if ($name === self::FIND_TOOL) {
+            return $this->findTools($arguments, $thread);
+        }
         if ($name === self::SETTINGS_READ_TOOL || $name === self::SETTINGS_WRITE_TOOL) {
             // Checked again: a profile may have changed while the run waited.
             if (!$this->employee->isSuperAdmin()) {
@@ -1677,33 +1707,9 @@ class SomcpAssistantChat
         }
 
         if ($assistant !== []) {
-            $tools = $this->tools($assistant);
-            if ($switches['web'] && $assistant['provider'] === 'anthropic') {
-                // Claude's own search, run on Anthropic's side with the same
-                // key: no tool call reaches the shop. Capped per answer, since
-                // each search is billed on top of the tokens.
-                $tools[] = ProviderTool::make('web_search_20250305', 'web_search', ['max_uses' => self::MAX_SEARCHES]);
-                // And reads a page: one the employee wrote, or one a search
-                // or a tool result named - Anthropic opens no other.
-                $tools[] = ProviderTool::make('web_fetch_20250910', 'web_fetch', ['max_uses' => self::MAX_SEARCHES]);
-            } elseif ($switches['web']) {
-                // Read-only, so no approval: it changes nothing on the shop.
-                $tools[] = new FrontendTool(
-                    self::SEARCH_TOOL,
-                    'Search the web, or read one page, and get a short answer with the pages it comes from. Use it only when the shop data does not answer.',
-                    [
-                        'type' => 'object',
-                        'properties' => [
-                            'query' => ['type' => 'string', 'description' => 'What to look up, or what to find on the page.'],
-                            'url' => ['type' => 'string', 'description' => 'A page to read, when you know its address.'],
-                        ],
-                        'required' => ['query'],
-                    ]
-                );
-            }
             $agent->setAiProvider($this->provider($assistant, false, $switches['think']))
                 ->setInstructions($this->instructions($assistant, $thread, $memory !== null, $switches['web']))
-                ->setTools($tools);
+                ->setTools($this->tools($assistant, $thread, $switches));
         }
         $agent->toolMaxRuns(self::MAX_TOOL_RUNS);
 
@@ -1842,17 +1848,41 @@ class SomcpAssistantChat
      * by another module reaches the chat the moment it is registered, with
      * nothing to wire here. A tool that is not read-only asks for approval.
      *
-     * @param array<string, mixed> $assistant
+     * Only the BASE_TOOLS and those the conversation loaded are described to
+     * the model; the rest are reached through FIND_TOOL. The chat's own tools
+     * come with them when they apply: web search when switched on, the
+     * module's settings for a super administrator, another assistant when
+     * there is one to ask.
      *
-     * @return array<int, FrontendTool>
+     * @param array<string, mixed> $assistant
+     * @param array<string, mixed> $thread
+     * @param array{think:bool, web:bool, memory:bool} $switches
+     *
+     * @return array<int, FrontendTool|ProviderTool>
      */
-    private function tools(array $assistant): array
+    private function tools(array $assistant, array $thread, array $switches): array
     {
         $tools = [];
         $scopes = $this->scopes();
         $idEmployee = (int) $this->employee->id;
+        $offered = array_merge(self::BASE_TOOLS, $this->loaded($thread));
+
+        $tools[] = new FrontendTool(
+            self::FIND_TOOL,
+            'The shop\'s tools are not all loaded, to keep each request small. Search them by keywords in English (e.g. "product", "order status", "stock"), or with no keyword for the full list; then load the ones you need by name with load. Loaded tools stay for the rest of the conversation. Call a tool only once it is loaded.',
+            [
+                'type' => 'object',
+                'properties' => [
+                    'query' => ['type' => 'string', 'description' => 'Keywords to search the tools with.'],
+                    'load' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Names of the tools to load.'],
+                ],
+            ]
+        );
 
         foreach (SomcpToolRegistry::getInstance()->all() as $tool) {
+            if (!in_array($tool->getName(), $offered, true)) {
+                continue;
+            }
             if (!SomcpToolRegistry::isEnabled($tool->getName()) || !$tool->isAvailableTo($scopes, $idEmployee)) {
                 continue;
             }
@@ -1925,7 +1955,139 @@ class SomcpAssistantChat
             );
         }
 
+        if ($switches['web'] && $assistant['provider'] === 'anthropic') {
+            // Claude's own search, run on Anthropic's side with the same
+            // key: no tool call reaches the shop. Capped per answer, since
+            // each search is billed on top of the tokens.
+            $tools[] = ProviderTool::make('web_search_20250305', 'web_search', ['max_uses' => self::MAX_SEARCHES]);
+            // And reads a page: one the employee wrote, or one a search
+            // or a tool result named - Anthropic opens no other.
+            $tools[] = ProviderTool::make('web_fetch_20250910', 'web_fetch', ['max_uses' => self::MAX_SEARCHES]);
+        } elseif ($switches['web']) {
+            // Read-only, so no approval: it changes nothing on the shop.
+            $tools[] = new FrontendTool(
+                self::SEARCH_TOOL,
+                'Search the web, or read one page, and get a short answer with the pages it comes from. Use it only when the shop data does not answer.',
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'query' => ['type' => 'string', 'description' => 'What to look up, or what to find on the page.'],
+                        'url' => ['type' => 'string', 'description' => 'A page to read, when you know its address.'],
+                    ],
+                    'required' => ['query'],
+                ]
+            );
+        }
+
         return $tools;
+    }
+
+    /**
+     * The shop tools a conversation loaded, read from its row: a step may
+     * have loaded some since the array passed in was read.
+     *
+     * @param array<string, mixed> $thread
+     *
+     * @return array<int, string>
+     */
+    private function loaded(array $thread): array
+    {
+        $raw = Db::getInstance()->getValue(
+            'SELECT `tools` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread` WHERE `id_thread` = ' . (int) $thread['id_thread']
+        );
+        $names = json_decode((string) $raw, true);
+
+        return is_array($names) ? array_values(array_filter($names, 'is_string')) : [];
+    }
+
+    /**
+     * Loads shop tools into a conversation: those that exist, are switched on
+     * and that this employee may use. Past MAX_LOADED, the oldest are let go,
+     * and can be loaded again.
+     *
+     * @param array<string, mixed> $thread
+     * @param array<int, string> $names
+     *
+     * @return array<int, string> the names actually loaded now
+     */
+    public function loadTools(array $thread, array $names): array
+    {
+        $registry = SomcpToolRegistry::getInstance();
+        $scopes = $this->scopes();
+        $idEmployee = (int) $this->employee->id;
+        $added = [];
+        foreach ($names as $name) {
+            $tool = $registry->get((string) $name);
+            if ($tool !== null && SomcpToolRegistry::isEnabled($tool->getName()) && $tool->isAvailableTo($scopes, $idEmployee)) {
+                $added[] = $tool->getName();
+            }
+        }
+        if ($added === []) {
+            return [];
+        }
+        $kept = array_values(array_unique(array_merge(array_diff($this->loaded($thread), $added), $added)));
+        $kept = array_slice($kept, -self::MAX_LOADED);
+        Db::getInstance()->update(
+            'somcp_assistant_thread',
+            ['tools' => pSQL((string) json_encode($kept))],
+            '`id_thread` = ' . (int) $thread['id_thread']
+        );
+
+        return array_values(array_unique($added));
+    }
+
+    /**
+     * Searches the shop's tools for the model, or loads the ones it picked.
+     * A search lists each tool on one line - name, title, the first sentence
+     * of its description - so finding one costs a few hundred tokens instead
+     * of every description on every call.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $thread
+     *
+     * @return array{result: string}
+     */
+    private function findTools(array $arguments, array $thread): array
+    {
+        $load = array_values(array_filter(array_map('strval', (array) ($arguments['load'] ?? []))));
+        if ($load !== []) {
+            $added = $this->loadTools($thread, $load);
+            $refused = array_values(array_diff($load, $added));
+
+            return ['result' => ($added !== [] ? 'Loaded, callable now: ' . implode(', ', $added) . '.' : 'Nothing loaded.')
+                . ($refused !== [] ? ' Not available here: ' . implode(', ', $refused) . '.' : '')];
+        }
+
+        $words = array_values(array_filter(preg_split('/[^a-z0-9_]+/', strtolower((string) ($arguments['query'] ?? ''))) ?: []));
+        $scopes = $this->scopes();
+        $idEmployee = (int) $this->employee->id;
+        $found = [];
+        foreach (SomcpToolRegistry::getInstance()->all() as $tool) {
+            if (!SomcpToolRegistry::isEnabled($tool->getName()) || !$tool->isAvailableTo($scopes, $idEmployee)) {
+                continue;
+            }
+            $described = $tool->describe();
+            $haystack = strtolower($tool->getName() . ' ' . $described['title'] . ' ' . $described['description']);
+            $score = 0;
+            foreach ($words as $word) {
+                $score += substr_count($haystack, $word) > 0 ? 1 : 0;
+            }
+            if ($words !== [] && $score === 0) {
+                continue;
+            }
+            $first = (string) preg_replace('/(?<=\.)\s.*$/s', '', (string) $described['description']);
+            $found[] = [$score, '- ' . $tool->getName() . ' (' . $described['title'] . '): ' . Tools::substr($first, 0, 160)
+                . (($described['annotations']['readOnlyHint'] ?? false) === true ? '' : ' [changes the shop]')];
+        }
+        usort($found, static function (array $a, array $b): int {
+            return $b[0] <=> $a[0];
+        });
+        if ($found === []) {
+            return ['result' => 'No tool matches. Try other keywords, or none for the full list.'];
+        }
+        $lines = array_column(array_slice($found, 0, $words !== [] ? self::MAX_FOUND : count($found)), 1);
+
+        return ['result' => implode("\n", $lines) . "\nLoad the ones you need with load."];
     }
 
     /**
@@ -2181,6 +2343,7 @@ class SomcpAssistantChat
             self::SEARCH_TOOL => self::t('Web search'),
             self::SETTINGS_READ_TOOL => self::t('Read the module settings'),
             self::SETTINGS_WRITE_TOOL => self::t('Change a module setting'),
+            self::FIND_TOOL => self::t('Find a tool'),
         ];
         foreach (SomcpToolRegistry::getInstance()->all() as $tool) {
             $described = $tool->describe();

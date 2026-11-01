@@ -9,6 +9,7 @@ of it can be undone by calling again.
 - `somcp_ping`
 - `somcp_list_order_statuses`
 - `somcp_list_return_statuses`
+- `somcp_list_carriers`
 - `somcp_create_return_status`
 - `somcp_get_order`
 - `somcp_set_order_status`
@@ -62,6 +63,10 @@ status change: it never moves the order to shipped, and
 - An empty number (`""`) removes it without any email. Only when the merchant
   asked for that.
 - The carrier of the shipment is never changed here.
+- To know which carrier a parcel goes with, or what tracking link the
+  customer will get, read `somcp_list_carriers`: its `tracking_url` holds `@`
+  where the number goes. An order keeps the `id_carrier` it was placed with,
+  which may be an older row of the carrier: match it on `id_reference`.
 
 When the merchant says an order has left with its number, set the number
 first, then the shipped status: the shipped email then carries the tracking

@@ -569,9 +569,7 @@ class SomcpToolGetProduct
         foreach (Carrier::getCarriers($idLang, false, false, false, null, Carrier::ALL_CARRIERS) ?: [] as $row) {
             $carriers[] = [
                 'id_carrier' => (int) $row['id_carrier'],
-                // A carrier named 0 is the one the installer creates, and the
-                // back office shows it under the shop's name.
-                'name' => (string) $row['name'] === '0' ? (string) Configuration::get('PS_SHOP_NAME') : (string) $row['name'],
+                'name' => SomcpTool::carrierName((string) $row['name']),
                 // No carrier ticked on the product means every carrier may
                 // deliver it, which is how the checkout reads it too.
                 'available' => $allowed === [] || isset($allowed[(int) $row['id_reference']]),

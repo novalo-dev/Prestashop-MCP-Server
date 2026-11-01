@@ -25,6 +25,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_feature_value`
 - `somcp_list_attachments`
 - `somcp_list_tax_rules`
+- `somcp_list_carriers`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -159,6 +160,11 @@ Files - a manual, a data sheet - come from `somcp_list_attachments`: take the
 when the one the merchant wants is not listed, they upload it in the back
 office first. Its `download_url` opens without being signed in: give it to the
 merchant, never put it anywhere public.
+
+Carriers come from `somcp_list_carriers`: give its `id_carrier` in
+`shipping.carriers`, never a guessed one. A disabled carrier is listed too;
+say so before tying a product to it. No carrier given means every carrier
+may deliver the product.
 
 Tax rules come from `somcp_list_tax_rules`: take the `id_tax_rules_group` from
 there, 0 for no tax. Match the merchant's "20 %" on the `rate`, not on the

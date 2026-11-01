@@ -646,6 +646,10 @@ T = {
  "Lister les statuts de retour",
  "Listar los estados de devolución",
  "Rückgabestatus auflisten"),
+"List carriers": (
+ "Lister les transporteurs",
+ "Listar los transportistas",
+ "Versanddienste auflisten"),
 "Create a return status": (
  "Créer un statut de retour",
  "Crear un estado de devolución",

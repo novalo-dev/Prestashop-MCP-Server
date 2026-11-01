@@ -603,4 +603,20 @@ class SomcpTool
             true
         );
     }
+
+    /**
+     * The name of a carrier as the back office shows it.
+     *
+     * The carrier the installer creates is stored with the name 0, and the
+     * back office shows it under the shop name. Shared by every tool that
+     * names a carrier, so the same carrier never wears two names.
+     *
+     * @param string $name as stored
+     *
+     * @return string
+     */
+    public static function carrierName(string $name): string
+    {
+        return $name === '0' ? (string) Configuration::get('PS_SHOP_NAME') : $name;
+    }
 }

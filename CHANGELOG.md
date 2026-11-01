@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Listing carriers.** The new tool `somcp_list_carriers` lists the
+carriers of the shop as **Shipping > Carriers** shows them, enabled or not
+and in the same order, with their delay, logo, tracking URL and whether
+they are free, filtered by status, free shipping or part of the name. The
+carrier identifiers a product takes are read from it instead of guessed,
+and since PrestaShop gives a carrier a new identifier each time it is
+edited, the reference that stays the same is given too. The prompts
+**Change an order status** and **Manage products** name it.
+
 **Creating return statuses.** The new tool `somcp_create_return_status`
 adds one return status - a step a merchandise return goes through - with
 its name in the languages being filled and its colour, as the **Add new

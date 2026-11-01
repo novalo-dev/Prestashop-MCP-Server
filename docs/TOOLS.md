@@ -793,23 +793,29 @@ exists in `somcp_search_orders`, where the permission is the right one.
 them out before we see them. Removed rather than left lying.
 
 #### `somcp_list_carriers`
-**State**: draft · [issue #20](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/20)
+**State**: written · [issue #20](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/20)
 **Nature**: `acts(VIEW, 'AdminCarriers')` · **Scope**: `mcp.orders.read`
 
-**Does** - lists the carriers of this shop with their identifiers, delays and tracking URL.
+**Does** - lists the carriers of this shop as **Shipping > Carriers** shows them, enabled or not, with the tracking URL of each.
 
-**Do not use for** - reading the carrier of one order (→ `somcp_get_order`).
+**Do not use for** - the carrier and tracking number of one order (→ `somcp_get_order`), changing a tracking number (→ `somcp_set_order_tracking`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `active` | boolean | no | true by default |
-| `language` | string | no | ISO code, shop default otherwise |
+| `active` | boolean | no | the **Status** filter; left out, every carrier, since a disabled one can still be tied to a product |
+| `is_free` | boolean | no | the **Free shipping** filter; left out, both |
+| `name` | string | no | part of the carrier name (the **Name** filter of the list), case-insensitive; left out, every carrier |
+| `language` | string | no | for `delay`, which is translated: ISO code of one of the shop's active languages, refused otherwise; the shop default when left out |
 
-**Returns** - per carrier: `id_carrier`, `id_reference`, `name`, `delay`, `active`, `is_free`, `tracking_url`, `external_module`.
+**Returns** - per carrier, in the order of the list (`position`, then `id_carrier`): `id_carrier` (**ID**, what `shipping.carriers` of the product tools takes), `id_reference`, `name` (**Name**; the carrier stored as `0` is shown under the shop name, as `somcp_get_product` names it, through one shared function), `delay` (**Delay** on the list, **Transit time** on the form, in `language` for the token's shop), `active` (**Status**), `is_free` (**Free shipping**), `position` (from 0; the list shows it from 1), `logo` (public URL of `img/s/<id_carrier>.jpg`, `null` when there is none), `tracking_url` (as stored, `@` where the tracking number goes, empty when none), `external_module` (the module that computes its costs when a module created it, `null` otherwise). Plus `count` and `language` (the ISO code `delay` was read in).
 
-**Notes** - `id_carrier` changes each time a carrier is edited in PrestaShop; `id_reference` does not. Both are returned, and the description says which to keep.
+**Errors** - a language the shop does not have: the shared refusal, naming the ones it has. An empty list is `carriers: []`, `count: 0`.
+
+**Notes** - PrestaShop gives a carrier a new `id_carrier` each time it is edited and keeps the old row as deleted; `id_reference` does not change. Orders keep the `id_carrier` they were placed with, products are tied to the reference (the product tools turn the `id_carrier` they are given into it). Only the carriers of the token's shop (`carrier_shop`), not deleted; disabled ones are listed. Zones, ranges, prices, groups, tax, handling costs, sizes and weight belong to a future read of one carrier. In Configuration with `somcp_list_order_statuses`: an order uses a carrier without containing one, so the scope is `mcp.orders.read`.
+
+On 8.0.1 the filter label is **Free Shipping**, on 9.0.0 **Free shipping**; the edit page is the wizard `AdminCarrierWizard` on 8.0.1 and a Symfony form on 9.0.0. The columns read are the same on both.
 
 #### `somcp_list_tax_rules`
 **State**: written

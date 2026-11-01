@@ -817,6 +817,11 @@
       <source>List return statuses</source>
       <target>Rückgabestatus auflisten</target>
     </trans-unit>
+    <!-- List carriers -->
+    <trans-unit id="6e594164605afd39214487871c057711" resname="List carriers">
+      <source>List carriers</source>
+      <target>Versanddienste auflisten</target>
+    </trans-unit>
     <!-- Create a return status -->
     <trans-unit id="bed8b046732e0d12fe3f9bbb9776d996" resname="Create a return status">
       <source>Create a return status</source>

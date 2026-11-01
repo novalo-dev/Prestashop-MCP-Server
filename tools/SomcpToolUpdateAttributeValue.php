@@ -36,7 +36,9 @@ declare(strict_types=1);
  * in the shop of the token, as the core's EditAttributeHandler does, so
  * actionAttributeSave fires. The faceted search module answers that hook by
  * deleting the value's rows and writing back what its form's request carries
- * - nothing, here - so the rows are written again afterwards.
+ * - nothing, here - so the rows are written again afterwards. A new position
+ * comes last, through ProductAttribute::updatePosition(), where the drag and
+ * drop of the values list ends, so the other values shift as they do there.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -50,7 +52,7 @@ require_once __DIR__ . '/SomcpToolCreateAttributeValue.php';
 class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
 {
     /** @var array<int, string> What this tool takes besides the fields of the creation. */
-    private const OWN_ARGUMENTS = ['id_attribute', 'remove_texture'];
+    private const OWN_ARGUMENTS = ['id_attribute', 'remove_texture', 'position'];
 
     /**
      * @return SomcpTool
@@ -65,7 +67,8 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
                 . 'same rules - who fills each field, lengths, forbidden characters: name, the group it belongs to '
                 . '(id_attribute_group), for a group of type color its colour and texture, and the faceted search '
                 . 'fields url_name and meta_title when the faceted search module is installed and enabled. '
-                . 'remove_texture: true removes the texture. Only what is given changes: a field left out is '
+                . 'remove_texture: true removes the texture. position moves the value among the values of its '
+                . 'group, from 0 as somcp_get_attribute_value gives it; the others shift. Only what is given changes: a field left out is '
                 . 'kept, a text is replaced in the languages filled and kept in the others. When languages is '
                 . 'left out every language of the shop is filled, so a text must then be given in each; to change '
                 . 'one language, pass languages with it alone. '
@@ -107,7 +110,8 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         $kept = ' Left out: unchanged.';
 
         $properties['id_attribute_group']['description'] = 'Merchant. Moves the value to this attribute group, '
-            . 'from somcp_list_attributes; it is placed last there. Refused while a combination uses the value.' . $kept;
+            . 'from somcp_list_attributes; it is placed last there, or at position when given. Refused while a '
+            . 'combination uses the value.' . $kept;
         $properties['name']['description'] = 'Merchant. The value shown on the product page, 128 characters at '
             . 'most, never empty, without < > = { }. Changed on every combination using it.'
             . ' One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.' . $kept;
@@ -126,6 +130,12 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
                 'type' => 'boolean',
                 'description' => 'Merchant. Groups of type color only: true removes the texture, so the colour '
                     . 'shows again. Not with texture in the same call.',
+            ],
+            'position' => [
+                'type' => 'integer',
+                'description' => 'Merchant. The place among the values of its group, from 0 as '
+                    . 'somcp_get_attribute_value gives it (the back office list shows it plus 1); the others shift. '
+                    . 'With id_attribute_group, the place in the group it moves to.' . $kept,
             ],
         ];
         $schema['required'] = ['id_attribute'];
@@ -235,6 +245,8 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
             'id_attribute_group' => null,
             'faceted_rows' => null,
             'colours_unused' => false,
+            // null until given: the value keeps its place otherwise.
+            'position' => null,
         ];
 
         self::valueNames($arguments, $languages, $idGroup, $idShop, $plan, $errors, false, (int) $attribute->id);
@@ -244,12 +256,26 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         // group. It is already reported as not a field of this tool, so it is
         // kept away from the shared check, which would report it twice.
         self::facetedFields(array_diff_key($arguments, ['indexable' => true]), $languages, $plan, $errors);
+        if (array_key_exists('position', $arguments) && $idGroup > 0) {
+            self::planPosition($arguments['position'], $idGroup, $idGroup !== $idCurrent, $plan, $errors);
+        }
 
         if ($errors !== []) {
             return $plan;
         }
 
         self::compareValue($attribute, $idGroup, $group === null ? '' : (string) $group->group_type, $idShop, $plan, $errors);
+
+        if ($plan['position'] !== null) {
+            // A value moved to another group always changes list, so its
+            // place there is recorded even when the number is the same.
+            $oldPosition = (int) $attribute->position;
+            if ($idGroup === $idCurrent && $oldPosition === $plan['position']) {
+                $plan['position'] = null;
+            } else {
+                self::record($plan, 'position', $oldPosition, $plan['position']);
+            }
+        }
 
         // The same check the core runs before update(), on the whole object as
         // it will be written, as a last net for a rule none of the above knew.
@@ -270,6 +296,35 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         }
 
         return $plan;
+    }
+
+    /**
+     * The new place of the value, checked against how many values its group will hold.
+     *
+     * The order of the values is one per group for the whole installation,
+     * the one the back office list shows, so every value of the group counts,
+     * whatever its shop. A value moving in is one more there.
+     *
+     * @param mixed $value
+     * @param int $idGroup the group the value ends up in
+     * @param bool $moving whether it comes from another group
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    private static function planPosition($value, int $idGroup, bool $moving, array &$plan, array &$errors): void
+    {
+        $last = (int) Db::getInstance()->getValue(
+            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'attribute` WHERE `id_attribute_group` = ' . (int) $idGroup
+        ) - ($moving ? 0 : 1);
+        $position = self::integer($value);
+        if ($position === null || $position < 0 || $position > $last) {
+            $errors[] = 'position: a whole number from 0 to ' . $last . ', the place among the values of the group';
+
+            return;
+        }
+        $plan['position'] = $position;
     }
 
     /**
@@ -631,6 +686,34 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
             // The module's filter blocks carry the value's name, and its own
             // form drops them on every save.
             self::dropFacetedCache();
+        }
+
+        if ($plan['position'] !== null) {
+            // The core finds the group to reorder from the request the list
+            // sends, so the group the value now stands in is handed over.
+            // After a move, update() has already put the value last there.
+            $failure = SomcpCatalog::movePosition(
+                $attribute,
+                (int) $attribute->position,
+                (int) $plan['position'],
+                ['id_attribute_group' => (int) $attribute->id_attribute_group]
+            );
+            if ($failure !== '') {
+                SomcpLogger::log(
+                    'attribute_value_update_failed',
+                    SomcpLogger::OUTCOME_FAILURE,
+                    'attribute value ' . $idAttribute . ' position: ' . Tools::substr($failure, 0, 500),
+                    '',
+                    $idEmployee
+                );
+
+                return SomcpTool::text(
+                    'The attribute value could not be moved to position ' . (int) $plan['position'] . ': ' . $failure
+                        . '. The other changes of this call may be saved. Read the value again with '
+                        . 'somcp_get_attribute_value, tell the merchant what it holds now, and do not call again before.',
+                    true
+                );
+            }
         }
 
         SomcpLogger::log(

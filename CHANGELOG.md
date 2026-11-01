@@ -28,6 +28,14 @@ each other. The prompt **Change an order status** names it too.
 
 ### Changed
 
+**Attribute values can be reordered.** The order of the values of an
+attribute - the drag and drop of its list of values in **Catalog > Attributes &
+Features > Attributes** - could not be changed by the assistant:
+`somcp_update_attribute_value` refused `position`. It now takes it, moves the
+value to that place and shifts the others as the list does, also right after
+moving the value to another attribute, and the answer gives the old and the
+new place.
+
 **Attribute groups can be reordered.** The order of the attribute groups -
 the drag and drop of **Catalog > Attributes & Features > Attributes** - could
 not be changed by the assistant: `somcp_update_attribute_group` refused

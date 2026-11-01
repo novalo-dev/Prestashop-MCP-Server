@@ -521,6 +521,9 @@ calling it:
 3. Moving the value to another group (`id_attribute_group`) is refused while a
    combination uses it. A texture given is downloaded again and replaces the
    current one.
+4. To reorder the values of a group, give `position`, the new place from 0 as
+   `somcp_get_attribute_value` gives it: the other values shift, as with the
+   drag and drop of the back office list.
 
 When it succeeds, show the merchant each change with its old and new value,
 and the `note` when there is one. If `texture` says `refused`, the value keeps

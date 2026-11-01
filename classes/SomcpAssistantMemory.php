@@ -198,9 +198,11 @@ class SomcpAssistantMemory
      *
      * Switching it on is refused unless it can run: a provider offered here,
      * and a key to embed with. A memory saved as on without them did nothing
-     * while the page - and the chat - said it was on. With no provider picked
-     * and a single one offered that needs no key of its own, that one is
-     * taken. Refused, nothing of the memory is changed.
+     * while the page - and the chat - said it was on. No provider is ever
+     * picked on the merchant's behalf, even when only one is offered: the
+     * chat once chose one by itself, and the choice of who receives the
+     * conversations is the merchant's. Refused, nothing of the memory is
+     * changed.
      *
      * @param bool $on
      * @param string $provider
@@ -222,13 +224,7 @@ class SomcpAssistantMemory
         if ($on) {
             $offered = self::selectable(Somcp::currentShopId());
             if (!isset($offered[$provider])) {
-                $plain = array_keys(array_filter($offered, static function (array $one): bool {
-                    return !$one['special'];
-                }));
-                if ($provider !== '' || count($plain) !== 1) {
-                    return self::NEEDS_PROVIDER;
-                }
-                $provider = $plain[0];
+                return self::NEEDS_PROVIDER;
             }
             // A provider of the chat is offered only with a key to lend; one
             // that brings its own needs it typed now or stored before.

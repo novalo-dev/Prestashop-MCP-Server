@@ -130,7 +130,7 @@ class SomcpModuleSettings
 
         return [
             'shop' => $idShop,
-            'note' => 'Speak to the employee of a setting by its tab and label, never by its key nor in JSON. set_at says where a value comes from: shop, group, global (all shops) or default. A change made here is written for this shop. API keys are only typed in the form. Tools and prompts switch with the keys tool:<name> and prompt:<name>, values on or off.',
+            'note' => 'Change only what the employee asked for, one setting at a time. When a change needs a choice the employee has not made - a provider, a profile, a value - ask them and wait: never choose for them, never change a second setting on your own. Speak to the employee of a setting by its tab and label, never by its key nor in JSON. set_at says where a value comes from: shop, group, global (all shops) or default. A change made here is written for this shop. API keys are only typed in the form. Tools and prompts switch with the keys tool:<name> and prompt:<name>, values on or off.',
             'docs' => $docs,
             'settings' => $settings,
             'assistants' => ['tab' => self::t('Built-in assistant'), 'list' => $assistants],
@@ -230,8 +230,10 @@ class SomcpModuleSettings
         if ($refused === SomcpAssistantMemory::NEEDS_PROVIDER) {
             $offered = array_keys(SomcpAssistantMemory::selectable($idShop));
 
-            return 'The memory cannot be switched on without an embeddings provider. Set ' . SomcpAssistantMemory::PROVIDER . ' first'
-                . ($offered !== [] ? ', to one of: ' . implode(', ', $offered) : ': none is offered until a chat assistant of OpenAI, Gemini, Mistral or Cohere has a key') . '. Nothing was changed.';
+            return 'The memory cannot be switched on without an embeddings provider, and nothing was changed. '
+                . ($offered !== []
+                    ? 'Ask the employee which provider to use (' . implode(', ', $offered) . ') and wait for the answer: never pick one yourself.'
+                    : 'None is offered until a chat assistant of OpenAI, Gemini, Mistral or Cohere has a key: tell the employee.');
         }
         if ($refused === SomcpAssistantMemory::NEEDS_KEY) {
             return 'This embeddings provider needs its own key, typed in the form of the Built-in assistant tab. Nothing was changed.';

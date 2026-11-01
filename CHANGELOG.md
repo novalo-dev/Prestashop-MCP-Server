@@ -138,13 +138,15 @@ names the branch.
 **Settings that depend on each other are checked before they are saved.**
 The memory could be switched on with no embeddings provider, or with Voyage
 and no key: the page said it was on, and it did nothing. It is now refused
-with a message saying what is missing - and with a single provider offered
-that needs no key of its own, that one is picked for you. A refresh token
+with a message saying what is missing; no provider is ever picked for you.
+A refresh token
 set to last less than the access token, which would log every assistant out
 at its first renewal, and a profile that does not exist are refused too. The
 rest of the form is still saved, and the message says so. The built-in
 assistant follows the same rules when it changes a setting, then reads the
-setting back and tells you whether the feature actually works.
+setting back and tells you whether the feature actually works. It changes
+only the setting you asked for, and asks you whenever a choice is needed -
+which provider, which profile - instead of choosing for you.
 
 **Gemini's thinking now counts toward the monthly cap.** Gemini reports the
 tokens it spends thinking apart from its answer, and bills them as output;

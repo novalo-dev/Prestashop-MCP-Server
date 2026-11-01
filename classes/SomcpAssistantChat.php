@@ -1922,7 +1922,7 @@ class SomcpAssistantChat
             );
             $change = new FrontendTool(
                 self::SETTINGS_WRITE_TOOL,
-                'Change one setting of this module for this shop, with a key read from ' . self::SETTINGS_READ_TOOL . '. Switches take on or off. tool:<name> and prompt:<name> switch one tool or prompt. API keys cannot be set here.',
+                'Change one setting of this module for this shop, with a key read from ' . self::SETTINGS_READ_TOOL . ', only the one the employee asked for. When it needs a choice they have not made, ask them first: never choose for them. Switches take on or off. tool:<name> and prompt:<name> switch one tool or prompt. API keys cannot be set here.',
                 [
                     'type' => 'object',
                     'properties' => [

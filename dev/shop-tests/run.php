@@ -584,6 +584,16 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
             $failures[] = 'assistant: the chat set a refresh token shorter than the access token';
         }
         SomcpConfig::set(SomcpConfig::REFRESH_TTL, $refreshWas);
+        // The memory is never switched on without a provider the employee
+        // chose: the chat must ask, not pick one, even when one is offered.
+        ++$assistantChecks;
+        $providerWas = SomcpAssistantMemory::providerId((int) $context->shop->id);
+        Configuration::updateValue(SomcpAssistantMemory::PROVIDER, '');
+        if (SomcpModuleSettings::write(SomcpAssistantMemory::ON, 'on', (int) $context->shop->id) === ''
+            || SomcpAssistantMemory::providerId((int) $context->shop->id) !== '') {
+            $failures[] = 'assistant: the memory was switched on, or given a provider, without the employee choosing one';
+        }
+        Configuration::updateValue(SomcpAssistantMemory::PROVIDER, $providerWas);
         ++$assistantChecks;
         if (SomcpModuleSettings::write(SomcpConfig::REQUIRED_PROFILE, '999999', (int) $context->shop->id) === '') {
             $failures[] = 'assistant: the chat set a profile that does not exist';

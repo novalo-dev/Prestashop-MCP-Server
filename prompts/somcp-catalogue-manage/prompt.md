@@ -479,6 +479,9 @@ calling it:
 3. A new public name or type shows on every product page offering the group:
    tell the merchant before calling. Away from `color`, the values keep their
    colours and textures but the product page no longer shows them.
+4. To reorder the groups, give `position`, the new place from 0 as
+   `somcp_get_attribute_group` gives it: the other groups shift, as with the
+   drag and drop of the back office list.
 
 When it succeeds, show the merchant each change with its old and new value,
 and the `note` when there is one. `changed: false` means the group already held

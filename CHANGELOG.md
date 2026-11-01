@@ -28,6 +28,12 @@ each other. The prompt **Change an order status** names it too.
 
 ### Changed
 
+**Attribute groups can be reordered.** The order of the attribute groups -
+the drag and drop of **Catalog > Attributes & Features > Attributes** - could
+not be changed by the assistant: `somcp_update_attribute_group` refused
+`position`. It now takes it, moves the group to that place and shifts the
+others as the list does, and the answer gives the old and the new place.
+
 **Tax rules: found by name, in the order of the list.** With the fifty or so
 rules a localization pack creates, the assistant had to read them all to find
 one. `somcp_list_tax_rules` now takes part of a rule name, as the **Name**

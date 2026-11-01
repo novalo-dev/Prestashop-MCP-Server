@@ -1743,13 +1743,14 @@ The name and every contact field are one string each, the same in every language
 
 **Do not use for** - creating one (→ `somcp_create_attribute_group`), or changing one of its values (→ `somcp_update_attribute_value`).
 
-**Parameters** - `id_attribute_group` (required, from `somcp_list_attributes`), `languages`, then the fields of `somcp_create_attribute_group`, all optional, checked by the same code. A text given replaces the languages given and keeps the others; given, `name` and `public_name` are never empty. `indexable` left out keeps what the group has.
+**Parameters** - `id_attribute_group` (required, from `somcp_list_attributes`), `languages`, then the fields of `somcp_create_attribute_group`, all optional, checked by the same code. A text given replaces the languages given and keeps the others; given, `name` and `public_name` are never empty. `indexable` left out keeps what the group has. `position` (merchant) is the place among the attribute groups, from 0 as `somcp_get_attribute_group` gives it (the back office list shows it plus 1), refused outside 0 to the number of groups minus 1; left out, the group keeps its place.
 
 **Returns** - `changed`; when something changed, `changes` (per field and language, its `old` and `new` value) and `attribute_group`, the group as `somcp_get_attribute_group` returns it. `note` appears when `group_type` leaves `color`, `faceted_search` only when the faceted search rows could not be written while the rest was.
 
 **Notes**
 - A group that is not in `attribute_group_shop` for the shop of the token is refused, the same test as `somcp_get_attribute_group`.
-- Written through `AttributeGroup::update()` in the shop of the token (`id_shop_list`), as the core's `EditAttributeGroupHandler` does, so the hooks fire and `update()` sets the colour flag from `group_type`. Position is not changed.
+- Written through `AttributeGroup::update()` in the shop of the token (`id_shop_list`), as the core's `EditAttributeGroupHandler` does, so the hooks fire and `update()` sets the colour flag from `group_type`.
+- `position` is written last with `AttributeGroup::updatePosition()`, where the drag and drop of the back office list ends, so the other groups shift as there; `changes` records the old and new place. The core finds the group to move from the list's request (`id_attribute_group`), which an MCP call does not carry, so the shared `SomcpCatalog::movePosition()` hands it over for the move only - the one function meant for every tool that reorders a catalogue list, attribute values and features included.
 - Changing `group_type` away from `color` leaves the values' colours and textures in place but unused, as in the back office; the answer says so in `note`.
 - The faceted search fields are compared with the module's rows and, when one changes, the group's rows are written again as `somcp_create_attribute_group` writes them, the other languages keeping their text; the module's `actionAttributeGroupSave` hook leaves them alone when the request carries no form. A rename alone still drops the module's filter block cache, as its form does on every save.
 - Every problem is reported at once, before anything is written. Replayable: the same values again write nothing and say `changed: false`.

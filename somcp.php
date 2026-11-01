@@ -85,6 +85,7 @@ class Somcp extends Module
         'SomcpUpdate',
         'SomcpContributors',
         'SomcpAssistant',
+        'SomcpRelay',
         'SomcpAssistantMemory',
         'SomcpModuleSettings',
         'SomcpAssistantChat',
@@ -661,6 +662,17 @@ class Somcp extends Module
         if (Tools::isSubmit('submitSomcpAssistant')) {
             $this->saveAssistant();
         }
+        if (Tools::isSubmit('submitSomcpRelayCode')) {
+            // Same rule as the assistant form: an inheriting level shows the
+            // assistants above read-only.
+            if (!SomcpAssistant::editedState()['own']) {
+                $this->redirectToSelf();
+            }
+            $this->redirectToSelf(['somcp_relay' => SomcpRelay::createPairing()]);
+        }
+        if (Tools::isSubmit('submitSomcpLocalAssistant')) {
+            $this->saveLocalAssistant();
+        }
         if (Tools::isSubmit('submitSomcpAssistantOwn')) {
             if (SomcpAssistant::copyHere()) {
                 $this->flash($this->trans('The assistants inherited from above were copied to this level, where they can now be changed.', [], 'Modules.Somcp.Admin'));
@@ -677,6 +689,14 @@ class Somcp extends Module
         if (Tools::isSubmit('submitSomcpAssistantTest')) {
             $tested = SomcpAssistant::edited((int) Tools::getValue('id_assistant'));
             $model = $tested !== null ? SomcpAssistant::test($tested) : '';
+            if ($tested !== null && $tested['local']) {
+                if ($model !== '') {
+                    $this->flash($this->trans('The relay answers. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
+                } else {
+                    $this->flash($this->trans('The relay is offline, or the model no longer passes its tool test. Start somcp-relay on the computer where your AI runs, then test again.', [], 'Modules.Somcp.Admin'), true);
+                }
+                $this->redirectToSelf();
+            }
             if ($model !== '') {
                 $this->flash($this->trans('The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
             } else {
@@ -782,6 +802,12 @@ class Somcp extends Module
         // an existing assistant with a key is open for editing, so the settings
         // page never calls a provider just to be shown.
         $editing = $this->assistantBeingEdited();
+        // A local assistant has its own form: no key, and a model picked
+        // from those its relay found able to call tools.
+        $local = $this->localScreen($editing);
+        if ($editing !== null && !empty($editing['local'])) {
+            $editing = null;
+        }
         $assistantState = SomcpAssistant::editedState();
         $assistantSettings = SomcpAssistant::editedSettings();
         $contextShops = array_map('intval', Shop::getContextListShopID());
@@ -823,6 +849,7 @@ class Somcp extends Module
             'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
             'somcp_assistant_edit' => $editing,
             'somcp_assistant_models' => $editModels,
+            'somcp_local' => $local,
             'somcp_search_useful' => SomcpAssistant::searchUseful(),
             'somcp_search_lenders' => SomcpAssistant::searchLenders(),
             'somcp_search_provider' => $assistantSettings['search'],
@@ -880,6 +907,12 @@ class Somcp extends Module
         if (!SomcpAssistant::editedState()['own']) {
             $this->redirectToSelf();
         }
+        // A local assistant posted to this form would become a keyless
+        // provider assistant: it has its own form.
+        $posted = SomcpAssistant::edited((int) Tools::getValue('id_assistant'));
+        if ($posted !== null && $posted['local']) {
+            $this->redirectToSelf();
+        }
         $idAssistant = SomcpAssistant::save((int) Tools::getValue('id_assistant'), [
             'provider' => (string) Tools::getValue('somcp_assistant_provider'),
             'api_key' => (string) Tools::getValue('somcp_assistant_key'),
@@ -900,6 +933,95 @@ class Somcp extends Module
             $this->flash($this->trans('Assistant saved, but the provider refused the key or did not answer. Check the key.', [], 'Modules.Somcp.Admin'), true);
         }
         $this->redirectToSelf();
+    }
+
+    /**
+     * Saves the form of a local assistant.
+     */
+    private function saveLocalAssistant(): void
+    {
+        if (!SomcpAssistant::editedState()['own']) {
+            $this->redirectToSelf();
+        }
+        $idAssistant = (int) Tools::getValue('id_assistant');
+        $idRelay = (int) Tools::getValue('id_relay');
+        $saved = SomcpAssistant::saveLocal($idAssistant, $idRelay, [
+            'model' => (string) Tools::getValue('somcp_assistant_model'),
+            'role' => (string) Tools::getValue('somcp_assistant_role'),
+            'active' => Tools::getValue('somcp_assistant_active') === '1',
+            'token_cap' => (int) Tools::getValue('somcp_assistant_token_cap'),
+        ]);
+        if ($saved === 0) {
+            // Back to the same screen, which shows what the relay offers now.
+            $this->flash($this->trans('The relay no longer offers this model, or it was unlinked. Pick a model again.', [], 'Modules.Somcp.Admin'), true);
+            $this->redirectToSelf($idAssistant > 0 ? ['somcp_assistant_edit' => $idAssistant] : ['somcp_relay' => $idRelay]);
+        }
+
+        $assistant = SomcpAssistant::edited($saved);
+        $model = $assistant !== null ? SomcpAssistant::test($assistant) : '';
+        if ($model !== '') {
+            $this->flash($this->trans('Local assistant saved. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
+        } else {
+            $this->flash($this->trans('Local assistant saved, but its relay is offline right now. Start somcp-relay on the computer where your AI runs.', [], 'Modules.Somcp.Admin'), true);
+        }
+        $this->redirectToSelf();
+    }
+
+    /**
+     * What the local assistant screen shows, or null when it is closed.
+     *
+     * Its steps follow the relay: download it, then a code to type in it,
+     * then a choice among the models it found able to call tools. The same
+     * screen edits a local assistant already saved.
+     *
+     * @param array<string, mixed>|null $editing the assistant open for editing
+     *
+     * @return array<string, mixed>|null
+     */
+    private function localScreen(?array $editing): ?array
+    {
+        if (!SomcpAssistant::editedState()['own']) {
+            return null;
+        }
+        $relay = null;
+        $assistant = null;
+        $step = 'start';
+        if ($editing !== null && !empty($editing['local'])) {
+            $assistant = $editing;
+            $relay = SomcpRelay::get((int) $editing['id_relay']);
+        } elseif (Tools::getValue('somcp_local_add') === '1') {
+            // The first step: download the relay, then generate a code.
+        } elseif ((int) Tools::getValue('somcp_relay') > 0) {
+            $relay = SomcpRelay::edited((int) Tools::getValue('somcp_relay'));
+            if ($relay === null) {
+                return null;
+            }
+        } else {
+            return null;
+        }
+
+        if ($relay !== null) {
+            if ($relay['paired']) {
+                $step = $assistant !== null ? 'edit' : 'models';
+            } else {
+                $step = $relay['code'] !== '' ? 'code' : 'expired';
+            }
+        } elseif ($assistant !== null) {
+            // Its relay is gone: only removing the assistant is left.
+            $step = 'lost';
+        }
+        $shop = rtrim((string) $this->context->shop->getBaseURL(true), '/');
+
+        return [
+            'step' => $step,
+            'relay' => $relay,
+            'online' => $relay !== null && $relay['paired'] && SomcpRelay::online($relay),
+            'models' => $relay !== null ? SomcpRelay::toolModels($relay) : [],
+            'assistant' => $assistant ?? ['id_assistant' => 0, 'model' => '', 'role' => '', 'active' => true, 'token_cap' => 0],
+            'command' => $relay !== null && $relay['code'] !== '' ? 'somcp-relay pair ' . $shop . ' ' . $relay['code'] : '',
+            'minutes' => $relay !== null ? max(1, (int) ceil(($relay['code_expires'] - time()) / 60)) : 0,
+            'download' => SomcpRelay::DOWNLOAD_URL,
+        ];
     }
 
     /**

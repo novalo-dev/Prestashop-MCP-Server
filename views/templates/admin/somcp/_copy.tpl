@@ -380,6 +380,13 @@
             });
         });
 
+        // The local assistant screen waits for the relay - for the code to be
+        // typed, then for its models - and has nothing to type meanwhile, so
+        // it reloads itself. The server shows the next step when it comes.
+        if (document.querySelector('[data-somcp-relay-wait]')) {
+            setTimeout(function () { window.location.reload(); }, 5000);
+        }
+
         document.querySelectorAll('[data-somcp-copy]').forEach(function (button) {
             button.addEventListener('click', function (event) {
                 event.preventDefault();

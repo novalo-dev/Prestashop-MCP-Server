@@ -20,10 +20,10 @@ declare(strict_types=1);
  * The part of Neuron AI the built-in assistant calls, checked by reflection.
  *
  * Every class, method and constructor parameter listed here is one that
- * classes/SomcpAssistantChat.php or classes/SomcpAssistantMemory.php relies
- * on. A new version of Neuron that renames, removes or reshapes one of them
+ * classes/SomcpAssistantChat.php, classes/SomcpAssistantMemory.php or
+ * classes/SomcpRelayClient.php relies on. A new version of Neuron that renames, removes or reshapes one of them
  * fails here, in CI, instead of in the chat of a merchant. Keep the list in
- * step with those two files. The CI runs it on the pruned archive, so a part
+ * step with those files. The CI runs it on the pruned archive, so a part
  * left out of the module is caught here too.
  *
  * Usage: php dev/package/contract.php <module folder>
@@ -57,6 +57,8 @@ $methods = [
     'NeuronAI\RAG\VectorStore\Filter\FilterGroup' => ['and'],
     'NeuronAI\RAG\VectorStore\Filter\Filter' => ['eq'],
     'NeuronAI\RAG\Embeddings\OpenAIEmbeddingsProvider' => ['embedDocuments'],
+    // The local assistant's relay client.
+    'NeuronAI\Exceptions\HttpException' => ['networkError', 'statusError'],
 ];
 
 // Constructor parameters by position, as the assistant passes them.
@@ -70,6 +72,8 @@ $constructors = [
     'NeuronAI\Providers\XAI\Grok' => ['key', 'model'],
     'NeuronAI\Providers\Cohere\Cohere' => ['key', 'model'],
     'NeuronAI\Providers\Ollama\Ollama' => ['url', 'model'],
+    'NeuronAI\Providers\OpenAILike' => ['baseUri', 'key', 'model'],
+    'NeuronAI\HttpClient\HttpResponse' => ['statusCode', 'body', 'headers'],
     'NeuronAI\Providers\OpenAI\Image\OpenAIImage' => ['key', 'model'],
     'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
     'NeuronAI\Chat\Messages\ContentBlocks\FileContent' => ['content', 'sourceType', 'mediaType', 'filename'],
@@ -94,6 +98,12 @@ $properties = [
     'NeuronAI\Chat\Messages\Usage' => ['inputTokens', 'outputTokens', 'reasoningTokens'],
     'NeuronAI\Chat\Messages\Citation' => ['source', 'title'],
     'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
+    'NeuronAI\HttpClient\HttpRequest' => ['body', 'timeout'],
+];
+
+// Implemented by SomcpRelayClient: a method added here would leave it abstract.
+$interfaces = [
+    'NeuronAI\HttpClient\HttpClientInterface' => ['request', 'stream'],
 ];
 
 $classes = [
@@ -117,6 +127,22 @@ if (!defined('NeuronAI\RAG\Retrieval\SemanticMemoryRetrieval::SOURCE_TYPE')
 foreach ($classes as $class) {
     if (!class_exists($class) && !enum_exists($class)) {
         $problems[] = $class . ' is gone';
+    }
+}
+
+foreach ($interfaces as $interface => $names) {
+    if (!interface_exists($interface)) {
+        $problems[] = $interface . ' is gone';
+        continue;
+    }
+    $declared = array_map(static function (ReflectionMethod $method): string {
+        return $method->getName();
+    }, (new ReflectionClass($interface))->getMethods());
+    sort($declared);
+    $known = $names;
+    sort($known);
+    if ($declared !== $known) {
+        $problems[] = $interface . ' now declares ' . implode(', ', $declared) . ': compare it with classes/SomcpRelayClient.php';
     }
 }
 

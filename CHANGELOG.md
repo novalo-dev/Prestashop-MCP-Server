@@ -57,6 +57,20 @@ when the assistant can use it, and one set away from how a conversation
 starts shows as a pill under the field, with a cross to undo it. The
 conversation keeps its switches when you come back to it.
 
+**A local assistant, running on your own computer.** **Add a local assistant**
+in the **Built-in assistant** tab connects the chat to an AI on your computer -
+Ollama, LM Studio or any software that speaks the OpenAI API - through
+[somcp-relay](https://github.com/novalo-dev/Somcp-Relay), a small program you
+download and run there. Your conversations and your shop data then go to your
+computer instead of an AI company, with no key to pay for. The relay calls your
+shop, never the other way round, so nothing has to be opened on your network,
+and it works whether your shop is hosted online or next to you. The screen
+gives a code valid ten minutes, once, and the command to type it; the relay
+then tests the models of your AI, and only those able to call the shop's tools
+are offered. The list of assistants shows whether the relay is online, and
+**Test the connection** checks it. Removing the local assistant unlinks the
+relay at once.
+
 ### Changed
 
 **A new look for the built-in assistant.** The chat now looks like the AI

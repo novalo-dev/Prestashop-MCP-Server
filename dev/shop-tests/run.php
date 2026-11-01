@@ -612,6 +612,70 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
     SomcpAssistant::delete($idBorrower);
     SomcpAssistant::delete($idAssistant);
     SomcpAssistantChat::overrideProvider(null);
+
+    // A local assistant, through somcp-relay. A code pairs once, in any case
+    // and with or without its dash; the token reports the models and only
+    // those that passed the tool test can be chosen; a request the chat
+    // queues is taken once, answered and read back; a relay gone quiet fails
+    // the chat at once instead of keeping it waiting; and removing the
+    // assistant revokes the token.
+    $relayCheck = static function (bool $ok, string $label) use (&$failures, &$assistantChecks): void {
+        ++$assistantChecks;
+        if (!$ok) {
+            $failures[] = 'local assistant: ' . $label;
+        }
+    };
+    $idLocal = 0;
+    try {
+        $idRelay = SomcpRelay::createPairing();
+        $relay = SomcpRelay::get($idRelay);
+        $code = (string) ($relay['code'] ?? '');
+        $relayCheck((bool) preg_match('/^[A-Z2-9]{4}-[A-Z2-9]{4}$/', $code), 'the pairing code is not shown as XXXX-XXXX');
+        $token = SomcpRelay::pair(strtolower(str_replace('-', '', $code)), '0.1.0', 'linux/amd64');
+        $relayCheck($token !== '', 'a valid code typed in lower case without its dash did not pair');
+        $relayCheck(SomcpRelay::pair($code, '0.1.0', 'linux/amd64') === '', 'a pairing code worked twice');
+        $relayCheck((SomcpRelay::authenticate($token)['id_relay'] ?? 0) === $idRelay, 'the token does not lead back to its relay');
+        $relayCheck(SomcpRelay::authenticate('wrong') === null, 'an unknown token was accepted');
+
+        SomcpRelay::hello($idRelay, ['software' => 'Ollama', 'models' => [
+            ['id' => 'qwen2.5:7b', 'tools' => true],
+            ['id' => 'gemma2:2b', 'tools' => false],
+            ['id' => 'untested'],
+        ]]);
+        $relay = SomcpRelay::get($idRelay);
+        $relayCheck($relay !== null && SomcpRelay::toolModels($relay) === ['qwen2.5:7b'], 'models without a passed tool test are offered');
+        $local = ['model' => 'gemma2:2b', 'role' => '', 'active' => true, 'token_cap' => 0];
+        $relayCheck(SomcpAssistant::saveLocal(0, $idRelay, $local) === 0, 'a model that failed the tool test was saved');
+        $idLocal = SomcpAssistant::saveLocal(0, $idRelay, ['model' => 'qwen2.5:7b'] + $local);
+        $saved = SomcpAssistant::edited($idLocal);
+        $relayCheck($saved !== null && $saved['local'] && $saved['label'] === 'Ollama' && $saved['online'], 'the local assistant is not saved online under the name of its AI');
+
+        $key = SomcpRelay::enqueue($idRelay, ['model' => 'qwen2.5:7b', 'messages' => [['role' => 'user', 'content' => 'Hello']]]);
+        $job = SomcpRelay::claim($idRelay);
+        $relayCheck(($job['id'] ?? '') === $key && ($job['request']['model'] ?? '') === 'qwen2.5:7b', 'the relay did not get the queued request');
+        $relayCheck(SomcpRelay::claim($idRelay) === null, 'one request was handed out twice');
+        $relayCheck(SomcpRelay::complete($idRelay, $key, 200, '{"choices":[{"message":{"role":"assistant","content":"Hi"}}]}', ''), 'the answer was refused');
+        $answer = SomcpRelay::wait($key, 2.0);
+        $relayCheck(($answer['status'] ?? 0) === 200 && strpos((string) ($answer['body'] ?? ''), '"Hi"') !== false, 'the chat did not read the answer back');
+
+        // Quiet for two hours: the chat says so rather than wait for nobody.
+        Db::getInstance()->update('somcp_relay', ['last_seen' => date('Y-m-d H:i:s', time() - 7200)], '`id_relay` = ' . $idRelay);
+        $localThread = $chat->newThread($idLocal);
+        $started = microtime(true);
+        $view = $chat->send($localThread, 'Hello');
+        $relayCheck($view['error'] !== '' && microtime(true) - $started < 10, 'an offline relay did not fail the chat at once');
+        $relayCheck((int) Db::getInstance()->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'somcp_relay_job` WHERE `id_relay` = ' . $idRelay, false) === 0, 'a request was queued for an offline relay');
+        $chat->deleteThread($localThread);
+
+        SomcpAssistant::delete($idLocal);
+        $idLocal = 0;
+        $relayCheck(SomcpRelay::authenticate($token) === null, 'removing the local assistant did not revoke its relay');
+    } catch (Throwable $e) {
+        $failures[] = 'local assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+    if ($idLocal > 0) {
+        SomcpAssistant::delete($idLocal);
+    }
 }
 
 echo "\n";

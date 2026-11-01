@@ -39,6 +39,12 @@ function upgrade_module_1_2_0($module)
         if (!is_array($column) || $column === []) {
             $db->execute('ALTER TABLE `' . bqSQL($assistant) . '` ADD `token_cap` INT(11) UNSIGNED NOT NULL DEFAULT 0 AFTER `role`');
         }
+        // A local assistant answers through a somcp-relay; its own tables
+        // come with installDatabase() below.
+        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($assistant) . '` LIKE "id_relay"');
+        if (!is_array($column) || $column === []) {
+            $db->execute('ALTER TABLE `' . bqSQL($assistant) . '` ADD `id_relay` INT(11) NOT NULL DEFAULT 0 AFTER `token_cap`');
+        }
     }
 
     // The chat's + menu switches deep thinking, web search and the memory for

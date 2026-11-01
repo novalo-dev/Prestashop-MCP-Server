@@ -3,6 +3,8 @@ DROP TABLE IF EXISTS `PREFIX_somcp_assistant_message`;
 DROP TABLE IF EXISTS `PREFIX_somcp_assistant_thread`;
 DROP TABLE IF EXISTS `PREFIX_somcp_assistant_usage`;
 DROP TABLE IF EXISTS `PREFIX_somcp_assistant`;
+DROP TABLE IF EXISTS `PREFIX_somcp_relay_job`;
+DROP TABLE IF EXISTS `PREFIX_somcp_relay`;
 DROP TABLE IF EXISTS `PREFIX_somcp_upload_file`;
 DROP TABLE IF EXISTS `PREFIX_somcp_upload`;
 DROP TABLE IF EXISTS `PREFIX_somcp_log`;

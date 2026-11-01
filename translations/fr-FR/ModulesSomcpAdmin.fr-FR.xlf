@@ -2577,6 +2577,146 @@
       <source>The assistant could not answer with web search on. Turn it off in the + menu, or allow web search for this key in the provider's console.</source>
       <target>L'assistant n'a pas pu répondre avec la recherche en ligne. Désactivez-la dans le menu +, ou autorisez la recherche web pour cette clé dans la console du fournisseur.</target>
     </trans-unit>
+    <!-- The relay answers. Model in use: %model%. -->
+    <trans-unit id="99ad4cd31f581ae03403e380349d7a3c" resname="The relay answers. Model in use: %model%.">
+      <source>The relay answers. Model in use: %model%.</source>
+      <target>Le relais répond. Modèle utilisé : %model%.</target>
+    </trans-unit>
+    <!-- The relay is offline, or the model no longer passes its tool test. Start somcp-relay on the computer where your AI runs, then test again. -->
+    <trans-unit id="023be195ea9be745ef17784b37eccd53" resname="The relay is offline, or the model no longer passes its tool test. Start somcp-relay on the computer where your AI runs, then test again.">
+      <source>The relay is offline, or the model no longer passes its tool test. Start somcp-relay on the computer where your AI runs, then test again.</source>
+      <target>Le relais est hors ligne, ou le modèle ne réussit plus son test des outils. Lancez somcp-relay sur l'ordinateur où tourne votre IA, puis testez à nouveau.</target>
+    </trans-unit>
+    <!-- The relay no longer offers this model, or it was unlinked. Pick a model again. -->
+    <trans-unit id="c6f784f9096f063ca9c3b0fdd873a389" resname="The relay no longer offers this model, or it was unlinked. Pick a model again.">
+      <source>The relay no longer offers this model, or it was unlinked. Pick a model again.</source>
+      <target>Le relais ne propose plus ce modèle, ou il a été délié. Choisissez à nouveau un modèle.</target>
+    </trans-unit>
+    <!-- Local assistant saved. Model in use: %model%. -->
+    <trans-unit id="fccb509a9948e50d5dc40b961398837c" resname="Local assistant saved. Model in use: %model%.">
+      <source>Local assistant saved. Model in use: %model%.</source>
+      <target>Assistant local enregistré. Modèle utilisé : %model%.</target>
+    </trans-unit>
+    <!-- Local assistant saved, but its relay is offline right now. Start somcp-relay on the computer where your AI runs. -->
+    <trans-unit id="f84d77baf5d3b36ec44ea16a893e1f46" resname="Local assistant saved, but its relay is offline right now. Start somcp-relay on the computer where your AI runs.">
+      <source>Local assistant saved, but its relay is offline right now. Start somcp-relay on the computer where your AI runs.</source>
+      <target>Assistant local enregistré, mais son relais est hors ligne pour l'instant. Lancez somcp-relay sur l'ordinateur où tourne votre IA.</target>
+    </trans-unit>
+    <!-- The local assistant could not answer. Check that somcp-relay and your AI are running on the computer, then try again. -->
+    <trans-unit id="0d31e52017d8d0402641b4d195b45880" resname="The local assistant could not answer. Check that somcp-relay and your AI are running on the computer, then try again.">
+      <source>The local assistant could not answer. Check that somcp-relay and your AI are running on the computer, then try again.</source>
+      <target>L'assistant local n'a pas pu répondre. Vérifiez que somcp-relay et votre IA tournent sur l'ordinateur, puis réessayez.</target>
+    </trans-unit>
+    <!-- Edit the local assistant -->
+    <trans-unit id="c61871447e17729d0d8496cfe4216446" resname="Edit the local assistant">
+      <source>Edit the local assistant</source>
+      <target>Modifier l'assistant local</target>
+    </trans-unit>
+    <!-- Add a local assistant -->
+    <trans-unit id="4d0ffe1074c61d8bbd305d29e7a877fc" resname="Add a local assistant">
+      <source>Add a local assistant</source>
+      <target>Ajouter un assistant local</target>
+    </trans-unit>
+    <!-- Online -->
+    <trans-unit id="54f664c70c22054ea0d8d26fc3997ce7" resname="Online">
+      <source>Online</source>
+      <target>En ligne</target>
+    </trans-unit>
+    <!-- Offline -->
+    <trans-unit id="8d9da4bc0e49a50e09ac9f7e56789d39" resname="Offline">
+      <source>Offline</source>
+      <target>Hors ligne</target>
+    </trans-unit>
+    <!-- Local -->
+    <trans-unit id="509820290d57f333403f490dde7316f4" resname="Local">
+      <source>Local</source>
+      <target>Local</target>
+    </trans-unit>
+    <!-- A local assistant answers with an AI running on your own computer: Ollama, LM Studio or any software that speaks the OpenAI API. Your conversations and your shop data go to your computer, not to an AI company, and there is no key to pay for. -->
+    <trans-unit id="605d279270e7208037ea4d4ea80b1cc3" resname="A local assistant answers with an AI running on your own computer: Ollama, LM Studio or any software that speaks the OpenAI API. Your conversations and your shop data go to your computer, not to an AI company, and there is no key to pay for.">
+      <source>A local assistant answers with an AI running on your own computer: Ollama, LM Studio or any software that speaks the OpenAI API. Your conversations and your shop data go to your computer, not to an AI company, and there is no key to pay for.</source>
+      <target>Un assistant local répond avec une IA qui tourne sur votre propre ordinateur : Ollama, LM Studio ou tout logiciel compatible avec l'API d'OpenAI. Vos conversations et les données de votre boutique vont sur votre ordinateur, pas chez une entreprise d'IA, et il n'y a aucune clé à payer.</target>
+    </trans-unit>
+    <!-- The link goes through somcp-relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network. -->
+    <trans-unit id="14fcf8a2ea071b66022c1d07f1f86bf4" resname="The link goes through somcp-relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.">
+      <source>The link goes through somcp-relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.</source>
+      <target>La liaison passe par somcp-relay, un petit programme qui tourne sur votre ordinateur et appelle votre boutique. Votre boutique ne se connecte jamais à votre ordinateur : rien n'est à ouvrir sur votre réseau.</target>
+    </trans-unit>
+    <!-- Download somcp-relay for your computer and run it. -->
+    <trans-unit id="a527463ea2400299a9386311d36001bb" resname="Download somcp-relay for your computer and run it.">
+      <source>Download somcp-relay for your computer and run it.</source>
+      <target>Téléchargez somcp-relay pour votre ordinateur et lancez-le.</target>
+    </trans-unit>
+    <!-- Download somcp-relay -->
+    <trans-unit id="face610715a7909a76f378c693eeb4e4" resname="Download somcp-relay">
+      <source>Download somcp-relay</source>
+      <target>Télécharger somcp-relay</target>
+    </trans-unit>
+    <!-- Generate a pairing code below and type it in the relay. -->
+    <trans-unit id="df98f4267691414d270ea0f571d648c9" resname="Generate a pairing code below and type it in the relay.">
+      <source>Generate a pairing code below and type it in the relay.</source>
+      <target>Générez un code d'appairage ci-dessous et saisissez-le dans le relais.</target>
+    </trans-unit>
+    <!-- In the relay, type the address of your AI and click Test. The models that can call tools then appear here. -->
+    <trans-unit id="5b5142efaa70153ba91a39248c335f43" resname="In the relay, type the address of your AI and click Test. The models that can call tools then appear here.">
+      <source>In the relay, type the address of your AI and click Test. The models that can call tools then appear here.</source>
+      <target>Dans le relais, saisissez l'adresse de votre IA et cliquez sur Tester. Les modèles capables d'appeler des outils apparaissent alors ici.</target>
+    </trans-unit>
+    <!-- Generate a pairing code -->
+    <trans-unit id="ff09e90f29f09abd0bafbf1effd2868c" resname="Generate a pairing code">
+      <source>Generate a pairing code</source>
+      <target>Générer un code d'appairage</target>
+    </trans-unit>
+    <!-- Type this code in somcp-relay with the address of this shop, or run this command on your computer: -->
+    <trans-unit id="d1b028b8a25da9719ae205d669cac276" resname="Type this code in somcp-relay with the address of this shop, or run this command on your computer:">
+      <source>Type this code in somcp-relay with the address of this shop, or run this command on your computer:</source>
+      <target>Saisissez ce code dans somcp-relay avec l'adresse de cette boutique, ou lancez cette commande sur votre ordinateur :</target>
+    </trans-unit>
+    <!-- Valid once, for %minutes% more minutes. This page refreshes on its own until the relay is linked. -->
+    <trans-unit id="5c3fa069ca899e8657d0f5a08f4bb389" resname="Valid once, for %minutes% more minutes. This page refreshes on its own until the relay is linked.">
+      <source>Valid once, for %minutes% more minutes. This page refreshes on its own until the relay is linked.</source>
+      <target>Valable une seule fois, encore %minutes% minutes. Cette page se rafraîchit seule jusqu'à ce que le relais soit lié.</target>
+    </trans-unit>
+    <!-- This code has expired. Generate a new one. -->
+    <trans-unit id="0c2649d49fe9bc003d953927dbca1018" resname="This code has expired. Generate a new one.">
+      <source>This code has expired. Generate a new one.</source>
+      <target>Ce code a expiré. Générez-en un nouveau.</target>
+    </trans-unit>
+    <!-- Generate a new code -->
+    <trans-unit id="3953b319b53db12827ef7d3ba2adfbc7" resname="Generate a new code">
+      <source>Generate a new code</source>
+      <target>Générer un nouveau code</target>
+    </trans-unit>
+    <!-- The relay of this assistant was unlinked. Remove the assistant, then add it again. -->
+    <trans-unit id="5919636ca7cd8fdb090c0bf0cb7b5b45" resname="The relay of this assistant was unlinked. Remove the assistant, then add it again.">
+      <source>The relay of this assistant was unlinked. Remove the assistant, then add it again.</source>
+      <target>Le relais de cet assistant a été délié. Supprimez l'assistant, puis ajoutez-le à nouveau.</target>
+    </trans-unit>
+    <!-- The relay is linked to %software%. -->
+    <trans-unit id="9bb9150cfeaf67b8460b443556252d0a" resname="The relay is linked to %software%.">
+      <source>The relay is linked to %software%.</source>
+      <target>Le relais est lié à %software%.</target>
+    </trans-unit>
+    <!-- The relay is linked. -->
+    <trans-unit id="f4c20f17d32cc35f815ff7d6eaed344f" resname="The relay is linked.">
+      <source>The relay is linked.</source>
+      <target>Le relais est lié.</target>
+    </trans-unit>
+    <!-- Waiting for a model that can call tools: in somcp-relay, type the address of your AI and click Test, then keep the relay running. This page refreshes on its own. -->
+    <trans-unit id="54bc8af82cb1b651cc7d8311a3e6ee61" resname="Waiting for a model that can call tools: in somcp-relay, type the address of your AI and click Test, then keep the relay running. This page refreshes on its own.">
+      <source>Waiting for a model that can call tools: in somcp-relay, type the address of your AI and click Test, then keep the relay running. This page refreshes on its own.</source>
+      <target>En attente d'un modèle capable d'appeler des outils : dans somcp-relay, saisissez l'adresse de votre IA et cliquez sur Tester, puis laissez le relais tourner. Cette page se rafraîchit seule.</target>
+    </trans-unit>
+    <!-- Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop. -->
+    <trans-unit id="6193d48aaec5db19a8859f392bda283e" resname="Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop.">
+      <source>Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop.</source>
+      <target>Seuls les modèles qui ont réussi le test des outils du relais sont proposés : un modèle incapable d'appeler des outils ne peut pas agir sur votre boutique.</target>
+    </trans-unit>
+    <!-- The model %model% no longer passes the relay tool test: pick another one. -->
+    <trans-unit id="bee69ed4e82553c23089241dba636486" resname="The model %model% no longer passes the relay tool test: pick another one.">
+      <source>The model %model% no longer passes the relay tool test: pick another one.</source>
+      <target>Le modèle %model% ne réussit plus le test des outils du relais : choisissez-en un autre.</target>
+    </trans-unit>
     </body>
   </file>
 </xliff>

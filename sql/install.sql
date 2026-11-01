@@ -218,6 +218,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     `resolved_at`    DATETIME     DEFAULT NULL,
     `role`           VARCHAR(255) NOT NULL DEFAULT '',
     `token_cap`      INT(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'tokens a month on each shop, 0 for no cap of its own',
+    `id_relay`       INT(11)      NOT NULL DEFAULT 0 COMMENT 'local assistants only: the relay that carries their requests',
     `id_shop`        INT(11)      NOT NULL DEFAULT 1,
     `id_shop_group`  INT(11)      NOT NULL DEFAULT 0,
     `active`         TINYINT(1)   NOT NULL DEFAULT 1,
@@ -226,6 +227,54 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     `date_upd`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id_assistant`),
     KEY `idx_shop` (`id_shop`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_relay - a somcp-relay program linked to the shop, which carries the
+-- requests of a local assistant to an AI running on the merchant's computer.
+-- The relay always calls the shop; the shop never reaches into the merchant's
+-- network.
+--
+-- Only hashes are looked up: `code_hash` while the pairing code is valid,
+-- `token_hash` once paired. `code` keeps the code itself, encrypted like an
+-- API key, only so the back office can show it again until it is used.
+-- `models` is what the relay last reported, JSON: id and tool test result.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_relay` (
+    `id_relay`       INT(11)      NOT NULL AUTO_INCREMENT,
+    `id_shop`        INT(11)      NOT NULL DEFAULT 1,
+    `id_shop_group`  INT(11)      NOT NULL DEFAULT 0,
+    `code_hash`      VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'sha256 of the pairing code, empty once used',
+    `code`           TEXT         NULL COMMENT 'the pairing code, encrypted, until it is used',
+    `code_expires`   DATETIME     NULL DEFAULT NULL,
+    `token_hash`     VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'sha256 of the relay token, never the token',
+    `relay_version`  VARCHAR(32)  NOT NULL DEFAULT '',
+    `relay_os`       VARCHAR(64)  NOT NULL DEFAULT '',
+    `software`       VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'the local AI the relay reported',
+    `models`         TEXT         NULL,
+    `last_seen`      DATETIME     NULL DEFAULT NULL,
+    `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id_relay`),
+    KEY `idx_code` (`code_hash`),
+    KEY `idx_token` (`token_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_relay_job - one chat request waiting for a relay, then its answer.
+-- The chat writes the request and waits; the relay takes it, has the local AI
+-- answer and posts the answer back. `job_key` is the id the relay sees, random
+-- so that one job cannot be guessed from another.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_relay_job` (
+    `id_job`         INT(11)      NOT NULL AUTO_INCREMENT,
+    `id_relay`       INT(11)      NOT NULL,
+    `job_key`        VARCHAR(64)  NOT NULL,
+    `status`         VARCHAR(8)   NOT NULL DEFAULT 'pending' COMMENT 'pending, taken, done or failed',
+    `request`        LONGTEXT     NOT NULL COMMENT 'OpenAI-compatible chat body, JSON',
+    `http_status`    INT(11)      NOT NULL DEFAULT 0,
+    `response`       LONGTEXT     NULL,
+    `error`          VARCHAR(255) NOT NULL DEFAULT '',
+    `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `date_upd`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id_job`),
+    UNIQUE KEY `uq_job_key` (`job_key`),
+    KEY `idx_relay` (`id_relay`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- somcp_assistant_usage - what each assistant consumed, per shop and calendar

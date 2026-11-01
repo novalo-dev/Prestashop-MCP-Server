@@ -100,6 +100,14 @@ class SomcpAssistant
      */
     public const IMAGE_PROVIDERS = ['gemini', 'openai'];
 
+    /**
+     * @var string The provider of a local assistant: an AI on the merchant's
+     *             computer, reached through somcp-relay. Not in providers():
+     *             it has no key, its own form, and a model picked from those
+     *             the relay found able to call tools.
+     */
+    public const LOCAL = 'local';
+
     /** @var int Seconds a resolved model is trusted before the provider is asked again. */
     private const RESOLVE_TTL = 86400;
 
@@ -167,6 +175,11 @@ class SomcpAssistant
      */
     public static function models(array $assistant): array
     {
+        if ($assistant['provider'] === self::LOCAL) {
+            $relay = SomcpRelay::get((int) $assistant['id_relay']);
+
+            return $relay !== null ? SomcpRelay::toolModels($relay) : [];
+        }
         $listed = self::listModels((string) $assistant['provider'], self::key($assistant));
         if ($listed === null) {
             return [];
@@ -363,7 +376,11 @@ class SomcpAssistant
             return;
         }
         [$idShop, $idGroup] = self::editedLevel();
+        $dropped = self::atLevel($idShop, $idGroup);
         Db::getInstance()->delete('somcp_assistant', '`id_shop` = ' . (int) $idShop . ' AND `id_shop_group` = ' . (int) $idGroup);
+        foreach ($dropped as $assistant) {
+            SomcpRelay::dropUnused((int) $assistant['id_relay']);
+        }
     }
 
     /**
@@ -524,6 +541,69 @@ class SomcpAssistant
     }
 
     /**
+     * Creates or updates a local assistant, on the relay linked for it.
+     *
+     * The model must be one the relay found able to call tools: the relay
+     * refuses any other, and the chat would only fail later.
+     *
+     * @param int $idAssistant 0 to create
+     * @param int $idRelay the relay, at the level being edited
+     * @param array{model:string, role:string, active:bool, token_cap:int} $values
+     *
+     * @return int the assistant id, 0 when the relay or the model does not fit
+     */
+    public static function saveLocal(int $idAssistant, int $idRelay, array $values): int
+    {
+        $existing = $idAssistant > 0 ? self::edited($idAssistant) : null;
+        if ($existing !== null) {
+            if ($existing['provider'] !== self::LOCAL) {
+                return 0;
+            }
+            $idRelay = (int) $existing['id_relay'];
+        }
+        $relay = SomcpRelay::get($idRelay);
+        [$idShop, $idGroup] = self::editedLevel();
+        // An existing assistant may have been copied from a level above and
+        // keep that level's relay; a new one needs a relay of this level.
+        if ($relay === null || !$relay['paired']
+            || ($existing === null && ($relay['id_shop'] !== $idShop || $relay['id_shop_group'] !== $idGroup))) {
+            return 0;
+        }
+        $model = trim($values['model']);
+        if (!in_array($model, SomcpRelay::toolModels($relay), true)) {
+            return 0;
+        }
+
+        $data = [
+            'provider' => self::LOCAL,
+            'level' => self::LEVEL_CUSTOM,
+            'model' => pSQL(Tools::substr($model, 0, 128)),
+            'role' => pSQL(Tools::substr(trim($values['role']), 0, 255)),
+            'token_cap' => max(0, (int) $values['token_cap']),
+            'active' => $values['active'] ? 1 : 0,
+            'resolved_model' => '',
+        ];
+        $db = Db::getInstance();
+        if ($existing !== null) {
+            $db->update('somcp_assistant', $data, '`id_assistant` = ' . (int) $idAssistant);
+
+            return $idAssistant;
+        }
+
+        $data['api_key'] = '';
+        $data['id_relay'] = (int) $idRelay;
+        $data['id_shop'] = $idShop;
+        $data['id_shop_group'] = $idGroup;
+        $leads = array_filter(self::atLevel($idShop, $idGroup), static function (array $other): bool {
+            return $other['level'] !== self::LEVEL_IMAGE;
+        });
+        $data['is_default'] = $leads === [] ? 1 : 0;
+        $db->insert('somcp_assistant', $data);
+
+        return (int) $db->Insert_ID();
+    }
+
+    /**
      * The key in clear of an active assistant of this shop using a provider, so
      * the memory can embed with a key the merchant already set for the chat
      * rather than ask for it twice. '' when no such assistant has a key.
@@ -558,6 +638,9 @@ class SomcpAssistant
 
         Db::getInstance()->delete('somcp_assistant', '`id_assistant` = ' . (int) $idAssistant);
         Db::getInstance()->delete('somcp_assistant_usage', '`id_assistant` = ' . (int) $idAssistant);
+        // The relay of a local assistant goes with it, and its token stops
+        // working: removing the assistant is how the merchant unlinks it.
+        SomcpRelay::dropUnused((int) $removed['id_relay']);
 
         if ($removed['is_default']) {
             [$idShop, $idGroup] = self::editedLevel();
@@ -813,6 +896,15 @@ class SomcpAssistant
      */
     public static function test(array $assistant): string
     {
+        if ($assistant['provider'] === self::LOCAL) {
+            // A relay stopped for the night is not a dead key: the assistant
+            // stays on and answers again once the relay runs.
+            $relay = SomcpRelay::get((int) $assistant['id_relay']);
+
+            return $relay !== null && SomcpRelay::online($relay) && in_array($assistant['model'], SomcpRelay::toolModels($relay), true)
+                ? (string) $assistant['model']
+                : '';
+        }
         if (self::listModels((string) $assistant['provider'], self::key($assistant)) === null) {
             // A key the provider refuses would only surface on the first
             // message. The assistant is switched off instead, so it never
@@ -1089,12 +1181,26 @@ class SomcpAssistant
     {
         $providers = self::providers();
         $provider = (string) $row['provider'];
+        $idRelay = (int) ($row['id_relay'] ?? 0);
+        $label = $providers[$provider]['label'] ?? $provider;
+        $online = false;
+        if ($provider === self::LOCAL) {
+            // Named after the AI the relay reaches - Ollama, LM Studio - and
+            // after its model until the relay said which one it is.
+            $relay = SomcpRelay::get($idRelay);
+            $label = $relay !== null && $relay['software'] !== '' ? $relay['software'] : (string) $row['model'];
+            $online = $relay !== null && SomcpRelay::online($relay);
+        }
 
         return [
             'id_assistant' => (int) $row['id_assistant'],
             'provider' => $provider,
-            'label' => $providers[$provider]['label'] ?? $provider,
-            'has_key' => (string) $row['api_key'] !== '',
+            'label' => $label,
+            // A local assistant has no key: its relay stands for one.
+            'has_key' => (string) $row['api_key'] !== '' || ($provider === self::LOCAL && $idRelay > 0),
+            'local' => $provider === self::LOCAL,
+            'id_relay' => $idRelay,
+            'online' => $online,
             'level' => (string) $row['level'],
             'model' => (string) $row['model'],
             'resolved_model' => (string) $row['resolved_model'],

@@ -126,6 +126,20 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     margin-left: 6px;
 }
 
+/* Read aloud or copied by hand into the relay: big enough to read from a
+   step back, and in a font where letters and digits cannot be mistaken. */
+.somcp .somcp-relay-code code {
+    display: inline-block;
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 28px;
+    letter-spacing: 4px;
+    padding: 6px 14px;
+}
+
+.somcp #somcp-relay-command {
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
 .somcp .somcp-endpoint input[readonly] {
     font-family: "SFMono-Regular", Menlo, Consolas, monospace;
     background: #fff;

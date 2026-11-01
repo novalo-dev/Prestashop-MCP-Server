@@ -44,6 +44,7 @@ use NeuronAI\Providers\Gemini\Gemini;
 use NeuronAI\Providers\Mistral\Mistral;
 use NeuronAI\Providers\OpenAI\Image\OpenAIImage;
 use NeuronAI\Providers\OpenAI\OpenAI;
+use NeuronAI\Providers\OpenAILike;
 use NeuronAI\Providers\XAI\Grok;
 use NeuronAI\RAG\RAG;
 use NeuronAI\Tools\ApprovalState;
@@ -1193,6 +1194,10 @@ class SomcpAssistantChat
                 (int) $this->employee->id
             );
 
+            if ($assistant['provider'] === SomcpAssistant::LOCAL) {
+                return self::t('The local assistant could not answer. Check that somcp-relay and your AI are running on the computer, then try again.');
+            }
+
             // Claude searches the web only once the account allows it in its
             // console: a refusal then reads like a bad key, which it is not.
             if ($assistant['provider'] === 'anthropic' && $this->switches($thread, $assistant)['web']) {
@@ -1748,8 +1753,16 @@ class SomcpAssistantChat
         // nothing logged, and the run stayed held until its lease ran out.
         // A wait that ends inside PHP's time fails as an error instead, which
         // is logged, told to the employee and frees the conversation.
-        return $this->connect($assistant, $delegated, $think)
-            ->setHttpClient(new CurlHttpClient([], self::providerTimeout()));
+        $provider = $this->connect($assistant, $delegated, $think);
+        if ($assistant['provider'] === SomcpAssistant::LOCAL) {
+            // A local assistant is reached through its relay, which waits on
+            // the same clock as any provider.
+            require_once _PS_MODULE_DIR_ . 'somcp/classes/SomcpRelayClient.php';
+
+            return $provider->setHttpClient(new SomcpRelayClient((int) $assistant['id_relay'], self::providerTimeout()));
+        }
+
+        return $provider->setHttpClient(new CurlHttpClient([], self::providerTimeout()));
     }
 
     /**
@@ -1828,6 +1841,11 @@ class SomcpAssistantChat
                 return new Grok($key, $model);
             case 'cohere':
                 return new Cohere($key, $model);
+            case SomcpAssistant::LOCAL:
+                // Ollama, LM Studio and the others speak OpenAI's API. The
+                // address is never called: the relay client hands the body to
+                // the relay, which calls the address typed on the computer.
+                return new OpenAILike('http://relay.invalid/v1', '', $model);
             default:
                 // The thinking counts against max_tokens, so the answer gets
                 // more room when it is on.

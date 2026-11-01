@@ -59,7 +59,10 @@ us. See [Where to help](#where-to-help).
   [DeepSeek](https://platform.deepseek.com/api_keys),
   [Grok](https://console.x.ai) or
   [Cohere](https://dashboard.cohere.com/api-keys) - each link opens the page
-  where that provider gives out keys. It uses the same tools, with the rights of the employee
+  where that provider gives out keys - or with an AI running on the merchant's
+  own computer, such as Ollama or LM Studio, linked through
+  [somcp-relay](https://github.com/novalo-dev/Somcp-Relay) with no key and
+  nothing opened on their network. It uses the same tools, with the rights of the employee
   signed in, and asks for approval before any change. Several assistants can
   share the work by role. Each conversation can switch on deep thinking
   (Claude, Gemini, OpenAI's reasoning models) and web search (Claude and

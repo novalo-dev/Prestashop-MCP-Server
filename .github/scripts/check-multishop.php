@@ -46,6 +46,7 @@ $children = [
     'somcp_upload_file' => 'somcp_upload',
     'somcp_assistant_message' => 'somcp_assistant_thread',
     'somcp_assistant_run' => 'somcp_assistant_thread',
+    'somcp_relay_job' => 'somcp_relay',
 ];
 
 // The built-in assistant's merchant settings. Each is something the merchant

@@ -34,7 +34,9 @@ declare(strict_types=1);
  * The name goes through Feature::update() in the shop of the token, as the
  * core's EditFeatureHandler does, so the object hooks fire. The faceted search
  * fields come after, written the way the module's form writes them, since the
- * module reads them from the form's request only.
+ * module reads them from the form's request only. A new position comes last,
+ * through Feature::updatePosition(), where the drag and drop of the back
+ * office list ends, so the other features shift as they do there.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -48,7 +50,7 @@ require_once __DIR__ . '/SomcpToolCreateFeature.php';
 class SomcpToolUpdateFeature extends SomcpToolCreateFeature
 {
     /** @var array<int, string> What this tool takes besides the fields of the creation. */
-    private const OWN_ARGUMENTS = ['id_feature'];
+    private const OWN_ARGUMENTS = ['id_feature', 'position'];
 
     /**
      * @return SomcpTool
@@ -62,7 +64,8 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
                 . 'somcp_create_feature can write can be changed here, under the same names and with the same '
                 . 'rules - who fills each field, lengths, forbidden characters: name, and the faceted search '
                 . 'fields url_name, meta_title and indexable when the faceted search module is installed and '
-                . 'enabled. Only what is given changes: a value left out is kept, a text is replaced in the '
+                . 'enabled. position moves the feature in the list of features, from 0 as somcp_get_feature '
+                . 'gives it; the others shift. Only what is given changes: a value left out is kept, a text is replaced in the '
                 . 'languages filled and kept in the others. When languages is left out every language of the '
                 . 'shop is filled, so a text must then be given in each; to change one language, pass languages '
                 . 'with it alone. '
@@ -107,6 +110,12 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
         }
         $properties['indexable']['description'] = 'Merchant. Faceted search: whether filtered pages on this '
             . 'feature are open to search engines.' . $kept;
+
+        $properties['position'] = [
+            'type' => 'integer',
+            'description' => 'Merchant. The place among the features, from 0 as somcp_get_feature gives it (the '
+                . 'back office list shows it plus 1); the others shift.' . $kept,
+        ];
 
         $schema['properties'] = [
             'id_feature' => ['type' => 'integer', 'description' => 'The feature to change, from somcp_list_features.'],
@@ -195,10 +204,15 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
             'changes' => [],
             'names' => null,
             'faceted_rows' => null,
+            // null until given: the feature keeps its place otherwise.
+            'position' => null,
         ];
 
         self::featureNames($arguments, $languages, new Feature(), $plan, $errors, false);
         self::facetedFields($arguments, $languages, $plan, $errors);
+        if (array_key_exists('position', $arguments)) {
+            self::planPosition($arguments['position'], $plan, $errors);
+        }
 
         if ($errors !== []) {
             return $plan;
@@ -222,7 +236,31 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
     }
 
     /**
-     * Keeps the names and faceted search fields that differ from the shop, and records each one.
+     * The new place of the feature, checked against how many features there are.
+     *
+     * Features have one order for the whole installation, the one the back
+     * office list shows, so every feature counts, whatever its shop.
+     *
+     * @param mixed $value
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    private static function planPosition($value, array &$plan, array &$errors): void
+    {
+        $last = (int) Db::getInstance()->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'feature`') - 1;
+        $position = self::integer($value);
+        if ($position === null || $position < 0 || $position > $last) {
+            $errors[] = 'position: a whole number from 0 to ' . $last . ', the place among the features';
+
+            return;
+        }
+        $plan['position'] = $position;
+    }
+
+    /**
+     * Keeps the names, faceted search fields and position that differ from the shop, and records each one.
      *
      * @param Feature $feature loaded in every language
      * @param array<string, mixed> $plan
@@ -248,6 +286,15 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
             }
             if ($merged !== $current) {
                 $plan['names'] = $merged;
+            }
+        }
+
+        if ($plan['position'] !== null) {
+            $oldPosition = (int) $feature->position;
+            if ($oldPosition === $plan['position']) {
+                $plan['position'] = null;
+            } else {
+                self::record($plan, 'position', $oldPosition, $plan['position']);
             }
         }
 
@@ -386,6 +433,28 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
             // The module's filter blocks carry the feature's name, and its own
             // form drops them on every save, a rename included.
             self::dropFacetedCache();
+        }
+
+        if ($plan['position'] !== null) {
+            // The core moves the feature from its own identifier, so no value
+            // of the list's request has to be handed over.
+            $failure = SomcpCatalog::movePosition($feature, (int) $feature->position, (int) $plan['position']);
+            if ($failure !== '') {
+                SomcpLogger::log(
+                    'feature_update_failed',
+                    SomcpLogger::OUTCOME_FAILURE,
+                    'feature ' . $idFeature . ' position: ' . Tools::substr($failure, 0, 500),
+                    '',
+                    $idEmployee
+                );
+
+                return SomcpTool::text(
+                    'The feature could not be moved to position ' . (int) $plan['position'] . ': ' . $failure
+                        . '. The other changes of this call may be saved. Read the feature again with '
+                        . 'somcp_get_feature, tell the merchant what it holds now, and do not call again before.',
+                    true
+                );
+            }
         }
 
         SomcpLogger::log(

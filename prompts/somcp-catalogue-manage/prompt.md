@@ -567,6 +567,9 @@ creates a second feature.
    `url_name`, `meta_title` and `indexable` out: they are refused.
 3. A new name shows on every product that carries the feature: tell the
    merchant before calling.
+4. To reorder the features, give `position`, the new place from 0 as
+   `somcp_get_feature` gives it: the other features shift, as with the drag
+   and drop of the back office list.
 
 When it succeeds, show the merchant each change with its old and new value.
 `changed: false` means the feature already held those values. On a lost

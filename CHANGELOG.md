@@ -77,6 +77,12 @@ each other. The prompt **Change an order status** names it too.
 
 ### Changed
 
+**Features can be reordered.** The order of the features - the drag and
+drop of **Catalog > Attributes & Features > Features** - could not be changed
+by the assistant: `somcp_update_feature` refused `position`. It now takes it,
+moves the feature to that place and shifts the others as the list does, and
+the answer gives the old and the new place.
+
 **Attribute values can be reordered.** The order of the values of an
 attribute - the drag and drop of its list of values in **Catalog > Attributes &
 Features > Attributes** - could not be changed by the assistant:

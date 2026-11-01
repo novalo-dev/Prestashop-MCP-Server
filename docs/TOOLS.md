@@ -1919,13 +1919,14 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 
 **Do not use for** - creating one (→ `somcp_create_feature`).
 
-**Parameters** - `id_feature` (required), `languages`, then the fields of `somcp_create_feature`, all optional. A text given replaces the languages given and keeps the others.
+**Parameters** - `id_feature` (required), `languages`, then the fields of `somcp_create_feature`, all optional. A text given replaces the languages given and keeps the others. `position` (merchant) is the place among the features, from 0 as `somcp_get_feature` gives it (the back office list shows it plus 1), refused outside 0 to the number of features minus 1; left out, the feature keeps its place.
 
 **Returns** - `changed`, `id_feature`, `changes` (per field its old and new value, a text per language: `name (en)`), and `feature`, the feature as `somcp_get_feature` returns it. `faceted_search` appears only when the faceted search rows could not be written while the name did change. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
 **Notes**
 - Renaming a feature renames it on every product that carries it, which the assistant tells the merchant before the call.
 - The name is written through `Feature::update()` in the shop of the token (`id_shop_list`), as the core's `EditFeatureHandler` does, so the object hooks fire. A language not filled keeps its name.
+- `position` is written last with `Feature::updatePosition()`, where the drag and drop of the back office list ends, so the other features shift as there; `changes` records the old and new place. It goes through the shared `SomcpCatalog::movePosition()`, as for attribute groups and values; the core moves the feature from its own identifier, so no value of the list's request is handed over.
 - Faceted search fields left out keep what the feature holds, `indexable` included: unlike the creation, it is not turned off when missing. When one of them changes, the rows are written again as the module's form writes them, every language of the shop with its stored text unless a new one was given. A feature whose form was never saved with the module reads as empty texts and not indexable, as `somcp_get_feature` shows it. The module's filter block cache is dropped after any change, a rename included, as its form does.
 - Every problem is reported at once, before anything is written.
 - Replayable: the same values again say `changed: false`. On a lost answer, read `somcp_get_feature` before calling again.

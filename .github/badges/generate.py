@@ -94,6 +94,7 @@ BADGES = {
     "license":    dict(label="license", message="AFL-3.0", colour="#007EC6"),
     "version":    dict(label="version", message="1.0.0", colour="#4C1"),
     "prs":        dict(label="PRs", message="welcome", colour="#4C1"),
+    "docs":       dict(label="docs", message="wiki", colour="#007EC6"),
 }
 
 out = os.path.join(os.path.dirname(os.path.abspath(__file__)))

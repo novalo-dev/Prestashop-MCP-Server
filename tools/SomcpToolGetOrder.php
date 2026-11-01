@@ -47,11 +47,13 @@ class SomcpToolGetOrder
             'Returns everything about one order of this shop, as its page in the back office shows '
                 . 'it: the order note, the cart it came from, gift wrapping and gift message, recycled '
                 . 'packaging; the customer, how to reach them, their valid orders and total spent, and '
-                . 'the private note on them; both addresses; every product line with its quantity, '
-                . 'prices, tax rate, identifiers (EAN-13, ISBN, UPC, MPN, supplier reference), stock '
-                . 'location, quantity in stock now, refunded and returned quantities and '
-                . 'customizations; discounts; each shipment with its carrier, weight, cost and '
-                . 'tracking number; payments received; the current status and how it got there; the '
+                . 'the private note on them; both addresses with their identifier, alias and region; '
+                . 'every product line with its id_order_detail, quantity, prices, tax rate, identifiers '
+                . '(EAN-13, ISBN, UPC, MPN, supplier reference), stock location, quantity in stock now, '
+                . 'refunded and returned quantities, customizations and, for a pack, the products in '
+                . 'it; discounts with their id_order_cart_rule; each shipment with its carrier, weight, cost and '
+                . 'tracking number; payments received; the current status and how it got there, each '
+                . 'step with its id_order_history; the '
                 . 'invoices, delivery slips and credit slips it produced; the messages exchanged, each '
                 . 'saying whether the shop or the customer wrote it; and the totals. Identify the order '
                 . 'by its identifier or its reference. '
@@ -116,7 +118,7 @@ class SomcpToolGetOrder
                 'delivery' => self::address((int) $order->id_address_delivery, $idLang),
                 'invoice' => self::address((int) $order->id_address_invoice, $idLang),
             ],
-            'products' => self::products($order, $idLang),
+            'products' => self::products($order, $idLang, (int) $order->id_shop),
             'discounts' => self::discounts($order),
             'shipping' => self::shipping($order, $idLang),
             'totals' => self::totals($order),
@@ -300,8 +302,14 @@ class SomcpToolGetOrder
         }
 
         $country = new Country((int) $address->id_country, $idLang);
+        // The region is printed in the address blocks of the order page.
+        $state = (int) $address->id_state > 0 ? State::getNameById((int) $address->id_state) : '';
 
         return [
+            // What the address tools and the change of address of an order
+            // point to; the alias is what the select of the page shows on 9.
+            'id_address' => (int) $address->id,
+            'alias' => (string) $address->alias,
             'firstname' => (string) $address->firstname,
             'lastname' => (string) $address->lastname,
             'company' => (string) $address->company,
@@ -309,10 +317,12 @@ class SomcpToolGetOrder
             'address2' => (string) $address->address2,
             'postcode' => (string) $address->postcode,
             'city' => (string) $address->city,
+            'state' => is_string($state) ? $state : '',
             'country' => Validate::isLoadedObject($country) ? (string) $country->name : '',
             'phone' => (string) $address->phone,
             'phone_mobile' => (string) $address->phone_mobile,
             'vat_number' => (string) $address->vat_number,
+            'dni' => (string) $address->dni,
             'other' => (string) $address->other,
         ];
     }
@@ -320,10 +330,11 @@ class SomcpToolGetOrder
     /**
      * @param Order $order
      * @param int $idLang
+     * @param int $idShop
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function products(Order $order, int $idLang): array
+    private static function products(Order $order, int $idLang, int $idShop): array
     {
         $lines = [];
         // getProducts() already adds what the Products table of the order page
@@ -331,6 +342,9 @@ class SomcpToolGetOrder
         // stock now (current_stock), and the customizations of the line.
         foreach ($order->getProducts() as $product) {
             $lines[] = [
+                // The line itself: refunds, returns and cancellations name
+                // the line they act on with it.
+                'id_order_detail' => (int) $product['id_order_detail'],
                 'id_product' => (int) $product['product_id'],
                 'id_product_attribute' => (int) $product['product_attribute_id'],
                 'reference' => (string) $product['product_reference'],
@@ -358,10 +372,43 @@ class SomcpToolGetOrder
                 'total_tax_excluded' => (float) $product['total_price_tax_excl'],
                 'total_tax_included' => (float) $product['total_price_tax_incl'],
                 'customizations' => self::customizations($product),
+                'pack_items' => self::packItems((int) $product['product_id'], $idLang, $idShop),
             ];
         }
 
         return $lines;
+    }
+
+    /**
+     * The products in the pack of one line, as the Products in pack window of
+     * the order page lists them, and nothing for any other product.
+     *
+     * The pack is read as it is now, like that window does: the order keeps
+     * no copy of its content.
+     *
+     * @param int $idProduct
+     * @param int $idLang
+     * @param int $idShop
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function packItems(int $idProduct, int $idLang, int $idShop): array
+    {
+        if ($idProduct <= 0 || !Pack::isPack($idProduct)) {
+            return [];
+        }
+
+        $items = [];
+        foreach (SomcpToolGetProduct::packItems($idProduct, $idLang, $idShop) as $item) {
+            $item['quantity_in_stock_now'] = (int) StockAvailable::getQuantityAvailableByProduct(
+                (int) $item['id_product'],
+                (int) $item['id_product_attribute'],
+                $idShop
+            );
+            $items[] = $item;
+        }
+
+        return $items;
     }
 
     /**
@@ -415,9 +462,13 @@ class SomcpToolGetOrder
         $discounts = [];
         foreach ($order->getCartRules() as $rule) {
             $discounts[] = [
+                // What removing a discount from the order points to.
+                'id_order_cart_rule' => (int) $rule['id_order_cart_rule'],
+                'id_order_invoice' => (int) $rule['id_order_invoice'],
                 'name' => (string) $rule['name'],
                 'value_tax_included' => (float) $rule['value'],
                 'value_tax_excluded' => (float) $rule['value_tax_excl'],
+                'free_shipping' => (bool) $rule['free_shipping'],
             ];
         }
 
@@ -573,6 +624,9 @@ class SomcpToolGetOrder
         $history = [];
         foreach ($order->getHistory($idLang) as $step) {
             $history[] = [
+                // The Resend email action of each line of the Status tab
+                // points to it.
+                'id_order_history' => (int) $step['id_order_history'],
                 'date' => (string) $step['date_add'],
                 'status' => (string) $step['ostate_name'],
                 'status_id' => (int) $step['id_order_state'],

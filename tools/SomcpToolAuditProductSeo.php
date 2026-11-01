@@ -458,26 +458,15 @@ class SomcpToolAuditProductSeo
      */
     public static function languages(array $arguments, int $idShop): ?array
     {
-        $all = [];
-        foreach (Language::getLanguages(true, $idShop) as $language) {
-            $all[(int) $language['id_lang']] = (string) $language['iso_code'];
-        }
+        $all = SomcpTool::activeLanguages($idShop);
 
         if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
             return $all !== [] ? $all : null;
         }
-        if (!is_string($arguments['language'])) {
-            return null;
-        }
+        // One language asked for: the same lookup as every read tool.
+        $language = SomcpTool::readLanguage($arguments, $idShop);
 
-        $iso = Tools::strtolower(trim($arguments['language']));
-        foreach ($all as $idLang => $code) {
-            if (Tools::strtolower($code) === $iso) {
-                return [$idLang => $code];
-            }
-        }
-
-        return null;
+        return $language === null ? null : [$language[0] => $language[1]];
     }
 
     /**

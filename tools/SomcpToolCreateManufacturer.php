@@ -90,8 +90,8 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
                 . 'one text, the same in every language. Lengths count the visible text, spaces included, HTML '
                 . 'tags not counted. '
                 . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'The logo is downloaded by the shop from a public https address; one that cannot be fetched is '
-                . 'reported in logo and does not stop the creation. '
+                . 'The logo is given by url or by upload_ref; one that cannot be had is reported in logo and does '
+                . 'not stop the creation. '
                 . 'Do not use it to change a brand, which is somcp_update_manufacturer, or to enable or disable '
                 . 'one, which is somcp_set_manufacturer_active. One brand per call: for several, call it once per '
                 . 'brand and report each result. '
@@ -141,11 +141,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
                 'meta_description' => $text('Assistant. 512 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_keywords' => $text('Assistant. PrestaShop 8 only, refused on 9, which dropped them. '
                     . '5 keywords at most, comma separated, without < > = { }.'),
-                'logo' => [
-                    'type' => 'string',
-                    'description' => 'Merchant. Public https address of the logo. Downloaded by the shop: no '
-                        . 'redirect, 10 MB at most, JPEG, PNG, GIF or WebP.',
-                ],
+                'logo' => self::imageSchema('Merchant. The logo.', 'the logo'),
                 'active' => [
                     'type' => 'boolean',
                     'description' => 'Merchant. Enabled on the storefront; true by default.',
@@ -216,7 +212,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
                 'active' => true,
             ],
             'texts' => [],
-            'logo' => self::logoUrl($arguments, $errors),
+            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
         ];
 
         if (array_key_exists('active', $arguments)) {
@@ -288,29 +284,6 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
     }
 
     /**
-     * The logo address, checked for shape only: it is fetched once the brand exists.
-     *
-     * @param array<string, mixed> $arguments
-     * @param array<int, string> $errors
-     *
-     * @return string|null null when not given
-     */
-    protected static function logoUrl(array $arguments, array &$errors): ?string
-    {
-        if (!array_key_exists('logo', $arguments)) {
-            return null;
-        }
-        $url = self::string($arguments['logo']);
-        if ($url === null || trim($url) === '') {
-            $errors[] = 'logo: a public https address';
-
-            return null;
-        }
-
-        return trim($url);
-    }
-
-    /**
      * Writes the brand, then its logo, and answers with what was stored.
      *
      * @param array<string, mixed> $plan
@@ -364,7 +337,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
         }
 
         $idManufacturer = (int) $manufacturer->id;
-        $logo = $plan['logo'] === null ? null : self::storeLogo($idManufacturer, (string) $plan['logo']);
+        $logo = $plan['logo'] === null ? null : self::storeLogo($idManufacturer, $plan['logo']);
 
         SomcpLogger::log(
             'manufacturer_created',
@@ -389,13 +362,13 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      * The logo downloaded, checked and written where the core's uploader writes it.
      *
      * @param int $idManufacturer
-     * @param string $url
+     * @param array{url: string, upload_ref: string} $source
      *
-     * @return array<string, mixed> the address, with stored: true or the reason it was refused
+     * @return array<string, mixed> the url or upload_ref, with stored: true or the reason it was refused
      */
-    protected static function storeLogo(int $idManufacturer, string $url): array
+    protected static function storeLogo(int $idManufacturer, array $source): array
     {
-        return self::storeLogoIn($idManufacturer, $url, _PS_MANU_IMG_DIR_, 'manufacturers', 'manufacturer_mini_');
+        return self::storeLogoIn($idManufacturer, $source, _PS_MANU_IMG_DIR_, 'manufacturers', 'manufacturer_mini_');
     }
 
     /**
@@ -403,29 +376,28 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      * supplier uploaders write theirs.
      *
      * Those two uploaders differ only by folder, image types and cached copy,
-     * so one download path serves both: a second copy would be a second place
-     * to forget one of its checks.
+     * so one path serves both, and the file itself comes from fetchImage(),
+     * as every other image does: a second copy would be a second place to
+     * forget one of its checks.
      *
      * @param int $id the brand or supplier
-     * @param string $url
+     * @param array{url: string, upload_ref: string} $source
      * @param string $directory where the uploader writes, _PS_MANU_IMG_DIR_ or _PS_SUPP_IMG_DIR_
      * @param string $for the image types to make: manufacturers or suppliers
      * @param string $miniPrefix the name of the copy the back office list keeps in the image cache
      *
-     * @return array<string, mixed> the address, with stored: true or the reason it was refused
+     * @return array<string, mixed> the url or upload_ref, with stored: true or the reason it was refused
      */
-    protected static function storeLogoIn(int $id, string $url, string $directory, string $for, string $miniPrefix): array
+    protected static function storeLogoIn(int $id, array $source, string $directory, string $for, string $miniPrefix): array
     {
+        $origin = self::imageOrigin($source);
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($file === false) {
-            return ['url' => $url, 'refused' => 'the shop has no room to receive it'];
+            return $origin + ['refused' => 'the shop has no room to receive it'];
         }
 
         try {
-            $refusal = self::download($url, $file);
-            if ($refusal === '') {
-                $refusal = self::checkImage($file);
-            }
+            $refusal = self::fetchImage($source, $file);
             if ($refusal === '') {
                 // ManufacturerImageUploader and SupplierImageUploader: the
                 // original as <id>.jpg, then one file per image type.
@@ -446,7 +418,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
             @unlink($file);
         }
 
-        return ['url' => $url] + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
+        return $origin + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
     }
 
     /**

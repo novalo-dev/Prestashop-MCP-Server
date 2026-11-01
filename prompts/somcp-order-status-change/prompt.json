@@ -7,7 +7,9 @@
   "tools": [
     "somcp_ping",
     "somcp_list_order_statuses",
+    "somcp_create_order_status",
     "somcp_list_return_statuses",
+    "somcp_list_carriers",
     "somcp_create_return_status",
     "somcp_update_return_status",
     "somcp_get_order",

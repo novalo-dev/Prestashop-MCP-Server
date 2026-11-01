@@ -305,12 +305,30 @@
             follow();
         });
 
-        // The sponsor window. The header button opens it from its own onclick
-        // (PrestaShop prints that one, and offers no other hook into the
-        // header); here it only learns to close. Escape and a click on the
-        // backdrop close it too, as anyone expects of a window that only says
+        // The sponsor window. The Support us button of the page header is
+        // drawn by PrestaShop, which rewrites its id and class and offers no
+        // hook of its own, so a click is caught by the address it leads to -
+        // the one the window's own button carries, which is left alone. A
+        // browser without dialogs follows the link. Escape and a click on the
+        // backdrop close it, as anyone expects of a window that only says
         // thank you.
         document.querySelectorAll('[data-somcp-sponsor]').forEach(function (dialog) {
+            var own = dialog.querySelector('a[href]');
+            var url = own ? own.getAttribute('href') : '';
+            if (url && typeof dialog.showModal === 'function') {
+                document.addEventListener('click', function (event) {
+                    var link = event.target.closest ? event.target.closest('a[href]') : null;
+                    if (!link || dialog.contains(link) || link.getAttribute('href') !== url) {
+                        return;
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!dialog.open) {
+                        dialog.showModal();
+                    }
+                }, true);
+            }
+
             dialog.querySelectorAll('[data-somcp-sponsor-close]').forEach(function (button) {
                 button.addEventListener('click', function () {
                     dialog.close();

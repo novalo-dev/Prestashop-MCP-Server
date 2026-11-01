@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "lists every carrier of the demo shop, enabled or not, in the order of the back office list", "arguments": {}, "expect": "ok", "contains": ["\"carriers\"", "\"id_carrier\": 1", "\"id_reference\"", "\"name\": \"My carrier\"", "\"delay\"", "\"active\": true", "\"active\": false", "\"is_free\"", "\"position\": 0", "\"logo\"", "\"tracking_url\"", "\"external_module\": null", "\"count\"", "\"language\": \"en\""]},
+    {"why": "disabled carriers only", "arguments": {"active": false}, "expect": "ok", "contains": ["\"active\": false"]},
+    {"why": "enabled carriers only", "arguments": {"active": true}, "expect": "ok", "contains": ["\"name\": \"My carrier\"", "\"active\": true"]},
+    {"why": "free carriers only", "arguments": {"is_free": true}, "expect": "ok", "contains": ["\"is_free\": true"]},
+    {"why": "finds a carrier by part of its name, whatever the case", "arguments": {"name": "MY CARR"}, "expect": "ok", "contains": ["\"name\": \"My carrier\""]},
+    {"why": "the delay read in a language the shop has, said by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a name no carrier carries gives an empty list", "arguments": {"name": "no such carrier"}, "expect": "ok", "contains": ["\"carriers\": []", "\"count\": 0"]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+  ]
+}

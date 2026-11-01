@@ -8,7 +8,9 @@ of it can be undone by calling again.
 
 - `somcp_ping`
 - `somcp_list_order_statuses`
+- `somcp_create_order_status`
 - `somcp_list_return_statuses`
+- `somcp_list_carriers`
 - `somcp_create_return_status`
 - `somcp_update_return_status`
 - `somcp_get_order`
@@ -63,6 +65,10 @@ status change: it never moves the order to shipped, and
 - An empty number (`""`) removes it without any email. Only when the merchant
   asked for that.
 - The carrier of the shipment is never changed here.
+- To know which carrier a parcel goes with, or what tracking link the
+  customer will get, read `somcp_list_carriers`: its `tracking_url` holds `@`
+  where the number goes. An order keeps the `id_carrier` it was placed with,
+  which may be an older row of the carrier: match it on `id_reference`.
 
 When the merchant says an order has left with its number, set the number
 first, then the shipped status: the shipped email then carries the tracking
@@ -108,6 +114,24 @@ wants it.
 - When the order has an invoice, `id_order_invoice` is required: take it from
   `documents.invoices` of `somcp_get_order`, never guess it.
 - A refund is not a negative payment: it is refused.
+
+## A new order status
+
+When the merchant wants a status the shop does not have yet, create it
+with `somcp_create_order_status`: the name in the languages being filled,
+the boxes that say what reaching it sets off, and a colour, an icon or an
+email template when they ask for them.
+
+- A new status is only needed when none of the existing ones plays the
+  role. List them first with `somcp_list_order_statuses` and match on the
+  role, as in the workflow above: most "we need a new status" requests
+  end at an existing one under another name.
+- A name another order status already has in the same language is
+  refused: two statuses with one label could not be told apart.
+- Creating one changes no order: nothing is emailed and nothing moves
+  until an order is actually set to it.
+- Not to be retried: if the answer is lost, read
+  `somcp_list_order_statuses` and look for the name before anything else.
 
 ## A new return status
 

@@ -35,7 +35,9 @@ declare(strict_types=1);
  * the token, as the core's EditAttributeGroupHandler does, so the object hooks
  * fire and update() keeps the colour flag in step with the type. The faceted
  * search fields come after, written the way the module's form writes them,
- * since the module reads them from the form's request only.
+ * since the module reads them from the form's request only. A new position
+ * comes last, through AttributeGroup::updatePosition(), where the drag and drop
+ * of the back office list ends, so the other groups shift as they do there.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -49,7 +51,7 @@ require_once __DIR__ . '/SomcpToolCreateAttributeGroup.php';
 class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
 {
     /** @var array<int, string> What this tool takes besides the fields of the creation. */
-    private const OWN_ARGUMENTS = ['id_attribute_group'];
+    private const OWN_ARGUMENTS = ['id_attribute_group', 'position'];
 
     /**
      * @return SomcpTool
@@ -64,7 +66,8 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
                 . 'same rules - who fills each field, lengths, forbidden characters: name (the one the back office '
                 . 'lists), public_name (the one customers see on the product page), group_type (select, radio or '
                 . 'color), and the faceted search fields url_name, meta_title and indexable when the faceted '
-                . 'search module is installed and enabled. Only what is given changes: a value left out is kept, a '
+                . 'search module is installed and enabled. position moves the group in the list of attribute '
+                . 'groups, from 0 as somcp_get_attribute_group gives it; the others shift. Only what is given changes: a value left out is kept, a '
                 . 'text is replaced in the languages filled and kept in the others. When languages is left out '
                 . 'every language of the shop is filled, so a text must then be given in each; to change one '
                 . 'language, pass languages with it alone. '
@@ -115,6 +118,12 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
         }
         $properties['indexable']['description'] = 'Merchant. Faceted search: whether filtered pages on this '
             . 'group are open to search engines.' . $kept;
+
+        $properties['position'] = [
+            'type' => 'integer',
+            'description' => 'Merchant. The place among the attribute groups, from 0 as somcp_get_attribute_group '
+                . 'gives it (the back office list shows it plus 1); the others shift.' . $kept,
+        ];
 
         $schema['properties'] = [
             'id_attribute_group' => [
@@ -213,6 +222,8 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
             'object' => [],
             'faceted_rows' => null,
             'colours_unused' => false,
+            // null until given: the group keeps its place otherwise.
+            'position' => null,
         ];
 
         foreach (array_keys(self::GROUP_TEXT_MAX) as $field) {
@@ -220,6 +231,9 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
         }
         self::groupType($arguments, $plan, $errors, false);
         self::facetedFields($arguments, $languages, $plan, $errors);
+        if (array_key_exists('position', $arguments)) {
+            self::planPosition($arguments['position'], $plan, $errors);
+        }
 
         if ($errors !== []) {
             return $plan;
@@ -240,6 +254,30 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
         }
 
         return $plan;
+    }
+
+    /**
+     * The new place of the group, checked against how many groups there are.
+     *
+     * Attribute groups have one order for the whole installation, the one
+     * the back office list shows, so every group counts, whatever its shop.
+     *
+     * @param mixed $value
+     * @param array<string, mixed> $plan
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    private static function planPosition($value, array &$plan, array &$errors): void
+    {
+        $last = (int) Db::getInstance()->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'attribute_group`') - 1;
+        $position = self::integer($value);
+        if ($position === null || $position < 0 || $position > $last) {
+            $errors[] = 'position: a whole number from 0 to ' . $last . ', the place among the attribute groups';
+
+            return;
+        }
+        $plan['position'] = $position;
     }
 
     /**
@@ -302,6 +340,15 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
             // The values keep their colour and texture, as in the back office;
             // the product page simply stops drawing them as swatches.
             $plan['colours_unused'] = $oldType === 'color';
+        }
+
+        if ($plan['position'] !== null) {
+            $oldPosition = (int) $group->position;
+            if ($oldPosition === $plan['position']) {
+                $plan['position'] = null;
+            } else {
+                self::record($plan, 'position', $oldPosition, $plan['position']);
+            }
         }
 
         $given = isset($plan['texts']['url_name']) || isset($plan['texts']['meta_title']) || $plan['indexable'] !== null;
@@ -445,6 +492,33 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
             // The module's filter blocks carry the group's name, and its own
             // form drops them on every save, a rename included.
             self::dropFacetedCache();
+        }
+
+        if ($plan['position'] !== null) {
+            // The core finds the group being moved from the request the list
+            // sends, so its identifier is handed over for the move.
+            $failure = SomcpCatalog::movePosition(
+                $group,
+                (int) $group->position,
+                (int) $plan['position'],
+                ['id_attribute_group' => $idGroup]
+            );
+            if ($failure !== '') {
+                SomcpLogger::log(
+                    'attribute_group_update_failed',
+                    SomcpLogger::OUTCOME_FAILURE,
+                    'attribute group ' . $idGroup . ' position: ' . Tools::substr($failure, 0, 500),
+                    '',
+                    $idEmployee
+                );
+
+                return SomcpTool::text(
+                    'The attribute group could not be moved to position ' . (int) $plan['position'] . ': ' . $failure
+                        . '. The other changes of this call may be saved. Read the group again with '
+                        . 'somcp_get_attribute_group, tell the merchant what it holds now, and do not call again before.',
+                    true
+                );
+            }
         }
 
         SomcpLogger::log(

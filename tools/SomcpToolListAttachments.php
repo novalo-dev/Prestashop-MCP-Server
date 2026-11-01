@@ -43,8 +43,9 @@ class SomcpToolListAttachments
             'somcp_list_attachments',
             Somcp::t('List files'),
             'Lists the files of this shop (Catalogue > Files: manuals, data sheets) that a product '
-                . 'can carry, with the columns of the back office list: identifier, name, file name, '
-                . 'size in bytes, number of products carrying it, MIME type and a download link. Call '
+                . 'can carry, with the columns of the back office list: identifier, name, description, '
+                . 'file name, size in bytes, number of products carrying it, MIME type and a download '
+                . 'link, filtered by part of the name or of the file name. Call '
                 . 'it before any call that takes file identifiers - creating or changing a product - and '
                 . 'take id_attachment from here: identifiers are specific to each shop, so never assume '
                 . 'one. The file itself is never sent: download_url is the public storefront link, which '
@@ -54,10 +55,20 @@ class SomcpToolListAttachments
             [
                 'type' => 'object',
                 'properties' => [
+                    'name' => [
+                        'type' => 'string',
+                        'description' => 'Part of the file name shown in the back office (Name), '
+                            . 'case-insensitive, read in the language of the answer.',
+                    ],
+                    'file_name' => [
+                        'type' => 'string',
+                        'description' => 'Part of the name the file was uploaded under (File), '
+                            . 'case-insensitive.',
+                    ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the names in, '
-                            . 'for example fr. The shop default is used otherwise.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; '
+                            . 'a code the shop does not have is refused. The shop default language when left out.',
                     ],
                 ],
                 'additionalProperties' => false,
@@ -79,10 +90,14 @@ class SomcpToolListAttachments
     public static function handle(array $arguments, array $context): array
     {
         $idShop = (int) Somcp::currentShop()->id;
-        $idLang = self::language($arguments);
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $iso] = $language;
 
         $query = new DbQuery();
-        $query->select('a.`id_attachment`, al.`name`, a.`file_name`, a.`file_size`, a.`mime`');
+        $query->select('a.`id_attachment`, al.`name`, al.`description`, a.`file_name`, a.`file_size`, a.`mime`');
         $query->from('attachment', 'a');
         // A left join, unlike the back office list, so a file with no name in
         // this language is still listed rather than silently missing from the
@@ -92,6 +107,16 @@ class SomcpToolListAttachments
             'al',
             'al.`id_attachment` = a.`id_attachment` AND al.`id_lang` = ' . $idLang
         );
+        // The filters of the back office list. Name is the translated one,
+        // so it is matched in the language the answer is read in.
+        $name = isset($arguments['name']) && is_scalar($arguments['name']) ? trim((string) $arguments['name']) : '';
+        if ($name !== '') {
+            $query->where("al.`name` LIKE '%" . pSQL($name) . "%'");
+        }
+        $fileName = isset($arguments['file_name']) && is_scalar($arguments['file_name']) ? trim((string) $arguments['file_name']) : '';
+        if ($fileName !== '') {
+            $query->where("a.`file_name` LIKE '%" . pSQL($fileName) . "%'");
+        }
         // Same order as the back office list.
         $query->orderBy('a.`id_attachment` ASC');
         $rows = Db::getInstance()->executeS($query) ?: [];
@@ -125,6 +150,9 @@ class SomcpToolListAttachments
             $attachments[] = [
                 'id_attachment' => $id,
                 'name' => (string) ($row['name'] ?? ''),
+                // What tells two files of the same kind apart - two manuals,
+                // two data sheets - and no other tool returns it.
+                'description' => (string) ($row['description'] ?? ''),
                 'file_name' => (string) $row['file_name'],
                 'file_size' => (int) $row['file_size'],
                 'products_count' => $counts[$id] ?? 0,
@@ -145,26 +173,7 @@ class SomcpToolListAttachments
         return SomcpTool::json([
             'attachments' => $attachments,
             'count' => count($attachments),
+            'language' => $iso,
         ]);
-    }
-
-    /**
-     * The language to read the names in.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return int
-     */
-    private static function language(array $arguments): int
-    {
-        $iso = isset($arguments['language']) && is_scalar($arguments['language']) ? trim((string) $arguments['language']) : '';
-        if ($iso !== '') {
-            $idLang = (int) Language::getIdByIso($iso);
-            if ($idLang > 0) {
-                return $idLang;
-            }
-        }
-
-        return (int) Somcp::legacyContext()->language->id;
     }
 }

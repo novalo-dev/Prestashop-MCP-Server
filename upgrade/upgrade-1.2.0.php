@@ -34,7 +34,47 @@ function upgrade_module_1_2_0($module)
         if (!is_array($column) || $column === []) {
             $db->execute('ALTER TABLE `' . bqSQL($assistant) . '` ADD `id_shop_group` INT(11) NOT NULL DEFAULT 0 AFTER `id_shop`');
         }
+        // Each assistant may have a monthly cap of its own, in tokens.
+        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($assistant) . '` LIKE "token_cap"');
+        if (!is_array($column) || $column === []) {
+            $db->execute('ALTER TABLE `' . bqSQL($assistant) . '` ADD `token_cap` INT(11) UNSIGNED NOT NULL DEFAULT 0 AFTER `role`');
+        }
     }
+
+    // The monthly cap was an estimate in US dollars; it is now counted in the
+    // tokens the providers report. A cap a merchant set is kept, converted at
+    // the highest output price among their assistants, so it is never looser
+    // than before - only a cap that cannot be converted, no model having a
+    // known price, is left out. Each row keeps its level: all shops, a group
+    // or a shop.
+    $table = _DB_PREFIX_ . 'configuration';
+    $old = $db->executeS('SELECT `id_shop_group`, `id_shop`, `value` FROM `' . bqSQL($table) . '`'
+        . ' WHERE `name` = "' . pSQL(SomcpAssistant::BUDGET) . '"');
+    $already = (int) $db->getValue('SELECT COUNT(*) FROM `' . bqSQL($table) . '` WHERE `name` = "' . pSQL(SomcpAssistant::TOKEN_CAP) . '"');
+    if (is_array($old) && $old !== [] && $already === 0) {
+        $models = is_array($present) && $present !== [] ? $db->executeS('SELECT `provider`, `model`, `resolved_model` FROM `' . bqSQL($assistant) . '`') : [];
+        foreach ($old as $row) {
+            $tokens = 0;
+            foreach (is_array($models) ? $models : [] as $model) {
+                $name = (string) $model['model'] !== '' ? (string) $model['model'] : (string) $model['resolved_model'];
+                $converted = SomcpAssistant::tokensFor((float) $row['value'], (string) $model['provider'], $name);
+                if ($converted > 0 && ($tokens === 0 || $converted < $tokens)) {
+                    $tokens = $converted;
+                }
+            }
+            if ($tokens > 0) {
+                $db->insert('configuration', [
+                    'name' => pSQL(SomcpAssistant::TOKEN_CAP),
+                    'value' => (string) $tokens,
+                    'id_shop_group' => $row['id_shop_group'] === null ? null : (int) $row['id_shop_group'],
+                    'id_shop' => $row['id_shop'] === null ? null : (int) $row['id_shop'],
+                    'date_add' => date('Y-m-d H:i:s'),
+                    'date_upd' => date('Y-m-d H:i:s'),
+                ], true);
+            }
+        }
+    }
+    $db->delete('configuration', '`name` = "' . pSQL(SomcpAssistant::BUDGET) . '"');
 
     // One assistant set for all shops is now used by several of them, and
     // each shop keeps its own spending: the month of an assistant is counted

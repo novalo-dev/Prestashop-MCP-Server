@@ -554,6 +554,16 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Monthly cap for this assistant' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        <div class="input-group fixed-width-xl">
+                            <input type="number" min="0" step="1000" name="somcp_assistant_token_cap" class="form-control" value="{$somcp_assistant_edit.token_cap|intval}">
+                            <span class="input-group-addon">{l s='tokens' d='Modules.Somcp.Admin'}</span>
+                        </div>
+                        <p class="help-block">{l s='Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+                <div class="form-group">
                     <label class="control-label col-lg-3">{l s='Active' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
                         <span class="switch prestashop-switch fixed-width-lg">
@@ -628,7 +638,10 @@
                             {elseif $assistant.resolved_model}<code>{$assistant.resolved_model|escape:'html':'UTF-8'}</code>
                             {else}<span class="text-muted">{l s='not checked yet' d='Modules.Somcp.Admin'}</span>{/if}
                         </td>
-                        <td class="text-right">{if isset($somcp_assistant_costs[$assistant.id_assistant])}${$somcp_assistant_costs[$assistant.id_assistant]|floatval|string_format:'%.2f'}{else}$0.00{/if}</td>
+                        <td class="text-right">
+                            {if isset($somcp_assistant_tokens[$assistant.id_assistant])}{$somcp_assistant_tokens[$assistant.id_assistant]|escape:'html':'UTF-8'}{else}0{/if}{if $assistant.token_cap} / {$assistant.token_cap_label|escape:'html':'UTF-8'}{/if} {l s='tokens' d='Modules.Somcp.Admin'}
+                            <br><small class="text-muted">{l s='about' d='Modules.Somcp.Admin'} ${if isset($somcp_assistant_costs[$assistant.id_assistant])}{$somcp_assistant_costs[$assistant.id_assistant]|floatval|string_format:'%.2f'}{else}0.00{/if}</small>
+                        </td>
                         <td class="text-center">
                             {if $assistant.active}<i class="icon-check text-success"></i>{else}<i class="icon-remove text-danger"></i>{/if}
                         </td>
@@ -708,14 +721,14 @@
                 <div class="form-group">
                     <label class="control-label col-lg-3">{l s='Monthly cap, all assistants' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
-                        {include file='./_inherit.tpl' field='SOMCP_ASSISTANT_BUDGET'}
-                        <div class="input-group fixed-width-lg">
-                            <span class="input-group-addon">$</span>
-                            <input type="number" min="0" step="0.5" name="SOMCP_ASSISTANT_BUDGET" class="form-control" value="{$somcp_assistant_budget|floatval}">
+                        {include file='./_inherit.tpl' field='SOMCP_ASSISTANT_TOKENS'}
+                        <div class="input-group fixed-width-xl">
+                            <input type="number" min="0" step="1000" name="SOMCP_ASSISTANT_TOKENS" class="form-control" value="{$somcp_assistant_token_cap|intval}">
+                            <span class="input-group-addon">{l s='tokens' d='Modules.Somcp.Admin'}</span>
                         </div>
                         <p class="help-block">
-                            {l s='This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.' sprintf=['%spent%' => ($somcp_assistant_spent|string_format:'%.2f')] d='Modules.Somcp.Admin'}
-                            {l s='Estimated in US dollars from the public prices of each provider, the currency they bill in.' d='Modules.Somcp.Admin'}
+                            {l s='This month: %tokens% tokens, counted exactly as the providers report them. The chat stops when the cap is reached, on each shop. 0 for no cap.' sprintf=['%tokens%' => $somcp_assistant_used] d='Modules.Somcp.Admin'}
+                            {l s='About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.' sprintf=['%spent%' => ($somcp_assistant_spent|string_format:'%.2f')] d='Modules.Somcp.Admin'}
                         </p>
                     </div>
                 </div>

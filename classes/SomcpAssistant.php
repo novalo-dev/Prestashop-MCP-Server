@@ -43,8 +43,18 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpAssistant
 {
-    /** @var string Monthly cap in US dollars, all assistants together. Empty or 0: no cap. */
+    /**
+     * @var string The monthly cap of earlier versions, in estimated US dollars.
+     *             Read only by the 1.2.0 upgrade, which turns it into tokens.
+     */
     public const BUDGET = 'SOMCP_ASSISTANT_BUDGET';
+
+    /**
+     * @var string Monthly cap in tokens, all assistants of a shop together.
+     *             Empty or 0: no cap. Tokens are what every provider reports,
+     *             exactly; a price would be an estimate that ages.
+     */
+    public const TOKEN_CAP = 'SOMCP_ASSISTANT_TOKENS';
 
     /** @var string The merchant's own instructions, added to every conversation. */
     public const INSTRUCTIONS = 'SOMCP_ASSISTANT_INSTRUCTIONS';
@@ -429,7 +439,7 @@ class SomcpAssistant
      * must not have to paste it again.
      *
      * @param int $idAssistant 0 to create
-     * @param array{provider:string, api_key:string, level:string, model:string, role:string, active:bool} $values
+     * @param array{provider:string, api_key:string, level:string, model:string, role:string, active:bool, token_cap?:int} $values
      *
      * @return int the assistant id
      */
@@ -473,6 +483,7 @@ class SomcpAssistant
             'level' => pSQL($level),
             'model' => pSQL($model),
             'role' => pSQL(Tools::substr(trim($values['role']), 0, 255)),
+            'token_cap' => max(0, (int) ($values['token_cap'] ?? 0)),
             'active' => $values['active'] ? 1 : 0,
             // A changed provider, level or model invalidates what the level
             // resolved to before.
@@ -710,11 +721,38 @@ class SomcpAssistant
     }
 
     /**
-     * @return float
+     * The tokens each assistant used this month, input and output together,
+     * keyed by assistant id.
+     *
+     * @param array<int, int>|null $shops the shops to count, the shop of the chat when null
+     *
+     * @return array<int, int>
      */
-    public static function budget(): float
+    public static function monthTokens(?array $shops = null): array
     {
-        return max(0.0, (float) Configuration::get(self::BUDGET, null, null, self::shop()));
+        $ids = array_map('intval', $shops ?? [self::shop()]);
+        $rows = Db::getInstance()->executeS(
+            'SELECT `id_assistant`, SUM(`input_tokens` + `output_tokens`) AS `tokens` FROM `' . _DB_PREFIX_ . 'somcp_assistant_usage`'
+            . ' WHERE `month` = \'' . pSQL(date('Y-m')) . '\' AND `id_shop` IN (' . implode(',', $ids ?: [0]) . ')'
+            . ' GROUP BY `id_assistant`'
+        );
+
+        $tokens = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $tokens[(int) $row['id_assistant']] = (int) $row['tokens'];
+        }
+
+        return $tokens;
+    }
+
+    /**
+     * The monthly cap of the shop of the chat, in tokens; 0 for none.
+     *
+     * @return int
+     */
+    public static function tokenCap(): int
+    {
+        return max(0, (int) Configuration::get(self::TOKEN_CAP, null, null, self::shop()));
     }
 
     /**
@@ -730,15 +768,44 @@ class SomcpAssistant
     }
 
     /**
-     * Whether the monthly cap is reached. Checked before every model call.
+     * Which monthly cap is reached, if any: the shop's, for all assistants,
+     * or the assistant's own. Checked before every model call.
      *
-     * @return bool
+     * @param array<string, mixed>|null $assistant the assistant about to be called
+     *
+     * @return string shop, assistant, or empty when neither is reached
      */
-    public static function overBudget(): bool
+    public static function capReached(?array $assistant = null): string
     {
-        $budget = self::budget();
+        $used = self::monthTokens();
+        $cap = self::tokenCap();
+        if ($cap > 0 && array_sum($used) >= $cap) {
+            return 'shop';
+        }
+        $own = (int) ($assistant['token_cap'] ?? 0);
+        if ($own > 0 && ($used[(int) ($assistant['id_assistant'] ?? 0)] ?? 0) >= $own) {
+            return 'assistant';
+        }
 
-        return $budget > 0 && array_sum(self::monthCosts()) >= $budget;
+        return '';
+    }
+
+    /**
+     * How many tokens a sum in US dollars buys at the output price of a model,
+     * the higher of its two prices: a cap converted this way is never looser
+     * than the one it replaces. 0 when the model's price is not known.
+     *
+     * @param float $dollars
+     * @param string $provider
+     * @param string $model
+     *
+     * @return int
+     */
+    public static function tokensFor(float $dollars, string $provider, string $model): int
+    {
+        $output = self::rates($provider, $model)[1];
+
+        return $output > 0 ? (int) floor($dollars / $output * 1000000) : 0;
     }
 
     /**
@@ -773,16 +840,16 @@ class SomcpAssistant
      * its own" box is unchecked is not written: its row at this level is
      * removed and the value comes from the level above, as on the other tabs.
      *
-     * @param float $budget
+     * @param int $tokenCap
      * @param string $instructions
      * @param int $idProfile
      * @param array<string, bool> $own key => whether this level keeps a value of its own
      */
-    public static function saveSettings(float $budget, string $instructions, int $idProfile, array $own = []): void
+    public static function saveSettings(int $tokenCap, string $instructions, int $idProfile, array $own = []): void
     {
         $values = [
             self::PROFILE => [(string) max(0, $idProfile), false],
-            self::BUDGET => [(string) max(0.0, round($budget, 2)), false],
+            self::TOKEN_CAP => [(string) max(0, $tokenCap), false],
             // Stored as HTML-allowed so the merchant's punctuation survives:
             // the value is only ever sent to the model and escaped wherever shown.
             self::INSTRUCTIONS => [Tools::substr($instructions, 0, 4000), true],
@@ -801,12 +868,12 @@ class SomcpAssistant
     /**
      * The settings as the level being edited sees them, for the form.
      *
-     * @return array{budget:float, instructions:string, profile:int}
+     * @return array{token_cap:int, instructions:string, profile:int}
      */
     public static function editedSettings(): array
     {
         return [
-            'budget' => max(0.0, (float) Configuration::get(self::BUDGET)),
+            'token_cap' => max(0, (int) Configuration::get(self::TOKEN_CAP)),
             'instructions' => (string) Configuration::get(self::INSTRUCTIONS),
             'profile' => (int) Configuration::get(self::PROFILE),
         ];
@@ -818,6 +885,7 @@ class SomcpAssistant
     public static function purge(): void
     {
         Configuration::deleteByName(self::BUDGET);
+        Configuration::deleteByName(self::TOKEN_CAP);
         Configuration::deleteByName(self::INSTRUCTIONS);
         Configuration::deleteByName(self::LINK_KEY);
         Configuration::deleteByName(self::PROFILE);
@@ -847,6 +915,7 @@ class SomcpAssistant
             'is_default' => (int) $row['is_default'] === 1,
             'id_shop' => (int) $row['id_shop'],
             'id_shop_group' => (int) ($row['id_shop_group'] ?? 0),
+            'token_cap' => (int) ($row['token_cap'] ?? 0),
         ];
     }
 

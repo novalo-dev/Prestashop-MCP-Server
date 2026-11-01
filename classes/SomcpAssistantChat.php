@@ -909,8 +909,11 @@ class SomcpAssistantChat
             'busy' => $busy,
             'actions' => $actions,
             'error' => $error,
+            // Tokens are exact; the cost beside them is only an estimate from
+            // public prices, shown as such.
+            'tokens' => array_sum(SomcpAssistant::monthTokens()),
+            'token_cap' => SomcpAssistant::tokenCap(),
             'spent' => round(array_sum(SomcpAssistant::monthCosts()), 2),
-            'budget' => SomcpAssistant::budget(),
         ];
     }
 
@@ -940,8 +943,12 @@ class SomcpAssistantChat
         if ($assistant === null) {
             return $this->view($thread, self::t('No assistant is switched on. Add one in the module settings.'));
         }
-        if (SomcpAssistant::overBudget()) {
-            return $this->view($thread, self::t('The monthly spending cap is reached. Raise it in the module settings to keep chatting.'));
+        $cap = SomcpAssistant::capReached($assistant);
+        if ($cap === 'shop') {
+            return $this->view($thread, self::t('The monthly token cap is reached. Raise it in the module settings to keep chatting.'));
+        }
+        if ($cap === 'assistant') {
+            return $this->view($thread, self::t('This assistant used its monthly tokens. Raise its cap in the module settings, or pick another assistant.'));
         }
         if (!$this->claim($thread)) {
             return $this->view($thread, $quiet ? '' : self::t('The assistant is still answering. Wait for its reply.'));
@@ -1371,8 +1378,8 @@ class SomcpAssistantChat
         if ($target === null || !$target['active'] || (int) $target['id_assistant'] === (int) $leader['id_assistant'] || $task === '') {
             return ['error' => 'No such assistant is available, or the task is empty.'];
         }
-        if (SomcpAssistant::overBudget()) {
-            return ['error' => 'The monthly spending cap of the shop is reached.'];
+        if (SomcpAssistant::capReached($target) !== '') {
+            return ['error' => 'The monthly token cap of the shop, or of that assistant, is reached.'];
         }
 
         try {

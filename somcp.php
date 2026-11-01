@@ -238,6 +238,18 @@ class Somcp extends Module
     }
 
     /**
+     * A count of tokens, grouped by thousands, for the settings page.
+     *
+     * @param int $tokens
+     *
+     * @return string
+     */
+    public static function formatTokens(int $tokens): string
+    {
+        return number_format($tokens, 0, '.', ' ');
+    }
+
+    /**
      * Makes the rest of the request run as one shop, whatever the back office
      * is set to: the tools, the settings and the assistants all read the shop
      * of the context. Used by the built-in chat, whose conversation belongs to
@@ -446,8 +458,9 @@ class Somcp extends Module
                 'refused' => $this->l10n('Refused'),
                 'working' => $this->l10n('Working...'),
                 'summarized' => $this->l10n('Earlier messages were summarized to keep the cost down.'),
-                'spent' => $this->l10n('This month: %spent%'),
-                'spentOf' => $this->l10n('This month: %spent% of %budget%'),
+                'tokens' => $this->l10n('This month: %tokens% tokens'),
+                'tokensOf' => $this->l10n('This month: %tokens% of %cap% tokens'),
+                'estimate' => $this->l10n('about %cost%, estimated'),
                 'failed' => $this->l10n('Something went wrong. Try again.'),
                 'poweredBy' => $this->l10n('Powered by'),
                 'attach' => $this->l10n('Attach files from your computer'),
@@ -670,11 +683,11 @@ class Somcp extends Module
         }
         if (Tools::isSubmit('submitSomcpAssistantSettings')) {
             $own = [];
-            foreach ([SomcpAssistant::PROFILE, SomcpAssistant::BUDGET, SomcpAssistant::INSTRUCTIONS, SomcpAssistantMemory::ON] as $key) {
+            foreach ([SomcpAssistant::PROFILE, SomcpAssistant::TOKEN_CAP, SomcpAssistant::INSTRUCTIONS, SomcpAssistantMemory::ON] as $key) {
                 $own[$key] = Tools::getValue('somcp_own_' . $key) === '1';
             }
             SomcpAssistant::saveSettings(
-                (float) str_replace(',', '.', (string) Tools::getValue('SOMCP_ASSISTANT_BUDGET')),
+                (int) Tools::getValue('SOMCP_ASSISTANT_TOKENS'),
                 (string) Tools::getValue('SOMCP_ASSISTANT_INSTRUCTIONS'),
                 (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE'),
                 $own
@@ -762,12 +775,18 @@ class Somcp extends Module
             'somcp_contributors' => $this->contributorsShown(),
             // The level the page edits - all shops, a group or a shop - and the
             // spending of every shop of it.
-            'somcp_assistants' => $assistantState['assistants'],
+            'somcp_assistants' => array_map(static function (array $assistant): array {
+                return $assistant + ['token_cap_label' => self::formatTokens((int) $assistant['token_cap'])];
+            }, $assistantState['assistants']),
             'somcp_assistants_own' => $assistantState['own'],
             'somcp_assistants_source' => $assistantState['source'],
             'somcp_assistant_costs' => SomcpAssistant::monthCosts($contextShops),
+            // Formatted here: Smarty has no number formatting of its own, and a
+            // PHP function used as a modifier is deprecated in recent versions.
+            'somcp_assistant_tokens' => array_map([self::class, 'formatTokens'], SomcpAssistant::monthTokens($contextShops)),
+            'somcp_assistant_used' => self::formatTokens(array_sum(SomcpAssistant::monthTokens($contextShops))),
             'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts($contextShops)),
-            'somcp_assistant_budget' => $assistantSettings['budget'],
+            'somcp_assistant_token_cap' => $assistantSettings['token_cap'],
             'somcp_assistant_instructions' => $assistantSettings['instructions'],
             'somcp_assistant_profile' => $assistantSettings['profile'],
             'somcp_assistant_providers' => SomcpAssistant::providers(),
@@ -831,6 +850,7 @@ class Somcp extends Module
             'model' => (string) Tools::getValue('somcp_assistant_model'),
             'role' => (string) Tools::getValue('somcp_assistant_role'),
             'active' => Tools::getValue('somcp_assistant_active') === '1',
+            'token_cap' => (int) Tools::getValue('somcp_assistant_token_cap'),
         ]);
 
         // Tested right away: a key pasted with a stray space or for the wrong
@@ -854,7 +874,7 @@ class Somcp extends Module
     private function assistantBeingEdited(): ?array
     {
         if (Tools::getValue('somcp_assistant_add') === '1') {
-            return ['id_assistant' => 0, 'provider' => 'anthropic', 'has_key' => false, 'level' => SomcpAssistant::LEVEL_ECONOMY, 'model' => '', 'role' => '', 'active' => true];
+            return ['id_assistant' => 0, 'provider' => 'anthropic', 'has_key' => false, 'level' => SomcpAssistant::LEVEL_ECONOMY, 'model' => '', 'role' => '', 'active' => true, 'token_cap' => 0];
         }
         $idAssistant = (int) Tools::getValue('somcp_assistant_edit');
 
@@ -911,7 +931,7 @@ class Somcp extends Module
         }
         // The settings of the Built-in assistant tab follow the same levels.
         // The memory's switch stands for its provider and key too.
-        foreach ([SomcpAssistant::PROFILE, SomcpAssistant::BUDGET, SomcpAssistant::INSTRUCTIONS, SomcpAssistantMemory::ON] as $key) {
+        foreach ([SomcpAssistant::PROFILE, SomcpAssistant::TOKEN_CAP, SomcpAssistant::INSTRUCTIONS, SomcpAssistantMemory::ON] as $key) {
             $map[$key] = SomcpConfig::level($key);
         }
 

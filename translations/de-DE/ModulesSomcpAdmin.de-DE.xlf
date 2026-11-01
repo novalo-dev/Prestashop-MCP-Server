@@ -2077,6 +2077,61 @@
       <source>Use the assistants inherited from above again? The assistants of this level are removed.</source>
       <target>Wieder die von der höheren Ebene geerbten Assistenten verwenden? Die Assistenten dieser Ebene werden entfernt.</target>
     </trans-unit>
+    <!-- This month: %tokens% tokens -->
+    <trans-unit id="c8b80009c3b478780aa9b9ba5c3196c4" resname="This month: %tokens% tokens">
+      <source>This month: %tokens% tokens</source>
+      <target>Diesen Monat: %tokens% Tokens</target>
+    </trans-unit>
+    <!-- This month: %tokens% of %cap% tokens -->
+    <trans-unit id="c0788e8dde8b2736d939a55f7cec90fe" resname="This month: %tokens% of %cap% tokens">
+      <source>This month: %tokens% of %cap% tokens</source>
+      <target>Diesen Monat: %tokens% von %cap% Tokens</target>
+    </trans-unit>
+    <!-- about %cost%, estimated -->
+    <trans-unit id="bb3f13d465c19d05974f1384b20d1fd9" resname="about %cost%, estimated">
+      <source>about %cost%, estimated</source>
+      <target>etwa %cost%, geschätzt</target>
+    </trans-unit>
+    <!-- The monthly token cap is reached. Raise it in the module settings to keep chatting. -->
+    <trans-unit id="e6513334fcf6e3458c7ffc0ed79fd7fd" resname="The monthly token cap is reached. Raise it in the module settings to keep chatting.">
+      <source>The monthly token cap is reached. Raise it in the module settings to keep chatting.</source>
+      <target>Das monatliche Token-Limit ist erreicht. Erhöhen Sie es in den Moduleinstellungen, um weiterzuchatten.</target>
+    </trans-unit>
+    <!-- This assistant used its monthly tokens. Raise its cap in the module settings, or pick another assistant. -->
+    <trans-unit id="b6618948da314d72ce6b21a5c21a1467" resname="This assistant used its monthly tokens. Raise its cap in the module settings, or pick another assistant.">
+      <source>This assistant used its monthly tokens. Raise its cap in the module settings, or pick another assistant.</source>
+      <target>Dieser Assistent hat seine Tokens für den Monat verbraucht. Erhöhen Sie sein Limit in den Moduleinstellungen oder wählen Sie einen anderen Assistenten.</target>
+    </trans-unit>
+    <!-- Monthly cap for this assistant -->
+    <trans-unit id="ae65f244e6da2f375459ea6ceabe9774" resname="Monthly cap for this assistant">
+      <source>Monthly cap for this assistant</source>
+      <target>Monatliches Limit dieses Assistenten</target>
+    </trans-unit>
+    <!-- tokens -->
+    <trans-unit id="25d7186fe598a394919623186ca325e2" resname="tokens">
+      <source>tokens</source>
+      <target>Tokens</target>
+    </trans-unit>
+    <!-- Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own. -->
+    <trans-unit id="e7db2cf966482111f3850c14b90f4919" resname="Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own.">
+      <source>Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own.</source>
+      <target>Tokens, die er in einem Monat verwenden darf, je Shop gezählt. Ein leistungsstarkes Modell verdient ein niedrigeres Limit als ein sparsames. 0 für kein eigenes Limit.</target>
+    </trans-unit>
+    <!-- about -->
+    <trans-unit id="46b3931b9959c927df4fc65fdee94b07" resname="about">
+      <source>about</source>
+      <target>etwa</target>
+    </trans-unit>
+    <!-- This month: %tokens% tokens, counted exactly as the providers report them. The chat stops when the cap is reached, on each shop. 0 for no cap. -->
+    <trans-unit id="96472a26db5d22dd17e490b4894a487e" resname="This month: %tokens% tokens, counted exactly as the providers report them. The chat stops when the cap is reached, on each shop. 0 for no cap.">
+      <source>This month: %tokens% tokens, counted exactly as the providers report them. The chat stops when the cap is reached, on each shop. 0 for no cap.</source>
+      <target>Diesen Monat: %tokens% Tokens, genau so gezählt, wie die Anbieter sie melden. Der Chat stoppt, wenn das Limit erreicht ist, je Shop. 0 für kein Limit.</target>
+    </trans-unit>
+    <!-- About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model. -->
+    <trans-unit id="e88aa44df2748a747bb1e82124fee88d" resname="About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.">
+      <source>About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.</source>
+      <target>Etwa %spent% $, geschätzt nach den öffentlichen Preisen jedes Anbieters: Ein Token kostet nicht bei jedem Modell gleich viel.</target>
+    </trans-unit>
     <!-- This prompt is not available. -->
     <trans-unit id="2b1cf2c0709f388f368c31a09916e973" resname="This prompt is not available.">
       <source>This prompt is not available.</source>
@@ -2111,16 +2166,6 @@
     <trans-unit id="9854012be358334cb6933b74106635d0" resname="The assistant is still answering. Wait for its reply.">
       <source>The assistant is still answering. Wait for its reply.</source>
       <target>Der Assistent antwortet noch. Warten Sie seine Antwort ab.</target>
-    </trans-unit>
-    <!-- This month: %spent% -->
-    <trans-unit id="a75e924a56bc92c5ccb7c910e9cbc75b" resname="This month: %spent%">
-      <source>This month: %spent%</source>
-      <target>Diesen Monat: %spent%</target>
-    </trans-unit>
-    <!-- This month: %spent% of %budget% -->
-    <trans-unit id="70e97c664623ca21a39ca0e93ce4a44e" resname="This month: %spent% of %budget%">
-      <source>This month: %spent% of %budget%</source>
-      <target>Diesen Monat: %spent% von %budget%</target>
     </trans-unit>
     <!-- Something went wrong. Try again. -->
     <trans-unit id="31a5bcc383c3f166b58b66b16feb347a" resname="Something went wrong. Try again.">
@@ -2161,11 +2206,6 @@
     <trans-unit id="d7268d8ca828f5832b38fa829d36d0d5" resname="No assistant is switched on. Add one in the module settings.">
       <source>No assistant is switched on. Add one in the module settings.</source>
       <target>Kein Assistent ist aktiviert. Fügen Sie in den Moduleinstellungen einen hinzu.</target>
-    </trans-unit>
-    <!-- The monthly spending cap is reached. Raise it in the module settings to keep chatting. -->
-    <trans-unit id="48633de4aae59072250413a205b4814a" resname="The monthly spending cap is reached. Raise it in the module settings to keep chatting.">
-      <source>The monthly spending cap is reached. Raise it in the module settings to keep chatting.</source>
-      <target>Die monatliche Ausgabengrenze ist erreicht. Erhöhen Sie sie in den Moduleinstellungen, um weiterzumachen.</target>
     </trans-unit>
     <!-- Answer the change waiting for your approval first. -->
     <trans-unit id="67409127c5e8655e91544f4feb7ce0b7" resname="Answer the change waiting for your approval first.">
@@ -2356,16 +2396,6 @@
     <trans-unit id="8a628fe3e633b015f7c84ebab16b1aa0" resname="Monthly cap, all assistants">
       <source>Monthly cap, all assistants</source>
       <target>Monatliche Grenze, alle Assistenten</target>
-    </trans-unit>
-    <!-- This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap. -->
-    <trans-unit id="6c3a2e01add43a2ffb653aa9f54b8014" resname="This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.">
-      <source>This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.</source>
-      <target>Diesen Monat: etwa %spent% $. Der Chat stoppt, wenn die Grenze erreicht ist. 0 für keine Grenze.</target>
-    </trans-unit>
-    <!-- Estimated in US dollars from the public prices of each provider, the currency they bill in. -->
-    <trans-unit id="2fe36cf51a6d1f5bc7d02e0dc907d29f" resname="Estimated in US dollars from the public prices of each provider, the currency they bill in.">
-      <source>Estimated in US dollars from the public prices of each provider, the currency they bill in.</source>
-      <target>Geschätzt in US-Dollar nach den öffentlichen Preisen der Anbieter, der Währung, in der sie abrechnen.</target>
     </trans-unit>
     <!-- Instructions for the shop -->
     <trans-unit id="ac3cf63cabfdaa88ed5311ebdc3a9e42" resname="Instructions for the shop">

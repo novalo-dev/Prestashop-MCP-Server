@@ -54,6 +54,7 @@ $children = [
 // secrets are global by nature and are not listed, so they are not flagged.
 $merchantSettings = [
     'BUDGET',
+    'TOKEN_CAP',
     'INSTRUCTIONS',
     'PROFILE',
 ];

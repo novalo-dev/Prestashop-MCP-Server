@@ -52,6 +52,16 @@ acts on that shop only, whatever the back office is set to later: its name
 shows in the chat, each conversation of the list carries its shop number,
 and the line shown while the assistant works names the shop too.
 
+**Assistant spending counted in tokens.** The monthly cap of the built-in
+assistant is now set in tokens, the exact count every AI service reports,
+instead of an estimate in US dollars that went stale whenever a price
+changed and counted an unknown model as free. Each assistant can also have
+a monthly cap of its own, useful to keep a powerful model below an economy
+one. The chat shows the tokens of the month against the cap, with the
+estimated cost beside them, marked as an estimate. A cap set in dollars
+before is converted on upgrade at the highest price among your assistants,
+so it is never looser than it was.
+
 ### Fixed
 
 **The built-in assistant no longer freezes after a slow answer.** When the AI

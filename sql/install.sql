@@ -217,6 +217,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     `resolved_model` VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'what the level resolved to last time',
     `resolved_at`    DATETIME     DEFAULT NULL,
     `role`           VARCHAR(255) NOT NULL DEFAULT '',
+    `token_cap`      INT(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'tokens a month on each shop, 0 for no cap of its own',
     `id_shop`        INT(11)      NOT NULL DEFAULT 1,
     `id_shop_group`  INT(11)      NOT NULL DEFAULT 0,
     `active`         TINYINT(1)   NOT NULL DEFAULT 1,

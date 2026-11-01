@@ -344,6 +344,16 @@
         });
     }
 
+    // 1 200 000 reads 1.2M, in the employee's language where the browser
+    // knows how to say it.
+    function count(value) {
+        try {
+            return new Intl.NumberFormat(document.documentElement.lang || undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value || 0));
+        } catch (e) {
+            return String(Number(value || 0));
+        }
+    }
+
     function money(value) {
         return '$' + Number(value || 0).toFixed(2);
     }
@@ -783,13 +793,15 @@
 
     function drawSpent(view) {
         if (view) {
-            var spent = view.budget > 0
-                ? text.spentOf.replace('%spent%', money(view.spent)).replace('%budget%', money(view.budget))
-                : text.spent.replace('%spent%', money(view.spent));
-            foot.lastChild.textContent = spent;
-            spendText.textContent = spent;
-            spendBar.parentNode.hidden = !(view.budget > 0);
-            spendBar.style.width = view.budget > 0 ? Math.min(100, Math.round(view.spent / view.budget * 100)) + '%' : '0';
+            // Tokens are exact and carry the cap; the cost is an estimate from
+            // public prices, given beside them in the list of conversations.
+            var used = view.token_cap > 0
+                ? text.tokensOf.replace('%tokens%', count(view.tokens)).replace('%cap%', count(view.token_cap))
+                : text.tokens.replace('%tokens%', count(view.tokens));
+            foot.lastChild.textContent = used;
+            spendText.textContent = used + ' (' + text.estimate.replace('%cost%', money(view.spent)) + ')';
+            spendBar.parentNode.hidden = !(view.token_cap > 0);
+            spendBar.style.width = view.token_cap > 0 ? Math.min(100, Math.round(view.tokens / view.token_cap * 100)) + '%' : '0';
         }
     }
 
@@ -1345,7 +1357,7 @@
         pending = [];
         input.value = '';
         grow();
-        state.view = state.view || { thread_id: '', id_assistant: Number(picker.value), messages: [], status: 'idle', actions: [], budget: 0, spent: 0 };
+        state.view = state.view || { thread_id: '', id_assistant: Number(picker.value), messages: [], status: 'idle', actions: [], tokens: 0, token_cap: 0, spent: 0 };
         state.view.messages.push({ role: 'user', text: message, files: files.map(function (file) { return file.name; }) });
         var data = { text: message, id_assistant: picker.value, files: files };
         if (prompt) {

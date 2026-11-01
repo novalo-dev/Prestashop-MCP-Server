@@ -1643,6 +1643,50 @@ T = {
  "Utiliser de nouveau les assistants hérités du niveau supérieur ? Les assistants de ce niveau seront supprimés.",
  "¿Volver a usar los asistentes heredados del nivel superior? Se eliminarán los asistentes de este nivel.",
  "Wieder die von der höheren Ebene geerbten Assistenten verwenden? Die Assistenten dieser Ebene werden entfernt."),
+"This month: %tokens% tokens": (
+ "Ce mois : %tokens% tokens",
+ "Este mes: %tokens% tokens",
+ "Diesen Monat: %tokens% Tokens"),
+"This month: %tokens% of %cap% tokens": (
+ "Ce mois : %tokens% sur %cap% tokens",
+ "Este mes: %tokens% de %cap% tokens",
+ "Diesen Monat: %tokens% von %cap% Tokens"),
+"about %cost%, estimated": (
+ "environ %cost%, estimation",
+ "unos %cost%, estimación",
+ "etwa %cost%, geschätzt"),
+"The monthly token cap is reached. Raise it in the module settings to keep chatting.": (
+ "Le plafond mensuel de tokens est atteint. Relevez-le dans les réglages du module pour continuer.",
+ "Se ha alcanzado el límite mensual de tokens. Auméntelo en los ajustes del módulo para seguir.",
+ "Das monatliche Token-Limit ist erreicht. Erhöhen Sie es in den Moduleinstellungen, um weiterzuchatten."),
+"This assistant used its monthly tokens. Raise its cap in the module settings, or pick another assistant.": (
+ "Cet assistant a utilisé ses tokens du mois. Relevez son plafond dans les réglages du module, ou choisissez un autre assistant.",
+ "Este asistente ha usado sus tokens del mes. Aumente su límite en los ajustes del módulo o elija otro asistente.",
+ "Dieser Assistent hat seine Tokens für den Monat verbraucht. Erhöhen Sie sein Limit in den Moduleinstellungen oder wählen Sie einen anderen Assistenten."),
+"Monthly cap for this assistant": (
+ "Plafond mensuel de cet assistant",
+ "Límite mensual de este asistente",
+ "Monatliches Limit dieses Assistenten"),
+"tokens": (
+ "tokens",
+ "tokens",
+ "Tokens"),
+"Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own.": (
+ "Tokens qu'il peut utiliser dans le mois, comptés sur chaque boutique. Un modèle puissant mérite un plafond plus bas qu'un modèle économique. 0 pour aucun plafond propre.",
+ "Tokens que puede usar en un mes, contados en cada tienda. Un modelo potente merece un límite más bajo que uno económico. 0 para ningún límite propio.",
+ "Tokens, die er in einem Monat verwenden darf, je Shop gezählt. Ein leistungsstarkes Modell verdient ein niedrigeres Limit als ein sparsames. 0 für kein eigenes Limit."),
+"about": (
+ "environ",
+ "unos",
+ "etwa"),
+"This month: %tokens% tokens, counted exactly as the providers report them. The chat stops when the cap is reached, on each shop. 0 for no cap.": (
+ "Ce mois : %tokens% tokens, comptés exactement comme les fournisseurs les déclarent. Le chat s'arrête quand le plafond est atteint, sur chaque boutique. 0 pour aucun plafond.",
+ "Este mes: %tokens% tokens, contados exactamente como los declaran los proveedores. El chat se detiene al alcanzar el límite, en cada tienda. 0 para ningún límite.",
+ "Diesen Monat: %tokens% Tokens, genau so gezählt, wie die Anbieter sie melden. Der Chat stoppt, wenn das Limit erreicht ist, je Shop. 0 für kein Limit."),
+"About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.": (
+ "Environ %spent% $, estimé d'après les prix publics de chaque fournisseur : un token ne coûte pas le même prix avec chaque modèle.",
+ "Unos %spent% $, estimado a partir de los precios públicos de cada proveedor: un token no cuesta lo mismo con cada modelo.",
+ "Etwa %spent% $, geschätzt nach den öffentlichen Preisen jedes Anbieters: Ein Token kostet nicht bei jedem Modell gleich viel."),
 "This prompt is not available.": (
  "Ce prompt n'est pas disponible.",
  "Este prompt no está disponible.",
@@ -1671,14 +1715,6 @@ T = {
  "L'assistant est encore en train de répondre. Attendez sa réponse.",
  "El asistente aún está respondiendo. Espere su respuesta.",
  "Der Assistent antwortet noch. Warten Sie seine Antwort ab."),
-"This month: %spent%": (
- "Ce mois-ci : %spent%",
- "Este mes: %spent%",
- "Diesen Monat: %spent%"),
-"This month: %spent% of %budget%": (
- "Ce mois-ci : %spent% sur %budget%",
- "Este mes: %spent% de %budget%",
- "Diesen Monat: %spent% von %budget%"),
 "Something went wrong. Try again.": (
  "Un problème est survenu. Réessayez.",
  "Algo ha fallado. Inténtelo de nuevo.",
@@ -1711,10 +1747,6 @@ T = {
  "Aucun assistant n'est activé. Ajoutez-en un dans les réglages du module.",
  "No hay ningún asistente activado. Añada uno en los ajustes del módulo.",
  "Kein Assistent ist aktiviert. Fügen Sie in den Moduleinstellungen einen hinzu."),
-"The monthly spending cap is reached. Raise it in the module settings to keep chatting.": (
- "Le plafond mensuel de dépenses est atteint. Relevez-le dans les réglages du module pour continuer.",
- "Se ha alcanzado el límite mensual de gasto. Auméntelo en los ajustes del módulo para seguir.",
- "Die monatliche Ausgabengrenze ist erreicht. Erhöhen Sie sie in den Moduleinstellungen, um weiterzumachen."),
 "Answer the change waiting for your approval first.": (
  "Répondez d'abord à la modification qui attend votre accord.",
  "Responda primero al cambio que espera su aprobación.",
@@ -1867,14 +1899,6 @@ T = {
  "Plafond mensuel, tous assistants",
  "Límite mensual, todos los asistentes",
  "Monatliche Grenze, alle Assistenten"),
-"This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.": (
- "Ce mois-ci : environ %spent% $. Le chat s'arrête quand le plafond est atteint. 0 pour aucun plafond.",
- "Este mes: unos %spent% $. El chat se detiene al alcanzar el límite. 0 para ningún límite.",
- "Diesen Monat: etwa %spent% $. Der Chat stoppt, wenn die Grenze erreicht ist. 0 für keine Grenze."),
-"Estimated in US dollars from the public prices of each provider, the currency they bill in.": (
- "Estimé en dollars américains d'après les prix publics de chaque fournisseur, la devise dans laquelle ils facturent.",
- "Estimado en dólares estadounidenses según los precios públicos de cada proveedor, la moneda en la que facturan.",
- "Geschätzt in US-Dollar nach den öffentlichen Preisen der Anbieter, der Währung, in der sie abrechnen."),
 "Instructions for the shop": (
  "Consignes de la boutique",
  "Instrucciones de la tienda",

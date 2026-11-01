@@ -12,6 +12,7 @@
     "somcp_list_carriers",
     "somcp_create_return_status",
     "somcp_update_return_status",
+    "somcp_delete_return_status",
     "somcp_get_order",
     "somcp_set_order_status",
     "somcp_set_order_tracking",

@@ -753,6 +753,31 @@ lost answer is checked with `somcp_list_return_statuses`.
 
 **Notes** - the **Edit** form of a return status, read in full on 8.0.1 and 9.0.0: the same two fields as the **Add new return status** form, and no difference between the versions. The name follows the rules of `somcp_create_return_status`: required in every language being filled, `Validate::isGenericName()`, 64 characters at most. A name another return status already has in that language is refused, so the merchant can tell the steps apart; the status's own name is not a duplicate. The colour is checked as at creation - `#RRGGBB` only. Every return status can be edited, the five built-in ones (1 to 5) included, on both versions. Written through `OrderReturnState::update()`, as the back office edit does. Return statuses are not tied to a shop: the table has no shop column. Every problem is reported at once, before anything is written. Not replayable: a lost answer is checked with `somcp_list_return_statuses`.
 
+#### `somcp_delete_return_status`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
+
+**Does** - deletes one return status the merchant created, as the **Delete** action of the return status list of **Shop Parameters > Order Settings > Statuses** does.
+
+**Do not use for** - changing one (→ `somcp_update_return_status`), or the statuses of an order: a return status is not an order status, and its identifiers are never order status identifiers.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order_return_state` | integer | yes | from `somcp_list_return_statuses`, never guessed |
+
+**Returns** - `deleted`, `id_order_return_state` and `name`, the name in the shop's default language.
+
+**Notes**
+- Irreversible: the description tells the assistant to read the status with `somcp_list_return_statuses` and have the merchant confirm it by name before the call.
+- The row is really deleted on both versions (`OrderReturnState::delete()`: 8.0.1 `AdminStatusesController.php` line 602; 9.0.0 `DeleteOrderReturnStateHandler`), unlike an order status.
+- The five statuses every shop starts with (1 to 5) are refused: neither back office offers **Delete** on them (8.0.1 `addRowActionSkipList('delete', [1, 2, 3, 4, 5])`; 9.0.0 `DeleteOrderReturnStatesAccessibilityChecker` reading `unremovable`), and neither handler checks it, so the tool refuses them itself, before the question of use.
+- A status a merchandise return still stands on (`order_return.state`) is refused, with the number of returns: deleting it would leave those returns with a step that no longer exists, which neither version checks.
+- Permission `delete` on `AdminStatuses`: the right the back office checks on its delete action for a return status.
+- Only a whole number is an identifier. An unknown identifier is refused like in the other tools, pointing to `somcp_list_return_statuses`. Whether the status is gone is read back rather than inferred from `delete()`: a second call is refused, never read as a success.
+- Not replayable: the read tool to check is `somcp_list_return_statuses`.
+
 ### Billing
 
 The accounting records an order produces: invoices, credit slips, delivery

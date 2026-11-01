@@ -102,7 +102,7 @@ class Somcp extends Module
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '1.1.2';
+        $this->version = '1.1.3';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;

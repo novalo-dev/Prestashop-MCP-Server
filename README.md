@@ -360,12 +360,12 @@ GitHub, under **Help and updates > Meet our contributors**.
   <tr>
     <td align="center" width="140">
       <a href="https://github.com/novalo-dev"><img src="https://github.com/novalo-dev.png?size=96" width="64" height="64" alt=""><br><b>novalo-dev</b></a><br>
-      <sub>215 contributions · 95%</sub><br>
+      <sub>249 contributions · 83%</sub><br>
       <sub><i>Top contributor</i></sub>
     </td>
     <td align="center" width="140">
       <a href="https://github.com/Ptraaah"><img src="https://github.com/Ptraaah.png?size=96" width="64" height="64" alt=""><br><b>Ptraaah</b></a><br>
-      <sub>12 contributions · 5.3%</sub>
+      <sub>50 contributions · 17%</sub>
     </td>
   </tr>
 </table>

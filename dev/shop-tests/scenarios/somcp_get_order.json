@@ -2,6 +2,7 @@
   "calls": [
     {"why": "reads a demo order", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["recycled_packaging", "valid_orders_count", "quantity_in_stock_now", "stock_location", "shipments", "delivery_slips", "wrapping_tax_excluded", "taxes"]},
     {"why": "reads another demo order", "arguments": {"id_order": 2}, "expect": "ok", "contains": ["customizations", "private_note"]},
+    {"why": "the identifiers the order write tools act on, and the address details", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["\"id_order_detail\"", "\"id_order_history\"", "\"pack_items\"", "\"id_address\"", "\"alias\"", "\"state\"", "\"dni\""]},
     {"why": "an order that does not exist", "arguments": {"id_order": 999999}, "expect": "error"},
     {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "error"}
   ]

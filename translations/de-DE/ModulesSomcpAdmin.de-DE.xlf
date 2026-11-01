@@ -187,6 +187,81 @@
       <source>The shop sits at the root of its domain.</source>
       <target>Der Shop liegt im Stammverzeichnis seiner Domain.</target>
     </trans-unit>
+    <!-- HTTPS certificate -->
+    <trans-unit id="6a3f3799bc264d32568bb7169ddd515a" resname="HTTPS certificate">
+      <source>HTTPS certificate</source>
+      <target>HTTPS-Zertifikat</target>
+    </trans-unit>
+    <!-- The certificate is valid. -->
+    <trans-unit id="00180adcda44e15a933e7cee819efdd5" resname="The certificate is valid.">
+      <source>The certificate is valid.</source>
+      <target>Das Zertifikat ist gültig.</target>
+    </trans-unit>
+    <!-- This shop runs on a local address, which assistants cannot reach. To test it, give it a public HTTPS address with a tunnel such as cloudflared or ngrok, and set the shop domain to it. -->
+    <trans-unit id="be8e56f8a3b9bd0371362389c74cdeeb" resname="This shop runs on a local address, which assistants cannot reach. To test it, give it a public HTTPS address with a tunnel such as cloudflared or ngrok, and set the shop domain to it.">
+      <source>This shop runs on a local address, which assistants cannot reach. To test it, give it a public HTTPS address with a tunnel such as cloudflared or ngrok, and set the shop domain to it.</source>
+      <target>Dieser Shop läuft unter einer lokalen Adresse, die Assistenten nicht erreichen können. Um ihn zu testen, geben Sie ihm mit einem Tunnel wie cloudflared oder ngrok eine öffentliche HTTPS-Adresse und stellen Sie die Shop-Domain darauf ein.</target>
+    </trans-unit>
+    <!-- The certificate is refused: %reason%. Assistants only connect to a shop whose certificate is valid. Install or renew it from your hosting panel. -->
+    <trans-unit id="6a1d09d9908dd8b69c264c2b2c5e55a5" resname="The certificate is refused: %reason%. Assistants only connect to a shop whose certificate is valid. Install or renew it from your hosting panel.">
+      <source>The certificate is refused: %reason%. Assistants only connect to a shop whose certificate is valid. Install or renew it from your hosting panel.</source>
+      <target>Das Zertifikat wird abgelehnt: %reason%. Assistenten verbinden sich nur mit einem Shop, dessen Zertifikat gültig ist. Installieren oder erneuern Sie es in der Verwaltung Ihres Hosters.</target>
+    </trans-unit>
+    <!-- Nothing answers over HTTPS on this domain. Assistants only connect over HTTPS: enable a certificate for it from your hosting panel. -->
+    <trans-unit id="bbfb5c36ad201a9752f38e170f815fe2" resname="Nothing answers over HTTPS on this domain. Assistants only connect over HTTPS: enable a certificate for it from your hosting panel.">
+      <source>Nothing answers over HTTPS on this domain. Assistants only connect over HTTPS: enable a certificate for it from your hosting panel.</source>
+      <target>Unter dieser Domain antwortet nichts über HTTPS. Assistenten verbinden sich nur über HTTPS: Aktivieren Sie in der Verwaltung Ihres Hosters ein Zertifikat für diese Domain.</target>
+    </trans-unit>
+    <!-- The shop could not be reached over HTTPS: %reason%. -->
+    <trans-unit id="b49106523e7ca783e991b9b000405718" resname="The shop could not be reached over HTTPS: %reason%.">
+      <source>The shop could not be reached over HTTPS: %reason%.</source>
+      <target>Der Shop war über HTTPS nicht erreichbar: %reason%.</target>
+    </trans-unit>
+    <!-- SSL in PrestaShop -->
+    <trans-unit id="d64bd5525d2af3fd857c827a2ebdcdcc" resname="SSL in PrestaShop">
+      <source>SSL in PrestaShop</source>
+      <target>SSL in PrestaShop</target>
+    </trans-unit>
+    <!-- SSL is enabled. -->
+    <trans-unit id="96a9ae5babb44f111a3771b4214672c7" resname="SSL is enabled.">
+      <source>SSL is enabled.</source>
+      <target>SSL ist aktiviert.</target>
+    </trans-unit>
+    <!-- SSL is disabled, which is fine on a local shop. Enable it before the shop goes online. -->
+    <trans-unit id="015c743602de46851f8c6eacf19b18b9" resname="SSL is disabled, which is fine on a local shop. Enable it before the shop goes online.">
+      <source>SSL is disabled, which is fine on a local shop. Enable it before the shop goes online.</source>
+      <target>SSL ist deaktiviert, was für einen lokalen Shop in Ordnung ist. Aktivieren Sie es, bevor der Shop online geht.</target>
+    </trans-unit>
+    <!-- SSL is disabled. The shop and its back office answer over plain HTTP, and employees sign in unencrypted. Enable it in Shop parameters, General. -->
+    <trans-unit id="52cfabba9c26ff833118f84952b91832" resname="SSL is disabled. The shop and its back office answer over plain HTTP, and employees sign in unencrypted. Enable it in Shop parameters, General.">
+      <source>SSL is disabled. The shop and its back office answer over plain HTTP, and employees sign in unencrypted. Enable it in Shop parameters, General.</source>
+      <target>SSL ist deaktiviert. Der Shop und sein Backoffice antworten über unverschlüsseltes HTTP, und Mitarbeiter melden sich unverschlüsselt an. Aktivieren Sie es unter Shop-Parameter, Allgemein.</target>
+    </trans-unit>
+    <!-- This address answered %status% instead of 200. Assistants read it to find out where to sign in, so none of them can connect until it works. -->
+    <trans-unit id="b0bbfd933a49167472fc470d3fef07c1" resname="This address answered %status% instead of 200. Assistants read it to find out where to sign in, so none of them can connect until it works.">
+      <source>This address answered %status% instead of 200. Assistants read it to find out where to sign in, so none of them can connect until it works.</source>
+      <target>Diese Adresse hat mit %status% statt 200 geantwortet. Assistenten lesen sie, um zu erfahren, wo sie sich anmelden: Keiner kann sich verbinden, solange sie nicht funktioniert.</target>
+    </trans-unit>
+    <!-- This address could not be reached: %reason%. -->
+    <trans-unit id="c81df6b57b5e874da14bd584df0485fe" resname="This address could not be reached: %reason%.">
+      <source>This address could not be reached: %reason%.</source>
+      <target>Diese Adresse war nicht erreichbar: %reason%.</target>
+    </trans-unit>
+    <!-- The maintenance page answered instead of the module: this address does not reach it. -->
+    <trans-unit id="f251077117124d0bb8650417e9d7c9f1" resname="The maintenance page answered instead of the module: this address does not reach it.">
+      <source>The maintenance page answered instead of the module: this address does not reach it.</source>
+      <target>Die Wartungsseite hat statt des Moduls geantwortet: Diese Adresse erreicht es nicht.</target>
+    </trans-unit>
+    <!-- Not checked: fix %causes% above first. -->
+    <trans-unit id="6e470dd5799cb19c214922f631e1b528" resname="Not checked: fix %causes% above first.">
+      <source>Not checked: fix %causes% above first.</source>
+      <target>Nicht geprüft: Beheben Sie zuerst %causes% oben.</target>
+    </trans-unit>
+    <!-- Go to the setting -->
+    <trans-unit id="382a341ede33d92cbd9ca1ef25ca64b2" resname="Go to the setting">
+      <source>Go to the setting</source>
+      <target>Zur Einstellung</target>
+    </trans-unit>
     <!-- Consent screen -->
     <trans-unit id="b5b4f3f787f2e5a15a6c5da5015c923c" resname="Consent screen">
       <source>Consent screen</source>
@@ -737,10 +812,30 @@
       <source>List order statuses</source>
       <target>Bestellstatus auflisten</target>
     </trans-unit>
+    <!-- Create an order status -->
+    <trans-unit id="05dac18aa67147cb5529f4d5bb2986c1" resname="Create an order status">
+      <source>Create an order status</source>
+      <target>Einen Bestellstatus anlegen</target>
+    </trans-unit>
     <!-- List return statuses -->
     <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
       <source>List return statuses</source>
       <target>Rückgabestatus auflisten</target>
+    </trans-unit>
+    <!-- List carriers -->
+    <trans-unit id="6e594164605afd39214487871c057711" resname="List carriers">
+      <source>List carriers</source>
+      <target>Versanddienste auflisten</target>
+    </trans-unit>
+    <!-- Create a return status -->
+    <trans-unit id="bed8b046732e0d12fe3f9bbb9776d996" resname="Create a return status">
+      <source>Create a return status</source>
+      <target>Einen Rückgabestatus anlegen</target>
+    </trans-unit>
+    <!-- Change a return status -->
+    <trans-unit id="28bccaf72061ff3f479b1e58136d42dc" resname="Change a return status">
+      <source>Change a return status</source>
+      <target>Einen Rückgabestatus ändern</target>
     </trans-unit>
     <!-- Test the connection -->
     <trans-unit id="660fc9e01f52fb7f8a715e51167c4f8d" resname="Test the connection">
@@ -1082,6 +1177,31 @@
       <source>Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt</source>
       <target>Die SEO-Einstellungen des Shops, die Titel und Beschreibungen der Seiten, die robots.txt und die llms.txt ändern</target>
     </trans-unit>
+    <!-- Read the statistics of this shop: revenue, orders, products sold and new customers over a period -->
+    <trans-unit id="cee5afa74ab7cd8e22507cb680a757e1" resname="Read the statistics of this shop: revenue, orders, products sold and new customers over a period">
+      <source>Read the statistics of this shop: revenue, orders, products sold and new customers over a period</source>
+      <target>Die Statistiken dieses Shops lesen: Umsatz, Bestellungen, verkaufte Produkte und Neukunden über einen Zeitraum</target>
+    </trans-unit>
+    <!-- Get a sales summary -->
+    <trans-unit id="bb16cd9749111ef004f120ebdc3cb6e7" resname="Get a sales summary">
+      <source>Get a sales summary</source>
+      <target>Eine Verkaufsübersicht abrufen</target>
+    </trans-unit>
+    <!-- List best-selling products -->
+    <trans-unit id="d84c4cdf88befa8894e45a39653b1c7b" resname="List best-selling products">
+      <source>List best-selling products</source>
+      <target>Meistverkaufte Produkte auflisten</target>
+    </trans-unit>
+    <!-- Read the content pages of this shop: their titles, addresses and categories, displayed or not -->
+    <trans-unit id="610fc39055cd434848f7a7892e6833aa" resname="Read the content pages of this shop: their titles, addresses and categories, displayed or not">
+      <source>Read the content pages of this shop: their titles, addresses and categories, displayed or not</source>
+      <target>Die Inhaltsseiten dieses Shops lesen: ihre Titel, Adressen und Kategorien, angezeigt oder nicht</target>
+    </trans-unit>
+    <!-- List content pages -->
+    <trans-unit id="47ec10c3185f74c186e09083656a61d3" resname="List content pages">
+      <source>List content pages</source>
+      <target>Inhaltsseiten auflisten</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>
@@ -1201,6 +1321,36 @@
     <trans-unit id="93b46287befd343af1d5eaeb7d18655d" resname="Manage products">
       <source>Manage products</source>
       <target>Produkte verwalten</target>
+    </trans-unit>
+    <!-- Sales report -->
+    <trans-unit id="08512c0c5db8120b6786f387ee84a8a8" resname="Sales report">
+      <source>Sales report</source>
+      <target>Verkaufsbericht</target>
+    </trans-unit>
+    <!-- Report the PrestaShop shop's sales over a period: revenue, orders, average basket, best sellers. -->
+    <trans-unit id="436510d3f112d274223762c025f359c2" resname="Report the PrestaShop shop&#x27;s sales over a period: revenue, orders, average basket, best sellers.">
+      <source>Report the PrestaShop shop's sales over a period: revenue, orders, average basket, best sellers.</source>
+      <target>Die Verkäufe des PrestaShop-Shops über einen Zeitraum darstellen: Umsatz, Bestellungen, durchschnittlicher Warenkorb, Bestseller.</target>
+    </trans-unit>
+    <!-- Period to report on, for example last month -->
+    <trans-unit id="c84d7aa02acd985a0471654dbcea88fd" resname="Period to report on, for example last month">
+      <source>Period to report on, for example last month</source>
+      <target>Berichtszeitraum, zum Beispiel der letzte Monat</target>
+    </trans-unit>
+    <!-- Read content pages -->
+    <trans-unit id="556b74ab9e61e5b6a75de151bf38c4df" resname="Read content pages">
+      <source>Read content pages</source>
+      <target>Inhaltsseiten lesen</target>
+    </trans-unit>
+    <!-- List and read the CMS pages of the PrestaShop shop. -->
+    <trans-unit id="e33bce61c60fa7091d9064f83edd80be" resname="List and read the CMS pages of the PrestaShop shop.">
+      <source>List and read the CMS pages of the PrestaShop shop.</source>
+      <target>Die CMS-Seiten des PrestaShop-Shops auflisten und lesen.</target>
+    </trans-unit>
+    <!-- Title of a page -->
+    <trans-unit id="f8c68565d064bb35fafebf69ff32f56f" resname="Title of a page">
+      <source>Title of a page</source>
+      <target>Titel einer Seite</target>
     </trans-unit>
     <!-- Check and adjust stock -->
     <trans-unit id="f522c8316bb101ad6052425e7f80271a" resname="Check and adjust stock">

@@ -60,8 +60,8 @@ order was paid does not want the product lines read out.
 
 `somcp_get_order` returns what the order page shows: the order note and the
 gift message, the customer's valid orders, total spent and private note, each
-product line with its stock location, quantity in stock now, refunds and
-customizations, each shipment with its tracking number, the payments, the
+product line with its stock location, quantity in stock now, refunds,
+customizations and, for a pack, the products in it, each shipment with its tracking number, the payments, the
 invoices, delivery slips and credit slips, and the messages. Each message says
 in `from` whether the shop or the customer wrote it: never present the shop's
 answer as the customer's request.

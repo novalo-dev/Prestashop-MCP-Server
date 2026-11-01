@@ -8,7 +8,11 @@ of it can be undone by calling again.
 
 - `somcp_ping`
 - `somcp_list_order_statuses`
+- `somcp_create_order_status`
 - `somcp_list_return_statuses`
+- `somcp_list_carriers`
+- `somcp_create_return_status`
+- `somcp_update_return_status`
 - `somcp_get_order`
 - `somcp_set_order_status`
 - `somcp_set_order_tracking`
@@ -61,6 +65,10 @@ status change: it never moves the order to shipped, and
 - An empty number (`""`) removes it without any email. Only when the merchant
   asked for that.
 - The carrier of the shipment is never changed here.
+- To know which carrier a parcel goes with, or what tracking link the
+  customer will get, read `somcp_list_carriers`: its `tracking_url` holds `@`
+  where the number goes. An order keeps the `id_carrier` it was placed with,
+  which may be an older row of the carrier: match it on `id_reference`.
 
 When the merchant says an order has left with its number, set the number
 first, then the shipped status: the shipped email then carries the tracking
@@ -106,6 +114,54 @@ wants it.
 - When the order has an invoice, `id_order_invoice` is required: take it from
   `documents.invoices` of `somcp_get_order`, never guess it.
 - A refund is not a negative payment: it is refused.
+
+## A new order status
+
+When the merchant wants a status the shop does not have yet, create it
+with `somcp_create_order_status`: the name in the languages being filled,
+the boxes that say what reaching it sets off, and a colour, an icon or an
+email template when they ask for them.
+
+- A new status is only needed when none of the existing ones plays the
+  role. List them first with `somcp_list_order_statuses` and match on the
+  role, as in the workflow above: most "we need a new status" requests
+  end at an existing one under another name.
+- A name another order status already has in the same language is
+  refused: two statuses with one label could not be told apart.
+- Creating one changes no order: nothing is emailed and nothing moves
+  until an order is actually set to it.
+- Not to be retried: if the answer is lost, read
+  `somcp_list_order_statuses` and look for the name before anything else.
+
+## A new return status
+
+When the merchant wants a step a return does not have yet, create it with
+`somcp_create_return_status`: the name in the languages being filled, and
+a colour.
+
+- Read `somcp_list_return_statuses` first. A name another return status
+  already has in the same language is refused: two steps with one label
+  could not be told apart.
+- It is a shop setting, not a change to any order or return: nothing is
+  emailed and nothing moves. A return status is never an order status, so
+  creating one never gives an order a new `status_id`.
+- Not to be retried: if the answer is lost, read
+  `somcp_list_return_statuses` and look for the name before anything else.
+
+## Changing a return status
+
+When the merchant wants a step renamed or recoloured, change it with
+`somcp_update_return_status`: the identifier from
+`somcp_list_return_statuses`, and only what changes.
+
+- Only what is given changes. A language left out of `languages` keeps its
+  text, so to rename one language, pass `languages` with that one alone.
+- Every return status can be changed, the five the shop starts with
+  included. Renaming a step renames it on every return standing on it:
+  say so before calling.
+- The same call twice is safe to read, not to repeat blindly: the second
+  answers `changed: false`. If an answer is lost, read
+  `somcp_list_return_statuses` and compare before calling again.
 
 ## Several orders
 

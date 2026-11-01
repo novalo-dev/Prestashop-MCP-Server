@@ -25,6 +25,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_feature_value`
 - `somcp_list_attachments`
 - `somcp_list_tax_rules`
+- `somcp_list_carriers`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -159,6 +160,11 @@ Files - a manual, a data sheet - come from `somcp_list_attachments`: take the
 when the one the merchant wants is not listed, they upload it in the back
 office first. Its `download_url` opens without being signed in: give it to the
 merchant, never put it anywhere public.
+
+Carriers come from `somcp_list_carriers`: give its `id_carrier` in
+`shipping.carriers`, never a guessed one. A disabled carrier is listed too;
+say so before tying a product to it. No carrier given means every carrier
+may deliver the product.
 
 Tax rules come from `somcp_list_tax_rules`: take the `id_tax_rules_group` from
 there, 0 for no tax. Match the merchant's "20 %" on the `rate`, not on the
@@ -319,11 +325,14 @@ otherwise. Before calling it:
 
 1. Read `somcp_list_manufacturers`: the brand may already exist, and the shop
    accepts two brands of the same name.
-2. Ask the merchant for the name, whether the brand is enabled and the address
-   of its logo. The name is one text, the same in every language. Write the
+2. Ask the merchant for the name, whether the brand is enabled and its logo.
+   The name is one text, the same in every language. Write the
    descriptions and the SEO texts yourself, in every language being filled, and
    show them first.
-3. The logo is given by a public `https` address, which the shop downloads.
+3. The logo is an object: `url`, a public `https` address the shop downloads,
+   or `upload_ref`, a file already on the shop (attached or deposited by the
+   merchant, or generated in the built-in assistant), exactly as given in the
+   conversation. One of the two, never both, never an address you made up.
 
 When it succeeds, show the merchant the brand as returned, the `seo_warnings`,
 and the logo if it was refused, with its reason. On a lost answer, read
@@ -406,10 +415,13 @@ otherwise. Before calling it:
 2. Ask the merchant for the name, the contact details - at least the address,
    the city and the country, the state when the country has states, the DNI
    when the country asks for one - whether the supplier is enabled and the
-   address of its logo. Never invent a phone number or an address. Write the
+   logo. Never invent a phone number or an address. Write the
    description and the SEO texts yourself, in every language being filled, and
    show them first.
-3. The logo is given by a public `https` address, which the shop downloads.
+3. The logo is an object: `url`, a public `https` address the shop downloads,
+   or `upload_ref`, a file already on the shop (attached or deposited by the
+   merchant, or generated in the built-in assistant), exactly as given in the
+   conversation. One of the two, never both, never an address you made up.
 
 When it succeeds, show the merchant the supplier as returned, the
 `seo_warnings`, and the logo if it was refused, with its reason. On a lost
@@ -479,6 +491,9 @@ calling it:
 3. A new public name or type shows on every product page offering the group:
    tell the merchant before calling. Away from `color`, the values keep their
    colours and textures but the product page no longer shows them.
+4. To reorder the groups, give `position`, the new place from 0 as
+   `somcp_get_attribute_group` gives it: the other groups shift, as with the
+   drag and drop of the back office list.
 
 When it succeeds, show the merchant each change with its old and new value,
 and the `note` when there is one. `changed: false` means the group already held
@@ -518,6 +533,9 @@ calling it:
 3. Moving the value to another group (`id_attribute_group`) is refused while a
    combination uses it. A texture given is downloaded again and replaces the
    current one.
+4. To reorder the values of a group, give `position`, the new place from 0 as
+   `somcp_get_attribute_value` gives it: the other values shift, as with the
+   drag and drop of the back office list.
 
 When it succeeds, show the merchant each change with its old and new value,
 and the `note` when there is one. If `texture` says `refused`, the value keeps
@@ -555,6 +573,9 @@ creates a second feature.
    `url_name`, `meta_title` and `indexable` out: they are refused.
 3. A new name shows on every product that carries the feature: tell the
    merchant before calling.
+4. To reorder the features, give `position`, the new place from 0 as
+   `somcp_get_feature` gives it: the other features shift, as with the drag
+   and drop of the back office list.
 
 When it succeeds, show the merchant each change with its old and new value.
 `changed: false` means the feature already held those values. On a lost

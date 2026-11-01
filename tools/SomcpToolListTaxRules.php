@@ -52,6 +52,8 @@ class SomcpToolListTaxRules
                 . 'before creating or changing a product, and take id_tax_rules_group from here: '
                 . 'identifiers are specific to each shop, so never assume one, and 0 means no tax. '
                 . 'A rate depends on the country: a customer delivered elsewhere may pay another one. '
+                . 'Rules come in identifier order, as on the back office list; give name to find one '
+                . 'without reading them all. '
                 . 'When taxes_enabled is false the shop applies no tax at all, whatever the rule. '
                 . 'Do not use it for the tax of one product: somcp_get_product gives its rule and rate.',
             [
@@ -61,6 +63,10 @@ class SomcpToolListTaxRules
                         'type' => 'boolean',
                         'description' => 'true (the default) for enabled rules only, false to include '
                             . 'disabled ones too.',
+                    ],
+                    'name' => [
+                        'type' => 'string',
+                        'description' => 'Part of the rule name (Name), case-insensitive. Left out, every rule.',
                     ],
                 ],
                 'additionalProperties' => false,
@@ -106,8 +112,15 @@ class SomcpToolListTaxRules
         if ($onlyActive) {
             $query->where('g.`active` = 1');
         }
-        // Same order as the core list and the product page.
-        $query->orderBy('g.`name` ASC, g.`id_tax_rules_group` ASC');
+        // The Name filter of the back office list: with some fifty rules from
+        // a localization pack, reading them all to find one wastes the answer.
+        $name = isset($arguments['name']) && is_scalar($arguments['name']) ? trim((string) $arguments['name']) : '';
+        if ($name !== '') {
+            $query->where("g.`name` LIKE '%" . pSQL($name) . "%'");
+        }
+        // Identifier order, as the back office list (International > Taxes >
+        // Tax Rules), so a rule sits where the merchant sees it.
+        $query->orderBy('g.`id_tax_rules_group` ASC');
 
         $idCountry = (int) Configuration::get('PS_COUNTRY_DEFAULT', null, null, $idShop);
         // The same call somcp_get_product and somcp_search_products make, so

@@ -38,13 +38,15 @@
     display: inline;
 }
 
-/* The Support us button of the page header, drawn by PrestaShop outside this
-   module's markup (hence the selector on its id). The legacy header template
-   puts an icon box above every label, and the Help button beside it has none:
-   the box goes, so the two read as a pair. */
-[id$="-somcp_sponsor"] > i {
-    display: none;
+/* The heart of the Support us button of the page header is PrestaShop's own
+   icon, but its template only spaces the process-icon set from the label.
+   The button is found by its address: PrestaShop rewrites its id. Only the
+   settings page has the button, and only it is given the address. */
+{if isset($somcp_sponsor_url)}
+a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
+    margin-right: 6px;
 }
+{/if}
 
 /* A native dialog dressed as the back office modal. Its own box is cleared so
    only modal-content draws the frame. */
@@ -173,6 +175,10 @@
 
 .somcp .somcp-status-error {
     color: #e08f95;
+}
+
+.somcp .somcp-status-skipped {
+    color: #a0a0a0;
 }
 
 .somcp .somcp-log code {
@@ -495,7 +501,8 @@
 }
 
 /* Meet our contributors: one row that never wraps - the top contributor,
-   then a page of nine, then the link to everyone past ten. */
+   then a page of six, then the link to everyone past seven. Every card has
+   the width of the top one, so a count and a share each keep to one line. */
 .somcp .somcp-contributors {
     display: flex;
     flex-wrap: nowrap;
@@ -509,11 +516,11 @@
     box-sizing: border-box;
     display: flex;
     /* Narrower screens shrink the cards rather than cut the last one off. */
-    flex: 0 1 84px;
+    flex: 0 1 112px;
     flex-direction: column;
-    min-width: 64px;
+    min-width: 88px;
     align-items: center;
-    width: 84px;
+    width: 112px;
     padding: 8px 4px;
     border: 1px solid #dbe6e9;
     border-radius: 4px;

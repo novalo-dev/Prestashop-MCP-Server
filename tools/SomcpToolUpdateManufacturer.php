@@ -24,7 +24,7 @@ declare(strict_types=1);
  * It extends the creation tool rather than copying it: a field accepted at
  * creation is accepted here under the same name and checked by the same code,
  * so the two tools cannot come to disagree on what a valid name or meta title
- * is, and a logo is downloaded with the same guards and written where the
+ * is, and a logo is fetched with the same guards and written where the
  * creation writes it.
  *
  * Only what is given changes. Each value is compared with what the shop holds
@@ -72,8 +72,8 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
                 . 'Take the brand from somcp_list_manufacturers, never guessed, and read it with '
                 . 'somcp_get_manufacturer to know what it holds. Show the merchant what will change and call once '
                 . 'they agree. Every problem is reported at once and nothing is written until the whole call is '
-                . 'valid. The logo is downloaded by the shop from a public https address after the change; one '
-                . 'that cannot be fetched is reported in logo and does not undo it. The answer gives each field '
+                . 'valid. The logo, by url or by upload_ref, is written after the change; one that cannot be had '
+                . 'is reported in logo and does not undo it. The answer gives each field '
                 . 'changed with its old and new value. A call that would change nothing writes nothing and says '
                 . 'changed: false. '
                 . 'Do not use it to create a brand (somcp_create_manufacturer) or only to enable or disable one '
@@ -106,8 +106,7 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
         $properties['name']['description'] = 'Merchant. One text for every language: a brand name is not '
             . 'translated. 64 characters at most, never empty, without < > { } (nor ; = # before PrestaShop 9.1).' . $kept;
         $properties['active']['description'] = 'Merchant. Enabled on the storefront.' . $kept;
-        $properties['logo']['description'] = 'Merchant. Public https address of a new logo, which replaces the '
-            . 'current one. Downloaded by the shop: no redirect, 10 MB at most, JPEG, PNG, GIF or WebP.';
+        $properties['logo'] = self::imageSchema('Merchant. A new logo, which replaces the current one.', 'the logo');
         $properties['remove_logo'] = [
             'type' => 'boolean',
             'description' => 'Merchant. true removes the logo. Not with logo, which already replaces it.',
@@ -198,7 +197,7 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
             'changes' => [],
             'touched' => [],
             'manufacturer' => [],
-            'logo' => self::logoUrl($arguments, $errors),
+            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
             'remove_logo' => false,
         ];
 
@@ -303,7 +302,7 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
         // An address cannot be compared with a stored file, so a logo given
         // always counts as a change; a removal counts only when there is one.
         if ($plan['logo'] !== null) {
-            self::record($plan, 'logo', $before['logo'], $plan['logo']);
+            self::record($plan, 'logo', $before['logo'], self::imageOrigin($plan['logo']));
         } elseif ($before['logo'] === null) {
             $plan['remove_logo'] = false;
         } else {
@@ -362,7 +361,7 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
             // Written over the current files, under the same names, rather
             // than after deleting them: if it cannot be fetched, the brand
             // keeps the logo it had.
-            $logo = self::storeLogo($idManufacturer, (string) $plan['logo']);
+            $logo = self::storeLogo($idManufacturer, $plan['logo']);
         }
 
         SomcpLogger::log(

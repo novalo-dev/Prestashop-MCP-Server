@@ -519,4 +519,124 @@ class SomcpTool
             'isError' => $isError,
         ];
     }
+
+    /**
+     * A calendar day given as YYYY-MM-DD, or null when the value is not one.
+     *
+     * Shared by the tools that take a period, so a date accepted by one is
+     * accepted by the others and the assistant can pass the same bounds on.
+     *
+     * @param mixed $value
+     *
+     * @return string|null
+     */
+    public static function day($value): ?string
+    {
+        if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)
+            || !checkdate((int) substr($value, 5, 2), (int) substr($value, 8, 2), (int) substr($value, 0, 4))) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    /**
+     * The active languages of a shop, keyed by id_lang, with their ISO code.
+     *
+     * The one list every tool checks a language against: an installed
+     * language that is disabled, or attached to another shop, is not one the
+     * merchant writes in, so a text read or written in it would be lost.
+     *
+     * @param int $idShop
+     *
+     * @return array<int, string>
+     */
+    public static function activeLanguages(int $idShop): array
+    {
+        $languages = [];
+        foreach (Language::getLanguages(true, $idShop) as $language) {
+            $languages[(int) $language['id_lang']] = (string) $language['iso_code'];
+        }
+
+        return $languages;
+    }
+
+    /**
+     * The language a read tool reads its texts in, as [id_lang, iso], or null
+     * when the one asked for is not an active language of the shop.
+     *
+     * Left out, it is the shop default rather than the context language: on an
+     * MCP call the context language follows the client's Accept-Language
+     * header, so the same call would answer in a different language from one
+     * client to the next. An unknown code is refused rather than replaced, or
+     * texts read in one language would be handed back as another.
+     *
+     * @param array<string, mixed> $arguments
+     * @param int $idShop
+     *
+     * @return array{0: int, 1: string}|null
+     */
+    public static function readLanguage(array $arguments, int $idShop): ?array
+    {
+        $languages = self::activeLanguages($idShop);
+        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
+            $idDefault = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
+            if (isset($languages[$idDefault])) {
+                return [$idDefault, $languages[$idDefault]];
+            }
+            // A default language left disabled still answers in a language
+            // the shop has, rather than failing a call that asked for none.
+            foreach ($languages as $idLang => $iso) {
+                return [$idLang, $iso];
+            }
+
+            return null;
+        }
+        if (!is_string($arguments['language'])) {
+            return null;
+        }
+
+        $asked = Tools::strtolower(trim($arguments['language']));
+        foreach ($languages as $idLang => $iso) {
+            if (Tools::strtolower($iso) === $asked) {
+                return [$idLang, $iso];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The answer to a language readLanguage() refused, naming the ones the
+     * shop has so the next call can pick one.
+     *
+     * @param int $idShop
+     *
+     * @return array<string, mixed>
+     */
+    public static function languageRefused(int $idShop): array
+    {
+        return self::text(
+            'This language is not one of the shop\'s, which has '
+                . implode(', ', self::activeLanguages($idShop))
+                . '. Give the ISO code of one of them, or leave language out for the shop default.',
+            true
+        );
+    }
+
+    /**
+     * The name of a carrier as the back office shows it.
+     *
+     * The carrier the installer creates is stored with the name 0, and the
+     * back office shows it under the shop name. Shared by every tool that
+     * names a carrier, so the same carrier never wears two names.
+     *
+     * @param string $name as stored
+     *
+     * @return string
+     */
+    public static function carrierName(string $name): string
+    {
+        return $name === '0' ? (string) Configuration::get('PS_SHOP_NAME') : $name;
+    }
 }

@@ -17,10 +17,11 @@
 declare(strict_types=1);
 
 /*
- * SomcpCatalog - how the catalogue tools read a stored value the same way.
+ * SomcpCatalog - how the catalogue tools read or write a stored value the same way.
  *
- * Several tools return the same product values. Each rule lives here once, so
- * a product read with one tool never shows a different value with another.
+ * Several tools return the same product values, or move items of the catalogue
+ * the same way. Each rule lives here once, so a value read with one tool never
+ * shows differently with another, and two tools never write it differently.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -82,5 +83,85 @@ class SomcpCatalog
         );
 
         return (float) ($rates[(int) Configuration::get('PS_ECOTAX_TAX_RULES_GROUP_ID', null, null, $idShop)] ?? 0);
+    }
+
+    /**
+     * Whether the running version gives feature values a position.
+     *
+     * PrestaShop 9 added feature_value.position, with the back office order
+     * and the Rearrange button that go with it; PrestaShop 8 has neither. The
+     * tools that list, read or move feature values all ask here, so they never
+     * disagree on which versions have it.
+     *
+     * @return bool
+     */
+    public static function featureValuesHavePosition(): bool
+    {
+        return version_compare(_PS_VERSION_, '9.0.0', '>=');
+    }
+
+    /**
+     * Moves an object to a new place in its list, as the drag and drop of the back office does.
+     *
+     * The core's updatePosition() shifts the others, as the list does. Some
+     * versions of it look up the object being moved, or its parent, from the
+     * request the back office list sends rather than from the object, so the
+     * caller names those request values and they are set for the call only:
+     * the request of this module never carries them, and without them the core
+     * would move another row or refuse. Every tool that reorders a catalogue
+     * list is meant to come through here, so they agree on how a place is
+     * written.
+     *
+     * @param ObjectModel $object loaded, with an updatePosition($direction, $position) method
+     * @param int $current where it stands now
+     * @param int $position where it goes
+     * @param array<string, int> $request request values the core reads during the move
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    public static function movePosition(ObjectModel $object, int $current, int $position, array $request = []): string
+    {
+        if ($current === $position) {
+            return '';
+        }
+        if (!method_exists($object, 'updatePosition')) {
+            return 'PrestaShop gives this object no position';
+        }
+
+        $saved = [];
+        foreach ($request as $key => $value) {
+            $saved[$key] = [
+                'get' => array_key_exists($key, $_GET) ? $_GET[$key] : null,
+                'post' => array_key_exists($key, $_POST) ? $_POST[$key] : null,
+            ];
+            // Both, since Tools::getValue() reads POST before GET.
+            $_GET[$key] = (string) (int) $value;
+            $_POST[$key] = (string) (int) $value;
+        }
+
+        try {
+            $failure = $object->updatePosition($position > $current, $position) ? '' : 'PrestaShop refused to save it';
+        } catch (Throwable $e) {
+            $failure = $e->getMessage();
+        } finally {
+            foreach ($saved as $key => $was) {
+                if ($was['get'] === null) {
+                    unset($_GET[$key]);
+                } else {
+                    $_GET[$key] = $was['get'];
+                }
+                if ($was['post'] === null) {
+                    unset($_POST[$key]);
+                } else {
+                    $_POST[$key] = $was['post'];
+                }
+            }
+        }
+
+        // The object is kept for the rest of the request under its id, and a
+        // read-back must show the new place rather than the one loaded before.
+        Cache::clean('objectmodel_' . get_class($object) . '_' . (int) $object->id . '_*');
+
+        return $failure;
     }
 }

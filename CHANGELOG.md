@@ -14,6 +14,181 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## 1.1.3 - 2026-11-01
+
+### Added
+
+**Sales summary over a period.** The new tool `somcp_get_sales_summary`
+gives what the shop sold between two dates, counted as the **Stats Dashboard**
+and **Sales and orders** pages count it: valid orders by invoice date, amounts
+tax excluded in the shop's default currency. It returns the revenue, the
+sales after credit slips, the revenue tax included, the number of orders, the
+products bought, the average basket and the new customers, and on request the
+same figures for the period just before, to compare. It works even when the
+statistics modules are disabled. It needs the new permission `mcp.stats.read`,
+which the consent screen describes as reading the statistics, and the `view`
+right on the back office Stats page.
+
+**Best-selling products over a period.** The new tool
+`somcp_list_best_sellers` lists the products that sold most between two
+dates, as **Stats > Best-selling products** shows them: reference, name,
+quantity sold, price sold, sales, quantity sold in a day, page views,
+available quantity and status, sorted by sales or by any of those figures,
+page by page. It counts the same valid orders by invoice date as the sales
+summary, in the shop's default currency, and works even when the statistics
+module is disabled. The sales report prompt now uses it for best sellers.
+
+**Sales report prompt.** A guided task for sales figures, picked from the
+assistant's menu: turn the period into two dates and say which, give every
+amount with its currency and whether tax is included, and explain why the
+list of orders can differ by a few orders at the edges of a period.
+
+**Listing carriers.** The new tool `somcp_list_carriers` lists the
+carriers of the shop as **Shipping > Carriers** shows them, enabled or not
+and in the same order, with their delay, logo, tracking URL and whether
+they are free, filtered by status, free shipping or part of the name. The
+carrier identifiers a product takes are read from it instead of guessed,
+and since PrestaShop gives a carrier a new identifier each time it is
+edited, the reference that stays the same is given too. The prompts
+**Change an order status** and **Manage products** name it.
+
+**Listing content pages.** The new tool `somcp_list_cms_pages` lists the
+CMS pages of the shop as **Design > Pages** shows them, displayed or not:
+URL, title, meta title, position, category and the page's address on the
+storefront, filtered by category, by **Displayed** or by part of the title.
+The page categories come with it, so a category can be picked by its
+identifier. The title and the meta title keep the names the SEO tools use,
+so the assistant never writes one in place of the other. It needs the new
+permission `mcp.content.read`, which the consent screen describes as
+reading the content pages, and the `view` right on **Design > Pages**.
+
+**Content pages prompt.** A guided task for the shop's CMS pages, picked
+from the assistant's menu: find the page the merchant means by its title,
+quote its texts rather than paraphrasing them, and tell the title from the
+meta title.
+
+**Creating return statuses.** The new tool `somcp_create_return_status`
+adds one return status - a step a merchandise return goes through - with
+its name in the languages being filled and its colour, as the **Add new
+return status** form of **Shop Parameters > Order Settings > Statuses**
+does. A name another return status already has in that language is
+refused, so two steps can never wear the same label and be mistaken for
+each other. The prompt **Change an order status** names it too.
+
+**Changing return statuses.** The new tool `somcp_update_return_status`
+changes the name or the colour of one return status, as its **Edit** form
+of **Shop Parameters > Order Settings > Statuses** does. Only what is
+given changes: a language left out keeps its text, and a call that would
+change nothing writes nothing and says so. A name another return status
+already has in that language is refused, as at creation. The prompt
+**Change an order status** names it too.
+
+**Creating order statuses.** The new tool `somcp_create_order_status`
+adds one order status with every field of the **Add new order status**
+form of the same page: its name and email template in the languages
+being filled, its colour, its GIF icon - by address or by a file already
+on the shop - and the nine boxes that say what reaching the status sets
+off. A name another order status already has in that language is
+refused on both PrestaShop 8 and 9, so two statuses can never wear the
+same label. The prompt **Change an order status** names it too.
+
+### Changed
+
+**A brand or supplier logo can be a file already on the shop.** The logo of
+`somcp_create_manufacturer`, `somcp_update_manufacturer`,
+`somcp_create_supplier` and `somcp_update_supplier` used to accept only a web
+address, so a photo attached in the built-in assistant or an image it had just
+generated could not become a logo. It is now given the way product images are:
+either its public https address (`url`) or the reference of a file already on
+the shop (`upload_ref`), and it goes through the same download and image checks
+as product images. The answer names the logo by the one that was given.
+
+**Reading an order gives what acting on it needs.** `somcp_get_order` now
+returns the identifier of each product line, of each discount (with its
+invoice and whether it offers free shipping) and of each step of the status
+history, so that refunding a line, removing a discount or resending the email
+of a status can name what they act on. Each address now comes with its
+identifier, its alias, its region and the identification number when there is
+one, as the address blocks of the order page show them. A product line that is
+a pack lists the products in it, with their quantity and the stock available
+now, like the **Products in pack** window of the order page.
+
+**Features can be reordered.** The order of the features - the drag and
+drop of **Catalog > Attributes & Features > Features** - could not be changed
+by the assistant: `somcp_update_feature` refused `position`. It now takes it,
+moves the feature to that place and shifts the others as the list does, and
+the answer gives the old and the new place.
+
+**Attribute values can be reordered.** The order of the values of an
+attribute - the drag and drop of its list of values in **Catalog > Attributes &
+Features > Attributes** - could not be changed by the assistant:
+`somcp_update_attribute_value` refused `position`. It now takes it, moves the
+value to that place and shifts the others as the list does, also right after
+moving the value to another attribute, and the answer gives the old and the
+new place.
+
+**Attribute groups can be reordered.** The order of the attribute groups -
+the drag and drop of **Catalog > Attributes & Features > Attributes** - could
+not be changed by the assistant: `somcp_update_attribute_group` refused
+`position`. It now takes it, moves the group to that place and shifts the
+others as the list does, and the answer gives the old and the new place.
+
+**Tax rules: found by name, in the order of the list.** With the fifty or so
+rules a localization pack creates, the assistant had to read them all to find
+one. `somcp_list_tax_rules` now takes part of a rule name, as the **Name**
+filter of **International > Taxes > Tax Rules** does, and lists the rules in
+the order of that page - by identifier - instead of by name.
+
+**The diagnostic names the real cause.** With friendly URLs off, the three
+address lines below also failed, each blaming something else - a rewrite rule,
+an error 503 - and sent the merchant after problems that did not exist. When a
+line every address depends on fails (the shop disabled, friendly URLs off, no
+valid certificate), the addresses are now marked **Not checked** and point to
+that line. Two lines are new: **HTTPS certificate**, which says when the
+certificate is expired, self-signed, issued for another domain or missing, and
+**SSL in PrestaShop**, red when SSL is off - only a warning on a shop running
+on a local address. A failing setting now comes with **Go to the setting**,
+which opens the PrestaShop page where it is changed, and an address answered by
+the maintenance page says so.
+
+**Meet our contributors: wider cards.** On the cards after the top
+contributor, the number of contributions and the share of the commits were
+cut over four short lines. Every card now has the width of the top one, so
+each keeps to a line, and the others come six at a time with Previous and
+Next.
+
+**The list of files shows descriptions and can be filtered.**
+`somcp_list_attachments` now returns the **Description** of each file beside
+its name, which tells two manuals or two data sheets apart, and filters on
+part of the **Name** or of the **File** as the list of **Catalog > Files**
+does. A language the shop does not have used to be silently replaced by
+another one; it is now refused with the list of the shop's languages, the
+shop default language is used when none is given, and the answer says which
+language the names and descriptions are in.
+
+**The attribute list shows what the back office shows.** `somcp_list_attributes`
+now gives, for each attribute group, its type, its position and its number of
+values, and for each value its position and, in a colour group, its colour -
+the columns of **Catalog > Attributes & Features > Attributes**. Before, it
+gave only identifiers and names, so a group's order or a value's colour had to
+be read one by one.
+
+**The feature list shows what the back office shows.** `somcp_list_features`
+now gives, for each feature, its position and its number of values - the
+columns of **Catalog > Attributes & Features > Features** - and on PrestaShop 9
+the position of each value, with the values in the order of the back office.
+Before, it gave only identifiers and names, and on PrestaShop 9 listed the
+values in another order than the back office. `somcp_get_feature_value` also
+gives the position of the value on PrestaShop 9.
+
+### Fixed
+
+**Support us button on PrestaShop 8.1 and later.** The button opened GitHub
+straight away instead of the thank-you window, and showed no icon, because
+PrestaShop rebuilds the buttons of the page header and dropped what the module
+gave this one. It now opens the window on every version, with a heart in front
+of its label drawn the way PrestaShop draws the icons of its own buttons.
+
 ## 1.1.2 - 2026-10-31
 
 ### Added

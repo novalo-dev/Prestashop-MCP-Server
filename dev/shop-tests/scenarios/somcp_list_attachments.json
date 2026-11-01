@@ -1,7 +1,12 @@
 {
   "calls": [
-    {"why": "lists the files of the demo shop, which ships none", "arguments": {}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]},
-    {"why": "in a language given by ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]},
-    {"why": "a language the shop does not have falls back on the default one", "arguments": {"language": "zz"}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]}
+    {"why": "lists the files of the demo shop, which ships none, in the shop default language", "arguments": {}, "expect": "ok", "contains": ["\"attachments\"", "\"count\"", "\"language\""]},
+    {"why": "in a language given by ISO code, which the answer names", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"attachments\"", "\"language\": \"en\""]},
+    {"why": "the ISO code is read without case", "arguments": {"language": "EN"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]},
+    {"why": "a language that is not a string is refused", "arguments": {"language": 5}, "expect": "error", "contains": ["This language is not one of the shop's"]},
+    {"why": "filtered by part of the name", "arguments": {"name": "manual"}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]},
+    {"why": "filtered by part of the file name", "arguments": {"file_name": ".pdf"}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]},
+    {"why": "a name no file carries lists nothing", "arguments": {"name": "no-file-is-named-like-this"}, "expect": "ok", "contains": ["\"attachments\": []", "\"count\": 0"]}
   ]
 }

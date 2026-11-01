@@ -114,6 +114,11 @@ jobs:
           tools: none
       - name: Every tool documented, scoped and in a prompt
         run: php .github/scripts/check-tools.php .
+      - name: Every source file with the module's licence header
+        # Reported, never fixed here: a bot commit would be unsigned, and a
+        # pull request from a fork cannot be written to. The message gives
+        # the command that fixes it locally.
+        run: php .github/scripts/check-headers.php .
 
   multishop:
     name: Multistore

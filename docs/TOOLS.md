@@ -360,11 +360,18 @@ customer has none. The count joins the same tables as the list, so
   `gift_message`, `recycled_packaging`;
 - `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
   `total_spent` with `total_spent_currency`, `private_note` (read only);
-- `products`, per line: `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
+- `addresses.delivery` and `addresses.invoice`: `id_address`, `alias`,
+  `state` (the region), `dni` (empty when not set);
+- `products`, per line: `id_order_detail`, `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
   (strings), `tax_name`, `tax_rate`, `stock_location`, `quantity_in_stock_now`,
   `quantity_refunded`, `refunded_tax_excluded`, `refunded_tax_included`,
   `quantity_returned`, `customizations` (`id_customization`, `type` text or
-  file, `name`, `value`);
+  file, `name`, `value`), `pack_items` (`id_product`, `id_product_attribute`,
+  `name`, `reference`, `quantity`, `quantity_in_stock_now`; empty when the
+  product is not a pack);
+- `discounts`, each with `id_order_cart_rule`, `id_order_invoice` and
+  `free_shipping`;
+- `history`, each step with `id_order_history`;
 - `shipping.shipments`, one per shipment: `id_order_carrier`, `date`,
   `carrier`, `weight`, `shipping_cost_tax_excluded`,
   `shipping_cost_tax_included`, `tracking_number`, `tracking_url`;
@@ -383,7 +390,8 @@ through core objects, which one order can afford.
 The customer figures come from `Customer::getStats()`, as on the order page,
 converted into the order's currency. Stock location and quantity in stock now
 come from `Order::getProducts()`, not from `product_quantity_in_stock`, which is
-the quantity at the time of the order. Shipments are read from the order's
+the quantity at the time of the order. Pack items are read as `somcp_get_product` reads them, the pack as it is now:
+the order keeps no copy of its content. Shipments are read from the order's
 `OrderCarrier` rows, not from `Order::getShipping()`, which groups them by
 carrier. `order_payment.id_employee` exists on 9.0.0 only. Card number, holder
 and expiry are never returned: the page does not show them.
@@ -685,6 +693,66 @@ five statuses every shop starts with cannot be deleted, on PrestaShop 8 or 9:
 8.0.1 skips Delete on 1 to 5, 9.0.0 computes the same rows as unremovable.
 Same table and same rows on both versions.
 
+#### `somcp_create_return_status`
+**State**: written
+**Nature**: `acts(ADD, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
+
+**Does** - creates one return status: a step a merchandise return goes
+through, with its name in the languages being filled and its colour.
+
+**Do not use for** - the statuses of an order (→ `somcp_list_order_statuses`
+lists them, `somcp_create_order_status` creates one):
+a return status is not an order status, and its identifiers are never order
+status identifiers.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `languages` | array of strings | no | ISO codes of the languages to fill; all the shop's active languages by default |
+| `name` | object by ISO code | yes | the name of the step, one text per language being filled; a language of the shop left out of `languages` takes the default language's text |
+| `color` | string | no | the colour the status is highlighted in, a hex code `#RRGGBB` |
+
+**Returns** - `created`, `id_order_return_state`, and `status`, the status as
+`somcp_list_return_statuses` lists it.
+
+**Notes** - the **Add new return status** form of **Shop Parameters > Order
+Settings > Statuses**, read in full on 8.0.1 and 9.0.0: two fields, the name
+and the colour, and no difference between the versions. The name follows the
+rules of `somcp_create_feature`: required in the default language - every
+language being filled - `Validate::isGenericName()`, 64 characters at most.
+A name another return status already has in that language is refused, so the
+merchant can tell the steps apart; PrestaShop itself accepts the duplicate.
+The colour is checked as `somcp_create_attribute_value` checks a swatch -
+`#RRGGBB` only, because `Validate::isColor()` alone lets a bare word
+through; left out, the status is stored without a colour, as the form
+allows. Written through `OrderReturnState::add()`, as 8.0.1
+(`AdminStatusesController`) and 9.0.0 (`AddOrderReturnStateHandler`) do.
+Return statuses are not tied to a shop: the table has no shop column. Every
+problem is reported at once, before anything is written. Not replayable: a
+lost answer is checked with `somcp_list_return_statuses`.
+
+#### `somcp_update_return_status`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes the name or the colour of one return status, as its **Edit** form on **Shop Parameters > Order Settings > Statuses** does. Only what is given changes.
+
+**Do not use for** - creating one (→ `somcp_create_return_status`), or the statuses of an order: a return status is not an order status, and its identifiers are never order status identifiers.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order_return_state` | integer | yes | from `somcp_list_return_statuses`, never guessed |
+| `languages` | array of strings | no | ISO codes of the languages to fill; all the shop's active languages by default |
+| `name` | object by ISO code | no | the new name of the step, one text per language being filled; a language left out of `languages` keeps its text |
+| `color` | string | no | the colour the status is highlighted in, a hex code `#RRGGBB` |
+
+**Returns** - `changed`, `id_order_return_state`, `changes` (per field its old and new value, a name per language: `name (en)`), and `status`, the status as `somcp_list_return_statuses` lists it. A call that would change nothing writes nothing and answers `changed: false`, with empty `changes` and a `reason`.
+
+**Notes** - the **Edit** form of a return status, read in full on 8.0.1 and 9.0.0: the same two fields as the **Add new return status** form, and no difference between the versions. The name follows the rules of `somcp_create_return_status`: required in every language being filled, `Validate::isGenericName()`, 64 characters at most. A name another return status already has in that language is refused, so the merchant can tell the steps apart; the status's own name is not a duplicate. The colour is checked as at creation - `#RRGGBB` only. Every return status can be edited, the five built-in ones (1 to 5) included, on both versions. Written through `OrderReturnState::update()`, as the back office edit does. Return statuses are not tied to a shop: the table has no shop column. Every problem is reported at once, before anything is written. Not replayable: a lost answer is checked with `somcp_list_return_statuses`.
+
 ### Billing
 
 The accounting records an order produces: invoices, credit slips, delivery
@@ -754,24 +822,91 @@ exists in `somcp_search_orders`, where the permission is the right one.
 `deleted` was returned and always false: `OrderState::getOrderStates()` filters
 them out before we see them. Removed rather than left lying.
 
-#### `somcp_list_carriers`
-**State**: draft · [issue #20](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/20)
-**Nature**: `acts(VIEW, 'AdminCarriers')` · **Scope**: `mcp.orders.read`
+#### `somcp_create_order_status`
+**State**: written
+**Nature**: `acts(ADD, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
 
-**Does** - lists the carriers of this shop with their identifiers, delays and tracking URL.
+**Does** - creates one order status, with every field of the **Add new order
+status** form: the name and the email template per language, the colour, the
+GIF icon, and the nine boxes that say what reaching the status sets off.
 
-**Do not use for** - reading the carrier of one order (→ `somcp_get_order`).
+**Do not use for** - changing a status (→ `somcp_update_order_status`), giving
+an order a status (→ `somcp_set_order_status`), or the steps of a merchandise
+return (→ `somcp_create_return_status`): a return status is not an order
+status.
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `active` | boolean | no | true by default |
-| `language` | string | no | ISO code, shop default otherwise |
+| `languages` | array of strings | no | ISO codes of the languages to fill; all the shop's active languages by default |
+| `name` | object by ISO code | yes | the name of the status, one text per language being filled; a language of the shop left out takes the default language's text |
+| `color` | string | no | the colour the status is highlighted in, a hex code `#RRGGBB` |
+| `icon` | object | no | the icon, a GIF: `url` (a public https address the shop downloads) or `upload_ref` (a file already on the shop), one of the two |
+| `logable` | boolean | no | considers the associated order as validated; off by default |
+| `invoice` | boolean | no | lets the customer download and view PDF versions of their invoices; off by default |
+| `hidden` | boolean | no | hides the status in all customer orders; off by default |
+| `send_email` | boolean | no | emails the customer when their order reaches this status; off by default |
+| `pdf_invoice` | boolean | no | attaches the invoice PDF to that email; off by default |
+| `pdf_delivery` | boolean | no | attaches the delivery slip PDF to that email; off by default |
+| `shipped` | boolean | no | sets the order as shipped; off by default |
+| `paid` | boolean | no | sets the order as paid; off by default |
+| `in_transit` | boolean | no | sets the order as in transit - the box 8.0.1 labels **Show delivery PDF**; off by default |
+| `template` | object by ISO code | no | the mail template of the status email, one per language being filled; only stored with `send_email` |
 
-**Returns** - per carrier: `id_carrier`, `id_reference`, `name`, `delay`, `active`, `is_free`, `tracking_url`, `external_module`.
+**Returns** - `created`, `id_order_state`, `status` (the status as
+`somcp_list_order_statuses` lists it, `icon` included) and, when an icon was
+given, `icon`: its `url` or `upload_ref`, with `stored: true` or
+`refused: <reason>`.
 
-**Notes** - `id_carrier` changes each time a carrier is edited in PrestaShop; `id_reference` does not. Both are returned, and the description says which to keep.
+**Notes** - the **Add new order status** form of **Shop Parameters > Order
+Settings > Statuses**, read in full on 8.0.1 and 9.0.0. The name follows the
+rules of `somcp_create_feature`: required in the default language - every
+language being filled - `Validate::isGenericName()`, 64 characters at most.
+A name another order status already has in that language is refused, so two
+statuses can never wear one label and be mistaken by the merchant or by
+`somcp_set_order_status` called with a name: 8.0.1 refuses it
+(`OrderState::existsLocalizedNameInDatabase()`), the 9.0.0 handler does not
+call the check, and the tool refuses it on both. The colour is checked as
+`somcp_create_attribute_value` checks a swatch. A template must be one of the
+mail templates of its language (`mails/<iso>/`, the list the form offers);
+with `send_email` off the templates are stored empty, as 8.0.1 blanks them.
+The icon is a GIF only, as the form says, fetched as the product images are -
+`url` downloaded by the shop with its guards, `upload_ref` redeemed from the
+shop's deposits - and stored as `img/os/<id>.gif` as it arrived, as the 9.0.0
+`OrderStateFileUploader` moves it. It is written after the status exists, so
+a refused icon leaves the status without one and says so. `module_name`,
+`unremovable` and `deleted` are not on the form and are never written.
+Written through `OrderState::add()`. Order statuses are not tied to a shop:
+the table has no shop column. Every problem is reported at once, before
+anything is written. Not replayable: a lost answer is checked with
+`somcp_list_order_statuses`, and a second call would be refused on the name
+anyway.
+
+#### `somcp_list_carriers`
+**State**: written · [issue #20](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/20)
+**Nature**: `acts(VIEW, 'AdminCarriers')` · **Scope**: `mcp.orders.read`
+
+**Does** - lists the carriers of this shop as **Shipping > Carriers** shows them, enabled or not, with the tracking URL of each.
+
+**Do not use for** - the carrier and tracking number of one order (→ `somcp_get_order`), changing a tracking number (→ `somcp_set_order_tracking`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `active` | boolean | no | the **Status** filter; left out, every carrier, since a disabled one can still be tied to a product |
+| `is_free` | boolean | no | the **Free shipping** filter; left out, both |
+| `name` | string | no | part of the carrier name (the **Name** filter of the list), case-insensitive; left out, every carrier |
+| `language` | string | no | for `delay`, which is translated: ISO code of one of the shop's active languages, refused otherwise; the shop default when left out |
+
+**Returns** - per carrier, in the order of the list (`position`, then `id_carrier`): `id_carrier` (**ID**, what `shipping.carriers` of the product tools takes), `id_reference`, `name` (**Name**; the carrier stored as `0` is shown under the shop name, as `somcp_get_product` names it, through one shared function), `delay` (**Delay** on the list, **Transit time** on the form, in `language` for the token's shop), `active` (**Status**), `is_free` (**Free shipping**), `position` (from 0; the list shows it from 1), `logo` (public URL of `img/s/<id_carrier>.jpg`, `null` when there is none), `tracking_url` (as stored, `@` where the tracking number goes, empty when none), `external_module` (the module that computes its costs when a module created it, `null` otherwise). Plus `count` and `language` (the ISO code `delay` was read in).
+
+**Errors** - a language the shop does not have: the shared refusal, naming the ones it has. An empty list is `carriers: []`, `count: 0`.
+
+**Notes** - PrestaShop gives a carrier a new `id_carrier` each time it is edited and keeps the old row as deleted; `id_reference` does not change. Orders keep the `id_carrier` they were placed with, products are tied to the reference (the product tools turn the `id_carrier` they are given into it). Only the carriers of the token's shop (`carrier_shop`), not deleted; disabled ones are listed. Zones, ranges, prices, groups, tax, handling costs, sizes and weight belong to a future read of one carrier. In Configuration with `somcp_list_order_statuses`: an order uses a carrier without containing one, so the scope is `mcp.orders.read`.
+
+On 8.0.1 the filter label is **Free Shipping**, on 9.0.0 **Free shipping**; the edit page is the wizard `AdminCarrierWizard` on 8.0.1 and a Symfony form on 9.0.0. The columns read are the same on both.
 
 #### `somcp_list_tax_rules`
 **State**: written
@@ -786,6 +921,7 @@ them out before we see them. Removed rather than left lying.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `active` | boolean | no | true by default, enabled rules only; false lists disabled ones too |
+| `name` | string | no | part of the rule name (the **Name** filter of the list), case-insensitive; left out, every rule |
 
 **Returns** - per rule: `id_tax_rules_group`, `name`, `active`, `rate` in the default country, `country` (ISO code of that country). Plus `count`, and `taxes_enabled`: false when the shop has taxes switched off, so that no rule applies.
 
@@ -793,7 +929,8 @@ them out before we see them. Removed rather than left lying.
 - Scope `mcp.catalog.read`, not a configuration one: it is read to price a product. The rate depends on the country; the one returned is the one the back office product page shows.
 - The rate comes from `TaxRulesGroup::getAssociatedTaxRatesByIdCountry()` for `PS_COUNTRY_DEFAULT` of the shop of the token, the same call `somcp_get_product` and `somcp_search_products` make, so the three tools agree. A rule with nothing for that country gives 0.
 - `taxes_enabled` added to the first draft of this entry: with `PS_TAX` off, `somcp_get_product` gives a rate of 0 whatever the rule, and an assistant reading 20 here would otherwise price tax included wrongly.
-- Read through a query on `tax_rules_group` and `tax_rules_group_shop` in the shop of the token, rather than `TaxRulesGroup::getTaxRulesGroups()`, which takes the shop from the global context. Rules deleted in the back office (`deleted = 1`, kept for the orders that used them) are left out. Sorted by name, as the core does.
+- Read through a query on `tax_rules_group` and `tax_rules_group_shop` in the shop of the token, rather than `TaxRulesGroup::getTaxRulesGroups()`, which takes the shop from the global context. Rules deleted in the back office (`deleted = 1`, kept for the orders that used them) are left out. Sorted by identifier, the order of **International > Taxes > Tax Rules** (the product page drop-down sorts by name, the list the merchant manages them in does not).
+- `name` filters as the **Name** column of that list does, the same parameter as `somcp_list_manufacturers`, `somcp_list_suppliers` and `somcp_list_attachments`.
 
 #### `somcp_list_customer_groups`
 **State**: draft · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)
@@ -1312,14 +1449,14 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most |
 | `meta_description` | assistant | same characters; 512 characters at most |
 | `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
-| `logo` | merchant | a public `https` URL, downloaded with the guards of `somcp_create_product` |
+| `logo` | merchant | an object with `url` (a public `https` address) or `upload_ref` (a file already on the shop), one of the two, as the `images` of `somcp_create_product`, fetched and checked by the same shared function |
 | `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 
-**Returns** - `created`, `id_manufacturer`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` with `stored: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
+**Returns** - `created`, `id_manufacturer`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` or `upload_ref` with `stored: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
 
 **Notes**
 - Written through `Manufacturer::add()` in the shop of the token (`id_shop_list`), as the core's `AddManufacturerHandler` does, so the object hooks fire. If the add fails after the row went in, the brand is deleted again.
-- The core's `ManufacturerImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The downloaded logo is written where it writes it instead, as `img/m/<id>.jpg` with one file per brand image type (and each extra format switched on, from PrestaShop 8.1, with the fitment of each type on 9), and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the brand.
+- The core's `ManufacturerImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The logo, downloaded or redeemed, is written where it writes it instead, as `img/m/<id>.jpg` with one file per brand image type (and each extra format switched on, from PrestaShop 8.1, with the fitment of each type on 9), and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the brand.
 - PrestaShop accepts two brands of the same name: the description tells the assistant to read `somcp_list_manufacturers` first.
 - Every problem is reported at once, before anything is written. The rich texts, meta texts and meta keywords are checked by the same methods as `somcp_create_category`, with the limits of `Manufacturer::$definition`.
 - Not replayable: the read tool to check is `somcp_list_manufacturers`.
@@ -1334,14 +1471,14 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 **Parameters** - `id_manufacturer` (required), `languages`, then the fields of `somcp_create_manufacturer`, all optional. A text given replaces the languages given and keeps the others. `remove_logo` removes the logo explicitly.
 
-**Returns** - `changed`, `changes` (per field its old and new value, a text per language), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise `stored: true`, `removed: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
+**Returns** - `changed`, `changes` (per field its old and new value, a text per language), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise its `url` or `upload_ref` with `stored: true`, `removed: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
 
 **Notes**
-- Extends `somcp_create_manufacturer`: every field is checked by the same code, and the logo downloaded with the same guards and written where the creation writes it, over the current files, so a logo that cannot be fetched leaves the brand with the one it had.
+- Extends `somcp_create_manufacturer`: every field is checked by the same code, and the logo fetched with the same guards and written where the creation writes it, over the current files, so a logo that cannot be had leaves the brand with the one it had.
 - An `id_manufacturer` that does not exist, or a brand of another shop, is refused by the same test of the shop as `somcp_get_manufacturer`.
 - Written through one `Manufacturer::update()` in the shop of the token (`id_shop_list`), as the core's `EditManufacturerHandler` does, so the object hooks fire; left to the context, the update could attach the brand to a shop it was never in.
 - `remove_logo` deletes what the core's `DeleteManufacturerLogoImageHandler` deletes: the original, every brand image type in every format, and the two cached copies of the back office. It is refused next to `logo`, and counts as a change only when the brand has a logo.
-- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address cannot be compared with a stored file.
+- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address or an `upload_ref` cannot be compared with a stored file; `changes` names it by its `url` or `upload_ref`.
 
 #### `somcp_set_manufacturer_active`
 **State**: written
@@ -1560,18 +1697,18 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most |
 | `meta_description` | assistant | same characters; 512 characters at most |
 | `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
-| `logo` | merchant | a public `https` URL, downloaded with the guards of `somcp_create_product` |
+| `logo` | merchant | an object with `url` (a public `https` address) or `upload_ref` (a file already on the shop), one of the two, as the `images` of `somcp_create_product`, fetched and checked by the same shared function |
 | `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 
 The name and every contact field are one string each, the same in every language.
 
-**Returns** - `created`, `id_supplier`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` with `stored: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
+**Returns** - `created`, `id_supplier`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` or `upload_ref` with `stored: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
 
 **Notes**
 - Written through `Supplier::add()` in the shop of the token (`id_shop_list`), then its `Address` through `Address::add()` with `id_supplier` set and the placeholder alias, first name and last name (`supplier`) the core's `AddSupplierHandler` writes. The handler adds the address first and links it after; here it is linked from the start, so a failure in between cannot leave an address that belongs to nobody. If either add fails after a row went in, what was written is deleted again.
-- Every problem is reported at once, before anything is written. The name, rich text, meta texts, meta keywords and logo address are checked by the same methods as `somcp_create_manufacturer`; the contact fields by the definition of `Address` of the running version, then both whole objects by `validateFields()`, as the handler does.
+- Every problem is reported at once, before anything is written. The name, rich text, meta texts, meta keywords and logo are checked by the same methods as `somcp_create_manufacturer`; the contact fields by the definition of `Address` of the running version, then both whole objects by `validateFields()`, as the handler does.
 - The postal code format is the one the checkout asks of a customer of that country; the back office supplier form does not check it, the specification asks for it.
-- The core's `SupplierImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The downloaded logo is written where it writes it, as `img/su/<id>.jpg` with one file per supplier image type, by the code `somcp_create_manufacturer` writes a brand logo with, and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the supplier.
+- The core's `SupplierImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The logo, downloaded or redeemed, is written where it writes it, as `img/su/<id>.jpg` with one file per supplier image type, by the code `somcp_create_manufacturer` writes a brand logo with, and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the supplier.
 - PrestaShop accepts two suppliers of the same name: the description tells the assistant to read `somcp_list_suppliers` first.
 - Not replayable: the read tool to check is `somcp_list_suppliers`.
 
@@ -1585,15 +1722,15 @@ The name and every contact field are one string each, the same in every language
 
 **Parameters** - `id_supplier` (required), `languages`, then the fields of `somcp_create_supplier`, all optional. A text given replaces the languages given and keeps the others. `remove_logo` removes the logo explicitly.
 
-**Returns** - `changed`, `changes` (per field its old and new value, a text per language, `country` and `state` as ISO codes), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise `stored: true`, `removed: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
+**Returns** - `changed`, `changes` (per field its old and new value, a text per language, `country` and `state` as ISO codes), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise its `url` or `upload_ref` with `stored: true`, `removed: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
 
 **Notes**
-- Extends `somcp_create_supplier`: every field is checked by the same code, the contact block included, and the logo downloaded with the same guards and written where the creation writes it, over the current files, so a logo that cannot be fetched leaves the supplier with the one it had.
+- Extends `somcp_create_supplier`: every field is checked by the same code, the contact block included, and the logo fetched with the same guards and written where the creation writes it, over the current files, so a logo that cannot be had leaves the supplier with the one it had.
 - The contact details are checked as a whole: the values given are laid over the stored ones before the creation's checks run, since the country decides whether a state or a DNI is required and which postal code format applies. A stored state is not carried over to a new country; give the state again when the new country has states.
 - An `id_supplier` that does not exist, or a supplier of another shop, is refused by the same test of the shop as `somcp_get_supplier`.
 - Written as the core's `EditSupplierHandler` does: one `Supplier::update()` in the shop of the token (`id_shop_list`), then `Address::update()` on the supplier's address row, so the object hooks fire. A supplier with no address row gets one, added with the creation's placeholders, when contact details are given.
 - `remove_logo` deletes what the core's `DeleteSupplierLogoImageHandler` deletes: the original, every supplier image type in every format, and the two cached copies of the back office. It is refused next to `logo`, and counts as a change only when the supplier has a logo.
-- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address cannot be compared with a stored file.
+- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address or an `upload_ref` cannot be compared with a stored file; `changes` names it by its `url` or `upload_ref`.
 
 #### `somcp_set_supplier_active`
 **State**: written
@@ -1624,7 +1761,7 @@ The name and every contact field are one string each, the same in every language
 **State**: written
 **Nature**: `acts(VIEW, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.read`
 
-**Does** - lists the attribute groups (Size, Colour...) and, under each, its values: identifier and name, nothing else. A cascade, like the categories.
+**Does** - lists the attribute groups (Size, Colour...) and, under each, its values: identifier, name and position, plus the type and the number of values of each group and the colour of each value of a colour group. A cascade, like the categories.
 
 **Do not use for** - everything about one group or one value (→ `somcp_get_attribute_group`, `somcp_get_attribute_value`), or the combinations of a product (→ `somcp_get_product`).
 
@@ -1635,7 +1772,7 @@ The name and every contact field are one string each, the same in every language
 | `id_attribute_group` | integer | no | one group only |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `attribute_groups`, per group: `id_attribute_group`, `name`, and its `values`: `id_attribute`, `name`. Plus `count`, the number of groups. An `id_attribute_group` that is not a group of this shop is an error, not an empty list.
+**Returns** - `attribute_groups`, per group: `id_attribute_group`, `name`, `group_type` (`select`, `radio` or `color`), `position` (0 for the first, the **Position** column), `values_count` (the **Values** column), and its `values`: `id_attribute`, `name`, `position`, `color` (`#RRGGBB`, `null` outside a group of type `color`). The fields keep the names of `somcp_get_attribute_group` and `somcp_get_attribute_value`. Plus `count`, the number of groups. An `id_attribute_group` that is not a group of this shop is an error, not an empty list.
 
 **Notes**
 - A combination is a set of `id_attribute`, never of names: names are translated and two groups can hold the same value name.
@@ -1703,13 +1840,14 @@ The name and every contact field are one string each, the same in every language
 
 **Do not use for** - creating one (→ `somcp_create_attribute_group`), or changing one of its values (→ `somcp_update_attribute_value`).
 
-**Parameters** - `id_attribute_group` (required, from `somcp_list_attributes`), `languages`, then the fields of `somcp_create_attribute_group`, all optional, checked by the same code. A text given replaces the languages given and keeps the others; given, `name` and `public_name` are never empty. `indexable` left out keeps what the group has.
+**Parameters** - `id_attribute_group` (required, from `somcp_list_attributes`), `languages`, then the fields of `somcp_create_attribute_group`, all optional, checked by the same code. A text given replaces the languages given and keeps the others; given, `name` and `public_name` are never empty. `indexable` left out keeps what the group has. `position` (merchant) is the place among the attribute groups, from 0 as `somcp_get_attribute_group` gives it (the back office list shows it plus 1), refused outside 0 to the number of groups minus 1; left out, the group keeps its place.
 
 **Returns** - `changed`; when something changed, `changes` (per field and language, its `old` and `new` value) and `attribute_group`, the group as `somcp_get_attribute_group` returns it. `note` appears when `group_type` leaves `color`, `faceted_search` only when the faceted search rows could not be written while the rest was.
 
 **Notes**
 - A group that is not in `attribute_group_shop` for the shop of the token is refused, the same test as `somcp_get_attribute_group`.
-- Written through `AttributeGroup::update()` in the shop of the token (`id_shop_list`), as the core's `EditAttributeGroupHandler` does, so the hooks fire and `update()` sets the colour flag from `group_type`. Position is not changed.
+- Written through `AttributeGroup::update()` in the shop of the token (`id_shop_list`), as the core's `EditAttributeGroupHandler` does, so the hooks fire and `update()` sets the colour flag from `group_type`.
+- `position` is written last with `AttributeGroup::updatePosition()`, where the drag and drop of the back office list ends, so the other groups shift as there; `changes` records the old and new place. The core finds the group to move from the list's request (`id_attribute_group`), which an MCP call does not carry, so the shared `SomcpCatalog::movePosition()` hands it over for the move only - the one function meant for every tool that reorders a catalogue list, attribute values and features included.
 - Changing `group_type` away from `color` leaves the values' colours and textures in place but unused, as in the back office; the answer says so in `note`.
 - The faceted search fields are compared with the module's rows and, when one changes, the group's rows are written again as `somcp_create_attribute_group` writes them, the other languages keeping their text; the module's `actionAttributeGroupSave` hook leaves them alone when the request carries no form. A rename alone still drops the module's filter block cache, as its form does on every save.
 - Every problem is reported at once, before anything is written. Replayable: the same values again write nothing and say `changed: false`.
@@ -1776,7 +1914,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 
 **Do not use for** - adding one (→ `somcp_create_attribute_value`), or changing its group (→ `somcp_update_attribute_group`).
 
-**Parameters** - `id_attribute` (required, from `somcp_list_attributes`), `languages`, then the fields of `somcp_create_attribute_value`, all optional, checked by the same code; `id_attribute_group` moves the value to another group; `remove_texture` (a boolean, groups of type `color` only, not with `texture`) removes the texture. A text given replaces the languages given and keeps the others; given, `name` is never empty. `color`, `texture` and `remove_texture` follow the type of the group the value ends up in.
+**Parameters** - `id_attribute` (required, from `somcp_list_attributes`), `languages`, then the fields of `somcp_create_attribute_value`, all optional, checked by the same code; `id_attribute_group` moves the value to another group; `remove_texture` (a boolean, groups of type `color` only, not with `texture`) removes the texture; `position` (merchant) is the place among the values of the group, from 0 as `somcp_get_attribute_value` gives it (the back office list shows it plus 1), refused outside 0 to the number of values minus 1 - with `id_attribute_group`, the place in the group it moves to, where it counts as one more. A text given replaces the languages given and keeps the others; given, `name` is never empty. `color`, `texture` and `remove_texture` follow the type of the group the value ends up in; left out, `position` keeps the value's place.
 
 **Returns** - `changed`; when something changed, `changes` (per field and language, its `old` and `new` value) and `attribute_value`, the value as `somcp_get_attribute_value` returns it. `texture` appears when one was given (its `url` with `stored: true` or the reason it was `refused`), `note` when the value leaves a group of type `color` with a colour or texture, `faceted_search` only when the faceted search rows could not be written while the rest was.
 
@@ -1786,6 +1924,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - The value stays on the combinations that use it: a new name or colour shows on every one of them, which the assistant tells the merchant before the call.
 - A move is refused while a combination uses the value: a combination holds one value per group, and the core would leave it with a value of a group its product was not built on. A moved value is placed last in its new group, and the positions of the group it leaves are closed up. Its colour and texture stay stored; a group not of type `color` does not show them, and the answer says so in `note`.
 - A name the group already holds in a language is refused, as at creation; on a move, the names kept from the value are compared with the new group too.
+- `position` is written last with `ProductAttribute::updatePosition()`, where the drag and drop of the values list ends, so the other values of the group shift as there; `changes` records the old and new place. With `id_attribute_group`, the value is moved first, placed last in its new group, then put at `position` there. The core finds the group to reorder from the list's request (`id_attribute_group`), so the move goes through the shared `SomcpCatalog::movePosition()`, as `somcp_update_attribute_group` does.
 - A texture given is always downloaded and written over the current one, as at creation, so giving it again is a change; one that cannot be used leaves the current texture in place and says why in `texture`, and is an error when it was the only change. `remove_texture` deletes `img/co/<id_attribute>.jpg`; on a value without a texture it changes nothing.
 - `ps_facetedsearch` deletes the value's rows of `layered_indexable_attribute_lang_value` in its `actionAttributeSave` hook and writes back only what its form's request carries, so after `update()` the tool writes the rows again: the ones given merged with the ones kept, as `somcp_create_attribute_value` writes them. A call that changes only these fields does not go through `update()`. The module's filter block cache is dropped, as its form does on every save.
 - Every problem is reported at once, before anything is written. Replayable, except for a texture: the same values again write nothing and say `changed: false`.
@@ -1794,7 +1933,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 **State**: written
 **Nature**: `acts(VIEW, 'AdminFeatures')` · **Scope**: `mcp.catalog.read`
 
-**Does** - lists the features (Material, Composition...) and, under each, its predefined values: identifier and name, nothing else. A cascade, like the attributes.
+**Does** - lists the features (Material, Composition...) and, under each, its predefined values: identifier, name and the position and count the back office lists show. A cascade, like the attributes.
 
 **Do not use for** - everything about one feature or one value (→ `somcp_get_feature`, `somcp_get_feature_value`), or the features of a product (→ `somcp_get_product`).
 
@@ -1805,11 +1944,12 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature` | integer | no | one feature only |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `features`, per feature: `id_feature`, `name`, and its `values`: `id_feature_value`, `value`. Plus `count`, the number of features. An `id_feature` that is not a feature of this shop is an error, not an empty list.
+**Returns** - `features`, per feature: `id_feature`, `name`, `position` (0 for the first, as `somcp_get_feature` returns it), `values_count` (the **Values** column: its predefined values), and its `values`: `id_feature_value`, `value`, and on PrestaShop 9 `position`. Plus `count`, the number of features. An `id_feature` that is not a feature of this shop is an error, not an empty list.
 
 **Notes**
 - Predefined values only (`custom` = 0, or NULL, which the core reads the same way). A custom value typed on one product belongs to that product and is read with `somcp_get_product`.
-- Read through queries on `feature`, `feature_shop`, `feature_value` and their language tables in the shop of the token, rather than `Feature::getFeatures()` and `FeatureValue::getFeatureValuesWithLang()`, which take the shop from the global context. Features are sorted by position, as the back office does; values by identifier, since `feature_value` only has a position from PrestaShop 9 on.
+- Read through queries on `feature`, `feature_shop`, `feature_value` and their language tables in the shop of the token, rather than `Feature::getFeatures()` and `FeatureValue::getFeatureValuesWithLang()`, which take the shop from the global context. Features are sorted by position, as the back office does.
+- Values differ between versions: `feature_value.position` only exists from PrestaShop 9 on, where the value list shows **Position** and **Rearrange**. There, values are sorted by position then identifier, as the back office does, and carry `position`; on PrestaShop 8 they are sorted by identifier and the key is left out, rather than a 0 that would read as "first". The version test is `SomcpCatalog::featureValuesHavePosition()`, shared with `somcp_get_feature_value` and `somcp_update_feature_value`.
 
 #### `somcp_get_feature`
 **State**: written
@@ -1870,13 +2010,14 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 
 **Do not use for** - creating one (→ `somcp_create_feature`).
 
-**Parameters** - `id_feature` (required), `languages`, then the fields of `somcp_create_feature`, all optional. A text given replaces the languages given and keeps the others.
+**Parameters** - `id_feature` (required), `languages`, then the fields of `somcp_create_feature`, all optional. A text given replaces the languages given and keeps the others. `position` (merchant) is the place among the features, from 0 as `somcp_get_feature` gives it (the back office list shows it plus 1), refused outside 0 to the number of features minus 1; left out, the feature keeps its place.
 
 **Returns** - `changed`, `id_feature`, `changes` (per field its old and new value, a text per language: `name (en)`), and `feature`, the feature as `somcp_get_feature` returns it. `faceted_search` appears only when the faceted search rows could not be written while the name did change. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
 **Notes**
 - Renaming a feature renames it on every product that carries it, which the assistant tells the merchant before the call.
 - The name is written through `Feature::update()` in the shop of the token (`id_shop_list`), as the core's `EditFeatureHandler` does, so the object hooks fire. A language not filled keeps its name.
+- `position` is written last with `Feature::updatePosition()`, where the drag and drop of the back office list ends, so the other features shift as there; `changes` records the old and new place. It goes through the shared `SomcpCatalog::movePosition()`, as for attribute groups and values; the core moves the feature from its own identifier, so no value of the list's request is handed over.
 - Faceted search fields left out keep what the feature holds, `indexable` included: unlike the creation, it is not turned off when missing. When one of them changes, the rows are written again as the module's form writes them, every language of the shop with its stored text unless a new one was given. A feature whose form was never saved with the module reads as empty texts and not indexable, as `somcp_get_feature` shows it. The module's filter block cache is dropped after any change, a rename included, as its form does.
 - Every problem is reported at once, before anything is written.
 - Replayable: the same values again say `changed: false`. On a lost answer, read `somcp_get_feature` before calling again.
@@ -1896,11 +2037,12 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. A value that is not one of this shop is an error.
+**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). A value that is not one of this shop is an error.
 
 **Notes**
 - Read through `FeatureValue` and `Feature`. `feature_value` has no shop table: a value belongs to the shops of its feature, so its feature must be in `feature_shop` for the shop of the token, the test `somcp_get_feature` makes.
 - A custom value (`custom` = 1) is refused with its own message: it belongs to one product, and is read with `somcp_get_product`. `custom` NULL is predefined, as the core reads it.
+- `position` is read from `feature_value` on PrestaShop 9 only, the version test `somcp_list_features` uses (`SomcpCatalog::featureValuesHavePosition()`); on PrestaShop 8 the column does not exist and the key is left out.
 - The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_feature_value_lang_value`, the table its form reads; a value the form was never saved for has no row there, and gives `''`, as the form shows it.
 
 #### `somcp_create_feature_value`
@@ -1966,9 +2108,11 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `name` | string | no | part of the name (Name), case-insensitive, in the language read |
+| `file_name` | string | no | part of the name the file was uploaded under (File), case-insensitive |
+| `language` | string | no | ISO code of one of the shop's active languages; the shop default when left out; any other code is refused |
 
-**Returns** - `attachments`, per file: `id_attachment` (ID), `name` (Name), `file_name` (File), `file_size` (Size, in bytes), `products_count` (Products), `mime`, `download_url`. Plus `count`, the number of files.
+**Returns** - `attachments`, per file: `id_attachment` (ID), `name` (Name), `description` (Description of the form, in the same language), `file_name` (File), `file_size` (Size, in bytes), `products_count` (Products), `mime`, `download_url`. Plus `count`, the number of files, and `language`, the ISO code the names and descriptions were read in.
 
 **Notes**
 - The file itself never travels through the conversation. `download_url` is the storefront link PrestaShop already gives customers on a product page, built with `Link::getPageLink('attachment', true, null, 'id_attachment=N')`; the `attachment` front controller sends the file. The merchant opens it in a browser to download or preview it.
@@ -1976,6 +2120,8 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 - Columns of `attachment` and `attachment_lang`; `products_count` from `product_attachment`. `file_name` is the name the file was uploaded under; the back office File column shows the name it is stored under on disk, which means nothing to a merchant.
 - Files have no shop of their own in PrestaShop: every shop sees the same list, as in the back office. `products_count` only counts products of the shop of the token (`product_shop`), so a count never reaches into another shop.
 - A file with no name in the language read is still listed, with an empty `name`, rather than missing from the only list of identifiers.
+- Filters as the back office list does: `name` on the translated name, `file_name` on the uploaded name. Left out, every file is listed.
+- The language follows the shared rule: the shop default when left out (never the language of the client's browser), refused with the list of the shop's languages when unknown, inactive or not a string, and named in the answer so a text can be given back keyed by its ISO code.
 - Lists only, never uploads: files do not travel through the conversation.
 
 ### Stock
@@ -2253,43 +2399,55 @@ Figures over a period, computed from valid orders.
 **Not here**: the orders behind them (→ Orders).
 
 #### `somcp_get_sales_summary`
-**State**: draft · [issue #21](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/21)
+**State**: written · [issue #21](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/21)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.stats.read`
 
-**Does** - returns sales over a period: revenue, number of orders, average basket, new customers.
+**Does** - returns the sales of this shop over a period, as **Stats > Stats Dashboard** and **Stats > Sales and orders** count them: revenue, orders, products bought, average basket, new customers.
 
-**Do not use for** - the list of orders behind the figures (→ `somcp_search_orders`).
+**Do not use for** - the orders behind the figures (→ `somcp_search_orders`), the products that sold most (→ `somcp_list_best_sellers`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `date_from` / `date_to` | string | yes | `YYYY-MM-DD`, both days included |
-| `compare_previous` | boolean | no | adds the same figures for the previous period of the same length |
+| `date_from` | string | yes | **From:**, `YYYY-MM-DD`, that day included, in the shop's time zone |
+| `date_to` | string | yes | **To:**, `YYYY-MM-DD`, that day included; not before `date_from` |
+| `compare_previous` | boolean | no | adds `previous`: the same figures for the period of the same length that ends the day before `date_from` |
 
-**Returns** - `revenue_tax_excl`, `revenue_tax_incl`, `currency`, `orders_count`, `average_basket_tax_incl`, `new_customers`, and `previous` when asked.
+**Returns** - `date_from` / `date_to` (as received), `currency` (ISO code of the default currency, the one every amount is in), `revenue_tax_excl` (**Revenue** on Stats Dashboard), `sales_tax_excl` (**Sales** on Sales and orders: revenue of the orders in a validated status minus their credit slips), `revenue_tax_incl`, `orders_count` (**Placed orders** / **Orders placed**), `products_bought` (**Bought items** / **Products bought**, sum of `order_detail.product_quantity`), `average_basket_tax_excl` and `average_basket_tax_incl` (`0` with no order), `new_customers` (**Registrations**: accounts created in the period), and `previous` with `compare_previous` (the same object with its own dates, without `previous`). Amounts are rounded to 2 decimals.
 
-**Notes** - counts valid orders only (`Order::valid`), converted to the shop's default currency, as the dashboard does.
+**Errors** - a missing or malformed date, or `date_to` before `date_from`: a refusal that names the field. An empty period is not an error: every figure is `0`.
+
+**Notes** - counts orders with `valid = 1`, dated by **`invoice_date`** (not `date_add`), amounts divided by `conversion_rate`, as `statsforecast` and `statssales` do; **Sales** also keeps only statuses counted as validated (`logable`) and takes off the credit slips with the formula of `statssales`. The tables are read directly, so the figures still come when the stats modules are disabled or uninstalled. Only the token's shop. `somcp_search_orders` filters on `date_add`: on the same dates a few orders can differ at the edges of the period. **Visits**, conversion and the distribution blocks are not returned.
+
+Same labels, module versions (`statsforecast` 2.0.4, `statssales` 2.1.0) and queries on 8.0.1 and 9.0.0.
 
 #### `somcp_list_best_sellers`
-**State**: draft · [issue #22](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/22)
+**State**: written · [issue #22](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/22)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.stats.read`
 
-**Does** - lists the products that sold most over a period.
+**Does** - lists the products that sold most over a period, as **Stats > Best-selling products** shows them: quantity sold, price sold, sales, quantity sold in a day, page views, available quantity, status.
 
-**Do not use for** - sales totals (→ `somcp_get_sales_summary`).
+**Do not use for** - sales totals (→ `somcp_get_sales_summary`), the orders behind a product (→ `somcp_search_orders`), the stock of every combination (→ `somcp_get_stock`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `date_from` / `date_to` | string | yes |  |
-| `sort` | enum | no | `quantity` (default) or `revenue` |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `date_from` | string | yes | **From:**, `YYYY-MM-DD`, that day included, in the shop's time zone |
+| `date_to` | string | yes | **To:**, `YYYY-MM-DD`, that day included; not before `date_from` |
+| `sort` | enum | no | `sales` (default, as the screen), `quantity_sold`, `quantity_sold_per_day`, `average_price_tax_excl`, `page_views`; always descending, ties by `id_product` ascending |
+| `language` | string | no | language of `name`: ISO code of one of the shop's active languages, the shop default when left out, any other value refused |
+| `limit` | integer | no | 20 by default, 100 at most |
+| `offset` | integer | no | 0 by default |
 
-**Returns** - per product: `id_product`, `name`, `quantity_sold`, `revenue_tax_excl`, `currency`. Plus `total_count`.
+**Returns** - `date_from` / `date_to` (as received), `currency` (ISO code of the default currency, the one every amount is in), `language` (ISO code the names are in), `products[]` with `id_product`, `reference` (**Reference**), `name` (**Name**), `quantity_sold` (**Quantity sold**), `average_price_tax_excl` (**Price sold**), `revenue_tax_excl` (**Sales**), `quantity_sold_per_day` (**Quantity sold in a day**, 2 decimals), `page_views` (**Page views**), `quantity` (**Available quantity for sale**), `active` (**Active**), then `total_count` and `offset`. Amounts are rounded to 2 decimals.
 
-**Notes** - valid orders only.
+**Errors** - a missing or malformed date, `date_to` before `date_from`, an unknown `sort`, an out-of-range `limit` or `offset`: a refusal that names the field; an unknown `language`: the shared language refusal. An empty period is not an error: `products` is empty, `total_count` is `0`.
+
+**Notes** - counts orders with `valid = 1`, dated by **`invoice_date`** (not `date_add`), as `somcp_get_sales_summary`; one row per product, **combinations merged** (`GROUP BY od.product_id`); a product deleted since is not listed. **Sales** is `SUM(unit_price_tax_excl * product_quantity / conversion_rate)`, credit slips not taken off; **Price sold** is the average of the order lines' unit prices, not weighted by quantity; **Quantity sold in a day** divides by the days from the later of `date_from` and the product's date added to the shop, to the earlier of `date_to` and today, both included (`0` when there is no such day). **Page views** sums `page_viewed` over the day ranges inside the period, `0` when page views are not recorded (`statsdata`, **Save page views**). **Available quantity for sale** is the `stock_available` row without combination. Only the token's shop. The tables are read directly, so the list still comes when `statsbestproducts` is disabled or uninstalled.
+
+Same labels, module version (`statsbestproducts` 2.0.1) and query on 8.0.1 and 9.0.0.
 
 ### Content
 
@@ -2298,22 +2456,31 @@ The CMS pages of the storefront.
 **Not here**: product texts (→ Catalogue).
 
 #### `somcp_list_cms_pages`
-**State**: draft · [issue #23](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/23)
+**State**: written · [issue #23](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/23)
 **Nature**: `acts(VIEW, 'AdminCmsContent')` · **Scope**: `mcp.content.read`
 
-**Does** - lists the CMS pages with their category and status.
+**Does** - lists the CMS pages and page categories of the token's shop, as **Design > Pages** shows them: identifier, URL, title, meta title, position, displayed or not, and the category of each page.
 
-**Do not use for** - reading one page (→ `somcp_get_cms_page`).
+**Do not use for** - reading one page with its content (→ `somcp_get_cms_page`), the SEO checks of the pages (→ `somcp_audit_cms_seo`), changing a page's SEO texts (→ `somcp_update_cms_seo`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_cms_category` | integer | no |  |
-| `active` | boolean | no |  |
-| `language` | string | no | ISO code, shop default otherwise |
+| `id_cms_category` | integer | no | only the pages of that category (not of its sub-categories), as the screen; every category when left out. A category the shop does not have is refused |
+| `active` | boolean | no | **Displayed** filter: `true` displayed pages only, `false` hidden only; both when left out |
+| `title` | string | no | part of the **Title**, compared without case |
+| `language` | string | no | ISO code of one of the shop's active languages, the shop default when left out, any other value refused |
 
-**Returns** - per page: `id_cms`, `meta_title`, `id_cms_category`, `active`, `link`.
+No paging: a shop has a few dozen pages at most, and every matching page is returned.
+
+**Returns** - `pages[]` with `id_cms` (**ID**, the identifier `somcp_update_cms_seo` and `somcp_audit_cms_seo` take), `link_rewrite` (**URL**), `title` (**Title**, column `meta_title`), `meta_title` (**Meta title**, column `head_seo_title`, empty string when not set), `position` (**Position**, from 0 as in the other tools; the screen shows it from 1), `active` (**Displayed**), `id_cms_category`, `url` (the page's address on the storefront); `categories[]`, every category of the shop, root included, with `id_cms_category`, `name`, `description`, `id_parent` (`0` for the root), `position` (from 0), `active`, `pages_count` (pages directly in it); then `total_count` (pages returned) and `language` (ISO code the texts are in). Pages sorted by category then position, categories by `id_parent` then position.
+
+**Errors** - an unknown `id_cms_category`, a non-integer `id_cms_category`, a non-boolean `active`, a non-string `title`: a refusal that names the field; an unknown `language`: the shared language refusal. No page matching is not an error: `pages` is empty.
+
+**Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_update_cms_seo`, never by the column name. Categories are returned because no other tool gives an `id_cms_category`. Only the token's shop (`cms_shop`, `cms_category_shop`, `id_shop` of the `_lang` tables). The content of a page is not returned.
+
+Same columns, filters and grid queries on 8.0.1 and 9.0.0; 9.0.0 adds a **Rearrange** column for drag and drop, with nothing to read.
 
 #### `somcp_get_cms_page`
 **State**: draft · [issue #24](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/24)
@@ -3233,8 +3400,8 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-catalogue-manage` | Catalogue | written |
 | `somcp-stock-check` | Stock | written |
 | `somcp-customer-lookup` | Customers | written |
-| `somcp-sales-report` | Statistics | draft · [issue #39](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/39) |
-| `somcp-content-pages` | Content | draft · [issue #40](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/40) |
+| `somcp-sales-report` | Statistics | written |
+| `somcp-content-pages` | Content | written |
 | `somcp-modules-review` | Modules | draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41) |
 | `somcp-storefront-menu` | Appearance | draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42) |
 | `somcp-cache-maintenance` | System | draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43) |
@@ -3285,7 +3452,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 **The guide must say** - search, then read the one customer the merchant means; the email is more reliable than the name; personal data stays in the answer it was asked for; no password ever goes through the conversation.
 
 #### `somcp-sales-report`
-**State**: draft · [issue #39](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/39)
+**State**: written
 **Section**: Statistics · **Scope**: `mcp.stats.read` · **Permission**: `view` on `AdminStats`
 
 **Title** - Sales report
@@ -3296,10 +3463,10 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 **Tools** - `somcp_ping`, `somcp_get_sales_summary`, `somcp_list_best_sellers`, `somcp_search_orders`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
-**The guide must say** - turn the period into two dates in the shop's time zone and say which; figures count valid orders only; compare with the previous period when it helps; amounts always with their currency and tax said.
+**The guide must say** - turn the period into two dates in the shop's time zone and say which; figures count valid orders dated by invoice date, tax excluded, in the default currency, as **Stats Dashboard** and **Sales and orders** do; `somcp_search_orders` filters on the date the order was placed, so a few orders can differ at the edges of a period; compare with the previous period when it helps; amounts always with their currency and tax said.
 
 #### `somcp-content-pages`
-**State**: draft · [issue #40](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/40)
+**State**: written
 **Section**: Content · **Scope**: `mcp.content.read` · **Permission**: `view` on `AdminCmsContent`
 
 **Title** - Read content pages
@@ -3308,9 +3475,9 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 **Arguments** - `page` (title of a page).
 
-**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
-**The guide must say** - list, then read the page the merchant means; quote the content rather than paraphrasing it when asked what a page says.
+**The guide must say** - list with `somcp_list_cms_pages` (filtered by `title` when the merchant names the page), then read the page the merchant means by its `id_cms`; quote the content rather than paraphrasing it when asked what a page says; **Title** is the page's title and **Meta title** the title of the browser tab and search results, named `title` and `meta_title` in every tool; a hidden page (`active: false`) is not on the storefront; changing a page's SEO texts is `somcp_update_cms_seo`, in the prompt `somcp-seo-audit`, not here.
 
 #### `somcp-modules-review`
 **State**: draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41)

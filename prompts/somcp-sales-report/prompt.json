@@ -1,0 +1,22 @@
+{
+  "title": "Sales report",
+  "description": "Report the PrestaShop shop's sales over a period: revenue, orders, average basket, best sellers.",
+  "scopes": [
+    "mcp.stats.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_get_sales_summary",
+    "somcp_list_best_sellers",
+    "somcp_search_orders"
+  ],
+  "controller": "AdminStats",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "period",
+      "description": "Period to report on, for example last month",
+      "required": false
+    }
+  ]
+}

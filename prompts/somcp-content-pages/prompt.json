@@ -1,0 +1,20 @@
+{
+  "title": "Read content pages",
+  "description": "List and read the CMS pages of the PrestaShop shop.",
+  "scopes": [
+    "mcp.content.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_list_cms_pages"
+  ],
+  "controller": "AdminCmsContent",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "page",
+      "description": "Title of a page",
+      "required": false
+    }
+  ]
+}

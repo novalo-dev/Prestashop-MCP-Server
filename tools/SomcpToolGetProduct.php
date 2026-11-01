@@ -177,7 +177,7 @@ class SomcpToolGetProduct
             'customization' => self::customization($product, $idLang, $idShop),
             'stock' => self::stock($product, $stock[0] ?? null, $isPack),
             'pack' => [
-                'items' => $isPack ? self::packItems($product, $idLang, $idShop) : [],
+                'items' => $isPack ? self::packItems((int) $product->id, $idLang, $idShop) : [],
             ],
             'virtual_file' => self::virtualFile($product),
             'shipping' => self::shipping($product, $idLang, $money['iso']),
@@ -480,15 +480,17 @@ class SomcpToolGetProduct
      * The products in a pack, each with its combination and quantity.
      *
      * Read from the table rather than with Pack::getItems(), which loads a
-     * full Product per item for a name and a reference.
+     * full Product per item for a name and a reference. Public so
+     * somcp_get_order lists the items of a pack line exactly as this tool
+     * lists those of the pack.
      *
-     * @param Product $product
+     * @param int $idProduct the pack
      * @param int $idLang
      * @param int $idShop
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function packItems(Product $product, int $idLang, int $idShop): array
+    public static function packItems(int $idProduct, int $idLang, int $idShop): array
     {
         $query = new DbQuery();
         $query->select('pk.`id_product_item`, pk.`id_product_attribute_item`, pk.`quantity`, p.`reference`, pl.`name`');
@@ -499,7 +501,7 @@ class SomcpToolGetProduct
             'pl',
             'pl.`id_product` = pk.`id_product_item` AND pl.`id_lang` = ' . $idLang . ' AND pl.`id_shop` = ' . $idShop
         );
-        $query->where('pk.`id_product_pack` = ' . (int) $product->id);
+        $query->where('pk.`id_product_pack` = ' . $idProduct);
         $query->orderBy('pk.`id_product_item` ASC, pk.`id_product_attribute_item` ASC');
 
         $items = [];
@@ -569,9 +571,7 @@ class SomcpToolGetProduct
         foreach (Carrier::getCarriers($idLang, false, false, false, null, Carrier::ALL_CARRIERS) ?: [] as $row) {
             $carriers[] = [
                 'id_carrier' => (int) $row['id_carrier'],
-                // A carrier named 0 is the one the installer creates, and the
-                // back office shows it under the shop's name.
-                'name' => (string) $row['name'] === '0' ? (string) Configuration::get('PS_SHOP_NAME') : (string) $row['name'],
+                'name' => SomcpTool::carrierName((string) $row['name']),
                 // No carrier ticked on the product means every carrier may
                 // deliver it, which is how the checkout reads it too.
                 'available' => $allowed === [] || isset($allowed[(int) $row['id_reference']]),

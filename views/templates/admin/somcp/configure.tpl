@@ -83,12 +83,14 @@
                         <td class="somcp-status somcp-status-{$check.status|escape:'html':'UTF-8'}">
                             {if $check.status === 'ok'}<i class="icon-check"></i>
                             {elseif $check.status === 'warning'}<i class="icon-warning"></i>
+                            {elseif $check.status === 'skipped'}<i class="icon-minus"></i>
                             {else}<i class="icon-remove"></i>{/if}
                         </td>
                         <th>{$check.label|escape:'html':'UTF-8'}</th>
                         <td>
                             {$check.detail|escape:'html':'UTF-8'}
                             {if $check.url}<br><code>{$check.url|escape:'html':'UTF-8'}</code>{/if}
+                            {if $check.fix}<br><a href="{$check.fix|escape:'html':'UTF-8'}" target="_blank" rel="noopener">{l s='Go to the setting' d='Modules.Somcp.Admin'} <i class="icon-external-link"></i></a>{/if}
                         </td>
                     </tr>
                 {/foreach}
@@ -871,8 +873,8 @@
     {if $somcp_contributors}
         {* The first card goes to whoever has contributed the most, read from
            GitHub each time: the place follows the work, not a title. The
-           others are paged nine at a time so the row never wraps, and past
-           ten people the last slot links to GitHub's full list. *}
+           others are paged six at a time so the row never wraps, and past
+           seven people the last slot links to GitHub's full list. *}
         {assign var=somcp_people value=$somcp_contributors|@count}
         <div class="panel">
             <div class="panel-heading"><i class="icon-group"></i> {l s='Meet our contributors' d='Modules.Somcp.Admin'}</div>
@@ -882,7 +884,7 @@
                 <div class="somcp-contributor{if $smarty.foreach.people.first} somcp-contributor-top{/if}"{if !$smarty.foreach.people.first} data-somcp-paged{/if}>
                     <a href="{$person.profile|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer" title="{$person.login|escape:'html':'UTF-8'}">
                     {if $person.avatar}
-                        <img src="{$person.avatar|escape:'html':'UTF-8'}" alt="" width="{if $smarty.foreach.people.first}48{else}40{/if}" height="{if $smarty.foreach.people.first}48{else}40{/if}" loading="lazy" referrerpolicy="no-referrer">
+                        <img src="{$person.avatar|escape:'html':'UTF-8'}" alt="" width="48" height="48" loading="lazy" referrerpolicy="no-referrer">
                     {/if}
                         <span class="somcp-contributor-name">{$person.login|escape:'html':'UTF-8'}</span>
                     </a>
@@ -900,7 +902,7 @@
                 </div>
                 {if $smarty.foreach.people.first && $somcp_people > 1}<div class="somcp-contributors-sep"></div>{/if}
             {/foreach}
-            {if $somcp_people > 10}
+            {if $somcp_people > 7}
                 <a class="somcp-contributor somcp-contributor-all" href="{$somcp_repository|escape:'html':'UTF-8'}/graphs/contributors" target="_blank" rel="noopener noreferrer">
                     <span class="somcp-contributor-total">{$somcp_people|intval}</span>
                     {l s='See all contributors' d='Modules.Somcp.Admin'} <i class="icon-external-link"></i>
@@ -911,7 +913,7 @@
                 <a class="btn btn-default" href="{$somcp_repository|escape:'html':'UTF-8'}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">
                     <i class="icon-code-fork"></i> {l s='Become a contributor' d='Modules.Somcp.Admin'}
                 </a>
-                <div class="somcp-tools-nav" data-somcp-pager="9" hidden>
+                <div class="somcp-tools-nav" data-somcp-pager="6" hidden>
                     <button type="button" class="btn btn-default btn-sm" data-somcp-page="-1">
                         &laquo; {l s='Previous' d='Modules.Somcp.Admin'}
                     </button>

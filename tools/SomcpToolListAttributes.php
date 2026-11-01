@@ -19,9 +19,9 @@ declare(strict_types=1);
 
 /*
  * somcp_list_attributes - the attribute groups of this shop and their values,
- * identifier and name.
+ * identifier, name and what the back office lists show beside them.
  *
- * Kept that short on purpose, like somcp_list_categories: it is the list an
+ * Kept short on purpose, like somcp_list_categories: it is the list an
  * assistant reads before a call that takes attribute values - a combination
  * created or changed - so that it never guesses an identifier. A combination
  * is a set of id_attribute, never of names: names are translated, and two
@@ -43,7 +43,8 @@ class SomcpToolListAttributes
             'somcp_list_attributes',
             Somcp::t('List attributes'),
             'Lists the attribute groups of this shop (Size, Colour...) and, under each, its values: '
-                . 'identifier and name, nothing else. Call it before any call that takes attribute '
+                . 'identifier, name and position, plus the type and the number of values of each group '
+                . 'and the colour of each value of a colour group. Call it before any call that takes attribute '
                 . 'values - creating or changing the combinations of a product - and take the '
                 . 'id_attribute from here: identifiers are specific to each shop, so never assume one. '
                 . 'Two groups can hold a value of the same name: when the merchant names a value, '
@@ -100,7 +101,7 @@ class SomcpToolListAttributes
         // AttributeGroup::getAttributes(), which read the shop from the global
         // context: here it comes from the token and is passed explicitly.
         $query = new DbQuery();
-        $query->select('ag.`id_attribute_group`, agl.`name`');
+        $query->select('ag.`id_attribute_group`, ag.`group_type`, ag.`position`, agl.`name`');
         $query->from('attribute_group', 'ag');
         $query->innerJoin(
             'attribute_group_shop',
@@ -125,6 +126,9 @@ class SomcpToolListAttributes
             $groups[(int) $row['id_attribute_group']] = [
                 'id_attribute_group' => (int) $row['id_attribute_group'],
                 'name' => (string) ($row['name'] ?? ''),
+                'group_type' => (string) $row['group_type'],
+                'position' => (int) $row['position'],
+                'values_count' => 0,
                 'values' => [],
             ];
         }
@@ -138,7 +142,7 @@ class SomcpToolListAttributes
 
         if ($groups !== []) {
             $values = new DbQuery();
-            $values->select('a.`id_attribute`, a.`id_attribute_group`, al.`name`');
+            $values->select('a.`id_attribute`, a.`id_attribute_group`, a.`color`, a.`position`, al.`name`');
             $values->from('attribute', 'a');
             $values->innerJoin(
                 'attribute_shop',
@@ -150,10 +154,20 @@ class SomcpToolListAttributes
             $values->orderBy('a.`position` ASC, a.`id_attribute` ASC');
 
             foreach (Db::getInstance()->executeS($values) ?: [] as $row) {
-                $groups[(int) $row['id_attribute_group']]['values'][] = [
+                $id = (int) $row['id_attribute_group'];
+                $groups[$id]['values'][] = [
                     'id_attribute' => (int) $row['id_attribute'],
                     'name' => (string) ($row['name'] ?? ''),
+                    'position' => (int) $row['position'],
+                    // Same rule as somcp_get_attribute_value: a colour is only
+                    // drawn for a group of type color, so a colour left over
+                    // from a group whose type changed is reported as null.
+                    'color' => $groups[$id]['group_type'] === 'color' ? (string) $row['color'] : null,
                 ];
+                // Counted on the same rows as the values listed, which are the
+                // ones somcp_get_attribute_group counts: attribute_shop in the
+                // shop of the token.
+                ++$groups[$id]['values_count'];
             }
         }
 

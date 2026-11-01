@@ -5,6 +5,7 @@
 [![MCP](.github/badges/mcp.svg)](https://modelcontextprotocol.io)
 ![Multistore](.github/badges/multistore.svg)
 [![License](.github/badges/license.svg)](LICENSE.txt)
+[![Docs](.github/badges/docs.svg)](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
 ![Version](.github/badges/version.svg)
 [![PRs welcome](.github/badges/prs.svg)](CONTRIBUTING.md)
 [![Stars](https://img.shields.io/github/stars/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Stars)](https://github.com/novalo-dev/Prestashop-MCP-Server/stargazers)
@@ -13,12 +14,15 @@
 
 A PrestaShop module that turns a shop into an [MCP](https://modelcontextprotocol.io)
 server. Claude, ChatGPT, Le Chat or any MCP-compatible assistant
-([full list](#compatible-clients)) can then work with the shop's orders
+([full list](#compatible-assistants)) can then work with the shop's orders
 and catalogue, through a standard protocol, with OAuth 2.1 and the employee's
 own back office permissions, instead of a database login or an API key that can
 do everything.
 
 The module folder is `somcp`; in the back office it is called **O'So MCP Server**.
+
+The module documentation - requirements, installation, configuration and how
+to connect each assistant - is on the [wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki).
 
 https://github.com/user-attachments/assets/cf0b0e3f-1172-4ba9-aad1-11a6298aadf7
 
@@ -62,7 +66,13 @@ us. See [Where to help](#where-to-help).
   `2026-07-28` revision, with questions in the middle of a call, and the
   `2025-11-25`, `2025-06-18` and `2025-03-26` revisions.
 
-![The module settings in the back office: the address to give to an assistant, and the diagnostic calling the shop's own OAuth and MCP addresses, all green](docs/images/diagnostic.png)
+## Screenshots
+
+The settings pages on PrestaShop 9.1, one after the other: configuration, tools
+and prompts, access and security, connected assistants, built-in assistant,
+security log, help and updates, and the chat.
+
+![The settings pages of O'So MCP Server, one after the other](docs/images/somcp-tour.gif)
 
 ## Compatibility
 
@@ -75,8 +85,11 @@ us. See [Where to help](#where-to-help).
 
 The shop has to be reachable over **HTTPS**, with **friendly URLs** enabled, and
 installed at the **root of its domain**: OAuth anchors one of its discovery
-documents there. The diagnostic button in the settings checks all of this by
-calling the shop's own addresses.
+documents there. The diagnostic button in the settings checks the certificate,
+the SSL setting, the friendly URLs, the location and the addresses an assistant
+calls, from the outside. The full
+list of requirements is on the
+[wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki#requirements).
 
 ## Tools
 
@@ -96,11 +109,15 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_get_order` | `mcp.orders.read` | `view` on `AdminOrders` | read |
 | `somcp_list_order_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
 | `somcp_list_return_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
+| `somcp_list_carriers` | `mcp.orders.read` | `view` on `AdminCarriers` | read |
 | `somcp_set_order_status` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_set_order_tracking` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_add_order_message` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_set_order_note` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_add_order_payment` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
+| `somcp_create_return_status` | `mcp.orders.write` | `add` on `AdminStatuses` | write |
+| `somcp_update_return_status` | `mcp.orders.write` | `edit` on `AdminStatuses` | write |
+| `somcp_create_order_status` | `mcp.orders.write` | `add` on `AdminStatuses` | write |
 
 ### Catalog - Products
 
@@ -196,6 +213,19 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_create_customer` | `mcp.customers.write` | `add` on `AdminCustomers` | write |
 | `somcp_update_customer` | `mcp.customers.write` | `edit` on `AdminCustomers` | write |
 
+### Statistics
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_get_sales_summary` | `mcp.stats.read` | `view` on `AdminStats` | read |
+| `somcp_list_best_sellers` | `mcp.stats.read` | `view` on `AdminStats` | read |
+
+### Content
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_cms_pages` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
+
 ### SEO
 
 | Tool | Scope | Back office right | Nature |
@@ -221,8 +251,9 @@ and only says what the assistant is connected to (shop, account, language,
 currency), so an assistant can always tell which account it is using, even one
 with no rights at all.
 
-Six prompts ship with the module: checking the connection, finding an order,
-changing an order status, managing products, checking stock, and auditing SEO. Details of every tool are in
+Nine prompts ship with the module: checking the connection, finding an order,
+changing an order status, managing products, checking stock, finding a customer,
+auditing SEO, reporting sales, and reading content pages. Details of every tool are in
 [docs/TOOLS.md](docs/TOOLS.md).
 
 ## Install for development
@@ -243,8 +274,8 @@ changing an order status, managing products, checking stock, and auditing SEO. D
 
 3. Copy the **address to give to your assistant**. It looks like
    `https://your-shop.example/module/somcp/mcp`.
-4. Press **Run the diagnostic**. Every line should be green before you connect a
-   client.
+4. Press **Run the diagnostic**. No line should be red before you connect an
+   assistant; a warning, such as a shop in maintenance, does not stop it.
 
 A local shop needs a public HTTPS address for an MCP client to reach it: use a
 tunnel such as `cloudflared` or `ngrok` and set the shop's domain to it.
@@ -254,45 +285,25 @@ change the database schema; the upgrade for existing shops is written when the
 next release is published, so on a development shop, reinstall the module when a
 pull request says its schema changed.
 
-## Connect a client
-
-**Claude (web or desktop).** Add a custom connector and paste the MCP address.
-Claude walks you through the OAuth sign-in, which lands on the consent screen
-of your back office. See
-[Get started with custom connectors](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
-
-**Claude Code.**
-
-```bash
-claude mcp add --transport http prestashop https://your-shop.example/module/somcp/mcp
-```
-
-Then run `/mcp` inside Claude Code to sign in. See the
-[Claude Code MCP documentation](https://code.claude.com/docs/en/mcp).
-
-### Compatible clients
+## Compatible assistants
 
 Any assistant that connects to a remote MCP server over HTTP with OAuth uses
-the same address. The ones below can; each one's own documentation says where
-to paste it.
+the shop's MCP address, shown on the module's configuration page. The ones
+below can. Where to paste the address in each of them:
+[Connect an assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant).
 
-| Client | Type | How to add the address |
-|---|---|---|
-| Claude (web, desktop, mobile) | Chat | Custom connector |
-| ChatGPT | Chat | Developer mode, apps and connectors |
-| Le Chat (Mistral) | Chat | Custom connector |
-| Dust | Team chat | Add an MCP server |
-| Claude Code | Command line | `claude mcp add --transport http` |
-| Codex (OpenAI) | Command line | `[mcp_servers]` in `config.toml`, then `codex mcp login` |
-| Gemini CLI (Google) | Command line | MCP servers in Gemini CLI |
-| GitHub Copilot CLI | Command line | Add an MCP server |
-| Cursor | Code editor | Model Context Protocol settings |
-| VS Code (GitHub Copilot) | Code editor | Add and manage MCP servers |
-| Windsurf (Devin Desktop) | Code editor | Cascade MCP integration |
-| Zed | Code editor | MCP context servers |
-| n8n Cloud | Automation | MCP Client node; connects in one click |
-| n8n self-hosted | Automation | MCP Client node; add its domain to the allowed hosts of the settings, nothing to do on `localhost` |
-| Make | Automation | MCP connection; connects in one click |
+- **Chat:** [Claude](https://claude.ai) (web, desktop, mobile),
+  [ChatGPT](https://chatgpt.com), [Le Chat](https://chat.mistral.ai) (Mistral),
+  [Dust](https://dust.tt)
+- **Command line:** [Claude Code](https://claude.com/product/claude-code),
+  [Codex](https://openai.com/codex/) (OpenAI),
+  [Gemini CLI](https://geminicli.com) (Google),
+  [GitHub Copilot CLI](https://github.com/features/copilot/cli)
+- **Code editor:** [Cursor](https://cursor.com),
+  [VS Code](https://code.visualstudio.com) (GitHub Copilot),
+  [Windsurf](https://devin.ai/desktop) (Devin Desktop), [Zed](https://zed.dev)
+- **Automation:** [n8n](https://n8n.io) (Cloud and self-hosted),
+  [Make](https://www.make.com)
 
 ## Security model
 
@@ -302,7 +313,7 @@ to paste it.
 - **Scopes** say what an assistant may do: `mcp.access` to connect,
   `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
   `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
-  `mcp.seo.read`, `mcp.seo.write`. Other
+  `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`. Other
   modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's
@@ -318,6 +329,9 @@ Found a vulnerability? Please do not open an issue: see [SECURITY.md](SECURITY.m
 
 ## Documentation
 
+- [Wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki): the module
+  documentation for merchants - requirements, installation, configuration,
+  connecting an assistant and the built-in assistant.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how a request travels through
   the module, OAuth, MCP, multistore, data.
 - [docs/EXTENDING.md](docs/EXTENDING.md): publish tools and prompts from your
@@ -346,12 +360,12 @@ GitHub, under **Help and updates > Meet our contributors**.
   <tr>
     <td align="center" width="140">
       <a href="https://github.com/novalo-dev"><img src="https://github.com/novalo-dev.png?size=96" width="64" height="64" alt=""><br><b>novalo-dev</b></a><br>
-      <sub>215 contributions · 95%</sub><br>
+      <sub>249 contributions · 83%</sub><br>
       <sub><i>Top contributor</i></sub>
     </td>
     <td align="center" width="140">
       <a href="https://github.com/Ptraaah"><img src="https://github.com/Ptraaah.png?size=96" width="64" height="64" alt=""><br><b>Ptraaah</b></a><br>
-      <sub>12 contributions · 5.3%</sub>
+      <sub>50 contributions · 17%</sub>
     </td>
   </tr>
 </table>

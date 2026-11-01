@@ -1,0 +1,20 @@
+{
+  "calls": [
+    {"why": "a long period covering the demo orders lists the products with every column, in the default currency and language", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31"}, "expect": "ok", "contains": ["\"date_from\": \"2000-01-01\"", "\"date_to\": \"2099-12-31\"", "\"currency\"", "\"language\": \"en\"", "\"products\"", "\"total_count\"", "\"offset\": 0"]},
+    {"why": "a period with no order gives an empty list, not an error", "arguments": {"date_from": "2001-01-01", "date_to": "2001-01-31"}, "expect": "ok", "contains": ["\"products\": []", "\"total_count\": 0"]},
+    {"why": "one day, both bounds the same", "arguments": {"date_from": "2001-01-01", "date_to": "2001-01-01"}, "expect": "ok", "contains": ["\"total_count\": 0"]},
+    {"why": "sorted by quantity sold", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "sort": "quantity_sold"}, "expect": "ok", "contains": ["\"products\""]},
+    {"why": "sorted by quantity sold in a day", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "sort": "quantity_sold_per_day"}, "expect": "ok", "contains": ["\"products\""]},
+    {"why": "sorted by price sold", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "sort": "average_price_tax_excl"}, "expect": "ok", "contains": ["\"products\""]},
+    {"why": "sorted by page views", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "sort": "page_views"}, "expect": "ok", "contains": ["\"products\""]},
+    {"why": "the next page, one product at a time", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "sort": "sales", "limit": 1, "offset": 1}, "expect": "ok", "contains": ["\"offset\": 1"]},
+    {"why": "names read in a language the shop has, said by its code", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "the end before the start is refused, naming the field", "arguments": {"date_from": "2001-02-10", "date_to": "2001-02-01"}, "expect": "error", "contains": ["date_to"]},
+    {"why": "a malformed date is refused, naming the field", "arguments": {"date_from": "01/02/2001", "date_to": "2001-02-10"}, "expect": "error", "contains": ["date_from"]},
+    {"why": "a missing date is refused", "arguments": {"date_from": "2001-02-01"}, "expect": "error", "contains": ["date_to"]},
+    {"why": "an unknown sort is refused, naming the field", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "sort": "name"}, "expect": "error", "contains": ["sort"]},
+    {"why": "a limit above 100 is refused, naming the field", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "limit": 101}, "expect": "error", "contains": ["limit"]},
+    {"why": "a negative offset is refused, naming the field", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "offset": -1}, "expect": "error", "contains": ["offset"]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+  ]
+}

@@ -424,7 +424,7 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
                 // PrestaShop 9 orders values within their feature, and update()
                 // keeps the number the value had in the one it leaves: it is
                 // put last in the new one, as add() places a new value.
-                if (self::orderedValues()) {
+                if (SomcpCatalog::featureValuesHavePosition()) {
                     $highest = self::versionMethod('getHighestPosition');
                     self::fill($featureValue, ['position' => (int) FeatureValue::$highest((int) $plan['id_feature']) + 1]);
                 }
@@ -456,7 +456,7 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
 
             // The positions left behind are closed up, as the core does when a
             // value is deleted, so the old feature keeps no gap.
-            if ($plan['id_feature'] !== null && self::orderedValues()) {
+            if ($plan['id_feature'] !== null && SomcpCatalog::featureValuesHavePosition()) {
                 $clean = self::versionMethod('cleanPositions');
                 $featureValue->$clean($idLeft);
             }
@@ -510,26 +510,12 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
     }
 
     /**
-     * Whether the running version gives feature values a position.
-     *
-     * PrestaShop 9 added it with getHighestPosition() and cleanPositions(),
-     * which PrestaShop 8 does not have. They are called by name where this is
-     * true, since PHPStan analyses the module against one version at a time
-     * and would report the other one's methods as missing.
-     *
-     * @return bool
-     */
-    private static function orderedValues(): bool
-    {
-        return version_compare(_PS_VERSION_, '9.0.0', '>=');
-    }
-
-    /**
      * The name of a method only some versions have, typed as any string.
      *
      * Held in a local variable, a literal name is still resolved by PHPStan,
      * which then reports the method as missing on PrestaShop 8 although the
-     * call is guarded by orderedValues(). Returned from here, it is not.
+     * call is guarded by SomcpCatalog::featureValuesHavePosition(). Returned
+     * from here, it is not.
      *
      * @param string $name
      *

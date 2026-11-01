@@ -12,6 +12,7 @@ of it can be undone by calling again.
 - `somcp_list_return_statuses`
 - `somcp_list_carriers`
 - `somcp_create_return_status`
+- `somcp_update_return_status`
 - `somcp_get_order`
 - `somcp_set_order_status`
 - `somcp_set_order_tracking`
@@ -146,6 +147,21 @@ a colour.
   creating one never gives an order a new `status_id`.
 - Not to be retried: if the answer is lost, read
   `somcp_list_return_statuses` and look for the name before anything else.
+
+## Changing a return status
+
+When the merchant wants a step renamed or recoloured, change it with
+`somcp_update_return_status`: the identifier from
+`somcp_list_return_statuses`, and only what changes.
+
+- Only what is given changes. A language left out of `languages` keeps its
+  text, so to rename one language, pass `languages` with that one alone.
+- Every return status can be changed, the five the shop starts with
+  included. Renaming a step renames it on every return standing on it:
+  say so before calling.
+- The same call twice is safe to read, not to repeat blindly: the second
+  answers `changed: false`. If an answer is lost, read
+  `somcp_list_return_statuses` and compare before calling again.
 
 ## Several orders
 

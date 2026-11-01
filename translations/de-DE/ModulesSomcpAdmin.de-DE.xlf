@@ -832,6 +832,11 @@
       <source>Create a return status</source>
       <target>Einen Rückgabestatus anlegen</target>
     </trans-unit>
+    <!-- Change a return status -->
+    <trans-unit id="28bccaf72061ff3f479b1e58136d42dc" resname="Change a return status">
+      <source>Change a return status</source>
+      <target>Einen Rückgabestatus ändern</target>
+    </trans-unit>
     <!-- Test the connection -->
     <trans-unit id="660fc9e01f52fb7f8a715e51167c4f8d" resname="Test the connection">
       <source>Test the connection</source>

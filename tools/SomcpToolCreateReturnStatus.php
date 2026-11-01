@@ -225,21 +225,27 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
      * The names given in the call, checked with the running version's rules, then against the shop's own.
      *
      * A name another return status already has in that language is refused:
-     * the steps are told apart by their name alone on the returns page.
+     * the steps are told apart by their name alone on the returns page. The
+     * status being changed is left out of that check: keeping its own name is
+     * not a change, and giving it back is how a call is repeated safely.
      *
      * @param array<int, string> $names by language identifier
      * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
      * @param OrderReturnState $probe
      * @param array<int, string> $errors
+     * @param int $idSelf the status being changed, 0 at creation
      *
      * @return array<int, string>
      */
-    protected static function returnStatusNames(array $names, array $languages, OrderReturnState $probe, array &$errors): array
+    protected static function returnStatusNames(array $names, array $languages, OrderReturnState $probe, array &$errors, int $idSelf = 0): array
     {
         $taken = [];
         foreach (array_keys($languages['filled']) as $idLang) {
             $taken[$idLang] = [];
             foreach (OrderReturnState::getOrderReturnStates($idLang) as $state) {
+                if ($idSelf > 0 && (int) $state['id_order_return_state'] === $idSelf) {
+                    continue;
+                }
                 $taken[$idLang][Tools::strtolower(trim((string) $state['name']))] = (int) $state['id_order_return_state'];
             }
         }
@@ -329,12 +335,15 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
     /**
      * One status as somcp_list_return_statuses lists it, read the way it reads.
      *
+     * Protected so the update tool answers with the same row, the removable
+     * rule included, instead of keeping its own copy.
+     *
      * @param int $idReturnState
      * @param int $idLang
      *
      * @return array<string, mixed>
      */
-    private static function status(int $idReturnState, int $idLang): array
+    protected static function status(int $idReturnState, int $idLang): array
     {
         foreach (OrderReturnState::getOrderReturnStates($idLang) as $state) {
             if ((int) $state['id_order_return_state'] === $idReturnState) {
@@ -351,7 +360,7 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
 
         // The row was written a moment ago; not finding it means the read
         // above raced something. Answer from the object rather than failing
-        // a creation that did go through.
+        // a write that did go through.
         $stored = new OrderReturnState($idReturnState, $idLang);
 
         return [

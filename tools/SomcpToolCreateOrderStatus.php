@@ -351,6 +351,12 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      */
     protected static function orderStatusNames(array $names, array $languages, OrderState $probe, array &$errors): array
     {
+        // The check is only as good as the list it reads, and the list
+        // getOrderStates() hands over is the one it read first in this
+        // process: forget the remembered lists, so the names below are
+        // the shop's as they stand now.
+        self::forgetOrderStatusLists(array_keys($languages['filled']));
+
         $taken = [];
         foreach (array_keys($languages['filled']) as $idLang) {
             $taken[$idLang] = [];
@@ -375,6 +381,30 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         }
 
         return $names;
+    }
+
+    /**
+     * Forgets the order status lists this process remembers, for these languages.
+     *
+     * OrderState::getOrderStates() stores the list it read in Cache::$local
+     * and serves that copy for the rest of the process, and nothing in the
+     * core forgets it when a status is created. A process that lives across
+     * calls - the shop test, a worker - would go on answering from the list
+     * as it stood before the first create in it: a name taken a moment ago
+     * looks free, and a status just written is missing from the list it is
+     * read back from. Cache::clean() drops the copies held in this process,
+     * so the next getOrderStates() asks the database again. The two keys are
+     * the ones the core builds for the list, with and without its
+     * deleted-status filter, the same on PrestaShop 8 and 9.
+     *
+     * @param array<int, int> $idLangs
+     */
+    private static function forgetOrderStatusLists(array $idLangs): void
+    {
+        foreach ($idLangs as $idLang) {
+            Cache::clean('OrderState::getOrderStates_' . (int) $idLang);
+            Cache::clean('OrderState::getOrderStates_' . (int) $idLang . '_filterDeleted');
+        }
     }
 
     /**
@@ -498,6 +528,11 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         }
 
         $idOrderState = (int) $state->id;
+
+        // The shop's list of statuses has a new member: forget the
+        // remembered lists, so the read-back below and any later answer
+        // in this process list the status as it was stored.
+        self::forgetOrderStatusLists($plan['languages']['all']);
 
         // The icon is written now that the status has the identifier its file
         // is named after, as the form's uploader does. A refusal is reported

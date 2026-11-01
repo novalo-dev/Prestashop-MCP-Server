@@ -2537,6 +2537,31 @@
       <source>Find a tool</source>
       <target>Ein Werkzeug finden</target>
     </trans-unit>
+    <!-- This profile does not exist: the employees allowed were not changed. -->
+    <trans-unit id="b951c101dddcb097e03c7ce8ad7f9d3e" resname="This profile does not exist: the employees allowed were not changed.">
+      <source>This profile does not exist: the employees allowed were not changed.</source>
+      <target>Dieses Profil existiert nicht: Die berechtigten Mitarbeiter wurden nicht geändert.</target>
+    </trans-unit>
+    <!-- Choose an embeddings provider for the memory: without one it stays as it was. -->
+    <trans-unit id="fda029d5b7623f4b28eda4ef66f7a1e6" resname="Choose an embeddings provider for the memory: without one it stays as it was.">
+      <source>Choose an embeddings provider for the memory: without one it stays as it was.</source>
+      <target>Wählen Sie einen Embeddings-Anbieter für das Gedächtnis: Ohne ihn bleibt es wie zuvor.</target>
+    </trans-unit>
+    <!-- The embeddings provider has no key: type the Voyage key, or pick a provider of the chat. The memory stays as it was. -->
+    <trans-unit id="8d480f40bd985833047ea6bf2121cd2f" resname="The embeddings provider has no key: type the Voyage key, or pick a provider of the chat. The memory stays as it was.">
+      <source>The embeddings provider has no key: type the Voyage key, or pick a provider of the chat. The memory stays as it was.</source>
+      <target>Der Embeddings-Anbieter hat keinen Schlüssel: Geben Sie den Voyage-Schlüssel ein oder wählen Sie einen Anbieter des Chats. Das Gedächtnis bleibt wie zuvor.</target>
+    </trans-unit>
+    <!-- The refresh token must last longer than the access token: the two lifetimes were not changed. -->
+    <trans-unit id="9b89f21e2e8283d10e2bf9a98e9ca005" resname="The refresh token must last longer than the access token: the two lifetimes were not changed.">
+      <source>The refresh token must last longer than the access token: the two lifetimes were not changed.</source>
+      <target>Das Aktualisierungstoken muss länger gültig sein als das Zugriffstoken: Die beiden Laufzeiten wurden nicht geändert.</target>
+    </trans-unit>
+    <!-- The other settings were saved. -->
+    <trans-unit id="8a8934df69865beb7767fdab76ee9fcd" resname="The other settings were saved.">
+      <source>The other settings were saved.</source>
+      <target>Die übrigen Einstellungen wurden gespeichert.</target>
+    </trans-unit>
     <!-- Sources -->
     <trans-unit id="fb61758d0f0fda4ba867c3d5a46c16a7" resname="Sources">
       <source>Sources</source>

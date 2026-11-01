@@ -135,6 +135,17 @@ scripts, and showed strings of the last release as missing; it also said
 "of ." instead of the branch it built. It now checks the module it built, and
 names the branch.
 
+**Settings that depend on each other are checked before they are saved.**
+The memory could be switched on with no embeddings provider, or with Voyage
+and no key: the page said it was on, and it did nothing. It is now refused
+with a message saying what is missing - and with a single provider offered
+that needs no key of its own, that one is picked for you. A refresh token
+set to last less than the access token, which would log every assistant out
+at its first renewal, and a profile that does not exist are refused too. The
+rest of the form is still saved, and the message says so. The built-in
+assistant follows the same rules when it changes a setting, then reads the
+setting back and tells you whether the feature actually works.
+
 **Gemini's thinking now counts toward the monthly cap.** Gemini reports the
 tokens it spends thinking apart from its answer, and bills them as output;
 the built-in assistant left them out of the month's count, so a Gemini

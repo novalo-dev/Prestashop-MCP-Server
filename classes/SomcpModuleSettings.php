@@ -130,7 +130,7 @@ class SomcpModuleSettings
 
         return [
             'shop' => $idShop,
-            'note' => 'set_at says where a value comes from: shop, group, global (all shops) or default. A change made here is written for this shop. API keys are only typed in the form. Tools and prompts switch with the keys tool:<name> and prompt:<name>, values on or off.',
+            'note' => 'Speak to the employee of a setting by its tab and label, never by its key nor in JSON. set_at says where a value comes from: shop, group, global (all shops) or default. A change made here is written for this shop. API keys are only typed in the form. Tools and prompts switch with the keys tool:<name> and prompt:<name>, values on or off.',
             'docs' => $docs,
             'settings' => $settings,
             'assistants' => ['tab' => self::t('Built-in assistant'), 'list' => $assistants],
@@ -166,8 +166,17 @@ class SomcpModuleSettings
             }
             $raw = $on ? '1' : '0';
         }
-        if ($kind === 'profile' && (int) $raw > 0 && !Validate::isLoadedObject(new Profile((int) $raw))) {
+        if ($kind === 'profile' && !SomcpConfig::profileExists(max(0, (int) $raw))) {
             return 'No such profile. Use 0 for every employee, or the id of a profile.';
+        }
+        // The rules that tie two settings together, as the form holds them.
+        if ($key === SomcpConfig::ACCESS_TTL || $key === SomcpConfig::REFRESH_TTL) {
+            $value = (int) SomcpConfig::clean($key, $raw);
+            $access = $key === SomcpConfig::ACCESS_TTL ? $value : (int) SomcpConfig::get(SomcpConfig::ACCESS_TTL, $idShop);
+            $refresh = $key === SomcpConfig::REFRESH_TTL ? $value : (int) SomcpConfig::get(SomcpConfig::REFRESH_TTL, $idShop);
+            if (!SomcpConfig::lifetimesHold($access, $refresh)) {
+                return 'The refresh token must last longer than the access token (now ' . $access . ' and ' . $refresh . ' seconds). Nothing was changed.';
+            }
         }
 
         switch ($key) {
@@ -188,9 +197,7 @@ class SomcpModuleSettings
 
                 return '';
             case SomcpAssistantMemory::ON:
-                SomcpAssistantMemory::save($raw === '1', SomcpAssistantMemory::providerId($idShop), '', true);
-
-                return '';
+                return self::memoryRefusal(SomcpAssistantMemory::save($raw === '1', SomcpAssistantMemory::providerId($idShop), '', true), $idShop);
             case SomcpAssistantMemory::PROVIDER:
                 $offered = SomcpAssistantMemory::selectable($idShop);
                 if (!isset($offered[$raw])) {
@@ -201,14 +208,98 @@ class SomcpModuleSettings
                 if ($offered[$raw]['special'] && SomcpAssistantMemory::providerId($idShop) !== $raw) {
                     return 'This provider needs its own key, which is typed in the form of the Built-in assistant tab.';
                 }
-                SomcpAssistantMemory::save(SomcpAssistantMemory::on($idShop), $raw, '', true);
 
-                return '';
+                return self::memoryRefusal(SomcpAssistantMemory::save(SomcpAssistantMemory::on($idShop), $raw, '', true), $idShop);
             default:
                 SomcpConfig::set($key, SomcpConfig::clean($key, $raw));
 
                 return '';
         }
+    }
+
+    /**
+     * What a refused memory save means, for the model.
+     *
+     * @param string $refused '' or a SomcpAssistantMemory refusal
+     * @param int $idShop
+     *
+     * @return string
+     */
+    private static function memoryRefusal(string $refused, int $idShop): string
+    {
+        if ($refused === SomcpAssistantMemory::NEEDS_PROVIDER) {
+            $offered = array_keys(SomcpAssistantMemory::selectable($idShop));
+
+            return 'The memory cannot be switched on without an embeddings provider. Set ' . SomcpAssistantMemory::PROVIDER . ' first'
+                . ($offered !== [] ? ', to one of: ' . implode(', ', $offered) : ': none is offered until a chat assistant of OpenAI, Gemini, Mistral or Cohere has a key') . '. Nothing was changed.';
+        }
+        if ($refused === SomcpAssistantMemory::NEEDS_KEY) {
+            return 'This embeddings provider needs its own key, typed in the form of the Built-in assistant tab. Nothing was changed.';
+        }
+
+        return '';
+    }
+
+    /**
+     * A setting as it now stands, with what it means, told to the model after
+     * a change: written is not the same as working, and the model must not
+     * say a feature is on while it cannot run.
+     *
+     * @param string $key
+     * @param int $idShop
+     *
+     * @return string
+     */
+    public static function state(string $key, int $idShop): string
+    {
+        if (strpos($key, self::TOOL_PREFIX) === 0) {
+            $name = substr($key, strlen(self::TOOL_PREFIX));
+            $line = 'Tool ' . $name . ' is ' . (SomcpToolRegistry::isEnabled($name) ? 'on' : 'off') . '.';
+            if (!SomcpToolRegistry::isEnabled($name)) {
+                $using = [];
+                foreach (SomcpPromptRegistry::getInstance()->all() as $prompt) {
+                    if (in_array($name, $prompt->getTools(), true) && SomcpPromptRegistry::isEnabled($prompt->getName())) {
+                        $using[] = $prompt->getTitle();
+                    }
+                }
+                if ($using !== []) {
+                    $line .= ' These prompts use it and are now incomplete: ' . implode(', ', $using) . '.';
+                }
+            }
+
+            return $line;
+        }
+        if (strpos($key, self::PROMPT_PREFIX) === 0) {
+            $name = substr($key, strlen(self::PROMPT_PREFIX));
+
+            return 'Prompt ' . $name . ' is ' . (SomcpPromptRegistry::isEnabled($name) ? 'on' : 'off') . '.';
+        }
+        $catalogue = self::catalogue();
+        if (!isset($catalogue[$key])) {
+            return '';
+        }
+        $line = self::t($catalogue[$key]['tab']) . ' > ' . self::t($catalogue[$key]['label']) . ': ' . self::value($key, $catalogue[$key]['kind'], $idShop) . '.';
+        switch ($key) {
+            case SomcpConfig::ENABLED:
+                if (SomcpConfig::get($key, $idShop) !== '1') {
+                    $line .= ' No assistant connected over MCP can reach the shop any more; the built-in assistant still works.';
+                }
+                break;
+            case SomcpConfig::OAUTH_ENABLED:
+                if (SomcpConfig::get($key, $idShop) !== '1') {
+                    $line .= ' New connections are refused: the registration settings and the return addresses have no effect until it is on again.';
+                }
+                break;
+            case SomcpAssistantMemory::ON:
+            case SomcpAssistantMemory::PROVIDER:
+                $line .= SomcpAssistantMemory::enabled($idShop) ? ' The memory works.' : ' The memory does not work: it is off, or has no provider or key.';
+                break;
+            case SomcpAssistant::SEARCH:
+                $line .= SomcpAssistant::searchProvider() !== '' ? ' The other assistants can search the web.' : ' The other assistants cannot search the web.';
+                break;
+        }
+
+        return $line;
     }
 
     /**

@@ -1386,7 +1386,10 @@ class SomcpAssistantChat
                 SomcpLogger::log('settings_changed', SomcpLogger::OUTCOME_SUCCESS, 'assistant: ' . Tools::substr((string) ($arguments['key'] ?? ''), 0, 120), '', (int) $this->employee->id);
             }
 
-            return $error !== '' ? ['error' => $error] : ['result' => 'Saved for shop #' . $this->idShop . '.'];
+            // Read back, with what it means: the model then says whether the
+            // feature works, not merely that the value was written.
+            return $error !== '' ? ['error' => $error] : ['result' => 'Saved for shop #' . $this->idShop . '. Now: '
+                . SomcpModuleSettings::state((string) ($arguments['key'] ?? ''), $this->idShop) . ' Tell the employee by tab and label, not by key.'];
         }
 
         $tool = SomcpToolRegistry::getInstance()->get($name);

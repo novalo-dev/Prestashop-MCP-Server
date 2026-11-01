@@ -699,20 +699,36 @@ class Somcp extends Module
             foreach ([SomcpAssistant::PROFILE, SomcpAssistant::TOKEN_CAP, SomcpAssistant::INSTRUCTIONS, SomcpAssistant::SEARCH, SomcpAssistantMemory::ON] as $key) {
                 $own[$key] = Tools::getValue('somcp_own_' . $key) === '1';
             }
+            $errors = [];
+            $idProfile = (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE');
+            if (!SomcpConfig::profileExists($idProfile)) {
+                // The stored value is written back unchanged.
+                $errors[] = $this->trans('This profile does not exist: the employees allowed were not changed.', [], 'Modules.Somcp.Admin');
+                $idProfile = (int) Configuration::get(SomcpAssistant::PROFILE);
+            }
             SomcpAssistant::saveSettings(
                 (int) Tools::getValue('SOMCP_ASSISTANT_TOKENS'),
                 (string) Tools::getValue('SOMCP_ASSISTANT_INSTRUCTIONS'),
-                (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE'),
+                $idProfile,
                 $own
             );
-            SomcpAssistantMemory::save(
+            $memory = SomcpAssistantMemory::save(
                 Tools::getValue('SOMCP_EMB_ON') === '1',
                 (string) Tools::getValue('SOMCP_EMB_PROVIDER'),
                 (string) Tools::getValue('SOMCP_EMB_KEY'),
                 $own[SomcpAssistantMemory::ON]
             );
+            if ($memory === SomcpAssistantMemory::NEEDS_PROVIDER) {
+                $errors[] = $this->trans('Choose an embeddings provider for the memory: without one it stays as it was.', [], 'Modules.Somcp.Admin');
+            } elseif ($memory === SomcpAssistantMemory::NEEDS_KEY) {
+                $errors[] = $this->trans('The embeddings provider has no key: type the Voyage key, or pick a provider of the chat. The memory stays as it was.', [], 'Modules.Somcp.Admin');
+            }
             SomcpAssistant::saveSearch((string) Tools::getValue(SomcpAssistant::SEARCH), $own[SomcpAssistant::SEARCH]);
-            $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
+            if ($errors !== []) {
+                $this->flash(implode(' ', $errors) . ' ' . $this->trans('The other settings were saved.', [], 'Modules.Somcp.Admin'), true);
+            } else {
+                $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
+            }
             $this->redirectToSelf();
         }
         if (Tools::isSubmit('submitSomcpUpdateSwitch')) {
@@ -982,6 +998,25 @@ class Somcp extends Module
             SomcpConfig::DCR_ENABLED,
             SomcpConfig::LOG_ENABLED,
         ];
+        // The rules that tie two settings together hold before anything is
+        // written, as in the built-in assistant's settings tool.
+        $errors = [];
+        if (isset($ownFields[SomcpConfig::REQUIRED_PROFILE])
+            && !SomcpConfig::profileExists((int) Tools::getValue(SomcpConfig::REQUIRED_PROFILE))) {
+            unset($ownFields[SomcpConfig::REQUIRED_PROFILE]);
+            $errors[] = $this->trans('This profile does not exist: the employees allowed were not changed.', [], 'Modules.Somcp.Admin');
+        }
+        $access = isset($ownFields[SomcpConfig::ACCESS_TTL])
+            ? (int) SomcpConfig::clean(SomcpConfig::ACCESS_TTL, (string) Tools::getValue(SomcpConfig::ACCESS_TTL))
+            : (int) SomcpConfig::get(SomcpConfig::ACCESS_TTL);
+        $refresh = isset($ownFields[SomcpConfig::REFRESH_TTL])
+            ? (int) SomcpConfig::clean(SomcpConfig::REFRESH_TTL, (string) Tools::getValue(SomcpConfig::REFRESH_TTL))
+            : (int) SomcpConfig::get(SomcpConfig::REFRESH_TTL);
+        if (!SomcpConfig::lifetimesHold($access, $refresh)) {
+            unset($ownFields[SomcpConfig::ACCESS_TTL], $ownFields[SomcpConfig::REFRESH_TTL]);
+            $errors[] = $this->trans('The refresh token must last longer than the access token: the two lifetimes were not changed.', [], 'Modules.Somcp.Admin');
+        }
+
         // SomcpConfig::clean() holds each setting's bounds, shared with the
         // built-in assistant's settings tool.
         $plain = array_merge($switches, [
@@ -1005,6 +1040,11 @@ class Somcp extends Module
             SomcpConfig::set(SomcpConfig::PROMPTS_OFF, $this->readPromptSwitches());
         }
 
+        if ($errors !== []) {
+            $this->flash(implode(' ', $errors) . ' ' . $this->trans('The other settings were saved.', [], 'Modules.Somcp.Admin'), true);
+
+            return;
+        }
         $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
     }
 

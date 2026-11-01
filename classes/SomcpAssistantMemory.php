@@ -58,6 +58,12 @@ class SomcpAssistantMemory
     /** @var string A key of its own, encrypted. Only for a provider with no chat assistant to borrow one from (Voyage). */
     public const KEY = 'SOMCP_EMB_KEY';
 
+    /** @var string save() refused: no provider the memory can use. */
+    public const NEEDS_PROVIDER = 'provider';
+
+    /** @var string save() refused: the provider has no key to embed with. */
+    public const NEEDS_KEY = 'key';
+
     /**
      * @var string The kind a conversation document carries, matched by the
      *             retrieval. It must equal SemanticMemoryRetrieval::SOURCE_TYPE.
@@ -190,19 +196,45 @@ class SomcpAssistantMemory
      * shops, a group or a shop. The switch, the provider and the key are one
      * setting: a level either keeps all three of its own or inherits all three.
      *
+     * Switching it on is refused unless it can run: a provider offered here,
+     * and a key to embed with. A memory saved as on without them did nothing
+     * while the page - and the chat - said it was on. With no provider picked
+     * and a single one offered that needs no key of its own, that one is
+     * taken. Refused, nothing of the memory is changed.
+     *
      * @param bool $on
      * @param string $provider
      * @param string $key a key of its own, only for a non-reusable provider; '' keeps the stored one
      * @param bool $own whether this level keeps a value of its own
+     *
+     * @return string '' when saved, NEEDS_PROVIDER or NEEDS_KEY when refused
      */
-    public static function save(bool $on, string $provider, string $key, bool $own = true): void
+    public static function save(bool $on, string $provider, string $key, bool $own = true): string
     {
         if (SomcpConfig::inheritableContext() && !$own) {
             foreach ([self::ON, self::PROVIDER, self::KEY] as $setting) {
                 SomcpConfig::inherit($setting);
             }
 
-            return;
+            return '';
+        }
+
+        if ($on) {
+            $offered = self::selectable(Somcp::currentShopId());
+            if (!isset($offered[$provider])) {
+                $plain = array_keys(array_filter($offered, static function (array $one): bool {
+                    return !$one['special'];
+                }));
+                if ($provider !== '' || count($plain) !== 1) {
+                    return self::NEEDS_PROVIDER;
+                }
+                $provider = $plain[0];
+            }
+            // A provider of the chat is offered only with a key to lend; one
+            // that brings its own needs it typed now or stored before.
+            if ($offered[$provider]['special'] && trim($key) === '' && (string) Configuration::get(self::KEY) === '') {
+                return self::NEEDS_KEY;
+            }
         }
 
         $provider = isset(self::PROVIDERS[$provider]) ? $provider : '';
@@ -217,6 +249,8 @@ class SomcpAssistantMemory
         } elseif ($key !== '') {
             Configuration::updateValue(self::KEY, SomcpAssistant::seal($key));
         }
+
+        return '';
     }
 
     /**

@@ -225,6 +225,35 @@ class SomcpConfig
         }
     }
 
+    /**
+     * Whether a profile id may be stored: 0 for every employee, or a profile
+     * that exists. The form offers only existing ones; a hand-made request or
+     * the chat may name any number.
+     *
+     * @param int $idProfile
+     *
+     * @return bool
+     */
+    public static function profileExists(int $idProfile): bool
+    {
+        return $idProfile === 0 || ($idProfile > 0 && Validate::isLoadedObject(new Profile($idProfile)));
+    }
+
+    /**
+     * Whether the two token lifetimes hold together: a refresh token that ran
+     * out before the access token it renews would log every assistant out at
+     * the first renewal.
+     *
+     * @param int $access seconds
+     * @param int $refresh seconds
+     *
+     * @return bool
+     */
+    public static function lifetimesHold(int $access, int $refresh): bool
+    {
+        return $refresh > $access;
+    }
+
     public static function set(string $key, string $value, ?int $idShop = null): void
     {
         Configuration::updateValue($key, $value, false, null, $idShop);

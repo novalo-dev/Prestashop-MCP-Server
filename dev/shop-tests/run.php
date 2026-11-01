@@ -574,6 +574,20 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
             || !SomcpToolRegistry::isEnabled('somcp_ping')) {
             $failures[] = 'assistant: a tool could not be switched off and on again from the chat';
         }
+        // Strict on what ties settings together, as the form is: a refresh
+        // token shorter than the access token, or a profile that does not
+        // exist, is refused and nothing changes.
+        ++$assistantChecks;
+        $refreshWas = SomcpConfig::get(SomcpConfig::REFRESH_TTL, (int) $context->shop->id);
+        if (SomcpModuleSettings::write(SomcpConfig::REFRESH_TTL, '600', (int) $context->shop->id) === ''
+            && (int) SomcpConfig::get(SomcpConfig::ACCESS_TTL, (int) $context->shop->id) >= 600) {
+            $failures[] = 'assistant: the chat set a refresh token shorter than the access token';
+        }
+        SomcpConfig::set(SomcpConfig::REFRESH_TTL, $refreshWas);
+        ++$assistantChecks;
+        if (SomcpModuleSettings::write(SomcpConfig::REQUIRED_PROFILE, '999999', (int) $context->shop->id) === '') {
+            $failures[] = 'assistant: the chat set a profile that does not exist';
+        }
         ++$assistantChecks;
         if (SomcpModuleSettings::write('SOMCP_STATE_KEY', 'x', (int) $context->shop->id) === '') {
             $failures[] = 'assistant: the chat could write a setting that is not on the settings page';

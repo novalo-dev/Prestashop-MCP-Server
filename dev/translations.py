@@ -2011,6 +2011,26 @@ T = {
  "Trouver un outil",
  "Buscar una herramienta",
  "Ein Werkzeug finden"),
+"This profile does not exist: the employees allowed were not changed.": (
+ "Ce profil n'existe pas : les employés autorisés n'ont pas été modifiés.",
+ "Este perfil no existe: los empleados autorizados no se han modificado.",
+ "Dieses Profil existiert nicht: Die berechtigten Mitarbeiter wurden nicht geändert."),
+"Choose an embeddings provider for the memory: without one it stays as it was.": (
+ "Choisissez un fournisseur d'embeddings pour la mémoire : sans lui, elle reste comme avant.",
+ "Elija un proveedor de embeddings para la memoria: sin él, se queda como estaba.",
+ "Wählen Sie einen Embeddings-Anbieter für das Gedächtnis: Ohne ihn bleibt es wie zuvor."),
+"The embeddings provider has no key: type the Voyage key, or pick a provider of the chat. The memory stays as it was.": (
+ "Le fournisseur d'embeddings n'a pas de clé : saisissez la clé Voyage, ou choisissez un fournisseur du chat. La mémoire reste comme avant.",
+ "El proveedor de embeddings no tiene clave: escriba la clave de Voyage o elija un proveedor del chat. La memoria se queda como estaba.",
+ "Der Embeddings-Anbieter hat keinen Schlüssel: Geben Sie den Voyage-Schlüssel ein oder wählen Sie einen Anbieter des Chats. Das Gedächtnis bleibt wie zuvor."),
+"The refresh token must last longer than the access token: the two lifetimes were not changed.": (
+ "Le jeton de rafraîchissement doit durer plus longtemps que le jeton d'accès : les deux durées n'ont pas été modifiées.",
+ "El token de actualización debe durar más que el token de acceso: las dos duraciones no se han modificado.",
+ "Das Aktualisierungstoken muss länger gültig sein als das Zugriffstoken: Die beiden Laufzeiten wurden nicht geändert."),
+"The other settings were saved.": (
+ "Les autres réglages ont été enregistrés.",
+ "Los demás ajustes se han guardado.",
+ "Die übrigen Einstellungen wurden gespeichert."),
 "Sources": (
  "Sources",
  "Fuentes",

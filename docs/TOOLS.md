@@ -2307,23 +2307,28 @@ Figures over a period, computed from valid orders.
 **Not here**: the orders behind them (→ Orders).
 
 #### `somcp_get_sales_summary`
-**State**: draft · [issue #21](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/21)
+**State**: written · [issue #21](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/21)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.stats.read`
 
-**Does** - returns sales over a period: revenue, number of orders, average basket, new customers.
+**Does** - returns the sales of this shop over a period, as **Stats > Stats Dashboard** and **Stats > Sales and orders** count them: revenue, orders, products bought, average basket, new customers.
 
-**Do not use for** - the list of orders behind the figures (→ `somcp_search_orders`).
+**Do not use for** - the orders behind the figures (→ `somcp_search_orders`), the products that sold most (→ `somcp_list_best_sellers`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `date_from` / `date_to` | string | yes | `YYYY-MM-DD`, both days included |
-| `compare_previous` | boolean | no | adds the same figures for the previous period of the same length |
+| `date_from` | string | yes | **From:**, `YYYY-MM-DD`, that day included, in the shop's time zone |
+| `date_to` | string | yes | **To:**, `YYYY-MM-DD`, that day included; not before `date_from` |
+| `compare_previous` | boolean | no | adds `previous`: the same figures for the period of the same length that ends the day before `date_from` |
 
-**Returns** - `revenue_tax_excl`, `revenue_tax_incl`, `currency`, `orders_count`, `average_basket_tax_incl`, `new_customers`, and `previous` when asked.
+**Returns** - `date_from` / `date_to` (as received), `currency` (ISO code of the default currency, the one every amount is in), `revenue_tax_excl` (**Revenue** on Stats Dashboard), `sales_tax_excl` (**Sales** on Sales and orders: revenue of the orders in a validated status minus their credit slips), `revenue_tax_incl`, `orders_count` (**Placed orders** / **Orders placed**), `products_bought` (**Bought items** / **Products bought**, sum of `order_detail.product_quantity`), `average_basket_tax_excl` and `average_basket_tax_incl` (`0` with no order), `new_customers` (**Registrations**: accounts created in the period), and `previous` with `compare_previous` (the same object with its own dates, without `previous`). Amounts are rounded to 2 decimals.
 
-**Notes** - counts valid orders only (`Order::valid`), converted to the shop's default currency, as the dashboard does.
+**Errors** - a missing or malformed date, or `date_to` before `date_from`: a refusal that names the field. An empty period is not an error: every figure is `0`.
+
+**Notes** - counts orders with `valid = 1`, dated by **`invoice_date`** (not `date_add`), amounts divided by `conversion_rate`, as `statsforecast` and `statssales` do; **Sales** also keeps only statuses counted as validated (`logable`) and takes off the credit slips with the formula of `statssales`. The tables are read directly, so the figures still come when the stats modules are disabled or uninstalled. Only the token's shop. `somcp_search_orders` filters on `date_add`: on the same dates a few orders can differ at the edges of the period. **Visits**, conversion and the distribution blocks are not returned.
+
+Same labels, module versions (`statsforecast` 2.0.4, `statssales` 2.1.0) and queries on 8.0.1 and 9.0.0.
 
 #### `somcp_list_best_sellers`
 **State**: draft · [issue #22](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/22)
@@ -3287,7 +3292,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-catalogue-manage` | Catalogue | written |
 | `somcp-stock-check` | Stock | written |
 | `somcp-customer-lookup` | Customers | written |
-| `somcp-sales-report` | Statistics | draft · [issue #39](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/39) |
+| `somcp-sales-report` | Statistics | written |
 | `somcp-content-pages` | Content | draft · [issue #40](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/40) |
 | `somcp-modules-review` | Modules | draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41) |
 | `somcp-storefront-menu` | Appearance | draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42) |
@@ -3339,7 +3344,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 **The guide must say** - search, then read the one customer the merchant means; the email is more reliable than the name; personal data stays in the answer it was asked for; no password ever goes through the conversation.
 
 #### `somcp-sales-report`
-**State**: draft · [issue #39](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/39)
+**State**: written
 **Section**: Statistics · **Scope**: `mcp.stats.read` · **Permission**: `view` on `AdminStats`
 
 **Title** - Sales report
@@ -3348,9 +3353,9 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 **Arguments** - `period` (period to report on, for example last month).
 
-**Tools** - `somcp_ping`, `somcp_get_sales_summary`, `somcp_list_best_sellers`, `somcp_search_orders`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_get_sales_summary`, `somcp_search_orders`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
-**The guide must say** - turn the period into two dates in the shop's time zone and say which; figures count valid orders only; compare with the previous period when it helps; amounts always with their currency and tax said.
+**The guide must say** - turn the period into two dates in the shop's time zone and say which; figures count valid orders dated by invoice date, tax excluded, in the default currency, as **Stats Dashboard** and **Sales and orders** do; `somcp_search_orders` filters on the date the order was placed, so a few orders can differ at the edges of a period; compare with the previous period when it helps; amounts always with their currency and tax said.
 
 #### `somcp-content-pages`
 **State**: draft · [issue #40](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/40)

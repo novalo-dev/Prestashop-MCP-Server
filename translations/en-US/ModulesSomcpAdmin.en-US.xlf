@@ -1167,6 +1167,16 @@
       <source>Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt</source>
       <target>Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt</target>
     </trans-unit>
+    <!-- Read the statistics of this shop: revenue, orders, products sold and new customers over a period -->
+    <trans-unit id="cee5afa74ab7cd8e22507cb680a757e1" resname="Read the statistics of this shop: revenue, orders, products sold and new customers over a period">
+      <source>Read the statistics of this shop: revenue, orders, products sold and new customers over a period</source>
+      <target>Read the statistics of this shop: revenue, orders, products sold and new customers over a period</target>
+    </trans-unit>
+    <!-- Get a sales summary -->
+    <trans-unit id="bb16cd9749111ef004f120ebdc3cb6e7" resname="Get a sales summary">
+      <source>Get a sales summary</source>
+      <target>Get a sales summary</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>
@@ -1286,6 +1296,21 @@
     <trans-unit id="93b46287befd343af1d5eaeb7d18655d" resname="Manage products">
       <source>Manage products</source>
       <target>Manage products</target>
+    </trans-unit>
+    <!-- Sales report -->
+    <trans-unit id="08512c0c5db8120b6786f387ee84a8a8" resname="Sales report">
+      <source>Sales report</source>
+      <target>Sales report</target>
+    </trans-unit>
+    <!-- Report the PrestaShop shop's sales over a period: revenue, orders, average basket, best sellers. -->
+    <trans-unit id="436510d3f112d274223762c025f359c2" resname="Report the PrestaShop shop&#x27;s sales over a period: revenue, orders, average basket, best sellers.">
+      <source>Report the PrestaShop shop's sales over a period: revenue, orders, average basket, best sellers.</source>
+      <target>Report the PrestaShop shop's sales over a period: revenue, orders, average basket, best sellers.</target>
+    </trans-unit>
+    <!-- Period to report on, for example last month -->
+    <trans-unit id="c84d7aa02acd985a0471654dbcea88fd" resname="Period to report on, for example last month">
+      <source>Period to report on, for example last month</source>
+      <target>Period to report on, for example last month</target>
     </trans-unit>
     <!-- Check and adjust stock -->
     <trans-unit id="f522c8316bb101ad6052425e7f80271a" resname="Check and adjust stock">

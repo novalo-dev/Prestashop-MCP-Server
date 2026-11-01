@@ -18,6 +18,22 @@ are:
 
 ### Added
 
+**Sales summary over a period.** The new tool `somcp_get_sales_summary`
+gives what the shop sold between two dates, counted as the **Stats Dashboard**
+and **Sales and orders** pages count it: valid orders by invoice date, amounts
+tax excluded in the shop's default currency. It returns the revenue, the
+sales after credit slips, the revenue tax included, the number of orders, the
+products bought, the average basket and the new customers, and on request the
+same figures for the period just before, to compare. It works even when the
+statistics modules are disabled. It needs the new permission `mcp.stats.read`,
+which the consent screen describes as reading the statistics, and the `view`
+right on the back office Stats page.
+
+**Sales report prompt.** A guided task for sales figures, picked from the
+assistant's menu: turn the period into two dates and say which, give every
+amount with its currency and whether tax is included, and explain why the
+list of orders can differ by a few orders at the edges of a period.
+
 **Listing carriers.** The new tool `somcp_list_carriers` lists the
 carriers of the shop as **Shipping > Carriers** shows them, enabled or not
 and in the same order, with their delay, logo, tracking URL and whether

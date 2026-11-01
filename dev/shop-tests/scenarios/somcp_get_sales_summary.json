@@ -1,0 +1,13 @@
+{
+  "calls": [
+    {"why": "a long period covering the demo orders gives every figure in the default currency", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31"}, "expect": "ok", "contains": ["\"date_from\": \"2000-01-01\"", "\"date_to\": \"2099-12-31\"", "\"currency\"", "\"revenue_tax_excl\"", "\"sales_tax_excl\"", "\"revenue_tax_incl\"", "\"orders_count\"", "\"products_bought\"", "\"average_basket_tax_excl\"", "\"average_basket_tax_incl\"", "\"new_customers\""]},
+    {"why": "a period with no order and no account gives zeros, not an error", "arguments": {"date_from": "2001-01-01", "date_to": "2001-01-31"}, "expect": "ok", "contains": ["\"revenue_tax_excl\": 0", "\"sales_tax_excl\": 0", "\"orders_count\": 0", "\"products_bought\": 0", "\"average_basket_tax_excl\": 0", "\"new_customers\": 0"]},
+    {"why": "one day, both bounds the same", "arguments": {"date_from": "2001-01-01", "date_to": "2001-01-01"}, "expect": "ok", "contains": ["\"orders_count\": 0"]},
+    {"why": "the previous period has the same length and ends the day before", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "compare_previous": true}, "expect": "ok", "contains": ["\"previous\"", "\"date_from\": \"2001-01-22\"", "\"date_to\": \"2001-01-31\""]},
+    {"why": "no comparison unless asked", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "compare_previous": false}, "expect": "ok"},
+    {"why": "the end before the start is refused, naming the field", "arguments": {"date_from": "2001-02-10", "date_to": "2001-02-01"}, "expect": "error", "contains": ["date_to"]},
+    {"why": "a malformed date is refused, naming the field", "arguments": {"date_from": "01/02/2001", "date_to": "2001-02-10"}, "expect": "error", "contains": ["date_from"]},
+    {"why": "a day that does not exist is refused", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-30"}, "expect": "error", "contains": ["date_to"]},
+    {"why": "a missing date is refused", "arguments": {"date_from": "2001-02-01"}, "expect": "error", "contains": ["date_to"]}
+  ]
+}

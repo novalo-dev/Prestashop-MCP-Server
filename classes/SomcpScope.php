@@ -65,6 +65,9 @@ class SomcpScope
     /** @var string Changing how the shop appears to search engines. */
     public const SEO_WRITE = 'mcp.seo.write';
 
+    /** @var string Reading statistics: sales figures over a period. */
+    public const STATS_READ = 'mcp.stats.read';
+
     /**
      * The scopes this module owns.
      *
@@ -72,7 +75,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ];
     }
 
     /**
@@ -257,6 +260,8 @@ class SomcpScope
                 return $module->l10n('Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages');
             case self::SEO_WRITE:
                 return $module->l10n('Change the shop\'s SEO settings, page titles and descriptions, robots.txt and llms.txt');
+            case self::STATS_READ:
+                return $module->l10n('Read the statistics of this shop: revenue, orders, products sold and new customers over a period');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

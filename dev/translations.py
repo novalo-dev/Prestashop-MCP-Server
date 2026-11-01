@@ -926,6 +926,14 @@ T = {
  "Modifier les réglages SEO de la boutique, les titres et descriptions des pages, le robots.txt et le llms.txt",
  "Cambiar los ajustes de SEO de la tienda, los títulos y descripciones de las páginas, el robots.txt y el llms.txt",
  "Die SEO-Einstellungen des Shops, die Titel und Beschreibungen der Seiten, die robots.txt und die llms.txt ändern"),
+"Read the statistics of this shop: revenue, orders, products sold and new customers over a period": (
+ "Lire les statistiques de cette boutique : chiffre d'affaires, commandes, produits vendus et nouveaux clients sur une période",
+ "Leer las estadísticas de esta tienda: volumen de negocio, pedidos, productos vendidos y nuevos clientes en un periodo",
+ "Die Statistiken dieses Shops lesen: Umsatz, Bestellungen, verkaufte Produkte und Neukunden über einen Zeitraum"),
+"Get a sales summary": (
+ "Obtenir un résumé des ventes",
+ "Obtener un resumen de las ventas",
+ "Eine Verkaufsübersicht abrufen"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",
@@ -1022,6 +1030,18 @@ T = {
  "Gérer les produits",
  "Gestionar los productos",
  "Produkte verwalten"),
+"Sales report": (
+ "Rapport des ventes",
+ "Informe de ventas",
+ "Verkaufsbericht"),
+"Report the PrestaShop shop's sales over a period: revenue, orders, average basket, best sellers.": (
+ "Présenter les ventes de la boutique PrestaShop sur une période : chiffre d'affaires, commandes, panier moyen, meilleures ventes.",
+ "Presentar las ventas de la tienda PrestaShop en un periodo: volumen de negocio, pedidos, cesta media, productos más vendidos.",
+ "Die Verkäufe des PrestaShop-Shops über einen Zeitraum darstellen: Umsatz, Bestellungen, durchschnittlicher Warenkorb, Bestseller."),
+"Period to report on, for example last month": (
+ "Période à présenter, par exemple le mois dernier",
+ "Periodo del informe, por ejemplo el mes pasado",
+ "Berichtszeitraum, zum Beispiel der letzte Monat"),
 "Check and adjust stock": (
  "Vérifier et ajuster le stock",
  "Comprobar y ajustar el stock",

@@ -117,6 +117,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_add_order_payment` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_create_return_status` | `mcp.orders.write` | `add` on `AdminStatuses` | write |
 | `somcp_update_return_status` | `mcp.orders.write` | `edit` on `AdminStatuses` | write |
+| `somcp_delete_return_status` | `mcp.orders.write` | `delete` on `AdminStatuses` | write |
 | `somcp_create_order_status` | `mcp.orders.write` | `add` on `AdminStatuses` | write |
 
 ### Catalog - Products

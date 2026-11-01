@@ -662,6 +662,10 @@ T = {
  "Modifier un statut de retour",
  "Modificar un estado de devolución",
  "Einen Rückgabestatus ändern"),
+"Delete a return status": (
+ "Supprimer un statut de retour",
+ "Eliminar un estado de devolución",
+ "Einen Rückgabestatus löschen"),
 "Test the connection": (
  "Tester la connexion",
  "Probar la conexión",

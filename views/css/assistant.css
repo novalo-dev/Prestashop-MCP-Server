@@ -401,6 +401,13 @@
     background: #fff;
 }
 
+/* Nothing in the column shrinks: an element that hides its overflow, like
+   the approval card, would otherwise be squeezed to nothing once the
+   conversation is longer than the panel. */
+#somcp-chat .somcp-chat-body > * {
+    flex-shrink: 0;
+}
+
 #somcp-chat .somcp-msg {
     position: relative;
     max-width: 86%;
@@ -431,6 +438,89 @@
 
 #somcp-chat .somcp-msg a {
     color: var(--somcp-accent);
+}
+
+#somcp-chat .somcp-msg h3,
+#somcp-chat .somcp-msg h4 {
+    margin: 14px 0 6px;
+    color: var(--somcp-ink);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+#somcp-chat .somcp-msg h3 {
+    font-size: 16px;
+}
+
+#somcp-chat .somcp-msg h4 {
+    font-size: 14px;
+}
+
+#somcp-chat .somcp-msg > :first-child {
+    margin-top: 0;
+}
+
+#somcp-chat .somcp-msg ol {
+    margin: 0 0 8px 20px;
+    padding: 0;
+}
+
+#somcp-chat .somcp-msg hr {
+    margin: 14px 0;
+    border: 0;
+    border-top: 1px solid var(--somcp-line);
+}
+
+#somcp-chat .somcp-msg blockquote {
+    margin: 0 0 8px;
+    padding: 2px 0 2px 12px;
+    border-left: 3px solid var(--somcp-line);
+    color: var(--somcp-muted);
+}
+
+#somcp-chat .somcp-msg pre {
+    margin: 0 0 8px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    border-radius: 8px;
+    background: var(--somcp-soft);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#somcp-chat .somcp-msg pre code {
+    padding: 0;
+    background: none;
+}
+
+#somcp-chat .somcp-table {
+    max-width: 100%;
+    margin: 0 0 10px;
+    overflow-x: auto;
+    border: 1px solid var(--somcp-line);
+    border-radius: 10px;
+}
+
+#somcp-chat .somcp-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+#somcp-chat .somcp-table th,
+#somcp-chat .somcp-table td {
+    padding: 8px 10px;
+    border-top: 1px solid #eef0f3;
+    text-align: left;
+    vertical-align: top;
+}
+
+#somcp-chat .somcp-table th {
+    border-top: 0;
+    background: var(--somcp-soft);
+    color: var(--somcp-muted);
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 #somcp-chat .somcp-msg-user {
@@ -497,6 +587,10 @@
 
 #somcp-chat .somcp-tool-refused .somcp-icon {
     color: #b42318;
+}
+
+#somcp-chat .somcp-tool-pending .somcp-icon {
+    color: #9a4a08;
 }
 
 #somcp-chat .somcp-msg-file {

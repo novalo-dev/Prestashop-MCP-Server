@@ -75,7 +75,8 @@
         warn: ['M12 9v4', 'M12 17h.01', 'M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'],
         trash: ['M3 6h18', 'M8 6V4h8v2', 'M6 6l1 14h10l1-14'],
         copy: ['M9 9h12v12H9z', 'M5 15V5a2 2 0 0 1 2-2h10'],
-        chevron: ['M6 9l6 6 6-6']
+        chevron: ['M6 9l6 6 6-6'],
+        clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 1 0 0 18z', 'M12 7v5l3 2']
     };
     var MAX_SUGGESTIONS = 4;
     var MAX_STEPS = 30;
@@ -165,42 +166,134 @@
             .replace(/'/g, '&#39;');
     }
 
-    // A small part of Markdown, on text already escaped: what assistants use
-    // in a short answer. Links are kept only when they are http or https.
+    // The Markdown assistants write in an answer, on text already escaped:
+    // titles, lists, tables, quotes, rules and code. Nothing in it becomes
+    // HTML of its own - a <p> the model wrote shows as text - and links are
+    // kept only when they are http or https.
     function markdown(value) {
         var lines = escapeHtml(value).split(/\r?\n/);
         var html = '';
-        var list = false;
-
-        lines.forEach(function (line) {
-            var item = /^\s*(?:[-*]|\d+\.)\s+(.*)$/.exec(line);
-            if (item) {
-                if (!list) {
-                    html += '<ul>';
-                    list = true;
-                }
-                html += '<li>' + inline(item[1]) + '</li>';
-                return;
-            }
+        var list = '';
+        var i = 0;
+        var closeList = function () {
             if (list) {
-                html += '</ul>';
-                list = false;
+                html += '</' + list + '>';
+                list = '';
             }
+        };
+
+        while (i < lines.length) {
+            var line = lines[i];
+            if (/^\s*```/.test(line)) {
+                closeList();
+                var code = [];
+                i += 1;
+                while (i < lines.length && !/^\s*```/.test(lines[i])) {
+                    code.push(lines[i]);
+                    i += 1;
+                }
+                html += '<pre><code>' + code.join('\n') + '</code></pre>';
+                i += 1;
+                continue;
+            }
+            if (isRow(line) && i + 1 < lines.length && isSeparator(lines[i + 1])) {
+                closeList();
+                html += table(lines, i);
+                i += 2;
+                while (i < lines.length && isRow(lines[i])) {
+                    i += 1;
+                }
+                continue;
+            }
+            var heading = /^\s*(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line);
+            if (heading) {
+                closeList();
+                var level = heading[1].length <= 2 ? 'h3' : 'h4';
+                html += '<' + level + '>' + inline(heading[2]) + '</' + level + '>';
+                i += 1;
+                continue;
+            }
+            if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) {
+                closeList();
+                html += '<hr>';
+                i += 1;
+                continue;
+            }
+            var quote = /^\s*&gt;\s?(.*)$/.exec(line);
+            if (quote) {
+                closeList();
+                html += '<blockquote>' + inline(quote[1]) + '</blockquote>';
+                i += 1;
+                continue;
+            }
+            var bullet = /^\s*[-*+]\s+(.*)$/.exec(line);
+            var number = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+            if (bullet || number) {
+                var kind = bullet ? 'ul' : 'ol';
+                if (list !== kind) {
+                    closeList();
+                    html += '<' + kind + '>';
+                    list = kind;
+                }
+                html += '<li>' + inline((bullet || number)[1]) + '</li>';
+                i += 1;
+                continue;
+            }
+            closeList();
             if (line.trim() !== '') {
                 html += '<p>' + inline(line) + '</p>';
             }
-        });
-        if (list) {
-            html += '</ul>';
+            i += 1;
         }
+        closeList();
 
         return html;
+    }
+
+    function isRow(line) {
+        return /^\s*\|.*\|\s*$/.test(line);
+    }
+
+    function isSeparator(line) {
+        return isRow(line) && cells(line).every(function (cell) {
+            return /^:?-+:?$/.test(cell);
+        });
+    }
+
+    function cells(line) {
+        return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function (cell) {
+            return cell.trim();
+        });
+    }
+
+    // A table from its header row at start, its separator, and every row
+    // after them. Wrapped in a box that scrolls sideways, so a wide table
+    // never widens the chat.
+    function table(lines, start) {
+        var aligns = cells(lines[start + 1]).map(function (cell) {
+            if (/^:-+:$/.test(cell)) {
+                return 'center';
+            }
+            return /-:$/.test(cell) ? 'right' : '';
+        });
+        var row = function (line, tag) {
+            return '<tr>' + cells(line).map(function (cell, index) {
+                var align = aligns[index] ? ' style="text-align:' + aligns[index] + '"' : '';
+                return '<' + tag + align + '>' + inline(cell) + '</' + tag + '>';
+            }).join('') + '</tr>';
+        };
+        var out = '<div class="somcp-table"><table><thead>' + row(lines[start], 'th') + '</thead><tbody>';
+        for (var i = start + 2; i < lines.length && isRow(lines[i]); i += 1) {
+            out += row(lines[i], 'td');
+        }
+        return out + '</tbody></table></div>';
     }
 
     function inline(value) {
         return value
             .replace(/`([^`]+)`/g, '<code>$1</code>')
             .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:!?]|$)/g, '$1<em>$2</em>')
             .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     }
 
@@ -453,8 +546,11 @@
                 } else if (tool.approval === 'rejected') {
                     label += ' · ' + text.refused;
                 }
-                var chip = el('div', 'somcp-tool' + (tool.approval === 'rejected' ? ' somcp-tool-refused' : ''));
-                chip.appendChild(icon(tool.approval === 'rejected' ? 'close' : 'check', 14));
+                // A change still waiting for the employee is not done yet: it
+                // shows a clock, not the check of a finished step.
+                var step = tool.approval === 'rejected' ? 'refused' : (tool.approval === 'pending' ? 'pending' : 'done');
+                var chip = el('div', 'somcp-tool somcp-tool-' + step);
+                chip.appendChild(icon({ refused: 'close', pending: 'clock', done: 'check' }[step], 14));
                 chip.appendChild(el('span', '', label));
                 wrap.appendChild(chip);
             });

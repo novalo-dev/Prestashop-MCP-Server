@@ -28,8 +28,14 @@ plain words - each field with its label and its new value, yes or no instead
 of true or false - with **Refuse** and **Approve** side by side and the exact
 data one click away. The conversations can be searched and are grouped by
 day, with the month's spending and its budget under them. Icons are drawn as
-lines instead of emoji, and an answer can be copied in one click. A prompt
-declared by another module can name its icon too.
+lines instead of emoji, a change still waiting for you shows a clock rather
+than a check, and an answer can be copied in one click. A prompt declared by
+another module can name its icon too.
+
+**Answers drawn as written.** Titles, tables, numbered lists, quotes,
+separators and blocks of code in an answer of the built-in assistant now show
+as such, instead of the raw `###`, `|` and `---` they were written with. A
+wide table scrolls sideways inside the chat.
 
 ## 1.1.3 - 2026-11-01
 

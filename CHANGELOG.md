@@ -23,10 +23,12 @@ are:
 you are in. **Deep thinking** asks the assistant to think longer before
 answering, for Claude, Gemini and OpenAI's reasoning models; it is slower and
 uses more tokens, and what the assistant thought can be unfolded above its
-answer. **Web search** lets Claude look things up on the web with the key it
-already has, and the pages it used are listed under the answer; each search
-is billed by Anthropic on top of the tokens, and web search must be allowed
-in your Anthropic console. **Memory**, offered when the memory is switched on
+answer. **Web search** lets Claude and Gemini look things up on the web with the
+key they already have, and the pages used are listed in the conversation.
+Claude searches on its own: each search is billed by Anthropic on top of the
+tokens, and web search must be allowed in your Anthropic console. Gemini
+searches through a second call to the same model with Google Search, counted
+in the tokens like any answer. **Memory**, offered when the memory is switched on
 in the module settings, can be switched off for one conversation: the
 assistant then works from that conversation alone, and nothing said in it is
 added to the memory - what was remembered before stays. A switch only shows

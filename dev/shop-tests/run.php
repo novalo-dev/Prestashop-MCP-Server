@@ -439,6 +439,40 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
     }
 
     $chat->deleteThread($thread);
+
+    // Gemini searches through the chat's own tool: a second call of the same
+    // model with Google Search alone, whose pages are listed under the step.
+    $idSearcher = SomcpAssistant::save(0, [
+        'provider' => 'gemini', 'api_key' => 'test-key', 'level' => 'economy',
+        'model' => '', 'role' => '', 'active' => true,
+    ]);
+    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+        $call(SomcpAssistantChat::SEARCH_TOOL, 'call_search', ['query' => 'price of a custom mug']),
+        (new NeuronAI\Chat\Messages\AssistantMessage('About 13 euros.'))->addMetadata('citations', [
+            new NeuronAI\Chat\Messages\Citation('g1', 'https://example.org/prices', 'Mug prices'),
+        ]),
+        new NeuronAI\Chat\Messages\AssistantMessage('The market is about 13 euros.')
+    ));
+    $thread = $chat->setSwitches($chat->newThread($idSearcher), ['think' => false, 'web' => true, 'memory' => true]);
+
+    try {
+        $view = $chat->send($thread, 'What do custom mugs cost?');
+        $expect($view, 'working', 'Gemini asks for a web search');
+        $view = $chat->step($thread);
+        $expect($view, 'idle', 'the answer after the web search');
+        $listed = array_values(array_filter($view['messages'], static function (array $message): bool {
+            return $message['role'] === 'sources';
+        }));
+        ++$assistantChecks;
+        if (($listed[0]['sources'] ?? null) !== [['url' => 'https://example.org/prices', 'title' => 'Mug prices']]) {
+            $failures[] = 'assistant: the pages of a Gemini web search are not listed';
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+
+    $chat->deleteThread($thread);
+    SomcpAssistant::delete($idSearcher);
     SomcpAssistant::delete($idAssistant);
     SomcpAssistantChat::overrideProvider(null);
 }

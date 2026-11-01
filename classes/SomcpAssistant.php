@@ -681,12 +681,12 @@ class SomcpAssistant
     }
 
     /**
-     * Whether this assistant can search the web on its own, with the key it
-     * already has.
+     * Whether this assistant can search the web with the key it already has.
      *
-     * Only Claude does, for now: Gemini searches only when no function tool is
-     * offered with it, and the chat always offers the shop's tools; OpenAI
-     * searches only through another of its APIs.
+     * Claude searches on its own; Gemini through the chat's search tool,
+     * which calls it again with Google Search alone, since it drops Google
+     * Search whenever the shop's tools are offered with it. OpenAI searches
+     * only through another of its APIs.
      *
      * @param array<string, mixed> $assistant
      *
@@ -694,7 +694,7 @@ class SomcpAssistant
      */
     public static function searches(array $assistant): bool
     {
-        return $assistant['provider'] === 'anthropic';
+        return in_array($assistant['provider'], ['anthropic', 'gemini'], true);
     }
 
     /**

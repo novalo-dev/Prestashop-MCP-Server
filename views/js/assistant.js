@@ -670,6 +670,10 @@
             note.appendChild(gist);
             return note;
         }
+        // The pages a web search of the chat read, under its step.
+        if (message.role === 'sources') {
+            return drawSources(message.sources || []);
+        }
         if (message.role === 'tools') {
             var wrap = document.createDocumentFragment();
             if (message.reasoning) {

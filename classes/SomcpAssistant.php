@@ -298,16 +298,17 @@ class SomcpAssistant
      * Gives the level being edited assistants of its own: a copy of those it
      * inherited, keys included, which can then be changed here alone.
      *
-     * @return void
+     * @return bool false when a copy could not be written
      */
-    public static function copyHere(): void
+    public static function copyHere(): bool
     {
         $state = self::editedState();
         if ($state['own']) {
-            return;
+            return true;
         }
         [$idShop, $idGroup] = self::editedLevel();
         $db = Db::getInstance();
+        $copied = true;
         foreach ($state['assistants'] as $assistant) {
             $row = $db->getRow('SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant` WHERE `id_assistant` = ' . (int) $assistant['id_assistant']);
             if (!is_array($row)) {
@@ -316,10 +317,19 @@ class SomcpAssistant
             unset($row['id_assistant'], $row['date_add'], $row['date_upd']);
             $row['id_shop'] = $idShop;
             $row['id_shop_group'] = $idGroup;
-            $db->insert('somcp_assistant', array_map(static function ($value) {
-                return $value === null ? null : pSQL((string) $value);
-            }, $row), true);
+            // A column that is NULL is left out and takes its default. Db's
+            // null option would also turn every empty text into NULL, which
+            // the NOT NULL columns refuse - and the copy failed without a word.
+            $values = [];
+            foreach ($row as $column => $value) {
+                if ($value !== null) {
+                    $values[$column] = pSQL((string) $value);
+                }
+            }
+            $copied = $db->insert('somcp_assistant', $values) && $copied;
         }
+
+        return $copied;
     }
 
     /**

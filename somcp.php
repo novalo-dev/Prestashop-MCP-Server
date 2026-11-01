@@ -636,8 +636,11 @@ class Somcp extends Module
             $this->saveAssistant();
         }
         if (Tools::isSubmit('submitSomcpAssistantOwn')) {
-            SomcpAssistant::copyHere();
-            $this->flash($this->trans('The assistants inherited from above were copied to this level, where they can now be changed.', [], 'Modules.Somcp.Admin'));
+            if (SomcpAssistant::copyHere()) {
+                $this->flash($this->trans('The assistants inherited from above were copied to this level, where they can now be changed.', [], 'Modules.Somcp.Admin'));
+            } else {
+                $this->flash($this->trans('The assistants could not be copied to this level. Try again, or add them here by hand.', [], 'Modules.Somcp.Admin'), true);
+            }
             $this->redirectToSelf();
         }
         if (Tools::isSubmit('submitSomcpAssistantInherit')) {

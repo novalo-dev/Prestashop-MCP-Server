@@ -1631,6 +1631,10 @@ T = {
  "Les assistants hérités du niveau supérieur ont été copiés à ce niveau, où ils peuvent maintenant être modifiés.",
  "Los asistentes heredados del nivel superior se han copiado a este nivel, donde ahora se pueden modificar.",
  "Die von der höheren Ebene geerbten Assistenten wurden auf diese Ebene kopiert und können hier nun geändert werden."),
+"The assistants could not be copied to this level. Try again, or add them here by hand.": (
+ "Les assistants n'ont pas pu être copiés à ce niveau. Réessayez, ou ajoutez-les ici à la main.",
+ "No se han podido copiar los asistentes a este nivel. Inténtelo de nuevo o añádalos aquí manualmente.",
+ "Die Assistenten konnten nicht auf diese Ebene kopiert werden. Versuchen Sie es erneut oder fügen Sie sie hier von Hand hinzu."),
 "This level uses the assistants inherited from above again.": (
  "Ce niveau utilise de nouveau les assistants hérités du niveau supérieur.",
  "Este nivel vuelve a usar los asistentes heredados del nivel superior.",

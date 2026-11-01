@@ -2062,6 +2062,11 @@
       <source>The assistants inherited from above were copied to this level, where they can now be changed.</source>
       <target>Die von der höheren Ebene geerbten Assistenten wurden auf diese Ebene kopiert und können hier nun geändert werden.</target>
     </trans-unit>
+    <!-- The assistants could not be copied to this level. Try again, or add them here by hand. -->
+    <trans-unit id="cf674f74a94ec87a06bd9c604336d10c" resname="The assistants could not be copied to this level. Try again, or add them here by hand.">
+      <source>The assistants could not be copied to this level. Try again, or add them here by hand.</source>
+      <target>Die Assistenten konnten nicht auf diese Ebene kopiert werden. Versuchen Sie es erneut oder fügen Sie sie hier von Hand hinzu.</target>
+    </trans-unit>
     <!-- This level uses the assistants inherited from above again. -->
     <trans-unit id="c2f16983cf69bb270871fdad547001b3" resname="This level uses the assistants inherited from above again.">
       <source>This level uses the assistants inherited from above again.</source>

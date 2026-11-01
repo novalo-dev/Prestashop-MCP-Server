@@ -700,9 +700,10 @@ Same table and same rows on both versions.
 **Does** - creates one return status: a step a merchandise return goes
 through, with its name in the languages being filled and its colour.
 
-**Do not use for** - the statuses of an order (→ `somcp_list_order_statuses`):
+**Do not use for** - the statuses of an order (→ `somcp_list_order_statuses`
+lists them, `somcp_create_order_status` creates one):
 a return status is not an order status, and its identifiers are never order
-status identifiers. No tool creates an order status.
+status identifiers.
 
 **Parameters**
 
@@ -799,6 +800,67 @@ exists in `somcp_search_orders`, where the permission is the right one.
 
 `deleted` was returned and always false: `OrderState::getOrderStates()` filters
 them out before we see them. Removed rather than left lying.
+
+#### `somcp_create_order_status`
+**State**: written
+**Nature**: `acts(ADD, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
+
+**Does** - creates one order status, with every field of the **Add new order
+status** form: the name and the email template per language, the colour, the
+GIF icon, and the nine boxes that say what reaching the status sets off.
+
+**Do not use for** - changing a status (→ `somcp_update_order_status`), giving
+an order a status (→ `somcp_set_order_status`), or the steps of a merchandise
+return (→ `somcp_create_return_status`): a return status is not an order
+status.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `languages` | array of strings | no | ISO codes of the languages to fill; all the shop's active languages by default |
+| `name` | object by ISO code | yes | the name of the status, one text per language being filled; a language of the shop left out takes the default language's text |
+| `color` | string | no | the colour the status is highlighted in, a hex code `#RRGGBB` |
+| `icon` | object | no | the icon, a GIF: `url` (a public https address the shop downloads) or `upload_ref` (a file already on the shop), one of the two |
+| `logable` | boolean | no | considers the associated order as validated; off by default |
+| `invoice` | boolean | no | lets the customer download and view PDF versions of their invoices; off by default |
+| `hidden` | boolean | no | hides the status in all customer orders; off by default |
+| `send_email` | boolean | no | emails the customer when their order reaches this status; off by default |
+| `pdf_invoice` | boolean | no | attaches the invoice PDF to that email; off by default |
+| `pdf_delivery` | boolean | no | attaches the delivery slip PDF to that email; off by default |
+| `shipped` | boolean | no | sets the order as shipped; off by default |
+| `paid` | boolean | no | sets the order as paid; off by default |
+| `in_transit` | boolean | no | sets the order as in transit - the box 8.0.1 labels **Show delivery PDF**; off by default |
+| `template` | object by ISO code | no | the mail template of the status email, one per language being filled; only stored with `send_email` |
+
+**Returns** - `created`, `id_order_state`, `status` (the status as
+`somcp_list_order_statuses` lists it, `icon` included) and, when an icon was
+given, `icon`: its `url` or `upload_ref`, with `stored: true` or
+`refused: <reason>`.
+
+**Notes** - the **Add new order status** form of **Shop Parameters > Order
+Settings > Statuses**, read in full on 8.0.1 and 9.0.0. The name follows the
+rules of `somcp_create_feature`: required in the default language - every
+language being filled - `Validate::isGenericName()`, 64 characters at most.
+A name another order status already has in that language is refused, so two
+statuses can never wear one label and be mistaken by the merchant or by
+`somcp_set_order_status` called with a name: 8.0.1 refuses it
+(`OrderState::existsLocalizedNameInDatabase()`), the 9.0.0 handler does not
+call the check, and the tool refuses it on both. The colour is checked as
+`somcp_create_attribute_value` checks a swatch. A template must be one of the
+mail templates of its language (`mails/<iso>/`, the list the form offers);
+with `send_email` off the templates are stored empty, as 8.0.1 blanks them.
+The icon is a GIF only, as the form says, fetched as the product images are -
+`url` downloaded by the shop with its guards, `upload_ref` redeemed from the
+shop's deposits - and stored as `img/os/<id>.gif` as it arrived, as the 9.0.0
+`OrderStateFileUploader` moves it. It is written after the status exists, so
+a refused icon leaves the status without one and says so. `module_name`,
+`unremovable` and `deleted` are not on the form and are never written.
+Written through `OrderState::add()`. Order statuses are not tied to a shop:
+the table has no shop column. Every problem is reported at once, before
+anything is written. Not replayable: a lost answer is checked with
+`somcp_list_order_statuses`, and a second call would be refused on the name
+anyway.
 
 #### `somcp_list_carriers`
 **State**: written · [issue #20](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/20)

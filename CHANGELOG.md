@@ -75,6 +75,15 @@ does. A name another return status already has in that language is
 refused, so two steps can never wear the same label and be mistaken for
 each other. The prompt **Change an order status** names it too.
 
+**Creating order statuses.** The new tool `somcp_create_order_status`
+adds one order status with every field of the **Add new order status**
+form of the same page: its name and email template in the languages
+being filled, its colour, its GIF icon - by address or by a file already
+on the shop - and the nine boxes that say what reaching the status sets
+off. A name another order status already has in that language is
+refused on both PrestaShop 8 and 9, so two statuses can never wear the
+same label. The prompt **Change an order status** names it too.
+
 ### Changed
 
 **A brand or supplier logo can be a file already on the shop.** The logo of

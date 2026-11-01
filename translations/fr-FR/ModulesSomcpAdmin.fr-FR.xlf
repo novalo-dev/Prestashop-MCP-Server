@@ -812,6 +812,11 @@
       <source>List order statuses</source>
       <target>Lister les statuts de commande</target>
     </trans-unit>
+    <!-- Create an order status -->
+    <trans-unit id="05dac18aa67147cb5529f4d5bb2986c1" resname="Create an order status">
+      <source>Create an order status</source>
+      <target>Créer un statut de commande</target>
+    </trans-unit>
     <!-- List return statuses -->
     <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
       <source>List return statuses</source>

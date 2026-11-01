@@ -642,6 +642,10 @@ T = {
  "Lister les statuts de commande",
  "Listar los estados de pedido",
  "Bestellstatus auflisten"),
+"Create an order status": (
+ "Créer un statut de commande",
+ "Crear un estado de pedido",
+ "Einen Bestellstatus anlegen"),
 "List return statuses": (
  "Lister les statuts de retour",
  "Listar los estados de devolución",

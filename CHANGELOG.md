@@ -110,7 +110,8 @@ sent the full description of all the shop's tools to the AI service - some
 The assistant now starts with a tool finder: it looks up the tools a request
 needs by keyword and loads only those, which the conversation keeps for the
 messages that follow. A hello now costs a few thousand tokens. A prompt
-started from the **+** menu loads the tools its guide walks through. Tools
+started from the **+** menu tells the assistant which tools its guide walks
+through, and each is loaded when the step needs it. Tools
 switched off on the **Tools and prompts** tab, or beyond the employee's
 rights, cannot be found nor loaded. Assistants connected over MCP still see
 the whole list, as before.

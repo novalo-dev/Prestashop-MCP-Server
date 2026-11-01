@@ -2227,10 +2227,10 @@
       <source>The files of the assistant are missing from this copy of the module. Install the module from its release zip.</source>
       <target>The files of the assistant are missing from this copy of the module. Install the module from its release zip.</target>
     </trans-unit>
-    <!-- In development: the built-in assistant is unstable and may change or stop working without notice. -->
-    <trans-unit id="da4b870d7d4d80d82b60dd7df6e742ab" resname="In development: the built-in assistant is unstable and may change or stop working without notice.">
-      <source>In development: the built-in assistant is unstable and may change or stop working without notice.</source>
-      <target>In development: the built-in assistant is unstable and may change or stop working without notice.</target>
+    <!-- In development: the built-in assistant is unstable and may change or stop working without notice, and its consumption can be somewhat high. -->
+    <trans-unit id="a9e7d04f8d53a72ffe75e72acc2779ad" resname="In development: the built-in assistant is unstable and may change or stop working without notice, and its consumption can be somewhat high.">
+      <source>In development: the built-in assistant is unstable and may change or stop working without notice, and its consumption can be somewhat high.</source>
+      <target>In development: the built-in assistant is unstable and may change or stop working without notice, and its consumption can be somewhat high.</target>
     </trans-unit>
     <!-- Edit the assistant -->
     <trans-unit id="1bfb39f857ef076837da95e30de22458" resname="Edit the assistant">

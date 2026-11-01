@@ -681,11 +681,6 @@ class SomcpAssistantChat
                 return $this->view($thread, self::t('This prompt is not available.'));
             }
             $guide = (string) ($rendered['messages'][0]['content']['text'] ?? '');
-            // The guide names the tools it walks through: loaded now, the
-            // model can follow it without searching for them first.
-            if (preg_match_all('/\bsomcp_[a-z0-9_]+\b/', $guide, $named)) {
-                $this->loadTools($thread, $named[0]);
-            }
             if ($text === '') {
                 $text = $prompt->getTitle();
             }
@@ -712,7 +707,13 @@ class SomcpAssistantChat
 
         $content = array_merge([new TextContent(Tools::substr($text, 0, 20000))], $blocks);
         if ($guide !== '') {
-            $content[] = new TextContent(self::GUIDE_MARKER . "\n\n" . $guide);
+            // The guide names its tools, written for clients that see them
+            // all. Loading them all up front cost the heaviest descriptions
+            // before the employee had said what to do; the chat adds this
+            // line instead, and the model loads each one when it needs it.
+            // The prompt itself is unchanged for MCP clients.
+            $content[] = new TextContent(self::GUIDE_MARKER . "\n\n" . $guide
+                . "\n\nLoad the tools this guide names with " . self::FIND_TOOL . ' when you need them, before calling them.');
         }
         $names = [];
         foreach ($files as $file) {
@@ -2077,8 +2078,11 @@ class SomcpAssistantChat
             if ($words !== [] && $score === 0) {
                 continue;
             }
+            // The full list gives names and titles only: with every tool on
+            // it, a sentence each cost some 2,500 tokens.
             $first = (string) preg_replace('/(?<=\.)\s.*$/s', '', (string) $described['description']);
-            $found[] = [$score, '- ' . $tool->getName() . ' (' . $described['title'] . '): ' . Tools::substr($first, 0, 160)
+            $found[] = [$score, '- ' . $tool->getName() . ' (' . $described['title'] . ')'
+                . ($words !== [] ? ': ' . Tools::substr($first, 0, 160) : '')
                 . (($described['annotations']['readOnlyHint'] ?? false) === true ? '' : ' [changes the shop]')];
         }
         usort($found, static function (array $a, array $b): int {

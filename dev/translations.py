@@ -1763,10 +1763,10 @@ T = {
  "Les fichiers de l'assistant manquent dans cette copie du module. Installez le module depuis le zip de sa version.",
  "Faltan los archivos del asistente en esta copia del módulo. Instale el módulo desde el zip de su versión.",
  "In dieser Kopie des Moduls fehlen die Dateien des Assistenten. Installieren Sie das Modul aus dem Zip seiner Version."),
-"In development: the built-in assistant is unstable and may change or stop working without notice.": (
- "En cours de développement : l'assistant intégré est instable et peut changer ou cesser de fonctionner sans préavis.",
- "En desarrollo: el asistente integrado es inestable y puede cambiar o dejar de funcionar sin previo aviso.",
- "In Entwicklung: Der integrierte Assistent ist instabil und kann sich ohne Vorankündigung ändern oder ausfallen."),
+"In development: the built-in assistant is unstable and may change or stop working without notice, and its consumption can be somewhat high.": (
+ "En cours de développement : l'assistant intégré est instable et peut changer ou cesser de fonctionner sans préavis, et sa consommation peut être un peu élevée.",
+ "En desarrollo: el asistente integrado es inestable y puede cambiar o dejar de funcionar sin previo aviso, y su consumo puede ser algo elevado.",
+ "In Entwicklung: Der integrierte Assistent ist instabil und kann sich ohne Vorankündigung ändern oder ausfallen, und sein Verbrauch kann etwas hoch sein."),
 "Edit the assistant": (
  "Modifier l'assistant",
  "Editar el asistente",

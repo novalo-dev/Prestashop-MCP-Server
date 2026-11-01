@@ -360,11 +360,18 @@ customer has none. The count joins the same tables as the list, so
   `gift_message`, `recycled_packaging`;
 - `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
   `total_spent` with `total_spent_currency`, `private_note` (read only);
-- `products`, per line: `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
+- `addresses.delivery` and `addresses.invoice`: `id_address`, `alias`,
+  `state` (the region), `dni` (empty when not set);
+- `products`, per line: `id_order_detail`, `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
   (strings), `tax_name`, `tax_rate`, `stock_location`, `quantity_in_stock_now`,
   `quantity_refunded`, `refunded_tax_excluded`, `refunded_tax_included`,
   `quantity_returned`, `customizations` (`id_customization`, `type` text or
-  file, `name`, `value`);
+  file, `name`, `value`), `pack_items` (`id_product`, `id_product_attribute`,
+  `name`, `reference`, `quantity`, `quantity_in_stock_now`; empty when the
+  product is not a pack);
+- `discounts`, each with `id_order_cart_rule`, `id_order_invoice` and
+  `free_shipping`;
+- `history`, each step with `id_order_history`;
 - `shipping.shipments`, one per shipment: `id_order_carrier`, `date`,
   `carrier`, `weight`, `shipping_cost_tax_excluded`,
   `shipping_cost_tax_included`, `tracking_number`, `tracking_url`;
@@ -383,7 +390,8 @@ through core objects, which one order can afford.
 The customer figures come from `Customer::getStats()`, as on the order page,
 converted into the order's currency. Stock location and quantity in stock now
 come from `Order::getProducts()`, not from `product_quantity_in_stock`, which is
-the quantity at the time of the order. Shipments are read from the order's
+the quantity at the time of the order. Pack items are read as `somcp_get_product` reads them, the pack as it is now:
+the order keeps no copy of its content. Shipments are read from the order's
 `OrderCarrier` rows, not from `Order::getShipping()`, which groups them by
 carrier. `order_payment.id_employee` exists on 9.0.0 only. Card number, holder
 and expiry are never returned: the page does not show them.

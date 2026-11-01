@@ -77,6 +77,16 @@ each other. The prompt **Change an order status** names it too.
 
 ### Changed
 
+**Reading an order gives what acting on it needs.** `somcp_get_order` now
+returns the identifier of each product line, of each discount (with its
+invoice and whether it offers free shipping) and of each step of the status
+history, so that refunding a line, removing a discount or resending the email
+of a status can name what they act on. Each address now comes with its
+identifier, its alias, its region and the identification number when there is
+one, as the address blocks of the order page show them. A product line that is
+a pack lists the products in it, with their quantity and the stock available
+now, like the **Products in pack** window of the order page.
+
 **Features can be reordered.** The order of the features - the drag and
 drop of **Catalog > Attributes & Features > Features** - could not be changed
 by the assistant: `somcp_update_feature` refused `position`. It now takes it,

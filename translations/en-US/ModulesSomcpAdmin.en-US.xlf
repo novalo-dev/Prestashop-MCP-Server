@@ -1182,6 +1182,16 @@
       <source>List best-selling products</source>
       <target>List best-selling products</target>
     </trans-unit>
+    <!-- Read the content pages of this shop: their titles, addresses and categories, displayed or not -->
+    <trans-unit id="610fc39055cd434848f7a7892e6833aa" resname="Read the content pages of this shop: their titles, addresses and categories, displayed or not">
+      <source>Read the content pages of this shop: their titles, addresses and categories, displayed or not</source>
+      <target>Read the content pages of this shop: their titles, addresses and categories, displayed or not</target>
+    </trans-unit>
+    <!-- List content pages -->
+    <trans-unit id="47ec10c3185f74c186e09083656a61d3" resname="List content pages">
+      <source>List content pages</source>
+      <target>List content pages</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>
@@ -1316,6 +1326,21 @@
     <trans-unit id="c84d7aa02acd985a0471654dbcea88fd" resname="Period to report on, for example last month">
       <source>Period to report on, for example last month</source>
       <target>Period to report on, for example last month</target>
+    </trans-unit>
+    <!-- Read content pages -->
+    <trans-unit id="556b74ab9e61e5b6a75de151bf38c4df" resname="Read content pages">
+      <source>Read content pages</source>
+      <target>Read content pages</target>
+    </trans-unit>
+    <!-- List and read the CMS pages of the PrestaShop shop. -->
+    <trans-unit id="e33bce61c60fa7091d9064f83edd80be" resname="List and read the CMS pages of the PrestaShop shop.">
+      <source>List and read the CMS pages of the PrestaShop shop.</source>
+      <target>List and read the CMS pages of the PrestaShop shop.</target>
+    </trans-unit>
+    <!-- Title of a page -->
+    <trans-unit id="f8c68565d064bb35fafebf69ff32f56f" resname="Title of a page">
+      <source>Title of a page</source>
+      <target>Title of a page</target>
     </trans-unit>
     <!-- Check and adjust stock -->
     <trans-unit id="f522c8316bb101ad6052425e7f80271a" resname="Check and adjust stock">

@@ -2364,22 +2364,31 @@ The CMS pages of the storefront.
 **Not here**: product texts (→ Catalogue).
 
 #### `somcp_list_cms_pages`
-**State**: draft · [issue #23](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/23)
+**State**: written · [issue #23](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/23)
 **Nature**: `acts(VIEW, 'AdminCmsContent')` · **Scope**: `mcp.content.read`
 
-**Does** - lists the CMS pages with their category and status.
+**Does** - lists the CMS pages and page categories of the token's shop, as **Design > Pages** shows them: identifier, URL, title, meta title, position, displayed or not, and the category of each page.
 
-**Do not use for** - reading one page (→ `somcp_get_cms_page`).
+**Do not use for** - reading one page with its content (→ `somcp_get_cms_page`), the SEO checks of the pages (→ `somcp_audit_cms_seo`), changing a page's SEO texts (→ `somcp_update_cms_seo`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_cms_category` | integer | no |  |
-| `active` | boolean | no |  |
-| `language` | string | no | ISO code, shop default otherwise |
+| `id_cms_category` | integer | no | only the pages of that category (not of its sub-categories), as the screen; every category when left out. A category the shop does not have is refused |
+| `active` | boolean | no | **Displayed** filter: `true` displayed pages only, `false` hidden only; both when left out |
+| `title` | string | no | part of the **Title**, compared without case |
+| `language` | string | no | ISO code of one of the shop's active languages, the shop default when left out, any other value refused |
 
-**Returns** - per page: `id_cms`, `meta_title`, `id_cms_category`, `active`, `link`.
+No paging: a shop has a few dozen pages at most, and every matching page is returned.
+
+**Returns** - `pages[]` with `id_cms` (**ID**, the identifier `somcp_update_cms_seo` and `somcp_audit_cms_seo` take), `link_rewrite` (**URL**), `title` (**Title**, column `meta_title`), `meta_title` (**Meta title**, column `head_seo_title`, empty string when not set), `position` (**Position**, from 0 as in the other tools; the screen shows it from 1), `active` (**Displayed**), `id_cms_category`, `url` (the page's address on the storefront); `categories[]`, every category of the shop, root included, with `id_cms_category`, `name`, `description`, `id_parent` (`0` for the root), `position` (from 0), `active`, `pages_count` (pages directly in it); then `total_count` (pages returned) and `language` (ISO code the texts are in). Pages sorted by category then position, categories by `id_parent` then position.
+
+**Errors** - an unknown `id_cms_category`, a non-integer `id_cms_category`, a non-boolean `active`, a non-string `title`: a refusal that names the field; an unknown `language`: the shared language refusal. No page matching is not an error: `pages` is empty.
+
+**Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_update_cms_seo`, never by the column name. Categories are returned because no other tool gives an `id_cms_category`. Only the token's shop (`cms_shop`, `cms_category_shop`, `id_shop` of the `_lang` tables). The content of a page is not returned.
+
+Same columns, filters and grid queries on 8.0.1 and 9.0.0; 9.0.0 adds a **Rearrange** column for drag and drop, with nothing to read.
 
 #### `somcp_get_cms_page`
 **State**: draft · [issue #24](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/24)
@@ -3300,7 +3309,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-stock-check` | Stock | written |
 | `somcp-customer-lookup` | Customers | written |
 | `somcp-sales-report` | Statistics | written |
-| `somcp-content-pages` | Content | draft · [issue #40](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/40) |
+| `somcp-content-pages` | Content | written |
 | `somcp-modules-review` | Modules | draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41) |
 | `somcp-storefront-menu` | Appearance | draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42) |
 | `somcp-cache-maintenance` | System | draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43) |
@@ -3365,7 +3374,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 **The guide must say** - turn the period into two dates in the shop's time zone and say which; figures count valid orders dated by invoice date, tax excluded, in the default currency, as **Stats Dashboard** and **Sales and orders** do; `somcp_search_orders` filters on the date the order was placed, so a few orders can differ at the edges of a period; compare with the previous period when it helps; amounts always with their currency and tax said.
 
 #### `somcp-content-pages`
-**State**: draft · [issue #40](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/40)
+**State**: written
 **Section**: Content · **Scope**: `mcp.content.read` · **Permission**: `view` on `AdminCmsContent`
 
 **Title** - Read content pages
@@ -3374,9 +3383,9 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 **Arguments** - `page` (title of a page).
 
-**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
-**The guide must say** - list, then read the page the merchant means; quote the content rather than paraphrasing it when asked what a page says.
+**The guide must say** - list with `somcp_list_cms_pages` (filtered by `title` when the merchant names the page), then read the page the merchant means by its `id_cms`; quote the content rather than paraphrasing it when asked what a page says; **Title** is the page's title and **Meta title** the title of the browser tab and search results, named `title` and `meta_title` in every tool; a hidden page (`active: false`) is not on the storefront; changing a page's SEO texts is `somcp_update_cms_seo`, in the prompt `somcp-seo-audit`, not here.
 
 #### `somcp-modules-review`
 **State**: draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41)

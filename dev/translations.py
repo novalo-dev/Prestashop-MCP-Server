@@ -938,6 +938,14 @@ T = {
  "Lister les meilleures ventes",
  "Listar los productos más vendidos",
  "Meistverkaufte Produkte auflisten"),
+"Read the content pages of this shop: their titles, addresses and categories, displayed or not": (
+ "Lire les pages de contenu de cette boutique : leurs titres, adresses et catégories, affichées ou non",
+ "Leer las páginas de contenido de esta tienda: sus títulos, direcciones y categorías, mostradas o no",
+ "Die Inhaltsseiten dieses Shops lesen: ihre Titel, Adressen und Kategorien, angezeigt oder nicht"),
+"List content pages": (
+ "Lister les pages de contenu",
+ "Listar las páginas de contenido",
+ "Inhaltsseiten auflisten"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",
@@ -1046,6 +1054,18 @@ T = {
  "Période à présenter, par exemple le mois dernier",
  "Periodo del informe, por ejemplo el mes pasado",
  "Berichtszeitraum, zum Beispiel der letzte Monat"),
+"Read content pages": (
+ "Lire les pages de contenu",
+ "Leer las páginas de contenido",
+ "Inhaltsseiten lesen"),
+"List and read the CMS pages of the PrestaShop shop.": (
+ "Lister et lire les pages CMS de la boutique PrestaShop.",
+ "Listar y leer las páginas CMS de la tienda PrestaShop.",
+ "Die CMS-Seiten des PrestaShop-Shops auflisten und lesen."),
+"Title of a page": (
+ "Titre d'une page",
+ "Título de una página",
+ "Titel einer Seite"),
 "Check and adjust stock": (
  "Vérifier et ajuster le stock",
  "Comprobar y ajustar el stock",

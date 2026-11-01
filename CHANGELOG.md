@@ -52,6 +52,21 @@ and since PrestaShop gives a carrier a new identifier each time it is
 edited, the reference that stays the same is given too. The prompts
 **Change an order status** and **Manage products** name it.
 
+**Listing content pages.** The new tool `somcp_list_cms_pages` lists the
+CMS pages of the shop as **Design > Pages** shows them, displayed or not:
+URL, title, meta title, position, category and the page's address on the
+storefront, filtered by category, by **Displayed** or by part of the title.
+The page categories come with it, so a category can be picked by its
+identifier. The title and the meta title keep the names the SEO tools use,
+so the assistant never writes one in place of the other. It needs the new
+permission `mcp.content.read`, which the consent screen describes as
+reading the content pages, and the `view` right on **Design > Pages**.
+
+**Content pages prompt.** A guided task for the shop's CMS pages, picked
+from the assistant's menu: find the page the merchant means by its title,
+quote its texts rather than paraphrasing them, and tell the title from the
+meta title.
+
 **Creating return statuses.** The new tool `somcp_create_return_status`
 adds one return status - a step a merchandise return goes through - with
 its name in the languages being filled and its colour, as the **Add new

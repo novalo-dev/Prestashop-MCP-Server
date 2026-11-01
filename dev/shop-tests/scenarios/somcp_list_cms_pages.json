@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "lists every page of the demo shop with the page categories, in the order of Design > Pages", "arguments": {}, "expect": "ok", "contains": ["\"pages\"", "\"id_cms\": 1", "\"link_rewrite\"", "\"title\"", "\"meta_title\"", "\"position\"", "\"active\": true", "\"id_cms_category\": 1", "\"url\"", "\"categories\"", "\"id_parent\": 0", "\"pages_count\"", "\"total_count\"", "\"language\": \"en\""]},
+    {"why": "only the pages of the root category", "arguments": {"id_cms_category": 1}, "expect": "ok", "contains": ["\"id_cms_category\": 1", "\"id_cms\": 1"]},
+    {"why": "displayed pages only", "arguments": {"active": true}, "expect": "ok", "contains": ["\"active\": true"]},
+    {"why": "hidden pages only: the demo shop has none", "arguments": {"active": false}, "expect": "ok", "contains": ["\"pages\": []", "\"total_count\": 0"]},
+    {"why": "finds a page by part of its title, whatever the case", "arguments": {"title": "DELIVERY"}, "expect": "ok", "contains": ["\"title\": \"Delivery\"", "\"total_count\": 1"]},
+    {"why": "a title no page carries gives an empty list", "arguments": {"title": "no such page"}, "expect": "ok", "contains": ["\"pages\": []", "\"total_count\": 0"]},
+    {"why": "the texts read in a language the shop has, said by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a page category the shop does not have is refused", "arguments": {"id_cms_category": 999999}, "expect": "error", "contains": ["id_cms_category"]},
+    {"why": "a non-boolean Displayed filter is refused, naming the field", "arguments": {"active": "yes"}, "expect": "error", "contains": ["active"]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+  ]
+}

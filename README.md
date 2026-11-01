@@ -218,6 +218,12 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_get_sales_summary` | `mcp.stats.read` | `view` on `AdminStats` | read |
 | `somcp_list_best_sellers` | `mcp.stats.read` | `view` on `AdminStats` | read |
 
+### Content
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_cms_pages` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
+
 ### SEO
 
 | Tool | Scope | Back office right | Nature |
@@ -243,9 +249,9 @@ and only says what the assistant is connected to (shop, account, language,
 currency), so an assistant can always tell which account it is using, even one
 with no rights at all.
 
-Eight prompts ship with the module: checking the connection, finding an order,
+Nine prompts ship with the module: checking the connection, finding an order,
 changing an order status, managing products, checking stock, finding a customer,
-auditing SEO, and reporting sales. Details of every tool are in
+auditing SEO, reporting sales, and reading content pages. Details of every tool are in
 [docs/TOOLS.md](docs/TOOLS.md).
 
 ## Install for development
@@ -305,7 +311,7 @@ below can. Where to paste the address in each of them:
 - **Scopes** say what an assistant may do: `mcp.access` to connect,
   `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
   `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
-  `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`. Other
+  `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`. Other
   modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's

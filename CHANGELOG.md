@@ -29,6 +29,15 @@ statistics modules are disabled. It needs the new permission `mcp.stats.read`,
 which the consent screen describes as reading the statistics, and the `view`
 right on the back office Stats page.
 
+**Best-selling products over a period.** The new tool
+`somcp_list_best_sellers` lists the products that sold most between two
+dates, as **Stats > Best-selling products** shows them: reference, name,
+quantity sold, price sold, sales, quantity sold in a day, page views,
+available quantity and status, sorted by sales or by any of those figures,
+page by page. It counts the same valid orders by invoice date as the sales
+summary, in the shop's default currency, and works even when the statistics
+module is disabled. The sales report prompt now uses it for best sellers.
+
 **Sales report prompt.** A guided task for sales figures, picked from the
 assistant's menu: turn the period into two dates and say which, give every
 amount with its currency and whether tax is included, and explain why the

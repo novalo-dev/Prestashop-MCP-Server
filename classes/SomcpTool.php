@@ -521,6 +521,26 @@ class SomcpTool
     }
 
     /**
+     * A calendar day given as YYYY-MM-DD, or null when the value is not one.
+     *
+     * Shared by the tools that take a period, so a date accepted by one is
+     * accepted by the others and the assistant can pass the same bounds on.
+     *
+     * @param mixed $value
+     *
+     * @return string|null
+     */
+    public static function day($value): ?string
+    {
+        if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)
+            || !checkdate((int) substr($value, 5, 2), (int) substr($value, 8, 2), (int) substr($value, 0, 4))) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    /**
      * The active languages of a shop, keyed by id_lang, with their ISO code.
      *
      * The one list every tool checks a language against: an installed

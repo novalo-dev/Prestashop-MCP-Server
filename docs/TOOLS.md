@@ -2331,24 +2331,31 @@ Figures over a period, computed from valid orders.
 Same labels, module versions (`statsforecast` 2.0.4, `statssales` 2.1.0) and queries on 8.0.1 and 9.0.0.
 
 #### `somcp_list_best_sellers`
-**State**: draft · [issue #22](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/22)
+**State**: written · [issue #22](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/22)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.stats.read`
 
-**Does** - lists the products that sold most over a period.
+**Does** - lists the products that sold most over a period, as **Stats > Best-selling products** shows them: quantity sold, price sold, sales, quantity sold in a day, page views, available quantity, status.
 
-**Do not use for** - sales totals (→ `somcp_get_sales_summary`).
+**Do not use for** - sales totals (→ `somcp_get_sales_summary`), the orders behind a product (→ `somcp_search_orders`), the stock of every combination (→ `somcp_get_stock`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `date_from` / `date_to` | string | yes |  |
-| `sort` | enum | no | `quantity` (default) or `revenue` |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `date_from` | string | yes | **From:**, `YYYY-MM-DD`, that day included, in the shop's time zone |
+| `date_to` | string | yes | **To:**, `YYYY-MM-DD`, that day included; not before `date_from` |
+| `sort` | enum | no | `sales` (default, as the screen), `quantity_sold`, `quantity_sold_per_day`, `average_price_tax_excl`, `page_views`; always descending, ties by `id_product` ascending |
+| `language` | string | no | language of `name`: ISO code of one of the shop's active languages, the shop default when left out, any other value refused |
+| `limit` | integer | no | 20 by default, 100 at most |
+| `offset` | integer | no | 0 by default |
 
-**Returns** - per product: `id_product`, `name`, `quantity_sold`, `revenue_tax_excl`, `currency`. Plus `total_count`.
+**Returns** - `date_from` / `date_to` (as received), `currency` (ISO code of the default currency, the one every amount is in), `language` (ISO code the names are in), `products[]` with `id_product`, `reference` (**Reference**), `name` (**Name**), `quantity_sold` (**Quantity sold**), `average_price_tax_excl` (**Price sold**), `revenue_tax_excl` (**Sales**), `quantity_sold_per_day` (**Quantity sold in a day**, 2 decimals), `page_views` (**Page views**), `quantity` (**Available quantity for sale**), `active` (**Active**), then `total_count` and `offset`. Amounts are rounded to 2 decimals.
 
-**Notes** - valid orders only.
+**Errors** - a missing or malformed date, `date_to` before `date_from`, an unknown `sort`, an out-of-range `limit` or `offset`: a refusal that names the field; an unknown `language`: the shared language refusal. An empty period is not an error: `products` is empty, `total_count` is `0`.
+
+**Notes** - counts orders with `valid = 1`, dated by **`invoice_date`** (not `date_add`), as `somcp_get_sales_summary`; one row per product, **combinations merged** (`GROUP BY od.product_id`); a product deleted since is not listed. **Sales** is `SUM(unit_price_tax_excl * product_quantity / conversion_rate)`, credit slips not taken off; **Price sold** is the average of the order lines' unit prices, not weighted by quantity; **Quantity sold in a day** divides by the days from the later of `date_from` and the product's date added to the shop, to the earlier of `date_to` and today, both included (`0` when there is no such day). **Page views** sums `page_viewed` over the day ranges inside the period, `0` when page views are not recorded (`statsdata`, **Save page views**). **Available quantity for sale** is the `stock_available` row without combination. Only the token's shop. The tables are read directly, so the list still comes when `statsbestproducts` is disabled or uninstalled.
+
+Same labels, module version (`statsbestproducts` 2.0.1) and query on 8.0.1 and 9.0.0.
 
 ### Content
 
@@ -3353,7 +3360,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 **Arguments** - `period` (period to report on, for example last month).
 
-**Tools** - `somcp_ping`, `somcp_get_sales_summary`, `somcp_search_orders`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_get_sales_summary`, `somcp_list_best_sellers`, `somcp_search_orders`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - turn the period into two dates in the shop's time zone and say which; figures count valid orders dated by invoice date, tax excluded, in the default currency, as **Stats Dashboard** and **Sales and orders** do; `somcp_search_orders` filters on the date the order was placed, so a few orders can differ at the edges of a period; compare with the previous period when it helps; amounts always with their currency and tax said.
 

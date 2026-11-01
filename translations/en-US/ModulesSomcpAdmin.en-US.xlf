@@ -1177,6 +1177,11 @@
       <source>Get a sales summary</source>
       <target>Get a sales summary</target>
     </trans-unit>
+    <!-- List best-selling products -->
+    <trans-unit id="d84c4cdf88befa8894e45a39653b1c7b" resname="List best-selling products">
+      <source>List best-selling products</source>
+      <target>List best-selling products</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

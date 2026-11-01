@@ -7,6 +7,7 @@ memory or from an earlier answer: the figures move with every invoice.
 
 - `somcp_ping`
 - `somcp_get_sales_summary`
+- `somcp_list_best_sellers`
 - `somcp_search_orders`
 
 ## Know which shop you are in
@@ -28,7 +29,12 @@ in mind.
    `compare_previous: true` when a comparison helps ("is it better than
    before?"): `previous` then holds the period of the same length that ends the
    day before `date_from`, with its own dates.
-3. **The orders behind a figure**, when the merchant asks for them: use
+3. **The products that sold most**, when the merchant asks for best sellers:
+   use `somcp_list_best_sellers` with the same dates. It is sorted by sales
+   tax excluded, as **Stats > Best-selling products**; pass `sort` for the
+   quantity sold, the quantity per day, the price sold or the page views.
+   One row per product, its combinations merged.
+4. **The orders behind a figure**, when the merchant asks for them: use
    `somcp_search_orders` with the same dates and `only_valid: true`. It needs
    order access: without it, say the figures are all you can give.
 
@@ -48,6 +54,9 @@ in mind.
   invoice date: an order placed on the 31st and invoiced on the 1st falls on
   each side of a month. Expect a few orders to differ at the edges of the
   period, and say so if the merchant compares the two.
+- `somcp_list_best_sellers` counts the same orders the same way: its
+  `revenue_tax_excl` is **Sales** of Best-selling products, credit slips not
+  taken off, and `page_views` is `0` when the shop does not record page views.
 - An empty period gives zeros, not an error: say there was no sale.
 
 ## Do not use when

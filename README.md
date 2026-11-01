@@ -216,6 +216,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | Tool | Scope | Back office right | Nature |
 |---|---|---|---|
 | `somcp_get_sales_summary` | `mcp.stats.read` | `view` on `AdminStats` | read |
+| `somcp_list_best_sellers` | `mcp.stats.read` | `view` on `AdminStats` | read |
 
 ### SEO
 

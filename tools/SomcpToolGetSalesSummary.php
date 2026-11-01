@@ -56,7 +56,7 @@ class SomcpToolGetSalesSummary
                 . 'length that ends the day before date_from. An empty period gives zeros. '
                 . 'Do not use it to list the orders behind the figures - somcp_search_orders does, but '
                 . 'it filters on the date the order was placed, not the invoice date, so a few orders '
-                . 'can differ at the edges of a period. Do not use it for the products that sold most.',
+                . 'can differ at the edges of a period. Do not use it for the products that sold most (somcp_list_best_sellers).',
             [
                 'type' => 'object',
                 'properties' => [
@@ -90,11 +90,11 @@ class SomcpToolGetSalesSummary
      */
     public static function handle(array $arguments, array $context): array
     {
-        $dateFrom = self::date($arguments['date_from'] ?? null);
+        $dateFrom = SomcpTool::day($arguments['date_from'] ?? null);
         if ($dateFrom === null) {
             return SomcpTool::text('date_from: a date, YYYY-MM-DD.', true);
         }
-        $dateTo = self::date($arguments['date_to'] ?? null);
+        $dateTo = SomcpTool::day($arguments['date_to'] ?? null);
         if ($dateTo === null) {
             return SomcpTool::text('date_to: a date, YYYY-MM-DD.', true);
         }
@@ -123,23 +123,6 @@ class SomcpToolGetSalesSummary
         }
 
         return SomcpTool::json($summary);
-    }
-
-    /**
-     * A calendar date, or null when the value is not one.
-     *
-     * @param mixed $value
-     *
-     * @return string|null
-     */
-    private static function date($value): ?string
-    {
-        if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)
-            || !checkdate((int) substr($value, 5, 2), (int) substr($value, 8, 2), (int) substr($value, 0, 4))) {
-            return null;
-        }
-
-        return $value;
     }
 
     /**

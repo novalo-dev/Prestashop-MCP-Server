@@ -934,6 +934,10 @@ T = {
  "Obtenir un résumé des ventes",
  "Obtener un resumen de las ventas",
  "Eine Verkaufsübersicht abrufen"),
+"List best-selling products": (
+ "Lister les meilleures ventes",
+ "Listar los productos más vendidos",
+ "Meistverkaufte Produkte auflisten"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",

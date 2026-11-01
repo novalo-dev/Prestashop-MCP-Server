@@ -28,7 +28,12 @@ key they already have, and the pages used are listed in the conversation.
 Claude searches on its own: each search is billed by Anthropic on top of the
 tokens, and web search must be allowed in your Anthropic console. Gemini
 searches through a second call to the same model with Google Search, counted
-in the tokens like any answer. **Memory**, offered when the memory is switched on
+in the tokens like any answer. The other assistants - OpenAI, Mistral,
+DeepSeek, Grok, Cohere - can search too once you pick Claude or Gemini under
+**Web search** in the **Built-in assistant** tab: that assistant searches for
+them with its key, and its searches count in its tokens. The setting follows
+the shop levels like the others, and stays greyed until both a Claude or
+Gemini assistant and an assistant of another provider are set up. **Memory**, offered when the memory is switched on
 in the module settings, can be switched off for one conversation: the
 assistant then works from that conversation alone, and nothing said in it is
 added to the memory - what was remembered before stays. A switch only shows

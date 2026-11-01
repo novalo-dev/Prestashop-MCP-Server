@@ -740,6 +740,26 @@
                         <p class="help-block">{l s='Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
+                {* Web search for the assistants that cannot run one beside the
+                   shop's tools: a Claude or Gemini assistant lends its key.
+                   Greyed while there is nobody to lend or nobody to lend to;
+                   the PHP side ignores it then too. *}
+                <div class="form-group">
+                    <label class="control-label col-lg-3">{l s='Web search' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-6">
+                        {include file='./_inherit.tpl' field='SOMCP_ASSISTANT_SEARCH'}
+                        <select name="SOMCP_ASSISTANT_SEARCH" class="form-control"{if !$somcp_search_useful} disabled data-somcp-locked{/if}>
+                            <option value="">{l s='Off' d='Modules.Somcp.Admin'}</option>
+                            {foreach from=$somcp_search_lenders key=id item=label}
+                                <option value="{$id|escape:'html':'UTF-8'}"{if $id === $somcp_search_provider} selected{/if}>{$label|escape:'html':'UTF-8'}</option>
+                            {/foreach}
+                        </select>
+                        <p class="help-block">{l s='Claude and Gemini search the web on their own. Pick one of them to search for the other assistants too, with its key: its searches count in its tokens.' d='Modules.Somcp.Admin'}</p>
+                        {if !$somcp_search_useful}
+                            <p class="help-block">{l s='Available once a Claude or Gemini assistant and an assistant of another provider are both set up.' d='Modules.Somcp.Admin'}</p>
+                        {/if}
+                    </div>
+                </div>
                 {* Long-term memory: a switch, then a provider. Providers already
                    set up for the chat lend their key, so nothing is asked twice;
                    Voyage does embeddings only and shows a key field of its own

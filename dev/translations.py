@@ -1991,6 +1991,14 @@ T = {
  "A réfléchi",
  "Lo ha pensado",
  "Hat nachgedacht"),
+"Claude and Gemini search the web on their own. Pick one of them to search for the other assistants too, with its key: its searches count in its tokens.": (
+ "Claude et Gemini font leurs recherches en ligne eux-mêmes. Choisissez l'un d'eux pour qu'il cherche aussi pour les autres assistants, avec sa clé : ses recherches comptent dans ses tokens.",
+ "Claude y Gemini buscan en la web por sí mismos. Elija uno de ellos para que busque también para los demás asistentes, con su clave: sus búsquedas cuentan en sus tokens.",
+ "Claude und Gemini suchen selbst im Web. Wählen Sie einen von beiden, damit er auch für die anderen Assistenten sucht, mit seinem Schlüssel: Seine Suchen zählen zu seinen Tokens."),
+"Available once a Claude or Gemini assistant and an assistant of another provider are both set up.": (
+ "Disponible dès qu'un assistant Claude ou Gemini et un assistant d'un autre fournisseur sont tous deux configurés.",
+ "Disponible en cuanto haya configurados un asistente Claude o Gemini y un asistente de otro proveedor.",
+ "Verfügbar, sobald sowohl ein Claude- oder Gemini-Assistent als auch ein Assistent eines anderen Anbieters eingerichtet sind."),
 "Sources": (
  "Sources",
  "Fuentes",

@@ -2512,6 +2512,16 @@
       <source>Thought it through</source>
       <target>A réfléchi</target>
     </trans-unit>
+    <!-- Claude and Gemini search the web on their own. Pick one of them to search for the other assistants too, with its key: its searches count in its tokens. -->
+    <trans-unit id="1be637bba57e348fe9f54c59b212af3d" resname="Claude and Gemini search the web on their own. Pick one of them to search for the other assistants too, with its key: its searches count in its tokens.">
+      <source>Claude and Gemini search the web on their own. Pick one of them to search for the other assistants too, with its key: its searches count in its tokens.</source>
+      <target>Claude et Gemini font leurs recherches en ligne eux-mêmes. Choisissez l'un d'eux pour qu'il cherche aussi pour les autres assistants, avec sa clé : ses recherches comptent dans ses tokens.</target>
+    </trans-unit>
+    <!-- Available once a Claude or Gemini assistant and an assistant of another provider are both set up. -->
+    <trans-unit id="21410905ee35da3508522817d5ed3a07" resname="Available once a Claude or Gemini assistant and an assistant of another provider are both set up.">
+      <source>Available once a Claude or Gemini assistant and an assistant of another provider are both set up.</source>
+      <target>Disponible dès qu'un assistant Claude ou Gemini et un assistant d'un autre fournisseur sont tous deux configurés.</target>
+    </trans-unit>
     <!-- Sources -->
     <trans-unit id="fb61758d0f0fda4ba867c3d5a46c16a7" resname="Sources">
       <source>Sources</source>

@@ -695,7 +695,7 @@ class Somcp extends Module
         }
         if (Tools::isSubmit('submitSomcpAssistantSettings')) {
             $own = [];
-            foreach ([SomcpAssistant::PROFILE, SomcpAssistant::TOKEN_CAP, SomcpAssistant::INSTRUCTIONS, SomcpAssistantMemory::ON] as $key) {
+            foreach ([SomcpAssistant::PROFILE, SomcpAssistant::TOKEN_CAP, SomcpAssistant::INSTRUCTIONS, SomcpAssistant::SEARCH, SomcpAssistantMemory::ON] as $key) {
                 $own[$key] = Tools::getValue('somcp_own_' . $key) === '1';
             }
             SomcpAssistant::saveSettings(
@@ -710,6 +710,7 @@ class Somcp extends Module
                 (string) Tools::getValue('SOMCP_EMB_KEY'),
                 $own[SomcpAssistantMemory::ON]
             );
+            SomcpAssistant::saveSearch((string) Tools::getValue(SomcpAssistant::SEARCH), $own[SomcpAssistant::SEARCH]);
             $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
             $this->redirectToSelf();
         }
@@ -805,6 +806,9 @@ class Somcp extends Module
             'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
             'somcp_assistant_edit' => $editing,
             'somcp_assistant_models' => $editModels,
+            'somcp_search_useful' => SomcpAssistant::searchUseful(),
+            'somcp_search_lenders' => SomcpAssistant::searchLenders(),
+            'somcp_search_provider' => $assistantSettings['search'],
             'somcp_memory_on' => (string) Configuration::get(SomcpAssistantMemory::ON) === '1',
             'somcp_memory_selectable' => SomcpAssistantMemory::selectable((int) self::currentShopId()),
             'somcp_memory_provider' => (string) Configuration::get(SomcpAssistantMemory::PROVIDER),
@@ -943,7 +947,7 @@ class Somcp extends Module
         }
         // The settings of the Built-in assistant tab follow the same levels.
         // The memory's switch stands for its provider and key too.
-        foreach ([SomcpAssistant::PROFILE, SomcpAssistant::TOKEN_CAP, SomcpAssistant::INSTRUCTIONS, SomcpAssistantMemory::ON] as $key) {
+        foreach ([SomcpAssistant::PROFILE, SomcpAssistant::TOKEN_CAP, SomcpAssistant::INSTRUCTIONS, SomcpAssistant::SEARCH, SomcpAssistantMemory::ON] as $key) {
             $map[$key] = SomcpConfig::level($key);
         }
 

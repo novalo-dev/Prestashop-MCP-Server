@@ -62,8 +62,9 @@ us. See [Where to help](#where-to-help).
   where that provider gives out keys. It uses the same tools, with the rights of the employee
   signed in, and asks for approval before any change. Several assistants can
   share the work by role. Each conversation can switch on deep thinking
-  (Claude, Gemini, OpenAI's reasoning models) and web search (Claude, Gemini), and
-  switch the memory off, from the **+** menu. Runs on [Neuron AI](https://github.com/neuron-core/neuron-ai).
+  (Claude, Gemini, OpenAI's reasoning models) and web search (Claude and
+  Gemini on their own, the others through one of them), and switch the
+  memory off, from the **+** menu. Runs on [Neuron AI](https://github.com/neuron-core/neuron-ai).
 - **Speaks both eras of the protocol** from one endpoint: the stateless
   `2026-07-28` revision, with questions in the middle of a call, and the
   `2025-11-25`, `2025-06-18` and `2025-03-26` revisions.

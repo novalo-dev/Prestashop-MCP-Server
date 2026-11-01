@@ -65,6 +65,15 @@ class SomcpAssistant
     /** @var string Profile allowed to use the built-in assistant, 0 for every employee. */
     public const PROFILE = 'SOMCP_ASSISTANT_PROFILE';
 
+    /**
+     * @var string the provider that searches the web for the assistants that
+     *             cannot: anthropic, gemini, or empty for none
+     */
+    public const SEARCH = 'SOMCP_ASSISTANT_SEARCH';
+
+    /** @var array<int, string> The providers that search the web with the key they already have. */
+    private const SEARCHERS = ['anthropic', 'gemini'];
+
     public const LEVEL_ECONOMY = 'economy';
     public const LEVEL_BALANCED = 'balanced';
     public const LEVEL_POWER = 'power';
@@ -694,7 +703,104 @@ class SomcpAssistant
      */
     public static function searches(array $assistant): bool
     {
-        return in_array($assistant['provider'], ['anthropic', 'gemini'], true);
+        return in_array($assistant['provider'], self::SEARCHERS, true) || self::searchProvider() !== '';
+    }
+
+    /**
+     * Whether the setting that lends a search to the other assistants means
+     * anything here: it needs an assistant that can search, to lend its key,
+     * and one that cannot, to use it. With only one side, the setting is
+     * greyed on the page and ignored when read.
+     *
+     * @return bool
+     */
+    public static function searchUseful(): bool
+    {
+        $lends = false;
+        $needs = false;
+        foreach (self::active() as $assistant) {
+            if ($assistant['level'] === self::LEVEL_IMAGE || !$assistant['has_key']) {
+                continue;
+            }
+            if (in_array($assistant['provider'], self::SEARCHERS, true)) {
+                $lends = true;
+            } else {
+                $needs = true;
+            }
+        }
+
+        return $lends && $needs;
+    }
+
+    /**
+     * The providers offered to search for the others: those of SEARCHERS that
+     * have an assistant with a key on this shop.
+     *
+     * @return array<string, string> provider => label
+     */
+    public static function searchLenders(): array
+    {
+        $providers = self::providers();
+        $lenders = [];
+        foreach (self::SEARCHERS as $provider) {
+            if (self::keyForProvider($provider) !== '') {
+                $lenders[$provider] = (string) ($providers[$provider]['label'] ?? $provider);
+            }
+        }
+
+        return $lenders;
+    }
+
+    /**
+     * The provider that searches for the other assistants of this shop, or ''
+     * when none is set or the setting means nothing here.
+     *
+     * @return string
+     */
+    public static function searchProvider(): string
+    {
+        $provider = (string) Configuration::get(self::SEARCH, null, null, self::shop());
+
+        return $provider !== '' && self::searchUseful() && isset(self::searchLenders()[$provider]) ? $provider : '';
+    }
+
+    /**
+     * The assistant whose key and model run the searches of the others.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function searchLender(): ?array
+    {
+        $provider = self::searchProvider();
+        foreach ($provider !== '' ? self::active() : [] as $assistant) {
+            if ($assistant['provider'] === $provider && $assistant['has_key'] && $assistant['level'] !== self::LEVEL_IMAGE) {
+                return $assistant;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Saves the search provider at the level the back office is set to. While
+     * the setting means nothing - the field is greyed - the stored value is
+     * kept rather than wiped by the empty field, for the day it means
+     * something again.
+     *
+     * @param string $provider
+     * @param bool $own whether this level keeps a value of its own
+     */
+    public static function saveSearch(string $provider, bool $own): void
+    {
+        if (SomcpConfig::inheritableContext() && !$own) {
+            SomcpConfig::inherit(self::SEARCH);
+
+            return;
+        }
+        if (!self::searchUseful()) {
+            return;
+        }
+        Configuration::updateValue(self::SEARCH, isset(self::searchLenders()[$provider]) ? $provider : '');
     }
 
     /**
@@ -931,7 +1037,7 @@ class SomcpAssistant
     /**
      * The settings as the level being edited sees them, for the form.
      *
-     * @return array{token_cap:int, instructions:string, profile:int}
+     * @return array{token_cap:int, instructions:string, profile:int, search:string}
      */
     public static function editedSettings(): array
     {
@@ -939,6 +1045,7 @@ class SomcpAssistant
             'token_cap' => max(0, (int) Configuration::get(self::TOKEN_CAP)),
             'instructions' => (string) Configuration::get(self::INSTRUCTIONS),
             'profile' => (int) Configuration::get(self::PROFILE),
+            'search' => (string) Configuration::get(self::SEARCH),
         ];
     }
 
@@ -952,6 +1059,7 @@ class SomcpAssistant
         Configuration::deleteByName(self::INSTRUCTIONS);
         Configuration::deleteByName(self::LINK_KEY);
         Configuration::deleteByName(self::PROFILE);
+        Configuration::deleteByName(self::SEARCH);
     }
 
     /**

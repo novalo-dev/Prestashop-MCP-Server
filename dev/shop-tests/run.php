@@ -473,6 +473,52 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
 
     $chat->deleteThread($thread);
     SomcpAssistant::delete($idSearcher);
+
+    // An assistant that cannot search borrows one: with Claude set to search
+    // for the others, a Mistral assistant gets the search tool, and its
+    // pages are listed as for Gemini. Without the setting it gets nothing.
+    $idBorrower = SomcpAssistant::save(0, [
+        'provider' => 'mistral', 'api_key' => 'test-key', 'level' => 'economy',
+        'model' => '', 'role' => '', 'active' => true,
+    ]);
+    $borrower = SomcpAssistant::get($idBorrower);
+    ++$assistantChecks;
+    if ($borrower === null || SomcpAssistant::searches($borrower)) {
+        $failures[] = 'assistant: Mistral is offered web search with no assistant set to search for it';
+    }
+    Configuration::updateValue(SomcpAssistant::SEARCH, 'anthropic');
+    ++$assistantChecks;
+    if ($borrower === null || !SomcpAssistant::searches($borrower)) {
+        $failures[] = 'assistant: Mistral is not offered the web search Claude lends';
+    }
+    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+        $call(SomcpAssistantChat::SEARCH_TOOL, 'call_borrowed', ['query' => 'price of a custom mug']),
+        (new NeuronAI\Chat\Messages\AssistantMessage('About 13 euros.'))->addMetadata('citations', [
+            new NeuronAI\Chat\Messages\Citation('b1', 'https://example.net/mugs', 'Mugs compared'),
+        ]),
+        new NeuronAI\Chat\Messages\AssistantMessage('Claude found about 13 euros.')
+    ));
+    $thread = $chat->setSwitches($chat->newThread($idBorrower), ['think' => false, 'web' => true, 'memory' => true]);
+
+    try {
+        $view = $chat->send($thread, 'What do custom mugs cost?');
+        $expect($view, 'working', 'Mistral asks for the lent web search');
+        $view = $chat->step($thread);
+        $expect($view, 'idle', 'the answer after the lent web search');
+        $listed = array_values(array_filter($view['messages'], static function (array $message): bool {
+            return $message['role'] === 'sources';
+        }));
+        ++$assistantChecks;
+        if (($listed[0]['sources'] ?? null) !== [['url' => 'https://example.net/mugs', 'title' => 'Mugs compared']]) {
+            $failures[] = 'assistant: the pages of a lent web search are not listed';
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+
+    $chat->deleteThread($thread);
+    Configuration::deleteByName(SomcpAssistant::SEARCH);
+    SomcpAssistant::delete($idBorrower);
     SomcpAssistant::delete($idAssistant);
     SomcpAssistantChat::overrideProvider(null);
 }

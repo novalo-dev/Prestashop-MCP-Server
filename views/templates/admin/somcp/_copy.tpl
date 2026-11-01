@@ -356,7 +356,9 @@
             var apply = function () {
                 group.querySelectorAll('input, select, textarea').forEach(function (field) {
                     if (field !== box) {
-                        field.disabled = !box.checked;
+                        // A field the server greys for a reason of its own
+                        // stays greyed whatever the box says.
+                        field.disabled = !box.checked || field.hasAttribute('data-somcp-locked');
                     }
                 });
             };

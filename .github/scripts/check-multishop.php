@@ -57,6 +57,7 @@ $merchantSettings = [
     'TOKEN_CAP',
     'INSTRUCTIONS',
     'PROFILE',
+    'SEARCH',
 ];
 
 $sql = (string) @file_get_contents($root . '/sql/install.sql');

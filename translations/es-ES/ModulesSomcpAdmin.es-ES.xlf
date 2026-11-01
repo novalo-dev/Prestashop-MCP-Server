@@ -2562,6 +2562,11 @@
       <source>The other settings were saved.</source>
       <target>Los demás ajustes se han guardado.</target>
     </trans-unit>
+    <!-- The memory is switched on but does not work: its embeddings provider has no key any more. Choose a provider below and save. -->
+    <trans-unit id="894103bc268917dc43d19b20b15ac346" resname="The memory is switched on but does not work: its embeddings provider has no key any more. Choose a provider below and save.">
+      <source>The memory is switched on but does not work: its embeddings provider has no key any more. Choose a provider below and save.</source>
+      <target>La memoria está activada pero no funciona: su proveedor de embeddings ya no tiene clave. Elija un proveedor abajo y guarde.</target>
+    </trans-unit>
     <!-- Sources -->
     <trans-unit id="fb61758d0f0fda4ba867c3d5a46c16a7" resname="Sources">
       <source>Sources</source>

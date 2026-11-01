@@ -97,6 +97,11 @@ class SomcpModuleSettings
             if ($choices !== null) {
                 $setting['choices'] = $choices;
             }
+            // On is not the same as working: said for the memory, so the model
+            // never tells the employee a feature runs when it cannot.
+            if ($key === SomcpAssistantMemory::ON) {
+                $setting['works'] = SomcpAssistantMemory::enabled($idShop);
+            }
             if ($key === SomcpAssistant::SEARCH && !SomcpAssistant::searchUseful()) {
                 $setting['greyed'] = 'needs a Claude or Gemini assistant and an assistant of another provider';
             }

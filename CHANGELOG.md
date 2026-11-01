@@ -139,7 +139,9 @@ names the branch.
 The memory could be switched on with no embeddings provider, or with Voyage
 and no key: the page said it was on, and it did nothing. It is now refused
 with a message saying what is missing; no provider is ever picked for you.
-A refresh token
+A memory that was on and stopped
+working - its provider's assistant deleted, its key gone - is now flagged in
+red on the page instead of showing a switch on over nothing. A refresh token
 set to last less than the access token, which would log every assistant out
 at its first renewal, and a profile that does not exist are refused too. The
 rest of the form is still saved, and the message says so. The built-in

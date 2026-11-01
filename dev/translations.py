@@ -2031,6 +2031,10 @@ T = {
  "Les autres réglages ont été enregistrés.",
  "Los demás ajustes se han guardado.",
  "Die übrigen Einstellungen wurden gespeichert."),
+"The memory is switched on but does not work: its embeddings provider has no key any more. Choose a provider below and save.": (
+ "La mémoire est activée mais ne fonctionne pas : son fournisseur d'embeddings n'a plus de clé. Choisissez un fournisseur ci-dessous et enregistrez.",
+ "La memoria está activada pero no funciona: su proveedor de embeddings ya no tiene clave. Elija un proveedor abajo y guarde.",
+ "Das Gedächtnis ist eingeschaltet, funktioniert aber nicht: Sein Embeddings-Anbieter hat keinen Schlüssel mehr. Wählen Sie unten einen Anbieter und speichern Sie."),
 "Sources": (
  "Sources",
  "Fuentes",

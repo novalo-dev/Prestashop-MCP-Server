@@ -827,6 +827,10 @@ class Somcp extends Module
             'somcp_search_lenders' => SomcpAssistant::searchLenders(),
             'somcp_search_provider' => $assistantSettings['search'],
             'somcp_memory_on' => (string) Configuration::get(SomcpAssistantMemory::ON) === '1',
+            // A memory saved as on can stop working later - its provider's
+            // assistant deleted, its key gone: the page says so rather than
+            // show a switch on over a feature that does nothing.
+            'somcp_memory_works' => SomcpAssistantMemory::enabled((int) self::currentShopId()),
             'somcp_memory_selectable' => SomcpAssistantMemory::selectable((int) self::currentShopId()),
             'somcp_memory_provider' => (string) Configuration::get(SomcpAssistantMemory::PROVIDER),
             'somcp_memory_has_own_key' => (string) Configuration::get(SomcpAssistantMemory::KEY) !== '',

@@ -779,6 +779,9 @@
                             <a class="slide-button btn"></a>
                         </span>
                         <p class="help-block">{l s='Lets the assistant remember past conversations and recall them later, each one kept to the employee who had it. It embeds them with a provider - a chat provider you already set up, or Voyage - and is billed for that. Off by default.' d='Modules.Somcp.Admin'}</p>
+                        {if $somcp_memory_on && !$somcp_memory_works}
+                            <p class="help-block text-danger">{l s='The memory is switched on but does not work: its embeddings provider has no key any more. Choose a provider below and save.' d='Modules.Somcp.Admin'}</p>
+                        {/if}
                     </div>
                 </div>
                 <div class="form-group" data-somcp-memory-block{if !$somcp_memory_on} style="display:none"{/if}>

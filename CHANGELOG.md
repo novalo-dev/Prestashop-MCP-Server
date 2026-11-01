@@ -33,7 +33,23 @@ DeepSeek, Grok, Cohere - can search too once you pick Claude or Gemini under
 **Web search** in the **Built-in assistant** tab: that assistant searches for
 them with its key, and its searches count in its tokens. The setting follows
 the shop levels like the others, and stays greyed until both a Claude or
-Gemini assistant and an assistant of another provider are set up. **Memory**, offered when the memory is switched on
+Gemini assistant and an assistant of another provider are set up. With web
+search on, the assistant can also open a page - one you give it, or one a
+search found - and read it.
+
+**The built-in assistant knows the module it belongs to.** Asked how to
+switch its memory on, it used to search the web and answer about other
+products, or say it had no memory at all. It now knows it is the module's
+own chat, what its **+** menu does and where each setting lives, and points
+to the module's documentation for the installed version. For super
+administrators, the employees the settings pages are open to, it can read
+every setting of the module - each with its tab and label, and whether it is
+set for this shop, the group or all shops - with the assistants, tools and
+prompts, and change one setting at a time after you approve it, through the
+same checks as the settings page. It never reads nor writes an API key. These
+abilities, like asking another assistant and searching the web, belong to the
+chat alone: they are not in the module's tool list, and an assistant
+connected over MCP never sees them. **Memory**, offered when the memory is switched on
 in the module settings, can be switched off for one conversation: the
 assistant then works from that conversation alone, and nothing said in it is
 added to the memory - what was remembered before stays. A switch only shows
@@ -99,6 +115,12 @@ the time an answer needs where the host allows it, stops waiting for the AI
 service before the shop stops the page, and reports a slow answer as an error
 you can retry. While an earlier step still holds a conversation, the chat says
 so and waits, and the conversation is freed after five minutes instead of ten.
+
+**The test build no longer reports false translation problems.** Its summary
+checked the translations of main's copy too, which the build fetches for its
+scripts, and showed strings of the last release as missing; it also said
+"of ." instead of the branch it built. It now checks the module it built, and
+names the branch.
 
 **Gemini's thinking now counts toward the monthly cap.** Gemini reports the
 tokens it spends thinking apart from its answer, and bills them as output;

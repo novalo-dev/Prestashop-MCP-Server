@@ -517,6 +517,57 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
     }
 
     $chat->deleteThread($thread);
+
+    // The module's settings from the chat: a super administrator reads them,
+    // and a change waits for approval, then is written through the page's own
+    // code - here the security log switched off, and one tool.
+    $logWas = SomcpConfig::get(SomcpConfig::LOG_ENABLED);
+    $read = SomcpModuleSettings::read((int) $context->shop->id, 'https://example.com/docs');
+    ++$assistantChecks;
+    if (!in_array(SomcpConfig::LOG_ENABLED, array_column($read['settings'], 'key'), true) || $read['tools']['list'] === []) {
+        $failures[] = 'assistant: the module settings read from the chat miss a setting or the tools';
+    }
+    ++$assistantChecks;
+    if (strpos((string) json_encode($read), 'test-key') !== false) {
+        $failures[] = 'assistant: the module settings read from the chat carry an API key';
+    }
+    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+        $call(SomcpAssistantChat::SETTINGS_WRITE_TOOL, 'call_setting', ['key' => SomcpConfig::LOG_ENABLED, 'value' => 'off']),
+        new NeuronAI\Chat\Messages\AssistantMessage('The security log is off.')
+    ));
+    $thread = $chat->newThread(0);
+
+    try {
+        $view = $chat->send($thread, 'Switch the security log off.');
+        $expect($view, 'approval', 'a module setting asks for approval');
+        ++$assistantChecks;
+        if (SomcpConfig::get(SomcpConfig::LOG_ENABLED) !== $logWas) {
+            $failures[] = 'assistant: a module setting changed before it was approved';
+        }
+        $view = $chat->decide($thread, ['call_setting' => 'approve']);
+        $view = $chat->step($thread);
+        $expect($view, 'idle', 'the answer after the module setting');
+        ++$assistantChecks;
+        if (SomcpConfig::get(SomcpConfig::LOG_ENABLED, (int) $context->shop->id) !== '0') {
+            $failures[] = 'assistant: the approved module setting was not written';
+        }
+        ++$assistantChecks;
+        if (SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'off', (int) $context->shop->id) !== ''
+            || SomcpToolRegistry::isEnabled('somcp_ping')
+            || SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'on', (int) $context->shop->id) !== ''
+            || !SomcpToolRegistry::isEnabled('somcp_ping')) {
+            $failures[] = 'assistant: a tool could not be switched off and on again from the chat';
+        }
+        ++$assistantChecks;
+        if (SomcpModuleSettings::write('SOMCP_STATE_KEY', 'x', (int) $context->shop->id) === '') {
+            $failures[] = 'assistant: the chat could write a setting that is not on the settings page';
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+    SomcpConfig::set(SomcpConfig::LOG_ENABLED, $logWas);
+
+    $chat->deleteThread($thread);
     Configuration::deleteByName(SomcpAssistant::SEARCH);
     SomcpAssistant::delete($idBorrower);
     SomcpAssistant::delete($idAssistant);

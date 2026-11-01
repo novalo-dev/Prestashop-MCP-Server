@@ -86,6 +86,7 @@ class Somcp extends Module
         'SomcpContributors',
         'SomcpAssistant',
         'SomcpAssistantMemory',
+        'SomcpModuleSettings',
         'SomcpAssistantChat',
     ];
 
@@ -981,30 +982,19 @@ class Somcp extends Module
             SomcpConfig::DCR_ENABLED,
             SomcpConfig::LOG_ENABLED,
         ];
-        foreach ($switches as $key) {
+        // SomcpConfig::clean() holds each setting's bounds, shared with the
+        // built-in assistant's settings tool.
+        $plain = array_merge($switches, [
+            SomcpConfig::ACCESS_TTL,
+            SomcpConfig::REFRESH_TTL,
+            SomcpConfig::REQUIRED_PROFILE,
+            SomcpConfig::TOOLS_TTL,
+            SomcpConfig::REDIRECT_HOSTS,
+        ]);
+        foreach ($plain as $key) {
             if (isset($ownFields[$key])) {
-                SomcpConfig::set($key, Tools::getValue($key) === '1' ? '1' : '0');
+                SomcpConfig::set($key, SomcpConfig::clean($key, (string) Tools::getValue($key, '')));
             }
-        }
-
-        if (isset($ownFields[SomcpConfig::ACCESS_TTL])) {
-            SomcpConfig::set(SomcpConfig::ACCESS_TTL, (string) max(60, (int) Tools::getValue(SomcpConfig::ACCESS_TTL)));
-        }
-        if (isset($ownFields[SomcpConfig::REFRESH_TTL])) {
-            SomcpConfig::set(SomcpConfig::REFRESH_TTL, (string) max(600, (int) Tools::getValue(SomcpConfig::REFRESH_TTL)));
-        }
-        if (isset($ownFields[SomcpConfig::REQUIRED_PROFILE])) {
-            SomcpConfig::set(SomcpConfig::REQUIRED_PROFILE, (string) max(0, (int) Tools::getValue(SomcpConfig::REQUIRED_PROFILE)));
-        }
-
-        if (isset($ownFields[SomcpConfig::TOOLS_TTL])) {
-            // Bounds repeated here rather than trusted from the form: the
-            // endpoint clamps the value it announces anyway, and a field left
-            // saying 0 while the shop announces 10 would read as a bug.
-            SomcpConfig::set(
-                SomcpConfig::TOOLS_TTL,
-                (string) max(10, min(3600, (int) Tools::getValue(SomcpConfig::TOOLS_TTL)))
-            );
         }
 
         if (isset($ownFields[SomcpConfig::TOOLS_OFF])) {
@@ -1013,14 +1003,6 @@ class Somcp extends Module
 
         if (isset($ownFields[SomcpConfig::PROMPTS_OFF])) {
             SomcpConfig::set(SomcpConfig::PROMPTS_OFF, $this->readPromptSwitches());
-        }
-
-        if (isset($ownFields[SomcpConfig::REDIRECT_HOSTS])) {
-            $hosts = (string) Tools::getValue(SomcpConfig::REDIRECT_HOSTS, '');
-            // Host names only: anything else here would silently widen what the
-            // module accepts as a return address.
-            $hosts = (string) preg_replace('/[^a-zA-Z0-9.\-\s,;]/', '', $hosts);
-            SomcpConfig::set(SomcpConfig::REDIRECT_HOSTS, Tools::substr(trim($hosts), 0, 500));
         }
 
         $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));

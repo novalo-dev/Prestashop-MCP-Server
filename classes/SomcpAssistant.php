@@ -1017,20 +1017,38 @@ class SomcpAssistant
     public static function saveSettings(int $tokenCap, string $instructions, int $idProfile, array $own = []): void
     {
         $values = [
-            self::PROFILE => [(string) max(0, $idProfile), false],
-            self::TOKEN_CAP => [(string) max(0, $tokenCap), false],
-            // Stored as HTML-allowed so the merchant's punctuation survives:
-            // the value is only ever sent to the model and escaped wherever shown.
-            self::INSTRUCTIONS => [Tools::substr($instructions, 0, 4000), true],
+            self::PROFILE => (string) $idProfile,
+            self::TOKEN_CAP => (string) $tokenCap,
+            self::INSTRUCTIONS => $instructions,
         ];
-        foreach ($values as $key => [$value, $html]) {
+        foreach ($values as $key => $value) {
             if (SomcpConfig::inheritableContext() && empty($own[$key])) {
                 SomcpConfig::inherit($key);
                 continue;
             }
+            self::saveSetting($key, $value);
+        }
+    }
+
+    /**
+     * Saves one of the tab's plain settings - profile, cap or instructions -
+     * with its bounds, at the level the back office or the chat acts on. The
+     * settings page and the built-in assistant's settings tool both write
+     * through here.
+     *
+     * @param string $key PROFILE, TOKEN_CAP or INSTRUCTIONS
+     * @param string $raw
+     */
+    public static function saveSetting(string $key, string $raw): void
+    {
+        if ($key === self::INSTRUCTIONS) {
+            // Stored as HTML-allowed so the merchant's punctuation survives:
+            // the value is only ever sent to the model and escaped wherever shown.
+            Configuration::updateValue($key, (string) Tools::substr($raw, 0, 4000), true);
+        } elseif ($key === self::PROFILE || $key === self::TOKEN_CAP) {
             // No shop given: PrestaShop writes at the level the back office is
             // set to - all shops, the group or the shop.
-            Configuration::updateValue($key, $value, $html);
+            Configuration::updateValue($key, (string) max(0, (int) $raw));
         }
     }
 

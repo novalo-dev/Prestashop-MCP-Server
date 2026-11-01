@@ -1999,6 +1999,14 @@ T = {
  "Disponible dès qu'un assistant Claude ou Gemini et un assistant d'un autre fournisseur sont tous deux configurés.",
  "Disponible en cuanto haya configurados un asistente Claude o Gemini y un asistente de otro proveedor.",
  "Verfügbar, sobald sowohl ein Claude- oder Gemini-Assistent als auch ein Assistent eines anderen Anbieters eingerichtet sind."),
+"Read the module settings": (
+ "Lire les réglages du module",
+ "Leer los ajustes del módulo",
+ "Moduleinstellungen lesen"),
+"Change a module setting": (
+ "Modifier un réglage du module",
+ "Cambiar un ajuste del módulo",
+ "Eine Moduleinstellung ändern"),
 "Sources": (
  "Sources",
  "Fuentes",

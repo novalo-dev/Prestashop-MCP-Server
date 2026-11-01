@@ -2522,6 +2522,16 @@
       <source>Available once a Claude or Gemini assistant and an assistant of another provider are both set up.</source>
       <target>Disponible dès qu'un assistant Claude ou Gemini et un assistant d'un autre fournisseur sont tous deux configurés.</target>
     </trans-unit>
+    <!-- Read the module settings -->
+    <trans-unit id="56187b2da86622dd1ee4ccfd3f2e2280" resname="Read the module settings">
+      <source>Read the module settings</source>
+      <target>Lire les réglages du module</target>
+    </trans-unit>
+    <!-- Change a module setting -->
+    <trans-unit id="6a3523bc564b559e4926c02a13a8ce46" resname="Change a module setting">
+      <source>Change a module setting</source>
+      <target>Modifier un réglage du module</target>
+    </trans-unit>
     <!-- Sources -->
     <trans-unit id="fb61758d0f0fda4ba867c3d5a46c16a7" resname="Sources">
       <source>Sources</source>

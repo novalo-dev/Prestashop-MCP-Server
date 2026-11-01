@@ -163,6 +163,19 @@ When the merchant wants a step renamed or recoloured, change it with
   answers `changed: false`. If an answer is lost, read
   `somcp_list_return_statuses` and compare before calling again.
 
+## Deleting a return status
+
+When the merchant wants a step gone, delete it with
+`somcp_delete_return_status` - only after the merchant has confirmed it
+by name: read `somcp_list_return_statuses`, name the exact status, and
+let them say yes to that one before calling. Deleting is final.
+
+- The five statuses the shop starts with cannot be deleted, and a status
+  a return still stands on is refused with the number of returns. Report
+  a refusal as it comes back; do not work around it.
+- If an answer is lost, read `somcp_list_return_statuses`: a status that
+  is no longer listed is deleted. Do not call again.
+
 ## Several orders
 
 One call per order. Never present a batch as one action.

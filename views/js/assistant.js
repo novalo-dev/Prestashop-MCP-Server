@@ -76,6 +76,7 @@
         trash: ['M3 6h18', 'M8 6V4h8v2', 'M6 6l1 14h10l1-14'],
         copy: ['M9 9h12v12H9z', 'M5 15V5a2 2 0 0 1 2-2h10'],
         chevron: ['M6 9l6 6 6-6'],
+        shop: ['M3 9l1.5-5h15L21 9', 'M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z', 'M5 13v7h14v-7'],
         clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 1 0 0 18z', 'M12 7v5l3 2']
     };
     var MAX_SUGGESTIONS = 4;
@@ -94,7 +95,7 @@
     // replace what is drawn. ticket and round: the latest action and the
     // latest background check; a reply to an older one is stale.
     var state = {
-        view: null, threads: [], assistants: [], prompts: [], query: '', busy: false, steps: 0, waits: 0,
+        view: null, threads: [], assistants: [], prompts: [], shops: [], pickShop: false, verb: 0, query: '', busy: false, steps: 0, waits: 0,
         shown: '', ticket: 0, round: 0, left: {}, unread: {}, watches: 0, drawn: '', openings: {}
     };
     var panel;
@@ -110,6 +111,7 @@
     var addButton;
     var promptList;
     var threadRows;
+    var shopBadge;
     var spendBar;
     var spendText;
     var pending = [];
@@ -362,6 +364,29 @@
         state.threads = json.threads || [];
         state.assistants = json.assistants || [];
         state.prompts = json.prompts || state.prompts;
+        state.shops = json.shops || [];
+        state.pickShop = !!json.pick_shop;
+    }
+
+    function shopOf(idShop) {
+        for (var i = 0; i < state.shops.length; i += 1) {
+            if (state.shops[i].id === Number(idShop)) {
+                return state.shops[i];
+            }
+        }
+        return null;
+    }
+
+    // The shop beside each conversation and in the header, only where there
+    // is more than one to tell apart.
+    function manyShops() {
+        return state.shops.length > 1;
+    }
+
+    // The conversation on screen is not tied to a shop yet, and the back
+    // office is on several: nothing may be sent before one is picked.
+    function needsShop(view) {
+        return state.pickShop && !(view && view.thread_id);
     }
 
     // Before another conversation is opened: the checks on the one on screen
@@ -710,7 +735,7 @@
         // Drawn again only when something changed: the background checks
         // bring the same conversation back every two seconds, and redrawing it
         // each time made the page jump. Someone reading higher up stays there.
-        var drawn = JSON.stringify([view, working, problem, state.busy, state.prompts]);
+        var drawn = JSON.stringify([view, working, problem, state.busy, state.prompts, state.shops, state.pickShop]);
         if (drawn !== state.drawn) {
             state.drawn = drawn;
             drawBody(view, working, problem);
@@ -719,10 +744,12 @@
         var waiting = view && view.status === 'approval';
         // The field stays free while an answer is coming, so the next message
         // can be written meanwhile; only sending it waits.
-        input.disabled = waiting;
-        input.placeholder = waiting ? text.waiting : text.placeholder;
-        sendButton.disabled = working || waiting;
-        addButton.disabled = waiting;
+        var unpicked = needsShop(view);
+        input.disabled = waiting || unpicked;
+        input.placeholder = waiting ? text.waiting : (unpicked ? text.pickShop : text.placeholder);
+        sendButton.disabled = working || waiting || unpicked;
+        addButton.disabled = waiting || unpicked;
+        drawShopBadge(view);
         drawPending();
         drawPrompts();
 
@@ -780,6 +807,61 @@
         });
     }
 
+    // The word shown while the assistant works. It changes every few seconds,
+    // so a long step reads as work going on rather than a frozen line.
+    function verb() {
+        var verbs = text.verbs && text.verbs.length ? text.verbs : [text.working];
+        return verbs[state.verb % verbs.length];
+    }
+
+    function initials(name) {
+        return String(name || '').split(/\s+/).filter(Boolean).slice(0, 2).map(function (word) {
+            return word.charAt(0).toUpperCase();
+        }).join('') || '#';
+    }
+
+    // A new conversation on a back office set to several shops starts by
+    // picking its shop: it then acts on that shop and no other.
+    function drawShopPicker() {
+        var wrap = el('div', 'somcp-welcome');
+        wrap.appendChild(el('h2', '', text.chooseShop));
+        wrap.appendChild(el('p', '', text.chooseShopHint));
+        var grid = el('div', 'somcp-shops');
+        state.shops.forEach(function (shop) {
+            var card = el('button', 'somcp-shop');
+            card.type = 'button';
+            card.disabled = state.busy;
+            var mark = el('span', 'somcp-shop-mark');
+            if (shop.logo) {
+                var logo = el('img');
+                logo.src = shop.logo;
+                logo.alt = '';
+                mark.appendChild(logo);
+            } else {
+                mark.textContent = initials(shop.name);
+                mark.classList.add('somcp-shop-initials');
+            }
+            card.appendChild(mark);
+            card.appendChild(el('b', '', shop.name));
+            card.appendChild(el('small', '', '#' + shop.id + (shop.domain ? ' · ' + shop.domain : '')));
+            card.addEventListener('click', function () {
+                run('new', { id_assistant: picker.value, id_shop: shop.id });
+            });
+            grid.appendChild(card);
+        });
+        wrap.appendChild(grid);
+        return wrap;
+    }
+
+    function drawShopBadge(view) {
+        var shop = manyShops() && view && view.thread_id ? shopOf(view.id_shop) : null;
+        shopBadge.hidden = !shop;
+        if (shop) {
+            shopBadge.lastChild.textContent = shop.name;
+            shopBadge.title = text.conversationFor.replace('%shop%', shop.name);
+        }
+    }
+
     function drawWelcome(threadId) {
         var welcome = el('div', 'somcp-welcome');
         var spark = el('div', 'somcp-welcome-mark');
@@ -824,7 +906,9 @@
         var bottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
         var top = body.scrollTop;
         body.innerHTML = '';
-        if (!view || !view.messages.length) {
+        if (needsShop(view)) {
+            body.appendChild(drawShopPicker());
+        } else if (!view || !view.messages.length) {
             body.appendChild(drawWelcome(view ? view.thread_id : ''));
         }
         if (view) {
@@ -838,7 +922,11 @@
         if (working) {
             var typing = el('div', 'somcp-typing');
             typing.appendChild(el('span', 'somcp-dots'));
-            typing.appendChild(el('span', '', text.working));
+            typing.appendChild(el('span', 'somcp-verb', verb()));
+            var shop = manyShops() && view ? shopOf(view.id_shop) : null;
+            if (shop) {
+                typing.appendChild(el('span', '', '· ' + shop.name));
+            }
             body.appendChild(typing);
         }
         if (problem) {
@@ -868,7 +956,7 @@
     // with its own bin.
     function drawThreads() {
         var view = state.view;
-        var drawn = JSON.stringify([state.threads, view ? view.thread_id : '', state.unread, state.query]);
+        var drawn = JSON.stringify([state.threads, view ? view.thread_id : '', state.unread, state.query, state.shops]);
         if (drawn === state.listed) {
             return;
         }
@@ -900,6 +988,13 @@
                 closeThreads();
                 run('load', { thread_id: thread.thread_id });
             });
+            var shop = manyShops() ? shopOf(thread.id_shop) : null;
+            var badge = null;
+            if (shop) {
+                badge = el('span', 'somcp-thread-shop', '#' + shop.id);
+                badge.title = text.conversationFor.replace('%shop%', shop.name);
+                badge.setAttribute('aria-label', badge.title);
+            }
             var remove = iconButton('trash', text.deleteThread, 'somcp-thread-delete');
             remove.addEventListener('click', function () {
                 if (window.confirm(text.deleteThread + ' ?')) {
@@ -907,6 +1002,9 @@
                 }
             });
             row.appendChild(open);
+            if (badge) {
+                row.appendChild(badge);
+            }
             row.appendChild(remove);
             threadRows.appendChild(row);
         });
@@ -977,6 +1075,11 @@
         mark.appendChild(icon('spark'));
         who.appendChild(mark);
         who.appendChild(el('b', '', text.title));
+        shopBadge = el('span', 'somcp-chat-shop');
+        shopBadge.hidden = true;
+        shopBadge.appendChild(icon('shop', 14));
+        shopBadge.appendChild(el('span', '', ''));
+        who.appendChild(shopBadge);
         var widen = iconButton('expand', text.enlarge, 'somcp-widen');
         var setWide = function (wide) {
             panel.classList.toggle('somcp-chat-wide', wide);
@@ -1024,6 +1127,16 @@
         fresh.appendChild(el('span', '', text.newThread));
         fresh.addEventListener('click', function () {
             closeThreads();
+            // On several shops, the conversation is created once its shop is
+            // picked on the cards; until then nothing is asked of the server.
+            if (state.pickShop) {
+                leave();
+                state.view = null;
+                state.shown = '';
+                remember('');
+                render();
+                return;
+            }
             run('new', { id_assistant: picker.value });
         });
         var search = el('input', 'somcp-thread-search');
@@ -1165,6 +1278,14 @@
                 addButton.focus();
             }
         });
+
+        window.setInterval(function () {
+            var shown = body.querySelector('.somcp-verb');
+            if (shown) {
+                state.verb += 1;
+                shown.textContent = verb();
+            }
+        }, 2500);
 
         panel.appendChild(head);
         panel.appendChild(shade);

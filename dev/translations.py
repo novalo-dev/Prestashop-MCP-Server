@@ -1591,6 +1591,54 @@ T = {
  "L'assistant termine encore son étape précédente. Réessayez dans quelques minutes.",
  "El asistente aún está terminando su paso anterior. Inténtelo de nuevo en unos minutos.",
  "Der Assistent schließt noch seinen vorherigen Schritt ab. Versuchen Sie es in ein paar Minuten erneut."),
+"Cogitating...": (
+ "Cogitating...",
+ "Cogitating...",
+ "Cogitating..."),
+"Thinking...": (
+ "Réflexion...",
+ "Pensando...",
+ "Überlege..."),
+"Looking it up...": (
+ "Recherche...",
+ "Buscando...",
+ "Suche..."),
+"Checking...": (
+ "Vérification...",
+ "Comprobando...",
+ "Prüfe..."),
+"Writing...": (
+ "Rédaction...",
+ "Redactando...",
+ "Schreibe..."),
+"Which shop are we working on?": (
+ "Sur quelle boutique travaille-t-on ?",
+ "¿En qué tienda trabajamos?",
+ "An welchem Shop arbeiten wir?"),
+"The conversation stays tied to the shop you pick.": (
+ "La conversation restera liée à la boutique choisie.",
+ "La conversación quedará vinculada a la tienda elegida.",
+ "Die Unterhaltung bleibt an den gewählten Shop gebunden."),
+"Choose a shop to start": (
+ "Choisissez une boutique pour commencer",
+ "Elija una tienda para empezar",
+ "Wählen Sie einen Shop, um zu beginnen"),
+"This conversation is for the shop %shop%": (
+ "Cette conversation est pour la boutique %shop%",
+ "Esta conversación es para la tienda %shop%",
+ "Diese Unterhaltung gilt für den Shop %shop%"),
+"The assistants inherited from above were copied to this level, where they can now be changed.": (
+ "Les assistants hérités du niveau supérieur ont été copiés à ce niveau, où ils peuvent maintenant être modifiés.",
+ "Los asistentes heredados del nivel superior se han copiado a este nivel, donde ahora se pueden modificar.",
+ "Die von der höheren Ebene geerbten Assistenten wurden auf diese Ebene kopiert und können hier nun geändert werden."),
+"This level uses the assistants inherited from above again.": (
+ "Ce niveau utilise de nouveau les assistants hérités du niveau supérieur.",
+ "Este nivel vuelve a usar los asistentes heredados del nivel superior.",
+ "Diese Ebene verwendet wieder die von der höheren Ebene geerbten Assistenten."),
+"Use the assistants inherited from above again? The assistants of this level are removed.": (
+ "Utiliser de nouveau les assistants hérités du niveau supérieur ? Les assistants de ce niveau seront supprimés.",
+ "¿Volver a usar los asistentes heredados del nivel superior? Se eliminarán los asistentes de este nivel.",
+ "Wieder die von der höheren Ebene geerbten Assistenten verwenden? Die Assistenten dieser Ebene werden entfernt."),
 "This prompt is not available.": (
  "Ce prompt n'est pas disponible.",
  "Este prompt no está disponible.",

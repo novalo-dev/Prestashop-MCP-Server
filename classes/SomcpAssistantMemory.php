@@ -186,24 +186,36 @@ class SomcpAssistantMemory
     }
 
     /**
-     * @param int $idShop
+     * Saves the memory settings at the level the back office is set to - all
+     * shops, a group or a shop. The switch, the provider and the key are one
+     * setting: a level either keeps all three of its own or inherits all three.
+     *
      * @param bool $on
      * @param string $provider
      * @param string $key a key of its own, only for a non-reusable provider; '' keeps the stored one
+     * @param bool $own whether this level keeps a value of its own
      */
-    public static function save(int $idShop, bool $on, string $provider, string $key): void
+    public static function save(bool $on, string $provider, string $key, bool $own = true): void
     {
+        if (SomcpConfig::inheritableContext() && !$own) {
+            foreach ([self::ON, self::PROVIDER, self::KEY] as $setting) {
+                SomcpConfig::inherit($setting);
+            }
+
+            return;
+        }
+
         $provider = isset(self::PROVIDERS[$provider]) ? $provider : '';
-        Configuration::updateValue(self::ON, $on ? '1' : '0', false, null, $idShop);
-        Configuration::updateValue(self::PROVIDER, $provider, false, null, $idShop);
+        Configuration::updateValue(self::ON, $on ? '1' : '0');
+        Configuration::updateValue(self::PROVIDER, $provider);
 
         $key = trim($key);
         // The own key is kept only for a provider that needs one, and only when
         // the merchant typed it; blank keeps whatever was stored.
         if ($provider === '' || self::PROVIDERS[$provider]['reuse']) {
-            Configuration::updateValue(self::KEY, '', false, null, $idShop);
+            Configuration::updateValue(self::KEY, '');
         } elseif ($key !== '') {
-            Configuration::updateValue(self::KEY, SomcpAssistant::seal($key), false, null, $idShop);
+            Configuration::updateValue(self::KEY, SomcpAssistant::seal($key));
         }
     }
 

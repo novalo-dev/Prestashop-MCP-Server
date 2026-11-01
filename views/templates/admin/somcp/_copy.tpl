@@ -344,10 +344,11 @@
         // A setting that inherits from the level above is shown but not editable:
         // its value does not belong to this level, and it is not submitted either
         // - the module removes the row instead of writing what was on screen.
-        // A setting is its form group, or the whole panel for the tool and
-        // prompt lists, which have one panel each and no form group.
+        // A setting is its form group, a block marked data-somcp-setting when
+        // it spans several groups, or the whole panel for the tool and prompt
+        // lists, which have one panel each and no form group.
         document.querySelectorAll('[data-somcp-own]').forEach(function (box) {
-            var group = box.closest('.form-group, .panel');
+            var group = box.closest('[data-somcp-setting], .form-group, .panel');
             if (!group) {
                 return;
             }
@@ -362,6 +363,19 @@
 
             box.addEventListener('change', apply);
             apply();
+        });
+
+        // The assistants of a level: checking the box copies those inherited
+        // here at once, unchecking it removes this level's after a question,
+        // since their keys go with them.
+        document.querySelectorAll('[data-somcp-assistants-own]').forEach(function (box) {
+            box.addEventListener('change', function () {
+                if (!box.checked && !window.confirm(box.getAttribute('data-somcp-question'))) {
+                    box.checked = true;
+                    return;
+                }
+                box.form.submit();
+            });
         });
 
         document.querySelectorAll('[data-somcp-copy]').forEach(function (button) {

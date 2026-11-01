@@ -2012,6 +2012,66 @@
       <source>The assistant is still finishing its previous step. Try again in a few minutes.</source>
       <target>El asistente aún está terminando su paso anterior. Inténtelo de nuevo en unos minutos.</target>
     </trans-unit>
+    <!-- Cogitating... -->
+    <trans-unit id="525a67344724c9a30ed2a9a7813bff54" resname="Cogitating...">
+      <source>Cogitating...</source>
+      <target>Cogitating...</target>
+    </trans-unit>
+    <!-- Thinking... -->
+    <trans-unit id="a321c84a4bb5557eb0b6a82aa0f1604a" resname="Thinking...">
+      <source>Thinking...</source>
+      <target>Pensando...</target>
+    </trans-unit>
+    <!-- Looking it up... -->
+    <trans-unit id="d7e0197be24ed49b249f6db1c8cb0bf0" resname="Looking it up...">
+      <source>Looking it up...</source>
+      <target>Buscando...</target>
+    </trans-unit>
+    <!-- Checking... -->
+    <trans-unit id="44e6108ff458cea05eca82b296ef617f" resname="Checking...">
+      <source>Checking...</source>
+      <target>Comprobando...</target>
+    </trans-unit>
+    <!-- Writing... -->
+    <trans-unit id="e4d7f082bc2103109fcf2027e50b6601" resname="Writing...">
+      <source>Writing...</source>
+      <target>Redactando...</target>
+    </trans-unit>
+    <!-- Which shop are we working on? -->
+    <trans-unit id="a05d528c95be499e29cff04520d7a9a6" resname="Which shop are we working on?">
+      <source>Which shop are we working on?</source>
+      <target>¿En qué tienda trabajamos?</target>
+    </trans-unit>
+    <!-- The conversation stays tied to the shop you pick. -->
+    <trans-unit id="15075439c9fc70aff84f7bda767513be" resname="The conversation stays tied to the shop you pick.">
+      <source>The conversation stays tied to the shop you pick.</source>
+      <target>La conversación quedará vinculada a la tienda elegida.</target>
+    </trans-unit>
+    <!-- Choose a shop to start -->
+    <trans-unit id="4ab45051678f017b260e44e7923fced6" resname="Choose a shop to start">
+      <source>Choose a shop to start</source>
+      <target>Elija una tienda para empezar</target>
+    </trans-unit>
+    <!-- This conversation is for the shop %shop% -->
+    <trans-unit id="91475ae15ffa39cbdbcabc5ff1613639" resname="This conversation is for the shop %shop%">
+      <source>This conversation is for the shop %shop%</source>
+      <target>Esta conversación es para la tienda %shop%</target>
+    </trans-unit>
+    <!-- The assistants inherited from above were copied to this level, where they can now be changed. -->
+    <trans-unit id="f91e68311cf861d6b049c72c284650db" resname="The assistants inherited from above were copied to this level, where they can now be changed.">
+      <source>The assistants inherited from above were copied to this level, where they can now be changed.</source>
+      <target>Los asistentes heredados del nivel superior se han copiado a este nivel, donde ahora se pueden modificar.</target>
+    </trans-unit>
+    <!-- This level uses the assistants inherited from above again. -->
+    <trans-unit id="c2f16983cf69bb270871fdad547001b3" resname="This level uses the assistants inherited from above again.">
+      <source>This level uses the assistants inherited from above again.</source>
+      <target>Este nivel vuelve a usar los asistentes heredados del nivel superior.</target>
+    </trans-unit>
+    <!-- Use the assistants inherited from above again? The assistants of this level are removed. -->
+    <trans-unit id="3d37d25b92995f430a5747e0c601341b" resname="Use the assistants inherited from above again? The assistants of this level are removed.">
+      <source>Use the assistants inherited from above again? The assistants of this level are removed.</source>
+      <target>¿Volver a usar los asistentes heredados del nivel superior? Se eliminarán los asistentes de este nivel.</target>
+    </trans-unit>
     <!-- This prompt is not available. -->
     <trans-unit id="2b1cf2c0709f388f368c31a09916e973" resname="This prompt is not available.">
       <source>This prompt is not available.</source>

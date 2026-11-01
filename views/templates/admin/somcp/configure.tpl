@@ -576,6 +576,25 @@
         <div class="panel">
             <div class="panel-heading"><i class="icon-comments"></i> {l s='Your assistants' d='Modules.Somcp.Admin'} <span class="somcp-foot text-muted">- {l s='Powered by' d='Modules.Somcp.Admin'} <a href="https://github.com/neuron-core/neuron-ai" target="_blank" rel="noopener noreferrer">Neuron AI</a></span></div>
             <p class="help-block">{l s='The chat opens with the button at the top right of every back office page. It acts with the rights of the employee signed in and asks for approval before any change. One assistant switched on does everything; with several, each takes its role.' d='Modules.Somcp.Admin'}</p>
+        {* A group or a shop uses the assistants of the level above until it is
+           given its own: checking the box copies them here, keys included;
+           unchecking it removes this level's and goes back to those above. *}
+        {if $somcp_inheritable}
+            <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="somcp-inherit" data-somcp-assistants-level>
+                <label>
+                    <input type="checkbox" value="1" data-somcp-assistants-own data-somcp-question="{l s='Use the assistants inherited from above again? The assistants of this level are removed.' d='Modules.Somcp.Admin'}"{if $somcp_assistants_own} checked{/if}{if !$somcp_assistants_own && !$somcp_assistants} disabled{/if}>
+                    {l s='Value of its own here' d='Modules.Somcp.Admin'}
+                </label>
+                {if !$somcp_assistants_own}
+                    <span class="text-muted">
+                        {if $somcp_assistants_source === 'group'}{l s='inherited from the group' d='Modules.Somcp.Admin'}
+                        {elseif $somcp_assistants_source === 'global'}{l s='inherited from all shops' d='Modules.Somcp.Admin'}
+                        {else}{l s='module default' d='Modules.Somcp.Admin'}{/if}
+                    </span>
+                {/if}
+                <input type="hidden" name="{if $somcp_assistants_own}submitSomcpAssistantInherit{else}submitSomcpAssistantOwn{/if}" value="1">
+            </form>
+        {/if}
         {if $somcp_assistants}
             <table class="table">
                 <thead>
@@ -614,6 +633,7 @@
                             {if $assistant.active}<i class="icon-check text-success"></i>{else}<i class="icon-remove text-danger"></i>{/if}
                         </td>
                         <td class="text-right">
+                        {if $somcp_assistants_own}
                             <div class="btn-group-action">
                                 <div class="btn-group pull-right">
                                     <a class="edit btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_assistant_edit={$assistant.id_assistant|intval}" title="{l s='Edit' d='Modules.Somcp.Admin'}">
@@ -644,6 +664,7 @@
                                     </ul>
                                 </div>
                             </div>
+                        {/if}
                         </td>
                     </tr>
                 {/foreach}
@@ -661,9 +682,11 @@
             {* Under the list, not in a panel footer: a footer makes PrestaShop 9
                move the panel padding onto each child, with wider side margins
                than the tools and connected assistants panels have. *}
+            {if $somcp_assistants_own}
             <div class="somcp-panel-actions">
                 <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_assistant_add=1"><i class="icon-plus"></i> {l s='Add an assistant' d='Modules.Somcp.Admin'}</a>
             </div>
+            {/if}
         </div>
 
         <form method="post" action="{$somcp_form_action|escape:'html':'UTF-8'}" class="defaultForm form-horizontal">
@@ -672,6 +695,7 @@
                 <div class="form-group">
                     <label class="control-label col-lg-3">{l s='Employees allowed to use the built-in assistant' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
+                        {include file='./_inherit.tpl' field='SOMCP_ASSISTANT_PROFILE'}
                         <select name="SOMCP_ASSISTANT_PROFILE" class="form-control fixed-width-xl">
                             <option value="0"{if !$somcp_assistant_profile} selected{/if}>{l s='Any employee' d='Modules.Somcp.Admin'}</option>
                             {foreach from=$somcp_profiles item=profile}
@@ -684,6 +708,7 @@
                 <div class="form-group">
                     <label class="control-label col-lg-3">{l s='Monthly cap, all assistants' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
+                        {include file='./_inherit.tpl' field='SOMCP_ASSISTANT_BUDGET'}
                         <div class="input-group fixed-width-lg">
                             <span class="input-group-addon">$</span>
                             <input type="number" min="0" step="0.5" name="SOMCP_ASSISTANT_BUDGET" class="form-control" value="{$somcp_assistant_budget|floatval}">
@@ -697,6 +722,7 @@
                 <div class="form-group">
                     <label class="control-label col-lg-3">{l s='Instructions for the shop' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
+                        {include file='./_inherit.tpl' field='SOMCP_ASSISTANT_INSTRUCTIONS'}
                         <textarea name="SOMCP_ASSISTANT_INSTRUCTIONS" class="form-control" rows="4" maxlength="4000">{$somcp_assistant_instructions|escape:'html':'UTF-8'}</textarea>
                         <p class="help-block">{l s='Added to every conversation, for every assistant. For example: how to address customers, delivery times, house style.' d='Modules.Somcp.Admin'}</p>
                     </div>
@@ -705,9 +731,13 @@
                    set up for the chat lend their key, so nothing is asked twice;
                    Voyage does embeddings only and shows a key field of its own
                    when picked. The whole block hides when the switch is off. *}
+                {* The switch, the provider and the key are one setting across
+                   levels, so one box governs the three groups. *}
+                <div data-somcp-setting>
                 <div class="form-group">
                     <label class="control-label col-lg-3">{l s='Memory' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-6">
+                        {include file='./_inherit.tpl' field='SOMCP_EMB_ON'}
                         <span class="switch prestashop-switch fixed-width-lg" data-somcp-memory-switch>
                             <input type="radio" name="SOMCP_EMB_ON" id="somcp_emb_on" value="1"{if $somcp_memory_on} checked{/if}>
                             <label for="somcp_emb_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
@@ -739,6 +769,7 @@
                         <input type="password" name="SOMCP_EMB_KEY" class="form-control" autocomplete="new-password" value=""{if $somcp_memory_has_own_key} placeholder="{l s='A key is saved. Leave empty to keep it.' d='Modules.Somcp.Admin' js=1}"{/if}>
                         <p class="help-block">{l s='Get a key at' d='Modules.Somcp.Admin'} <a href="https://dashboard.voyageai.com" target="_blank" rel="noopener">dashboard.voyageai.com</a>. {l s='Stored encrypted. Leave empty to keep the saved one.' d='Modules.Somcp.Admin'}</p>
                     </div>
+                </div>
                 </div>
                 <div class="panel-footer">
                     <button type="submit" name="submitSomcpAssistantSettings" value="1" class="btn btn-default pull-right"><i class="process-icon-save"></i> {l s='Save' d='Modules.Somcp.Admin'}</button>

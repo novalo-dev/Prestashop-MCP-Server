@@ -159,11 +159,122 @@
 }
 
 #somcp-chat .somcp-chat-who b {
+    flex: 0 3 auto;
+    min-width: 0;
     overflow: hidden;
     font-size: 15px;
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+#somcp-chat .somcp-chat-shop {
+    display: inline-flex;
+    flex: 0 1 auto;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    height: 26px;
+    padding: 0 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #eef2fd;
+    color: var(--somcp-accent-dark);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#somcp-chat .somcp-chat-shop[hidden] {
+    display: none;
+}
+
+#somcp-chat .somcp-chat-shop span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#somcp-chat .somcp-thread-shop {
+    flex: 0 0 auto;
+    margin: 0 2px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f1f3f6;
+    color: var(--somcp-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#somcp-chat .somcp-thread.somcp-current .somcp-thread-shop {
+    background: #fff;
+    color: var(--somcp-accent-dark);
+}
+
+/* The cards a new conversation picks its shop from, on a back office set to
+   all shops or a group. */
+#somcp-chat .somcp-shops {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+#somcp-chat .somcp-shop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 16px 10px;
+    border: 1px solid var(--somcp-line);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--somcp-ink);
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-shop:hover {
+    border-color: var(--somcp-accent);
+    background: #eef2fd;
+}
+
+#somcp-chat .somcp-shop b,
+#somcp-chat .somcp-shop small {
+    max-width: 100%;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#somcp-chat .somcp-shop small {
+    color: var(--somcp-muted);
+    font-size: 12px;
+}
+
+#somcp-chat .somcp-shop-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    overflow: hidden;
+    border: 1px solid var(--somcp-line);
+    border-radius: 12px;
+    background: #fff;
+}
+
+#somcp-chat .somcp-shop-mark img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+#somcp-chat .somcp-shop-initials {
+    border: 0;
+    background: #e7eeff;
+    color: var(--somcp-accent-dark);
+    font-size: 18px;
+    font-weight: 700;
 }
 
 #somcp-chat .somcp-chat-mark {

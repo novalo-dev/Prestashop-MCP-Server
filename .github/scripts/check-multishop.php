@@ -26,10 +26,12 @@ declare(strict_types=1);
  * `id_shop` is a row no shop owns, which is the bug this check exists to stop.
  *
  * It also refuses a global Configuration call on one of the built-in
- * assistant's merchant settings: those belong to a shop (Configuration with an
- * id_shop), never to the whole install. Module state and minted secrets are the
- * same on every shop and are left alone - only the merchant settings are
- * checked, so the rule is exact rather than a guess about every global value.
+ * assistant's merchant settings: those follow PrestaShop's levels - all shops,
+ * a group, a shop - written in the back office context and read for a shop,
+ * never through the global calls that skip the levels. Module state and minted
+ * secrets are the same on every shop and are left alone - only the merchant
+ * settings are checked, so the rule is exact rather than a guess about every
+ * global value.
  *
  * Usage: php .github/scripts/check-multishop.php [module root]
  * Exit code 0 when everything is in order, 1 otherwise.
@@ -47,8 +49,8 @@ $children = [
 ];
 
 // The built-in assistant's merchant settings. Each is something the merchant
-// sets on the page and must therefore live per shop, so a global call on any of
-// them is the regression this check guards against. Module state and minted
+// sets on the page for a level and reads for a shop, so a global call on any
+// of them is the regression this check guards against. Module state and minted
 // secrets are global by nature and are not listed, so they are not flagged.
 $merchantSettings = [
     'BUDGET',
@@ -89,7 +91,7 @@ foreach (array_merge(glob($root . '/classes/*.php') ?: [], glob($root . '/*.php'
     if (preg_match_all('/(?:getGlobalValue|updateGlobalValue)\(\s*(?:self::|SomcpAssistant::)?([A-Z_]+)/', $code, $m, PREG_SET_ORDER)) {
         foreach ($m as $hit) {
             if (in_array($hit[1], $merchantSettings, true)) {
-                $errors[] = basename($file) . ': ' . $hit[1] . ' is a merchant setting read or written with a global Configuration call; it belongs to a shop (pass an id_shop)';
+                $errors[] = basename($file) . ': ' . $hit[1] . ' is a merchant setting read or written with a global Configuration call; it follows the shop levels (write in the context, read with an id_shop)';
             }
         }
     }

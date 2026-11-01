@@ -205,6 +205,9 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_upload_file` (
 -- database dump alone does not hand out the merchant's provider account.
 -- `model` is empty unless the merchant picked one by hand: the level then
 -- resolves to the newest model of that tier, read from the provider.
+-- `id_shop` and `id_shop_group` give the level the assistant belongs to, as
+-- for any setting: a shop (id_shop), a group (id_shop_group) or all shops
+-- (both 0). A shop uses the assistants of the most precise level that has any.
 CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     `id_assistant`   INT(11)      NOT NULL AUTO_INCREMENT,
     `provider`       VARCHAR(32)  NOT NULL,
@@ -215,6 +218,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     `resolved_at`    DATETIME     DEFAULT NULL,
     `role`           VARCHAR(255) NOT NULL DEFAULT '',
     `id_shop`        INT(11)      NOT NULL DEFAULT 1,
+    `id_shop_group`  INT(11)      NOT NULL DEFAULT 0,
     `active`         TINYINT(1)   NOT NULL DEFAULT 1,
     `is_default`     TINYINT(1)   NOT NULL DEFAULT 0,
     `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -223,8 +227,10 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     KEY `idx_shop` (`id_shop`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- somcp_assistant_usage - what each assistant consumed, per calendar month.
--- The monthly cap is checked against the sum of `cost` before every call.
+-- somcp_assistant_usage - what each assistant consumed, per shop and calendar
+-- month: an assistant set for several shops is counted for each one, since a
+-- cap applies to each shop. The cap is checked against the sum of `cost`
+-- before every call.
 CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_usage` (
     `id_assistant`   INT(11)        NOT NULL,
     `id_shop`        INT(11)        NOT NULL DEFAULT 1,
@@ -232,7 +238,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_usage` (
     `input_tokens`   BIGINT         NOT NULL DEFAULT 0,
     `output_tokens`  BIGINT         NOT NULL DEFAULT 0,
     `cost`           DECIMAL(14,6)  NOT NULL DEFAULT 0 COMMENT 'US dollars, estimated from public prices',
-    PRIMARY KEY (`id_assistant`, `month`),
+    PRIMARY KEY (`id_assistant`, `id_shop`, `month`),
     KEY `idx_shop` (`id_shop`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

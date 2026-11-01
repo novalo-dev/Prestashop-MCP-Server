@@ -29,6 +29,12 @@ declare(strict_types=1);
  * Costs are estimates. Providers report tokens, not money, so the module
  * multiplies by public prices per tier, in US dollars, the currency every one
  * of these providers bills in. A merchant setting a cap reads "about".
+ *
+ * On a multistore install the assistants and the settings follow the levels
+ * of every other setting: all shops, then a group, then a shop. A shop uses
+ * the assistants of the most precise level that has any, and a setting the
+ * value PrestaShop resolves for it. Conversations and spending stay per shop:
+ * the chat acts on one shop, and a cap set above applies to each shop below.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -156,18 +162,198 @@ class SomcpAssistant
     }
 
     /**
-     * Every assistant, the default one first.
+     * Every assistant the shop of the chat uses, the default one first.
      *
      * @return array<int, array<string, mixed>>
      */
     public static function all(): array
     {
+        return self::forShop(self::shop());
+    }
+
+    /**
+     * Every assistant a shop uses: those of the shop, else of its group, else
+     * of all shops - whichever level is the most precise to have any.
+     *
+     * @param int $idShop
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function forShop(int $idShop): array
+    {
+        [$atShop, $atGroup] = self::levelOf($idShop);
+
+        return self::atLevel($atShop, $atGroup);
+    }
+
+    /**
+     * The assistants stored at exactly one level.
+     *
+     * @param int $idShop the shop for a shop level, 0 otherwise
+     * @param int $idShopGroup the group for a group level, 0 otherwise
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function atLevel(int $idShop, int $idShopGroup): array
+    {
         $rows = Db::getInstance()->executeS(
-            'SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant` WHERE `id_shop` = ' . self::shop()
+            'SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant`'
+            . ' WHERE `id_shop` = ' . (int) $idShop . ' AND `id_shop_group` = ' . (int) $idShopGroup
             . ' ORDER BY `is_default` DESC, `id_assistant` ASC'
         );
 
         return is_array($rows) ? array_map([self::class, 'shape'], $rows) : [];
+    }
+
+    /**
+     * The level whose assistants a shop uses, in the order PrestaShop reads a
+     * setting: the shop, its group, all shops.
+     *
+     * @param int $idShop
+     *
+     * @return array{0:int, 1:int} id_shop and id_shop_group of that level
+     */
+    public static function levelOf(int $idShop): array
+    {
+        foreach (self::levelsAbove($idShop, true) as $level) {
+            if (self::atLevel($level[0], $level[1]) !== []) {
+                return [$level[0], $level[1]];
+            }
+        }
+
+        return [$idShop, 0];
+    }
+
+    /**
+     * The levels a shop reads from, the most precise first.
+     *
+     * @param int $idShop
+     * @param bool $withShop whether the shop's own level comes first
+     *
+     * @return array<int, array{0:int, 1:int, 2:string}> id_shop, id_shop_group, and the level's name
+     */
+    private static function levelsAbove(int $idShop, bool $withShop): array
+    {
+        $levels = $withShop ? [[$idShop, 0, 'shop']] : [];
+        $idGroup = (int) Shop::getGroupFromShop($idShop, true);
+        if ($idGroup > 0) {
+            $levels[] = [0, $idGroup, 'group'];
+        }
+        $levels[] = [0, 0, 'global'];
+
+        return $levels;
+    }
+
+    /**
+     * The level the settings page edits: the shop, the group or all shops the
+     * back office is set to. A single shop install has the shop level only, as
+     * it always had.
+     *
+     * @return array{0:int, 1:int}
+     */
+    public static function editedLevel(): array
+    {
+        if (!Shop::isFeatureActive()) {
+            return [self::shop(), 0];
+        }
+        switch (Shop::getContext()) {
+            case Shop::CONTEXT_SHOP:
+                return [(int) Shop::getContextShopID(), 0];
+            case Shop::CONTEXT_GROUP:
+                return [0, (int) Shop::getContextShopGroupID()];
+            default:
+                return [0, 0];
+        }
+    }
+
+    /**
+     * What the settings page shows for the assistants of the level it edits:
+     * its own, or those it inherits, read-only.
+     *
+     * The source is shop, group, global or default (nothing anywhere).
+     *
+     * @return array{own:bool, source:string, assistants:array<int, array<string, mixed>>}
+     */
+    public static function editedState(): array
+    {
+        [$idShop, $idGroup] = self::editedLevel();
+        $own = self::atLevel($idShop, $idGroup);
+        if ($own !== [] || !Shop::isFeatureActive() || Shop::getContext() === Shop::CONTEXT_ALL) {
+            return ['own' => true, 'source' => $idShop > 0 ? 'shop' : ($idGroup > 0 ? 'group' : 'global'), 'assistants' => $own];
+        }
+
+        // A group reads from all shops only; a shop from its group, then all shops.
+        $above = $idShop > 0 ? self::levelsAbove($idShop, false) : [[0, 0, 'global']];
+        foreach ($above as [$atShop, $atGroup, $source]) {
+            $rows = self::atLevel($atShop, $atGroup);
+            if ($rows !== []) {
+                return ['own' => false, 'source' => $source, 'assistants' => $rows];
+            }
+        }
+
+        return ['own' => false, 'source' => 'default', 'assistants' => []];
+    }
+
+    /**
+     * Gives the level being edited assistants of its own: a copy of those it
+     * inherited, keys included, which can then be changed here alone.
+     *
+     * @return void
+     */
+    public static function copyHere(): void
+    {
+        $state = self::editedState();
+        if ($state['own']) {
+            return;
+        }
+        [$idShop, $idGroup] = self::editedLevel();
+        $db = Db::getInstance();
+        foreach ($state['assistants'] as $assistant) {
+            $row = $db->getRow('SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant` WHERE `id_assistant` = ' . (int) $assistant['id_assistant']);
+            if (!is_array($row)) {
+                continue;
+            }
+            unset($row['id_assistant'], $row['date_add'], $row['date_upd']);
+            $row['id_shop'] = $idShop;
+            $row['id_shop_group'] = $idGroup;
+            $db->insert('somcp_assistant', array_map(static function ($value) {
+                return $value === null ? null : pSQL((string) $value);
+            }, $row), true);
+        }
+    }
+
+    /**
+     * Drops the assistants of the level being edited, so it uses those of the
+     * level above again. Their spending stays recorded for the month.
+     *
+     * @return void
+     */
+    public static function inheritHere(): void
+    {
+        if (!Shop::isFeatureActive() || Shop::getContext() === Shop::CONTEXT_ALL) {
+            return;
+        }
+        [$idShop, $idGroup] = self::editedLevel();
+        Db::getInstance()->delete('somcp_assistant', '`id_shop` = ' . (int) $idShop . ' AND `id_shop_group` = ' . (int) $idGroup);
+    }
+
+    /**
+     * One assistant of the level being edited, for the settings page.
+     *
+     * @param int $idAssistant
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function edited(int $idAssistant): ?array
+    {
+        [$idShop, $idGroup] = self::editedLevel();
+        foreach (self::atLevel($idShop, $idGroup) as $assistant) {
+            if ($assistant['id_assistant'] === $idAssistant) {
+                return $assistant;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -188,8 +374,20 @@ class SomcpAssistant
      */
     public static function leader(): ?array
     {
-        foreach (self::active() as $assistant) {
-            if ($assistant['level'] !== self::LEVEL_IMAGE) {
+        return self::leaderFor(self::shop());
+    }
+
+    /**
+     * The assistant that leads the chat of a shop, if it has one.
+     *
+     * @param int $idShop
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function leaderFor(int $idShop): ?array
+    {
+        foreach (self::forShop($idShop) as $assistant) {
+            if ($assistant['active'] && $assistant['level'] !== self::LEVEL_IMAGE) {
                 return $assistant;
             }
         }
@@ -204,12 +402,15 @@ class SomcpAssistant
      */
     public static function get(int $idAssistant): ?array
     {
-        $row = Db::getInstance()->getRow(
-            'SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant`'
-            . ' WHERE `id_assistant` = ' . (int) $idAssistant . ' AND `id_shop` = ' . self::shop()
-        );
+        // Among the assistants the shop of the chat uses: an id from a request
+        // never reaches another shop's key.
+        foreach (self::all() as $assistant) {
+            if ($assistant['id_assistant'] === $idAssistant) {
+                return $assistant;
+            }
+        }
 
-        return is_array($row) ? self::shape($row) : null;
+        return null;
     }
 
     /**
@@ -242,7 +443,7 @@ class SomcpAssistant
             // No separate request from the browser - the key is the one posted.
             $plain = trim($values['api_key']);
             if ($plain === '' && $idAssistant > 0) {
-                $existing = self::get($idAssistant);
+                $existing = self::edited($idAssistant);
                 $plain = $existing !== null ? self::key($existing) : '';
             }
             $listed = $plain !== '' ? self::listModels($provider, $plain) : null;
@@ -272,14 +473,19 @@ class SomcpAssistant
         }
 
         $db = Db::getInstance();
-        if ($idAssistant > 0 && self::get($idAssistant) !== null) {
+        [$idShop, $idGroup] = self::editedLevel();
+        if ($idAssistant > 0 && self::edited($idAssistant) !== null) {
             $db->update('somcp_assistant', $data, '`id_assistant` = ' . (int) $idAssistant);
         } else {
             $data['api_key'] = $data['api_key'] ?? '';
-            $data['id_shop'] = self::shop();
-            // The first assistant that can lead is the default one: a chat
-            // with no default would have nobody to answer.
-            $data['is_default'] = $level !== self::LEVEL_IMAGE && self::leader() === null ? 1 : 0;
+            $data['id_shop'] = $idShop;
+            $data['id_shop_group'] = $idGroup;
+            // The first assistant of the level that can lead is its default
+            // one: a chat with no default would have nobody to answer.
+            $leads = array_filter(self::atLevel($idShop, $idGroup), static function (array $other): bool {
+                return $other['level'] !== self::LEVEL_IMAGE;
+            });
+            $data['is_default'] = $level !== self::LEVEL_IMAGE && $leads === [] ? 1 : 0;
             $db->insert('somcp_assistant', $data);
             $idAssistant = (int) $db->Insert_ID();
         }
@@ -315,13 +521,17 @@ class SomcpAssistant
      */
     public static function delete(int $idAssistant): void
     {
-        $wasDefault = (self::get($idAssistant)['is_default'] ?? false) === true;
+        $removed = self::edited($idAssistant);
+        if ($removed === null) {
+            return;
+        }
 
         Db::getInstance()->delete('somcp_assistant', '`id_assistant` = ' . (int) $idAssistant);
         Db::getInstance()->delete('somcp_assistant_usage', '`id_assistant` = ' . (int) $idAssistant);
 
-        if ($wasDefault) {
-            foreach (self::all() as $next) {
+        if ($removed['is_default']) {
+            [$idShop, $idGroup] = self::editedLevel();
+            foreach (self::atLevel($idShop, $idGroup) as $next) {
                 if ($next['level'] !== self::LEVEL_IMAGE) {
                     self::makeDefault((int) $next['id_assistant']);
                     break;
@@ -335,14 +545,16 @@ class SomcpAssistant
      */
     public static function makeDefault(int $idAssistant): void
     {
-        $assistant = self::get($idAssistant);
+        $assistant = self::edited($idAssistant);
         if ($assistant === null || $assistant['level'] === self::LEVEL_IMAGE) {
             return;
         }
+        [$idShop, $idGroup] = self::editedLevel();
+        $level = '`id_shop` = ' . (int) $idShop . ' AND `id_shop_group` = ' . (int) $idGroup;
         $db = Db::getInstance();
-        // Only this shop's assistants: each shop keeps its own default.
-        $db->update('somcp_assistant', ['is_default' => 0], '`id_shop` = ' . self::shop());
-        $db->update('somcp_assistant', ['is_default' => 1], '`id_assistant` = ' . (int) $idAssistant . ' AND `id_shop` = ' . self::shop());
+        // Only the assistants of this level: each level keeps its own default.
+        $db->update('somcp_assistant', ['is_default' => 0], $level);
+        $db->update('somcp_assistant', ['is_default' => 1], '`id_assistant` = ' . (int) $idAssistant . ' AND ' . $level);
     }
 
     /**
@@ -356,7 +568,8 @@ class SomcpAssistant
     {
         $stored = (string) Db::getInstance()->getValue(
             'SELECT `api_key` FROM `' . _DB_PREFIX_ . 'somcp_assistant`'
-            . ' WHERE `id_assistant` = ' . (int) $assistant['id_assistant'] . ' AND `id_shop` = ' . self::shop()
+            . ' WHERE `id_assistant` = ' . (int) $assistant['id_assistant']
+            . ' AND `id_shop` = ' . (int) $assistant['id_shop'] . ' AND `id_shop_group` = ' . (int) $assistant['id_shop_group']
         );
 
         return self::open($stored);
@@ -465,13 +678,17 @@ class SomcpAssistant
     /**
      * What each assistant cost this month, keyed by assistant id.
      *
+     * @param array<int, int>|null $shops the shops to count, the shop of the chat when null
+     *
      * @return array<int, float>
      */
-    public static function monthCosts(): array
+    public static function monthCosts(?array $shops = null): array
     {
+        $ids = array_map('intval', $shops ?? [self::shop()]);
         $rows = Db::getInstance()->executeS(
-            'SELECT `id_assistant`, `cost` FROM `' . _DB_PREFIX_ . 'somcp_assistant_usage`'
-            . ' WHERE `month` = \'' . pSQL(date('Y-m')) . '\' AND `id_shop` = ' . self::shop()
+            'SELECT `id_assistant`, SUM(`cost`) AS `cost` FROM `' . _DB_PREFIX_ . 'somcp_assistant_usage`'
+            . ' WHERE `month` = \'' . pSQL(date('Y-m')) . '\' AND `id_shop` IN (' . implode(',', $ids ?: [0]) . ')'
+            . ' GROUP BY `id_assistant`'
         );
 
         $costs = [];
@@ -542,17 +759,47 @@ class SomcpAssistant
     }
 
     /**
+     * Saves the settings at the level being edited. A setting whose "value of
+     * its own" box is unchecked is not written: its row at this level is
+     * removed and the value comes from the level above, as on the other tabs.
+     *
      * @param float $budget
      * @param string $instructions
+     * @param int $idProfile
+     * @param array<string, bool> $own key => whether this level keeps a value of its own
      */
-    public static function saveSettings(float $budget, string $instructions, int $idProfile): void
+    public static function saveSettings(float $budget, string $instructions, int $idProfile, array $own = []): void
     {
-        $idShop = self::shop();
-        Configuration::updateValue(self::PROFILE, (string) max(0, $idProfile), false, null, $idShop);
-        Configuration::updateValue(self::BUDGET, (string) max(0.0, round($budget, 2)), false, null, $idShop);
-        // Stored as HTML-allowed so the merchant's punctuation survives: the
-        // value is only ever sent to the model and escaped wherever shown.
-        Configuration::updateValue(self::INSTRUCTIONS, Tools::substr($instructions, 0, 4000), true, null, $idShop);
+        $values = [
+            self::PROFILE => [(string) max(0, $idProfile), false],
+            self::BUDGET => [(string) max(0.0, round($budget, 2)), false],
+            // Stored as HTML-allowed so the merchant's punctuation survives:
+            // the value is only ever sent to the model and escaped wherever shown.
+            self::INSTRUCTIONS => [Tools::substr($instructions, 0, 4000), true],
+        ];
+        foreach ($values as $key => [$value, $html]) {
+            if (SomcpConfig::inheritableContext() && empty($own[$key])) {
+                SomcpConfig::inherit($key);
+                continue;
+            }
+            // No shop given: PrestaShop writes at the level the back office is
+            // set to - all shops, the group or the shop.
+            Configuration::updateValue($key, $value, $html);
+        }
+    }
+
+    /**
+     * The settings as the level being edited sees them, for the form.
+     *
+     * @return array{budget:float, instructions:string, profile:int}
+     */
+    public static function editedSettings(): array
+    {
+        return [
+            'budget' => max(0.0, (float) Configuration::get(self::BUDGET)),
+            'instructions' => (string) Configuration::get(self::INSTRUCTIONS),
+            'profile' => (int) Configuration::get(self::PROFILE),
+        ];
     }
 
     /**
@@ -588,6 +835,8 @@ class SomcpAssistant
             'role' => (string) $row['role'],
             'active' => (int) $row['active'] === 1,
             'is_default' => (int) $row['is_default'] === 1,
+            'id_shop' => (int) $row['id_shop'],
+            'id_shop_group' => (int) ($row['id_shop_group'] ?? 0),
         ];
     }
 

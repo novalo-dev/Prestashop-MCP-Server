@@ -238,6 +238,25 @@ class Somcp extends Module
     }
 
     /**
+     * Makes the rest of the request run as one shop, whatever the back office
+     * is set to: the tools, the settings and the assistants all read the shop
+     * of the context. Used by the built-in chat, whose conversation belongs to
+     * one shop even when the back office shows all of them.
+     *
+     * @param int $idShop
+     *
+     * @return void
+     */
+    public static function actAsShop(int $idShop): void
+    {
+        if ($idShop <= 0 || (Shop::getContext() === Shop::CONTEXT_SHOP && self::currentShopId() === $idShop)) {
+            return;
+        }
+        Shop::setContext(Shop::CONTEXT_SHOP, $idShop);
+        self::legacyContext()->shop = new Shop($idShop);
+    }
+
+    /**
      * Translates one of the module's own strings.
      *
      * Module::trans() is protected, so the classes and controllers around the
@@ -374,9 +393,11 @@ class Somcp extends Module
         SomcpBackOffice::rememberAdminDir();
 
         $employee = $this->context->employee;
+        // Shown when at least one shop of the back office context has an
+        // assistant: on all shops, a merchant may chat about any of them.
         if (!$employee instanceof Employee || (int) $employee->id <= 0
             || !SomcpAssistantChat::available()
-            || SomcpAssistant::leader() === null
+            || SomcpAssistantChat::shopsFor($employee) === []
             || !SomcpAssistant::mayUse((int) $employee->id_profile)) {
             return '';
         }
@@ -451,6 +472,18 @@ class Somcp extends Module
                 'yes' => $this->l10n('Yes'),
                 'no' => $this->l10n('No'),
                 'chooseAssistant' => $this->l10n('Choose the assistant'),
+                // Shown in turn while the assistant works, a few seconds each.
+                'verbs' => [
+                    $this->l10n('Cogitating...'),
+                    $this->l10n('Thinking...'),
+                    $this->l10n('Looking it up...'),
+                    $this->l10n('Checking...'),
+                    $this->l10n('Writing...'),
+                ],
+                'chooseShop' => $this->l10n('Which shop are we working on?'),
+                'chooseShopHint' => $this->l10n('The conversation stays tied to the shop you pick.'),
+                'pickShop' => $this->l10n('Choose a shop to start'),
+                'conversationFor' => $this->l10n('This conversation is for the shop %shop%'),
             ],
         ];
 
@@ -493,7 +526,7 @@ class Somcp extends Module
         $employee = $this->context->employee;
         if (!$employee instanceof Employee || (int) $employee->id <= 0
             || !SomcpAssistantChat::available()
-            || SomcpAssistant::leader() === null
+            || SomcpAssistantChat::shopsFor($employee) === []
             || !SomcpAssistant::mayUse((int) $employee->id_profile)) {
             return '';
         }
@@ -602,8 +635,18 @@ class Somcp extends Module
         if (Tools::isSubmit('submitSomcpAssistant')) {
             $this->saveAssistant();
         }
+        if (Tools::isSubmit('submitSomcpAssistantOwn')) {
+            SomcpAssistant::copyHere();
+            $this->flash($this->trans('The assistants inherited from above were copied to this level, where they can now be changed.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantInherit')) {
+            SomcpAssistant::inheritHere();
+            $this->flash($this->trans('This level uses the assistants inherited from above again.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
         if (Tools::isSubmit('submitSomcpAssistantTest')) {
-            $tested = SomcpAssistant::get((int) Tools::getValue('id_assistant'));
+            $tested = SomcpAssistant::edited((int) Tools::getValue('id_assistant'));
             $model = $tested !== null ? SomcpAssistant::test($tested) : '';
             if ($model !== '') {
                 $this->flash($this->trans('The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
@@ -623,16 +666,21 @@ class Somcp extends Module
             $this->redirectToSelf();
         }
         if (Tools::isSubmit('submitSomcpAssistantSettings')) {
+            $own = [];
+            foreach ([SomcpAssistant::PROFILE, SomcpAssistant::BUDGET, SomcpAssistant::INSTRUCTIONS, SomcpAssistantMemory::ON] as $key) {
+                $own[$key] = Tools::getValue('somcp_own_' . $key) === '1';
+            }
             SomcpAssistant::saveSettings(
                 (float) str_replace(',', '.', (string) Tools::getValue('SOMCP_ASSISTANT_BUDGET')),
                 (string) Tools::getValue('SOMCP_ASSISTANT_INSTRUCTIONS'),
-                (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE')
+                (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE'),
+                $own
             );
             SomcpAssistantMemory::save(
-                (int) self::currentShopId(),
                 Tools::getValue('SOMCP_EMB_ON') === '1',
                 (string) Tools::getValue('SOMCP_EMB_PROVIDER'),
-                (string) Tools::getValue('SOMCP_EMB_KEY')
+                (string) Tools::getValue('SOMCP_EMB_KEY'),
+                $own[SomcpAssistantMemory::ON]
             );
             $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
             $this->redirectToSelf();
@@ -688,6 +736,9 @@ class Somcp extends Module
         // an existing assistant with a key is open for editing, so the settings
         // page never calls a provider just to be shown.
         $editing = $this->assistantBeingEdited();
+        $assistantState = SomcpAssistant::editedState();
+        $assistantSettings = SomcpAssistant::editedSettings();
+        $contextShops = array_map('intval', Shop::getContextListShopID());
         $editModels = ($editing !== null && !empty($editing['has_key']) && (int) $editing['id_assistant'] > 0)
             ? SomcpAssistant::models($editing)
             : [];
@@ -706,21 +757,24 @@ class Somcp extends Module
             'somcp_repository' => SomcpUpdate::REPOSITORY,
             'somcp_update' => $update,
             'somcp_contributors' => $this->contributorsShown(),
-            'somcp_assistants' => SomcpAssistant::all(),
-            'somcp_assistant_costs' => SomcpAssistant::monthCosts(),
-            'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts()),
-            'somcp_assistant_budget' => SomcpAssistant::budget(),
-            'somcp_assistant_instructions' => SomcpAssistant::instructions(),
-            'somcp_assistant_profile' => (int) Configuration::get(SomcpAssistant::PROFILE, null, null, (int) self::currentShopId()),
+            // The level the page edits - all shops, a group or a shop - and the
+            // spending of every shop of it.
+            'somcp_assistants' => $assistantState['assistants'],
+            'somcp_assistants_own' => $assistantState['own'],
+            'somcp_assistants_source' => $assistantState['source'],
+            'somcp_assistant_costs' => SomcpAssistant::monthCosts($contextShops),
+            'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts($contextShops)),
+            'somcp_assistant_budget' => $assistantSettings['budget'],
+            'somcp_assistant_instructions' => $assistantSettings['instructions'],
+            'somcp_assistant_profile' => $assistantSettings['profile'],
             'somcp_assistant_providers' => SomcpAssistant::providers(),
             'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
             'somcp_assistant_edit' => $editing,
             'somcp_assistant_models' => $editModels,
-            'somcp_memory_on' => SomcpAssistantMemory::on((int) self::currentShopId()),
+            'somcp_memory_on' => (string) Configuration::get(SomcpAssistantMemory::ON) === '1',
             'somcp_memory_selectable' => SomcpAssistantMemory::selectable((int) self::currentShopId()),
-            'somcp_memory_provider' => SomcpAssistantMemory::providerId((int) self::currentShopId()),
-            'somcp_memory_has_own_key' => Configuration::get(SomcpAssistantMemory::KEY, null, null, (int) self::currentShopId()) !== false
-                && (string) Configuration::get(SomcpAssistantMemory::KEY, null, null, (int) self::currentShopId()) !== '',
+            'somcp_memory_provider' => (string) Configuration::get(SomcpAssistantMemory::PROVIDER),
+            'somcp_memory_has_own_key' => (string) Configuration::get(SomcpAssistantMemory::KEY) !== '',
             'somcp_assistant_ready' => SomcpAssistantChat::available(),
             // Formatted here, in the employee's language, rather than in the
             // template: Smarty's date modifier knows nothing of the back
@@ -762,6 +816,11 @@ class Somcp extends Module
      */
     private function saveAssistant(): void
     {
+        // A level that inherits its assistants shows them read-only: one saved
+        // here would silently replace all of them for this level.
+        if (!SomcpAssistant::editedState()['own']) {
+            $this->redirectToSelf();
+        }
         $idAssistant = SomcpAssistant::save((int) Tools::getValue('id_assistant'), [
             'provider' => (string) Tools::getValue('somcp_assistant_provider'),
             'api_key' => (string) Tools::getValue('somcp_assistant_key'),
@@ -773,7 +832,7 @@ class Somcp extends Module
 
         // Tested right away: a key pasted with a stray space or for the wrong
         // provider is better found here than on the first message in the chat.
-        $saved = SomcpAssistant::get($idAssistant);
+        $saved = SomcpAssistant::edited($idAssistant);
         $model = $saved !== null ? SomcpAssistant::test($saved) : '';
         if ($model !== '') {
             $this->flash($this->trans('Assistant saved. The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
@@ -796,7 +855,7 @@ class Somcp extends Module
         }
         $idAssistant = (int) Tools::getValue('somcp_assistant_edit');
 
-        return $idAssistant > 0 ? SomcpAssistant::get($idAssistant) : null;
+        return $idAssistant > 0 ? SomcpAssistant::edited($idAssistant) : null;
     }
 
     /**
@@ -845,6 +904,11 @@ class Somcp extends Module
     {
         $map = [];
         foreach (array_keys(SomcpConfig::defaults()) as $key) {
+            $map[$key] = SomcpConfig::level($key);
+        }
+        // The settings of the Built-in assistant tab follow the same levels.
+        // The memory's switch stands for its provider and key too.
+        foreach ([SomcpAssistant::PROFILE, SomcpAssistant::BUDGET, SomcpAssistant::INSTRUCTIONS, SomcpAssistantMemory::ON] as $key) {
             $map[$key] = SomcpConfig::level($key);
         }
 

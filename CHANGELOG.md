@@ -37,6 +37,21 @@ separators and blocks of code in an answer of the built-in assistant now show
 as such, instead of the raw `###`, `|` and `---` they were written with. A
 wide table scrolls sideways inside the chat.
 
+**The built-in assistant on a multistore shop.** The **Built-in assistant**
+tab now follows the shop levels like the other tabs: the assistants, the
+employees allowed, the monthly cap, the instructions and the memory are set
+for all shops, a group or a shop, each with the **Value of its own here** box
+and "inherited from the group" or "inherited from all shops" beside it. A
+group or a shop uses the assistants of the level above until it is given its
+own: checking the box copies them, keys included, to be changed there.
+Conversations and spending stay per shop, and a cap set above applies to
+each shop. With the back office on all shops or a group, the chat now
+appears as soon as one shop has an assistant, and a new conversation starts
+by picking its shop on cards showing each shop's logo. The conversation then
+acts on that shop only, whatever the back office is set to later: its name
+shows in the chat, each conversation of the list carries its shop number,
+and the line shown while the assistant works names the shop too.
+
 ### Fixed
 
 **The built-in assistant no longer freezes after a slow answer.** When the AI

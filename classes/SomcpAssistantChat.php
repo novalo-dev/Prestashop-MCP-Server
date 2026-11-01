@@ -196,8 +196,11 @@ class SomcpAssistantChat
     /** @var Employee */
     private $employee;
 
-    /** @var int */
+    /** @var int The shop the conversation acts on. */
     private $idShop;
+
+    /** @var array<int, int> Every shop whose conversations the list shows. */
+    private $shops;
 
     /** @var string Back office controller the chat is open on, e.g. AdminOrders. */
     private $page = '';
@@ -210,12 +213,125 @@ class SomcpAssistantChat
 
     /**
      * @param Employee $employee
-     * @param int $idShop
+     * @param int $idShop the shop the conversation acts on
+     * @param array<int, int> $shops the shops whose conversations are listed; the shop alone when empty
      */
-    public function __construct(Employee $employee, int $idShop)
+    public function __construct(Employee $employee, int $idShop, array $shops = [])
     {
         $this->employee = $employee;
         $this->idShop = $idShop;
+        $this->shops = $shops !== [] ? array_values(array_map('intval', $shops)) : [$idShop];
+    }
+
+    /**
+     * The shops this employee may chat about from the page open: those of the
+     * back office context - one shop, a group or all shops - that the employee
+     * may work on and that have an assistant to answer.
+     *
+     * @param Employee $employee
+     *
+     * @return array<int, int>
+     */
+    public static function shopsFor(Employee $employee): array
+    {
+        $shops = [];
+        foreach (Shop::getContextListShopID() as $idShop) {
+            $idShop = (int) $idShop;
+            if ($employee->hasAuthOnShop($idShop) && SomcpAssistant::leaderFor($idShop) !== null) {
+                $shops[] = $idShop;
+            }
+        }
+
+        return $shops;
+    }
+
+    /**
+     * Whether a new conversation starts by picking its shop: only when the back
+     * office is set to all shops or a group, with more than one shop to pick.
+     *
+     * @param array<int, int> $shops
+     *
+     * @return bool
+     */
+    public static function picksShop(array $shops): bool
+    {
+        return Shop::isFeatureActive() && Shop::getContext() !== Shop::CONTEXT_SHOP && count($shops) > 1;
+    }
+
+    /**
+     * The shop of a conversation of this employee, 0 when it is not theirs or
+     * not among the shops given.
+     *
+     * @param int $idEmployee
+     * @param string $threadId
+     * @param array<int, int> $shops
+     *
+     * @return int
+     */
+    public static function threadShop(int $idEmployee, string $threadId, array $shops): int
+    {
+        if (!preg_match('/^[a-f0-9]{32}$/', $threadId) || $shops === []) {
+            return 0;
+        }
+
+        return (int) Db::getInstance()->getValue(
+            'SELECT `id_shop` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
+            . ' WHERE `thread_id` = \'' . pSQL($threadId) . '\' AND `id_employee` = ' . (int) $idEmployee
+            . ' AND `id_shop` IN (' . implode(',', array_map('intval', $shops)) . ')'
+        );
+    }
+
+    /**
+     * The shop of this employee's latest conversation among the shops given,
+     * 0 when there is none.
+     *
+     * @param int $idEmployee
+     * @param array<int, int> $shops
+     *
+     * @return int
+     */
+    public static function latestShop(int $idEmployee, array $shops): int
+    {
+        if ($shops === []) {
+            return 0;
+        }
+
+        return (int) Db::getInstance()->getValue(
+            'SELECT `id_shop` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
+            . ' WHERE `id_employee` = ' . (int) $idEmployee
+            . ' AND `id_shop` IN (' . implode(',', array_map('intval', $shops)) . ')'
+            . ' ORDER BY `date_upd` DESC, `id_thread` DESC'
+        );
+    }
+
+    /**
+     * The shops as the chat draws them: on the cards a new conversation picks
+     * from, and beside each conversation of the list.
+     *
+     * @param array<int, int> $shops
+     *
+     * @return array<int, array{id:int, name:string, domain:string, logo:string}>
+     */
+    public static function describeShops(array $shops): array
+    {
+        $described = [];
+        foreach ($shops as $idShop) {
+            $shop = new Shop((int) $idShop);
+            if (!Validate::isLoadedObject($shop)) {
+                continue;
+            }
+            // The shop's own logo, as its storefront shows it; none when the
+            // file is missing, and the chat draws the initials instead.
+            $logo = (string) Configuration::get('PS_LOGO', null, null, (int) $idShop);
+            $described[] = [
+                'id' => (int) $shop->id,
+                'name' => (string) $shop->name,
+                'domain' => (string) $shop->domain,
+                'logo' => $logo !== '' && is_file(_PS_IMG_DIR_ . $logo) ? _PS_IMG_ . $logo : '',
+            ];
+        }
+
+        return $described;
     }
 
     /**
@@ -255,15 +371,16 @@ class SomcpAssistantChat
     }
 
     /**
-     * The employee's latest conversations, newest first.
+     * The employee's latest conversations, newest first, on every shop the
+     * chat lists - each one carries its shop.
      *
      * @return array<int, array<string, mixed>>
      */
     public function threads(): array
     {
         $rows = Db::getInstance()->executeS(
-            'SELECT `thread_id`, `title`, `id_assistant`, `date_upd` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
-            . ' WHERE `id_employee` = ' . (int) $this->employee->id . ' AND `id_shop` = ' . (int) $this->idShop
+            'SELECT `thread_id`, `title`, `id_assistant`, `id_shop`, `date_upd` FROM `' . _DB_PREFIX_ . 'somcp_assistant_thread`'
+            . ' WHERE `id_employee` = ' . (int) $this->employee->id . ' AND `id_shop` IN (' . implode(',', $this->shops) . ')'
             . ' ORDER BY `date_upd` DESC, `id_thread` DESC LIMIT ' . self::MAX_THREADS
         );
 
@@ -783,6 +900,7 @@ class SomcpAssistantChat
         return [
             'thread_id' => (string) $thread['thread_id'],
             'id_assistant' => (int) $thread['id_assistant'],
+            'id_shop' => $this->idShop,
             'assistant' => $assistant !== null ? (string) $assistant['label'] : '',
             'messages' => $messages,
             'status' => $status,

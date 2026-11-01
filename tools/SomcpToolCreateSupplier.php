@@ -25,8 +25,8 @@ declare(strict_types=1);
  * and must not come to disagree on: a name that is one text in every language,
  * the languages being filled, texts keyed by ISO code, rich text cleaned the
  * way the back office cleans it, meta texts counted on the visible text, meta
- * keywords on the versions that still have them, and the guarded download of a
- * logo from a URL the merchant typed.
+ * keywords on the versions that still have them, and a logo taken by url or
+ * upload_ref through the same guards as every other image.
  *
  * What a brand does not have is the contact block: PrestaShop keeps it on an
  * address row of the supplier, as the core's AddSupplierHandler writes it, with
@@ -95,8 +95,8 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
                 . 'name and the contact details are one text each, the same in every language. Lengths count the '
                 . 'visible text, spaces included, HTML tags not counted. '
                 . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'The logo is downloaded by the shop from a public https address; one that cannot be fetched is '
-                . 'reported in logo and does not stop the creation. '
+                . 'The logo is given by url or by upload_ref; one that cannot be had is reported in logo and does '
+                . 'not stop the creation. '
                 . 'Do not use it to change a supplier, which is somcp_update_supplier, or to enable or disable '
                 . 'one, which is somcp_set_supplier_active. One supplier per call: for several, call it once per '
                 . 'supplier and report each result. '
@@ -158,8 +158,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
                 'meta_description' => $text('Assistant. 512 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_keywords' => $text('Assistant. PrestaShop 8 only, refused on 9, which dropped them. '
                     . '5 keywords at most, comma separated, without < > = { }.'),
-                'logo' => $plain('Merchant. Public https address of the logo. Downloaded by the shop: no '
-                    . 'redirect, 10 MB at most, JPEG, PNG, GIF or WebP.'),
+                'logo' => self::imageSchema('Merchant. The logo.', 'the logo'),
                 'active' => [
                     'type' => 'boolean',
                     'description' => 'Merchant. Enabled on the storefront; true by default.',
@@ -231,7 +230,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
             ],
             'texts' => [],
             'address' => self::supplierAddress($arguments, $idShop, $errors),
-            'logo' => self::logoUrl($arguments, $errors),
+            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
         ];
 
         if (array_key_exists('active', $arguments)) {
@@ -480,7 +479,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         $idSupplier = (int) $supplier->id;
         $logo = $plan['logo'] === null
             ? null
-            : self::storeLogoIn($idSupplier, (string) $plan['logo'], _PS_SUPP_IMG_DIR_, 'suppliers', 'supplier_mini_');
+            : self::storeLogoIn($idSupplier, $plan['logo'], _PS_SUPP_IMG_DIR_, 'suppliers', 'supplier_mini_');
 
         SomcpLogger::log(
             'supplier_created',

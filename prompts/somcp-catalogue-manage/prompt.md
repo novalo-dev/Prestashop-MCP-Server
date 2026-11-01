@@ -325,11 +325,14 @@ otherwise. Before calling it:
 
 1. Read `somcp_list_manufacturers`: the brand may already exist, and the shop
    accepts two brands of the same name.
-2. Ask the merchant for the name, whether the brand is enabled and the address
-   of its logo. The name is one text, the same in every language. Write the
+2. Ask the merchant for the name, whether the brand is enabled and its logo.
+   The name is one text, the same in every language. Write the
    descriptions and the SEO texts yourself, in every language being filled, and
    show them first.
-3. The logo is given by a public `https` address, which the shop downloads.
+3. The logo is an object: `url`, a public `https` address the shop downloads,
+   or `upload_ref`, a file already on the shop (attached or deposited by the
+   merchant, or generated in the built-in assistant), exactly as given in the
+   conversation. One of the two, never both, never an address you made up.
 
 When it succeeds, show the merchant the brand as returned, the `seo_warnings`,
 and the logo if it was refused, with its reason. On a lost answer, read
@@ -412,10 +415,13 @@ otherwise. Before calling it:
 2. Ask the merchant for the name, the contact details - at least the address,
    the city and the country, the state when the country has states, the DNI
    when the country asks for one - whether the supplier is enabled and the
-   address of its logo. Never invent a phone number or an address. Write the
+   logo. Never invent a phone number or an address. Write the
    description and the SEO texts yourself, in every language being filled, and
    show them first.
-3. The logo is given by a public `https` address, which the shop downloads.
+3. The logo is an object: `url`, a public `https` address the shop downloads,
+   or `upload_ref`, a file already on the shop (attached or deposited by the
+   merchant, or generated in the built-in assistant), exactly as given in the
+   conversation. One of the two, never both, never an address you made up.
 
 When it succeeds, show the merchant the supplier as returned, the
 `seo_warnings`, and the logo if it was refused, with its reason. On a lost

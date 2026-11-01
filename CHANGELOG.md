@@ -77,6 +77,15 @@ each other. The prompt **Change an order status** names it too.
 
 ### Changed
 
+**A brand or supplier logo can be a file already on the shop.** The logo of
+`somcp_create_manufacturer`, `somcp_update_manufacturer`,
+`somcp_create_supplier` and `somcp_update_supplier` used to accept only a web
+address, so a photo attached in the built-in assistant or an image it had just
+generated could not become a logo. It is now given the way product images are:
+either its public https address (`url`) or the reference of a file already on
+the shop (`upload_ref`), and it goes through the same download and image checks
+as product images. The answer names the logo by the one that was given.
+
 **Reading an order gives what acting on it needs.** `somcp_get_order` now
 returns the identifier of each product line, of each discount (with its
 invoice and whether it offers free shipping) and of each step of the status

@@ -1366,14 +1366,14 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most |
 | `meta_description` | assistant | same characters; 512 characters at most |
 | `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
-| `logo` | merchant | a public `https` URL, downloaded with the guards of `somcp_create_product` |
+| `logo` | merchant | an object with `url` (a public `https` address) or `upload_ref` (a file already on the shop), one of the two, as the `images` of `somcp_create_product`, fetched and checked by the same shared function |
 | `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 
-**Returns** - `created`, `id_manufacturer`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` with `stored: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
+**Returns** - `created`, `id_manufacturer`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` or `upload_ref` with `stored: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
 
 **Notes**
 - Written through `Manufacturer::add()` in the shop of the token (`id_shop_list`), as the core's `AddManufacturerHandler` does, so the object hooks fire. If the add fails after the row went in, the brand is deleted again.
-- The core's `ManufacturerImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The downloaded logo is written where it writes it instead, as `img/m/<id>.jpg` with one file per brand image type (and each extra format switched on, from PrestaShop 8.1, with the fitment of each type on 9), and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the brand.
+- The core's `ManufacturerImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The logo, downloaded or redeemed, is written where it writes it instead, as `img/m/<id>.jpg` with one file per brand image type (and each extra format switched on, from PrestaShop 8.1, with the fitment of each type on 9), and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the brand.
 - PrestaShop accepts two brands of the same name: the description tells the assistant to read `somcp_list_manufacturers` first.
 - Every problem is reported at once, before anything is written. The rich texts, meta texts and meta keywords are checked by the same methods as `somcp_create_category`, with the limits of `Manufacturer::$definition`.
 - Not replayable: the read tool to check is `somcp_list_manufacturers`.
@@ -1388,14 +1388,14 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 **Parameters** - `id_manufacturer` (required), `languages`, then the fields of `somcp_create_manufacturer`, all optional. A text given replaces the languages given and keeps the others. `remove_logo` removes the logo explicitly.
 
-**Returns** - `changed`, `changes` (per field its old and new value, a text per language), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise `stored: true`, `removed: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
+**Returns** - `changed`, `changes` (per field its old and new value, a text per language), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise its `url` or `upload_ref` with `stored: true`, `removed: true` or the reason it was `refused`), and `manufacturer`, the brand as `somcp_get_manufacturer` returns it.
 
 **Notes**
-- Extends `somcp_create_manufacturer`: every field is checked by the same code, and the logo downloaded with the same guards and written where the creation writes it, over the current files, so a logo that cannot be fetched leaves the brand with the one it had.
+- Extends `somcp_create_manufacturer`: every field is checked by the same code, and the logo fetched with the same guards and written where the creation writes it, over the current files, so a logo that cannot be had leaves the brand with the one it had.
 - An `id_manufacturer` that does not exist, or a brand of another shop, is refused by the same test of the shop as `somcp_get_manufacturer`.
 - Written through one `Manufacturer::update()` in the shop of the token (`id_shop_list`), as the core's `EditManufacturerHandler` does, so the object hooks fire; left to the context, the update could attach the brand to a shop it was never in.
 - `remove_logo` deletes what the core's `DeleteManufacturerLogoImageHandler` deletes: the original, every brand image type in every format, and the two cached copies of the back office. It is refused next to `logo`, and counts as a change only when the brand has a logo.
-- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address cannot be compared with a stored file.
+- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address or an `upload_ref` cannot be compared with a stored file; `changes` names it by its `url` or `upload_ref`.
 
 #### `somcp_set_manufacturer_active`
 **State**: written
@@ -1614,18 +1614,18 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most |
 | `meta_description` | assistant | same characters; 512 characters at most |
 | `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
-| `logo` | merchant | a public `https` URL, downloaded with the guards of `somcp_create_product` |
+| `logo` | merchant | an object with `url` (a public `https` address) or `upload_ref` (a file already on the shop), one of the two, as the `images` of `somcp_create_product`, fetched and checked by the same shared function |
 | `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 
 The name and every contact field are one string each, the same in every language.
 
-**Returns** - `created`, `id_supplier`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` with `stored: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
+**Returns** - `created`, `id_supplier`, `seo_warnings` (no meta title or description in a language), `logo` (`null` when none was given, otherwise its `url` or `upload_ref` with `stored: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
 
 **Notes**
 - Written through `Supplier::add()` in the shop of the token (`id_shop_list`), then its `Address` through `Address::add()` with `id_supplier` set and the placeholder alias, first name and last name (`supplier`) the core's `AddSupplierHandler` writes. The handler adds the address first and links it after; here it is linked from the start, so a failure in between cannot leave an address that belongs to nobody. If either add fails after a row went in, what was written is deleted again.
-- Every problem is reported at once, before anything is written. The name, rich text, meta texts, meta keywords and logo address are checked by the same methods as `somcp_create_manufacturer`; the contact fields by the definition of `Address` of the running version, then both whole objects by `validateFields()`, as the handler does.
+- Every problem is reported at once, before anything is written. The name, rich text, meta texts, meta keywords and logo are checked by the same methods as `somcp_create_manufacturer`; the contact fields by the definition of `Address` of the running version, then both whole objects by `validateFields()`, as the handler does.
 - The postal code format is the one the checkout asks of a customer of that country; the back office supplier form does not check it, the specification asks for it.
-- The core's `SupplierImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The downloaded logo is written where it writes it, as `img/su/<id>.jpg` with one file per supplier image type, by the code `somcp_create_manufacturer` writes a brand logo with, and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the supplier.
+- The core's `SupplierImageUploader` cannot be called: it moves the file with `move_uploaded_file()`, which refuses a file that did not arrive in a POST. The logo, downloaded or redeemed, is written where it writes it, as `img/su/<id>.jpg` with one file per supplier image type, by the code `somcp_create_manufacturer` writes a brand logo with, and the cached logo of the back office list is dropped as the uploader does. A logo refused is reported and does not undo the supplier.
 - PrestaShop accepts two suppliers of the same name: the description tells the assistant to read `somcp_list_suppliers` first.
 - Not replayable: the read tool to check is `somcp_list_suppliers`.
 
@@ -1639,15 +1639,15 @@ The name and every contact field are one string each, the same in every language
 
 **Parameters** - `id_supplier` (required), `languages`, then the fields of `somcp_create_supplier`, all optional. A text given replaces the languages given and keeps the others. `remove_logo` removes the logo explicitly.
 
-**Returns** - `changed`, `changes` (per field its old and new value, a text per language, `country` and `state` as ISO codes), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise `stored: true`, `removed: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
+**Returns** - `changed`, `changes` (per field its old and new value, a text per language, `country` and `state` as ISO codes), `seo_warnings` (for the languages whose texts changed), `logo` (`null` when untouched, otherwise its `url` or `upload_ref` with `stored: true`, `removed: true` or the reason it was `refused`), and `supplier`, the supplier as `somcp_get_supplier` returns it.
 
 **Notes**
-- Extends `somcp_create_supplier`: every field is checked by the same code, the contact block included, and the logo downloaded with the same guards and written where the creation writes it, over the current files, so a logo that cannot be fetched leaves the supplier with the one it had.
+- Extends `somcp_create_supplier`: every field is checked by the same code, the contact block included, and the logo fetched with the same guards and written where the creation writes it, over the current files, so a logo that cannot be had leaves the supplier with the one it had.
 - The contact details are checked as a whole: the values given are laid over the stored ones before the creation's checks run, since the country decides whether a state or a DNI is required and which postal code format applies. A stored state is not carried over to a new country; give the state again when the new country has states.
 - An `id_supplier` that does not exist, or a supplier of another shop, is refused by the same test of the shop as `somcp_get_supplier`.
 - Written as the core's `EditSupplierHandler` does: one `Supplier::update()` in the shop of the token (`id_shop_list`), then `Address::update()` on the supplier's address row, so the object hooks fire. A supplier with no address row gets one, added with the creation's placeholders, when contact details are given.
 - `remove_logo` deletes what the core's `DeleteSupplierLogoImageHandler` deletes: the original, every supplier image type in every format, and the two cached copies of the back office. It is refused next to `logo`, and counts as a change only when the supplier has a logo.
-- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address cannot be compared with a stored file.
+- Replayable: the same values again change nothing, fire no hook and say `changed: false`. A logo given always counts as a change, since an address or an `upload_ref` cannot be compared with a stored file; `changes` names it by its `url` or `upload_ref`.
 
 #### `somcp_set_supplier_active`
 **State**: written

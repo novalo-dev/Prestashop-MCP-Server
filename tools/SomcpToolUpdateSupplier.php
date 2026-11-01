@@ -75,9 +75,9 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
                 . 'the contact details are one text each, the same in every language. '
                 . 'Take the supplier from somcp_list_suppliers, never guessed, and read it with somcp_get_supplier '
                 . 'to know what it holds. Show the merchant what will change and call once they agree. Every '
-                . 'problem is reported at once and nothing is written until the whole call is valid. The logo is '
-                . 'downloaded by the shop from a public https address after the change; one that cannot be '
-                . 'fetched is reported in logo and does not undo it. The answer gives each field changed with its '
+                . 'problem is reported at once and nothing is written until the whole call is valid. The logo, by '
+                . 'url or by upload_ref, is written after the change; one that cannot be had is reported in logo '
+                . 'and does not undo it. The answer gives each field changed with its '
                 . 'old and new value. A call that would change nothing writes nothing and says changed: false. '
                 . 'Do not use it to create a supplier (somcp_create_supplier) or only to enable or disable one '
                 . '(somcp_set_supplier_active). One supplier per call. '
@@ -119,8 +119,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
         $properties['active']['description'] = 'Merchant. Enabled on the storefront.' . $kept;
         $properties['country']['description'] = 'Merchant. ISO code of the country, for example FR, among the '
             . 'countries of this shop. A new country takes the state given with it, none otherwise.' . $kept;
-        $properties['logo']['description'] = 'Merchant. Public https address of a new logo, which replaces the '
-            . 'current one. Downloaded by the shop: no redirect, 10 MB at most, JPEG, PNG, GIF or WebP.';
+        $properties['logo'] = self::imageSchema('Merchant. A new logo, which replaces the current one.', 'the logo');
         $properties['remove_logo'] = [
             'type' => 'boolean',
             'description' => 'Merchant. true removes the logo. Not with logo, which already replaces it.',
@@ -213,7 +212,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
             'supplier' => [],
             'address' => [],
             'id_address' => (int) Address::getAddressIdBySupplierId((int) $supplier->id),
-            'logo' => self::logoUrl($arguments, $errors),
+            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
             'remove_logo' => false,
         ];
 
@@ -392,7 +391,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
         // An address cannot be compared with a stored file, so a logo given
         // always counts as a change; a removal counts only when there is one.
         if ($plan['logo'] !== null) {
-            self::record($plan, 'logo', $before['logo'], $plan['logo']);
+            self::record($plan, 'logo', $before['logo'], self::imageOrigin($plan['logo']));
         } elseif ($before['logo'] === null) {
             $plan['remove_logo'] = false;
         } else {
@@ -525,7 +524,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
             // Written over the current files, under the same names, rather
             // than after deleting them: if it cannot be fetched, the supplier
             // keeps the logo it had.
-            $logo = self::storeLogoIn($idSupplier, (string) $plan['logo'], _PS_SUPP_IMG_DIR_, 'suppliers', 'supplier_mini_');
+            $logo = self::storeLogoIn($idSupplier, $plan['logo'], _PS_SUPP_IMG_DIR_, 'suppliers', 'supplier_mini_');
         }
 
         SomcpLogger::log(

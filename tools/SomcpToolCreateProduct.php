@@ -2215,6 +2215,57 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * One image field of a tool that is not a product: absent, or an object
+     * read by imageSource().
+     *
+     * Anything other than an object - a bare address, a bare reference - is
+     * refused with the message imageSource() gives for an empty one, which
+     * names both forms the field accepts.
+     *
+     * @param array<string, mixed> $arguments
+     * @param string $field
+     * @param array<int, string> $errors
+     * @param string $what what the file is, for the message
+     *
+     * @return array{url: string, upload_ref: string}|null null when not given or refused
+     */
+    protected static function imageArgument(array $arguments, string $field, array &$errors, string $what): ?array
+    {
+        if (!array_key_exists($field, $arguments)) {
+            return null;
+        }
+        $value = $arguments[$field];
+
+        return self::imageSource(is_array($value) && !array_is_list($value) ? $value : [], $field, $errors, $what);
+    }
+
+    /**
+     * The schema of one image field, worded as the images of the product tools.
+     *
+     * One builder for every tool, so an image is asked for in the same words
+     * wherever it goes.
+     *
+     * @param string $description who fills it and what it is, first
+     * @param string $of the image named in the property descriptions, e.g. "the logo"
+     *
+     * @return array<string, mixed>
+     */
+    protected static function imageSchema(string $description, string $of): array
+    {
+        return [
+            'type' => 'object',
+            'description' => $description . ' Give its url, downloaded by the shop (public https only, no redirect, '
+                . '10 MB at most), or the upload_ref of a file already on the shop - one the merchant attached or '
+                . 'deposited, or an image generated in the built-in assistant. JPEG, PNG, GIF or WebP. Never file content.',
+            'properties' => [
+                'url' => ['type' => 'string', 'description' => 'Public https address of ' . $of . '. Give url or upload_ref, not both.'],
+                'upload_ref' => ['type' => 'string', 'description' => 'Reference of ' . $of . ' already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],
+            ],
+            'additionalProperties' => false,
+        ];
+    }
+
+    /**
      * How an image is named in the answer: its address, or its reference.
      *
      * @param array<string, mixed> $image
@@ -2903,12 +2954,7 @@ class SomcpToolCreateProduct
         }
 
         try {
-            $refusal = ($plan['upload_ref'] ?? '') !== ''
-                ? self::fromDeposit((string) $plan['upload_ref'], $file)
-                : self::download((string) $plan['url'], $file);
-            if ($refusal === '') {
-                $refusal = self::checkImage($file);
-            }
+            $refusal = self::fetchImage(['url' => (string) ($plan['url'] ?? ''), 'upload_ref' => (string) ($plan['upload_ref'] ?? '')], $file);
             if ($refusal !== '') {
                 return 0;
             }
@@ -2947,6 +2993,28 @@ class SomcpToolCreateProduct
         } finally {
             @unlink($file);
         }
+    }
+
+    /**
+     * The bytes of one image, from its address or its upload_ref, checked.
+     *
+     * Every tool that takes an image gets it through here, whatever object it
+     * ends up on: a guard added to the download, the deposit or the image
+     * check then reaches all of them at once, instead of the one tool that
+     * happened to be edited.
+     *
+     * @param array{url: string, upload_ref: string} $source as imageSource() reads it
+     * @param string $target where the file is written
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    protected static function fetchImage(array $source, string $target): string
+    {
+        $refusal = $source['upload_ref'] !== ''
+            ? self::fromDeposit($source['upload_ref'], $target)
+            : self::download($source['url'], $target);
+
+        return $refusal === '' ? self::checkImage($target) : $refusal;
     }
 
     /**

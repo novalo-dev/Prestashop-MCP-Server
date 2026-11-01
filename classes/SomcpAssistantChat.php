@@ -1867,7 +1867,7 @@ class SomcpAssistantChat
         $tools = [];
         $scopes = $this->scopes();
         $idEmployee = (int) $this->employee->id;
-        $offered = array_merge(self::BASE_TOOLS, $this->loaded($thread));
+        $wanted = array_merge(self::BASE_TOOLS, $this->loaded($thread));
 
         $tools[] = new FrontendTool(
             self::FIND_TOOL,
@@ -1882,7 +1882,7 @@ class SomcpAssistantChat
         );
 
         foreach (SomcpToolRegistry::getInstance()->all() as $tool) {
-            if (!in_array($tool->getName(), $offered, true)) {
+            if (!in_array($tool->getName(), $wanted, true)) {
                 continue;
             }
             if (!SomcpToolRegistry::isEnabled($tool->getName()) || !$tool->isAvailableTo($scopes, $idEmployee)) {

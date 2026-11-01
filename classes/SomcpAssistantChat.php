@@ -2151,11 +2151,14 @@ class SomcpAssistantChat
     {
         $sources = [];
         foreach ((array) $message->getMetadata('citations') as $citation) {
-            $url = $citation instanceof Citation ? $citation->source : '';
+            if (!$citation instanceof Citation) {
+                continue;
+            }
+            $url = $citation->source;
             if (!preg_match('#^https?://#i', $url) || isset($sources[$url])) {
                 continue;
             }
-            $title = $citation instanceof Citation ? trim((string) $citation->title) : '';
+            $title = trim((string) $citation->title);
             $sources[$url] = ['url' => $url, 'title' => (string) Tools::substr($title !== '' ? $title : (string) parse_url($url, PHP_URL_HOST), 0, 120)];
         }
 

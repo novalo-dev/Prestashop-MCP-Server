@@ -405,6 +405,13 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
             new NeuronAI\Chat\Messages\Citation('c2', 'javascript:alert(1)', 'Not a page'),
         ])
     ));
+    // An automatic level offers deep thinking once its model is known, as
+    // after a first answer: the model it resolved to is set by hand here,
+    // with a fresh date so nothing asks the provider for it.
+    Db::getInstance()->update('somcp_assistant', [
+        'resolved_model' => 'claude-shop-test',
+        'resolved_at' => date('Y-m-d H:i:s'),
+    ], '`id_assistant` = ' . (int) $idAssistant);
     $thread = $chat->setSwitches($chat->newThread(0), ['think' => true, 'web' => true, 'memory' => false]);
 
     try {

@@ -219,7 +219,7 @@ class SomcpToolUpdateReturnStatus extends SomcpToolCreateReturnStatus
             // language being filled is refused, as at creation.
             $names = self::texts($arguments, 'name', 'name', $languages, $errors, true);
             if ($names !== null) {
-                $plan['given_names'] = self::returnStatusNames($names, $languages, new OrderReturnState(), (int) $status->id, $errors);
+                $plan['given_names'] = self::returnStatusNames($names, $languages, new OrderReturnState(), $errors, (int) $status->id);
             }
         }
 

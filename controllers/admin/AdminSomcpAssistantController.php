@@ -148,6 +148,9 @@ class AdminSomcpAssistantController extends ModuleAdminController
                 break;
             case 'send':
                 $thread = $thread ?? $chat->newThread((int) Tools::getValue('id_assistant'));
+                // The switches travel with every message: set before the first
+                // one, the conversation does not exist yet to keep them.
+                $thread = $chat->setSwitches($thread, self::switches());
                 $this->answer($chat, $chat->send($thread, (string) Tools::getValue('text'), self::uploadedFiles(), (string) Tools::getValue('prompt')));
                 break;
             case 'step':
@@ -164,6 +167,11 @@ class AdminSomcpAssistantController extends ModuleAdminController
             case 'assistant':
                 if ($thread !== null) {
                     $thread = $chat->useAssistant($thread, (int) Tools::getValue('id_assistant'));
+                }
+                break;
+            case 'switches':
+                if ($thread !== null) {
+                    $thread = $chat->setSwitches($thread, self::switches());
                 }
                 break;
             case 'delete':
@@ -229,6 +237,21 @@ class AdminSomcpAssistantController extends ModuleAdminController
     }
 
     /**
+     * The switches of the chat's + menu, as the page sent them. The memory is
+     * on unless switched off, like on a conversation that never set it.
+     *
+     * @return array{think:bool, web:bool, memory:bool}
+     */
+    private static function switches(): array
+    {
+        return [
+            'think' => (string) Tools::getValue('think') === '1',
+            'web' => (string) Tools::getValue('web') === '1',
+            'memory' => (string) Tools::getValue('memory', '1') !== '0',
+        ];
+    }
+
+    /**
      * The files sent with a message, one entry per file, from PHP's
      * upload array that groups them by field instead.
      *
@@ -287,6 +310,9 @@ class AdminSomcpAssistantController extends ModuleAdminController
                 'label' => (string) $assistant['label'],
                 'role' => (string) $assistant['role'],
                 'default' => (bool) $assistant['is_default'],
+                // What the + menu may offer before a conversation exists.
+                'think' => SomcpAssistant::thinking($assistant) !== '',
+                'web' => SomcpAssistant::searches($assistant),
             ];
         }
 
@@ -299,6 +325,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
             // whether a new conversation starts by picking one of them.
             'shops' => Shop::isFeatureActive() ? SomcpAssistantChat::describeShops($this->chatShops) : [],
             'pick_shop' => $this->picksShop,
+            'memory' => $chat->memoryOn(),
         ]);
     }
 }

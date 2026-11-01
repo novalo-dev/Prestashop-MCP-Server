@@ -77,8 +77,18 @@
         copy: ['M9 9h12v12H9z', 'M5 15V5a2 2 0 0 1 2-2h10'],
         chevron: ['M6 9l6 6 6-6'],
         shop: ['M3 9l1.5-5h15L21 9', 'M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z', 'M5 13v7h14v-7'],
-        clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 1 0 0 18z', 'M12 7v5l3 2']
+        clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 1 0 0 18z', 'M12 7v5l3 2'],
+        globe: ['M12 21a9 9 0 1 0 0-18 9 9 0 1 0 0 18z', 'M3 12h18', 'M12 3a14 14 0 0 1 0 18', 'M12 3a14 14 0 0 0 0 18'],
+        brain: ['M12 4a3 3 0 0 0-3 3 3 3 0 0 0-3 3c0 1 .4 1.8 1 2.4A3 3 0 0 0 9 18a3 3 0 0 0 3 2', 'M12 4a3 3 0 0 1 3 3 3 3 0 0 1 3 3c0 1-.4 1.8-1 2.4A3 3 0 0 1 15 18a3 3 0 0 1-3 2', 'M12 4v16']
     };
+    // The switches of the + menu, in their order. A pill under the field
+    // shows each one set away from how a conversation starts: thinking and
+    // search start off, the memory on.
+    var SWITCHES = [
+        { key: 'think', icon: 'bulb', start: false },
+        { key: 'web', icon: 'globe', start: false },
+        { key: 'memory', icon: 'brain', start: true }
+    ];
     var MAX_SUGGESTIONS = 4;
     var MAX_STEPS = 30;
     // A move still running on the server - from before a reload, or in another
@@ -96,7 +106,8 @@
     // latest background check; a reply to an older one is stale.
     var state = {
         view: null, threads: [], assistants: [], prompts: [], shops: [], pickShop: false, verb: 0, query: '', busy: false, steps: 0, waits: 0,
-        shown: '', ticket: 0, round: 0, left: {}, unread: {}, watches: 0, drawn: '', openings: {}
+        shown: '', ticket: 0, round: 0, left: {}, unread: {}, watches: 0, drawn: '', openings: {},
+        memory: false, switches: startSwitches(), switchesOf: ''
     };
     var panel;
     var body;
@@ -115,6 +126,16 @@
     var spendBar;
     var spendText;
     var pending = [];
+    var switchRows = {};
+    var switchList;
+
+    function startSwitches() {
+        var set = {};
+        SWITCHES.forEach(function (one) {
+            set[one.key] = one.start;
+        });
+        return set;
+    }
 
     function el(tag, className, content) {
         var node = document.createElement(tag);
@@ -361,6 +382,19 @@
     function absorb(json) {
         state.view = json.view;
         state.shown = state.view ? state.view.thread_id : '';
+        // Taken from the server when another conversation comes on screen
+        // only: a switch flipped while an answer is coming is not undone by
+        // that answer, and goes with the next message.
+        var opened = state.view && state.view.thread_id ? state.view.thread_id : '';
+        if (opened !== state.switchesOf) {
+            state.switchesOf = opened;
+            state.switches = startSwitches();
+            SWITCHES.forEach(function (one) {
+                if (opened && state.view.switches && one.key in state.view.switches) {
+                    state.switches[one.key] = !!state.view.switches[one.key];
+                }
+            });
+        }
         delete state.unread[state.shown];
         delete state.left[state.shown];
         list(json);
@@ -376,6 +410,75 @@
         state.prompts = json.prompts || state.prompts;
         state.shops = json.shops || [];
         state.pickShop = !!json.pick_shop;
+        state.memory = !!json.memory;
+    }
+
+    // What the assistant of the conversation on screen can honour: the
+    // server says for an open conversation, and the list of assistants
+    // tells for one not started yet.
+    function capable() {
+        var view = state.view;
+        if (view && view.thread_id && view.can) {
+            return view.can;
+        }
+        var picked = Number(picker ? picker.value : 0);
+        var assistant = null;
+        state.assistants.forEach(function (one) {
+            if ((picked && one.id === picked) || (!picked && !assistant && one.default)) {
+                assistant = one;
+            }
+        });
+        assistant = assistant || (picked ? null : state.assistants[0]) || {};
+        return { think: !!assistant.think, web: !!assistant.web, memory: state.memory };
+    }
+
+    function switchData(data) {
+        SWITCHES.forEach(function (one) {
+            data[one.key] = state.switches[one.key] ? '1' : '0';
+        });
+        return data;
+    }
+
+    // Flips a switch, and keeps it on the conversation at once when there is
+    // one and nothing is on its way; otherwise it goes with the next message.
+    function flip(key) {
+        state.switches[key] = !state.switches[key];
+        drawSwitches();
+        if (state.view && state.view.thread_id && !state.busy) {
+            run('switches', switchData(threadData()));
+        }
+    }
+
+    // The rows of the + menu for what this assistant can do, and a pill under
+    // the field for each switch set away from how a conversation starts.
+    function drawSwitches() {
+        if (!switchList) {
+            return;
+        }
+        var can = capable();
+        var any = false;
+        switchList.innerHTML = '';
+        SWITCHES.forEach(function (one) {
+            var row = switchRows[one.key];
+            var on = !!state.switches[one.key];
+            row.hidden = !can[one.key];
+            row.setAttribute('aria-checked', on ? 'true' : 'false');
+            any = any || !row.hidden;
+            if (!can[one.key] || on === one.start) {
+                return;
+            }
+            var pill = el('span', 'somcp-switch-pill');
+            pill.appendChild(icon(one.icon, 14));
+            pill.appendChild(el('span', '', text[one.key + 'Pill']));
+            var undo = iconButton('close', text.removeSwitch.replace('%name%', text[one.key + 'Pill']));
+            undo.addEventListener('click', function () {
+                flip(one.key);
+            });
+            pill.appendChild(undo);
+            switchList.appendChild(pill);
+        });
+        switchRows.think.previousSibling.hidden = !any;
+        switchList.hidden = !switchList.childNodes.length;
     }
 
     function shopOf(idShop) {
@@ -569,6 +672,9 @@
         }
         if (message.role === 'tools') {
             var wrap = document.createDocumentFragment();
+            if (message.reasoning) {
+                wrap.appendChild(drawReasoning(message.reasoning));
+            }
             if (message.text) {
                 var said = el('div', 'somcp-msg somcp-msg-assistant');
                 said.innerHTML = markdown(message.text);
@@ -594,6 +700,9 @@
 
         var node = el('div', 'somcp-msg ' + (message.role === 'user' ? 'somcp-msg-user' : 'somcp-msg-assistant'));
         node.innerHTML = markdown(message.text || '');
+        if (message.sources && message.sources.length) {
+            node.appendChild(drawSources(message.sources));
+        }
         (message.images || []).forEach(function (image) {
             node.appendChild(drawImage(image));
         });
@@ -603,6 +712,53 @@
             file.appendChild(el('span', '', name));
             node.appendChild(file);
         });
+        if (message.reasoning) {
+            var both = document.createDocumentFragment();
+            both.appendChild(drawReasoning(message.reasoning));
+            both.appendChild(node);
+            addCopy(node, message);
+            return both;
+        }
+        addCopy(node, message);
+        return node;
+    }
+
+    // What the model thought before answering, folded: it is there to be
+    // checked, not read every time.
+    function drawReasoning(reasoning) {
+        var fold = el('details', 'somcp-reasoning');
+        var head = el('summary');
+        head.appendChild(icon('bulb', 16));
+        head.appendChild(el('span', '', text.thought));
+        fold.appendChild(head);
+        var said = el('div', 'somcp-reasoning-text');
+        said.innerHTML = markdown(reasoning);
+        fold.appendChild(said);
+        return fold;
+    }
+
+    // The web pages an answer rests on, as links built from attributes, never
+    // from HTML: their titles come from whoever runs those sites.
+    function drawSources(sources) {
+        var row = el('div', 'somcp-sources');
+        row.appendChild(el('span', 'somcp-sources-label', text.sources));
+        sources.forEach(function (source) {
+            if (!/^https?:\/\//i.test(source.url)) {
+                return;
+            }
+            var link = el('a', 'somcp-source');
+            link.href = source.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer nofollow';
+            link.title = source.url;
+            link.appendChild(icon('globe', 12));
+            link.appendChild(el('span', '', source.title || source.url));
+            row.appendChild(link);
+        });
+        return row;
+    }
+
+    function addCopy(node, message) {
         if (message.role === 'assistant' && message.text && navigator.clipboard) {
             var copy = iconButton('copy', text.copy, 'somcp-copy');
             copy.addEventListener('click', function () {
@@ -616,7 +772,6 @@
             });
             node.appendChild(copy);
         }
-        return node;
     }
 
     // An image a provider generated: inline bytes in the message, or a signed
@@ -762,6 +917,7 @@
         drawShopBadge(view);
         drawPending();
         drawPrompts();
+        drawSwitches();
 
         // The picker and the list are rebuilt only when they changed too: a
         // menu rebuilt under the pointer closes, and a click on a row being
@@ -1145,6 +1301,8 @@
                 leave();
                 state.view = null;
                 state.shown = '';
+                state.switchesOf = '';
+                state.switches = startSwitches();
                 remember('');
                 render();
                 return;
@@ -1233,6 +1391,25 @@
         var promptsLabel = el('div', 'somcp-addmenu-label', text.prompts);
         promptList = el('div', 'somcp-addmenu-prompts');
         addMenu.appendChild(files);
+        // The switches come before the prompts: the prompt list scrolls, and
+        // a switch below it would be out of sight.
+        addMenu.appendChild(el('div', 'somcp-addmenu-rule'));
+        SWITCHES.forEach(function (one) {
+            var row = el('button', 'somcp-addmenu-item somcp-addmenu-switch');
+            row.type = 'button';
+            row.setAttribute('role', 'menuitemcheckbox');
+            row.appendChild(icon(one.icon));
+            var words = el('span', 'somcp-addmenu-words');
+            words.appendChild(el('span', '', text[one.key]));
+            words.appendChild(el('small', '', text[one.key + 'Hint']));
+            row.appendChild(words);
+            row.appendChild(el('span', 'somcp-toggle'));
+            row.addEventListener('click', function () {
+                flip(one.key);
+            });
+            switchRows[one.key] = row;
+            addMenu.appendChild(row);
+        });
         addMenu.appendChild(promptsLabel);
         addMenu.appendChild(promptList);
 
@@ -1253,6 +1430,9 @@
         picker.addEventListener('change', function () {
             if (state.view && state.view.thread_id) {
                 run('assistant', threadData({ id_assistant: picker.value }));
+            } else {
+                // Not started yet: the menu follows the assistant picked.
+                drawSwitches();
             }
         });
         sendButton = el('button', 'somcp-send');
@@ -1265,9 +1445,12 @@
         actions.appendChild(el('span', 'somcp-composer-gap'));
         actions.appendChild(fileInput);
         actions.appendChild(sendButton);
+        switchList = el('div', 'somcp-chat-switches');
+        switchList.hidden = true;
         form.appendChild(addMenu);
         form.appendChild(fileList);
         form.appendChild(input);
+        form.appendChild(switchList);
         form.appendChild(actions);
         form.addEventListener('submit', function (event) {
             event.preventDefault();
@@ -1359,7 +1542,7 @@
         grow();
         state.view = state.view || { thread_id: '', id_assistant: Number(picker.value), messages: [], status: 'idle', actions: [], tokens: 0, token_cap: 0, spent: 0 };
         state.view.messages.push({ role: 'user', text: message, files: files.map(function (file) { return file.name; }) });
-        var data = { text: message, id_assistant: picker.value, files: files };
+        var data = switchData({ text: message, id_assistant: picker.value, files: files });
         if (prompt) {
             data.prompt = prompt.name;
         }

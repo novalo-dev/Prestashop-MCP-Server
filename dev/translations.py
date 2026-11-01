@@ -1955,6 +1955,50 @@ T = {
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",
  "Open Source unter der Lizenz AFL-3.0"),
+"Deep thinking": (
+ "Réflexion approfondie",
+ "Razonamiento profundo",
+ "Gründliches Nachdenken"),
+"Slower, uses more tokens": (
+ "Plus lent, plus de tokens",
+ "Más lento, usa más tokens",
+ "Langsamer, mehr Tokens"),
+"Thinking": (
+ "Réflexion",
+ "Razonamiento",
+ "Nachdenken"),
+"Web search": (
+ "Recherche en ligne",
+ "Búsqueda en la web",
+ "Websuche"),
+"Web pages cited as sources": (
+ "Pages web citées en source",
+ "Páginas web citadas como fuente",
+ "Webseiten als Quellen zitiert"),
+"Remember this conversation": (
+ "Retenir cette conversation",
+ "Recordar esta conversación",
+ "Diese Unterhaltung merken"),
+"No memory": (
+ "Sans mémoire",
+ "Sin memoria",
+ "Ohne Gedächtnis"),
+"Remove %name%": (
+ "Retirer %name%",
+ "Quitar %name%",
+ "%name% entfernen"),
+"Thought it through": (
+ "A réfléchi",
+ "Lo ha pensado",
+ "Hat nachgedacht"),
+"Sources": (
+ "Sources",
+ "Fuentes",
+ "Quellen"),
+"The assistant could not answer with web search on. Turn it off in the + menu, or allow web search for this key in the provider's console.": (
+ "L'assistant n'a pas pu répondre avec la recherche en ligne. Désactivez-la dans le menu +, ou autorisez la recherche web pour cette clé dans la console du fournisseur.",
+ "El asistente no ha podido responder con la búsqueda en la web activada. Desactívela en el menú +, o permita la búsqueda web para esta clave en la consola del proveedor.",
+ "Der Assistent konnte mit aktivierter Websuche nicht antworten. Schalten Sie sie im Menü + aus oder erlauben Sie die Websuche für diesen Schlüssel in der Konsole des Anbieters."),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

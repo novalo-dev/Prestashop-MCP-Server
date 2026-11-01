@@ -497,6 +497,18 @@ class Somcp extends Module
                 'chooseShopHint' => $this->l10n('The conversation stays tied to the shop you pick.'),
                 'pickShop' => $this->l10n('Choose a shop to start'),
                 'conversationFor' => $this->l10n('This conversation is for the shop %shop%'),
+                'think' => $this->l10n('Deep thinking'),
+                'thinkHint' => $this->l10n('Slower, uses more tokens'),
+                'thinkPill' => $this->l10n('Thinking'),
+                'web' => $this->l10n('Web search'),
+                'webHint' => $this->l10n('Web pages cited as sources'),
+                'webPill' => $this->l10n('Web search'),
+                'memory' => $this->l10n('Memory'),
+                'memoryHint' => $this->l10n('Remember this conversation'),
+                'memoryPill' => $this->l10n('No memory'),
+                'removeSwitch' => $this->l10n('Remove %name%'),
+                'thought' => $this->l10n('Thought it through'),
+                'sources' => $this->l10n('Sources'),
             ],
         ];
 

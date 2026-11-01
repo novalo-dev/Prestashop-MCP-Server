@@ -41,6 +41,25 @@ function upgrade_module_1_2_0($module)
         }
     }
 
+    // The chat's + menu switches deep thinking, web search and the memory for
+    // one conversation, and the conversation keeps them: an existing one
+    // starts as it ran before, without thinking or search and with memory.
+    $thread = _DB_PREFIX_ . 'somcp_assistant_thread';
+    $threadTable = $db->executeS('SHOW TABLES LIKE "' . pSQL($thread) . '"');
+    if (is_array($threadTable) && $threadTable !== []) {
+        $switches = [
+            'think' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `memory_last`',
+            'web_search' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `think`',
+            'memory' => 'TINYINT(1) NOT NULL DEFAULT 1 AFTER `web_search`',
+        ];
+        foreach ($switches as $name => $definition) {
+            $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($thread) . '` LIKE "' . pSQL($name) . '"');
+            if (!is_array($column) || $column === []) {
+                $db->execute('ALTER TABLE `' . bqSQL($thread) . '` ADD `' . bqSQL($name) . '` ' . $definition);
+            }
+        }
+    }
+
     // The monthly cap was an estimate in US dollars; it is now counted in the
     // tokens the providers report. A cap a merchant set is kept, converted at
     // the highest output price among their assistants, so it is never looser

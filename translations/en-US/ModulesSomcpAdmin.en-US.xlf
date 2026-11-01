@@ -2467,6 +2467,61 @@
       <source>Open source under the AFL-3.0 licence</source>
       <target>Open source under the AFL-3.0 licence</target>
     </trans-unit>
+    <!-- Deep thinking -->
+    <trans-unit id="fe9afb3b6a3ac6d531d45ff7284030a9" resname="Deep thinking">
+      <source>Deep thinking</source>
+      <target>Deep thinking</target>
+    </trans-unit>
+    <!-- Slower, uses more tokens -->
+    <trans-unit id="9edd7d78127eaed0504499ba675680e3" resname="Slower, uses more tokens">
+      <source>Slower, uses more tokens</source>
+      <target>Slower, uses more tokens</target>
+    </trans-unit>
+    <!-- Thinking -->
+    <trans-unit id="e067b6f4f09910ce519d4a9e1a76b1d6" resname="Thinking">
+      <source>Thinking</source>
+      <target>Thinking</target>
+    </trans-unit>
+    <!-- Web search -->
+    <trans-unit id="156671b5029edc9e86fbd2c55bb8f74d" resname="Web search">
+      <source>Web search</source>
+      <target>Web search</target>
+    </trans-unit>
+    <!-- Web pages cited as sources -->
+    <trans-unit id="c2efbe7e482296106678ca8accedd50d" resname="Web pages cited as sources">
+      <source>Web pages cited as sources</source>
+      <target>Web pages cited as sources</target>
+    </trans-unit>
+    <!-- Remember this conversation -->
+    <trans-unit id="b3264d0825f9938cf2893dbda8641ceb" resname="Remember this conversation">
+      <source>Remember this conversation</source>
+      <target>Remember this conversation</target>
+    </trans-unit>
+    <!-- No memory -->
+    <trans-unit id="b2651b1f2dbac6837d9207b4bd8fb630" resname="No memory">
+      <source>No memory</source>
+      <target>No memory</target>
+    </trans-unit>
+    <!-- Remove %name% -->
+    <trans-unit id="f4ca04f2b913cdb28cf2ffdc8df9d259" resname="Remove %name%">
+      <source>Remove %name%</source>
+      <target>Remove %name%</target>
+    </trans-unit>
+    <!-- Thought it through -->
+    <trans-unit id="e670c4eac78ad7f4f18042264bcff3a0" resname="Thought it through">
+      <source>Thought it through</source>
+      <target>Thought it through</target>
+    </trans-unit>
+    <!-- Sources -->
+    <trans-unit id="fb61758d0f0fda4ba867c3d5a46c16a7" resname="Sources">
+      <source>Sources</source>
+      <target>Sources</target>
+    </trans-unit>
+    <!-- The assistant could not answer with web search on. Turn it off in the + menu, or allow web search for this key in the provider's console. -->
+    <trans-unit id="3647b96343b7ff9dd095b06c02791ea8" resname="The assistant could not answer with web search on. Turn it off in the + menu, or allow web search for this key in the provider&#x27;s console.">
+      <source>The assistant could not answer with web search on. Turn it off in the + menu, or allow web search for this key in the provider's console.</source>
+      <target>The assistant could not answer with web search on. Turn it off in the + menu, or allow web search for this key in the provider's console.</target>
+    </trans-unit>
     </body>
   </file>
 </xliff>

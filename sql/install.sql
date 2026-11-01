@@ -246,7 +246,8 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_usage` (
 -- somcp_assistant_thread - one row per conversation, and who it belongs to.
 -- The framework behind the chat keys everything by thread id and checks no
 -- ownership itself, so an employee only ever reaches a thread listed here
--- under their own id.
+-- under their own id. The switches of the chat's + menu are kept here too, so
+-- a conversation reopened later goes on as it was set.
 CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_thread` (
     `id_thread`      INT(11)      NOT NULL AUTO_INCREMENT,
     `thread_id`      VARCHAR(64)  NOT NULL,
@@ -256,6 +257,9 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_thread` (
     `title`          VARCHAR(255) NOT NULL DEFAULT '',
     `files`          TEXT         NULL COMMENT 'images generated in the conversation, JSON: name and upload reference',
     `memory_last`    VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'id of the last message written to the long-term memory',
+    `think`          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'deep thinking asked for this conversation',
+    `web_search`     TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'web search allowed in this conversation',
+    `memory`         TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '0 when the employee switched the memory off for this conversation',
     `busy_until`     DATETIME     NULL DEFAULT NULL COMMENT 'set while a move runs on the conversation, so a reload or a second tab does not start it twice',
     `pending`        TEXT         NULL COMMENT 'the message being answered, JSON: text and file names, shown until the framework has stored it',
     `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

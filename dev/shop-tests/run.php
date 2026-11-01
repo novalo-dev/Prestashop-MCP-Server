@@ -390,6 +390,48 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
 
     $chat->deleteThread($thread);
     SomcpAssistant::delete($idPainter);
+
+    // The switches of the + menu: kept on the conversation, offered as the
+    // model allows, and with thinking and web search on, the thoughts and
+    // the cited pages reach the chat - a page that is no web address does not.
+    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+        (new NeuronAI\Chat\Messages\AssistantMessage([
+            new NeuronAI\Chat\Messages\ContentBlocks\ReasoningContent('Compare the prices first.'),
+            new NeuronAI\Chat\Messages\ContentBlocks\TextContent('Your mugs cost '),
+            new NeuronAI\Chat\Messages\ContentBlocks\TextContent('2 euros more'),
+            new NeuronAI\Chat\Messages\ContentBlocks\TextContent('.'),
+        ]))->addMetadata('citations', [
+            new NeuronAI\Chat\Messages\Citation('c1', 'https://example.com/mugs', 'Mugs'),
+            new NeuronAI\Chat\Messages\Citation('c2', 'javascript:alert(1)', 'Not a page'),
+        ])
+    ));
+    $thread = $chat->setSwitches($chat->newThread(0), ['think' => true, 'web' => true, 'memory' => false]);
+
+    try {
+        $view = $chat->send($thread, 'Are my mugs too expensive?');
+        $expect($view, 'idle', 'an answer with thinking and web search');
+        ++$assistantChecks;
+        if ($view['switches'] !== ['think' => true, 'web' => true, 'memory' => false]) {
+            $failures[] = 'assistant: the switches were not kept on the conversation';
+        }
+        ++$assistantChecks;
+        if (!$view['can']['think'] || !$view['can']['web']) {
+            $failures[] = 'assistant: thinking and web search are not offered for Claude';
+        }
+        $last = end($view['messages']);
+        ++$assistantChecks;
+        if (!is_array($last) || ($last['reasoning'] ?? '') !== 'Compare the prices first.' || $last['text'] !== 'Your mugs cost 2 euros more.') {
+            $failures[] = 'assistant: the thinking or the cited answer is not drawn as sent';
+        }
+        ++$assistantChecks;
+        if (!is_array($last) || ($last['sources'] ?? null) !== [['url' => 'https://example.com/mugs', 'title' => 'Mugs']]) {
+            $failures[] = 'assistant: the sources are not the cited web pages alone';
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+
+    $chat->deleteThread($thread);
     SomcpAssistant::delete($idAssistant);
     SomcpAssistantChat::overrideProvider(null);
 }

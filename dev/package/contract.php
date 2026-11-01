@@ -46,7 +46,9 @@ $methods = [
     'NeuronAI\Chat\Messages\ToolCallMessage' => ['getToolCalls'],
     'NeuronAI\Tools\FrontendTool' => ['requireApproval', 'getInputSchema'],
     'NeuronAI\Tools\ToolCall' => ['getName', 'getCallId', 'getInputs', 'getApprovalState', 'hasResult', 'getResult'],
-    'NeuronAI\Chat\Messages\Message' => ['getContent', 'getUsage', 'getContentBlocks'],
+    'NeuronAI\Chat\Messages\Message' => ['getContent', 'getUsage', 'getContentBlocks', 'getTextBlocks', 'getMetadata'],
+    // Web search and deep thinking.
+    'NeuronAI\Tools\ProviderTool' => ['make'],
     'NeuronAI\Workflow\Persistence\DatabasePersistence' => ['get'],
     // The memory.
     'NeuronAI\RAG\RAG' => ['make', 'setRetrieval'],
@@ -59,9 +61,10 @@ $methods = [
 
 // Constructor parameters by position, as the assistant passes them.
 $constructors = [
-    'NeuronAI\Providers\Anthropic\Anthropic' => ['key', 'model', 'version', 'max_tokens'],
-    'NeuronAI\Providers\OpenAI\OpenAI' => ['key', 'model'],
-    'NeuronAI\Providers\Gemini\Gemini' => ['key', 'model'],
+    'NeuronAI\Providers\Anthropic\Anthropic' => ['key', 'model', 'version', 'max_tokens', 'parameters'],
+    'NeuronAI\Providers\OpenAI\OpenAI' => ['key', 'model', 'parameters'],
+    'NeuronAI\Providers\Gemini\Gemini' => ['key', 'model', 'parameters'],
+    'NeuronAI\Tools\ProviderTool' => ['type', 'name', 'options'],
     'NeuronAI\Providers\Mistral\Mistral' => ['key', 'model'],
     'NeuronAI\Providers\Deepseek\Deepseek' => ['key', 'model'],
     'NeuronAI\Providers\XAI\Grok' => ['key', 'model'],
@@ -88,7 +91,8 @@ $constructors = [
 $properties = [
     'NeuronAI\Workflow\WorkflowRunSnapshot' => ['interrupt'],
     'NeuronAI\Agent\Interrupt\Action' => ['id', 'name', 'inputs'],
-    'NeuronAI\Chat\Messages\Usage' => ['inputTokens', 'outputTokens'],
+    'NeuronAI\Chat\Messages\Usage' => ['inputTokens', 'outputTokens', 'reasoningTokens'],
+    'NeuronAI\Chat\Messages\Citation' => ['source', 'title'],
     'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
 ];
 
@@ -98,6 +102,7 @@ $classes = [
     'NeuronAI\Chat\Messages\ToolResultMessage',
     'NeuronAI\Tools\ApprovalState',
     'NeuronAI\Chat\Enums\SourceType',
+    'NeuronAI\Chat\Messages\ContentBlocks\ReasoningContent',
 ];
 
 $problems = [];

@@ -635,6 +635,69 @@ class SomcpAssistant
     }
 
     /**
+     * How this assistant's model takes a request to think longer, or '' when
+     * it cannot: each provider has its own switch, and a model offered a
+     * switch it does not know refuses the whole request.
+     *
+     * Read from the model last used, without asking the provider: the chat
+     * calls this to draw its menu. A model not resolved yet offers nothing
+     * until its first answer.
+     *
+     * @param array<string, mixed> $assistant
+     *
+     * @return string adaptive or budget (Anthropic), level or budget (Gemini), effort (OpenAI), or ''
+     */
+    public static function thinking(array $assistant): string
+    {
+        $model = (string) ($assistant['model'] !== '' ? $assistant['model'] : $assistant['resolved_model']);
+        switch ($assistant['provider']) {
+            case 'anthropic':
+                // Claude 3.7 and 4.0 to 4.5 take a token budget; from 4.6 on
+                // the model decides how far to think, and the newest refuse a
+                // budget. Older Claude 3 models do not think at all.
+                if (preg_match('/^claude-3-(?!7)/', $model)) {
+                    return '';
+                }
+                if (preg_match('/^claude-(3-7|(opus|sonnet|haiku)-4-[15](-|$)|(opus|sonnet)-4-\d{8})/', $model)) {
+                    return 'budget';
+                }
+
+                return $model !== '' ? 'adaptive' : '';
+            case 'gemini':
+                // Gemini 2.5 takes a budget, Gemini 3 and later a level; 2.0
+                // and older do not think.
+                if (preg_match('/^gemini-2\.5/', $model)) {
+                    return 'budget';
+                }
+
+                return preg_match('/^gemini-([3-9]|\d{2})/', $model) ? 'level' : '';
+            case 'openai':
+                // Only the reasoning models accept an effort; the chat variant
+                // of GPT-5 is not one.
+                return preg_match('/^(o\d|gpt-5)/', $model) && strpos($model, '-chat') === false ? 'effort' : '';
+            default:
+                return '';
+        }
+    }
+
+    /**
+     * Whether this assistant can search the web on its own, with the key it
+     * already has.
+     *
+     * Only Claude does, for now: Gemini searches only when no function tool is
+     * offered with it, and the chat always offers the shop's tools; OpenAI
+     * searches only through another of its APIs.
+     *
+     * @param array<string, mixed> $assistant
+     *
+     * @return bool
+     */
+    public static function searches(array $assistant): bool
+    {
+        return $assistant['provider'] === 'anthropic';
+    }
+
+    /**
      * Checks a key by asking the provider for its models, the cheapest call
      * every provider offers and one that costs nothing.
      *

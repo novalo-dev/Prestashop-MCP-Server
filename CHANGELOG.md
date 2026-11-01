@@ -16,6 +16,24 @@ are:
 
 ## 1.2.0 - 2026-11-01
 
+### Added
+
+**Deep thinking, web search and memory, switched per conversation.** The
+**+** menu of the built-in assistant now has switches for the conversation
+you are in. **Deep thinking** asks the assistant to think longer before
+answering, for Claude, Gemini and OpenAI's reasoning models; it is slower and
+uses more tokens, and what the assistant thought can be unfolded above its
+answer. **Web search** lets Claude look things up on the web with the key it
+already has, and the pages it used are listed under the answer; each search
+is billed by Anthropic on top of the tokens, and web search must be allowed
+in your Anthropic console. **Memory**, offered when the memory is switched on
+in the module settings, can be switched off for one conversation: the
+assistant then works from that conversation alone, and nothing said in it is
+added to the memory - what was remembered before stays. A switch only shows
+when the assistant can use it, and one set away from how a conversation
+starts shows as a pill under the field, with a cross to undo it. The
+conversation keeps its switches when you come back to it.
+
 ### Changed
 
 **A new look for the built-in assistant.** The chat now looks like the AI
@@ -74,6 +92,11 @@ the time an answer needs where the host allows it, stops waiting for the AI
 service before the shop stops the page, and reports a slow answer as an error
 you can retry. While an earlier step still holds a conversation, the chat says
 so and waits, and the conversation is freed after five minutes instead of ten.
+
+**Gemini's thinking now counts toward the monthly cap.** Gemini reports the
+tokens it spends thinking apart from its answer, and bills them as output;
+the built-in assistant left them out of the month's count, so a Gemini
+assistant used more than the chat showed. They are counted now.
 
 ## 1.1.3 - 2026-11-01
 

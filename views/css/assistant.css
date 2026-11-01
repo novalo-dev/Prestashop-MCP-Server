@@ -1210,3 +1210,164 @@
     color: var(--somcp-muted);
     font-size: 11px;
 }
+
+/* The switches of the + menu: a row per switch with a toggle at its end. */
+#somcp-chat .somcp-addmenu-rule {
+    height: 1px;
+    margin: 4px 6px;
+    background: #eef0f3;
+}
+
+#somcp-chat .somcp-addmenu-rule[hidden],
+#somcp-chat .somcp-addmenu-switch[hidden],
+#somcp-chat .somcp-chat-switches[hidden] {
+    display: none;
+}
+
+#somcp-chat .somcp-addmenu-switch {
+    min-height: 52px;
+    padding: 8px 10px;
+}
+
+#somcp-chat .somcp-addmenu-words {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#somcp-chat .somcp-addmenu-words span {
+    flex: none;
+}
+
+#somcp-chat .somcp-addmenu-item .somcp-toggle {
+    position: relative;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    background: #d5d9e0;
+    transition: background-color 0.15s;
+}
+
+#somcp-chat .somcp-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.2);
+    transition: left 0.15s;
+}
+
+#somcp-chat .somcp-addmenu-switch[aria-checked="true"] .somcp-toggle {
+    background: var(--somcp-accent);
+}
+
+#somcp-chat .somcp-addmenu-switch[aria-checked="true"] .somcp-toggle::after {
+    left: 18px;
+}
+
+/* A switch set away from how a conversation starts, under the field. */
+#somcp-chat .somcp-chat-switches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 0 8px;
+}
+
+#somcp-chat .somcp-switch-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 2px 0 10px;
+    border-radius: 999px;
+    background: #eef2fd;
+    color: #1e3fb0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#somcp-chat .somcp-switch-pill button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-switch-pill button .somcp-icon {
+    width: 12px;
+    height: 12px;
+}
+
+/* What the model thought, folded above its answer. */
+#somcp-chat .somcp-reasoning {
+    align-self: stretch;
+    border: 1px solid var(--somcp-line);
+    border-radius: 12px;
+    color: var(--somcp-muted);
+    font-size: 13px;
+}
+
+#somcp-chat .somcp-reasoning summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    cursor: pointer;
+    list-style: none;
+}
+
+#somcp-chat .somcp-reasoning summary::-webkit-details-marker {
+    display: none;
+}
+
+#somcp-chat .somcp-reasoning-text {
+    padding: 0 12px 10px;
+    line-height: 1.5;
+}
+
+/* The web pages an answer cites. */
+#somcp-chat .somcp-sources {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+#somcp-chat .somcp-sources-label {
+    color: var(--somcp-muted);
+    font-size: 12px;
+}
+
+#somcp-chat .somcp-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 220px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #f1f3f6;
+    color: var(--somcp-ink);
+    font-size: 12px;
+    text-decoration: none;
+}
+
+#somcp-chat .somcp-source span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

@@ -353,6 +353,7 @@ public function hookActionSomcpRegisterPrompts(array $params): array
 | `scopes`, `permission` | no | Same as a tool. A merchant who may not use the tools does not see the prompt. |
 | `tools` | no | Published names of the tools the guide talks about, shown in the somcp settings. |
 | `arguments` | no | Fields the merchant can fill in: `name` (`[A-Za-z0-9_-]`, unique), `description` (translated), `required` (default `false`). |
+| `icon` | no | Name of the icon the built-in chat draws beside the prompt: `chart`, `search`, `truck`, `tag`, `box`, `person`, `page`, `rank`, `plug`, `puzzle`, `menu`, `refresh`, `bulb`, `cart` or `spark`. Any other name shows the chat's default icon. |
 
 ### Arguments are appended, never substituted
 

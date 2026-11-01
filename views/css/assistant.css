@@ -15,8 +15,9 @@
  */
 
 /* The chat of the built-in assistant. PrestaShop has no chat component, so
-   this one is drawn here, in the back office primary colour. Every rule is
-   scoped to the chat's own ids so nothing leaks onto the page around it. */
+   this one is drawn here, laid out like the chat apps employees already use:
+   a white panel, one accent colour, line icons. Every rule is scoped to the
+   chat's own ids so nothing leaks onto the page around it. */
 
 /* The header link, printed by the displayBackOfficeTop hook: drawn like
    "View my shop" beside it, in that link's colour and icon size, and with its
@@ -85,103 +86,121 @@
 }
 
 #somcp-chat {
+    /* One accent for every action of the chat; the rest is greys that keep
+       a 4.5:1 contrast on white. */
+    --somcp-accent: #2f5bea;
+    --somcp-accent-dark: #1e3fb0;
+    --somcp-ink: #1d1f23;
+    --somcp-muted: #5b616b;
+    --somcp-line: #e3e6eb;
+    --somcp-soft: #f6f7f9;
     position: fixed;
     top: 64px;
     right: 22px;
     z-index: 10001;
     display: flex;
     flex-direction: column;
-    width: 600px;
+    width: 440px;
     max-width: calc(100vw - 32px);
     height: calc(100vh - 90px);
-    max-height: 760px;
+    max-height: 780px;
     overflow: hidden;
-    border-radius: 12px;
+    border: 1px solid var(--somcp-line);
+    border-radius: 16px;
     background: #fff;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-    font-size: 13px;
-    color: #363a41;
+    box-shadow: 0 16px 48px rgba(16, 24, 40, 0.18);
+    font-size: 14px;
+    color: var(--somcp-ink);
 }
 
 #somcp-chat[hidden] {
     display: none;
 }
 
+#somcp-chat.somcp-chat-wide {
+    width: 860px;
+    max-height: none;
+}
+
+#somcp-chat .somcp-icon {
+    flex: 0 0 auto;
+    display: block;
+}
+
+#somcp-chat button {
+    font: inherit;
+}
+
+#somcp-chat button:focus-visible,
+#somcp-chat select:focus-visible,
+#somcp-chat input:focus-visible {
+    outline: 2px solid var(--somcp-accent);
+    outline-offset: 2px;
+}
+
+/* Header: the conversations, the name, and the panel's own buttons. */
 #somcp-chat .somcp-chat-head {
     display: flex;
     align-items: center;
+    gap: 4px;
+    min-height: 56px;
+    padding: 0 10px;
+    border-bottom: 1px solid #eef0f3;
+    background: #fff;
+}
+
+#somcp-chat .somcp-chat-who {
+    display: flex;
+    flex: 1;
+    align-items: center;
     gap: 8px;
-    padding: 10px 12px;
-    background: #25b9d7;
-    color: #fff;
+    min-width: 0;
+    padding-left: 4px;
 }
 
-#somcp-chat .somcp-chat-head b {
-    display: block;
-    font-size: 14px;
-}
-
-#somcp-chat .somcp-chat-head small {
-    display: block;
-    opacity: 0.9;
-    font-size: 10px;
+#somcp-chat .somcp-chat-who b {
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 600;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-#somcp-chat .somcp-chat-head .somcp-chat-who {
-    flex: 1;
-    min-width: 0;
-}
-
-/* !important against the back office's own select styles, which paint
-   every select white and left the chosen assistant white on white. */
-#somcp-chat .somcp-chat-head select {
-    width: auto;
-    max-width: 150px;
-    height: 26px;
-    margin: 0;
-    padding: 0 6px;
-    border: 1px solid rgba(255, 255, 255, 0.5) !important;
-    border-radius: 13px;
-    background: rgba(255, 255, 255, 0.18) !important;
-    color: #fff !important;
-    font-size: 12px;
-    box-shadow: none !important;
-}
-
-#somcp-chat .somcp-chat-head select option {
-    color: #363a41;
-}
-
-/* All header buttons share one exact square so they line up to the pixel,
-   whatever glyph each one carries. */
-#somcp-chat .somcp-chat-head button {
-    flex: 0 0 auto;
+#somcp-chat .somcp-chat-mark {
     display: inline-flex;
+    color: var(--somcp-accent);
+}
+
+/* All header buttons share one exact square so they line up to the pixel. */
+#somcp-chat .somcp-chat-head button {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     border: 0;
+    border-radius: 8px;
     background: none;
-    color: #fff;
-    font-size: 16px;
-    line-height: 1;
+    color: var(--somcp-muted);
     cursor: pointer;
+}
+
+#somcp-chat .somcp-chat-head button:hover {
+    background: var(--somcp-soft);
+    color: var(--somcp-ink);
 }
 
 /* The conversations: a bar sliding in from the left over the messages,
    with a shade behind it that closes it. */
 #somcp-chat .somcp-chat-shade {
     position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
+    inset: 0;
     z-index: 2;
     display: none;
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(16, 24, 40, 0.25);
 }
 
 #somcp-chat.somcp-threads-open .somcp-chat-shade {
@@ -196,11 +215,13 @@
     z-index: 3;
     display: flex;
     flex-direction: column;
-    width: 270px;
-    max-width: 85%;
-    overflow-y: auto;
+    gap: 10px;
+    width: 300px;
+    max-width: 88%;
+    padding: 14px 10px 12px;
+    box-sizing: border-box;
     background: #fff;
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 4px 0 20px rgba(16, 24, 40, 0.12);
     transform: translateX(-105%);
     transition: transform 0.2s ease;
 }
@@ -210,39 +231,66 @@
 }
 
 #somcp-chat .somcp-chat-newthread {
-    margin: 12px;
-    padding: 8px 12px;
-    border: 1px solid #25b9d7;
-    border-radius: 8px;
-    background: #fff;
-    color: #25b9d7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--somcp-accent);
+    color: #fff;
     font-weight: 600;
-    text-align: left;
     cursor: pointer;
 }
 
 #somcp-chat .somcp-chat-newthread:hover {
-    background: #f4fcfd;
+    background: var(--somcp-accent-dark);
+}
+
+#somcp-chat .somcp-thread-search {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    border: 1px solid var(--somcp-line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--somcp-ink);
+    font-size: 14px;
+    box-shadow: none;
+}
+
+#somcp-chat .somcp-thread-rows {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 #somcp-chat .somcp-chat-threads-title {
-    padding: 4px 14px;
-    color: #9aa8ad;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+    padding: 10px 8px 4px;
+    color: var(--somcp-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#somcp-chat .somcp-thread-none {
+    padding: 12px 8px;
+    color: var(--somcp-muted);
 }
 
 #somcp-chat .somcp-thread {
     display: flex;
     align-items: center;
-    margin: 0 6px;
-    border-radius: 6px;
+    border-radius: 10px;
 }
 
-#somcp-chat .somcp-thread:hover,
+#somcp-chat .somcp-thread:hover {
+    background: var(--somcp-soft);
+}
+
 #somcp-chat .somcp-thread.somcp-current {
-    background: #f4f6f7;
+    background: #eef2fd;
 }
 
 /* A conversation whose answer landed while another one was on screen: a dot
@@ -255,22 +303,26 @@
     height: 8px;
     margin-right: 6px;
     border-radius: 50%;
-    background: #25b9d7;
+    background: var(--somcp-accent);
     vertical-align: middle;
 }
 
 #somcp-chat.somcp-has-unread .somcp-chat-menu::after {
-    margin: 0 0 0 4px;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    margin: 0;
 }
 
 #somcp-chat .somcp-thread-open {
     flex: 1;
     min-width: 0;
-    padding: 8px 8px;
+    min-height: 40px;
+    padding: 8px 10px;
     overflow: hidden;
     border: 0;
     background: none;
-    color: #363a41;
+    color: var(--somcp-ink);
     text-align: left;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -281,47 +333,83 @@
     display: inline-flex;
     flex: 0 0 auto;
     align-items: center;
-    padding: 4px 6px;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
     border: 0;
+    border-radius: 8px;
     background: none;
-    color: #9aa8ad;
+    color: var(--somcp-muted);
     cursor: pointer;
     visibility: hidden;
 }
 
 #somcp-chat .somcp-thread:hover .somcp-thread-delete,
-#somcp-chat .somcp-thread.somcp-current .somcp-thread-delete {
+#somcp-chat .somcp-thread.somcp-current .somcp-thread-delete,
+#somcp-chat .somcp-thread-delete:focus-visible {
     visibility: visible;
 }
 
 #somcp-chat .somcp-thread-delete:hover {
-    color: #c05c67;
+    color: #b42318;
 }
 
-#somcp-chat .somcp-thread-delete .material-icons {
-    font-size: 18px;
+#somcp-chat .somcp-spend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 6px 0;
+    border-top: 1px solid #eef0f3;
+    color: var(--somcp-muted);
+    font-size: 12px;
 }
 
+#somcp-chat .somcp-spend-text {
+    color: var(--somcp-ink);
+    font-weight: 500;
+}
+
+#somcp-chat .somcp-spend-track {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #eef0f3;
+}
+
+#somcp-chat .somcp-spend-track[hidden] {
+    display: none;
+}
+
+#somcp-chat .somcp-spend-bar {
+    height: 6px;
+    background: var(--somcp-accent);
+}
+
+#somcp-chat .somcp-credit a {
+    color: var(--somcp-accent);
+}
+
+/* Messages. */
 #somcp-chat .somcp-chat-body {
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 9px;
-    padding: 14px;
+    gap: 14px;
+    padding: 20px 16px;
     overflow-y: auto;
-    background: #f4f6f7;
+    background: #fff;
 }
 
 #somcp-chat .somcp-msg {
+    position: relative;
     max-width: 86%;
-    padding: 8px 12px;
-    border-radius: 12px;
-    line-height: 1.45;
+    line-height: 1.55;
     overflow-wrap: anywhere;
 }
 
 #somcp-chat .somcp-msg p {
-    margin: 0 0 6px;
+    margin: 0 0 8px;
 }
 
 #somcp-chat .somcp-msg p:last-child,
@@ -330,124 +418,376 @@
 }
 
 #somcp-chat .somcp-msg ul {
-    margin: 0 0 6px 18px;
+    margin: 0 0 8px 18px;
     padding: 0;
 }
 
 #somcp-chat .somcp-msg code {
-    padding: 0 3px;
-    border-radius: 3px;
-    background: rgba(0, 0, 0, 0.06);
-    font-size: 12px;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: var(--somcp-soft);
+    font-size: 13px;
+}
+
+#somcp-chat .somcp-msg a {
+    color: var(--somcp-accent);
 }
 
 #somcp-chat .somcp-msg-user {
     align-self: flex-end;
-    border-bottom-right-radius: 3px;
-    background: #25b9d7;
-    color: #fff;
+    padding: 10px 14px;
+    border-radius: 16px 16px 4px 16px;
+    background: #f1f3f6;
 }
 
-#somcp-chat .somcp-msg-user a {
-    color: #fff;
-}
-
+/* The assistant writes on the page itself, without a bubble, as in the chat
+   apps: the answer is the content, not a reply in a box. */
 #somcp-chat .somcp-msg-assistant {
-    align-self: flex-start;
-    border: 1px solid #e3e8ea;
-    border-bottom-left-radius: 3px;
-    background: #fff;
+    align-self: stretch;
+    max-width: none;
+    padding-bottom: 4px;
+}
+
+#somcp-chat .somcp-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-top: 2px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--somcp-muted);
+    cursor: pointer;
+    opacity: 0;
+}
+
+#somcp-chat .somcp-msg-assistant:hover .somcp-copy,
+#somcp-chat .somcp-copy:focus-visible,
+#somcp-chat .somcp-copy.somcp-copied {
+    opacity: 1;
+}
+
+#somcp-chat .somcp-copy:hover {
+    background: var(--somcp-soft);
+}
+
+#somcp-chat .somcp-copy.somcp-copied {
+    color: #0f766e;
 }
 
 #somcp-chat .somcp-tool {
+    display: inline-flex;
     align-self: flex-start;
-    padding: 3px 10px;
-    border: 1px dashed #cfd8dc;
-    border-radius: 10px;
-    background: #fff;
-    color: #6c868e;
-    font-size: 11px;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--somcp-line);
+    border-radius: 999px;
+    color: var(--somcp-muted);
+    font-size: 13px;
 }
 
-#somcp-chat .somcp-approval {
-    padding: 10px 12px;
-    border: 1px solid #f0c36d;
-    border-radius: 10px;
-    background: #fff8e6;
+#somcp-chat .somcp-tool .somcp-icon {
+    color: #0f766e;
 }
 
-#somcp-chat .somcp-approval b {
+#somcp-chat .somcp-tool-refused .somcp-icon {
+    color: #b42318;
+}
+
+#somcp-chat .somcp-msg-file {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    color: var(--somcp-muted);
+    font-size: 13px;
+}
+
+#somcp-chat .somcp-msg-image {
     display: block;
-    margin-bottom: 4px;
+    max-width: 100%;
+    max-height: 260px;
+    margin-top: 8px;
+    border-radius: 10px;
 }
 
-#somcp-chat .somcp-approval ul {
-    margin: 4px 0 8px 18px;
-    padding: 0;
+/* An empty conversation: an opening line, then the prompts of the page. */
+#somcp-chat .somcp-welcome {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: auto 0;
 }
 
-#somcp-chat .somcp-approval pre {
-    max-height: 120px;
-    margin: 2px 0 0;
-    padding: 4px 6px;
+#somcp-chat .somcp-welcome-mark {
+    color: var(--somcp-accent);
+}
+
+#somcp-chat .somcp-welcome h2 {
+    margin: 4px 0 0;
+    color: var(--somcp-ink);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+#somcp-chat .somcp-welcome p {
+    margin: 0 0 12px;
+    color: var(--somcp-muted);
+    line-height: 1.5;
+}
+
+#somcp-chat .somcp-welcome-label {
+    color: var(--somcp-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+#somcp-chat .somcp-suggestion {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 10px 14px;
+    border: 1px solid var(--somcp-line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--somcp-ink);
+    text-align: left;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-suggestion:hover {
+    border-color: #c9ced6;
+    background: var(--somcp-soft);
+}
+
+#somcp-chat .somcp-suggestion > .somcp-icon {
+    color: var(--somcp-muted);
+}
+
+#somcp-chat .somcp-suggestion-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+#somcp-chat .somcp-suggestion-text b {
+    font-weight: 500;
+}
+
+#somcp-chat .somcp-suggestion-text small {
+    overflow: hidden;
+    color: var(--somcp-muted);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* A change waiting for the employee: what it is in words, two clear
+   buttons, and the exact call one click away. */
+#somcp-chat .somcp-approval {
+    overflow: hidden;
+    border: 1px solid var(--somcp-line);
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(16, 24, 40, 0.06);
+}
+
+#somcp-chat .somcp-approval-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #f6e2c6;
+    background: #fef6ec;
+    color: #7a3a06;
+}
+
+#somcp-chat .somcp-approval-head b {
+    flex: 1;
+    font-weight: 600;
+}
+
+#somcp-chat .somcp-approval-head span {
+    font-size: 12px;
+}
+
+#somcp-chat .somcp-approval-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px;
+}
+
+#somcp-chat .somcp-approval-action + .somcp-approval-action {
+    padding-top: 14px;
+    border-top: 1px solid #eef0f3;
+}
+
+#somcp-chat .somcp-approval-title {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+#somcp-chat .somcp-approval dl {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 6px 12px;
+    margin: 0;
+    font-size: 13px;
+}
+
+#somcp-chat .somcp-approval dt {
+    color: var(--somcp-muted);
+    font-weight: 400;
+}
+
+#somcp-chat .somcp-approval dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+#somcp-chat .somcp-approval-raw {
+    color: var(--somcp-muted);
+    font-size: 12px;
+}
+
+#somcp-chat .somcp-approval-raw > summary {
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-approval-raw pre {
+    max-height: 160px;
+    margin: 6px 0 0;
+    padding: 8px;
     overflow: auto;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    background: var(--somcp-soft);
+    color: var(--somcp-ink);
     font-size: 11px;
     white-space: pre-wrap;
 }
 
-#somcp-chat .somcp-approval button {
-    margin-right: 6px;
-    padding: 5px 14px;
-    border-radius: 4px;
-    font-size: 12px;
+#somcp-chat .somcp-approval-foot {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px;
+    border-top: 1px solid #eef0f3;
+    background: #fafbfc;
+}
+
+#somcp-chat .somcp-approval-foot button {
+    flex: 1;
+    min-height: 44px;
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
 }
 
+#somcp-chat .somcp-refuse {
+    border: 1px solid #d5d9e0;
+    background: #fff;
+    color: var(--somcp-ink);
+}
+
+#somcp-chat .somcp-refuse:hover {
+    background: var(--somcp-soft);
+}
+
 #somcp-chat .somcp-approve {
-    border: 1px solid #70b580;
-    background: #70b580;
+    border: 0;
+    background: var(--somcp-accent);
     color: #fff;
 }
 
-#somcp-chat .somcp-refuse {
-    border: 1px solid #c05c67;
-    background: #fff;
-    color: #c05c67;
+#somcp-chat .somcp-approve:hover {
+    background: var(--somcp-accent-dark);
+}
+
+#somcp-chat .somcp-approval-foot button:disabled {
+    cursor: default;
+    opacity: 0.6;
 }
 
 #somcp-chat .somcp-error {
-    padding: 8px 12px;
-    border-radius: 8px;
-    background: #fbe9eb;
-    color: #a33a46;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #fdecea;
+    color: #8f1d14;
 }
 
 #somcp-chat .somcp-typing {
-    align-self: flex-start;
-    color: #6c868e;
-    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--somcp-muted);
 }
 
-#somcp-chat.somcp-chat-wide {
-    width: 860px;
-    height: calc(100vh - 90px);
-    max-height: none;
+#somcp-chat .somcp-dots {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--somcp-accent);
+    animation: somcp-pulse 1s ease-in-out infinite;
 }
 
+@keyframes somcp-pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #somcp-chat .somcp-dots {
+        animation: none;
+    }
+
+    #somcp-chat .somcp-chat-threads {
+        transition: none;
+    }
+}
+
+/* The summary standing for the oldest messages: quieter than a message,
+   since nobody in the conversation wrote it. */
+#somcp-chat .somcp-summary {
+    color: var(--somcp-muted);
+    font-size: 13px;
+}
+
+#somcp-chat .somcp-summary > summary {
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-summary-text {
+    margin-top: 6px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--somcp-soft);
+}
+
+/* The field: one rounded box with the files waiting, the text and a row of
+   actions - the + menu, the assistant, and send. */
 #somcp-chat .somcp-composer {
-    margin: 10px 12px 0;
-    padding: 8px 10px 6px;
-    border: 1px solid #dfe3e5;
+    position: relative;
+    margin: 4px 14px 0;
+    padding: 10px 10px 8px;
+    border: 1px solid #d5d9e0;
     border-radius: 16px;
     background: #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
 }
 
 #somcp-chat .somcp-composer:focus-within {
-    border-color: #bbcdd2;
+    border-color: #a9b1bd;
 }
 
 #somcp-chat .somcp-composer textarea {
@@ -455,88 +795,168 @@
     width: 100%;
     min-height: 24px;
     max-height: 200px;
-    padding: 4px 2px;
+    padding: 2px 4px;
+    box-sizing: border-box;
     border: 0;
     outline: 0;
     background: transparent;
     resize: none;
+    color: var(--somcp-ink);
     font: inherit;
     font-size: 14px;
-    line-height: 1.45;
+    line-height: 1.5;
+    box-shadow: none;
+}
+
+#somcp-chat .somcp-composer textarea:disabled {
+    background: transparent;
 }
 
 #somcp-chat .somcp-composer-actions {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-top: 4px;
+    gap: 6px;
+    margin-top: 6px;
 }
 
-#somcp-chat .somcp-composer-actions button {
+#somcp-chat .somcp-composer-gap {
+    flex: 1;
+}
+
+#somcp-chat .somcp-attach,
+#somcp-chat .somcp-send {
     display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
     padding: 0;
-    border: 0;
-    border-radius: 8px;
+    border-radius: 999px;
     cursor: pointer;
 }
 
 #somcp-chat .somcp-attach {
-    background: none;
-    color: #6c868e;
-    font-size: 22px;
-    line-height: 1;
+    border: 1px solid #d5d9e0;
+    background: #fff;
+    color: var(--somcp-ink);
 }
 
-#somcp-chat .somcp-attach:hover {
-    background: #f4f6f7;
+#somcp-chat .somcp-attach:hover,
+#somcp-chat .somcp-attach[aria-expanded="true"] {
+    background: #f1f3f6;
 }
 
 #somcp-chat .somcp-send {
-    background: #25b9d7;
+    border: 0;
+    background: var(--somcp-accent);
     color: #fff;
-    font-size: 16px;
-    font-weight: 700;
 }
 
-#somcp-chat .somcp-send:disabled {
-    background: #bbcdd2;
+#somcp-chat .somcp-send:hover {
+    background: var(--somcp-accent-dark);
+}
+
+#somcp-chat .somcp-send:disabled,
+#somcp-chat .somcp-attach:disabled {
     cursor: default;
+    opacity: 0.45;
 }
 
-#somcp-chat .somcp-chat-warning {
-    padding: 6px 14px 0;
-    color: #9aa8ad;
-    font-size: 11px;
-    text-align: center;
+/* !important against the back office's own select styles, which paint
+   every select at full width with their own border. */
+#somcp-chat .somcp-picker {
+    width: auto !important;
+    max-width: 180px;
+    height: 32px !important;
+    margin: 0;
+    padding: 0 10px !important;
+    border: 1px solid var(--somcp-line) !important;
+    border-radius: 999px !important;
+    background-color: var(--somcp-soft) !important;
+    color: var(--somcp-ink) !important;
+    font-size: 13px;
+    box-shadow: none !important;
 }
 
-#somcp-chat .somcp-chat-foot {
+/* The menu of the +, opening above the field. */
+#somcp-chat .somcp-addmenu {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 4px;
+    z-index: 4;
     display: flex;
-    justify-content: space-between;
-    padding: 4px 14px 8px;
-    color: #9aa8ad;
-    font-size: 10.5px;
+    flex-direction: column;
+    gap: 2px;
+    width: 300px;
+    max-width: calc(100% - 8px);
+    max-height: 360px;
+    padding: 6px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    border: 1px solid var(--somcp-line);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(16, 24, 40, 0.14);
 }
 
-#somcp-chat .somcp-chat-foot a {
-    color: #25b9d7;
+#somcp-chat .somcp-addmenu[hidden],
+#somcp-chat .somcp-addmenu-label[hidden] {
+    display: none;
 }
 
-#somcp-chat .somcp-msg-file {
-    margin-top: 4px;
+#somcp-chat .somcp-addmenu-item,
+#somcp-chat .somcp-addmenu-prompt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--somcp-ink);
+    text-align: left;
+    cursor: pointer;
+}
+
+#somcp-chat .somcp-addmenu-prompt {
+    min-height: 40px;
+    font-size: 13px;
+}
+
+#somcp-chat .somcp-addmenu-item:hover,
+#somcp-chat .somcp-addmenu-prompt:hover {
+    background: #f1f3f6;
+}
+
+#somcp-chat .somcp-addmenu-item span {
+    flex: 1;
+}
+
+#somcp-chat .somcp-addmenu-item small {
+    color: var(--somcp-muted);
     font-size: 12px;
-    opacity: 0.9;
+}
+
+#somcp-chat .somcp-addmenu .somcp-icon {
+    color: var(--somcp-muted);
+}
+
+#somcp-chat .somcp-addmenu-label {
+    margin-top: 4px;
+    padding: 8px 10px 4px;
+    border-top: 1px solid #eef0f3;
+    color: var(--somcp-muted);
+    font-size: 12px;
+    font-weight: 600;
 }
 
 #somcp-chat .somcp-chat-files {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 0 0 6px;
+    padding: 0 0 8px;
 }
 
 #somcp-chat .somcp-chat-files[hidden] {
@@ -546,52 +966,42 @@
 #somcp-chat .somcp-file-chip {
     display: inline-flex;
     align-items: center;
+    gap: 6px;
     max-width: 100%;
-    padding: 2px 4px 2px 8px;
+    padding: 2px 2px 2px 10px;
     overflow: hidden;
-    border: 1px solid #dfe3e5;
-    border-radius: 12px;
-    background: #f4f6f7;
-    font-size: 11px;
+    border: 1px solid var(--somcp-line);
+    border-radius: 999px;
+    background: var(--somcp-soft);
+    font-size: 12px;
     white-space: nowrap;
+}
+
+#somcp-chat .somcp-file-chip span {
+    overflow: hidden;
     text-overflow: ellipsis;
 }
 
 #somcp-chat .somcp-file-chip button {
-    margin-left: 2px;
-    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
     border: 0;
+    border-radius: 999px;
     background: none;
-    color: #6c868e;
-    font-size: 14px;
-    line-height: 1;
+    color: var(--somcp-muted);
     cursor: pointer;
 }
 
-#somcp-chat .somcp-msg-image {
-    display: block;
-    max-width: 100%;
-    max-height: 260px;
-    margin-top: 6px;
-    border-radius: 8px;
-}
-
-/* The note that stands for the oldest messages once they were summarized:
-   quieter than a message, since nobody in the conversation wrote it. */
-#somcp-chat .somcp-summary {
-    margin: 4px 0 10px;
-    color: #6c868e;
-    font-size: 12px;
-}
-
-#somcp-chat .somcp-summary > summary {
-    cursor: pointer;
-    font-style: italic;
-}
-
-#somcp-chat .somcp-summary-text {
-    margin-top: 6px;
-    padding: 8px 10px;
-    border-left: 2px solid #dfe3e6;
-    background: #f8f9fa;
+/* Under the field: the warning, and what the month cost so far. */
+#somcp-chat .somcp-chat-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 18px 12px;
+    color: var(--somcp-muted);
+    font-size: 11px;
 }

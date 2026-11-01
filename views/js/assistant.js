@@ -39,6 +39,45 @@
     }
 
     var text = config.text || {};
+    var SVG = 'http://www.w3.org/2000/svg';
+    // The pictures a prompt may name in its prompt.json, as stroke paths on a
+    // 24 px grid. CI reads the keys of this object: a prompt naming anything
+    // else fails the build, so keep one entry per line and the key as written.
+    var PROMPT_ICONS = {
+        spark: ['M12 3l1.8 4.6 4.7 1.9-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.9z', 'M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z'],
+        chart: ['M3 3v18h18', 'M7 15l4-4 3 3 5-6'],
+        search: ['M11 4a7 7 0 1 0 0 14 7 7 0 1 0 0-14z', 'M20 20l-3.5-3.5'],
+        truck: ['M3 6h11v10H3z', 'M14 10h4l3 3v3h-7', 'M7 19a2 2 0 1 0 0-4 2 2 0 1 0 0 4z', 'M17 19a2 2 0 1 0 0-4 2 2 0 1 0 0 4z'],
+        tag: ['M3 12V4h8l9 9-8 8z', 'M7.5 7.5h.01'],
+        box: ['M21 8l-9-5-9 5 9 5z', 'M3 8v8l9 5 9-5V8', 'M12 13v8'],
+        person: ['M12 12a4 4 0 1 0 0-8 4 4 0 1 0 0 8z', 'M4 21a8 8 0 0 1 16 0'],
+        page: ['M6 2h9l5 5v15H6z', 'M14 2v6h6', 'M9 13h8', 'M9 17h6'],
+        rank: ['M4 20h16', 'M7 16v-6', 'M12 16V6', 'M17 16v-3'],
+        plug: ['M9 2v6', 'M15 2v6', 'M6 8h12v3a6 6 0 0 1-12 0z', 'M12 17v5'],
+        puzzle: ['M4 7h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4H4z'],
+        menu: ['M4 6h16', 'M4 12h16', 'M4 18h16'],
+        refresh: ['M21 12a9 9 0 1 1-3-6.7L21 8', 'M21 3v5h-5'],
+        bulb: ['M9 18h6', 'M10 22h4', 'M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z'],
+        cart: ['M3 4h2l2.4 11h11.2L21 8H6.2', 'M9 20a1 1 0 1 0 0-2 1 1 0 1 0 0 2z', 'M18 20a1 1 0 1 0 0-2 1 1 0 1 0 0 2z']
+    };
+    // The pictures of the chat itself: drawn as lines in the text colour, so
+    // they follow the theme and read the same on every system, unlike emoji.
+    var UI_ICONS = {
+        list: ['M4 6h16', 'M4 12h10', 'M4 18h7'],
+        gear: ['M12 15a3 3 0 1 0 0-6 3 3 0 1 0 0 6z', 'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'],
+        expand: ['M15 3h6v6', 'M9 21H3v-6', 'M21 3l-7 7', 'M3 21l7-7'],
+        shrink: ['M4 14h6v6', 'M20 10h-6V4', 'M14 10l7-7', 'M3 21l7-7'],
+        close: ['M6 6l12 12', 'M18 6L6 18'],
+        plus: ['M12 5v14', 'M5 12h14'],
+        up: ['M12 19V5', 'M5 12l7-7 7 7'],
+        clip: ['M21 12.5l-8.5 8.5a5 5 0 0 1-7-7L14 5.5a3.3 3.3 0 0 1 4.7 4.7L10.2 18.7a1.7 1.7 0 0 1-2.4-2.4L15.5 8.6'],
+        check: ['M20 6L9 17l-5-5'],
+        warn: ['M12 9v4', 'M12 17h.01', 'M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'],
+        trash: ['M3 6h18', 'M8 6V4h8v2', 'M6 6l1 14h10l1-14'],
+        copy: ['M9 9h12v12H9z', 'M5 15V5a2 2 0 0 1 2-2h10'],
+        chevron: ['M6 9l6 6 6-6']
+    };
+    var MAX_SUGGESTIONS = 4;
     var MAX_STEPS = 30;
     // A move still running on the server - from before a reload, or in another
     // tab - is waited for by asking again every BUSY_DELAY, up to MAX_WAITS
@@ -54,7 +93,7 @@
     // replace what is drawn. ticket and round: the latest action and the
     // latest background check; a reply to an older one is stale.
     var state = {
-        view: null, threads: [], assistants: [], busy: false, steps: 0, waits: 0,
+        view: null, threads: [], assistants: [], prompts: [], query: '', busy: false, steps: 0, waits: 0,
         shown: '', ticket: 0, round: 0, left: {}, unread: {}, watches: 0, drawn: '', openings: {}
     };
     var panel;
@@ -66,6 +105,12 @@
     var foot;
     var fileInput;
     var fileList;
+    var addMenu;
+    var addButton;
+    var promptList;
+    var threadRows;
+    var spendBar;
+    var spendText;
     var pending = [];
 
     function el(tag, className, content) {
@@ -77,6 +122,38 @@
             node.textContent = content;
         }
         return node;
+    }
+
+    function icon(name, size) {
+        var paths = PROMPT_ICONS[name] || UI_ICONS[name] || PROMPT_ICONS.spark;
+        var svg = document.createElementNS(SVG, 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', String(size || 18));
+        svg.setAttribute('height', String(size || 18));
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '1.8');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('class', 'somcp-icon');
+        paths.forEach(function (d) {
+            var path = document.createElementNS(SVG, 'path');
+            path.setAttribute('d', d);
+            svg.appendChild(path);
+        });
+        return svg;
+    }
+
+    // A button that shows only a picture: its name goes to screen readers and
+    // to the tooltip.
+    function iconButton(name, label, className) {
+        var button = el('button', className || '');
+        button.type = 'button';
+        button.title = label;
+        button.setAttribute('aria-label', label);
+        button.appendChild(icon(name));
+        return button;
     }
 
     function escapeHtml(value) {
@@ -191,6 +268,7 @@
     function list(json) {
         state.threads = json.threads || [];
         state.assistants = json.assistants || [];
+        state.prompts = json.prompts || state.prompts;
     }
 
     // Before another conversation is opened: the checks on the one on screen
@@ -375,7 +453,10 @@
                 } else if (tool.approval === 'rejected') {
                     label += ' · ' + text.refused;
                 }
-                wrap.appendChild(el('div', 'somcp-tool', '⚙ ' + label));
+                var chip = el('div', 'somcp-tool' + (tool.approval === 'rejected' ? ' somcp-tool-refused' : ''));
+                chip.appendChild(icon(tool.approval === 'rejected' ? 'close' : 'check', 14));
+                chip.appendChild(el('span', '', label));
+                wrap.appendChild(chip);
             });
             return wrap;
         }
@@ -386,8 +467,24 @@
             node.appendChild(drawImage(image));
         });
         (message.files || []).forEach(function (name) {
-            node.appendChild(el('div', 'somcp-msg-file', '📎 ' + name));
+            var file = el('div', 'somcp-msg-file');
+            file.appendChild(icon('clip', 14));
+            file.appendChild(el('span', '', name));
+            node.appendChild(file);
         });
+        if (message.role === 'assistant' && message.text && navigator.clipboard) {
+            var copy = iconButton('copy', text.copy, 'somcp-copy');
+            copy.addEventListener('click', function () {
+                navigator.clipboard.writeText(message.text).then(function () {
+                    copy.title = text.copied;
+                    copy.setAttribute('aria-label', text.copied);
+                    copy.classList.add('somcp-copied');
+                }, function () {
+                    // Refused by the browser: nothing copied, nothing claimed.
+                });
+            });
+            node.appendChild(copy);
+        }
         return node;
     }
 
@@ -415,19 +512,69 @@
         return link;
     }
 
+    // A field name of a tool, as a label: id_order_state reads "Order state (ID)".
+    function fieldLabel(key) {
+        var label = String(key).replace(/^id_(.+)$/, '$1 (ID)').replace(/_/g, ' ');
+        return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
+    // A value given to a tool, in words: yes or no, a list, one line per
+    // language for a translated text, and the rest as compact data.
+    function fieldValue(value) {
+        var out;
+        if (value === null || value === undefined) {
+            out = '';
+        } else if (typeof value === 'boolean') {
+            out = value ? text.yes : text.no;
+        } else if (typeof value !== 'object') {
+            out = String(value);
+        } else if (Array.isArray(value) && value.every(function (item) { return item === null || typeof item !== 'object'; })) {
+            out = value.join(', ');
+        } else if (!Array.isArray(value) && Object.keys(value).length && Object.keys(value).every(function (key) {
+            return /^[a-z]{2}(-[A-Za-z]{2})?$/.test(key) && (value[key] === null || typeof value[key] !== 'object');
+        })) {
+            out = Object.keys(value).map(function (key) {
+                return key + ' : ' + value[key];
+            }).join('\n');
+        } else {
+            out = JSON.stringify(value);
+        }
+        return out.length > 400 ? out.slice(0, 400) + '...' : out;
+    }
+
     function drawApproval(actions) {
-        var card = el('div', 'somcp-approval');
-        card.appendChild(el('b', '', '⚠ ' + text.approvalTitle));
-        var list = el('ul');
+        var card = el('section', 'somcp-approval');
+        var head = el('div', 'somcp-approval-head');
+        head.appendChild(icon('warn'));
+        head.appendChild(el('b', '', text.approvalTitle));
+        head.appendChild(el('span', '', actions.length === 1 ? text.oneChange : text.changes.replace('%count%', actions.length)));
+        card.appendChild(head);
+
+        var content = el('div', 'somcp-approval-body');
+        var raw = {};
         actions.forEach(function (action) {
-            var item = el('li', '', action.title);
+            var block = el('div', 'somcp-approval-action');
+            block.appendChild(el('div', 'somcp-approval-title', action.title));
             var inputs = action.inputs || {};
-            if (Object.keys(inputs).length) {
-                item.appendChild(el('pre', '', JSON.stringify(inputs, null, 2)));
+            raw[action.title] = inputs;
+            var keys = Object.keys(inputs);
+            if (keys.length) {
+                var fields = el('dl');
+                keys.forEach(function (key) {
+                    fields.appendChild(el('dt', '', fieldLabel(key)));
+                    fields.appendChild(el('dd', '', fieldValue(inputs[key])));
+                });
+                block.appendChild(fields);
             }
-            list.appendChild(item);
+            content.appendChild(block);
         });
-        card.appendChild(list);
+        // The exact call stays one click away, for whoever wants to check
+        // what the labels above stand for.
+        var details = el('details', 'somcp-approval-raw');
+        details.appendChild(el('summary', '', text.technical));
+        details.appendChild(el('pre', '', JSON.stringify(raw, null, 2)));
+        content.appendChild(details);
+        card.appendChild(content);
 
         var decide = function (verdict) {
             var decisions = {};
@@ -436,20 +583,22 @@
             });
             run('decide', threadData({ decisions: JSON.stringify(decisions) }));
         };
-        var approve = el('button', 'somcp-approve', text.approve);
-        approve.type = 'button';
-        approve.disabled = state.busy;
-        approve.addEventListener('click', function () {
-            decide('approve');
-        });
+        var foot = el('div', 'somcp-approval-foot');
         var refuse = el('button', 'somcp-refuse', text.refuse);
         refuse.type = 'button';
         refuse.disabled = state.busy;
         refuse.addEventListener('click', function () {
             decide('reject');
         });
-        card.appendChild(approve);
-        card.appendChild(refuse);
+        var approve = el('button', 'somcp-approve', text.approve);
+        approve.type = 'button';
+        approve.disabled = state.busy;
+        approve.addEventListener('click', function () {
+            decide('approve');
+        });
+        foot.appendChild(refuse);
+        foot.appendChild(approve);
+        card.appendChild(foot);
 
         return card;
     }
@@ -465,7 +614,7 @@
         // Drawn again only when something changed: the background checks
         // bring the same conversation back every two seconds, and redrawing it
         // each time made the page jump. Someone reading higher up stays there.
-        var drawn = JSON.stringify([view, working, problem, state.busy]);
+        var drawn = JSON.stringify([view, working, problem, state.busy, state.prompts]);
         if (drawn !== state.drawn) {
             state.drawn = drawn;
             drawBody(view, working, problem);
@@ -475,8 +624,11 @@
         // The field stays free while an answer is coming, so the next message
         // can be written meanwhile; only sending it waits.
         input.disabled = waiting;
+        input.placeholder = waiting ? text.waiting : text.placeholder;
         sendButton.disabled = working || waiting;
+        addButton.disabled = waiting;
         drawPending();
+        drawPrompts();
 
         // The picker and the list are rebuilt only when they changed too: a
         // menu rebuilt under the pointer closes, and a click on a row being
@@ -508,10 +660,56 @@
 
     function drawSpent(view) {
         if (view) {
-            foot.firstChild.textContent = view.budget > 0
+            var spent = view.budget > 0
                 ? text.spentOf.replace('%spent%', money(view.spent)).replace('%budget%', money(view.budget))
                 : text.spent.replace('%spent%', money(view.spent));
+            foot.lastChild.textContent = spent;
+            spendText.textContent = spent;
+            spendBar.parentNode.hidden = !(view.budget > 0);
+            spendBar.style.width = view.budget > 0 ? Math.min(100, Math.round(view.spent / view.budget * 100)) + '%' : '0';
         }
+    }
+
+    // The prompts offered first: those of the page the employee has open,
+    // then those of another page, then those tied to none, each group in the
+    // order the server listed them.
+    function suggestions() {
+        return state.prompts.map(function (prompt, index) {
+            var rank = prompt.controller === config.page ? 0 : (prompt.controller ? 1 : 2);
+            return { prompt: prompt, rank: rank, index: index };
+        }).sort(function (a, b) {
+            return a.rank - b.rank || a.index - b.index;
+        }).slice(0, MAX_SUGGESTIONS).map(function (entry) {
+            return entry.prompt;
+        });
+    }
+
+    function drawWelcome(threadId) {
+        var welcome = el('div', 'somcp-welcome');
+        var spark = el('div', 'somcp-welcome-mark');
+        spark.appendChild(icon('spark', 32));
+        welcome.appendChild(spark);
+        welcome.appendChild(el('h2', '', opening(threadId)));
+        welcome.appendChild(el('p', '', text.subtitle));
+        var picks = suggestions();
+        if (picks.length) {
+            welcome.appendChild(el('div', 'somcp-welcome-label', text.toStart));
+            picks.forEach(function (prompt) {
+                var pick = el('button', 'somcp-suggestion');
+                pick.type = 'button';
+                pick.disabled = state.busy;
+                pick.appendChild(icon(prompt.icon));
+                var words = el('span', 'somcp-suggestion-text');
+                words.appendChild(el('b', '', prompt.title));
+                words.appendChild(el('small', '', prompt.description));
+                pick.appendChild(words);
+                pick.addEventListener('click', function () {
+                    submit(prompt);
+                });
+                welcome.appendChild(pick);
+            });
+        }
+        return welcome;
     }
 
     // The opening line of an empty conversation, drawn once per conversation
@@ -531,7 +729,7 @@
         var top = body.scrollTop;
         body.innerHTML = '';
         if (!view || !view.messages.length) {
-            body.appendChild(drawMessage({ role: 'assistant', text: opening(view ? view.thread_id : '') }));
+            body.appendChild(drawWelcome(view ? view.thread_id : ''));
         }
         if (view) {
             view.messages.forEach(function (message) {
@@ -542,7 +740,10 @@
             }
         }
         if (working) {
-            body.appendChild(el('div', 'somcp-typing', text.working));
+            var typing = el('div', 'somcp-typing');
+            typing.appendChild(el('span', 'somcp-dots'));
+            typing.appendChild(el('span', '', text.working));
+            body.appendChild(typing);
         }
         if (problem) {
             body.appendChild(el('div', 'somcp-error', problem));
@@ -550,28 +751,49 @@
         body.scrollTop = bottom ? body.scrollHeight : top;
     }
 
+    // Today, yesterday or earlier, from the date the server keeps: its own
+    // clock and the browser's agree on the day for everyone but those working
+    // across midnight from another time zone.
+    function dayOf(date) {
+        var day = String(date || '').slice(0, 10);
+        var now = new Date();
+        var iso = function (moment) {
+            return moment.getFullYear() + '-' + ('0' + (moment.getMonth() + 1)).slice(-2) + '-' + ('0' + moment.getDate()).slice(-2);
+        };
+        if (day === iso(now)) {
+            return text.today;
+        }
+        now.setDate(now.getDate() - 1);
+        return day === iso(now) ? text.yesterday : text.earlier;
+    }
+
     // The conversations, in a bar sliding in from the left of the chat: the
-    // new one on top, then each conversation with its own bin.
+    // new one and the search on top, then each conversation under its day,
+    // with its own bin.
     function drawThreads() {
         var view = state.view;
-        var drawn = JSON.stringify([state.threads, view ? view.thread_id : '', state.unread]);
+        var drawn = JSON.stringify([state.threads, view ? view.thread_id : '', state.unread, state.query]);
         if (drawn === state.listed) {
             return;
         }
         state.listed = drawn;
         // The list is folded most of the time: its button carries the mark too.
         panel.classList.toggle('somcp-has-unread', Object.keys(state.unread).length > 0);
-        threadList.innerHTML = '';
-        var fresh = el('button', 'somcp-chat-newthread', '+ ' + text.newThread);
-        fresh.type = 'button';
-        fresh.addEventListener('click', function () {
-            closeThreads();
-            run('new', { id_assistant: picker.value });
+        threadRows.innerHTML = '';
+        var query = state.query.trim().toLowerCase();
+        var shown = state.threads.filter(function (thread) {
+            return !query || String(thread.title || '').toLowerCase().indexOf(query) !== -1;
         });
-        threadList.appendChild(fresh);
-        var title = el('div', 'somcp-chat-threads-title', text.threads);
-        threadList.appendChild(title);
-        state.threads.forEach(function (thread) {
+        if (!shown.length && query) {
+            threadRows.appendChild(el('div', 'somcp-thread-none', text.noThread));
+        }
+        var group = '';
+        shown.forEach(function (thread) {
+            var day = dayOf(thread.date);
+            if (day !== group) {
+                group = day;
+                threadRows.appendChild(el('div', 'somcp-chat-threads-title', day));
+            }
             var row = el('div', 'somcp-thread'
                 + (view && view.thread_id === thread.thread_id ? ' somcp-current' : '')
                 + (state.unread[thread.thread_id] ? ' somcp-unread' : ''));
@@ -582,11 +804,7 @@
                 closeThreads();
                 run('load', { thread_id: thread.thread_id });
             });
-            var remove = el('button', 'somcp-thread-delete');
-            remove.type = 'button';
-            remove.title = text.deleteThread;
-            remove.setAttribute('aria-label', text.deleteThread);
-            remove.appendChild(el('i', 'material-icons', 'delete'));
+            var remove = iconButton('trash', text.deleteThread, 'somcp-thread-delete');
             remove.addEventListener('click', function () {
                 if (window.confirm(text.deleteThread + ' ?')) {
                     run('delete', { thread_id: thread.thread_id });
@@ -594,8 +812,44 @@
             });
             row.appendChild(open);
             row.appendChild(remove);
-            threadList.appendChild(row);
+            threadRows.appendChild(row);
         });
+    }
+
+    // Every prompt the employee may start, in the menu of the + button.
+    function drawPrompts() {
+        var drawn = JSON.stringify(state.prompts);
+        if (drawn === state.prompted) {
+            return;
+        }
+        state.prompted = drawn;
+        promptList.innerHTML = '';
+        state.prompts.forEach(function (prompt) {
+            var item = el('button', 'somcp-addmenu-prompt');
+            item.type = 'button';
+            item.setAttribute('role', 'menuitem');
+            item.title = prompt.description;
+            item.appendChild(icon(prompt.icon, 16));
+            item.appendChild(el('span', '', prompt.title));
+            item.addEventListener('click', function () {
+                closeMenu();
+                submit(prompt);
+            });
+            promptList.appendChild(item);
+        });
+        promptList.previousSibling.hidden = !state.prompts.length;
+    }
+
+    function openMenu() {
+        addMenu.hidden = false;
+        addButton.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeMenu() {
+        if (addMenu && !addMenu.hidden) {
+            addMenu.hidden = true;
+            addButton.setAttribute('aria-expanded', 'false');
+        }
     }
 
     function openThreads() {
@@ -614,9 +868,7 @@
         panel.setAttribute('aria-label', text.title);
 
         var head = el('div', 'somcp-chat-head');
-        var menu = el('button', 'somcp-chat-menu', '☰');
-        menu.type = 'button';
-        menu.title = text.threads;
+        var menu = iconButton('list', text.threads, 'somcp-chat-menu');
         menu.addEventListener('click', function () {
             if (panel.classList.contains('somcp-threads-open')) {
                 closeThreads();
@@ -625,59 +877,86 @@
             }
         });
         var who = el('div', 'somcp-chat-who');
+        var mark = el('span', 'somcp-chat-mark');
+        mark.appendChild(icon('spark'));
+        who.appendChild(mark);
         who.appendChild(el('b', '', text.title));
-        who.appendChild(el('small', '', text.subtitle));
-        picker = el('select');
-        picker.addEventListener('change', function () {
-            if (state.view) {
-                run('assistant', threadData({ id_assistant: picker.value }));
-            }
-        });
-        var widen = el('button', 'somcp-widen', '⤢');
-        widen.type = 'button';
-        widen.title = text.enlarge;
-        widen.setAttribute('aria-label', text.enlarge);
+        var widen = iconButton('expand', text.enlarge, 'somcp-widen');
+        var setWide = function (wide) {
+            panel.classList.toggle('somcp-chat-wide', wide);
+            widen.innerHTML = '';
+            widen.appendChild(icon(wide ? 'shrink' : 'expand'));
+            widen.title = wide ? text.reduce : text.enlarge;
+            widen.setAttribute('aria-label', widen.title);
+        };
         widen.addEventListener('click', function () {
             var wide = !panel.classList.contains('somcp-chat-wide');
-            panel.classList.toggle('somcp-chat-wide', wide);
-            widen.textContent = wide ? '⤡' : '⤢';
-            widen.title = wide ? text.reduce : text.enlarge;
+            setWide(wide);
             try {
                 window.localStorage.setItem('somcp.assistant.wide', wide ? '1' : '');
             } catch (e) {
                 // Not remembered; the next page opens it at its usual size.
             }
         });
-        var settings = el('button', '', '⚙');
-        settings.type = 'button';
-        settings.title = text.settings;
-        settings.setAttribute('aria-label', text.settings);
+        var settings = iconButton('gear', text.settings);
         settings.addEventListener('click', function () {
             if (config.settingsUrl) {
                 window.open(config.settingsUrl, '_blank', 'noopener');
             }
         });
-        var close = el('button', '', '×');
-        close.type = 'button';
-        close.title = text.close;
+        var close = iconButton('close', text.close);
         close.addEventListener('click', toggle);
         head.appendChild(menu);
         head.appendChild(who);
-        head.appendChild(picker);
         head.appendChild(settings);
         head.appendChild(widen);
         head.appendChild(close);
         try {
             if (window.localStorage.getItem('somcp.assistant.wide') === '1') {
-                panel.classList.add('somcp-chat-wide');
-                widen.textContent = '⤡';
-                widen.title = text.reduce;
+                setWide(true);
             }
         } catch (e) {
             // Storage refused: the usual size.
         }
 
+        // The conversations: the new one and the search are built once, so
+        // the search keeps its focus while the rows under it are redrawn.
         threadList = el('div', 'somcp-chat-threads');
+        var fresh = el('button', 'somcp-chat-newthread');
+        fresh.type = 'button';
+        fresh.appendChild(icon('plus', 16));
+        fresh.appendChild(el('span', '', text.newThread));
+        fresh.addEventListener('click', function () {
+            closeThreads();
+            run('new', { id_assistant: picker.value });
+        });
+        var search = el('input', 'somcp-thread-search');
+        search.type = 'search';
+        search.placeholder = text.search;
+        search.setAttribute('aria-label', text.search);
+        search.addEventListener('input', function () {
+            state.query = search.value;
+            drawThreads();
+        });
+        threadRows = el('div', 'somcp-thread-rows');
+        var spend = el('div', 'somcp-spend');
+        spendText = el('div', 'somcp-spend-text');
+        var track = el('div', 'somcp-spend-track');
+        spendBar = el('div', 'somcp-spend-bar');
+        track.appendChild(spendBar);
+        var credit = el('div', 'somcp-credit', text.poweredBy + ' ');
+        var link = el('a', '', 'Neuron AI');
+        link.href = config.neuron;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        credit.appendChild(link);
+        spend.appendChild(spendText);
+        spend.appendChild(track);
+        spend.appendChild(credit);
+        threadList.appendChild(fresh);
+        threadList.appendChild(search);
+        threadList.appendChild(threadRows);
+        threadList.appendChild(spend);
         var shade = el('div', 'somcp-chat-shade');
         shade.addEventListener('click', closeThreads);
 
@@ -705,6 +984,7 @@
         input = el('textarea');
         input.rows = 1;
         input.placeholder = text.placeholder;
+        input.setAttribute('aria-label', text.placeholder);
         input.addEventListener('keydown', function (event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -712,21 +992,59 @@
             }
         });
         input.addEventListener('input', grow);
-        var actions = el('div', 'somcp-composer-actions');
-        var attach = el('button', 'somcp-attach', '+');
-        attach.type = 'button';
-        attach.title = text.attach;
-        attach.setAttribute('aria-label', text.attach);
-        attach.addEventListener('click', function () {
+
+        // The + opens a menu: files from the computer, or a prompt started
+        // from its title.
+        addMenu = el('div', 'somcp-addmenu');
+        addMenu.hidden = true;
+        addMenu.setAttribute('role', 'menu');
+        var files = el('button', 'somcp-addmenu-item');
+        files.type = 'button';
+        files.setAttribute('role', 'menuitem');
+        files.title = text.attach;
+        files.appendChild(icon('clip'));
+        files.appendChild(el('span', '', text.addFiles));
+        files.appendChild(el('small', '', text.filesHint));
+        files.addEventListener('click', function () {
+            closeMenu();
             fileInput.click();
         });
-        sendButton = el('button', 'somcp-send', '↑');
+        var promptsLabel = el('div', 'somcp-addmenu-label', text.prompts);
+        promptList = el('div', 'somcp-addmenu-prompts');
+        addMenu.appendChild(files);
+        addMenu.appendChild(promptsLabel);
+        addMenu.appendChild(promptList);
+
+        var actions = el('div', 'somcp-composer-actions');
+        addButton = iconButton('plus', text.add, 'somcp-attach');
+        addButton.setAttribute('aria-haspopup', 'menu');
+        addButton.setAttribute('aria-expanded', 'false');
+        addButton.addEventListener('click', function () {
+            if (addMenu.hidden) {
+                openMenu();
+            } else {
+                closeMenu();
+            }
+        });
+        picker = el('select', 'somcp-picker');
+        picker.setAttribute('aria-label', text.chooseAssistant);
+        picker.title = text.chooseAssistant;
+        picker.addEventListener('change', function () {
+            if (state.view && state.view.thread_id) {
+                run('assistant', threadData({ id_assistant: picker.value }));
+            }
+        });
+        sendButton = el('button', 'somcp-send');
         sendButton.type = 'submit';
         sendButton.title = text.send;
         sendButton.setAttribute('aria-label', text.send);
-        actions.appendChild(attach);
+        sendButton.appendChild(icon('up'));
+        actions.appendChild(addButton);
+        actions.appendChild(picker);
+        actions.appendChild(el('span', 'somcp-composer-gap'));
         actions.appendChild(fileInput);
         actions.appendChild(sendButton);
+        form.appendChild(addMenu);
         form.appendChild(fileList);
         form.appendChild(input);
         form.appendChild(actions);
@@ -734,24 +1052,29 @@
             event.preventDefault();
             submit();
         });
-        var warning = el('div', 'somcp-chat-warning', text.mistakes);
 
         foot = el('div', 'somcp-chat-foot');
+        foot.appendChild(el('span', '', text.mistakes));
         foot.appendChild(el('span', '', ''));
-        var credit = el('span', '', text.poweredBy + ' ');
-        var link = el('a', '', 'Neuron AI');
-        link.href = config.neuron;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        credit.appendChild(link);
-        foot.appendChild(credit);
+
+        // A click anywhere else in the chat, or Escape, folds the menu.
+        panel.addEventListener('click', function (event) {
+            if (!addMenu.hidden && !addMenu.contains(event.target) && !addButton.contains(event.target)) {
+                closeMenu();
+            }
+        });
+        panel.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !addMenu.hidden) {
+                closeMenu();
+                addButton.focus();
+            }
+        });
 
         panel.appendChild(head);
         panel.appendChild(shade);
         panel.appendChild(threadList);
         panel.appendChild(body);
         panel.appendChild(form);
-        panel.appendChild(warning);
         panel.appendChild(foot);
         document.body.appendChild(panel);
     }
@@ -770,10 +1093,10 @@
         }
         fileList.innerHTML = '';
         pending.forEach(function (file, index) {
-            var chip = el('span', 'somcp-file-chip', '📎 ' + file.name + ' ');
-            var remove = el('button', '', '×');
-            remove.type = 'button';
-            remove.title = text.removeFile;
+            var chip = el('span', 'somcp-file-chip');
+            chip.appendChild(icon('clip', 14));
+            chip.appendChild(el('span', '', file.name));
+            var remove = iconButton('close', text.removeFile);
             remove.addEventListener('click', function () {
                 pending.splice(index, 1);
                 drawPending();
@@ -784,8 +1107,13 @@
         fileList.hidden = pending.length === 0;
     }
 
-    function submit() {
+    // Sends what is in the field, with the files waiting. Given a prompt, its
+    // guide goes with the message, and its title stands for an empty field.
+    function submit(prompt) {
         var message = input.value.trim();
+        if (prompt) {
+            message = message || prompt.title;
+        }
         if ((!message && !pending.length) || sendButton.disabled) {
             return;
         }
@@ -803,6 +1131,9 @@
         state.view = state.view || { thread_id: '', id_assistant: Number(picker.value), messages: [], status: 'idle', actions: [], budget: 0, spent: 0 };
         state.view.messages.push({ role: 'user', text: message, files: files.map(function (file) { return file.name; }) });
         var data = { text: message, id_assistant: picker.value, files: files };
+        if (prompt) {
+            data.prompt = prompt.name;
+        }
         if (state.view.thread_id) {
             data.thread_id = state.view.thread_id;
         }

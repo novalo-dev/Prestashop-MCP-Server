@@ -14,6 +14,23 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+### Changed
+
+**A new look for the built-in assistant.** The chat now looks like the AI
+apps you already know. An empty conversation opens on a short welcome and up
+to four suggested tasks: the prompts of the page you are on come first, and
+only those your rights allow are shown. The **+** button in the field adds
+files or starts any prompt, and a prompt picked there hands its guide to the
+assistant with your message. A change waiting for your approval now reads in
+plain words - each field with its label and its new value, yes or no instead
+of true or false - with **Refuse** and **Approve** side by side and the exact
+data one click away. The conversations can be searched and are grouped by
+day, with the month's spending and its budget under them. Icons are drawn as
+lines instead of emoji, and an answer can be copied in one click. A prompt
+declared by another module can name its icon too.
+
 ## 1.1.3 - 2026-11-01
 
 ### Added

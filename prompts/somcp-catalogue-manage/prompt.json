@@ -1,6 +1,7 @@
 {
   "title": "Manage products",
   "description": "Find, read and change products and categories in the PrestaShop shop, one at a time, without guessing an identifier.",
+  "icon": "tag",
   "scopes": [
     "mcp.catalog.read"
   ],

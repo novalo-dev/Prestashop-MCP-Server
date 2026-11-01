@@ -129,7 +129,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
                 break;
             case 'send':
                 $thread = $thread ?? $chat->newThread((int) Tools::getValue('id_assistant'));
-                $this->answer($chat, $chat->send($thread, (string) Tools::getValue('text'), self::uploadedFiles()));
+                $this->answer($chat, $chat->send($thread, (string) Tools::getValue('text'), self::uploadedFiles(), (string) Tools::getValue('prompt')));
                 break;
             case 'step':
                 if ($thread !== null) {
@@ -228,6 +228,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
             'view' => $view,
             'threads' => $threads,
             'assistants' => $assistants,
+            'prompts' => $chat->prompts(),
         ]);
     }
 }

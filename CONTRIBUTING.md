@@ -233,8 +233,11 @@ There is one prompt per section, specified at the end of
 [docs/TOOLS.md](docs/TOOLS.md#prompts) with an issue labelled `new prompt`. As for
 tools, a prompt marked **draft** (its issue labelled `draft`) is not open yet. A
 prompt is a folder in `prompts/` named after it, holding `prompt.json` (title,
-description, arguments, scopes, permission, tools) and `prompt.md`, the guide
-the assistant reads. Copy `prompts/somcp-order-lookup/`.
+description, icon, arguments, scopes, permission, tools) and `prompt.md`, the
+guide the assistant reads. Copy `prompts/somcp-order-lookup/`. The icon is the
+one its specification gives, a name from `PROMPT_ICONS` in
+`views/js/assistant.js`; CI fails on a prompt without one or with a name the set
+does not have.
 
 A prompt can only list tools that exist, so it is written in the pull request
 of the first tool of its section, and each later tool of that section adds

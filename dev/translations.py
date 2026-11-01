@@ -1523,6 +1523,74 @@ T = {
  "Confirmation demandée",
  "Confirmación solicitada",
  "Bestätigung erforderlich"),
+"Add files or a prompt": (
+ "Ajouter des fichiers ou un prompt",
+ "Añadir archivos o un prompt",
+ "Dateien oder einen Prompt hinzufügen"),
+"Add files": (
+ "Ajouter des fichiers",
+ "Añadir archivos",
+ "Dateien hinzufügen"),
+"Images, PDF and text": (
+ "Images, PDF et texte",
+ "Imágenes, PDF y texto",
+ "Bilder, PDF und Text"),
+"Prompts": (
+ "Prompts",
+ "Prompts",
+ "Prompts"),
+"To get started": (
+ "Pour commencer",
+ "Para empezar",
+ "Zum Einstieg"),
+"1 change": (
+ "1 modification",
+ "1 cambio",
+ "1 Änderung"),
+"%count% changes": (
+ "%count% modifications",
+ "%count% cambios",
+ "%count% Änderungen"),
+"See the technical data": (
+ "Voir les données techniques",
+ "Ver los datos técnicos",
+ "Technische Daten anzeigen"),
+"Waiting for your answer...": (
+ "En attente de votre réponse...",
+ "Esperando su respuesta...",
+ "Wartet auf Ihre Antwort..."),
+"Search a conversation": (
+ "Rechercher une conversation",
+ "Buscar una conversación",
+ "Eine Unterhaltung suchen"),
+"No conversation found": (
+ "Aucune conversation trouvée",
+ "No se ha encontrado ninguna conversación",
+ "Keine Unterhaltung gefunden"),
+"Today": (
+ "Aujourd'hui",
+ "Hoy",
+ "Heute"),
+"Yesterday": (
+ "Hier",
+ "Ayer",
+ "Gestern"),
+"Earlier": (
+ "Plus ancien",
+ "Anteriores",
+ "Älter"),
+"Copy the answer": (
+ "Copier la réponse",
+ "Copiar la respuesta",
+ "Antwort kopieren"),
+"Choose the assistant": (
+ "Choisir l'assistant",
+ "Elegir el asistente",
+ "Assistenten wählen"),
+"This prompt is not available.": (
+ "Ce prompt n'est pas disponible.",
+ "Este prompt no está disponible.",
+ "Dieser Prompt ist nicht verfügbar."),
 "Approve": (
  "Approuver",
  "Aprobar",

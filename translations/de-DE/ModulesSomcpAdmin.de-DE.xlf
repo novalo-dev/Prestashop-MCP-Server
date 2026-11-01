@@ -1927,6 +1927,91 @@
       <source>Confirmation requested</source>
       <target>Bestätigung erforderlich</target>
     </trans-unit>
+    <!-- Add files or a prompt -->
+    <trans-unit id="b11d97229cf48c47cd1ff74e4fa63e29" resname="Add files or a prompt">
+      <source>Add files or a prompt</source>
+      <target>Dateien oder einen Prompt hinzufügen</target>
+    </trans-unit>
+    <!-- Add files -->
+    <trans-unit id="d39ec66f08507e26fe86aa5325d070df" resname="Add files">
+      <source>Add files</source>
+      <target>Dateien hinzufügen</target>
+    </trans-unit>
+    <!-- Images, PDF and text -->
+    <trans-unit id="6d455a4912784fe85580771a58fd1919" resname="Images, PDF and text">
+      <source>Images, PDF and text</source>
+      <target>Bilder, PDF und Text</target>
+    </trans-unit>
+    <!-- Prompts -->
+    <trans-unit id="c9ffccdbbe4d42f60cc2dda3a80086dd" resname="Prompts">
+      <source>Prompts</source>
+      <target>Prompts</target>
+    </trans-unit>
+    <!-- To get started -->
+    <trans-unit id="9d6009be5569e17d779c181671d33365" resname="To get started">
+      <source>To get started</source>
+      <target>Zum Einstieg</target>
+    </trans-unit>
+    <!-- 1 change -->
+    <trans-unit id="efed8d83a822ecafde46a82b630a4ca9" resname="1 change">
+      <source>1 change</source>
+      <target>1 Änderung</target>
+    </trans-unit>
+    <!-- %count% changes -->
+    <trans-unit id="7c8064e10fe40d52a95810acee526345" resname="%count% changes">
+      <source>%count% changes</source>
+      <target>%count% Änderungen</target>
+    </trans-unit>
+    <!-- See the technical data -->
+    <trans-unit id="b1dde5971e89da959f543e5f44786f56" resname="See the technical data">
+      <source>See the technical data</source>
+      <target>Technische Daten anzeigen</target>
+    </trans-unit>
+    <!-- Waiting for your answer... -->
+    <trans-unit id="c73082de5ba91c5ad4d4f38602f6f927" resname="Waiting for your answer...">
+      <source>Waiting for your answer...</source>
+      <target>Wartet auf Ihre Antwort...</target>
+    </trans-unit>
+    <!-- Search a conversation -->
+    <trans-unit id="8115aaa3f7ef31b2e8d3ab9b77bf85a7" resname="Search a conversation">
+      <source>Search a conversation</source>
+      <target>Eine Unterhaltung suchen</target>
+    </trans-unit>
+    <!-- No conversation found -->
+    <trans-unit id="202ac74770c44310f7e097d79a84b4b8" resname="No conversation found">
+      <source>No conversation found</source>
+      <target>Keine Unterhaltung gefunden</target>
+    </trans-unit>
+    <!-- Today -->
+    <trans-unit id="1dd1c5fb7f25cd41b291d43a89e3aefd" resname="Today">
+      <source>Today</source>
+      <target>Heute</target>
+    </trans-unit>
+    <!-- Yesterday -->
+    <trans-unit id="ebfe9ce86e6e9fb953aa7a25b59c1956" resname="Yesterday">
+      <source>Yesterday</source>
+      <target>Gestern</target>
+    </trans-unit>
+    <!-- Earlier -->
+    <trans-unit id="aa015f12f13825d65f5567adceb48e23" resname="Earlier">
+      <source>Earlier</source>
+      <target>Älter</target>
+    </trans-unit>
+    <!-- Copy the answer -->
+    <trans-unit id="b7ad269f1ee97c957205bebce9d126b2" resname="Copy the answer">
+      <source>Copy the answer</source>
+      <target>Antwort kopieren</target>
+    </trans-unit>
+    <!-- Choose the assistant -->
+    <trans-unit id="0f420ea051a5059cb911882a8d3157ed" resname="Choose the assistant">
+      <source>Choose the assistant</source>
+      <target>Assistenten wählen</target>
+    </trans-unit>
+    <!-- This prompt is not available. -->
+    <trans-unit id="2b1cf2c0709f388f368c31a09916e973" resname="This prompt is not available.">
+      <source>This prompt is not available.</source>
+      <target>Dieser Prompt ist nicht verfügbar.</target>
+    </trans-unit>
     <!-- Approve -->
     <trans-unit id="6f7351657f795bc1357a53142b1184cc" resname="Approve">
       <source>Approve</source>

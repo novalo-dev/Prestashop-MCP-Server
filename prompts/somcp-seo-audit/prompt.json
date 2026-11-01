@@ -1,6 +1,7 @@
 {
   "title": "Audit and improve SEO",
   "description": "Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards.",
+  "icon": "rank",
   "scopes": [
     "mcp.seo.read"
   ],

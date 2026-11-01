@@ -124,6 +124,13 @@ class SomcpAssistantChat
     /** @var string Opens the text block that names an attached file, so the chat can draw it as a file. */
     private const FILE_MARKER = '[File: ';
 
+    /**
+     * @var string Opens the text block that carries a prompt's guide. The guide
+     *             is for the model: the chat draws the employee's words, which
+     *             come first in the same message, and never this block.
+     */
+    private const GUIDE_MARKER = '## Guide for this task';
+
     /** @var string Names an image another assistant generated, in the result handed back. */
     private const GENERATED_MARKER = '[Generated image: ';
 
@@ -376,17 +383,69 @@ class SomcpAssistantChat
     }
 
     /**
+     * The prompts this employee may start from the chat, as its suggestions
+     * and its menu draw them.
+     *
+     * Filtered like the tools the chat offers: a guide to changing order
+     * statuses is no suggestion for an employee who may not change one.
+     *
+     * @return array<int, array{name:string, title:string, description:string, icon:string, controller:string}>
+     */
+    public function prompts(): array
+    {
+        $scopes = $this->scopes();
+        $idEmployee = (int) $this->employee->id;
+        $prompts = [];
+        foreach (SomcpPromptRegistry::getInstance()->all() as $prompt) {
+            if (!SomcpPromptRegistry::isEnabled($prompt->getName()) || !$prompt->isAvailableTo($scopes, $idEmployee)) {
+                continue;
+            }
+            $prompts[] = [
+                'name' => $prompt->getName(),
+                'title' => $prompt->getTitle(),
+                'description' => $prompt->getDescription(),
+                'icon' => $prompt->getIcon(),
+                'controller' => $prompt->getController(),
+            ];
+        }
+
+        return $prompts;
+    }
+
+    /**
      * The merchant's message, and the model's first move.
+     *
+     * A prompt picked in the chat travels with the message: its guide is
+     * added after the employee's words, in the same message, so the model
+     * reads it at the moment it is needed and the conversations that never
+     * use it do not pay for it. With nothing typed, the prompt's title stands
+     * for the employee's words.
      *
      * @param array<string, mixed> $thread
      * @param string $text
      * @param array<int, array{name:string, tmp_name:string, size:int, error:int}> $files attached from the employee's computer
+     * @param string $promptName a prompt of prompts(), or empty
      *
      * @return array<string, mixed> the conversation as the chat draws it
      */
-    public function send(array $thread, string $text, array $files = []): array
+    public function send(array $thread, string $text, array $files = [], string $promptName = ''): array
     {
         $text = trim($text);
+        $guide = '';
+        if ($promptName !== '') {
+            // Located again rather than trusted from the page: a prompt switched
+            // off or out of this employee's rights since the chat drew it is
+            // refused here too.
+            $prompt = SomcpPromptRegistry::getInstance()->locate($promptName, $this->scopes(), (int) $this->employee->id);
+            $rendered = $prompt !== null ? $prompt->render([]) : null;
+            if ($prompt === null || $rendered === null) {
+                return $this->view($thread, self::t('This prompt is not available.'));
+            }
+            $guide = (string) ($rendered['messages'][0]['content']['text'] ?? '');
+            if ($text === '') {
+                $text = $prompt->getTitle();
+            }
+        }
         if ($text === '' && $files === []) {
             return $this->view($thread);
         }
@@ -408,6 +467,9 @@ class SomcpAssistantChat
         }
 
         $content = array_merge([new TextContent(Tools::substr($text, 0, 20000))], $blocks);
+        if ($guide !== '') {
+            $content[] = new TextContent(self::GUIDE_MARKER . "\n\n" . $guide);
+        }
         $names = [];
         foreach ($files as $file) {
             $names[] = Tools::substr(basename(str_replace('\\', '/', (string) $file['name'])), 0, 120);

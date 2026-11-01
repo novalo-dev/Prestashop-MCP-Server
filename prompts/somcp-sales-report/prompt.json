@@ -1,6 +1,7 @@
 {
   "title": "Sales report",
   "description": "Report the PrestaShop shop's sales over a period: revenue, orders, average basket, best sellers.",
+  "icon": "chart",
   "scopes": [
     "mcp.stats.read"
   ],

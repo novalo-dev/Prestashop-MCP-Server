@@ -1,6 +1,7 @@
 {
   "title": "Read content pages",
   "description": "List and read the CMS pages of the PrestaShop shop.",
+  "icon": "page",
   "scopes": [
     "mcp.content.read"
   ],

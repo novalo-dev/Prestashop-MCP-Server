@@ -292,7 +292,8 @@ class SomcpPromptRegistry
                 is_array($declared['scopes'] ?? null) ? $declared['scopes'] : [],
                 is_array($declared['tools'] ?? null) ? $declared['tools'] : [],
                 $acts,
-                $arguments
+                $arguments,
+                (string) ($declared['icon'] ?? '')
             ));
         }
     }

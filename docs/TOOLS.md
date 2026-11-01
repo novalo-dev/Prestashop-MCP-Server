@@ -114,9 +114,9 @@ description.
 starts from the assistant's menu, and it hands the assistant written
 instructions for using the tools. They live one folder per prompt under
 `prompts/`, each with a `prompt.md` and a `prompt.json` giving the title shown
-in the menu, the description, the arguments the merchant may fill in, the
-scopes and back office permission it needs, and the tools it talks about.
-Adding a prompt is adding a folder.
+in the menu, the description, the icon the built-in chat draws beside it, the
+arguments the merchant may fill in, the scopes and back office permission it
+needs, and the tools it talks about. Adding a prompt is adding a folder.
 
 They replaced skills. The Skills extension was implemented and no assistant
 tested ever read it; putting the same text in the server instructions would
@@ -3392,6 +3392,12 @@ Every tool the module ships belongs to at least one prompt, and CI checks it: a
 pull request that adds a tool adds it to the prompt of its section, in both
 `prompt.json` and the guide.
 
+Every prompt names its **icon** in `prompt.json`, one of the names of
+`PROMPT_ICONS` in `views/js/assistant.js`, and CI checks that too. The built-in
+chat draws it beside the prompt in its suggestions and in its menu. A prompt that
+needs a picture the set does not have adds it to `PROMPT_ICONS` in the same pull
+request: one line, stroke paths on a 24 px grid.
+
 | Prompt | Section | State |
 |---|---|---|
 | `somcp-connection-check` | Diagnostics | written |
@@ -3411,7 +3417,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-catalogue-manage`
 **State**: written
-**Section**: Catalogue · **Scope**: `mcp.catalog.read` · **Permission**: `view` on `AdminProducts`
+**Section**: Catalogue · **Scope**: `mcp.catalog.read` · **Permission**: `view` on `AdminProducts` · **Icon**: `tag`
 
 **Title** - Manage products
 
@@ -3425,7 +3431,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-stock-check`
 **State**: written
-**Section**: Stock · **Scope**: `mcp.stock.read` · **Permission**: `view` on `AdminStockManagement`
+**Section**: Stock · **Scope**: `mcp.stock.read` · **Permission**: `view` on `AdminStockManagement` · **Icon**: `box`
 
 **Title** - Check and adjust stock
 
@@ -3439,7 +3445,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-customer-lookup`
 **State**: written
-**Section**: Customers · **Scope**: `mcp.customers.read`, `mcp.customers.write` · **Permission**: `view` on `AdminCustomers`
+**Section**: Customers · **Scope**: `mcp.customers.read`, `mcp.customers.write` · **Permission**: `view` on `AdminCustomers` · **Icon**: `person`
 
 **Title** - Find a customer
 
@@ -3453,7 +3459,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-sales-report`
 **State**: written
-**Section**: Statistics · **Scope**: `mcp.stats.read` · **Permission**: `view` on `AdminStats`
+**Section**: Statistics · **Scope**: `mcp.stats.read` · **Permission**: `view` on `AdminStats` · **Icon**: `chart`
 
 **Title** - Sales report
 
@@ -3467,7 +3473,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-content-pages`
 **State**: written
-**Section**: Content · **Scope**: `mcp.content.read` · **Permission**: `view` on `AdminCmsContent`
+**Section**: Content · **Scope**: `mcp.content.read` · **Permission**: `view` on `AdminCmsContent` · **Icon**: `page`
 
 **Title** - Read content pages
 
@@ -3481,7 +3487,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-modules-review`
 **State**: draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41)
-**Section**: Modules · **Scope**: `mcp.modules.read` · **Permission**: `view` on `AdminModules`
+**Section**: Modules · **Scope**: `mcp.modules.read` · **Permission**: `view` on `AdminModules` · **Icon**: `puzzle`
 
 **Title** - Review modules
 
@@ -3495,7 +3501,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-storefront-menu`
 **State**: draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42)
-**Section**: Appearance · **Scope**: `mcp.appearance.read` · **Permission**: `view` on `AdminThemes`
+**Section**: Appearance · **Scope**: `mcp.appearance.read` · **Permission**: `view` on `AdminThemes` · **Icon**: `menu`
 
 **Title** - Storefront menu and layout
 
@@ -3509,7 +3515,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-cache-maintenance`
 **State**: draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43)
-**Section**: System · **Scope**: `mcp.system.read` · **Permission**: `view` on `AdminPerformance`
+**Section**: System · **Scope**: `mcp.system.read` · **Permission**: `view` on `AdminPerformance` · **Icon**: `refresh`
 
 **Title** - Cache maintenance
 
@@ -3523,7 +3529,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-seo-audit`
 **State**: written
-**Section**: SEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminMeta`
+**Section**: SEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminMeta` · **Icon**: `rank`
 
 **Title** - Audit and improve SEO
 
@@ -3537,7 +3543,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-aeo-audit`
 **State**: to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80)
-**Section**: AEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminProducts`
+**Section**: AEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminProducts` · **Icon**: `bulb`
 
 **Title** - Get recommended by AI assistants
 
@@ -3551,7 +3557,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-sales-boost`
 **State**: to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81)
-**Section**: Sales · **Scope**: `mcp.sales.read` · **Permission**: `view` on `AdminStats`
+**Section**: Sales · **Scope**: `mcp.sales.read` · **Permission**: `view` on `AdminStats` · **Icon**: `cart`
 
 **Title** - Boost sales
 

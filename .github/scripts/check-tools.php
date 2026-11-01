@@ -26,6 +26,10 @@ declare(strict_types=1);
  * Each one is easy to forget in a pull request and none of them fails on its
  * own, so they are checked together here.
  *
+ * A prompt also names the icon the built-in chat draws beside it. The chat
+ * falls back to its default icon for a name it does not know, so a missing or
+ * misspelt one would never fail anywhere else.
+ *
  * Usage: php .github/scripts/check-tools.php [module root]
  * Exit code 0 when everything is in order, 1 otherwise.
  */
@@ -70,7 +74,19 @@ $scopes = (string) @file_get_contents($root . '/classes/SomcpScope.php');
 // 5. The CHANGELOG.
 $changelog = (string) @file_get_contents($root . '/CHANGELOG.md');
 
-// 6. The prompts: which tools each one hands to the assistant.
+// 6. The icons a prompt may name: the keys of PROMPT_ICONS in the chat script,
+// read from there so the two can never drift apart.
+$icons = [];
+$script = (string) @file_get_contents($root . '/views/js/assistant.js');
+if (preg_match('/var PROMPT_ICONS = \{(.*?)\n    \};/s', $script, $block)) {
+    preg_match_all('/^\s{8}([a-z]+): \[/m', $block[1], $m);
+    $icons = array_flip($m[1]);
+}
+if ($icons === []) {
+    $errors[] = 'views/js/assistant.js: no PROMPT_ICONS set found';
+}
+
+// 7. The prompts: which tools each one hands to the assistant.
 $inPrompts = [];
 foreach (glob($root . '/prompts/*/prompt.json') ?: [] as $file) {
     $folder = basename(dirname($file));
@@ -79,6 +95,12 @@ foreach (glob($root . '/prompts/*/prompt.json') ?: [] as $file) {
     if (!is_array($data)) {
         $errors[] = "$where/prompt.json: invalid JSON";
         continue;
+    }
+    $icon = $data['icon'] ?? null;
+    if (!is_string($icon) || $icon === '') {
+        $errors[] = "$where/prompt.json: no icon; name one of PROMPT_ICONS in views/js/assistant.js";
+    } elseif ($icons !== [] && !isset($icons[$icon])) {
+        $errors[] = "$where/prompt.json: icon \"$icon\" is not in PROMPT_ICONS of views/js/assistant.js";
     }
     $guide = (string) @file_get_contents(dirname($file) . '/prompt.md');
     foreach ((array) ($data['tools'] ?? []) as $tool) {

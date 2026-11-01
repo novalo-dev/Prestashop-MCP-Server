@@ -243,7 +243,8 @@ class SomcpContract
             array_values(array_unique(array_merge([SomcpScope::ACCESS], $scopes))),
             $tools,
             $acts,
-            $arguments
+            $arguments,
+            is_string($definition['icon'] ?? null) ? $definition['icon'] : ''
         );
     }
 

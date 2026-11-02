@@ -228,6 +228,7 @@ class SomcpModules
         $level = ob_get_level();
         ob_start();
         try {
+            self::prepareLanguageContext();
             // The core's own way to reach its ModuleManager from legacy code:
             // the Symfony container when there is one, the same classes built
             // by hand otherwise, on PrestaShop 8 and 9 alike.
@@ -254,5 +255,42 @@ class SomcpModules
             'done' => $done,
             'errors' => array_values(array_unique(array_filter(array_map('trim', $errors)))),
         ];
+    }
+
+    /**
+     * Gives the language of the call to the core's language context, on
+     * PrestaShop 9.
+     *
+     * There the ModuleManager's disable and enable reach services built from
+     * that context, which only a back office or API request listener prepares.
+     * The MCP endpoint is neither, so without this the core throws before it
+     * changes anything. The core's own command line and installer prepare it
+     * the same way. Named as a string: the class does not exist on 8, which
+     * needs nothing here.
+     */
+    private static function prepareLanguageContext(): void
+    {
+        $id = 'PrestaShop\\PrestaShop\\Core\\Context\\ContextBuilderPreparer';
+        if (!class_exists($id)) {
+            return;
+        }
+
+        $container = PrestaShop\PrestaShop\Adapter\SymfonyContainer::getInstance();
+        if ($container === null || !$container->has($id)) {
+            return;
+        }
+
+        $preparer = $container->get($id);
+        if (!is_object($preparer) || !method_exists($preparer, 'prepareLanguageId')) {
+            return;
+        }
+
+        $language = Somcp::legacyContext()->language;
+        $idLang = $language instanceof Language && (int) $language->id > 0
+            ? (int) $language->id
+            : (int) Configuration::get('PS_LANG_DEFAULT');
+        if ($idLang > 0) {
+            $preparer->prepareLanguageId($idLang);
+        }
     }
 }

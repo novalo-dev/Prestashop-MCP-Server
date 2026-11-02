@@ -245,20 +245,31 @@ class SomcpRelay
      */
     public static function hello(int $idRelay, array $ai): void
     {
+        // What the relay sends is shown in the back office and comes from a
+        // computer the shop does not control. Names are cut down to the
+        // characters a model or a program name uses, so nothing that reads
+        // as markup is ever stored, whatever template or PrestaShop version
+        // prints it later.
         $models = [];
         foreach (array_slice((array) ($ai['models'] ?? []), 0, self::MAX_MODELS) as $model) {
-            if (!is_array($model) || !is_string($model['id'] ?? null) || trim($model['id']) === '') {
+            if (!is_array($model) || !is_string($model['id'] ?? null)) {
+                continue;
+            }
+            $id = (string) Tools::substr(trim($model['id']), 0, 128);
+            // A model id with other characters is dropped rather than
+            // altered: an altered id would name a model the AI does not have.
+            if (!preg_match('/^[A-Za-z0-9._:\/@+-]+$/', $id)) {
                 continue;
             }
             $models[] = [
-                'id' => (string) Tools::substr(trim($model['id']), 0, 128),
+                'id' => $id,
                 // Absent for a model the relay did not test: not offered.
                 'tools' => ($model['tools'] ?? null) === true,
             ];
         }
 
         Db::getInstance()->update('somcp_relay', [
-            'software' => pSQL(Tools::substr(trim((string) ($ai['software'] ?? '')), 0, 64)),
+            'software' => pSQL(Tools::substr(trim((string) preg_replace('/[^A-Za-z0-9 ._:\/@+()-]/', '', (string) ($ai['software'] ?? ''))), 0, 64)),
             'models' => pSQL((string) json_encode($models), true),
             'last_seen' => date('Y-m-d H:i:s'),
         ], '`id_relay` = ' . (int) $idRelay);

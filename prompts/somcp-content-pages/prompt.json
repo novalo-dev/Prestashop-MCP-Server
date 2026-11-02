@@ -7,7 +7,8 @@
   ],
   "tools": [
     "somcp_ping",
-    "somcp_list_cms_pages"
+    "somcp_list_cms_pages",
+    "somcp_get_cms_page"
   ],
   "controller": "AdminCmsContent",
   "action": "view",

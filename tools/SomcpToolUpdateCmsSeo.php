@@ -175,13 +175,14 @@ class SomcpToolUpdateCmsSeo
 
     /**
      * The page as this shop holds it, every language loaded, or null.
+     * Public so somcp_get_cms_page finds pages exactly as this tool does.
      *
      * @param mixed $id
      * @param int $idShop
      *
      * @return CMS|null
      */
-    private static function page($id, int $idShop): ?CMS
+    public static function page($id, int $idShop): ?CMS
     {
         $idCms = is_int($id) ? $id : 0;
         if ($idCms <= 0) {
@@ -465,13 +466,14 @@ class SomcpToolUpdateCmsSeo
 
     /**
      * The title tag of the page: the meta title when filled, the page title otherwise.
+     * Public so somcp_get_cms_page reports the same seo_title this tool answers with.
      *
      * @param CMS $cms
      * @param int $idLang
      *
      * @return string
      */
-    private static function seoTitle(CMS $cms, int $idLang): string
+    public static function seoTitle(CMS $cms, int $idLang): string
     {
         $meta = trim(self::textOf($cms->head_seo_title, $idLang));
 
@@ -487,7 +489,7 @@ class SomcpToolUpdateCmsSeo
      *
      * @return string
      */
-    private static function textOf($value, int $idLang): string
+    public static function textOf($value, int $idLang): string
     {
         if (is_array($value)) {
             return (string) ($value[$idLang] ?? '');

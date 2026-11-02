@@ -18,6 +18,16 @@ are:
 
 ### Added
 
+**Reading one content page.** The new tool `somcp_get_cms_page` reads one
+CMS page as its edit form under **Design > Pages** shows it: category,
+title, meta title, meta description, meta keywords (PrestaShop 8), friendly
+URL, the full page content, **Indexation by search engines** and
+**Displayed**, with the page's address on the storefront. What a page says
+can now be read and quoted, not only listed, and the SEO fields keep the
+names `somcp_update_cms_seo` takes, so a value read can be written back as
+is. It joins the **Read content pages** prompt and needs the
+`mcp.content.read` permission and the `view` right on **Design > Pages**.
+
 **Deep thinking, web search and memory, switched per conversation.** The
 **+** menu of the built-in assistant now has switches for the conversation
 you are in. **Deep thinking** asks the assistant to think longer before

@@ -954,6 +954,10 @@ T = {
  "Lister les pages de contenu",
  "Listar las páginas de contenido",
  "Inhaltsseiten auflisten"),
+"Get a content page": (
+ "Lire une page de contenu",
+ "Leer una página de contenido",
+ "Eine Inhaltsseite abrufen"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",

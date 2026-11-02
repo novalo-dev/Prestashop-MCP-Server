@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "reads the delivery page of the demo shop with every field of its edit form", "arguments": {"id_cms": 1}, "expect": "ok", "contains": ["\"id_cms\": 1", "\"language\": \"en\"", "\"id_cms_category\": 1", "\"title\": \"Delivery\"", "\"meta_title\"", "\"seo_title\"", "\"meta_description\"", "\"meta_keywords\"", "\"link_rewrite\": \"delivery\"", "\"content\"", "\"indexation\"", "\"active\": true", "\"position\"", "\"url\""]},
+    {"why": "the texts read in a language the shop has, said by its code", "arguments": {"id_cms": 1, "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"title\": \"Delivery\""]},
+    {"why": "another page of the demo shop", "arguments": {"id_cms": 2}, "expect": "ok", "contains": ["\"id_cms\": 2", "\"content\""]},
+    {"why": "a page the shop does not have is refused, pointing to the list", "arguments": {"id_cms": 999999}, "expect": "error", "contains": ["No CMS page of this shop", "somcp_list_cms_pages"]},
+    {"why": "an identifier that is not a whole number is refused, naming the field", "arguments": {"id_cms": "first"}, "expect": "error", "contains": ["id_cms"]},
+    {"why": "a missing identifier is refused, naming the field", "arguments": {}, "expect": "error", "contains": ["id_cms"]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"id_cms": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+  ]
+}

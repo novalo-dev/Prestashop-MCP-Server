@@ -233,6 +233,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | Tool | Scope | Back office right | Nature |
 |---|---|---|---|
 | `somcp_list_cms_pages` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
+| `somcp_get_cms_page` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
 
 ### SEO
 

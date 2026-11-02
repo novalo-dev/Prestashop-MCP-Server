@@ -1202,6 +1202,11 @@
       <source>List content pages</source>
       <target>Inhaltsseiten auflisten</target>
     </trans-unit>
+    <!-- Get a content page -->
+    <trans-unit id="2b602d4c87e39a83741729fe428885d0" resname="Get a content page">
+      <source>Get a content page</source>
+      <target>Eine Inhaltsseite abrufen</target>
+    </trans-unit>
     <!-- Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages -->
     <trans-unit id="fcec3a73cb0f40d9e97d6c54f5f166a8" resname="Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages">
       <source>Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages</source>

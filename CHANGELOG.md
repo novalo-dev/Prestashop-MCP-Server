@@ -50,9 +50,13 @@ installing modules already present on the shop, and the `add` right on
 changes the **Page title**, **Meta description** and **Rewritten URL** of one
 of the pages listed under **Shop Parameters > Traffic & SEO** - contact, new
 products, best sales, search and the others - in the languages you approve,
-in the current shop only. It takes the names `somcp_list_meta_pages` returns,
-refuses a friendly URL another page already uses, and warns that a new one
-makes the old address stop working. It joins the **Audit and improve SEO**
+in the current shop only, and the **Meta keywords** on PrestaShop 8, the only
+version whose form has them. It checks a **Rewritten URL** as the form does -
+"Only letters and hyphens are allowed." - instead of reshaping what you
+approved, requires it in the shop's default language only, accepts the home
+page's empty one given back unchanged, refuses a friendly URL another page
+already uses, and warns that a new one makes the old address stop working. It
+takes the field names `somcp_list_meta_pages` returns. It joins the **Audit and improve SEO**
 prompt and needs the `mcp.seo.write` permission and the `edit` right on
 **Shop Parameters > Traffic & SEO**.
 
@@ -125,6 +129,10 @@ shop's PHP processes; it is back to answering at once as soon as the chat is
 opened.
 
 ### Changed
+
+**Meta keywords of the shop pages.** `somcp_list_meta_pages` now also gives
+the **Meta keywords** of each page on PrestaShop 8; on PrestaShop 9, which
+no longer has that field, they are shown as empty.
 
 **A new look for the built-in assistant.** The chat now looks like the AI
 apps you already know. An empty conversation opens on a short welcome and up

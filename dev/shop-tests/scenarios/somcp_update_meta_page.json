@@ -3,16 +3,19 @@
     {"why": "a new meta description for the contact page, in one language", "arguments": {"id_meta": 3, "description": {"en": "Write to the shop with the contact form, an answer within a day"}}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"description\"", "\"previous\": \"Use our form to contact us\"", "\"seo_warnings\"", "\"page\": \"contact\""]},
     {"why": "the same value again changes nothing", "arguments": {"id_meta": 3, "description": {"en": "Write to the shop with the contact form, an answer within a day"}}, "expect": "ok", "contains": ["\"changed\": false"]},
     {"why": "a new page title", "arguments": {"id_meta": 3, "title": {"en": "Contact the shop"}}, "expect": "ok", "contains": ["\"changed\": true", "\"title\": \"Contact the shop\""]},
-    {"why": "a new friendly URL, made from words, warns that the old address stops working", "arguments": {"id_meta": 3, "url_rewrite": {"en": "Contact Form"}}, "expect": "ok", "contains": ["\"new\": \"contact-form\"", "old address"]},
+    {"why": "a friendly URL is checked as typed, never rewritten", "arguments": {"id_meta": 3, "url_rewrite": {"en": "Contact Form"}}, "expect": "error", "contains": ["Only letters and hyphens are allowed."]},
+    {"why": "a new friendly URL warns that the old address stops working", "arguments": {"id_meta": 3, "url_rewrite": {"en": "contact-form"}}, "expect": "ok", "contains": ["\"new\": \"contact-form\"", "old address"]},
     {"why": "a friendly URL another page already uses", "arguments": {"id_meta": 2, "url_rewrite": {"en": "contact-form"}}, "expect": "error", "contains": ["already the friendly URL of the page contact"]},
     {"why": "the friendly URL put back", "arguments": {"id_meta": 3, "url_rewrite": {"en": "contact-us"}}, "expect": "ok", "contains": ["\"changed\": true", "\"new\": \"contact-us\""]},
     {"why": "the home page has no friendly URL", "arguments": {"id_meta": 4, "url_rewrite": {"en": "home"}}, "expect": "error", "contains": ["home page"]},
-    {"why": "an empty friendly URL", "arguments": {"id_meta": 3, "url_rewrite": {"en": ""}}, "expect": "error", "contains": ["no valid friendly URL"]},
+    {"why": "the home page read and given back as it is changes nothing", "arguments": {"id_meta": 4, "url_rewrite": {"en": ""}}, "expect": "ok", "contains": ["\"changed\": false"]},
+    {"why": "an empty friendly URL in the shop default language", "arguments": {"id_meta": 3, "url_rewrite": {"en": ""}}, "expect": "error", "contains": ["required in the shop default language"]},
+    {"why": "meta keywords, written on PrestaShop 8 and refused on 9 which has no such field", "arguments": {"id_meta": 3, "keywords": {"en": "contact, form"}}, "expect": "any"},
     {"why": "a page that does not exist", "arguments": {"id_meta": 999999, "title": {"en": "x"}}, "expect": "error", "contains": ["No page of this shop"]},
     {"why": "a title over 70 characters", "arguments": {"id_meta": 3, "title": {"en": "A page title that goes on and on well beyond what any search result shows"}}, "expect": "error", "contains": ["70 characters at most"]},
     {"why": "a language the shop does not have", "arguments": {"id_meta": 3, "title": {"zz": "x"}}, "expect": "error", "contains": ["not an active language"]},
     {"why": "a text given without its language", "arguments": {"id_meta": 3, "title": "x"}, "expect": "error", "contains": ["keyed by ISO code"]},
-    {"why": "a field this tool does not write", "arguments": {"id_meta": 3, "keywords": {"en": "x"}}, "expect": "error", "contains": ["keywords: not a field of this tool"]},
+    {"why": "a field this tool does not write", "arguments": {"id_meta": 3, "page": "contact"}, "expect": "error", "contains": ["page: not a field of this tool"]},
     {"why": "characters PrestaShop refuses in a description", "arguments": {"id_meta": 3, "description": {"en": "<script>x</script>"}}, "expect": "error", "contains": ["Nothing was changed"]}
   ]
 }

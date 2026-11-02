@@ -2897,13 +2897,13 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 |---|---|---|---|
 | `language` | string | no | ISO code, shop default otherwise; refused when the shop does not have it |
 
-**Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `title`, `description`, `url_rewrite`, `url`, `configurable`. Plus `count` and the `language` read.
+**Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `title`, `description`, `keywords` (the **Meta keywords**, PrestaShop 8 only, `null` on 9), `url_rewrite`, `url`, `configurable`. Plus `count` and the `language` read.
 
 **Notes**
 - Read from `meta` and `meta_lang` of the token's shop, as the Traffic & SEO page lists them, in one query, without paging: a shop has a few dozen pages.
 - The back office lists only the pages whose `configurable` is true. The others - the product, category and CMS templates and some payment module pages - are returned too, with `configurable: false`, empty texts and `url: null`: their texts come from each product, category or page.
 - `url` is the public address the storefront builds: `Link::getModuleLink()` for a module page (`module-<module>-<controller>`), `Link::getPageLink()` otherwise. The home page has no `url_rewrite`.
-- `meta_lang` also holds `keywords` on PrestaShop 8, a field PrestaShop 9 no longer has: it is not returned.
+- `meta_lang` holds `keywords` on PrestaShop 8 only, a field PrestaShop 9 no longer has: `keywords` is `null` there, as `somcp_get_manufacturer` returns `meta_keywords`.
 
 #### `somcp_update_meta_page`
 **State**: written · [issue #88](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/88)
@@ -2920,15 +2920,16 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | `id_meta` | integer | yes | from `somcp_list_meta_pages` |
 | `title` | object | no | per ISO code; the form's **Page title**; 70 characters at most, an empty text removes it |
 | `description` | object | no | per ISO code; the form's **Meta description**; 255 characters at most (the column), a warning over 160 |
-| `url_rewrite` | object | no | per ISO code; the form's **Rewritten URL**; `Tools::str2url()` then `Validate::isLinkRewrite()`, 255 characters at most, never empty, refused if another page of the shop already uses it in that language |
+| `keywords` | object | no | per ISO code; the form's **Meta keywords**, PrestaShop 8 only (refused on 9, which has no such field); 255 characters at most, an empty text removes them |
+| `url_rewrite` | object | no | per ISO code; the form's **Rewritten URL**; checked as typed with `Validate::isLinkRewrite()` (which follows `PS_ALLOW_ACCENTED_CHARS_URL`), never rewritten; 254 characters at most (`varchar(254)` on PrestaShop 8); required in the shop default language, may be empty in the others; refused if another page of the shop already uses it in that language |
 
-**Returns** - `changed`, `id_meta`; when something changed, `changes` (each a `field`, its `language`, the `previous` and `new` value), `seo_warnings` (per ISO code) and `page` (`id_meta`, `page`, and per language changed its `title`, `description` and `url_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
+**Returns** - `changed`, `id_meta`; when something changed, `changes` (each a `field`, its `language`, the `previous` and `new` value), `seo_warnings` (per ISO code) and `page` (`id_meta`, `page`, and per language changed its `title`, `description`, `keywords` (`null` on PrestaShop 9) and `url_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
 
 **Notes**
-- The names are the ones `somcp_list_meta_pages` returns, so a value read can be written back as is.
-- Written through the `Meta` object, after `validateFields()` and `validateFieldsLang()`, with `id_shop_list` set to the shop of the token: `meta_lang` is per shop, and the other shops keep their texts. Only the languages given change; an ISO code that is not an active language of the shop is refused, and so is any other field (`keywords`, which only PrestaShop 8 has, included).
+- The text fields have the names `somcp_list_meta_pages` returns, but the list gives them flat in one language, with `page`, `url` and `configurable`, which this tool does not take: to write, give each field as one object keyed by ISO code.
+- Written through the `Meta` object, after `validateFields()` and `validateFieldsLang()`, with `id_shop_list` set to the shop of the token: `meta_lang` is per shop, and the other shops keep their texts. Only the languages given change; an ISO code that is not an active language of the shop is refused, and so is any other field.
 - The pages whose `configurable` is false (the product, category and CMS templates, some module pages) are refused: their texts come from each product, category or page, and the back office does not list them.
-- The home page (`index`) has no `url_rewrite` and refuses one. `EditMetaHandler` only checks the shape of a friendly URL; the tool also refuses one already used by another page of the shop in the same language, since both addresses would lead to one page.
+- The home page (`index`) has no `url_rewrite`: a new one is refused, the value it holds given back unchanged is not. `EditMetaHandler` only checks the shape of a friendly URL; the tool also refuses one already used by another page of the shop in the same language, since both addresses would lead to one page.
 - Every value is checked and compared before anything is written, and every problem reported at once. A call that changes nothing writes nothing and answers `changed: false`.
 - `seo_warnings`, for each language changed: a `title` over 60 characters, a `description` over 160 (the lengths of `somcp_audit_product_seo`), and a new `url_rewrite`, whose old address breaks; the assistant tells the merchant before the call.
 

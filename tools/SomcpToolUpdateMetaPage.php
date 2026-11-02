@@ -29,6 +29,8 @@ declare(strict_types=1);
  * (EditMetaHandler on 8 and 9) only checks the shape of a friendly URL; this
  * tool also refuses one another page of the shop already uses in that
  * language, since the dispatcher would then send both addresses to one page.
+ * Meta keywords exist on PrestaShop 8 only: PrestaShop 9 dropped the field
+ * and its column.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -45,7 +47,7 @@ require_once __DIR__ . '/SomcpToolUpdateCmsSeo.php';
 class SomcpToolUpdateMetaPage
 {
     /** @var array<int, string> The translatable fields this tool writes, named as somcp_list_meta_pages returns them. */
-    private const TEXTS = ['title', 'description', 'url_rewrite'];
+    private const TEXTS = ['title', 'description', 'keywords', 'url_rewrite'];
 
     /** The longest title accepted: search results cut well before. */
     private const TITLE_MAX = 70;
@@ -53,8 +55,11 @@ class SomcpToolUpdateMetaPage
     /** The column's own size. */
     private const DESCRIPTION_MAX = 255;
 
+    /** The column's own size, the smaller of the two: varchar(254) on PrestaShop 8, 255 on 9. */
+    private const URL_REWRITE_MAX = 254;
+
     /** The column's own size. */
-    private const URL_REWRITE_MAX = 255;
+    private const KEYWORDS_MAX = 255;
 
     /** The home page, served at the root of the shop: it has no friendly URL. */
     private const HOME = 'index';
@@ -71,10 +76,12 @@ class SomcpToolUpdateMetaPage
                 . 'sales, prices drop, search, sitemap, account and checkout pages, module pages - as the page form '
                 . 'of Shop Parameters > Traffic & SEO does: title (the Page title, the title tag), description (the '
                 . 'Meta description) and url_rewrite (the Rewritten URL). Texts are objects keyed by ISO code, '
-                . '{"fr": "...", "en": "..."}; only the languages given change, the others keep their text. Read '
+                . '{"fr": "...", "en": "..."}; only the languages given change, the others keep their text. keywords '
+                . '(the Meta keywords) exists on PrestaShop 8 only and is refused on 9. Read '
                 . 'the page first with somcp_list_meta_pages, which gives id_meta, and show the merchant the new '
                 . 'values in each language before calling. A new url_rewrite makes the old address of the page stop '
-                . 'working: say so to the merchant before the call. The home page has no url_rewrite, and the pages '
+                . 'working: say so to the merchant before the call. The home page has no url_rewrite (its stored '
+                . 'empty value is accepted unchanged), and the pages '
                 . 'whose configurable is false (product, category and CMS templates) are refused: their texts come '
                 . 'from each product, category or page. Every problem is reported at once and nothing is written '
                 . 'until the whole call is valid. The answer gives each value changed with its previous and new '
@@ -102,12 +109,19 @@ class SomcpToolUpdateMetaPage
                             . '255 characters at most, without < > = { }; search results show about 160.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
+                    'keywords' => [
+                        'type' => 'object',
+                        'description' => 'Assistant, approved by the merchant. The Meta keywords, per ISO code, '
+                            . 'separated by commas: 255 characters at most; an empty text removes them. PrestaShop 8 '
+                            . 'only.',
+                        'additionalProperties' => ['type' => 'string'],
+                    ],
                     'url_rewrite' => [
                         'type' => 'object',
-                        'description' => 'Assistant, approved by the merchant. The Rewritten URL, per ISO code: '
-                            . 'made into lower case words joined by hyphens, 255 characters at most, never empty, '
-                            . 'refused when another page of the shop already uses it. The old address stops working. '
-                            . 'Refused on the home page.',
+                        'description' => 'Assistant, approved by the merchant. The Rewritten URL, per ISO code, '
+                            . 'checked as typed: letters, digits and hyphens only, 254 characters at most, required in '
+                            . 'the shop default language and may be empty in the others, refused when another page of '
+                            . 'the shop already uses it. The old address stops working. The home page has none.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                 ],
@@ -217,17 +231,16 @@ class SomcpToolUpdateMetaPage
             }
         }
 
-        if (array_key_exists('url_rewrite', $arguments) && (string) $meta->page === self::HOME) {
-            // The dispatcher serves the home page at the root of the shop
-            // and never reads a rewritten URL for it.
-            $errors[] = 'url_rewrite: the home page is served at the root of the shop and has no friendly URL';
-            unset($arguments['url_rewrite']);
+        if (array_key_exists('keywords', $arguments) && !self::hasKeywords()) {
+            $errors[] = 'keywords: the Meta keywords field exists on PrestaShop 8 only, and this shop runs PrestaShop ' . _PS_VERSION_;
+            unset($arguments['keywords']);
         }
 
         $active = [];
         foreach (Language::getLanguages(true, $idShop) as $row) {
             $active[Tools::strtolower((string) $row['iso_code'])] = (int) $row['id_lang'];
         }
+        $idLangDefault = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
 
         foreach (self::TEXTS as $field) {
             if (!array_key_exists($field, $arguments)) {
@@ -250,11 +263,21 @@ class SomcpToolUpdateMetaPage
                     continue;
                 }
                 $idLang = $active[$iso];
-                $new = self::checked($field, trim($text), $idLang, $meta, $idShop, $where, $errors);
+                $previous = SomcpToolUpdateCmsSeo::textOf($meta->{$field}, $idLang);
+                if ($field === 'url_rewrite' && (string) $meta->page === self::HOME) {
+                    // The dispatcher serves the home page at the root of the
+                    // shop and never reads a rewritten URL for it. The value
+                    // it holds is accepted unchanged, so a page read can be
+                    // given back as it is.
+                    if (trim($text) !== $previous) {
+                        $errors[] = $where . ': the home page is served at the root of the shop and has no friendly URL';
+                    }
+                    continue;
+                }
+                $new = self::checked($field, trim($text), $idLang, $idLang === $idLangDefault, $meta, $idShop, $where, $errors);
                 if ($new === null) {
                     continue;
                 }
-                $previous = SomcpToolUpdateCmsSeo::textOf($meta->{$field}, $idLang);
                 if ($new === $previous) {
                     continue;
                 }
@@ -276,6 +299,7 @@ class SomcpToolUpdateMetaPage
      * @param string $field
      * @param string $text
      * @param int $idLang
+     * @param bool $isDefaultLanguage
      * @param Meta $meta
      * @param int $idShop
      * @param string $where
@@ -283,15 +307,26 @@ class SomcpToolUpdateMetaPage
      *
      * @return string|null
      */
-    private static function checked(string $field, string $text, int $idLang, Meta $meta, int $idShop, string $where, array &$errors): ?string
+    private static function checked(string $field, string $text, int $idLang, bool $isDefaultLanguage, Meta $meta, int $idShop, string $where, array &$errors): ?string
     {
         if ($field === 'url_rewrite') {
-            // As the back office makes a friendly URL from what is typed. An
-            // empty one is refused: EditMetaHandler wants one on every page
-            // but the home page, and the page would lose its address.
-            $text = (string) Tools::str2url($text);
-            if ($text === '' || !Validate::isLinkRewrite($text)) {
-                $errors[] = $where . ': no valid friendly URL can be made from it; give words, which become lower case joined by hyphens';
+            // The form requires the Rewritten URL in the shop default
+            // language only: the other languages fall back on it.
+            if ($text === '') {
+                if ($isDefaultLanguage) {
+                    $errors[] = $where . ': required in the shop default language, the page would lose its address';
+
+                    return null;
+                }
+
+                return $text;
+            }
+            // Checked as typed, as IsUrlRewriteValidator does in the form,
+            // rather than rewritten: a URL changed without a word is not the
+            // one the merchant approved. isLinkRewrite() follows
+            // PS_ALLOW_ACCENTED_CHARS_URL like the form.
+            if (!Validate::isLinkRewrite($text)) {
+                $errors[] = $where . ': "Only letters and hyphens are allowed." - as the form says; no spaces, no other characters';
 
                 return null;
             }
@@ -318,6 +353,10 @@ class SomcpToolUpdateMetaPage
             return null;
         } elseif ($field === 'description' && Tools::strlen($text) > self::DESCRIPTION_MAX) {
             $errors[] = $where . ': ' . self::DESCRIPTION_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
+
+            return null;
+        } elseif ($field === 'keywords' && Tools::strlen($text) > self::KEYWORDS_MAX) {
+            $errors[] = $where . ': ' . self::KEYWORDS_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
 
             return null;
         }
@@ -444,6 +483,7 @@ class SomcpToolUpdateMetaPage
             $texts[$iso] = [
                 'title' => SomcpToolUpdateCmsSeo::textOf($stored->title, $idLang),
                 'description' => SomcpToolUpdateCmsSeo::textOf($stored->description, $idLang),
+                'keywords' => self::hasKeywords() ? SomcpToolUpdateCmsSeo::textOf($stored->keywords, $idLang) : null,
                 'url_rewrite' => SomcpToolUpdateCmsSeo::textOf($stored->url_rewrite, $idLang),
             ];
         }
@@ -453,5 +493,18 @@ class SomcpToolUpdateMetaPage
             'page' => (string) $stored->page,
             'texts' => $texts === [] ? new stdClass() : $texts,
         ];
+    }
+
+    /**
+     * Whether this PrestaShop still has the Meta keywords field.
+     *
+     * Read from the object's definition rather than the version number: it
+     * is what validateFieldsLang() and update() write.
+     *
+     * @return bool
+     */
+    public static function hasKeywords(): bool
+    {
+        return isset(Meta::$definition['fields']['keywords']);
     }
 }

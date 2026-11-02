@@ -253,6 +253,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |
 | `somcp_audit_brand_seo` | `mcp.seo.read` | `view` on `AdminManufacturers` | read |
 | `somcp_update_cms_seo` | `mcp.seo.write` | `edit` on `AdminCmsContent` | write |
+| `somcp_update_meta_page` | `mcp.seo.write` | `edit` on `AdminMeta` | write |
 | `somcp_get_robots_txt` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_generate_robots_txt` | `mcp.seo.write` | `add`, `edit` and `delete` on `AdminMeta` | write |
 

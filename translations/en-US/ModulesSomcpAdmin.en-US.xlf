@@ -1172,6 +1172,11 @@
       <source>Change the SEO of a CMS page</source>
       <target>Change the SEO of a CMS page</target>
     </trans-unit>
+    <!-- Change the SEO of a shop page -->
+    <trans-unit id="c9f75056f74581bcdf13ba2953879366" resname="Change the SEO of a shop page">
+      <source>Change the SEO of a shop page</source>
+      <target>Change the SEO of a shop page</target>
+    </trans-unit>
     <!-- Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt -->
     <trans-unit id="23d7a2f44f6eb2b665723de3eb177aa3" resname="Change the shop&#x27;s SEO settings, page titles and descriptions, robots.txt and llms.txt">
       <source>Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt</source>

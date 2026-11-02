@@ -29,6 +29,16 @@ needs the new permission `mcp.modules.read`, which the consent screen
 describes as reading the modules of the shop, and the `view` right on
 **Modules > Module Manager**.
 
+**SEO of the shop's own pages.** The new tool `somcp_update_meta_page`
+changes the **Page title**, **Meta description** and **Rewritten URL** of one
+of the pages listed under **Shop Parameters > Traffic & SEO** - contact, new
+products, best sales, search and the others - in the languages you approve,
+in the current shop only. It takes the names `somcp_list_meta_pages` returns,
+refuses a friendly URL another page already uses, and warns that a new one
+makes the old address stop working. It joins the **Audit and improve SEO**
+prompt and needs the `mcp.seo.write` permission and the `edit` right on
+**Shop Parameters > Traffic & SEO**.
+
 **Reading one content page.** The new tool `somcp_get_cms_page` reads one
 CMS page as its edit form under **Design > Pages** shows it: category,
 title, meta title, meta description, meta keywords (PrestaShop 8), friendly

@@ -837,6 +837,11 @@
       <source>Change a return status</source>
       <target>Change a return status</target>
     </trans-unit>
+    <!-- Delete a return status -->
+    <trans-unit id="12b97efbfbfc52c083d1e1f4c8c786fb" resname="Delete a return status">
+      <source>Delete a return status</source>
+      <target>Delete a return status</target>
+    </trans-unit>
     <!-- Test the connection -->
     <trans-unit id="660fc9e01f52fb7f8a715e51167c4f8d" resname="Test the connection">
       <source>Test the connection</source>

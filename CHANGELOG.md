@@ -139,6 +139,14 @@ relay at once. While nobody uses the chat, the relay asks your shop only every
 shop's PHP processes; it is back to answering at once as soon as the chat is
 opened.
 
+**Deleting return statuses.** The new tool
+`somcp_delete_return_status` deletes one return status the merchant
+created, as the **Delete** action of the return status list of **Shop
+Parameters > Order Settings > Statuses** does. The five statuses every
+shop starts with are refused, and so is a status a merchandise return
+still stands on, with the number of returns. The prompt **Change an
+order status** names it too.
+
 ### Changed
 
 **Meta keywords of the shop pages.** `somcp_list_meta_pages` now also gives

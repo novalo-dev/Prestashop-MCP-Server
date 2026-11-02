@@ -280,6 +280,9 @@ class SomcpModules
             return;
         }
 
+        // Typed by hand: PrestaShop 9's container declares a non-null object,
+        // 8's an object or null, and one check has to hold on both.
+        /** @var object|null $preparer */
         $preparer = $container->get($id);
         if (!is_object($preparer) || !method_exists($preparer, 'prepareLanguageId')) {
             return;

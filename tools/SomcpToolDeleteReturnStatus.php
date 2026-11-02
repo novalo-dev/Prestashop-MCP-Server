@@ -38,6 +38,10 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+// Loaded here rather than left to the order the registry reads tools/ in:
+// the status lookup and the removable rule live in the creation tool.
+require_once __DIR__ . '/SomcpToolCreateReturnStatus.php';
+
 class SomcpToolDeleteReturnStatus
 {
     /**
@@ -97,7 +101,7 @@ class SomcpToolDeleteReturnStatus
 
         // Refused, not ignored: a second call for a status already deleted
         // must not read as a success.
-        $status = self::existingStatus($idReturnState);
+        $status = SomcpToolCreateReturnStatus::existingStatus($idReturnState);
         if ($status === null) {
             return SomcpTool::text(
                 'No return status has this identifier. Nothing was deleted. Find it with '
@@ -113,7 +117,7 @@ class SomcpToolDeleteReturnStatus
         // Neither back office offers Delete on the five statuses every shop
         // starts with, and neither handler checks it: the tool refuses them
         // itself, before any question of use.
-        if ($idReturnState >= 1 && $idReturnState <= 5) {
+        if (!SomcpToolCreateReturnStatus::removable($idReturnState)) {
             return SomcpTool::text(
                 'Return status ' . $idReturnState . ' (' . $name . ') is one of the five statuses every shop '
                     . 'starts with, and neither back office offers Delete on those. Nothing was deleted.',
@@ -145,7 +149,7 @@ class SomcpToolDeleteReturnStatus
         // Asked of the shop rather than inferred from delete(): the same
         // read as the list tool, so "deleted" means the merchant no longer
         // sees it.
-        $gone = self::existingStatus($idReturnState) === null;
+        $gone = SomcpToolCreateReturnStatus::existingStatus($idReturnState) === null;
 
         if (!$done || !$gone) {
             SomcpLogger::log(
@@ -179,27 +183,6 @@ class SomcpToolDeleteReturnStatus
             'id_order_return_state' => $idReturnState,
             'name' => $name,
         ]);
-    }
-
-    /**
-     * The status of this identifier, or null when the shop has none.
-     *
-     * No shop test, unlike the catalogue reads: return statuses are not
-     * tied to a shop, the table has no shop column.
-     *
-     * @param int $idReturnState
-     *
-     * @return OrderReturnState|null
-     */
-    private static function existingStatus(int $idReturnState): ?OrderReturnState
-    {
-        if ($idReturnState < 1) {
-            return null;
-        }
-
-        $status = new OrderReturnState($idReturnState);
-
-        return (int) $status->id === $idReturnState ? $status : null;
     }
 
     /**

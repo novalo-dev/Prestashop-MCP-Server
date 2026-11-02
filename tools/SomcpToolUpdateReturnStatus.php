@@ -159,27 +159,6 @@ class SomcpToolUpdateReturnStatus extends SomcpToolCreateReturnStatus
     }
 
     /**
-     * The status of this identifier, or null when the shop has none.
-     *
-     * No shop test, unlike the catalogue reads: return statuses are not
-     * tied to a shop, the table has no shop column.
-     *
-     * @param int $idReturnState
-     *
-     * @return OrderReturnState|null
-     */
-    private static function existingStatus(int $idReturnState): ?OrderReturnState
-    {
-        if ($idReturnState < 1) {
-            return null;
-        }
-
-        $status = new OrderReturnState($idReturnState);
-
-        return (int) $status->id === $idReturnState ? $status : null;
-    }
-
-    /**
      * Turns the arguments into what will be written, or says everything that is wrong with them.
      *
      * Nothing is written here. A value equal to what the shop holds is left

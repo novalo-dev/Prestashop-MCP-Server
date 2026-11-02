@@ -118,6 +118,9 @@ class AdminSomcpAssistantController extends ModuleAdminController
         }
         ignore_user_abort(true);
         SomcpAssistantChat::allowTime();
+        // The chat is in use: a local assistant's relay goes back to keeping
+        // a request open, so the next message is answered without delay.
+        SomcpRelay::wake();
 
         $action = (string) Tools::getValue('somcp_action');
         $threadId = (string) Tools::getValue('thread_id');

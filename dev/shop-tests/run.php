@@ -650,7 +650,11 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
         $saved = SomcpAssistant::edited($idLocal);
         $relayCheck($saved !== null && $saved['local'] && $saved['label'] === 'Ollama' && $saved['online'], 'the local assistant is not saved online under the name of its AI');
 
+        // Nobody chatting: the relays may rest; a queued request wakes them.
+        SomcpRelay::purge();
+        $relayCheck(!SomcpRelay::awake(), 'the relays stay awake with nobody chatting');
         $key = SomcpRelay::enqueue($idRelay, ['model' => 'qwen2.5:7b', 'messages' => [['role' => 'user', 'content' => 'Hello']]]);
+        $relayCheck(SomcpRelay::awake(), 'a request from the chat did not wake the relays');
         $job = SomcpRelay::claim($idRelay);
         $relayCheck(($job['id'] ?? '') === $key && ($job['request']['model'] ?? '') === 'qwen2.5:7b', 'the relay did not get the queued request');
         $relayCheck(SomcpRelay::claim($idRelay) === null, 'one request was handed out twice');

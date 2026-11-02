@@ -1170,6 +1170,7 @@ class SomcpAssistant
         Configuration::deleteByName(self::LINK_KEY);
         Configuration::deleteByName(self::PROFILE);
         Configuration::deleteByName(self::SEARCH);
+        SomcpRelay::purge();
     }
 
     /**

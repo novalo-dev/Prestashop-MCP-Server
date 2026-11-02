@@ -69,8 +69,33 @@ class SomcpRelay
     /** @var string Letters of a pairing code: no 0/O or 1/I, which read alike. */
     private const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
-    /** @var int Microseconds between two looks at the table while waiting. */
+    /** @var int Microseconds between two looks at the table while the chat waits for an answer. */
     private const POLL_MICROSECONDS = 300000;
+
+    /**
+     * @var int Seconds between two looks at the table while a relay waits for
+     *          work. A request queued in between waits at most this long, and
+     *          the shop runs a quarter of the queries it ran at half a second.
+     */
+    public const NEXT_POLL_SECONDS = 2;
+
+    /**
+     * @var string until when the relays keep a request open, a timestamp. Set
+     *             whenever the chat is used; past it, nobody is chatting and
+     *             a relay that knows how is told to come back later instead
+     *             of holding one of the shop's PHP processes for nothing.
+     */
+    public const AWAKE = 'SOMCP_RELAY_AWAKE';
+
+    /** @var int Seconds the relays stay quick after the chat was last used. */
+    private const AWAKE_SECONDS = 600;
+
+    /**
+     * @var int Seconds an idle relay waits before asking again. Below the
+     *          shortest wait of the chat for a provider, so a message sent the
+     *          moment the chat opens is still answered.
+     */
+    public const IDLE_WAIT_SECONDS = 15;
 
     /**
      * Opens a pairing at the level the back office edits, and gives back the
@@ -240,6 +265,37 @@ class SomcpRelay
     }
 
     /**
+     * Notes that somebody uses the chat, so the relays answer quickly for the
+     * next minutes. Written at most once a minute: the chat calls it on every
+     * request.
+     */
+    public static function wake(): void
+    {
+        $until = (int) Configuration::getGlobalValue(self::AWAKE);
+        if ($until - time() < self::AWAKE_SECONDS - 60) {
+            Configuration::updateGlobalValue(self::AWAKE, (string) (time() + self::AWAKE_SECONDS));
+        }
+    }
+
+    /**
+     * Whether the chat was used in the last minutes.
+     *
+     * @return bool
+     */
+    public static function awake(): bool
+    {
+        return (int) Configuration::getGlobalValue(self::AWAKE) > time();
+    }
+
+    /**
+     * Removes what the relays stored outside their tables, on uninstall.
+     */
+    public static function purge(): void
+    {
+        Configuration::deleteByName(self::AWAKE);
+    }
+
+    /**
      * Notes that the relay asked, which is what the online status reads.
      *
      * @param int $idRelay
@@ -313,6 +369,8 @@ class SomcpRelay
      */
     public static function enqueue(int $idRelay, array $request): string
     {
+        // A request is the chat in use, if nothing woke the relays before.
+        self::wake();
         $db = Db::getInstance();
         // Jobs a chat stopped waiting for, as when PHP ended the request
         // before the chat could cancel: nothing will read them any more.

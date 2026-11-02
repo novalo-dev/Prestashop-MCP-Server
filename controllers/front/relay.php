@@ -116,10 +116,20 @@ class SomcpRelayModuleFrontController extends ModuleFrontController
     /**
      * Holds the call until a request is waiting or WAIT_SECONDS have passed.
      *
+     * While nobody uses the chat, a relay that says it understands (wait=1)
+     * gets an immediate answer telling it when to come back, instead of a
+     * PHP process held open for nothing. Older relays always get the long
+     * wait: told nothing, they would ask again at once, in a loop.
+     *
      * @param int $idRelay
      */
     private function next(int $idRelay): void
     {
+        SomcpRelay::touch($idRelay);
+        if (Tools::getValue('wait') === '1' && !SomcpRelay::awake()) {
+            SomcpHttp::json(['job' => SomcpRelay::claim($idRelay), 'wait' => SomcpRelay::IDLE_WAIT_SECONDS]);
+        }
+
         $limit = (int) ini_get('max_execution_time');
         if ($limit > 0 && $limit < SomcpRelay::WAIT_SECONDS + 10 && function_exists('set_time_limit')) {
             @set_time_limit(SomcpRelay::WAIT_SECONDS + 10);
@@ -129,13 +139,12 @@ class SomcpRelayModuleFrontController extends ModuleFrontController
         $limit = (int) ini_get('max_execution_time');
         $wait = $limit > 0 ? min(SomcpRelay::WAIT_SECONDS, max(1, $limit - 5)) : SomcpRelay::WAIT_SECONDS;
         $until = microtime(true) + $wait;
-        SomcpRelay::touch($idRelay);
         do {
             $job = SomcpRelay::claim($idRelay);
             if ($job !== null) {
                 SomcpHttp::json(['job' => $job]);
             }
-            usleep(500000);
+            sleep(SomcpRelay::NEXT_POLL_SECONDS);
         } while (microtime(true) < $until);
 
         SomcpRelay::touch($idRelay);

@@ -71,7 +71,10 @@ tested, the model to choose. Nothing to click while it waits; **Retry** shows
 only when a step gave up, such as a code that expired. Only the models of your
 AI able to call the shop's tools are offered. The list of assistants shows whether the relay is online, and
 **Test the connection** checks it. Removing the local assistant unlinks the
-relay at once.
+relay at once. While nobody uses the chat, the relay asks your shop only every
+15 seconds instead of keeping a request open, so it does not hold one of your
+shop's PHP processes; it is back to answering at once as soon as the chat is
+opened.
 
 ### Changed
 

@@ -54,28 +54,18 @@ class SomcpToolSetOrderStatus
         return new SomcpTool(
             'somcp_set_order_status',
             Somcp::t('Change the status of an order'),
-            'Changes the status of one order, exactly as a merchant would from the back '
-                . 'office. Depending on the status reached this emails the customer, moves '
-                . 'stock, issues an invoice or records a refund, so it is not reversible by '
-                . 'calling it again. '
-                . 'Call somcp_list_order_statuses first and use an identifier from that list: '
-                . 'status identifiers differ from one shop to the next and a guessed one sends '
-                . 'the wrong email to a customer. In that list, pick the status by the role it '
-                . 'plays - shipped, delivered, refunded, canceled - rather than by its name, '
-                . 'which is translated and which the merchant can change. '
-                . 'Do not use it to find out what the statuses are, which is '
-                . 'somcp_list_order_statuses, nor to read an order, which is somcp_get_order. '
-                . 'One order per call. To move several orders, call it once per order and '
-                . 'report each result separately. '
-                . 'If the answer to a call is lost, do not repeat it - read the order with '
-                . 'somcp_get_order to see whether the change went through, because a second '
-                . 'call can send the customer a second email.',
+            'Changes the status of one order, as the merchant does on the order page. Depending on the '
+                . 'status this emails the customer, moves stock, issues an invoice or records a refund: calling '
+                . 'again does not undo it. Take the identifier from somcp_list_order_statuses, never guess it, '
+                . 'and pick the status by its role (shipped, delivered, refunded, canceled), not by its name. '
+                . 'One order per call; report each result. Not to be retried on a lost answer: a second call '
+                . 'can email the customer again - check the status with somcp_get_order.',
             [
                 'type' => 'object',
                 'properties' => [
                     'id_order' => [
                         'type' => 'integer',
-                        'description' => 'Identifier of the order to change.',
+                        'description' => 'Identifier of the order to change, from somcp_search_orders.',
                     ],
                     'reference' => [
                         'type' => 'string',

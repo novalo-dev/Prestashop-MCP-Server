@@ -59,6 +59,21 @@ a tool the module ships, and every write names at least one read. A link to a
 tool not written yet is left out, and added by the pull request that writes
 it. `check-tools.php` fails on either.
 
+**Descriptions.** Every tool is sent to the model on each step, so its text is
+kept short: 600 characters at most for a tool description, 200 for a property
+description. A tool description says, one sentence each where possible: what
+it does, with the words and the place of the screen; which tool to use instead,
+by name; and for a write, where its identifiers come from, then the
+not-to-be-retried sentence with the read that checks it. Types, formats and
+defaults belong to the property, once; how the tool works inside belongs here
+and in the code comments; an error the tool returns with what to do next does
+not need to be announced. What never leaves: the not-to-be-retried sentence,
+"never guess" where an identifier is asked, an email sent to the customer, and
+one object per call. A parameter that takes an identifier names the tool that
+gives it. `php dev/tools/measure.php .` prints the size of each tool and page
+and the texts above the budget. The tools are brought within it page by page;
+the budget is checked by `check-tools.php` once every page fits.
+
 **Nature and permission.** `SomcpTool::acts($action, $controller)`: one
 declaration, from which the module takes the permission required and what the
 assistant is told about the call. `view` is read-only and repeatable; `add`,

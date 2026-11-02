@@ -61,25 +61,18 @@ class SomcpToolSetOrderTracking
         return new SomcpTool(
             'somcp_set_order_tracking',
             Somcp::t('Set the tracking number of an order'),
-            'Sets the tracking number of one shipment of one order, like the Tracking number field of the '
-                . 'Edit shipping details window on the Carriers tab of the order page. A new number that is not '
-                . 'empty emails the customer the in_transit message (with the tracking link when the carrier has '
-                . 'one) and tells the carrier modules, as the back office does: tell the merchant before calling. '
-                . 'An empty tracking_number ("") clears the number and sends no email - only send it when the '
-                . 'merchant asked for the number to be removed. The carrier of the shipment is never changed, '
-                . 'and the order status is not touched: marking the order as shipped is somcp_set_order_status, '
-                . 'a separate decision. A reference shared by several orders (a split cart) is refused with '
-                . 'their identifiers and nothing is written: ask the merchant which one, then give id_order. An order with several shipments needs id_order_carrier; without it the '
-                . 'call is refused with the list of shipments. When the shipment already has this number, '
-                . 'nothing is written and nobody is emailed (changed: false). One shipment per call. Not to be '
-                . 'retried on a lost answer: a second call could email the customer twice - read the order with '
-                . 'somcp_get_order, whose shipping.shipments show the number once saved.',
+            'Sets the tracking number of one shipment, like the Tracking number field of Edit shipping '
+                . 'details on the Carriers tab of the order page. A new number emails the customer and tells '
+                . 'the carrier modules: tell the merchant first. An empty number clears it without email, only '
+                . 'if the merchant asked. The carrier and the status are not changed (shipped is '
+                . 'somcp_set_order_status). One shipment per call. Not to be retried on a lost answer: a second '
+                . 'call could email the customer twice - check shipping.shipments with somcp_get_order.',
             [
                 'type' => 'object',
                 'properties' => [
                     'id_order' => [
                         'type' => 'integer',
-                        'description' => 'Identifier of the order.',
+                        'description' => 'Identifier of the order, from somcp_search_orders.',
                     ],
                     'reference' => [
                         'type' => 'string',

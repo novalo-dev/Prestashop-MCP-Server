@@ -180,6 +180,13 @@ a call that only failed. They now say where to look in the back office
 instead, such as **Customers > Groups**, and each change still names the tool
 that shows its result. The link to a new tool is added with that tool.
 
+**Shorter order tools.** The seven tools of the order page - search, read,
+change the status, set the tracking number or the private note, add a message,
+record a payment - now describe themselves in a few sentences instead of a
+paragraph, about a fifth lighter for the assistant on every step. What
+matters is kept: when the customer is emailed, which tool gives each
+identifier, and which read checks a change.
+
 ### Fixed
 
 **The built-in assistant no longer freezes after a slow answer.** When the AI

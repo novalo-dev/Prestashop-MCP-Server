@@ -44,27 +44,17 @@ class SomcpToolGetOrder
         return new SomcpTool(
             'somcp_get_order',
             Somcp::t('Get an order'),
-            'Returns everything about one order of this shop, as its page in the back office shows '
-                . 'it: the order note, the cart it came from, gift wrapping and gift message, recycled '
-                . 'packaging; the customer, how to reach them, their valid orders and total spent, and '
-                . 'the private note on them; both addresses with their identifier, alias and region; '
-                . 'every product line with its id_order_detail, quantity, prices, tax rate, identifiers '
-                . '(EAN-13, ISBN, UPC, MPN, supplier reference), stock location, quantity in stock now, '
-                . 'refunded and returned quantities, customizations and, for a pack, the products in '
-                . 'it; discounts with their id_order_cart_rule; each shipment with its carrier, weight, cost and '
-                . 'tracking number; payments received; the current status and how it got there, each '
-                . 'step with its id_order_history; the '
-                . 'invoices, delivery slips and credit slips it produced; the messages exchanged, each '
-                . 'saying whether the shop or the customer wrote it; and the totals. Identify the order '
-                . 'by its identifier or its reference. '
-                . 'Do not use it to look for orders - somcp_search_orders finds them, and this '
-                . 'tool reads one you have already identified.',
+            'Returns everything about one order, as its page in the back office shows it: note, customer, '
+                . 'addresses, product lines with stock and refunded or returned quantities, discounts, '
+                . 'shipments with their tracking number, payments, status history, invoices and slips, messages '
+                . 'and totals, each with its identifier. Identify the order by its identifier or its reference. '
+                . 'Not for looking for orders: somcp_search_orders finds them.',
             [
                 'type' => 'object',
                 'properties' => [
                     'id_order' => [
                         'type' => 'integer',
-                        'description' => 'Identifier of the order to read.',
+                        'description' => 'Identifier of the order to read, from somcp_search_orders.',
                     ],
                     'reference' => [
                         'type' => 'string',

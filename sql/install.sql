@@ -287,6 +287,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_usage` (
     `month`          CHAR(7)        NOT NULL COMMENT 'YYYY-MM',
     `input_tokens`   BIGINT         NOT NULL DEFAULT 0,
     `output_tokens`  BIGINT         NOT NULL DEFAULT 0,
+    `cached_tokens`  BIGINT         NOT NULL DEFAULT 0 COMMENT 'part of input_tokens read from the provider prompt cache',
     `cost`           DECIMAL(14,6)  NOT NULL DEFAULT 0 COMMENT 'US dollars, estimated from public prices',
     PRIMARY KEY (`id_assistant`, `id_shop`, `month`),
     KEY `idx_shop` (`id_shop`)

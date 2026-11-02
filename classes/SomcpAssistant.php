@@ -921,39 +921,61 @@ class SomcpAssistant
     /**
      * What one model call cost, in US dollars, from public prices per tier.
      *
+     * The input tokens a provider read back from its prompt cache are billed
+     * at its reduced rate, and the ones Anthropic wrote to it at its higher
+     * one: counting them at the plain rate would overstate what the merchant
+     * pays as soon as a conversation goes on.
+     *
      * @param string $provider
      * @param string $model
-     * @param int $inputTokens
+     * @param int $inputTokens every input token, cached ones included
      * @param int $outputTokens
+     * @param int $cachedTokens the part of the input read from the cache
+     * @param int $cacheWriteTokens the part of the input written to it
      *
      * @return float
      */
-    public static function price(string $provider, string $model, int $inputTokens, int $outputTokens): float
+    public static function price(string $provider, string $model, int $inputTokens, int $outputTokens, int $cachedTokens = 0, int $cacheWriteTokens = 0): float
     {
         [$in, $out] = self::rates($provider, $model);
+        [$read, $write] = self::cacheRates($provider, $model);
+        $cachedTokens = min($cachedTokens, $inputTokens);
+        $cacheWriteTokens = min($cacheWriteTokens, $inputTokens - $cachedTokens);
+        $plain = $inputTokens - $cachedTokens - $cacheWriteTokens;
 
-        return ($inputTokens * $in + $outputTokens * $out) / 1000000;
+        return (($plain + $cachedTokens * $read + $cacheWriteTokens * $write) * $in + $outputTokens * $out) / 1000000;
     }
 
-    /**
-     * Adds a call to the month of an assistant.
-     *
-     * @param int $idAssistant
-     * @param int $inputTokens
-     * @param int $outputTokens
-     * @param float $cost
-     */
-    public static function record(int $idAssistant, int $inputTokens, int $outputTokens, float $cost): void
+    public static function record(int $idAssistant, int $inputTokens, int $outputTokens, float $cost, int $cachedTokens = 0): void
     {
         if ($inputTokens === 0 && $outputTokens === 0) {
             return;
         }
 
         Db::getInstance()->execute(
-            'INSERT INTO `' . _DB_PREFIX_ . 'somcp_assistant_usage` (`id_assistant`, `id_shop`, `month`, `input_tokens`, `output_tokens`, `cost`)'
-            . ' VALUES (' . (int) $idAssistant . ', ' . self::shop() . ', \'' . pSQL(date('Y-m')) . '\', ' . (int) $inputTokens . ', ' . (int) $outputTokens . ', ' . (float) $cost . ')'
+            'INSERT INTO `' . _DB_PREFIX_ . 'somcp_assistant_usage` (`id_assistant`, `id_shop`, `month`, `input_tokens`, `output_tokens`, `cached_tokens`, `cost`)'
+            . ' VALUES (' . (int) $idAssistant . ', ' . self::shop() . ', \'' . pSQL(date('Y-m')) . '\', ' . (int) $inputTokens . ', ' . (int) $outputTokens . ', ' . (int) $cachedTokens . ', ' . (float) $cost . ')'
             . ' ON DUPLICATE KEY UPDATE `input_tokens` = `input_tokens` + VALUES(`input_tokens`),'
-            . ' `output_tokens` = `output_tokens` + VALUES(`output_tokens`), `cost` = `cost` + VALUES(`cost`)'
+            . ' `output_tokens` = `output_tokens` + VALUES(`output_tokens`), `cached_tokens` = `cached_tokens` + VALUES(`cached_tokens`),'
+            . ' `cost` = `cost` + VALUES(`cost`)'
+        );
+    }
+
+    /**
+     * The input tokens read from a provider prompt cache this month, all
+     * assistants together: part of the tokens counted, billed for less.
+     *
+     * @param array<int, int>|null $shops the shops to count, the shop of the chat when null
+     *
+     * @return int
+     */
+    public static function monthCachedTokens(?array $shops = null): int
+    {
+        $ids = array_map('intval', $shops ?? [self::shop()]);
+
+        return (int) Db::getInstance()->getValue(
+            'SELECT SUM(`cached_tokens`) FROM `' . _DB_PREFIX_ . 'somcp_assistant_usage`'
+            . ' WHERE `month` = \'' . pSQL(date('Y-m')) . '\' AND `id_shop` IN (' . implode(',', $ids ?: [0]) . ')'
         );
     }
 
@@ -1525,5 +1547,39 @@ class SomcpAssistant
         // A model the table does not know, or one running on the merchant's
         // own server: counted as free rather than guessed.
         return [0.0, 0.0];
+    }
+
+    /**
+     * How a provider bills its prompt cache, as factors of its input price:
+     * the tokens read back, then the tokens written. First match wins, so the
+     * more specific family comes first.
+     *
+     * Taken from each provider's official pricing page on 2026-11-02. A
+     * provider that publishes no cache price bills cached tokens like any
+     * other, and only Anthropic charges for writing to the cache.
+     *
+     * @param string $provider
+     * @param string $model
+     *
+     * @return array{0: float, 1: float}
+     */
+    private static function cacheRates(string $provider, string $model): array
+    {
+        $table = [
+            'anthropic' => [['fable', 0.025, 1.25], ['mythos', 0.025, 1.25], ['opus-5-5', 0.05, 1.25], ['sonnet-5-5', 0.05, 1.25], ['', 0.1, 1.25]],
+            'openai' => [['gpt-6.1', 0.05, 1.0], ['', 0.1, 1.0]],
+            'gemini' => [['', 0.1, 1.0]],
+            'mistral' => [['', 0.1, 1.0]],
+            'deepseek' => [['pro', 0.033, 1.0], ['', 0.02, 1.0]],
+            'xai' => [['grok-4.7', 0.25, 1.0], ['grok-4.6', 0.25, 1.0], ['grok-build', 0.2, 1.0], ['grok-4.5', 0.15, 1.0], ['', 0.16, 1.0]],
+        ];
+
+        foreach ($table[$provider] ?? [] as [$family, $read, $write]) {
+            if ($family === '' || strpos($model, $family) !== false) {
+                return [$read, $write];
+            }
+        }
+
+        return [1.0, 1.0];
     }
 }

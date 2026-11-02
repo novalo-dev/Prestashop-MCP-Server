@@ -149,6 +149,18 @@ order status** names it too.
 
 ### Changed
 
+**Claude costs less in a conversation, and the consumption is exact.**
+Assistants on Claude now ask Anthropic to keep the start of each request in
+its cache: from the second call of a conversation, the tools and the
+instructions are read back at a tenth of the price or less. The tokens a
+provider reads back from its cache are counted apart, and the estimate in
+dollars prices them at that provider's own cache rate (OpenAI, Gemini,
+DeepSeek, xAI and Mistral cache on their side too), instead of at the full
+price. The summary the assistant writes of the oldest messages of a long
+conversation was not counted at all; it now is. **Shop Parameters > MCP
+server > Built-in assistant** says how many of this month's tokens were read
+from a cache.
+
 **Meta keywords of the shop pages.** `somcp_list_meta_pages` now also gives
 the **Meta keywords** of each page on PrestaShop 8; on PrestaShop 9, which
 no longer has that field, they are shown as empty.

@@ -1731,6 +1731,10 @@ T = {
  "Ce mois : %tokens% tokens, comptés exactement comme les fournisseurs les déclarent. Le chat s'arrête quand le plafond est atteint, sur chaque boutique. 0 pour aucun plafond.",
  "Este mes: %tokens% tokens, contados exactamente como los declaran los proveedores. El chat se detiene al alcanzar el límite, en cada tienda. 0 para ningún límite.",
  "Diesen Monat: %tokens% Tokens, genau so gezählt, wie die Anbieter sie melden. Der Chat stoppt, wenn das Limit erreicht ist, je Shop. 0 für kein Limit."),
+"Of these, %cached% were read back from the provider's cache, which bills them for less.": (
+ "Dont %cached% relus depuis le cache du fournisseur, qui les facture moins cher.",
+ "De ellos, %cached% se releyeron desde la caché del proveedor, que los factura más baratos.",
+ "Davon wurden %cached% aus dem Cache des Anbieters gelesen, der sie günstiger berechnet."),
 "About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.": (
  "Environ %spent% $, estimé d'après les prix publics de chaque fournisseur : un token ne coûte pas le même prix avec chaque modèle.",
  "Unos %spent% $, estimado a partir de los precios públicos de cada proveedor: un token no cuesta lo mismo con cada modelo.",

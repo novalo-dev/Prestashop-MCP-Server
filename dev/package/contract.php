@@ -59,11 +59,14 @@ $methods = [
     'NeuronAI\RAG\Embeddings\OpenAIEmbeddingsProvider' => ['embedDocuments'],
     // The local assistant's relay client.
     'NeuronAI\Exceptions\HttpException' => ['networkError', 'statusError'],
+    // The summary of long conversations, whose call is counted.
+    'NeuronAI\Agent\Middleware\Summarization' => ['generateSummary', 'getDefaultSummaryPrompt', 'formatMessagesForSummarization'],
 ];
 
 // Constructor parameters by position, as the assistant passes them.
 $constructors = [
     'NeuronAI\Providers\Anthropic\Anthropic' => ['key', 'model', 'version', 'max_tokens', 'parameters'],
+    'NeuronAI\Agent\Middleware\Summarization' => ['provider', 'maxTokens'],
     'NeuronAI\Providers\OpenAI\OpenAI' => ['key', 'model', 'parameters'],
     'NeuronAI\Providers\Gemini\Gemini' => ['key', 'model', 'parameters'],
     'NeuronAI\Tools\ProviderTool' => ['type', 'name', 'options'],
@@ -95,7 +98,8 @@ $constructors = [
 $properties = [
     'NeuronAI\Workflow\WorkflowRunSnapshot' => ['interrupt'],
     'NeuronAI\Agent\Interrupt\Action' => ['id', 'name', 'inputs'],
-    'NeuronAI\Chat\Messages\Usage' => ['inputTokens', 'outputTokens', 'reasoningTokens'],
+    'NeuronAI\Chat\Messages\Usage' => ['inputTokens', 'outputTokens', 'cachedInputTokens', 'reasoningTokens'],
+    'NeuronAI\Agent\Middleware\Summarization' => ['summaryPrompt'],
     'NeuronAI\Chat\Messages\Citation' => ['source', 'title'],
     'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
     'NeuronAI\HttpClient\HttpRequest' => ['body', 'timeout'],
@@ -177,6 +181,18 @@ foreach ($properties as $class => $names) {
         if (!property_exists($class, $name)) {
             $problems[] = $class . '::$' . $name . ' is gone';
         }
+    }
+}
+
+// The assistant overrides generateSummary() to count the summary's tokens:
+// a changed signature would make PHP refuse the override at load time.
+if (method_exists('NeuronAI\Agent\Middleware\Summarization', 'generateSummary')) {
+    $method = new ReflectionMethod('NeuronAI\Agent\Middleware\Summarization', 'generateSummary');
+    $names = array_map(static function (ReflectionParameter $p): string {
+        return $p->getName();
+    }, $method->getParameters());
+    if ($names !== ['provider', 'messages'] || (string) $method->getReturnType() !== '?string' || !$method->isProtected()) {
+        $problems[] = 'Summarization::generateSummary() changed shape: compare it with the override in classes/SomcpAssistantChat.php';
     }
 }
 

@@ -1709,7 +1709,7 @@ class SomcpAssistantChat
             // The delegate sub-agent is built on its own below and gets none of
             // this - it is one shot with no history to summarize.
             ->setContextWindow(self::CONTEXT_WINDOW);
-        $agent->addMiddleware(InferenceNode::class, new Summarization(null, self::SUMMARIZE_AT));
+        $agent->addMiddleware(InferenceNode::class, $this->summarization($assistant));
 
         if ($memory !== null && $agent instanceof RAG) {
             // The retrieval already carries its own store and embeddings and is
@@ -1849,19 +1849,24 @@ class SomcpAssistantChat
             default:
                 // The thinking counts against max_tokens, so the answer gets
                 // more room when it is on.
+                // Anthropic caches only what it is asked to: the top-level
+                // marker lets it place the breakpoint itself, so the tools and
+                // the instructions, the same on every call of a conversation,
+                // are read back at a tenth of the price from the second call.
+                $cache = ['cache_control' => ['type' => 'ephemeral']];
                 if ($thinking === 'adaptive') {
-                    return new Anthropic($key, $model, '2023-06-01', self::THINKING_MAX_TOKENS, [
+                    return new Anthropic($key, $model, '2023-06-01', self::THINKING_MAX_TOKENS, $cache + [
                         'thinking' => ['type' => 'adaptive'],
                         'output_config' => ['effort' => 'high'],
                     ]);
                 }
                 if ($thinking === 'budget') {
-                    return new Anthropic($key, $model, '2023-06-01', self::THINKING_MAX_TOKENS, [
+                    return new Anthropic($key, $model, '2023-06-01', self::THINKING_MAX_TOKENS, $cache + [
                         'thinking' => ['type' => 'enabled', 'budget_tokens' => self::THINKING_TOKENS],
                     ]);
                 }
 
-                return new Anthropic($key, $model, '2023-06-01', 4096);
+                return new Anthropic($key, $model, '2023-06-01', 4096, $cache);
         }
     }
 
@@ -2317,31 +2322,94 @@ class SomcpAssistantChat
     }
 
     /**
-     * Records what the model calls of a run consumed.
+     * Neuron's summary of the oldest messages, whose model call is counted.
      *
-     * @param array<int, Message> $steps
+     * The summary is one more call to the assistant's model, and Neuron
+     * throws its usage away: left as it is, the tokens of every summary of
+     * a long conversation would go missing from the month. The call is made
+     * exactly as Neuron makes it; only its usage is kept.
+     *
+     * @param array<string, mixed> $assistant
+     *
+     * @return Summarization
+     */
+    private function summarization(array $assistant): Summarization
+    {
+        $count = $assistant !== [] ? function (Message $message) use ($assistant): void {
+            $this->account([$message], $assistant);
+        } : null;
+
+        return new class($count, self::SUMMARIZE_AT) extends Summarization {
+            /** @var callable|null */
+            private $count;
+
+            public function __construct(?callable $count, int $maxTokens)
+            {
+                parent::__construct(null, $maxTokens);
+                $this->count = $count;
+            }
+
+            /**
+             * @param Message[] $messages
+             */
+            protected function generateSummary(AIProviderInterface $provider, array $messages): ?string
+            {
+                $prompt = $this->summaryPrompt ?? $this->getDefaultSummaryPrompt();
+                try {
+                    $message = $provider
+                        ->systemPrompt('You are a helpful assistant that creates concise, informative summaries of conversations.')
+                        ->setTools([])
+                        ->chat(new UserMessage($prompt . "\n\n" . $this->formatMessagesForSummarization($messages)))
+                        ->message();
+                } catch (Exception $e) {
+                    return null;
+                }
+                if ($this->count !== null) {
+                    ($this->count)($message);
+                }
+
+                return $message->getContent();
+            }
+        };
+    }
+
+    /**
+     * Records what the model calls of a run consumed, to the token:
+     * the whole prompt, the part read from the prompt cache, the part
+     * Anthropic wrote to it, and the answer.
+     *
+     * @param array<int, Message> $messages
      * @param array<string, mixed> $assistant
      */
-    private function account(array $steps, array $assistant): void
+    private function account(array $messages, array $assistant): void
     {
-        $model = SomcpAssistant::model($assistant);
         $input = 0;
         $output = 0;
-        foreach ($steps as $message) {
+        $cached = 0;
+        $written = 0;
+        foreach ($messages as $message) {
             $usage = $message->getUsage();
-            if ($usage !== null) {
-                $input += $usage->inputTokens;
-                // Gemini reports its thoughts apart from the answer, yet bills
-                // them as output; the other providers already count them in.
-                $output += $usage->outputTokens + ($assistant['provider'] === 'gemini' ? $usage->reasoningTokens : 0);
+            if ($usage === null) {
+                continue;
             }
+            // Neuron counts the cached part inside inputTokens, and adds back
+            // what Anthropic reports apart: inputTokens is the whole prompt.
+            $input += $usage->inputTokens;
+            $cached += $usage->cachedInputTokens;
+            // Gemini reports its thoughts apart from the answer, yet bills
+            // them as output; the other providers already count them in.
+            $output += $usage->outputTokens + ($assistant['provider'] === 'gemini' ? $usage->reasoningTokens : 0);
+            // Only Anthropic bills writing to its cache, and Neuron keeps
+            // that count in the message metadata.
+            $written += (int) ($message->getMetadata('cacheWriteTokens') ?? 0);
         }
 
         SomcpAssistant::record(
             (int) $assistant['id_assistant'],
             $input,
             $output,
-            SomcpAssistant::price((string) $assistant['provider'], $model, $input, $output)
+            SomcpAssistant::price((string) $assistant['provider'], SomcpAssistant::model($assistant), $input, $output, $cached, $written),
+            $cached
         );
     }
 

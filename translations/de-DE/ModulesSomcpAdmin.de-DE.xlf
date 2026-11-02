@@ -2187,6 +2187,11 @@
       <source>This month: %tokens% tokens, counted exactly as the providers report them. The chat stops when the cap is reached, on each shop. 0 for no cap.</source>
       <target>Diesen Monat: %tokens% Tokens, genau so gezählt, wie die Anbieter sie melden. Der Chat stoppt, wenn das Limit erreicht ist, je Shop. 0 für kein Limit.</target>
     </trans-unit>
+    <!-- Of these, %cached% were read back from the provider's cache, which bills them for less. -->
+    <trans-unit id="266d4d72fb07155db95a1523b7e4587d" resname="Of these, %cached% were read back from the provider&#x27;s cache, which bills them for less.">
+      <source>Of these, %cached% were read back from the provider's cache, which bills them for less.</source>
+      <target>Davon wurden %cached% aus dem Cache des Anbieters gelesen, der sie günstiger berechnet.</target>
+    </trans-unit>
     <!-- About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model. -->
     <trans-unit id="e88aa44df2748a747bb1e82124fee88d" resname="About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.">
       <source>About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.</source>

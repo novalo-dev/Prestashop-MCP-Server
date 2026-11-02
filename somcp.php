@@ -850,6 +850,7 @@ class Somcp extends Module
             'somcp_assistant_tokens' => array_map([self::class, 'formatTokens'], SomcpAssistant::monthTokens($contextShops)),
             'somcp_assistant_used' => self::formatTokens(array_sum(SomcpAssistant::monthTokens($contextShops))),
             'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts($contextShops)),
+            'somcp_assistant_cached' => SomcpAssistant::monthCachedTokens($contextShops) > 0 ? self::formatTokens(SomcpAssistant::monthCachedTokens($contextShops)) : '',
             'somcp_assistant_token_cap' => $assistantSettings['token_cap'],
             'somcp_assistant_instructions' => $assistantSettings['instructions'],
             'somcp_assistant_profile' => $assistantSettings['profile'],

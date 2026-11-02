@@ -876,6 +876,7 @@
                         </div>
                         <p class="help-block">
                             {l s='This month: %tokens% tokens, counted exactly as the providers report them. The chat stops when the cap is reached, on each shop. 0 for no cap.' sprintf=['%tokens%' => $somcp_assistant_used] d='Modules.Somcp.Admin'}
+                            {if $somcp_assistant_cached}{l s='Of these, %cached% were read back from the provider\'s cache, which bills them for less.' sprintf=['%cached%' => $somcp_assistant_cached] d='Modules.Somcp.Admin'}{/if}
                             {l s='About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.' sprintf=['%spent%' => ($somcp_assistant_spent|string_format:'%.4f')] d='Modules.Somcp.Admin'}
                         </p>
                     </div>

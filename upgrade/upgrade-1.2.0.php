@@ -23,51 +23,19 @@ function upgrade_module_1_2_0($module)
     Somcp::bootClasses();
     $db = Db::getInstance();
 
-    // The assistants of the built-in chat now belong to a level - all shops,
-    // a group or a shop - as every other setting does. Existing rows keep
-    // their shop and get group 0: each one stays the shop's own assistant,
-    // so nothing changes for a merchant until they choose to inherit.
+    // The columns 1.2.0 adds - the level of an assistant, its own monthly
+    // cap and its relay; the + menu switches and the loaded tools of a
+    // conversation - and the relay tables come from install.sql, which
+    // installDatabase() applies to whatever the shop already has. That runs
+    // first, so the steps below find every column whatever version the shop
+    // comes from. The defaults are what existing rows need: group 0 keeps
+    // each assistant the shop's own, and a conversation goes on as before,
+    // without thinking or search and with its memory.
+    if (!$module->installDatabase()) {
+        return false;
+    }
     $assistant = _DB_PREFIX_ . 'somcp_assistant';
     $present = $db->executeS('SHOW TABLES LIKE "' . pSQL($assistant) . '"');
-    if (is_array($present) && $present !== []) {
-        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($assistant) . '` LIKE "id_shop_group"');
-        if (!is_array($column) || $column === []) {
-            $db->execute('ALTER TABLE `' . bqSQL($assistant) . '` ADD `id_shop_group` INT(11) NOT NULL DEFAULT 0 AFTER `id_shop`');
-        }
-        // Each assistant may have a monthly cap of its own, in tokens.
-        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($assistant) . '` LIKE "token_cap"');
-        if (!is_array($column) || $column === []) {
-            $db->execute('ALTER TABLE `' . bqSQL($assistant) . '` ADD `token_cap` INT(11) UNSIGNED NOT NULL DEFAULT 0 AFTER `role`');
-        }
-        // A local assistant answers through O'So AI Relay; its own tables
-        // come with installDatabase() below.
-        $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($assistant) . '` LIKE "id_relay"');
-        if (!is_array($column) || $column === []) {
-            $db->execute('ALTER TABLE `' . bqSQL($assistant) . '` ADD `id_relay` INT(11) NOT NULL DEFAULT 0 AFTER `token_cap`');
-        }
-    }
-
-    // The chat's + menu switches deep thinking, web search and the memory for
-    // one conversation, and the conversation keeps them: an existing one
-    // starts as it ran before, without thinking or search and with memory.
-    $thread = _DB_PREFIX_ . 'somcp_assistant_thread';
-    $threadTable = $db->executeS('SHOW TABLES LIKE "' . pSQL($thread) . '"');
-    if (is_array($threadTable) && $threadTable !== []) {
-        $switches = [
-            'think' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `memory_last`',
-            'web_search' => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `think`',
-            'memory' => 'TINYINT(1) NOT NULL DEFAULT 1 AFTER `web_search`',
-            // The shop tools a conversation loaded: the chat no longer sends
-            // every tool's description on every call.
-            'tools' => 'TEXT NULL AFTER `memory`',
-        ];
-        foreach ($switches as $name => $definition) {
-            $column = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($thread) . '` LIKE "' . pSQL($name) . '"');
-            if (!is_array($column) || $column === []) {
-                $db->execute('ALTER TABLE `' . bqSQL($thread) . '` ADD `' . bqSQL($name) . '` ' . $definition);
-            }
-        }
-    }
 
     // The monthly cap was an estimate in US dollars; it is now counted in the
     // tokens the providers report. A cap a merchant set is kept, converted at
@@ -117,5 +85,5 @@ function upgrade_module_1_2_0($module)
         }
     }
 
-    return $module->installDatabase();
+    return true;
 }

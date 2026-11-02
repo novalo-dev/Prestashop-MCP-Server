@@ -189,6 +189,14 @@ identifier, and which read checks a change.
 
 ### Fixed
 
+**The update to 1.2.0 no longer stops on "Unknown column 'memory_last'".**
+On a shop where an earlier update had not added every column of the
+assistant's tables, the update failed with that message and the module stayed
+on its old version. The module now compares its tables with the ones a fresh
+install creates and adds whatever is missing, on every update. A shop reaches
+the right tables whatever version it comes from, and an update that was
+stopped can simply be run again.
+
 **The built-in assistant no longer freezes after a slow answer.** When the AI
 service took longer to answer than the shop allows a page to run - often 30
 seconds, and on Windows the wait counts - the request was stopped mid-way

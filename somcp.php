@@ -1406,15 +1406,69 @@ class Somcp extends Module
     }
 
     /**
-     * Creates the module tables. Every statement is CREATE TABLE IF NOT EXISTS,
-     * so an upgrade script calls this to add the tables of a new version
-     * without touching the ones a shop already has.
+     * Brings the module tables to what install.sql describes.
+     *
+     * Missing tables are created, then every column and plain key install.sql
+     * names that a table lacks is added. install.sql is the one description
+     * of the schema: a new column goes there and nowhere else, and every
+     * upgrade script calls this, so a shop reaches the current schema whatever
+     * version - or pre-release copy - it comes from, and whichever upgrade
+     * steps it skipped. A column is added without AFTER: its position changes
+     * nothing, and placing it after another made the upgrade fail on a shop
+     * that lacked that other one.
+     *
+     * Primary and unique keys are left to the upgrade scripts: adding one can
+     * fail on rows already there, which only a script that knows the data can
+     * settle first.
      *
      * @return bool
      */
     public function installDatabase(): bool
     {
-        return $this->runSqlFile('install.sql');
+        return $this->runSqlFile('install.sql') && $this->addMissingColumns();
+    }
+
+    /**
+     * Adds to each existing table the columns and plain keys install.sql
+     * names and the table lacks.
+     *
+     * @return bool
+     */
+    private function addMissingColumns(): bool
+    {
+        $db = Db::getInstance();
+        foreach ($this->sqlStatements('install.sql') as $statement) {
+            if (!preg_match('/^CREATE TABLE IF NOT EXISTS `(\w+)` \((.*)\)[^)]*$/s', $statement, $table)) {
+                continue;
+            }
+            $present = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($table[1]) . '`');
+            $keys = $db->executeS('SHOW INDEX FROM `' . bqSQL($table[1]) . '`');
+            if (!is_array($present) || !is_array($keys)) {
+                return false;
+            }
+            // MySQL compares column and key names without case.
+            $columns = array_map('strtolower', array_column($present, 'Field'));
+            $indexes = array_map('strtolower', array_column($keys, 'Key_name'));
+            foreach (preg_split('/\R/', $table[2]) ?: [] as $line) {
+                $line = rtrim(trim($line), ',');
+                if (preg_match('/^`(\w+)`\s+(.+)$/', $line, $column)) {
+                    // An AUTO_INCREMENT column is the primary key, which a
+                    // table cannot have been created without.
+                    if (in_array(strtolower($column[1]), $columns, true) || stripos($column[2], 'AUTO_INCREMENT') !== false) {
+                        continue;
+                    }
+                    if (!$db->execute('ALTER TABLE `' . bqSQL($table[1]) . '` ADD ' . $line)) {
+                        return false;
+                    }
+                } elseif (preg_match('/^KEY `(\w+)`/', $line, $key) && !in_array(strtolower($key[1]), $indexes, true)) {
+                    if (!$db->execute('ALTER TABLE `' . bqSQL($table[1]) . '` ADD ' . $line)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -1439,6 +1493,30 @@ class Somcp extends Module
             return false;
         }
 
+        foreach ($this->sqlStatements($file) as $statement) {
+            if (!Db::getInstance()->execute($statement)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The statements of one of the module SQL files, with the shop's prefix
+     * and engine.
+     *
+     * @param string $file
+     *
+     * @return array<int, string>
+     */
+    private function sqlStatements(string $file): array
+    {
+        $path = _PS_MODULE_DIR_ . 'somcp/sql/' . $file;
+        if (!file_exists($path)) {
+            return [];
+        }
+
         $sql = (string) Tools::file_get_contents($path);
         $sql = str_replace(['PREFIX_', 'ENGINE=InnoDB'], [_DB_PREFIX_, 'ENGINE=' . _MYSQL_ENGINE_], $sql);
 
@@ -1446,14 +1524,8 @@ class Somcp extends Module
         // introduced by a comment would otherwise be dropped whole.
         $sql = (string) preg_replace('/^\s*--.*$/m', '', $sql);
 
-        // array_filter has already dropped the empty pieces left by the split.
-        foreach (array_filter(array_map('trim', explode(';', $sql))) as $statement) {
-            if (!Db::getInstance()->execute($statement)) {
-                return false;
-            }
-        }
-
-        return true;
+        // array_filter drops the empty pieces left by the split.
+        return array_values(array_filter(array_map('trim', explode(';', $sql))));
     }
 
     /**

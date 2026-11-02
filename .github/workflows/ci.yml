@@ -132,6 +132,11 @@ jobs:
           tools: none
       - name: Every table shop-scoped, no merchant setting stored globally
         run: php .github/scripts/check-multishop.php .
+      # A column placed AFTER another fails the upgrade on a shop that lacks
+      # that other one. New columns go in install.sql only: installDatabase()
+      # adds them on every upgrade.
+      - name: No upgrade column placed after another
+        run: "! grep -rn 'AFTER `' upgrade/"
 
   container:
     name: Symfony container on Symfony ${{ matrix.symfony }}

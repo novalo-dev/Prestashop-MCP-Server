@@ -17,7 +17,7 @@
 declare(strict_types=1);
 
 /*
- * SomcpRelay - the somcp-relay programs linked to the shop, and the requests
+ * SomcpRelay - the O'So AI Relay programs linked to the shop, and the requests
  * they carry to an AI running on the merchant's own computer.
  *
  * The shop never calls the relay: a shop hosted online cannot reach a computer

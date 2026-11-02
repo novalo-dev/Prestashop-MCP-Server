@@ -102,7 +102,7 @@ class SomcpAssistant
 
     /**
      * @var string The provider of a local assistant: an AI on the merchant's
-     *             computer, reached through somcp-relay. Not in providers():
+     *             computer, reached through O'So AI Relay. Not in providers():
      *             it has no key, its own form, and a model picked from those
      *             the relay found able to call tools.
      */

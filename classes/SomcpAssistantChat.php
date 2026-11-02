@@ -1195,7 +1195,7 @@ class SomcpAssistantChat
             );
 
             if ($assistant['provider'] === SomcpAssistant::LOCAL) {
-                return self::t('The local assistant could not answer. Check that somcp-relay and your AI are running on the computer, then try again.');
+                return self::t('The local assistant could not answer. Check that O\'So AI Relay and your AI are running on the computer, then try again.');
             }
 
             // Claude searches the web only once the account allows it in its

@@ -700,7 +700,7 @@ class Somcp extends Module
                 if ($model !== '') {
                     $this->flash($this->trans('The relay answers. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
                 } else {
-                    $this->flash($this->trans('The relay is offline, or the model no longer passes its tool test. Start somcp-relay on the computer where your AI runs, then test again.', [], 'Modules.Somcp.Admin'), true);
+                    $this->flash($this->trans('The relay is offline, or the model no longer passes its tool test. Start O\'So AI Relay on the computer where your AI runs, then test again.', [], 'Modules.Somcp.Admin'), true);
                 }
                 $this->redirectToSelf();
             }
@@ -969,7 +969,7 @@ class Somcp extends Module
         if ($model !== '') {
             $this->flash($this->trans('Local assistant saved. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
         } else {
-            $this->flash($this->trans('Local assistant saved, but its relay is offline right now. Start somcp-relay on the computer where your AI runs.', [], 'Modules.Somcp.Admin'), true);
+            $this->flash($this->trans('Local assistant saved, but its relay is offline right now. Start O\'So AI Relay on the computer where your AI runs.', [], 'Modules.Somcp.Admin'), true);
         }
         $this->redirectToSelf();
     }
@@ -1021,7 +1021,7 @@ class Somcp extends Module
             'models' => $relay !== null ? SomcpRelay::toolModels($relay) : [],
             'model_count' => $relay !== null ? count(SomcpRelay::toolModels($relay)) : 0,
             'assistant' => $assistant ?? ['id_assistant' => 0, 'model' => '', 'role' => '', 'active' => true, 'token_cap' => 0],
-            'command' => $relay !== null && $relay['code'] !== '' ? 'somcp-relay pair ' . $shop . ' ' . $relay['code'] : '',
+            'command' => $relay !== null && $relay['code'] !== '' ? 'oso pair ' . $shop . ' ' . $relay['code'] : '',
             'status_url' => $relay !== null ? $this->selfUrl(['somcp_relay_status' => (int) $relay['id_relay']]) : '',
             'download' => SomcpRelay::DOWNLOAD_URL,
         ];

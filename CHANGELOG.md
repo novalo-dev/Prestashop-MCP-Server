@@ -60,7 +60,7 @@ conversation keeps its switches when you come back to it.
 **A local assistant, running on your own computer.** **Add a local assistant**
 in the **Built-in assistant** tab connects the chat to an AI on your computer -
 Ollama, LM Studio or any software that speaks the OpenAI API - through
-[somcp-relay](https://github.com/novalo-dev/Somcp-Relay), a small program you
+[O'So AI Relay](https://github.com/novalo-dev/Somcp-Relay), a small program you
 download and run there. Your conversations and your shop data then go to your
 computer instead of an AI company, with no key to pay for. The relay calls your
 shop, never the other way round, so nothing has to be opened on your network,

@@ -613,7 +613,7 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
     SomcpAssistant::delete($idAssistant);
     SomcpAssistantChat::overrideProvider(null);
 
-    // A local assistant, through somcp-relay. A code pairs once, in any case
+    // A local assistant, through O'So AI Relay. A code pairs once, in any case
     // and with or without its dash; the token reports the models and only
     // those that passed the tool test can be chosen; a request the chat
     // queues is taken once, answered and read back; a relay gone quiet fails

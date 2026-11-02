@@ -17,7 +17,7 @@
 declare(strict_types=1);
 
 /*
- * Where somcp-relay calls the shop: to pair with a code from the back office,
+ * Where O'So AI Relay calls the shop: to pair with a code from the back office,
  * to say which local AI answers, to wait for chat requests and to send their
  * answers back. PROTOCOL.md in the relay's repository is the contract.
  *

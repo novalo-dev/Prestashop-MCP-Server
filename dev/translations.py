@@ -2047,10 +2047,10 @@ T = {
  "Le relais répond. Modèle utilisé : %model%.",
  "El relé responde. Modelo en uso: %model%.",
  "Das Relay antwortet. Verwendetes Modell: %model%."),
-"The relay is offline, or the model no longer passes its tool test. Start somcp-relay on the computer where your AI runs, then test again.": (
- "Le relais est hors ligne, ou le modèle ne réussit plus son test des outils. Lancez somcp-relay sur l'ordinateur où tourne votre IA, puis testez à nouveau.",
- "El relé está desconectado, o el modelo ya no supera su prueba de herramientas. Inicie somcp-relay en el ordenador donde funciona su IA y vuelva a probar.",
- "Das Relay ist offline, oder das Modell besteht seinen Werkzeugtest nicht mehr. Starten Sie somcp-relay auf dem Computer, auf dem Ihre KI läuft, und testen Sie erneut."),
+"The relay is offline, or the model no longer passes its tool test. Start O'So AI Relay on the computer where your AI runs, then test again.": (
+ "Le relais est hors ligne, ou le modèle ne réussit plus son test des outils. Lancez O'So AI Relay sur l'ordinateur où tourne votre IA, puis testez à nouveau.",
+ "El relé está desconectado, o el modelo ya no supera su prueba de herramientas. Inicie O'So AI Relay en el ordenador donde funciona su IA y vuelva a probar.",
+ "Das Relay ist offline, oder das Modell besteht seinen Werkzeugtest nicht mehr. Starten Sie O'So AI Relay auf dem Computer, auf dem Ihre KI läuft, und testen Sie erneut."),
 "The relay no longer offers this model, or it was unlinked. Pick a model again.": (
  "Le relais ne propose plus ce modèle, ou il a été délié. Choisissez à nouveau un modèle.",
  "El relé ya no ofrece este modelo, o se ha desvinculado. Vuelva a elegir un modelo.",
@@ -2059,14 +2059,14 @@ T = {
  "Assistant local enregistré. Modèle utilisé : %model%.",
  "Asistente local guardado. Modelo en uso: %model%.",
  "Lokaler Assistent gespeichert. Verwendetes Modell: %model%."),
-"Local assistant saved, but its relay is offline right now. Start somcp-relay on the computer where your AI runs.": (
- "Assistant local enregistré, mais son relais est hors ligne pour l'instant. Lancez somcp-relay sur l'ordinateur où tourne votre IA.",
- "Asistente local guardado, pero su relé está desconectado en este momento. Inicie somcp-relay en el ordenador donde funciona su IA.",
- "Lokaler Assistent gespeichert, aber sein Relay ist gerade offline. Starten Sie somcp-relay auf dem Computer, auf dem Ihre KI läuft."),
-"The local assistant could not answer. Check that somcp-relay and your AI are running on the computer, then try again.": (
- "L'assistant local n'a pas pu répondre. Vérifiez que somcp-relay et votre IA tournent sur l'ordinateur, puis réessayez.",
- "El asistente local no ha podido responder. Compruebe que somcp-relay y su IA están funcionando en el ordenador y vuelva a intentarlo.",
- "Der lokale Assistent konnte nicht antworten. Prüfen Sie, ob somcp-relay und Ihre KI auf dem Computer laufen, und versuchen Sie es erneut."),
+"Local assistant saved, but its relay is offline right now. Start O'So AI Relay on the computer where your AI runs.": (
+ "Assistant local enregistré, mais son relais est hors ligne pour l'instant. Lancez O'So AI Relay sur l'ordinateur où tourne votre IA.",
+ "Asistente local guardado, pero su relé está desconectado en este momento. Inicie O'So AI Relay en el ordenador donde funciona su IA.",
+ "Lokaler Assistent gespeichert, aber sein Relay ist gerade offline. Starten Sie O'So AI Relay auf dem Computer, auf dem Ihre KI läuft."),
+"The local assistant could not answer. Check that O'So AI Relay and your AI are running on the computer, then try again.": (
+ "L'assistant local n'a pas pu répondre. Vérifiez que O'So AI Relay et votre IA tournent sur l'ordinateur, puis réessayez.",
+ "El asistente local no ha podido responder. Compruebe que O'So AI Relay y su IA están funcionando en el ordenador y vuelva a intentarlo.",
+ "Der lokale Assistent konnte nicht antworten. Prüfen Sie, ob O'So AI Relay und Ihre KI auf dem Computer laufen, und versuchen Sie es erneut."),
 "Edit the local assistant": (
  "Modifier l'assistant local",
  "Editar el asistente local",
@@ -2091,22 +2091,22 @@ T = {
  "Un assistant local répond avec une IA qui tourne sur votre propre ordinateur : Ollama, LM Studio ou tout logiciel compatible avec l'API d'OpenAI. Vos conversations et les données de votre boutique vont sur votre ordinateur, pas chez une entreprise d'IA, et il n'y a aucune clé à payer.",
  "Un asistente local responde con una IA que funciona en su propio ordenador: Ollama, LM Studio o cualquier programa compatible con la API de OpenAI. Sus conversaciones y los datos de su tienda van a su ordenador, no a una empresa de IA, y no hay ninguna clave que pagar.",
  "Ein lokaler Assistent antwortet mit einer KI, die auf Ihrem eigenen Computer läuft: Ollama, LM Studio oder jede Software, die die OpenAI-API spricht. Ihre Unterhaltungen und Ihre Shopdaten gehen an Ihren Computer, nicht an ein KI-Unternehmen, und es gibt keinen Schlüssel zu bezahlen."),
-"The link goes through somcp-relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.": (
- "La liaison passe par somcp-relay, un petit programme qui tourne sur votre ordinateur et appelle votre boutique. Votre boutique ne se connecte jamais à votre ordinateur : rien n'est à ouvrir sur votre réseau.",
- "El enlace pasa por somcp-relay, un pequeño programa que funciona en su ordenador y llama a su tienda. Su tienda nunca se conecta a su ordenador, así que no hay que abrir nada en su red.",
- "Die Verbindung läuft über somcp-relay, ein kleines Programm, das auf Ihrem Computer läuft und Ihren Shop aufruft. Ihr Shop verbindet sich nie mit Ihrem Computer, daher muss in Ihrem Netzwerk nichts geöffnet werden."),
-"Download somcp-relay for your computer and run it.": (
- "Téléchargez somcp-relay pour votre ordinateur et lancez-le.",
- "Descargue somcp-relay para su ordenador y ejecútelo.",
- "Laden Sie somcp-relay für Ihren Computer herunter und starten Sie es."),
-"Download somcp-relay": (
- "Télécharger somcp-relay",
- "Descargar somcp-relay",
- "somcp-relay herunterladen"),
-"Type this code in somcp-relay with the address of this shop, or run this command on your computer:": (
- "Saisissez ce code dans somcp-relay avec l'adresse de cette boutique, ou lancez cette commande sur votre ordinateur :",
- "Introduzca este código en somcp-relay con la dirección de esta tienda, o ejecute este comando en su ordenador:",
- "Geben Sie diesen Code mit der Adresse dieses Shops in somcp-relay ein, oder führen Sie diesen Befehl auf Ihrem Computer aus:"),
+"The link goes through O'So AI Relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.": (
+ "La liaison passe par O'So AI Relay, un petit programme qui tourne sur votre ordinateur et appelle votre boutique. Votre boutique ne se connecte jamais à votre ordinateur : rien n'est à ouvrir sur votre réseau.",
+ "El enlace pasa por O'So AI Relay, un pequeño programa que funciona en su ordenador y llama a su tienda. Su tienda nunca se conecta a su ordenador, así que no hay que abrir nada en su red.",
+ "Die Verbindung läuft über O'So AI Relay, ein kleines Programm, das auf Ihrem Computer läuft und Ihren Shop aufruft. Ihr Shop verbindet sich nie mit Ihrem Computer, daher muss in Ihrem Netzwerk nichts geöffnet werden."),
+"Download O'So AI Relay for your computer and run it.": (
+ "Téléchargez O'So AI Relay pour votre ordinateur et lancez-le.",
+ "Descargue O'So AI Relay para su ordenador y ejecútelo.",
+ "Laden Sie O'So AI Relay für Ihren Computer herunter und starten Sie es."),
+"Download O'So AI Relay": (
+ "Télécharger O'So AI Relay",
+ "Descargar O'So AI Relay",
+ "O'So AI Relay herunterladen"),
+"Type this code in O'So AI Relay with the address of this shop, or run this command on your computer:": (
+ "Saisissez ce code dans O'So AI Relay avec l'adresse de cette boutique, ou lancez cette commande sur votre ordinateur :",
+ "Introduzca este código en O'So AI Relay con la dirección de esta tienda, o ejecute este comando en su ordenador:",
+ "Geben Sie diesen Code mit der Adresse dieses Shops in O'So AI Relay ein, oder führen Sie diesen Befehl auf Ihrem Computer aus:"),
 "The relay of this assistant was unlinked. Remove the assistant, then add it again.": (
  "Le relais de cet assistant a été délié. Supprimez l'assistant, puis ajoutez-le à nouveau.",
  "El relé de este asistente se ha desvinculado. Elimine el asistente y vuelva a añadirlo.",
@@ -2127,18 +2127,18 @@ T = {
  "Le modèle %model% ne réussit plus le test des outils du relais : choisissez-en un autre.",
  "El modelo %model% ya no supera la prueba de herramientas del relé: elija otro.",
  "Das Modell %model% besteht den Werkzeugtest des Relays nicht mehr: Wählen Sie ein anderes."),
-"Link somcp-relay": (
- "Lier somcp-relay",
- "Vincular somcp-relay",
- "somcp-relay verbinden"),
+"Link O'So AI Relay": (
+ "Lier O'So AI Relay",
+ "Vincular O'So AI Relay",
+ "O'So AI Relay verbinden"),
 "Single use, valid 10 minutes. Checked automatically: nothing to click while it waits.": (
  "Usage unique, valable 10 minutes. Vérifié automatiquement : rien à cliquer pendant l'attente.",
  "Un solo uso, válido 10 minutos. Se comprueba automáticamente: no hay que hacer clic mientras espera.",
  "Einmalig, 10 Minuten gültig. Wird automatisch geprüft: Während des Wartens ist nichts zu klicken."),
-"The code expired before somcp-relay used it.": (
- "Le code a expiré avant que somcp-relay ne l'utilise.",
- "El código caducó antes de que somcp-relay lo usara.",
- "Der Code ist abgelaufen, bevor somcp-relay ihn verwendet hat."),
+"The code expired before O'So AI Relay used it.": (
+ "Le code a expiré avant que O'So AI Relay ne l'utilise.",
+ "El código caducó antes de que O'So AI Relay lo usara.",
+ "Der Code ist abgelaufen, bevor O'So AI Relay ihn verwendet hat."),
 "Retry": (
  "Réessayer",
  "Reintentar",
@@ -2147,14 +2147,14 @@ T = {
  "Tester votre IA",
  "Probar su IA",
  "Ihre KI testen"),
-"Waiting for somcp-relay to test your AI: in the relay, type the address of your AI and click Test.": (
- "En attente du test de votre IA par somcp-relay : dans le relais, saisissez l'adresse de votre IA et cliquez sur Tester.",
- "Esperando a que somcp-relay pruebe su IA: en el relé, introduzca la dirección de su IA y haga clic en Probar.",
- "Warten, bis somcp-relay Ihre KI testet: Geben Sie im Relay die Adresse Ihrer KI ein und klicken Sie auf Testen."),
-"Still no model able to call tools. Check that somcp-relay is running and that your AI passed its test, then retry.": (
- "Toujours aucun modèle capable d'appeler des outils. Vérifiez que somcp-relay tourne et que votre IA a réussi son test, puis réessayez.",
- "Todavía no hay ningún modelo capaz de llamar a herramientas. Compruebe que somcp-relay está en marcha y que su IA ha superado la prueba, y vuelva a intentarlo.",
- "Noch immer kein Modell, das Werkzeuge aufrufen kann. Prüfen Sie, ob somcp-relay läuft und Ihre KI den Test bestanden hat, und versuchen Sie es erneut."),
+"Waiting for O'So AI Relay to test your AI: in the relay, type the address of your AI and click Test.": (
+ "En attente du test de votre IA par O'So AI Relay : dans le relais, saisissez l'adresse de votre IA et cliquez sur Tester.",
+ "Esperando a que O'So AI Relay pruebe su IA: en el relé, introduzca la dirección de su IA y haga clic en Probar.",
+ "Warten, bis O'So AI Relay Ihre KI testet: Geben Sie im Relay die Adresse Ihrer KI ein und klicken Sie auf Testen."),
+"Still no model able to call tools. Check that O'So AI Relay is running and that your AI passed its test, then retry.": (
+ "Toujours aucun modèle capable d'appeler des outils. Vérifiez que O'So AI Relay tourne et que votre IA a réussi son test, puis réessayez.",
+ "Todavía no hay ningún modelo capaz de llamar a herramientas. Compruebe que O'So AI Relay está en marcha y que su IA ha superado la prueba, y vuelva a intentarlo.",
+ "Noch immer kein Modell, das Werkzeuge aufrufen kann. Prüfen Sie, ob O'So AI Relay läuft und Ihre KI den Test bestanden hat, und versuchen Sie es erneut."),
 "Models able to call tools: %count%.": (
  "Modèles capables d'appeler des outils : %count%.",
  "Modelos capaces de llamar a herramientas: %count%.",

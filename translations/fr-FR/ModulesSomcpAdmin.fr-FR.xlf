@@ -2582,10 +2582,10 @@
       <source>The relay answers. Model in use: %model%.</source>
       <target>Le relais répond. Modèle utilisé : %model%.</target>
     </trans-unit>
-    <!-- The relay is offline, or the model no longer passes its tool test. Start somcp-relay on the computer where your AI runs, then test again. -->
-    <trans-unit id="023be195ea9be745ef17784b37eccd53" resname="The relay is offline, or the model no longer passes its tool test. Start somcp-relay on the computer where your AI runs, then test again.">
-      <source>The relay is offline, or the model no longer passes its tool test. Start somcp-relay on the computer where your AI runs, then test again.</source>
-      <target>Le relais est hors ligne, ou le modèle ne réussit plus son test des outils. Lancez somcp-relay sur l'ordinateur où tourne votre IA, puis testez à nouveau.</target>
+    <!-- The relay is offline, or the model no longer passes its tool test. Start O'So AI Relay on the computer where your AI runs, then test again. -->
+    <trans-unit id="e021a8be1adaeaee0359cca0cfacdc3d" resname="The relay is offline, or the model no longer passes its tool test. Start O&#x27;So AI Relay on the computer where your AI runs, then test again.">
+      <source>The relay is offline, or the model no longer passes its tool test. Start O'So AI Relay on the computer where your AI runs, then test again.</source>
+      <target>Le relais est hors ligne, ou le modèle ne réussit plus son test des outils. Lancez O'So AI Relay sur l'ordinateur où tourne votre IA, puis testez à nouveau.</target>
     </trans-unit>
     <!-- The relay no longer offers this model, or it was unlinked. Pick a model again. -->
     <trans-unit id="c6f784f9096f063ca9c3b0fdd873a389" resname="The relay no longer offers this model, or it was unlinked. Pick a model again.">
@@ -2597,15 +2597,15 @@
       <source>Local assistant saved. Model in use: %model%.</source>
       <target>Assistant local enregistré. Modèle utilisé : %model%.</target>
     </trans-unit>
-    <!-- Local assistant saved, but its relay is offline right now. Start somcp-relay on the computer where your AI runs. -->
-    <trans-unit id="f84d77baf5d3b36ec44ea16a893e1f46" resname="Local assistant saved, but its relay is offline right now. Start somcp-relay on the computer where your AI runs.">
-      <source>Local assistant saved, but its relay is offline right now. Start somcp-relay on the computer where your AI runs.</source>
-      <target>Assistant local enregistré, mais son relais est hors ligne pour l'instant. Lancez somcp-relay sur l'ordinateur où tourne votre IA.</target>
+    <!-- Local assistant saved, but its relay is offline right now. Start O'So AI Relay on the computer where your AI runs. -->
+    <trans-unit id="0cce00fcbc950d95ee8190f26ebe2ad3" resname="Local assistant saved, but its relay is offline right now. Start O&#x27;So AI Relay on the computer where your AI runs.">
+      <source>Local assistant saved, but its relay is offline right now. Start O'So AI Relay on the computer where your AI runs.</source>
+      <target>Assistant local enregistré, mais son relais est hors ligne pour l'instant. Lancez O'So AI Relay sur l'ordinateur où tourne votre IA.</target>
     </trans-unit>
-    <!-- The local assistant could not answer. Check that somcp-relay and your AI are running on the computer, then try again. -->
-    <trans-unit id="0d31e52017d8d0402641b4d195b45880" resname="The local assistant could not answer. Check that somcp-relay and your AI are running on the computer, then try again.">
-      <source>The local assistant could not answer. Check that somcp-relay and your AI are running on the computer, then try again.</source>
-      <target>L'assistant local n'a pas pu répondre. Vérifiez que somcp-relay et votre IA tournent sur l'ordinateur, puis réessayez.</target>
+    <!-- The local assistant could not answer. Check that O'So AI Relay and your AI are running on the computer, then try again. -->
+    <trans-unit id="978160aaa47656099f55c65cf7e04e30" resname="The local assistant could not answer. Check that O&#x27;So AI Relay and your AI are running on the computer, then try again.">
+      <source>The local assistant could not answer. Check that O'So AI Relay and your AI are running on the computer, then try again.</source>
+      <target>L'assistant local n'a pas pu répondre. Vérifiez que O'So AI Relay et votre IA tournent sur l'ordinateur, puis réessayez.</target>
     </trans-unit>
     <!-- Edit the local assistant -->
     <trans-unit id="c61871447e17729d0d8496cfe4216446" resname="Edit the local assistant">
@@ -2637,25 +2637,25 @@
       <source>A local assistant answers with an AI running on your own computer: Ollama, LM Studio or any software that speaks the OpenAI API. Your conversations and your shop data go to your computer, not to an AI company, and there is no key to pay for.</source>
       <target>Un assistant local répond avec une IA qui tourne sur votre propre ordinateur : Ollama, LM Studio ou tout logiciel compatible avec l'API d'OpenAI. Vos conversations et les données de votre boutique vont sur votre ordinateur, pas chez une entreprise d'IA, et il n'y a aucune clé à payer.</target>
     </trans-unit>
-    <!-- The link goes through somcp-relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network. -->
-    <trans-unit id="14fcf8a2ea071b66022c1d07f1f86bf4" resname="The link goes through somcp-relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.">
-      <source>The link goes through somcp-relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.</source>
-      <target>La liaison passe par somcp-relay, un petit programme qui tourne sur votre ordinateur et appelle votre boutique. Votre boutique ne se connecte jamais à votre ordinateur : rien n'est à ouvrir sur votre réseau.</target>
+    <!-- The link goes through O'So AI Relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network. -->
+    <trans-unit id="53aba24d09fb2586605f668b846fd6b0" resname="The link goes through O&#x27;So AI Relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.">
+      <source>The link goes through O'So AI Relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.</source>
+      <target>La liaison passe par O'So AI Relay, un petit programme qui tourne sur votre ordinateur et appelle votre boutique. Votre boutique ne se connecte jamais à votre ordinateur : rien n'est à ouvrir sur votre réseau.</target>
     </trans-unit>
-    <!-- Download somcp-relay for your computer and run it. -->
-    <trans-unit id="a527463ea2400299a9386311d36001bb" resname="Download somcp-relay for your computer and run it.">
-      <source>Download somcp-relay for your computer and run it.</source>
-      <target>Téléchargez somcp-relay pour votre ordinateur et lancez-le.</target>
+    <!-- Download O'So AI Relay for your computer and run it. -->
+    <trans-unit id="1300603844d98fe626f0250b9a8aacbf" resname="Download O&#x27;So AI Relay for your computer and run it.">
+      <source>Download O'So AI Relay for your computer and run it.</source>
+      <target>Téléchargez O'So AI Relay pour votre ordinateur et lancez-le.</target>
     </trans-unit>
-    <!-- Download somcp-relay -->
-    <trans-unit id="face610715a7909a76f378c693eeb4e4" resname="Download somcp-relay">
-      <source>Download somcp-relay</source>
-      <target>Télécharger somcp-relay</target>
+    <!-- Download O'So AI Relay -->
+    <trans-unit id="c1c5b848dd2163da5af173e2e36c9529" resname="Download O&#x27;So AI Relay">
+      <source>Download O'So AI Relay</source>
+      <target>Télécharger O'So AI Relay</target>
     </trans-unit>
-    <!-- Type this code in somcp-relay with the address of this shop, or run this command on your computer: -->
-    <trans-unit id="d1b028b8a25da9719ae205d669cac276" resname="Type this code in somcp-relay with the address of this shop, or run this command on your computer:">
-      <source>Type this code in somcp-relay with the address of this shop, or run this command on your computer:</source>
-      <target>Saisissez ce code dans somcp-relay avec l'adresse de cette boutique, ou lancez cette commande sur votre ordinateur :</target>
+    <!-- Type this code in O'So AI Relay with the address of this shop, or run this command on your computer: -->
+    <trans-unit id="17283f3e7cfdbe24eb4ea5a8e1082e8b" resname="Type this code in O&#x27;So AI Relay with the address of this shop, or run this command on your computer:">
+      <source>Type this code in O'So AI Relay with the address of this shop, or run this command on your computer:</source>
+      <target>Saisissez ce code dans O'So AI Relay avec l'adresse de cette boutique, ou lancez cette commande sur votre ordinateur :</target>
     </trans-unit>
     <!-- The relay of this assistant was unlinked. Remove the assistant, then add it again. -->
     <trans-unit id="5919636ca7cd8fdb090c0bf0cb7b5b45" resname="The relay of this assistant was unlinked. Remove the assistant, then add it again.">
@@ -2682,20 +2682,20 @@
       <source>The model %model% no longer passes the relay tool test: pick another one.</source>
       <target>Le modèle %model% ne réussit plus le test des outils du relais : choisissez-en un autre.</target>
     </trans-unit>
-    <!-- Link somcp-relay -->
-    <trans-unit id="c29071b528f8b3486d4d326430a1bb95" resname="Link somcp-relay">
-      <source>Link somcp-relay</source>
-      <target>Lier somcp-relay</target>
+    <!-- Link O'So AI Relay -->
+    <trans-unit id="9b93e685514b4f4ef5e6e264602d2478" resname="Link O&#x27;So AI Relay">
+      <source>Link O'So AI Relay</source>
+      <target>Lier O'So AI Relay</target>
     </trans-unit>
     <!-- Single use, valid 10 minutes. Checked automatically: nothing to click while it waits. -->
     <trans-unit id="e3557933bd09163b6cfeca5f97c3f6e6" resname="Single use, valid 10 minutes. Checked automatically: nothing to click while it waits.">
       <source>Single use, valid 10 minutes. Checked automatically: nothing to click while it waits.</source>
       <target>Usage unique, valable 10 minutes. Vérifié automatiquement : rien à cliquer pendant l'attente.</target>
     </trans-unit>
-    <!-- The code expired before somcp-relay used it. -->
-    <trans-unit id="ebf85e4e695412dbce3ea8825fbda853" resname="The code expired before somcp-relay used it.">
-      <source>The code expired before somcp-relay used it.</source>
-      <target>Le code a expiré avant que somcp-relay ne l'utilise.</target>
+    <!-- The code expired before O'So AI Relay used it. -->
+    <trans-unit id="f2d6ab944a0017fc41183e4546231a41" resname="The code expired before O&#x27;So AI Relay used it.">
+      <source>The code expired before O'So AI Relay used it.</source>
+      <target>Le code a expiré avant que O'So AI Relay ne l'utilise.</target>
     </trans-unit>
     <!-- Retry -->
     <trans-unit id="6327b4e59f58137083214a1fec358855" resname="Retry">
@@ -2707,15 +2707,15 @@
       <source>Test your AI</source>
       <target>Tester votre IA</target>
     </trans-unit>
-    <!-- Waiting for somcp-relay to test your AI: in the relay, type the address of your AI and click Test. -->
-    <trans-unit id="31a808de8e61508f4216171e1c7f5515" resname="Waiting for somcp-relay to test your AI: in the relay, type the address of your AI and click Test.">
-      <source>Waiting for somcp-relay to test your AI: in the relay, type the address of your AI and click Test.</source>
-      <target>En attente du test de votre IA par somcp-relay : dans le relais, saisissez l'adresse de votre IA et cliquez sur Tester.</target>
+    <!-- Waiting for O'So AI Relay to test your AI: in the relay, type the address of your AI and click Test. -->
+    <trans-unit id="eecfde636a0a7a659b17a4aae4ea2647" resname="Waiting for O&#x27;So AI Relay to test your AI: in the relay, type the address of your AI and click Test.">
+      <source>Waiting for O'So AI Relay to test your AI: in the relay, type the address of your AI and click Test.</source>
+      <target>En attente du test de votre IA par O'So AI Relay : dans le relais, saisissez l'adresse de votre IA et cliquez sur Tester.</target>
     </trans-unit>
-    <!-- Still no model able to call tools. Check that somcp-relay is running and that your AI passed its test, then retry. -->
-    <trans-unit id="6b63b6ad171760693ecbb1ebb5c8c3c1" resname="Still no model able to call tools. Check that somcp-relay is running and that your AI passed its test, then retry.">
-      <source>Still no model able to call tools. Check that somcp-relay is running and that your AI passed its test, then retry.</source>
-      <target>Toujours aucun modèle capable d'appeler des outils. Vérifiez que somcp-relay tourne et que votre IA a réussi son test, puis réessayez.</target>
+    <!-- Still no model able to call tools. Check that O'So AI Relay is running and that your AI passed its test, then retry. -->
+    <trans-unit id="b6d88453ce1ac46c5292d930f3ce95ec" resname="Still no model able to call tools. Check that O&#x27;So AI Relay is running and that your AI passed its test, then retry.">
+      <source>Still no model able to call tools. Check that O'So AI Relay is running and that your AI passed its test, then retry.</source>
+      <target>Toujours aucun modèle capable d'appeler des outils. Vérifiez que O'So AI Relay tourne et que votre IA a réussi son test, puis réessayez.</target>
     </trans-unit>
     <!-- Models able to call tools: %count%. -->
     <trans-unit id="37ca6b0fb9ea45f9b6e996632f4d5a6e" resname="Models able to call tools: %count%.">

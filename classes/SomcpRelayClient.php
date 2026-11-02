@@ -24,7 +24,7 @@ use NeuronAI\HttpClient\StreamInterface;
 
 /*
  * The HTTP client of a local assistant: instead of sending the request to an
- * address, it hands it to the somcp-relay linked to the shop and waits for
+ * address, it hands it to the O'So AI Relay linked to the shop and waits for
  * the answer the relay brings back.
  *
  * Neuron builds an ordinary OpenAI-compatible request; only its body travels.

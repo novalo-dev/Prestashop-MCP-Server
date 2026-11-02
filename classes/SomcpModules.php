@@ -20,10 +20,12 @@ declare(strict_types=1);
 /*
  * SomcpModules - how the module tools read one module of the shop.
  *
- * somcp_list_modules, somcp_get_module and somcp_install_module return the
- * same fields for a module; building them here once keeps the mobile bit, the
- * needs_upgrade rule and the null cases identical, so one module never reads
- * differently in two tools.
+ * somcp_list_modules, somcp_get_module, somcp_install_module and
+ * somcp_set_module_active return the same fields for a module; building them
+ * here once keeps the mobile bit, the needs_upgrade rule and the null cases
+ * identical, so one module never reads differently in two tools. The writes
+ * reach the core's ModuleManager through one function here too, so they all
+ * drop what a module prints and gather its errors the same way.
  *
  * What is on disk comes from the legacy Module class, which PrestaShop 8 and 9
  * both have: the module manager's Symfony layer differs between the two, and a
@@ -206,5 +208,51 @@ class SomcpModules
         }
 
         return $hooks;
+    }
+
+    /**
+     * Runs one or more actions of the core's ModuleManager on a module, as
+     * the buttons of its card in Modules > Module Manager do.
+     *
+     * @param string $folder the module's technical name, as the core knows it
+     * @param callable $action receives the ModuleManager, returns true on success
+     *
+     * @return array{done: bool, errors: array<int, string>}
+     */
+    public static function throughCore(string $folder, callable $action): array
+    {
+        $done = false;
+        $errors = [];
+        // A module may print while it installs, enables or disables, which
+        // would break the JSON of the answer: what it prints is dropped.
+        $level = ob_get_level();
+        ob_start();
+        try {
+            // The core's own way to reach its ModuleManager from legacy code:
+            // the Symfony container when there is one, the same classes built
+            // by hand otherwise, on PrestaShop 8 and 9 alike.
+            $manager = PrestaShop\PrestaShop\Core\Addon\Module\ModuleManagerBuilder::getInstance()->build();
+            $done = (bool) $action($manager);
+        } catch (Throwable $e) {
+            $errors[] = $e->getMessage();
+        } finally {
+            while (ob_get_level() > $level) {
+                ob_end_clean();
+            }
+        }
+
+        if (!$done) {
+            $legacy = Module::getInstanceByName($folder);
+            if ($legacy instanceof Module) {
+                foreach ($legacy->getErrors() as $error) {
+                    $errors[] = (string) $error;
+                }
+            }
+        }
+
+        return [
+            'done' => $done,
+            'errors' => array_values(array_unique(array_filter(array_map('trim', $errors)))),
+        ];
     }
 }

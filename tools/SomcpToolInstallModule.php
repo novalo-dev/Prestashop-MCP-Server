@@ -124,34 +124,11 @@ class SomcpToolInstallModule
      */
     private static function install(string $folder, int $idShop): array
     {
-        $installed = false;
-        $errors = [];
-        // A module may print while it installs, which would break the JSON
-        // of the answer: what it prints is dropped.
-        $level = ob_get_level();
-        ob_start();
-        try {
-            // The core's own way to reach its ModuleManager from legacy code:
-            // the Symfony container when there is one, the same classes built
-            // by hand otherwise, on PrestaShop 8 and 9 alike.
-            $manager = PrestaShop\PrestaShop\Core\Addon\Module\ModuleManagerBuilder::getInstance()->build();
-            $installed = (bool) $manager->install($folder);
-        } catch (Throwable $e) {
-            $errors[] = $e->getMessage();
-        } finally {
-            while (ob_get_level() > $level) {
-                ob_end_clean();
-            }
-        }
-
-        if (!$installed) {
-            $legacy = Module::getInstanceByName($folder);
-            if ($legacy instanceof Module) {
-                foreach ($legacy->getErrors() as $error) {
-                    $errors[] = (string) $error;
-                }
-            }
-        }
+        $run = SomcpModules::throughCore($folder, static function ($manager) use ($folder): bool {
+            return (bool) $manager->install($folder);
+        });
+        $installed = $run['done'];
+        $errors = $run['errors'];
 
         // Read back whatever happened: PrestaShop 8 dispatches the install
         // event even after a failure, so nothing is assumed either way.
@@ -159,8 +136,6 @@ class SomcpToolInstallModule
         if ($installed && $module['installed']) {
             return SomcpTool::json($module);
         }
-
-        $errors = array_values(array_unique(array_filter(array_map('trim', $errors))));
 
         return SomcpTool::text(
             'The module was not installed' . ($errors !== [] ? ': ' . implode(' ', $errors) : '.')

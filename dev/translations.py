@@ -1086,10 +1086,14 @@ T = {
  "Installer un module",
  "Instalar un módulo",
  "Ein Modul installieren"),
-"Install the modules already present on this shop, which runs their own code": (
- "Installer les modules déjà présents sur cette boutique, ce qui exécute leur propre code",
- "Instalar los módulos ya presentes en esta tienda, lo que ejecuta su propio código",
- "Die bereits in diesem Shop vorhandenen Module installieren, wobei ihr eigener Code ausgeführt wird"),
+"Install, enable and disable the modules already present on this shop, which runs their own code": (
+ "Installer, activer et désactiver les modules déjà présents sur cette boutique, ce qui exécute leur propre code",
+ "Instalar, activar y desactivar los módulos ya presentes en esta tienda, lo que ejecuta su propio código",
+ "Die bereits in diesem Shop vorhandenen Module installieren, aktivieren und deaktivieren, wobei ihr eigener Code ausgeführt wird"),
+"Enable or disable a module": (
+ "Activer ou désactiver un module",
+ "Activar o desactivar un módulo",
+ "Ein Modul aktivieren oder deaktivieren"),
 "Review modules": (
  "Passer en revue les modules",
  "Revisar los módulos",

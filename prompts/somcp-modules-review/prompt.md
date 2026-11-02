@@ -10,6 +10,7 @@ earlier answer: a module can be installed, upgraded or disabled at any time.
 - `somcp_list_modules`
 - `somcp_get_module`
 - `somcp_install_module`
+- `somcp_set_module_active`
 
 ## Know which shop you are in
 
@@ -71,9 +72,22 @@ A module already installed is refused and left unchanged: upgrading it is done
 in **Modules > Module Manager**. A module that is not on the shop cannot be
 installed from here: its files have to be put on the shop first.
 
-## Before acting on a module
+## Enabling or disabling a module
 
-Enabling or disabling a module is not possible from here yet. When the merchant
-asks for it, name the module and what it does, and point to **Modules > Module
-Manager**. A payment or carrier module disabled stops orders or deliveries: say
-so before they do it.
+`somcp_set_module_active` enables or disables an installed module on this
+shop, as the **Enable** and **Disable** buttons of its card do. Only when the
+merchant asks for it:
+
+1. **Read the module** with `somcp_get_module` and confirm with the merchant
+   which one it is and what it does. A payment or carrier module disabled
+   stops orders or deliveries: say so before calling.
+2. **Call `somcp_set_module_active` once** with its `name` and `active`. On
+   PrestaShop 8, `active_on_mobile` switches it on or off for mobile; enabling
+   a module again turns mobile back on, so pass `active_on_mobile: false` with
+   `active: true` when it should stay off there.
+3. **Answer from the result**: `changed` lists what was written, from and to.
+   If the answer is lost, read `somcp_get_module` instead of calling again. On
+   a refusal, give the module's own messages as they are.
+
+A request that would change nothing is refused and nothing is touched. This
+module cannot disable itself: point to **Modules > Module Manager** for that.

@@ -46,6 +46,17 @@ new permission `mcp.modules.write`, which the consent screen describes as
 installing modules already present on the shop, and the `add` right on
 **Modules > Module Manager**.
 
+**Enabling or disabling a module.** The new tool `somcp_set_module_active`
+enables or disables an installed module on the shop, as the **Enable** and
+**Disable** buttons of its card in **Modules > Module Manager** do, and on
+PrestaShop 8 switches it on or off for mobile. A request that would change
+nothing is refused, since PrestaShop would still report a success and run the
+module's hooks; this module never disables itself. It answers with the module
+as `somcp_get_module` reads it afterwards. It joins the **Review modules**
+prompt and needs the `mcp.modules.write` permission, which the consent screen
+now describes as installing, enabling and disabling modules already present
+on the shop, and the `edit` right on **Modules > Module Manager**.
+
 **SEO of the shop's own pages.** The new tool `somcp_update_meta_page`
 changes the **Page title**, **Meta description** and **Rewritten URL** of one
 of the pages listed under **Shop Parameters > Traffic & SEO** - contact, new

@@ -1367,10 +1367,15 @@
       <source>Install a module</source>
       <target>Instalar un módulo</target>
     </trans-unit>
-    <!-- Install the modules already present on this shop, which runs their own code -->
-    <trans-unit id="c463437e644e582cea6ac26b2d2e11dd" resname="Install the modules already present on this shop, which runs their own code">
-      <source>Install the modules already present on this shop, which runs their own code</source>
-      <target>Instalar los módulos ya presentes en esta tienda, lo que ejecuta su propio código</target>
+    <!-- Install, enable and disable the modules already present on this shop, which runs their own code -->
+    <trans-unit id="a590ed8bc24989c527459f63ced69897" resname="Install, enable and disable the modules already present on this shop, which runs their own code">
+      <source>Install, enable and disable the modules already present on this shop, which runs their own code</source>
+      <target>Instalar, activar y desactivar los módulos ya presentes en esta tienda, lo que ejecuta su propio código</target>
+    </trans-unit>
+    <!-- Enable or disable a module -->
+    <trans-unit id="e709837fc9fc8dadcf277286474ed7f4" resname="Enable or disable a module">
+      <source>Enable or disable a module</source>
+      <target>Activar o desactivar un módulo</target>
     </trans-unit>
     <!-- Review modules -->
     <trans-unit id="5dde8abfface84a95408a0c791202847" resname="Review modules">

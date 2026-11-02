@@ -242,6 +242,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_list_modules` | `mcp.modules.read` | `view` on `AdminModulesSf` | read |
 | `somcp_get_module` | `mcp.modules.read` | `view` on `AdminModulesSf` | read |
 | `somcp_install_module` | `mcp.modules.write` | `add` on `AdminModulesSf` | write |
+| `somcp_set_module_active` | `mcp.modules.write` | `edit` on `AdminModulesSf` | write |
 
 ### SEO
 

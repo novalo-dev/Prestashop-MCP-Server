@@ -2606,23 +2606,46 @@ The modules present on the shop, their state and version.
 **Differences between 8.0.1 and 9.0.0** - the install event is dispatched even after a failed install on 8.0.1, only after a success on 9.0.0: the state is read back in both cases rather than assumed. 9.0.0 also refreshes the translation catalogues before installing and can install from a remote zip; neither changes the tool.
 
 #### `somcp_set_module_active`
-**State**: draft · [issue #28](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/28)
+**State**: written · [issue #28](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/28)
 **Nature**: `acts(EDIT, 'AdminModulesSf')` · **Scope**: `mcp.modules.write`
 
-**Does** - enables or disables one installed module.
+**Does** - enables or disables one installed module on the token's shop - the **Enable** / **Disable** actions of its card under **Modules > Module Manager** - and, on PrestaShop 8 only, **Enable Mobile** / **Disable Mobile**; answers with the module as `somcp_get_module` reads it afterwards.
 
-**Do not use for** - installing or uninstalling it.
+**Do not use for** - installing (→ `somcp_install_module`), uploading (→ `somcp_upload_module`), upgrading, resetting, uninstalling or deleting a module; the module's own settings behind **Configure**.
 
 **Parameters**
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `name` | string | yes |  |
-| `active` | boolean | yes |  |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | - (`data-tech-name` of the card) | string | yes | technical name, the folder, as `modules[].name` of `somcp_list_modules`; compared without case |
+| `active` | **Enable** / **Disable** | boolean | no | the state wanted on the token's shop |
+| `active_on_mobile` | **Enable Mobile** / **Disable Mobile** | boolean | no | PrestaShop 8 only; refused on 9 |
 
-**Returns** - `changed`, `name`, `active`. When the module is already in that state: `changed: false`.
+At least one of `active` and `active_on_mobile` is given; both may be given in one call (`active: true, active_on_mobile: false` brings back a module that was off on mobile).
 
-**Notes** - somcp refuses to disable itself: the answer would never reach the assistant.
+**Returns** - the fields of `somcp_get_module` read back after the change, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`; plus `changed`: each field written with `from` and `to` (`{"active": {"from": true, "to": false}}`).
+
+**Errors** - `SomcpTool::text('<field>: ...', true)`:
+- a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, or neither given: a refusal that names the field;
+- a `name` that is not a module of the shop: "No module of this shop has this name", naming `somcp_list_modules`;
+- a module not installed: refused, naming `somcp_install_module`;
+- a call that would change nothing (the state read is already the one asked): refused and nothing called, since the core answers success and fires the hooks anyway;
+- `active_on_mobile` on PrestaShop 9: "not available on this version of PrestaShop";
+- `active_on_mobile: true` on a module disabled and not enabled in the same call: refused;
+- `name` is `somcp` with `active: false`: refused - the answer would never reach the assistant and every connected assistant would lose its access;
+- on PrestaShop 8, disabling a module also enabled on another shop than the token's: refused, since the core would disable it on every shop;
+- the core refuses (no **edit** right on the Module Manager) or the module's `enable()` / `disable()` returns `false`: "The module was not changed as asked", with the module's own messages (`getErrors()`) and the state read back.
+
+**Notes**
+- The state is read first with `SomcpModules::read()`, then only the actions that change something are called, in this order: `enable()`, then the mobile action; `disable()` alone when disabling. Through the core's `ModuleManager` (`SomcpModules::throughCore()`, shared with `somcp_install_module`), with the token's employee on the context; what the module prints is dropped.
+- The core never checks the current state: it answers success to a disable of a disabled module, and a second **Enable Mobile** corrupts `module_shop.enable_device` (7 becomes 11). Hence the refusal of a call that would change nothing.
+- **Disable** deletes the `module_shop` row (and `module.active` becomes 0 once no shop row is left); **Enable** inserts one with `enable_device` 7, so enabling again a module disabled earlier brings mobile back on: pass `active_on_mobile: false` with `active: true` to keep it off there.
+- Disabling a module also disables its back-office tabs; its hooks stay attached, but `hooks[]` reads them for an enabled module only.
+- Not replayable: on a lost answer, read `somcp_get_module` instead of retrying.
+
+**Differences between 8.0.1 and 9.0.0**
+- Mobile actions exist on 8.0.1 only; on 9.0.0 `Module::enableDevice()` / `disableDevice()` are deprecated and do nothing.
+- `Module::disable()` deletes the rows of every shop on 8.0.1, of the context shops on 9.0.0.
 
 ### Appearance
 

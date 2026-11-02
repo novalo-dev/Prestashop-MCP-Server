@@ -276,7 +276,7 @@ class SomcpScope
             case self::MODULES_READ:
                 return $module->l10n('Read the modules of this shop: their version, author and whether they are installed and enabled');
             case self::MODULES_WRITE:
-                return $module->l10n('Install the modules already present on this shop, which runs their own code');
+                return $module->l10n('Install, enable and disable the modules already present on this shop, which runs their own code');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

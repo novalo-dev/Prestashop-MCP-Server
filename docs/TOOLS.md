@@ -2580,22 +2580,30 @@ The modules present on the shop, their state and version.
 **Differences between 8.0.1 and 9.0.0** - the upgrade action reads **Upgrade** on 8.0.1, **Update** on 9.0.0, and the mobile actions are bulk actions on 8.0.1 only; nothing the tool reads changes, `module`, `module_shop` and `hook_module` have the same columns.
 
 #### `somcp_install_module`
-**State**: draft · [issue #27](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/27)
+**State**: written · [issue #27](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/27)
 **Nature**: `acts(ADD, 'AdminModulesSf')` · **Scope**: `mcp.modules.write`
 
-**Does** - installs one module already present in the shop's `modules` folder.
+**Does** - installs one module whose folder is already in the shop's `modules` folder and that is not installed yet - the **Install** button of its card under **Modules > Module Manager** - and answers with the module as `somcp_get_module` reads it afterwards.
 
-**Do not use for** - uploading or downloading a module, which this tool does not do: the files must already be on the shop.
+**Do not use for** - upgrading, uninstalling, resetting or deleting a module; enabling or disabling one (→ `somcp_set_module_active`); uploading a module archive (→ `somcp_upload_module`); downloading a module from a link or the marketplace.
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `name` | string | yes | technical name, the folder |
+| `name` | string | yes | technical name, the module's folder, exactly as `modules[].name` of `somcp_list_modules` (`status: "uninstalled"` lists the candidates); compared without case |
 
-**Returns** - `installed`, `name`, `version`, `errors`.
+**Returns** - the fields of `somcp_get_module` read back after the install, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`.
 
-**Notes** - through the core's `ModuleManager`, exactly as the back office does it, so the module's own install checks run. Not replayable: the read tool to check is `somcp_get_module`.
+**Errors** - same shape as `somcp_get_module`:
+- a missing, empty or non-string `name`: a refusal that names the field;
+- a `name` neither on disk nor installed, or installed with its folder gone: "No module of this shop has this name", naming `somcp_list_modules`;
+- a module already installed: refused and nothing changed ("already installed, version ...; use the Module Manager to upgrade it"), since `ModuleManager::install()` would upgrade it;
+- the core refuses (no **add** right on the Module Manager), or the module's `install()` returns `false`: "The module was not installed", with the module's own messages (`getErrors()`) and the state read back, so nothing is claimed as installed.
+
+**Notes** - disk only: no archive, no `url`, no `upload_ref`; `install()` gets no source. Through the core's `ModuleManager`, reached by `ModuleManagerBuilder::getInstance()->build()`, the core's own entry point from legacy code on 8 and 9 (the Symfony container's service when there is one), with the token's employee on the context for the length of the call, so the module's install checks, hooks and tabs are set up as from the back office. What the module prints while installing is dropped. On a multistore installation the core installs for the shops of the current context. Not replayable: on a lost answer, read `somcp_get_module` instead of retrying.
+
+**Differences between 8.0.1 and 9.0.0** - the install event is dispatched even after a failed install on 8.0.1, only after a success on 9.0.0: the state is read back in both cases rather than assumed. 9.0.0 also refreshes the translation catalogues before installing and can install from a remote zip; neither changes the tool.
 
 #### `somcp_set_module_active`
 **State**: draft · [issue #28](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/28)

@@ -1362,6 +1362,16 @@
       <source>Read the modules of this shop: their version, author and whether they are installed and enabled</source>
       <target>Leer los módulos de esta tienda: su versión, su autor y si están instalados y activados</target>
     </trans-unit>
+    <!-- Install a module -->
+    <trans-unit id="76881586f05f3b21d67b0c2332539634" resname="Install a module">
+      <source>Install a module</source>
+      <target>Instalar un módulo</target>
+    </trans-unit>
+    <!-- Install the modules already present on this shop, which runs their own code -->
+    <trans-unit id="c463437e644e582cea6ac26b2d2e11dd" resname="Install the modules already present on this shop, which runs their own code">
+      <source>Install the modules already present on this shop, which runs their own code</source>
+      <target>Instalar los módulos ya presentes en esta tienda, lo que ejecuta su propio código</target>
+    </trans-unit>
     <!-- Review modules -->
     <trans-unit id="5dde8abfface84a95408a0c791202847" resname="Review modules">
       <source>Review modules</source>

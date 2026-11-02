@@ -20,9 +20,10 @@ declare(strict_types=1);
 /*
  * SomcpModules - how the module tools read one module of the shop.
  *
- * somcp_list_modules and somcp_get_module return the same fields for a module;
- * building them here once keeps the mobile bit, the needs_upgrade rule and the
- * null cases identical, so one module never reads differently in two tools.
+ * somcp_list_modules, somcp_get_module and somcp_install_module return the
+ * same fields for a module; building them here once keeps the mobile bit, the
+ * needs_upgrade rule and the null cases identical, so one module never reads
+ * differently in two tools.
  *
  * What is on disk comes from the legacy Module class, which PrestaShop 8 and 9
  * both have: the module manager's Symfony layer differs between the two, and a
@@ -128,6 +129,53 @@ class SomcpModules
             'active' => $device !== null,
             'active_on_mobile' => $installed ? $device !== null && ($device & self::DEVICE_MOBILE) !== 0 : null,
         ];
+    }
+
+    /**
+     * One module of this shop by its technical name, as somcp_get_module
+     * returns it: the row of somcp_list_modules plus its hooks.
+     *
+     * Kept here so a write on a module answers with exactly what a read of
+     * it would give, and the assistant never has to reconcile two shapes.
+     *
+     * @param string $name compared without case
+     * @param int $idShop
+     *
+     * @return array<string, mixed>|null null when the name is neither on disk nor installed
+     */
+    public static function read(string $name, int $idShop): ?array
+    {
+        $key = Tools::strtolower(trim($name));
+        $states = self::states($idShop);
+        $state = $states[$key] ?? null;
+
+        $found = null;
+        foreach (self::onDisk() as $item) {
+            if (Tools::strtolower((string) ($item->name ?? '')) === $key) {
+                $found = $item;
+                break;
+            }
+        }
+        if ($found === null && $state === null) {
+            return null;
+        }
+        if ($found === null) {
+            // Installed but its folder is gone: the database still knows it,
+            // so its state is returned under the name it was installed with.
+            $stored = Db::getInstance()->getValue(
+                'SELECT `name` FROM `' . _DB_PREFIX_ . 'module` WHERE `id_module` = ' . (int) $state['id_module']
+            );
+            $found = (object) ['name' => (string) $stored];
+        }
+
+        $module = self::row($found, $state);
+        // A module disabled here keeps its rows in hook_module, but none of
+        // its hooks runs on this shop: the screen and the tool show none.
+        $module['hooks'] = $state !== null && $module['active']
+            ? self::hooks($state['id_module'], $idShop)
+            : [];
+
+        return $module;
     }
 
     /**

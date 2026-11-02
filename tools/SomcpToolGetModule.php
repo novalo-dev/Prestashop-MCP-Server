@@ -22,7 +22,8 @@ declare(strict_types=1);
  * Manager shows it, plus the hooks it is attached to (Design > Positions).
  *
  * The fields are built by SomcpModules, as somcp_list_modules builds them, so
- * one module reads the same in both tools. The hooks are read from hook_module
+ * one module reads the same in both tools; somcp_install_module answers
+ * through the same read. The hooks are read from hook_module
  * for the token's shop only: on a multistore installation each shop attaches
  * its own.
  */
@@ -81,38 +82,11 @@ class SomcpToolGetModule
         if (!is_string($name) || trim($name) === '') {
             return SomcpTool::text('name: a string, the technical name from somcp_list_modules.', true);
         }
-        $key = Tools::strtolower(trim($name));
-
         // The shop comes from the token, never from the caller.
-        $idShop = (int) Somcp::currentShop()->id;
-        $states = SomcpModules::states($idShop);
-        $state = $states[$key] ?? null;
-
-        $found = null;
-        foreach (SomcpModules::onDisk() as $item) {
-            if (Tools::strtolower((string) ($item->name ?? '')) === $key) {
-                $found = $item;
-                break;
-            }
-        }
-        if ($found === null && $state === null) {
+        $module = SomcpModules::read($name, (int) Somcp::currentShop()->id);
+        if ($module === null) {
             return SomcpTool::text('No module of this shop has this name. Find it with somcp_list_modules.', true);
         }
-        if ($found === null) {
-            // Installed but its folder is gone: the database still knows it,
-            // so its state is returned under the name it was installed with.
-            $stored = Db::getInstance()->getValue(
-                'SELECT `name` FROM `' . _DB_PREFIX_ . 'module` WHERE `id_module` = ' . (int) $state['id_module']
-            );
-            $found = (object) ['name' => (string) $stored];
-        }
-
-        $module = SomcpModules::row($found, $state);
-        // A module disabled here keeps its rows in hook_module, but none of
-        // its hooks runs on this shop: the screen and the tool show none.
-        $module['hooks'] = $state !== null && $module['active']
-            ? SomcpModules::hooks($state['id_module'], $idShop)
-            : [];
 
         return SomcpTool::json($module);
     }

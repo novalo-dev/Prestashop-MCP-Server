@@ -9,6 +9,7 @@ earlier answer: a module can be installed, upgraded or disabled at any time.
 - `somcp_ping`
 - `somcp_list_modules`
 - `somcp_get_module`
+- `somcp_install_module`
 
 ## Know which shop you are in
 
@@ -52,9 +53,27 @@ shop that answered.
 - The marketplace's **Upgrade available** and categories are not returned:
   they come from the PrestaShop marketplace, not from the shop.
 
+## Installing a module
+
+`somcp_install_module` installs a module whose folder is already on the shop,
+as the **Install** button of its card does. Only when the merchant asks for it:
+
+1. **Find the module** with `somcp_list_modules` and `status: "uninstalled"`,
+   and confirm its display name and author with the merchant.
+2. **Say what installing does** before calling: the module's own code runs and
+   it attaches itself where it needs to. Then call `somcp_install_module` with
+   its `name`, once.
+3. **Answer from the result**: it is the module as `somcp_get_module` reads it
+   after the install. If the answer is lost, read `somcp_get_module` instead of
+   calling again. On a refusal, give the module's own messages as they are.
+
+A module already installed is refused and left unchanged: upgrading it is done
+in **Modules > Module Manager**. A module that is not on the shop cannot be
+installed from here: its files have to be put on the shop first.
+
 ## Before acting on a module
 
-Installing, enabling or disabling a module is not possible from here yet. When
-the merchant asks for it, name the module and what it does, and point to
-**Modules > Module Manager**. A payment or carrier module disabled stops
-orders or deliveries: say so before they do it.
+Enabling or disabling a module is not possible from here yet. When the merchant
+asks for it, name the module and what it does, and point to **Modules > Module
+Manager**. A payment or carrier module disabled stops orders or deliveries: say
+so before they do it.

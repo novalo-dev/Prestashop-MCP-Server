@@ -1082,6 +1082,14 @@ T = {
  "Lire les modules de cette boutique : leur version, leur auteur et s'ils sont installés et activés",
  "Leer los módulos de esta tienda: su versión, su autor y si están instalados y activados",
  "Die Module dieses Shops lesen: ihre Version, ihren Autor und ob sie installiert und aktiviert sind"),
+"Install a module": (
+ "Installer un module",
+ "Instalar un módulo",
+ "Ein Modul installieren"),
+"Install the modules already present on this shop, which runs their own code": (
+ "Installer les modules déjà présents sur cette boutique, ce qui exécute leur propre code",
+ "Instalar los módulos ya presentes en esta tienda, lo que ejecuta su propio código",
+ "Die bereits in diesem Shop vorhandenen Module installieren, wobei ihr eigener Code ausgeführt wird"),
 "Review modules": (
  "Passer en revue les modules",
  "Revisar los módulos",

@@ -36,6 +36,16 @@ hooks it is attached to on the current shop, as **Design > Positions** lists
 them. It joins the **Review modules** prompt and needs the same
 `mcp.modules.read` permission and `view` right on **Modules > Module Manager**.
 
+**Installing a module.** The new tool `somcp_install_module` installs a module
+whose folder is already on the shop, as the **Install** button of its card in
+**Modules > Module Manager** does, and answers with the module as
+`somcp_get_module` reads it afterwards. A module already installed is refused
+and left as it is, so an install never turns into an upgrade, and nothing is
+uploaded or downloaded. It joins the **Review modules** prompt and needs the
+new permission `mcp.modules.write`, which the consent screen describes as
+installing modules already present on the shop, and the `add` right on
+**Modules > Module Manager**.
+
 **SEO of the shop's own pages.** The new tool `somcp_update_meta_page`
 changes the **Page title**, **Meta description** and **Rewritten URL** of one
 of the pages listed under **Shop Parameters > Traffic & SEO** - contact, new

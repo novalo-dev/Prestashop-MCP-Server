@@ -21,14 +21,9 @@ declare(strict_types=1);
  * somcp_list_modules - the modules of this shop, as Modules > Module Manager
  * shows them.
  *
- * What is on disk (name, version, author, description) comes from the core's
- * Module::getModulesOnDisk(), the legacy class both PrestaShop 8 and 9 have:
- * the module manager's Symfony layer differs between the two, and a class of
- * PrestaShop 9 in a type would put the back office of PrestaShop 8 in error.
- * Whether a module is installed, enabled and enabled on mobile is read from
- * module and module_shop for the token's shop, not from what the core worked
- * out: getModulesOnDisk() takes the shop from the global context, which is not
- * the token's on a multistore installation.
+ * Each module is built by SomcpModules, which somcp_get_module calls too, so
+ * one module reads the same in both tools: what is on disk from the legacy
+ * Module class, the state from module and module_shop for the token's shop.
  *
  * Nothing asks the marketplace: its Upgrade available and its categories need
  * a network call and are not the shop's data.
@@ -46,11 +41,6 @@ class SomcpToolListModules
 
     /** @var array<int, string> the Status filter of the screen, Show all modules being none */
     private const STATUSES = ['enabled', 'disabled', 'installed', 'uninstalled'];
-
-    /**
-     * module_shop.enable_device is a bit mask; Disable Mobile clears this bit.
-     */
-    private const DEVICE_MOBILE = 4;
 
     /**
      * @return SomcpTool
@@ -131,30 +121,27 @@ class SomcpToolListModules
 
         // The shop comes from the token, never from the caller.
         $idShop = (int) Somcp::currentShop()->id;
-        $states = self::states($idShop);
+        $states = SomcpModules::states($idShop);
         $needle = $query !== null ? Tools::strtolower(trim($query)) : '';
 
         $modules = [];
-        foreach (self::onDisk() as $item) {
+        foreach (SomcpModules::onDisk() as $item) {
             $name = (string) ($item->name ?? '');
             if ($name === '') {
                 continue;
             }
-            $displayName = (string) ($item->displayName ?? $name);
+            $row = SomcpModules::row($item, $states[Tools::strtolower($name)] ?? null);
             // Compared in PHP rather than with LIKE, so that % or _ in what
             // the merchant typed are plain characters, as on the screen.
             if ($needle !== ''
                 && strpos(Tools::strtolower($name), $needle) === false
-                && strpos(Tools::strtolower($displayName), $needle) === false
+                && strpos(Tools::strtolower($row['display_name']), $needle) === false
             ) {
                 continue;
             }
 
-            $state = $states[Tools::strtolower($name)] ?? null;
-            $installed = $state !== null;
-            $device = $state !== null ? $state['enable_device'] : null;
-            $installedVersion = $state !== null ? $state['version'] : null;
-            $active = $device !== null;
+            $installed = $row['installed'];
+            $active = $row['active'];
             if ($status === 'enabled' && !$active
                 || $status === 'disabled' && ($active || !$installed)
                 || $status === 'installed' && !$installed
@@ -163,21 +150,7 @@ class SomcpToolListModules
                 continue;
             }
 
-            $version = (string) ($item->version ?? '');
-            $modules[] = [
-                'name' => $name,
-                'display_name' => $displayName,
-                'version' => $version,
-                'version_installed' => $installedVersion,
-                // The core's rule for an upgrade waiting on disk: the files
-                // carry a higher version than the one recorded at install.
-                'needs_upgrade' => $installedVersion !== null && $version !== '' && version_compare($version, $installedVersion, '>'),
-                'author' => (string) ($item->author ?? ''),
-                'description' => (string) ($item->description ?? ''),
-                'installed' => $installed,
-                'active' => $active,
-                'active_on_mobile' => $installed ? $device !== null && ($device & self::DEVICE_MOBILE) !== 0 : null,
-            ];
+            $modules[] = $row;
         }
 
         // By display name, as the core sorts the screen, so pages stay stable.
@@ -190,58 +163,5 @@ class SomcpToolListModules
             'total_count' => count($modules),
             'offset' => $offset,
         ]);
-    }
-
-    /**
-     * What the core finds on disk, each module's config.xml or class.
-     *
-     * @return array<int, object>
-     */
-    private static function onDisk(): array
-    {
-        // getModulesOnDisk() prints the modules it could not load when no
-        // controller is there to collect them, which would break the JSON of
-        // the answer: what it prints is dropped, the modules it loaded kept.
-        $level = ob_get_level();
-        ob_start();
-        try {
-            $modules = Module::getModulesOnDisk(true);
-        } catch (Throwable $e) {
-            $modules = [];
-        } finally {
-            while (ob_get_level() > $level) {
-                ob_end_clean();
-            }
-        }
-
-        return array_values($modules);
-    }
-
-    /**
-     * The installed modules, keyed by lower-case name, with their state on
-     * this shop: enable_device is null when the module is not enabled here.
-     *
-     * @param int $idShop
-     *
-     * @return array<string, array{version: string, enable_device: int|null}>
-     */
-    private static function states(int $idShop): array
-    {
-        $query = new DbQuery();
-        $query->select('m.`name`, m.`version`, ms.`enable_device`');
-        $query->from('module', 'm');
-        // A left join: a module installed but disabled on this shop has no
-        // row in module_shop for it.
-        $query->leftJoin('module_shop', 'ms', 'ms.`id_module` = m.`id_module` AND ms.`id_shop` = ' . $idShop);
-
-        $states = [];
-        foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
-            $states[Tools::strtolower((string) $row['name'])] = [
-                'version' => (string) $row['version'],
-                'enable_device' => $row['enable_device'] !== null ? (int) $row['enable_device'] : null,
-            ];
-        }
-
-        return $states;
     }
 }

@@ -1074,6 +1074,10 @@ T = {
  "Lister les modules",
  "Listar los módulos",
  "Module auflisten"),
+"Get a module": (
+ "Lire un module",
+ "Leer un módulo",
+ "Ein Modul abrufen"),
 "Read the modules of this shop: their version, author and whether they are installed and enabled": (
  "Lire les modules de cette boutique : leur version, leur auteur et s'ils sont installés et activés",
  "Leer los módulos de esta tienda: su versión, su autor y si están instalados y activados",

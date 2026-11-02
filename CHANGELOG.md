@@ -29,6 +29,13 @@ needs the new permission `mcp.modules.read`, which the consent screen
 describes as reading the modules of the shop, and the `view` right on
 **Modules > Module Manager**.
 
+**Reading one module.** The new tool `somcp_get_module` reads one module of
+the shop as its card in **Modules > Module Manager** shows it - the same
+version, author, description and state as `somcp_list_modules` - and adds the
+hooks it is attached to on the current shop, as **Design > Positions** lists
+them. It joins the **Review modules** prompt and needs the same
+`mcp.modules.read` permission and `view` right on **Modules > Module Manager**.
+
 **SEO of the shop's own pages.** The new tool `somcp_update_meta_page`
 changes the **Page title**, **Meta description** and **Rewritten URL** of one
 of the pages listed under **Shop Parameters > Traffic & SEO** - contact, new

@@ -1352,6 +1352,11 @@
       <source>List modules</source>
       <target>List modules</target>
     </trans-unit>
+    <!-- Get a module -->
+    <trans-unit id="e2d40003bc20471cc214cb0b43841f66" resname="Get a module">
+      <source>Get a module</source>
+      <target>Get a module</target>
+    </trans-unit>
     <!-- Read the modules of this shop: their version, author and whether they are installed and enabled -->
     <trans-unit id="6963902da5d674ad3b4e1dfd84b9927c" resname="Read the modules of this shop: their version, author and whether they are installed and enabled">
       <source>Read the modules of this shop: their version, author and whether they are installed and enabled</source>

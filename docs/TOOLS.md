@@ -2543,20 +2543,26 @@ The modules present on the shop, their state and version.
 **Differences between 8.0.1 and 9.0.0** - the bulk actions differ (**Enable Mobile** / **Disable Mobile** on 8.0.1, **Delete** on 9.0.0) and the per-module action is **Upgrade** on 8.0.1, **Update** on 9.0.0; nothing the tool reads changes, `enable_device` is in `module_shop` on both.
 
 #### `somcp_get_module`
-**State**: draft · [issue #26](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/26)
+**State**: written · [issue #26](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/26)
 **Nature**: `acts(VIEW, 'AdminModulesSf')` · **Scope**: `mcp.modules.read`
 
-**Does** - returns one module's details: version on disk and in the database, state, author, hooks it is attached to.
+**Does** - returns one module of the token's shop as its card under **Modules > Module Manager** shows it, installed or only on disk, plus what the card does not show: the hooks it is attached to on the token's shop (**Design > Positions**).
 
-**Do not use for** - listing modules (→ `somcp_list_modules`).
+**Do not use for** - listing or searching modules (→ `somcp_list_modules`), installing (→ `somcp_install_module`), enabling or disabling (→ `somcp_set_module_active`), the module's own settings page behind **Configure**.
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `name` | string | yes | technical name, the folder |
+| `name` | string | yes | technical name, the module's folder, exactly as `modules[].name` of `somcp_list_modules`; compared without case |
 
-**Returns** - `name`, `display_name`, `description`, `version_on_disk`, `version_installed`, `installed`, `active`, `author`, `hooks`, `needs_upgrade`.
+**Returns** - the same fields, same names and same rules as one entry of `modules[]` in `somcp_list_modules`: `name`, `display_name` (card title), `version` (files on disk), `version_installed` (`null` when not installed), `needs_upgrade`, `author`, `description`, `installed`, `active` (on the token's shop, `false` when not installed), `active_on_mobile` (`null` when not installed). Plus `hooks[]`: the hooks the module is attached to on the token's shop, each with `name` (`hook.name`) and `position` (`hook_module.position`, as stored), sorted by hook name; empty when the module is not installed or not enabled on this shop.
+
+**Errors** - a missing, empty or non-string `name`: a refusal that names the field. A `name` neither on disk nor in `module`: "No module of this shop has this name", naming `somcp_list_modules` as the way to find it.
+
+**Notes** - read from the shop only, as `somcp_list_modules`, through the same row builder (`SomcpModules`): the files through `Module::getModulesOnDisk(true)`, the state from `module`, `module_shop` and `hook_module` for the token's shop, never the global context's. A module installed whose folder is gone is returned from the database alone, with an empty `version`. `id_module` is never returned: the name is the identifier everywhere. **Upgrade available**, **Category** and **Recently used** are not returned, for the reasons given in `somcp_list_modules`.
+
+**Differences between 8.0.1 and 9.0.0** - the upgrade action reads **Upgrade** on 8.0.1, **Update** on 9.0.0, and the mobile actions are bulk actions on 8.0.1 only; nothing the tool reads changes, `module`, `module_shop` and `hook_module` have the same columns.
 
 #### `somcp_install_module`
 **State**: draft · [issue #27](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/27)

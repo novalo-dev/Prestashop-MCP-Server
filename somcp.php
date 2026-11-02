@@ -77,6 +77,7 @@ class Somcp extends Module
         'SomcpTool',
         'SomcpProductImage',
         'SomcpCatalog',
+        'SomcpModules',
         'SomcpToolRegistry',
         'SomcpPrompt',
         'SomcpPromptRegistry',

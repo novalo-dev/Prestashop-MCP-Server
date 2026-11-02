@@ -240,6 +240,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | Tool | Scope | Back office right | Nature |
 |---|---|---|---|
 | `somcp_list_modules` | `mcp.modules.read` | `view` on `AdminModulesSf` | read |
+| `somcp_get_module` | `mcp.modules.read` | `view` on `AdminModulesSf` | read |
 
 ### SEO
 

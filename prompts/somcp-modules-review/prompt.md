@@ -8,6 +8,7 @@ earlier answer: a module can be installed, upgraded or disabled at any time.
 
 - `somcp_ping`
 - `somcp_list_modules`
+- `somcp_get_module`
 
 ## Know which shop you are in
 
@@ -28,7 +29,10 @@ shop that answered.
 2. **Pick the module the merchant means** by its `name`, the technical name
    every module tool takes. When several modules match, show them with their
    display name and author and ask which one.
-3. **Answer from the list as it is.** Give the display name, the version, the
+3. **Read the module** with `somcp_get_module` and its `name` when the
+   merchant wants one module in detail or asks where it runs: it adds `hooks`,
+   the hooks the module is attached to on this shop.
+4. **Answer from what you read.** Give the display name, the version, the
    author and the state, and say what the module does from its description.
 
 ## What the fields mean
@@ -42,6 +46,9 @@ shop that answered.
   uninstalled: it does nothing on the shop.
 - `active` is whether the module is enabled on this shop, `active_on_mobile`
   whether it also runs on mobile devices.
+- `hooks` lists where the module runs on this shop, as **Design > Positions**
+  shows it: each hook's `name` and the module's `position` in it. It is empty
+  when the module is not installed or disabled on this shop.
 - The marketplace's **Upgrade available** and categories are not returned:
   they come from the PrestaShop marketplace, not from the shop.
 

@@ -631,8 +631,10 @@
                                         </div>
                                         <p class="help-block">{l s='Single use, valid 10 minutes. Checked automatically: nothing to click while it waits.' d='Modules.Somcp.Admin'}</p>
                                     {elseif $stage === 'expired'}
-                                        <p class="text-danger">{l s='The code expired before O\'So AI Relay used it.' d='Modules.Somcp.Admin'}</p>
-                                        <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_local_add=1"><i class="icon-refresh"></i> {l s='Retry' d='Modules.Somcp.Admin'}</a>
+                                        <div class="somcp-relay-line">
+                                            <p class="text-danger">{l s='The code expired before O\'So AI Relay used it.' d='Modules.Somcp.Admin'}</p>
+                                            <a class="btn btn-default" href="{$somcp_form_action|escape:'html':'UTF-8'}&amp;somcp_local_add=1"><i class="icon-refresh"></i> {l s='Retry' d='Modules.Somcp.Admin'}</a>
+                                        </div>
                                     {else}
                                         <p>{if $somcp_local.relay.software}{l s='The relay is linked to %software%.' sprintf=['%software%' => $somcp_local.relay.software] d='Modules.Somcp.Admin'}{else}{l s='The relay is linked.' d='Modules.Somcp.Admin'}{/if}</p>
                                     {/if}
@@ -643,9 +645,13 @@
                                 <div>
                                     <strong>{l s='Test your AI' d='Modules.Somcp.Admin'}</strong>
                                     {if $stage === 'wait'}
-                                        <p data-somcp-relay-waiting>{l s='Waiting for O\'So AI Relay to test your AI: in the relay, type the address of your AI and click Test.' d='Modules.Somcp.Admin'}</p>
-                                        <p class="text-danger" data-somcp-relay-gaveup hidden>{l s='Still no model able to call tools. Check that O\'So AI Relay is running and that your AI passed its test, then retry.' d='Modules.Somcp.Admin'}</p>
-                                        <button type="button" class="btn btn-default" data-somcp-relay-retry hidden><i class="icon-refresh"></i> {l s='Retry' d='Modules.Somcp.Admin'}</button>
+                                        <div class="somcp-relay-line">
+                                            <div>
+                                                <p data-somcp-relay-waiting>{l s='Waiting for O\'So AI Relay to test your AI: in the relay, type the address of your AI and click Test.' d='Modules.Somcp.Admin'}</p>
+                                                <p class="text-danger" data-somcp-relay-gaveup hidden>{l s='Still no model able to call tools. Check that O\'So AI Relay is running and that your AI passed its test, then retry.' d='Modules.Somcp.Admin'}</p>
+                                            </div>
+                                            <button type="button" class="btn btn-default" data-somcp-relay-retry hidden><i class="icon-refresh"></i> {l s='Retry' d='Modules.Somcp.Admin'}</button>
+                                        </div>
                                     {elseif $stage === 'ready'}
                                         <p>{l s='Models able to call tools: %count%.' sprintf=['%count%' => $somcp_local.model_count] d='Modules.Somcp.Admin'}</p>
                                     {/if}

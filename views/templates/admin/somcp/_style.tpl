@@ -126,6 +126,27 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     margin-left: 6px;
 }
 
+/* Retry sits at the right of the sentence it answers, on the same line, and
+   drops under it only when the line is too narrow. */
+.somcp .somcp-relay-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-top: 6px;
+}
+
+.somcp .somcp-relay-steps > li .somcp-relay-line p {
+    margin: 0;
+}
+
+.somcp .somcp-relay-line > div,
+.somcp .somcp-relay-line > p {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
 /* Bootstrap's buttons set display themselves and would show through the
    hidden attribute the pairing screen toggles. */
 .somcp .somcp-relay-steps [hidden] {

@@ -6,6 +6,18 @@
     {"why": "a brand without address gives an empty list", "arguments": {"id_manufacturer": 2}, "expect": "ok", "contains": ["\"addresses\"", "\"count\""]},
     {"why": "a brand that does not exist", "arguments": {"id_manufacturer": 999999}, "expect": "error", "contains": ["No brand of this shop"]},
     {"why": "a brand identifier of zero", "arguments": {"id_manufacturer": 0}, "expect": "error", "contains": ["No brand of this shop"]},
-    {"why": "a brand identifier that is not a number", "arguments": {"id_manufacturer": [1]}, "expect": "error", "contains": ["No brand of this shop"]}
+    {"why": "a brand identifier that is not a number", "arguments": {"id_manufacturer": [1]}, "expect": "error", "contains": ["No brand of this shop"]},
+    {"why": "the country name is given beside its ISO code, in the shop default language", "arguments": {"id_manufacturer": 1}, "expect": "ok", "contains": ["\"country\": \"US\"", "\"country_name\": \"United States\"", "\"language\": \"en\""]},
+    {"why": "the country name in a language the shop has", "arguments": {"id_manufacturer": 1, "language": "en"}, "expect": "ok", "contains": ["\"country_name\": \"United States\"", "\"language\": \"en\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's"]},
+    {"why": "part of the city, in another case", "arguments": {"city": "new york"}, "expect": "ok", "contains": ["Studio Design", "New York"]},
+    {"why": "part of the postal code", "arguments": {"postcode": "1015"}, "expect": "ok", "contains": ["10154"]},
+    {"why": "a city no brand address has gives an empty list", "arguments": {"city": "no-such-city-anywhere"}, "expect": "ok", "contains": ["\"addresses\": []", "\"count\": 0"]},
+    {"why": "empty text filters are left out", "arguments": {"lastname": "", "firstname": ""}, "expect": "ok", "contains": ["Studio Design"]},
+    {"why": "a last name no brand address has gives an empty list", "arguments": {"lastname": "no-such-name-anywhere"}, "expect": "ok", "contains": ["\"addresses\": []", "\"count\": 0"]},
+    {"why": "a first name no brand address has gives an empty list", "arguments": {"firstname": "no-such-name-anywhere"}, "expect": "ok", "contains": ["\"count\": 0"]},
+    {"why": "one country by its ISO code", "arguments": {"country": "US"}, "expect": "ok", "contains": ["Studio Design", "\"country\": \"US\""]},
+    {"why": "a country with no brand address gives an empty list", "arguments": {"country": "FR", "id_manufacturer": 1}, "expect": "ok", "contains": ["\"addresses\": []", "\"count\": 0"]},
+    {"why": "a country code no country has", "arguments": {"country": "ZZ"}, "expect": "error", "contains": ["No country has this ISO code"]}
   ]
 }

@@ -1563,13 +1563,20 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_manufacturer` | integer | no | the addresses of one brand only |
+| `lastname` | string | no | part of the **Last name**, case-insensitive |
+| `firstname` | string | no | part of the **First name**, case-insensitive |
+| `postcode` | string | no | part of the **Zip/Postal code** |
+| `city` | string | no | part of the **City**, case-insensitive |
+| `country` | string | no | ISO code of the **Country**, for example `FR` |
+| `language` | string | no | ISO code of an active language of the shop, for `country_name`; the shop default language when left out |
 
-**Returns** - `addresses`, per address: `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `postcode`, `city`, `country` (ISO code, `null` when the country no longer exists). Plus `count`. An `id_manufacturer` that is not a brand of this shop is an error, not an empty list.
+**Returns** - `addresses`, per address: `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `postcode`, `city`, `country` (ISO code, `null` when the country no longer exists), `country_name` (the name the **Country** column shows, in `language`, `null` when the country no longer exists). Plus `count` and `language`. An `id_manufacturer` that is not a brand of this shop, a `country` code no country has and a `language` the shop does not have are errors, not an empty list.
 
 **Notes**
 - Rows of `address` with `id_manufacturer` set and not deleted. Brand addresses are managed under the brands page, so the permission is the one on `AdminManufacturers`, as in the back office.
 - `address` has no shop column: an address belongs to the shop of its brand, so only the addresses of brands in `manufacturer_shop` for the shop of the token are listed, and `id_manufacturer` is checked by the same test of the shop as `somcp_get_manufacturer`.
-- Read through a query on `address`, `manufacturer`, `manufacturer_shop` and `country`, not through `Address` objects. Sorted by brand name, then by identifier.
+- The filters are those of the **Addresses** list, the same on PrestaShop 8.0 and 9.0: the text columns match a part of the value, **Country** one country. They combine with each other and with `id_manufacturer`.
+- Read through a query on `address`, `manufacturer`, `manufacturer_shop`, `country` and `country_lang`, not through `Address` objects. Sorted by brand name, then by identifier.
 
 #### `somcp_get_manufacturer_address`
 **State**: written

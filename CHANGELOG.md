@@ -161,6 +161,13 @@ conversation was not counted at all; it now is. **Shop Parameters > MCP
 server > Built-in assistant** says how many of this month's tokens were read
 from a cache.
 
+**Brand addresses filtered like their list.** `somcp_list_manufacturer_addresses`
+now filters like the columns of **Catalog > Brands & Suppliers > Brands >
+Addresses**: part of the **Last name**, **First name**, **Zip/Postal code**
+or **City**, and one **Country** by its ISO code. Each address now also gives
+the name of its country, as the **Country** column shows it, in the shop
+default language or the language asked for.
+
 **Meta keywords of the shop pages.** `somcp_list_meta_pages` now also gives
 the **Meta keywords** of each page on PrestaShop 8; on PrestaShop 9, which
 no longer has that field, they are shown as empty.

@@ -61,7 +61,7 @@ class SomcpToolGetRobotsTxt
                 . 'address of a real product or category of the shop, with the rule, the address and its language), '
                 . 'no_sitemap, not_at_domain_root (the shop is in a folder, so search engines never read this '
                 . 'file), too_large, no_robots_txt. On a multistore installation the file is shared by every shop. '
-                . 'Read only. Do not use it for AI crawlers specifically (somcp_check_ai_crawler_access), or to '
+                . 'Read only. Do not use it to '
                 . 'write the file again (somcp_generate_robots_txt).',
             [
                 'type' => 'object',

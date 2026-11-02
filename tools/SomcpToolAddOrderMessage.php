@@ -56,22 +56,18 @@ class SomcpToolAddOrderMessage
         return new SomcpTool(
             'somcp_add_order_message',
             Somcp::t('Add a message to an order'),
-            'Adds one message to one order, like the Messages block of the order page. With '
-                . 'display_to_customer true the customer sees it in their account and is emailed it ("New '
-                . 'message regarding your order"): tell the merchant before calling. With display_to_customer '
-                . 'false it stays private to the shop and nobody is emailed. display_to_customer has no default: '
-                . 'decide it with the merchant, never assume. The message is plain text, 1200 characters at '
-                . 'most; one holding a script or an event attribute is refused. The order status is not touched '
-                . '(that is somcp_set_order_status). Not for a customer service thread with no order, nor for '
-                . 'the order note only the shop sees on the order (that is somcp_set_order_note). One message per '
-                . 'call. Not to be retried on a lost answer: a second call adds the message twice and emails the '
-                . 'customer twice - read the order with somcp_get_order, whose messages list shows it once saved.',
+            'Adds one message to one order, like the Messages block of the order page. '
+                . 'display_to_customer has no default, decide it with the merchant: true shows it in the '
+                . 'customer\'s account and emails them, so tell the merchant first; false keeps it private to '
+                . 'the shop. The status is not touched (somcp_set_order_status), and the private order note is '
+                . 'somcp_set_order_note. One message per call. Not to be retried on a lost answer: it would add '
+                . 'and email the message twice - check the messages of somcp_get_order.',
             [
                 'type' => 'object',
                 'properties' => [
                     'id_order' => [
                         'type' => 'integer',
-                        'description' => 'Identifier of the order.',
+                        'description' => 'Identifier of the order, from somcp_search_orders.',
                     ],
                     'reference' => [
                         'type' => 'string',

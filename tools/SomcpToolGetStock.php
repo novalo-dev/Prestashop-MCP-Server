@@ -44,22 +44,12 @@ class SomcpToolGetStock
         return new SomcpTool(
             'somcp_get_stock',
             Somcp::t('Get the stock of a product'),
-            'Returns the stock of one product of this shop, as the storefront sells against it: '
-                . 'quantity is what can be sold, physical_quantity what is on the shelves, and '
-                . 'reserved_quantity what orders not shipped yet already hold. For a product with '
-                . 'combinations, the product line is the total and each combination comes with its '
-                . 'attributes (Size: M), its own reference and its own quantities; low_stock_threshold '
-                . 'is the level the merchant set for an alert, null when none is set, and '
-                . 'low_stock_alert says whether an email is sent at that level. The product line also '
-                . 'gives its reference, its default supplier (id_supplier, and supplier, its name, null '
-                . 'when none) and active, whether it is enabled. reserved_by lists the orders of '
-                . 'this shop that hold the reserved stock, each with its id_order, reference and the '
-                . 'quantity it holds; it is rebuilt from the orders still valid and not shipped, so its '
-                . 'total can differ from reserved_quantity in edge cases (partial refund or return). '
-                . 'Identify the product by its '
-                . 'identifier, from somcp_search_products, which finds it from a name, a reference or '
-                . 'an EAN13. Do not use it to find what runs low across the catalogue: '
-                . 'somcp_list_low_stock does that when the shop offers it.',
+            'Returns the stock of one product, like the Stock page of the catalogue: quantity is what '
+                . 'the storefront can sell, physical_quantity what is on the shelves, reserved_quantity what '
+                . 'orders not shipped yet hold, and reserved_by lists those orders. A product with '
+                . 'combinations gives its total and one line per combination with its attributes (Size: M). '
+                . 'low_stock_threshold is the alert level, null when none is set. To find what runs low '
+                . 'across the catalogue, use somcp_list_low_stock.',
             [
                 'type' => 'object',
                 'properties' => [

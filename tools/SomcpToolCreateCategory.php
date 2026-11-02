@@ -97,8 +97,8 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 . 'category goes under Home and is displayed unless told otherwise. '
                 . 'Who fills each field is said at the start of its description, and is a rule for you: '
                 . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Merchant, from the shop" - show the list read with somcp_list_categories or '
-                . 'somcp_list_customer_groups and let the merchant pick; never guess an identifier. '
+                . 'confirm. "Merchant, from the shop" - show the list read with somcp_list_categories and '
+                . 'let the merchant pick, or ask for the customer groups (Customers > Groups); never guess an identifier. '
                 . '"Assistant" - write it yourself in every language being filled, and show it to the merchant '
                 . 'before the call. '
                 . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
@@ -161,7 +161,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 'groups' => [
                     'type' => 'array',
                     'description' => 'Merchant, from the shop: the customer groups that can see the category, '
-                        . 'from somcp_list_customer_groups. Every group when left out, as in the back office.',
+                        . 'as listed under Customers > Groups. Every group when left out, as in the back office.',
                     'items' => ['type' => 'integer'],
                 ],
                 'link_rewrite' => $text('Assistant. The friendly URL, 128 characters at most; made from the '
@@ -442,7 +442,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         $groups = [];
         foreach (array_unique(self::ids($value, 'id_group', 'groups', $errors)) as $idGroup) {
             if (!in_array($idGroup, $known, true)) {
-                $errors[] = 'groups: no customer group ' . $idGroup . ' in this shop; take one from somcp_list_customer_groups';
+                $errors[] = 'groups: no customer group ' . $idGroup . ' in this shop; ask the merchant for one listed under Customers > Groups';
                 continue;
             }
             $groups[] = $idGroup;

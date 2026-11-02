@@ -1,6 +1,7 @@
 {
   "title": "Find a customer",
   "description": "Find a customer of the PrestaShop shop, read their account and orders, and update it when asked.",
+  "icon": "person",
   "scopes": [
     "mcp.customers.read",
     "mcp.customers.write"

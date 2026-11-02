@@ -266,13 +266,15 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
     $call = static function (string $name, string $id, array $inputs): NeuronAI\Chat\Messages\ToolCallMessage {
         return new NeuronAI\Chat\Messages\ToolCallMessage(null, [new NeuronAI\Tools\ToolCall($name, $id, $inputs, null, true)]);
     };
-    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+    $fake = new NeuronAI\Testing\FakeAIProvider(
+        $call(SomcpAssistantChat::FIND_TOOL, 'call_find', ['load' => ['somcp_set_order_status']]),
         $call('somcp_ping', 'call_ping', []),
         $call('somcp_set_order_status', 'call_refused', ['id_order' => 2, 'status_id' => $status === 8 ? 6 : 8]),
         new NeuronAI\Chat\Messages\AssistantMessage('Nothing was changed.'),
         $call('somcp_set_order_status', 'call_approved', ['id_order' => 2, 'status_id' => $status]),
         new NeuronAI\Chat\Messages\AssistantMessage('Done.')
-    ));
+    );
+    SomcpAssistantChat::overrideProvider($fake);
     $idAssistant = SomcpAssistant::save(0, [
         'provider' => 'anthropic', 'api_key' => 'test-key', 'level' => 'economy',
         'model' => 'claude-shop-test', 'role' => '', 'active' => true,
@@ -287,7 +289,20 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
     };
 
     try {
+        // The shop's tools load on demand: the first call offers the finder
+        // and the base tools, not the 76 descriptions; the status tool is
+        // loaded by the finder, then offered and called.
         $view = $chat->send($thread, 'Check the connection, then change order 2.');
+        $expect($view, 'working', 'the finder waits for the next step');
+        ++$assistantChecks;
+        $first = $fake->getRecorded()[0]->tools ?? [];
+        $names = array_map(static function ($tool): string {
+            return (string) $tool->getName();
+        }, $first);
+        if (!in_array(SomcpAssistantChat::FIND_TOOL, $names, true) || in_array('somcp_set_order_status', $names, true) || count($names) > 6) {
+            $failures[] = 'assistant: the first call offers ' . count($names) . ' tools instead of the finder and the base tools';
+        }
+        $view = $chat->step($thread);
         $expect($view, 'working', 'a read-only tool waits for the next step');
         $view = $chat->step($thread);
         $expect($view, 'approval', 'a change asks for approval');
@@ -345,6 +360,7 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
         new NeuronAI\Chat\Messages\AssistantMessage('Image added.')
     ));
     $thread = $chat->newThread(0);
+    $chat->loadTools($thread, ['somcp_update_product']);
     $before = count(Image::getImages((int) $context->language->id, 1));
 
     try {
@@ -390,8 +406,280 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
 
     $chat->deleteThread($thread);
     SomcpAssistant::delete($idPainter);
+
+    // The switches of the + menu: kept on the conversation, offered as the
+    // model allows, and with thinking and web search on, the thoughts and
+    // the cited pages reach the chat - a page that is no web address does not.
+    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+        (new NeuronAI\Chat\Messages\AssistantMessage([
+            new NeuronAI\Chat\Messages\ContentBlocks\ReasoningContent('Compare the prices first.'),
+            new NeuronAI\Chat\Messages\ContentBlocks\TextContent('Your mugs cost '),
+            new NeuronAI\Chat\Messages\ContentBlocks\TextContent('2 euros more'),
+            new NeuronAI\Chat\Messages\ContentBlocks\TextContent('.'),
+        ]))->addMetadata('citations', [
+            new NeuronAI\Chat\Messages\Citation('c1', 'https://example.com/mugs', 'Mugs'),
+            new NeuronAI\Chat\Messages\Citation('c2', 'javascript:alert(1)', 'Not a page'),
+        ])
+    ));
+    // An automatic level offers deep thinking once its model is known, as
+    // after a first answer: the model it resolved to is set by hand here,
+    // with a fresh date so nothing asks the provider for it.
+    Db::getInstance()->update('somcp_assistant', [
+        'resolved_model' => 'claude-shop-test',
+        'resolved_at' => date('Y-m-d H:i:s'),
+    ], '`id_assistant` = ' . (int) $idAssistant);
+    $thread = $chat->setSwitches($chat->newThread(0), ['think' => true, 'web' => true, 'memory' => false]);
+
+    try {
+        $view = $chat->send($thread, 'Are my mugs too expensive?');
+        $expect($view, 'idle', 'an answer with thinking and web search');
+        ++$assistantChecks;
+        if ($view['switches'] !== ['think' => true, 'web' => true, 'memory' => false]) {
+            $failures[] = 'assistant: the switches were not kept on the conversation';
+        }
+        ++$assistantChecks;
+        if (!$view['can']['think'] || !$view['can']['web']) {
+            $failures[] = 'assistant: thinking and web search are not offered for Claude';
+        }
+        $last = end($view['messages']);
+        ++$assistantChecks;
+        if (!is_array($last) || ($last['reasoning'] ?? '') !== 'Compare the prices first.' || $last['text'] !== 'Your mugs cost 2 euros more.') {
+            $failures[] = 'assistant: the thinking or the cited answer is not drawn as sent';
+        }
+        ++$assistantChecks;
+        if (!is_array($last) || ($last['sources'] ?? null) !== [['url' => 'https://example.com/mugs', 'title' => 'Mugs']]) {
+            $failures[] = 'assistant: the sources are not the cited web pages alone';
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+
+    $chat->deleteThread($thread);
+
+    // Gemini searches through the chat's own tool: a second call of the same
+    // model with Google Search alone, whose pages are listed under the step.
+    $idSearcher = SomcpAssistant::save(0, [
+        'provider' => 'gemini', 'api_key' => 'test-key', 'level' => 'economy',
+        'model' => '', 'role' => '', 'active' => true,
+    ]);
+    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+        $call(SomcpAssistantChat::SEARCH_TOOL, 'call_search', ['query' => 'price of a custom mug']),
+        (new NeuronAI\Chat\Messages\AssistantMessage('About 13 euros.'))->addMetadata('citations', [
+            new NeuronAI\Chat\Messages\Citation('g1', 'https://example.org/prices', 'Mug prices'),
+        ]),
+        new NeuronAI\Chat\Messages\AssistantMessage('The market is about 13 euros.')
+    ));
+    $thread = $chat->setSwitches($chat->newThread($idSearcher), ['think' => false, 'web' => true, 'memory' => true]);
+
+    try {
+        $view = $chat->send($thread, 'What do custom mugs cost?');
+        $expect($view, 'working', 'Gemini asks for a web search');
+        $view = $chat->step($thread);
+        $expect($view, 'idle', 'the answer after the web search');
+        $listed = array_values(array_filter($view['messages'], static function (array $message): bool {
+            return $message['role'] === 'sources';
+        }));
+        ++$assistantChecks;
+        if (($listed[0]['sources'] ?? null) !== [['url' => 'https://example.org/prices', 'title' => 'Mug prices']]) {
+            $failures[] = 'assistant: the pages of a Gemini web search are not listed';
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+
+    $chat->deleteThread($thread);
+    SomcpAssistant::delete($idSearcher);
+
+    // An assistant that cannot search borrows one: with Claude set to search
+    // for the others, a Mistral assistant gets the search tool, and its
+    // pages are listed as for Gemini. Without the setting it gets nothing.
+    $idBorrower = SomcpAssistant::save(0, [
+        'provider' => 'mistral', 'api_key' => 'test-key', 'level' => 'economy',
+        'model' => '', 'role' => '', 'active' => true,
+    ]);
+    $borrower = SomcpAssistant::get($idBorrower);
+    ++$assistantChecks;
+    if ($borrower === null || SomcpAssistant::searches($borrower)) {
+        $failures[] = 'assistant: Mistral is offered web search with no assistant set to search for it';
+    }
+    Configuration::updateValue(SomcpAssistant::SEARCH, 'anthropic');
+    ++$assistantChecks;
+    if ($borrower === null || !SomcpAssistant::searches($borrower)) {
+        $failures[] = 'assistant: Mistral is not offered the web search Claude lends';
+    }
+    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+        $call(SomcpAssistantChat::SEARCH_TOOL, 'call_borrowed', ['query' => 'price of a custom mug']),
+        (new NeuronAI\Chat\Messages\AssistantMessage('About 13 euros.'))->addMetadata('citations', [
+            new NeuronAI\Chat\Messages\Citation('b1', 'https://example.net/mugs', 'Mugs compared'),
+        ]),
+        new NeuronAI\Chat\Messages\AssistantMessage('Claude found about 13 euros.')
+    ));
+    $thread = $chat->setSwitches($chat->newThread($idBorrower), ['think' => false, 'web' => true, 'memory' => true]);
+
+    try {
+        $view = $chat->send($thread, 'What do custom mugs cost?');
+        $expect($view, 'working', 'Mistral asks for the lent web search');
+        $view = $chat->step($thread);
+        $expect($view, 'idle', 'the answer after the lent web search');
+        $listed = array_values(array_filter($view['messages'], static function (array $message): bool {
+            return $message['role'] === 'sources';
+        }));
+        ++$assistantChecks;
+        if (($listed[0]['sources'] ?? null) !== [['url' => 'https://example.net/mugs', 'title' => 'Mugs compared']]) {
+            $failures[] = 'assistant: the pages of a lent web search are not listed';
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+
+    $chat->deleteThread($thread);
+
+    // The module's settings from the chat: a super administrator reads them,
+    // and a change waits for approval, then is written through the page's own
+    // code - here the security log switched off, and one tool.
+    $logWas = SomcpConfig::get(SomcpConfig::LOG_ENABLED);
+    $read = SomcpModuleSettings::read((int) $context->shop->id, 'https://example.com/docs');
+    ++$assistantChecks;
+    if (!in_array(SomcpConfig::LOG_ENABLED, array_column($read['settings'], 'key'), true) || $read['tools']['list'] === []) {
+        $failures[] = 'assistant: the module settings read from the chat miss a setting or the tools';
+    }
+    ++$assistantChecks;
+    if (strpos((string) json_encode($read), 'test-key') !== false) {
+        $failures[] = 'assistant: the module settings read from the chat carry an API key';
+    }
+    SomcpAssistantChat::overrideProvider(new NeuronAI\Testing\FakeAIProvider(
+        $call(SomcpAssistantChat::SETTINGS_WRITE_TOOL, 'call_setting', ['key' => SomcpConfig::LOG_ENABLED, 'value' => 'off']),
+        new NeuronAI\Chat\Messages\AssistantMessage('The security log is off.')
+    ));
+    $thread = $chat->newThread(0);
+
+    try {
+        $view = $chat->send($thread, 'Switch the security log off.');
+        $expect($view, 'approval', 'a module setting asks for approval');
+        ++$assistantChecks;
+        if (SomcpConfig::get(SomcpConfig::LOG_ENABLED) !== $logWas) {
+            $failures[] = 'assistant: a module setting changed before it was approved';
+        }
+        $view = $chat->decide($thread, ['call_setting' => 'approve']);
+        $view = $chat->step($thread);
+        $expect($view, 'idle', 'the answer after the module setting');
+        ++$assistantChecks;
+        if (SomcpConfig::get(SomcpConfig::LOG_ENABLED, (int) $context->shop->id) !== '0') {
+            $failures[] = 'assistant: the approved module setting was not written';
+        }
+        ++$assistantChecks;
+        if (SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'off', (int) $context->shop->id) !== ''
+            || SomcpToolRegistry::isEnabled('somcp_ping')
+            || SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'on', (int) $context->shop->id) !== ''
+            || !SomcpToolRegistry::isEnabled('somcp_ping')) {
+            $failures[] = 'assistant: a tool could not be switched off and on again from the chat';
+        }
+        // Strict on what ties settings together, as the form is: a refresh
+        // token shorter than the access token, or a profile that does not
+        // exist, is refused and nothing changes.
+        ++$assistantChecks;
+        $refreshWas = SomcpConfig::get(SomcpConfig::REFRESH_TTL, (int) $context->shop->id);
+        if (SomcpModuleSettings::write(SomcpConfig::REFRESH_TTL, '600', (int) $context->shop->id) === ''
+            && (int) SomcpConfig::get(SomcpConfig::ACCESS_TTL, (int) $context->shop->id) >= 600) {
+            $failures[] = 'assistant: the chat set a refresh token shorter than the access token';
+        }
+        SomcpConfig::set(SomcpConfig::REFRESH_TTL, $refreshWas);
+        // The memory is never switched on without a provider the employee
+        // chose: the chat must ask, not pick one, even when one is offered.
+        ++$assistantChecks;
+        $providerWas = SomcpAssistantMemory::providerId((int) $context->shop->id);
+        Configuration::updateValue(SomcpAssistantMemory::PROVIDER, '');
+        if (SomcpModuleSettings::write(SomcpAssistantMemory::ON, 'on', (int) $context->shop->id) === ''
+            || SomcpAssistantMemory::providerId((int) $context->shop->id) !== '') {
+            $failures[] = 'assistant: the memory was switched on, or given a provider, without the employee choosing one';
+        }
+        Configuration::updateValue(SomcpAssistantMemory::PROVIDER, $providerWas);
+        ++$assistantChecks;
+        if (SomcpModuleSettings::write(SomcpConfig::REQUIRED_PROFILE, '999999', (int) $context->shop->id) === '') {
+            $failures[] = 'assistant: the chat set a profile that does not exist';
+        }
+        ++$assistantChecks;
+        if (SomcpModuleSettings::write('SOMCP_STATE_KEY', 'x', (int) $context->shop->id) === '') {
+            $failures[] = 'assistant: the chat could write a setting that is not on the settings page';
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+    SomcpConfig::set(SomcpConfig::LOG_ENABLED, $logWas);
+
+    $chat->deleteThread($thread);
+    Configuration::deleteByName(SomcpAssistant::SEARCH);
+    SomcpAssistant::delete($idBorrower);
     SomcpAssistant::delete($idAssistant);
     SomcpAssistantChat::overrideProvider(null);
+
+    // A local assistant, through O'So AI Relay. A code pairs once, in any case
+    // and with or without its dash; the token reports the models and only
+    // those that passed the tool test can be chosen; a request the chat
+    // queues is taken once, answered and read back; a relay gone quiet fails
+    // the chat at once instead of keeping it waiting; and removing the
+    // assistant revokes the token.
+    $relayCheck = static function (bool $ok, string $label) use (&$failures, &$assistantChecks): void {
+        ++$assistantChecks;
+        if (!$ok) {
+            $failures[] = 'local assistant: ' . $label;
+        }
+    };
+    $idLocal = 0;
+    try {
+        $idRelay = SomcpRelay::createPairing();
+        $relay = SomcpRelay::get($idRelay);
+        $code = (string) ($relay['code'] ?? '');
+        $relayCheck((bool) preg_match('/^[A-Z2-9]{4}-[A-Z2-9]{4}$/', $code), 'the pairing code is not shown as XXXX-XXXX');
+        $token = SomcpRelay::pair(strtolower(str_replace('-', '', $code)), '0.1.0', 'linux/amd64');
+        $relayCheck($token !== '', 'a valid code typed in lower case without its dash did not pair');
+        $relayCheck(SomcpRelay::pair($code, '0.1.0', 'linux/amd64') === '', 'a pairing code worked twice');
+        $relayCheck((SomcpRelay::authenticate($token)['id_relay'] ?? 0) === $idRelay, 'the token does not lead back to its relay');
+        $relayCheck(SomcpRelay::authenticate('wrong') === null, 'an unknown token was accepted');
+
+        SomcpRelay::hello($idRelay, ['software' => 'Ollama', 'models' => [
+            ['id' => 'qwen2.5:7b', 'tools' => true],
+            ['id' => 'gemma2:2b', 'tools' => false],
+            ['id' => 'untested'],
+        ]]);
+        $relay = SomcpRelay::get($idRelay);
+        $relayCheck($relay !== null && SomcpRelay::toolModels($relay) === ['qwen2.5:7b'], 'models without a passed tool test are offered');
+        $local = ['model' => 'gemma2:2b', 'role' => '', 'active' => true, 'token_cap' => 0];
+        $relayCheck(SomcpAssistant::saveLocal(0, $idRelay, $local) === 0, 'a model that failed the tool test was saved');
+        $idLocal = SomcpAssistant::saveLocal(0, $idRelay, ['model' => 'qwen2.5:7b'] + $local);
+        $saved = SomcpAssistant::edited($idLocal);
+        $relayCheck($saved !== null && $saved['local'] && $saved['label'] === 'Ollama' && $saved['online'], 'the local assistant is not saved online under the name of its AI');
+
+        // Nobody chatting: the relays may rest; a queued request wakes them.
+        SomcpRelay::purge();
+        $relayCheck(!SomcpRelay::awake(), 'the relays stay awake with nobody chatting');
+        $key = SomcpRelay::enqueue($idRelay, ['model' => 'qwen2.5:7b', 'messages' => [['role' => 'user', 'content' => 'Hello']]]);
+        $relayCheck(SomcpRelay::awake(), 'a request from the chat did not wake the relays');
+        $job = SomcpRelay::claim($idRelay);
+        $relayCheck(($job['id'] ?? '') === $key && ($job['request']['model'] ?? '') === 'qwen2.5:7b', 'the relay did not get the queued request');
+        $relayCheck(SomcpRelay::claim($idRelay) === null, 'one request was handed out twice');
+        $relayCheck(SomcpRelay::complete($idRelay, $key, 200, '{"choices":[{"message":{"role":"assistant","content":"Hi"}}]}', ''), 'the answer was refused');
+        $answer = SomcpRelay::wait($key, 2.0);
+        $relayCheck(($answer['status'] ?? 0) === 200 && strpos((string) ($answer['body'] ?? ''), '"Hi"') !== false, 'the chat did not read the answer back');
+
+        // Quiet for two hours: the chat says so rather than wait for nobody.
+        Db::getInstance()->update('somcp_relay', ['last_seen' => date('Y-m-d H:i:s', time() - 7200)], '`id_relay` = ' . $idRelay);
+        $localThread = $chat->newThread($idLocal);
+        $started = microtime(true);
+        $view = $chat->send($localThread, 'Hello');
+        $relayCheck($view['error'] !== '' && microtime(true) - $started < 10, 'an offline relay did not fail the chat at once');
+        $relayCheck((int) Db::getInstance()->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'somcp_relay_job` WHERE `id_relay` = ' . $idRelay, false) === 0, 'a request was queued for an offline relay');
+        $chat->deleteThread($localThread);
+
+        SomcpAssistant::delete($idLocal);
+        $idLocal = 0;
+        $relayCheck(SomcpRelay::authenticate($token) === null, 'removing the local assistant did not revoke its relay');
+    } catch (Throwable $e) {
+        $failures[] = 'local assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
+    }
+    if ($idLocal > 0) {
+        SomcpAssistant::delete($idLocal);
+    }
 }
 
 echo "\n";

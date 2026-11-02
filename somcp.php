@@ -77,6 +77,7 @@ class Somcp extends Module
         'SomcpTool',
         'SomcpProductImage',
         'SomcpCatalog',
+        'SomcpModules',
         'SomcpToolRegistry',
         'SomcpPrompt',
         'SomcpPromptRegistry',
@@ -85,7 +86,9 @@ class Somcp extends Module
         'SomcpUpdate',
         'SomcpContributors',
         'SomcpAssistant',
+        'SomcpRelay',
         'SomcpAssistantMemory',
+        'SomcpModuleSettings',
         'SomcpAssistantChat',
     ];
 
@@ -102,7 +105,7 @@ class Somcp extends Module
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '1.1.3';
+        $this->version = '1.2.0';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -235,6 +238,37 @@ class Somcp extends Module
     public static function currentShopId(): int
     {
         return (int) self::legacyContext()->shop->id;
+    }
+
+    /**
+     * A count of tokens, grouped by thousands, for the settings page.
+     *
+     * @param int $tokens
+     *
+     * @return string
+     */
+    public static function formatTokens(int $tokens): string
+    {
+        return number_format($tokens, 0, '.', ' ');
+    }
+
+    /**
+     * Makes the rest of the request run as one shop, whatever the back office
+     * is set to: the tools, the settings and the assistants all read the shop
+     * of the context. Used by the built-in chat, whose conversation belongs to
+     * one shop even when the back office shows all of them.
+     *
+     * @param int $idShop
+     *
+     * @return void
+     */
+    public static function actAsShop(int $idShop): void
+    {
+        if ($idShop <= 0 || (Shop::getContext() === Shop::CONTEXT_SHOP && self::currentShopId() === $idShop)) {
+            return;
+        }
+        Shop::setContext(Shop::CONTEXT_SHOP, $idShop);
+        self::legacyContext()->shop = new Shop($idShop);
     }
 
     /**
@@ -374,9 +408,11 @@ class Somcp extends Module
         SomcpBackOffice::rememberAdminDir();
 
         $employee = $this->context->employee;
+        // Shown when at least one shop of the back office context has an
+        // assistant: on all shops, a merchant may chat about any of them.
         if (!$employee instanceof Employee || (int) $employee->id <= 0
             || !SomcpAssistantChat::available()
-            || SomcpAssistant::leader() === null
+            || SomcpAssistantChat::shopsFor($employee) === []
             || !SomcpAssistant::mayUse((int) $employee->id_profile)) {
             return '';
         }
@@ -425,13 +461,57 @@ class Somcp extends Module
                 'refused' => $this->l10n('Refused'),
                 'working' => $this->l10n('Working...'),
                 'summarized' => $this->l10n('Earlier messages were summarized to keep the cost down.'),
-                'spent' => $this->l10n('This month: %spent%'),
-                'spentOf' => $this->l10n('This month: %spent% of %budget%'),
+                'tokens' => $this->l10n('This month: %tokens% tokens'),
+                'tokensOf' => $this->l10n('This month: %tokens% of %cap% tokens'),
+                'estimate' => $this->l10n('about %cost%, estimated'),
                 'failed' => $this->l10n('Something went wrong. Try again.'),
                 'poweredBy' => $this->l10n('Powered by'),
                 'attach' => $this->l10n('Attach files from your computer'),
                 'removeFile' => $this->l10n('Remove this file'),
                 'fileTooBig' => $this->l10n('This file cannot be sent: only images, PDF and text files up to 5 MB are accepted.'),
+                'add' => $this->l10n('Add files or a prompt'),
+                'addFiles' => $this->l10n('Add files'),
+                'filesHint' => $this->l10n('Images, PDF and text'),
+                'prompts' => $this->l10n('Prompts'),
+                'toStart' => $this->l10n('To get started'),
+                'oneChange' => $this->l10n('1 change'),
+                'changes' => $this->l10n('%count% changes'),
+                'technical' => $this->l10n('See the technical data'),
+                'waiting' => $this->l10n('Waiting for your answer...'),
+                'search' => $this->l10n('Search a conversation'),
+                'noThread' => $this->l10n('No conversation found'),
+                'today' => $this->l10n('Today'),
+                'yesterday' => $this->l10n('Yesterday'),
+                'earlier' => $this->l10n('Earlier'),
+                'copy' => $this->l10n('Copy the answer'),
+                'copied' => $this->l10n('Copied'),
+                'yes' => $this->l10n('Yes'),
+                'no' => $this->l10n('No'),
+                'chooseAssistant' => $this->l10n('Choose the assistant'),
+                // Shown in turn while the assistant works, a few seconds each.
+                'verbs' => [
+                    $this->l10n('Cogitating...'),
+                    $this->l10n('Thinking...'),
+                    $this->l10n('Looking it up...'),
+                    $this->l10n('Checking...'),
+                    $this->l10n('Writing...'),
+                ],
+                'chooseShop' => $this->l10n('Which shop are we working on?'),
+                'chooseShopHint' => $this->l10n('The conversation stays tied to the shop you pick.'),
+                'pickShop' => $this->l10n('Choose a shop to start'),
+                'conversationFor' => $this->l10n('This conversation is for the shop %shop%'),
+                'think' => $this->l10n('Deep thinking'),
+                'thinkHint' => $this->l10n('Slower, uses more tokens'),
+                'thinkPill' => $this->l10n('Thinking'),
+                'web' => $this->l10n('Web search'),
+                'webHint' => $this->l10n('Web pages cited as sources'),
+                'webPill' => $this->l10n('Web search'),
+                'memory' => $this->l10n('Memory'),
+                'memoryHint' => $this->l10n('Remember this conversation'),
+                'memoryPill' => $this->l10n('No memory'),
+                'removeSwitch' => $this->l10n('Remove %name%'),
+                'thought' => $this->l10n('Thought it through'),
+                'sources' => $this->l10n('Sources'),
             ],
         ];
 
@@ -474,7 +554,7 @@ class Somcp extends Module
         $employee = $this->context->employee;
         if (!$employee instanceof Employee || (int) $employee->id <= 0
             || !SomcpAssistantChat::available()
-            || SomcpAssistant::leader() === null
+            || SomcpAssistantChat::shopsFor($employee) === []
             || !SomcpAssistant::mayUse((int) $employee->id_profile)) {
             return '';
         }
@@ -583,9 +663,48 @@ class Somcp extends Module
         if (Tools::isSubmit('submitSomcpAssistant')) {
             $this->saveAssistant();
         }
+        // Add a local assistant, or Retry once a code expired: the code is
+        // made at once, there is nothing to choose before it. An inheriting
+        // level shows the assistants above read-only, as for the form.
+        if (Tools::getValue('somcp_local_add') === '1') {
+            if (!SomcpAssistant::editedState()['own']) {
+                $this->redirectToSelf();
+            }
+            $this->redirectToSelf(['somcp_relay' => SomcpRelay::createPairing()]);
+        }
+        // What the pairing screen checks every few seconds, so it moves on by
+        // itself as the relay links, then reports its models.
+        if ((int) Tools::getValue('somcp_relay_status') > 0) {
+            $relay = SomcpRelay::edited((int) Tools::getValue('somcp_relay_status'));
+            SomcpHttp::json(['stage' => $relay !== null ? SomcpRelay::stage($relay) : 'gone']);
+        }
+        if (Tools::isSubmit('submitSomcpLocalAssistant')) {
+            $this->saveLocalAssistant();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantOwn')) {
+            if (SomcpAssistant::copyHere()) {
+                $this->flash($this->trans('The assistants inherited from above were copied to this level, where they can now be changed.', [], 'Modules.Somcp.Admin'));
+            } else {
+                $this->flash($this->trans('The assistants could not be copied to this level. Try again, or add them here by hand.', [], 'Modules.Somcp.Admin'), true);
+            }
+            $this->redirectToSelf();
+        }
+        if (Tools::isSubmit('submitSomcpAssistantInherit')) {
+            SomcpAssistant::inheritHere();
+            $this->flash($this->trans('This level uses the assistants inherited from above again.', [], 'Modules.Somcp.Admin'));
+            $this->redirectToSelf();
+        }
         if (Tools::isSubmit('submitSomcpAssistantTest')) {
-            $tested = SomcpAssistant::get((int) Tools::getValue('id_assistant'));
+            $tested = SomcpAssistant::edited((int) Tools::getValue('id_assistant'));
             $model = $tested !== null ? SomcpAssistant::test($tested) : '';
+            if ($tested !== null && $tested['local']) {
+                if ($model !== '') {
+                    $this->flash($this->trans('The relay answers. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
+                } else {
+                    $this->flash($this->trans('The relay is offline, or the model no longer passes its tool test. Start O\'So AI Relay on the computer where your AI runs, then test again.', [], 'Modules.Somcp.Admin'), true);
+                }
+                $this->redirectToSelf();
+            }
             if ($model !== '') {
                 $this->flash($this->trans('The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
             } else {
@@ -604,18 +723,40 @@ class Somcp extends Module
             $this->redirectToSelf();
         }
         if (Tools::isSubmit('submitSomcpAssistantSettings')) {
+            $own = [];
+            foreach ([SomcpAssistant::PROFILE, SomcpAssistant::TOKEN_CAP, SomcpAssistant::INSTRUCTIONS, SomcpAssistant::SEARCH, SomcpAssistantMemory::ON] as $key) {
+                $own[$key] = Tools::getValue('somcp_own_' . $key) === '1';
+            }
+            $errors = [];
+            $idProfile = (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE');
+            if (!SomcpConfig::profileExists($idProfile)) {
+                // The stored value is written back unchanged.
+                $errors[] = $this->trans('This profile does not exist: the employees allowed were not changed.', [], 'Modules.Somcp.Admin');
+                $idProfile = (int) Configuration::get(SomcpAssistant::PROFILE);
+            }
             SomcpAssistant::saveSettings(
-                (float) str_replace(',', '.', (string) Tools::getValue('SOMCP_ASSISTANT_BUDGET')),
+                (int) Tools::getValue('SOMCP_ASSISTANT_TOKENS'),
                 (string) Tools::getValue('SOMCP_ASSISTANT_INSTRUCTIONS'),
-                (int) Tools::getValue('SOMCP_ASSISTANT_PROFILE')
+                $idProfile,
+                $own
             );
-            SomcpAssistantMemory::save(
-                (int) self::currentShopId(),
+            $memory = SomcpAssistantMemory::save(
                 Tools::getValue('SOMCP_EMB_ON') === '1',
                 (string) Tools::getValue('SOMCP_EMB_PROVIDER'),
-                (string) Tools::getValue('SOMCP_EMB_KEY')
+                (string) Tools::getValue('SOMCP_EMB_KEY'),
+                $own[SomcpAssistantMemory::ON]
             );
-            $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
+            if ($memory === SomcpAssistantMemory::NEEDS_PROVIDER) {
+                $errors[] = $this->trans('Choose an embeddings provider for the memory: without one it stays as it was.', [], 'Modules.Somcp.Admin');
+            } elseif ($memory === SomcpAssistantMemory::NEEDS_KEY) {
+                $errors[] = $this->trans('The embeddings provider has no key: type the Voyage key, or pick a provider of the chat. The memory stays as it was.', [], 'Modules.Somcp.Admin');
+            }
+            SomcpAssistant::saveSearch((string) Tools::getValue(SomcpAssistant::SEARCH), $own[SomcpAssistant::SEARCH]);
+            if ($errors !== []) {
+                $this->flash(implode(' ', $errors) . ' ' . $this->trans('The other settings were saved.', [], 'Modules.Somcp.Admin'), true);
+            } else {
+                $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
+            }
             $this->redirectToSelf();
         }
         if (Tools::isSubmit('submitSomcpUpdateSwitch')) {
@@ -669,6 +810,15 @@ class Somcp extends Module
         // an existing assistant with a key is open for editing, so the settings
         // page never calls a provider just to be shown.
         $editing = $this->assistantBeingEdited();
+        // A local assistant has its own form: no key, and a model picked
+        // from those its relay found able to call tools.
+        $local = $this->localScreen($editing);
+        if ($editing !== null && !empty($editing['local'])) {
+            $editing = null;
+        }
+        $assistantState = SomcpAssistant::editedState();
+        $assistantSettings = SomcpAssistant::editedSettings();
+        $contextShops = array_map('intval', Shop::getContextListShopID());
         $editModels = ($editing !== null && !empty($editing['has_key']) && (int) $editing['id_assistant'] > 0)
             ? SomcpAssistant::models($editing)
             : [];
@@ -687,21 +837,38 @@ class Somcp extends Module
             'somcp_repository' => SomcpUpdate::REPOSITORY,
             'somcp_update' => $update,
             'somcp_contributors' => $this->contributorsShown(),
-            'somcp_assistants' => SomcpAssistant::all(),
-            'somcp_assistant_costs' => SomcpAssistant::monthCosts(),
-            'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts()),
-            'somcp_assistant_budget' => SomcpAssistant::budget(),
-            'somcp_assistant_instructions' => SomcpAssistant::instructions(),
-            'somcp_assistant_profile' => (int) Configuration::get(SomcpAssistant::PROFILE, null, null, (int) self::currentShopId()),
+            // The level the page edits - all shops, a group or a shop - and the
+            // spending of every shop of it.
+            'somcp_assistants' => array_map(static function (array $assistant): array {
+                return $assistant + ['token_cap_label' => self::formatTokens((int) $assistant['token_cap'])];
+            }, $assistantState['assistants']),
+            'somcp_assistants_own' => $assistantState['own'],
+            'somcp_assistants_source' => $assistantState['source'],
+            'somcp_assistant_costs' => SomcpAssistant::monthCosts($contextShops),
+            // Formatted here: Smarty has no number formatting of its own, and a
+            // PHP function used as a modifier is deprecated in recent versions.
+            'somcp_assistant_tokens' => array_map([self::class, 'formatTokens'], SomcpAssistant::monthTokens($contextShops)),
+            'somcp_assistant_used' => self::formatTokens(array_sum(SomcpAssistant::monthTokens($contextShops))),
+            'somcp_assistant_spent' => array_sum(SomcpAssistant::monthCosts($contextShops)),
+            'somcp_assistant_token_cap' => $assistantSettings['token_cap'],
+            'somcp_assistant_instructions' => $assistantSettings['instructions'],
+            'somcp_assistant_profile' => $assistantSettings['profile'],
             'somcp_assistant_providers' => SomcpAssistant::providers(),
             'somcp_assistant_image_providers' => implode(' ', SomcpAssistant::IMAGE_PROVIDERS),
             'somcp_assistant_edit' => $editing,
             'somcp_assistant_models' => $editModels,
-            'somcp_memory_on' => SomcpAssistantMemory::on((int) self::currentShopId()),
+            'somcp_local' => $local,
+            'somcp_search_useful' => SomcpAssistant::searchUseful(),
+            'somcp_search_lenders' => SomcpAssistant::searchLenders(),
+            'somcp_search_provider' => $assistantSettings['search'],
+            'somcp_memory_on' => (string) Configuration::get(SomcpAssistantMemory::ON) === '1',
+            // A memory saved as on can stop working later - its provider's
+            // assistant deleted, its key gone: the page says so rather than
+            // show a switch on over a feature that does nothing.
+            'somcp_memory_works' => SomcpAssistantMemory::enabled((int) self::currentShopId()),
             'somcp_memory_selectable' => SomcpAssistantMemory::selectable((int) self::currentShopId()),
-            'somcp_memory_provider' => SomcpAssistantMemory::providerId((int) self::currentShopId()),
-            'somcp_memory_has_own_key' => Configuration::get(SomcpAssistantMemory::KEY, null, null, (int) self::currentShopId()) !== false
-                && (string) Configuration::get(SomcpAssistantMemory::KEY, null, null, (int) self::currentShopId()) !== '',
+            'somcp_memory_provider' => (string) Configuration::get(SomcpAssistantMemory::PROVIDER),
+            'somcp_memory_has_own_key' => (string) Configuration::get(SomcpAssistantMemory::KEY) !== '',
             'somcp_assistant_ready' => SomcpAssistantChat::available(),
             // Formatted here, in the employee's language, rather than in the
             // template: Smarty's date modifier knows nothing of the back
@@ -743,6 +910,17 @@ class Somcp extends Module
      */
     private function saveAssistant(): void
     {
+        // A level that inherits its assistants shows them read-only: one saved
+        // here would silently replace all of them for this level.
+        if (!SomcpAssistant::editedState()['own']) {
+            $this->redirectToSelf();
+        }
+        // A local assistant posted to this form would become a keyless
+        // provider assistant: it has its own form.
+        $posted = SomcpAssistant::edited((int) Tools::getValue('id_assistant'));
+        if ($posted !== null && $posted['local']) {
+            $this->redirectToSelf();
+        }
         $idAssistant = SomcpAssistant::save((int) Tools::getValue('id_assistant'), [
             'provider' => (string) Tools::getValue('somcp_assistant_provider'),
             'api_key' => (string) Tools::getValue('somcp_assistant_key'),
@@ -750,11 +928,12 @@ class Somcp extends Module
             'model' => (string) Tools::getValue('somcp_assistant_model'),
             'role' => (string) Tools::getValue('somcp_assistant_role'),
             'active' => Tools::getValue('somcp_assistant_active') === '1',
+            'token_cap' => (int) Tools::getValue('somcp_assistant_token_cap'),
         ]);
 
         // Tested right away: a key pasted with a stray space or for the wrong
         // provider is better found here than on the first message in the chat.
-        $saved = SomcpAssistant::get($idAssistant);
+        $saved = SomcpAssistant::edited($idAssistant);
         $model = $saved !== null ? SomcpAssistant::test($saved) : '';
         if ($model !== '') {
             $this->flash($this->trans('Assistant saved. The key works. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
@@ -762,6 +941,91 @@ class Somcp extends Module
             $this->flash($this->trans('Assistant saved, but the provider refused the key or did not answer. Check the key.', [], 'Modules.Somcp.Admin'), true);
         }
         $this->redirectToSelf();
+    }
+
+    /**
+     * Saves the form of a local assistant.
+     */
+    private function saveLocalAssistant(): void
+    {
+        if (!SomcpAssistant::editedState()['own']) {
+            $this->redirectToSelf();
+        }
+        $idAssistant = (int) Tools::getValue('id_assistant');
+        $idRelay = (int) Tools::getValue('id_relay');
+        $saved = SomcpAssistant::saveLocal($idAssistant, $idRelay, [
+            'model' => (string) Tools::getValue('somcp_assistant_model'),
+            'role' => (string) Tools::getValue('somcp_assistant_role'),
+            'active' => Tools::getValue('somcp_assistant_active') === '1',
+            'token_cap' => (int) Tools::getValue('somcp_assistant_token_cap'),
+        ]);
+        if ($saved === 0) {
+            // Back to the same screen, which shows what the relay offers now.
+            $this->flash($this->trans('The relay no longer offers this model, or it was unlinked. Pick a model again.', [], 'Modules.Somcp.Admin'), true);
+            $this->redirectToSelf($idAssistant > 0 ? ['somcp_assistant_edit' => $idAssistant] : ['somcp_relay' => $idRelay]);
+        }
+
+        $assistant = SomcpAssistant::edited($saved);
+        $model = $assistant !== null ? SomcpAssistant::test($assistant) : '';
+        if ($model !== '') {
+            $this->flash($this->trans('Local assistant saved. Model in use: %model%.', ['%model%' => $model], 'Modules.Somcp.Admin'));
+        } else {
+            $this->flash($this->trans('Local assistant saved, but its relay is offline right now. Start O\'So AI Relay on the computer where your AI runs.', [], 'Modules.Somcp.Admin'), true);
+        }
+        $this->redirectToSelf();
+    }
+
+    /**
+     * What the local assistant screen shows, or null when it is closed.
+     *
+     * Its steps follow the relay: download it, then a code to type in it,
+     * then a choice among the models it found able to call tools. The same
+     * screen edits a local assistant already saved.
+     *
+     * @param array<string, mixed>|null $editing the assistant open for editing
+     *
+     * @return array<string, mixed>|null
+     */
+    private function localScreen(?array $editing): ?array
+    {
+        if (!SomcpAssistant::editedState()['own']) {
+            return null;
+        }
+        $assistant = null;
+        if ($editing !== null && !empty($editing['local'])) {
+            $assistant = $editing;
+            $relay = SomcpRelay::get((int) $editing['id_relay']);
+        } elseif ((int) Tools::getValue('somcp_relay') > 0) {
+            $relay = SomcpRelay::edited((int) Tools::getValue('somcp_relay'));
+            if ($relay === null) {
+                return null;
+            }
+        } else {
+            return null;
+        }
+
+        if ($assistant !== null) {
+            // Its relay is gone: only removing the assistant is left.
+            $step = $relay !== null ? 'edit' : 'lost';
+        } else {
+            $step = 'pairing';
+        }
+        $shop = rtrim((string) $this->context->shop->getBaseURL(true), '/');
+
+        return [
+            'step' => $step,
+            // code, expired, wait or ready: what the progress shows, and
+            // what the page compares with each check to know it moved on.
+            'stage' => $relay !== null ? SomcpRelay::stage($relay) : 'gone',
+            'relay' => $relay,
+            'online' => $relay !== null && $relay['paired'] && SomcpRelay::online($relay),
+            'models' => $relay !== null ? SomcpRelay::toolModels($relay) : [],
+            'model_count' => $relay !== null ? count(SomcpRelay::toolModels($relay)) : 0,
+            'assistant' => $assistant ?? ['id_assistant' => 0, 'model' => '', 'role' => '', 'active' => true, 'token_cap' => 0],
+            'command' => $relay !== null && $relay['code'] !== '' ? 'oso pair ' . $shop . ' ' . $relay['code'] : '',
+            'status_url' => $relay !== null ? $this->selfUrl(['somcp_relay_status' => (int) $relay['id_relay']]) : '',
+            'download' => SomcpRelay::DOWNLOAD_URL,
+        ];
     }
 
     /**
@@ -773,11 +1037,11 @@ class Somcp extends Module
     private function assistantBeingEdited(): ?array
     {
         if (Tools::getValue('somcp_assistant_add') === '1') {
-            return ['id_assistant' => 0, 'provider' => 'anthropic', 'has_key' => false, 'level' => SomcpAssistant::LEVEL_ECONOMY, 'model' => '', 'role' => '', 'active' => true];
+            return ['id_assistant' => 0, 'provider' => 'anthropic', 'has_key' => false, 'level' => SomcpAssistant::LEVEL_ECONOMY, 'model' => '', 'role' => '', 'active' => true, 'token_cap' => 0];
         }
         $idAssistant = (int) Tools::getValue('somcp_assistant_edit');
 
-        return $idAssistant > 0 ? SomcpAssistant::get($idAssistant) : null;
+        return $idAssistant > 0 ? SomcpAssistant::edited($idAssistant) : null;
     }
 
     /**
@@ -828,6 +1092,11 @@ class Somcp extends Module
         foreach (array_keys(SomcpConfig::defaults()) as $key) {
             $map[$key] = SomcpConfig::level($key);
         }
+        // The settings of the Built-in assistant tab follow the same levels.
+        // The memory's switch stands for its provider and key too.
+        foreach ([SomcpAssistant::PROFILE, SomcpAssistant::TOKEN_CAP, SomcpAssistant::INSTRUCTIONS, SomcpAssistant::SEARCH, SomcpAssistantMemory::ON] as $key) {
+            $map[$key] = SomcpConfig::level($key);
+        }
 
         return $map;
     }
@@ -859,30 +1128,38 @@ class Somcp extends Module
             SomcpConfig::DCR_ENABLED,
             SomcpConfig::LOG_ENABLED,
         ];
-        foreach ($switches as $key) {
+        // The rules that tie two settings together hold before anything is
+        // written, as in the built-in assistant's settings tool.
+        $errors = [];
+        if (isset($ownFields[SomcpConfig::REQUIRED_PROFILE])
+            && !SomcpConfig::profileExists((int) Tools::getValue(SomcpConfig::REQUIRED_PROFILE))) {
+            unset($ownFields[SomcpConfig::REQUIRED_PROFILE]);
+            $errors[] = $this->trans('This profile does not exist: the employees allowed were not changed.', [], 'Modules.Somcp.Admin');
+        }
+        $access = isset($ownFields[SomcpConfig::ACCESS_TTL])
+            ? (int) SomcpConfig::clean(SomcpConfig::ACCESS_TTL, (string) Tools::getValue(SomcpConfig::ACCESS_TTL))
+            : (int) SomcpConfig::get(SomcpConfig::ACCESS_TTL);
+        $refresh = isset($ownFields[SomcpConfig::REFRESH_TTL])
+            ? (int) SomcpConfig::clean(SomcpConfig::REFRESH_TTL, (string) Tools::getValue(SomcpConfig::REFRESH_TTL))
+            : (int) SomcpConfig::get(SomcpConfig::REFRESH_TTL);
+        if (!SomcpConfig::lifetimesHold($access, $refresh)) {
+            unset($ownFields[SomcpConfig::ACCESS_TTL], $ownFields[SomcpConfig::REFRESH_TTL]);
+            $errors[] = $this->trans('The refresh token must last longer than the access token: the two lifetimes were not changed.', [], 'Modules.Somcp.Admin');
+        }
+
+        // SomcpConfig::clean() holds each setting's bounds, shared with the
+        // built-in assistant's settings tool.
+        $plain = array_merge($switches, [
+            SomcpConfig::ACCESS_TTL,
+            SomcpConfig::REFRESH_TTL,
+            SomcpConfig::REQUIRED_PROFILE,
+            SomcpConfig::TOOLS_TTL,
+            SomcpConfig::REDIRECT_HOSTS,
+        ]);
+        foreach ($plain as $key) {
             if (isset($ownFields[$key])) {
-                SomcpConfig::set($key, Tools::getValue($key) === '1' ? '1' : '0');
+                SomcpConfig::set($key, SomcpConfig::clean($key, (string) Tools::getValue($key, '')));
             }
-        }
-
-        if (isset($ownFields[SomcpConfig::ACCESS_TTL])) {
-            SomcpConfig::set(SomcpConfig::ACCESS_TTL, (string) max(60, (int) Tools::getValue(SomcpConfig::ACCESS_TTL)));
-        }
-        if (isset($ownFields[SomcpConfig::REFRESH_TTL])) {
-            SomcpConfig::set(SomcpConfig::REFRESH_TTL, (string) max(600, (int) Tools::getValue(SomcpConfig::REFRESH_TTL)));
-        }
-        if (isset($ownFields[SomcpConfig::REQUIRED_PROFILE])) {
-            SomcpConfig::set(SomcpConfig::REQUIRED_PROFILE, (string) max(0, (int) Tools::getValue(SomcpConfig::REQUIRED_PROFILE)));
-        }
-
-        if (isset($ownFields[SomcpConfig::TOOLS_TTL])) {
-            // Bounds repeated here rather than trusted from the form: the
-            // endpoint clamps the value it announces anyway, and a field left
-            // saying 0 while the shop announces 10 would read as a bug.
-            SomcpConfig::set(
-                SomcpConfig::TOOLS_TTL,
-                (string) max(10, min(3600, (int) Tools::getValue(SomcpConfig::TOOLS_TTL)))
-            );
         }
 
         if (isset($ownFields[SomcpConfig::TOOLS_OFF])) {
@@ -893,14 +1170,11 @@ class Somcp extends Module
             SomcpConfig::set(SomcpConfig::PROMPTS_OFF, $this->readPromptSwitches());
         }
 
-        if (isset($ownFields[SomcpConfig::REDIRECT_HOSTS])) {
-            $hosts = (string) Tools::getValue(SomcpConfig::REDIRECT_HOSTS, '');
-            // Host names only: anything else here would silently widen what the
-            // module accepts as a return address.
-            $hosts = (string) preg_replace('/[^a-zA-Z0-9.\-\s,;]/', '', $hosts);
-            SomcpConfig::set(SomcpConfig::REDIRECT_HOSTS, Tools::substr(trim($hosts), 0, 500));
-        }
+        if ($errors !== []) {
+            $this->flash(implode(' ', $errors) . ' ' . $this->trans('The other settings were saved.', [], 'Modules.Somcp.Admin'), true);
 
+            return;
+        }
         $this->flash($this->trans('Settings saved.', [], 'Modules.Somcp.Admin'));
     }
 
@@ -1132,15 +1406,69 @@ class Somcp extends Module
     }
 
     /**
-     * Creates the module tables. Every statement is CREATE TABLE IF NOT EXISTS,
-     * so an upgrade script calls this to add the tables of a new version
-     * without touching the ones a shop already has.
+     * Brings the module tables to what install.sql describes.
+     *
+     * Missing tables are created, then every column and plain key install.sql
+     * names that a table lacks is added. install.sql is the one description
+     * of the schema: a new column goes there and nowhere else, and every
+     * upgrade script calls this, so a shop reaches the current schema whatever
+     * version - or pre-release copy - it comes from, and whichever upgrade
+     * steps it skipped. A column is added without AFTER: its position changes
+     * nothing, and placing it after another made the upgrade fail on a shop
+     * that lacked that other one.
+     *
+     * Primary and unique keys are left to the upgrade scripts: adding one can
+     * fail on rows already there, which only a script that knows the data can
+     * settle first.
      *
      * @return bool
      */
     public function installDatabase(): bool
     {
-        return $this->runSqlFile('install.sql');
+        return $this->runSqlFile('install.sql') && $this->addMissingColumns();
+    }
+
+    /**
+     * Adds to each existing table the columns and plain keys install.sql
+     * names and the table lacks.
+     *
+     * @return bool
+     */
+    private function addMissingColumns(): bool
+    {
+        $db = Db::getInstance();
+        foreach ($this->sqlStatements('install.sql') as $statement) {
+            if (!preg_match('/^CREATE TABLE IF NOT EXISTS `(\w+)` \((.*)\)[^)]*$/s', $statement, $table)) {
+                continue;
+            }
+            $present = $db->executeS('SHOW COLUMNS FROM `' . bqSQL($table[1]) . '`');
+            $keys = $db->executeS('SHOW INDEX FROM `' . bqSQL($table[1]) . '`');
+            if (!is_array($present) || !is_array($keys)) {
+                return false;
+            }
+            // MySQL compares column and key names without case.
+            $columns = array_map('strtolower', array_column($present, 'Field'));
+            $indexes = array_map('strtolower', array_column($keys, 'Key_name'));
+            foreach (preg_split('/\R/', $table[2]) ?: [] as $line) {
+                $line = rtrim(trim($line), ',');
+                if (preg_match('/^`(\w+)`\s+(.+)$/', $line, $column)) {
+                    // An AUTO_INCREMENT column is the primary key, which a
+                    // table cannot have been created without.
+                    if (in_array(strtolower($column[1]), $columns, true) || stripos($column[2], 'AUTO_INCREMENT') !== false) {
+                        continue;
+                    }
+                    if (!$db->execute('ALTER TABLE `' . bqSQL($table[1]) . '` ADD ' . $line)) {
+                        return false;
+                    }
+                } elseif (preg_match('/^KEY `(\w+)`/', $line, $key) && !in_array(strtolower($key[1]), $indexes, true)) {
+                    if (!$db->execute('ALTER TABLE `' . bqSQL($table[1]) . '` ADD ' . $line)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -1165,6 +1493,30 @@ class Somcp extends Module
             return false;
         }
 
+        foreach ($this->sqlStatements($file) as $statement) {
+            if (!Db::getInstance()->execute($statement)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The statements of one of the module SQL files, with the shop's prefix
+     * and engine.
+     *
+     * @param string $file
+     *
+     * @return array<int, string>
+     */
+    private function sqlStatements(string $file): array
+    {
+        $path = _PS_MODULE_DIR_ . 'somcp/sql/' . $file;
+        if (!file_exists($path)) {
+            return [];
+        }
+
         $sql = (string) Tools::file_get_contents($path);
         $sql = str_replace(['PREFIX_', 'ENGINE=InnoDB'], [_DB_PREFIX_, 'ENGINE=' . _MYSQL_ENGINE_], $sql);
 
@@ -1172,14 +1524,8 @@ class Somcp extends Module
         // introduced by a comment would otherwise be dropped whole.
         $sql = (string) preg_replace('/^\s*--.*$/m', '', $sql);
 
-        // array_filter has already dropped the empty pieces left by the split.
-        foreach (array_filter(array_map('trim', explode(';', $sql))) as $statement) {
-            if (!Db::getInstance()->execute($statement)) {
-                return false;
-            }
-        }
-
-        return true;
+        // array_filter drops the empty pieces left by the split.
+        return array_values(array_filter(array_map('trim', explode(';', $sql))));
     }
 
     /**

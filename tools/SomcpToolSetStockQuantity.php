@@ -48,19 +48,13 @@ class SomcpToolSetStockQuantity
         return new SomcpTool(
             'somcp_set_stock_quantity',
             Somcp::t('Set the stock of a product'),
-            'Changes the quantity the storefront sells against, for one product without combinations or for '
-                . 'one combination, exactly like the quantity field of the back office Stock page: the change '
-                . 'is recorded as a stock movement in the name of the account behind the connection. Give either '
-                . 'quantity, the new level, or delta, a movement such as -3 or 10, never both; prefer quantity. '
-                . 'A product with combinations has no quantity of its own, only the total of its combinations: '
-                . 'give id_product_attribute, read from somcp_get_stock. A pack whose stock is worked out from '
-                . 'its products cannot be set; one that moves its products with it moves them here too. '
-                . 'When the quantity is already the one asked for, or delta is 0, nothing is written and the '
-                . 'answer says changed: false. Find the product with somcp_search_products first and never guess '
-                . 'an identifier. Do not use it to read stock (somcp_get_stock), nor to change anything else '
-                . 'about a product (somcp_update_product). One product or combination per call. Not to be '
-                . 'retried on a lost answer, above all with delta, which would move the stock twice: read '
-                . 'somcp_get_stock to see whether the change went through.',
+            'Changes the sellable quantity of one product without combinations or of one combination, '
+                . 'like the quantity field of the Stock page, recorded as a stock movement. Give quantity '
+                . '(preferred) or delta, never both. A product with combinations needs id_product_attribute, '
+                . 'from somcp_get_stock. A pack whose stock is worked out from its products cannot be set. '
+                . 'Find the product with somcp_search_products, never guess an identifier; anything else '
+                . 'about it is somcp_update_product. One per call. Not to be retried on a lost answer, above '
+                . 'all with delta: check with somcp_get_stock.',
             [
                 'type' => 'object',
                 'properties' => [

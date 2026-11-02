@@ -50,20 +50,12 @@ class SomcpToolListLowStock
         return new SomcpTool(
             'somcp_list_low_stock',
             Somcp::t('List low stock'),
-            'Lists what runs low in this shop: one line per product without combinations and per '
-                . 'combination, whose quantity - what the storefront can still sell - is at or under '
-                . 'a threshold, lowest quantity first. Without a threshold, each line is compared with '
-                . 'its own low stock level, the one the merchant set on the product or the '
-                . 'combination, and a line with no low stock level set counts as low only at zero or '
-                . 'below. threshold on each line is the level it was compared with. Only enabled '
-                . 'products by default. Filters as on the Stock page of the back office: a category, '
-                . 'a supplier, and a search on the product name, the product or combination '
-                . 'reference or the supplier name. supplier on each line is the name of the default '
-                . 'supplier. A combination line carries the name of its product; read '
-                . 'somcp_get_stock for its attributes (Size: M) and its physical and reserved '
-                . 'quantities. total_count says how many lines match in all: read the next page with '
-                . 'offset rather than concluding from one page. Do not use it for the stock of one '
-                . 'known product: somcp_get_stock returns it.',
+            'Lists what runs low, like the Stock page: one line per product without combinations and '
+                . 'per combination whose sellable quantity is at or under a threshold, lowest first. Without '
+                . 'threshold, each line uses its own low stock level, or 0 when none is set; threshold on '
+                . 'each line is the level used. For the attributes and the physical and reserved quantities '
+                . 'of a line, or the stock of one known product, use somcp_get_stock. total_count counts '
+                . 'every match: read the next page with offset rather than concluding from one page.',
             [
                 'type' => 'object',
                 'properties' => [

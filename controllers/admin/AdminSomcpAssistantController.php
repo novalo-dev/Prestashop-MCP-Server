@@ -41,6 +41,12 @@ class AdminSomcpAssistantController extends ModuleAdminController
      */
     public $module;
 
+    /** @var array<int, int> The shops this employee may chat about from the page open, read before the request acts as one of them. */
+    private $chatShops = [];
+
+    /** @var bool Whether a new conversation starts by picking its shop, read at the same time. */
+    private $picksShop = false;
+
     public function __construct()
     {
         $this->bootstrap = true;
@@ -95,7 +101,9 @@ class AdminSomcpAssistantController extends ModuleAdminController
         if (!$this->checkToken()) {
             SomcpHttp::json(['error' => 'invalid_token'], 403);
         }
-        if (!SomcpAssistantChat::available() || SomcpAssistant::leader() === null) {
+        $employee = $this->context->employee;
+        $shops = SomcpAssistantChat::available() ? SomcpAssistantChat::shopsFor($employee) : [];
+        if ($shops === []) {
             SomcpHttp::json(['error' => 'unavailable'], 404);
         }
 
@@ -109,13 +117,27 @@ class AdminSomcpAssistantController extends ModuleAdminController
             session_write_close();
         }
         ignore_user_abort(true);
+        SomcpAssistantChat::allowTime();
+        // The chat is in use: a local assistant's relay goes back to keeping
+        // a request open, so the next message is answered without delay.
+        SomcpRelay::wake();
 
-        $chat = new SomcpAssistantChat($this->context->employee, Somcp::currentShopId());
-        $chat->openOn((string) Tools::getValue('page'));
         $action = (string) Tools::getValue('somcp_action');
+        $threadId = (string) Tools::getValue('thread_id');
+        // Read before the request acts as one shop: the back office context
+        // then narrows to that shop alone.
+        $this->chatShops = $shops;
+        $this->picksShop = SomcpAssistantChat::picksShop($shops);
+        $idShop = $this->shopOf($shops, $action, $threadId);
+
+        // The whole request then runs as that shop: the tools read the shop
+        // of the context, and so do the assistants, the budget and the
+        // settings, whatever the back office is set to.
+        Somcp::actAsShop($idShop);
+        $chat = new SomcpAssistantChat($employee, $idShop, $shops);
+        $chat->openOn((string) Tools::getValue('page'));
 
         $thread = null;
-        $threadId = (string) Tools::getValue('thread_id');
         if ($threadId !== '') {
             $thread = $chat->thread($threadId);
             if ($thread === null) {
@@ -129,7 +151,10 @@ class AdminSomcpAssistantController extends ModuleAdminController
                 break;
             case 'send':
                 $thread = $thread ?? $chat->newThread((int) Tools::getValue('id_assistant'));
-                $this->answer($chat, $chat->send($thread, (string) Tools::getValue('text'), self::uploadedFiles()));
+                // The switches travel with every message: set before the first
+                // one, the conversation does not exist yet to keep them.
+                $thread = $chat->setSwitches($thread, self::switches());
+                $this->answer($chat, $chat->send($thread, (string) Tools::getValue('text'), self::uploadedFiles(), (string) Tools::getValue('prompt')));
                 break;
             case 'step':
                 if ($thread !== null) {
@@ -147,6 +172,11 @@ class AdminSomcpAssistantController extends ModuleAdminController
                     $thread = $chat->useAssistant($thread, (int) Tools::getValue('id_assistant'));
                 }
                 break;
+            case 'switches':
+                if ($thread !== null) {
+                    $thread = $chat->setSwitches($thread, self::switches());
+                }
+                break;
             case 'delete':
                 if ($thread !== null) {
                     $chat->deleteThread($thread);
@@ -161,6 +191,67 @@ class AdminSomcpAssistantController extends ModuleAdminController
         }
 
         $this->answer($chat, $thread !== null ? $chat->view($thread) : null);
+    }
+
+    /**
+     * The shop a request acts on: the conversation's own, or the one picked
+     * for a new conversation, or the latest conversation's for a plain load.
+     *
+     * A conversation keeps the shop it started on: reopened from another back
+     * office context, it still acts on that shop and no other.
+     *
+     * @param array<int, int> $shops the shops this employee may chat about here
+     * @param string $action
+     * @param string $threadId
+     *
+     * @return int
+     */
+    private function shopOf(array $shops, string $action, string $threadId): int
+    {
+        $idEmployee = (int) $this->context->employee->id;
+        if ($threadId !== '') {
+            $idShop = SomcpAssistantChat::threadShop($idEmployee, $threadId, $shops);
+            if ($idShop <= 0) {
+                SomcpHttp::json(['error' => 'unknown_thread'], 404);
+            }
+
+            return $idShop;
+        }
+
+        $current = Somcp::currentShopId();
+        $fallback = in_array($current, $shops, true) ? $current : $shops[0];
+        if ($action === 'new' || $action === 'send') {
+            $picked = (int) Tools::getValue('id_shop');
+            if (in_array($picked, $shops, true)) {
+                return $picked;
+            }
+            // Several shops to pick from and none picked: guessing one would
+            // let a conversation act on a shop nobody chose.
+            if ($this->picksShop) {
+                SomcpHttp::json(['error' => 'choose_shop'], 400);
+            }
+
+            return $fallback;
+        }
+
+        $latest = SomcpAssistantChat::latestShop($idEmployee, $shops);
+
+        return $latest > 0 ? $latest : $fallback;
+    }
+
+    /**
+     * The switches of the chat's + menu, as the page sent them. The memory is
+     * on unless switched off, like on a conversation that never set it.
+     *
+     * @return array{think:bool, web:bool, memory:bool}
+     */
+    private static function switches(): array
+    {
+        return [
+            'think' => (string) Tools::getValue('think') === '1',
+            'web' => (string) Tools::getValue('web') === '1',
+            'memory' => (string) Tools::getValue('memory', '1') !== '0',
+        ];
     }
 
     /**
@@ -206,6 +297,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
                 'thread_id' => (string) $row['thread_id'],
                 'title' => (string) $row['title'],
                 'date' => (string) $row['date_upd'],
+                'id_shop' => (int) $row['id_shop'],
             ];
         }
 
@@ -221,6 +313,9 @@ class AdminSomcpAssistantController extends ModuleAdminController
                 'label' => (string) $assistant['label'],
                 'role' => (string) $assistant['role'],
                 'default' => (bool) $assistant['is_default'],
+                // What the + menu may offer before a conversation exists.
+                'think' => SomcpAssistant::thinking($assistant) !== '',
+                'web' => SomcpAssistant::searches($assistant),
             ];
         }
 
@@ -228,6 +323,12 @@ class AdminSomcpAssistantController extends ModuleAdminController
             'view' => $view,
             'threads' => $threads,
             'assistants' => $assistants,
+            'prompts' => $chat->prompts(),
+            // Every shop of the list, for the badge of each conversation, and
+            // whether a new conversation starts by picking one of them.
+            'shops' => Shop::isFeatureActive() ? SomcpAssistantChat::describeShops($this->chatShops) : [],
+            'pick_shop' => $this->picksShop,
+            'memory' => $chat->memoryOn(),
         ]);
     }
 }

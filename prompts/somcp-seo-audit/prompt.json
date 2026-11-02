@@ -1,6 +1,7 @@
 {
   "title": "Audit and improve SEO",
   "description": "Find what holds the shop back in search results, fix it with the merchant's approval, and check the public pages afterwards.",
+  "icon": "rank",
   "scopes": [
     "mcp.seo.read"
   ],
@@ -12,6 +13,7 @@
     "somcp_audit_brand_seo",
     "somcp_update_cms_seo",
     "somcp_list_meta_pages",
+    "somcp_update_meta_page",
     "somcp_get_seo_settings",
     "somcp_get_robots_txt",
     "somcp_generate_robots_txt",

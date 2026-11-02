@@ -1,0 +1,18 @@
+{
+  "calls": [
+    {"why": "lists the modules of the demo shop with every field, the first page sorted by display name", "arguments": {}, "expect": "ok", "contains": ["\"modules\"", "\"name\"", "\"display_name\"", "\"version\"", "\"version_installed\"", "\"needs_upgrade\"", "\"author\"", "\"description\"", "\"installed\"", "\"active\"", "\"active_on_mobile\"", "\"total_count\"", "\"offset\": 0"]},
+    {"why": "finds this module by its technical name, installed and enabled on every device", "arguments": {"query": "somcp"}, "expect": "ok", "contains": ["\"name\": \"somcp\"", "\"installed\": true", "\"active\": true", "\"active_on_mobile\": true", "\"needs_upgrade\": false", "\"author\": \"Novalo\""]},
+    {"why": "finds a module by part of its display name, whatever the case", "arguments": {"query": "O'SO MCP"}, "expect": "ok", "contains": ["\"name\": \"somcp\""]},
+    {"why": "the enabled modules include this one", "arguments": {"status": "enabled", "query": "somcp"}, "expect": "ok", "contains": ["\"name\": \"somcp\"", "\"total_count\": 1"]},
+    {"why": "the installed modules include this one", "arguments": {"status": "installed", "query": "somcp"}, "expect": "ok", "contains": ["\"name\": \"somcp\"", "\"total_count\": 1"]},
+    {"why": "an enabled module is not among the disabled ones", "arguments": {"status": "disabled", "query": "somcp"}, "expect": "ok", "contains": ["\"modules\": []", "\"total_count\": 0"]},
+    {"why": "an installed module is not among the uninstalled ones", "arguments": {"status": "uninstalled", "query": "somcp"}, "expect": "ok", "contains": ["\"modules\": []", "\"total_count\": 0"]},
+    {"why": "the modules on disk that are not installed, which depend on the demo shop", "arguments": {"status": "uninstalled"}, "expect": "ok", "contains": ["\"modules\"", "\"total_count\""]},
+    {"why": "a name no module carries gives an empty list", "arguments": {"query": "no such module"}, "expect": "ok", "contains": ["\"modules\": []", "\"total_count\": 0"]},
+    {"why": "the next page, one module at a time", "arguments": {"limit": 1, "offset": 1}, "expect": "ok", "contains": ["\"offset\": 1"]},
+    {"why": "an unknown status is refused, naming the accepted ones", "arguments": {"status": "active"}, "expect": "error", "contains": ["status", "enabled", "uninstalled"]},
+    {"why": "a non-string query is refused, naming the field", "arguments": {"query": 12}, "expect": "error", "contains": ["query"]},
+    {"why": "a limit above 100 is refused, naming the field", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit"]},
+    {"why": "a negative offset is refused, naming the field", "arguments": {"offset": -1}, "expect": "error", "contains": ["offset"]}
+  ]
+}

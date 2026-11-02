@@ -1,6 +1,7 @@
 {
   "title": "Find an order",
   "description": "Find orders in the PrestaShop shop and read one in full - search by reference, customer, date, status or amount, then open the order that matters.",
+  "icon": "search",
   "scopes": [
     "mcp.orders.read"
   ],

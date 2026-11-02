@@ -51,16 +51,11 @@ class SomcpToolSearchOrders
         return new SomcpTool(
             'somcp_search_orders',
             Somcp::t('Search orders'),
-            'Finds orders of this shop by reference, customer, date, status, amount or payment '
-                . 'method, delivery country, company or whether it was the customer\'s first order, and '
-                . 'returns a short line for each: reference, customer, company, phone, delivery country, '
-                . 'amount paid tax included, payment method, current status and whether the customer was '
-                . 'new. Use it to answer questions about '
-                . 'several orders, or to find the reference of one. '
-                . 'Do not use it to read a single order you already identified - somcp_get_order '
-                . 'returns everything about it. Do not use it for carts that were never paid for, '
-                . 'which are not orders. Status identifiers differ from one shop to the next, so '
-                . 'do not guess one.',
+            'Finds orders of this shop by reference, customer, date, status, amount, payment method, '
+                . 'delivery country, company or first order, and returns a short line for each. Use it for '
+                . 'questions about several orders, or to find the reference of one. To read one order already '
+                . 'identified, use somcp_get_order. Carts never paid for are not orders. Status identifiers '
+                . 'differ from one shop to the next: take them from somcp_list_order_statuses, never guess one.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -90,7 +85,8 @@ class SomcpToolSearchOrders
                     ],
                     'status_id' => [
                         'type' => 'integer',
-                        'description' => 'Current order status. Identifiers are specific to this shop.',
+                        'description' => 'Current order status, an identifier from somcp_list_order_statuses: '
+                            . 'they are specific to this shop.',
                     ],
                     'total_min' => [
                         'type' => 'number',

@@ -37,6 +37,7 @@ if (!defined('_PS_VERSION_')) {
 }
 
 require_once __DIR__ . '/SomcpToolAuditProductSeo.php';
+require_once __DIR__ . '/SomcpToolUpdateMetaPage.php';
 
 class SomcpToolListMetaPages
 {
@@ -50,8 +51,9 @@ class SomcpToolListMetaPages
             Somcp::t('List the shop pages and their SEO'),
             'Lists the shop\'s own pages - home, contact, new products, best sales, prices drop, search, '
                 . 'sitemap, account and checkout pages, and the pages of modules - with their identifier, the '
-                . 'page (controller) name, and in one language the meta title, the meta description, the friendly '
-                . 'URL (url_rewrite) and the public address. These are the pages of Shop Parameters > Traffic & '
+                . 'page (controller) name, and in one language the meta title, the meta description, the meta '
+                . 'keywords (PrestaShop 8, null on 9), the friendly URL (url_rewrite) and the public address. These '
+                . 'are the pages of Shop Parameters > Traffic & '
                 . 'SEO. configurable is false for the product, category and CMS templates and a few module pages: '
                 . 'the back office does not list them, their texts come from each product, category or page, and '
                 . 'they have no address of their own (url is null). The home page has no url_rewrite. Read only. '
@@ -106,8 +108,11 @@ class SomcpToolListMetaPages
 
         $link = Somcp::legacyContext()->link ?? new Link();
 
+        // PrestaShop 9 dropped the Meta keywords field and its column.
+        $keywords = SomcpToolUpdateMetaPage::hasKeywords();
+
         $pages = [];
-        foreach (self::rows($idShop, $idLang) as $row) {
+        foreach (self::rows($idShop, $idLang, $keywords) as $row) {
             $page = (string) $row['page'];
             $configurable = (bool) $row['configurable'];
             $pages[] = [
@@ -115,6 +120,7 @@ class SomcpToolListMetaPages
                 'page' => $page,
                 'title' => (string) ($row['title'] ?? ''),
                 'description' => (string) ($row['description'] ?? ''),
+                'keywords' => $keywords ? (string) ($row['keywords'] ?? '') : null,
                 'url_rewrite' => (string) ($row['url_rewrite'] ?? ''),
                 'url' => $configurable ? self::url($link, $page, $idLang, $idShop) : null,
                 'configurable' => $configurable,
@@ -133,14 +139,15 @@ class SomcpToolListMetaPages
      *
      * @param int $idShop
      * @param int $idLang
+     * @param bool $keywords
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function rows(int $idShop, int $idLang): array
+    private static function rows(int $idShop, int $idLang, bool $keywords): array
     {
         $query = new DbQuery();
         $query->select('m.`id_meta`, m.`page`, m.`configurable`');
-        $query->select('ml.`title`, ml.`description`, ml.`url_rewrite`');
+        $query->select('ml.`title`, ml.`description`, ml.`url_rewrite`' . ($keywords ? ', ml.`keywords`' : ''));
         $query->from('meta', 'm');
         // meta_lang is per shop as well as per language, and the shop comes
         // from the token. A page without a row in it, such as the product

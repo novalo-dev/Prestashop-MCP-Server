@@ -70,6 +70,9 @@ class SomcpPrompt
     /** @var array<int, array{name:string, description:string, required:bool}> */
     private $arguments;
 
+    /** @var string name of the icon the built-in chat draws beside the title, empty for its default one */
+    private $icon;
+
     /**
      * @param string $name
      * @param string $title shown in the assistant's menu
@@ -79,6 +82,7 @@ class SomcpPrompt
      * @param array<int, string> $tools
      * @param array{permissions?: array<int, array{controller:string, action:string}>} $acts
      * @param array<int, array{name:string, description:string, required:bool}> $arguments
+     * @param string $icon name of an icon of the built-in chat, empty for its default one
      */
     public function __construct(
         string $name,
@@ -89,6 +93,7 @@ class SomcpPrompt
         array $tools = [],
         array $acts = [],
         array $arguments = [],
+        string $icon = '',
     ) {
         $this->name = $name;
         $this->title = $title;
@@ -98,6 +103,9 @@ class SomcpPrompt
         $this->tools = $tools;
         $this->requiredPermissions = is_array($acts['permissions'] ?? null) ? $acts['permissions'] : [];
         $this->arguments = $arguments;
+        // A name, never markup: the chat looks it up in its own set and falls
+        // back to its default icon for one it does not know.
+        $this->icon = preg_match('/^[a-z]{1,20}$/', $icon) === 1 ? $icon : '';
     }
 
     /**
@@ -170,6 +178,26 @@ class SomcpPrompt
     public function getArguments(): array
     {
         return $this->arguments;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIcon(): string
+    {
+        return $this->icon;
+    }
+
+    /**
+     * The back office page the prompt is about, read from the permission it
+     * requires: the built-in chat suggests first the prompts of the page the
+     * employee has open.
+     *
+     * @return string empty when the prompt requires no permission
+     */
+    public function getController(): string
+    {
+        return (string) ($this->requiredPermissions[0]['controller'] ?? '');
     }
 
     /**

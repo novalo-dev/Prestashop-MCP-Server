@@ -263,7 +263,7 @@ class SomcpToolUpdateMetaPage
                     continue;
                 }
                 $idLang = $active[$iso];
-                $previous = SomcpToolUpdateCmsSeo::textOf($meta->{$field}, $idLang);
+                $previous = SomcpToolUpdateCmsSeo::textOf(self::stored($meta, $field), $idLang);
                 if ($field === 'url_rewrite' && (string) $meta->page === self::HOME) {
                     // The dispatcher serves the home page at the root of the
                     // shop and never reads a rewritten URL for it. The value
@@ -483,7 +483,7 @@ class SomcpToolUpdateMetaPage
             $texts[$iso] = [
                 'title' => SomcpToolUpdateCmsSeo::textOf($stored->title, $idLang),
                 'description' => SomcpToolUpdateCmsSeo::textOf($stored->description, $idLang),
-                'keywords' => self::hasKeywords() ? SomcpToolUpdateCmsSeo::textOf($stored->keywords, $idLang) : null,
+                'keywords' => self::hasKeywords() ? SomcpToolUpdateCmsSeo::textOf(self::stored($stored, 'keywords'), $idLang) : null,
                 'url_rewrite' => SomcpToolUpdateCmsSeo::textOf($stored->url_rewrite, $idLang),
             ];
         }
@@ -493,6 +493,23 @@ class SomcpToolUpdateMetaPage
             'page' => (string) $stored->page,
             'texts' => $texts === [] ? new stdClass() : $texts,
         ];
+    }
+
+    /**
+     * One field of the page as the object holds it.
+     *
+     * Read by a name only known at run time: keywords is declared on
+     * PrestaShop 8 and gone from the class on 9, so a literal property
+     * access would not type-check against both versions.
+     *
+     * @param Meta $meta
+     * @param string $field
+     *
+     * @return mixed
+     */
+    private static function stored(Meta $meta, string $field)
+    {
+        return $meta->{$field} ?? null;
     }
 
     /**

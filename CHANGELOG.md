@@ -205,6 +205,13 @@ paragraph, about a fifth lighter for the assistant on every step. What
 matters is kept: when the customer is emailed, which tool gives each
 identifier, and which read checks a change.
 
+**Shorter stock and statistics tools.** The three tools of the Stock page -
+read the stock of a product, list what runs low, change a quantity - and the
+two statistics tools - sales summary and best-selling products - now describe
+themselves in a few sentences, a quarter lighter for the assistant on every
+step. What matters is kept: what each figure means on the screen, which tool
+gives each identifier, and which read checks a stock change.
+
 ### Fixed
 
 **The update to 1.2.0 no longer stops on "Unknown column 'memory_last'".**

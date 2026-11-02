@@ -98,9 +98,10 @@ class SomcpToolListModules
             ],
             [SomcpScope::MODULES_READ],
             [self::class, 'handle'],
-            // The modules are managed on Modules > Module Manager, the page a
-            // merchant would open to look at them.
-            SomcpTool::acts(SomcpPermission::VIEW, 'AdminModules')
+            // The modules are managed on Modules > Module Manager, whose tab is
+            // AdminModulesSf: AdminModules is only the legacy configure page and
+            // has no tab of its own, so no profile holds a right on it.
+            SomcpTool::acts(SomcpPermission::VIEW, 'AdminModulesSf')
         );
     }
 

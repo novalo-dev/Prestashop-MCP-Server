@@ -2515,7 +2515,7 @@ The modules present on the shop, their state and version.
 
 #### `somcp_list_modules`
 **State**: written · [issue #25](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/25)
-**Nature**: `acts(VIEW, 'AdminModules')` · **Scope**: `mcp.modules.read`
+**Nature**: `acts(VIEW, 'AdminModulesSf')` · **Scope**: `mcp.modules.read`
 
 **Does** - lists the modules of the token's shop as **Modules > Module Manager** shows them, installed or only on disk: name, version on disk and installed, author, description, installed or not, enabled or not, enabled on mobile or not, and whether the files on disk are newer than the installed version.
 
@@ -2539,7 +2539,7 @@ The modules present on the shop, their state and version.
 
 #### `somcp_get_module`
 **State**: draft · [issue #26](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/26)
-**Nature**: `acts(VIEW, 'AdminModules')` · **Scope**: `mcp.modules.read`
+**Nature**: `acts(VIEW, 'AdminModulesSf')` · **Scope**: `mcp.modules.read`
 
 **Does** - returns one module's details: version on disk and in the database, state, author, hooks it is attached to.
 
@@ -2555,7 +2555,7 @@ The modules present on the shop, their state and version.
 
 #### `somcp_install_module`
 **State**: draft · [issue #27](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/27)
-**Nature**: `acts(ADD, 'AdminModules')` · **Scope**: `mcp.modules.write`
+**Nature**: `acts(ADD, 'AdminModulesSf')` · **Scope**: `mcp.modules.write`
 
 **Does** - installs one module already present in the shop's `modules` folder.
 
@@ -2573,7 +2573,7 @@ The modules present on the shop, their state and version.
 
 #### `somcp_set_module_active`
 **State**: draft · [issue #28](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/28)
-**Nature**: `acts(EDIT, 'AdminModules')` · **Scope**: `mcp.modules.write`
+**Nature**: `acts(EDIT, 'AdminModulesSf')` · **Scope**: `mcp.modules.write`
 
 **Does** - enables or disables one installed module.
 
@@ -3500,7 +3500,7 @@ request: one line, stroke paths on a 24 px grid.
 
 #### `somcp-modules-review`
 **State**: written
-**Section**: Modules · **Scope**: `mcp.modules.read` · **Permission**: `view` on `AdminModules` · **Icon**: `puzzle`
+**Section**: Modules · **Scope**: `mcp.modules.read` · **Permission**: `view` on `AdminModulesSf` · **Icon**: `puzzle`
 
 **Title** - Review modules
 

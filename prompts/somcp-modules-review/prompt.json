@@ -9,7 +9,7 @@
     "somcp_ping",
     "somcp_list_modules"
   ],
-  "controller": "AdminModules",
+  "controller": "AdminModulesSf",
   "action": "view",
   "arguments": [
     {

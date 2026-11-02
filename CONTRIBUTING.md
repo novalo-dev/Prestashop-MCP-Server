@@ -58,7 +58,8 @@ _PS_ROOT_DIR_=/path/to/prestashop dev/tools/vendor/bin/phpstan analyse -c phpsta
 # Every visible string in the four languages
 php .github/scripts/check-translations.php .
 
-# Every tool in the README, its entry, its scope, the CHANGELOG and a prompt
+# Every tool in the README, its entry, its scope, the CHANGELOG and a prompt,
+# and linked only to tools that exist
 php .github/scripts/check-tools.php .
 
 # Every table shop-scoped, no merchant setting stored globally

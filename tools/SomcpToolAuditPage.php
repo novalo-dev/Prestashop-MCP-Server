@@ -76,7 +76,7 @@ class SomcpToolAuditPage
                 . 'too_many_redirects, slow_page (over 2 seconds), not_ok, not_html, truncated. Only addresses of '
                 . 'this shop are fetched: url is a full address on one of its domains, or a path such as '
                 . '/en/3-clothes; anything else is refused. Read only, GET only. Use it after a change to check '
-                . 'what the theme really prints. Do not use it for many pages at once (somcp_check_links), or '
+                . 'what the theme really prints. Do not use it for many pages at once, or '
                 . 'for the fields stored in the database (somcp_audit_product_seo, somcp_audit_category_seo, '
                 . 'somcp_audit_cms_seo, somcp_audit_brand_seo, somcp_list_meta_pages).',
             [

@@ -116,7 +116,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
                 . 'A template is only stored with send_email: without it the templates are stored empty, as '
                 . 'the form does. '
                 . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Do not use it to change a status, which is somcp_update_order_status, or to give an order '
+                . 'Do not use it to change an existing status, or to give an order '
                 . 'a status, which is somcp_set_order_status. '
                 . 'One order status per call: for several, call it once per status and report each result. '
                 . 'Not to be retried: if the answer is lost, read somcp_list_order_statuses and look for '

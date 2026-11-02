@@ -30,6 +30,9 @@ declare(strict_types=1);
  * falls back to its default icon for a name it does not know, so a missing or
  * misspelt one would never fail anywhere else.
  *
+ * Tools also point to each other: every tool a file names must exist, and
+ * every write must name a read that shows its outcome.
+ *
  * Usage: php .github/scripts/check-tools.php [module root]
  * Exit code 0 when everything is in order, 1 otherwise.
  */
@@ -39,12 +42,15 @@ $errors = [];
 
 // 1. The tools the module ships: the name each file in tools/ declares.
 $shipped = [];
+$sources = [];
 foreach (glob($root . '/tools/Somcp*.php') ?: [] as $file) {
+    $source = (string) file_get_contents($file);
     // The name is the first argument of the definition: the first string in
     // the file that is nothing but a tool name. Descriptions mention other
     // tools inside longer sentences, never as a literal of their own.
-    if (preg_match("/^\\s*'(somcp_[a-z0-9_]+)',?\\s*$/m", (string) file_get_contents($file), $m)) {
+    if (preg_match("/^\\s*'(somcp_[a-z0-9_]+)',?\\s*$/m", $source, $m)) {
         $shipped[$m[1]] = 'tools/' . basename($file);
+        $sources[$m[1]] = $source;
     } else {
         $errors[] = 'tools/' . basename($file) . ': no tool name found';
     }
@@ -124,6 +130,37 @@ foreach (glob($root . '/prompts/*/prompt.json') ?: [] as $file) {
     }
 }
 
+// 8. The links between tools. A tool name in a description or an error is
+// where the assistant goes next: a name the module does not ship sends it to
+// a call that can only fail, so the pull request that writes a tool is the one
+// that adds the links to it. A write must also name a read, the only way to
+// check its outcome when its answer was lost, since it is not to be retried.
+// The whole file is read, errors included, because the assistant reads those
+// too; a family written as somcp_list_* is not a name.
+$writes = [];
+foreach ($sources as $tool => $source) {
+    if (preg_match('/SomcpTool::acts\(\s*SomcpPermission::(?:ADD|EDIT|DELETE)\b/', $source)) {
+        $writes[$tool] = true;
+    }
+}
+foreach ($sources as $tool => $source) {
+    preg_match_all('/\bsomcp_[a-z0-9_]+(?![a-z0-9_*])/', $source, $m);
+    $cited = array_unique($m[0]);
+    foreach ($cited as $name) {
+        if (!isset($shipped[$name])) {
+            $errors[] = "{$shipped[$tool]}: $tool names $name, which the module does not ship; leave the link to the pull request that writes it";
+        }
+    }
+    if (isset($writes[$tool])) {
+        $reads = array_filter($cited, function ($name) use ($tool, $shipped, $writes) {
+            return $name !== $tool && isset($shipped[$name]) && !isset($writes[$name]);
+        });
+        if ($reads === []) {
+            $errors[] = "{$shipped[$tool]}: $tool writes but names no read tool that shows the outcome";
+        }
+    }
+}
+
 foreach ($shipped as $tool => $file) {
     if (!isset($listed[$tool])) {
         $errors[] = "$file: $tool is missing from the Tools table of README.md";
@@ -165,7 +202,7 @@ if ($errors !== []) {
 }
 
 printf(
-    "Tools OK: %d shipped, each in README.md, docs/TOOLS.md, SomcpScope, CHANGELOG.md and a prompt; %d more specified.\n",
+    "Tools OK: %d shipped, each in README.md, docs/TOOLS.md, SomcpScope, CHANGELOG.md and a prompt, linked to existing tools only; %d more specified.\n",
     count($shipped),
     count($entries) - count($shipped)
 );

@@ -54,6 +54,11 @@ loops.
 Each one says so in its own description and names the read tool that tells the
 assistant whether the change went through.
 
+**Links between tools.** A tool name cited in a description or an error must be
+a tool the module ships, and every write names at least one read. A link to a
+tool not written yet is left out, and added by the pull request that writes
+it. `check-tools.php` fails on either.
+
 **Nature and permission.** `SomcpTool::acts($action, $controller)`: one
 declaration, from which the module takes the permission required and what the
 assistant is told about the call. `view` is read-only and repeatable; `add`,

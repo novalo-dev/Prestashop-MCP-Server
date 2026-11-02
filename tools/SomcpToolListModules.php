@@ -68,9 +68,8 @@ class SomcpToolListModules
                 . 'applies), author, description, installed, active (enabled on this shop, false when not '
                 . 'installed) and active_on_mobile (null when not installed). Sorted by display name. '
                 . 'Read from the shop only: the marketplace\'s Upgrade available and categories are not '
-                . 'returned. Do not use it for one module\'s details and hooks (somcp_get_module), to '
-                . 'install a module (somcp_install_module) or to enable or disable one '
-                . '(somcp_set_module_active).',
+                . 'returned. It does not install, enable or disable '
+                . 'a module.',
             [
                 'type' => 'object',
                 'properties' => [

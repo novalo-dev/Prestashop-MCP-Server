@@ -166,6 +166,13 @@ switched off on the **Tools and prompts** tab, or beyond the employee's
 rights, cannot be found nor loaded. Assistants connected over MCP still see
 the whole list, as before.
 
+**Tools only point to tools that exist.** A few tools told the assistant to
+use a tool not written yet - to list the customer groups, check many links,
+change an order status, or install and enable modules - so it could reach for
+a call that only failed. They now say where to look in the back office
+instead, such as **Customers > Groups**, and each change still names the tool
+that shows its result. The link to a new tool is added with that tool.
+
 ### Fixed
 
 **The built-in assistant no longer freezes after a slow answer.** When the AI

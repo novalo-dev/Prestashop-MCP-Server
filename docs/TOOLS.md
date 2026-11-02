@@ -2514,23 +2514,28 @@ The modules present on the shop, their state and version.
 **Not here**: tools published by other modules, which they declare themselves (see EXTENDING.md).
 
 #### `somcp_list_modules`
-**State**: draft · [issue #25](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/25)
+**State**: written · [issue #25](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/25)
 **Nature**: `acts(VIEW, 'AdminModules')` · **Scope**: `mcp.modules.read`
 
-**Does** - lists the modules present on the shop with their version and state.
+**Does** - lists the modules of the token's shop as **Modules > Module Manager** shows them, installed or only on disk: name, version on disk and installed, author, description, installed or not, enabled or not, enabled on mobile or not, and whether the files on disk are newer than the installed version.
 
-**Do not use for** - details of one module (→ `somcp_get_module`).
+**Do not use for** - one module's details and hooks (→ `somcp_get_module`), installing (→ `somcp_install_module`), enabling or disabling (→ `somcp_set_module_active`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `installed` | boolean | no |  |
-| `active` | boolean | no |  |
-| `query` | string | no | part of the name or display name |
+| `status` | string | no | the **Status** filter: `enabled`, `disabled` (installed but disabled), `installed`, `uninstalled` (on disk only); every module when left out (**Show all modules**). Any other value refused, naming the accepted ones |
+| `query` | string | no | part of the technical name or of the display name (the search field), compared without case |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per module: `name`, `display_name`, `version`, `installed`, `active`, `author`.
+**Returns** - per module, sorted by `display_name`: `name` (technical name, the module's folder, the identifier `somcp_get_module`, `somcp_install_module` and `somcp_set_module_active` take); `display_name` (card title, in the language of the request); `version` (version of the files on disk); `version_installed` (`module.version`, `null` when not installed); `needs_upgrade` (`true` when the files on disk are newer than `version_installed`, the core's rule of `Module::needUpgrade()`); `author` ("by ..."); `description` (card text); `installed` (boolean); `active` (**Enabled** / **Disabled** on the token's shop, from `module_shop`, `false` when not installed); `active_on_mobile` (**Enable Mobile** / **Disable Mobile**, from bit 4 of `module_shop.enable_device`, `null` when not installed). Then `total_count` (modules matching, before `limit`) and `offset`.
+
+**Errors** - an unknown `status`, a non-string `query`, an out-of-range `limit` or `offset`: a refusal that names the field. No module matching: not an error, `modules` is empty.
+
+**Notes** - read from the shop only: what is on disk through `Module::getModulesOnDisk(true)` (each module's `config.xml` or class), the state from `module` and `module_shop` for the token's shop, never the global context's. The marketplace's **Upgrade available**, its categories (**Category** filter) and **Recently used** need a network call or are not stored by the shop: not returned. Stays on the legacy `Module` class, present on both versions. `somcp` lists itself like any other module. `id_module` is never returned: the name is the identifier everywhere.
+
+**Differences between 8.0.1 and 9.0.0** - the bulk actions differ (**Enable Mobile** / **Disable Mobile** on 8.0.1, **Delete** on 9.0.0) and the per-module action is **Upgrade** on 8.0.1, **Update** on 9.0.0; nothing the tool reads changes, `enable_device` is in `module_shop` on both.
 
 #### `somcp_get_module`
 **State**: draft · [issue #26](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/26)
@@ -3416,7 +3421,7 @@ request: one line, stroke paths on a 24 px grid.
 | `somcp-customer-lookup` | Customers | written |
 | `somcp-sales-report` | Statistics | written |
 | `somcp-content-pages` | Content | written |
-| `somcp-modules-review` | Modules | draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41) |
+| `somcp-modules-review` | Modules | written |
 | `somcp-storefront-menu` | Appearance | draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42) |
 | `somcp-cache-maintenance` | System | draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43) |
 | `somcp-seo-audit` | SEO | written |
@@ -3494,7 +3499,7 @@ request: one line, stroke paths on a 24 px grid.
 **The guide must say** - list with `somcp_list_cms_pages` (filtered by `title` when the merchant names the page), then read the page the merchant means by its `id_cms`; quote the content rather than paraphrasing it when asked what a page says; **Title** is the page's title and **Meta title** the title of the browser tab and search results, named `title` and `meta_title` in every tool; a hidden page (`active: false`) is not on the storefront; changing a page's SEO texts is `somcp_update_cms_seo`, in the prompt `somcp-seo-audit`, not here.
 
 #### `somcp-modules-review`
-**State**: draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41)
+**State**: written
 **Section**: Modules · **Scope**: `mcp.modules.read` · **Permission**: `view` on `AdminModules` · **Icon**: `puzzle`
 
 **Title** - Review modules

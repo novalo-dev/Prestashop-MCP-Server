@@ -1,0 +1,21 @@
+{
+  "title": "Review modules",
+  "description": "See which modules the PrestaShop shop runs, their version and state, and install or switch one when asked.",
+  "icon": "puzzle",
+  "scopes": [
+    "mcp.modules.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_list_modules"
+  ],
+  "controller": "AdminModules",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "module",
+      "description": "Name of a module",
+      "required": false
+    }
+  ]
+}

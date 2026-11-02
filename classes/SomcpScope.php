@@ -71,6 +71,9 @@ class SomcpScope
     /** @var string Reading content: the CMS pages and their categories. */
     public const CONTENT_READ = 'mcp.content.read';
 
+    /** @var string Reading the modules: which ones the shop has, their version and state. */
+    public const MODULES_READ = 'mcp.modules.read';
+
     /**
      * The scopes this module owns.
      *
@@ -78,7 +81,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ];
     }
 
     /**
@@ -267,6 +270,8 @@ class SomcpScope
                 return $module->l10n('Read the statistics of this shop: revenue, orders, products sold and new customers over a period');
             case self::CONTENT_READ:
                 return $module->l10n('Read the content pages of this shop: their titles, addresses and categories, displayed or not');
+            case self::MODULES_READ:
+                return $module->l10n('Read the modules of this shop: their version, author and whether they are installed and enabled');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

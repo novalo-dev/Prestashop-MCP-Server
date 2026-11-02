@@ -235,6 +235,12 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_list_cms_pages` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
 | `somcp_get_cms_page` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
 
+### Modules
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_modules` | `mcp.modules.read` | `view` on `AdminModules` | read |
+
 ### SEO
 
 | Tool | Scope | Back office right | Nature |
@@ -324,7 +330,8 @@ below can. Where to paste the address in each of them:
 - **Scopes** say what an assistant may do: `mcp.access` to connect,
   `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
   `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
-  `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`. Other
+  `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`,
+  `mcp.modules.read`. Other
   modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's

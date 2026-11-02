@@ -1342,6 +1342,31 @@
       <source>Period to report on, for example last month</source>
       <target>Period to report on, for example last month</target>
     </trans-unit>
+    <!-- List modules -->
+    <trans-unit id="ad9124023eba48dd5fe16d02e92bbd7a" resname="List modules">
+      <source>List modules</source>
+      <target>List modules</target>
+    </trans-unit>
+    <!-- Read the modules of this shop: their version, author and whether they are installed and enabled -->
+    <trans-unit id="6963902da5d674ad3b4e1dfd84b9927c" resname="Read the modules of this shop: their version, author and whether they are installed and enabled">
+      <source>Read the modules of this shop: their version, author and whether they are installed and enabled</source>
+      <target>Read the modules of this shop: their version, author and whether they are installed and enabled</target>
+    </trans-unit>
+    <!-- Review modules -->
+    <trans-unit id="5dde8abfface84a95408a0c791202847" resname="Review modules">
+      <source>Review modules</source>
+      <target>Review modules</target>
+    </trans-unit>
+    <!-- See which modules the PrestaShop shop runs, their version and state, and install or switch one when asked. -->
+    <trans-unit id="5995a7e49c93fac1f1607195d6f54adf" resname="See which modules the PrestaShop shop runs, their version and state, and install or switch one when asked.">
+      <source>See which modules the PrestaShop shop runs, their version and state, and install or switch one when asked.</source>
+      <target>See which modules the PrestaShop shop runs, their version and state, and install or switch one when asked.</target>
+    </trans-unit>
+    <!-- Name of a module -->
+    <trans-unit id="71910aab8155dec9c29172321485a74c" resname="Name of a module">
+      <source>Name of a module</source>
+      <target>Name of a module</target>
+    </trans-unit>
     <!-- Read content pages -->
     <trans-unit id="556b74ab9e61e5b6a75de151bf38c4df" resname="Read content pages">
       <source>Read content pages</source>

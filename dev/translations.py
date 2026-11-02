@@ -1066,6 +1066,26 @@ T = {
  "Période à présenter, par exemple le mois dernier",
  "Periodo del informe, por ejemplo el mes pasado",
  "Berichtszeitraum, zum Beispiel der letzte Monat"),
+"List modules": (
+ "Lister les modules",
+ "Listar los módulos",
+ "Module auflisten"),
+"Read the modules of this shop: their version, author and whether they are installed and enabled": (
+ "Lire les modules de cette boutique : leur version, leur auteur et s'ils sont installés et activés",
+ "Leer los módulos de esta tienda: su versión, su autor y si están instalados y activados",
+ "Die Module dieses Shops lesen: ihre Version, ihren Autor und ob sie installiert und aktiviert sind"),
+"Review modules": (
+ "Passer en revue les modules",
+ "Revisar los módulos",
+ "Module überprüfen"),
+"See which modules the PrestaShop shop runs, their version and state, and install or switch one when asked.": (
+ "Voir quels modules la boutique PrestaShop utilise, leur version et leur état, et en installer ou en basculer un sur demande.",
+ "Ver qué módulos usa la tienda PrestaShop, su versión y su estado, e instalar o activar o desactivar uno cuando se pida.",
+ "Sehen, welche Module der PrestaShop-Shop nutzt, ihre Version und ihren Status, und auf Wunsch eines installieren oder umschalten."),
+"Name of a module": (
+ "Nom d'un module",
+ "Nombre de un módulo",
+ "Name eines Moduls"),
 "Read content pages": (
  "Lire les pages de contenu",
  "Leer las páginas de contenido",

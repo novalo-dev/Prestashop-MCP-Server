@@ -18,6 +18,17 @@ are:
 
 ### Added
 
+**Reviewing the modules.** The new tool `somcp_list_modules` lists the
+modules of the shop as **Modules > Module Manager** shows them, installed or
+only on disk: name, version, author, description, whether each one is
+installed, enabled and enabled on mobile, and whether its files are newer
+than the installed version and wait for an upgrade. It filters like the
+**Status** filter and the search field of the screen, and reads only the shop,
+never the marketplace. It comes with the new **Review modules** prompt and
+needs the new permission `mcp.modules.read`, which the consent screen
+describes as reading the modules of the shop, and the `view` right on
+**Modules > Module Manager**.
+
 **Reading one content page.** The new tool `somcp_get_cms_page` reads one
 CMS page as its edit form under **Design > Pages** shows it: category,
 title, meta title, meta description, meta keywords (PrestaShop 8), friendly

@@ -18,6 +18,6 @@
     },
     "require": {
         "php": ">=8.1",
-        "neuron-core/neuron-ai": "4.1.13"
+        "neuron-core/neuron-ai": "4.1.19"
     }
 }

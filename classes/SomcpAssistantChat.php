@@ -197,6 +197,15 @@ class SomcpAssistantChat
     private const SUMMARY_MARKER = '## Previous conversation summary:';
 
     /**
+     * @var string What Neuron AI writes as the assistant's answer when a turn
+     *             broke before its answer came and the employee wrote again.
+     *             It is for the model; the employee already saw the error, and
+     *             an English sentence in their chat or their memory would only
+     *             repeat it in the wrong language.
+     */
+    public const INTERRUPTED_ANSWER = 'My previous response was interrupted before it was completed.';
+
+    /**
      * @var int Seconds a conversation stays marked as busy. A move clears the
      *          mark when it ends; this only frees a conversation whose PHP
      *          process died mid-move.
@@ -1305,7 +1314,7 @@ class SomcpAssistantChat
                 }
             } elseif ($message instanceof AssistantMessage) {
                 $text = trim((string) $message->getContent());
-                if ($text !== '') {
+                if ($text !== '' && $text !== self::INTERRUPTED_ANSWER) {
                     $new[] = ['role' => 'assistant', 'text' => $text];
                 }
             }
@@ -2418,6 +2427,9 @@ class SomcpAssistantChat
             // Only Anthropic bills writing to its cache, and Neuron keeps
             // that count in the message metadata.
             $written += (int) ($message->getMetadata('cacheWriteTokens') ?? 0);
+            // What Gemini's own tools read (a page opened by url_context) is
+            // billed as input, but Neuron keeps it out of inputTokens.
+            $input += (int) ($message->getMetadata('toolInputTokens') ?? 0);
         }
 
         SomcpAssistant::record(
@@ -2556,6 +2568,9 @@ class SomcpAssistantChat
             return ['role' => 'user', 'text' => $text, 'files' => $files];
         }
         if ($message instanceof AssistantMessage) {
+            if (trim((string) $message->getContent()) === self::INTERRUPTED_ANSWER) {
+                return null;
+            }
             $sources = self::sources($message);
             $text = self::plainText($message);
             $images = [];

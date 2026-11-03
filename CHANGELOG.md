@@ -367,6 +367,15 @@ loses the lines written by hand, and which read checks a change.
 
 ### Fixed
 
+**A conversation no longer stops for good after the AI service fails.** When
+the AI service failed right after a change you had approved - often a
+"high demand" error from Gemini - the change was made, but the conversation
+then refused every new message, with this assistant or any other, and had to
+be thrown away. The built-in assistant now runs on Neuron AI 4.1.19: the
+change is recorded the moment it is made, and the next message is answered.
+A conversation that broke this way before the update picks up again too,
+without running the change a second time.
+
 **An approved change shows as done in the built-in assistant.** After the
 employee approved a change - turning a product on or off, for example - the
 change was made and the assistant answered, but its step kept the clock of a

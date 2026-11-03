@@ -196,6 +196,26 @@ if (method_exists('NeuronAI\Agent\Middleware\Summarization', 'generateSummary'))
     }
 }
 
+// The chat hides the sentence Neuron writes for an answer a broken turn
+// never gave, matched word for word: a reworded one would reach the employee.
+if (trait_exists('NeuronAI\Agent\ClosesOpenTurn')) {
+    $closer = new class {
+        use NeuronAI\Agent\ClosesOpenTurn;
+
+        public function answer(): string
+        {
+            return (string) $this->interruptedAnswer()->getContent();
+        }
+    };
+    // Read from the source: the class needs PrestaShop to load.
+    preg_match("/INTERRUPTED_ANSWER = '([^']*)'/", (string) file_get_contents($module . '/classes/SomcpAssistantChat.php'), $hidden);
+    if ($closer->answer() !== ($hidden[1] ?? null)) {
+        $problems[] = 'Neuron reworded the answer of an interrupted turn: update SomcpAssistantChat::INTERRUPTED_ANSWER';
+    }
+} else {
+    $problems[] = 'NeuronAI\Agent\ClosesOpenTurn is gone: check how the chat shows a turn that broke half way';
+}
+
 // The run store must still accept the table layout of sql/install.sql: the
 // framework documents it in the class comment, which is read here.
 $doc = (string) (new ReflectionClass('NeuronAI\Workflow\Persistence\DatabasePersistence'))->getDocComment();

@@ -217,10 +217,10 @@ class SomcpToolGetCacheStatus
             ];
         }
 
-        $system = (string) self::setting('_PS_CACHING_SYSTEM_');
+        $system = (string) SomcpBackOffice::constant('_PS_CACHING_SYSTEM_');
 
         return [
-            'use_cache' => (bool) self::setting('_PS_CACHE_ENABLED_'),
+            'use_cache' => (bool) SomcpBackOffice::constant('_PS_CACHE_ENABLED_'),
             // As stored, even with the cache off: the screen keeps it selected.
             'caching_system' => $system === '' ? null : $system,
             'available_systems' => $available,
@@ -309,18 +309,5 @@ class SomcpToolGetCacheStatus
     private static function callIfPresent(object $object, string $method)
     {
         return method_exists($object, $method) ? $object->{$method}() : null;
-    }
-
-    /**
-     * A constant the core defines at boot from app/config/parameters.php.
-     *
-     * Read by name for the same reason: its value is the shop's, not the one
-     * the analysis was given.
-     *
-     * @return mixed null when the constant is not defined
-     */
-    private static function setting(string $name)
-    {
-        return defined($name) ? constant($name) : null;
     }
 }

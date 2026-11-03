@@ -279,6 +279,24 @@ class SomcpBackOffice
     }
 
     /**
+     * A constant the core defines at boot, read by name.
+     *
+     * Its value is the shop's, set from app/config/parameters.php or
+     * config/defines.inc.php, not the one a static analysis is given: named
+     * directly after a defined() check, the analysis folds the constant to
+     * its own value and calls the test always true or always false, which the
+     * Addons validator reports.
+     *
+     * @param string $name
+     *
+     * @return mixed null when the constant is not defined
+     */
+    public static function constant(string $name)
+    {
+        return defined($name) ? constant($name) : null;
+    }
+
+    /**
      * A service of the core's Symfony container, when one is running.
      *
      * The MCP endpoint is a front controller, where no kernel is booted and

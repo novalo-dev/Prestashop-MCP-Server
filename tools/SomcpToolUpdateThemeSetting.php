@@ -95,7 +95,7 @@ class SomcpToolUpdateThemeSetting
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
         // The back office refuses to save the layouts in demo mode.
-        if (defined('_PS_MODE_DEMO_') && _PS_MODE_DEMO_) {
+        if (SomcpBackOffice::constant('_PS_MODE_DEMO_')) {
             return SomcpTool::text('This shop runs in demo mode, where the theme cannot be changed. Nothing was changed.', true);
         }
 

@@ -16,6 +16,14 @@ are:
 
 ## Unreleased
 
+### Fixed
+
+**The module passes the PrestaShop Addons validator again.** The check
+`somcp_update_theme_setting` makes before changing the theme, which refuses
+to change it on a shop in demo mode, was reported by the validator as a
+condition that can never be true. It now reads the shop's demo mode the way
+the other tools read the core's settings, and behaves as before.
+
 ## 1.2.0 - 2026-11-03
 
 ### Added

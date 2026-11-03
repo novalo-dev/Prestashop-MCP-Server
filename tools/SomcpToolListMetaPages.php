@@ -49,16 +49,12 @@ class SomcpToolListMetaPages
         return new SomcpTool(
             'somcp_list_meta_pages',
             Somcp::t('List the shop pages and their SEO'),
-            'Lists the shop\'s own pages - home, contact, new products, best sales, prices drop, search, '
-                . 'sitemap, account and checkout pages, and the pages of modules - with their identifier, the '
-                . 'page (controller) name, and in one language the meta title, the meta description, the meta '
-                . 'keywords (PrestaShop 8, null on 9), the friendly URL (url_rewrite) and the public address. These '
-                . 'are the pages of Shop Parameters > Traffic & '
-                . 'SEO. configurable is false for the product, category and CMS templates and a few module pages: '
-                . 'the back office does not list them, their texts come from each product, category or page, and '
-                . 'they have no address of their own (url is null). The home page has no url_rewrite. Read only. '
-                . 'Do not use it for products, categories, brands or CMS pages, which have their own fields and '
-                . 'tools; somcp_update_meta_page changes one of these pages.',
+            'Lists the shop\'s own pages of Shop Parameters > Traffic & SEO - home, contact, new products, '
+                . 'best sales, search, account, checkout and module pages - with id_meta, the page name and, in one '
+                . 'language, the Page title, Meta description, Meta keywords (PrestaShop 8, null on 9), Rewritten '
+                . 'URL and public address. configurable is false for the product, category and CMS templates: their '
+                . 'texts come from each product, category or page, and they have no address. Read only. To change a '
+                . 'page, use somcp_update_meta_page.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -72,23 +72,13 @@ class SomcpToolUpdateMetaPage
         return new SomcpTool(
             'somcp_update_meta_page',
             Somcp::t('Change the SEO of a shop page'),
-            'Changes the search engine fields of one of the shop\'s own pages - home, contact, new products, best '
-                . 'sales, prices drop, search, sitemap, account and checkout pages, module pages - as the page form '
-                . 'of Shop Parameters > Traffic & SEO does: title (the Page title, the title tag), description (the '
-                . 'Meta description) and url_rewrite (the Rewritten URL). Texts are objects keyed by ISO code, '
-                . '{"fr": "...", "en": "..."}; only the languages given change, the others keep their text. keywords '
-                . '(the Meta keywords) exists on PrestaShop 8 only and is refused on 9. Read '
-                . 'the page first with somcp_list_meta_pages, which gives id_meta, and show the merchant the new '
-                . 'values in each language before calling. A new url_rewrite makes the old address of the page stop '
-                . 'working: say so to the merchant before the call. The home page has no url_rewrite (its stored '
-                . 'empty value is accepted unchanged), and the pages '
-                . 'whose configurable is false (product, category and CMS templates) are refused: their texts come '
-                . 'from each product, category or page. Every problem is reported at once and nothing is written '
-                . 'until the whole call is valid. The answer gives each value changed with its previous and new '
-                . 'value, seo_warnings, and the page as stored. A call that would change nothing writes nothing and '
-                . 'says changed: false. Do not use it for a product, category, brand or CMS page (their own update '
-                . 'tools, somcp_update_cms_seo for a CMS page). One page per call. Not to be retried: if the answer '
-                . 'is lost, read the page again with somcp_list_meta_pages before calling again.',
+            'Changes the Page title, Meta description and Rewritten URL of one of the shop\'s own pages, per '
+                . 'ISO code, as the page form of Shop Parameters > Traffic & SEO does; languages not given keep '
+                . 'their text. Meta keywords exist on PrestaShop 8 only. Take id_meta from somcp_list_meta_pages, '
+                . 'never guess one, and show the merchant the new values first: a new Rewritten URL breaks the old '
+                . 'address. Pages whose configurable is false are refused; for a CMS page, use '
+                . 'somcp_update_cms_seo. One page per call. Not to be retried: if the answer is lost, read the page '
+                . 'again with somcp_list_meta_pages.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -118,10 +108,9 @@ class SomcpToolUpdateMetaPage
                     ],
                     'url_rewrite' => [
                         'type' => 'object',
-                        'description' => 'Assistant, approved by the merchant. The Rewritten URL, per ISO code, '
-                            . 'checked as typed: letters, digits and hyphens only, 254 characters at most, required in '
-                            . 'the shop default language and may be empty in the others, refused when another page of '
-                            . 'the shop already uses it. The old address stops working. The home page has none.',
+                        'description' => 'Assistant, approved by the merchant. The Rewritten URL, per ISO code: '
+                            . 'letters, digits and hyphens, 254 characters at most, required in the default language, '
+                            . 'unique in the shop. The home page has none.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                 ],

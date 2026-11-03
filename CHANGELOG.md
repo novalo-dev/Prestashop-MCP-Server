@@ -321,6 +321,14 @@ every step. What matters is kept: which tool gives each page identifier, the
 warning that a new friendly URL breaks the old address, and which read checks
 a change.
 
+**Shorter Traffic & SEO tools.** The six tools of Shop Parameters > Traffic &
+SEO - check a public page, read the SEO settings, read and generate
+robots.txt, list the shop pages and change their SEO - now describe themselves
+in a few sentences, a third lighter for the assistant on every step. What
+matters is kept: which tool gives each page identifier, the warning that a new
+Rewritten URL breaks the old address, the reminder that generating robots.txt
+loses the lines written by hand, and which read checks a change.
+
 ### Fixed
 
 **The update to 1.2.0 no longer stops on "Unknown column 'memory_last'".**

@@ -54,15 +54,12 @@ class SomcpToolGenerateRobotsTxt
         return new SomcpTool(
             'somcp_generate_robots_txt',
             Somcp::t('Generate the robots.txt file'),
-            'Writes the shop\'s robots.txt again from PrestaShop\'s own rules, exactly as the Generate '
-                . 'robots.txt file button of Shop Parameters > Traffic & SEO does, modules adding their lines '
-                . 'included. Any line written into the file by hand is lost: read the file first with '
-                . 'somcp_get_robots_txt, show the merchant what will go, and only call this after they agree. '
-                . 'On a multistore installation the file is shared by every shop, and its Sitemap line is the '
-                . 'one of the shop this call is made for. Returns changed (false when the new file is the same '
-                . 'as the old one), previous_content (null when there was no file) and content. Takes no '
-                . 'parameter. Do not use it to read the file (somcp_get_robots_txt). Not to be retried: if the '
-                . 'answer is lost, read the file with somcp_get_robots_txt to see whether it was written.',
+            'Writes robots.txt again from PrestaShop\'s rules, as the Generate robots.txt file button of Shop '
+                . 'Parameters > Traffic & SEO does. Lines written by hand are lost: read the file first with '
+                . 'somcp_get_robots_txt, show the merchant what will go, and call only once they agree. On a '
+                . 'multistore installation the file is shared by every shop and its Sitemap line is this shop\'s. '
+                . 'Not to be retried: if the answer is lost, read the file with somcp_get_robots_txt to see whether '
+                . 'it was written.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),

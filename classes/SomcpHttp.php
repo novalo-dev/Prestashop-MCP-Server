@@ -227,21 +227,26 @@ class SomcpHttp
     }
 
     /**
-     * Forbids other sites from showing the page inside a frame.
+     * The headers of the module's own HTML pages: the sign-in page and the
+     * consent screen.
      *
-     * The sign-in and consent pages carry the button that hands a shop to an
-     * assistant. Framed invisibly by another site, a merchant who is signed
-     * in could be led to click it without seeing it, and PrestaShop sends no
-     * such header of its own. Both headers, for browsers that only know the
-     * older one.
+     * Those pages carry the button that hands a shop to an assistant. Framed
+     * invisibly by another site, a merchant who is signed in could be led to
+     * click it without seeing it, and PrestaShop sends no anti-framing header
+     * of its own: both headers are sent, for browsers that only know the
+     * older one. They are rendered by PrestaShop rather than by json(), so
+     * they also need the two lines sendHeaders() adds to every JSON answer.
      */
-    public static function denyFraming(): void
+    public static function pageHeaders(): void
     {
         if (headers_sent()) {
             return;
         }
         header('X-Frame-Options: DENY');
         header("Content-Security-Policy: frame-ancestors 'none'");
+        header('X-Content-Type-Options: nosniff');
+        // The PHP version gives anyone probing the page the known flaws to try.
+        header_remove('X-Powered-By');
     }
 
     /**

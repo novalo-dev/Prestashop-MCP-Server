@@ -70,7 +70,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         parent::initContent();
 
         Somcp::bootClasses();
-        SomcpHttp::denyFraming();
+        SomcpHttp::pageHeaders();
 
         if (!SomcpConfig::isOn(SomcpConfig::ENABLED) || !SomcpConfig::isOn(SomcpConfig::OAUTH_ENABLED)) {
             $this->refuse($this->module->l10n(

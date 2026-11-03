@@ -392,26 +392,35 @@ needs, and which contributions fit.
 
 ## Contributors
 
-Everyone who helped build the module, the top contributor first. The pictures
-come straight from GitHub and follow each profile; the shares of the commits
-are refreshed at each release. The settings page of the module shows the same list, read from
-GitHub, under **Help and updates > Meet our contributors**.
+Everyone who helped build the module, the top contributor in the middle. The
+names and the counts are read from GitHub each time this page is shown, so
+they are always up to date. The settings page of the module shows the same
+list, read from GitHub, under **Help and updates > Meet our contributors**.
 
+<div align="center">
 <table>
   <tr>
-    <td align="center" width="140">
-      <a href="https://github.com/novalo-dev"><img src="https://github.com/novalo-dev.png?size=96" width="64" height="64" alt=""><br><b>novalo-dev</b></a><br>
-      <sub>261 contributions · 84%</sub><br>
+    <td align="center" width="200">
+      <sub>2nd</sub><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B1%5D.login&amp;label=contributor&amp;color=brightgreen" alt="2nd contributor"></a><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B1%5D.contributions&amp;label=contributions&amp;color=blue" alt="2nd contributions"></a>
+    </td>
+    <td align="center" width="200">
+      <b>1st</b><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B0%5D.login&amp;label=contributor&amp;color=brightgreen" alt="1st contributor"></a><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B0%5D.contributions&amp;label=contributions&amp;color=blue" alt="1st contributions"></a><br>
       <sub><i>Top contributor</i></sub>
     </td>
-    <td align="center" width="140">
-      <a href="https://github.com/Ptraaah"><img src="https://github.com/Ptraaah.png?size=96" width="64" height="64" alt=""><br><b>Ptraaah</b></a><br>
-      <sub>50 contributions · 16%</sub>
+    <td align="center" width="200">
+      <sub>3rd</sub><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B2%5D.login&amp;label=contributor&amp;color=brightgreen" alt="3rd contributor"></a><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B2%5D.contributions&amp;label=contributions&amp;color=blue" alt="3rd contributions"></a>
     </td>
   </tr>
 </table>
 
 Want to be next? [CONTRIBUTING.md](CONTRIBUTING.md) explains how.
+</div>
 
 ## License
 

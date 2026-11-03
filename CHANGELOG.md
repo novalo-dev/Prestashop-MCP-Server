@@ -16,6 +16,14 @@ are:
 
 ## Unreleased
 
+### Changed
+
+**The server address shows the shop's "page not found" in a browser.** The
+address you give to an assistant used to answer a browser with a blank error
+page. It now shows the shop's usual page not found, like any other address
+that leads nowhere for a visitor. Assistants are not affected: they keep being
+answered as before.
+
 ### Fixed
 
 **The module passes the PrestaShop Addons validator again.** The check

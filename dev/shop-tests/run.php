@@ -57,22 +57,7 @@ if ($psRoot === false || !is_file($psRoot . '/config/config.inc.php')) {
 $scenarioDir = __DIR__ . '/scenarios';
 $moduleDir = $psRoot . '/modules/somcp/';
 
-// The back-office side of PrestaShop: a command line has no host to pick a
-// shop from, and the admin side falls back on the default shop, which is the
-// one the tools answer for here. The source tree names its folder admin-dev.
-foreach (['admin-dev', 'admin'] as $folder) {
-    if (is_dir($psRoot . '/' . $folder)) {
-        define('_PS_ADMIN_DIR_', $psRoot . '/' . $folder);
-        break;
-    }
-}
-$_SERVER['HTTP_HOST'] = 'localhost';
-$_SERVER['SERVER_NAME'] = 'localhost';
-$_SERVER['REQUEST_METHOD'] = 'GET';
-$_SERVER['REQUEST_URI'] = '/';
-$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-
-require $psRoot . '/config/config.inc.php';
+require __DIR__ . '/boot.php';
 
 // A back-office request runs inside the Symfony kernel, and the core reaches
 // for its container from legacy code - an order changing status does, through

@@ -27,28 +27,13 @@
  * Usage: php dev/shop-tests/uninstalled.php <prestashop root>
  * Exit code 0 when nothing is left, 1 otherwise.
  */
-
 $psRoot = realpath($argv[1] ?? '');
 if ($psRoot === false || !is_file($psRoot . '/config/config.inc.php')) {
     fwrite(STDERR, "Usage: php dev/shop-tests/uninstalled.php <prestashop root>\n");
     exit(1);
 }
 
-// The same command-line setup as run.php: the back-office side, on the
-// default shop.
-foreach (['admin-dev', 'admin'] as $folder) {
-    if (is_dir($psRoot . '/' . $folder)) {
-        define('_PS_ADMIN_DIR_', $psRoot . '/' . $folder);
-        break;
-    }
-}
-$_SERVER['HTTP_HOST'] = 'localhost';
-$_SERVER['SERVER_NAME'] = 'localhost';
-$_SERVER['REQUEST_METHOD'] = 'GET';
-$_SERVER['REQUEST_URI'] = '/';
-$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-
-require $psRoot . '/config/config.inc.php';
+require __DIR__ . '/boot.php';
 
 $db = Db::getInstance();
 $prefix = _DB_PREFIX_;

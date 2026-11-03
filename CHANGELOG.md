@@ -32,6 +32,14 @@ to change it on a shop in demo mode, was reported by the validator as a
 condition that can never be true. It now reads the shop's demo mode the way
 the other tools read the core's settings, and behaves as before.
 
+**The faceted search fields of attributes and features follow the module's
+state.** With the faceted search module installed but disabled, the back
+office form no longer shows the URL and Meta title fields, yet
+`somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_get_feature`
+and `somcp_get_feature_value` still returned them as empty texts, which the
+update tools then refused. They now return them as `null` whenever the module
+is not installed and enabled, as the create and update tools already did.
+
 ## 1.2.0 - 2026-11-03
 
 ### Added

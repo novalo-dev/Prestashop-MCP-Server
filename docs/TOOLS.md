@@ -1846,7 +1846,7 @@ The name and every contact field are one string each, the same in every language
 | `id_attribute_group` | integer | yes | from `somcp_list_attributes` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`, `indexable`. A group that is not one of this shop is an error.
+**Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A group that is not one of this shop is an error.
 
 **Notes**
 - Columns of `attribute_group` and `attribute_group_lang`, read through `AttributeGroup`; the group must be in `attribute_group_shop` for the shop of the token, since the constructor would load it whatever its shop. `position` is the raw column, 0 for the first.
@@ -1919,7 +1919,7 @@ The name and every contact field are one string each, the same in every language
 | `id_attribute` | integer | yes | from `somcp_list_attributes` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (URL of the current texture, `null` when there is none), and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. A value that is not one of this shop is an error.
+**Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (URL of the current texture, `null` when there is none), and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. A value that is not one of this shop is an error.
 
 **Notes**
 - Columns of `attribute` and `attribute_lang`, read through `ProductAttribute`; the value must be in `attribute_shop` for the shop of the token, the set `somcp_list_attributes` lists, since the constructor would load it whatever its shop. `position` is the raw column, 0 for the first of its group. `group_name` is the name the back office lists, not the public one.
@@ -2018,7 +2018,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_feature`, `name`, `position`, `values_count`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
+**Returns** - `id_feature`, `name`, `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
 
 **Notes**
 - Columns of `feature` and `feature_lang`, read through `Feature`; the feature must be in `feature_shop` for the shop of the token, since the constructor takes no shop. `position` is the raw column, 0 for the first.
@@ -2089,7 +2089,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). A value that is not one of this shop is an error.
+**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). A value that is not one of this shop is an error.
 
 **Notes**
 - Read through `FeatureValue` and `Feature`. `feature_value` has no shop table: a value belongs to the shops of its feature, so its feature must be in `feature_shop` for the shop of the token, the test `somcp_get_feature` makes.

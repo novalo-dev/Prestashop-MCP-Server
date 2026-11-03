@@ -53,7 +53,7 @@ class SomcpToolGetFeatureValue
                 . 'of this shop (Cotton under Composition...): its text, the feature it belongs to with that '
                 . 'feature\'s name, and the faceted search fields of that form - url_name (the word used in '
                 . 'filtered URLs) and meta_title - which are null when the faceted search module is not '
-                . 'installed. From PrestaShop 9 on it also gives the position of the value among those of its '
+                . 'installed and enabled. From PrestaShop 9 on it also gives the position of the value among those of its '
                 . 'feature (0 for the first), a key left out before, where values have no position. Identify the value by its identifier, from somcp_list_features: never guess one. '
                 . 'A custom value, typed on one product only, is refused: read it with somcp_get_product. '
                 . 'Do not use it for the list of features and values, which is somcp_list_features, or for '
@@ -165,8 +165,10 @@ class SomcpToolGetFeatureValue
         }
 
         // These two fields are added to the form by ps_facetedsearch and live
-        // in its own table, which only exists while it is installed.
-        if (Module::isInstalled('ps_facetedsearch')) {
+        // in its own table, which only exists while it is installed. A disabled module runs
+        // no hook, so the form drops them too: the same test as the write
+        // tools, which refuse them then, keeps get and update in step.
+        if (SomcpToolCreateFeature::facetedSearchActive()) {
             $texts = Db::getInstance()->getRow(
                 'SELECT `url_name`, `meta_title` FROM `' . _DB_PREFIX_ . 'layered_indexable_feature_value_lang_value`'
                 . ' WHERE `id_feature_value` = ' . (int) $idFeatureValue . ' AND `id_lang` = ' . (int) $idLang

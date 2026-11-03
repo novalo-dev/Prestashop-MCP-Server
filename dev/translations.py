@@ -1118,6 +1118,14 @@ T = {
  "Lire l'apparence de la boutique : les entrées et les liens de son menu principal",
  "Leer el aspecto de la tienda: las entradas y los enlaces de su menú principal",
  "Lesen, wie der Shop aussieht: die Einträge und Links seines Hauptmenüs"),
+"Add a main menu entry": (
+ "Ajouter une entrée au menu principal",
+ "Añadir una entrada al menú principal",
+ "Einen Eintrag zum Hauptmenü hinzufügen"),
+"Change how the storefront looks: add entries and custom links to its main menu": (
+ "Modifier l'apparence de la boutique : ajouter des entrées et des liens personnalisés à son menu principal",
+ "Cambiar el aspecto de la tienda: añadir entradas y enlaces personalizados a su menú principal",
+ "Das Aussehen des Shops ändern: Einträge und eigene Links zu seinem Hauptmenü hinzufügen"),
 "Storefront menu and layout": (
  "Menu et mise en page de la boutique",
  "Menú y diseño de la tienda",

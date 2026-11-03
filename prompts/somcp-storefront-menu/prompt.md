@@ -9,6 +9,7 @@ any time.
 
 - `somcp_ping`
 - `somcp_list_menu_links`
+- `somcp_add_menu_link`
 - `somcp_list_categories`
 - `somcp_list_cms_pages`
 
@@ -52,8 +53,22 @@ have its own menu: what you read is the menu of the shop that answered.
   category or page, for example. The storefront and the configuration page
   hide them: tell the merchant they point to nothing.
 
-## One change at a time
+## Adding an entry
 
-Changing the menu is not available from these tools yet: point to **Modules >
-Module Manager > Main menu > Configure** for that. When it is, make one change
-per call and read the menu again before saying it is done.
+`somcp_add_menu_link` adds one entry per call, as **Add** then **Save** in the
+**Menu Top Link** panel.
+
+- Give `type` and the identifier its list tool gives: `id_category` from
+  `somcp_list_categories`, `id_cms` or `id_cms_category` from
+  `somcp_list_cms_pages`, `id_link` from `custom_links`. Never guess one.
+- For a new custom link, leave out `id_link` and give `label` and `url`, one
+  text per language keyed by ISO code: the link is created and put in the menu
+  in the same call. A language left out shows the default language's text.
+- `position` 1 puts it first; left out, it goes at the end. An entry already in
+  the menu is refused: say so rather than calling again.
+- Confirm with the merchant what will be added and where before calling. If
+  the answer is lost, do not call again: read `somcp_list_menu_links` to see
+  whether the entry is there.
+
+Changing or removing an entry is not available from these tools yet: point to
+**Modules > Module Manager > Main menu > Configure** for that.

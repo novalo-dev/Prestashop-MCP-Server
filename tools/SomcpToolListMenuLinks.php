@@ -37,7 +37,7 @@ if (!defined('_PS_VERSION_')) {
 class SomcpToolListMenuLinks
 {
     /** @var string The module that owns the main menu. */
-    private const MODULE = 'ps_mainmenu';
+    public const MODULE = 'ps_mainmenu';
 
     /**
      * The prefixes of the stored codes, with the type returned and the name
@@ -46,7 +46,7 @@ class SomcpToolListMenuLinks
      *
      * @var array<string, array{0: string, 1: string|null}>
      */
-    private const PREFIXES = [
+    public const PREFIXES = [
         'CAT' => ['category', 'id_category'],
         'PRD' => ['product', 'id_product'],
         'CMS' => ['cms_page', 'id_cms'],
@@ -127,11 +127,8 @@ class SomcpToolListMenuLinks
         }
         [$idLang, $iso] = $language;
 
-        // module_shop for the token's shop: Module::isEnabled() answers for
-        // the shop of the global context. Without the module its tables may
-        // not exist, so nothing is read.
-        $state = SomcpModules::states($idShop)[self::MODULE] ?? null;
-        if ($state === null || $state['enable_device'] === null) {
+        // Without the module its tables may not exist, so nothing is read.
+        if (!self::moduleActive($idShop)) {
             return SomcpTool::json([
                 'module_active' => false,
                 'entries' => [],
@@ -141,20 +138,78 @@ class SomcpToolListMenuLinks
             ]);
         }
 
-        $links = self::customLinks($idLang, $idShop);
+        $menu = self::menu($idLang, $idShop);
+
+        return SomcpTool::json([
+            'module_active' => true,
+            'entries' => $menu['entries'],
+            'skipped' => $menu['skipped'],
+            'custom_links' => $menu['custom_links'],
+            'language' => $iso,
+        ]);
+    }
+
+    /**
+     * Whether the Main menu module is installed and enabled on the shop.
+     *
+     * module_shop for the given shop: Module::isEnabled() answers for the
+     * shop of the global context. Without the module its tables may not
+     * exist, so the callers read and write nothing.
+     *
+     * @param int $idShop
+     *
+     * @return bool
+     */
+    public static function moduleActive(int $idShop): bool
+    {
+        $state = SomcpModules::states($idShop)[self::MODULE] ?? null;
+
+        return $state !== null && $state['enable_device'] !== null;
+    }
+
+    /**
+     * The stored codes of the menu, in order, skipped ones included.
+     *
+     * Falls back from the shop to its group and to the global value, as the
+     * module reads it on its configuration page.
+     *
+     * @param int $idShop
+     *
+     * @return array<int, string>
+     */
+    public static function storedItems(int $idShop): array
+    {
         $idShopGroup = (int) Shop::getGroupFromShop($idShop);
-        // Falls back from the shop to its group and to the global value, as
-        // the module reads it on its configuration page.
         $stored = (string) Configuration::get('MOD_BLOCKTOPMENU_ITEMS', null, $idShopGroup, $idShop);
+
+        $items = [];
+        foreach (explode(',', $stored) as $item) {
+            $item = trim($item);
+            if ($item !== '') {
+                $items[] = $item;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * The menu as somcp_list_menu_links answers it - shared with the tools
+     * that change the menu, so they answer with the same shape.
+     *
+     * @param int $idLang
+     * @param int $idShop
+     *
+     * @return array{entries: array<int, array<string, mixed>>, skipped: array<int, string>, custom_links: array<int, array<string, mixed>>}
+     */
+    public static function menu(int $idLang, int $idShop): array
+    {
+        $links = self::customLinks($idLang, $idShop);
 
         $entries = [];
         $skipped = [];
         $inMenu = [];
-        foreach (explode(',', $stored) as $item) {
-            $item = trim($item);
-            if ($item === '') {
-                continue;
-            }
+        foreach (self::storedItems($idShop) as $item) {
             $entry = self::entry($item, $idLang, $idShop, $links);
             if ($entry === null) {
                 $skipped[] = $item;
@@ -178,13 +233,7 @@ class SomcpToolListMenuLinks
             ];
         }
 
-        return SomcpTool::json([
-            'module_active' => true,
-            'entries' => $entries,
-            'skipped' => $skipped,
-            'custom_links' => $customLinks,
-            'language' => $iso,
-        ]);
+        return ['entries' => $entries, 'skipped' => $skipped, 'custom_links' => $customLinks];
     }
 
     /**
@@ -197,7 +246,7 @@ class SomcpToolListMenuLinks
      *
      * @return array<string, mixed>|null
      */
-    private static function entry(string $item, int $idLang, int $idShop, array $links): ?array
+    public static function entry(string $item, int $idLang, int $idShop, array $links): ?array
     {
         // The module's own parsing: the letters and underscores before the
         // number are the prefix, so CMS_CAT is never read as CMS.
@@ -286,7 +335,7 @@ class SomcpToolListMenuLinks
      *
      * @return array<int, array{label: string, url: string, new_window: bool}>
      */
-    private static function customLinks(int $idLang, int $idShop): array
+    public static function customLinks(int $idLang, int $idShop): array
     {
         $idDefault = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
 

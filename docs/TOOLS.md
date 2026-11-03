@@ -2708,27 +2708,33 @@ What the storefront looks like: the main menu of `ps_mainmenu`, the active theme
 Same labels, configuration key, prefixes, tables and columns on 8.0.1 (`ps_mainmenu` 2.3.1) and 9.0.0 (2.3.4); 9.0.0 always applies the shop filter to CMS categories and pages, with the same result.
 
 #### `somcp_add_menu_link`
-**State**: draft · [issue #30](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/30)
-**Nature**: `acts(ADD, 'AdminModules')` · **Scope**: `mcp.appearance.write`
+**State**: written · [issue #30](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/30)
+**Nature**: `acts(EDIT, 'AdminModulesSf')` · **Scope**: `mcp.appearance.write`
 
-**Does** - adds one custom link, a category or a CMS page to the main menu.
+**Does** - adds one entry to the storefront's main menu, one line of **Selected items** in the **Menu Top Link** panel of the **Main menu** module (`ps_mainmenu`), what **Add** then **Save** do, at the end or at a given position. For a custom link, it can create the link (**Add a new link** panel) in the same call, since a custom link outside the menu shows nowhere on the storefront.
 
-**Do not use for** - changing an existing custom link (→ `somcp_update_menu_link`).
+**Do not use for** - changing a custom link already created (→ `somcp_update_menu_link`); reading the menu (→ `somcp_list_menu_links`); removing or moving an entry (not offered yet).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `type` | enum | yes | `category`, `cms`, `link` |
-| `id` | integer | for category and cms |  |
-| `label` | string | for link |  |
-| `url` | string | for link |  |
-| `new_window` | boolean | no |  |
-| `position` | integer | no | at the end by default |
+| `type` | enum | yes | the group of **Available items**: `category`, `product`, `cms_page`, `cms_category`, `all_brands`, `brand`, `all_suppliers`, `supplier`, `link`, `shop` - the values of `entries[].type` of `somcp_list_menu_links` |
+| `id_category`, `id_product`, `id_cms`, `id_cms_category`, `id_manufacturer`, `id_supplier`, `id_link`, `id_shop` | integer | the one of `type` | the object, under the name its list tool gives it; none for `all_brands` / `all_suppliers`; an identifier that does not go with `type` is refused; `id_link` left out with `link` creates a new custom link |
+| `languages` | array of ISO codes | no | new custom link only: the languages filled, among the shop's active languages, all of them by default |
+| `label` | object keyed by ISO code | new custom link | **Label**, the text of the entry; not empty in every language filled; a language left out gets the default language's text; 128 characters at most |
+| `url` | object keyed by ISO code | new custom link | **Link**, same rule as `label`; an absolute `http` / `https` address or a path starting with `/`, checked with `Validate::isUrl()`; 128 characters at most |
+| `new_window` | boolean | no | **New window**, new custom link only; `false` by default, as the form |
+| `position` | integer | no | **Change position**: 1 for the first entry; at the end when left out; above the number of entries plus one is refused |
+| `language` | string | no | ISO code for the labels of the answer; the shop default when left out |
 
-**Returns** - `added`, the menu as `somcp_list_menu_links` returns it.
+**Returns** - `added`: the new entry in the shape of `entries[]` of `somcp_list_menu_links` (`position`, `item`, `type`, the identifier, `label`, `url`, `new_window`); `created_link`: `true` when a custom link was created, its `id_link` in `added`; `entries`: the whole menu read back after the save; `language`.
 
-**Notes** - written through `ps_mainmenu`'s own storage so its cache is cleared like the back office does. Not replayable.
+**Errors** - one message per refused field, nothing written: `ps_mainmenu` not installed or not enabled on the token's shop; an object that does not exist (a custom link of another shop included); an entry already in the menu, which the screen no longer offers in **Available items**; `id_link` given with `label`, `url`, `new_window` or `languages`; an empty `label` or `url`, an invalid `url`, a text over 128 characters, `position` out of range, a `languages` code the shop does not have; an unknown argument; an unknown `language`: the shared language refusal.
+
+**Notes** - writes the list the way **Save** does: `MOD_BLOCKTOPMENU_ITEMS` read as `somcp_list_menu_links` reads it, the code inserted at its place, the codes reported in `skipped` kept where they are, then `Configuration::updateValue(..., false, $idShopGroup, $idShop)` for the token's shop only, never the global row. A new custom link goes through the module's `Ps_MenuTopLinks::add()` with the token's `id_shop`, one row per language, before the list is written; the module itself accepts an empty label and link, so the tool checks them. The module's cache is then emptied through its public `hookActionCategoryUpdate()`, so the storefront shows the change at once. Not replayable: on a lost answer, read `somcp_list_menu_links`.
+
+Same panels, labels, configuration key, tables and submit code on 8.0.1 (`ps_mainmenu` 2.3.1) and 9.0.0 (2.3.4).
 
 #### `somcp_update_menu_link`
 **State**: draft · [issue #31](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/31)

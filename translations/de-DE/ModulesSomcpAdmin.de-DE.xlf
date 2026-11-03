@@ -1407,6 +1407,16 @@
       <source>Read how the storefront looks: the entries and links of its main menu</source>
       <target>Lesen, wie der Shop aussieht: die Einträge und Links seines Hauptmenüs</target>
     </trans-unit>
+    <!-- Add a main menu entry -->
+    <trans-unit id="5659bec49c28f3fafe12d31f741132f4" resname="Add a main menu entry">
+      <source>Add a main menu entry</source>
+      <target>Einen Eintrag zum Hauptmenü hinzufügen</target>
+    </trans-unit>
+    <!-- Change how the storefront looks: add entries and custom links to its main menu -->
+    <trans-unit id="dba7046657e5697a9a53a3f35e9945e7" resname="Change how the storefront looks: add entries and custom links to its main menu">
+      <source>Change how the storefront looks: add entries and custom links to its main menu</source>
+      <target>Das Aussehen des Shops ändern: Einträge und eigene Links zu seinem Hauptmenü hinzufügen</target>
+    </trans-unit>
     <!-- Storefront menu and layout -->
     <trans-unit id="7898d05d7a9cab751dae320d32d866d4" resname="Storefront menu and layout">
       <source>Storefront menu and layout</source>

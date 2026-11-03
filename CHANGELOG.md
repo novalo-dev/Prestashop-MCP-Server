@@ -160,6 +160,20 @@ permission `mcp.appearance.read`, which the consent screen describes as
 reading how the storefront looks, and the `view` right on **Modules > Module
 Manager**.
 
+**Adding an entry to the storefront's main menu.** The new tool
+`somcp_add_menu_link` adds one entry to the main menu, as **Add** then **Save**
+in the **Menu Top Link** panel of the **Main menu** module: a category, a
+product, a CMS page or category, a brand, a supplier, all brands or all
+suppliers, a shop or a custom link, at the end or at the position asked. A new
+custom link is created from its label and address in each language and put in
+the menu in the same call, where the screen leaves it outside the menu. An
+empty label or address, which the module would accept, is refused, and so is
+an entry already in the menu. Only the menu of the connected shop changes, and
+the storefront shows it at once. The **Storefront menu and layout** prompt
+names it. It needs the new permission `mcp.appearance.write`, which the
+consent screen describes as changing how the storefront looks, and the `edit`
+right on **Modules > Module Manager**.
+
 ### Changed
 
 **Claude costs less in a conversation, and the consumption is exact.**

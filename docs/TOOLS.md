@@ -2737,24 +2737,33 @@ Same labels, configuration key, prefixes, tables and columns on 8.0.1 (`ps_mainm
 Same panels, labels, configuration key, tables and submit code on 8.0.1 (`ps_mainmenu` 2.3.1) and 9.0.0 (2.3.4).
 
 #### `somcp_update_menu_link`
-**State**: draft · [issue #31](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/31)
-**Nature**: `acts(EDIT, 'AdminModules')` · **Scope**: `mcp.appearance.write`
+**State**: written · [issue #31](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/31)
+**Nature**: `acts(EDIT, 'AdminModulesSf')` · **Scope**: `mcp.appearance.write`
 
-**Does** - changes the label, URL or target of one custom link in the main menu.
+**Does** - changes one custom link of the storefront's main menu, the **Update link** panel of the **Main menu** module (`ps_mainmenu`), opened by **Edit** in **Link list**: its **Label**, **Link** and **New window**. Only what is given changes, where the form writes every field and empties those left blank.
 
-**Do not use for** - adding an entry (→ `somcp_add_menu_link`).
+**Do not use for** - adding an entry to the menu, or creating a custom link (→ `somcp_add_menu_link`); reading the menu (→ `somcp_list_menu_links`); moving or removing an entry, deleting a custom link (not offered yet).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id` | integer | yes | custom link, from `somcp_list_menu_links` |
-| `label` | string | no |  |
-| `url` | string | no |  |
-| `new_window` | boolean | no |  |
-| `language` | string | no | ISO code, shop default otherwise |
+| `id_link` | integer | yes | **Link ID**, the custom link, from `custom_links[].id_link` of `somcp_list_menu_links`; a link of another shop is refused as unknown |
+| `languages` | array of ISO codes | no | the languages being filled, among the shop's active languages, all of them by default; the other languages keep their texts |
+| `label` | object keyed by ISO code | no | **Label**; a plain string accepted when one language is filled; given, required and not empty in every language filled; 128 characters at most |
+| `url` | object keyed by ISO code | no | **Link**, same rule as `label`; an absolute `http` / `https` address or a path starting with `/`, checked with `Validate::isUrl()`; 128 characters at most |
+| `new_window` | boolean | no | **New window** |
+| `language` | string | no | ISO code for the labels of the answer; the shop default when left out |
 
-**Returns** - `changed`, the fields written with their old and new values.
+At least one of `label`, `url`, `new_window` is required.
+
+**Returns** - `changed`; `id_link`; `changes`, each field written with `field` (`label (<iso>)`, `url (<iso>)`, `new_window`), `old` and `new`; `link`, the link after the save in the shape of `custom_links[]` of `somcp_list_menu_links` (`id_link`, `label`, `url`, `new_window`, `in_menu`); `language`. A call that would change nothing writes nothing and answers `changed: false`, with empty `changes` and a `reason`.
+
+**Errors** - one message per refused field, nothing written: `ps_mainmenu` not installed or not enabled on the token's shop; an unknown `id_link` for the token's shop; none of `label`, `url`, `new_window` given; an empty `label` or `url`, an invalid `url`, a text over 128 characters, a `languages` code the shop does not have (the texts of `somcp_add_menu_link`); an unknown argument; an unknown `language`: the shared language refusal.
+
+**Notes** - reads the link raw from `linksmenutop` and `linksmenutop_lang` (`id_shop` 0 or the token's shop; `Ps_MenuTopLinks::getLinkLang()` escapes the texts for display), merges what is given, then calls the module's `Ps_MenuTopLinks::update()` with the full texts of every language that has a row and the link's own `id_shop`, so a link shared by every shop stays shared. `update()` only runs `UPDATE`: a language filled that has no `linksmenutop_lang` row (installed after the link was created) gets one first, with the columns of `Ps_MenuTopLinks::add()`. The link is read back to confirm the write, then the module's cache is emptied through its public `hookActionCategoryUpdate()`, as `somcp_add_menu_link`. The link's place in the menu never changes. On a lost answer, read `somcp_list_menu_links` and compare before calling again.
+
+Same panel, labels, message, tables and code on 8.0.1 (`ps_mainmenu` 2.3.1) and 9.0.0 (2.3.4).
 
 #### `somcp_get_theme`
 **State**: draft · [issue #32](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/32)
@@ -3627,7 +3636,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - none.
 
-**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read the menu or the theme first; take category and page identifiers from their list tools; one change per call.
 

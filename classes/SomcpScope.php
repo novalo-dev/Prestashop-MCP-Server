@@ -286,7 +286,7 @@ class SomcpScope
             case self::APPEARANCE_READ:
                 return $module->l10n('Read how the storefront looks: the entries and links of its main menu');
             case self::APPEARANCE_WRITE:
-                return $module->l10n('Change how the storefront looks: add entries and custom links to its main menu');
+                return $module->l10n('Change how the storefront looks: add entries and custom links to its main menu, and change those links');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

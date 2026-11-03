@@ -42,7 +42,7 @@ require_once __DIR__ . '/SomcpToolListMenuLinks.php';
 class SomcpToolAddMenuLink extends SomcpToolCreateProduct
 {
     /** @var int The size of the label and link columns of linksmenutop_lang. */
-    private const TEXT_MAX = 128;
+    protected const TEXT_MAX = 128;
 
     /** @var array<int, string> The arguments a new custom link is made of. */
     private const LINK_FIELDS = ['languages', 'label', 'url', 'new_window'];
@@ -318,27 +318,7 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
             return null;
         }
 
-        foreach ($labels as $idLang => $label) {
-            $label = trim($label);
-            $labels[$idLang] = $label;
-            if (Tools::strlen($label) > self::TEXT_MAX) {
-                $errors[] = 'label (' . $languages['filled'][$idLang] . '): ' . self::TEXT_MAX . ' characters at most, '
-                    . Tools::strlen($label) . ' given';
-            }
-        }
-        foreach ($urls as $idLang => $url) {
-            $url = trim($url);
-            $urls[$idLang] = $url;
-            $where = 'url (' . $languages['filled'][$idLang] . ')';
-            if ($url === '') {
-                continue;
-            }
-            if (!preg_match('#^(https?://[^/\s]+|/)#i', $url) || !Validate::isUrl($url)) {
-                $errors[] = $where . ': an absolute http or https address, or a path starting with /';
-            } elseif (Tools::strlen($url) > self::TEXT_MAX) {
-                $errors[] = $where . ': ' . self::TEXT_MAX . ' characters at most, ' . Tools::strlen($url) . ' given';
-            }
-        }
+        self::checkLinkTexts($labels, $urls, $languages['filled'], $errors);
 
         // Every language gets a row, as the form posts them all: a language
         // left out takes the fallback's text rather than an empty entry.
@@ -350,6 +330,77 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
         }
 
         return ['labels' => $allLabels, 'urls' => $allUrls, 'new_window' => $newWindow === true];
+    }
+
+    /**
+     * Trims the labels and addresses of a custom link and checks them - shared
+     * with somcp_update_menu_link, so a text accepted at creation is accepted
+     * when it is changed, and refused for the same reason.
+     *
+     * The emptiness of a text given is checked by texts(); what is left is
+     * what the module never checks: the size of its columns and the form of
+     * the address.
+     *
+     * @param array<int, string> $labels keyed by id_lang
+     * @param array<int, string> $urls keyed by id_lang
+     * @param array<int, string> $isos the ISO code of each language filled, keyed by id_lang
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    protected static function checkLinkTexts(array &$labels, array &$urls, array $isos, array &$errors): void
+    {
+        foreach ($labels as $idLang => $label) {
+            $label = trim($label);
+            $labels[$idLang] = $label;
+            if (Tools::strlen($label) > self::TEXT_MAX) {
+                $errors[] = 'label (' . $isos[$idLang] . '): ' . self::TEXT_MAX . ' characters at most, '
+                    . Tools::strlen($label) . ' given';
+            }
+        }
+        foreach ($urls as $idLang => $url) {
+            $url = trim($url);
+            $urls[$idLang] = $url;
+            $where = 'url (' . $isos[$idLang] . ')';
+            if ($url === '') {
+                continue;
+            }
+            if (!preg_match('#^(https?://[^/\s]+|/)#i', $url) || !Validate::isUrl($url)) {
+                $errors[] = $where . ': an absolute http or https address, or a path starting with /';
+            } elseif (Tools::strlen($url) > self::TEXT_MAX) {
+                $errors[] = $where . ': ' . self::TEXT_MAX . ' characters at most, ' . Tools::strlen($url) . ' given';
+            }
+        }
+    }
+
+    /**
+     * Loads the module's class for its custom links, which only the module
+     * itself requires.
+     *
+     * @return bool whether the class can be called
+     */
+    protected static function linksClass(): bool
+    {
+        $class = _PS_MODULE_DIR_ . SomcpToolListMenuLinks::MODULE . '/ps_menutoplinks.class.php';
+        if (!class_exists('Ps_MenuTopLinks') && is_file($class)) {
+            require_once $class;
+        }
+
+        return class_exists('Ps_MenuTopLinks');
+    }
+
+    /**
+     * Empties the module's cache of the storefront menu, so the change shows at
+     * once - through its public hook, the way the module empties it itself.
+     *
+     * @return void
+     */
+    protected static function clearMenuCache(): void
+    {
+        $module = Module::getInstanceByName(SomcpToolListMenuLinks::MODULE);
+        if ($module && method_exists($module, 'hookActionCategoryUpdate')) {
+            $module->hookActionCategoryUpdate([]);
+        }
     }
 
     /**
@@ -368,11 +419,7 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
         $item = $plan['item'];
         $createdLink = false;
         if ($plan['link'] !== null) {
-            $class = _PS_MODULE_DIR_ . SomcpToolListMenuLinks::MODULE . '/ps_menutoplinks.class.php';
-            if (!class_exists('Ps_MenuTopLinks') && is_file($class)) {
-                require_once $class;
-            }
-            if (!class_exists('Ps_MenuTopLinks')) {
+            if (!self::linksClass()) {
                 return SomcpTool::text('The Main menu module could not create the link. Nothing was changed.', true);
             }
 
@@ -431,12 +478,7 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
             );
         }
 
-        // The module caches the storefront menu; its public hook is the way
-        // it empties that cache itself.
-        $module = Module::getInstanceByName(SomcpToolListMenuLinks::MODULE);
-        if ($module && method_exists($module, 'hookActionCategoryUpdate')) {
-            $module->hookActionCategoryUpdate([]);
-        }
+        self::clearMenuCache();
 
         $menu = SomcpToolListMenuLinks::menu($idLang, $idShop);
         $added = null;

@@ -10,6 +10,7 @@ any time.
 - `somcp_ping`
 - `somcp_list_menu_links`
 - `somcp_add_menu_link`
+- `somcp_update_menu_link`
 - `somcp_list_categories`
 - `somcp_list_cms_pages`
 
@@ -70,5 +71,21 @@ have its own menu: what you read is the menu of the shop that answered.
   the answer is lost, do not call again: read `somcp_list_menu_links` to see
   whether the entry is there.
 
-Changing or removing an entry is not available from these tools yet: point to
-**Modules > Module Manager > Main menu > Configure** for that.
+## Changing a custom link
+
+`somcp_update_menu_link` changes one custom link per call, as **Edit** then
+**Update** in the **Link list**: its `label`, its `url` and `new_window`.
+
+- Take `id_link` from `custom_links` of `somcp_list_menu_links`. Never guess
+  one.
+- Only what you give changes. To change a text in one language, pass
+  `languages` with that language alone: without it every language is filled,
+  and the text is needed in each. The other languages keep their texts.
+- `changed: false` means the link already held those values: nothing was
+  written. Say so rather than calling again.
+- Confirm the new texts with the merchant before calling. If the answer is
+  lost, read `somcp_list_menu_links` and compare before calling again.
+
+It changes the link only, never its place in the menu. Moving or removing an
+entry, or deleting a custom link, is not available from these tools yet: point
+to **Modules > Module Manager > Main menu > Configure** for that.

@@ -1412,10 +1412,15 @@
       <source>Add a main menu entry</source>
       <target>Ajouter une entrée au menu principal</target>
     </trans-unit>
-    <!-- Change how the storefront looks: add entries and custom links to its main menu -->
-    <trans-unit id="dba7046657e5697a9a53a3f35e9945e7" resname="Change how the storefront looks: add entries and custom links to its main menu">
-      <source>Change how the storefront looks: add entries and custom links to its main menu</source>
-      <target>Modifier l'apparence de la boutique : ajouter des entrées et des liens personnalisés à son menu principal</target>
+    <!-- Change a main menu custom link -->
+    <trans-unit id="8a395de94d9795e44e1c58a73a77278a" resname="Change a main menu custom link">
+      <source>Change a main menu custom link</source>
+      <target>Modifier un lien personnalisé du menu principal</target>
+    </trans-unit>
+    <!-- Change how the storefront looks: add entries and custom links to its main menu, and change those links -->
+    <trans-unit id="bf88d77ef38cdd3298b6ed5e989e08e2" resname="Change how the storefront looks: add entries and custom links to its main menu, and change those links">
+      <source>Change how the storefront looks: add entries and custom links to its main menu, and change those links</source>
+      <target>Modifier l'apparence de la boutique : ajouter des entrées et des liens personnalisés à son menu principal, et modifier ces liens</target>
     </trans-unit>
     <!-- Storefront menu and layout -->
     <trans-unit id="7898d05d7a9cab751dae320d32d866d4" resname="Storefront menu and layout">

@@ -174,6 +174,19 @@ names it. It needs the new permission `mcp.appearance.write`, which the
 consent screen describes as changing how the storefront looks, and the `edit`
 right on **Modules > Module Manager**.
 
+**Changing a custom link of the storefront's main menu.** The new tool
+`somcp_update_menu_link` changes the label, the address or **New window** of
+one custom link of the **Link list** of the **Main menu** module, as **Edit**
+then **Update**. Only what is asked changes: where the form empties a field
+left blank, the other texts and languages are kept, an empty label or address
+is refused, and a language added to the shop after the link was created gets
+its text instead of losing it. A link shared by every shop stays shared. A
+call that would change nothing writes nothing, and the storefront shows the
+change at once. The **Storefront menu and layout** prompt names it. It needs
+the permission `mcp.appearance.write`, which the consent screen now describes
+as also changing the custom links of the main menu, and the `edit` right on
+**Modules > Module Manager**.
+
 ### Changed
 
 **Claude costs less in a conversation, and the consumption is exact.**

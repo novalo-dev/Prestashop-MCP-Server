@@ -1,0 +1,17 @@
+{
+  "calls": [
+    {"why": "changes the label of the custom link somcp_add_menu_link created, the address kept, read back in the shape of custom_links", "arguments": {"id_link": 1, "languages": ["en"], "label": {"en": "Summer sale"}}, "expect": "ok", "contains": ["\"changed\": true", "\"id_link\": 1", "\"field\": \"label (en)\"", "\"new\": \"Summer sale\"", "\"url\": \"https://www.example.com\"", "\"in_menu\"", "\"language\""]},
+    {"why": "the same label again changes nothing and writes nothing", "arguments": {"id_link": 1, "languages": ["en"], "label": "Summer sale"}, "expect": "ok", "contains": ["\"changed\": false", "\"changes\": []", "\"reason\""]},
+    {"why": "changes the address alone, the label kept", "arguments": {"id_link": 1, "languages": ["en"], "url": {"en": "/content/1-delivery"}}, "expect": "ok", "contains": ["\"field\": \"url (en)\"", "\"url\": \"/content/1-delivery\"", "\"label\": \"Summer sale\""]},
+    {"why": "changes New window alone", "arguments": {"id_link": 1, "new_window": false, "language": "en"}, "expect": "ok", "contains": ["\"field\": \"new_window\"", "\"new_window\": false", "\"language\": \"en\""]},
+    {"why": "a call with nothing to change is refused", "arguments": {"id_link": 1}, "expect": "error", "contains": ["label, url or new_window: give at least one"]},
+    {"why": "a custom link that does not exist is refused", "arguments": {"id_link": 999999, "new_window": true}, "expect": "error", "contains": ["id_link: no custom link 999999"]},
+    {"why": "the link is required", "arguments": {"new_window": true}, "expect": "error", "contains": ["id_link: required"]},
+    {"why": "an empty label is refused, though the module would store it", "arguments": {"id_link": 1, "languages": ["en"], "label": {"en": " "}}, "expect": "error", "contains": ["label: missing in en"]},
+    {"why": "an address that is neither http, https nor a path is refused", "arguments": {"id_link": 1, "languages": ["en"], "url": {"en": "ftp:example"}}, "expect": "error", "contains": ["url (en): an absolute http or https address"]},
+    {"why": "a language the shop does not have is refused among the languages filled", "arguments": {"id_link": 1, "languages": ["zz"], "label": {"zz": "Sale"}}, "expect": "error", "contains": ["languages: \"zz\" is not an active language"]},
+    {"why": "new_window takes a boolean", "arguments": {"id_link": 1, "new_window": "yes"}, "expect": "error", "contains": ["new_window: true or false"]},
+    {"why": "an argument the tool does not take is refused, naming it", "arguments": {"id_link": 1, "new_window": true, "position": 1}, "expect": "error", "contains": ["position: not a field of this tool"]},
+    {"why": "a language the shop does not have is refused for the answer", "arguments": {"id_link": 1, "new_window": true, "language": "zz"}, "expect": "error", "contains": ["language"]}
+  ]
+}

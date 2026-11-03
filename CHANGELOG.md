@@ -314,6 +314,13 @@ themselves in a few sentences, a quarter lighter for the assistant on every
 step. What matters is kept: what each figure means on the screen, which tool
 gives each identifier, and which read checks a stock change.
 
+**Shorter content page tools.** The four tools of Design > Pages - list the
+pages, read one, check their SEO, change their SEO fields - now describe
+themselves in a few sentences, almost a third lighter for the assistant on
+every step. What matters is kept: which tool gives each page identifier, the
+warning that a new friendly URL breaks the old address, and which read checks
+a change.
+
 ### Fixed
 
 **The update to 1.2.0 no longer stops on "Unknown column 'memory_last'".**

@@ -45,17 +45,11 @@ class SomcpToolGetCmsPage
         return new SomcpTool(
             'somcp_get_cms_page',
             Somcp::t('Get a content page'),
-            'Returns everything the edit form of Design > Pages shows for one CMS page of this shop: page '
-                . 'category (id_cms_category), Title (title), Meta title (meta_title, the title of the browser '
-                . 'tab and search results, empty when not set), the title search engines read (seo_title), meta '
-                . 'description, meta keywords (PrestaShop 8, null on 9), Friendly URL (link_rewrite), the page '
-                . 'content as stored HTML, never cut, Indexation by search engines (indexation), Displayed '
-                . '(active), position (0 for the first) and the page\'s address on the storefront (url). '
-                . 'meta_title, meta_description, link_rewrite and indexation are named as somcp_update_cms_seo '
-                . 'takes them. Identify the page by its id_cms, from somcp_list_cms_pages: never guess one. '
-                . 'Do not use it to list pages or find one by its title (somcp_list_cms_pages), for the SEO '
-                . 'checks of the pages (somcp_audit_cms_seo), nor to change a page\'s SEO texts '
-                . '(somcp_update_cms_seo).',
+            'Returns one CMS page as its edit form of Design > Pages shows it: page category, Title, Meta '
+                . 'title, the title search engines read (seo_title), meta description, Friendly URL, the content '
+                . 'as stored HTML, Indexation, Displayed, position and its storefront address. The SEO fields are '
+                . 'named as somcp_update_cms_seo takes them. Take id_cms from somcp_list_cms_pages, never guess '
+                . 'one. For the SEO checks of every page, use somcp_audit_cms_seo.',
             [
                 'type' => 'object',
                 'properties' => [

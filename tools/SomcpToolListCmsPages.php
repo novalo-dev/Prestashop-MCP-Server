@@ -47,16 +47,11 @@ class SomcpToolListCmsPages
         return new SomcpTool(
             'somcp_list_cms_pages',
             Somcp::t('List content pages'),
-            'Lists the CMS pages of this shop as Design > Pages shows them, displayed or not: '
-                . 'identifier (id_cms), URL (link_rewrite), Title (title), Meta title (meta_title, '
-                . 'the title of the browser tab and search results), position (0 for the first), '
-                . 'whether it is displayed (active), its category and its address on the storefront. '
-                . 'Pages are sorted by category, then in the order of the list. Also returns every '
-                . 'page category of the shop, root included, with its identifier for id_cms_category. '
-                . 'Take id_cms from here for somcp_update_cms_seo: identifiers are specific to each '
-                . 'shop, so never assume one. The content of a page is not returned. Do not use it '
-                . 'for the SEO checks of the pages (somcp_audit_cms_seo), nor to change a page\'s '
-                . 'title, meta title, meta description or URL (somcp_update_cms_seo).',
+            'Lists the CMS pages of this shop as Design > Pages shows them, displayed or not, by category '
+                . 'then position: id_cms, URL, Title, Meta title, Displayed and storefront address, without the '
+                . 'content (somcp_get_cms_page). Also gives every page category with its id_cms_category. '
+                . 'Identifiers are specific to each shop: take id_cms from here, never assume one. For the SEO '
+                . 'checks, use somcp_audit_cms_seo; to change the SEO fields, somcp_update_cms_seo.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -260,6 +260,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | Tool | Scope | Back office right | Nature |
 |---|---|---|---|
 | `somcp_get_cache_status` | `mcp.system.read` | `view` on `AdminPerformance` | read |
+| `somcp_clear_cache` | `mcp.system.write` | `delete` on `AdminPerformance` | write |
 
 ### SEO
 
@@ -353,7 +354,7 @@ below can. Where to paste the address in each of them:
   `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
   `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`,
   `mcp.modules.read`, `mcp.modules.write`, `mcp.appearance.read`,
-  `mcp.appearance.write`, `mcp.system.read`. Other
+  `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`. Other
   modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's

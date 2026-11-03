@@ -1122,6 +1122,14 @@ T = {
  "Lire le fonctionnement de cette boutique : ses paramètres de performances, son cache et le mode debug",
  "Leer cómo funciona esta tienda: sus ajustes de rendimiento, su caché y el modo de depuración",
  "Lesen, wie dieser Shop läuft: seine Leistungseinstellungen, sein Cache und der Debug-Modus"),
+"Clear the cache": (
+ "Vider le cache",
+ "Vaciar la caché",
+ "Cache leeren"),
+"Clear the cache of this shop and of every shop of the installation, which slows them until it rebuilds": (
+ "Vider le cache de cette boutique et de toutes les boutiques de l'installation, ce qui les ralentit le temps qu'il se reconstruise",
+ "Vaciar la caché de esta tienda y de todas las tiendas de la instalación, lo que las ralentiza hasta que se reconstruye",
+ "Den Cache dieses Shops und aller Shops der Installation leeren, was sie verlangsamt, bis er neu aufgebaut ist"),
 "Cache maintenance": (
  "Maintenance du cache",
  "Mantenimiento de la caché",

@@ -9,6 +9,7 @@ changed in the back office at any time.
 
 - `somcp_ping`
 - `somcp_get_cache_status`
+- `somcp_clear_cache`
 
 ## Know which shop you are in
 
@@ -46,8 +47,12 @@ answered. Debug mode and the caching system apply to the whole installation.
 
 ## Clearing the cache
 
-Clearing the cache is not available from these tools yet: point to
-**Advanced Parameters > Performance > Clear cache** for that. Clearing slows
-the storefront while the cache rebuilds: say so, and clear it once when a
-change does not show, not as a reflex. Changing these settings stays in the
-back office.
+Clear with `somcp_clear_cache` when a change does not show on the storefront,
+once, after reading the status, not as a reflex. It clears what the **Clear
+cache** button of **Advanced Parameters > Performance** clears, for every shop
+of the installation, not only the one that answered: say so on a multistore
+installation. The storefront and back office are slower until the caches
+rebuild, sometimes for several seconds: say so, and do not clear a busy shop
+unless the merchant asks. Calling it twice is harmless, so a lost answer can be
+retried. It does not flush Memcache or APC, and changing these settings stays
+in the back office.

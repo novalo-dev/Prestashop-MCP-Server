@@ -86,6 +86,9 @@ class SomcpScope
     /** @var string Reading how the shop runs: its performance and cache settings. */
     public const SYSTEM_READ = 'mcp.system.read';
 
+    /** @var string Acting on how the shop runs: clearing its cache. */
+    public const SYSTEM_WRITE = 'mcp.system.write';
+
     /**
      * The scopes this module owns.
      *
@@ -93,7 +96,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ, self::SYSTEM_WRITE];
     }
 
     /**
@@ -292,6 +295,8 @@ class SomcpScope
                 return $module->l10n('Change how the storefront looks: add entries and custom links to its main menu, change those links, and the layout of its pages');
             case self::SYSTEM_READ:
                 return $module->l10n('Read how this shop runs: its performance settings, cache and debug mode');
+            case self::SYSTEM_WRITE:
+                return $module->l10n('Clear the cache of this shop and of every shop of the installation, which slows them until it rebuilds');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

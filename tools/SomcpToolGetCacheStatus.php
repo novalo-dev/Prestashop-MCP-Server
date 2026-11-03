@@ -28,8 +28,8 @@ declare(strict_types=1);
  * constant of the running request: with a debug cookie that constant is only
  * true for the browser sending it.
  *
- * Nothing is written: clearing the cache and changing these settings stay
- * in the back office.
+ * Nothing is written: somcp_clear_cache clears the cache, and changing these
+ * settings stays in the back office.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -67,8 +67,8 @@ class SomcpToolGetCacheStatus
             'Reads Advanced Parameters > Performance: Smarty compilation and cache, debug mode and overrides, '
                 . 'optional features, CCC for CSS and JavaScript, media servers and the caching system with its '
                 . 'servers, plus warnings on what slows the storefront or should not stay on in production. A '
-                . 'setting the running version lacks is null. Read only: clearing the cache and changing these settings '
-                . 'stay in the back office.',
+                . 'setting the running version lacks is null. Read only: clear the cache with somcp_clear_cache; '
+                . 'changing these settings stays in the back office.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),

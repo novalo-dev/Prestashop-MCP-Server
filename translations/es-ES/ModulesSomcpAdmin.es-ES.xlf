@@ -1412,6 +1412,16 @@
       <source>Read how this shop runs: its performance settings, cache and debug mode</source>
       <target>Leer cómo funciona esta tienda: sus ajustes de rendimiento, su caché y el modo de depuración</target>
     </trans-unit>
+    <!-- Clear the cache -->
+    <trans-unit id="d10e173a479d8c471e5b17edd39b54fc" resname="Clear the cache">
+      <source>Clear the cache</source>
+      <target>Vaciar la caché</target>
+    </trans-unit>
+    <!-- Clear the cache of this shop and of every shop of the installation, which slows them until it rebuilds -->
+    <trans-unit id="3773bb53db2e219c339c25638e7dda13" resname="Clear the cache of this shop and of every shop of the installation, which slows them until it rebuilds">
+      <source>Clear the cache of this shop and of every shop of the installation, which slows them until it rebuilds</source>
+      <target>Vaciar la caché de esta tienda y de todas las tiendas de la instalación, lo que las ralentiza hasta que se reconstruye</target>
+    </trans-unit>
     <!-- Cache maintenance -->
     <trans-unit id="9be14a5ca118b6628ab40ae4ca36c1f3" resname="Cache maintenance">
       <source>Cache maintenance</source>

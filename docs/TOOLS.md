@@ -2862,16 +2862,33 @@ How the shop runs: caching.
 9.0.0 adds **Debug cookie name**, **Debug cookie value** and **Debug profiler** to the Debug mode card; every other field, value and key is the same on 8.0.1 and 9.0.0.
 
 #### `somcp_clear_cache`
-**State**: draft · [issue #35](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/35)
-**Nature**: `acts(EDIT, 'AdminPerformance')` · **Scope**: `mcp.system.write`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminPerformance')` · **Scope**: `mcp.system.write`
 
-**Does** - clears the shop's caches, as the Clear cache button in Advanced parameters > Performance does.
+**Does** - clears the shop's caches, as the **Clear cache** button at the top of **Advanced Parameters > Performance** does: Symfony, Smarty (cache and compiled templates), XML, the CCC files of the theme (CSS and JavaScript) and the class index. Nothing else changes.
+
+**Do not use for** - reading how caching is configured (→ `somcp_get_cache_status`); changing the Performance settings, which stays in the back office; clearing the Memcache or APC cache, which the button does not do either.
 
 **Parameters** - none.
 
-**Returns** - `cleared`.
+**Returns**
 
-**Notes** - the storefront is slower for a while as the cache rebuilds; the description says so.
+| Field | On screen | Notes |
+|---|---|---|
+| `cleared` | - | the caches cleared, in the order of the core's chain: `symfony`, `smarty`, `xml`, `media`, `class_index` |
+| `symfony_cleared_at` | - | `end_of_request`: the Symfony folder goes after the answer is sent, as in the core |
+| `message` | **All caches cleared successfully** | the sentence of the screen |
+
+**Errors** - an unknown argument (`<name>: not a field of this tool`); an account without `delete` on `AdminPerformance` (the sentence of every `acts()` refusal).
+
+**Notes**
+- The route of the button is guarded by `is_granted('delete', 'AdminPerformance')` on both versions, not `edit`: the tool asks the same right.
+- The button runs `prestashop.core.cache.clearer.cache_clearer_chain`. The MCP endpoint is a front controller where no Symfony kernel is booted, so `SymfonyContainer::getInstance()` is `null` there: when a container offers the chain, its `clear()` is called; otherwise its steps are called in the same order through their legacy calls, `Tools::clearSf2Cache()`, `Tools::clearSmartyCache()`, `Tools::clearXMLCache()`, `Media::clearCache()`, `PrestashopAutoload::getInstance()->generateIndex()`. The container lookup is the one shared in `SomcpBackOffice::coreService()`.
+- Every call clears and clearing twice is harmless: there is no "nothing to change", and a lost answer can be retried.
+- The storefront and the back office are slower until the caches rebuild (on the test shops, 2.7 seconds for the next back-office page on 8.0.1, more than 12 seconds on 9.0.0): the description says not to clear a busy shop without the merchant asking.
+- Multistore: the caches are shared by every shop of the installation, and the call clears them for all of them, not only the token's.
+
+9.0.0 adds the Doctrine cache to the chain and clears the Symfony cache of three apps behind a lock; through the legacy path both versions remove `var/cache/<env>/`, Doctrine included. Same button, route, right and message on 8.0.1 and 9.0.0.
 
 ---
 

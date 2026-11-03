@@ -225,6 +225,19 @@ the new permission `mcp.system.read`, which the consent screen describes as
 reading how the shop runs, and the `view` right on **Advanced Parameters >
 Performance**.
 
+**Clearing the cache.** The new tool `somcp_clear_cache` clears what the
+**Clear cache** button of **Advanced Parameters > Performance** clears: the
+Symfony cache, the Smarty cache and compiled templates, the XML cache, the
+combined CSS and JavaScript files of the theme and the class index. The
+caches are shared by every shop of the installation, so they are cleared for
+all of them; Memcache or APC is not flushed and no setting changes. The shop
+is slower for a few seconds while the caches rebuild, so the tool's own
+description warns of it and keeps a busy shop from being cleared unless the
+merchant asks. The **Cache maintenance** prompt names it. It needs the new permission
+`mcp.system.write`, which the consent screen describes as clearing the cache,
+and the `delete` right on **Advanced Parameters > Performance**, the same
+right the button asks.
+
 ### Changed
 
 **The sign-in and consent pages can no longer be shown inside another site.**

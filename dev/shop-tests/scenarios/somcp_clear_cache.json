@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "clears every cache the Clear cache button clears, in the order of the core's chain", "arguments": {}, "expect": "ok", "contains": ["\"cleared\"", "\"symfony\"", "\"smarty\"", "\"xml\"", "\"media\"", "\"class_index\"", "\"symfony_cleared_at\": \"end_of_request\"", "All caches cleared successfully"]},
+    {"why": "a second call in a row clears again and answers the same", "arguments": {}, "expect": "ok", "contains": ["All caches cleared successfully"]},
+    {"why": "an argument the tool does not take is refused, naming it, and nothing is cleared", "arguments": {"shop": 1}, "expect": "error", "contains": ["Nothing was cleared", "shop: not a field of this tool"]}
+  ]
+}

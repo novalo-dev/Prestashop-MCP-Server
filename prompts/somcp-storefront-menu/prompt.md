@@ -12,6 +12,7 @@ any time.
 - `somcp_add_menu_link`
 - `somcp_update_menu_link`
 - `somcp_get_theme`
+- `somcp_update_theme_setting`
 - `somcp_list_categories`
 - `somcp_list_cms_pages`
 
@@ -108,3 +109,18 @@ each page.
 - `other_themes` are installed but not used by this shop. Switching theme or
   uploading a logo is not available from these tools: point to **Design >
   Theme & Logo** for that.
+
+## Changing the layout of a page
+
+`somcp_update_theme_setting` sets the layout of one page per call, as one row
+of **Choose layouts** then **Save**. Every other page keeps its setting.
+
+- Take `page` from `pages[].page` and `layout` from
+  `available_layouts[].layout` of `somcp_get_theme`. Never guess one: another
+  theme can offer other layouts.
+- Confirm the page and the new layout with the merchant before calling, naming
+  the layout by its `name`.
+- `changed: false` means the page already used that layout: nothing was
+  written. Say so rather than calling again.
+- If the answer is lost, do not call again: read `somcp_get_theme` to see
+  which layout the page has.

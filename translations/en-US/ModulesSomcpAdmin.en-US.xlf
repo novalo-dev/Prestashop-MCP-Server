@@ -1422,10 +1422,15 @@
       <source>Change a main menu custom link</source>
       <target>Change a main menu custom link</target>
     </trans-unit>
-    <!-- Change how the storefront looks: add entries and custom links to its main menu, and change those links -->
-    <trans-unit id="bf88d77ef38cdd3298b6ed5e989e08e2" resname="Change how the storefront looks: add entries and custom links to its main menu, and change those links">
-      <source>Change how the storefront looks: add entries and custom links to its main menu, and change those links</source>
-      <target>Change how the storefront looks: add entries and custom links to its main menu, and change those links</target>
+    <!-- Change how the storefront looks: add entries and custom links to its main menu, change those links, and the layout of its pages -->
+    <trans-unit id="350f8616f36b0cc434d4178446700205" resname="Change how the storefront looks: add entries and custom links to its main menu, change those links, and the layout of its pages">
+      <source>Change how the storefront looks: add entries and custom links to its main menu, change those links, and the layout of its pages</source>
+      <target>Change how the storefront looks: add entries and custom links to its main menu, change those links, and the layout of its pages</target>
+    </trans-unit>
+    <!-- Change the layout of a page -->
+    <trans-unit id="700e8a2aabf5c4faa260afe88162fe2f" resname="Change the layout of a page">
+      <source>Change the layout of a page</source>
+      <target>Change the layout of a page</target>
     </trans-unit>
     <!-- Storefront menu and layout -->
     <trans-unit id="7898d05d7a9cab751dae320d32d866d4" resname="Storefront menu and layout">

@@ -1130,10 +1130,14 @@ T = {
  "Modifier un lien personnalisé du menu principal",
  "Modificar un enlace personalizado del menú principal",
  "Einen eigenen Link des Hauptmenüs ändern"),
-"Change how the storefront looks: add entries and custom links to its main menu, and change those links": (
- "Modifier l'apparence de la boutique : ajouter des entrées et des liens personnalisés à son menu principal, et modifier ces liens",
- "Cambiar el aspecto de la tienda: añadir entradas y enlaces personalizados a su menú principal, y modificar esos enlaces",
- "Das Aussehen des Shops ändern: Einträge und eigene Links zu seinem Hauptmenü hinzufügen und diese Links ändern"),
+"Change how the storefront looks: add entries and custom links to its main menu, change those links, and the layout of its pages": (
+ "Modifier l'apparence de la boutique : ajouter des entrées et des liens personnalisés à son menu principal, modifier ces liens, et la mise en page de ses pages",
+ "Cambiar el aspecto de la tienda: añadir entradas y enlaces personalizados a su menú principal, modificar esos enlaces, y el diseño de sus páginas",
+ "Das Aussehen des Shops ändern: Einträge und eigene Links zu seinem Hauptmenü hinzufügen, diese Links ändern und das Layout seiner Seiten"),
+"Change the layout of a page": (
+ "Modifier la mise en page d'une page",
+ "Cambiar el diseño de una página",
+ "Das Layout einer Seite ändern"),
 "Storefront menu and layout": (
  "Menu et mise en page de la boutique",
  "Menú y diseño de la tienda",

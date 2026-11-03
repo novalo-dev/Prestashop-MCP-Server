@@ -2788,23 +2788,27 @@ Same panel, labels, message, tables and code on 8.0.1 (`ps_mainmenu` 2.3.1) and 
 Classic 2.0.6 on 8.0.1, 3.0.2 on 9.0.0; 9.0.0 also ships **Hummingbird** (installed, not used on the test shop). **Best sales** is titled **Best sellers** on 9.0.0 and `index` has no description there: the tool returns what the shop stores, never a fixed list.
 
 #### `somcp_update_theme_setting`
-**State**: draft · [issue #33](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/33)
+**State**: written · [issue #33](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/33)
 **Nature**: `acts(EDIT, 'AdminThemes')` · **Scope**: `mcp.appearance.write`
 
-**Does** - sets the layout of one page of the active theme, as Appearance > Theme & Logo > Choose layouts does.
+**Does** - sets the layout of one page of the theme of the token's shop, as one row of **Design > Theme & Logo > Choose layouts** followed by **Save** does. Every other page keeps its setting.
 
-**Do not use for** - installing or switching themes.
+**Do not use for** - installing or switching themes; uploading a logo; the meta title or URL of a page (→ `somcp_update_meta_page`); reading the layouts (→ `somcp_get_theme`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `page` | string | yes | page name, from `somcp_get_theme` |
-| `layout` | string | yes | one of `available_layouts` |
+| `page` | string | yes | **Page**, the row: the meta page name, as `somcp_get_theme` returns it in `pages[].page` and `somcp_list_meta_pages` in `page`; refused when it is not one of the rows of **Choose layouts** (`Meta::getAllMeta()`) |
+| `layout` | string | yes | **Layout**: a key of `available_layouts[].layout` of `somcp_get_theme`, for example `layout-left-column`; refused when the theme of the shop does not offer it, the error lists the keys it does offer |
 
-**Returns** - `changed`, `page`, `previous_layout`, `layout`.
+**Returns** - `changed`; `page`; `previous_layout`, the layout the page had, the default layout when it had none of its own; `layout`, the layout now set; `theme`, technical name of the theme changed (`classic`). A call that would change nothing writes nothing and answers `changed: false` with `page`, `layout`, `theme` and a `reason`.
 
-**Notes** - the scope is the page layouts on purpose: other theme settings depend on each theme. Wider settings can be proposed in the issue.
+**Errors** - one message per refused field, nothing written: `page` or `layout` missing or not a string, an unknown `page`, a `layout` the theme does not offer (with the keys offered), an unknown argument (`<name>: not a field of this tool`); demo mode; the theme's folder or configuration missing from the server, as `somcp_get_theme`.
+
+**Notes** - the core setter `Theme::setPageLayouts()` replaces the whole of `theme_settings.layouts`, and the screen always sends every page: the tool reads `getPageLayouts()`, sets the one page and hands the whole array back, so no other page loses its setting, and a page with no stored value gets one only when it is the page asked. The theme is loaded as `somcp_get_theme` loads it (`ThemeManagerBuilder::buildRepository()` for the token's shop), saved by `ThemeManager::saveTheme()` from `ThemeManagerBuilder::build()`, which writes the token's shop's own `config/themes/<theme>/shop<id>.json` and no other shop's, then the Smarty cache is cleared, as `ThemePageLayoutsCustomizer::customize()` does. Refused in demo mode (`_PS_MODE_DEMO_`), as the back office. One page per call; not replayable: on a lost answer, read `somcp_get_theme`. Other theme settings (logos, switching or deleting themes, the `ps_themecusto` tabs) are out of scope on purpose.
+
+Same form, field names and four layouts on Classic on 8.0.1 (2.0.6) and 9.0.0 (3.0.2). The page titles differ in places (**Best sales** on 8.0.1, **Best sellers** on 9.0.0): `page` is the stable name, never the title.
 
 ### System
 
@@ -3648,7 +3652,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - none.
 
-**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_get_theme`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_get_theme`, `somcp_update_theme_setting`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read the menu or the theme first; take category and page identifiers from their list tools; one change per call.
 

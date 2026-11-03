@@ -198,6 +198,19 @@ permission `mcp.appearance.read`, which the consent screen now describes as
 also reading the theme, logos and page layouts, and the `view` right on
 **Design > Theme & Logo**.
 
+**Changing the layout of a page of the storefront.** The new tool
+`somcp_update_theme_setting` sets the layout of one page - full width, three
+columns, or two columns with a small left or right column - as one row of
+**Design > Theme & Logo > Choose layouts** followed by **Save**. Only that
+page changes: every other page keeps its own setting, where the screen saves
+every row at once. Only the layouts the theme offers are accepted, a call that
+would change nothing writes nothing, and the storefront shows the new columns
+at once. It changes the connected shop alone on a multistore installation, and
+is refused in demo mode. The **Storefront menu and layout** prompt names it.
+It needs the permission `mcp.appearance.write`, which the consent screen now
+describes as also changing the layout of the pages, and the `edit` right on
+**Design > Theme & Logo**.
+
 ### Changed
 
 **Claude costs less in a conversation, and the consumption is exact.**

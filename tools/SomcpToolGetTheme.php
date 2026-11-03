@@ -114,24 +114,12 @@ class SomcpToolGetTheme
         }
         [$idLang, $iso] = $language;
 
-        $legacy = Somcp::legacyContext();
-        $shop = $legacy->shop;
-        $themeName = (string) $shop->theme_name;
-
-        // Built for the token's shop, so each theme is read with this shop's
-        // own configuration, as the back office reads it.
-        $builder = new PrestaShop\PrestaShop\Core\Addon\Theme\ThemeManagerBuilder($legacy, Db::getInstance());
-        $repository = $builder->buildRepository($shop);
-
-        try {
-            $theme = $repository->getInstanceByName($themeName);
-        } catch (Exception $e) {
-            return SomcpTool::text(
-                'The theme of this shop (' . $themeName . ') cannot be read: its folder or its configuration '
-                    . 'is missing from the server.',
-                true
-            );
+        $theme = self::shopTheme();
+        if ($theme === null) {
+            return self::themeMissing();
         }
+        $themeName = (string) $theme->getName();
+        $repository = self::repository();
 
         $otherThemes = [];
         try {
@@ -183,6 +171,50 @@ class SomcpToolGetTheme
             'pages' => $pages,
             'language' => $iso,
         ]);
+    }
+
+    /**
+     * The theme repository built for the token's shop, so each theme is read
+     * with this shop's own configuration, as the back office reads it.
+     *
+     * @return PrestaShop\PrestaShop\Core\Addon\Theme\ThemeRepository
+     */
+    public static function repository(): PrestaShop\PrestaShop\Core\Addon\Theme\ThemeRepository
+    {
+        $legacy = Somcp::legacyContext();
+        $builder = new PrestaShop\PrestaShop\Core\Addon\Theme\ThemeManagerBuilder($legacy, Db::getInstance());
+
+        return $builder->buildRepository($legacy->shop);
+    }
+
+    /**
+     * The theme the token's shop uses, or null when its folder or its
+     * configuration is missing from the server. Shared with
+     * somcp_update_theme_setting, which writes what this tool reads.
+     *
+     * @return PrestaShop\PrestaShop\Core\Addon\Theme\Theme|null
+     */
+    public static function shopTheme(): ?PrestaShop\PrestaShop\Core\Addon\Theme\Theme
+    {
+        try {
+            return self::repository()->getInstanceByName((string) Somcp::legacyContext()->shop->theme_name);
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * The answer when shopTheme() finds no theme.
+     *
+     * @return array<string, mixed>
+     */
+    public static function themeMissing(): array
+    {
+        return SomcpTool::text(
+            'The theme of this shop (' . (string) Somcp::legacyContext()->shop->theme_name . ') cannot be read: '
+                . 'its folder or its configuration is missing from the server.',
+            true
+        );
     }
 
     /**

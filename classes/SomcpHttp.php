@@ -560,7 +560,6 @@ class SomcpHttp
             return;
         }
 
-        http_response_code($status);
         if ($contentType !== '') {
             header('Content-Type: ' . $contentType);
         }
@@ -572,5 +571,9 @@ class SomcpHttp
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value);
         }
+        // Set last: PHP turns any response carrying WWW-Authenticate into a
+        // 401, which made the 403 of a missing scope look like a dead token
+        // and sent assistants back to sign in instead of asking for the scope.
+        http_response_code($status);
     }
 }

@@ -333,6 +333,15 @@ loses the lines written by hand, and which read checks a change.
 
 ### Fixed
 
+**An assistant missing a permission is asked to request it, instead of
+signing in again.** When an assistant called a tool its connection was not
+allowed to use - writing to the catalogue with a read-only connection, for
+example - the shop answered as if the connection had expired. Some assistants
+then dropped it and asked the merchant to connect again, which gave the same
+connection back and the same refusal. The shop now answers that a permission
+is missing and names it, so the assistant can ask the merchant for exactly
+that one.
+
 **The update to 1.2.0 no longer stops on "Unknown column 'memory_last'".**
 On a shop where an earlier update had not added every column of the
 assistant's tables, the update failed with that message and the module stayed

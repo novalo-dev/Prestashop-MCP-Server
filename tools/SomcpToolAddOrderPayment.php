@@ -59,22 +59,19 @@ class SomcpToolAddOrderPayment
         return new SomcpTool(
             'somcp_add_order_payment',
             Somcp::t('Record a payment for an order'),
-            'Records one payment received for one order - a bank wire or a cheque that arrived, a part '
-                . 'payment - like the Payment block of the order page. It adds the payment line and raises the '
-                . 'amount paid of the order; it does NOT change the order status: marking the order paid is a '
-                . 'separate call to somcp_set_order_status, only if the merchant wants it. The answer gives '
-                . 'what is still due (remaining), so you can tell the merchant whether the order is now fully '
-                . 'paid. When the order has an invoice, id_order_invoice is required: take it from '
-                . 'documents.invoices of somcp_get_order, never guess it; without it the call is refused with '
-                . 'the list of invoices. One payment per call. Not for refunds, which are credit slips. Never '
-                . 'to be retried on a lost answer: a payment recorded twice is money counted twice - read the '
-                . 'order with somcp_get_order, whose payments list shows it once recorded.',
+            'Records one payment received for one order (a bank wire, a cheque, a part payment), like the '
+                . 'Payment block of the order page. It does not change the status: marking the order paid is '
+                . 'somcp_set_order_status, only if the merchant wants it. The answer gives what is still due. '
+                . 'For an order with an invoice, give id_order_invoice from documents.invoices of '
+                . 'somcp_get_order, never guessed. Not for refunds. One payment per call. Never to be retried '
+                . 'on a lost answer: a payment recorded twice is money counted twice - check the payments of '
+                . 'somcp_get_order.',
             [
                 'type' => 'object',
                 'properties' => [
                     'id_order' => [
                         'type' => 'integer',
-                        'description' => 'Identifier of the order.',
+                        'description' => 'Identifier of the order, from somcp_search_orders.',
                     ],
                     'reference' => [
                         'type' => 'string',

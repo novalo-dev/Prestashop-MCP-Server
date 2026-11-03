@@ -58,17 +58,13 @@ class SomcpToolListBestSellers
         return new SomcpTool(
             'somcp_list_best_sellers',
             Somcp::t('List best-selling products'),
-            'Lists the products that sold most over a period, as Stats > Best-selling products shows '
-                . 'them: valid orders only, dated by their invoice date, one row per product with its '
-                . 'combinations merged, amounts tax excluded and converted to the shop\'s default '
-                . 'currency (currency). Each row gives id_product, reference, name, quantity_sold, '
-                . 'average_price_tax_excl (Price sold, the average unit price of the order lines), '
-                . 'revenue_tax_excl (Sales, credit slips not taken off), quantity_sold_per_day, '
-                . 'page_views (0 when page views are not recorded), quantity (available for sale) and '
-                . 'active. Sorted by sales by default, as the screen. A product deleted since is not '
-                . 'listed. Do not use it for sales totals (somcp_get_sales_summary), the orders behind '
-                . 'a product (somcp_search_orders, which filters on the date the order was placed) or '
-                . 'the stock of each combination (somcp_get_stock).',
+            'Lists the products that sold most over a period, like Stats > Best-selling products: valid '
+                . 'orders dated by invoice date, combinations merged, tax excluded, in the default currency. '
+                . 'average_price_tax_excl is Price sold, revenue_tax_excl is Sales (credit slips not taken '
+                . 'off), page_views is 0 when not recorded, quantity is what is available for sale. A product '
+                . 'deleted since is not listed. Totals are somcp_get_sales_summary, the orders behind a '
+                . 'product somcp_search_orders (dated by order date), the stock of each combination '
+                . 'somcp_get_stock.',
             [
                 'type' => 'object',
                 'properties' => [

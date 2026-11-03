@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "the status the create scenario made first, in two languages", "arguments": {"id_order_return_state": 6}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_order_return_state\": 6", "\"name\": \"Somcp awaiting inspection\""]},
+    {"why": "deleted again, nothing changes", "arguments": {"id_order_return_state": 6}, "expect": "error", "contains": ["No return status has this identifier", "Nothing was deleted"]},
+    {"why": "another status the create scenario made, with the identifier as a string", "arguments": {"id_order_return_state": "7"}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_order_return_state\": 7", "\"name\": \"Somcp plain status\""]},
+    {"why": "a built-in status is refused: no back office offers Delete on 1 to 5", "arguments": {"id_order_return_state": 3}, "expect": "error", "contains": ["one of the five statuses every shop starts with", "Nothing was deleted"]},
+    {"why": "a status that does not exist", "arguments": {"id_order_return_state": 999999}, "expect": "error", "contains": ["No return status has this identifier"]},
+    {"why": "an identifier that is not a number", "arguments": {"id_order_return_state": "6 OR 1=1"}, "expect": "error", "contains": ["No return status has this identifier"]},
+    {"why": "an identifier given as a list", "arguments": {"id_order_return_state": [6]}, "expect": "error", "contains": ["No return status has this identifier"]},
+    {"why": "no identifier", "arguments": {}, "expect": "error", "contains": ["No return status has this identifier"]}
+  ]
+}

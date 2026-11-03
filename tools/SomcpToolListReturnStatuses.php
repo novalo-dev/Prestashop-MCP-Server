@@ -39,6 +39,10 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+// Loaded here rather than left to the order the registry reads tools/ in:
+// the removable rule lives in the creation tool.
+require_once __DIR__ . '/SomcpToolCreateReturnStatus.php';
+
 class SomcpToolListReturnStatuses
 {
     /**
@@ -101,9 +105,7 @@ class SomcpToolListReturnStatuses
                 'id_order_return_state' => $id,
                 'name' => (string) $state['name'],
                 'color' => (string) $state['color'],
-                // The five statuses every shop starts with cannot be
-                // removed: both back offices hide Delete on 1 to 5.
-                'removable' => $id < 1 || $id > 5,
+                'removable' => SomcpToolCreateReturnStatus::removable($id),
             ];
         }
 

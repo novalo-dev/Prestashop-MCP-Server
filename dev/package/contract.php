@@ -20,10 +20,10 @@ declare(strict_types=1);
  * The part of Neuron AI the built-in assistant calls, checked by reflection.
  *
  * Every class, method and constructor parameter listed here is one that
- * classes/SomcpAssistantChat.php or classes/SomcpAssistantMemory.php relies
- * on. A new version of Neuron that renames, removes or reshapes one of them
+ * classes/SomcpAssistantChat.php, classes/SomcpAssistantMemory.php or
+ * classes/SomcpRelayClient.php relies on. A new version of Neuron that renames, removes or reshapes one of them
  * fails here, in CI, instead of in the chat of a merchant. Keep the list in
- * step with those two files. The CI runs it on the pruned archive, so a part
+ * step with those files. The CI runs it on the pruned archive, so a part
  * left out of the module is caught here too.
  *
  * Usage: php dev/package/contract.php <module folder>
@@ -46,7 +46,9 @@ $methods = [
     'NeuronAI\Chat\Messages\ToolCallMessage' => ['getToolCalls'],
     'NeuronAI\Tools\FrontendTool' => ['requireApproval', 'getInputSchema'],
     'NeuronAI\Tools\ToolCall' => ['getName', 'getCallId', 'getInputs', 'getApprovalState', 'hasResult', 'getResult'],
-    'NeuronAI\Chat\Messages\Message' => ['getContent', 'getUsage', 'getContentBlocks'],
+    'NeuronAI\Chat\Messages\Message' => ['getContent', 'getUsage', 'getContentBlocks', 'getTextBlocks', 'getMetadata'],
+    // Web search and deep thinking.
+    'NeuronAI\Tools\ProviderTool' => ['make'],
     'NeuronAI\Workflow\Persistence\DatabasePersistence' => ['get'],
     // The memory.
     'NeuronAI\RAG\RAG' => ['make', 'setRetrieval'],
@@ -55,18 +57,26 @@ $methods = [
     'NeuronAI\RAG\VectorStore\Filter\FilterGroup' => ['and'],
     'NeuronAI\RAG\VectorStore\Filter\Filter' => ['eq'],
     'NeuronAI\RAG\Embeddings\OpenAIEmbeddingsProvider' => ['embedDocuments'],
+    // The local assistant's relay client.
+    'NeuronAI\Exceptions\HttpException' => ['networkError', 'statusError'],
+    // The summary of long conversations, whose call is counted.
+    'NeuronAI\Agent\Middleware\Summarization' => ['generateSummary', 'getDefaultSummaryPrompt', 'formatMessagesForSummarization'],
 ];
 
 // Constructor parameters by position, as the assistant passes them.
 $constructors = [
-    'NeuronAI\Providers\Anthropic\Anthropic' => ['key', 'model', 'version', 'max_tokens'],
-    'NeuronAI\Providers\OpenAI\OpenAI' => ['key', 'model'],
-    'NeuronAI\Providers\Gemini\Gemini' => ['key', 'model'],
+    'NeuronAI\Providers\Anthropic\Anthropic' => ['key', 'model', 'version', 'max_tokens', 'parameters'],
+    'NeuronAI\Agent\Middleware\Summarization' => ['provider', 'maxTokens'],
+    'NeuronAI\Providers\OpenAI\OpenAI' => ['key', 'model', 'parameters'],
+    'NeuronAI\Providers\Gemini\Gemini' => ['key', 'model', 'parameters'],
+    'NeuronAI\Tools\ProviderTool' => ['type', 'name', 'options'],
     'NeuronAI\Providers\Mistral\Mistral' => ['key', 'model'],
     'NeuronAI\Providers\Deepseek\Deepseek' => ['key', 'model'],
     'NeuronAI\Providers\XAI\Grok' => ['key', 'model'],
     'NeuronAI\Providers\Cohere\Cohere' => ['key', 'model'],
     'NeuronAI\Providers\Ollama\Ollama' => ['url', 'model'],
+    'NeuronAI\Providers\OpenAILike' => ['baseUri', 'key', 'model'],
+    'NeuronAI\HttpClient\HttpResponse' => ['statusCode', 'body', 'headers'],
     'NeuronAI\Providers\OpenAI\Image\OpenAIImage' => ['key', 'model'],
     'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
     'NeuronAI\Chat\Messages\ContentBlocks\FileContent' => ['content', 'sourceType', 'mediaType', 'filename'],
@@ -88,8 +98,16 @@ $constructors = [
 $properties = [
     'NeuronAI\Workflow\WorkflowRunSnapshot' => ['interrupt'],
     'NeuronAI\Agent\Interrupt\Action' => ['id', 'name', 'inputs'],
-    'NeuronAI\Chat\Messages\Usage' => ['inputTokens', 'outputTokens'],
+    'NeuronAI\Chat\Messages\Usage' => ['inputTokens', 'outputTokens', 'cachedInputTokens', 'reasoningTokens'],
+    'NeuronAI\Agent\Middleware\Summarization' => ['summaryPrompt'],
+    'NeuronAI\Chat\Messages\Citation' => ['source', 'title'],
     'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
+    'NeuronAI\HttpClient\HttpRequest' => ['body', 'timeout'],
+];
+
+// Implemented by SomcpRelayClient: a method added here would leave it abstract.
+$interfaces = [
+    'NeuronAI\HttpClient\HttpClientInterface' => ['request', 'stream'],
 ];
 
 $classes = [
@@ -98,6 +116,7 @@ $classes = [
     'NeuronAI\Chat\Messages\ToolResultMessage',
     'NeuronAI\Tools\ApprovalState',
     'NeuronAI\Chat\Enums\SourceType',
+    'NeuronAI\Chat\Messages\ContentBlocks\ReasoningContent',
 ];
 
 $problems = [];
@@ -112,6 +131,22 @@ if (!defined('NeuronAI\RAG\Retrieval\SemanticMemoryRetrieval::SOURCE_TYPE')
 foreach ($classes as $class) {
     if (!class_exists($class) && !enum_exists($class)) {
         $problems[] = $class . ' is gone';
+    }
+}
+
+foreach ($interfaces as $interface => $names) {
+    if (!interface_exists($interface)) {
+        $problems[] = $interface . ' is gone';
+        continue;
+    }
+    $declared = array_map(static function (ReflectionMethod $method): string {
+        return $method->getName();
+    }, (new ReflectionClass($interface))->getMethods());
+    sort($declared);
+    $known = $names;
+    sort($known);
+    if ($declared !== $known) {
+        $problems[] = $interface . ' now declares ' . implode(', ', $declared) . ': compare it with classes/SomcpRelayClient.php';
     }
 }
 
@@ -147,6 +182,38 @@ foreach ($properties as $class => $names) {
             $problems[] = $class . '::$' . $name . ' is gone';
         }
     }
+}
+
+// The assistant overrides generateSummary() to count the summary's tokens:
+// a changed signature would make PHP refuse the override at load time.
+if (method_exists('NeuronAI\Agent\Middleware\Summarization', 'generateSummary')) {
+    $method = new ReflectionMethod('NeuronAI\Agent\Middleware\Summarization', 'generateSummary');
+    $names = array_map(static function (ReflectionParameter $p): string {
+        return $p->getName();
+    }, $method->getParameters());
+    if ($names !== ['provider', 'messages'] || (string) $method->getReturnType() !== '?string' || !$method->isProtected()) {
+        $problems[] = 'Summarization::generateSummary() changed shape: compare it with the override in classes/SomcpAssistantChat.php';
+    }
+}
+
+// The chat hides the sentence Neuron writes for an answer a broken turn
+// never gave, matched word for word: a reworded one would reach the employee.
+if (trait_exists('NeuronAI\Agent\ClosesOpenTurn')) {
+    $closer = new class {
+        use NeuronAI\Agent\ClosesOpenTurn;
+
+        public function answer(): string
+        {
+            return (string) $this->interruptedAnswer()->getContent();
+        }
+    };
+    // Read from the source: the class needs PrestaShop to load.
+    preg_match("/INTERRUPTED_ANSWER = '([^']*)'/", (string) file_get_contents($module . '/classes/SomcpAssistantChat.php'), $hidden);
+    if ($closer->answer() !== ($hidden[1] ?? null)) {
+        $problems[] = 'Neuron reworded the answer of an interrupted turn: update SomcpAssistantChat::INTERRUPTED_ANSWER';
+    }
+} else {
+    $problems[] = 'NeuronAI\Agent\ClosesOpenTurn is gone: check how the chat shows a turn that broke half way';
 }
 
 // The run store must still accept the table layout of sql/install.sql: the

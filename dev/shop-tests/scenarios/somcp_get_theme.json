@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "reads the theme of the demo shop with every field, the Classic theme being in use", "arguments": {}, "expect": "ok", "contains": ["\"theme\"", "\"name\": \"classic\"", "\"display_name\"", "\"version\"", "\"author\"", "\"parent\"", "\"other_themes\"", "\"logos\"", "\"header\"", "\"favicon\"", "\"mail_uses_header\"", "\"invoice_uses_header\"", "\"default_layout\"", "\"available_layouts\"", "\"pages\"", "\"uses_default\"", "\"language\""]},
+    {"why": "the layouts of the Classic theme, under their keys, and the pages of Choose layouts under the name somcp_list_meta_pages gives", "arguments": {}, "expect": "ok", "contains": ["\"layout\": \"layout-full-width\"", "\"layout\": \"layout-left-column\"", "\"page\": \"index\"", "\"page\": \"contact\""]},
+    {"why": "reads the page titles in a language the shop has, given back as asked", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"pages\""]},
+    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["language"]},
+    {"why": "a language that is not a string is refused", "arguments": {"language": 12}, "expect": "error", "contains": ["language"]},
+    {"why": "an argument the tool does not take is refused, naming it", "arguments": {"page": "index"}, "expect": "error", "contains": ["page: not a field of this tool"]}
+  ]
+}

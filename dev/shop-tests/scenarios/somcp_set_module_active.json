@@ -1,0 +1,18 @@
+{
+  "calls": [
+    {"why": "this module never disables itself: every connected assistant would lose its access", "arguments": {"name": "somcp", "active": false}, "expect": "error", "contains": ["cannot disable itself", "Nothing was changed"]},
+    {"why": "the name is compared without case, so the refusal holds under any spelling", "arguments": {"name": "SOMCP", "active": false}, "expect": "error", "contains": ["cannot disable itself"]},
+    {"why": "a call that would change nothing is refused, since the core would still answer success and run the hooks", "arguments": {"name": "ps_banner", "active": true}, "expect": "error", "contains": ["already in this state", "Nothing was changed"]},
+    {"why": "disabling an enabled module answers with the module read back and what changed", "arguments": {"name": "ps_banner", "active": false}, "expect": "ok", "contains": ["ps_banner", "changed", "from"]},
+    {"why": "disabling it again changes nothing and is refused", "arguments": {"name": "ps_banner", "active": false}, "expect": "error", "contains": ["already in this state"]},
+    {"why": "enabling it again brings the shop back to its demo state", "arguments": {"name": "Ps_Banner", "active": true}, "expect": "ok", "contains": ["ps_banner", "changed", "from"]},
+    {"why": "the mobile switch is refused when it changes nothing on PrestaShop 8 and does not exist on 9", "arguments": {"name": "ps_banner", "active_on_mobile": true}, "expect": "error", "contains": ["active_on_mobile"]},
+    {"why": "the mobile switch is refused on a module left disabled, the core would do nothing", "arguments": {"name": "ps_banner", "active": false, "active_on_mobile": true}, "expect": "error", "contains": ["active_on_mobile"]},
+    {"why": "a name no module carries points to the list tool", "arguments": {"name": "no_such_module", "active": true}, "expect": "error", "contains": ["No module", "somcp_list_modules"]},
+    {"why": "neither active nor active_on_mobile is refused, naming the field", "arguments": {"name": "ps_banner"}, "expect": "error", "contains": ["active"]},
+    {"why": "a non-boolean active is refused, naming the field", "arguments": {"name": "ps_banner", "active": "yes"}, "expect": "error", "contains": ["active"]},
+    {"why": "a non-boolean active_on_mobile is refused, naming the field", "arguments": {"name": "ps_banner", "active_on_mobile": 1}, "expect": "error", "contains": ["active_on_mobile"]},
+    {"why": "a missing name is refused, naming the field", "arguments": {"active": true}, "expect": "error", "contains": ["name"]},
+    {"why": "a non-string name is refused, naming the field", "arguments": {"name": 12, "active": true}, "expect": "error", "contains": ["name"]}
+  ]
+}

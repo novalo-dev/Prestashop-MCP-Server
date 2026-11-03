@@ -111,11 +111,15 @@ jobs:
 
       - name: Check, without blocking
         continue-on-error: true
+        # Passed through the environment: written into the script, a name in
+        # backticks ran as a command and the summary said "of .".
+        env:
+          WHAT: ${{ steps.ref.outputs.what }}
         run: |
           {
             echo "## Test build ${{ steps.name.outputs.version }}"
             echo ""
-            echo "Commit \`${{ steps.name.outputs.sha }}\` of ${{ steps.ref.outputs.what }}."
+            echo "Commit \`${{ steps.name.outputs.sha }}\` of $WHAT."
             echo ""
             echo "| Check | Result |"
             echo "|---|---|"
@@ -129,8 +133,10 @@ jobs:
             head -20 /tmp/lint.txt
           fi
 
-          # The same script as the CI, so both say the same thing.
-          if php .trusted/.github/scripts/check-translations.php . > /tmp/tr.txt 2>&1; then
+          # The same script as the CI, so both say the same thing, on the
+          # module built: run on the checkout it also read main's copy in
+          # .trusted/ and reported its strings as missing.
+          if php .trusted/.github/scripts/check-translations.php build/somcp > /tmp/tr.txt 2>&1; then
             echo "| Translations | $(tail -1 /tmp/tr.txt) |" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "| Translations | **$(tail -1 /tmp/tr.txt)** |" >> "$GITHUB_STEP_SUMMARY"

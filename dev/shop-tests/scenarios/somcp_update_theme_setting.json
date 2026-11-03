@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "sets another layout on a page the default theme gives its own (Classic up to 9.0, Hummingbird from 9.1), the contact page in two columns with a small left column", "arguments": {"page": "contact", "layout": "layout-right-column"}, "expect": "ok", "contains": ["\"changed\": true", "\"page\": \"contact\"", "\"previous_layout\": \"layout-left-column\"", "\"layout\": \"layout-right-column\"", "\"theme\": \""]},
+    {"why": "the same layout again changes nothing and writes nothing", "arguments": {"page": "contact", "layout": "layout-right-column"}, "expect": "ok", "contains": ["\"changed\": false", "\"reason\""]},
+    {"why": "a page with no layout of its own reports the default layout as the previous one", "arguments": {"page": "index", "layout": "layout-both-columns"}, "expect": "ok", "contains": ["\"changed\": true", "\"page\": \"index\"", "\"previous_layout\": \"layout-full-width\"", "\"layout\": \"layout-both-columns\""]},
+    {"why": "the page set before kept its layout while another page changed", "arguments": {"page": "contact", "layout": "layout-left-column"}, "expect": "ok", "contains": ["\"changed\": true", "\"previous_layout\": \"layout-right-column\""]},
+    {"why": "puts the home page back on the default layout", "arguments": {"page": "index", "layout": "layout-full-width"}, "expect": "ok", "contains": ["\"changed\": true", "\"previous_layout\": \"layout-both-columns\""]},
+    {"why": "a page that is not a row of Choose layouts is refused", "arguments": {"page": "no-such-page", "layout": "layout-full-width"}, "expect": "error", "contains": ["page: \"no-such-page\" is not a page of Choose layouts"]},
+    {"why": "a layout the theme does not offer is refused, with the layouts it offers", "arguments": {"page": "contact", "layout": "layout-wide"}, "expect": "error", "contains": ["layout: \"layout-wide\" is not offered by the theme ", "layout-full-width"]},
+    {"why": "the page and the layout are required", "arguments": {}, "expect": "error", "contains": ["page: required", "layout: required"]},
+    {"why": "a page that is not a string is refused", "arguments": {"page": 12, "layout": "layout-full-width"}, "expect": "error", "contains": ["page: required"]},
+    {"why": "an argument the tool does not take is refused, naming it", "arguments": {"page": "contact", "layout": "layout-left-column", "language": "en"}, "expect": "error", "contains": ["language: not a field of this tool"]}
+  ]
+}

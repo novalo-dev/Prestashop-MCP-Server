@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "reads this module with every field, installed and enabled on every device, with the hook it cannot run without", "arguments": {"name": "somcp"}, "expect": "ok", "contains": ["\"name\": \"somcp\"", "\"display_name\"", "\"version\"", "\"version_installed\"", "\"needs_upgrade\": false", "\"author\": \"Novalo\"", "\"description\"", "\"installed\": true", "\"active\": true", "\"active_on_mobile\": true", "\"hooks\"", "\"name\": \"moduleRoutes\"", "\"position\""]},
+    {"why": "the name is compared without case, as somcp_list_modules keys its states", "arguments": {"name": "SOMCP"}, "expect": "ok", "contains": ["\"name\": \"somcp\"", "\"installed\": true"]},
+    {"why": "a name no module carries, on disk or installed, points to the list tool", "arguments": {"name": "no_such_module"}, "expect": "error", "contains": ["No module", "somcp_list_modules"]},
+    {"why": "a missing name is refused, naming the field", "arguments": {}, "expect": "error", "contains": ["name"]},
+    {"why": "a non-string name is refused, naming the field", "arguments": {"name": 12}, "expect": "error", "contains": ["name"]},
+    {"why": "an empty name is refused, naming the field", "arguments": {"name": " "}, "expect": "error", "contains": ["name"]}
+  ]
+}

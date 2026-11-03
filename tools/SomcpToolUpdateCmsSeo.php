@@ -74,20 +74,12 @@ class SomcpToolUpdateCmsSeo
         return new SomcpTool(
             'somcp_update_cms_seo',
             Somcp::t('Change the SEO of a CMS page'),
-            'Changes the search engine fields of one CMS page of this shop (delivery, legal notice, about us...), '
-                . 'as the CMS page form of Design > Pages does: meta_title (the form\'s Meta title, which replaces '
-                . 'the page title in search results when filled; an empty text removes it and the page title is '
-                . 'shown again), meta_description, link_rewrite (the friendly URL) and indexation. Texts are '
-                . 'objects keyed by ISO code, {"fr": "...", "en": "..."}; only the languages given change, the '
-                . 'others keep their text. Read the page first with somcp_audit_cms_seo, whose meta_title is the '
-                . 'page title, and show the merchant the new values in each language before calling. A new '
-                . 'link_rewrite on a displayed page makes its old address stop working: say so to the merchant '
-                . 'before the call. Every problem is reported at once and nothing is written until the whole call '
-                . 'is valid. The answer gives each value changed with its previous and new value, seo_warnings, '
-                . 'and the page as stored. A call that would change nothing writes nothing and says changed: '
-                . 'false. Do not use it for the page title or the content of the page, nor for a product, '
-                . 'category or brand (their own update tools). One page per call. Not to be retried: if the '
-                . 'answer is lost, read the page again with somcp_audit_cms_seo before calling again.',
+            'Changes the Meta title, meta description, Friendly URL and Indexation of one CMS page, like '
+                . 'its form in Design > Pages; only the languages given change. Not the Title or the content. '
+                . 'Read the page with somcp_audit_cms_seo first and show the merchant the new values; warn that a '
+                . 'new friendly URL breaks the old address of a displayed page. Nothing is written until the '
+                . 'whole call is valid. One page per call. Not to be retried on a lost answer: check with '
+                . 'somcp_audit_cms_seo.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -111,8 +103,7 @@ class SomcpToolUpdateCmsSeo
                     'link_rewrite' => [
                         'type' => 'object',
                         'description' => 'Assistant, approved by the merchant. The friendly URL, per ISO code: '
-                            . 'made into lower case words joined by hyphens, 128 characters at most, never empty. '
-                            . 'On a displayed page the old address stops working.',
+                            . 'lower case words joined by hyphens, 128 characters at most, never empty.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                     'indexation' => [
@@ -175,13 +166,14 @@ class SomcpToolUpdateCmsSeo
 
     /**
      * The page as this shop holds it, every language loaded, or null.
+     * Public so somcp_get_cms_page finds pages exactly as this tool does.
      *
      * @param mixed $id
      * @param int $idShop
      *
      * @return CMS|null
      */
-    private static function page($id, int $idShop): ?CMS
+    public static function page($id, int $idShop): ?CMS
     {
         $idCms = is_int($id) ? $id : 0;
         if ($idCms <= 0) {
@@ -465,13 +457,14 @@ class SomcpToolUpdateCmsSeo
 
     /**
      * The title tag of the page: the meta title when filled, the page title otherwise.
+     * Public so somcp_get_cms_page reports the same seo_title this tool answers with.
      *
      * @param CMS $cms
      * @param int $idLang
      *
      * @return string
      */
-    private static function seoTitle(CMS $cms, int $idLang): string
+    public static function seoTitle(CMS $cms, int $idLang): string
     {
         $meta = trim(self::textOf($cms->head_seo_title, $idLang));
 
@@ -487,7 +480,7 @@ class SomcpToolUpdateCmsSeo
      *
      * @return string
      */
-    private static function textOf($value, int $idLang): string
+    public static function textOf($value, int $idLang): string
     {
         if (is_array($value)) {
             return (string) ($value[$idLang] ?? '');

@@ -54,6 +54,26 @@ loops.
 Each one says so in its own description and names the read tool that tells the
 assistant whether the change went through.
 
+**Links between tools.** A tool name cited in a description or an error must be
+a tool the module ships, and every write names at least one read. A link to a
+tool not written yet is left out, and added by the pull request that writes
+it. `check-tools.php` fails on either.
+
+**Descriptions.** Every tool is sent to the model on each step, so its text is
+kept short: 600 characters at most for a tool description, 200 for a property
+description. A tool description says, one sentence each where possible: what
+it does, with the words and the place of the screen; which tool to use instead,
+by name; and for a write, where its identifiers come from, then the
+not-to-be-retried sentence with the read that checks it. Types, formats and
+defaults belong to the property, once; how the tool works inside belongs here
+and in the code comments; an error the tool returns with what to do next does
+not need to be announced. What never leaves: the not-to-be-retried sentence,
+"never guess" where an identifier is asked, an email sent to the customer, and
+one object per call. A parameter that takes an identifier names the tool that
+gives it. `php dev/tools/measure.php .` prints the size of each tool and page
+and the texts above the budget. The tools are brought within it page by page;
+the budget is checked by `check-tools.php` once every page fits.
+
 **Nature and permission.** `SomcpTool::acts($action, $controller)`: one
 declaration, from which the module takes the permission required and what the
 assistant is told about the call. `view` is read-only and repeatable; `add`,
@@ -114,9 +134,9 @@ description.
 starts from the assistant's menu, and it hands the assistant written
 instructions for using the tools. They live one folder per prompt under
 `prompts/`, each with a `prompt.md` and a `prompt.json` giving the title shown
-in the menu, the description, the arguments the merchant may fill in, the
-scopes and back office permission it needs, and the tools it talks about.
-Adding a prompt is adding a folder.
+in the menu, the description, the icon the built-in chat draws beside it, the
+arguments the merchant may fill in, the scopes and back office permission it
+needs, and the tools it talks about. Adding a prompt is adding a folder.
 
 They replaced skills. The Skills extension was implemented and no assistant
 tested ever read it; putting the same text in the server instructions would
@@ -752,6 +772,31 @@ lost answer is checked with `somcp_list_return_statuses`.
 **Returns** - `changed`, `id_order_return_state`, `changes` (per field its old and new value, a name per language: `name (en)`), and `status`, the status as `somcp_list_return_statuses` lists it. A call that would change nothing writes nothing and answers `changed: false`, with empty `changes` and a `reason`.
 
 **Notes** - the **Edit** form of a return status, read in full on 8.0.1 and 9.0.0: the same two fields as the **Add new return status** form, and no difference between the versions. The name follows the rules of `somcp_create_return_status`: required in every language being filled, `Validate::isGenericName()`, 64 characters at most. A name another return status already has in that language is refused, so the merchant can tell the steps apart; the status's own name is not a duplicate. The colour is checked as at creation - `#RRGGBB` only. Every return status can be edited, the five built-in ones (1 to 5) included, on both versions. Written through `OrderReturnState::update()`, as the back office edit does. Return statuses are not tied to a shop: the table has no shop column. Every problem is reported at once, before anything is written. Not replayable: a lost answer is checked with `somcp_list_return_statuses`.
+
+#### `somcp_delete_return_status`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
+
+**Does** - deletes one return status the merchant created, as the **Delete** action of the return status list of **Shop Parameters > Order Settings > Statuses** does.
+
+**Do not use for** - changing one (→ `somcp_update_return_status`), or the statuses of an order: a return status is not an order status, and its identifiers are never order status identifiers.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order_return_state` | integer | yes | from `somcp_list_return_statuses`, never guessed |
+
+**Returns** - `deleted`, `id_order_return_state` and `name`, the name in the shop's default language.
+
+**Notes**
+- Irreversible: the description tells the assistant to read the status with `somcp_list_return_statuses` and have the merchant confirm it by name before the call.
+- The row is really deleted on both versions (`OrderReturnState::delete()`: 8.0.1 `AdminStatusesController.php` line 602; 9.0.0 `DeleteOrderReturnStateHandler`), unlike an order status.
+- The five statuses every shop starts with (1 to 5) are refused: neither back office offers **Delete** on them (8.0.1 `addRowActionSkipList('delete', [1, 2, 3, 4, 5])`; 9.0.0 `DeleteOrderReturnStatesAccessibilityChecker` reading `unremovable`), and neither handler checks it, so the tool refuses them itself, before the question of use.
+- A status a merchandise return still stands on (`order_return.state`) is refused, with the number of returns: deleting it would leave those returns with a step that no longer exists, which neither version checks.
+- Permission `delete` on `AdminStatuses`: the right the back office checks on its delete action for a return status.
+- Only a whole number is an identifier. An unknown identifier is refused like in the other tools, pointing to `somcp_list_return_statuses`. Whether the status is gone is read back rather than inferred from `delete()`: a second call is refused, never read as a success.
+- Not replayable: the read tool to check is `somcp_list_return_statuses`.
 
 ### Billing
 
@@ -1518,13 +1563,20 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_manufacturer` | integer | no | the addresses of one brand only |
+| `lastname` | string | no | part of the **Last name**, case-insensitive |
+| `firstname` | string | no | part of the **First name**, case-insensitive |
+| `postcode` | string | no | part of the **Zip/Postal code** |
+| `city` | string | no | part of the **City**, case-insensitive |
+| `country` | string | no | ISO code of the **Country**, for example `FR` |
+| `language` | string | no | ISO code of an active language of the shop, for `country_name`; the shop default language when left out |
 
-**Returns** - `addresses`, per address: `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `postcode`, `city`, `country` (ISO code, `null` when the country no longer exists). Plus `count`. An `id_manufacturer` that is not a brand of this shop is an error, not an empty list.
+**Returns** - `addresses`, per address: `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `postcode`, `city`, `country` (ISO code, `null` when the country no longer exists), `country_name` (the name the **Country** column shows, in `language`, `null` when the country no longer exists). Plus `count` and `language`. An `id_manufacturer` that is not a brand of this shop, a `country` code no country has and a `language` the shop does not have are errors, not an empty list.
 
 **Notes**
 - Rows of `address` with `id_manufacturer` set and not deleted. Brand addresses are managed under the brands page, so the permission is the one on `AdminManufacturers`, as in the back office.
 - `address` has no shop column: an address belongs to the shop of its brand, so only the addresses of brands in `manufacturer_shop` for the shop of the token are listed, and `id_manufacturer` is checked by the same test of the shop as `somcp_get_manufacturer`.
-- Read through a query on `address`, `manufacturer`, `manufacturer_shop` and `country`, not through `Address` objects. Sorted by brand name, then by identifier.
+- The filters are those of the **Addresses** list, the same on PrestaShop 8.0 and 9.0: the text columns match a part of the value, **Country** one country. They combine with each other and with `id_manufacturer`.
+- Read through a query on `address`, `manufacturer`, `manufacturer_shop`, `country` and `country_lang`, not through `Address` objects. Sorted by brand name, then by identifier.
 
 #### `somcp_get_manufacturer_address`
 **State**: written
@@ -2483,21 +2535,29 @@ No paging: a shop has a few dozen pages at most, and every matching page is retu
 Same columns, filters and grid queries on 8.0.1 and 9.0.0; 9.0.0 adds a **Rearrange** column for drag and drop, with nothing to read.
 
 #### `somcp_get_cms_page`
-**State**: draft · [issue #24](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/24)
+**State**: written · [issue #24](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/24)
 **Nature**: `acts(VIEW, 'AdminCmsContent')` · **Scope**: `mcp.content.read`
 
-**Does** - returns one CMS page with its content.
+**Does** - returns one CMS page of the token's shop with everything its edit form under **Design > Pages** shows: category, title, meta title, meta description, meta keywords (PrestaShop 8 only), friendly URL, page content, indexation and display.
 
-**Do not use for** - listing pages (→ `somcp_list_cms_pages`).
+**Do not use for** - listing pages or finding a page by its title (→ `somcp_list_cms_pages`), the SEO checks of the pages (→ `somcp_audit_cms_seo`), changing a page's SEO texts (→ `somcp_update_cms_seo`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_cms` | integer | yes |  |
-| `language` | string | no | ISO code, shop default otherwise |
+| `id_cms` | integer | yes | **ID** of the list, from `somcp_list_cms_pages`. A page the token's shop does not have (absent from `cms_shop`) is refused as unknown, never read from another shop, by the same check as `somcp_update_cms_seo` |
+| `language` | string | no | ISO code of one of the shop's active languages, the shop default when left out, any other value refused |
 
-**Returns** - `id_cms`, `meta_title`, `meta_description`, `content` (HTML), `link_rewrite`, `active`, `link`.
+**Returns** - `id_cms`; `language` (ISO code the texts are in); `id_cms_category` (**Page category**, named as in `somcp_list_cms_pages`, whose `categories[]` give its name); `title` (**Title**, column `meta_title`); `meta_title` (**Meta title**, column `head_seo_title`, empty string when not set); `seo_title` (the title search engines read: `meta_title` when filled, `title` otherwise, built by the same function as `somcp_update_cms_seo`); `meta_description` (**Meta description**); `meta_keywords` (**Meta keywords**, PrestaShop 8 only, `null` on 9, read from `CMS::$definition`, never the version number); `link_rewrite` (**Friendly URL**); `content` (**Page content**, the stored HTML as is, never cut, empty string when not set); `indexation` (**Indexation by search engines**, boolean); `active` (**Displayed**, boolean); `position` (**Position**, from 0 as in `somcp_list_cms_pages` and the other tools; the screen shows it from 1); `url` (the page's address on the storefront).
+
+Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `link_rewrite`, `indexation`) has the same name here, so a value read can be given back; the texts here are plain strings in the language asked, where `somcp_update_cms_seo` takes them as an object indexed by ISO code (`{"en": "..."}`).
+
+**Errors** - a missing or non-integer `id_cms`: a refusal that names the field; an unknown `id_cms`: "No CMS page of this shop has this identifier", as `somcp_update_cms_seo` says it, pointing to `somcp_list_cms_pages`; an unknown `language`: the shared language refusal.
+
+**Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_list_cms_pages` and `somcp_update_cms_seo`, never by the column name. Read through the core object `CMS`, not raw SQL. The texts are per language and per shop (`cms_lang.id_shop`). The form's **SEO preview** is built from the fields above and stores nothing.
+
+**Differences between 8.0.1 and 9.0.0** - **Meta keywords** exists on 8.0.1 only (field and column `cms_lang.meta_keywords`): `meta_keywords` is `null` on 9.0.0. The content is a `longtext` column on both, returned whole.
 
 ### Modules
 
@@ -2506,76 +2566,118 @@ The modules present on the shop, their state and version.
 **Not here**: tools published by other modules, which they declare themselves (see EXTENDING.md).
 
 #### `somcp_list_modules`
-**State**: draft · [issue #25](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/25)
-**Nature**: `acts(VIEW, 'AdminModules')` · **Scope**: `mcp.modules.read`
+**State**: written · [issue #25](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/25)
+**Nature**: `acts(VIEW, 'AdminModulesSf')` · **Scope**: `mcp.modules.read`
 
-**Does** - lists the modules present on the shop with their version and state.
+**Does** - lists the modules of the token's shop as **Modules > Module Manager** shows them, installed or only on disk: name, version on disk and installed, author, description, installed or not, enabled or not, enabled on mobile or not, and whether the files on disk are newer than the installed version.
 
-**Do not use for** - details of one module (→ `somcp_get_module`).
+**Do not use for** - one module's details and hooks (→ `somcp_get_module`), installing (→ `somcp_install_module`), enabling or disabling (→ `somcp_set_module_active`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `installed` | boolean | no |  |
-| `active` | boolean | no |  |
-| `query` | string | no | part of the name or display name |
+| `status` | string | no | the **Status** filter: `enabled`, `disabled` (installed but disabled), `installed`, `uninstalled` (on disk only); every module when left out (**Show all modules**). Any other value refused, naming the accepted ones |
+| `query` | string | no | part of the technical name or of the display name (the search field), compared without case |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per module: `name`, `display_name`, `version`, `installed`, `active`, `author`.
+**Returns** - per module, sorted by `display_name`: `name` (technical name, the module's folder, the identifier `somcp_get_module`, `somcp_install_module` and `somcp_set_module_active` take); `display_name` (card title, in the language of the request); `version` (version of the files on disk); `version_installed` (`module.version`, `null` when not installed); `needs_upgrade` (`true` when the files on disk are newer than `version_installed`, the core's rule of `Module::needUpgrade()`); `author` ("by ..."); `description` (card text); `installed` (boolean); `active` (**Enabled** / **Disabled** on the token's shop, from `module_shop`, `false` when not installed); `active_on_mobile` (**Enable Mobile** / **Disable Mobile**, from bit 4 of `module_shop.enable_device`, `null` when not installed). Then `total_count` (modules matching, before `limit`) and `offset`.
+
+**Errors** - an unknown `status`, a non-string `query`, an out-of-range `limit` or `offset`: a refusal that names the field. No module matching: not an error, `modules` is empty.
+
+**Notes** - read from the shop only: what is on disk through `Module::getModulesOnDisk(true)` (each module's `config.xml` or class), the state from `module` and `module_shop` for the token's shop, never the global context's. The marketplace's **Upgrade available**, its categories (**Category** filter) and **Recently used** need a network call or are not stored by the shop: not returned. Stays on the legacy `Module` class, present on both versions. `somcp` lists itself like any other module. `id_module` is never returned: the name is the identifier everywhere.
+
+**Differences between 8.0.1 and 9.0.0** - the bulk actions differ (**Enable Mobile** / **Disable Mobile** on 8.0.1, **Delete** on 9.0.0) and the per-module action is **Upgrade** on 8.0.1, **Update** on 9.0.0; nothing the tool reads changes, `enable_device` is in `module_shop` on both.
 
 #### `somcp_get_module`
-**State**: draft · [issue #26](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/26)
-**Nature**: `acts(VIEW, 'AdminModules')` · **Scope**: `mcp.modules.read`
+**State**: written · [issue #26](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/26)
+**Nature**: `acts(VIEW, 'AdminModulesSf')` · **Scope**: `mcp.modules.read`
 
-**Does** - returns one module's details: version on disk and in the database, state, author, hooks it is attached to.
+**Does** - returns one module of the token's shop as its card under **Modules > Module Manager** shows it, installed or only on disk, plus what the card does not show: the hooks it is attached to on the token's shop (**Design > Positions**).
 
-**Do not use for** - listing modules (→ `somcp_list_modules`).
+**Do not use for** - listing or searching modules (→ `somcp_list_modules`), installing (→ `somcp_install_module`), enabling or disabling (→ `somcp_set_module_active`), the module's own settings page behind **Configure**.
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `name` | string | yes | technical name, the folder |
+| `name` | string | yes | technical name, the module's folder, exactly as `modules[].name` of `somcp_list_modules`; compared without case |
 
-**Returns** - `name`, `display_name`, `description`, `version_on_disk`, `version_installed`, `installed`, `active`, `author`, `hooks`, `needs_upgrade`.
+**Returns** - the same fields, same names and same rules as one entry of `modules[]` in `somcp_list_modules`: `name`, `display_name` (card title), `version` (files on disk), `version_installed` (`null` when not installed), `needs_upgrade`, `author`, `description`, `installed`, `active` (on the token's shop, `false` when not installed), `active_on_mobile` (`null` when not installed). Plus `hooks[]`: the hooks the module is attached to on the token's shop, each with `name` (`hook.name`) and `position` (`hook_module.position`, as stored), sorted by hook name; empty when the module is not installed or not enabled on this shop.
+
+**Errors** - a missing, empty or non-string `name`: a refusal that names the field. A `name` neither on disk nor in `module`: "No module of this shop has this name", naming `somcp_list_modules` as the way to find it.
+
+**Notes** - read from the shop only, as `somcp_list_modules`, through the same row builder (`SomcpModules`): the files through `Module::getModulesOnDisk(true)`, the state from `module`, `module_shop` and `hook_module` for the token's shop, never the global context's. A module installed whose folder is gone is returned from the database alone, with an empty `version`. `id_module` is never returned: the name is the identifier everywhere. **Upgrade available**, **Category** and **Recently used** are not returned, for the reasons given in `somcp_list_modules`.
+
+**Differences between 8.0.1 and 9.0.0** - the upgrade action reads **Upgrade** on 8.0.1, **Update** on 9.0.0, and the mobile actions are bulk actions on 8.0.1 only; nothing the tool reads changes, `module`, `module_shop` and `hook_module` have the same columns.
 
 #### `somcp_install_module`
-**State**: draft · [issue #27](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/27)
-**Nature**: `acts(ADD, 'AdminModules')` · **Scope**: `mcp.modules.write`
+**State**: written · [issue #27](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/27)
+**Nature**: `acts(ADD, 'AdminModulesSf')` · **Scope**: `mcp.modules.write`
 
-**Does** - installs one module already present in the shop's `modules` folder.
+**Does** - installs one module whose folder is already in the shop's `modules` folder and that is not installed yet - the **Install** button of its card under **Modules > Module Manager** - and answers with the module as `somcp_get_module` reads it afterwards.
 
-**Do not use for** - uploading or downloading a module, which this tool does not do: the files must already be on the shop.
+**Do not use for** - upgrading, uninstalling, resetting or deleting a module; enabling or disabling one (→ `somcp_set_module_active`); uploading a module archive (→ `somcp_upload_module`); downloading a module from a link or the marketplace.
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `name` | string | yes | technical name, the folder |
+| `name` | string | yes | technical name, the module's folder, exactly as `modules[].name` of `somcp_list_modules` (`status: "uninstalled"` lists the candidates); compared without case |
 
-**Returns** - `installed`, `name`, `version`, `errors`.
+**Returns** - the fields of `somcp_get_module` read back after the install, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`.
 
-**Notes** - through the core's `ModuleManager`, exactly as the back office does it, so the module's own install checks run. Not replayable: the read tool to check is `somcp_get_module`.
+**Errors** - same shape as `somcp_get_module`:
+- a missing, empty or non-string `name`: a refusal that names the field;
+- a `name` neither on disk nor installed, or installed with its folder gone: "No module of this shop has this name", naming `somcp_list_modules`;
+- a module already installed: refused and nothing changed ("already installed, version ...; use the Module Manager to upgrade it"), since `ModuleManager::install()` would upgrade it;
+- the core refuses (no **add** right on the Module Manager), or the module's `install()` returns `false`: "The module was not installed", with the module's own messages (`getErrors()`) and the state read back, so nothing is claimed as installed.
+
+**Notes** - disk only: no archive, no `url`, no `upload_ref`; `install()` gets no source. Through the core's `ModuleManager`, reached by `ModuleManagerBuilder::getInstance()->build()`, the core's own entry point from legacy code on 8 and 9 (the Symfony container's service when there is one), with the token's employee on the context for the length of the call, so the module's install checks, hooks and tabs are set up as from the back office. What the module prints while installing is dropped. On a multistore installation the core installs for the shops of the current context. Not replayable: on a lost answer, read `somcp_get_module` instead of retrying.
+
+**Differences between 8.0.1 and 9.0.0** - the install event is dispatched even after a failed install on 8.0.1, only after a success on 9.0.0: the state is read back in both cases rather than assumed. 9.0.0 also refreshes the translation catalogues before installing and can install from a remote zip; neither changes the tool.
 
 #### `somcp_set_module_active`
-**State**: draft · [issue #28](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/28)
-**Nature**: `acts(EDIT, 'AdminModules')` · **Scope**: `mcp.modules.write`
+**State**: written · [issue #28](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/28)
+**Nature**: `acts(EDIT, 'AdminModulesSf')` · **Scope**: `mcp.modules.write`
 
-**Does** - enables or disables one installed module.
+**Does** - enables or disables one installed module on the token's shop - the **Enable** / **Disable** actions of its card under **Modules > Module Manager** - and, on PrestaShop 8 only, **Enable Mobile** / **Disable Mobile**; answers with the module as `somcp_get_module` reads it afterwards.
 
-**Do not use for** - installing or uninstalling it.
+**Do not use for** - installing (→ `somcp_install_module`), uploading (→ `somcp_upload_module`), upgrading, resetting, uninstalling or deleting a module; the module's own settings behind **Configure**.
 
 **Parameters**
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `name` | string | yes |  |
-| `active` | boolean | yes |  |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | - (`data-tech-name` of the card) | string | yes | technical name, the folder, as `modules[].name` of `somcp_list_modules`; compared without case |
+| `active` | **Enable** / **Disable** | boolean | no | the state wanted on the token's shop |
+| `active_on_mobile` | **Enable Mobile** / **Disable Mobile** | boolean | no | PrestaShop 8 only; refused on 9 |
 
-**Returns** - `changed`, `name`, `active`. When the module is already in that state: `changed: false`.
+At least one of `active` and `active_on_mobile` is given; both may be given in one call (`active: true, active_on_mobile: false` brings back a module that was off on mobile).
 
-**Notes** - somcp refuses to disable itself: the answer would never reach the assistant.
+**Returns** - the fields of `somcp_get_module` read back after the change, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`; plus `changed`: each field written with `from` and `to` (`{"active": {"from": true, "to": false}}`).
+
+**Errors** - `SomcpTool::text('<field>: ...', true)`:
+- a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, or neither given: a refusal that names the field;
+- a `name` that is not a module of the shop: "No module of this shop has this name", naming `somcp_list_modules`;
+- a module not installed: refused, naming `somcp_install_module`;
+- a call that would change nothing (the state read is already the one asked): refused and nothing called, since the core answers success and fires the hooks anyway;
+- `active_on_mobile` on PrestaShop 9: "not available on this version of PrestaShop";
+- `active_on_mobile: true` on a module disabled and not enabled in the same call: refused;
+- `name` is `somcp` with `active: false`: refused - the answer would never reach the assistant and every connected assistant would lose its access;
+- on PrestaShop 8, disabling a module also enabled on another shop than the token's: refused, since the core would disable it on every shop;
+- the core refuses (no **edit** right on the Module Manager) or the module's `enable()` / `disable()` returns `false`: "The module was not changed as asked", with the module's own messages (`getErrors()`) and the state read back.
+
+**Notes**
+- The state is read first with `SomcpModules::read()`, then only the actions that change something are called, in this order: `enable()`, then the mobile action; `disable()` alone when disabling. Through the core's `ModuleManager` (`SomcpModules::throughCore()`, shared with `somcp_install_module`), with the token's employee on the context; what the module prints is dropped.
+- The core never checks the current state: it answers success to a disable of a disabled module, and a second **Enable Mobile** corrupts `module_shop.enable_device` (7 becomes 11). Hence the refusal of a call that would change nothing.
+- **Disable** deletes the `module_shop` row (and `module.active` becomes 0 once no shop row is left); **Enable** inserts one with `enable_device` 7, so enabling again a module disabled earlier brings mobile back on: pass `active_on_mobile: false` with `active: true` to keep it off there.
+- Disabling a module also disables its back-office tabs; its hooks stay attached, but `hooks[]` reads them for an enabled module only.
+- Not replayable: on a lost answer, read `somcp_get_module` instead of retrying.
+
+**Differences between 8.0.1 and 9.0.0**
+- Mobile actions exist on 8.0.1 only; on 9.0.0 `Module::enableDevice()` / `disableDevice()` are deprecated and do nothing.
+- `Module::disable()` deletes the rows of every shop on 8.0.1, of the context shops on 9.0.0.
 
 ### Appearance
 
@@ -2584,94 +2686,129 @@ What the storefront looks like: the main menu of `ps_mainmenu`, the active theme
 **Not here**: content of the pages (→ Content).
 
 #### `somcp_list_menu_links`
-**State**: draft · [issue #29](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/29)
-**Nature**: `acts(VIEW, 'AdminModules')` · **Scope**: `mcp.appearance.read`
+**State**: written · [issue #29](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/29)
+**Nature**: `acts(VIEW, 'AdminModulesSf')` · **Scope**: `mcp.appearance.read`
 
-**Does** - lists the entries of the storefront's main menu, from the `ps_mainmenu` module.
+**Does** - lists the entries of the storefront's main menu, the **Selected items** of the **Menu Top Link** panel on the configuration page of the **Main menu** module (`ps_mainmenu`), in menu order, and its custom links (**Link list**).
 
-**Do not use for** - the shop's categories (→ `somcp_list_categories`).
+**Do not use for** - the shop's categories (→ `somcp_list_categories`), its CMS pages (→ `somcp_list_cms_pages`); adding an entry (→ `somcp_add_menu_link`) or changing a custom link (→ `somcp_update_menu_link`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, for the labels; the shop default when left out, any other value refused |
 
-**Returns** - per entry, in menu order: `type` (category, CMS page, custom link, ...), `id`, `label`, `link`, `new_window`.
+**Returns** - `module_active`; `entries[]` (**Selected items**, in menu order) with `position` (**Change position**, 1 for the first), `item` (the stored code, `CAT3`, `ALLMAN0`, ...), `type` (the group of **Available items**: `category`, `product`, `cms_page`, `cms_category`, `all_brands`, `brand`, `all_suppliers`, `supplier`, `link`, `shop`), the identifier that applies under the name its list tool gives (`id_category`, `id_product`, `id_cms`, `id_cms_category`, `id_manufacturer`, `id_supplier`, `id_link`, `id_shop`; none for **All brands** / **All suppliers**), `label` (category, product, brand, supplier or shop name, CMS page title, CMS category name, "All brands" / "All suppliers", custom link label, in the requested language), `url` and `new_window` (**Link** and **New window**, custom links only, `null` otherwise); `skipped[]`, the stored codes whose object no longer exists, which the screen hides; `custom_links[]` (**Link list**), every custom link of the token's shop, in the menu or not, with `id_link`, `label`, `url`, `new_window`, `in_menu`; `language` (ISO code the labels are in).
 
-**Notes** - only listed when `ps_mainmenu` is installed and active; absent otherwise, never failing.
+**Errors** - an unknown argument: `<name>: not a field of this tool`; an unknown `language`: the shared language refusal. `ps_mainmenu` not installed or not enabled on the token's shop is not an error: `module_active: false` and empty lists.
+
+**Notes** - reads `MOD_BLOCKTOPMENU_ITEMS` (comma-separated `PREFIX<id>`, falling back from the shop to its group and the global value, as the module) and the tables `linksmenutop` and `linksmenutop_lang` (`id_shop` 0 or the token's shop), never the module's widget, which builds the storefront tree for a customer group and caches it. Labels through the core classes, as the module's `makeMenuOption()`; a custom link without a label in the requested language takes the default language's, as the module does. On the storefront a category entry shows the category and its whole active subtree, a CMS category its sub-categories and pages, **All brands** / **All suppliers** every brand / supplier. Read only.
+
+Same labels, configuration key, prefixes, tables and columns on 8.0.1 (`ps_mainmenu` 2.3.1) and 9.0.0 (2.3.4); 9.0.0 always applies the shop filter to CMS categories and pages, with the same result.
 
 #### `somcp_add_menu_link`
-**State**: draft · [issue #30](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/30)
-**Nature**: `acts(ADD, 'AdminModules')` · **Scope**: `mcp.appearance.write`
+**State**: written · [issue #30](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/30)
+**Nature**: `acts(EDIT, 'AdminModulesSf')` · **Scope**: `mcp.appearance.write`
 
-**Does** - adds one custom link, a category or a CMS page to the main menu.
+**Does** - adds one entry to the storefront's main menu, one line of **Selected items** in the **Menu Top Link** panel of the **Main menu** module (`ps_mainmenu`), what **Add** then **Save** do, at the end or at a given position. For a custom link, it can create the link (**Add a new link** panel) in the same call, since a custom link outside the menu shows nowhere on the storefront.
 
-**Do not use for** - changing an existing custom link (→ `somcp_update_menu_link`).
+**Do not use for** - changing a custom link already created (→ `somcp_update_menu_link`); reading the menu (→ `somcp_list_menu_links`); removing or moving an entry (not offered yet).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `type` | enum | yes | `category`, `cms`, `link` |
-| `id` | integer | for category and cms |  |
-| `label` | string | for link |  |
-| `url` | string | for link |  |
-| `new_window` | boolean | no |  |
-| `position` | integer | no | at the end by default |
+| `type` | enum | yes | the group of **Available items**: `category`, `product`, `cms_page`, `cms_category`, `all_brands`, `brand`, `all_suppliers`, `supplier`, `link`, `shop` - the values of `entries[].type` of `somcp_list_menu_links` |
+| `id_category`, `id_product`, `id_cms`, `id_cms_category`, `id_manufacturer`, `id_supplier`, `id_link`, `id_shop` | integer | the one of `type` | the object, under the name its list tool gives it; none for `all_brands` / `all_suppliers`; an identifier that does not go with `type` is refused; `id_link` left out with `link` creates a new custom link |
+| `languages` | array of ISO codes | no | new custom link only: the languages filled, among the shop's active languages, all of them by default |
+| `label` | object keyed by ISO code | new custom link | **Label**, the text of the entry; not empty in every language filled; a language left out gets the default language's text; 128 characters at most |
+| `url` | object keyed by ISO code | new custom link | **Link**, same rule as `label`; an absolute `http` / `https` address or a path starting with `/`, checked with `Validate::isUrl()`; 128 characters at most |
+| `new_window` | boolean | no | **New window**, new custom link only; `false` by default, as the form |
+| `position` | integer | no | **Change position**: 1 for the first entry; at the end when left out; above the number of entries plus one is refused |
+| `language` | string | no | ISO code for the labels of the answer; the shop default when left out |
 
-**Returns** - `added`, the menu as `somcp_list_menu_links` returns it.
+**Returns** - `added`: the new entry in the shape of `entries[]` of `somcp_list_menu_links` (`position`, `item`, `type`, the identifier, `label`, `url`, `new_window`); `created_link`: `true` when a custom link was created, its `id_link` in `added`; `entries`: the whole menu read back after the save; `language`.
 
-**Notes** - written through `ps_mainmenu`'s own storage so its cache is cleared like the back office does. Not replayable.
+**Errors** - one message per refused field, nothing written: `ps_mainmenu` not installed or not enabled on the token's shop; an object that does not exist (a custom link of another shop included); an entry already in the menu, which the screen no longer offers in **Available items**; `id_link` given with `label`, `url`, `new_window` or `languages`; an empty `label` or `url`, an invalid `url`, a text over 128 characters, `position` out of range, a `languages` code the shop does not have; an unknown argument; an unknown `language`: the shared language refusal.
+
+**Notes** - writes the list the way **Save** does: `MOD_BLOCKTOPMENU_ITEMS` read as `somcp_list_menu_links` reads it, the code inserted at its place, the codes reported in `skipped` kept where they are, then `Configuration::updateValue(..., false, $idShopGroup, $idShop)` for the token's shop only, never the global row. A new custom link goes through the module's `Ps_MenuTopLinks::add()` with the token's `id_shop`, one row per language, before the list is written; the module itself accepts an empty label and link, so the tool checks them. The module's cache is then emptied through its public `hookActionCategoryUpdate()`, so the storefront shows the change at once. Not replayable: on a lost answer, read `somcp_list_menu_links`.
+
+Same panels, labels, configuration key, tables and submit code on 8.0.1 (`ps_mainmenu` 2.3.1) and 9.0.0 (2.3.4).
 
 #### `somcp_update_menu_link`
-**State**: draft · [issue #31](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/31)
-**Nature**: `acts(EDIT, 'AdminModules')` · **Scope**: `mcp.appearance.write`
+**State**: written · [issue #31](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/31)
+**Nature**: `acts(EDIT, 'AdminModulesSf')` · **Scope**: `mcp.appearance.write`
 
-**Does** - changes the label, URL or target of one custom link in the main menu.
+**Does** - changes one custom link of the storefront's main menu, the **Update link** panel of the **Main menu** module (`ps_mainmenu`), opened by **Edit** in **Link list**: its **Label**, **Link** and **New window**. Only what is given changes, where the form writes every field and empties those left blank.
 
-**Do not use for** - adding an entry (→ `somcp_add_menu_link`).
+**Do not use for** - adding an entry to the menu, or creating a custom link (→ `somcp_add_menu_link`); reading the menu (→ `somcp_list_menu_links`); moving or removing an entry, deleting a custom link (not offered yet).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id` | integer | yes | custom link, from `somcp_list_menu_links` |
-| `label` | string | no |  |
-| `url` | string | no |  |
-| `new_window` | boolean | no |  |
-| `language` | string | no | ISO code, shop default otherwise |
+| `id_link` | integer | yes | **Link ID**, the custom link, from `custom_links[].id_link` of `somcp_list_menu_links`; a link of another shop is refused as unknown |
+| `languages` | array of ISO codes | no | the languages being filled, among the shop's active languages, all of them by default; the other languages keep their texts |
+| `label` | object keyed by ISO code | no | **Label**; a plain string accepted when one language is filled; given, required and not empty in every language filled; 128 characters at most |
+| `url` | object keyed by ISO code | no | **Link**, same rule as `label`; an absolute `http` / `https` address or a path starting with `/`, checked with `Validate::isUrl()`; 128 characters at most |
+| `new_window` | boolean | no | **New window** |
+| `language` | string | no | ISO code for the labels of the answer; the shop default when left out |
 
-**Returns** - `changed`, the fields written with their old and new values.
+At least one of `label`, `url`, `new_window` is required.
+
+**Returns** - `changed`; `id_link`; `changes`, each field written with `field` (`label (<iso>)`, `url (<iso>)`, `new_window`), `old` and `new`; `link`, the link after the save in the shape of `custom_links[]` of `somcp_list_menu_links` (`id_link`, `label`, `url`, `new_window`, `in_menu`); `language`. A call that would change nothing writes nothing and answers `changed: false`, with empty `changes` and a `reason`.
+
+**Errors** - one message per refused field, nothing written: `ps_mainmenu` not installed or not enabled on the token's shop; an unknown `id_link` for the token's shop; none of `label`, `url`, `new_window` given; an empty `label` or `url`, an invalid `url`, a text over 128 characters, a `languages` code the shop does not have (the texts of `somcp_add_menu_link`); an unknown argument; an unknown `language`: the shared language refusal.
+
+**Notes** - reads the link raw from `linksmenutop` and `linksmenutop_lang` (`id_shop` 0 or the token's shop; `Ps_MenuTopLinks::getLinkLang()` escapes the texts for display), merges what is given, then calls the module's `Ps_MenuTopLinks::update()` with the full texts of every language that has a row and the link's own `id_shop`, so a link shared by every shop stays shared. `update()` only runs `UPDATE`: a language filled that has no `linksmenutop_lang` row (installed after the link was created) gets one first, with the columns of `Ps_MenuTopLinks::add()`. The link is read back to confirm the write, then the module's cache is emptied through its public `hookActionCategoryUpdate()`, as `somcp_add_menu_link`. The link's place in the menu never changes. On a lost answer, read `somcp_list_menu_links` and compare before calling again.
+
+Same panel, labels, message, tables and code on 8.0.1 (`ps_mainmenu` 2.3.1) and 9.0.0 (2.3.4).
 
 #### `somcp_get_theme`
-**State**: draft · [issue #32](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/32)
+**State**: written · [issue #32](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/32)
 **Nature**: `acts(VIEW, 'AdminThemes')` · **Scope**: `mcp.appearance.read`
 
-**Does** - returns the active theme: name, version, parent theme, logos and the layout used by each page.
+**Does** - returns the theme of the token's shop as **Design > Theme & Logo** shows it: the theme in use and the other installed themes, the four logos of the **Logo** panel, and the layout of every page of **Choose layouts**.
 
-**Parameters** - none.
-
-**Returns** - `name`, `version`, `parent`, `logos`, `layouts` (page → layout), `available_layouts`.
-
-#### `somcp_update_theme_setting`
-**State**: draft · [issue #33](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/33)
-**Nature**: `acts(EDIT, 'AdminThemes')` · **Scope**: `mcp.appearance.write`
-
-**Does** - sets the layout of one page of the active theme, as Appearance > Theme & Logo > Choose layouts does.
-
-**Do not use for** - installing or switching themes.
+**Do not use for** - the meta titles and URLs of the pages (→ `somcp_list_meta_pages` / `somcp_update_meta_page`); changing a page layout (→ `somcp_update_theme_setting`); the main menu (→ `somcp_list_menu_links`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `page` | string | yes | page name, from `somcp_get_theme` |
-| `layout` | string | yes | one of `available_layouts` |
+| `language` | string | no | ISO code of one of the shop's active languages, for the page titles and descriptions; the shop default when left out, any other value refused |
 
-**Returns** - `changed`, `page`, `previous_layout`, `layout`.
+**Returns** - `theme` (**My current theme**) with `name` (technical name, `classic`), `display_name` (`Classic`), `version` (**Version**), `author` (**Designed by**), `parent` (the parent theme of a child theme, `null` otherwise); `other_themes[]`, the other cards of **My theme for ... shop**, with `name`, `display_name`, `version`, `author`, for information only; `logos` with `header` (**Header logo**), `mail` (**Mail logo**), `invoice` (**Invoice logo**), `favicon` (**Favicon**), absolute addresses through `Link::getMediaLink()`, `null` when unset or when the file is missing, and `mail_uses_header` / `invoice_uses_header`, `true` when that logo is `null` and the shop prints the header logo instead; `default_layout`, the layout key of a page without its own setting; `available_layouts[]` (the options of **Layout**) with `layout` (key, `layout-full-width`, ...), `name` (**Full Width**), `description`; `pages[]` (rows of **Choose layouts**, in the screen's order) with `page` (the meta page name, the same value as `somcp_list_meta_pages`), `title` (**Page**, the page name when the title is empty, as the screen), `description` (**Description**), `layout` (**Layout**, the key), `uses_default` (`true` when the page has no setting of its own); `language` (ISO code the texts are in).
 
-**Notes** - the scope is the page layouts on purpose: other theme settings depend on each theme. Wider settings can be proposed in the issue.
+**Errors** - an unknown argument: `<name>: not a field of this tool`; an unknown `language`: the shared language refusal; the theme's folder or configuration missing from the server.
+
+**Notes** - the token's shop only: its `shop.theme_name` and its own `config/themes/<theme>/shop<id>.json`, read through the core `ThemeManagerBuilder::buildRepository()` and `ThemeRepository::getInstanceByName()` as the back office, never by parsing the file; on a multistore installation two shops can use different themes. Layouts from `theme_settings.layouts` and `theme_settings.default_layout`, a page absent from the first using the second, as `PageLayoutCustomizationFormFactory`; available layouts from `meta.available_layouts`. Pages from `Meta::getAllMeta()`, as `GetPagesForLayoutCustomizationHandler`. Logos from `PS_LOGO`, `PS_LOGO_MAIL`, `PS_LOGO_INVOICE`, `PS_FAVICON` for the token's shop, files in `img/`. Read only, apart from the configuration cache the core writes on a first read, as the back office does. Logo upload, **Use this theme**, theme deletion, **Add new theme**, **Export current theme** and the two `ps_themecusto` tabs are not part of this tool.
+
+Classic 2.0.6 on 8.0.1, 3.0.2 on 9.0.0; 9.0.0 also ships **Hummingbird** (installed, not used on the test shop). **Best sales** is titled **Best sellers** on 9.0.0 and `index` has no description there: the tool returns what the shop stores, never a fixed list.
+
+#### `somcp_update_theme_setting`
+**State**: written · [issue #33](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/33)
+**Nature**: `acts(EDIT, 'AdminThemes')` · **Scope**: `mcp.appearance.write`
+
+**Does** - sets the layout of one page of the theme of the token's shop, as one row of **Design > Theme & Logo > Choose layouts** followed by **Save** does. Every other page keeps its setting.
+
+**Do not use for** - installing or switching themes; uploading a logo; the meta title or URL of a page (→ `somcp_update_meta_page`); reading the layouts (→ `somcp_get_theme`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `page` | string | yes | **Page**, the row: the meta page name, as `somcp_get_theme` returns it in `pages[].page` and `somcp_list_meta_pages` in `page`; refused when it is not one of the rows of **Choose layouts** (`Meta::getAllMeta()`) |
+| `layout` | string | yes | **Layout**: a key of `available_layouts[].layout` of `somcp_get_theme`, for example `layout-left-column`; refused when the theme of the shop does not offer it, the error lists the keys it does offer |
+
+**Returns** - `changed`; `page`; `previous_layout`, the layout the page had, the default layout when it had none of its own; `layout`, the layout now set; `theme`, technical name of the theme changed (`classic`). A call that would change nothing writes nothing and answers `changed: false` with `page`, `layout`, `theme` and a `reason`.
+
+**Errors** - one message per refused field, nothing written: `page` or `layout` missing or not a string, an unknown `page`, a `layout` the theme does not offer (with the keys offered), an unknown argument (`<name>: not a field of this tool`); demo mode; the theme's folder or configuration missing from the server, as `somcp_get_theme`.
+
+**Notes** - the core setter `Theme::setPageLayouts()` replaces the whole of `theme_settings.layouts`, and the screen always sends every page: the tool reads `getPageLayouts()`, sets the one page and hands the whole array back, so no other page loses its setting, and a page with no stored value gets one only when it is the page asked. The theme is loaded as `somcp_get_theme` loads it (`ThemeManagerBuilder::buildRepository()` for the token's shop), saved by `ThemeManager::saveTheme()` from `ThemeManagerBuilder::build()`, which writes the token's shop's own `config/themes/<theme>/shop<id>.json` and no other shop's, then the Smarty cache is cleared, as `ThemePageLayoutsCustomizer::customize()` does. Refused in demo mode (`_PS_MODE_DEMO_`), as the back office. One page per call; not replayable: on a lost answer, read `somcp_get_theme`. Other theme settings (logos, switching or deleting themes, the `ps_themecusto` tabs) are out of scope on purpose.
+
+Same form, field names and four layouts on Classic on 8.0.1 (2.0.6) and 9.0.0 (3.0.2). The page titles differ in places (**Best sales** on 8.0.1, **Best sellers** on 9.0.0): `page` is the stable name, never the title.
 
 ### System
 
@@ -2680,26 +2817,78 @@ How the shop runs: caching.
 **Not here**: the connection itself (→ Diagnostics).
 
 #### `somcp_get_cache_status`
-**State**: draft · [issue #34](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/34)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminPerformance')` · **Scope**: `mcp.system.read`
 
-**Does** - returns how caching is configured: template compilation and cache, CCC for CSS and JavaScript, the caching system, debug mode.
+**Does** - returns every card of **Advanced Parameters > Performance** for the token's shop: Smarty, Debug mode, Optional features, CCC (Combine, Compress and Cache), Media servers and Caching, with warnings on the settings that slow the storefront or should not stay on in production. Read only.
+
+**Do not use for** - clearing the cache (→ `somcp_clear_cache`); the server, PHP and database versions (→ `somcp_ping`); changing any of these settings, which stays in the back office.
 
 **Parameters** - none.
 
-**Returns** - `smarty_compile`, `smarty_cache`, `ccc_css`, `ccc_js`, `cache_enabled`, `cache_system`, `debug_mode`.
+**Returns**
+
+| Field | On screen | Notes |
+|---|---|---|
+| `smarty.template_compilation` | **Template compilation** | `never`, `if_updated` or `force` (stored 0, 1, 2) |
+| `smarty.cache` | **Cache** | bool |
+| `smarty.multi_front_optimization` | **Multi-front optimizations** | bool |
+| `smarty.clear_cache` | **Clear cache** | `never` or `everytime`, as stored |
+| `debug.disable_overrides` | **Disable all overrides** | bool |
+| `debug.debug_mode` | **Debug mode** | bool: the setting written in the defines file, as `DebugMode::isDebugModeEnabled()` reads it, never the `_PS_MODE_DEV_` constant of the running request |
+| `debug.debug_cookie` | **Debug cookie name** | 9.0.0: `true` when debug mode is limited to a cookie, `false` otherwise; `null` on 8.0.1. The cookie name and value are never returned |
+| `debug.debug_profiling` | **Debug profiler** | bool on 9.0.0, `null` on 8.0.1 |
+| `optional_features.combinations` | **Combinations** | bool |
+| `optional_features.features` | **Features** | bool |
+| `optional_features.customer_groups` | **Customer groups** | bool |
+| `ccc.smart_cache_css` | **Smart cache for CSS** | bool |
+| `ccc.smart_cache_js` | **Smart cache for JavaScript** | bool |
+| `ccc.apache_optimization` | **Apache optimization** | bool |
+| `media_servers` | **Media server #1** to **#3** | the domains filled in, in order; empty list when none |
+| `caching.use_cache` | **Use cache** | bool |
+| `caching.caching_system` | **Caching system** | `CacheMemcache`, `CacheMemcached`, `CacheApc` or `CacheXcache`, as stored, even when **Use cache** is off |
+| `caching.available_systems` | the options not greyed out | the systems whose PHP extension is loaded: `memcache`, `memcached`, `apc` or `apcu`, `xcache` |
+| `caching.servers` | Memcache servers table | `id`, `ip`, `port`, `weight`; empty list when none |
+| `warnings` | - | `code` and `why`, as `somcp_get_seo_settings`: `debug_mode_on`, `debug_profiling_on`, `force_compilation`, `smarty_cache_off`, `overrides_disabled`, `ccc_css_off`, `ccc_js_off`, `cache_system_unavailable` (**Use cache** is on and the stored system's extension is not loaded) |
+
+**Errors** - an unknown argument (`<name>: not a field of this tool`). A setting the running version does not have is `null`, never an error.
+
+**Notes**
+- Each `PS_` key is read for the token's shop with the helper of `somcp_get_seo_settings`, not through the back office form handlers, which take the shop from the global context. The optional features are the keys `Combination`, `Feature` and `Group::isFeatureActive()` read.
+- Debug mode and the profiler are read through the core's `DebugMode` and `DebugProfiling` classes; on 8.0.1 the profiler is not on the screen, so it is `null` there.
+- **Use cache** and **Caching system** live in `app/config/parameters.php` and apply to the whole installation, as debug mode does.
+- The labels of **Caching system** change with the server; the keys are returned, never the labels.
+
+9.0.0 adds **Debug cookie name**, **Debug cookie value** and **Debug profiler** to the Debug mode card; every other field, value and key is the same on 8.0.1 and 9.0.0.
 
 #### `somcp_clear_cache`
-**State**: draft · [issue #35](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/35)
-**Nature**: `acts(EDIT, 'AdminPerformance')` · **Scope**: `mcp.system.write`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminPerformance')` · **Scope**: `mcp.system.write`
 
-**Does** - clears the shop's caches, as the Clear cache button in Advanced parameters > Performance does.
+**Does** - clears the shop's caches, as the **Clear cache** button at the top of **Advanced Parameters > Performance** does: Symfony, Smarty (cache and compiled templates), XML, the CCC files of the theme (CSS and JavaScript) and the class index. Nothing else changes.
+
+**Do not use for** - reading how caching is configured (→ `somcp_get_cache_status`); changing the Performance settings, which stays in the back office; clearing the Memcache or APC cache, which the button does not do either.
 
 **Parameters** - none.
 
-**Returns** - `cleared`.
+**Returns**
 
-**Notes** - the storefront is slower for a while as the cache rebuilds; the description says so.
+| Field | On screen | Notes |
+|---|---|---|
+| `cleared` | - | the caches cleared, in the order of the core's chain: `symfony`, `smarty`, `xml`, `media`, `class_index` |
+| `symfony_cleared_at` | - | `end_of_request`: the Symfony folder goes after the answer is sent, as in the core |
+| `message` | **All caches cleared successfully** | the sentence of the screen |
+
+**Errors** - an unknown argument (`<name>: not a field of this tool`); an account without `delete` on `AdminPerformance` (the sentence of every `acts()` refusal).
+
+**Notes**
+- The route of the button is guarded by `is_granted('delete', 'AdminPerformance')` on both versions, not `edit`: the tool asks the same right.
+- The button runs `prestashop.core.cache.clearer.cache_clearer_chain`. The MCP endpoint is a front controller where no Symfony kernel is booted, so `SymfonyContainer::getInstance()` is `null` there: when a container offers the chain, its `clear()` is called; otherwise its steps are called in the same order through their legacy calls, `Tools::clearSf2Cache()`, `Tools::clearSmartyCache()`, `Tools::clearXMLCache()`, `Media::clearCache()`, `PrestashopAutoload::getInstance()->generateIndex()`. The container lookup is the one shared in `SomcpBackOffice::coreService()`.
+- Every call clears and clearing twice is harmless: there is no "nothing to change", and a lost answer can be retried.
+- The storefront and the back office are slower until the caches rebuild (on the test shops, 2.7 seconds for the next back-office page on 8.0.1, more than 12 seconds on 9.0.0): the description says not to clear a busy shop without the merchant asking.
+- Multistore: the caches are shared by every shop of the installation, and the call clears them for all of them, not only the token's.
+
+9.0.0 adds the Doctrine cache to the chain and clears the Symfony cache of three apps behind a lock; through the legacy path both versions remove `var/cache/<env>/`, Doctrine included. Same button, route, right and message on 8.0.1 and 9.0.0.
 
 ---
 
@@ -2850,35 +3039,41 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 |---|---|---|---|
 | `language` | string | no | ISO code, shop default otherwise; refused when the shop does not have it |
 
-**Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `title`, `description`, `url_rewrite`, `url`, `configurable`. Plus `count` and the `language` read.
+**Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `title`, `description`, `keywords` (the **Meta keywords**, PrestaShop 8 only, `null` on 9), `url_rewrite`, `url`, `configurable`. Plus `count` and the `language` read.
 
 **Notes**
 - Read from `meta` and `meta_lang` of the token's shop, as the Traffic & SEO page lists them, in one query, without paging: a shop has a few dozen pages.
 - The back office lists only the pages whose `configurable` is true. The others - the product, category and CMS templates and some payment module pages - are returned too, with `configurable: false`, empty texts and `url: null`: their texts come from each product, category or page.
 - `url` is the public address the storefront builds: `Link::getModuleLink()` for a module page (`module-<module>-<controller>`), `Link::getPageLink()` otherwise. The home page has no `url_rewrite`.
-- `meta_lang` also holds `keywords` on PrestaShop 8, a field PrestaShop 9 no longer has: it is not returned.
+- `meta_lang` holds `keywords` on PrestaShop 8 only, a field PrestaShop 9 no longer has: `keywords` is `null` there, as `somcp_get_manufacturer` returns `meta_keywords`.
 
 #### `somcp_update_meta_page`
-**State**: to write · [issue #88](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/88)
+**State**: written · [issue #88](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/88)
 **Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`
 
 **Does** - changes the title, description or friendly URL of one of the shop's own pages.
 
-**Do not use for** - products, categories, brands or CMS pages.
+**Do not use for** - products, categories, brands or CMS pages (→ their update tools, `somcp_update_cms_seo` for a CMS page).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_meta` | integer | yes | from `somcp_list_meta_pages` |
-| `title` | object | no | per ISO code; 70 characters at most |
-| `description` | object | no | per ISO code; a warning over 160 |
-| `url_rewrite` | object | no | per ISO code; refused if another page already uses it |
+| `title` | object | no | per ISO code; the form's **Page title**; 70 characters at most, an empty text removes it |
+| `description` | object | no | per ISO code; the form's **Meta description**; 255 characters at most (the column), a warning over 160 |
+| `keywords` | object | no | per ISO code; the form's **Meta keywords**, PrestaShop 8 only (refused on 9, which has no such field); 255 characters at most, an empty text removes them |
+| `url_rewrite` | object | no | per ISO code; the form's **Rewritten URL**; checked as typed with `Validate::isLinkRewrite()` (which follows `PS_ALLOW_ACCENTED_CHARS_URL`), never rewritten; 254 characters at most (`varchar(254)` on PrestaShop 8); required in the shop default language, may be empty in the others; refused if another page of the shop already uses it in that language |
 
-**Returns** - `changed`, `id_meta`, per field `previous` and new value, `seo_warnings`.
+**Returns** - `changed`, `id_meta`; when something changed, `changes` (each a `field`, its `language`, the `previous` and `new` value), `seo_warnings` (per ISO code) and `page` (`id_meta`, `page`, and per language changed its `title`, `description`, `keywords` (`null` on PrestaShop 9) and `url_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
 
 **Notes**
-- Written through `Meta`. A new `url_rewrite` breaks the old address: said before and in the answer. The home page has no `url_rewrite` and refuses one.
+- The text fields have the names `somcp_list_meta_pages` returns, but the list gives them flat in one language, with `page`, `url` and `configurable`, which this tool does not take: to write, give each field as one object keyed by ISO code.
+- Written through the `Meta` object, after `validateFields()` and `validateFieldsLang()`, with `id_shop_list` set to the shop of the token: `meta_lang` is per shop, and the other shops keep their texts. Only the languages given change; an ISO code that is not an active language of the shop is refused, and so is any other field.
+- The pages whose `configurable` is false (the product, category and CMS templates, some module pages) are refused: their texts come from each product, category or page, and the back office does not list them.
+- The home page (`index`) has no `url_rewrite`: a new one is refused, the value it holds given back unchanged is not. `EditMetaHandler` only checks the shape of a friendly URL; the tool also refuses one already used by another page of the shop in the same language, since both addresses would lead to one page.
+- Every value is checked and compared before anything is written, and every problem reported at once. A call that changes nothing writes nothing and answers `changed: false`.
+- `seo_warnings`, for each language changed: a `title` over 60 characters, a `description` over 160 (the lengths of `somcp_audit_product_seo`), and a new `url_rewrite`, whose old address breaks; the assistant tells the merchant before the call.
 
 #### `somcp_get_seo_settings`
 **State**: written
@@ -3392,6 +3587,12 @@ Every tool the module ships belongs to at least one prompt, and CI checks it: a
 pull request that adds a tool adds it to the prompt of its section, in both
 `prompt.json` and the guide.
 
+Every prompt names its **icon** in `prompt.json`, one of the names of
+`PROMPT_ICONS` in `views/js/assistant.js`, and CI checks that too. The built-in
+chat draws it beside the prompt in its suggestions and in its menu. A prompt that
+needs a picture the set does not have adds it to `PROMPT_ICONS` in the same pull
+request: one line, stroke paths on a 24 px grid.
+
 | Prompt | Section | State |
 |---|---|---|
 | `somcp-connection-check` | Diagnostics | written |
@@ -3402,16 +3603,16 @@ pull request that adds a tool adds it to the prompt of its section, in both
 | `somcp-customer-lookup` | Customers | written |
 | `somcp-sales-report` | Statistics | written |
 | `somcp-content-pages` | Content | written |
-| `somcp-modules-review` | Modules | draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41) |
-| `somcp-storefront-menu` | Appearance | draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42) |
-| `somcp-cache-maintenance` | System | draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43) |
+| `somcp-modules-review` | Modules | written |
+| `somcp-storefront-menu` | Appearance | written |
+| `somcp-cache-maintenance` | System | written |
 | `somcp-seo-audit` | SEO | written |
 | `somcp-aeo-audit` | AEO | to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
 | `somcp-sales-boost` | Sales | to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
 
 #### `somcp-catalogue-manage`
 **State**: written
-**Section**: Catalogue · **Scope**: `mcp.catalog.read` · **Permission**: `view` on `AdminProducts`
+**Section**: Catalogue · **Scope**: `mcp.catalog.read` · **Permission**: `view` on `AdminProducts` · **Icon**: `tag`
 
 **Title** - Manage products
 
@@ -3425,7 +3626,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-stock-check`
 **State**: written
-**Section**: Stock · **Scope**: `mcp.stock.read` · **Permission**: `view` on `AdminStockManagement`
+**Section**: Stock · **Scope**: `mcp.stock.read` · **Permission**: `view` on `AdminStockManagement` · **Icon**: `box`
 
 **Title** - Check and adjust stock
 
@@ -3439,7 +3640,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-customer-lookup`
 **State**: written
-**Section**: Customers · **Scope**: `mcp.customers.read`, `mcp.customers.write` · **Permission**: `view` on `AdminCustomers`
+**Section**: Customers · **Scope**: `mcp.customers.read`, `mcp.customers.write` · **Permission**: `view` on `AdminCustomers` · **Icon**: `person`
 
 **Title** - Find a customer
 
@@ -3453,7 +3654,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-sales-report`
 **State**: written
-**Section**: Statistics · **Scope**: `mcp.stats.read` · **Permission**: `view` on `AdminStats`
+**Section**: Statistics · **Scope**: `mcp.stats.read` · **Permission**: `view` on `AdminStats` · **Icon**: `chart`
 
 **Title** - Sales report
 
@@ -3467,7 +3668,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-content-pages`
 **State**: written
-**Section**: Content · **Scope**: `mcp.content.read` · **Permission**: `view` on `AdminCmsContent`
+**Section**: Content · **Scope**: `mcp.content.read` · **Permission**: `view` on `AdminCmsContent` · **Icon**: `page`
 
 **Title** - Read content pages
 
@@ -3475,13 +3676,13 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 **Arguments** - `page` (title of a page).
 
-**Tools** - `somcp_ping`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_cms_pages`, `somcp_get_cms_page`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - list with `somcp_list_cms_pages` (filtered by `title` when the merchant names the page), then read the page the merchant means by its `id_cms`; quote the content rather than paraphrasing it when asked what a page says; **Title** is the page's title and **Meta title** the title of the browser tab and search results, named `title` and `meta_title` in every tool; a hidden page (`active: false`) is not on the storefront; changing a page's SEO texts is `somcp_update_cms_seo`, in the prompt `somcp-seo-audit`, not here.
 
 #### `somcp-modules-review`
-**State**: draft · [issue #41](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/41)
-**Section**: Modules · **Scope**: `mcp.modules.read` · **Permission**: `view` on `AdminModules`
+**State**: written
+**Section**: Modules · **Scope**: `mcp.modules.read` · **Permission**: `view` on `AdminModulesSf` · **Icon**: `puzzle`
 
 **Title** - Review modules
 
@@ -3494,8 +3695,8 @@ pull request that adds a tool adds it to the prompt of its section, in both
 **The guide must say** - read before acting; name the module and what it does before installing or switching it; one module per call; a payment or carrier module switched off stops orders or deliveries, say so before doing it.
 
 #### `somcp-storefront-menu`
-**State**: draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42)
-**Section**: Appearance · **Scope**: `mcp.appearance.read` · **Permission**: `view` on `AdminThemes`
+**State**: written
+**Section**: Appearance · **Scope**: `mcp.appearance.read` · **Permission**: `view` on `AdminThemes` · **Icon**: `menu`
 
 **Title** - Storefront menu and layout
 
@@ -3508,8 +3709,8 @@ pull request that adds a tool adds it to the prompt of its section, in both
 **The guide must say** - read the menu or the theme first; take category and page identifiers from their list tools; one change per call.
 
 #### `somcp-cache-maintenance`
-**State**: draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43)
-**Section**: System · **Scope**: `mcp.system.read` · **Permission**: `view` on `AdminPerformance`
+**State**: written
+**Section**: System · **Scope**: `mcp.system.read` · **Permission**: `view` on `AdminPerformance` · **Icon**: `refresh`
 
 **Title** - Cache maintenance
 
@@ -3523,7 +3724,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-seo-audit`
 **State**: written
-**Section**: SEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminMeta`
+**Section**: SEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminMeta` · **Icon**: `rank`
 
 **Title** - Audit and improve SEO
 
@@ -3537,7 +3738,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-aeo-audit`
 **State**: to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80)
-**Section**: AEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminProducts`
+**Section**: AEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminProducts` · **Icon**: `bulb`
 
 **Title** - Get recommended by AI assistants
 
@@ -3551,7 +3752,7 @@ pull request that adds a tool adds it to the prompt of its section, in both
 
 #### `somcp-sales-boost`
 **State**: to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81)
-**Section**: Sales · **Scope**: `mcp.sales.read` · **Permission**: `view` on `AdminStats`
+**Section**: Sales · **Scope**: `mcp.sales.read` · **Permission**: `view` on `AdminStats` · **Icon**: `cart`
 
 **Title** - Boost sales
 

@@ -1,0 +1,22 @@
+{
+  "calls": [
+    {"why": "adds a category of the demo shop at the end of the main menu, read back in the shape of somcp_list_menu_links", "arguments": {"type": "category", "id_category": 4}, "expect": "ok", "contains": ["\"added\"", "\"item\": \"CAT4\"", "\"type\": \"category\"", "\"id_category\": 4", "\"created_link\": false", "\"entries\"", "\"language\""]},
+    {"why": "the same category again would change nothing and is refused", "arguments": {"type": "category", "id_category": 4}, "expect": "error", "contains": ["already in the menu"]},
+    {"why": "adds All brands as the first entry", "arguments": {"type": "all_brands", "position": 1}, "expect": "ok", "contains": ["\"item\": \"ALLMAN0\"", "\"type\": \"all_brands\"", "\"position\": 1"]},
+    {"why": "adds a product at a given position", "arguments": {"type": "product", "id_product": 1, "position": 2, "language": "en"}, "expect": "ok", "contains": ["\"item\": \"PRD1\"", "\"id_product\": 1", "\"language\": \"en\""]},
+    {"why": "creates a custom link and puts it in the menu in the same call", "arguments": {"type": "link", "languages": ["en"], "label": {"en": "Sale"}, "url": {"en": "https://www.example.com"}, "new_window": true}, "expect": "ok", "contains": ["\"created_link\": true", "\"type\": \"link\"", "\"id_link\"", "\"label\": \"Sale\"", "\"new_window\": true"]},
+    {"why": "a custom link with an empty label is refused, though the module would store it", "arguments": {"type": "link", "languages": ["en"], "label": {"en": " "}, "url": {"en": "https://www.example.com"}}, "expect": "error", "contains": ["label: missing in en"]},
+    {"why": "a custom link without its address is refused", "arguments": {"type": "link", "languages": ["en"], "label": {"en": "Sale"}}, "expect": "error", "contains": ["url: required"]},
+    {"why": "an address that is neither http, https nor a path is refused", "arguments": {"type": "link", "languages": ["en"], "label": {"en": "Sale"}, "url": {"en": "ftp:example"}}, "expect": "error", "contains": ["url (en): an absolute http or https address"]},
+    {"why": "a custom link that does not exist is refused", "arguments": {"type": "link", "id_link": 999999}, "expect": "error", "contains": ["id_link: no link 999999"]},
+    {"why": "a category that does not exist is refused", "arguments": {"type": "category", "id_category": 999999}, "expect": "error", "contains": ["id_category: no category 999999"]},
+    {"why": "an identifier that does not go with the type is refused", "arguments": {"type": "category", "id_category": 5, "id_cms": 1}, "expect": "error", "contains": ["id_cms: does not go with type category"]},
+    {"why": "All brands takes no identifier", "arguments": {"type": "all_brands", "id_manufacturer": 1}, "expect": "error", "contains": ["id_manufacturer: does not go with type all_brands"]},
+    {"why": "the texts of a new link cannot come with an existing one", "arguments": {"type": "link", "id_link": 999999, "label": {"en": "Sale"}}, "expect": "error", "contains": ["label: only for a new custom link"]},
+    {"why": "a position past the end of the menu is refused", "arguments": {"type": "category", "id_category": 5, "position": 999}, "expect": "error", "contains": ["position: an integer from 1 to"]},
+    {"why": "the type is required", "arguments": {"id_category": 5}, "expect": "error", "contains": ["type: one of"]},
+    {"why": "a type the menu does not have is refused", "arguments": {"type": "page"}, "expect": "error", "contains": ["type: one of"]},
+    {"why": "an argument the tool does not take is refused, naming it", "arguments": {"type": "category", "id_category": 5, "colour": "red"}, "expect": "error", "contains": ["colour: not a field of this tool"]},
+    {"why": "a language the shop does not have is refused", "arguments": {"type": "category", "id_category": 5, "language": "zz"}, "expect": "error", "contains": ["language"]}
+  ]
+}

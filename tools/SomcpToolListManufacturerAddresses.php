@@ -52,8 +52,9 @@ class SomcpToolListManufacturerAddresses
             Somcp::t('List brand addresses'),
             'Lists the postal addresses of the brands (manufacturers) of this shop, like the Brand '
                 . 'addresses list of the back office: identifier, brand, last name, first name, postal code, '
-                . 'city and country ISO code. Give id_manufacturer, taken from somcp_list_manufacturers, to '
-                . 'list the addresses of one brand only. Take an address identifier from here rather than '
+                . 'city, country ISO code and country name. Filters like the columns of that list: '
+                . 'id_manufacturer, taken from somcp_list_manufacturers, for one brand, and parts of the last '
+                . 'name, first name, postal code or city, or a country ISO code. Take an address identifier from here rather than '
                 . 'assuming one. Every field of one address is read with somcp_get_manufacturer_address. '
                 . 'Do not use it for the brands themselves (somcp_list_manufacturers), '
                 . 'nor for customer or supplier addresses: it lists brand addresses only.',
@@ -64,6 +65,33 @@ class SomcpToolListManufacturerAddresses
                         'type' => 'integer',
                         'description' => 'Identifier of one brand, from somcp_list_manufacturers, to list '
                             . 'its addresses only. The addresses of every brand are listed otherwise.',
+                    ],
+                    'lastname' => [
+                        'type' => 'string',
+                        'description' => 'Part of the last name (Last name), case-insensitive.',
+                    ],
+                    'firstname' => [
+                        'type' => 'string',
+                        'description' => 'Part of the first name (First name), case-insensitive.',
+                    ],
+                    'postcode' => [
+                        'type' => 'string',
+                        'description' => 'Part of the postal code (Zip/Postal code).',
+                    ],
+                    'city' => [
+                        'type' => 'string',
+                        'description' => 'Part of the city (City), case-insensitive.',
+                    ],
+                    'country' => [
+                        'type' => 'string',
+                        'description' => 'ISO code of the country (Country), for example FR: the code the '
+                            . 'answer gives in country.',
+                    ],
+                    'language' => [
+                        'type' => 'string',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr, '
+                            . 'for country_name, which is translated; a code the shop does not have is refused. '
+                            . 'The shop default language when left out.',
                     ],
                 ],
                 'additionalProperties' => false,
@@ -86,6 +114,26 @@ class SomcpToolListManufacturerAddresses
     {
         $idShop = (int) Somcp::currentShop()->id;
 
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        $idLang = $language[0];
+
+        // The Country filter of the list picks one country: an unknown code
+        // is said, rather than answered with an empty list the assistant would
+        // read as "no brand address in this country".
+        $idCountry = 0;
+        $countryIso = isset($arguments['country']) && is_scalar($arguments['country']) ? trim((string) $arguments['country']) : '';
+        if ($countryIso !== '') {
+            // Country::getByIso() stops the request on a malformed code
+            // rather than answering false, so the code is checked first.
+            $idCountry = Validate::isLanguageIsoCode($countryIso) ? (int) Country::getByIso($countryIso) : 0;
+            if ($idCountry <= 0) {
+                return SomcpTool::text('No country has this ISO code: give country as a code such as FR.', true);
+            }
+        }
+
         // A brand asked for must be one of this shop: an identifier that
         // matches nothing is said, not answered with an empty list the
         // assistant would read as "this brand has no address".
@@ -106,16 +154,29 @@ class SomcpToolListManufacturerAddresses
         // kept by PrestaShop for the orders that used them, and are hidden
         // from the back office list, so from here too.
         $query = new DbQuery();
-        $query->select('a.`id_address`, a.`id_manufacturer`, m.`name` AS manufacturer_name, a.`lastname`, a.`firstname`, a.`postcode`, a.`city`, c.`iso_code`');
+        $query->select('a.`id_address`, a.`id_manufacturer`, m.`name` AS manufacturer_name, a.`lastname`, a.`firstname`, a.`postcode`, a.`city`, c.`iso_code`, cl.`name` AS country_name');
         $query->from('address', 'a');
         $query->innerJoin('manufacturer', 'm', 'm.`id_manufacturer` = a.`id_manufacturer`');
         $query->innerJoin('manufacturer_shop', 'ms', 'ms.`id_manufacturer` = a.`id_manufacturer` AND ms.`id_shop` = ' . $idShop);
         // A left join, so an address whose country was removed is still listed.
         $query->leftJoin('country', 'c', 'c.`id_country` = a.`id_country`');
+        // The Country column shows the name, not the code: given in the
+        // language asked for, so the assistant does not translate codes.
+        $query->leftJoin('country_lang', 'cl', 'cl.`id_country` = a.`id_country` AND cl.`id_lang` = ' . (int) $idLang);
         $query->where('a.`id_manufacturer` > 0');
         $query->where('a.`deleted` = 0');
         if ($idManufacturer !== null) {
             $query->where('a.`id_manufacturer` = ' . (int) $idManufacturer);
+        }
+        if ($idCountry > 0) {
+            $query->where('a.`id_country` = ' . (int) $idCountry);
+        }
+        // The text filters of the list, which match a part of the column.
+        foreach (['lastname', 'firstname', 'postcode', 'city'] as $column) {
+            $part = isset($arguments[$column]) && is_scalar($arguments[$column]) ? trim((string) $arguments[$column]) : '';
+            if ($part !== '') {
+                $query->where('a.`' . bqSQL($column) . "` LIKE '%" . pSQL($part) . "%'");
+            }
         }
         $query->orderBy('m.`name` ASC, a.`id_address` ASC');
 
@@ -130,12 +191,14 @@ class SomcpToolListManufacturerAddresses
                 'postcode' => (string) ($row['postcode'] ?? ''),
                 'city' => (string) ($row['city'] ?? ''),
                 'country' => isset($row['iso_code']) && $row['iso_code'] !== '' ? (string) $row['iso_code'] : null,
+                'country_name' => isset($row['country_name']) && $row['country_name'] !== '' ? (string) $row['country_name'] : null,
             ];
         }
 
         return SomcpTool::json([
             'addresses' => $addresses,
             'count' => count($addresses),
+            'language' => $language[1],
         ]);
     }
 

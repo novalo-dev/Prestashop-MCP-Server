@@ -59,9 +59,17 @@ us. See [Where to help](#where-to-help).
   [DeepSeek](https://platform.deepseek.com/api_keys),
   [Grok](https://console.x.ai) or
   [Cohere](https://dashboard.cohere.com/api-keys) - each link opens the page
-  where that provider gives out keys. It uses the same tools, with the rights of the employee
+  where that provider gives out keys - or with an AI running on the merchant's
+  own computer, such as Ollama or LM Studio, linked through
+  [O'So AI Relay](https://github.com/novalo-dev/Somcp-Relay) with no key and
+  nothing opened on their network. It uses the same tools, with the rights of the employee
   signed in, and asks for approval before any change. Several assistants can
-  share the work by role. Runs on [Neuron AI](https://github.com/neuron-core/neuron-ai).
+  share the work by role. Each conversation can switch on deep thinking
+  (Claude, Gemini, OpenAI's reasoning models) and web search (Claude and
+  Gemini on their own, the others through one of them), and switch the
+  memory off, from the **+** menu. It knows the module it belongs to, and
+  for super administrators reads and, after approval, changes its settings.
+  Runs on [Neuron AI](https://github.com/neuron-core/neuron-ai).
 - **Speaks both eras of the protocol** from one endpoint: the stateless
   `2026-07-28` revision, with questions in the middle of a call, and the
   `2025-11-25`, `2025-06-18` and `2025-03-26` revisions.
@@ -117,6 +125,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_add_order_payment` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
 | `somcp_create_return_status` | `mcp.orders.write` | `add` on `AdminStatuses` | write |
 | `somcp_update_return_status` | `mcp.orders.write` | `edit` on `AdminStatuses` | write |
+| `somcp_delete_return_status` | `mcp.orders.write` | `delete` on `AdminStatuses` | write |
 | `somcp_create_order_status` | `mcp.orders.write` | `add` on `AdminStatuses` | write |
 
 ### Catalog - Products
@@ -225,6 +234,33 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | Tool | Scope | Back office right | Nature |
 |---|---|---|---|
 | `somcp_list_cms_pages` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
+| `somcp_get_cms_page` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
+
+### Modules
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_modules` | `mcp.modules.read` | `view` on `AdminModulesSf` | read |
+| `somcp_get_module` | `mcp.modules.read` | `view` on `AdminModulesSf` | read |
+| `somcp_install_module` | `mcp.modules.write` | `add` on `AdminModulesSf` | write |
+| `somcp_set_module_active` | `mcp.modules.write` | `edit` on `AdminModulesSf` | write |
+
+### Appearance
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_list_menu_links` | `mcp.appearance.read` | `view` on `AdminModulesSf` | read |
+| `somcp_add_menu_link` | `mcp.appearance.write` | `edit` on `AdminModulesSf` | write |
+| `somcp_update_menu_link` | `mcp.appearance.write` | `edit` on `AdminModulesSf` | write |
+| `somcp_get_theme` | `mcp.appearance.read` | `view` on `AdminThemes` | read |
+| `somcp_update_theme_setting` | `mcp.appearance.write` | `edit` on `AdminThemes` | write |
+
+### System
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_get_cache_status` | `mcp.system.read` | `view` on `AdminPerformance` | read |
+| `somcp_clear_cache` | `mcp.system.write` | `delete` on `AdminPerformance` | write |
 
 ### SEO
 
@@ -238,6 +274,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |
 | `somcp_audit_brand_seo` | `mcp.seo.read` | `view` on `AdminManufacturers` | read |
 | `somcp_update_cms_seo` | `mcp.seo.write` | `edit` on `AdminCmsContent` | write |
+| `somcp_update_meta_page` | `mcp.seo.write` | `edit` on `AdminMeta` | write |
 | `somcp_get_robots_txt` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_generate_robots_txt` | `mcp.seo.write` | `add`, `edit` and `delete` on `AdminMeta` | write |
 
@@ -253,7 +290,9 @@ with no rights at all.
 
 Nine prompts ship with the module: checking the connection, finding an order,
 changing an order status, managing products, checking stock, finding a customer,
-auditing SEO, reporting sales, and reading content pages. Details of every tool are in
+auditing SEO, reporting sales, and reading content pages. The built-in assistant
+offers them too, each with its icon: those of the back office page open first, and
+any of them from the + of its field. Details of every tool are in
 [docs/TOOLS.md](docs/TOOLS.md).
 
 ## Install for development
@@ -313,7 +352,9 @@ below can. Where to paste the address in each of them:
 - **Scopes** say what an assistant may do: `mcp.access` to connect,
   `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
   `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
-  `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`. Other
+  `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`,
+  `mcp.modules.read`, `mcp.modules.write`, `mcp.appearance.read`,
+  `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`. Other
   modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's
@@ -360,12 +401,12 @@ GitHub, under **Help and updates > Meet our contributors**.
   <tr>
     <td align="center" width="140">
       <a href="https://github.com/novalo-dev"><img src="https://github.com/novalo-dev.png?size=96" width="64" height="64" alt=""><br><b>novalo-dev</b></a><br>
-      <sub>249 contributions · 83%</sub><br>
+      <sub>261 contributions · 84%</sub><br>
       <sub><i>Top contributor</i></sub>
     </td>
     <td align="center" width="140">
       <a href="https://github.com/Ptraaah"><img src="https://github.com/Ptraaah.png?size=96" width="64" height="64" alt=""><br><b>Ptraaah</b></a><br>
-      <sub>50 contributions · 17%</sub>
+      <sub>50 contributions · 16%</sub>
     </td>
   </tr>
 </table>

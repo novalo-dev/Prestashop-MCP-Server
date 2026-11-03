@@ -1,0 +1,99 @@
+# OWASP ZAP plan: the module's public addresses scanned by an active attacker.
+#
+# dev/shop-tests/attacks.php checks the refusals the module promises; this
+# plan looks for what nobody wrote a test for - an injection in a parameter,
+# an error page that leaks, a header that lets a browser misread an answer.
+# Only the module's own addresses are in the context: the core and the theme
+# are PrestaShop's, and a finding there would say nothing about the module.
+#
+# Each address is seeded with a request as an assistant, a relay or a browser
+# sends it, because none of them is linked from a page a spider could follow.
+# The MCP calls carry a real token with every scope, so the attacks reach the
+# tools instead of stopping at the 401.
+#
+# Read by the CI with SHOP_URL, ZAP_TOKEN and REPORT_DIR in the environment;
+# dev/security/zap-verdict.php then decides from the report.
+env:
+  contexts:
+    - name: somcp
+      urls:
+        - ${SHOP_URL}
+      # Loose on purpose: a pattern following the parameters in the order of
+      # the address matched none of the requests ZAP recorded, and the active
+      # scan ended at once with nothing attacked.
+      includePaths:
+        - ${SHOP_URL}/index\.php\?.*module=somcp.*
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  - type: requestor
+    requests:
+      - name: MCP tool call
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=mcp
+        method: POST
+        headers:
+          - "Authorization:Bearer ${ZAP_TOKEN}"
+          - "Content-Type:application/json"
+        data: '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"somcp_search_products","arguments":{"name":"shirt","limit":5}}}'
+      - name: MCP tool list
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=mcp
+        method: POST
+        headers:
+          - "Authorization:Bearer ${ZAP_TOKEN}"
+          - "Content-Type:application/json"
+        data: '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+      - name: MCP prompt
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=mcp
+        method: POST
+        headers:
+          - "Authorization:Bearer ${ZAP_TOKEN}"
+          - "Content-Type:application/json"
+        data: '{"jsonrpc":"2.0","id":3,"method":"prompts/list","params":{}}'
+      - name: Token exchange
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=oauth&a=token
+        method: POST
+        headers:
+          - "Content-Type:application/x-www-form-urlencoded"
+        data: grant_type=authorization_code&client_id=somcp-unknown&code=abc&code_verifier=abcdefghijklmnopqrstuvwxyzabcdefghijklmnopq&redirect_uri=http%3A%2F%2F127.0.0.1%3A9%2Fcallback
+      - name: Token revocation
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=oauth&a=revoke
+        method: POST
+        headers:
+          - "Content-Type:application/x-www-form-urlencoded"
+        data: token=abc&client_id=somcp-unknown
+      - name: Client registration
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=oauth&a=register
+        method: POST
+        headers:
+          - "Content-Type:application/json"
+        data: '{"client_name":"Scanner","redirect_uris":["http://127.0.0.1:9/callback"]}'
+      - name: Sign-in page
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=authorize&response_type=code&client_id=somcp-unknown&redirect_uri=http%3A%2F%2F127.0.0.1%3A9%2Fcallback&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=scan&scope=mcp.access
+      - name: Authorization server metadata
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=wellknown
+      - name: Protected resource metadata
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=prm
+      - name: Relay pairing
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=relay&action=pair
+        method: POST
+        headers:
+          - "Content-Type:application/json"
+        data: '{"code":"ABCDEFGH","relay":{"version":"0.0.0","os":"scan"}}'
+      - name: Shared file
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=file&f=0000000000000000000000000000000000000000000000000000000000000000&e=1&s=0000000000000000000000000000000000000000000000000000000000000000
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+  - type: activeScan
+    parameters:
+      context: somcp
+      maxRuleDurationInMins: 3
+      maxScanDurationInMins: 25
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: ${REPORT_DIR}
+      reportFile: zap-report

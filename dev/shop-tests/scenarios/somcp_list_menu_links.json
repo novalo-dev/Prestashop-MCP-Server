@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "lists the main menu of the demo shop with every field, the Main menu module being enabled", "arguments": {}, "expect": "ok", "contains": ["\"module_active\": true", "\"entries\"", "\"position\": 1", "\"item\"", "\"type\"", "\"label\"", "\"url\": null", "\"new_window\": null", "\"skipped\"", "\"custom_links\"", "\"language\""]},
+    {"why": "the module's default menu starts with the category it installs first, under the identifier somcp_list_categories gives", "arguments": {}, "expect": "ok", "contains": ["\"item\": \"CAT3\"", "\"type\": \"category\"", "\"id_category\": 3"]},
+    {"why": "reads the labels in a language the shop has, given back as asked", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"entries\""]},
+    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["language"]},
+    {"why": "a language that is not a string is refused", "arguments": {"language": 12}, "expect": "error", "contains": ["language"]},
+    {"why": "an argument the tool does not take is refused, naming it", "arguments": {"id_category": 3}, "expect": "error", "contains": ["id_category: not a field of this tool"]}
+  ]
+}

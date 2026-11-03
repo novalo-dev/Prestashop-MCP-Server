@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "a module already installed is refused and left as it is, never upgraded by surprise", "arguments": {"name": "somcp"}, "expect": "error", "contains": ["already installed", "Nothing was changed"]},
+    {"why": "the name is compared without case, so an installed module is refused under any spelling", "arguments": {"name": "SOMCP"}, "expect": "error", "contains": ["already installed"]},
+    {"why": "a name no module carries, on disk or installed, points to the list tool", "arguments": {"name": "no_such_module"}, "expect": "error", "contains": ["No module", "somcp_list_modules"]},
+    {"why": "a missing name is refused, naming the field", "arguments": {}, "expect": "error", "contains": ["name"]},
+    {"why": "a non-string name is refused, naming the field", "arguments": {"name": 12}, "expect": "error", "contains": ["name"]},
+    {"why": "an empty name is refused, naming the field", "arguments": {"name": " "}, "expect": "error", "contains": ["name"]}
+  ]
+}

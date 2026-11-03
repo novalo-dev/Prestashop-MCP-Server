@@ -203,18 +203,29 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_upload_file` (
 --
 -- `api_key` is encrypted with the shop's own key before it is stored, so a
 -- database dump alone does not hand out the merchant's provider account.
--- `model` is empty unless the merchant picked one by hand: the level then
--- resolves to the newest model of that tier, read from the provider.
+-- `model` is the model the merchant chose as the assistant's default. It is
+-- empty only on assistants saved before 1.2.0 with an automatic level
+-- (economy, balanced, power), which still resolve the newest model of their
+-- tier until they are saved again. `models` keeps the list the provider gave
+-- for the key, so the chat can offer it without asking the provider each time.
+-- `id_shop` and `id_shop_group` give the level the assistant belongs to, as
+-- for any setting: a shop (id_shop), a group (id_shop_group) or all shops
+-- (both 0). A shop uses the assistants of the most precise level that has any.
 CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     `id_assistant`   INT(11)      NOT NULL AUTO_INCREMENT,
     `provider`       VARCHAR(32)  NOT NULL,
     `api_key`        TEXT         NOT NULL,
-    `level`          VARCHAR(16)  NOT NULL DEFAULT 'economy' COMMENT 'economy, balanced or power',
-    `model`          VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'chosen by hand, overrides the level',
+    `level`          VARCHAR(16)  NOT NULL DEFAULT 'economy' COMMENT 'custom for a chat assistant, image for one that makes pictures, economy, balanced or power on rows from before 1.2.0',
+    `model`          VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'the default model, chosen by the merchant',
+    `models`         TEXT         NULL COMMENT 'models the provider listed for the key, JSON list of ids',
+    `models_at`      DATETIME     DEFAULT NULL,
     `resolved_model` VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'what the level resolved to last time',
     `resolved_at`    DATETIME     DEFAULT NULL,
     `role`           VARCHAR(255) NOT NULL DEFAULT '',
+    `token_cap`      INT(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'tokens a month on each shop, 0 for no cap of its own',
+    `id_relay`       INT(11)      NOT NULL DEFAULT 0 COMMENT 'local assistants only: the relay that carries their requests',
     `id_shop`        INT(11)      NOT NULL DEFAULT 1,
+    `id_shop_group`  INT(11)      NOT NULL DEFAULT 0,
     `active`         TINYINT(1)   NOT NULL DEFAULT 1,
     `is_default`     TINYINT(1)   NOT NULL DEFAULT 0,
     `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -223,23 +234,75 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     KEY `idx_shop` (`id_shop`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- somcp_assistant_usage - what each assistant consumed, per calendar month.
--- The monthly cap is checked against the sum of `cost` before every call.
+-- somcp_relay - a somcp-relay program linked to the shop, which carries the
+-- requests of a local assistant to an AI running on the merchant's computer.
+-- The relay always calls the shop; the shop never reaches into the merchant's
+-- network.
+--
+-- Only hashes are looked up: `code_hash` while the pairing code is valid,
+-- `token_hash` once paired. `code` keeps the code itself, encrypted like an
+-- API key, only so the back office can show it again until it is used.
+-- `models` is what the relay last reported, JSON: id and tool test result.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_relay` (
+    `id_relay`       INT(11)      NOT NULL AUTO_INCREMENT,
+    `id_shop`        INT(11)      NOT NULL DEFAULT 1,
+    `id_shop_group`  INT(11)      NOT NULL DEFAULT 0,
+    `code_hash`      VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'sha256 of the pairing code, empty once used',
+    `code`           TEXT         NULL COMMENT 'the pairing code, encrypted, until it is used',
+    `code_expires`   DATETIME     NULL DEFAULT NULL,
+    `token_hash`     VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'sha256 of the relay token, never the token',
+    `relay_version`  VARCHAR(32)  NOT NULL DEFAULT '',
+    `relay_os`       VARCHAR(64)  NOT NULL DEFAULT '',
+    `software`       VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'the local AI the relay reported',
+    `models`         TEXT         NULL,
+    `last_seen`      DATETIME     NULL DEFAULT NULL,
+    `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id_relay`),
+    KEY `idx_code` (`code_hash`),
+    KEY `idx_token` (`token_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_relay_job - one chat request waiting for a relay, then its answer.
+-- The chat writes the request and waits; the relay takes it, has the local AI
+-- answer and posts the answer back. `job_key` is the id the relay sees, random
+-- so that one job cannot be guessed from another.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_relay_job` (
+    `id_job`         INT(11)      NOT NULL AUTO_INCREMENT,
+    `id_relay`       INT(11)      NOT NULL,
+    `job_key`        VARCHAR(64)  NOT NULL,
+    `status`         VARCHAR(8)   NOT NULL DEFAULT 'pending' COMMENT 'pending, taken, done or failed',
+    `request`        LONGTEXT     NOT NULL COMMENT 'OpenAI-compatible chat body, JSON',
+    `http_status`    INT(11)      NOT NULL DEFAULT 0,
+    `response`       LONGTEXT     NULL,
+    `error`          VARCHAR(255) NOT NULL DEFAULT '',
+    `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `date_upd`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id_job`),
+    UNIQUE KEY `uq_job_key` (`job_key`),
+    KEY `idx_relay` (`id_relay`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- somcp_assistant_usage - what each assistant consumed, per shop and calendar
+-- month: an assistant set for several shops is counted for each one, since a
+-- cap applies to each shop. The cap is checked against the sum of `cost`
+-- before every call.
 CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_usage` (
     `id_assistant`   INT(11)        NOT NULL,
     `id_shop`        INT(11)        NOT NULL DEFAULT 1,
     `month`          CHAR(7)        NOT NULL COMMENT 'YYYY-MM',
     `input_tokens`   BIGINT         NOT NULL DEFAULT 0,
     `output_tokens`  BIGINT         NOT NULL DEFAULT 0,
+    `cached_tokens`  BIGINT         NOT NULL DEFAULT 0 COMMENT 'part of input_tokens read from the provider prompt cache',
     `cost`           DECIMAL(14,6)  NOT NULL DEFAULT 0 COMMENT 'US dollars, estimated from public prices',
-    PRIMARY KEY (`id_assistant`, `month`),
+    PRIMARY KEY (`id_assistant`, `id_shop`, `month`),
     KEY `idx_shop` (`id_shop`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- somcp_assistant_thread - one row per conversation, and who it belongs to.
 -- The framework behind the chat keys everything by thread id and checks no
 -- ownership itself, so an employee only ever reaches a thread listed here
--- under their own id.
+-- under their own id. The switches of the chat's + menu are kept here too, so
+-- a conversation reopened later goes on as it was set.
 CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_thread` (
     `id_thread`      INT(11)      NOT NULL AUTO_INCREMENT,
     `thread_id`      VARCHAR(64)  NOT NULL,
@@ -249,6 +312,11 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_thread` (
     `title`          VARCHAR(255) NOT NULL DEFAULT '',
     `files`          TEXT         NULL COMMENT 'images generated in the conversation, JSON: name and upload reference',
     `memory_last`    VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'id of the last message written to the long-term memory',
+    `model`          VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'model picked in the chat for this conversation, empty for the default model of its assistant',
+    `think`          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'deep thinking asked for this conversation',
+    `web_search`     TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'web search allowed in this conversation',
+    `memory`         TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '0 when the employee switched the memory off for this conversation',
+    `tools`          TEXT         NULL COMMENT 'shop tools the model loaded in this conversation, JSON list of names',
     `busy_until`     DATETIME     NULL DEFAULT NULL COMMENT 'set while a move runs on the conversation, so a reload or a second tab does not start it twice',
     `pending`        TEXT         NULL COMMENT 'the message being answered, JSON: text and file names, shown until the framework has stored it',
     `date_add`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

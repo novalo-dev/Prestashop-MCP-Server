@@ -65,20 +65,13 @@ class SomcpToolAuditPage
         return new SomcpTool(
             'somcp_audit_page',
             Somcp::t('Audit a public page of the shop'),
-            'Fetches one public page of this shop as a visitor without an account gets it, and returns what a '
-                . 'search engine reads on it: status, final_url, redirects (each hop with its status), time_ms, '
-                . 'title, meta_description, meta_robots, x_robots_tag, canonical, hreflang (language and url of '
-                . 'each alternate), headings (h1 to h3 in order), images (count, without_alt), links (internal '
-                . 'and external counts), json_ld (each block\'s @type and main fields), open_graph, word_count '
-                . 'and warnings (each a code and why): no_h1, several_h1, canonical_elsewhere, noindex, '
-                . 'missing_hreflang, no_title, title_too_long (over 60 characters), no_meta_description, '
-                . 'description_too_long (over 160 characters), redirect_chain, redirect_outside_shop, '
-                . 'too_many_redirects, slow_page (over 2 seconds), not_ok, not_html, truncated. Only addresses of '
-                . 'this shop are fetched: url is a full address on one of its domains, or a path such as '
-                . '/en/3-clothes; anything else is refused. Read only, GET only. Use it after a change to check '
-                . 'what the theme really prints. Do not use it for many pages at once (somcp_check_links), or '
-                . 'for the fields stored in the database (somcp_audit_product_seo, somcp_audit_category_seo, '
-                . 'somcp_audit_cms_seo, somcp_audit_brand_seo, somcp_list_meta_pages).',
+            'Fetches one public page of this shop as a visitor without an account, and returns what a search '
+                . 'engine reads there: status and redirects, title, meta tags, canonical, hreflang, headings, '
+                . 'images without alt, links, JSON-LD, Open Graph and warnings (each a code and why; a title over '
+                . '60 characters, a description over 160, a page over 2 seconds). url is a full address on one of '
+                . 'the shop\'s domains or a path such as /en/3-clothes; anything else is refused. Use it after a '
+                . 'change to check what the theme prints. For the stored SEO fields, use somcp_audit_product_seo '
+                . 'and the other audits.',
             [
                 'type' => 'object',
                 'properties' => [

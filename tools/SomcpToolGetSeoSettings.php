@@ -59,18 +59,12 @@ class SomcpToolGetSeoSettings
         return new SomcpTool(
             'somcp_get_seo_settings',
             Somcp::t('Read the SEO and URL settings'),
-            'Reads the shop\'s SEO and URL settings and says which ones cost rankings: friendly_urls '
-                . '(addresses with words rather than ?id_product=12), accented_urls, canonical_redirect (none, '
-                . '302 or 301: whether a page reached through another address is sent to its own), https (whether '
-                . 'the shop is served in HTTPS; https_everywhere is the PrestaShop 8 setting that serves every page '
-                . 'in HTTPS, null on versions without it), domains (main first, with their address and HTTPS '
-                . 'domain), routes (the URL patterns of product, category, brand, supplier, CMS and CMS category '
-                . 'pages, and whether the merchant changed them; they only apply with friendly URLs on), '
-                . 'robots_txt_present, sitemap_module (gsitemap installed and active), languages (each language '
-                . 'adds its code to the addresses when the shop has several), and warnings. A setting the running '
-                . 'version does not have is null. Read only. Do not use it to change these settings: that stays in '
-                . 'the back office, since a wrong value breaks every address of the shop. somcp_list_meta_pages '
-                . 'reads the titles and addresses of the shop\'s own pages.',
+            'Reads the shop\'s SEO and URL settings and says which ones cost rankings: friendly and accented '
+                . 'URLs, the redirect to the canonical URL, HTTPS, the shop domains, the URL patterns of each page '
+                . 'type and whether they were changed, robots.txt, the sitemap module, the languages in the '
+                . 'addresses, and warnings. A setting the running version lacks is null. Read only: these settings '
+                . 'stay in the back office, since a wrong value breaks every address. For the titles and addresses '
+                . 'of the shop\'s own pages, use somcp_list_meta_pages.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),
@@ -165,6 +159,8 @@ class SomcpToolGetSeoSettings
 
     /**
      * One yes or no setting of the shop, null when this version does not have it.
+     * somcp_get_cache_status reads its settings through it too, for the
+     * token's shop.
      *
      * @param string $key
      * @param int $idShopGroup
@@ -172,7 +168,7 @@ class SomcpToolGetSeoSettings
      *
      * @return bool|null
      */
-    private static function flag(string $key, int $idShopGroup, int $idShop): ?bool
+    public static function flag(string $key, int $idShopGroup, int $idShop): ?bool
     {
         $value = Configuration::get($key, null, $idShopGroup, $idShop);
 

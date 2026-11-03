@@ -58,21 +58,18 @@ class SomcpToolSetOrderNote
         return new SomcpTool(
             'somcp_set_order_note',
             Somcp::t('Set the private note of an order'),
-            'Sets the private note of one order - the Order note (Order private note on PrestaShop 9) of the '
-                . 'Status tab of the order page, a text only the shop sees. The customer is never emailed and '
-                . 'never sees it. The note given REPLACES the current one, exactly as the screen does: there is '
-                . 'no append. To add to it, read the current note first with somcp_get_order (order.note) and '
-                . 'send the whole new text. An empty note ("") clears it - only when the merchant asked for that. '
-                . 'When the order already has this exact note, nothing is written (changed: false). One order '
-                . 'per call. Not for writing to the customer (use somcp_add_order_message), nor for a note about '
-                . 'the customer rather than this order (the customer tools). Not to be retried on a lost answer: '
-                . 'read the order with somcp_get_order, whose order.note shows the saved text.',
+            'Sets the private note of one order, the Order note (Order private note on PrestaShop 9) of '
+                . 'the Status tab of the order page, which only the shop sees: nobody is emailed. The text '
+                . 'REPLACES the current note: to add to it, read order.note with somcp_get_order and send the '
+                . 'whole text. An empty note clears it, only if the merchant asked. One order per call. To '
+                . 'write to the customer, use somcp_add_order_message. Not to be retried on a lost answer: '
+                . 'check order.note with somcp_get_order.',
             [
                 'type' => 'object',
                 'properties' => [
                     'id_order' => [
                         'type' => 'integer',
-                        'description' => 'Identifier of the order.',
+                        'description' => 'Identifier of the order, from somcp_search_orders.',
                     ],
                     'reference' => [
                         'type' => 'string',

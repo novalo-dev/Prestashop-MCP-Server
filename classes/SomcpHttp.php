@@ -227,6 +227,29 @@ class SomcpHttp
     }
 
     /**
+     * The headers of the module's own HTML pages: the sign-in page and the
+     * consent screen.
+     *
+     * Those pages carry the button that hands a shop to an assistant. Framed
+     * invisibly by another site, a merchant who is signed in could be led to
+     * click it without seeing it, and PrestaShop sends no anti-framing header
+     * of its own: both headers are sent, for browsers that only know the
+     * older one. They are rendered by PrestaShop rather than by json(), so
+     * they also need the two lines sendHeaders() adds to every JSON answer.
+     */
+    public static function pageHeaders(): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+        header('X-Frame-Options: DENY');
+        header("Content-Security-Policy: frame-ancestors 'none'");
+        header('X-Content-Type-Options: nosniff');
+        // The PHP version gives anyone probing the page the known flaws to try.
+        header_remove('X-Powered-By');
+    }
+
+    /**
      * Sends the browser somewhere else and stops the script.
      *
      * PrestaShop's own Tools::redirect() and Tools::redirectAdmin() are
@@ -560,7 +583,6 @@ class SomcpHttp
             return;
         }
 
-        http_response_code($status);
         if ($contentType !== '') {
             header('Content-Type: ' . $contentType);
         }
@@ -569,8 +591,15 @@ class SomcpHttp
         header('Cache-Control: no-store');
         header('Pragma: no-cache');
         header('X-Content-Type-Options: nosniff');
+        // The PHP version the host runs tells a client nothing it needs, and
+        // tells anyone probing the endpoints which known flaws to try.
+        header_remove('X-Powered-By');
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value);
         }
+        // Set last: PHP turns any response carrying WWW-Authenticate into a
+        // 401, which made the 403 of a missing scope look like a dead token
+        // and sent assistants back to sign in instead of asking for the scope.
+        http_response_code($status);
     }
 }

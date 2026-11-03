@@ -182,6 +182,7 @@ class AdminSomcpConsentController extends ModuleAdminController
     public function initContent()
     {
         Somcp::bootClasses();
+        SomcpHttp::pageHeaders();
 
         $this->context->smarty->assign($this->templateVariables());
         // PrestaShop 9 no longer offers setRedirectAfter on this path, and the

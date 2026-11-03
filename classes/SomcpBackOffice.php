@@ -271,16 +271,39 @@ class SomcpBackOffice
             return '';
         }
 
-        $container = PrestaShop\PrestaShop\Adapter\SymfonyContainer::getInstance();
-        if ($container === null || !$container->has($id)) {
-            return '';
-        }
+        $manager = self::coreService($id);
 
-        $manager = $container->get($id);
-
-        return is_object($manager) && method_exists($manager, 'getSymfonyToken')
+        return $manager !== null && method_exists($manager, 'getSymfonyToken')
             ? (string) $manager->getSymfonyToken()
             : '';
+    }
+
+    /**
+     * A service of the core's Symfony container, when one is running.
+     *
+     * The MCP endpoint is a front controller, where no kernel is booted and
+     * the container is null; the back office has one. Every lookup goes
+     * through here so that this check is written once, and the service id
+     * stays a string: a class that exists on PrestaShop 9 only must never be
+     * named in a type or a constructor.
+     *
+     * @param string $id
+     *
+     * @return object|null null when there is no container or no such service
+     */
+    public static function coreService(string $id): ?object
+    {
+        $container = PrestaShop\PrestaShop\Adapter\SymfonyContainer::getInstance();
+        if ($container === null || !$container->has($id)) {
+            return null;
+        }
+
+        // Typed by hand: PrestaShop 9's container declares a non-null object,
+        // 8's an object or null, and one check has to hold on both.
+        /** @var object|null $service */
+        $service = $container->get($id);
+
+        return is_object($service) ? $service : null;
     }
 
     /**

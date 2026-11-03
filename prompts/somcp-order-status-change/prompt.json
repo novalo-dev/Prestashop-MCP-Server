@@ -1,6 +1,7 @@
 {
   "title": "Change an order status",
   "description": "Change the status of an order in the PrestaShop shop, one order at a time, with the checks that keep a customer from being emailed twice.",
+  "icon": "truck",
   "scopes": [
     "mcp.orders.write"
   ],
@@ -12,6 +13,7 @@
     "somcp_list_carriers",
     "somcp_create_return_status",
     "somcp_update_return_status",
+    "somcp_delete_return_status",
     "somcp_get_order",
     "somcp_set_order_status",
     "somcp_set_order_tracking",

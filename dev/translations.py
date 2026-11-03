@@ -662,6 +662,10 @@ T = {
  "Modifier un statut de retour",
  "Modificar un estado de devolución",
  "Einen Rückgabestatus ändern"),
+"Delete a return status": (
+ "Supprimer un statut de retour",
+ "Eliminar un estado de devolución",
+ "Einen Rückgabestatus löschen"),
 "Test the connection": (
  "Tester la connexion",
  "Probar la conexión",
@@ -930,6 +934,10 @@ T = {
  "Modifier le SEO d'une page CMS",
  "Cambiar el SEO de una página CMS",
  "Das SEO einer CMS-Seite ändern"),
+"Change the SEO of a shop page": (
+ "Modifier le SEO d'une page de la boutique",
+ "Cambiar el SEO de una página de la tienda",
+ "Das SEO einer Shop-Seite ändern"),
 "Change the shop's SEO settings, page titles and descriptions, robots.txt and llms.txt": (
  "Modifier les réglages SEO de la boutique, les titres et descriptions des pages, le robots.txt et le llms.txt",
  "Cambiar los ajustes de SEO de la tienda, los títulos y descripciones de las páginas, el robots.txt y el llms.txt",
@@ -954,6 +962,10 @@ T = {
  "Lister les pages de contenu",
  "Listar las páginas de contenido",
  "Inhaltsseiten auflisten"),
+"Get a content page": (
+ "Lire une page de contenu",
+ "Leer una página de contenido",
+ "Eine Inhaltsseite abrufen"),
 "Read how the shop appears to search engines: titles, descriptions, URLs, robots.txt, sitemap and public pages": (
  "Lire comment la boutique apparaît aux moteurs de recherche : titres, descriptions, URL, robots.txt, sitemap et pages publiques",
  "Leer cómo aparece la tienda en los buscadores: títulos, descripciones, URL, robots.txt, sitemap y páginas públicas",
@@ -1062,6 +1074,102 @@ T = {
  "Période à présenter, par exemple le mois dernier",
  "Periodo del informe, por ejemplo el mes pasado",
  "Berichtszeitraum, zum Beispiel der letzte Monat"),
+"List modules": (
+ "Lister les modules",
+ "Listar los módulos",
+ "Module auflisten"),
+"Get a module": (
+ "Lire un module",
+ "Leer un módulo",
+ "Ein Modul abrufen"),
+"Read the modules of this shop: their version, author and whether they are installed and enabled": (
+ "Lire les modules de cette boutique : leur version, leur auteur et s'ils sont installés et activés",
+ "Leer los módulos de esta tienda: su versión, su autor y si están instalados y activados",
+ "Die Module dieses Shops lesen: ihre Version, ihren Autor und ob sie installiert und aktiviert sind"),
+"Install a module": (
+ "Installer un module",
+ "Instalar un módulo",
+ "Ein Modul installieren"),
+"Install, enable and disable the modules already present on this shop, which runs their own code": (
+ "Installer, activer et désactiver les modules déjà présents sur cette boutique, ce qui exécute leur propre code",
+ "Instalar, activar y desactivar los módulos ya presentes en esta tienda, lo que ejecuta su propio código",
+ "Die bereits in diesem Shop vorhandenen Module installieren, aktivieren und deaktivieren, wobei ihr eigener Code ausgeführt wird"),
+"Enable or disable a module": (
+ "Activer ou désactiver un module",
+ "Activar o desactivar un módulo",
+ "Ein Modul aktivieren oder deaktivieren"),
+"Review modules": (
+ "Passer en revue les modules",
+ "Revisar los módulos",
+ "Module überprüfen"),
+"See which modules the PrestaShop shop runs, their version and state, and install or switch one when asked.": (
+ "Voir quels modules la boutique PrestaShop utilise, leur version et leur état, et en installer ou en basculer un sur demande.",
+ "Ver qué módulos usa la tienda PrestaShop, su versión y su estado, e instalar o activar o desactivar uno cuando se pida.",
+ "Sehen, welche Module der PrestaShop-Shop nutzt, ihre Version und ihren Status, und auf Wunsch eines installieren oder umschalten."),
+"Name of a module": (
+ "Nom d'un module",
+ "Nombre de un módulo",
+ "Name eines Moduls"),
+"List main menu entries": (
+ "Lister les entrées du menu principal",
+ "Listar las entradas del menú principal",
+ "Einträge des Hauptmenüs auflisten"),
+"Read the performance settings": (
+ "Lire les paramètres de performances",
+ "Leer los ajustes de rendimiento",
+ "Leistungseinstellungen lesen"),
+"Read how this shop runs: its performance settings, cache and debug mode": (
+ "Lire le fonctionnement de cette boutique : ses paramètres de performances, son cache et le mode debug",
+ "Leer cómo funciona esta tienda: sus ajustes de rendimiento, su caché y el modo de depuración",
+ "Lesen, wie dieser Shop läuft: seine Leistungseinstellungen, sein Cache und der Debug-Modus"),
+"Clear the cache": (
+ "Vider le cache",
+ "Vaciar la caché",
+ "Cache leeren"),
+"Clear the cache of this shop and of every shop of the installation, which slows them until it rebuilds": (
+ "Vider le cache de cette boutique et de toutes les boutiques de l'installation, ce qui les ralentit le temps qu'il se reconstruise",
+ "Vaciar la caché de esta tienda y de todas las tiendas de la instalación, lo que las ralentiza hasta que se reconstruye",
+ "Den Cache dieses Shops und aller Shops der Installation leeren, was sie verlangsamt, bis er neu aufgebaut ist"),
+"Cache maintenance": (
+ "Maintenance du cache",
+ "Mantenimiento de la caché",
+ "Cache-Wartung"),
+"Check how the PrestaShop shop caches and clear the cache when changes do not show.": (
+ "Vérifier comment la boutique PrestaShop met en cache et vider le cache quand les changements ne s'affichent pas.",
+ "Comprobar cómo la tienda PrestaShop usa la caché y vaciarla cuando los cambios no se muestran.",
+ "Prüfen, wie der PrestaShop-Shop zwischenspeichert, und den Cache leeren, wenn Änderungen nicht erscheinen."),
+"Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts": (
+ "Lire l'apparence de la boutique : les entrées et les liens de son menu principal, son thème, ses logos et la mise en page de ses pages",
+ "Leer el aspecto de la tienda: las entradas y los enlaces de su menú principal, su tema, sus logotipos y el diseño de sus páginas",
+ "Lesen, wie der Shop aussieht: die Einträge und Links seines Hauptmenüs, sein Theme, seine Logos und das Layout seiner Seiten"),
+"Get the theme and page layouts": (
+ "Obtenir le thème et la mise en page des pages",
+ "Obtener el tema y el diseño de las páginas",
+ "Theme und Seitenlayouts abrufen"),
+"Add a main menu entry": (
+ "Ajouter une entrée au menu principal",
+ "Añadir una entrada al menú principal",
+ "Einen Eintrag zum Hauptmenü hinzufügen"),
+"Change a main menu custom link": (
+ "Modifier un lien personnalisé du menu principal",
+ "Modificar un enlace personalizado del menú principal",
+ "Einen eigenen Link des Hauptmenüs ändern"),
+"Change how the storefront looks: add entries and custom links to its main menu, change those links, and the layout of its pages": (
+ "Modifier l'apparence de la boutique : ajouter des entrées et des liens personnalisés à son menu principal, modifier ces liens, et la mise en page de ses pages",
+ "Cambiar el aspecto de la tienda: añadir entradas y enlaces personalizados a su menú principal, modificar esos enlaces, y el diseño de sus páginas",
+ "Das Aussehen des Shops ändern: Einträge und eigene Links zu seinem Hauptmenü hinzufügen, diese Links ändern und das Layout seiner Seiten"),
+"Change the layout of a page": (
+ "Modifier la mise en page d'une page",
+ "Cambiar el diseño de una página",
+ "Das Layout einer Seite ändern"),
+"Storefront menu and layout": (
+ "Menu et mise en page de la boutique",
+ "Menú y diseño de la tienda",
+ "Menü und Layout des Shops"),
+"Read and change the main menu of the PrestaShop storefront and the page layouts of its theme.": (
+ "Lire et modifier le menu principal de la boutique PrestaShop et la mise en page des pages de son thème.",
+ "Leer y cambiar el menú principal de la tienda PrestaShop y el diseño de las páginas de su tema.",
+ "Das Hauptmenü des PrestaShop-Shops und das Seitenlayout seines Themes lesen und ändern."),
 "Read content pages": (
  "Lire les pages de contenu",
  "Leer las páginas de contenido",
@@ -1415,10 +1523,6 @@ T = {
  "Réglages du module",
  "Ajustes del módulo",
  "Moduleinstellungen"),
-"Custom": (
- "Personnalisé",
- "Personalizado",
- "Benutzerdefiniert"),
 "Memory": (
  "Mémoire",
  "Memoria",
@@ -1463,14 +1567,6 @@ T = {
  "Une clé est enregistrée. Laissez vide pour la garder.",
  "Hay una clave guardada. Deje vacío para conservarla.",
  "Ein Schlüssel ist gespeichert. Leer lassen, um ihn zu behalten."),
-"choose the exact model yourself from the list below": (
- "choisissez vous-même le modèle exact dans la liste ci-dessous",
- "elija usted mismo el modelo exacto en la lista de abajo",
- "wählen Sie das genaue Modell selbst aus der Liste unten"),
-"Pick the model this assistant runs. The list comes from your provider.": (
- "Choisissez le modèle utilisé par cet assistant. La liste vient de votre fournisseur.",
- "Elija el modelo que usa este asistente. La lista proviene de su proveedor.",
- "Wählen Sie das Modell dieses Assistenten. Die Liste stammt von Ihrem Anbieter."),
 "Save this assistant with a working key first, then edit it to choose a model here.": (
  "Enregistrez d'abord cet assistant avec une clé valide, puis modifiez-le pour choisir un modèle ici.",
  "Guarde primero este asistente con una clave válida y luego edítelo para elegir un modelo aquí.",
@@ -1515,14 +1611,186 @@ T = {
  "Supprimer cette conversation",
  "Eliminar esta conversación",
  "Dieses Gespräch löschen"),
-"Default assistant": (
- "Assistant par défaut",
- "Asistente predeterminado",
- "Standardassistent"),
 "Confirmation requested": (
  "Confirmation demandée",
  "Confirmación solicitada",
  "Bestätigung erforderlich"),
+"Add files or a prompt": (
+ "Ajouter des fichiers ou un prompt",
+ "Añadir archivos o un prompt",
+ "Dateien oder einen Prompt hinzufügen"),
+"Add files": (
+ "Ajouter des fichiers",
+ "Añadir archivos",
+ "Dateien hinzufügen"),
+"Images, PDF and text": (
+ "Images, PDF et texte",
+ "Imágenes, PDF y texto",
+ "Bilder, PDF und Text"),
+"Prompts": (
+ "Prompts",
+ "Prompts",
+ "Prompts"),
+"To get started": (
+ "Pour commencer",
+ "Para empezar",
+ "Zum Einstieg"),
+"1 change": (
+ "1 modification",
+ "1 cambio",
+ "1 Änderung"),
+"%count% changes": (
+ "%count% modifications",
+ "%count% cambios",
+ "%count% Änderungen"),
+"See the technical data": (
+ "Voir les données techniques",
+ "Ver los datos técnicos",
+ "Technische Daten anzeigen"),
+"Waiting for your answer...": (
+ "En attente de votre réponse...",
+ "Esperando su respuesta...",
+ "Wartet auf Ihre Antwort..."),
+"Search a conversation": (
+ "Rechercher une conversation",
+ "Buscar una conversación",
+ "Eine Unterhaltung suchen"),
+"No conversation found": (
+ "Aucune conversation trouvée",
+ "No se ha encontrado ninguna conversación",
+ "Keine Unterhaltung gefunden"),
+"Today": (
+ "Aujourd'hui",
+ "Hoy",
+ "Heute"),
+"Yesterday": (
+ "Hier",
+ "Ayer",
+ "Gestern"),
+"Earlier": (
+ "Plus ancien",
+ "Anteriores",
+ "Älter"),
+"Copy the answer": (
+ "Copier la réponse",
+ "Copiar la respuesta",
+ "Antwort kopieren"),
+"Choose the assistant": (
+ "Choisir l'assistant",
+ "Elegir el asistente",
+ "Assistenten wählen"),
+"The assistant is still finishing its previous step. Try again in a few minutes.": (
+ "L'assistant termine encore son étape précédente. Réessayez dans quelques minutes.",
+ "El asistente aún está terminando su paso anterior. Inténtelo de nuevo en unos minutos.",
+ "Der Assistent schließt noch seinen vorherigen Schritt ab. Versuchen Sie es in ein paar Minuten erneut."),
+"Cogitating...": (
+ "Cogitating...",
+ "Cogitating...",
+ "Cogitating..."),
+"Thinking...": (
+ "Réflexion...",
+ "Pensando...",
+ "Überlege..."),
+"Looking it up...": (
+ "Recherche...",
+ "Buscando...",
+ "Suche..."),
+"Checking...": (
+ "Vérification...",
+ "Comprobando...",
+ "Prüfe..."),
+"Writing...": (
+ "Rédaction...",
+ "Redactando...",
+ "Schreibe..."),
+"Which shop are we working on?": (
+ "Sur quelle boutique travaille-t-on ?",
+ "¿En qué tienda trabajamos?",
+ "An welchem Shop arbeiten wir?"),
+"The conversation stays tied to the shop you pick.": (
+ "La conversation restera liée à la boutique choisie.",
+ "La conversación quedará vinculada a la tienda elegida.",
+ "Die Unterhaltung bleibt an den gewählten Shop gebunden."),
+"Choose a shop to start": (
+ "Choisissez une boutique pour commencer",
+ "Elija una tienda para empezar",
+ "Wählen Sie einen Shop, um zu beginnen"),
+"This conversation is for the shop %shop%": (
+ "Cette conversation est pour la boutique %shop%",
+ "Esta conversación es para la tienda %shop%",
+ "Diese Unterhaltung gilt für den Shop %shop%"),
+"The assistants inherited from above were copied to this level, where they can now be changed.": (
+ "Les assistants hérités du niveau supérieur ont été copiés à ce niveau, où ils peuvent maintenant être modifiés.",
+ "Los asistentes heredados del nivel superior se han copiado a este nivel, donde ahora se pueden modificar.",
+ "Die von der höheren Ebene geerbten Assistenten wurden auf diese Ebene kopiert und können hier nun geändert werden."),
+"The assistants could not be copied to this level. Try again, or add them here by hand.": (
+ "Les assistants n'ont pas pu être copiés à ce niveau. Réessayez, ou ajoutez-les ici à la main.",
+ "No se han podido copiar los asistentes a este nivel. Inténtelo de nuevo o añádalos aquí manualmente.",
+ "Die Assistenten konnten nicht auf diese Ebene kopiert werden. Versuchen Sie es erneut oder fügen Sie sie hier von Hand hinzu."),
+"This level uses the assistants inherited from above again.": (
+ "Ce niveau utilise de nouveau les assistants hérités du niveau supérieur.",
+ "Este nivel vuelve a usar los asistentes heredados del nivel superior.",
+ "Diese Ebene verwendet wieder die von der höheren Ebene geerbten Assistenten."),
+"Use the assistants inherited from above again? The assistants of this level are removed.": (
+ "Utiliser de nouveau les assistants hérités du niveau supérieur ? Les assistants de ce niveau seront supprimés.",
+ "¿Volver a usar los asistentes heredados del nivel superior? Se eliminarán los asistentes de este nivel.",
+ "Wieder die von der höheren Ebene geerbten Assistenten verwenden? Die Assistenten dieser Ebene werden entfernt."),
+"This month: %tokens% tokens": (
+ "Ce mois : %tokens% tokens",
+ "Este mes: %tokens% tokens",
+ "Diesen Monat: %tokens% Tokens"),
+"This month: %tokens% of %cap% tokens": (
+ "Ce mois : %tokens% sur %cap% tokens",
+ "Este mes: %tokens% de %cap% tokens",
+ "Diesen Monat: %tokens% von %cap% Tokens"),
+"about %cost%, estimated": (
+ "environ %cost%, estimation",
+ "unos %cost%, estimación",
+ "etwa %cost%, geschätzt"),
+"The monthly token cap is reached. Raise it in the module settings to keep chatting.": (
+ "Le plafond mensuel de tokens est atteint. Relevez-le dans les réglages du module pour continuer.",
+ "Se ha alcanzado el límite mensual de tokens. Auméntelo en los ajustes del módulo para seguir.",
+ "Das monatliche Token-Limit ist erreicht. Erhöhen Sie es in den Moduleinstellungen, um weiterzuchatten."),
+"This assistant used its monthly tokens. Raise its cap in the module settings, or pick another assistant.": (
+ "Cet assistant a utilisé ses tokens du mois. Relevez son plafond dans les réglages du module, ou choisissez un autre assistant.",
+ "Este asistente ha usado sus tokens del mes. Aumente su límite en los ajustes del módulo o elija otro asistente.",
+ "Dieser Assistent hat seine Tokens für den Monat verbraucht. Erhöhen Sie sein Limit in den Moduleinstellungen oder wählen Sie einen anderen Assistenten."),
+"Monthly cap for this assistant": (
+ "Plafond mensuel de cet assistant",
+ "Límite mensual de este asistente",
+ "Monatliches Limit dieses Assistenten"),
+"tokens": (
+ "tokens",
+ "tokens",
+ "Tokens"),
+"Tokens it may use in a month, counted on each shop. A powerful model deserves a lower cap than an economy one. 0 for no cap of its own.": (
+ "Tokens qu'il peut utiliser dans le mois, comptés sur chaque boutique. Un modèle puissant mérite un plafond plus bas qu'un modèle économique. 0 pour aucun plafond propre.",
+ "Tokens que puede usar en un mes, contados en cada tienda. Un modelo potente merece un límite más bajo que uno económico. 0 para ningún límite propio.",
+ "Tokens, die er in einem Monat verwenden darf, je Shop gezählt. Ein leistungsstarkes Modell verdient ein niedrigeres Limit als ein sparsames. 0 für kein eigenes Limit."),
+"about": (
+ "environ",
+ "unos",
+ "etwa"),
+"This month: %tokens% tokens, counted exactly as the providers report them. The chat stops when the cap is reached, on each shop. 0 for no cap.": (
+ "Ce mois : %tokens% tokens, comptés exactement comme les fournisseurs les déclarent. Le chat s'arrête quand le plafond est atteint, sur chaque boutique. 0 pour aucun plafond.",
+ "Este mes: %tokens% tokens, contados exactamente como los declaran los proveedores. El chat se detiene al alcanzar el límite, en cada tienda. 0 para ningún límite.",
+ "Diesen Monat: %tokens% Tokens, genau so gezählt, wie die Anbieter sie melden. Der Chat stoppt, wenn das Limit erreicht ist, je Shop. 0 für kein Limit."),
+"Of these, %cached% were read back from the provider's cache, which bills them for less.": (
+ "Dont %cached% relus depuis le cache du fournisseur, qui les facture moins cher.",
+ "De ellos, %cached% se releyeron desde la caché del proveedor, que los factura más baratos.",
+ "Davon wurden %cached% aus dem Cache des Anbieters gelesen, der sie günstiger berechnet."),
+"Local assistants are not copied: each level links its own relay. Add a local assistant here to use one.": (
+ "Les assistants locaux ne sont pas copiés : chaque niveau relie son propre relais. Ajoutez ici un assistant local pour en utiliser un.",
+ "Los asistentes locales no se copian: cada nivel vincula su propio relé. Añada aquí un asistente local para usar uno.",
+ "Lokale Assistenten werden nicht kopiert: Jede Ebene verbindet ihr eigenes Relay. Fügen Sie hier einen lokalen Assistenten hinzu, um einen zu nutzen."),
+"About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.": (
+ "Environ %spent% $, estimé d'après les prix publics de chaque fournisseur : un token ne coûte pas le même prix avec chaque modèle.",
+ "Unos %spent% $, estimado a partir de los precios públicos de cada proveedor: un token no cuesta lo mismo con cada modelo.",
+ "Etwa %spent% $, geschätzt nach den öffentlichen Preisen jedes Anbieters: Ein Token kostet nicht bei jedem Modell gleich viel."),
+"This prompt is not available.": (
+ "Ce prompt n'est pas disponible.",
+ "Este prompt no está disponible.",
+ "Dieser Prompt ist nicht verfügbar."),
 "Approve": (
  "Approuver",
  "Aprobar",
@@ -1547,14 +1815,6 @@ T = {
  "L'assistant est encore en train de répondre. Attendez sa réponse.",
  "El asistente aún está respondiendo. Espere su respuesta.",
  "Der Assistent antwortet noch. Warten Sie seine Antwort ab."),
-"This month: %spent%": (
- "Ce mois-ci : %spent%",
- "Este mes: %spent%",
- "Diesen Monat: %spent%"),
-"This month: %spent% of %budget%": (
- "Ce mois-ci : %spent% sur %budget%",
- "Este mes: %spent% de %budget%",
- "Diesen Monat: %spent% von %budget%"),
 "Something went wrong. Try again.": (
  "Un problème est survenu. Réessayez.",
  "Algo ha fallado. Inténtelo de nuevo.",
@@ -1587,10 +1847,6 @@ T = {
  "Aucun assistant n'est activé. Ajoutez-en un dans les réglages du module.",
  "No hay ningún asistente activado. Añada uno en los ajustes del módulo.",
  "Kein Assistent ist aktiviert. Fügen Sie in den Moduleinstellungen einen hinzu."),
-"The monthly spending cap is reached. Raise it in the module settings to keep chatting.": (
- "Le plafond mensuel de dépenses est atteint. Relevez-le dans les réglages du module pour continuer.",
- "Se ha alcanzado el límite mensual de gasto. Auméntelo en los ajustes del módulo para seguir.",
- "Die monatliche Ausgabengrenze ist erreicht. Erhöhen Sie sie in den Moduleinstellungen, um weiterzumachen."),
 "Answer the change waiting for your approval first.": (
  "Répondez d'abord à la modification qui attend votre accord.",
  "Responda primero al cambio que espera su aprobación.",
@@ -1607,10 +1863,10 @@ T = {
  "Les fichiers de l'assistant manquent dans cette copie du module. Installez le module depuis le zip de sa version.",
  "Faltan los archivos del asistente en esta copia del módulo. Instale el módulo desde el zip de su versión.",
  "In dieser Kopie des Moduls fehlen die Dateien des Assistenten. Installieren Sie das Modul aus dem Zip seiner Version."),
-"In development: the built-in assistant is unstable and may change or stop working without notice.": (
- "En cours de développement : l'assistant intégré est instable et peut changer ou cesser de fonctionner sans préavis.",
- "En desarrollo: el asistente integrado es inestable y puede cambiar o dejar de funcionar sin previo aviso.",
- "In Entwicklung: Der integrierte Assistent ist instabil und kann sich ohne Vorankündigung ändern oder ausfallen."),
+"In development: the built-in assistant is unstable and may change or stop working without notice, and its consumption can be somewhat high.": (
+ "En cours de développement : l'assistant intégré est instable et peut changer ou cesser de fonctionner sans préavis, et sa consommation peut être un peu élevée.",
+ "En desarrollo: el asistente integrado es inestable y puede cambiar o dejar de funcionar sin previo aviso, y su consumo puede ser algo elevado.",
+ "In Entwicklung: Der integrierte Assistent ist instabil und kann sich ohne Vorankündigung ändern oder ausfallen, und sein Verbrauch kann etwas hoch sein."),
 "Edit the assistant": (
  "Modifier l'assistant",
  "Editar el asistente",
@@ -1635,38 +1891,6 @@ T = {
  "La clé est stockée chiffrée sur votre boutique et envoyée uniquement au fournisseur choisi.",
  "La clave se guarda cifrada en su tienda y solo se envía al proveedor elegido.",
  "Der Schlüssel wird verschlüsselt in Ihrem Shop gespeichert und nur an den gewählten Anbieter gesendet."),
-"Level": (
- "Niveau",
- "Nivel",
- "Stufe"),
-"Economy": (
- "Économique",
- "Económico",
- "Sparsam"),
-"fast and inexpensive, enough for most tasks": (
- "rapide et peu cher, suffit pour la plupart des tâches",
- "rápido y económico, suficiente para la mayoría de tareas",
- "schnell und günstig, reicht für die meisten Aufgaben"),
-"Balanced": (
- "Équilibré",
- "Equilibrado",
- "Ausgewogen"),
-"finer for texts and SEO": (
- "plus fin pour les textes et le SEO",
- "más fino para los textos y el SEO",
- "feiner für Texte und SEO"),
-"Powerful": (
- "Puissant",
- "Potente",
- "Leistungsstark"),
-"the most capable, clearly more expensive": (
- "le plus capable, nettement plus cher",
- "el más capaz, claramente más caro",
- "der leistungsfähigste, deutlich teurer"),
-"The module always takes the newest model of the chosen level, without an update.": (
- "Le module prend toujours le modèle le plus récent du niveau choisi, sans mise à jour.",
- "El módulo siempre usa el modelo más reciente del nivel elegido, sin actualización.",
- "Das Modul nimmt immer das neueste Modell der gewählten Stufe, ohne Update."),
 "Role": (
  "Rôle",
  "Función",
@@ -1679,10 +1903,6 @@ T = {
  "Actif",
  "Activo",
  "Aktiv"),
-"Exact model": (
- "Modèle exact",
- "Modelo exacto",
- "Genaues Modell"),
 "Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.": (
  "Avancé. Laissez vide pour suivre le niveau. Obligatoire pour Ollama si votre serveur a plusieurs modèles. Pour un assistant qui crée des images, un modèle d'images comme gemini-2.5-flash-image ou gpt-image-1.",
  "Avanzado. Déjelo vacío para seguir el nivel. Obligatorio para Ollama si su servidor tiene varios modelos. Para un asistente que crea imágenes, un modelo de imágenes como gemini-2.5-flash-image o gpt-image-1.",
@@ -1743,14 +1963,6 @@ T = {
  "Plafond mensuel, tous assistants",
  "Límite mensual, todos los asistentes",
  "Monatliche Grenze, alle Assistenten"),
-"This month: about $%spent%. The chat stops when the cap is reached. 0 for no cap.": (
- "Ce mois-ci : environ %spent% $. Le chat s'arrête quand le plafond est atteint. 0 pour aucun plafond.",
- "Este mes: unos %spent% $. El chat se detiene al alcanzar el límite. 0 para ningún límite.",
- "Diesen Monat: etwa %spent% $. Der Chat stoppt, wenn die Grenze erreicht ist. 0 für keine Grenze."),
-"Estimated in US dollars from the public prices of each provider, the currency they bill in.": (
- "Estimé en dollars américains d'après les prix publics de chaque fournisseur, la devise dans laquelle ils facturent.",
- "Estimado en dólares estadounidenses según los precios públicos de cada proveedor, la moneda en la que facturan.",
- "Geschätzt in US-Dollar nach den öffentlichen Preisen der Anbieter, der Währung, in der sie abrechnen."),
 "Instructions for the shop": (
  "Consignes de la boutique",
  "Instrucciones de la tienda",
@@ -1807,6 +2019,250 @@ T = {
  "Open source sous licence AFL-3.0",
  "Código abierto bajo licencia AFL-3.0",
  "Open Source unter der Lizenz AFL-3.0"),
+"Deep thinking": (
+ "Réflexion approfondie",
+ "Razonamiento profundo",
+ "Gründliches Nachdenken"),
+"Slower, uses more tokens": (
+ "Plus lent, plus de tokens",
+ "Más lento, usa más tokens",
+ "Langsamer, mehr Tokens"),
+"Thinking": (
+ "Réflexion",
+ "Razonamiento",
+ "Nachdenken"),
+"Web search": (
+ "Recherche en ligne",
+ "Búsqueda en la web",
+ "Websuche"),
+"Web pages cited as sources": (
+ "Pages web citées en source",
+ "Páginas web citadas como fuente",
+ "Webseiten als Quellen zitiert"),
+"Remember this conversation": (
+ "Retenir cette conversation",
+ "Recordar esta conversación",
+ "Diese Unterhaltung merken"),
+"No memory": (
+ "Sans mémoire",
+ "Sin memoria",
+ "Ohne Gedächtnis"),
+"Remove %name%": (
+ "Retirer %name%",
+ "Quitar %name%",
+ "%name% entfernen"),
+"Thought it through": (
+ "A réfléchi",
+ "Lo ha pensado",
+ "Hat nachgedacht"),
+"Claude and Gemini search the web on their own. Pick one of them to search for the other assistants too, with its key: its searches count in its tokens.": (
+ "Claude et Gemini font leurs recherches en ligne eux-mêmes. Choisissez l'un d'eux pour qu'il cherche aussi pour les autres assistants, avec sa clé : ses recherches comptent dans ses tokens.",
+ "Claude y Gemini buscan en la web por sí mismos. Elija uno de ellos para que busque también para los demás asistentes, con su clave: sus búsquedas cuentan en sus tokens.",
+ "Claude und Gemini suchen selbst im Web. Wählen Sie einen von beiden, damit er auch für die anderen Assistenten sucht, mit seinem Schlüssel: Seine Suchen zählen zu seinen Tokens."),
+"Available once a Claude or Gemini assistant and an assistant of another provider are both set up.": (
+ "Disponible dès qu'un assistant Claude ou Gemini et un assistant d'un autre fournisseur sont tous deux configurés.",
+ "Disponible en cuanto haya configurados un asistente Claude o Gemini y un asistente de otro proveedor.",
+ "Verfügbar, sobald sowohl ein Claude- oder Gemini-Assistent als auch ein Assistent eines anderen Anbieters eingerichtet sind."),
+"Read the module settings": (
+ "Lire les réglages du module",
+ "Leer los ajustes del módulo",
+ "Moduleinstellungen lesen"),
+"Change a module setting": (
+ "Modifier un réglage du module",
+ "Cambiar un ajuste del módulo",
+ "Eine Moduleinstellung ändern"),
+"Find a tool": (
+ "Trouver un outil",
+ "Buscar una herramienta",
+ "Ein Werkzeug finden"),
+"This profile does not exist: the employees allowed were not changed.": (
+ "Ce profil n'existe pas : les employés autorisés n'ont pas été modifiés.",
+ "Este perfil no existe: los empleados autorizados no se han modificado.",
+ "Dieses Profil existiert nicht: Die berechtigten Mitarbeiter wurden nicht geändert."),
+"Choose an embeddings provider for the memory: without one it stays as it was.": (
+ "Choisissez un fournisseur d'embeddings pour la mémoire : sans lui, elle reste comme avant.",
+ "Elija un proveedor de embeddings para la memoria: sin él, se queda como estaba.",
+ "Wählen Sie einen Embeddings-Anbieter für das Gedächtnis: Ohne ihn bleibt es wie zuvor."),
+"The embeddings provider has no key: type the Voyage key, or pick a provider of the chat. The memory stays as it was.": (
+ "Le fournisseur d'embeddings n'a pas de clé : saisissez la clé Voyage, ou choisissez un fournisseur du chat. La mémoire reste comme avant.",
+ "El proveedor de embeddings no tiene clave: escriba la clave de Voyage o elija un proveedor del chat. La memoria se queda como estaba.",
+ "Der Embeddings-Anbieter hat keinen Schlüssel: Geben Sie den Voyage-Schlüssel ein oder wählen Sie einen Anbieter des Chats. Das Gedächtnis bleibt wie zuvor."),
+"The refresh token must last longer than the access token: the two lifetimes were not changed.": (
+ "Le jeton de rafraîchissement doit durer plus longtemps que le jeton d'accès : les deux durées n'ont pas été modifiées.",
+ "El token de actualización debe durar más que el token de acceso: las dos duraciones no se han modificado.",
+ "Das Aktualisierungstoken muss länger gültig sein als das Zugriffstoken: Die beiden Laufzeiten wurden nicht geändert."),
+"The other settings were saved.": (
+ "Les autres réglages ont été enregistrés.",
+ "Los demás ajustes se han guardado.",
+ "Die übrigen Einstellungen wurden gespeichert."),
+"The memory is switched on but does not work: its embeddings provider has no key any more. Choose a provider below and save.": (
+ "La mémoire est activée mais ne fonctionne pas : son fournisseur d'embeddings n'a plus de clé. Choisissez un fournisseur ci-dessous et enregistrez.",
+ "La memoria está activada pero no funciona: su proveedor de embeddings ya no tiene clave. Elija un proveedor abajo y guarde.",
+ "Das Gedächtnis ist eingeschaltet, funktioniert aber nicht: Sein Embeddings-Anbieter hat keinen Schlüssel mehr. Wählen Sie unten einen Anbieter und speichern Sie."),
+"Sources": (
+ "Sources",
+ "Fuentes",
+ "Quellen"),
+"The assistant could not answer with web search on. Turn it off in the + menu, or allow web search for this key in the provider's console.": (
+ "L'assistant n'a pas pu répondre avec la recherche en ligne. Désactivez-la dans le menu +, ou autorisez la recherche web pour cette clé dans la console du fournisseur.",
+ "El asistente no ha podido responder con la búsqueda en la web activada. Desactívela en el menú +, o permita la búsqueda web para esta clave en la consola del proveedor.",
+ "Der Assistent konnte mit aktivierter Websuche nicht antworten. Schalten Sie sie im Menü + aus oder erlauben Sie die Websuche für diesen Schlüssel in der Konsole des Anbieters."),
+"The relay answers. Model in use: %model%.": (
+ "Le relais répond. Modèle utilisé : %model%.",
+ "El relé responde. Modelo en uso: %model%.",
+ "Das Relay antwortet. Verwendetes Modell: %model%."),
+"The relay is offline, or the model no longer passes its tool test. Start O'So AI Relay on the computer where your AI runs, then test again.": (
+ "Le relais est hors ligne, ou le modèle ne réussit plus son test des outils. Lancez O'So AI Relay sur l'ordinateur où tourne votre IA, puis testez à nouveau.",
+ "El relé está desconectado, o el modelo ya no supera su prueba de herramientas. Inicie O'So AI Relay en el ordenador donde funciona su IA y vuelva a probar.",
+ "Das Relay ist offline, oder das Modell besteht seinen Werkzeugtest nicht mehr. Starten Sie O'So AI Relay auf dem Computer, auf dem Ihre KI läuft, und testen Sie erneut."),
+"The relay no longer offers this model, or it was unlinked. Pick a model again.": (
+ "Le relais ne propose plus ce modèle, ou il a été délié. Choisissez à nouveau un modèle.",
+ "El relé ya no ofrece este modelo, o se ha desvinculado. Vuelva a elegir un modelo.",
+ "Das Relay bietet dieses Modell nicht mehr an, oder es wurde getrennt. Wählen Sie erneut ein Modell."),
+"Local assistant saved. Model in use: %model%.": (
+ "Assistant local enregistré. Modèle utilisé : %model%.",
+ "Asistente local guardado. Modelo en uso: %model%.",
+ "Lokaler Assistent gespeichert. Verwendetes Modell: %model%."),
+"Local assistant saved, but its relay is offline right now. Start O'So AI Relay on the computer where your AI runs.": (
+ "Assistant local enregistré, mais son relais est hors ligne pour l'instant. Lancez O'So AI Relay sur l'ordinateur où tourne votre IA.",
+ "Asistente local guardado, pero su relé está desconectado en este momento. Inicie O'So AI Relay en el ordenador donde funciona su IA.",
+ "Lokaler Assistent gespeichert, aber sein Relay ist gerade offline. Starten Sie O'So AI Relay auf dem Computer, auf dem Ihre KI läuft."),
+"The local assistant could not answer. Check that O'So AI Relay and your AI are running on the computer, then try again.": (
+ "L'assistant local n'a pas pu répondre. Vérifiez que O'So AI Relay et votre IA tournent sur l'ordinateur, puis réessayez.",
+ "El asistente local no ha podido responder. Compruebe que O'So AI Relay y su IA están funcionando en el ordenador y vuelva a intentarlo.",
+ "Der lokale Assistent konnte nicht antworten. Prüfen Sie, ob O'So AI Relay und Ihre KI auf dem Computer laufen, und versuchen Sie es erneut."),
+"Edit the local assistant": (
+ "Modifier l'assistant local",
+ "Editar el asistente local",
+ "Lokalen Assistenten bearbeiten"),
+"Add a local assistant": (
+ "Ajouter un assistant local",
+ "Añadir un asistente local",
+ "Lokalen Assistenten hinzufügen"),
+"Online": (
+ "En ligne",
+ "En línea",
+ "Online"),
+"Offline": (
+ "Hors ligne",
+ "Desconectado",
+ "Offline"),
+"Local": (
+ "Local",
+ "Local",
+ "Lokal"),
+"A local assistant answers with an AI running on your own computer: Ollama, LM Studio or any software that speaks the OpenAI API. Your conversations and your shop data go to your computer, not to an AI company, and there is no key to pay for.": (
+ "Un assistant local répond avec une IA qui tourne sur votre propre ordinateur : Ollama, LM Studio ou tout logiciel compatible avec l'API d'OpenAI. Vos conversations et les données de votre boutique vont sur votre ordinateur, pas chez une entreprise d'IA, et il n'y a aucune clé à payer.",
+ "Un asistente local responde con una IA que funciona en su propio ordenador: Ollama, LM Studio o cualquier programa compatible con la API de OpenAI. Sus conversaciones y los datos de su tienda van a su ordenador, no a una empresa de IA, y no hay ninguna clave que pagar.",
+ "Ein lokaler Assistent antwortet mit einer KI, die auf Ihrem eigenen Computer läuft: Ollama, LM Studio oder jede Software, die die OpenAI-API spricht. Ihre Unterhaltungen und Ihre Shopdaten gehen an Ihren Computer, nicht an ein KI-Unternehmen, und es gibt keinen Schlüssel zu bezahlen."),
+"The link goes through O'So AI Relay, a small program that runs on your computer and calls your shop. Your shop never connects to your computer, so nothing has to be opened on your network.": (
+ "La liaison passe par O'So AI Relay, un petit programme qui tourne sur votre ordinateur et appelle votre boutique. Votre boutique ne se connecte jamais à votre ordinateur : rien n'est à ouvrir sur votre réseau.",
+ "El enlace pasa por O'So AI Relay, un pequeño programa que funciona en su ordenador y llama a su tienda. Su tienda nunca se conecta a su ordenador, así que no hay que abrir nada en su red.",
+ "Die Verbindung läuft über O'So AI Relay, ein kleines Programm, das auf Ihrem Computer läuft und Ihren Shop aufruft. Ihr Shop verbindet sich nie mit Ihrem Computer, daher muss in Ihrem Netzwerk nichts geöffnet werden."),
+"Download O'So AI Relay for your computer and run it.": (
+ "Téléchargez O'So AI Relay pour votre ordinateur et lancez-le.",
+ "Descargue O'So AI Relay para su ordenador y ejecútelo.",
+ "Laden Sie O'So AI Relay für Ihren Computer herunter und starten Sie es."),
+"Download O'So AI Relay": (
+ "Télécharger O'So AI Relay",
+ "Descargar O'So AI Relay",
+ "O'So AI Relay herunterladen"),
+"Type this code in O'So AI Relay with the address of this shop, or run this command on your computer:": (
+ "Saisissez ce code dans O'So AI Relay avec l'adresse de cette boutique, ou lancez cette commande sur votre ordinateur :",
+ "Introduzca este código en O'So AI Relay con la dirección de esta tienda, o ejecute este comando en su ordenador:",
+ "Geben Sie diesen Code mit der Adresse dieses Shops in O'So AI Relay ein, oder führen Sie diesen Befehl auf Ihrem Computer aus:"),
+"The relay of this assistant was unlinked. Remove the assistant, then add it again.": (
+ "Le relais de cet assistant a été délié. Supprimez l'assistant, puis ajoutez-le à nouveau.",
+ "El relé de este asistente se ha desvinculado. Elimine el asistente y vuelva a añadirlo.",
+ "Das Relay dieses Assistenten wurde getrennt. Entfernen Sie den Assistenten und fügen Sie ihn erneut hinzu."),
+"The relay is linked to %software%.": (
+ "Le relais est lié à %software%.",
+ "El relé está vinculado a %software%.",
+ "Das Relay ist mit %software% verbunden."),
+"The relay is linked.": (
+ "Le relais est lié.",
+ "El relé está vinculado.",
+ "Das Relay ist verbunden."),
+"Only the models that passed the relay tool test are offered: a model that cannot call tools cannot act on your shop.": (
+ "Seuls les modèles qui ont réussi le test des outils du relais sont proposés : un modèle incapable d'appeler des outils ne peut pas agir sur votre boutique.",
+ "Solo se ofrecen los modelos que han superado la prueba de herramientas del relé: un modelo que no puede llamar a herramientas no puede actuar en su tienda.",
+ "Nur Modelle, die den Werkzeugtest des Relays bestanden haben, werden angeboten: Ein Modell, das keine Werkzeuge aufrufen kann, kann nicht in Ihrem Shop handeln."),
+"The model %model% no longer passes the relay tool test: pick another one.": (
+ "Le modèle %model% ne réussit plus le test des outils du relais : choisissez-en un autre.",
+ "El modelo %model% ya no supera la prueba de herramientas del relé: elija otro.",
+ "Das Modell %model% besteht den Werkzeugtest des Relays nicht mehr: Wählen Sie ein anderes."),
+"Link O'So AI Relay": (
+ "Lier O'So AI Relay",
+ "Vincular O'So AI Relay",
+ "O'So AI Relay verbinden"),
+"Single use, valid 10 minutes. Checked automatically: nothing to click while it waits.": (
+ "Usage unique, valable 10 minutes. Vérifié automatiquement : rien à cliquer pendant l'attente.",
+ "Un solo uso, válido 10 minutos. Se comprueba automáticamente: no hay que hacer clic mientras espera.",
+ "Einmalig, 10 Minuten gültig. Wird automatisch geprüft: Während des Wartens ist nichts zu klicken."),
+"The code expired before O'So AI Relay used it.": (
+ "Le code a expiré avant que O'So AI Relay ne l'utilise.",
+ "El código caducó antes de que O'So AI Relay lo usara.",
+ "Der Code ist abgelaufen, bevor O'So AI Relay ihn verwendet hat."),
+"Retry": (
+ "Réessayer",
+ "Reintentar",
+ "Erneut versuchen"),
+"Test your AI": (
+ "Tester votre IA",
+ "Probar su IA",
+ "Ihre KI testen"),
+"Waiting for O'So AI Relay to test your AI: in the relay, type the address of your AI and click Test.": (
+ "En attente du test de votre IA par O'So AI Relay : dans le relais, saisissez l'adresse de votre IA et cliquez sur Tester.",
+ "Esperando a que O'So AI Relay pruebe su IA: en el relé, introduzca la dirección de su IA y haga clic en Probar.",
+ "Warten, bis O'So AI Relay Ihre KI testet: Geben Sie im Relay die Adresse Ihrer KI ein und klicken Sie auf Testen."),
+"Still no model able to call tools. Check that O'So AI Relay is running and that your AI passed its test, then retry.": (
+ "Toujours aucun modèle capable d'appeler des outils. Vérifiez que O'So AI Relay tourne et que votre IA a réussi son test, puis réessayez.",
+ "Todavía no hay ningún modelo capaz de llamar a herramientas. Compruebe que O'So AI Relay está en marcha y que su IA ha superado la prueba, y vuelva a intentarlo.",
+ "Noch immer kein Modell, das Werkzeuge aufrufen kann. Prüfen Sie, ob O'So AI Relay läuft und Ihre KI den Test bestanden hat, und versuchen Sie es erneut."),
+"Models able to call tools: %count%.": (
+ "Modèles capables d'appeler des outils : %count%.",
+ "Modelos capaces de llamar a herramientas: %count%.",
+ "Modelle, die Werkzeuge aufrufen können: %count%."),
+"Choose the model": (
+ "Choisir le modèle",
+ "Elegir el modelo",
+ "Modell wählen"),
+"Assistants": (
+ "Assistants",
+ "Asistentes",
+ "Assistenten"),
+"Models": (
+ "Modèles",
+ "Modelos",
+ "Modelle"),
+"Back to the assistants": (
+ "Retour aux assistants",
+ "Volver a los asistentes",
+ "Zurück zu den Assistenten"),
+"The model picked applies to this conversation. The default model is changed in the module settings.": (
+ "Le modèle choisi vaut pour cette conversation. Le modèle par défaut se change dans les réglages du module.",
+ "El modelo elegido vale para esta conversación. El modelo predeterminado se cambia en los ajustes del módulo.",
+ "Das gewählte Modell gilt für diese Unterhaltung. Das Standardmodell wird in den Einstellungen des Moduls geändert."),
+"Use": (
+ "Usage",
+ "Uso",
+ "Verwendung"),
+"Chat": (
+ "Discussion",
+ "Chat",
+ "Chat"),
+"answers in the chat and acts on the shop, with the default model chosen below": (
+ "répond dans le chat et agit sur la boutique, avec le modèle par défaut choisi ci-dessous",
+ "responde en el chat y actúa en la tienda, con el modelo predeterminado elegido abajo",
+ "antwortet im Chat und handelt im Shop, mit dem unten gewählten Standardmodell"),
+"Default model": (
+ "Modèle par défaut",
+ "Modelo predeterminado",
+ "Standardmodell"),
+"Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider.": (
+ "Chaque nouvelle conversation démarre avec ce modèle ; il peut être changé dans le chat pour une conversation. La liste vient de votre fournisseur.",
+ "Cada nueva conversación empieza con este modelo; se puede cambiar en el chat para una conversación. La lista viene de su proveedor.",
+ "Jede neue Unterhaltung beginnt mit diesem Modell; es kann im Chat für eine Unterhaltung geändert werden. Die Liste kommt von Ihrem Anbieter."),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

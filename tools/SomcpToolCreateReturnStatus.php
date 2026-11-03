@@ -351,9 +351,7 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
                     'id_order_return_state' => $idReturnState,
                     'name' => (string) $state['name'],
                     'color' => (string) $state['color'],
-                    // The five statuses every shop starts with cannot be
-                    // removed: both back offices hide Delete on 1 to 5.
-                    'removable' => $idReturnState < 1 || $idReturnState > 5,
+                    'removable' => self::removable($idReturnState),
                 ];
             }
         }
@@ -367,7 +365,45 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
             'id_order_return_state' => $idReturnState,
             'name' => (string) $stored->name,
             'color' => (string) $stored->color,
-            'removable' => $idReturnState < 1 || $idReturnState > 5,
+            'removable' => self::removable($idReturnState),
         ];
+    }
+
+    /**
+     * Whether a return status may be deleted.
+     *
+     * The five statuses every shop starts with cannot be: both back offices
+     * hide Delete on 1 to 5. One place for the rule, which the list, the
+     * creation, the update and the deletion tools all read.
+     *
+     * @param int $idReturnState
+     *
+     * @return bool
+     */
+    public static function removable(int $idReturnState): bool
+    {
+        return $idReturnState < 1 || $idReturnState > 5;
+    }
+
+    /**
+     * The status of this identifier, or null when the shop has none.
+     *
+     * No shop test, unlike the catalogue reads: return statuses are not
+     * tied to a shop, the table has no shop column. Public so the update
+     * and deletion tools find a status the same way.
+     *
+     * @param int $idReturnState
+     *
+     * @return OrderReturnState|null
+     */
+    public static function existingStatus(int $idReturnState): ?OrderReturnState
+    {
+        if ($idReturnState < 1) {
+            return null;
+        }
+
+        $status = new OrderReturnState($idReturnState);
+
+        return (int) $status->id === $idReturnState ? $status : null;
     }
 }

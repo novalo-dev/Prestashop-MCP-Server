@@ -183,6 +183,77 @@ class SomcpConfig
      * @param string $value
      * @param int|null $idShop
      */
+    /**
+     * A value as the module stores it, from what a form or the chat sent: the
+     * bounds and the allowed characters of each setting, kept in one place so
+     * the settings page and the built-in assistant cannot come to disagree.
+     *
+     * @param string $key one of defaults()
+     * @param string $raw
+     *
+     * @return string
+     */
+    public static function clean(string $key, string $raw): string
+    {
+        switch ($key) {
+            case self::ENABLED:
+            case self::OAUTH_ENABLED:
+            case self::REFRESH_ROTATION:
+            case self::CIMD_ENABLED:
+            case self::DCR_ENABLED:
+            case self::LOG_ENABLED:
+                return $raw === '1' ? '1' : '0';
+            case self::ACCESS_TTL:
+                return (string) max(60, (int) $raw);
+            case self::REFRESH_TTL:
+                return (string) max(600, (int) $raw);
+            case self::REQUIRED_PROFILE:
+                return (string) max(0, (int) $raw);
+            case self::TOOLS_TTL:
+                // Bounds repeated here rather than trusted from the form: the
+                // endpoint clamps the value it announces anyway, and a field
+                // left saying 0 while the shop announces 10 would read as a bug.
+                return (string) max(10, min(3600, (int) $raw));
+            case self::REDIRECT_HOSTS:
+                // Host names only: anything else here would silently widen what
+                // the module accepts as a return address.
+                $hosts = (string) preg_replace('/[^a-zA-Z0-9.\-\s,;]/', '', $raw);
+
+                return (string) Tools::substr(trim($hosts), 0, 500);
+            default:
+                return $raw;
+        }
+    }
+
+    /**
+     * Whether a profile id may be stored: 0 for every employee, or a profile
+     * that exists. The form offers only existing ones; a hand-made request or
+     * the chat may name any number.
+     *
+     * @param int $idProfile
+     *
+     * @return bool
+     */
+    public static function profileExists(int $idProfile): bool
+    {
+        return $idProfile === 0 || ($idProfile > 0 && Validate::isLoadedObject(new Profile($idProfile)));
+    }
+
+    /**
+     * Whether the two token lifetimes hold together: a refresh token that ran
+     * out before the access token it renews would log every assistant out at
+     * the first renewal.
+     *
+     * @param int $access seconds
+     * @param int $refresh seconds
+     *
+     * @return bool
+     */
+    public static function lifetimesHold(int $access, int $refresh): bool
+    {
+        return $refresh > $access;
+    }
+
     public static function set(string $key, string $value, ?int $idShop = null): void
     {
         Configuration::updateValue($key, $value, false, null, $idShop);

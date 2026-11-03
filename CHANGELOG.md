@@ -14,6 +14,448 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+## 1.2.0 - 2026-11-03
+
+### Added
+
+**Reviewing the modules.** The new tool `somcp_list_modules` lists the
+modules of the shop as **Modules > Module Manager** shows them, installed or
+only on disk: name, version, author, description, whether each one is
+installed, enabled and enabled on mobile, and whether its files are newer
+than the installed version and wait for an upgrade. It filters like the
+**Status** filter and the search field of the screen, and reads only the shop,
+never the marketplace. It comes with the new **Review modules** prompt and
+needs the new permission `mcp.modules.read`, which the consent screen
+describes as reading the modules of the shop, and the `view` right on
+**Modules > Module Manager**.
+
+**Reading one module.** The new tool `somcp_get_module` reads one module of
+the shop as its card in **Modules > Module Manager** shows it - the same
+version, author, description and state as `somcp_list_modules` - and adds the
+hooks it is attached to on the current shop, as **Design > Positions** lists
+them. It joins the **Review modules** prompt and needs the same
+`mcp.modules.read` permission and `view` right on **Modules > Module Manager**.
+
+**Installing a module.** The new tool `somcp_install_module` installs a module
+whose folder is already on the shop, as the **Install** button of its card in
+**Modules > Module Manager** does, and answers with the module as
+`somcp_get_module` reads it afterwards. A module already installed is refused
+and left as it is, so an install never turns into an upgrade, and nothing is
+uploaded or downloaded. It joins the **Review modules** prompt and needs the
+new permission `mcp.modules.write`, which the consent screen describes as
+installing modules already present on the shop, and the `add` right on
+**Modules > Module Manager**.
+
+**Enabling or disabling a module.** The new tool `somcp_set_module_active`
+enables or disables an installed module on the shop, as the **Enable** and
+**Disable** buttons of its card in **Modules > Module Manager** do, and on
+PrestaShop 8 switches it on or off for mobile. A request that would change
+nothing is refused, since PrestaShop would still report a success and run the
+module's hooks; this module never disables itself. It answers with the module
+as `somcp_get_module` reads it afterwards. It joins the **Review modules**
+prompt and needs the `mcp.modules.write` permission, which the consent screen
+now describes as installing, enabling and disabling modules already present
+on the shop, and the `edit` right on **Modules > Module Manager**.
+
+**SEO of the shop's own pages.** The new tool `somcp_update_meta_page`
+changes the **Page title**, **Meta description** and **Rewritten URL** of one
+of the pages listed under **Shop Parameters > Traffic & SEO** - contact, new
+products, best sales, search and the others - in the languages you approve,
+in the current shop only, and the **Meta keywords** on PrestaShop 8, the only
+version whose form has them. It checks a **Rewritten URL** as the form does -
+"Only letters and hyphens are allowed." - instead of reshaping what you
+approved, requires it in the shop's default language only, accepts the home
+page's empty one given back unchanged, refuses a friendly URL another page
+already uses, and warns that a new one makes the old address stop working. It
+takes the field names `somcp_list_meta_pages` returns. It joins the **Audit and improve SEO**
+prompt and needs the `mcp.seo.write` permission and the `edit` right on
+**Shop Parameters > Traffic & SEO**.
+
+**Reading one content page.** The new tool `somcp_get_cms_page` reads one
+CMS page as its edit form under **Design > Pages** shows it: category,
+title, meta title, meta description, meta keywords (PrestaShop 8), friendly
+URL, the full page content, **Indexation by search engines** and
+**Displayed**, with the page's address on the storefront. What a page says
+can now be read and quoted, not only listed, and the SEO fields keep the
+names `somcp_update_cms_seo` takes, so a value read can be written back as
+is. It joins the **Read content pages** prompt and needs the
+`mcp.content.read` permission and the `view` right on **Design > Pages**.
+
+**Deep thinking, web search and memory, switched per conversation.** The
+**+** menu of the built-in assistant now has switches for the conversation
+you are in. **Deep thinking** asks the assistant to think longer before
+answering, for Claude, Gemini and OpenAI's reasoning models; it is slower and
+uses more tokens, and what the assistant thought can be unfolded above its
+answer. **Web search** lets Claude and Gemini look things up on the web with the
+key they already have, and the pages used are listed in the conversation.
+Claude searches on its own: each search is billed by Anthropic on top of the
+tokens, and web search must be allowed in your Anthropic console. Gemini
+searches through a second call to the same model with Google Search, counted
+in the tokens like any answer. The other assistants - OpenAI, Mistral,
+DeepSeek, Grok, Cohere - can search too once you pick Claude or Gemini under
+**Web search** in the **Built-in assistant** tab: that assistant searches for
+them with its key, and its searches count in its tokens. The setting follows
+the shop levels like the others, and stays greyed until both a Claude or
+Gemini assistant and an assistant of another provider are set up. With web
+search on, the assistant can also open a page - one you give it, or one a
+search found - and read it.
+
+**The built-in assistant knows the module it belongs to.** Asked how to
+switch its memory on, it used to search the web and answer about other
+products, or say it had no memory at all. It now knows it is the module's
+own chat, what its **+** menu does and where each setting lives, and points
+to the module's documentation for the installed version. For super
+administrators, the employees the settings pages are open to, it can read
+every setting of the module - each with its tab and label, and whether it is
+set for this shop, the group or all shops - with the assistants, tools and
+prompts, and change one setting at a time after you approve it, through the
+same checks as the settings page. It never reads nor writes an API key. These
+abilities, like asking another assistant and searching the web, belong to the
+chat alone: they are not in the module's tool list, and an assistant
+connected over MCP never sees them. **Memory**, offered when the memory is switched on
+in the module settings, can be switched off for one conversation: the
+assistant then works from that conversation alone, and nothing said in it is
+added to the memory - what was remembered before stays. A switch only shows
+when the assistant can use it, and one set away from how a conversation
+starts shows as a pill under the field, with a cross to undo it. The
+conversation keeps its switches when you come back to it.
+
+**A local assistant, running on your own computer.** **Add a local assistant**
+in the **Built-in assistant** tab connects the chat to an AI on your computer -
+Ollama, LM Studio or any software that speaks the OpenAI API - through
+[O'So AI Relay](https://github.com/novalo-dev/Somcp-Relay), a small program you
+download and run there. Your conversations and your shop data then go to your
+computer instead of an AI company, with no key to pay for. The relay calls your
+shop, never the other way round, so nothing has to be opened on your network,
+and it works whether your shop is hosted online or next to you. The screen
+opens on a code valid ten minutes, once, with the command to paste in the
+relay, and a progress bar that moves on by itself: the relay linked, your AI
+tested, the model to choose. Nothing to click while it waits; **Retry** shows
+only when a step gave up, such as a code that expired. Only the models of your
+AI able to call the shop's tools are offered. The list of assistants shows whether the relay is online, and
+**Test the connection** checks it. Removing the local assistant unlinks the
+relay at once. While nobody uses the chat, the relay asks your shop only every
+15 seconds instead of keeping a request open, so it does not hold one of your
+shop's PHP processes; it is back to answering at once as soon as the chat is
+opened.
+
+**Deleting return statuses.** The new tool
+`somcp_delete_return_status` deletes one return status the merchant
+created, as the **Delete** action of the return status list of **Shop
+Parameters > Order Settings > Statuses** does. The five statuses every
+shop starts with are refused, and so is a status a merchandise return
+still stands on, with the number of returns. The prompt **Change an
+order status** names it too.
+
+**Reading the storefront's main menu.** The new tool `somcp_list_menu_links`
+lists the entries of the main menu as the **Selected items** of the **Main
+menu** module's configuration page show them, in order: categories, products,
+CMS pages and categories, brands, suppliers, shops and custom links, each with
+its name in the language asked for and the identifier the other tools take.
+It also lists the custom links of the **Link list**, in the menu or not, and
+names the entries that point to something deleted, which the screen hides.
+When the **Main menu** module is not enabled it says so instead of failing.
+It comes with the new **Storefront menu and layout** prompt and needs the new
+permission `mcp.appearance.read`, which the consent screen describes as
+reading how the storefront looks, and the `view` right on **Modules > Module
+Manager**.
+
+**Adding an entry to the storefront's main menu.** The new tool
+`somcp_add_menu_link` adds one entry to the main menu, as **Add** then **Save**
+in the **Menu Top Link** panel of the **Main menu** module: a category, a
+product, a CMS page or category, a brand, a supplier, all brands or all
+suppliers, a shop or a custom link, at the end or at the position asked. A new
+custom link is created from its label and address in each language and put in
+the menu in the same call, where the screen leaves it outside the menu. An
+empty label or address, which the module would accept, is refused, and so is
+an entry already in the menu. Only the menu of the connected shop changes, and
+the storefront shows it at once. The **Storefront menu and layout** prompt
+names it. It needs the new permission `mcp.appearance.write`, which the
+consent screen describes as changing how the storefront looks, and the `edit`
+right on **Modules > Module Manager**.
+
+**Changing a custom link of the storefront's main menu.** The new tool
+`somcp_update_menu_link` changes the label, the address or **New window** of
+one custom link of the **Link list** of the **Main menu** module, as **Edit**
+then **Update**. Only what is asked changes: where the form empties a field
+left blank, the other texts and languages are kept, an empty label or address
+is refused, and a language added to the shop after the link was created gets
+its text instead of losing it. A link shared by every shop stays shared. A
+call that would change nothing writes nothing, and the storefront shows the
+change at once. The **Storefront menu and layout** prompt names it. It needs
+the permission `mcp.appearance.write`, which the consent screen now describes
+as also changing the custom links of the main menu, and the `edit` right on
+**Modules > Module Manager**.
+
+**Reading the storefront's theme and page layouts.** The new tool
+`somcp_get_theme` reads **Design > Theme & Logo** for the connected shop: the
+theme in use with its version and author, the other installed themes, the
+addresses of the header, mail and invoice logos and of the favicon - saying
+when the header logo stands in for the mail or invoice logo - and every page
+of **Choose layouts** with the layout it uses, and whether that is the theme's
+default. The **Storefront menu and layout** prompt names it. It needs the
+permission `mcp.appearance.read`, which the consent screen now describes as
+also reading the theme, logos and page layouts, and the `view` right on
+**Design > Theme & Logo**.
+
+**Changing the layout of a page of the storefront.** The new tool
+`somcp_update_theme_setting` sets the layout of one page - full width, three
+columns, or two columns with a small left or right column - as one row of
+**Design > Theme & Logo > Choose layouts** followed by **Save**. Only that
+page changes: every other page keeps its own setting, where the screen saves
+every row at once. Only the layouts the theme offers are accepted, a call that
+would change nothing writes nothing, and the storefront shows the new columns
+at once. It changes the connected shop alone on a multistore installation, and
+is refused in demo mode. The **Storefront menu and layout** prompt names it.
+It needs the permission `mcp.appearance.write`, which the consent screen now
+describes as also changing the layout of the pages, and the `edit` right on
+**Design > Theme & Logo**.
+
+**Checking the performance settings.** The new tool `somcp_get_cache_status`
+reads every card of **Advanced Parameters > Performance** for the connected
+shop: Smarty, Debug mode, Optional features, CCC, Media servers and Caching,
+with the caching systems this server can run and the Memcache servers. It
+warns about what slows the storefront or should not stay on in production:
+debug mode or the debug profiler on, forced template compilation, the Smarty
+cache off, overrides disabled, CSS or JavaScript not combined, a caching
+system the server cannot run. On PrestaShop 9 it says whether debug mode is
+limited to a debug cookie, without ever giving the cookie's name or value. It
+changes nothing. It comes with the new **Cache maintenance** prompt and needs
+the new permission `mcp.system.read`, which the consent screen describes as
+reading how the shop runs, and the `view` right on **Advanced Parameters >
+Performance**.
+
+**Clearing the cache.** The new tool `somcp_clear_cache` clears what the
+**Clear cache** button of **Advanced Parameters > Performance** clears: the
+Symfony cache, the Smarty cache and compiled templates, the XML cache, the
+combined CSS and JavaScript files of the theme and the class index. The
+caches are shared by every shop of the installation, so they are cleared for
+all of them; Memcache or APC is not flushed and no setting changes. The shop
+is slower for a few seconds while the caches rebuild, so the tool's own
+description warns of it and keeps a busy shop from being cleared unless the
+merchant asks. The **Cache maintenance** prompt names it. It needs the new permission
+`mcp.system.write`, which the consent screen describes as clearing the cache,
+and the `delete` right on **Advanced Parameters > Performance**, the same
+right the button asks.
+
+### Changed
+
+**Each assistant runs the model you choose, and the chat lets you switch.**
+The Economy, Balanced and Powerful levels are gone: in **Built-in
+assistant**, an assistant is now either a **Chat** assistant with a
+**Default model** picked from the list your provider gives, or an **Images**
+one. An assistant that already ran keeps the model it was using. In the
+chat, the assistant button next to **+** opens a menu like the one of **+**:
+every assistant with its default model, a **Default** badge on the one that
+answers when none is picked, and for each assistant the list of its models,
+its default one marked the same way. The model picked there applies to that
+conversation only.
+
+**The sign-in and consent pages can no longer be shown inside another site.**
+These are the pages where a merchant hands the shop to an assistant.
+PrestaShop lets any site display its pages inside a frame, so another site
+could have placed the consent button under something else and led a signed-in
+merchant to click it without seeing it. Browsers now refuse to show these two
+pages anywhere but on their own.
+
+**Claude costs less in a conversation, and the consumption is exact.**
+Assistants on Claude now ask Anthropic to keep the start of each request in
+its cache: from the second call of a conversation, the tools and the
+instructions are read back at a tenth of the price or less. The tokens a
+provider reads back from its cache are counted apart, and the estimate in
+dollars prices them at that provider's own cache rate (OpenAI, Gemini,
+DeepSeek, xAI and Mistral cache on their side too), instead of at the full
+price. The summary the assistant writes of the oldest messages of a long
+conversation was not counted at all; it now is. **Shop Parameters > MCP
+server > Built-in assistant** says how many of this month's tokens were read
+from a cache.
+
+**Brand addresses filtered like their list.** `somcp_list_manufacturer_addresses`
+now filters like the columns of **Catalog > Brands & Suppliers > Brands >
+Addresses**: part of the **Last name**, **First name**, **Zip/Postal code**
+or **City**, and one **Country** by its ISO code. Each address now also gives
+the name of its country, as the **Country** column shows it, in the shop
+default language or the language asked for.
+
+**Meta keywords of the shop pages.** `somcp_list_meta_pages` now also gives
+the **Meta keywords** of each page on PrestaShop 8; on PrestaShop 9, which
+no longer has that field, they are shown as empty.
+
+**A new look for the built-in assistant.** The chat now looks like the AI
+apps you already know. An empty conversation opens on a short welcome and up
+to four suggested tasks: the prompts of the page you are on come first, and
+only those your rights allow are shown. The **+** button in the field adds
+files or starts any prompt, and a prompt picked there hands its guide to the
+assistant with your message. A change waiting for your approval now reads in
+plain words - each field with its label and its new value, yes or no instead
+of true or false - with **Refuse** and **Approve** side by side and the exact
+data one click away. The conversations can be searched and are grouped by
+day, with the month's spending and its budget under them. Icons are drawn as
+lines instead of emoji, a change still waiting for you shows a clock rather
+than a check, and an answer can be copied in one click. A prompt declared by
+another module can name its icon too.
+
+**Answers drawn as written.** Titles, tables, numbered lists, quotes,
+separators and blocks of code in an answer of the built-in assistant now show
+as such, instead of the raw `###`, `|` and `---` they were written with. A
+wide table scrolls sideways inside the chat.
+
+**The built-in assistant on a multistore shop.** The **Built-in assistant**
+tab now follows the shop levels like the other tabs: the assistants, the
+employees allowed, the monthly cap, the instructions and the memory are set
+for all shops, a group or a shop, each with the **Value of its own here** box
+and "inherited from the group" or "inherited from all shops" beside it. A
+group or a shop uses the assistants of the level above until it is given its
+own: checking the box copies them, keys included, to be changed there.
+A local assistant is not copied: each level links its own relay, so removing
+a local assistant always unlinks its relay at once.
+Conversations and spending stay per shop, and a cap set above applies to
+each shop. With the back office on all shops or a group, the chat now
+appears as soon as one shop has an assistant, and a new conversation starts
+by picking its shop on cards showing each shop's logo. The conversation then
+acts on that shop only, whatever the back office is set to later: its name
+shows in the chat, each conversation of the list carries its shop number,
+and the line shown while the assistant works names the shop too.
+
+**Assistant spending counted in tokens.** The monthly cap of the built-in
+assistant is now set in tokens, the exact count every AI service reports,
+instead of an estimate in US dollars that went stale whenever a price
+changed and counted an unknown model as free. Each assistant can also have
+a monthly cap of its own, useful to keep a powerful model below an economy
+one. The chat shows the tokens of the month against the cap, with the
+estimated cost beside them, marked as an estimate and given to four decimals,
+since a conversation costs fractions of a cent. A cap set in dollars
+before is converted on upgrade at the highest price among your assistants,
+so it is never looser than it was.
+
+**The built-in assistant spends a fraction of the tokens.** Every message
+sent the full description of all the shop's tools to the AI service - some
+50,000 tokens, a plain hello included, and twice that when a tool was used.
+The assistant now starts with a tool finder: it looks up the tools a request
+needs by keyword and loads only those, which the conversation keeps for the
+messages that follow. A hello now costs a few thousand tokens. A prompt
+started from the **+** menu tells the assistant which tools its guide walks
+through, and each is loaded when the step needs it. Tools
+switched off on the **Tools and prompts** tab, or beyond the employee's
+rights, cannot be found nor loaded. Assistants connected over MCP still see
+the whole list, as before.
+
+**Tools only point to tools that exist.** A few tools told the assistant to
+use a tool not written yet - to list the customer groups, check many links,
+change an order status, or install and enable modules - so it could reach for
+a call that only failed. They now say where to look in the back office
+instead, such as **Customers > Groups**, and each change still names the tool
+that shows its result. The link to a new tool is added with that tool.
+
+**Shorter order tools.** The seven tools of the order page - search, read,
+change the status, set the tracking number or the private note, add a message,
+record a payment - now describe themselves in a few sentences instead of a
+paragraph, about a fifth lighter for the assistant on every step. What
+matters is kept: when the customer is emailed, which tool gives each
+identifier, and which read checks a change.
+
+**Shorter stock and statistics tools.** The three tools of the Stock page -
+read the stock of a product, list what runs low, change a quantity - and the
+two statistics tools - sales summary and best-selling products - now describe
+themselves in a few sentences, a quarter lighter for the assistant on every
+step. What matters is kept: what each figure means on the screen, which tool
+gives each identifier, and which read checks a stock change.
+
+**Shorter content page tools.** The four tools of Design > Pages - list the
+pages, read one, check their SEO, change their SEO fields - now describe
+themselves in a few sentences, almost a third lighter for the assistant on
+every step. What matters is kept: which tool gives each page identifier, the
+warning that a new friendly URL breaks the old address, and which read checks
+a change.
+
+**Shorter Traffic & SEO tools.** The six tools of Shop Parameters > Traffic &
+SEO - check a public page, read the SEO settings, read and generate
+robots.txt, list the shop pages and change their SEO - now describe themselves
+in a few sentences, a third lighter for the assistant on every step. What
+matters is kept: which tool gives each page identifier, the warning that a new
+Rewritten URL breaks the old address, the reminder that generating robots.txt
+loses the lines written by hand, and which read checks a change.
+
+### Fixed
+
+**A conversation no longer stops for good after the AI service fails.** When
+the AI service failed right after a change you had approved - often a
+"high demand" error from Gemini - the change was made, but the conversation
+then refused every new message, with this assistant or any other, and had to
+be thrown away. The built-in assistant now runs on Neuron AI 4.1.19: the
+change is recorded the moment it is made, and the next message is answered.
+A conversation that broke this way before the update picks up again too,
+without running the change a second time.
+
+**An approved change shows as done in the built-in assistant.** After the
+employee approved a change - turning a product on or off, for example - the
+change was made and the assistant answered, but its step kept the clock of a
+change still waiting, without "approved" next to it. A refused change showed
+the same clock. Each step now shows what the employee decided.
+
+**An assistant missing a permission is asked to request it, instead of
+signing in again.** When an assistant called a tool its connection was not
+allowed to use - writing to the catalogue with a read-only connection, for
+example - the shop answered as if the connection had expired. Some assistants
+then dropped it and asked the merchant to connect again, which gave the same
+connection back and the same refusal. The shop now answers that a permission
+is missing and names it, so the assistant can ask the merchant for exactly
+that one.
+
+**The update to 1.2.0 no longer stops on "Unknown column 'memory_last'".**
+On a shop where an earlier update had not added every column of the
+assistant's tables, the update failed with that message and the module stayed
+on its old version. The module now compares its tables with the ones a fresh
+install creates and adds whatever is missing, on every update. A shop reaches
+the right tables whatever version it comes from, and an update that was
+stopped can simply be run again.
+
+**The built-in assistant no longer freezes after a slow answer.** When the AI
+service took longer to answer than the shop allows a page to run - often 30
+seconds, and on Windows the wait counts - the request was stopped mid-way
+without a trace: the chat showed "Working..." then nothing, and every new
+message was refused for ten minutes with "Answer the change waiting for your
+approval first", though no change was waiting. The chat now asks the shop for
+the time an answer needs where the host allows it, stops waiting for the AI
+service before the shop stops the page, and reports a slow answer as an error
+you can retry. While an earlier step still holds a conversation, the chat says
+so and waits, and the conversation is freed after five minutes instead of ten.
+
+**The test build no longer reports false translation problems.** Its summary
+checked the translations of main's copy too, which the build fetches for its
+scripts, and showed strings of the last release as missing; it also said
+"of ." instead of the branch it built. It now checks the module it built, and
+names the branch.
+
+**Settings that depend on each other are checked before they are saved.**
+The memory could be switched on with no embeddings provider, or with Voyage
+and no key: the page said it was on, and it did nothing. It is now refused
+with a message saying what is missing; no provider is ever picked for you.
+A memory that was on and stopped
+working - its provider's assistant deleted, its key gone - is now flagged in
+red on the page instead of showing a switch on over nothing. A refresh token
+set to last less than the access token, which would log every assistant out
+at its first renewal, and a profile that does not exist are refused too. The
+rest of the form is still saved, and the message says so. The built-in
+assistant follows the same rules when it changes a setting, then reads the
+setting back and tells you whether the feature actually works. It changes
+only the setting you asked for, and asks you whenever a choice is needed -
+which provider, which profile - instead of choosing for you.
+
+**Gemini's thinking now counts toward the monthly cap.** Gemini reports the
+tokens it spends thinking apart from its answer, and bills them as output;
+the built-in assistant left them out of the month's count, so a Gemini
+assistant used more than the chat showed. They are counted now.
+
+### Security
+
+**The module no longer tells callers which PHP version the shop runs.** The
+answers it sends to a connected assistant - tool calls, sign-in exchanges and
+the files it hands out - carried the version of PHP behind the shop, which
+nobody connecting needs. It is now left out of them.
+
 ## 1.1.3 - 2026-11-01
 
 ### Added

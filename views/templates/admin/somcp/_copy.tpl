@@ -49,7 +49,7 @@
             });
         });
 
-        // The images level is offered only for the providers that make
+        // The images use is offered only for the providers that make
         // images: it follows the provider picked in the form.
         var providerField = document.querySelector('[data-somcp-provider]');
         var imageLevel = document.querySelector('[data-somcp-image-level]');
@@ -72,8 +72,8 @@
             followProvider();
         }
 
-        // The exact-model row belongs to the Custom level only: it follows the
-        // level radios, shown when Custom is picked and hidden otherwise.
+        // The default-model row belongs to a chat assistant only: an image
+        // one resolves its own model, so the row hides when Images is picked.
         var customRow = document.querySelector('[data-somcp-custom-model]');
         var levelRadios = document.querySelectorAll('input[name="somcp_assistant_level"]');
         if (customRow && levelRadios.length) {
@@ -344,10 +344,11 @@
         // A setting that inherits from the level above is shown but not editable:
         // its value does not belong to this level, and it is not submitted either
         // - the module removes the row instead of writing what was on screen.
-        // A setting is its form group, or the whole panel for the tool and
-        // prompt lists, which have one panel each and no form group.
+        // A setting is its form group, a block marked data-somcp-setting when
+        // it spans several groups, or the whole panel for the tool and prompt
+        // lists, which have one panel each and no form group.
         document.querySelectorAll('[data-somcp-own]').forEach(function (box) {
-            var group = box.closest('.form-group, .panel');
+            var group = box.closest('[data-somcp-setting], .form-group, .panel');
             if (!group) {
                 return;
             }
@@ -355,7 +356,9 @@
             var apply = function () {
                 group.querySelectorAll('input, select, textarea').forEach(function (field) {
                     if (field !== box) {
-                        field.disabled = !box.checked;
+                        // A field the server greys for a reason of its own
+                        // stays greyed whatever the box says.
+                        field.disabled = !box.checked || field.hasAttribute('data-somcp-locked');
                     }
                 });
             };
@@ -363,6 +366,72 @@
             box.addEventListener('change', apply);
             apply();
         });
+
+        // The assistants of a level: checking the box copies those inherited
+        // here at once, unchecking it removes this level's after a question,
+        // since their keys go with them.
+        document.querySelectorAll('[data-somcp-assistants-own]').forEach(function (box) {
+            box.addEventListener('change', function () {
+                if (!box.checked && !window.confirm(box.getAttribute('data-somcp-question'))) {
+                    box.checked = true;
+                    return;
+                }
+                box.form.submit();
+            });
+        });
+
+        // The pairing of a local assistant checks itself: every few seconds
+        // it asks where the relay stands, and once that moved on - linked,
+        // then models found - the page is drawn again at the new step. The
+        // wait for models gives up after a few minutes, with Retry to start
+        // it again; an expired code has its own Retry, a new code.
+        var pairing = document.querySelector('[data-somcp-relay-status]');
+        if (pairing) {
+            var stage = pairing.getAttribute('data-somcp-relay-stage');
+            var statusUrl = pairing.getAttribute('data-somcp-relay-status');
+            var aiStep = pairing.querySelector('[data-somcp-relay-ai]');
+            var retry = pairing.querySelector('[data-somcp-relay-retry]');
+            var gaveUp = pairing.querySelector('[data-somcp-relay-gaveup]');
+            var waiting = pairing.querySelector('[data-somcp-relay-waiting]');
+            var timer = null;
+            var stopAt = 0;
+            var check = function () {
+                if (stopAt && Date.now() > stopAt) {
+                    clearInterval(timer);
+                    timer = null;
+                    if (aiStep) { aiStep.className = 'is-failed'; }
+                    if (waiting) { waiting.hidden = true; }
+                    if (gaveUp) { gaveUp.hidden = false; }
+                    if (retry) { retry.hidden = false; }
+                    return;
+                }
+                fetch(statusUrl, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+                    .then(function (response) { return response.json(); })
+                    .then(function (answer) {
+                        if (answer && answer.stage && answer.stage !== stage) {
+                            window.location.reload();
+                        }
+                    })
+                    .catch(function () {});
+            };
+            var start = function () {
+                // The code waits until it expires, which the server reports;
+                // the models are waited for five minutes.
+                stopAt = stage === 'wait' ? Date.now() + 5 * 60 * 1000 : 0;
+                if (aiStep && stage === 'wait') { aiStep.className = 'is-checking'; }
+                if (waiting) { waiting.hidden = false; }
+                if (gaveUp) { gaveUp.hidden = true; }
+                if (retry) { retry.hidden = true; }
+                if (!timer) { timer = setInterval(check, 3000); }
+                check();
+            };
+            if (stage === 'code' || stage === 'wait') {
+                start();
+            }
+            if (retry) {
+                retry.addEventListener('click', start);
+            }
+        }
 
         document.querySelectorAll('[data-somcp-copy]').forEach(function (button) {
             button.addEventListener('click', function (event) {

@@ -13,6 +13,7 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_audit_brand_seo`
 - `somcp_update_cms_seo`
 - `somcp_list_meta_pages`
+- `somcp_update_meta_page`
 - `somcp_get_seo_settings`
 - `somcp_get_robots_txt`
 - `somcp_generate_robots_txt`
@@ -63,7 +64,11 @@ installation has its own titles, descriptions and URLs.
    search results, while the `meta_title` of `somcp_audit_cms_seo` is the page
    title itself. Changing a friendly URL of a displayed page makes the old
    address stop working: say so before the call. Read the page again with
-   `somcp_audit_cms_seo` afterwards.
+   `somcp_audit_cms_seo` afterwards. One of the shop's own pages (contact,
+   new products, search...) is changed with `somcp_update_meta_page`, under
+   the names `somcp_list_meta_pages` returns: `title`, `description` and
+   `url_rewrite`. The home page has no friendly URL, and a new one on any other
+   page makes its old address stop working: say so before the call.
 6. **Check the public page.** A value in the database is not proof of what
    the theme prints: call `somcp_audit_page` with the address or the path of
    the page (`/` for the home page) to see the title, description, headings,

@@ -8,6 +8,7 @@ hidden or moved at any time.
 
 - `somcp_ping`
 - `somcp_list_cms_pages`
+- `somcp_get_cms_page`
 
 ## Know which shop you are in
 
@@ -27,9 +28,13 @@ in mind.
 2. **Pick the page the merchant means** by its `id_cms`, the identifier every
    tool takes for a page. When several pages match, show them with their
    title and category and ask which one.
-3. **Answer from the page as it is.** Give the title, its address (`url`) and
-   whether it is displayed. When asked what a page says, quote its texts
-   rather than paraphrasing them; the list does not hold a page's content.
+3. **Read the page** with `somcp_get_cms_page` and its `id_cms` when the
+   merchant asks what it says, or about its meta description, keywords or
+   indexation: the list does not hold a page's content. Pass the same
+   `language` as for the list.
+4. **Answer from the page as it is.** Give the title, its address (`url`) and
+   whether it is displayed. When asked what a page says, quote its content
+   rather than paraphrasing it.
 
 ## What the fields mean
 
@@ -37,6 +42,12 @@ in mind.
 - **Meta title** (`meta_title`) is the title of the browser tab and of search
   results, empty when the merchant has not set one. The two are named `title`
   and `meta_title` in every tool: never put one in place of the other.
+- `seo_title` is the title search engines actually read: the meta title when
+  filled, the title otherwise.
+- `content` is the page's HTML as stored; `meta_keywords` is `null` on
+  PrestaShop 9, which has no such field.
+- `indexation: false` keeps the page out of search engines, even when it is
+  displayed.
 - A hidden page (`active: false`) is not on the storefront, even though it
   has an address.
 - `position` counts from 0; **Design > Pages** shows it from 1.

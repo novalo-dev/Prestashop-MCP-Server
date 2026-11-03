@@ -45,18 +45,13 @@ class SomcpToolGetSalesSummary
         return new SomcpTool(
             'somcp_get_sales_summary',
             Somcp::t('Get a sales summary'),
-            'Returns the sales of this shop over a period, counted as the Stats Dashboard and Sales and '
-                . 'orders pages of the back office count them: valid orders only, dated by their invoice '
-                . 'date, amounts tax excluded and converted to the shop\'s default currency (currency). '
-                . 'revenue_tax_excl is Revenue on Stats Dashboard; sales_tax_excl is Sales on Sales and '
-                . 'orders, that is the revenue minus the credit slips of those orders; revenue_tax_incl '
-                . 'is the same revenue tax included. Also orders_count, products_bought, the average '
-                . 'basket tax excluded and included, and new_customers (accounts created in the period). '
-                . 'With compare_previous, previous holds the same figures for the period of the same '
-                . 'length that ends the day before date_from. An empty period gives zeros. '
-                . 'Do not use it to list the orders behind the figures - somcp_search_orders does, but '
-                . 'it filters on the date the order was placed, not the invoice date, so a few orders '
-                . 'can differ at the edges of a period. Do not use it for the products that sold most (somcp_list_best_sellers).',
+            'Returns the sales of a period as Stats Dashboard and Sales and orders count them: valid '
+                . 'orders dated by invoice date, tax excluded, in the default currency. revenue_tax_excl is '
+                . 'Revenue on Stats Dashboard, sales_tax_excl is Sales on Sales and orders (credit slips '
+                . 'taken off). Also orders, products bought, average basket and new customers; previous with '
+                . 'compare_previous. The orders behind the figures are somcp_search_orders, dated by order '
+                . 'date, so the edges of a period can differ; the products that sold most are '
+                . 'somcp_list_best_sellers.',
             [
                 'type' => 'object',
                 'properties' => [

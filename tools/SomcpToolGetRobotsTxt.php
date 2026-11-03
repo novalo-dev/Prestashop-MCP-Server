@@ -53,16 +53,11 @@ class SomcpToolGetRobotsTxt
         return new SomcpTool(
             'somcp_get_robots_txt',
             Somcp::t('Read the robots.txt file'),
-            'Reads the shop\'s robots.txt, the file at the root of the PrestaShop installation that tells search '
-                . 'engines which addresses not to crawl, and says what it blocks. Returns present, content (the file '
-                . 'as it is), groups (one per group of the file: user_agents, allow and disallow rules in their '
-                . 'order), sitemaps (the Sitemap lines), size in bytes, last_modified, and warnings: disallow_all '
-                . '(a group blocking the whole site), blocks_products and blocks_categories (a rule blocking the '
-                . 'address of a real product or category of the shop, with the rule, the address and its language), '
-                . 'no_sitemap, not_at_domain_root (the shop is in a folder, so search engines never read this '
-                . 'file), too_large, no_robots_txt. On a multistore installation the file is shared by every shop. '
-                . 'Read only. Do not use it for AI crawlers specifically (somcp_check_ai_crawler_access), or to '
-                . 'write the file again (somcp_generate_robots_txt).',
+            'Reads the shop\'s robots.txt, the file that tells search engines which addresses not to crawl, '
+                . 'and says what it blocks: its groups of rules in order, its Sitemap lines, and warnings such as a '
+                . 'group blocking the whole site, a rule blocking a real product or category, no sitemap, or a shop '
+                . 'in a folder where search engines never read the file. On a multistore installation the file is '
+                . 'shared by every shop. Read only. To write it again, use somcp_generate_robots_txt.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),

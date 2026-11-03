@@ -129,6 +129,14 @@ class SomcpToolClearCache
         Tools::clearSmartyCache();
         Tools::clearXMLCache();
         Media::clearCache();
-        PrestaShopAutoload::getInstance()->generateIndex();
+        // PrestaShop 8.1 moved the class index to the prestashop/autoload
+        // package and dropped the global class 8.0 loads from classes/: on
+        // 8.1 and later the old name does not exist at all, and a call to it
+        // stopped the whole clearing. Each name is checked before it is used.
+        if (class_exists('PrestaShop\Autoload\PrestashopAutoload')) {
+            PrestaShop\Autoload\PrestashopAutoload::getInstance()->generateIndex();
+        } elseif (class_exists('PrestaShopAutoload')) {
+            PrestaShopAutoload::getInstance()->generateIndex();
+        }
     }
 }

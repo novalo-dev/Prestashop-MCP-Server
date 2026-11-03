@@ -120,7 +120,7 @@ class SomcpToolGetTheme
 
         // Built for the token's shop, so each theme is read with this shop's
         // own configuration, as the back office reads it.
-        $builder = new \PrestaShop\PrestaShop\Core\Addon\Theme\ThemeManagerBuilder($legacy, Db::getInstance());
+        $builder = new PrestaShop\PrestaShop\Core\Addon\Theme\ThemeManagerBuilder($legacy, Db::getInstance());
         $repository = $builder->buildRepository($shop);
 
         try {
@@ -188,11 +188,11 @@ class SomcpToolGetTheme
     /**
      * The fields of a theme card of My theme for ... shop.
      *
-     * @param \PrestaShop\PrestaShop\Core\Addon\Theme\Theme $theme
+     * @param PrestaShop\PrestaShop\Core\Addon\Theme\Theme $theme
      *
      * @return array<string, string>
      */
-    private static function describe(\PrestaShop\PrestaShop\Core\Addon\Theme\Theme $theme): array
+    private static function describe(PrestaShop\PrestaShop\Core\Addon\Theme\Theme $theme): array
     {
         return [
             'name' => (string) $theme->getName(),

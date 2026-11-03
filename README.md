@@ -252,6 +252,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_list_menu_links` | `mcp.appearance.read` | `view` on `AdminModulesSf` | read |
 | `somcp_add_menu_link` | `mcp.appearance.write` | `edit` on `AdminModulesSf` | write |
 | `somcp_update_menu_link` | `mcp.appearance.write` | `edit` on `AdminModulesSf` | write |
+| `somcp_get_theme` | `mcp.appearance.read` | `view` on `AdminThemes` | read |
 
 ### SEO
 

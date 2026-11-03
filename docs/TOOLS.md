@@ -2766,14 +2766,26 @@ At least one of `label`, `url`, `new_window` is required.
 Same panel, labels, message, tables and code on 8.0.1 (`ps_mainmenu` 2.3.1) and 9.0.0 (2.3.4).
 
 #### `somcp_get_theme`
-**State**: draft · [issue #32](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/32)
+**State**: written · [issue #32](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/32)
 **Nature**: `acts(VIEW, 'AdminThemes')` · **Scope**: `mcp.appearance.read`
 
-**Does** - returns the active theme: name, version, parent theme, logos and the layout used by each page.
+**Does** - returns the theme of the token's shop as **Design > Theme & Logo** shows it: the theme in use and the other installed themes, the four logos of the **Logo** panel, and the layout of every page of **Choose layouts**.
 
-**Parameters** - none.
+**Do not use for** - the meta titles and URLs of the pages (→ `somcp_list_meta_pages` / `somcp_update_meta_page`); changing a page layout (→ `somcp_update_theme_setting`); the main menu (→ `somcp_list_menu_links`).
 
-**Returns** - `name`, `version`, `parent`, `logos`, `layouts` (page → layout), `available_layouts`.
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code of one of the shop's active languages, for the page titles and descriptions; the shop default when left out, any other value refused |
+
+**Returns** - `theme` (**My current theme**) with `name` (technical name, `classic`), `display_name` (`Classic`), `version` (**Version**), `author` (**Designed by**), `parent` (the parent theme of a child theme, `null` otherwise); `other_themes[]`, the other cards of **My theme for ... shop**, with `name`, `display_name`, `version`, `author`, for information only; `logos` with `header` (**Header logo**), `mail` (**Mail logo**), `invoice` (**Invoice logo**), `favicon` (**Favicon**), absolute addresses through `Link::getMediaLink()`, `null` when unset or when the file is missing, and `mail_uses_header` / `invoice_uses_header`, `true` when that logo is `null` and the shop prints the header logo instead; `default_layout`, the layout key of a page without its own setting; `available_layouts[]` (the options of **Layout**) with `layout` (key, `layout-full-width`, ...), `name` (**Full Width**), `description`; `pages[]` (rows of **Choose layouts**, in the screen's order) with `page` (the meta page name, the same value as `somcp_list_meta_pages`), `title` (**Page**, the page name when the title is empty, as the screen), `description` (**Description**), `layout` (**Layout**, the key), `uses_default` (`true` when the page has no setting of its own); `language` (ISO code the texts are in).
+
+**Errors** - an unknown argument: `<name>: not a field of this tool`; an unknown `language`: the shared language refusal; the theme's folder or configuration missing from the server.
+
+**Notes** - the token's shop only: its `shop.theme_name` and its own `config/themes/<theme>/shop<id>.json`, read through the core `ThemeManagerBuilder::buildRepository()` and `ThemeRepository::getInstanceByName()` as the back office, never by parsing the file; on a multistore installation two shops can use different themes. Layouts from `theme_settings.layouts` and `theme_settings.default_layout`, a page absent from the first using the second, as `PageLayoutCustomizationFormFactory`; available layouts from `meta.available_layouts`. Pages from `Meta::getAllMeta()`, as `GetPagesForLayoutCustomizationHandler`. Logos from `PS_LOGO`, `PS_LOGO_MAIL`, `PS_LOGO_INVOICE`, `PS_FAVICON` for the token's shop, files in `img/`. Read only, apart from the configuration cache the core writes on a first read, as the back office does. Logo upload, **Use this theme**, theme deletion, **Add new theme**, **Export current theme** and the two `ps_themecusto` tabs are not part of this tool.
+
+Classic 2.0.6 on 8.0.1, 3.0.2 on 9.0.0; 9.0.0 also ships **Hummingbird** (installed, not used on the test shop). **Best sales** is titled **Best sellers** on 9.0.0 and `index` has no description there: the tool returns what the shop stores, never a fixed list.
 
 #### `somcp_update_theme_setting`
 **State**: draft · [issue #33](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/33)
@@ -3636,7 +3648,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - none.
 
-**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_get_theme`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read the menu or the theme first; take category and page identifiers from their list tools; one change per call.
 

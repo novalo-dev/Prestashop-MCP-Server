@@ -11,6 +11,7 @@ any time.
 - `somcp_list_menu_links`
 - `somcp_add_menu_link`
 - `somcp_update_menu_link`
+- `somcp_get_theme`
 - `somcp_list_categories`
 - `somcp_list_cms_pages`
 
@@ -89,3 +90,21 @@ have its own menu: what you read is the menu of the shop that answered.
 It changes the link only, never its place in the menu. Moving or removing an
 entry, or deleting a custom link, is not available from these tools yet: point
 to **Modules > Module Manager > Main menu > Configure** for that.
+
+## Reading the theme and the page layouts
+
+`somcp_get_theme` reads **Design > Theme & Logo** and **Choose layouts**: the
+theme in use, the other installed themes, the four logos and the layout of
+each page.
+
+- `pages` lists the rows of **Choose layouts**: `page` is the same page name
+  `somcp_list_meta_pages` gives, `layout` the key of the layout used, and
+  `uses_default: true` when the page follows `default_layout` rather than a
+  setting of its own. Name a layout to the merchant by its `name` from
+  `available_layouts`, not by its key.
+- `logos.mail` or `logos.invoice` is `null`, with `mail_uses_header` or
+  `invoice_uses_header` true, when the shop prints the header logo in its
+  place: say so rather than calling the logo missing.
+- `other_themes` are installed but not used by this shop. Switching theme or
+  uploading a logo is not available from these tools: point to **Design >
+  Theme & Logo** for that.

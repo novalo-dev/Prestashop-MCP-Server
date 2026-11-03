@@ -10,6 +10,7 @@
     "somcp_list_menu_links",
     "somcp_add_menu_link",
     "somcp_update_menu_link",
+    "somcp_get_theme",
     "somcp_list_categories",
     "somcp_list_cms_pages"
   ],

@@ -284,7 +284,7 @@ class SomcpScope
             case self::MODULES_WRITE:
                 return $module->l10n('Install, enable and disable the modules already present on this shop, which runs their own code');
             case self::APPEARANCE_READ:
-                return $module->l10n('Read how the storefront looks: the entries and links of its main menu');
+                return $module->l10n('Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts');
             case self::APPEARANCE_WRITE:
                 return $module->l10n('Change how the storefront looks: add entries and custom links to its main menu, and change those links');
             case self::ACCESS:

@@ -1402,10 +1402,15 @@
       <source>List main menu entries</source>
       <target>Lister les entrées du menu principal</target>
     </trans-unit>
-    <!-- Read how the storefront looks: the entries and links of its main menu -->
-    <trans-unit id="b8f9f773fef3958b132944a149aa3adb" resname="Read how the storefront looks: the entries and links of its main menu">
-      <source>Read how the storefront looks: the entries and links of its main menu</source>
-      <target>Lire l'apparence de la boutique : les entrées et les liens de son menu principal</target>
+    <!-- Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts -->
+    <trans-unit id="5e752abdee2dcd532d48b58a8566a6d8" resname="Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts">
+      <source>Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts</source>
+      <target>Lire l'apparence de la boutique : les entrées et les liens de son menu principal, son thème, ses logos et la mise en page de ses pages</target>
+    </trans-unit>
+    <!-- Get the theme and page layouts -->
+    <trans-unit id="fe701cba607ad92c1073e216c6087865" resname="Get the theme and page layouts">
+      <source>Get the theme and page layouts</source>
+      <target>Obtenir le thème et la mise en page des pages</target>
     </trans-unit>
     <!-- Add a main menu entry -->
     <trans-unit id="5659bec49c28f3fafe12d31f741132f4" resname="Add a main menu entry">

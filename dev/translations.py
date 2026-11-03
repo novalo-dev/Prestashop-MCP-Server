@@ -1114,10 +1114,14 @@ T = {
  "Lister les entrées du menu principal",
  "Listar las entradas del menú principal",
  "Einträge des Hauptmenüs auflisten"),
-"Read how the storefront looks: the entries and links of its main menu": (
- "Lire l'apparence de la boutique : les entrées et les liens de son menu principal",
- "Leer el aspecto de la tienda: las entradas y los enlaces de su menú principal",
- "Lesen, wie der Shop aussieht: die Einträge und Links seines Hauptmenüs"),
+"Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts": (
+ "Lire l'apparence de la boutique : les entrées et les liens de son menu principal, son thème, ses logos et la mise en page de ses pages",
+ "Leer el aspecto de la tienda: las entradas y los enlaces de su menú principal, su tema, sus logotipos y el diseño de sus páginas",
+ "Lesen, wie der Shop aussieht: die Einträge und Links seines Hauptmenüs, sein Theme, seine Logos und das Layout seiner Seiten"),
+"Get the theme and page layouts": (
+ "Obtenir le thème et la mise en page des pages",
+ "Obtener el tema y el diseño de las páginas",
+ "Theme und Seitenlayouts abrufen"),
 "Add a main menu entry": (
  "Ajouter une entrée au menu principal",
  "Añadir una entrada al menú principal",

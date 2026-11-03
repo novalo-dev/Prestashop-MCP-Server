@@ -187,6 +187,17 @@ the permission `mcp.appearance.write`, which the consent screen now describes
 as also changing the custom links of the main menu, and the `edit` right on
 **Modules > Module Manager**.
 
+**Reading the storefront's theme and page layouts.** The new tool
+`somcp_get_theme` reads **Design > Theme & Logo** for the connected shop: the
+theme in use with its version and author, the other installed themes, the
+addresses of the header, mail and invoice logos and of the favicon - saying
+when the header logo stands in for the mail or invoice logo - and every page
+of **Choose layouts** with the layout it uses, and whether that is the theme's
+default. The **Storefront menu and layout** prompt names it. It needs the
+permission `mcp.appearance.read`, which the consent screen now describes as
+also reading the theme, logos and page layouts, and the `view` right on
+**Design > Theme & Logo**.
+
 ### Changed
 
 **Claude costs less in a conversation, and the consumption is exact.**

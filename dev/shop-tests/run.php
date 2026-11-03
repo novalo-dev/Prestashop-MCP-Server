@@ -311,6 +311,18 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
         if (!is_array($last) || $last['text'] !== 'Done.') {
             $failures[] = 'assistant: the final answer is missing from the conversation';
         }
+        // Once decided, a change shows what was decided: a step left on the
+        // clock reads as still waiting, after the employee already answered.
+        ++$assistantChecks;
+        $shown = [];
+        foreach ($view['messages'] as $drawn) {
+            foreach ($drawn['tools'] ?? [] as $tool) {
+                $shown[] = (string) $tool['approval'];
+            }
+        }
+        if (!in_array('rejected', $shown, true) || !in_array('approved', $shown, true) || in_array('pending', $shown, true)) {
+            $failures[] = 'assistant: decided changes are drawn as ' . implode(', ', array_filter($shown)) . ' instead of one rejected and one approved';
+        }
 
         // Ownership: the same thread id, asked for by another employee.
         ++$assistantChecks;

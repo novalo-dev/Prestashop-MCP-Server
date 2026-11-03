@@ -227,6 +227,24 @@ class SomcpHttp
     }
 
     /**
+     * Forbids other sites from showing the page inside a frame.
+     *
+     * The sign-in and consent pages carry the button that hands a shop to an
+     * assistant. Framed invisibly by another site, a merchant who is signed
+     * in could be led to click it without seeing it, and PrestaShop sends no
+     * such header of its own. Both headers, for browsers that only know the
+     * older one.
+     */
+    public static function denyFraming(): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+        header('X-Frame-Options: DENY');
+        header("Content-Security-Policy: frame-ancestors 'none'");
+    }
+
+    /**
      * Sends the browser somewhere else and stops the script.
      *
      * PrestaShop's own Tools::redirect() and Tools::redirectAdmin() are

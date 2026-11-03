@@ -271,6 +271,13 @@ if (stripos($location, 'attacker.example') !== false) {
 } else {
     echo "  ok    sign-in page with an unregistered redirect address ({$authorize['status']}, not sent there)\n";
 }
+++$checks;
+if (strtoupper($authorize['headers']['x-frame-options'] ?? '') !== 'DENY') {
+    $failures[] = 'sign-in page can be shown inside a frame by another site (no X-Frame-Options: DENY)';
+    echo "  FAIL  sign-in page refuses to be framed\n";
+} else {
+    echo "  ok    sign-in page refuses to be framed\n";
+}
 $expect('client registering a plain-http address on the internet', $http('POST', $endpoint('oauth', 'a=register'), $json, (string) json_encode([
     'client_name' => 'Attack test',
     'redirect_uris' => ['http://attacker.example/callback'],

@@ -227,6 +227,13 @@ Performance**.
 
 ### Changed
 
+**The sign-in and consent pages can no longer be shown inside another site.**
+These are the pages where a merchant hands the shop to an assistant.
+PrestaShop lets any site display its pages inside a frame, so another site
+could have placed the consent button under something else and led a signed-in
+merchant to click it without seeing it. Browsers now refuse to show these two
+pages anywhere but on their own.
+
 **Claude costs less in a conversation, and the consumption is exact.**
 Assistants on Claude now ask Anthropic to keep the start of each request in
 its cache: from the second call of a conversation, the tools and the
@@ -346,6 +353,12 @@ Rewritten URL breaks the old address, the reminder that generating robots.txt
 loses the lines written by hand, and which read checks a change.
 
 ### Fixed
+
+**An approved change shows as done in the built-in assistant.** After the
+employee approved a change - turning a product on or off, for example - the
+change was made and the assistant answered, but its step kept the clock of a
+change still waiting, without "approved" next to it. A refused change showed
+the same clock. Each step now shows what the employee decided.
 
 **An assistant missing a permission is asked to request it, instead of
 signing in again.** When an assistant called a tool its connection was not

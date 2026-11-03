@@ -958,9 +958,25 @@ class SomcpAssistantChat
         $assistant = $this->assistantOf($thread);
         $titles = $this->toolTitles();
 
+        $stored = $this->store()->loadAll((string) $thread['thread_id'], 300);
+        // The framework writes a change to history as pending before it asks,
+        // and skips that write on resume since the message is already there:
+        // the stored call stays pending for good. The decision travels on the
+        // result of the call, stored once the run went on, so it is read there.
+        $decided = [];
+        foreach ($stored as $message) {
+            if ($message instanceof ToolResultMessage) {
+                foreach ($message->getToolCalls() as $call) {
+                    if ($call->getApprovalState() instanceof ApprovalState && $call->getApprovalState() !== ApprovalState::Pending) {
+                        $decided[(string) $call->getCallId()] = $call->getApprovalState();
+                    }
+                }
+            }
+        }
+
         $messages = [];
-        foreach ($this->store()->loadAll((string) $thread['thread_id'], 300) as $message) {
-            $drawn = $this->draw($message, $titles);
+        foreach ($stored as $message) {
+            $drawn = $this->draw($message, $titles, $decided);
             if ($drawn !== null) {
                 $messages[] = $drawn;
             }
@@ -2454,10 +2470,11 @@ class SomcpAssistantChat
      *
      * @param Message $message
      * @param array<string, string> $titles
+     * @param array<string, ApprovalState> $decided call id => the employee's decision
      *
      * @return array<string, mixed>|null
      */
-    private function draw(Message $message, array $titles): ?array
+    private function draw(Message $message, array $titles, array $decided = []): ?array
     {
         if ($message instanceof ToolResultMessage) {
             // Shown only for the images another assistant generated, drawn
@@ -2490,7 +2507,7 @@ class SomcpAssistantChat
         if ($message instanceof ToolCallMessage) {
             $calls = [];
             foreach ($message->getToolCalls() as $call) {
-                $state = $call->getApprovalState();
+                $state = $decided[(string) $call->getCallId()] ?? $call->getApprovalState();
                 $title = $titles[$call->getName()] ?? $call->getName();
                 // Name the assistant a delegation went to, so the step reads
                 // "Ask another assistant (Gemini)" rather than hiding who did it.

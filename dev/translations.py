@@ -1110,6 +1110,22 @@ T = {
  "Nom d'un module",
  "Nombre de un módulo",
  "Name eines Moduls"),
+"List main menu entries": (
+ "Lister les entrées du menu principal",
+ "Listar las entradas del menú principal",
+ "Einträge des Hauptmenüs auflisten"),
+"Read how the storefront looks: the entries and links of its main menu": (
+ "Lire l'apparence de la boutique : les entrées et les liens de son menu principal",
+ "Leer el aspecto de la tienda: las entradas y los enlaces de su menú principal",
+ "Lesen, wie der Shop aussieht: die Einträge und Links seines Hauptmenüs"),
+"Storefront menu and layout": (
+ "Menu et mise en page de la boutique",
+ "Menú y diseño de la tienda",
+ "Menü und Layout des Shops"),
+"Read and change the main menu of the PrestaShop storefront and the page layouts of its theme.": (
+ "Lire et modifier le menu principal de la boutique PrestaShop et la mise en page des pages de son thème.",
+ "Leer y cambiar el menú principal de la tienda PrestaShop y el diseño de las páginas de su tema.",
+ "Das Hauptmenü des PrestaShop-Shops und das Seitenlayout seines Themes lesen und ändern."),
 "Read content pages": (
  "Lire les pages de contenu",
  "Leer las páginas de contenido",

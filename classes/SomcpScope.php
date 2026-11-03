@@ -77,6 +77,9 @@ class SomcpScope
     /** @var string Changing the modules: installing a module already on the shop. */
     public const MODULES_WRITE = 'mcp.modules.write';
 
+    /** @var string Reading how the storefront looks: its main menu. */
+    public const APPEARANCE_READ = 'mcp.appearance.read';
+
     /**
      * The scopes this module owns.
      *
@@ -84,7 +87,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::APPEARANCE_READ];
     }
 
     /**
@@ -277,6 +280,8 @@ class SomcpScope
                 return $module->l10n('Read the modules of this shop: their version, author and whether they are installed and enabled');
             case self::MODULES_WRITE:
                 return $module->l10n('Install, enable and disable the modules already present on this shop, which runs their own code');
+            case self::APPEARANCE_READ:
+                return $module->l10n('Read how the storefront looks: the entries and links of its main menu');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

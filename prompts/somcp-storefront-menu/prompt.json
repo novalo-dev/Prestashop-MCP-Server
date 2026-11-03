@@ -1,0 +1,17 @@
+{
+  "title": "Storefront menu and layout",
+  "description": "Read and change the main menu of the PrestaShop storefront and the page layouts of its theme.",
+  "icon": "menu",
+  "scopes": [
+    "mcp.appearance.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_list_menu_links",
+    "somcp_list_categories",
+    "somcp_list_cms_pages"
+  ],
+  "controller": "AdminThemes",
+  "action": "view",
+  "arguments": []
+}

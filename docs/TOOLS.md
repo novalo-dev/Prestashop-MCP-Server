@@ -2686,22 +2686,26 @@ What the storefront looks like: the main menu of `ps_mainmenu`, the active theme
 **Not here**: content of the pages (→ Content).
 
 #### `somcp_list_menu_links`
-**State**: draft · [issue #29](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/29)
-**Nature**: `acts(VIEW, 'AdminModules')` · **Scope**: `mcp.appearance.read`
+**State**: written · [issue #29](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/29)
+**Nature**: `acts(VIEW, 'AdminModulesSf')` · **Scope**: `mcp.appearance.read`
 
-**Does** - lists the entries of the storefront's main menu, from the `ps_mainmenu` module.
+**Does** - lists the entries of the storefront's main menu, the **Selected items** of the **Menu Top Link** panel on the configuration page of the **Main menu** module (`ps_mainmenu`), in menu order, and its custom links (**Link list**).
 
-**Do not use for** - the shop's categories (→ `somcp_list_categories`).
+**Do not use for** - the shop's categories (→ `somcp_list_categories`), its CMS pages (→ `somcp_list_cms_pages`); adding an entry (→ `somcp_add_menu_link`) or changing a custom link (→ `somcp_update_menu_link`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, for the labels; the shop default when left out, any other value refused |
 
-**Returns** - per entry, in menu order: `type` (category, CMS page, custom link, ...), `id`, `label`, `link`, `new_window`.
+**Returns** - `module_active`; `entries[]` (**Selected items**, in menu order) with `position` (**Change position**, 1 for the first), `item` (the stored code, `CAT3`, `ALLMAN0`, ...), `type` (the group of **Available items**: `category`, `product`, `cms_page`, `cms_category`, `all_brands`, `brand`, `all_suppliers`, `supplier`, `link`, `shop`), the identifier that applies under the name its list tool gives (`id_category`, `id_product`, `id_cms`, `id_cms_category`, `id_manufacturer`, `id_supplier`, `id_link`, `id_shop`; none for **All brands** / **All suppliers**), `label` (category, product, brand, supplier or shop name, CMS page title, CMS category name, "All brands" / "All suppliers", custom link label, in the requested language), `url` and `new_window` (**Link** and **New window**, custom links only, `null` otherwise); `skipped[]`, the stored codes whose object no longer exists, which the screen hides; `custom_links[]` (**Link list**), every custom link of the token's shop, in the menu or not, with `id_link`, `label`, `url`, `new_window`, `in_menu`; `language` (ISO code the labels are in).
 
-**Notes** - only listed when `ps_mainmenu` is installed and active; absent otherwise, never failing.
+**Errors** - an unknown argument: `<name>: not a field of this tool`; an unknown `language`: the shared language refusal. `ps_mainmenu` not installed or not enabled on the token's shop is not an error: `module_active: false` and empty lists.
+
+**Notes** - reads `MOD_BLOCKTOPMENU_ITEMS` (comma-separated `PREFIX<id>`, falling back from the shop to its group and the global value, as the module) and the tables `linksmenutop` and `linksmenutop_lang` (`id_shop` 0 or the token's shop), never the module's widget, which builds the storefront tree for a customer group and caches it. Labels through the core classes, as the module's `makeMenuOption()`; a custom link without a label in the requested language takes the default language's, as the module does. On the storefront a category entry shows the category and its whole active subtree, a CMS category its sub-categories and pages, **All brands** / **All suppliers** every brand / supplier. Read only.
+
+Same labels, configuration key, prefixes, tables and columns on 8.0.1 (`ps_mainmenu` 2.3.1) and 9.0.0 (2.3.4); 9.0.0 always applies the shop filter to CMS categories and pages, with the same result.
 
 #### `somcp_add_menu_link`
 **State**: draft · [issue #30](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/30)
@@ -3517,7 +3521,7 @@ request: one line, stroke paths on a 24 px grid.
 | `somcp-sales-report` | Statistics | written |
 | `somcp-content-pages` | Content | written |
 | `somcp-modules-review` | Modules | written |
-| `somcp-storefront-menu` | Appearance | draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42) |
+| `somcp-storefront-menu` | Appearance | written |
 | `somcp-cache-maintenance` | System | draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43) |
 | `somcp-seo-audit` | SEO | written |
 | `somcp-aeo-audit` | AEO | to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
@@ -3608,7 +3612,7 @@ request: one line, stroke paths on a 24 px grid.
 **The guide must say** - read before acting; name the module and what it does before installing or switching it; one module per call; a payment or carrier module switched off stops orders or deliveries, say so before doing it.
 
 #### `somcp-storefront-menu`
-**State**: draft · [issue #42](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/42)
+**State**: written
 **Section**: Appearance · **Scope**: `mcp.appearance.read` · **Permission**: `view` on `AdminThemes` · **Icon**: `menu`
 
 **Title** - Storefront menu and layout
@@ -3617,7 +3621,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - none.
 
-**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_add_menu_link`, `somcp_update_menu_link`, `somcp_get_theme`, `somcp_update_theme_setting`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_menu_links`, `somcp_list_categories`, `somcp_list_cms_pages`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read the menu or the theme first; take category and page identifiers from their list tools; one change per call.
 

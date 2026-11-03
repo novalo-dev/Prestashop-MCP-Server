@@ -1397,6 +1397,26 @@
       <source>Name of a module</source>
       <target>Nom d'un module</target>
     </trans-unit>
+    <!-- List main menu entries -->
+    <trans-unit id="160b452f09282b5820aa8412d01d5c91" resname="List main menu entries">
+      <source>List main menu entries</source>
+      <target>Lister les entrées du menu principal</target>
+    </trans-unit>
+    <!-- Read how the storefront looks: the entries and links of its main menu -->
+    <trans-unit id="b8f9f773fef3958b132944a149aa3adb" resname="Read how the storefront looks: the entries and links of its main menu">
+      <source>Read how the storefront looks: the entries and links of its main menu</source>
+      <target>Lire l'apparence de la boutique : les entrées et les liens de son menu principal</target>
+    </trans-unit>
+    <!-- Storefront menu and layout -->
+    <trans-unit id="7898d05d7a9cab751dae320d32d866d4" resname="Storefront menu and layout">
+      <source>Storefront menu and layout</source>
+      <target>Menu et mise en page de la boutique</target>
+    </trans-unit>
+    <!-- Read and change the main menu of the PrestaShop storefront and the page layouts of its theme. -->
+    <trans-unit id="2f4718005a49679aedb4575e2a17f773" resname="Read and change the main menu of the PrestaShop storefront and the page layouts of its theme.">
+      <source>Read and change the main menu of the PrestaShop storefront and the page layouts of its theme.</source>
+      <target>Lire et modifier le menu principal de la boutique PrestaShop et la mise en page des pages de son thème.</target>
+    </trans-unit>
     <!-- Read content pages -->
     <trans-unit id="556b74ab9e61e5b6a75de151bf38c4df" resname="Read content pages">
       <source>Read content pages</source>

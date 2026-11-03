@@ -147,6 +147,19 @@ shop starts with are refused, and so is a status a merchandise return
 still stands on, with the number of returns. The prompt **Change an
 order status** names it too.
 
+**Reading the storefront's main menu.** The new tool `somcp_list_menu_links`
+lists the entries of the main menu as the **Selected items** of the **Main
+menu** module's configuration page show them, in order: categories, products,
+CMS pages and categories, brands, suppliers, shops and custom links, each with
+its name in the language asked for and the identifier the other tools take.
+It also lists the custom links of the **Link list**, in the menu or not, and
+names the entries that point to something deleted, which the screen hides.
+When the **Main menu** module is not enabled it says so instead of failing.
+It comes with the new **Storefront menu and layout** prompt and needs the new
+permission `mcp.appearance.read`, which the consent screen describes as
+reading how the storefront looks, and the `view` right on **Modules > Module
+Manager**.
+
 ### Changed
 
 **Claude costs less in a conversation, and the consumption is exact.**

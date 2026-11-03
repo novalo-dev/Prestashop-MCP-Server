@@ -93,6 +93,8 @@ class SomcpFileModuleFrontController extends ModuleFrontController
         header("Content-Security-Policy: default-src 'none'; sandbox");
         header('Cache-Control: private, max-age=3600');
         header('X-Robots-Tag: noindex, nofollow');
+        // As on every other answer of the module: SomcpHttp::sendHeaders().
+        header_remove('X-Powered-By');
         readfile($file['path']);
         exit;
     }

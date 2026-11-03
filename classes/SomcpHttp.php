@@ -568,6 +568,9 @@ class SomcpHttp
         header('Cache-Control: no-store');
         header('Pragma: no-cache');
         header('X-Content-Type-Options: nosniff');
+        // The PHP version the host runs tells a client nothing it needs, and
+        // tells anyone probing the endpoints which known flaws to try.
+        header_remove('X-Powered-By');
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value);
         }

@@ -171,17 +171,14 @@ class SomcpToolGetCacheStatus
             // PrestaShop 9 writes the cookie test into the _PS_MODE_DEV_ line
             // itself. Only whether there is one is returned: its name and
             // value work as a password to the debug output.
-            $current = is_callable([$debugMode, 'getCurrentDebugMode'])
-                ? (string) call_user_func([$debugMode, 'getCurrentDebugMode'])
-                : '';
+            $current = (string) self::callIfPresent($debugMode, 'getCurrentDebugMode');
             $cookie = $enabled && stripos($current, '$_COOKIE') !== false;
 
             $profilingClass = 'PrestaShop\PrestaShop\Adapter\Debug\DebugProfiling';
             if (class_exists($profilingClass)) {
                 $profiler = new $profilingClass();
-                $profiling = is_callable([$profiler, 'isProfilingEnabled'])
-                    ? (bool) call_user_func([$profiler, 'isProfilingEnabled'])
-                    : null;
+                $profiling = self::callIfPresent($profiler, 'isProfilingEnabled');
+                $profiling = $profiling === null ? null : (bool) $profiling;
             }
         }
 
@@ -220,10 +217,10 @@ class SomcpToolGetCacheStatus
             ];
         }
 
-        $system = defined('_PS_CACHING_SYSTEM_') ? (string) constant('_PS_CACHING_SYSTEM_') : '';
+        $system = (string) self::setting('_PS_CACHING_SYSTEM_');
 
         return [
-            'use_cache' => defined('_PS_CACHE_ENABLED_') && (bool) constant('_PS_CACHE_ENABLED_'),
+            'use_cache' => (bool) self::setting('_PS_CACHE_ENABLED_'),
             // As stored, even with the cache off: the screen keeps it selected.
             'caching_system' => $system === '' ? null : $system,
             'available_systems' => $available,
@@ -297,5 +294,33 @@ class SomcpToolGetCacheStatus
         }
 
         return $warnings;
+    }
+
+    /**
+     * Calls a method that only some PrestaShop releases have.
+     *
+     * Taken as any object, with the method name held in a variable:
+     * each analysis sees one release, where the answer is fixed, and would
+     * call the check useless there - it is what keeps the other releases
+     * working.
+     *
+     * @return mixed null when this release does not have the method
+     */
+    private static function callIfPresent(object $object, string $method)
+    {
+        return method_exists($object, $method) ? $object->{$method}() : null;
+    }
+
+    /**
+     * A constant the core defines at boot from app/config/parameters.php.
+     *
+     * Read by name for the same reason: its value is the shop's, not the one
+     * the analysis was given.
+     *
+     * @return mixed null when the constant is not defined
+     */
+    private static function setting(string $name)
+    {
+        return defined($name) ? constant($name) : null;
     }
 }

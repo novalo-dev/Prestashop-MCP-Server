@@ -401,6 +401,13 @@ tokens it spends thinking apart from its answer, and bills them as output;
 the built-in assistant left them out of the month's count, so a Gemini
 assistant used more than the chat showed. They are counted now.
 
+### Security
+
+**The module no longer tells callers which PHP version the shop runs.** The
+answers it sends to a connected assistant - tool calls, sign-in exchanges and
+the files it hands out - carried the version of PHP behind the shop, which
+nobody connecting needs. It is now left out of them.
+
 ## 1.1.3 - 2026-11-01
 
 ### Added

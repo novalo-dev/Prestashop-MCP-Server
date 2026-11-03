@@ -1927,11 +1927,6 @@
       <source>Module settings</source>
       <target>Réglages du module</target>
     </trans-unit>
-    <!-- Custom -->
-    <trans-unit id="90589c47f06eb971d548591f23c285af" resname="Custom">
-      <source>Custom</source>
-      <target>Personnalisé</target>
-    </trans-unit>
     <!-- Memory -->
     <trans-unit id="4789f23283b3a61f858b641a1bef19a3" resname="Memory">
       <source>Memory</source>
@@ -1987,16 +1982,6 @@
       <source>A key is saved. Leave empty to keep it.</source>
       <target>Une clé est enregistrée. Laissez vide pour la garder.</target>
     </trans-unit>
-    <!-- choose the exact model yourself from the list below -->
-    <trans-unit id="aa88b893d9a68dfbe5b78a49e4f32eb9" resname="choose the exact model yourself from the list below">
-      <source>choose the exact model yourself from the list below</source>
-      <target>choisissez vous-même le modèle exact dans la liste ci-dessous</target>
-    </trans-unit>
-    <!-- Pick the model this assistant runs. The list comes from your provider. -->
-    <trans-unit id="988ce2b86e244bb3a3da21c86329af98" resname="Pick the model this assistant runs. The list comes from your provider.">
-      <source>Pick the model this assistant runs. The list comes from your provider.</source>
-      <target>Choisissez le modèle utilisé par cet assistant. La liste vient de votre fournisseur.</target>
-    </trans-unit>
     <!-- Save this assistant with a working key first, then edit it to choose a model here. -->
     <trans-unit id="bd1281829938c96b41346fb580e4794e" resname="Save this assistant with a working key first, then edit it to choose a model here.">
       <source>Save this assistant with a working key first, then edit it to choose a model here.</source>
@@ -2051,11 +2036,6 @@
     <trans-unit id="49ebed8ecd50e58d994a84edc11c5692" resname="Delete this conversation">
       <source>Delete this conversation</source>
       <target>Supprimer cette conversation</target>
-    </trans-unit>
-    <!-- Default assistant -->
-    <trans-unit id="1cc614a623e7431a0f4240f034523c00" resname="Default assistant">
-      <source>Default assistant</source>
-      <target>Assistant par défaut</target>
     </trans-unit>
     <!-- Confirmation requested -->
     <trans-unit id="b4bfecd0d321f54ddb01ac288f33cdc9" resname="Confirmation requested">
@@ -2407,46 +2387,6 @@
       <source>The key is stored encrypted on your shop and only sent to the provider you picked.</source>
       <target>La clé est stockée chiffrée sur votre boutique et envoyée uniquement au fournisseur choisi.</target>
     </trans-unit>
-    <!-- Level -->
-    <trans-unit id="a0db49ba470c1c9ae2128c3470339153" resname="Level">
-      <source>Level</source>
-      <target>Niveau</target>
-    </trans-unit>
-    <!-- Economy -->
-    <trans-unit id="8afc1f2760cfc2d63b8f0e9ddb1b6f39" resname="Economy">
-      <source>Economy</source>
-      <target>Économique</target>
-    </trans-unit>
-    <!-- fast and inexpensive, enough for most tasks -->
-    <trans-unit id="f2d33646b94d7181862110dbcc561266" resname="fast and inexpensive, enough for most tasks">
-      <source>fast and inexpensive, enough for most tasks</source>
-      <target>rapide et peu cher, suffit pour la plupart des tâches</target>
-    </trans-unit>
-    <!-- Balanced -->
-    <trans-unit id="c6589f5236c0c434d0c63dc5f9a856f2" resname="Balanced">
-      <source>Balanced</source>
-      <target>Équilibré</target>
-    </trans-unit>
-    <!-- finer for texts and SEO -->
-    <trans-unit id="58cac80fbf300c70df5a959d3c49cf38" resname="finer for texts and SEO">
-      <source>finer for texts and SEO</source>
-      <target>plus fin pour les textes et le SEO</target>
-    </trans-unit>
-    <!-- Powerful -->
-    <trans-unit id="42f7a5c8ba7f943ae22164aa3e3a04f8" resname="Powerful">
-      <source>Powerful</source>
-      <target>Puissant</target>
-    </trans-unit>
-    <!-- the most capable, clearly more expensive -->
-    <trans-unit id="6464048b53fb01bfc8eace3c615d777d" resname="the most capable, clearly more expensive">
-      <source>the most capable, clearly more expensive</source>
-      <target>le plus capable, nettement plus cher</target>
-    </trans-unit>
-    <!-- The module always takes the newest model of the chosen level, without an update. -->
-    <trans-unit id="56f1cef7ae8b6076e60a08be4ca33826" resname="The module always takes the newest model of the chosen level, without an update.">
-      <source>The module always takes the newest model of the chosen level, without an update.</source>
-      <target>Le module prend toujours le modèle le plus récent du niveau choisi, sans mise à jour.</target>
-    </trans-unit>
     <!-- Role -->
     <trans-unit id="bbbabdbe1b262f75d99d62880b953be1" resname="Role">
       <source>Role</source>
@@ -2461,11 +2401,6 @@
     <trans-unit id="4d3d769b812b6faa6b76e1a8abaece2d" resname="Active">
       <source>Active</source>
       <target>Actif</target>
-    </trans-unit>
-    <!-- Exact model -->
-    <trans-unit id="bf05ac87def68c6d9b3cf7d4f81c246e" resname="Exact model">
-      <source>Exact model</source>
-      <target>Modèle exact</target>
     </trans-unit>
     <!-- Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1. -->
     <trans-unit id="c6df3fe810b0ad814ae4c660f3dbc1ec" resname="Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.">
@@ -2871,6 +2806,51 @@
     <trans-unit id="c74d6d296e0bb7c2af0df8e5b86d7d07" resname="Choose the model">
       <source>Choose the model</source>
       <target>Choisir le modèle</target>
+    </trans-unit>
+    <!-- Assistants -->
+    <trans-unit id="32ffef5d9cb5af953e1a2c04cfe6664c" resname="Assistants">
+      <source>Assistants</source>
+      <target>Assistants</target>
+    </trans-unit>
+    <!-- Models -->
+    <trans-unit id="25ac429f9072293d27a836ee2a148f47" resname="Models">
+      <source>Models</source>
+      <target>Modèles</target>
+    </trans-unit>
+    <!-- Back to the assistants -->
+    <trans-unit id="4c9496a9eb83b5bf755d11e6b1b6055a" resname="Back to the assistants">
+      <source>Back to the assistants</source>
+      <target>Retour aux assistants</target>
+    </trans-unit>
+    <!-- The model picked applies to this conversation. The default model is changed in the module settings. -->
+    <trans-unit id="bf045dc083eb18c68a2235390bb399f8" resname="The model picked applies to this conversation. The default model is changed in the module settings.">
+      <source>The model picked applies to this conversation. The default model is changed in the module settings.</source>
+      <target>Le modèle choisi vaut pour cette conversation. Le modèle par défaut se change dans les réglages du module.</target>
+    </trans-unit>
+    <!-- Use -->
+    <trans-unit id="ad8783089f828b927473fb61d51940ec" resname="Use">
+      <source>Use</source>
+      <target>Usage</target>
+    </trans-unit>
+    <!-- Chat -->
+    <trans-unit id="55dcdf017b51fc96f7b5f9d63013b95d" resname="Chat">
+      <source>Chat</source>
+      <target>Discussion</target>
+    </trans-unit>
+    <!-- answers in the chat and acts on the shop, with the default model chosen below -->
+    <trans-unit id="388e0f0ddf64f3154aea6ca3ba46c02b" resname="answers in the chat and acts on the shop, with the default model chosen below">
+      <source>answers in the chat and acts on the shop, with the default model chosen below</source>
+      <target>répond dans le chat et agit sur la boutique, avec le modèle par défaut choisi ci-dessous</target>
+    </trans-unit>
+    <!-- Default model -->
+    <trans-unit id="b8821dd93fc369a07b7e9be00bd71b10" resname="Default model">
+      <source>Default model</source>
+      <target>Modèle par défaut</target>
+    </trans-unit>
+    <!-- Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider. -->
+    <trans-unit id="2800e2286adc87fa3b64171f8f97ecd4" resname="Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider.">
+      <source>Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider.</source>
+      <target>Chaque nouvelle conversation démarre avec ce modèle ; il peut être changé dans le chat pour une conversation. La liste vient de votre fournisseur.</target>
     </trans-unit>
     </body>
   </file>

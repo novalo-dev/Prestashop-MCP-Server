@@ -1523,10 +1523,6 @@ T = {
  "Réglages du module",
  "Ajustes del módulo",
  "Moduleinstellungen"),
-"Custom": (
- "Personnalisé",
- "Personalizado",
- "Benutzerdefiniert"),
 "Memory": (
  "Mémoire",
  "Memoria",
@@ -1571,14 +1567,6 @@ T = {
  "Une clé est enregistrée. Laissez vide pour la garder.",
  "Hay una clave guardada. Deje vacío para conservarla.",
  "Ein Schlüssel ist gespeichert. Leer lassen, um ihn zu behalten."),
-"choose the exact model yourself from the list below": (
- "choisissez vous-même le modèle exact dans la liste ci-dessous",
- "elija usted mismo el modelo exacto en la lista de abajo",
- "wählen Sie das genaue Modell selbst aus der Liste unten"),
-"Pick the model this assistant runs. The list comes from your provider.": (
- "Choisissez le modèle utilisé par cet assistant. La liste vient de votre fournisseur.",
- "Elija el modelo que usa este asistente. La lista proviene de su proveedor.",
- "Wählen Sie das Modell dieses Assistenten. Die Liste stammt von Ihrem Anbieter."),
 "Save this assistant with a working key first, then edit it to choose a model here.": (
  "Enregistrez d'abord cet assistant avec une clé valide, puis modifiez-le pour choisir un modèle ici.",
  "Guarde primero este asistente con una clave válida y luego edítelo para elegir un modelo aquí.",
@@ -1623,10 +1611,6 @@ T = {
  "Supprimer cette conversation",
  "Eliminar esta conversación",
  "Dieses Gespräch löschen"),
-"Default assistant": (
- "Assistant par défaut",
- "Asistente predeterminado",
- "Standardassistent"),
 "Confirmation requested": (
  "Confirmation demandée",
  "Confirmación solicitada",
@@ -1907,38 +1891,6 @@ T = {
  "La clé est stockée chiffrée sur votre boutique et envoyée uniquement au fournisseur choisi.",
  "La clave se guarda cifrada en su tienda y solo se envía al proveedor elegido.",
  "Der Schlüssel wird verschlüsselt in Ihrem Shop gespeichert und nur an den gewählten Anbieter gesendet."),
-"Level": (
- "Niveau",
- "Nivel",
- "Stufe"),
-"Economy": (
- "Économique",
- "Económico",
- "Sparsam"),
-"fast and inexpensive, enough for most tasks": (
- "rapide et peu cher, suffit pour la plupart des tâches",
- "rápido y económico, suficiente para la mayoría de tareas",
- "schnell und günstig, reicht für die meisten Aufgaben"),
-"Balanced": (
- "Équilibré",
- "Equilibrado",
- "Ausgewogen"),
-"finer for texts and SEO": (
- "plus fin pour les textes et le SEO",
- "más fino para los textos y el SEO",
- "feiner für Texte und SEO"),
-"Powerful": (
- "Puissant",
- "Potente",
- "Leistungsstark"),
-"the most capable, clearly more expensive": (
- "le plus capable, nettement plus cher",
- "el más capaz, claramente más caro",
- "der leistungsfähigste, deutlich teurer"),
-"The module always takes the newest model of the chosen level, without an update.": (
- "Le module prend toujours le modèle le plus récent du niveau choisi, sans mise à jour.",
- "El módulo siempre usa el modelo más reciente del nivel elegido, sin actualización.",
- "Das Modul nimmt immer das neueste Modell der gewählten Stufe, ohne Update."),
 "Role": (
  "Rôle",
  "Función",
@@ -1951,10 +1903,6 @@ T = {
  "Actif",
  "Activo",
  "Aktiv"),
-"Exact model": (
- "Modèle exact",
- "Modelo exacto",
- "Genaues Modell"),
 "Advanced. Leave empty to follow the level. Required for Ollama if your server has several models. For an assistant that makes images, an image model such as gemini-2.5-flash-image or gpt-image-1.": (
  "Avancé. Laissez vide pour suivre le niveau. Obligatoire pour Ollama si votre serveur a plusieurs modèles. Pour un assistant qui crée des images, un modèle d'images comme gemini-2.5-flash-image ou gpt-image-1.",
  "Avanzado. Déjelo vacío para seguir el nivel. Obligatorio para Ollama si su servidor tiene varios modelos. Para un asistente que crea imágenes, un modelo de imágenes como gemini-2.5-flash-image o gpt-image-1.",
@@ -2279,6 +2227,42 @@ T = {
  "Choisir le modèle",
  "Elegir el modelo",
  "Modell wählen"),
+"Assistants": (
+ "Assistants",
+ "Asistentes",
+ "Assistenten"),
+"Models": (
+ "Modèles",
+ "Modelos",
+ "Modelle"),
+"Back to the assistants": (
+ "Retour aux assistants",
+ "Volver a los asistentes",
+ "Zurück zu den Assistenten"),
+"The model picked applies to this conversation. The default model is changed in the module settings.": (
+ "Le modèle choisi vaut pour cette conversation. Le modèle par défaut se change dans les réglages du module.",
+ "El modelo elegido vale para esta conversación. El modelo predeterminado se cambia en los ajustes del módulo.",
+ "Das gewählte Modell gilt für diese Unterhaltung. Das Standardmodell wird in den Einstellungen des Moduls geändert."),
+"Use": (
+ "Usage",
+ "Uso",
+ "Verwendung"),
+"Chat": (
+ "Discussion",
+ "Chat",
+ "Chat"),
+"answers in the chat and acts on the shop, with the default model chosen below": (
+ "répond dans le chat et agit sur la boutique, avec le modèle par défaut choisi ci-dessous",
+ "responde en el chat y actúa en la tienda, con el modelo predeterminado elegido abajo",
+ "antwortet im Chat und handelt im Shop, mit dem unten gewählten Standardmodell"),
+"Default model": (
+ "Modèle par défaut",
+ "Modelo predeterminado",
+ "Standardmodell"),
+"Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider.": (
+ "Chaque nouvelle conversation démarre avec ce modèle ; il peut être changé dans le chat pour une conversation. La liste vient de votre fournisseur.",
+ "Cada nueva conversación empieza con este modelo; se puede cambiar en el chat para una conversación. La lista viene de su proveedor.",
+ "Jede neue Unterhaltung beginnt mit diesem Modell; es kann im Chat für eine Unterhaltung geändert werden. Die Liste kommt von Ihrem Anbieter."),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

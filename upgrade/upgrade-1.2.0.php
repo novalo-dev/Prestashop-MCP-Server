@@ -85,5 +85,15 @@ function upgrade_module_1_2_0($module)
         }
     }
 
+    // The Economy, Balanced and Powerful levels are gone: an assistant now
+    // runs the model the merchant chose as its default. One that already
+    // resolved its level keeps that model, so nothing changes on the shop;
+    // the provider is not asked here, and one that never ran keeps resolving
+    // its level until it is saved again.
+    if (is_array($present = $db->executeS('SHOW TABLES LIKE "' . pSQL($assistant) . '"')) && $present !== []) {
+        $db->execute('UPDATE `' . bqSQL($assistant) . '` SET `level` = "' . pSQL(SomcpAssistant::LEVEL_CUSTOM) . '", `model` = `resolved_model`'
+            . ' WHERE `level` IN ("economy", "balanced", "power") AND `model` = "" AND `resolved_model` <> ""');
+    }
+
     return true;
 }

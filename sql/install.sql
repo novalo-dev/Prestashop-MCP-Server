@@ -203,8 +203,11 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_upload_file` (
 --
 -- `api_key` is encrypted with the shop's own key before it is stored, so a
 -- database dump alone does not hand out the merchant's provider account.
--- `model` is empty unless the merchant picked one by hand: the level then
--- resolves to the newest model of that tier, read from the provider.
+-- `model` is the model the merchant chose as the assistant's default. It is
+-- empty only on assistants saved before 1.2.0 with an automatic level
+-- (economy, balanced, power), which still resolve the newest model of their
+-- tier until they are saved again. `models` keeps the list the provider gave
+-- for the key, so the chat can offer it without asking the provider each time.
 -- `id_shop` and `id_shop_group` give the level the assistant belongs to, as
 -- for any setting: a shop (id_shop), a group (id_shop_group) or all shops
 -- (both 0). A shop uses the assistants of the most precise level that has any.
@@ -212,8 +215,10 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant` (
     `id_assistant`   INT(11)      NOT NULL AUTO_INCREMENT,
     `provider`       VARCHAR(32)  NOT NULL,
     `api_key`        TEXT         NOT NULL,
-    `level`          VARCHAR(16)  NOT NULL DEFAULT 'economy' COMMENT 'economy, balanced or power',
-    `model`          VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'chosen by hand, overrides the level',
+    `level`          VARCHAR(16)  NOT NULL DEFAULT 'economy' COMMENT 'custom for a chat assistant, image for one that makes pictures, economy, balanced or power on rows from before 1.2.0',
+    `model`          VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'the default model, chosen by the merchant',
+    `models`         TEXT         NULL COMMENT 'models the provider listed for the key, JSON list of ids',
+    `models_at`      DATETIME     DEFAULT NULL,
     `resolved_model` VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'what the level resolved to last time',
     `resolved_at`    DATETIME     DEFAULT NULL,
     `role`           VARCHAR(255) NOT NULL DEFAULT '',
@@ -307,6 +312,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_thread` (
     `title`          VARCHAR(255) NOT NULL DEFAULT '',
     `files`          TEXT         NULL COMMENT 'images generated in the conversation, JSON: name and upload reference',
     `memory_last`    VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'id of the last message written to the long-term memory',
+    `model`          VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'model picked in the chat for this conversation, empty for the default model of its assistant',
     `think`          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'deep thinking asked for this conversation',
     `web_search`     TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'web search allowed in this conversation',
     `memory`         TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '0 when the employee switched the memory off for this conversation',

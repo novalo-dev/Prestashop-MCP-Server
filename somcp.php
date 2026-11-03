@@ -453,7 +453,6 @@ class Somcp extends Module
                 'newThread' => $this->l10n('New conversation'),
                 'threads' => $this->l10n('Conversations'),
                 'deleteThread' => $this->l10n('Delete this conversation'),
-                'defaultAssistant' => $this->l10n('Default assistant'),
                 'approvalTitle' => $this->l10n('Confirmation requested'),
                 'approve' => $this->l10n('Approve'),
                 'refuse' => $this->l10n('Refuse'),
@@ -488,6 +487,11 @@ class Somcp extends Module
                 'yes' => $this->l10n('Yes'),
                 'no' => $this->l10n('No'),
                 'chooseAssistant' => $this->l10n('Choose the assistant'),
+                'assistants' => $this->l10n('Assistants'),
+                'defaultBadge' => $this->l10n('Default'),
+                'models' => $this->l10n('Models'),
+                'backToAssistants' => $this->l10n('Back to the assistants'),
+                'modelNote' => $this->l10n('The model picked applies to this conversation. The default model is changed in the module settings.'),
                 // Shown in turn while the assistant works, a few seconds each.
                 'verbs' => [
                     $this->l10n('Cogitating...'),
@@ -1042,7 +1046,7 @@ class Somcp extends Module
     private function assistantBeingEdited(): ?array
     {
         if (Tools::getValue('somcp_assistant_add') === '1') {
-            return ['id_assistant' => 0, 'provider' => 'anthropic', 'has_key' => false, 'level' => SomcpAssistant::LEVEL_ECONOMY, 'model' => '', 'role' => '', 'active' => true, 'token_cap' => 0];
+            return ['id_assistant' => 0, 'provider' => 'anthropic', 'has_key' => false, 'level' => SomcpAssistant::LEVEL_CUSTOM, 'model' => '', 'resolved_model' => '', 'role' => '', 'active' => true, 'token_cap' => 0];
         }
         $idAssistant = (int) Tools::getValue('somcp_assistant_edit');
 

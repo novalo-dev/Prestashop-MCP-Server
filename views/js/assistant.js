@@ -76,6 +76,8 @@
         trash: ['M3 6h18', 'M8 6V4h8v2', 'M6 6l1 14h10l1-14'],
         copy: ['M9 9h12v12H9z', 'M5 15V5a2 2 0 0 1 2-2h10'],
         chevron: ['M6 9l6 6 6-6'],
+        forward: ['M9 6l6 6-6 6'],
+        back: ['M15 6l-6 6 6 6'],
         shop: ['M3 9l1.5-5h15L21 9', 'M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z', 'M5 13v7h14v-7'],
         clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 1 0 0 18z', 'M12 7v5l3 2'],
         globe: ['M12 21a9 9 0 1 0 0-18 9 9 0 1 0 0 18z', 'M3 12h18', 'M12 3a14 14 0 0 1 0 18', 'M12 3a14 14 0 0 0 0 18'],
@@ -113,7 +115,15 @@
     var body;
     var input;
     var sendButton;
-    var picker;
+    // The assistant and the model picked for a conversation not started
+    // yet; an open conversation keeps its own on the server. 0 and '' stand
+    // for the default assistant and its default model.
+    var picker = { id: 0, model: '' };
+    var pickButton;
+    var pickLabel;
+    var pickMenu;
+    // The assistant whose models the menu lists, 0 for the list of assistants.
+    var pickOpen = 0;
     var threadList;
     var foot;
     var fileInput;
@@ -423,15 +433,166 @@
         if (view && view.thread_id && view.can) {
             return view.can;
         }
-        var picked = Number(picker ? picker.value : 0);
+        var assistant = chosen().assistant || {};
+        return { think: !!assistant.think, web: !!assistant.web, memory: state.memory };
+    }
+
+    // The assistant and the model the conversation on screen runs - or the
+    // ones picked before it started - with the default assistant standing in
+    // for none picked, or for one switched off since. picked is the model
+    // asked for by hand, '' when it is the assistant's default one.
+    function chosen() {
+        var view = state.view;
+        var open = view && view.thread_id;
+        var id = open ? Number(view.id_assistant) : picker.id;
+        var picked = open ? (view.model || '') : picker.model;
         var assistant = null;
         state.assistants.forEach(function (one) {
-            if ((picked && one.id === picked) || (!picked && !assistant && one.default)) {
+            if (one.id === id) {
                 assistant = one;
             }
         });
-        assistant = assistant || (picked ? null : state.assistants[0]) || {};
-        return { think: !!assistant.think, web: !!assistant.web, memory: state.memory };
+        if (!assistant) {
+            picked = '';
+            state.assistants.forEach(function (one) {
+                if (!assistant && one.default) {
+                    assistant = one;
+                }
+            });
+            assistant = assistant || state.assistants[0] || null;
+        }
+        return { id: id, picked: picked, assistant: assistant, model: picked || (assistant ? assistant.model : '') };
+    }
+
+    // What a new conversation starts with: the assistant and the model on
+    // screen, as the employee last picked them.
+    function choice(data) {
+        var now = chosen();
+        data.id_assistant = String(now.id);
+        data.model = now.picked;
+        return data;
+    }
+
+    function pick(assistant, model) {
+        closePicker();
+        var picked = model === assistant.model ? '' : model;
+        if (state.view && state.view.thread_id) {
+            run('assistant', threadData({ id_assistant: String(assistant.id), model: picked }));
+            return;
+        }
+        // Not started yet: the menus follow the assistant picked.
+        picker.id = assistant.id;
+        picker.model = picked;
+        drawSwitches();
+        drawPicker();
+    }
+
+    // The menu of the assistant button, built like the + menu: the
+    // assistants, each with its default model and a badge on the default
+    // one; then, for the one opened, its models with a badge on its default.
+    function drawPicker() {
+        var now = chosen();
+        pickLabel.textContent = now.assistant ? now.assistant.label + (now.model ? ' · ' + now.model : '') : text.chooseAssistant;
+        pickMenu.innerHTML = '';
+        var open = null;
+        state.assistants.forEach(function (one) {
+            if (one.id === pickOpen) {
+                open = one;
+            }
+        });
+
+        if (!open) {
+            pickMenu.appendChild(el('div', 'somcp-addmenu-label somcp-pickmenu-head', text.assistants));
+            state.assistants.forEach(function (one) {
+                var current = !!now.assistant && one.id === now.assistant.id;
+                var many = (one.models || []).length > 1;
+                var row = el('button', 'somcp-addmenu-item somcp-pickmenu-row');
+                row.type = 'button';
+                row.setAttribute('role', 'menuitemradio');
+                row.setAttribute('aria-checked', current ? 'true' : 'false');
+                row.appendChild(current ? icon('check', 16) : el('span', 'somcp-pickmenu-space'));
+                var words = el('span', 'somcp-addmenu-words');
+                var name = el('span', 'somcp-pickmenu-name', one.label);
+                if (one.default) {
+                    name.appendChild(el('em', 'somcp-pickmenu-badge', text.defaultBadge));
+                }
+                words.appendChild(name);
+                words.appendChild(el('small', '', current ? now.model : one.model));
+                row.appendChild(words);
+                if (many) {
+                    row.setAttribute('aria-haspopup', 'menu');
+                    row.appendChild(icon('forward', 16));
+                }
+                row.addEventListener('click', function (event) {
+                    // Kept inside the menu: the panel folds it on any other click.
+                    event.stopPropagation();
+                    if (many) {
+                        pickOpen = one.id;
+                        drawPicker();
+                        var first = pickMenu.querySelector('button');
+                        if (first) {
+                            first.focus();
+                        }
+                    } else {
+                        pick(one, one.model);
+                    }
+                });
+                pickMenu.appendChild(row);
+            });
+            return;
+        }
+
+        var back = el('button', 'somcp-addmenu-item somcp-pickmenu-back');
+        back.type = 'button';
+        back.setAttribute('aria-label', text.backToAssistants);
+        back.appendChild(icon('back', 16));
+        back.appendChild(el('span', '', open.label));
+        back.addEventListener('click', function (event) {
+            event.stopPropagation();
+            pickOpen = 0;
+            drawPicker();
+        });
+        pickMenu.appendChild(back);
+        pickMenu.appendChild(el('div', 'somcp-addmenu-label', text.models));
+        // The default model first if the provider no longer lists it: it
+        // still runs until the settings change it.
+        var models = (open.models || []).slice();
+        if (open.model && models.indexOf(open.model) === -1) {
+            models.unshift(open.model);
+        }
+        models.forEach(function (model) {
+            var current = !!now.assistant && now.assistant.id === open.id && now.model === model;
+            var row = el('button', 'somcp-addmenu-item somcp-pickmenu-row');
+            row.type = 'button';
+            row.setAttribute('role', 'menuitemradio');
+            row.setAttribute('aria-checked', current ? 'true' : 'false');
+            row.appendChild(current ? icon('check', 16) : el('span', 'somcp-pickmenu-space'));
+            var name = el('span', 'somcp-pickmenu-name', model);
+            if (model === open.model) {
+                name.appendChild(el('em', 'somcp-pickmenu-badge', text.defaultBadge));
+            }
+            row.appendChild(name);
+            row.addEventListener('click', function () {
+                pick(open, model);
+            });
+            pickMenu.appendChild(row);
+        });
+        pickMenu.appendChild(el('div', 'somcp-pickmenu-note', text.modelNote));
+    }
+
+    function openPicker() {
+        closeMenu();
+        pickOpen = 0;
+        drawPicker();
+        pickMenu.hidden = false;
+        pickButton.setAttribute('aria-expanded', 'true');
+    }
+
+    function closePicker() {
+        if (pickMenu && !pickMenu.hidden) {
+            pickMenu.hidden = true;
+            pickButton.setAttribute('aria-expanded', 'false');
+        }
     }
 
     function switchData(data) {
@@ -928,26 +1089,14 @@
         // The picker and the list are rebuilt only when they changed too: a
         // menu rebuilt under the pointer closes, and a click on a row being
         // replaced is lost.
-        var choices = JSON.stringify([state.assistants, view ? view.id_assistant : 0]);
+        var choices = JSON.stringify([state.assistants, view ? view.id_assistant : 0, view ? view.model : '', picker]);
         if (choices === state.choices) {
             drawThreads();
             drawSpent(view);
             return;
         }
         state.choices = choices;
-        picker.innerHTML = '';
-        var automatic = el('option', '', text.defaultAssistant);
-        automatic.value = '0';
-        picker.appendChild(automatic);
-        state.assistants.forEach(function (assistant) {
-            var option = el('option', '', assistant.label);
-            option.value = String(assistant.id);
-            picker.appendChild(option);
-        });
-        picker.value = view ? String(view.id_assistant) : '0';
-        if (picker.value === '') {
-            picker.value = '0';
-        }
+        drawPicker();
 
         drawThreads();
         drawSpent(view);
@@ -1019,7 +1168,7 @@
             card.appendChild(el('b', '', shop.name));
             card.appendChild(el('small', '', '#' + shop.id + (shop.domain ? ' · ' + shop.domain : '')));
             card.addEventListener('click', function () {
-                run('new', { id_assistant: picker.value, id_shop: shop.id });
+                run('new', choice({ id_shop: shop.id }));
             });
             grid.appendChild(card);
         });
@@ -1209,6 +1358,7 @@
     }
 
     function openMenu() {
+        closePicker();
         addMenu.hidden = false;
         addButton.setAttribute('aria-expanded', 'true');
     }
@@ -1313,7 +1463,7 @@
                 render();
                 return;
             }
-            run('new', { id_assistant: picker.value });
+            run('new', choice({}));
         });
         var search = el('input', 'somcp-thread-search');
         search.type = 'search';
@@ -1430,30 +1580,39 @@
                 closeMenu();
             }
         });
-        picker = el('select', 'somcp-picker');
-        picker.setAttribute('aria-label', text.chooseAssistant);
-        picker.title = text.chooseAssistant;
-        picker.addEventListener('change', function () {
-            if (state.view && state.view.thread_id) {
-                run('assistant', threadData({ id_assistant: picker.value }));
+        pickButton = el('button', 'somcp-picker');
+        pickButton.type = 'button';
+        pickButton.title = text.chooseAssistant;
+        pickButton.setAttribute('aria-haspopup', 'menu');
+        pickButton.setAttribute('aria-expanded', 'false');
+        pickLabel = el('span', 'somcp-picker-label', text.chooseAssistant);
+        pickButton.appendChild(pickLabel);
+        pickButton.appendChild(icon('chevron', 14));
+        pickButton.addEventListener('click', function () {
+            if (pickMenu.hidden) {
+                openPicker();
             } else {
-                // Not started yet: the menu follows the assistant picked.
-                drawSwitches();
+                closePicker();
             }
         });
+        pickMenu = el('div', 'somcp-addmenu somcp-pickmenu');
+        pickMenu.setAttribute('role', 'menu');
+        pickMenu.setAttribute('aria-label', text.chooseAssistant);
+        pickMenu.hidden = true;
         sendButton = el('button', 'somcp-send');
         sendButton.type = 'submit';
         sendButton.title = text.send;
         sendButton.setAttribute('aria-label', text.send);
         sendButton.appendChild(icon('up'));
         actions.appendChild(addButton);
-        actions.appendChild(picker);
+        actions.appendChild(pickButton);
         actions.appendChild(el('span', 'somcp-composer-gap'));
         actions.appendChild(fileInput);
         actions.appendChild(sendButton);
         switchList = el('div', 'somcp-chat-switches');
         switchList.hidden = true;
         form.appendChild(addMenu);
+        form.appendChild(pickMenu);
         form.appendChild(fileList);
         form.appendChild(input);
         form.appendChild(switchList);
@@ -1472,11 +1631,18 @@
             if (!addMenu.hidden && !addMenu.contains(event.target) && !addButton.contains(event.target)) {
                 closeMenu();
             }
+            if (!pickMenu.hidden && !pickMenu.contains(event.target) && !pickButton.contains(event.target)) {
+                closePicker();
+            }
         });
         panel.addEventListener('keydown', function (event) {
             if (event.key === 'Escape' && !addMenu.hidden) {
                 closeMenu();
                 addButton.focus();
+            }
+            if (event.key === 'Escape' && !pickMenu.hidden) {
+                closePicker();
+                pickButton.focus();
             }
         });
 
@@ -1546,9 +1712,9 @@
         pending = [];
         input.value = '';
         grow();
-        state.view = state.view || { thread_id: '', id_assistant: Number(picker.value), messages: [], status: 'idle', actions: [], tokens: 0, token_cap: 0, spent: 0 };
+        state.view = state.view || { thread_id: '', id_assistant: picker.id, model: picker.model, messages: [], status: 'idle', actions: [], tokens: 0, token_cap: 0, spent: 0 };
         state.view.messages.push({ role: 'user', text: message, files: files.map(function (file) { return file.name; }) });
-        var data = switchData({ text: message, id_assistant: picker.value, files: files });
+        var data = switchData(choice({ text: message, files: files }));
         if (prompt) {
             data.prompt = prompt.name;
         }

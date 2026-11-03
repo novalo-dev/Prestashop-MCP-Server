@@ -473,10 +473,11 @@ class SomcpAssistantChat
 
     /**
      * @param int $idAssistant 0 for whichever assistant leads
+     * @param string $model a model of that assistant picked in the chat, '' for its default one
      *
      * @return array<string, mixed>
      */
-    public function newThread(int $idAssistant): array
+    public function newThread(int $idAssistant, string $model = ''): array
     {
         $threadId = bin2hex(random_bytes(16));
         Db::getInstance()->insert('somcp_assistant_thread', [
@@ -484,11 +485,32 @@ class SomcpAssistantChat
             'id_employee' => (int) $this->employee->id,
             'id_shop' => $this->idShop,
             'id_assistant' => max(0, $idAssistant),
+            'model' => pSQL(self::offeredModel($idAssistant, $model)),
             'date_add' => date('Y-m-d H:i:s'),
             'date_upd' => date('Y-m-d H:i:s'),
         ]);
 
         return (array) $this->thread($threadId);
+    }
+
+    /**
+     * A model picked in the chat, kept only when the assistant offers it and
+     * it is not already its default: a model sent by the page is never run
+     * unchecked, and the default one follows the settings if they change.
+     *
+     * @param int $idAssistant
+     * @param string $model
+     *
+     * @return string
+     */
+    private static function offeredModel(int $idAssistant, string $model): string
+    {
+        $assistant = $idAssistant > 0 && $model !== '' ? SomcpAssistant::get($idAssistant) : null;
+        if ($assistant === null || $model === SomcpAssistant::model($assistant)) {
+            return '';
+        }
+
+        return in_array($model, SomcpAssistant::chatModels($assistant), true) ? $model : '';
     }
 
     /**
@@ -557,18 +579,19 @@ class SomcpAssistantChat
     }
 
     /**
-     * Changes the assistant a conversation talks to.
+     * Changes the assistant a conversation talks to, and the model it runs.
      *
      * @param array<string, mixed> $thread
      * @param int $idAssistant
+     * @param string $model a model of that assistant, '' for its default one
      *
      * @return array<string, mixed>
      */
-    public function useAssistant(array $thread, int $idAssistant): array
+    public function useAssistant(array $thread, int $idAssistant, string $model = ''): array
     {
         Db::getInstance()->update(
             'somcp_assistant_thread',
-            ['id_assistant' => max(0, $idAssistant)],
+            ['id_assistant' => max(0, $idAssistant), 'model' => pSQL(self::offeredModel($idAssistant, $model))],
             '`id_thread` = ' . (int) $thread['id_thread']
         );
 
@@ -1044,6 +1067,7 @@ class SomcpAssistantChat
         return [
             'thread_id' => (string) $thread['thread_id'],
             'id_assistant' => (int) $thread['id_assistant'],
+            'model' => (string) ($thread['model'] ?? ''),
             'id_shop' => $this->idShop,
             'assistant' => $assistant !== null ? (string) $assistant['label'] : '',
             // As the employee set them, and what this assistant can honour:
@@ -2341,9 +2365,19 @@ class SomcpAssistantChat
         $picked = (int) $thread['id_assistant'] > 0 ? SomcpAssistant::get((int) $thread['id_assistant']) : null;
 
         // An image assistant cannot lead: it does not call the shop's tools.
-        return $picked !== null && $picked['active'] && $picked['level'] !== SomcpAssistant::LEVEL_IMAGE
-            ? $picked
-            : SomcpAssistant::leader();
+        if ($picked === null || !$picked['active'] || $picked['level'] === SomcpAssistant::LEVEL_IMAGE) {
+            return SomcpAssistant::leader();
+        }
+        // The model picked in the chat stands in for the default one here,
+        // so the provider, the price and the switches all follow it. It was
+        // checked when picked, and again now: a model the provider withdrew
+        // since then falls back to the default one rather than fail.
+        $model = (string) ($thread['model'] ?? '');
+        if ($model !== '' && in_array($model, SomcpAssistant::chatModels($picked), true)) {
+            $picked['model'] = $model;
+        }
+
+        return $picked;
     }
 
     /**

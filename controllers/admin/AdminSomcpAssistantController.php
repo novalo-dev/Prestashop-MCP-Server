@@ -147,10 +147,10 @@ class AdminSomcpAssistantController extends ModuleAdminController
 
         switch ($action) {
             case 'new':
-                $thread = $chat->newThread((int) Tools::getValue('id_assistant'));
+                $thread = $chat->newThread((int) Tools::getValue('id_assistant'), (string) Tools::getValue('model'));
                 break;
             case 'send':
-                $thread = $thread ?? $chat->newThread((int) Tools::getValue('id_assistant'));
+                $thread = $thread ?? $chat->newThread((int) Tools::getValue('id_assistant'), (string) Tools::getValue('model'));
                 // The switches travel with every message: set before the first
                 // one, the conversation does not exist yet to keep them.
                 $thread = $chat->setSwitches($thread, self::switches());
@@ -169,7 +169,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
                 break;
             case 'assistant':
                 if ($thread !== null) {
-                    $thread = $chat->useAssistant($thread, (int) Tools::getValue('id_assistant'));
+                    $thread = $chat->useAssistant($thread, (int) Tools::getValue('id_assistant'), (string) Tools::getValue('model'));
                 }
                 break;
             case 'switches':
@@ -313,6 +313,10 @@ class AdminSomcpAssistantController extends ModuleAdminController
                 'label' => (string) $assistant['label'],
                 'role' => (string) $assistant['role'],
                 'default' => (bool) $assistant['is_default'],
+                // Its default model and the others it may run, for the
+                // assistant menu of the chat and its list of models.
+                'model' => SomcpAssistant::model($assistant),
+                'models' => SomcpAssistant::chatModels($assistant),
                 // What the + menu may offer before a conversation exists.
                 'think' => SomcpAssistant::thinking($assistant) !== '',
                 'web' => SomcpAssistant::searches($assistant),

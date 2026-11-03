@@ -49,7 +49,7 @@
             });
         });
 
-        // The images level is offered only for the providers that make
+        // The images use is offered only for the providers that make
         // images: it follows the provider picked in the form.
         var providerField = document.querySelector('[data-somcp-provider]');
         var imageLevel = document.querySelector('[data-somcp-image-level]');
@@ -72,8 +72,8 @@
             followProvider();
         }
 
-        // The exact-model row belongs to the Custom level only: it follows the
-        // level radios, shown when Custom is picked and hidden otherwise.
+        // The default-model row belongs to a chat assistant only: an image
+        // one resolves its own model, so the row hides when Images is picked.
         var customRow = document.querySelector('[data-somcp-custom-model]');
         var levelRadios = document.querySelectorAll('input[name="somcp_assistant_level"]');
         if (customRow && levelRadios.length) {

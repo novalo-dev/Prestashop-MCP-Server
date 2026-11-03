@@ -240,6 +240,17 @@ right the button asks.
 
 ### Changed
 
+**Each assistant runs the model you choose, and the chat lets you switch.**
+The Economy, Balanced and Powerful levels are gone: in **Built-in
+assistant**, an assistant is now either a **Chat** assistant with a
+**Default model** picked from the list your provider gives, or an **Images**
+one. An assistant that already ran keeps the model it was using. In the
+chat, the assistant button next to **+** opens a menu like the one of **+**:
+every assistant with its default model, a **Default** badge on the one that
+answers when none is picked, and for each assistant the list of its models,
+its default one marked the same way. The model picked there applies to that
+conversation only.
+
 **The sign-in and consent pages can no longer be shown inside another site.**
 These are the pages where a merchant hands the shop to an assistant.
 PrestaShop lets any site display its pages inside a frame, so another site

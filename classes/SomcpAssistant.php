@@ -185,12 +185,60 @@ class SomcpAssistant
             return [];
         }
 
-        $ids = array_map(static function (array $model): string {
-            return (string) $model['id'];
-        }, $listed);
+        $ids = [];
+        foreach ($listed as $model) {
+            $id = (string) $model['id'];
+            // OpenAI lists every model of the account, those that cannot
+            // hold a conversation included: offered, they would only fail.
+            if ($assistant['provider'] === 'openai' && preg_match('/embedding|tts|whisper|dall-e|image|moderation|davinci|babbage|realtime|audio|transcribe/', $id)) {
+                continue;
+            }
+            $ids[] = $id;
+        }
         sort($ids);
+        if ((int) ($assistant['id_assistant'] ?? 0) > 0) {
+            Db::getInstance()->update('somcp_assistant', [
+                'models' => pSQL((string) json_encode($ids)),
+                'models_at' => date('Y-m-d H:i:s'),
+            ], '`id_assistant` = ' . (int) $assistant['id_assistant']);
+        }
 
         return $ids;
+    }
+
+    /**
+     * The models the chat offers for this assistant: the list kept from the
+     * last time the provider was asked, read again once a day.
+     *
+     * The chat sends the list with every answer, and asking the provider
+     * each time would add its delay to every message. When the provider does
+     * not answer, the list kept stays offered.
+     *
+     * @param array<string, mixed> $assistant
+     *
+     * @return array<int, string> model ids, sorted
+     */
+    public static function chatModels(array $assistant): array
+    {
+        if ($assistant['provider'] === self::LOCAL) {
+            return self::models($assistant);
+        }
+        $fresh = $assistant['models_at'] !== null
+            && time() - (int) strtotime((string) $assistant['models_at']) < self::RESOLVE_TTL;
+        if ($fresh) {
+            return $assistant['models'];
+        }
+        $listed = $assistant['has_key'] ? self::models($assistant) : [];
+        if ($listed === []) {
+            // Asked, and nothing came back: not asked again before tomorrow,
+            // or every message of the chat would wait on a provider that is
+            // down or a key that no longer works.
+            Db::getInstance()->update('somcp_assistant', ['models_at' => date('Y-m-d H:i:s')], '`id_assistant` = ' . (int) $assistant['id_assistant']);
+
+            return $assistant['models'];
+        }
+
+        return $listed;
     }
 
     /**
@@ -498,12 +546,16 @@ class SomcpAssistant
     {
         $providers = self::providers();
         $provider = isset($providers[$values['provider']]) ? $values['provider'] : 'anthropic';
-        $level = in_array($values['level'], self::levelsOf($provider), true) ? $values['level'] : self::LEVEL_ECONOMY;
+        // A chat assistant runs the model the merchant chose as its default;
+        // the Economy, Balanced and Powerful levels are no longer offered.
+        // An image one keeps resolving the newest model that makes pictures.
+        $level = $values['level'] === self::LEVEL_IMAGE && in_array(self::LEVEL_IMAGE, self::levelsOf($provider), true)
+            ? self::LEVEL_IMAGE
+            : self::LEVEL_CUSTOM;
 
-        // The exact model belongs to the Custom level only; the automatic
-        // levels resolve it themselves, so it is cleared for them. A Custom
-        // level left without a model has nothing to run, so it falls back to
-        // the Economy level rather than a chat that cannot answer.
+        // A chat assistant left without a model has nothing to run, so it
+        // falls back to resolving the Economy tier rather than a chat that
+        // cannot answer; the form offers the list once the key works.
         $model = Tools::substr(trim($values['model']), 0, 128);
         if ($level !== self::LEVEL_CUSTOM) {
             $model = '';
@@ -537,8 +589,9 @@ class SomcpAssistant
             'token_cap' => max(0, (int) ($values['token_cap'] ?? 0)),
             'active' => $values['active'] ? 1 : 0,
             // A changed provider, level or model invalidates what the level
-            // resolved to before.
+            // resolved to before, and a changed key the models it listed.
             'resolved_model' => '',
+            'models_at' => ['type' => 'sql', 'value' => 'NULL'],
         ];
         if (trim($values['api_key']) !== '') {
             $data['api_key'] = pSQL(self::seal(trim($values['api_key'])));
@@ -1251,6 +1304,8 @@ class SomcpAssistant
             'online' => $online,
             'level' => (string) $row['level'],
             'model' => (string) $row['model'],
+            'models' => array_values(array_filter(array_map('strval', (array) json_decode((string) ($row['models'] ?? ''), true)))),
+            'models_at' => ($row['models_at'] ?? null) !== null ? (string) $row['models_at'] : null,
             'resolved_model' => (string) $row['resolved_model'],
             'resolved_at' => $row['resolved_at'] !== null ? (string) $row['resolved_at'] : null,
             'role' => (string) $row['role'],

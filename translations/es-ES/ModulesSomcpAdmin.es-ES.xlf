@@ -2237,6 +2237,11 @@
       <source>Of these, %cached% were read back from the provider's cache, which bills them for less.</source>
       <target>De ellos, %cached% se releyeron desde la caché del proveedor, que los factura más baratos.</target>
     </trans-unit>
+    <!-- Local assistants are not copied: each level links its own relay. Add a local assistant here to use one. -->
+    <trans-unit id="af987bcdf373f7fde8138a8a1572c4e0" resname="Local assistants are not copied: each level links its own relay. Add a local assistant here to use one.">
+      <source>Local assistants are not copied: each level links its own relay. Add a local assistant here to use one.</source>
+      <target>Los asistentes locales no se copian: cada nivel vincula su propio relé. Añada aquí un asistente local para usar uno.</target>
+    </trans-unit>
     <!-- About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model. -->
     <trans-unit id="e88aa44df2748a747bb1e82124fee88d" resname="About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.">
       <source>About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.</source>

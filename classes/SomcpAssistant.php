@@ -330,20 +330,33 @@ class SomcpAssistant
      * Gives the level being edited assistants of its own: a copy of those it
      * inherited, keys included, which can then be changed here alone.
      *
-     * @return bool false when a copy could not be written
+     * Local assistants are not copied. A copy would share the relay of the
+     * level above, and removing the assistant there - the way a merchant
+     * unlinks a relay - would leave its token working for this level. Each
+     * level links its own relay instead.
+     *
+     * @return array{copied: bool, local: int} whether every copy was written,
+     *                                         and how many local assistants were left out
      */
-    public static function copyHere(): bool
+    public static function copyHere(): array
     {
         $state = self::editedState();
         if ($state['own']) {
-            return true;
+            return ['copied' => true, 'local' => 0];
         }
         [$idShop, $idGroup] = self::editedLevel();
         $db = Db::getInstance();
         $copied = true;
+        $local = 0;
+        $default = false;
+        $firstLead = 0;
         foreach ($state['assistants'] as $assistant) {
             $row = $db->getRow('SELECT * FROM `' . _DB_PREFIX_ . 'somcp_assistant` WHERE `id_assistant` = ' . (int) $assistant['id_assistant']);
             if (!is_array($row)) {
+                continue;
+            }
+            if ($row['provider'] === self::LOCAL) {
+                ++$local;
                 continue;
             }
             unset($row['id_assistant'], $row['date_add'], $row['date_upd']);
@@ -358,10 +371,22 @@ class SomcpAssistant
                     $values[$column] = pSQL((string) $value);
                 }
             }
-            $copied = $db->insert('somcp_assistant', $values) && $copied;
+            if (!$db->insert('somcp_assistant', $values)) {
+                $copied = false;
+                continue;
+            }
+            $default = $default || (int) $row['is_default'] === 1;
+            if ($firstLead === 0 && $row['level'] !== self::LEVEL_IMAGE) {
+                $firstLead = (int) $db->Insert_ID();
+            }
+        }
+        // The local assistant left out may have been the default one: the
+        // level still needs one to lead its chat.
+        if (!$default && $firstLead > 0) {
+            self::makeDefault($firstLead);
         }
 
-        return $copied;
+        return ['copied' => $copied, 'local' => $local];
     }
 
     /**

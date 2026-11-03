@@ -1055,7 +1055,7 @@
 
         {if $somcp_update.available}
             <div class="alert alert-info">
-                <p><strong>{l s='Version %version% is available.' sprintf=['%version%' => $somcp_update.latest] d='Modules.Somcp.Admin'}</strong></p>
+                <p><strong>{l s='Version %version% is available.' sprintf=['%version%' => ($somcp_update.latest|escape:'html':'UTF-8')] d='Modules.Somcp.Admin'}</strong></p>
             {if $somcp_update.titles}
                 <p>{l s='What is new:' d='Modules.Somcp.Admin'}</p>
                 <ul>

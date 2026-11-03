@@ -682,8 +682,12 @@ class Somcp extends Module
             $this->saveLocalAssistant();
         }
         if (Tools::isSubmit('submitSomcpAssistantOwn')) {
-            if (SomcpAssistant::copyHere()) {
-                $this->flash($this->trans('The assistants inherited from above were copied to this level, where they can now be changed.', [], 'Modules.Somcp.Admin'));
+            $copy = SomcpAssistant::copyHere();
+            if ($copy['copied']) {
+                // One banner holds one message: the note on local assistants
+                // goes after the confirmation rather than replacing it.
+                $this->flash($this->trans('The assistants inherited from above were copied to this level, where they can now be changed.', [], 'Modules.Somcp.Admin')
+                    . ($copy['local'] > 0 ? ' ' . $this->trans('Local assistants are not copied: each level links its own relay. Add a local assistant here to use one.', [], 'Modules.Somcp.Admin') : ''));
             } else {
                 $this->flash($this->trans('The assistants could not be copied to this level. Try again, or add them here by hand.', [], 'Modules.Somcp.Admin'), true);
             }

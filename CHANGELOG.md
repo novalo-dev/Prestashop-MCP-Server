@@ -262,6 +262,8 @@ for all shops, a group or a shop, each with the **Value of its own here** box
 and "inherited from the group" or "inherited from all shops" beside it. A
 group or a shop uses the assistants of the level above until it is given its
 own: checking the box copies them, keys included, to be changed there.
+A local assistant is not copied: each level links its own relay, so removing
+a local assistant always unlinks its relay at once.
 Conversations and spending stay per shop, and a cap set above applies to
 each shop. With the back office on all shops or a group, the chat now
 appears as soon as one shop has an assistant, and a new conversation starts

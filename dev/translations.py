@@ -1771,6 +1771,10 @@ T = {
  "Dont %cached% relus depuis le cache du fournisseur, qui les facture moins cher.",
  "De ellos, %cached% se releyeron desde la caché del proveedor, que los factura más baratos.",
  "Davon wurden %cached% aus dem Cache des Anbieters gelesen, der sie günstiger berechnet."),
+"Local assistants are not copied: each level links its own relay. Add a local assistant here to use one.": (
+ "Les assistants locaux ne sont pas copiés : chaque niveau relie son propre relais. Ajoutez ici un assistant local pour en utiliser un.",
+ "Los asistentes locales no se copian: cada nivel vincula su propio relé. Añada aquí un asistente local para usar uno.",
+ "Lokale Assistenten werden nicht kopiert: Jede Ebene verbindet ihr eigenes Relay. Fügen Sie hier einen lokalen Assistenten hinzu, um einen zu nutzen."),
 "About $%spent%, estimated from the public prices of each provider: a token does not cost the same with every model.": (
  "Environ %spent% $, estimé d'après les prix publics de chaque fournisseur : un token ne coûte pas le même prix avec chaque modèle.",
  "Unos %spent% $, estimado a partir de los precios públicos de cada proveedor: un token no cuesta lo mismo con cada modelo.",

@@ -255,6 +255,12 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_get_theme` | `mcp.appearance.read` | `view` on `AdminThemes` | read |
 | `somcp_update_theme_setting` | `mcp.appearance.write` | `edit` on `AdminThemes` | write |
 
+### System
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_get_cache_status` | `mcp.system.read` | `view` on `AdminPerformance` | read |
+
 ### SEO
 
 | Tool | Scope | Back office right | Nature |
@@ -347,7 +353,7 @@ below can. Where to paste the address in each of them:
   `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
   `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`,
   `mcp.modules.read`, `mcp.modules.write`, `mcp.appearance.read`,
-  `mcp.appearance.write`. Other
+  `mcp.appearance.write`, `mcp.system.read`. Other
   modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's

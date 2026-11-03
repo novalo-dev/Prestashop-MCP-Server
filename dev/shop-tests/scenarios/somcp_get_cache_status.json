@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "reads every card of the Performance page of the demo shop", "arguments": {}, "expect": "ok", "contains": ["\"smarty\"", "\"template_compilation\"", "\"cache\"", "\"multi_front_optimization\"", "\"clear_cache\"", "\"debug\"", "\"disable_overrides\"", "\"debug_mode\"", "\"debug_cookie\"", "\"debug_profiling\"", "\"optional_features\"", "\"combinations\"", "\"features\"", "\"customer_groups\"", "\"ccc\"", "\"smart_cache_css\"", "\"smart_cache_js\"", "\"apache_optimization\"", "\"media_servers\"", "\"caching\"", "\"use_cache\"", "\"caching_system\"", "\"available_systems\"", "\"servers\"", "\"warnings\""]},
+    {"why": "a fresh shop has no media server and no Memcache server", "arguments": {}, "expect": "ok", "contains": ["\"media_servers\": []", "\"servers\": []"]},
+    {"why": "an argument the tool does not take is refused, naming it", "arguments": {"shop": 1}, "expect": "error", "contains": ["shop: not a field of this tool"]}
+  ]
+}

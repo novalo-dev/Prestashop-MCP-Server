@@ -1,0 +1,15 @@
+{
+  "title": "Cache maintenance",
+  "description": "Check how the PrestaShop shop caches and clear the cache when changes do not show.",
+  "icon": "refresh",
+  "scopes": [
+    "mcp.system.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_get_cache_status"
+  ],
+  "controller": "AdminPerformance",
+  "action": "view",
+  "arguments": []
+}

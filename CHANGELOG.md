@@ -211,6 +211,20 @@ It needs the permission `mcp.appearance.write`, which the consent screen now
 describes as also changing the layout of the pages, and the `edit` right on
 **Design > Theme & Logo**.
 
+**Checking the performance settings.** The new tool `somcp_get_cache_status`
+reads every card of **Advanced Parameters > Performance** for the connected
+shop: Smarty, Debug mode, Optional features, CCC, Media servers and Caching,
+with the caching systems this server can run and the Memcache servers. It
+warns about what slows the storefront or should not stay on in production:
+debug mode or the debug profiler on, forced template compilation, the Smarty
+cache off, overrides disabled, CSS or JavaScript not combined, a caching
+system the server cannot run. On PrestaShop 9 it says whether debug mode is
+limited to a debug cookie, without ever giving the cookie's name or value. It
+changes nothing. It comes with the new **Cache maintenance** prompt and needs
+the new permission `mcp.system.read`, which the consent screen describes as
+reading how the shop runs, and the `view` right on **Advanced Parameters >
+Performance**.
+
 ### Changed
 
 **Claude costs less in a conversation, and the consumption is exact.**

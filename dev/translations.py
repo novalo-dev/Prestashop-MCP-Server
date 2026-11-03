@@ -1114,6 +1114,22 @@ T = {
  "Lister les entrées du menu principal",
  "Listar las entradas del menú principal",
  "Einträge des Hauptmenüs auflisten"),
+"Read the performance settings": (
+ "Lire les paramètres de performances",
+ "Leer los ajustes de rendimiento",
+ "Leistungseinstellungen lesen"),
+"Read how this shop runs: its performance settings, cache and debug mode": (
+ "Lire le fonctionnement de cette boutique : ses paramètres de performances, son cache et le mode debug",
+ "Leer cómo funciona esta tienda: sus ajustes de rendimiento, su caché y el modo de depuración",
+ "Lesen, wie dieser Shop läuft: seine Leistungseinstellungen, sein Cache und der Debug-Modus"),
+"Cache maintenance": (
+ "Maintenance du cache",
+ "Mantenimiento de la caché",
+ "Cache-Wartung"),
+"Check how the PrestaShop shop caches and clear the cache when changes do not show.": (
+ "Vérifier comment la boutique PrestaShop met en cache et vider le cache quand les changements ne s'affichent pas.",
+ "Comprobar cómo la tienda PrestaShop usa la caché y vaciarla cuando los cambios no se muestran.",
+ "Prüfen, wie der PrestaShop-Shop zwischenspeichert, und den Cache leeren, wenn Änderungen nicht erscheinen."),
 "Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts": (
  "Lire l'apparence de la boutique : les entrées et les liens de son menu principal, son thème, ses logos et la mise en page de ses pages",
  "Leer el aspecto de la tienda: las entradas y los enlaces de su menú principal, su tema, sus logotipos y el diseño de sus páginas",

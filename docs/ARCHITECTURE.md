@@ -69,7 +69,7 @@ The pieces, in `classes/`:
   `mcp.catalog.write`, `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`,
   `mcp.customers.write`, `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`,
   `mcp.content.read`, `mcp.modules.read`, `mcp.modules.write`,
-  `mcp.appearance.read`, `mcp.appearance.write`.
+  `mcp.appearance.read`, `mcp.appearance.write`, `mcp.system.read`.
 
 Reaching the consent screen from a front controller is its own problem.
 PrestaShop 8 accepts a legacy back office address with a computed token.

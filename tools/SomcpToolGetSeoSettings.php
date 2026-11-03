@@ -159,6 +159,8 @@ class SomcpToolGetSeoSettings
 
     /**
      * One yes or no setting of the shop, null when this version does not have it.
+     * somcp_get_cache_status reads its settings through it too, for the
+     * token's shop.
      *
      * @param string $key
      * @param int $idShopGroup
@@ -166,7 +168,7 @@ class SomcpToolGetSeoSettings
      *
      * @return bool|null
      */
-    private static function flag(string $key, int $idShopGroup, int $idShop): ?bool
+    public static function flag(string $key, int $idShopGroup, int $idShop): ?bool
     {
         $value = Configuration::get($key, null, $idShopGroup, $idShop);
 

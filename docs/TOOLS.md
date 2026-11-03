@@ -2817,14 +2817,49 @@ How the shop runs: caching.
 **Not here**: the connection itself (→ Diagnostics).
 
 #### `somcp_get_cache_status`
-**State**: draft · [issue #34](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/34)
+**State**: written
 **Nature**: `acts(VIEW, 'AdminPerformance')` · **Scope**: `mcp.system.read`
 
-**Does** - returns how caching is configured: template compilation and cache, CCC for CSS and JavaScript, the caching system, debug mode.
+**Does** - returns every card of **Advanced Parameters > Performance** for the token's shop: Smarty, Debug mode, Optional features, CCC (Combine, Compress and Cache), Media servers and Caching, with warnings on the settings that slow the storefront or should not stay on in production. Read only.
+
+**Do not use for** - clearing the cache (→ `somcp_clear_cache`); the server, PHP and database versions (→ `somcp_ping`); changing any of these settings, which stays in the back office.
 
 **Parameters** - none.
 
-**Returns** - `smarty_compile`, `smarty_cache`, `ccc_css`, `ccc_js`, `cache_enabled`, `cache_system`, `debug_mode`.
+**Returns**
+
+| Field | On screen | Notes |
+|---|---|---|
+| `smarty.template_compilation` | **Template compilation** | `never`, `if_updated` or `force` (stored 0, 1, 2) |
+| `smarty.cache` | **Cache** | bool |
+| `smarty.multi_front_optimization` | **Multi-front optimizations** | bool |
+| `smarty.clear_cache` | **Clear cache** | `never` or `everytime`, as stored |
+| `debug.disable_overrides` | **Disable all overrides** | bool |
+| `debug.debug_mode` | **Debug mode** | bool: the setting written in the defines file, as `DebugMode::isDebugModeEnabled()` reads it, never the `_PS_MODE_DEV_` constant of the running request |
+| `debug.debug_cookie` | **Debug cookie name** | 9.0.0: `true` when debug mode is limited to a cookie, `false` otherwise; `null` on 8.0.1. The cookie name and value are never returned |
+| `debug.debug_profiling` | **Debug profiler** | bool on 9.0.0, `null` on 8.0.1 |
+| `optional_features.combinations` | **Combinations** | bool |
+| `optional_features.features` | **Features** | bool |
+| `optional_features.customer_groups` | **Customer groups** | bool |
+| `ccc.smart_cache_css` | **Smart cache for CSS** | bool |
+| `ccc.smart_cache_js` | **Smart cache for JavaScript** | bool |
+| `ccc.apache_optimization` | **Apache optimization** | bool |
+| `media_servers` | **Media server #1** to **#3** | the domains filled in, in order; empty list when none |
+| `caching.use_cache` | **Use cache** | bool |
+| `caching.caching_system` | **Caching system** | `CacheMemcache`, `CacheMemcached`, `CacheApc` or `CacheXcache`, as stored, even when **Use cache** is off |
+| `caching.available_systems` | the options not greyed out | the systems whose PHP extension is loaded: `memcache`, `memcached`, `apc` or `apcu`, `xcache` |
+| `caching.servers` | Memcache servers table | `id`, `ip`, `port`, `weight`; empty list when none |
+| `warnings` | - | `code` and `why`, as `somcp_get_seo_settings`: `debug_mode_on`, `debug_profiling_on`, `force_compilation`, `smarty_cache_off`, `overrides_disabled`, `ccc_css_off`, `ccc_js_off`, `cache_system_unavailable` (**Use cache** is on and the stored system's extension is not loaded) |
+
+**Errors** - an unknown argument (`<name>: not a field of this tool`). A setting the running version does not have is `null`, never an error.
+
+**Notes**
+- Each `PS_` key is read for the token's shop with the helper of `somcp_get_seo_settings`, not through the back office form handlers, which take the shop from the global context. The optional features are the keys `Combination`, `Feature` and `Group::isFeatureActive()` read.
+- Debug mode and the profiler are read through the core's `DebugMode` and `DebugProfiling` classes; on 8.0.1 the profiler is not on the screen, so it is `null` there.
+- **Use cache** and **Caching system** live in `app/config/parameters.php` and apply to the whole installation, as debug mode does.
+- The labels of **Caching system** change with the server; the keys are returned, never the labels.
+
+9.0.0 adds **Debug cookie name**, **Debug cookie value** and **Debug profiler** to the Debug mode card; every other field, value and key is the same on 8.0.1 and 9.0.0.
 
 #### `somcp_clear_cache`
 **State**: draft · [issue #35](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/35)
@@ -3553,7 +3588,7 @@ request: one line, stroke paths on a 24 px grid.
 | `somcp-content-pages` | Content | written |
 | `somcp-modules-review` | Modules | written |
 | `somcp-storefront-menu` | Appearance | written |
-| `somcp-cache-maintenance` | System | draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43) |
+| `somcp-cache-maintenance` | System | written |
 | `somcp-seo-audit` | SEO | written |
 | `somcp-aeo-audit` | AEO | to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
 | `somcp-sales-boost` | Sales | to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
@@ -3657,7 +3692,7 @@ request: one line, stroke paths on a 24 px grid.
 **The guide must say** - read the menu or the theme first; take category and page identifiers from their list tools; one change per call.
 
 #### `somcp-cache-maintenance`
-**State**: draft · [issue #43](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/43)
+**State**: written
 **Section**: System · **Scope**: `mcp.system.read` · **Permission**: `view` on `AdminPerformance` · **Icon**: `refresh`
 
 **Title** - Cache maintenance

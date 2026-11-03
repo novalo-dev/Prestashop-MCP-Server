@@ -1402,6 +1402,26 @@
       <source>List main menu entries</source>
       <target>Einträge des Hauptmenüs auflisten</target>
     </trans-unit>
+    <!-- Read the performance settings -->
+    <trans-unit id="3029298513214e93f1b6ea1a7a1d0693" resname="Read the performance settings">
+      <source>Read the performance settings</source>
+      <target>Leistungseinstellungen lesen</target>
+    </trans-unit>
+    <!-- Read how this shop runs: its performance settings, cache and debug mode -->
+    <trans-unit id="46b3a7108352c9818fbb12a23b15df63" resname="Read how this shop runs: its performance settings, cache and debug mode">
+      <source>Read how this shop runs: its performance settings, cache and debug mode</source>
+      <target>Lesen, wie dieser Shop läuft: seine Leistungseinstellungen, sein Cache und der Debug-Modus</target>
+    </trans-unit>
+    <!-- Cache maintenance -->
+    <trans-unit id="9be14a5ca118b6628ab40ae4ca36c1f3" resname="Cache maintenance">
+      <source>Cache maintenance</source>
+      <target>Cache-Wartung</target>
+    </trans-unit>
+    <!-- Check how the PrestaShop shop caches and clear the cache when changes do not show. -->
+    <trans-unit id="ea87a3ea3311d5a8baf9357d0d894160" resname="Check how the PrestaShop shop caches and clear the cache when changes do not show.">
+      <source>Check how the PrestaShop shop caches and clear the cache when changes do not show.</source>
+      <target>Prüfen, wie der PrestaShop-Shop zwischenspeichert, und den Cache leeren, wenn Änderungen nicht erscheinen.</target>
+    </trans-unit>
     <!-- Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts -->
     <trans-unit id="5e752abdee2dcd532d48b58a8566a6d8" resname="Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts">
       <source>Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts</source>

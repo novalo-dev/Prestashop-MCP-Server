@@ -129,6 +129,6 @@ class SomcpToolClearCache
         Tools::clearSmartyCache();
         Tools::clearXMLCache();
         Media::clearCache();
-        PrestashopAutoload::getInstance()->generateIndex();
+        PrestaShopAutoload::getInstance()->generateIndex();
     }
 }

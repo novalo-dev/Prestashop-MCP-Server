@@ -102,6 +102,17 @@ jobs:
           docker exec -u www-data shop php bin/console prestashop:module install somcp 2>&1 | tee module.log \
             || { echo "::error title=Module install failed::$(tail -n 40 module.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
 
+      # The Assistant button only shows on a shop with an active assistant.
+      # dev/ is left out of the module archive, so the scripts go in on their
+      # own, outside the shop's folder.
+      - name: Give the shop a test assistant
+        run: |
+          docker exec shop mkdir -p /tmp/somcp-dev/ui-tests
+          docker cp module/dev/shop-tests shop:/tmp/somcp-dev/shop-tests
+          docker cp module/dev/ui-tests/assistant.php shop:/tmp/somcp-dev/ui-tests/assistant.php
+          docker exec shop chmod -R a+rX /tmp/somcp-dev
+          docker exec -u www-data shop php /tmp/somcp-dev/ui-tests/assistant.php /var/www/html
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

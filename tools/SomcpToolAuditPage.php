@@ -28,6 +28,8 @@ declare(strict_types=1);
  * Every request, the redirects included, stays on the shop's own domains: an
  * address on any other host is refused before anything is sent, so the tool
  * cannot be pointed at another site or at the shop's internal network.
+ * somcp_check_links fetches through the same public functions below, so that
+ * rule is written once.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -37,10 +39,10 @@ if (!defined('_PS_VERSION_')) {
 class SomcpToolAuditPage
 {
     /** Seconds for the whole fetch, redirects included. */
-    private const TIMEOUT = 10;
+    public const TIMEOUT = 10;
 
     /** Largest page read, in bytes. */
-    private const MAX_BYTES = 2097152;
+    public const MAX_BYTES = 2097152;
 
     /** Redirects followed before giving up: browsers stop around 20, search engines sooner. */
     private const MAX_REDIRECTS = 5;
@@ -52,7 +54,7 @@ class SomcpToolAuditPage
     private const DESCRIPTION_MAX = 160;
 
     /** A page slower than this, in milliseconds, is reported. */
-    private const SLOW_MS = 2000;
+    public const SLOW_MS = 2000;
 
     /** Headings returned at most, so a mega menu cannot flood the answer. */
     private const MAX_HEADINGS = 100;
@@ -124,54 +126,27 @@ class SomcpToolAuditPage
         }
 
         $warnings = [];
-        $redirects = [];
-        $started = microtime(true);
-        $current = $url;
-        $response = null;
-        $stopped = false;
-
-        for ($hop = 0; $hop <= self::MAX_REDIRECTS; ++$hop) {
-            // What is left of the time allowed, so the redirects cannot add
-            // up to more than it.
-            $left = (int) floor(self::TIMEOUT - (microtime(true) - $started));
-            if ($left < 1) {
-                break;
-            }
-            $response = SomcpHttp::fetchShopPage($current, $hosts, $left, self::MAX_BYTES);
-            if ($response['status'] < 300 || $response['status'] >= 400) {
-                break;
-            }
-
-            $location = self::resolve((string) ($response['headers']['location'] ?? ''), $current);
-            $redirects[] = ['url' => $current, 'status' => $response['status'], 'location' => $location];
-            if ($location === null) {
-                // A redirect without a usable Location is where the visitor
-                // stays, and so is the answer.
-                break;
-            }
-            if (!in_array(SomcpHttp::authority($location), $hosts, true)) {
-                $warnings[] = [
-                    'code' => 'redirect_outside_shop',
-                    'why' => 'The page sends visitors to an address outside the shop\'s domains, which was not '
-                        . 'fetched.',
-                    'location' => $location,
-                ];
-                $stopped = true;
-                break;
-            }
-            if ($hop === self::MAX_REDIRECTS) {
-                $warnings[] = [
-                    'code' => 'too_many_redirects',
-                    'why' => 'More than ' . self::MAX_REDIRECTS . ' redirects in a row: search engines give up '
-                        . 'before reaching the page.',
-                ];
-                $stopped = true;
-                break;
-            }
-            $current = $location;
-            $response = null;
+        $fetched = self::follow($url, $hosts, self::TIMEOUT);
+        $response = $fetched['response'];
+        $current = $fetched['final_url'];
+        $redirects = $fetched['redirects'];
+        $timeMs = $fetched['time_ms'];
+        $stopped = $fetched['outside'] !== null || $fetched['too_many'];
+        if ($fetched['outside'] !== null) {
+            $warnings[] = [
+                'code' => 'redirect_outside_shop',
+                'why' => 'The page sends visitors to an address outside the shop\'s domains, which was not '
+                    . 'fetched.',
+                'location' => $fetched['outside'],
+            ];
         }
-        $timeMs = (int) round((microtime(true) - $started) * 1000);
+        if ($fetched['too_many']) {
+            $warnings[] = [
+                'code' => 'too_many_redirects',
+                'why' => 'More than ' . self::MAX_REDIRECTS . ' redirects in a row: search engines give up '
+                    . 'before reaching the page.',
+            ];
+        }
 
         if ($response === null || $response['status'] === 0) {
             return SomcpTool::text(
@@ -264,6 +239,93 @@ class SomcpToolAuditPage
     }
 
     /**
+     * Fetches an address of the shop and follows its redirects one hop at a
+     * time, each Location checked against the shop's hosts before it is
+     * requested, all within one time budget. Shared with somcp_check_links,
+     * so the rule that keeps both tools on the shop lives in one place.
+     *
+     * final_url is the last address fetched: the one that redirected out of
+     * the shop when outside is set, since that Location is never requested.
+     *
+     * @param string $url an address already checked against $hosts
+     * @param array<int, string> $hosts
+     * @param int $timeout seconds for the whole fetch, redirects included
+     *
+     * @return array{response: array{status:int, body:string, headers:array<string,string>, error:string, errno:int, reason:string, truncated:bool}|null, final_url: string, redirects: array<int, array<string, mixed>>, time_ms: int, outside: string|null, too_many: bool}
+     */
+    public static function follow(string $url, array $hosts, int $timeout): array
+    {
+        $redirects = [];
+        $started = microtime(true);
+        $current = $url;
+        $response = null;
+        $outside = null;
+        $tooMany = false;
+
+        for ($hop = 0; $hop <= self::MAX_REDIRECTS; ++$hop) {
+            // What is left of the time allowed, so the redirects cannot add
+            // up to more than it.
+            $left = (int) floor($timeout - (microtime(true) - $started));
+            if ($left < 1) {
+                break;
+            }
+            $response = SomcpHttp::fetchShopPage($current, $hosts, $left, self::MAX_BYTES);
+            if ($response['status'] < 300 || $response['status'] >= 400) {
+                break;
+            }
+
+            $location = self::resolve((string) ($response['headers']['location'] ?? ''), $current);
+            $redirects[] = ['url' => $current, 'status' => $response['status'], 'location' => $location];
+            if ($location === null) {
+                // A redirect without a usable Location is where the visitor
+                // stays, and so is the answer.
+                break;
+            }
+            if (!in_array(SomcpHttp::authority($location), $hosts, true)) {
+                $outside = $location;
+                break;
+            }
+            if ($hop === self::MAX_REDIRECTS) {
+                $tooMany = true;
+                break;
+            }
+            $current = $location;
+            $response = null;
+        }
+
+        return [
+            'response' => $response,
+            'final_url' => $current,
+            'redirects' => $redirects,
+            'time_ms' => (int) round((microtime(true) - $started) * 1000),
+            'outside' => $outside,
+            'too_many' => $tooMany,
+        ];
+    }
+
+    /**
+     * Every http or https address an <a href> of the page points to, made
+     * absolute against the page address, in the order of the page.
+     *
+     * @param DOMXPath $xpath
+     * @param string $url the address the page was read from
+     *
+     * @return array<int, string>
+     */
+    public static function links(DOMXPath $xpath, string $url): array
+    {
+        $links = [];
+        foreach (self::elements($xpath, '//a[@href]') as $node) {
+            $target = self::resolve($node->getAttribute('href'), $url);
+            if ($target !== null) {
+                $links[] = $target;
+            }
+        }
+
+        return $links;
+    }
+
+    /**
      * The hosts of the shop's active domains, as SomcpHttp::authority() writes
      * them, both the http and the https one.
      *
@@ -271,7 +333,7 @@ class SomcpToolAuditPage
      *
      * @return array<int, string>
      */
-    private static function hosts(int $idShop): array
+    public static function hosts(int $idShop): array
     {
         $hosts = [];
         foreach (SomcpToolGetSeoSettings::domains($idShop) as $domain) {
@@ -299,7 +361,7 @@ class SomcpToolAuditPage
      *
      * @return string|null
      */
-    private static function absolute(string $requested, int $idShop): ?string
+    public static function absolute(string $requested, int $idShop): ?string
     {
         // The fragment never reaches the server.
         $hash = strpos($requested, '#');
@@ -344,7 +406,7 @@ class SomcpToolAuditPage
      *
      * @return string|null
      */
-    private static function resolve(string $reference, string $base): ?string
+    public static function resolve(string $reference, string $base): ?string
     {
         $reference = trim($reference);
         $hash = strpos($reference, '#');
@@ -394,7 +456,7 @@ class SomcpToolAuditPage
      *
      * @return DOMDocument|null
      */
-    private static function load(string $html): ?DOMDocument
+    public static function load(string $html): ?DOMDocument
     {
         $previous = libxml_use_internal_errors(true);
         $dom = new DOMDocument();
@@ -450,11 +512,7 @@ class SomcpToolAuditPage
         }
 
         $links = ['internal' => 0, 'external' => 0];
-        foreach (self::elements($xpath, '//a[@href]') as $node) {
-            $target = self::resolve($node->getAttribute('href'), $url);
-            if ($target === null) {
-                continue;
-            }
+        foreach (self::links($xpath, $url) as $target) {
             ++$links[in_array(SomcpHttp::authority($target), $hosts, true) ? 'internal' : 'external'];
         }
 

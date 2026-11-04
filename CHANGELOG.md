@@ -27,6 +27,15 @@ the group of a customer, of a category or of a specific price from this list
 instead of guessing it. It needs the `view` right on the **Groups** page and
 is part of the **Find a customer** and **Manage products** prompts.
 
+**Checking the shop's links.** The new tool `somcp_check_links` walks the
+public pages of your shop from a starting page, as a visitor sees them, and
+lists the links that lead to an error page with the pages that contain them,
+the addresses that go through several redirects and the pages that take more
+than 2 seconds to arrive. Only your shop's own addresses are opened, at most
+200 pages and one minute per check; links to other sites are counted, never
+followed. It needs the `view` right on **Shop Parameters > Traffic & SEO** and
+is part of the **Audit and improve SEO** prompt.
+
 ### Changed
 
 **The server address shows the shop's "page not found" in a browser.** The

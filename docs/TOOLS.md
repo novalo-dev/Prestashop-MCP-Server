@@ -3193,25 +3193,28 @@ None.
 - `warnings`: `no_h1`, `several_h1`, `canonical_elsewhere` (with the `canonical`), `noindex` (from the robots meta tag or the `X-Robots-Tag` header, `noindex` or `none` as a whole directive), `missing_hreflang` (with the `language`, only when the shop has several active languages), `no_title`, `title_too_long` (over 60 characters), `no_meta_description`, `description_too_long` (over 160), `redirect_chain` (more than one redirect), `redirect_outside_shop`, `too_many_redirects`, `slow_page` (over 2 seconds), `not_ok` (a status other than 200), `not_html`, `truncated` (over 2 MB). A page answering other than 200 is read but not judged on its content.
 
 #### `somcp_check_links`
-**State**: to write · [issue #93](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/93)
+**State**: written · [issue #93](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/93)
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
-**Does** - follows the links of the shop's public pages from a starting page and reports broken links and redirect chains.
+**Does** - follows the internal links of the shop's public pages from a starting page, as a visitor without an account, and reports broken links, redirect chains and slow pages. The many-pages companion of `somcp_audit_page`.
 
-**Do not use for** - one page in detail (→ `somcp_audit_page`).
+**Do not use for** - one page in detail (→ `somcp_audit_page`); the sitemap (→ `somcp_audit_sitemap`); the SEO texts stored in the database (→ `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`, `somcp_audit_brand_seo`, `somcp_list_meta_pages`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `start_url` | string | no | the home page by default |
-| `max_pages` | integer | no | 50 by default, 200 at most |
+| `url` | string | no | the starting page, in the form `somcp_audit_page` takes: an address of this shop, or a path such as `/en/3-clothes`; `/`, the home page, when left out |
+| `max_pages` | integer | no | pages fetched at most, 50 by default, 1 to 200 |
 
-**Returns** - `pages_checked`, `broken` (URL, status, the pages linking to it), `redirect_chains` (URL and its hops), `slow_pages` (over 2 seconds), `stopped_early` with the reason.
+**Returns** - `pages_checked` (internal pages fetched), `broken` (each `url`, `status` - 0 when nothing answered, with the `error` - and `linked_from`, up to 10 page addresses; every internal link whose final answer is not 2xx), `redirect_chains` (each `url`, `redirects` - every hop with its `url`, `status` and `location`, as `somcp_audit_page` - and `final_url`; every internal link answered by more than one redirect, or ending outside the shop's domains with `outside_shop: true`, not followed), `slow_pages` (each `url` and `time_ms`, over 2 seconds), `external_links` (count of distinct external addresses seen, never fetched), `stopped_early` (`null`, `max_pages` or `time_limit`). `broken` and `redirect_chains` keep their order of discovery.
 
 **Notes**
-- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
-- Internal links only are followed; external links are listed, not fetched. The crawl stops at `max_pages` or after 60 seconds, and says so.
+- Fetches through the same code as `somcp_audit_page` (`SomcpToolAuditPage::follow()`, `hosts()`, `absolute()`, `resolve()`, `links()`): only addresses of this shop's active domains are requested, redirects included, each `Location` checked before it is fetched, 5 redirects at most, 2 MB at most per page. GET only, as a visitor without the employee's session, a user agent naming the module.
+- Pages are visited breadth first from `url`, each address once (fragment removed, query kept); only `text/html` answers are read for further links. External links are counted, never requested.
+- 60 seconds for the whole call: each request gets at most 10 seconds, cut to what is left.
+- Errors, every one in the same answer: `url` that is not an address of this shop (listing its domains), `max_pages` out of range, a field the tool does not take; a shop with no active domain is refused before anything.
+- Read only.
 
 #### `somcp_audit_sitemap`
 **State**: to write · [issue #94](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/94)

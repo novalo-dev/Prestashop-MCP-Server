@@ -930,6 +930,10 @@ T = {
  "Auditer une page publique de la boutique",
  "Auditar una página pública de la tienda",
  "Eine öffentliche Seite des Shops prüfen"),
+"Check the links of the shop's public pages": (
+ "Vérifier les liens des pages publiques de la boutique",
+ "Comprobar los enlaces de las páginas públicas de la tienda",
+ "Die Links der öffentlichen Seiten des Shops prüfen"),
 "Generate the robots.txt file": (
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",

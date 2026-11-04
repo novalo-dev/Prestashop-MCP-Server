@@ -270,6 +270,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_get_seo_settings` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_list_meta_pages` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_audit_page` | `mcp.seo.read` | `view` on `AdminMeta` | read |
+| `somcp_check_links` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_audit_product_seo` | `mcp.seo.read` | `view` on `AdminProducts` | read |
 | `somcp_audit_category_seo` | `mcp.seo.read` | `view` on `AdminCategories` | read |
 | `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |

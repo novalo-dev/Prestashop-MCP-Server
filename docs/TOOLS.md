@@ -3269,27 +3269,31 @@ What answer engines and AI assistants need to recommend a product: complete and 
 **Not here**: classic search engine fields and settings (→ SEO).
 
 #### `somcp_audit_product_schema`
-**State**: to write · [issue #95](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/95)
+**State**: written · [issue #95](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/95)
 **Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.seo.read`
 
-**Does** - fetches a product's public page and compares its structured data (JSON-LD) with what the shop holds.
+**Does** - fetches the public page of one product, as a visitor, and compares the structured data (JSON-LD `Product`) it prints with what the product page of the back office holds.
 
-**Do not use for** - the database fields alone (→ `somcp_audit_product_entities`).
+**Do not use for** - the database fields alone (→ `somcp_audit_product_entities`); the meta title and description (→ `somcp_audit_product_seo`); any other page (→ `somcp_audit_page`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_product` | integer | yes |  |
-| `id_product_attribute` | integer | no | a combination's page |
-| `language` | string | no | ISO code, shop default otherwise |
+| `id_product` | integer | yes | from `somcp_search_products`, never guessed; an unknown product is refused with the error of `somcp_get_product` |
+| `id_product_attribute` | integer | no | from `somcp_get_product` `combinations[].id_product_attribute`: the page of that combination; refused when it is not a combination of the product |
+| `language` | string | no | ISO code of one of the shop's active languages, the page's language; refused when the shop does not have it, naming its languages; the shop default language when left out |
 
-**Returns** - `url`, `found` (the `@type`s present), `product` (name, brand, sku, gtin, mpn, image, description length as printed), `offer` (price, currency, availability, url as printed), `rating` (as printed, when present), `mismatches` (field, printed value, shop value), `missing` (recommended fields absent).
+**Returns** - `url` (the page fetched, after its redirects), `language` (the ISO code used), `found` (the `@type`s of every JSON-LD object of the page, `invalid_json` for a block that does not parse, as `somcp_audit_page`), `product` (as printed: `name`, `brand`, `sku`, `gtin` - whichever of `gtin13`, `gtin12`, `isbn`, `gtin` is printed first -, `mpn`, `image`, `description_length`), `offer` (as printed: `price`, `currency`, `availability`, `url`), `rating` (`rating_value`, `rating_count`, `review_count` as printed, `null` when absent), `mismatches` (each `field` - the name of `somcp_get_product`: `name`, `manufacturer_name`, `reference`, `mpn`, `ean13`, `upc`, `isbn`, `condition`, `price`, `currency`, `quantity` -, `on_screen`, the back office label of the shop's version, `printed` and `in_shop`), `missing` (each `field`, `on_screen` and the schema.org `property` absent from the page, only when the shop has a value to print). When the page prints no `Product`, `product`, `offer` and `rating` are `null` and `note` says so.
 
 **Notes**
-- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
-- Prices are compared with the tax-included price the page shows for this shop's default country and currency, availability with the stock and the out-of-stock behaviour.
-- Said plainly when the theme prints no Product JSON-LD at all: that is a theme matter, not something a tool can write.
+- Fetches through the code of `somcp_audit_page` (`SomcpToolAuditPage::hosts()`, `follow()`, `load()`, `jsonLd()`): only the shop's own active domains are requested, redirects included, GET only, 10 seconds, 2 MB, a user agent naming the module, no employee session. The address is `Link::getProductLink()` for the token's shop, the language and the combination.
+- The shop's values are those `somcp_get_product` returns for the same product, combination and language, never a second reading of the database. A combination's own codes are used when set, the product's otherwise, as the storefront does. The name only has to appear in the printed name, which a combination's page may complete with its attributes.
+- `price` is compared with the price with tax the storefront computes for the shop's default country, currency and group, specific prices included (`Product::getPriceStatic()`), to the cent. `quantity` is compared with the availability the core's product presenter prints: `Discontinued` for an inactive product, `InStock` with stock or with stock management off, `BackOrder` (or `PreOrder`, which themes also print) when **When out of stock** allows orders, `OutOfStock` otherwise.
+- Labels: **Reference**, **MPN**, **UPC barcode**, **ISBN**, **Condition**, **Brand**; the `ean13` field is **EAN-13 or JAN barcode** on PrestaShop 8 and **GTIN (EAN, JA, ITF or UCC code)** on PrestaShop 9.
+- Said plainly when the theme prints no `Product` JSON-LD at all: a theme matter, not something a tool can write. Classic prints its own; the comparison reads what is printed, never assumes a theme.
+- Errors: unknown product or combination, unknown language, a page that does not answer or answers other than 200 (with the HTTP status), a redirect or an address outside the shop's domains, a shop with no active domain.
+- Read only.
 
 #### `somcp_audit_product_entities`
 **State**: to write · [issue #96](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/96)
@@ -3670,7 +3674,7 @@ request: one line, stroke paths on a 24 px grid.
 | `somcp-storefront-menu` | Appearance | written |
 | `somcp-cache-maintenance` | System | written |
 | `somcp-seo-audit` | SEO | written |
-| `somcp-aeo-audit` | AEO | to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
+| `somcp-aeo-audit` | AEO | written · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
 | `somcp-sales-boost` | Sales | to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
 
 #### `somcp-catalogue-manage`
@@ -3800,7 +3804,7 @@ request: one line, stroke paths on a 24 px grid.
 **The guide must say** - start with `somcp_get_seo_settings` and the audits, then sort what was found by its effect on sales: products that sell or should sell first; propose every new title or description to the merchant before writing it, in each language of the shop; change a URL of a live page only after saying that the old one stops working; after a change, check the public page with `somcp_audit_page`, since a value in the database is not proof of what the theme prints.
 
 #### `somcp-aeo-audit`
-**State**: to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80)
+**State**: written · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80)
 **Section**: AEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminProducts` · **Icon**: `bulb`
 
 **Title** - Get recommended by AI assistants

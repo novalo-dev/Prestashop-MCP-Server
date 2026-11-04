@@ -28,8 +28,8 @@ declare(strict_types=1);
  * Every request, the redirects included, stays on the shop's own domains: an
  * address on any other host is refused before anything is sent, so the tool
  * cannot be pointed at another site or at the shop's internal network.
- * somcp_check_links fetches through the same public functions below, so that
- * rule is written once.
+ * somcp_check_links and somcp_audit_product_schema fetch through the same
+ * public functions below, so that rule is written once.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -517,15 +517,8 @@ class SomcpToolAuditPage
         }
 
         $jsonLd = [];
-        foreach (self::nodes($xpath, '//script[translate(@type, "LDJSON", "ldjson")="application/ld+json"]') as $node) {
-            $decoded = json_decode(trim($node->textContent), true);
-            if (!is_array($decoded)) {
-                $jsonLd[] = ['@type' => null, 'error' => 'invalid_json'];
-                continue;
-            }
-            foreach (self::items($decoded) as $item) {
-                $jsonLd[] = self::summary($item, true);
-            }
+        foreach (self::jsonLd($xpath) as $item) {
+            $jsonLd[] = $item === null ? ['@type' => null, 'error' => 'invalid_json'] : self::summary($item, true);
         }
 
         $openGraph = [];
@@ -641,6 +634,32 @@ class SomcpToolAuditPage
         }
 
         return $warnings;
+    }
+
+    /**
+     * Every JSON-LD object of the page, in its order, whole; null for a block
+     * that is not valid JSON. Shared with somcp_audit_product_schema, so both
+     * tools find the same objects on the same page.
+     *
+     * @param DOMXPath $xpath
+     *
+     * @return array<int, array<mixed>|null>
+     */
+    public static function jsonLd(DOMXPath $xpath): array
+    {
+        $found = [];
+        foreach (self::nodes($xpath, '//script[translate(@type, "LDJSON", "ldjson")="application/ld+json"]') as $node) {
+            $decoded = json_decode(trim($node->textContent), true);
+            if (!is_array($decoded)) {
+                $found[] = null;
+                continue;
+            }
+            foreach (self::items($decoded) as $item) {
+                $found[] = $item;
+            }
+        }
+
+        return $found;
     }
 
     /**

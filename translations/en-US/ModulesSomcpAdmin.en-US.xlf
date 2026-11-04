@@ -1207,6 +1207,11 @@
       <source>Audit the shop's sitemaps</source>
       <target>Audit the shop's sitemaps</target>
     </trans-unit>
+    <!-- Compare a product page with its structured data -->
+    <trans-unit id="1710ef53e8dc7b229510b276320ca8c5" resname="Compare a product page with its structured data">
+      <source>Compare a product page with its structured data</source>
+      <target>Compare a product page with its structured data</target>
+    </trans-unit>
     <!-- Generate the robots.txt file -->
     <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
       <source>Generate the robots.txt file</source>
@@ -1276,6 +1281,21 @@
     <trans-unit id="ed839806982bd08c386374db52525bbe" resname="Products, categories, pages or the whole shop">
       <source>Products, categories, pages or the whole shop</source>
       <target>Products, categories, pages or the whole shop</target>
+    </trans-unit>
+    <!-- Get recommended by AI assistants -->
+    <trans-unit id="856c0d54a53d93ce36b483860ec93bb0" resname="Get recommended by AI assistants">
+      <source>Get recommended by AI assistants</source>
+      <target>Get recommended by AI assistants</target>
+    </trans-unit>
+    <!-- Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss. -->
+    <trans-unit id="7aa7501fb414f1b782c57c0cfe70812b" resname="Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.">
+      <source>Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.</source>
+      <target>Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.</target>
+    </trans-unit>
+    <!-- Name, reference or ean13 of a product to start from -->
+    <trans-unit id="557f3122abbe72203551af9c3e6cd5c1" resname="Name, reference or ean13 of a product to start from">
+      <source>Name, reference or ean13 of a product to start from</source>
+      <target>Name, reference or ean13 of a product to start from</target>
     </trans-unit>
     <!-- view -->
     <trans-unit id="1bda80f2be4d3658e0baa43fbe7ae8c1" resname="view">

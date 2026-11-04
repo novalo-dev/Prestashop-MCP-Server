@@ -281,6 +281,12 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_get_robots_txt` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_generate_robots_txt` | `mcp.seo.write` | `add`, `edit` and `delete` on `AdminMeta` | write |
 
+### AEO
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_audit_product_schema` | `mcp.seo.read` | `view` on `AdminProducts` | read |
+
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running
 them; each write changes one object per call and is never retried on a lost

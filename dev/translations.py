@@ -958,6 +958,10 @@ T = {
  "Auditer les sitemaps de la boutique",
  "Auditar los sitemaps de la tienda",
  "Die Sitemaps des Shops prüfen"),
+"Compare a product page with its structured data": (
+ "Comparer une page produit avec ses données structurées",
+ "Comparar una página de producto con sus datos estructurados",
+ "Eine Produktseite mit ihren strukturierten Daten vergleichen"),
 "Generate the robots.txt file": (
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",
@@ -1014,6 +1018,18 @@ T = {
  "Produits, catégories, pages ou toute la boutique",
  "Productos, categorías, páginas o toda la tienda",
  "Produkte, Kategorien, Seiten oder der ganze Shop"),
+"Get recommended by AI assistants": (
+ "Être recommandé par les assistants IA",
+ "Ser recomendado por los asistentes de IA",
+ "Von KI-Assistenten empfohlen werden"),
+"Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.": (
+ "Vérifier que les moteurs de réponse et les assistants IA peuvent lire la boutique et se fier à ses données produits, et corriger ce qui leur échapperait.",
+ "Comprobar que los motores de respuesta y los asistentes de IA pueden leer la tienda y confiar en sus datos de producto, y corregir lo que se les escaparía.",
+ "Prüfen, dass Antwortmaschinen und KI-Assistenten den Shop lesen und seinen Produktdaten vertrauen können, und beheben, was ihnen entgehen würde."),
+"Name, reference or ean13 of a product to start from": (
+ "Nom, référence ou ean13 d'un produit par lequel commencer",
+ "Nombre, referencia o ean13 de un producto por el que empezar",
+ "Name, Referenz oder EAN13 eines Produkts, mit dem begonnen wird"),
 "view": (
  "voir",
  "ver",

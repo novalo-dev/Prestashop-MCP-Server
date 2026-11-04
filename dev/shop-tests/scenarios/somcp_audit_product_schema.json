@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "a demo product's public page; the test shop has no web server running, so whether it answers depends on the runner", "arguments": {"id_product": 1}, "expect": "any"},
+    {"why": "the page of one combination, whose identifier depends on how the demo data was numbered, same caveat", "arguments": {"id_product": 1, "id_product_attribute": 1}, "expect": "any"},
+    {"why": "in a language given by ISO code, same caveat", "arguments": {"id_product": 2, "language": "en"}, "expect": "any"},
+    {"why": "a language the shop does not have is refused before any request", "arguments": {"id_product": 1, "language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]},
+    {"why": "a product that does not exist is refused before any request", "arguments": {"id_product": 999999}, "expect": "error", "contains": ["No product of this shop has this identifier"]},
+    {"why": "no identifier", "arguments": {"id_product": 0}, "expect": "error", "contains": ["No product of this shop has this identifier"]},
+    {"why": "a combination that does not belong to the product is refused before any request", "arguments": {"id_product": 1, "id_product_attribute": 999999}, "expect": "error", "contains": ["does not belong to this product"]}
+  ]
+}

@@ -14,6 +14,17 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+### Changed
+
+**The project page is written for merchants.** The front page of the
+repository now says what you can ask, the requirements, how to install the
+module in three steps from the release zip, which assistants work with it and
+how your shop stays protected, with the tools folded by back office page. The
+technical details and the installation from the sources moved to the
+contributing guide.
+
 ## 1.2.1 - 2026-11-04
 
 ### Added

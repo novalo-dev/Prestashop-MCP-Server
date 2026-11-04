@@ -58,30 +58,44 @@ jobs:
             "${{ matrix.db_image }}"
           docker run -d --name shop --network shopnet -p 8080:80 \
             -e DB_SERVER=db -e DB_USER=root -e DB_PASSWD=root -e DB_NAME=prestashop \
-            -e PS_INSTALL_AUTO=1 -e PS_DOMAIN=localhost:8080 -e PS_LANGUAGE=en -e PS_COUNTRY=fr \
-            -e ADMIN_MAIL="$ADMIN_MAIL" -e ADMIN_PASSWD="$ADMIN_PASSWD" \
+            -e PS_INSTALL_AUTO=0 \
             "prestashop/prestashop:${{ matrix.prestashop }}-${{ matrix.php }}"
 
-      # The image installs the shop on its first start; until then the front
-      # office does not answer. Redirects are followed: with two languages the
-      # home page sends the visitor to /en/ first. The end of the log goes to
-      # an annotation when the shop never comes up, since nobody opens the
-      # step log first.
-      - name: Wait for the install
+      # The shop is installed here rather than by the image: on PrestaShop 9
+      # the installer removes its own install folder, then the image's start
+      # script fails removing it again and stops the container. The image only
+      # copies the files and starts the web server; the same installer it
+      # would have run is called once the files and the database are there.
+      - name: Install PrestaShop ${{ matrix.prestashop }}
         run: |
-          for _ in $(seq 1 120); do
+          for _ in $(seq 1 60); do
+            docker exec shop test -f /var/www/html/install/index_cli.php \
+              && docker exec shop php -r 'exit(@mysqli_connect("db", "root", "root", "prestashop") ? 0 : 1);' && break
+            sleep 5
+          done
+          set -o pipefail
+          docker exec -u www-data -w /var/www/html shop php -d memory_limit=-1 install/index_cli.php \
+            --domain=localhost:8080 --db_server=db --db_name=prestashop --db_user=root --db_password=root \
+            --prefix=ps_ --firstname=Demo --lastname=Shop --email="$ADMIN_MAIL" --password="$ADMIN_PASSWD" \
+            --language=en --country=fr --newsletter=0 --send_email=0 --ssl=0 2>&1 | tee install.log \
+            || { echo "::error title=Shop not installed::$(tail -n 40 install.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
+
+      # Redirects are followed: with two languages the home page sends the
+      # visitor to /en/ first.
+      - name: Wait for the shop
+        run: |
+          for _ in $(seq 1 60); do
             code=$(curl -sL -o /dev/null -w '%{http_code}' http://localhost:8080/ || true)
             [ "$code" = "200" ] && exit 0
             sleep 5
           done
-          docker logs shop > shop.log 2>&1 || true
-          echo "::error title=Shop not installed::$(tail -n 40 shop.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"
+          echo "::error title=Shop not answering::the front office answered $code"
           exit 1
 
       # The back office refuses to sign anyone in while the install folder is
-      # still there. Its own folder is left as the image named it - renaming it
-      # before the install breaks the install on PrestaShop 9 - and read back
-      # here for the browser.
+      # still there. Its own folder is left as the installer named it - renaming
+      # it beforehand breaks the install on PrestaShop 9 - and read back here
+      # for the browser.
       - name: Remove the install folder and find the back office
         run: |
           docker exec shop sh -c 'rm -rf /var/www/html/install /var/www/html/install-dev'

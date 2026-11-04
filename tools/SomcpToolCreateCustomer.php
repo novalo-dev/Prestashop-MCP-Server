@@ -91,24 +91,14 @@ class SomcpToolCreateCustomer
         return new SomcpTool(
             'somcp_create_customer',
             Somcp::t('Create a customer'),
-            'Creates one customer account in this shop, as Customers > Customers > Add new customer: first '
-                . 'name, last name, email, guest account or not, social title, birthday, Enabled, partner '
-                . 'offers, newsletter, group access and default customer group, plus the B2B fields (company, '
-                . 'SIRET, APE, website, allowed outstanding amount, maximum number of payment days, risk '
-                . 'rating) when B2B mode is on. Required: firstname, lastname and email. Every field takes the '
-                . 'name somcp_get_customer returns, so an account read there can be given back. '
-                . 'Every field is the merchant\'s: ask for it, never invent it. '
-                . 'Read somcp_search_customers with the email first: a registered email is used by one account '
-                . 'only, and is refused with the identifier of that account. A guest account has no password '
-                . 'and may share its email with other guests. '
-                . 'No password goes through the conversation: the account gets a random one, and the customer '
-                . 'chooses theirs with "Forgot your password?" on the shop; tell the merchant so. No email is '
-                . 'sent to the customer. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Do not use it to change an account, which is somcp_update_customer, or to add an address. '
-                . 'One account per call. '
-                . 'Not to be retried: if the answer is lost, read somcp_search_customers with the email before '
-                . 'anything else, because the account may already exist.',
+            'Creates one customer account, as Customers > Customers > Add new customer, with the '
+                . 'B2B fields when B2B mode is on; fields take the names somcp_get_customer returns. '
+                . 'Every value is the merchant\'s: ask for it, never invent it. A registered email is '
+                . 'used by one account only. No password goes through the conversation: the customer '
+                . 'chooses theirs with "Forgot your password?"; tell the merchant. No email is sent to '
+                . 'the customer. To change an account use somcp_update_customer. One account per call. '
+                . 'Not to be retried: if the answer is lost, read somcp_search_customers with the email '
+                . 'first.',
             [
                 'type' => 'object',
                 'properties' => [

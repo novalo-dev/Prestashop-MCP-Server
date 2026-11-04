@@ -50,6 +50,14 @@ add a value "when the shop offers it", although every one of those tools is
 there. The assistant could take it as a tool that may be missing and skip the
 step. They now name the tool plainly.
 
+**Shorter customer tools.** The four tools of Customers > Customers - search,
+read, create and change a customer - and the list of customer groups now
+describe themselves in a few sentences, lighter for the assistant on every
+step. What matters is kept: which tool gives the customer and the group
+identifiers, that every value comes from you and is never invented, that no
+password goes through the conversation and no email is sent to the customer,
+and which read checks a change.
+
 ### Fixed
 
 **The module passes the PrestaShop Addons validator again.** The check

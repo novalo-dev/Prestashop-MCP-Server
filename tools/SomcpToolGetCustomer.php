@@ -45,17 +45,13 @@ class SomcpToolGetCustomer
         return new SomcpTool(
             'somcp_get_customer',
             Somcp::t('Get a customer'),
-            'Returns everything the back office page of one customer of this shop shows '
-                . '(Customers > Customers > View): the account (name, email, social title, birthday and '
-                . 'age, registration, last visit, language, newsletter, partner offers, status, guest or '
-                . 'not, private note, and the B2B fields), the groups, the addresses, a summary of the '
-                . 'orders with the 10 newest, the 10 newest carts, purchased and viewed products, the '
-                . 'vouchers reserved to the customer, the number of messages, the last emails sent and '
-                . 'the last connections. Identify the customer by id_customer, or by an exact email; an '
-                . 'email shared by several accounts is refused with the identifier of each. Never '
-                . 'gives a password or a reset token. Do not use it to look for customers '
-                . '(somcp_search_customers), or to read one of their orders (somcp_get_order); more '
-                . 'orders come from somcp_search_orders with customer_email.',
+            'Returns the page of one customer, Customers > Customers > View: the account with its '
+                . 'B2B fields, the groups, the addresses, the orders with the 10 newest, the 10 newest '
+                . 'carts, purchased and viewed products, reserved vouchers, the number of messages, the '
+                . 'last emails and the last connections. Identify the customer by id_customer or an exact '
+                . 'email; never guess either. Never gives a password or a reset token. To look for '
+                . 'customers use somcp_search_customers; for one of their orders somcp_get_order, for '
+                . 'more orders somcp_search_orders with customer_email.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -71,10 +67,9 @@ class SomcpToolGetCustomer
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of one of the shop\'s active languages, for example fr, '
-                            . 'for the social title, group, country, order status and product names; a '
-                            . 'code the shop does not have is refused. The shop default language when '
-                            . 'left out.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr, for the social title, '
+                            . 'group, country, order status and product names; another code is refused. The shop '
+                            . 'default language when left out.',
                     ],
                 ],
                 'additionalProperties' => false,

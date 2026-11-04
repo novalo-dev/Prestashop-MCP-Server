@@ -44,16 +44,12 @@ class SomcpToolListCustomerGroups
             'somcp_list_customer_groups',
             Somcp::t('List customer groups'),
             'Lists the customer groups of this shop, as the Groups tab of Customer Settings: '
-                . 'identifier (id_group), name, discount in percent, price display method (tax '
-                . 'excluded or included), whether prices are shown, number of members and creation '
-                . 'date, plus which group the shop uses by default for visitors, guests and '
-                . 'registered customers. Read only. Group identifiers are specific to each shop, so '
-                . 'take id_group from here before a call that takes one: the groups of '
-                . 'somcp_create_customer and somcp_update_customer, the group access of '
-                . 'somcp_create_category and somcp_update_category, the group of a specific price in '
-                . 'the product tools. When customer_groups_enabled is false the shop ignores groups '
-                . 'for prices. Do not use it to find the customers of a group (somcp_search_customers) '
-                . 'or the groups of one customer (somcp_get_customer).',
+                . 'id_group, name, discount, price display method, whether prices are shown, members, and '
+                . 'the groups the shop uses by default for visitors, guests and registered customers. '
+                . 'Read only. Group identifiers differ from shop to shop: take id_group from here for the '
+                . 'customer and category tools and the specific prices of products. When '
+                . 'customer_groups_enabled is false, prices ignore groups. For the customers of a group '
+                . 'use somcp_search_customers; for the groups of one customer somcp_get_customer.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -65,21 +65,13 @@ class SomcpToolUpdateCustomer
         return new SomcpTool(
             'somcp_update_customer',
             Somcp::t('Change a customer'),
-            'Changes one existing customer account of this shop, as Customers > Customers > Edit: first name, '
-                . 'last name, email, social title, birthday, Enabled, partner offers, newsletter, group access and '
-                . 'default customer group, plus the private note of the customer page and the B2B fields (company, '
-                . 'SIRET, APE, website, allowed outstanding amount, maximum number of payment days, risk rating) when '
-                . 'B2B mode is on. Only id_customer is required, from somcp_search_customers; every other field is '
-                . 'left as it is when absent. Every field takes the name somcp_get_customer returns, so a value read '
-                . 'there can be given back. Every value is the merchant\'s: ask for it, never invent it. '
-                . 'The password is never written: the customer sets theirs with "Forgot your password?" on the '
-                . 'shop. A guest account cannot be turned into a registered one here. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. The answer '
-                . 'gives each field changed with its old and new value; a call that would change nothing writes '
-                . 'nothing and says changed: false. '
-                . 'Do not use it to create an account, which is somcp_create_customer, or to change an address. '
-                . 'One customer per call. Not to be retried: if the answer is lost, read somcp_get_customer before '
-                . 'anything else, to see what the account holds now.',
+            'Changes one customer account, as Customers > Customers > Edit, with the private note '
+                . 'and, when B2B mode is on, the B2B fields. id_customer comes from '
+                . 'somcp_search_customers; fields take the names somcp_get_customer returns. Every value '
+                . 'is the merchant\'s: ask for it, never invent it. The password is never written, and a '
+                . 'guest account stays a guest. The answer gives each field changed with its old and new '
+                . 'value. To create an account use somcp_create_customer. One customer per call. Not to '
+                . 'be retried: if the answer is lost, read somcp_get_customer before anything else.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -92,7 +92,6 @@ BADGES = {
                        logo="modelcontextprotocol"),
     "multistore": dict(label="multistore", message="native", colour="#2E7D32"),
     "license":    dict(label="license", message="AFL-3.0", colour="#007EC6"),
-    "version":    dict(label="version", message="1.0.0", colour="#4C1"),
     "prs":        dict(label="PRs", message="welcome", colour="#4C1"),
     "docs":       dict(label="docs", message="wiki", colour="#007EC6"),
 }

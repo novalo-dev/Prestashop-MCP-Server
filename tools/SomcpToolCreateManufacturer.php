@@ -76,27 +76,12 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
         return new SomcpTool(
             'somcp_create_manufacturer',
             Somcp::t('Create a brand'),
-            'Creates one brand (manufacturer) in this shop with every field of the back office brand form: name, '
-                . 'short description, description, meta title, meta description, meta keywords (PrestaShop 8), '
-                . 'logo and Enabled. Only name is required: the brand is enabled unless told otherwise. '
-                . 'Read somcp_list_manufacturers first: the brand may already exist, and PrestaShop accepts two '
-                . 'brands of the same name. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Assistant" - write it yourself in every language being filled, and show it to the '
-                . 'merchant before the call. '
-                . 'Texts other than the name are objects keyed by ISO code and must be given for every language '
-                . 'in languages; a language of the shop left out takes the default language\'s text. The name is '
-                . 'one text, the same in every language. Lengths count the visible text, spaces included, HTML '
-                . 'tags not counted. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'The logo is given by url or by upload_ref; one that cannot be had is reported in logo and does '
-                . 'not stop the creation. '
-                . 'Do not use it to change a brand, which is somcp_update_manufacturer, or to enable or disable '
-                . 'one, which is somcp_set_manufacturer_active. One brand per call: for several, call it once per '
-                . 'brand and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_manufacturers and look for the name '
-                . 'before anything else, because a second call creates a second brand.',
+            'Creates one brand, as the brand form of Catalog > Brands & Suppliers > Brands, enabled unless '
+                . 'told otherwise. Read somcp_list_manufacturers first: PrestaShop accepts two brands of the same '
+                . 'name. Each field says who fills it: Merchant - ask and never invent; Assistant - write it in every '
+                . 'language being filled and show it before the call. A logo that cannot be had does not stop the '
+                . 'creation. To change a brand use somcp_update_manufacturer. One brand per call. Not to be retried: '
+                . 'if the answer is lost, look for the name in somcp_list_manufacturers before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],
@@ -139,8 +124,8 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
                 'description' => $text('Assistant. The full presentation of the brand, HTML allowed.'),
                 'meta_title' => $text('Assistant. 255 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_description' => $text('Assistant. 512 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
-                'meta_keywords' => $text('Assistant. PrestaShop 8 only, refused on 9, which dropped them. '
-                    . '5 keywords at most, comma separated, without < > = { }.'),
+                'meta_keywords' => $text('Assistant. PrestaShop 8, refused on 9. Up to 5 keywords, comma separated, '
+                    . 'without < > = { }.'),
                 'logo' => self::imageSchema('Merchant. The logo.', 'the logo'),
                 'active' => [
                     'type' => 'boolean',

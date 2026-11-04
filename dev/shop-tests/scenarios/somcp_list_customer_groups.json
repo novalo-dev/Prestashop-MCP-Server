@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "lists the three groups every shop starts with, sorted by identifier, with every column of the Groups list and the default groups", "arguments": {}, "expect": "ok", "contains": ["\"groups\"", "\"id_group\": 1", "\"id_group\": 2", "\"id_group\": 3", "\"name\": \"Visitor\"", "\"name\": \"Guest\"", "\"name\": \"Customer\"", "\"reduction\"", "\"price_display_method\": \"tax_", "\"show_prices\": true", "\"members_count\"", "\"date_add\"", "\"default_for\"", "\"visitors\"", "\"guests\"", "\"customers\"", "\"count\": 3", "\"customer_groups_enabled\"", "\"language\": \"en\"", "\"language_id\""]},
+    {"why": "finds a group by part of its name, whatever the case", "arguments": {"name": "GUES"}, "expect": "ok", "contains": ["\"name\": \"Guest\"", "\"count\": 1"]},
+    {"why": "the names read in a language the shop has, said by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"name\": \"Customer\""]},
+    {"why": "a name no group carries gives an empty list", "arguments": {"name": "no such group"}, "expect": "ok", "contains": ["\"groups\": []", "\"count\": 0"]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+  ]
+}

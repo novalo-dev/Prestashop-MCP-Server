@@ -55,7 +55,7 @@ class SomcpToolGetAttributeValue
                 . 'has none; both are null for a value of a drop-down list or radio buttons group, where the '
                 . 'product page does not show them. Also the faceted search fields of that form - url_name '
                 . '(the word used in filtered URLs) and meta_title - which are null when the faceted search '
-                . 'module is not installed. '
+                . 'module is not installed and enabled. '
                 . 'Identify the value by its identifier, from somcp_list_attributes: never guess one. '
                 . 'Do not use it for the list of groups and values, which is somcp_list_attributes, or for '
                 . 'the group itself, which is somcp_get_attribute_group.',
@@ -179,8 +179,10 @@ class SomcpToolGetAttributeValue
         ];
 
         // These two fields are added to the form by ps_facetedsearch and live
-        // in its own table, which only exists while it is installed.
-        if (Module::isInstalled('ps_facetedsearch')) {
+        // in its own table, which only exists while it is installed. A disabled module runs
+        // no hook, so the form drops them too: the same test as the write
+        // tools, which refuse them then, keeps get and update in step.
+        if (SomcpToolCreateFeature::facetedSearchActive()) {
             $texts = Db::getInstance()->getRow(
                 'SELECT `url_name`, `meta_title` FROM `' . _DB_PREFIX_ . 'layered_indexable_attribute_lang_value`'
                 . ' WHERE `id_attribute` = ' . (int) $idAttribute . ' AND `id_lang` = ' . (int) $idLang

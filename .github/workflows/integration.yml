@@ -1,258 +1,25 @@
-name: CI
+name: Integration
 
+# The module installed and run on every published PrestaShop 8 and 9, with each
+# PHP version that release supports, then attacked over HTTP and uninstalled.
 on:
   push:
     branches: [main, develop]
   pull_request:
+  # Build for Release runs this workflow on the commit it is about to publish,
+  # and publishes only if every job passed.
+  workflow_call:
 
 permissions:
   contents: read
 
+# The event is part of the group: the run a release calls must neither cancel
+# nor be cancelled by the one a push to main started on the same branch.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: integration-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: PHP ${{ matrix.php }} syntax
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        php: ['8.1', '8.2', '8.3', '8.4']
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          coverage: none
-          tools: none
-      - name: php -l on every PHP file
-        run: |
-          find . -name '*.php' -not -path './dev/tools/vendor/*' -print0 \
-            | xargs -0 -n1 -P4 php -d display_errors=stderr -l > /dev/null
-
-  coding-standard:
-    name: PrestaShop coding standard
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: none
-          tools: cs2pr
-      - name: Install dev tools
-        run: composer install --working-dir=dev/tools --no-interaction --no-progress
-      - name: php-cs-fixer
-        # cs2pr turns each finding into an annotation on the file and line.
-        run: dev/tools/vendor/bin/php-cs-fixer fix --dry-run --using-cache=no --format=checkstyle | cs2pr
-
-  phpstan:
-    # Kept beside the analysis in the shop job, which covers every release:
-    # these two names are required checks of the main branch ruleset, and a
-    # required check that never reports blocks every merge.
-    name: PHPStan on PrestaShop ${{ matrix.prestashop }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Official images with PHP 8.1, the lowest version the module supports.
-        # The PrestaShop files are already in /var/www/html in these images.
-        prestashop: ['8.0.0-8.1', '9.0-8.1']
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: none
-      - name: Install dev tools
-        run: composer install --working-dir=dev/tools --no-interaction --no-progress
-      # The module's own dependencies, which PHPStan reads to check the calls
-      # the built-in assistant makes to Neuron AI.
-      - name: Install the module dependencies
-        run: composer install --no-dev --no-interaction --no-progress
-      - name: Analyse inside the PrestaShop image
-        run: |
-          docker run --rm \
-            -v "$PWD:/var/www/html/modules/somcp" \
-            -w /var/www/html/modules/somcp \
-            -e _PS_ROOT_DIR_=/var/www/html \
-            --entrypoint php \
-            prestashop/prestashop:${{ matrix.prestashop }} \
-            -d memory_limit=1G \
-            dev/tools/vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress --error-format=github
-
-  translations:
-    name: Translations
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: none
-          tools: none
-      - name: Every visible string in all four catalogues
-        run: php .github/scripts/check-translations.php .
-      - name: Catalogues match dev/translations.py
-        # A hand edit of an XLF file, or a table change committed without its
-        # regenerated files, shows up here as a diff.
-        run: |
-          python3 dev/translations.py > /dev/null
-          git diff --exit-code -- translations
-
-  tools:
-    name: Tools and prompts
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: none
-          tools: none
-      - name: Every tool documented, scoped and in a prompt
-        run: php .github/scripts/check-tools.php .
-      - name: Every source file with the module's licence header
-        # Reported, never fixed here: a bot commit would be unsigned, and a
-        # pull request from a fork cannot be written to. The message gives
-        # the command that fixes it locally.
-        run: php .github/scripts/check-headers.php .
-
-  multishop:
-    name: Multistore
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: none
-          tools: none
-      - name: Every table shop-scoped, no merchant setting stored globally
-        run: php .github/scripts/check-multishop.php .
-      # A column placed AFTER another fails the upgrade on a shop that lacks
-      # that other one. New columns go in install.sql only: installDatabase()
-      # adds them on every upgrade.
-      - name: No upgrade column placed after another
-        run: "! grep -rn 'AFTER `' upgrade/"
-
-  container:
-    name: Symfony container on Symfony ${{ matrix.symfony }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - symfony: '4.4'  # PrestaShop 8
-          - symfony: '6.4'  # PrestaShop 9
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: none
-      - name: Install the Symfony components PrestaShop uses
-        run: |
-          mkdir -p "$RUNNER_TEMP/sf"
-          cd "$RUNNER_TEMP/sf"
-          # Symfony 4.4 is end of life and carries security advisories, which
-          # Composer refuses by default. Nothing here runs a request: the
-          # components only parse and compile two configuration files.
-          echo '{"config": {"audit": {"block-insecure": false}}}' > composer.json
-          COMPOSER_NO_SECURITY_BLOCKING=1 composer require --no-interaction --no-progress \
-            symfony/dependency-injection:^${{ matrix.symfony }} \
-            symfony/config:^${{ matrix.symfony }} \
-            symfony/yaml:^${{ matrix.symfony }} \
-            symfony/routing:^${{ matrix.symfony }} \
-            symfony/http-foundation:^${{ matrix.symfony }}
-      # The module's own autoloader, which the script loads: Composer writes
-      # it, as the builds do for the archive.
-      - name: Module dependencies
-        run: composer install --no-dev --no-interaction --no-progress
-      - name: Compile services.yml and resolve routes.yml
-        run: php .github/scripts/compile-container.php "$RUNNER_TEMP/sf/vendor" .
-
-
-  security:
-    # PHP has no CodeQL support, so the security checks are put together:
-    # Semgrep with its PHP rules and PrestaShop's own (request data reaching a
-    # query, command execution, unserialize, unescaped Smarty output), Psalm's
-    # taint analysis to follow data from a request or a tool's arguments
-    # across functions to a query, an echo or a file, and Gitleaks over the
-    # whole history for a key or a token committed by mistake.
-    name: Security
-    runs-on: ubuntu-latest
-    env:
-      SEMGREP_VERSION: '1.182.1'
-      PSALM_VERSION: '6.20.1'
-      GITLEAKS_VERSION: '8.30.1'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # Every commit, not only the last one: a secret removed in a later
-          # commit is still published in the history.
-          fetch-depth: 0
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          coverage: none
-          tools: none
-      - name: Semgrep
-        run: |
-          pip install --quiet "semgrep==$SEMGREP_VERSION"
-          semgrep scan --metrics=off --error \
-            --config p/php --config dev/security/semgrep.yml \
-            somcp.php classes controllers src tools views config prompts
-      - name: Psalm taint analysis
-        run: |
-          curl -fsSL -o /tmp/psalm.phar "https://github.com/vimeo/psalm/releases/download/$PSALM_VERSION/psalm.phar"
-          php dev/security/make-entry.php
-          cd dev/security
-          php /tmp/psalm.phar --no-cache --no-progress --taint-analysis --output-format=github
-      - name: Gitleaks
-        run: |
-          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v$GITLEAKS_VERSION/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz -C /tmp gitleaks
-          /tmp/gitleaks git --no-banner --redact --exit-code 1 .
-  dependencies:
-    # Neuron AI runs the built-in assistant, and it moves fast: the version is
-    # pinned in composer.json, nothing changes without a commit, and this job
-    # watches what the pin brings in. Known vulnerabilities fail it. So does a
-    # class of the pruned archive that no longer loads, a class the module
-    # names that was pruned away, or a part of Neuron's API the module calls
-    # that is gone or changed shape - which is how an
-    # upgrade that would break the chat shows up here and not in a shop.
-    # The weekly Dependencies workflow says when a newer version is out.
-    name: Dependencies
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: none
-          tools: composer
-      - name: composer.json is valid
-        run: composer validate --no-check-publish --no-check-lock
-      - name: Install
-        run: composer install --no-dev --no-interaction --no-progress --optimize-autoloader
-      - name: Known vulnerabilities
-        run: composer audit --no-dev --locked --abandoned=report
-      # Both checks read the pruned copy, the one merchants install: run on
-      # the full vendor folder, they once passed while the archive had lost
-      # the classes the assistant's memory is built on.
-      - name: Prune a copy the way the builds do
-        run: |
-          mkdir -p /tmp/pack/somcp
-          git archive HEAD | tar -x -C /tmp/pack/somcp
-          cp -r vendor /tmp/pack/somcp/vendor
-          dev/package/prune.sh /tmp/pack/somcp
-      - name: The API the assistant calls is still there
-        run: php dev/package/contract.php /tmp/pack/somcp
-      - name: Every class of the pruned archive loads, and every class the module names is in it
-        run: php dev/package/loads.php /tmp/pack/somcp
-
   shop:
     # Every tool called for real, then the uninstall checked, then PHPStan,
     # on each published PrestaShop 8 and 9 with each PHP version that release
@@ -261,11 +28,13 @@ jobs:
     # which is where a column PrestaShop 8.0 lacks or a method PrestaShop 9
     # removed actually shows up.
     #
+    # Runs beside the PHP tests and the security checks rather than after
+    # them, now that each has a workflow and a badge of its own.
+    #
     # Only the pairs PrestaShop supports: PrestaShop 8 refuses PHP above 8.1,
     # and a failure there would say more about the core than about the
     # module.
     name: PrestaShop ${{ matrix.prestashop }} on PHP ${{ matrix.php }}
-    needs: [lint, tools, security, dependencies]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

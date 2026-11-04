@@ -669,7 +669,7 @@ class SomcpAssistantChat
         $idEmployee = (int) $this->employee->id;
         $prompts = [];
         foreach (SomcpPromptRegistry::getInstance()->all() as $prompt) {
-            if (!SomcpPromptRegistry::isEnabled($prompt->getName()) || !$prompt->isAvailableTo($scopes, $idEmployee)) {
+            if (!SomcpPromptRegistry::isEnabled($prompt->getName(), true) || !$prompt->isAvailableTo($scopes, $idEmployee)) {
                 continue;
             }
             $prompts[] = [
@@ -1452,7 +1452,7 @@ class SomcpAssistantChat
         // Checked again although the tool was only offered if both held: the
         // run may have paused for minutes, and a tool switched off or a right
         // taken away in the meantime must not go through.
-        if ($tool === null || !SomcpToolRegistry::isEnabled($name)) {
+        if ($tool === null || !SomcpToolRegistry::isEnabled($name, true)) {
             return ['error' => 'This tool is switched off for this shop.'];
         }
         if (!$tool->isAvailableTo($this->scopes(), $idEmployee)) {
@@ -1961,7 +1961,7 @@ class SomcpAssistantChat
             if (!in_array($tool->getName(), $wanted, true)) {
                 continue;
             }
-            if (!SomcpToolRegistry::isEnabled($tool->getName()) || !$tool->isAvailableTo($scopes, $idEmployee)) {
+            if (!SomcpToolRegistry::isEnabled($tool->getName(), true) || !$tool->isAvailableTo($scopes, $idEmployee)) {
                 continue;
             }
             $described = $tool->describe();
@@ -1994,7 +1994,7 @@ class SomcpAssistantChat
             );
             $change = new FrontendTool(
                 self::SETTINGS_WRITE_TOOL,
-                'Change one setting of this module for this shop, with a key read from ' . self::SETTINGS_READ_TOOL . ', only the one the employee asked for. When it needs a choice they have not made, ask them first: never choose for them. Switches take on or off. tool:<name> and prompt:<name> switch one tool or prompt. API keys cannot be set here.',
+                'Change one setting of this module for this shop, with a key read from ' . self::SETTINGS_READ_TOOL . ', only the one the employee asked for. When it needs a choice they have not made, ask them first: never choose for them. Switches take on or off. tool:<name> and prompt:<name> switch one tool or prompt for the assistants connected over MCP, builtin-tool:<name> and builtin-prompt:<name> for this assistant. API keys cannot be set here.',
                 [
                     'type' => 'object',
                     'properties' => [
@@ -2096,7 +2096,7 @@ class SomcpAssistantChat
         $added = [];
         foreach ($names as $name) {
             $tool = $registry->get((string) $name);
-            if ($tool !== null && SomcpToolRegistry::isEnabled($tool->getName()) && $tool->isAvailableTo($scopes, $idEmployee)) {
+            if ($tool !== null && SomcpToolRegistry::isEnabled($tool->getName(), true) && $tool->isAvailableTo($scopes, $idEmployee)) {
                 $added[] = $tool->getName();
             }
         }
@@ -2141,7 +2141,7 @@ class SomcpAssistantChat
         $idEmployee = (int) $this->employee->id;
         $found = [];
         foreach (SomcpToolRegistry::getInstance()->all() as $tool) {
-            if (!SomcpToolRegistry::isEnabled($tool->getName()) || !$tool->isAvailableTo($scopes, $idEmployee)) {
+            if (!SomcpToolRegistry::isEnabled($tool->getName(), true) || !$tool->isAvailableTo($scopes, $idEmployee)) {
                 continue;
             }
             $described = $tool->describe();
@@ -2484,7 +2484,7 @@ class SomcpAssistantChat
      */
     private function scopes(): string
     {
-        return SomcpScope::toString(SomcpScope::grantableFor((int) $this->employee->id, $this->idShop));
+        return SomcpScope::toString(SomcpScope::grantableFor((int) $this->employee->id, $this->idShop, true));
     }
 
     /**

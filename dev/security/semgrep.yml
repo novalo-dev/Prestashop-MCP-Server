@@ -155,3 +155,13 @@ rules:
     pattern-either:
       - pattern: Configuration::get('PS_LEGACY_IMAGES', ...)
       - pattern: Configuration::get("PS_LEGACY_IMAGES", ...)
+
+  - id: somcp-constant-after-defined
+    languages: [php]
+    severity: ERROR
+    message: >-
+      A core constant named right after its own defined() check. The analysis
+      folds the constant to the value it was given and calls the test always
+      true or always false, which the Addons validator reports, while on a
+      shop it is the shop's value. Read it with SomcpBackOffice::constant().
+    pattern-regex: defined\(\s*(['"])(\w+)\1\s*\)\s*(&&|and|\?)\s*\\?\2\b

@@ -18,6 +18,8 @@ search engines as a fact: say what the audit found and why it matters.
 - `somcp_get_robots_txt`
 - `somcp_generate_robots_txt`
 - `somcp_audit_page`
+- `somcp_check_links`
+- `somcp_audit_sitemap`
 
 ## Know which shop you are in
 
@@ -75,6 +77,19 @@ installation has its own titles, descriptions and URLs.
    canonical and structured data search engines are actually given, and again
    after a change. One page per call: pick the pages that matter, never loop
    over the catalogue.
+7. **Find the broken links.** Call `somcp_check_links` once, from the home
+   page or the section the merchant cares about: it follows the shop's own
+   links and reports the addresses that answer an error, with the pages that
+   link to them, the chains of redirects and the slow pages. Point the merchant
+   to the page holding each broken link, and open one in detail with
+   `somcp_audit_page`. When `stopped_early` is set, say that only part of the
+   shop was walked.
+8. **Check the sitemap.** Call `somcp_audit_sitemap` once: it says whether
+   the Google sitemap module generated the files, whether robots.txt
+   announces them, which active products are missing and which disabled ones
+   are still listed, and which listed addresses answer an error. When
+   `no_sitemap` or `stale` is reported, tell the merchant to press **Generate
+   sitemap** on the module's screen; this tool never generates it.
 
 ## Reading the checks
 

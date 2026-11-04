@@ -52,10 +52,10 @@ class SomcpToolGetFeature
                 . '(Composition, Material...): name, position (0 for the first, the order of the back office '
                 . 'list and of the product page), the number of predefined values it holds, and the faceted '
                 . 'search fields of that form - url_name (the word used in filtered URLs), meta_title and '
-                . 'indexable - which are null when the faceted search module is not installed. '
+                . 'indexable - which are null when the faceted search module is not installed and enabled. '
                 . 'Identify the feature by its identifier, from somcp_list_features: never guess one. '
                 . 'Do not use it for the list of features or the names of their values, which is '
-                . 'somcp_list_features, or for one value: somcp_get_feature_value when the shop offers it.',
+                . 'somcp_list_features, or for one value: somcp_get_feature_value.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -162,8 +162,10 @@ class SomcpToolGetFeature
         ];
 
         // These three fields are added to the form by ps_facetedsearch and
-        // live in its own tables, which only exist while it is installed.
-        if (Module::isInstalled('ps_facetedsearch')) {
+        // live in its own tables, which only exist while it is installed. A disabled module runs
+        // no hook, so the form drops them too: the same test as the write
+        // tools, which refuse them then, keeps get and update in step.
+        if (SomcpToolCreateFeature::facetedSearchActive()) {
             $texts = Db::getInstance()->getRow(
                 'SELECT `url_name`, `meta_title` FROM `' . _DB_PREFIX_ . 'layered_indexable_feature_lang_value`'
                 . ' WHERE `id_feature` = ' . (int) $idFeature . ' AND `id_lang` = ' . (int) $idLang

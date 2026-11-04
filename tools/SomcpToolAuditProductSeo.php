@@ -92,7 +92,8 @@ class SomcpToolAuditProductSeo
                 . 'words, tags removed), image_legend_missing (an image without its alternative text in that '
                 . 'language; value lists the image ids), no_image, no_brand, no_gtin (no EAN-13, UPC nor ISBN), '
                 . 'and inactive_without_redirect (an inactive product whose page sends no redirection; checked '
-                . 'only with active: false). The product-wide checks (no_image, no_brand, no_gtin, '
+                . 'only with active: false; on PrestaShop 9 the shop default is applied to a product left on it). '
+                . 'The product-wide checks (no_image, no_brand, no_gtin, '
                 . 'inactive_without_redirect) are repeated on each language entry. counts gives, per check, the '
                 . 'entries raising it over the whole catalogue, and total_count the entries with at least one '
                 . 'issue: read the next page with offset rather than concluding from one page. Only active '
@@ -184,6 +185,12 @@ class SomcpToolAuditProductSeo
             ? self::duplicates('link_rewrite', $idShop, $idLangs, $activeOnly)
             : [];
 
+        // PrestaShop 9 stores "default" on a product that follows the shop's
+        // own behaviour for disabled products, so what the page really does is
+        // read once from that setting. PrestaShop 8 has neither the value nor
+        // the setting.
+        $shopRedirect = (string) Configuration::get('PS_PRODUCT_REDIRECTION_DEFAULT', null, null, $idShop);
+
         $counts = array_fill_keys($checks, 0);
         $entries = [];
         $total = 0;
@@ -196,7 +203,7 @@ class SomcpToolAuditProductSeo
                 $idLang = (int) $row['id_lang'];
                 $key = $idProduct . '-' . $idLang;
 
-                $issues = self::issues($row, $checks, $images[$idProduct] ?? null, $idLang, isset($duplicateTitles[$key]), isset($duplicateUrls[$key]));
+                $issues = self::issues($row, $checks, $images[$idProduct] ?? null, $idLang, isset($duplicateTitles[$key]), isset($duplicateUrls[$key]), $shopRedirect);
                 if ($issues === []) {
                     continue;
                 }
@@ -241,10 +248,11 @@ class SomcpToolAuditProductSeo
      * @param int $idLang
      * @param bool $duplicateTitle
      * @param bool $duplicateUrl
+     * @param string $shopRedirect
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function issues(array $row, array $checks, ?array $images, int $idLang, bool $duplicateTitle, bool $duplicateUrl): array
+    private static function issues(array $row, array $checks, ?array $images, int $idLang, bool $duplicateTitle, bool $duplicateUrl, string $shopRedirect): array
     {
         $title = trim((string) $row['meta_title']);
         $description = trim((string) $row['meta_description']);
@@ -252,6 +260,7 @@ class SomcpToolAuditProductSeo
         $imageCount = $images['count'] ?? 0;
         $withoutLegend = $images['missing'][$idLang] ?? [];
         $redirect = (string) $row['redirect_type'];
+        $applies = $redirect === 'default' ? $shopRedirect : $redirect;
 
         $found = [
             'meta_title_missing' => $title === '' ? '' : null,
@@ -269,8 +278,13 @@ class SomcpToolAuditProductSeo
             'no_gtin' => trim((string) $row['ean13']) === '' && trim((string) $row['upc']) === '' && trim((string) $row['isbn']) === '' ? '' : null,
             // A 301 or 302 sends the visitor and the search engine to another
             // page; 200-displayed (PrestaShop 9) keeps the page shown. Anything
-            // else - 404, 410, the shop default - leaves a dead address.
-            'inactive_without_redirect' => !(bool) $row['active'] && !preg_match('/^(301|302)-|^200-displayed$/', $redirect) ? $redirect : null,
+            // else - 404, 410, 404-displayed, 410-displayed - leaves a dead
+            // address. A product on the shop default is judged by what that
+            // default applies, and both are given so the merchant knows which
+            // setting to change.
+            'inactive_without_redirect' => !(bool) $row['active'] && !preg_match('/^(301|302)-|^200-displayed$/', $applies)
+                ? ($redirect === 'default' ? ['redirect_type' => $redirect, 'applies' => $applies] : $redirect)
+                : null,
         ];
 
         $issues = [];

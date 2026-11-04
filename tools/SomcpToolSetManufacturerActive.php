@@ -55,17 +55,12 @@ class SomcpToolSetManufacturerActive
         return new SomcpTool(
             'somcp_set_manufacturer_active',
             Somcp::t('Enable or disable a brand'),
-            'Enables or disables one brand (manufacturer) of this shop, exactly like the Enabled toggle of the '
-                . 'back office brand list, and changes nothing else. Disabling a brand hides its page on the '
-                . 'storefront; its products stay on sale and keep their brand, so tell the merchant. It is '
-                . 'reversible: it is not a deletion. Find the brand with somcp_list_manufacturers first and use '
-                . 'the identifier it returns; never guess one. When the brand already has the state asked for, '
-                . 'nothing is written and the answer says changed: false. On a multistore installation, '
-                . 'PrestaShop keeps Enabled once for every shop sharing the brand, so the change shows in each '
-                . 'of them. Do not use it to change anything else about a brand (somcp_update_manufacturer). One '
-                . 'brand per call: for several, call it once per brand and report each result. Not to be retried '
-                . 'on a lost answer: read the brand with somcp_get_manufacturer to see whether the change went '
-                . 'through.',
+            'Enables or disables one brand, like the Enabled toggle of Catalog > Brands & Suppliers > Brands, '
+                . 'and changes nothing else. Disabling hides its storefront page; its products stay on sale and keep '
+                . 'their brand, so tell the merchant. It is not a deletion. id_manufacturer comes from '
+                . 'somcp_list_manufacturers: never guess one. On multistore, Enabled is shared by every shop of the '
+                . 'brand. To change anything else use somcp_update_manufacturer. One brand per call. Not to be '
+                . 'retried: if the answer is lost, read somcp_get_manufacturer before anything else.',
             [
                 'type' => 'object',
                 'properties' => [

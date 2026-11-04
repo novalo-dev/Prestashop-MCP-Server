@@ -3,13 +3,14 @@
 The README badges, generated as local SVG files rather than served by
 shields.io, so the README depends on nothing outside the repository.
 
-Three badges are the exception: stars, forks and contributors. Their numbers
-change without any commit, so a file in the repository could not follow them;
-they are served by shields.io, which reads them from GitHub.
+The exceptions are the badges whose value changes without a commit here, so a
+file in the repository could not follow them. The PHP tests, Integration and
+Security badges are served by GitHub Actions and show the last run of each
+workflow on develop. The release badge, stars, forks and contributors are
+served by shields.io, which reads them from GitHub.
 
-The PrestaShop, PHP and version badges state facts about the module: change
-them in the same pull request as `ps_versions_compliancy`, `composer.json` or
-the module version.
+The PrestaShop and PHP badges state facts about the module: change them in the
+same pull request as `ps_versions_compliancy` or `composer.json`.
 
 ## Regenerate
 

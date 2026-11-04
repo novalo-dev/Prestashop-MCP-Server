@@ -63,7 +63,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             Somcp::t('Change a category'),
             'Changes one existing category of this shop. Everything somcp_create_category can write can be '
                 . 'changed here, under the same names and with the same rules - who fills each field, lengths, '
-                . 'identifiers from somcp_list_categories and Customers > Groups. Only what is given '
+                . 'identifiers from somcp_list_categories and somcp_list_customer_groups. Only what is given '
                 . 'changes: a value left out is kept, a text is replaced in the languages filled and kept in the '
                 . 'others, groups given replaces the whole set, menu_thumbnails given replaces the current ones. '
                 . 'The cover image and the menu thumbnails are only removed through remove_cover_image and '
@@ -84,8 +84,8 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
                 . 'and says changed: false. '
                 . 'Do not use it to create a category (somcp_create_category) or only to show or hide one '
                 . '(somcp_set_category_active). One category per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the category again (somcp_get_category '
-                . 'when the shop offers it, otherwise somcp_list_categories) and compare before calling again.',
+                . 'Not to be retried blindly: if the answer is lost, read the category again with '
+                . 'somcp_get_category and compare before calling again.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],
@@ -116,7 +116,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             . 'Refused on Home.' . $kept;
         $properties['active']['description'] = 'Merchant. Displayed on the storefront.' . $kept;
         $properties['groups']['description'] = 'Merchant, from the shop: the customer groups that can see the '
-            . 'category, as listed under Customers > Groups. Given, it replaces the current set entirely.' . $kept;
+            . 'category, their id_group from somcp_list_customer_groups. Given, it replaces the current set entirely.' . $kept;
         $properties['link_rewrite']['description'] = 'Assistant. The friendly URL, 128 characters at most, only in '
             . 'the languages given; never made again from a new name. On a displayed category the old address '
             . 'stops working: tell the merchant first. One text per language being filled, keyed by ISO code: '

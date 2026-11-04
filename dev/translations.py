@@ -598,10 +598,30 @@ T = {
  "Outils disponibles",
  "Herramientas disponibles",
  "Verfügbare Werkzeuge"),
-"What an assistant may ask this shop to do. A tool switched off here is offered to nobody, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.": (
- "Ce qu'un assistant peut demander à cette boutique. Un outil désactivé ici n'est proposé à personne, quels que soient les droits de son compte. Les outils publiés par un autre module portent le nom de ce module devant le leur.",
- "Lo que un asistente puede pedir a esta tienda. Una herramienta desactivada aquí no se ofrece a nadie, sean cuales sean los permisos de su cuenta. Las herramientas publicadas por otro módulo llevan delante el nombre de ese módulo.",
- "Was ein Assistent von diesem Shop verlangen darf. Ein hier ausgeschaltetes Werkzeug wird niemandem angeboten, unabhängig von den Rechten seines Kontos. Werkzeuge anderer Module tragen deren Modulnamen vor dem eigenen."),
+"What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.": (
+ "Ce qu'un assistant peut demander à cette boutique. Choisissez pour chaque outil s'il est proposé aux assistants connectés en MCP, à l'assistant intégré, ou aux deux. Un outil désactivé dans une colonne n'y est proposé à personne, quels que soient les droits de son compte. Les outils publiés par un autre module portent le nom de ce module devant le leur.",
+ "Lo que un asistente puede pedir a esta tienda. Elija para cada herramienta si se ofrece a los asistentes conectados por MCP, al asistente integrado o a ambos. Una herramienta desactivada en una columna no se ofrece allí a nadie, sean cuales sean los permisos de su cuenta. Las herramientas publicadas por otro módulo llevan delante el nombre de ese módulo.",
+ "Was ein Assistent von diesem Shop verlangen darf. Wählen Sie für jedes Werkzeug, ob es den über MCP verbundenen Assistenten, dem integrierten Assistenten oder beiden angeboten wird. Ein in einer Spalte ausgeschaltetes Werkzeug wird dort niemandem angeboten, unabhängig von den Rechten seines Kontos. Werkzeuge anderer Module tragen deren Modulnamen vor dem eigenen."),
+"Search a tool": (
+ "Rechercher un outil",
+ "Buscar una herramienta",
+ "Ein Werkzeug suchen"),
+"Search a prompt": (
+ "Rechercher un prompt",
+ "Buscar un prompt",
+ "Einen Prompt suchen"),
+"No tool matches this search.": (
+ "Aucun outil ne correspond à cette recherche.",
+ "Ninguna herramienta coincide con esta búsqueda.",
+ "Kein Werkzeug entspricht dieser Suche."),
+"No prompt matches this search.": (
+ "Aucun prompt ne correspond à cette recherche.",
+ "Ningún prompt coincide con esta búsqueda.",
+ "Kein Prompt entspricht dieser Suche."),
+"(filtered from %all%)": (
+ "(filtré sur %all%)",
+ "(filtrado de %all%)",
+ "(gefiltert aus %all%)"),
 "On": (
  "Actif",
  "Activo",
@@ -646,6 +666,10 @@ T = {
  "Créer un statut de commande",
  "Crear un estado de pedido",
  "Einen Bestellstatus anlegen"),
+"List customer groups": (
+ "Lister les groupes de clients",
+ "Listar los grupos de clientes",
+ "Kundengruppen auflisten"),
 "List return statuses": (
  "Lister les statuts de retour",
  "Listar los estados de devolución",
@@ -926,6 +950,18 @@ T = {
  "Auditer une page publique de la boutique",
  "Auditar una página pública de la tienda",
  "Eine öffentliche Seite des Shops prüfen"),
+"Check the links of the shop's public pages": (
+ "Vérifier les liens des pages publiques de la boutique",
+ "Comprobar los enlaces de las páginas públicas de la tienda",
+ "Die Links der öffentlichen Seiten des Shops prüfen"),
+"Audit the shop's sitemaps": (
+ "Auditer les sitemaps de la boutique",
+ "Auditar los sitemaps de la tienda",
+ "Die Sitemaps des Shops prüfen"),
+"Compare a product page with its structured data": (
+ "Comparer une page produit avec ses données structurées",
+ "Comparar una página de producto con sus datos estructurados",
+ "Eine Produktseite mit ihren strukturierten Daten vergleichen"),
 "Generate the robots.txt file": (
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",
@@ -982,6 +1018,18 @@ T = {
  "Produits, catégories, pages ou toute la boutique",
  "Productos, categorías, páginas o toda la tienda",
  "Produkte, Kategorien, Seiten oder der ganze Shop"),
+"Get recommended by AI assistants": (
+ "Être recommandé par les assistants IA",
+ "Ser recomendado por los asistentes de IA",
+ "Von KI-Assistenten empfohlen werden"),
+"Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.": (
+ "Vérifier que les moteurs de réponse et les assistants IA peuvent lire la boutique et se fier à ses données produits, et corriger ce qui leur échapperait.",
+ "Comprobar que los motores de respuesta y los asistentes de IA pueden leer la tienda y confiar en sus datos de producto, y corregir lo que se les escaparía.",
+ "Prüfen, dass Antwortmaschinen und KI-Assistenten den Shop lesen und seinen Produktdaten vertrauen können, und beheben, was ihnen entgehen würde."),
+"Name, reference or ean13 of a product to start from": (
+ "Nom, référence ou ean13 d'un produit par lequel commencer",
+ "Nombre, referencia o ean13 de un producto por el que empezar",
+ "Name, Referenz oder EAN13 eines Produkts, mit dem begonnen wird"),
 "view": (
  "voir",
  "ver",

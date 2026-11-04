@@ -1,0 +1,99 @@
+name: Security
+
+# Static security analysis of the code, and the dependencies shipped in the zip.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  # Build for Release runs this workflow on the commit it is about to publish,
+  # and publishes only if every job passed.
+  workflow_call:
+
+permissions:
+  contents: read
+
+# The event is part of the group: the run a release calls must neither cancel
+# nor be cancelled by the one a push to main started on the same branch.
+concurrency:
+  group: security-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    # PHP has no CodeQL support, so the security checks are put together:
+    # Semgrep with its PHP rules and PrestaShop's own (request data reaching a
+    # query, command execution, unserialize, unescaped Smarty output), Psalm's
+    # taint analysis to follow data from a request or a tool's arguments
+    # across functions to a query, an echo or a file, and Gitleaks over the
+    # whole history for a key or a token committed by mistake.
+    name: Security
+    runs-on: ubuntu-latest
+    env:
+      SEMGREP_VERSION: '1.182.1'
+      PSALM_VERSION: '6.20.1'
+      GITLEAKS_VERSION: '8.30.1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Every commit, not only the last one: a secret removed in a later
+          # commit is still published in the history.
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: none
+      - name: Semgrep
+        run: |
+          pip install --quiet "semgrep==$SEMGREP_VERSION"
+          semgrep scan --metrics=off --error \
+            --config p/php --config dev/security/semgrep.yml \
+            somcp.php classes controllers src tools views config prompts
+      - name: Psalm taint analysis
+        run: |
+          curl -fsSL -o /tmp/psalm.phar "https://github.com/vimeo/psalm/releases/download/$PSALM_VERSION/psalm.phar"
+          php dev/security/make-entry.php
+          cd dev/security
+          php /tmp/psalm.phar --no-cache --no-progress --taint-analysis --output-format=github
+      - name: Gitleaks
+        run: |
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v$GITLEAKS_VERSION/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz -C /tmp gitleaks
+          /tmp/gitleaks git --no-banner --redact --exit-code 1 .
+
+  dependencies:
+    # Neuron AI runs the built-in assistant, and it moves fast: the version is
+    # pinned in composer.json, nothing changes without a commit, and this job
+    # watches what the pin brings in. Known vulnerabilities fail it. So does a
+    # class of the pruned archive that no longer loads, a class the module
+    # names that was pruned away, or a part of Neuron's API the module calls
+    # that is gone or changed shape - which is how an
+    # upgrade that would break the chat shows up here and not in a shop.
+    # The weekly Dependencies workflow says when a newer version is out.
+    name: Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+      - name: composer.json is valid
+        run: composer validate --no-check-publish --no-check-lock
+      - name: Install
+        run: composer install --no-dev --no-interaction --no-progress --optimize-autoloader
+      - name: Known vulnerabilities
+        run: composer audit --no-dev --locked --abandoned=report
+      # Both checks read the pruned copy, the one merchants install: run on
+      # the full vendor folder, they once passed while the archive had lost
+      # the classes the assistant's memory is built on.
+      - name: Prune a copy the way the builds do
+        run: |
+          mkdir -p /tmp/pack/somcp
+          git archive HEAD | tar -x -C /tmp/pack/somcp
+          cp -r vendor /tmp/pack/somcp/vendor
+          dev/package/prune.sh /tmp/pack/somcp
+      - name: The API the assistant calls is still there
+        run: php dev/package/contract.php /tmp/pack/somcp
+      - name: Every class of the pruned archive loads, and every class the module names is in it
+        run: php dev/package/loads.php /tmp/pack/somcp

@@ -73,6 +73,24 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
     }
 
     /**
+     * Hands a browser over to the shop's "page not found" before anything else.
+     *
+     * It has to happen before the parent init: the front controller sets the
+     * shop up only once per request, so a page-not-found controller started
+     * after it would find no service container and render nothing.
+     */
+    public function init()
+    {
+        Somcp::bootClasses();
+
+        if (Tools::strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'GET' && $this->isBrowser()) {
+            $this->showNotFound();
+        }
+
+        parent::init();
+    }
+
+    /**
      * Handles the request from end to end and stops the script.
      */
     public function initContent()
@@ -115,6 +133,35 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
         }
 
         $this->dispatch($message, $validation['row']);
+    }
+
+    /**
+     * Whether the GET comes from someone opening the address in a browser.
+     *
+     * A browser asks for a page; an MCP client never does - the older
+     * revisions open their stream with text/event-stream, and must keep
+     * getting the 405 the specification tells them to expect, since a 404
+     * reads to them as a session that has gone.
+     */
+    private function isBrowser(): bool
+    {
+        $accept = Tools::strtolower(SomcpHttp::header('Accept'));
+
+        return strpos($accept, 'text/html') !== false && strpos($accept, 'text/event-stream') === false;
+    }
+
+    /**
+     * Shows the shop's own "page not found", the way the dispatcher does for
+     * an address it does not know.
+     *
+     * The address is meant for an assistant, not a person: a merchant or a
+     * visitor who opens it sees the same page as for any other dead link,
+     * rather than a blank error that looks like something broke.
+     */
+    private function showNotFound(): void
+    {
+        Controller::getController('PageNotFoundController')->run();
+        exit;
     }
 
     /**

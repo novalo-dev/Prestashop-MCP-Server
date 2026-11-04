@@ -757,10 +757,35 @@
       <source>Available tools</source>
       <target>Herramientas disponibles</target>
     </trans-unit>
-    <!-- What an assistant may ask this shop to do. A tool switched off here is offered to nobody, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs. -->
-    <trans-unit id="01c4b521fae87e2d7c23cab78640583b" resname="What an assistant may ask this shop to do. A tool switched off here is offered to nobody, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.">
-      <source>What an assistant may ask this shop to do. A tool switched off here is offered to nobody, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.</source>
-      <target>Lo que un asistente puede pedir a esta tienda. Una herramienta desactivada aquí no se ofrece a nadie, sean cuales sean los permisos de su cuenta. Las herramientas publicadas por otro módulo llevan delante el nombre de ese módulo.</target>
+    <!-- What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs. -->
+    <trans-unit id="90d3d65d93d4388a9c120e8bdbe0756c" resname="What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.">
+      <source>What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.</source>
+      <target>Lo que un asistente puede pedir a esta tienda. Elija para cada herramienta si se ofrece a los asistentes conectados por MCP, al asistente integrado o a ambos. Una herramienta desactivada en una columna no se ofrece allí a nadie, sean cuales sean los permisos de su cuenta. Las herramientas publicadas por otro módulo llevan delante el nombre de ese módulo.</target>
+    </trans-unit>
+    <!-- Search a tool -->
+    <trans-unit id="58ebd9c24b715ba8b7ac6935cfcf38fd" resname="Search a tool">
+      <source>Search a tool</source>
+      <target>Buscar una herramienta</target>
+    </trans-unit>
+    <!-- Search a prompt -->
+    <trans-unit id="253997e9f16ffab58ecb3590b79c4bee" resname="Search a prompt">
+      <source>Search a prompt</source>
+      <target>Buscar un prompt</target>
+    </trans-unit>
+    <!-- No tool matches this search. -->
+    <trans-unit id="713bc5b1c96ad698dd67c2614165ae66" resname="No tool matches this search.">
+      <source>No tool matches this search.</source>
+      <target>Ninguna herramienta coincide con esta búsqueda.</target>
+    </trans-unit>
+    <!-- No prompt matches this search. -->
+    <trans-unit id="cfedba852182bfc55be130cee3fc0526" resname="No prompt matches this search.">
+      <source>No prompt matches this search.</source>
+      <target>Ningún prompt coincide con esta búsqueda.</target>
+    </trans-unit>
+    <!-- (filtered from %all%) -->
+    <trans-unit id="1701e4292513d19ad887866e22ade68d" resname="(filtered from %all%)">
+      <source>(filtered from %all%)</source>
+      <target>(filtrado de %all%)</target>
     </trans-unit>
     <!-- On -->
     <trans-unit id="521c36a31c2762741cf0f8890cbe05e3" resname="On">
@@ -816,6 +841,11 @@
     <trans-unit id="05dac18aa67147cb5529f4d5bb2986c1" resname="Create an order status">
       <source>Create an order status</source>
       <target>Crear un estado de pedido</target>
+    </trans-unit>
+    <!-- List customer groups -->
+    <trans-unit id="dacac58a1f9ceee1476795b40c5b8ea8" resname="List customer groups">
+      <source>List customer groups</source>
+      <target>Listar los grupos de clientes</target>
     </trans-unit>
     <!-- List return statuses -->
     <trans-unit id="1cf3c3877a1004fb4ee19da66d2b4cfa" resname="List return statuses">
@@ -1167,6 +1197,21 @@
       <source>Audit a public page of the shop</source>
       <target>Auditar una página pública de la tienda</target>
     </trans-unit>
+    <!-- Check the links of the shop's public pages -->
+    <trans-unit id="e70c4b3b40aad8a6c0a437fde5477c31" resname="Check the links of the shop&#x27;s public pages">
+      <source>Check the links of the shop's public pages</source>
+      <target>Comprobar los enlaces de las páginas públicas de la tienda</target>
+    </trans-unit>
+    <!-- Audit the shop's sitemaps -->
+    <trans-unit id="1cc23cbf9de2a2ba3d72e0d949024c57" resname="Audit the shop&#x27;s sitemaps">
+      <source>Audit the shop's sitemaps</source>
+      <target>Auditar los sitemaps de la tienda</target>
+    </trans-unit>
+    <!-- Compare a product page with its structured data -->
+    <trans-unit id="1710ef53e8dc7b229510b276320ca8c5" resname="Compare a product page with its structured data">
+      <source>Compare a product page with its structured data</source>
+      <target>Comparar una página de producto con sus datos estructurados</target>
+    </trans-unit>
     <!-- Generate the robots.txt file -->
     <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
       <source>Generate the robots.txt file</source>
@@ -1236,6 +1281,21 @@
     <trans-unit id="ed839806982bd08c386374db52525bbe" resname="Products, categories, pages or the whole shop">
       <source>Products, categories, pages or the whole shop</source>
       <target>Productos, categorías, páginas o toda la tienda</target>
+    </trans-unit>
+    <!-- Get recommended by AI assistants -->
+    <trans-unit id="856c0d54a53d93ce36b483860ec93bb0" resname="Get recommended by AI assistants">
+      <source>Get recommended by AI assistants</source>
+      <target>Ser recomendado por los asistentes de IA</target>
+    </trans-unit>
+    <!-- Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss. -->
+    <trans-unit id="7aa7501fb414f1b782c57c0cfe70812b" resname="Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.">
+      <source>Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.</source>
+      <target>Comprobar que los motores de respuesta y los asistentes de IA pueden leer la tienda y confiar en sus datos de producto, y corregir lo que se les escaparía.</target>
+    </trans-unit>
+    <!-- Name, reference or ean13 of a product to start from -->
+    <trans-unit id="557f3122abbe72203551af9c3e6cd5c1" resname="Name, reference or ean13 of a product to start from">
+      <source>Name, reference or ean13 of a product to start from</source>
+      <target>Nombre, referencia o ean13 de un producto por el que empezar</target>
     </trans-unit>
     <!-- view -->
     <trans-unit id="1bda80f2be4d3658e0baa43fbe7ae8c1" resname="view">

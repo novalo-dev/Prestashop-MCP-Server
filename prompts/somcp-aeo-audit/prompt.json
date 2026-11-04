@@ -1,0 +1,21 @@
+{
+  "title": "Get recommended by AI assistants",
+  "description": "Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.",
+  "icon": "bulb",
+  "scopes": [
+    "mcp.seo.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_audit_product_schema"
+  ],
+  "controller": "AdminProducts",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "product",
+      "description": "Name, reference or ean13 of a product to start from",
+      "required": false
+    }
+  ]
+}

@@ -30,9 +30,13 @@ declare(strict_types=1);
  */
 
 /* @var string $psRoot */
-foreach (['admin-dev', 'admin'] as $folder) {
-    if (is_dir($psRoot . '/' . $folder)) {
-        define('_PS_ADMIN_DIR_', $psRoot . '/' . $folder);
+// The official Docker images give the folder a name of their own, so the
+// first admin* folder holding the back office is taken after the usual two.
+// PrestaShop 9's admin-api is the API's entry point, not the back office.
+$adminDirs = array_merge([$psRoot . '/admin-dev', $psRoot . '/admin'], glob($psRoot . '/admin*', GLOB_ONLYDIR) ?: []);
+foreach ($adminDirs as $adminDir) {
+    if (basename($adminDir) !== 'admin-api' && is_file($adminDir . '/index.php')) {
+        define('_PS_ADMIN_DIR_', $adminDir);
         break;
     }
 }

@@ -164,6 +164,10 @@ tools that are off, not the ones that are on: a tool added by an update works
 without anyone going to allow it, and one switched off stays off even if the
 module publishing it is reinstalled. A tool that is off is left out of the
 listing, refused if called anyway, and stops making its scope worth granting.
+There are two such lists, one per column of the Tools and prompts tab: one for
+the assistants connected over MCP, one for the built-in assistant. A tool can
+be kept for the assistant that asks before every change and hidden from the
+ones that connect from outside, or the other way round. Prompts work the same.
 
 **Shop, and the employee behind the token.** Everything is bound to the shop
 the token belongs to, and the account is checked on every call rather than once
@@ -978,22 +982,56 @@ On 8.0.1 the filter label is **Free Shipping**, on 9.0.0 **Free shipping**; the 
 - `name` filters as the **Name** column of that list does, the same parameter as `somcp_list_manufacturers`, `somcp_list_suppliers` and `somcp_list_attachments`.
 
 #### `somcp_list_customer_groups`
-**State**: draft · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)
+**State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)
 **Nature**: `acts(VIEW, 'AdminGroups')` · **Scope**: `mcp.customers.read`
 
-**Does** - lists the customer groups (Visitor, Guest, Customer and the shop's own) with their identifiers.
+**Does** - lists the customer groups of the token's shop, as **Shop
+Parameters > Customer Settings > Groups** shows them: every column of the
+list, and the groups the shop uses for visitors, guests and registered
+customers (**Default groups options**). It is the source of the `id_group`
+that `somcp_create_customer`, `somcp_update_customer`, the category tools and
+the specific prices of the product tools take. Read only.
 
-**Do not use for** - the customers of a group (→ `somcp_search_customers`).
+**Do not use for** - the customers of a group (→ `somcp_search_customers`);
+one customer's groups (→ `somcp_get_customer`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `name` | string | no | part of **Group name**, case-insensitive; the same parameter as `somcp_list_suppliers`, `somcp_list_manufacturers` and `somcp_list_attachments` |
+| `language` | string | no | ISO code of the language to read the names in, shop default otherwise; a language the shop does not have is refused, naming the ones it has |
 
-**Returns** - per group: `id_group`, `name`, `reduction` (percent), `price_display_method` (tax included or excluded), `show_prices`, `members_count`.
+**Returns** - `groups`, per group:
 
-**Notes** - needed by a specific price aimed at one group.
+| Field | On screen | Notes |
+|---|---|---|
+| `id_group` | **ID** | the name `group_ids`, `id_default_group` and `somcp_get_customer` already use |
+| `name` | **Group name** | in `language` |
+| `reduction` | **Discount (%)** | number, percent as shown (`10` for 10 %) |
+| `price_display_method` | **Price display method** | `tax_excluded` or `tax_included` |
+| `show_prices` | **Show prices** | bool |
+| `members_count` | **Members** | customers not deleted, among those the token's shop shares |
+| `date_add` | **Creation date** | ISO 8601, as `somcp_get_customer` gives its dates |
+| `default_for` | **Default groups options** | list of `visitors`, `guests`, `customers` (one group can hold several); empty when none |
+
+Plus `count`, `customer_groups_enabled` (**Customer groups** of
+**Performance**: when false the shop ignores groups for prices), `language`
+and `language_id`. Groups of the token's shop only (`group_shop`), sorted by
+**ID** as the list.
+
+**Notes**
+- Read with one query on `group`, `group_lang` and `group_shop` for the
+  token's shop, and the member count as `AdminGroupsController` writes it,
+  with the customer sharing of the token's shop (`Shop::getSharedShops()`)
+  rather than the global context. `Group::getGroups()` takes the shop from the
+  context.
+- **Category discount** (`group_reduction`) and **Authorized modules** are
+  settings of one group, shown only on its edit form: they belong to a future
+  `somcp_get_customer_group`, not to the list.
+- Same legacy page, same columns, same options and same tables on PrestaShop
+  8.0.1 and 9.0.0. The page is a tab of **Customer Settings**, not in the side
+  menu, so the right asked is `view` on `AdminGroups` itself.
 
 ### Diagnostics
 
@@ -1846,7 +1884,7 @@ The name and every contact field are one string each, the same in every language
 | `id_attribute_group` | integer | yes | from `somcp_list_attributes` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`, `indexable`. A group that is not one of this shop is an error.
+**Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A group that is not one of this shop is an error.
 
 **Notes**
 - Columns of `attribute_group` and `attribute_group_lang`, read through `AttributeGroup`; the group must be in `attribute_group_shop` for the shop of the token, since the constructor would load it whatever its shop. `position` is the raw column, 0 for the first.
@@ -1919,7 +1957,7 @@ The name and every contact field are one string each, the same in every language
 | `id_attribute` | integer | yes | from `somcp_list_attributes` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (URL of the current texture, `null` when there is none), and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. A value that is not one of this shop is an error.
+**Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (URL of the current texture, `null` when there is none), and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. A value that is not one of this shop is an error.
 
 **Notes**
 - Columns of `attribute` and `attribute_lang`, read through `ProductAttribute`; the value must be in `attribute_shop` for the shop of the token, the set `somcp_list_attributes` lists, since the constructor would load it whatever its shop. `position` is the raw column, 0 for the first of its group. `group_name` is the name the back office lists, not the public one.
@@ -1939,7 +1977,7 @@ The name and every contact field are one string each, the same in every language
 | Field | Who fills it | Rule |
 |---|---|---|
 | `id_attribute_group` | merchant, from the shop | required; from `somcp_list_attributes` |
-| `name` (value) | merchant | required; 128 characters at most; `Validate::isGenericName()` |
+| `name` (value) | merchant | required; 128 characters at most; `Validate::isGenericName()` (no `< > = { }`); on PrestaShop 9 also no `;` or `#`, which its Symfony value form refuses as a catalogue name (`TypedRegex::TYPE_CATALOG_NAME`) - a value saved with them could not be saved again from that form |
 | `url_name` (URL) | assistant | faceted search, as for the group |
 | `meta_title` (title tag) | assistant | faceted search, as for the group |
 | `color` | merchant | groups of type `color` only, refused otherwise; a hex code `#RRGGBB`, `Validate::isColor()` (which alone would also let a bare word through) |
@@ -2018,7 +2056,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_feature`, `name`, `position`, `values_count`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
+**Returns** - `id_feature`, `name`, `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
 
 **Notes**
 - Columns of `feature` and `feature_lang`, read through `Feature`; the feature must be in `feature_shop` for the shop of the token, since the constructor takes no shop. `position` is the raw column, 0 for the first.
@@ -2089,7 +2127,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). A value that is not one of this shop is an error.
+**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). A value that is not one of this shop is an error.
 
 **Notes**
 - Read through `FeatureValue` and `Feature`. `feature_value` has no shop table: a value belongs to the shops of its feature, so its feature must be in `feature_shop` for the shop of the token, the test `somcp_get_feature` makes.
@@ -2919,10 +2957,10 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 **Notes**
 - Checks: `meta_title_missing`, `meta_title_too_long` (over 60 characters), `meta_title_duplicate` (another product has it in that language), `meta_description_missing`, `meta_description_short` (under 70), `meta_description_long` (over 160), `link_rewrite_duplicate`, `description_short` (the description holds under 150 words, tags removed), `image_legend_missing` (an image without its alternative text), `no_image`, `no_brand`, `no_gtin` (no ean13, upc nor isbn), `inactive_without_redirect` only when `active` is false.
-- The `value` is the title, description or friendly URL at fault, the number of words for `description_short`, the ids of the images without legend for `image_legend_missing`, the `redirect_type` for `inactive_without_redirect`, and an empty string for the checks that report an absence.
+- The `value` is the title, description or friendly URL at fault, the number of words for `description_short`, the ids of the images without legend for `image_legend_missing`, the `redirect_type` for `inactive_without_redirect` (on PrestaShop 9, `{"redirect_type": "default", "applies": "404"}` for a product left on the shop default), and an empty string for the checks that report an absence.
 - The product-wide checks (`no_image`, `no_brand`, `no_gtin`, `inactive_without_redirect`) repeat on each language entry, and `counts` counts entries, not products.
 - Duplicates are found by the database, grouping the values of the products audited (same shop, same `active` filter) in one language, so its collation decides what is the same title or URL, as it does for the shop's own URLs. Spaces around a value are ignored.
-- `inactive_without_redirect`: a 301 or 302 sends to another page and `200-displayed` (PrestaShop 9) keeps the page shown; anything else - empty, 404, 410, `404-displayed`, `410-displayed`, the shop `default` - is reported.
+- `inactive_without_redirect`: a 301 or 302 sends to another page and `200-displayed` (PrestaShop 9) keeps the page shown; anything else - empty, 404, 410, `404-displayed`, `410-displayed` - is reported. On PrestaShop 9 a product on `default` is judged by **Shop Parameters > Product Settings > Default behavior for disabled products** (`PS_PRODUCT_REDIRECTION_DEFAULT`, read for the token's shop): not reported when that default is **Display product as discontinued with 200 response**, reported with both values otherwise. PrestaShop 8 has neither `default` nor that setting.
 - An image counts in the shop when `image_shop` has it; a language without an `image_lang` row is a missing legend. An unknown `language`, or a `checks` entry not in the list, is refused.
 - Read in SQL from `product`, `product_shop`, `product_lang` and `image_lang` of this shop, in batches of products, so a catalogue of 50,000 products stays fast; only the page asked for is kept, while `counts` and `total_count` cover the whole catalogue. A product still being created (`state` 0) is left out. No write, ever: corrections go through `somcp_update_product`.
 
@@ -3159,45 +3197,70 @@ None.
 - `warnings`: `no_h1`, `several_h1`, `canonical_elsewhere` (with the `canonical`), `noindex` (from the robots meta tag or the `X-Robots-Tag` header, `noindex` or `none` as a whole directive), `missing_hreflang` (with the `language`, only when the shop has several active languages), `no_title`, `title_too_long` (over 60 characters), `no_meta_description`, `description_too_long` (over 160), `redirect_chain` (more than one redirect), `redirect_outside_shop`, `too_many_redirects`, `slow_page` (over 2 seconds), `not_ok` (a status other than 200), `not_html`, `truncated` (over 2 MB). A page answering other than 200 is read but not judged on its content.
 
 #### `somcp_check_links`
-**State**: to write · [issue #93](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/93)
+**State**: written · [issue #93](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/93)
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
-**Does** - follows the links of the shop's public pages from a starting page and reports broken links and redirect chains.
+**Does** - follows the internal links of the shop's public pages from a starting page, as a visitor without an account, and reports broken links, redirect chains and slow pages. The many-pages companion of `somcp_audit_page`.
 
-**Do not use for** - one page in detail (→ `somcp_audit_page`).
+**Do not use for** - one page in detail (→ `somcp_audit_page`); the sitemap (→ `somcp_audit_sitemap`); the SEO texts stored in the database (→ `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`, `somcp_audit_brand_seo`, `somcp_list_meta_pages`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `start_url` | string | no | the home page by default |
-| `max_pages` | integer | no | 50 by default, 200 at most |
+| `url` | string | no | the starting page, in the form `somcp_audit_page` takes: an address of this shop, or a path such as `/en/3-clothes`; `/`, the home page, when left out |
+| `max_pages` | integer | no | pages fetched at most, 50 by default, 1 to 200 |
 
-**Returns** - `pages_checked`, `broken` (URL, status, the pages linking to it), `redirect_chains` (URL and its hops), `slow_pages` (over 2 seconds), `stopped_early` with the reason.
+**Returns** - `pages_checked` (internal pages fetched), `broken` (each `url`, `status` - 0 when nothing answered, with the `error` - and `linked_from`, up to 10 page addresses; every internal link whose final answer is not 2xx), `redirect_chains` (each `url`, `redirects` - every hop with its `url`, `status` and `location`, as `somcp_audit_page` - and `final_url`; every internal link answered by more than one redirect, or ending outside the shop's domains with `outside_shop: true`, not followed), `slow_pages` (each `url` and `time_ms`, over 2 seconds), `external_links` (count of distinct external addresses seen, never fetched), `stopped_early` (`null`, `max_pages` or `time_limit`). `broken` and `redirect_chains` keep their order of discovery.
 
 **Notes**
-- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
-- Internal links only are followed; external links are listed, not fetched. The crawl stops at `max_pages` or after 60 seconds, and says so.
+- Fetches through the same code as `somcp_audit_page` (`SomcpToolAuditPage::follow()`, `hosts()`, `absolute()`, `resolve()`, `links()`): only addresses of this shop's active domains are requested, redirects included, each `Location` checked before it is fetched, 5 redirects at most, 2 MB at most per page. GET only, as a visitor without the employee's session, a user agent naming the module.
+- Pages are visited breadth first from `url`, each address once (fragment removed, query kept); only `text/html` answers are read for further links. External links are counted, never requested.
+- 60 seconds for the whole call: each request gets at most 10 seconds, cut to what is left.
+- Errors, every one in the same answer: `url` that is not an address of this shop (listing its domains), `max_pages` out of range, a field the tool does not take; a shop with no active domain is refused before anything.
+- Read only.
 
 #### `somcp_audit_sitemap`
-**State**: to write · [issue #94](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/94)
+**State**: written · [issue #94](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/94)
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
-**Does** - finds the shop's sitemaps, counts their URLs, and checks them against the active catalogue.
+**Does** - reads the XML sitemaps the **Google sitemap** module (`gsitemap`) generated for the shop, counts their addresses, and checks them against the active catalogue, robots.txt and a sample of listed addresses fetched as a visitor.
 
-**Do not use for** - robots.txt (→ `somcp_get_robots_txt`).
+**Do not use for** - robots.txt itself (→ `somcp_get_robots_txt`); following the links of the pages (→ `somcp_check_links`); one page in detail (→ `somcp_audit_page`); generating the sitemap (not offered yet).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `sample` | integer | no | how many listed URLs to fetch and check; 20 by default, 100 at most |
+| `sample` | integer | no | how many listed addresses to fetch and check, 20 by default, 0 to 100 |
+| `language` | string | no | ISO code: only that language's sitemap files; every language when left out |
 
-**Returns** - `sitemaps` (URL, `url_count`, `last_modified`), `missing_products` (active products of this shop absent from every sitemap, counted, the first 20 listed), `inactive_listed` (URLs of disabled products still listed), `sample_errors` (listed URLs answering other than 200).
+**Returns**
+
+| Field | On screen | Notes |
+|---|---|---|
+| `module_active` | - | `gsitemap` installed and enabled on the token's shop |
+| `sitemaps` | **Your sitemaps** | each `file`, `url` (on the shop's main domain), `language` (ISO code from the file name), `url_count` (`null` when the file is missing, over 50 MB or not valid XML), `last_modified` (file time), `exists` (`false` when the module lists a file missing on disk) |
+| `index` | - | `file`, `url`, `exists` of `<id_shop>_index_sitemap.xml`, and `announced` (whether a `Sitemap:` line of robots.txt points to it) |
+| `last_generated` | - | `GSITEMAP_LAST_EXPORT`, `null` before the first generation |
+| `frequency` | **How often do you update your store?** | the value as on screen (`weekly`, ...) |
+| `excluded_pages` | **Indicate the pages that you do not want to include in your sitemap files:** | the `page` names unticked |
+| `robots_txt_sitemaps` | - | the `Sitemap:` lines of robots.txt, as `somcp_get_robots_txt` returns them |
+| `missing_products` | - | active products of the token's shop visible in the catalogue and absent from every sitemap: `count`, and the first 20 as `products`, each `id_product` and `name` (default language) |
+| `inactive_listed` | - | disabled products still listed, the first 20: `url`, `id_product` |
+| `sample_errors` | - | sampled addresses answering other than 200: `url`, `status` (0 when nothing answered, or for an address outside the shop's domains, never requested), `final_url` |
+| `warnings` | - | each a `code` and `why`: `no_sitemap`, `module_inactive`, `index_not_in_robots_txt`, `stale` (generated longer ago than the frequency), `file_missing` (with its `file`) |
 
 **Notes**
-- Sitemaps are found from robots.txt, then from the gsitemap module's files at the shop root.
-- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
+- The files are read from disk at the root of the installation, where the module writes them, never over HTTP, with `libxml` network access off and the protocol's 50 MB cap per file. Only the names the module recorded for the token's shop in `gsitemap_sitemap` are read, and only plain file names.
+- The robots.txt lines come from the same reading as `somcp_get_robots_txt` (`SomcpToolGetRobotsTxt::sitemaps()`).
+- Product addresses are built with `Link::getProductLink()` in each language read and compared by path and query, so friendly URLs and their language prefix match as the module writes them. A product listed in any language counts as listed.
+- Only the sample is fetched, spread over the whole list, through the code of `somcp_audit_page` (`SomcpToolAuditPage::follow()`, `hosts()`): only the shop's own domains are requested, redirects included, 10 seconds per address and 60 seconds for the sample.
+- Read only. A shop without `gsitemap` answers with `module_active: false`, empty lists and `no_sitemap`, never a failure. The cron address and its token are never returned.
+- Errors, every one in the same answer: `sample` out of range, a `language` the shop does not have, a field the tool does not take.
+
+**Differences between 8.0.1 and 9.0.0**
+- `gsitemap` 4.2.0 / 4.4.0: the image-file check exists on 8.0.1 only; the brand priority on 9.0.0 only; the page list of 9.0.0 holds public pages only, and **best-sales** is labelled **Best sellers**. Same table, same file names, same index location.
 
 ### AEO
 
@@ -3206,27 +3269,31 @@ What answer engines and AI assistants need to recommend a product: complete and 
 **Not here**: classic search engine fields and settings (→ SEO).
 
 #### `somcp_audit_product_schema`
-**State**: to write · [issue #95](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/95)
+**State**: written · [issue #95](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/95)
 **Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.seo.read`
 
-**Does** - fetches a product's public page and compares its structured data (JSON-LD) with what the shop holds.
+**Does** - fetches the public page of one product, as a visitor, and compares the structured data (JSON-LD `Product`) it prints with what the product page of the back office holds.
 
-**Do not use for** - the database fields alone (→ `somcp_audit_product_entities`).
+**Do not use for** - the database fields alone (→ `somcp_audit_product_entities`); the meta title and description (→ `somcp_audit_product_seo`); any other page (→ `somcp_audit_page`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_product` | integer | yes |  |
-| `id_product_attribute` | integer | no | a combination's page |
-| `language` | string | no | ISO code, shop default otherwise |
+| `id_product` | integer | yes | from `somcp_search_products`, never guessed; an unknown product is refused with the error of `somcp_get_product` |
+| `id_product_attribute` | integer | no | from `somcp_get_product` `combinations[].id_product_attribute`: the page of that combination; refused when it is not a combination of the product |
+| `language` | string | no | ISO code of one of the shop's active languages, the page's language; refused when the shop does not have it, naming its languages; the shop default language when left out |
 
-**Returns** - `url`, `found` (the `@type`s present), `product` (name, brand, sku, gtin, mpn, image, description length as printed), `offer` (price, currency, availability, url as printed), `rating` (as printed, when present), `mismatches` (field, printed value, shop value), `missing` (recommended fields absent).
+**Returns** - `url` (the page fetched, after its redirects), `language` (the ISO code used), `found` (the `@type`s of every JSON-LD object of the page, `invalid_json` for a block that does not parse, as `somcp_audit_page`), `product` (as printed: `name`, `brand`, `sku`, `gtin` - whichever of `gtin13`, `gtin12`, `isbn`, `gtin` is printed first -, `mpn`, `image`, `description_length`), `offer` (as printed: `price`, `currency`, `availability`, `url`), `rating` (`rating_value`, `rating_count`, `review_count` as printed, `null` when absent), `mismatches` (each `field` - the name of `somcp_get_product`: `name`, `manufacturer_name`, `reference`, `mpn`, `ean13`, `upc`, `isbn`, `condition`, `price`, `currency`, `quantity` -, `on_screen`, the back office label of the shop's version, `printed` and `in_shop`), `missing` (each `field`, `on_screen` and the schema.org `property` absent from the page, only when the shop has a value to print). When the page prints no `Product`, `product`, `offer` and `rating` are `null` and `note` says so.
 
 **Notes**
-- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
-- Prices are compared with the tax-included price the page shows for this shop's default country and currency, availability with the stock and the out-of-stock behaviour.
-- Said plainly when the theme prints no Product JSON-LD at all: that is a theme matter, not something a tool can write.
+- Fetches through the code of `somcp_audit_page` (`SomcpToolAuditPage::hosts()`, `follow()`, `load()`, `jsonLd()`): only the shop's own active domains are requested, redirects included, GET only, 10 seconds, 2 MB, a user agent naming the module, no employee session. The address is `Link::getProductLink()` for the token's shop, the language and the combination.
+- The shop's values are those `somcp_get_product` returns for the same product, combination and language, never a second reading of the database. A combination's own codes are used when set, the product's otherwise, as the storefront does. The name only has to appear in the printed name, which a combination's page may complete with its attributes.
+- `price` is compared with the price with tax the storefront computes for the shop's default country, currency and group, specific prices included (`Product::getPriceStatic()`), to the cent. `quantity` is compared with the availability the core's product presenter prints: `Discontinued` for an inactive product, `InStock` with stock or with stock management off, `BackOrder` (or `PreOrder`, which themes also print) when **When out of stock** allows orders, `OutOfStock` otherwise.
+- Labels: **Reference**, **MPN**, **UPC barcode**, **ISBN**, **Condition**, **Brand**; the `ean13` field is **EAN-13 or JAN barcode** on PrestaShop 8 and **GTIN (EAN, JA, ITF or UCC code)** on PrestaShop 9.
+- Said plainly when the theme prints no `Product` JSON-LD at all: a theme matter, not something a tool can write. Classic prints its own; the comparison reads what is printed, never assumes a theme.
+- Errors: unknown product or combination, unknown language, a page that does not answer or answers other than 200 (with the HTTP status), a redirect or an address outside the shop's domains, a shop with no active domain.
+- Read only.
 
 #### `somcp_audit_product_entities`
 **State**: to write · [issue #96](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/96)
@@ -3607,7 +3674,7 @@ request: one line, stroke paths on a 24 px grid.
 | `somcp-storefront-menu` | Appearance | written |
 | `somcp-cache-maintenance` | System | written |
 | `somcp-seo-audit` | SEO | written |
-| `somcp-aeo-audit` | AEO | to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
+| `somcp-aeo-audit` | AEO | written · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
 | `somcp-sales-boost` | Sales | to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
 
 #### `somcp-catalogue-manage`
@@ -3648,7 +3715,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `customer` (name, email or company).
 
-**Tools** - `somcp_ping`, `somcp_search_customers`, `somcp_get_customer`, `somcp_search_orders`, `somcp_create_customer`, `somcp_update_customer`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_search_customers`, `somcp_get_customer`, `somcp_search_orders`, `somcp_create_customer`, `somcp_update_customer`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search, then read the one customer the merchant means; the email is more reliable than the name; personal data stays in the answer it was asked for; no password ever goes through the conversation.
 
@@ -3737,7 +3804,7 @@ request: one line, stroke paths on a 24 px grid.
 **The guide must say** - start with `somcp_get_seo_settings` and the audits, then sort what was found by its effect on sales: products that sell or should sell first; propose every new title or description to the merchant before writing it, in each language of the shop; change a URL of a live page only after saying that the old one stops working; after a change, check the public page with `somcp_audit_page`, since a value in the database is not proof of what the theme prints.
 
 #### `somcp-aeo-audit`
-**State**: to write · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80)
+**State**: written · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80)
 **Section**: AEO · **Scope**: `mcp.seo.read` · **Permission**: `view` on `AdminProducts` · **Icon**: `bulb`
 
 **Title** - Get recommended by AI assistants

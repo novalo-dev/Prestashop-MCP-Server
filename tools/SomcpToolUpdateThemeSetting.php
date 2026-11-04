@@ -48,16 +48,12 @@ class SomcpToolUpdateThemeSetting
         return new SomcpTool(
             'somcp_update_theme_setting',
             Somcp::t('Change the layout of a page'),
-            'Sets the layout of one page of the shop\'s theme, as one row of Design > Theme & Logo > Choose layouts '
-                . 'then Save does: page is the page name as somcp_get_theme gives it in pages[].page (index, '
-                . 'category, product, contact...), layout one of the keys of available_layouts[].layout of '
-                . 'somcp_get_theme, for example layout-left-column. Read the theme first with somcp_get_theme and '
-                . 'confirm the new layout with the merchant before calling. One call changes one page; every other '
-                . 'page keeps its setting. A call that would change nothing writes nothing and says changed: false. '
-                . 'The answer gives previous_layout (the default layout when the page had none of its own) and '
-                . 'the layout now set. Not to be retried: if the answer is lost, read somcp_get_theme again before '
-                . 'calling. Do not use it to install or switch themes, upload a logo (Design > Theme & Logo) or '
-                . 'change the title or URL of a page (somcp_update_meta_page).',
+            'Sets the layout of one page of the theme, as one row of Design > Theme & Logo > Choose layouts then '
+                . 'Save. page and layout come from pages[].page and available_layouts[].layout of somcp_get_theme: '
+                . 'never guess them. Confirm the new layout with the merchant before calling. Every other page keeps '
+                . 'its setting. Not to be retried: if the answer is lost, read somcp_get_theme before anything else. '
+                . 'Do not use it to switch themes or upload a logo; for the title or URL of a page use '
+                . 'somcp_update_meta_page.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -95,7 +91,7 @@ class SomcpToolUpdateThemeSetting
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
         // The back office refuses to save the layouts in demo mode.
-        if (defined('_PS_MODE_DEMO_') && _PS_MODE_DEMO_) {
+        if (SomcpBackOffice::constant('_PS_MODE_DEMO_')) {
             return SomcpTool::text('This shop runs in demo mode, where the theme cannot be changed. Nothing was changed.', true);
         }
 

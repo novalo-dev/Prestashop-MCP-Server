@@ -138,53 +138,84 @@
         });
 
         // The lists of tools and prompts, a page at a time. Every row stays in
-        // the form - hidden, not removed - because the checkboxes of a page
+        // the form - hidden, not removed - because the switches of a page
         // nobody looked at must still be submitted. Without a browser the whole
         // list shows, which is the right thing to fall back to. Each list has a
-        // panel of its own, which is what scopes the rows to their pager. The
-        // contributor cards marked data-somcp-paged go through the same pager.
+        // panel of its own, which is what scopes the rows to their pager and to
+        // the search above them. The contributor cards marked data-somcp-paged
+        // go through the same pager, without a search.
         document.querySelectorAll('[data-somcp-pager]').forEach(function (nav) {
             var group = nav.closest('.panel');
-            var rows = group ? group.querySelectorAll('.somcp-tools tbody tr, [data-somcp-paged]') : [];
+            var rows = group ? Array.prototype.slice.call(group.querySelectorAll('.somcp-tools tbody tr, [data-somcp-paged]')) : [];
             var size = parseInt(nav.getAttribute('data-somcp-pager'), 10) || 5;
-            var total = rows.length;
+            var search = group ? group.querySelector('[data-somcp-search]') : null;
 
-            if (total <= size) {
+            if (rows.length <= size && !search) {
                 return;
             }
 
             var count = nav.querySelector('.somcp-tools-count');
             var pattern = count ? count.getAttribute('data-somcp-range') : '';
-            var pages = Math.ceil(total / size);
+            var filtered = count ? count.getAttribute('data-somcp-filtered') || '' : '';
+            var none = search ? search.getAttribute('data-somcp-none') || '' : '';
             var page = 0;
 
             var draw = function () {
-                for (var i = 0; i < total; i++) {
-                    rows[i].hidden = i < page * size || i >= (page + 1) * size;
-                }
+                // Matched on the text the merchant reads - title, name,
+                // publisher, permission - so a search finds what the row says.
+                var query = search ? search.value.trim().toLowerCase() : '';
+                var shown = rows.filter(function (row) {
+                    return query === '' || row.textContent.toLowerCase().indexOf(query) !== -1;
+                });
+                var pages = Math.max(1, Math.ceil(shown.length / size));
+                page = Math.min(page, pages - 1);
 
-                var from = page * size + 1;
-                var to = Math.min((page + 1) * size, total);
+                rows.forEach(function (row) {
+                    row.hidden = true;
+                });
+                shown.forEach(function (row, i) {
+                    row.hidden = i < page * size || i >= (page + 1) * size;
+                });
 
                 if (count) {
-                    count.textContent = pattern
-                        .replace('%from%', from)
-                        .replace('%to%', to)
-                        .replace('%total%', total);
+                    if (shown.length === 0) {
+                        count.textContent = none;
+                    } else {
+                        count.textContent = pattern
+                            .replace('%from%', page * size + 1)
+                            .replace('%to%', Math.min((page + 1) * size, shown.length))
+                            .replace('%total%', shown.length)
+                            + (query !== '' && filtered !== '' ? ' ' + filtered.replace('%all%', rows.length) : '');
+                    }
                 }
 
                 nav.querySelector('[data-somcp-page="-1"]').disabled = page === 0;
                 nav.querySelector('[data-somcp-page="1"]').disabled = page >= pages - 1;
+                // A list that fits on one page needs no buttons, unless a search
+                // is under way: then the line says how many rows it kept.
+                nav.hidden = rows.length <= size && query === '';
             };
 
             nav.querySelectorAll('[data-somcp-page]').forEach(function (button) {
                 button.addEventListener('click', function () {
-                    page = Math.min(pages - 1, Math.max(0, page + parseInt(button.getAttribute('data-somcp-page'), 10)));
+                    page = Math.max(0, page + parseInt(button.getAttribute('data-somcp-page'), 10));
                     draw();
                 });
             });
 
-            nav.hidden = false;
+            if (search) {
+                search.addEventListener('input', function () {
+                    page = 0;
+                    draw();
+                });
+                // Enter in the search would submit the settings form.
+                search.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                    }
+                });
+            }
+
             draw();
         });
 
@@ -355,7 +386,9 @@
 
             var apply = function () {
                 group.querySelectorAll('input, select, textarea').forEach(function (field) {
-                    if (field !== box) {
+                    // The search of a list only filters the rows on screen:
+                    // it stays usable on an inherited list.
+                    if (field !== box && !field.hasAttribute('data-somcp-search')) {
                         // A field the server greys for a reason of its own
                         // stays greyed whatever the box says.
                         field.disabled = !box.checked || field.hasAttribute('data-somcp-locked');

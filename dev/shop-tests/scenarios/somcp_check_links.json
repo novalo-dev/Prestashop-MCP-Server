@@ -1,0 +1,17 @@
+{
+  "calls": [
+    {"why": "the home page with the default max_pages; the test shop has no web server running, so what is found depends on the runner", "arguments": {}, "expect": "any"},
+    {"why": "one page only, from a path", "arguments": {"url": "/", "max_pages": 1}, "expect": "any"},
+    {"why": "a full address on the shop's own domain", "arguments": {"url": "http://localhost/en/", "max_pages": 2}, "expect": "any"},
+    {"why": "another site is refused before any request", "arguments": {"url": "https://example.com/"}, "expect": "error", "contains": ["Nothing was fetched", "url: not an address of this shop"]},
+    {"why": "the shop's host on another port is refused", "arguments": {"url": "http://localhost:8081/"}, "expect": "error", "contains": ["url: not an address of this shop"]},
+    {"why": "an internal address that is not one of the shop's domains is refused", "arguments": {"url": "http://127.0.0.1/"}, "expect": "error", "contains": ["url: not an address of this shop"]},
+    {"why": "a path naming another host is refused", "arguments": {"url": "//example.com/"}, "expect": "error", "contains": ["url: a full http or https address"]},
+    {"why": "a scheme other than http and https is refused", "arguments": {"url": "file:///etc/passwd"}, "expect": "error", "contains": ["url: a full http or https address"]},
+    {"why": "no page is not a number of pages", "arguments": {"max_pages": 0}, "expect": "error", "contains": ["max_pages: a whole number from 1 to 200"]},
+    {"why": "more than 200 pages is refused", "arguments": {"max_pages": 201}, "expect": "error", "contains": ["max_pages: a whole number from 1 to 200"]},
+    {"why": "a number written as text is refused, not read as the default", "arguments": {"max_pages": "10"}, "expect": "error", "contains": ["max_pages: a whole number from 1 to 200"]},
+    {"why": "a misspelt field is reported instead of being ignored", "arguments": {"start_url": "/"}, "expect": "error", "contains": ["start_url: not a field of this tool"]},
+    {"why": "every problem is reported in the same answer", "arguments": {"url": "https://example.com/", "max_pages": 0}, "expect": "error", "contains": ["url: not an address of this shop", "max_pages: a whole number"]}
+  ]
+}

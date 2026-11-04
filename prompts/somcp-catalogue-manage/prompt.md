@@ -25,6 +25,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_feature_value`
 - `somcp_list_attachments`
 - `somcp_list_tax_rules`
+- `somcp_list_customer_groups`
 - `somcp_list_carriers`
 - `somcp_create_product`
 - `somcp_update_product`
@@ -183,6 +184,11 @@ when the merchant asks what a customer pays. `somcp_get_product` lists the
 specific prices apart, with who they apply to and when: never present one of
 them as the product's price. The ecotax is apart too (`ecotax_tax_excl`,
 `ecotax_tax_incl`), and is not included in `price_tax_incl`.
+
+A customer group - for a specific price, or for the groups that see a
+category - comes from `somcp_list_customer_groups`: take the `id_group` from
+there, never a guessed one. When `customer_groups_enabled` is false the shop
+ignores groups for prices: say so before writing a price for one group.
 
 ## Changing products
 

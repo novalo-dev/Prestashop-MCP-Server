@@ -56,15 +56,11 @@ class SomcpToolGetTheme
         return new SomcpTool(
             'somcp_get_theme',
             Somcp::t('Get the theme and page layouts'),
-            'Returns the theme of the shop as Design > Theme & Logo shows it: the theme in use (theme: name, '
-                . 'display_name, version, author, parent for a child theme), the other installed themes '
-                . '(other_themes[]), the addresses of the four logos (logos: header, mail, invoice, favicon; '
-                . 'mail and invoice are null with mail_uses_header / invoice_uses_header true when the header '
-                . 'logo stands in for them), the layouts the theme offers (available_layouts[]: layout key, name, '
-                . 'description), the default layout, and every page of Choose layouts (pages[]: page, the same '
-                . 'name somcp_list_meta_pages gives, title, description, layout key, uses_default when the page '
-                . 'has no setting of its own). Read only. Do not use it for the meta titles and URLs of the '
-                . 'pages (somcp_list_meta_pages) or for the main menu (somcp_list_menu_links).',
+            'Returns the theme as Design > Theme & Logo shows it: the theme in use and the other installed ones, '
+                . 'the four logos (mail and invoice null when the header logo stands in for them), the layouts the '
+                . 'theme offers, the default layout and the layout of every page of Choose layouts. Read only. For '
+                . 'the meta titles and URLs of the pages use somcp_list_meta_pages; for the main menu, '
+                . 'somcp_list_menu_links.',
             [
                 'type' => 'object',
                 'properties' => [

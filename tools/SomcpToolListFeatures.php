@@ -51,8 +51,8 @@ class SomcpToolListFeatures
                 . 'id_feature_value from here: identifiers are specific to each shop, so never assume '
                 . 'one. Custom values, typed on one product, are not listed: they belong to that product. '
                 . 'Give id_feature to read one feature only. Everything else about one feature or one '
-                . 'value is read with somcp_get_feature or somcp_get_feature_value when the shop offers '
-                . 'them. Do not use it for the features of a product: somcp_get_product lists those.',
+                . 'value is read with somcp_get_feature or somcp_get_feature_value. '
+                . 'Do not use it for the features of a product: somcp_get_product lists those.',
             [
                 'type' => 'object',
                 'properties' => [

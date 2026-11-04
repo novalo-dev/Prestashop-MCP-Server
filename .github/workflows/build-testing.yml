@@ -5,8 +5,9 @@ name: Build for Testing
 # is how a contribution is tried before it is merged.
 #
 # It publishes nothing, tags nothing and touches no release. The checks are
-# reported, never enforced: the CI workflow is the one that blocks a merge, and
-# a test build must not stand between the maintainer and a shop.
+# reported, never enforced: the CI workflows - PHP tests, Security,
+# Integration - are the ones that block a merge, and a test build must not
+# stand between the maintainer and a shop.
 on:
   workflow_dispatch:
     inputs:

@@ -55,17 +55,13 @@ class SomcpToolSetSupplierActive
         return new SomcpTool(
             'somcp_set_supplier_active',
             Somcp::t('Enable or disable a supplier'),
-            'Enables or disables one supplier of this shop, exactly like the Enabled toggle of the back office '
-                . 'supplier list, and changes nothing else. Disabling a supplier hides its page on the '
-                . 'storefront; it stays attached to its products, with their supplier references and purchase '
-                . 'prices, so tell the merchant. It is reversible: it is not a deletion. Find the supplier with '
-                . 'somcp_list_suppliers first and use the identifier it returns; never guess one. When the '
-                . 'supplier already has the state asked for, nothing is written and the answer says '
-                . 'changed: false. On a multistore installation, PrestaShop keeps Enabled once for every shop '
-                . 'sharing the supplier, so the change shows in each of them. Do not use it to change anything '
-                . 'else about a supplier (somcp_update_supplier). One supplier per call: for several, call it '
-                . 'once per supplier and report each result. Not to be retried on a lost answer: read the '
-                . 'supplier with somcp_get_supplier to see whether the change went through.',
+            'Enables or disables one supplier, like the Enabled toggle of Catalog > Brands & Suppliers > '
+                . 'Suppliers, and changes nothing else. Disabling hides its storefront page; it stays on its '
+                . 'products with their supplier references and purchase prices, so tell the merchant. It is not '
+                . 'a deletion. id_supplier comes from somcp_list_suppliers: never guess one. On multistore, '
+                . 'Enabled is shared by every shop of the supplier. To change anything else use '
+                . 'somcp_update_supplier. One supplier per call. Not to be retried: if the answer is lost, read '
+                . 'somcp_get_supplier before anything else.',
             [
                 'type' => 'object',
                 'properties' => [

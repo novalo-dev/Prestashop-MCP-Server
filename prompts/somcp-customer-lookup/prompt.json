@@ -10,6 +10,7 @@
     "somcp_ping",
     "somcp_search_customers",
     "somcp_get_customer",
+    "somcp_list_customer_groups",
     "somcp_search_orders",
     "somcp_create_customer",
     "somcp_update_customer"

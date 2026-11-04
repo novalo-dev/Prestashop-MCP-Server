@@ -488,11 +488,65 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     vertical-align: middle;
 }
 
-/* The switch column takes what a checkbox needs and no more, so the width goes
-   to the tool name, which is the longest thing in the row. */
+/* The two switch columns take what their heading needs and no more, so the
+   width goes to the tool name, which is the longest thing in the row. */
 .somcp .somcp-tools .somcp-tool-on {
-    width: 48px;
+    width: 130px;
     text-align: center;
+}
+
+/* Above each list, the width of a search field rather than of the panel. */
+.somcp .somcp-tools-search {
+    max-width: 340px;
+    margin-top: 10px;
+}
+
+/* A switch drawn over the checkbox itself: it is still a checkbox, posted and
+   read like the ones it replaced, with the look of the switches on the
+   Configuration tab. */
+.somcp .somcp-toggle {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    margin: 0;
+    border-radius: 10px;
+    background: #c3cdd1;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background-color .15s;
+}
+
+.somcp .somcp-toggle::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: left .15s;
+}
+
+.somcp .somcp-toggle:checked {
+    background: #70b580;
+}
+
+.somcp .somcp-toggle:checked::before {
+    left: 18px;
+}
+
+.somcp .somcp-toggle:focus-visible {
+    outline: 2px solid #25b9d7;
+    outline-offset: 2px;
+}
+
+.somcp .somcp-toggle:disabled {
+    cursor: not-allowed;
+    opacity: .5;
 }
 
 /* Buttons under a list, on the right: the tool paging, and the button that

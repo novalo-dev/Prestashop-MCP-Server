@@ -425,24 +425,29 @@ class SomcpToolRegistry
      *
      * The setting is an ordinary module setting, so it follows the shop, group
      * and global inheritance PrestaShop already applies to the rest of them.
+     * There is one list for the assistants connected over MCP and one for the
+     * built-in assistant, which a merchant may want to trust with more.
      *
      * @param string $name
+     * @param bool $chat true for the built-in assistant
      *
      * @return bool
      */
-    public static function isEnabled(string $name): bool
+    public static function isEnabled(string $name, bool $chat = false): bool
     {
-        return !in_array($name, self::disabled(), true);
+        return !in_array($name, self::disabled($chat), true);
     }
 
     /**
      * The tools switched off for the shop this request belongs to.
      *
+     * @param bool $chat true for the built-in assistant's list
+     *
      * @return array<int, string>
      */
-    public static function disabled(): array
+    public static function disabled(bool $chat = false): array
     {
-        $raw = trim(SomcpConfig::get(SomcpConfig::TOOLS_OFF));
+        $raw = trim(SomcpConfig::get($chat ? SomcpConfig::TOOLS_OFF_CHAT : SomcpConfig::TOOLS_OFF));
         if ($raw === '') {
             return [];
         }

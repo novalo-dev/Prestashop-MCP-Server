@@ -50,15 +50,13 @@ class SomcpToolDeleteManufacturerAddress
         return new SomcpTool(
             'somcp_delete_manufacturer_address',
             Somcp::t('Delete a brand address'),
-            'Deletes one postal address of a brand (manufacturer) of this shop, as the back office Brand '
-                . 'addresses list does. Irreversible. Before calling it, read the address with '
-                . 'somcp_get_manufacturer_address and ask the merchant to confirm, naming the brand and the city. '
-                . 'Take the address from somcp_list_manufacturer_addresses and use the identifier it returns; '
-                . 'never guess one. The brand itself is kept. Customer and supplier addresses are refused: it '
-                . 'deletes brand addresses only. Do not use it to change an address '
-                . '(somcp_update_manufacturer_address). One address per call: for several, confirm and call once '
-                . 'per address. Not to be retried on a lost answer: read somcp_list_manufacturer_addresses for '
-                . 'the brand to see whether it is gone.',
+            'Deletes one brand address, as the Brand addresses list of Catalog > Brands & Suppliers > Brands '
+                . 'does; the brand is kept. Irreversible: read it with somcp_get_manufacturer_address and have the '
+                . 'merchant confirm, naming the brand and the city. Customer and supplier addresses are refused. '
+                . 'id_address comes from '
+                . 'somcp_list_manufacturer_addresses: never guess one. To change an address use '
+                . 'somcp_update_manufacturer_address. One address per call. Not to be retried: if the answer is lost, '
+                . 'read somcp_list_manufacturer_addresses for the brand to see whether it is gone.',
             [
                 'type' => 'object',
                 'properties' => [

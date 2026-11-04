@@ -79,7 +79,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
                 . 'feature form: name, and the faceted search fields of that form - url_name (the word used in '
                 . 'filtered URLs), meta_title and indexable - when the faceted search module is installed and '
                 . 'enabled. Only name is required. The feature is created without values: add them afterwards, '
-                . 'one per call, with somcp_create_feature_value when the shop offers it. '
+                . 'one per call, with somcp_create_feature_value. '
                 . 'Read somcp_list_features first: the feature may already exist, and PrestaShop accepts two '
                 . 'features of the same name. '
                 . 'Who fills each field is said at the start of its description, and is a rule for you: '

@@ -160,10 +160,12 @@ class SomcpScope
      *                         shop in context is whichever one the administrator
      *                         is working on and not the one being connected, so
      *                         it names it rather than letting it be guessed.
+     * @param bool $chat true for the built-in assistant, which reads its own
+     *                   list of tools switched off
      *
      * @return array<int, string>
      */
-    public static function grantableFor(int $idEmployee, ?int $idShop = null): array
+    public static function grantableFor(int $idEmployee, ?int $idShop = null, bool $chat = false): array
     {
         // Opening a session asks nothing of the shop, so it is always on offer.
         $grantable = [self::ACCESS];
@@ -172,7 +174,7 @@ class SomcpScope
             // A tool the merchant switched off cannot make a scope worth
             // granting: the consent screen would be asking for a permission
             // that reaches nothing.
-            if (!SomcpToolRegistry::isEnabled($tool->getName())) {
+            if (!SomcpToolRegistry::isEnabled($tool->getName(), $chat)) {
                 continue;
             }
             if (!SomcpPermission::employeeHolds($idEmployee, $tool->getRequiredPermissions(), $idShop)) {

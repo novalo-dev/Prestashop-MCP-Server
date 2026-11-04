@@ -51,25 +51,20 @@ class SomcpToolSearchCustomers
         return new SomcpTool(
             'somcp_search_customers',
             Somcp::t('Search customers'),
-            'Finds customers of this shop, as the list of Customers > Customers in the back office, '
-                . 'and returns one short line each: name, email, company, social title, default group, '
-                . 'sales, whether the account is enabled, newsletter and partner offers, registration '
-                . 'and last visit, and whether it is a guest account. Filters as on that list. Most '
-                . 'recently registered first by default. Only the customers registered on this shop '
-                . 'are listed, even in a multistore that shares its customers, and a customer deleted '
-                . 'with their data kept is left out, as the list leaves them out. total_count says how '
-                . 'many match in all: read the next page with offset rather than concluding from one '
-                . 'page. No address, phone or birthday here. Do not use it to read one customer '
-                . 'already identified (somcp_get_customer), or their orders (somcp_search_orders '
-                . 'with customer_email).',
+            'Finds customers of this shop, as the list of Customers > Customers with its filters, '
+                . 'newest registration first: one short line each with name, email, company, default '
+                . 'group, sales, status, registration and last visit. Only the customers registered on '
+                . 'this shop, even in a multistore that shares them. total_count gives all the matches: '
+                . 'read the next page with offset rather than concluding from one page. No address, phone '
+                . 'or birthday here: read one customer with somcp_get_customer, their orders with '
+                . 'somcp_search_orders and customer_email.',
             [
                 'type' => 'object',
                 'properties' => [
                     'query' => [
                         'type' => 'string',
-                        'description' => 'Words matched against the first name, last name and email, and '
-                            . 'the company when B2B mode is on; each word must be found in one of them, as '
-                            . 'the customer search of the back office: "doe pub@" finds John DOE.',
+                        'description' => 'Words matched against the first name, last name, email and, in B2B mode, company; each '
+                            . 'word must be found in one of them: "doe pub@" finds John DOE.',
                     ],
                     'email' => [
                         'type' => 'string',

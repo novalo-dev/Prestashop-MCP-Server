@@ -1,16 +1,26 @@
 # PrestaShop MCP Server
 
+<div align="center">
+
+[![PHP tests](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/php.yml/badge.svg?branch=develop)](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/php.yml)
+[![Integration](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/integration.yml/badge.svg?branch=develop)](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/integration.yml)
+[![Security](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/security.yml/badge.svg?branch=develop)](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/security.yml)
+[![UI tests](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/ui.yml/badge.svg?branch=develop)](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/ui.yml)
+
+[![Release](https://img.shields.io/github/v/release/novalo-dev/Prestashop-MCP-Server?style=flat&label=release&color=007EC6)](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest)
 [![PrestaShop](.github/badges/prestashop.svg)](https://prestashop.com)
 [![PHP](.github/badges/php.svg)](https://php.net)
 [![MCP](.github/badges/mcp.svg)](https://modelcontextprotocol.io)
 ![Multistore](.github/badges/multistore.svg)
 [![License](.github/badges/license.svg)](LICENSE.txt)
 [![Docs](.github/badges/docs.svg)](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
-![Version](.github/badges/version.svg)
-[![PRs welcome](.github/badges/prs.svg)](CONTRIBUTING.md)
+
 [![Stars](https://img.shields.io/github/stars/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Stars)](https://github.com/novalo-dev/Prestashop-MCP-Server/stargazers)
 [![Forks](https://img.shields.io/github/forks/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Forks)](https://github.com/novalo-dev/Prestashop-MCP-Server/forks)
 [![Contributors](https://img.shields.io/github/contributors/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Contributors)](https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors)
+[![PRs welcome](.github/badges/prs.svg)](CONTRIBUTING.md)
+
+</div>
 
 A PrestaShop module that turns a shop into an [MCP](https://modelcontextprotocol.io)
 server. Claude, ChatGPT, Le Chat or any MCP-compatible assistant
@@ -221,6 +231,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_get_customer` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
 | `somcp_create_customer` | `mcp.customers.write` | `add` on `AdminCustomers` | write |
 | `somcp_update_customer` | `mcp.customers.write` | `edit` on `AdminCustomers` | write |
+| `somcp_list_customer_groups` | `mcp.customers.read` | `view` on `AdminGroups` | read |
 
 ### Statistics
 
@@ -269,6 +280,8 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_get_seo_settings` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_list_meta_pages` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_audit_page` | `mcp.seo.read` | `view` on `AdminMeta` | read |
+| `somcp_check_links` | `mcp.seo.read` | `view` on `AdminMeta` | read |
+| `somcp_audit_sitemap` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_audit_product_seo` | `mcp.seo.read` | `view` on `AdminProducts` | read |
 | `somcp_audit_category_seo` | `mcp.seo.read` | `view` on `AdminCategories` | read |
 | `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |
@@ -277,6 +290,12 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_update_meta_page` | `mcp.seo.write` | `edit` on `AdminMeta` | write |
 | `somcp_get_robots_txt` | `mcp.seo.read` | `view` on `AdminMeta` | read |
 | `somcp_generate_robots_txt` | `mcp.seo.write` | `add`, `edit` and `delete` on `AdminMeta` | write |
+
+### AEO
+
+| Tool | Scope | Back office right | Nature |
+|---|---|---|---|
+| `somcp_audit_product_schema` | `mcp.seo.read` | `view` on `AdminProducts` | read |
 
 **Reads** are flagged read-only and safe to repeat. **Writes** are flagged
 destructive, which is what MCP clients use to ask the merchant before running
@@ -392,26 +411,35 @@ needs, and which contributions fit.
 
 ## Contributors
 
-Everyone who helped build the module, the top contributor first. The pictures
-come straight from GitHub and follow each profile; the shares of the commits
-are refreshed at each release. The settings page of the module shows the same list, read from
-GitHub, under **Help and updates > Meet our contributors**.
+Everyone who helped build the module, the top contributor in the middle. The
+names and the counts are read from GitHub each time this page is shown, so
+they are always up to date. The settings page of the module shows the same
+list, read from GitHub, under **Help and updates > Meet our contributors**.
 
+<div align="center">
 <table>
   <tr>
-    <td align="center" width="140">
-      <a href="https://github.com/novalo-dev"><img src="https://github.com/novalo-dev.png?size=96" width="64" height="64" alt=""><br><b>novalo-dev</b></a><br>
-      <sub>261 contributions · 84%</sub><br>
+    <td align="center" width="200">
+      <sub>2nd</sub><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B1%5D.login&amp;label=contributor&amp;color=brightgreen" alt="2nd contributor"></a><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B1%5D.contributions&amp;label=contributions&amp;color=blue" alt="2nd contributions"></a>
+    </td>
+    <td align="center" width="200">
+      <b>1st</b><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B0%5D.login&amp;label=contributor&amp;color=brightgreen" alt="1st contributor"></a><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B0%5D.contributions&amp;label=contributions&amp;color=blue" alt="1st contributions"></a><br>
       <sub><i>Top contributor</i></sub>
     </td>
-    <td align="center" width="140">
-      <a href="https://github.com/Ptraaah"><img src="https://github.com/Ptraaah.png?size=96" width="64" height="64" alt=""><br><b>Ptraaah</b></a><br>
-      <sub>50 contributions · 16%</sub>
+    <td align="center" width="200">
+      <sub>3rd</sub><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B2%5D.login&amp;label=contributor&amp;color=brightgreen" alt="3rd contributor"></a><br>
+      <a href="https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fcontributors&amp;query=%24%5B2%5D.contributions&amp;label=contributions&amp;color=blue" alt="3rd contributions"></a>
     </td>
   </tr>
 </table>
 
 Want to be next? [CONTRIBUTING.md](CONTRIBUTING.md) explains how.
+</div>
 
 ## License
 

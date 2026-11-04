@@ -5,6 +5,7 @@
     {"why": "the ISO code in capitals is the same language", "arguments": {"language": "EN", "limit": 1}, "expect": "ok", "contains": ["\"language\": \"en\""]},
     {"why": "one check only, the others left out of the counts", "arguments": {"checks": ["no_gtin"], "limit": 5}, "expect": "ok", "contains": ["\"no_gtin\""]},
     {"why": "inactive products included, with the redirection check", "arguments": {"active": false, "checks": ["inactive_without_redirect", "no_brand"]}, "expect": "ok", "contains": ["\"active_only\": false", "\"inactive_without_redirect\""]},
+    {"why": "the redirection check alone on inactive products, the shop default resolved on PrestaShop 9", "arguments": {"active": false, "checks": ["inactive_without_redirect"]}, "expect": "ok", "contains": ["\"active_only\": false", "\"counts\""]},
     {"why": "the redirection check is dropped for active products only", "arguments": {"checks": ["inactive_without_redirect"]}, "expect": "ok", "contains": ["\"total_count\": 0", "\"returned\": 0"]},
     {"why": "the duplicate and length checks together", "arguments": {"checks": ["meta_title_duplicate", "link_rewrite_duplicate", "meta_title_too_long", "meta_description_short", "meta_description_long", "description_short", "image_legend_missing", "no_image"]}, "expect": "ok", "contains": ["\"link_rewrite_duplicate\""]},
     {"why": "a page far beyond the end is empty, not an error", "arguments": {"offset": 100000}, "expect": "ok", "contains": ["\"returned\": 0"]},

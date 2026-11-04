@@ -80,7 +80,7 @@ class SomcpToolCreateAttributeGroup extends SomcpToolCreateFeature
                 . 'url_name (the word used in filtered URLs), meta_title and indexable - when the faceted search '
                 . 'module is installed and enabled. name, public_name and group_type are required. The group is '
                 . 'created without values and placed last: add the values afterwards, one per call, with '
-                . 'somcp_create_attribute_value when the shop offers it. '
+                . 'somcp_create_attribute_value. '
                 . 'Read somcp_list_attributes first: the group may already exist, and PrestaShop accepts two '
                 . 'groups of the same name. '
                 . 'Who fills each field is said at the start of its description, and is a rule for you: '

@@ -9,6 +9,11 @@ name: Build for Release
 #
 # The tag is created here rather than pushed by hand, with the repository
 # token, so the tag and the release always come together.
+#
+# guard reads the version and refuses anything but main; the CI workflows -
+# PHP tests, security, integration, UI tests - then run on that commit; release builds
+# and publishes only once every one of their jobs passed, with a report of
+# what was checked, attached to the release beside the zip, never inside it.
 on:
   workflow_dispatch:
     inputs:
@@ -17,18 +22,24 @@ on:
         required: true
 
 permissions:
-  contents: write        # create the tag, the release and upload the asset
+  contents: write        # create the tag, the release and upload the assets
+  actions: read          # read the jobs of this run for the report
 
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
-  release:
+  guard:
     runs-on: ubuntu-latest
+    outputs:
+      number: ${{ steps.version.outputs.number }}
+      tag: ${{ steps.version.outputs.tag }}
+      skip: ${{ steps.guard.outputs.skip }}
     steps:
       # Releases come from main and nothing else: a branch picked by mistake in
-      # the Run workflow menu would otherwise publish unmerged code.
+      # the Run workflow menu would otherwise publish unmerged code. Checked
+      # first, before the half hour the CI takes.
       - name: Only from main
         run: |
           if [ "${{ github.ref }}" != "refs/heads/main" ]; then
@@ -92,35 +103,80 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
-            {
-              echo "## Releasing $V"
-              echo ""
-              echo "| Check | Result |"
-              echo "|---|---|"
-            } >> "$GITHUB_STEP_SUMMARY"
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
+
+  # The whole CI, on the commit being released: every PrestaShop and PHP
+  # combination, the attacks and the scan, the static analysis. A release
+  # published on a commit whose own CI was never green is what this prevents.
+  php:
+    needs: guard
+    if: needs.guard.outputs.skip == 'false'
+    uses: ./.github/workflows/php.yml
+
+  security:
+    needs: guard
+    if: needs.guard.outputs.skip == 'false'
+    uses: ./.github/workflows/security.yml
+
+  integration:
+    needs: guard
+    if: needs.guard.outputs.skip == 'false'
+    uses: ./.github/workflows/integration.yml
+
+  ui:
+    needs: guard
+    if: needs.guard.outputs.skip == 'false'
+    uses: ./.github/workflows/ui.yml
+
+  release:
+    needs: [guard, php, security, integration, ui]
+    runs-on: ubuntu-latest
+    env:
+      V: ${{ needs.guard.outputs.number }}
+      TAG: ${{ needs.guard.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Start the release summary
+        run: |
+          # One line per release check, for the report.
+          CHECKS="$RUNNER_TEMP/release.txt"
+          echo "CHECKS=$CHECKS" >> "$GITHUB_ENV"
+          {
+            echo "## Releasing $V"
+            echo ""
+            echo "The CI passed on this commit: every job is in the report."
+            echo ""
+            echo "| Check | Result |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          {
+            printf 'Only from main\t%s\n' "${{ github.ref }}"
+            printf 'Version read from config.xml\t%s\n' "$V"
+            printf 'Not released yet\ttag %s free\n' "$TAG"
+          } >> "$CHECKS"
 
       # A version that disagrees with itself ships an archive whose number says
       # one thing and whose module reports another; PrestaShop decides on
       # upgrades from the latter.
       - name: config.xml and somcp.php must agree
-        if: steps.guard.outputs.skip == 'false'
         run: |
-          V="${{ steps.version.outputs.number }}"
           PHP=$(sed -n "s/.*\$this->version *= *'\([^']*\)'.*/\1/p" somcp.php | head -1)
           if [ "$V" != "$PHP" ]; then
             echo "| Version numbers | **config.xml $V, somcp.php $PHP: they must match** |" >> "$GITHUB_STEP_SUMMARY"
             echo "::error::somcp.php says $PHP, config.xml says $V"; exit 1
           fi
           echo "| Version numbers | config.xml and somcp.php both say $V |" >> "$GITHUB_STEP_SUMMARY"
+          printf 'config.xml and somcp.php agree\t%s = %s\n' "$V" "$PHP" >> "$CHECKS"
 
       # Publishing while entries still sit under Unreleased would ship changes
       # that no version number accounts for.
       - name: The CHANGELOG must carry this version, with nothing left unreleased
-        if: steps.guard.outputs.skip == 'false'
         run: |
-          V="${{ steps.version.outputs.number }}"
           if ! grep -q "^## $V " CHANGELOG.md; then
             echo "| CHANGELOG | **no \`## $V ...\` section** |" >> "$GITHUB_STEP_SUMMARY"
             echo "::error::CHANGELOG.md has no '## $V ...' section"; exit 1
@@ -131,16 +187,15 @@ jobs:
             echo "::error::CHANGELOG.md still has entries under Unreleased"; exit 1
           fi
           echo "| CHANGELOG | section $V found, nothing left unreleased |" >> "$GITHUB_STEP_SUMMARY"
+          printf 'CHANGELOG carries this version\t## %s, nothing left unreleased\n' "$V" >> "$CHECKS"
 
       - uses: shivammathur/setup-php@v2
-        if: steps.guard.outputs.skip == 'false'
         with:
           php-version: '8.1'
           coverage: none
           tools: composer
 
       - name: PHP syntax
-        if: steps.guard.outputs.skip == 'false'
         run: |
           N=$(find . -name '*.php' -not -path './.git/*' | wc -l)
           if ! find . -name '*.php' -not -path './.git/*' -print0 \
@@ -150,11 +205,11 @@ jobs:
             exit 1
           fi
           echo "| PHP syntax | $N files, no error |" >> "$GITHUB_STEP_SUMMARY"
+          printf 'PHP syntax\t%s files, 0 error\n' "$N" >> "$CHECKS"
 
       # The same script as the CI: every visible string in the four catalogues,
       # well-formed XML, no duplicate id.
       - name: Translation catalogues
-        if: steps.guard.outputs.skip == 'false'
         run: |
           if ! php .github/scripts/check-translations.php . > /tmp/tr.txt 2>&1; then
             echo "| Translations | **$(tail -1 /tmp/tr.txt)** |" >> "$GITHUB_STEP_SUMMARY"
@@ -162,11 +217,11 @@ jobs:
             exit 1
           fi
           echo "| Translations | $(tail -1 /tmp/tr.txt) |" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Translation catalogues\t%s\n' "$(tail -1 /tmp/tr.txt)" >> "$CHECKS"
 
       # A tool missing from the README, its entry, its scope, the CHANGELOG or
       # every prompt would ship undocumented.
       - name: Tools and prompts
-        if: steps.guard.outputs.skip == 'false'
         run: |
           if ! php .github/scripts/check-tools.php . > /tmp/tools.txt 2>&1; then
             echo "| Tools and prompts | **$(tail -1 /tmp/tools.txt)** |" >> "$GITHUB_STEP_SUMMARY"
@@ -174,15 +229,15 @@ jobs:
             exit 1
           fi
           echo "| Tools and prompts | $(tail -1 /tmp/tools.txt) |" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Tools and prompts\t%s\n' "$(tail -1 /tmp/tools.txt | cut -c1-70)" >> "$CHECKS"
 
       # --prefix is what makes the archive installable: PrestaShop takes the
       # module's technical name from the folder inside the zip.
       # export-ignore in .gitattributes keeps the repository plumbing out.
       - name: Build the module archive
         id: build
-        if: steps.guard.outputs.skip == 'false'
         run: |
-          NAME="OSo-MCP-Server-${{ steps.version.outputs.number }}.zip"
+          NAME="OSo-MCP-Server-${{ needs.guard.outputs.number }}.zip"
           # The archive is laid out, given its Composer dependencies, pruned
           # of what the module never runs, then zipped: the shop has no
           # Composer, so vendor/ ships inside the module.
@@ -197,9 +252,9 @@ jobs:
           SIZE=$(du -h "$NAME" | cut -f1)
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "| Archive | \`$NAME\`, $N files, $SIZE |" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Archive built\t%s, %s files, %s\n' "$NAME" "$N" "$SIZE" >> "$CHECKS"
 
       - name: The archive must carry the module, not the plumbing
-        if: steps.guard.outputs.skip == 'false'
         run: |
           NAME="${{ steps.build.outputs.name }}"
           for f in somcp/somcp.php somcp/config.xml somcp/CHANGELOG.md somcp/LICENSE.txt somcp/.htaccess; do
@@ -221,13 +276,53 @@ jobs:
             echo "::error::index.php missing in some folders"; exit 1
           fi
           echo "| Archive contents | root folder \`somcp/\`, module present, no plumbing, index.php everywhere |" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Archive contents\troot folder somcp/, no dev/ .github/ docs/, index.php everywhere\n' >> "$CHECKS"
+
+      # The report says which commit and which archive it vouches for: the
+      # SHA-256 lets a merchant check the zip they downloaded is the one the
+      # CI tested. It is written from this run's own jobs, so it can only
+      # describe this commit.
+      # The UI tests leave one file per pair, with a line per check.
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ui-results-*
+          path: ${{ runner.temp }}/ui
+
+      - name: Security and compatibility report
+        id: report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NAME="${{ steps.build.outputs.name }}"
+          REPORT="security-report-$V.md"
+          SUM=$(sha256sum "$NAME" | cut -d' ' -f1)
+          {
+            printf 'Tag and publish\t%s on commit %s\n' "$TAG" "$(git rev-parse --short HEAD)"
+            printf 'SHA-256 of %s\t%s\n' "$NAME" "$SUM"
+          } >> "$CHECKS"
+          # Read page by page: a run holds more jobs than one page of the API.
+          PAGE=1
+          : > "$RUNNER_TEMP/pages.jsonl"
+          while :; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100&page=$PAGE" > "$RUNNER_TEMP/page.json"
+            [ "$(jq '.jobs | length' "$RUNNER_TEMP/page.json")" -eq 0 ] && break
+            jq -c '.jobs[]' "$RUNNER_TEMP/page.json" >> "$RUNNER_TEMP/pages.jsonl"
+            PAGE=$((PAGE + 1))
+          done
+          jq -s '{jobs: .}' "$RUNNER_TEMP/pages.jsonl" > "$RUNNER_TEMP/jobs.json"
+          if ! php .github/scripts/release-report.php "$RUNNER_TEMP/jobs.json" "$CHECKS" "$V" "$GITHUB_SHA" "$GITHUB_RUN_ID" . "$RUNNER_TEMP/ui" > "$REPORT"; then
+            echo "| Report | **a CI job did not pass, see the report below** |" >> "$GITHUB_STEP_SUMMARY"
+            cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::the report lists a check that did not pass"; exit 1
+          fi
+          echo "name=$REPORT" >> "$GITHUB_OUTPUT"
+          echo "| Report | \`$REPORT\`, SHA-256 of the zip \`$SUM\` |" >> "$GITHUB_STEP_SUMMARY"
 
       # The notes come from the CHANGELOG section for this version, so the
       # release page and the file in the module can never drift apart.
       - name: Release notes from the CHANGELOG
-        if: steps.guard.outputs.skip == 'false'
         run: |
-          awk -v v="${{ steps.version.outputs.number }}" \
+          awk -v v="${{ needs.guard.outputs.number }}" \
             '$0 ~ "^## " v " " {f=1; next} /^## /{f=0} f' CHANGELOG.md > NOTES.md
           # The CHANGELOG is wrapped at 80 columns for reading in a file, but a
           # release page keeps every line break, so each paragraph or list item
@@ -265,23 +360,27 @@ jobs:
       # --target creates the tag on this commit as part of publishing, so the
       # tag and the release can never exist without one another.
       - name: Tag and publish
-        if: steps.guard.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          URL=$(gh release create "${{ steps.version.outputs.tag }}" \
+          URL=$(gh release create "${{ needs.guard.outputs.tag }}" \
             --target "$GITHUB_SHA" \
-            --title "O'So MCP Server ${{ steps.version.outputs.number }}" \
+            --title "O'So MCP Server ${{ needs.guard.outputs.number }}" \
             --notes-file NOTES.md \
-            "${{ steps.build.outputs.name }}")
+            "${{ steps.build.outputs.name }}" \
+            "${{ steps.report.outputs.name }}")
           {
-            echo "| Published | ${{ steps.version.outputs.tag }} on \`$(git rev-parse --short HEAD)\` |"
+            echo "| Published | ${{ needs.guard.outputs.tag }} on \`$(git rev-parse --short HEAD)\` |"
             echo ""
             echo "### Released"
             echo ""
-            echo "**[${{ steps.version.outputs.tag }} - O'So MCP Server ${{ steps.version.outputs.number }}]($URL)**"
+            echo "**[${{ needs.guard.outputs.tag }} - O'So MCP Server ${{ needs.guard.outputs.number }}]($URL)**"
             echo ""
             echo "Download: \`${{ steps.build.outputs.name }}\`"
+            echo ""
+            echo "### Report, ready to paste on the forum"
+            echo ""
+            cat "${{ steps.report.outputs.name }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # Runs whatever happened above, so a failed run explains itself on the

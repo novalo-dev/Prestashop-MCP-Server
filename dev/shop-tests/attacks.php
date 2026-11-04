@@ -187,6 +187,8 @@ if (!$expect('a valid token is served', $http('POST', $mcpUrl, $bearer($valid['a
     exit(1);
 }
 $expect('GET is not allowed', $http('GET', $mcpUrl), 405);
+$expect('GET opening a stream is not allowed', $http('GET', $mcpUrl, ['Accept: text/event-stream']), 405);
+$expect('a browser gets the page not found', $http('GET', $mcpUrl, ['Accept: text/html,application/xhtml+xml']), 404);
 $missing = $http('POST', $mcpUrl, $json, $ping);
 $expect('no token', $missing, 401);
 if (stripos($missing['headers']['www-authenticate'] ?? '', 'Bearer') !== 0) {

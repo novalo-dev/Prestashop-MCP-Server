@@ -141,6 +141,15 @@ read checks a change.
 
 ### Fixed
 
+**Inactive products that follow the shop's default behaviour are judged
+correctly.** On PrestaShop 9, an inactive product left on the shop default in
+`somcp_audit_product_seo` was always reported as having no redirection, even
+when **Shop Parameters > Product Settings > Default behavior for disabled
+products** keeps its page shown with a 200 response. The audit now reads that
+setting: such a product is no longer reported, and when it is, the entry names
+both the product's choice and what the shop default applies, so you know which
+setting to change. Nothing changes on PrestaShop 8.
+
 **The module passes the PrestaShop Addons validator again.** The check
 `somcp_update_theme_setting` makes before changing the theme, which refuses
 to change it on a shop in demo mode, was reported by the validator as a

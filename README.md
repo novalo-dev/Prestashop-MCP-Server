@@ -167,289 +167,198 @@ Found a security issue? Please do not open an issue: report it privately, see
 
 ## Tools
 
-Grouped by back office page, each object's reads before its writes. The
-**Back office right** column is the right the employee needs in
-**Team > Permissions** for the assistant to use the tool. Details of every
-tool are in [docs/TOOLS.md](docs/TOOLS.md).
-
-### Connection
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_ping` | `mcp.access` | none | read |
-
-</details>
-
-### Orders
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_search_orders` | `mcp.orders.read` | `view` on `AdminOrders` | read |
-| `somcp_get_order` | `mcp.orders.read` | `view` on `AdminOrders` | read |
-| `somcp_list_order_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
-| `somcp_list_return_statuses` | `mcp.orders.read` | `view` on `AdminStatuses` | read |
-| `somcp_list_carriers` | `mcp.orders.read` | `view` on `AdminCarriers` | read |
-| `somcp_set_order_status` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
-| `somcp_set_order_tracking` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
-| `somcp_add_order_message` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
-| `somcp_set_order_note` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
-| `somcp_add_order_payment` | `mcp.orders.write` | `edit` on `AdminOrders` | write |
-| `somcp_create_return_status` | `mcp.orders.write` | `add` on `AdminStatuses` | write |
-| `somcp_update_return_status` | `mcp.orders.write` | `edit` on `AdminStatuses` | write |
-| `somcp_delete_return_status` | `mcp.orders.write` | `delete` on `AdminStatuses` | write |
-| `somcp_create_order_status` | `mcp.orders.write` | `add` on `AdminStatuses` | write |
-
-</details>
-
-### Catalog - Products
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_search_products` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
-| `somcp_get_product` | `mcp.catalog.read` | `view` on `AdminProducts` | read |
-| `somcp_create_product` | `mcp.catalog.write` | `add` on `AdminProducts` | write |
-| `somcp_update_product` | `mcp.catalog.write` | `edit` on `AdminProducts` | write |
-| `somcp_set_product_active` | `mcp.catalog.write` | `edit` on `AdminProducts` | write |
-| `somcp_delete_product` | `mcp.catalog.write` | `delete` on `AdminProducts` | write |
-
-</details>
-
-### Catalog - Categories
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_list_categories` | `mcp.catalog.read` | `view` on `AdminCategories` | read |
-| `somcp_get_category` | `mcp.catalog.read` | `view` on `AdminCategories` | read |
-| `somcp_create_category` | `mcp.catalog.write` | `add` on `AdminCategories` | write |
-| `somcp_update_category` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
-| `somcp_set_category_active` | `mcp.catalog.write` | `edit` on `AdminCategories` | write |
-
-</details>
-
-### Catalog - Brands
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_list_manufacturers` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
-| `somcp_get_manufacturer` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
-| `somcp_create_manufacturer` | `mcp.catalog.write` | `add` on `AdminManufacturers` | write |
-| `somcp_update_manufacturer` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
-| `somcp_set_manufacturer_active` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
-| `somcp_list_manufacturer_addresses` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
-| `somcp_get_manufacturer_address` | `mcp.catalog.read` | `view` on `AdminManufacturers` | read |
-| `somcp_create_manufacturer_address` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
-| `somcp_update_manufacturer_address` | `mcp.catalog.write` | `edit` on `AdminManufacturers` | write |
-| `somcp_delete_manufacturer_address` | `mcp.catalog.write` | `delete` on `AdminManufacturers` | write |
-
-</details>
-
-### Catalog - Suppliers
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_list_suppliers` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
-| `somcp_get_supplier` | `mcp.catalog.read` | `view` on `AdminSuppliers` | read |
-| `somcp_create_supplier` | `mcp.catalog.write` | `add` on `AdminSuppliers` | write |
-| `somcp_update_supplier` | `mcp.catalog.write` | `edit` on `AdminSuppliers` | write |
-| `somcp_set_supplier_active` | `mcp.catalog.write` | `edit` on `AdminSuppliers` | write |
-
-</details>
-
-### Catalog - Attributes
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_list_attributes` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
-| `somcp_get_attribute_group` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
-| `somcp_create_attribute_group` | `mcp.catalog.write` | `add` on `AdminAttributesGroups` | write |
-| `somcp_update_attribute_group` | `mcp.catalog.write` | `edit` on `AdminAttributesGroups` | write |
-| `somcp_get_attribute_value` | `mcp.catalog.read` | `view` on `AdminAttributesGroups` | read |
-| `somcp_create_attribute_value` | `mcp.catalog.write` | `add` on `AdminAttributesGroups` | write |
-| `somcp_update_attribute_value` | `mcp.catalog.write` | `edit` on `AdminAttributesGroups` | write |
-
-</details>
-
-### Catalog - Features
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_list_features` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
-| `somcp_get_feature` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
-| `somcp_create_feature` | `mcp.catalog.write` | `add` on `AdminFeatures` | write |
-| `somcp_update_feature` | `mcp.catalog.write` | `edit` on `AdminFeatures` | write |
-| `somcp_get_feature_value` | `mcp.catalog.read` | `view` on `AdminFeatures` | read |
-| `somcp_create_feature_value` | `mcp.catalog.write` | `add` on `AdminFeatures` | write |
-| `somcp_update_feature_value` | `mcp.catalog.write` | `edit` on `AdminFeatures` | write |
-
-</details>
-
-### Catalog - Files and taxes
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_list_attachments` | `mcp.catalog.read` | `view` on `AdminAttachments` | read |
-| `somcp_list_tax_rules` | `mcp.catalog.read` | `view` on `AdminTaxRulesGroup` | read |
-
-</details>
-
-### Stock
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_get_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
-| `somcp_list_low_stock` | `mcp.stock.read` | `view` on `AdminStockManagement` | read |
-| `somcp_set_stock_quantity` | `mcp.stock.write` | `edit` on `AdminStockManagement` | write |
-
-</details>
-
-### Customers
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_search_customers` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
-| `somcp_get_customer` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
-| `somcp_create_customer` | `mcp.customers.write` | `add` on `AdminCustomers` | write |
-| `somcp_update_customer` | `mcp.customers.write` | `edit` on `AdminCustomers` | write |
-| `somcp_list_customer_groups` | `mcp.customers.read` | `view` on `AdminGroups` | read |
-
-</details>
-
-### Statistics
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_get_sales_summary` | `mcp.stats.read` | `view` on `AdminStats` | read |
-| `somcp_list_best_sellers` | `mcp.stats.read` | `view` on `AdminStats` | read |
-
-</details>
-
-### Content
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_list_cms_pages` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
-| `somcp_get_cms_page` | `mcp.content.read` | `view` on `AdminCmsContent` | read |
-
-</details>
-
-### Modules
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_list_modules` | `mcp.modules.read` | `view` on `AdminModulesSf` | read |
-| `somcp_get_module` | `mcp.modules.read` | `view` on `AdminModulesSf` | read |
-| `somcp_install_module` | `mcp.modules.write` | `add` on `AdminModulesSf` | write |
-| `somcp_set_module_active` | `mcp.modules.write` | `edit` on `AdminModulesSf` | write |
-
-</details>
-
-### Appearance
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_list_menu_links` | `mcp.appearance.read` | `view` on `AdminModulesSf` | read |
-| `somcp_add_menu_link` | `mcp.appearance.write` | `edit` on `AdminModulesSf` | write |
-| `somcp_update_menu_link` | `mcp.appearance.write` | `edit` on `AdminModulesSf` | write |
-| `somcp_get_theme` | `mcp.appearance.read` | `view` on `AdminThemes` | read |
-| `somcp_update_theme_setting` | `mcp.appearance.write` | `edit` on `AdminThemes` | write |
-
-</details>
-
-### System
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_get_cache_status` | `mcp.system.read` | `view` on `AdminPerformance` | read |
-| `somcp_clear_cache` | `mcp.system.write` | `delete` on `AdminPerformance` | write |
-
-</details>
-
-### SEO
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_get_seo_settings` | `mcp.seo.read` | `view` on `AdminMeta` | read |
-| `somcp_list_meta_pages` | `mcp.seo.read` | `view` on `AdminMeta` | read |
-| `somcp_audit_page` | `mcp.seo.read` | `view` on `AdminMeta` | read |
-| `somcp_check_links` | `mcp.seo.read` | `view` on `AdminMeta` | read |
-| `somcp_audit_sitemap` | `mcp.seo.read` | `view` on `AdminMeta` | read |
-| `somcp_audit_product_seo` | `mcp.seo.read` | `view` on `AdminProducts` | read |
-| `somcp_audit_category_seo` | `mcp.seo.read` | `view` on `AdminCategories` | read |
-| `somcp_audit_cms_seo` | `mcp.seo.read` | `view` on `AdminCmsContent` | read |
-| `somcp_audit_brand_seo` | `mcp.seo.read` | `view` on `AdminManufacturers` | read |
-| `somcp_update_cms_seo` | `mcp.seo.write` | `edit` on `AdminCmsContent` | write |
-| `somcp_update_meta_page` | `mcp.seo.write` | `edit` on `AdminMeta` | write |
-| `somcp_get_robots_txt` | `mcp.seo.read` | `view` on `AdminMeta` | read |
-| `somcp_generate_robots_txt` | `mcp.seo.write` | `add`, `edit` and `delete` on `AdminMeta` | write |
-
-</details>
-
-### AEO
-
-<details>
-<summary>Show the tools</summary>
-
-| Tool | Scope | Back office right | Nature |
-|---|---|---|---|
-| `somcp_audit_product_schema` | `mcp.seo.read` | `view` on `AdminProducts` | read |
-
-</details>
-
-**Reads** change nothing and are safe to repeat. **Writes** change one thing per
-call, and are flagged so assistants ask you before running them. `somcp_ping` needs no right: it
-only tells the assistant which shop, account, language and currency it is
-connected to.
+Grouped by back office page, each object's reads before its writes. **●** reads
+only and is safe to repeat; **✎** changes data, one thing per call, and is
+flagged so assistants ask you before running it. The last column is the right
+the employee needs in **Team › Permissions** for the assistant to use the tool.
+Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
+
+### 🔌 Connection
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_ping` | ● Test the connection | nothing |
+
+### 🧾 Orders
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_search_orders` | ● Search orders | Orders › view |
+| `somcp_get_order` | ● Get an order | Orders › view |
+| `somcp_list_order_statuses` | ● List order statuses | Statuses › view |
+| `somcp_list_return_statuses` | ● List return statuses | Statuses › view |
+| `somcp_list_carriers` | ● List carriers | Carriers › view |
+| `somcp_set_order_status` | ✎ Change the status of an order | Orders › edit |
+| `somcp_set_order_tracking` | ✎ Set the tracking number of an order | Orders › edit |
+| `somcp_add_order_message` | ✎ Add a message to an order | Orders › edit |
+| `somcp_set_order_note` | ✎ Set the private note of an order | Orders › edit |
+| `somcp_add_order_payment` | ✎ Record a payment for an order | Orders › edit |
+| `somcp_create_return_status` | ✎ Create a return status | Statuses › add |
+| `somcp_update_return_status` | ✎ Change a return status | Statuses › edit |
+| `somcp_delete_return_status` | ✎ Delete a return status | Statuses › delete |
+| `somcp_create_order_status` | ✎ Create an order status | Statuses › add |
+
+### 📦 Catalog - Products
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_search_products` | ● Search products | Products › view |
+| `somcp_get_product` | ● Get a product | Products › view |
+| `somcp_create_product` | ✎ Create a product | Products › add |
+| `somcp_update_product` | ✎ Change a product | Products › edit |
+| `somcp_set_product_active` | ✎ Switch a product on or off | Products › edit |
+| `somcp_delete_product` | ✎ Delete a product | Products › delete |
+
+### 🗂️ Catalog - Categories
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_categories` | ● List categories | Categories › view |
+| `somcp_get_category` | ● Get a category | Categories › view |
+| `somcp_create_category` | ✎ Create a category | Categories › add |
+| `somcp_update_category` | ✎ Change a category | Categories › edit |
+| `somcp_set_category_active` | ✎ Show or hide a category | Categories › edit |
+
+### 🏷️ Catalog - Brands
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_manufacturers` | ● List brands | Brands › view |
+| `somcp_get_manufacturer` | ● Get a brand | Brands › view |
+| `somcp_create_manufacturer` | ✎ Create a brand | Brands › add |
+| `somcp_update_manufacturer` | ✎ Change a brand | Brands › edit |
+| `somcp_set_manufacturer_active` | ✎ Enable or disable a brand | Brands › edit |
+| `somcp_list_manufacturer_addresses` | ● List brand addresses | Brands › view |
+| `somcp_get_manufacturer_address` | ● Get a brand address | Brands › view |
+| `somcp_create_manufacturer_address` | ✎ Add a brand address | Brands › edit |
+| `somcp_update_manufacturer_address` | ✎ Change a brand address | Brands › edit |
+| `somcp_delete_manufacturer_address` | ✎ Delete a brand address | Brands › delete |
+
+### 🚚 Catalog - Suppliers
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_suppliers` | ● List suppliers | Suppliers › view |
+| `somcp_get_supplier` | ● Get a supplier | Suppliers › view |
+| `somcp_create_supplier` | ✎ Create a supplier | Suppliers › add |
+| `somcp_update_supplier` | ✎ Change a supplier | Suppliers › edit |
+| `somcp_set_supplier_active` | ✎ Enable or disable a supplier | Suppliers › edit |
+
+### 🎨 Catalog - Attributes
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_attributes` | ● List attributes | Attributes › view |
+| `somcp_get_attribute_group` | ● Get an attribute group | Attributes › view |
+| `somcp_create_attribute_group` | ✎ Create an attribute group | Attributes › add |
+| `somcp_update_attribute_group` | ✎ Change an attribute group | Attributes › edit |
+| `somcp_get_attribute_value` | ● Get an attribute value | Attributes › view |
+| `somcp_create_attribute_value` | ✎ Create an attribute value | Attributes › add |
+| `somcp_update_attribute_value` | ✎ Change an attribute value | Attributes › edit |
+
+### 📋 Catalog - Features
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_features` | ● List features | Features › view |
+| `somcp_get_feature` | ● Get a feature | Features › view |
+| `somcp_create_feature` | ✎ Create a feature | Features › add |
+| `somcp_update_feature` | ✎ Change a feature | Features › edit |
+| `somcp_get_feature_value` | ● Get a feature value | Features › view |
+| `somcp_create_feature_value` | ✎ Create a feature value | Features › add |
+| `somcp_update_feature_value` | ✎ Change a feature value | Features › edit |
+
+### 📎 Catalog - Files and taxes
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_attachments` | ● List files | Files › view |
+| `somcp_list_tax_rules` | ● List tax rules | Tax Rules › view |
+
+### 📊 Stock
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_get_stock` | ● Get the stock of a product | Stock › view |
+| `somcp_list_low_stock` | ● List low stock | Stock › view |
+| `somcp_set_stock_quantity` | ✎ Set the stock of a product | Stock › edit |
+
+### 👥 Customers
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_search_customers` | ● Search customers | Customers › view |
+| `somcp_get_customer` | ● Get a customer | Customers › view |
+| `somcp_create_customer` | ✎ Create a customer | Customers › add |
+| `somcp_update_customer` | ✎ Change a customer | Customers › edit |
+| `somcp_list_customer_groups` | ● List customer groups | Groups › view |
+
+### 📈 Statistics
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_get_sales_summary` | ● Get a sales summary | Stats › view |
+| `somcp_list_best_sellers` | ● List best-selling products | Stats › view |
+
+### 📄 Content
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_cms_pages` | ● List content pages | Pages › view |
+| `somcp_get_cms_page` | ● Get a content page | Pages › view |
+
+### 🧩 Modules
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_modules` | ● List modules | Module Manager › view |
+| `somcp_get_module` | ● Get a module | Module Manager › view |
+| `somcp_install_module` | ✎ Install a module | Module Manager › add |
+| `somcp_set_module_active` | ✎ Enable or disable a module | Module Manager › edit |
+
+### 🖌️ Appearance
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_menu_links` | ● List main menu entries | Module Manager › view |
+| `somcp_add_menu_link` | ✎ Add a main menu entry | Module Manager › edit |
+| `somcp_update_menu_link` | ✎ Change a main menu custom link | Module Manager › edit |
+| `somcp_get_theme` | ● Get the theme and page layouts | Theme & Logo › view |
+| `somcp_update_theme_setting` | ✎ Change the layout of a page | Theme & Logo › edit |
+
+### ⚙️ System
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_get_cache_status` | ● Read the performance settings | Performance › view |
+| `somcp_clear_cache` | ✎ Clear the cache | Performance › delete |
+
+### 🔎 SEO
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_get_seo_settings` | ● Read the SEO and URL settings | SEO & URLs › view |
+| `somcp_list_meta_pages` | ● List the shop pages and their SEO | SEO & URLs › view |
+| `somcp_audit_page` | ● Audit a public page of the shop | SEO & URLs › view |
+| `somcp_check_links` | ● Check the links of the shop's public pages | SEO & URLs › view |
+| `somcp_audit_sitemap` | ● Audit the shop's sitemaps | SEO & URLs › view |
+| `somcp_audit_product_seo` | ● Audit the SEO of products | Products › view |
+| `somcp_audit_category_seo` | ● Audit the SEO of categories | Categories › view |
+| `somcp_audit_cms_seo` | ● Audit the SEO of CMS pages | Pages › view |
+| `somcp_audit_brand_seo` | ● Audit the SEO of brands | Brands › view |
+| `somcp_update_cms_seo` | ✎ Change the SEO of a CMS page | Pages › edit |
+| `somcp_update_meta_page` | ✎ Change the SEO of a shop page | SEO & URLs › edit |
+| `somcp_get_robots_txt` | ● Read the robots.txt file | SEO & URLs › view |
+| `somcp_generate_robots_txt` | ✎ Generate the robots.txt file | SEO & URLs › add, edit, delete |
+
+### 🤖 AEO
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_audit_product_schema` | ● Compare a product page with its structured data | Products › view |
+
+`somcp_ping` needs no right: it only tells the assistant which shop, account,
+language and currency it is connected to.
 
 **13 prompts** ship with the module: check the shop connection, find an order,
 change an order status, manage products, check and adjust stock, find a

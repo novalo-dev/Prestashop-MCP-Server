@@ -318,8 +318,11 @@ any tool whose `acts()` is not a `view`.
 6. **Document the tool** in the same pull request:
    - its entry in `docs/TOOLS.md` says **written**, and is corrected wherever
      the code had to differ;
-   - a row in the table of its page under **Tools** in `README.md`, inside
-     that page's folded block;
+   - a row in the table of its page under **Tools** in `README.md`, in this
+     form: `` | `somcp_xxx` | ● Its title | Page › right | `` - the tool's name
+     first, then **●** for a read or **✎** for a write and the tool's title as
+     the code gives it, then the back office page as the menu names it and the
+     right it needs (`view`, `add`, `edit` or `delete`);
    - nothing on the settings page: the **Tools and prompts** tab lists the
      tool under the group of its scope by itself, with the group's switches
      (see "Switching a group off" in `docs/TOOLS.md`);

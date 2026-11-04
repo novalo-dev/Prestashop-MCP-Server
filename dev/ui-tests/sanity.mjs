@@ -59,7 +59,21 @@ const errors = [];
 const passed = [];
 let step = 'start';
 
-page.on('pageerror', (error) => errors.push(`${step}: ${error.message}`));
+// A script error fails the run when it comes from the module: its scripts,
+// or the inline ones its templates print, whose frame is the page itself. One
+// thrown inside a script file of PrestaShop's own is the core's, as the shop
+// test treats the core's notices: it is shown as a warning, with its file.
+// An error that cannot be placed still counts.
+page.on('pageerror', (error) => {
+    // The frame the error was thrown in is the first line naming an address.
+    const frame = String(error.stack || '').split('\n').find((line) => /https?:\/\//.test(line)) || '';
+    const where = (frame.match(/https?:\/\/[^\s)@]+?\.js\b[^\s)]*/) || [''])[0];
+    if (where !== '' && !where.includes('/modules/somcp/')) {
+        console.log(`::warning title=PrestaShop script error::${step}: ${error.message} (${where})`);
+        return;
+    }
+    errors.push(`${step}: ${error.message}${where !== '' ? ` (${where})` : ''}`);
+});
 
 const check = async (name, run) => {
     step = name;

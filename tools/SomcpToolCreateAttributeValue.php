@@ -136,7 +136,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
                     'items' => ['type' => 'string'],
                 ],
                 'name' => $text('Merchant. Required. The value shown on the product page, 128 characters at '
-                    . 'most, without < > = { }.'),
+                    . 'most, without < > = { } (nor ; # on PrestaShop 9).'),
                 'url_name' => $text('Assistant. Faceted search: the word used in filtered URLs instead of the '
                     . 'name, lower case letters, digits and hyphens, for example "dark-blue". Empty for the name. '
                     . '128 characters at most.'),
@@ -282,6 +282,8 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         }
 
         $taken = $idGroup > 0 ? self::groupNames($idGroup, $idShop, $idOwn) : [];
+        $refused = self::refusedNameCharacters();
+        $refusedList = implode(' ', str_split($refused));
         foreach ($names as $idLang => $name) {
             $name = trim($name);
             $names[$idLang] = $name;
@@ -293,7 +295,9 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             if (Tools::strlen($name) > self::VALUE_NAME_MAX) {
                 $errors[] = $where . ': ' . self::VALUE_NAME_MAX . ' characters at most, ' . Tools::strlen($name) . ' given';
             } elseif (($check = $probe->validateField('name', $name, $idLang)) !== true) {
-                $errors[] = $where . ': a character PrestaShop refuses in an attribute value (< > = { }) - ' . self::reason($check);
+                $errors[] = $where . ': a character PrestaShop refuses in an attribute value (' . $refusedList . ') - ' . self::reason($check);
+            } elseif (strpbrk($name, $refused) !== false) {
+                $errors[] = $where . ': a character PrestaShop refuses in an attribute value (' . $refusedList . ')';
             } elseif (isset($taken[$idLang][Tools::strtolower($name)])) {
                 // The back office refuses a name its group already holds in
                 // that language. Compared without case, as MySQL compares it
@@ -304,6 +308,22 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             }
         }
         $plan['texts']['name'] = $names;
+    }
+
+    /**
+     * The characters the back office refuses in the name of a value.
+     *
+     * PrestaShop 9 moved the value form to Symfony, which checks the name as a
+     * catalogue name (TypedRegex TYPE_CATALOG_NAME) on top of the class rule,
+     * so it also refuses ; and #. A value saved here with them could then no
+     * longer be saved from its edit form without being renamed. PrestaShop 8
+     * checks the class rule only, isGenericName.
+     *
+     * @return string
+     */
+    protected static function refusedNameCharacters(): string
+    {
+        return version_compare(_PS_VERSION_, '9.0.0', '>=') ? '<>;=#{}' : '<>={}';
     }
 
     /**

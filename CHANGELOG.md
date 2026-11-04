@@ -40,6 +40,15 @@ and `somcp_get_feature_value` still returned them as empty texts, which the
 update tools then refused. They now return them as `null` whenever the module
 is not installed and enabled, as the create and update tools already did.
 
+**Attribute values with ; or # in their name are refused on PrestaShop 9.**
+On PrestaShop 9, `somcp_create_attribute_value` and
+`somcp_update_attribute_value` accepted a name holding `;` or `#`, which the
+back office form of an attribute value refuses there: the value was saved,
+then its edit page could not be saved again until it was renamed. Both tools
+now refuse these characters on PrestaShop 9 as the back office does, and say
+which characters the running version refuses. PrestaShop 8, whose form accepts
+them, is unchanged.
+
 ## 1.2.0 - 2026-11-03
 
 ### Added

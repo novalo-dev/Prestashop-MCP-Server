@@ -1939,7 +1939,7 @@ The name and every contact field are one string each, the same in every language
 | Field | Who fills it | Rule |
 |---|---|---|
 | `id_attribute_group` | merchant, from the shop | required; from `somcp_list_attributes` |
-| `name` (value) | merchant | required; 128 characters at most; `Validate::isGenericName()` |
+| `name` (value) | merchant | required; 128 characters at most; `Validate::isGenericName()` (no `< > = { }`); on PrestaShop 9 also no `;` or `#`, which its Symfony value form refuses as a catalogue name (`TypedRegex::TYPE_CATALOG_NAME`) - a value saved with them could not be saved again from that form |
 | `url_name` (URL) | assistant | faceted search, as for the group |
 | `meta_title` (title tag) | assistant | faceted search, as for the group |
 | `color` | merchant | groups of type `color` only, refused otherwise; a hex code `#RRGGBB`, `Validate::isColor()` (which alone would also let a bare word through) |

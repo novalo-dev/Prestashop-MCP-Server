@@ -113,7 +113,7 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
             . 'from somcp_list_attributes; it is placed last there, or at position when given. Refused while a '
             . 'combination uses the value.' . $kept;
         $properties['name']['description'] = 'Merchant. The value shown on the product page, 128 characters at '
-            . 'most, never empty, without < > = { }. Changed on every combination using it.'
+            . 'most, never empty, without < > = { } (nor ; # on PrestaShop 9). Changed on every combination using it.'
             . ' One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.' . $kept;
         foreach (['url_name', 'meta_title', 'color'] as $field) {
             $properties[$field]['description'] .= $kept;

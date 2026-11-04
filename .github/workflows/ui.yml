@@ -99,7 +99,9 @@ jobs:
       - name: Remove the install folder and find the back office
         run: |
           docker exec shop sh -c 'rm -rf /var/www/html/install /var/www/html/install-dev'
-          ADMIN_DIR=$(docker exec shop sh -c 'for d in /var/www/html/admin*/; do [ -f "$d/index.php" ] && basename "$d" && break; done')
+          # PrestaShop 9 also ships admin-api, the API's entry point, which
+          # sorts before the back office's renamed folder.
+          ADMIN_DIR=$(docker exec shop sh -c 'for d in /var/www/html/admin*/; do [ "$(basename "$d")" != admin-api ] && [ -f "$d/index.php" ] && basename "$d" && break; done')
           [ -n "$ADMIN_DIR" ] || { echo "::error title=No back office::no admin folder found in the image"; exit 1; }
           echo "ADMIN_DIR=$ADMIN_DIR" >> "$GITHUB_ENV"
 

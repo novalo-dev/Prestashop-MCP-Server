@@ -24,6 +24,12 @@ page. It now shows the shop's usual page not found, like any other address
 that leads nowhere for a visitor. Assistants are not affected: they keep being
 answered as before.
 
+**Catalogue tools point plainly to the tool to use next.** Seven category,
+feature and attribute tools still told the assistant to use a tool to read or
+add a value "when the shop offers it", although every one of those tools is
+there. The assistant could take it as a tool that may be missing and skip the
+step. They now name the tool plainly.
+
 ### Fixed
 
 **The module passes the PrestaShop Addons validator again.** The check

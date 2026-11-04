@@ -55,7 +55,7 @@ class SomcpToolGetFeature
                 . 'indexable - which are null when the faceted search module is not installed and enabled. '
                 . 'Identify the feature by its identifier, from somcp_list_features: never guess one. '
                 . 'Do not use it for the list of features or the names of their values, which is '
-                . 'somcp_list_features, or for one value: somcp_get_feature_value when the shop offers it.',
+                . 'somcp_list_features, or for one value: somcp_get_feature_value.',
             [
                 'type' => 'object',
                 'properties' => [

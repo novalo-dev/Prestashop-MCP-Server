@@ -84,8 +84,8 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
                 . 'and says changed: false. '
                 . 'Do not use it to create a category (somcp_create_category) or only to show or hide one '
                 . '(somcp_set_category_active). One category per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the category again (somcp_get_category '
-                . 'when the shop offers it, otherwise somcp_list_categories) and compare before calling again.',
+                . 'Not to be retried blindly: if the answer is lost, read the category again with '
+                . 'somcp_get_category and compare before calling again.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

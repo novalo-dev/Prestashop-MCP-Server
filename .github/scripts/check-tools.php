@@ -30,8 +30,8 @@ declare(strict_types=1);
  * falls back to its default icon for a name it does not know, so a missing or
  * misspelt one would never fail anywhere else.
  *
- * Tools also point to each other: every tool a file names must exist, and
- * every write must name a read that shows its outcome.
+ * Tools also point to each other: every tool a file names must exist, without
+ * hedging the link, and every write must name a read that shows its outcome.
  *
  * Usage: php .github/scripts/check-tools.php [module root]
  * Exit code 0 when everything is in order, 1 otherwise.
@@ -136,7 +136,9 @@ foreach (glob($root . '/prompts/*/prompt.json') ?: [] as $file) {
 // that adds the links to it. A write must also name a read, the only way to
 // check its outcome when its answer was lost, since it is not to be retried.
 // The whole file is read, errors included, because the assistant reads those
-// too; a family written as somcp_list_* is not a name.
+// too; a family written as somcp_list_* is not a name. Since only shipped
+// tools can be named, hedging a link with "when the shop offers it" is never
+// true, and the assistant reads it as a tool that may be missing and skips it.
 $writes = [];
 foreach ($sources as $tool => $source) {
     if (preg_match('/SomcpTool::acts\(\s*SomcpPermission::(?:ADD|EDIT|DELETE)\b/', $source)) {
@@ -146,6 +148,9 @@ foreach ($sources as $tool => $source) {
 foreach ($sources as $tool => $source) {
     preg_match_all('/\bsomcp_[a-z0-9_]+(?![a-z0-9_*])/', $source, $m);
     $cited = array_unique($m[0]);
+    if (stripos($source, 'when the shop offers') !== false) {
+        $errors[] = "{$shipped[$tool]}: $tool hedges a link with \"when the shop offers\"; every tool it names exists, so name it plainly";
+    }
     foreach ($cited as $name) {
         if (!isset($shipped[$name])) {
             $errors[] = "{$shipped[$tool]}: $tool names $name, which the module does not ship; leave the link to the pull request that writes it";

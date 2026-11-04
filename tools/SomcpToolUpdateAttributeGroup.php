@@ -79,7 +79,7 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
                 . 'whole call is valid. The answer gives each field changed with its old and new value. A call '
                 . 'that would change nothing writes nothing and says changed: false. '
                 . 'Do not use it to create a group (somcp_create_attribute_group) or to change one of its values '
-                . '(somcp_update_attribute_value when the shop offers it). One group per call. '
+                . '(somcp_update_attribute_value). One group per call. '
                 . 'Not to be retried blindly: if the answer is lost, read the group again with '
                 . 'somcp_get_attribute_group and compare before calling again.',
             self::groupSchema(),

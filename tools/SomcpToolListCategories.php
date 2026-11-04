@@ -48,7 +48,7 @@ class SomcpToolListCategories
                 . 'identifiers are specific to each shop, so never assume one. Two categories can '
                 . 'share a name in different branches (Men > T-shirts, Women > T-shirts): when a '
                 . 'name comes back more than once, ask the merchant which one they mean, or read '
-                . 'each with somcp_get_category when the shop offers it, before writing anything. '
+                . 'each with somcp_get_category, before writing anything. '
                 . 'The root category is left out, since nothing can be placed in it; Home is listed. '
                 . 'Do not use it to find the products of a category: somcp_search_products does '
                 . 'that with id_category.',

@@ -54,7 +54,7 @@ class SomcpModuleSettings
     /**
      * @var string Prefix that switches a whole scope - the group of tools that
      *             need it, on the Tools and prompts tab - for the assistants
-     *             connected over MCP.
+     *             connected over MCP
      */
     public const SCOPE_PREFIX = 'scope:';
 

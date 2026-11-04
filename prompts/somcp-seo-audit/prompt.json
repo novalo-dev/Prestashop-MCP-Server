@@ -18,7 +18,8 @@
     "somcp_get_robots_txt",
     "somcp_generate_robots_txt",
     "somcp_audit_page",
-    "somcp_check_links"
+    "somcp_check_links",
+    "somcp_audit_sitemap"
   ],
   "controller": "AdminMeta",
   "action": "view",

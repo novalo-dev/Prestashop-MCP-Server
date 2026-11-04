@@ -1177,6 +1177,11 @@
       <source>Check the links of the shop's public pages</source>
       <target>Check the links of the shop's public pages</target>
     </trans-unit>
+    <!-- Audit the shop's sitemaps -->
+    <trans-unit id="1cc23cbf9de2a2ba3d72e0d949024c57" resname="Audit the shop&#x27;s sitemaps">
+      <source>Audit the shop's sitemaps</source>
+      <target>Audit the shop's sitemaps</target>
+    </trans-unit>
     <!-- Generate the robots.txt file -->
     <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
       <source>Generate the robots.txt file</source>

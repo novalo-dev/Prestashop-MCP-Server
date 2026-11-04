@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "the sitemaps of the demo shop, generated or not; the test shop has no web server running, so the sample depends on the runner", "arguments": {}, "expect": "ok", "contains": ["\"module_active\"", "\"sitemaps\"", "\"index\"", "\"last_generated\"", "\"frequency\"", "\"excluded_pages\"", "\"robots_txt_sitemaps\"", "\"missing_products\"", "\"inactive_listed\"", "\"sample_errors\"", "\"warnings\""]},
+    {"why": "no address fetched", "arguments": {"sample": 0}, "expect": "ok", "contains": ["\"sample_errors\": []"]},
+    {"why": "the files of one language only", "arguments": {"language": "en", "sample": 0}, "expect": "ok", "contains": ["\"sitemaps\""]},
+    {"why": "the language code is read whatever its case", "arguments": {"language": "EN", "sample": 0}, "expect": "ok", "contains": ["\"sitemaps\""]},
+    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read", "language: not a language of this shop"]},
+    {"why": "more than 100 addresses is refused", "arguments": {"sample": 101}, "expect": "error", "contains": ["sample: a whole number from 0 to 100"]},
+    {"why": "a negative sample is refused", "arguments": {"sample": -1}, "expect": "error", "contains": ["sample: a whole number from 0 to 100"]},
+    {"why": "a number written as text is refused, not read as the default", "arguments": {"sample": "5"}, "expect": "error", "contains": ["sample: a whole number from 0 to 100"]},
+    {"why": "a misspelt field is reported instead of being ignored", "arguments": {"samples": 5}, "expect": "error", "contains": ["samples: not a field of this tool"]},
+    {"why": "every problem is reported in the same answer", "arguments": {"sample": 101, "language": "zz"}, "expect": "error", "contains": ["sample: a whole number", "language: not a language of this shop"]}
+  ]
+}

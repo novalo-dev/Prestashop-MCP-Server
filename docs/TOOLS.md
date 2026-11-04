@@ -3217,24 +3217,46 @@ None.
 - Read only.
 
 #### `somcp_audit_sitemap`
-**State**: to write · [issue #94](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/94)
+**State**: written · [issue #94](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/94)
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
-**Does** - finds the shop's sitemaps, counts their URLs, and checks them against the active catalogue.
+**Does** - reads the XML sitemaps the **Google sitemap** module (`gsitemap`) generated for the shop, counts their addresses, and checks them against the active catalogue, robots.txt and a sample of listed addresses fetched as a visitor.
 
-**Do not use for** - robots.txt (→ `somcp_get_robots_txt`).
+**Do not use for** - robots.txt itself (→ `somcp_get_robots_txt`); following the links of the pages (→ `somcp_check_links`); one page in detail (→ `somcp_audit_page`); generating the sitemap (not offered yet).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `sample` | integer | no | how many listed URLs to fetch and check; 20 by default, 100 at most |
+| `sample` | integer | no | how many listed addresses to fetch and check, 20 by default, 0 to 100 |
+| `language` | string | no | ISO code: only that language's sitemap files; every language when left out |
 
-**Returns** - `sitemaps` (URL, `url_count`, `last_modified`), `missing_products` (active products of this shop absent from every sitemap, counted, the first 20 listed), `inactive_listed` (URLs of disabled products still listed), `sample_errors` (listed URLs answering other than 200).
+**Returns**
+
+| Field | On screen | Notes |
+|---|---|---|
+| `module_active` | - | `gsitemap` installed and enabled on the token's shop |
+| `sitemaps` | **Your sitemaps** | each `file`, `url` (on the shop's main domain), `language` (ISO code from the file name), `url_count` (`null` when the file is missing, over 50 MB or not valid XML), `last_modified` (file time), `exists` (`false` when the module lists a file missing on disk) |
+| `index` | - | `file`, `url`, `exists` of `<id_shop>_index_sitemap.xml`, and `announced` (whether a `Sitemap:` line of robots.txt points to it) |
+| `last_generated` | - | `GSITEMAP_LAST_EXPORT`, `null` before the first generation |
+| `frequency` | **How often do you update your store?** | the value as on screen (`weekly`, ...) |
+| `excluded_pages` | **Indicate the pages that you do not want to include in your sitemap files:** | the `page` names unticked |
+| `robots_txt_sitemaps` | - | the `Sitemap:` lines of robots.txt, as `somcp_get_robots_txt` returns them |
+| `missing_products` | - | active products of the token's shop visible in the catalogue and absent from every sitemap: `count`, and the first 20 as `products`, each `id_product` and `name` (default language) |
+| `inactive_listed` | - | disabled products still listed, the first 20: `url`, `id_product` |
+| `sample_errors` | - | sampled addresses answering other than 200: `url`, `status` (0 when nothing answered, or for an address outside the shop's domains, never requested), `final_url` |
+| `warnings` | - | each a `code` and `why`: `no_sitemap`, `module_inactive`, `index_not_in_robots_txt`, `stale` (generated longer ago than the frequency), `file_missing` (with its `file`) |
 
 **Notes**
-- Sitemaps are found from robots.txt, then from the gsitemap module's files at the shop root.
-- Only addresses of this shop are fetched: the host must be one of the shop's own domains (`ShopUrl` of this shop), anything else is refused before any request, redirects included, so the tool can never be used to reach another site or the internal network. GET only, a 10 second timeout, 2 MB at most per page, a user agent naming the module. The page is fetched as a visitor sees it, without the employee's session.
+- The files are read from disk at the root of the installation, where the module writes them, never over HTTP, with `libxml` network access off and the protocol's 50 MB cap per file. Only the names the module recorded for the token's shop in `gsitemap_sitemap` are read, and only plain file names.
+- The robots.txt lines come from the same reading as `somcp_get_robots_txt` (`SomcpToolGetRobotsTxt::sitemaps()`).
+- Product addresses are built with `Link::getProductLink()` in each language read and compared by path and query, so friendly URLs and their language prefix match as the module writes them. A product listed in any language counts as listed.
+- Only the sample is fetched, spread over the whole list, through the code of `somcp_audit_page` (`SomcpToolAuditPage::follow()`, `hosts()`): only the shop's own domains are requested, redirects included, 10 seconds per address and 60 seconds for the sample.
+- Read only. A shop without `gsitemap` answers with `module_active: false`, empty lists and `no_sitemap`, never a failure. The cron address and its token are never returned.
+- Errors, every one in the same answer: `sample` out of range, a `language` the shop does not have, a field the tool does not take.
+
+**Differences between 8.0.1 and 9.0.0**
+- `gsitemap` 4.2.0 / 4.4.0: the image-file check exists on 8.0.1 only; the brand priority on 9.0.0 only; the page list of 9.0.0 holds public pages only, and **best-sales** is labelled **Best sellers**. Same table, same file names, same index location.
 
 ### AEO
 

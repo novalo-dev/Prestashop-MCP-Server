@@ -114,18 +114,13 @@ class SomcpToolGetRobotsTxt
 
         $size = (int) filesize($file);
         $mtime = filemtime($file);
-        $content = (string) file_get_contents($file, false, null, 0, self::MAX_BYTES);
+        $content = self::read($file);
         if ($size > self::MAX_BYTES) {
             $warnings[] = [
                 'code' => 'too_large',
                 'why' => 'The file is over 500 KiB: search engines ignore everything after that, and so does this '
                     . 'reading.',
             ];
-        }
-        // A byte order mark left by an editor would glue itself to the first
-        // field name and hide the first line.
-        if (strncmp($content, "\xEF\xBB\xBF", 3) === 0) {
-            $content = substr($content, 3);
         }
 
         $parsed = self::parse($content);
@@ -147,6 +142,41 @@ class SomcpToolGetRobotsTxt
             'last_modified' => $mtime === false ? null : date('c', $mtime),
             'warnings' => $warnings,
         ]);
+    }
+
+    /**
+     * The Sitemap lines of the shop's robots.txt, empty when there is no file.
+     * Shared with somcp_audit_sitemap, so both tools read the file the same way.
+     *
+     * @return array<int, string>
+     */
+    public static function sitemaps(): array
+    {
+        $file = _PS_ROOT_DIR_ . '/robots.txt';
+        if (!is_file($file) || !is_readable($file)) {
+            return [];
+        }
+
+        return self::parse(self::read($file))['sitemaps'];
+    }
+
+    /**
+     * The part of the file search engines read.
+     *
+     * @param string $file
+     *
+     * @return string
+     */
+    private static function read(string $file): string
+    {
+        $content = (string) file_get_contents($file, false, null, 0, self::MAX_BYTES);
+        // A byte order mark left by an editor would glue itself to the first
+        // field name and hide the first line.
+        if (strncmp($content, "\xEF\xBB\xBF", 3) === 0) {
+            $content = substr($content, 3);
+        }
+
+        return $content;
     }
 
     /**

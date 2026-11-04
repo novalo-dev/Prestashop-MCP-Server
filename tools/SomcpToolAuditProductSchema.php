@@ -322,7 +322,7 @@ class SomcpToolAuditProductSchema
             'ean13' => $code('ean13'),
             'upc' => $code('upc'),
             'isbn' => $code('isbn'),
-        ], 'strlen');
+        ], static fn (string $value): bool => $value !== '');
         if ($gtinKey === null) {
             if ($barcodes !== []) {
                 $absent((string) array_key_first($barcodes), 'gtin13');
@@ -496,7 +496,7 @@ class SomcpToolAuditProductSchema
     }
 
     /**
-     * The @type of an object, always as a list.
+     * The JSON-LD type of an object, always as a list.
      *
      * @param array<mixed> $item
      *

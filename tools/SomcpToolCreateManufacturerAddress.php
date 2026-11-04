@@ -72,23 +72,12 @@ class SomcpToolCreateManufacturerAddress extends SomcpToolCreateSupplier
         return new SomcpTool(
             'somcp_create_manufacturer_address',
             Somcp::t('Add a brand address'),
-            'Adds one postal address to a brand (manufacturer) of this shop, with every field of the back office '
-                . 'brand address form: brand, last name, first name, address, address line 2, postal code, city, '
-                . 'country, state, DNI (national identification number), phone, mobile phone and other '
-                . 'information. Required: id_manufacturer, lastname, firstname, address1, city and country, plus '
-                . 'state when the country has states and dni when the country asks for one. '
-                . 'Take the brand from somcp_list_manufacturers, never guessed, and read '
-                . 'somcp_list_manufacturer_addresses for that brand first: the address may already be there, and '
-                . 'PrestaShop accepts the same address twice. '
-                . 'Every field is filled by the merchant: ask for each value and never invent a name, a phone '
-                . 'number or an address; you may suggest one for them to confirm. Each field is one text, the same '
-                . 'in every language. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Do not use it to change an address, which is somcp_update_manufacturer_address, nor for the '
-                . 'brand itself (somcp_create_manufacturer, somcp_update_manufacturer). One address per call: for '
-                . 'several, call it once per address and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_manufacturer_addresses for the brand '
-                . 'before anything else, because a second call adds a second address.',
+            'Adds one address to a brand, as the brand address form of Catalog > Brands & Suppliers > Brands. '
+                . 'id_manufacturer comes from somcp_list_manufacturers: never guess one. Read '
+                . 'somcp_list_manufacturer_addresses for that brand first: PrestaShop accepts the same address twice. '
+                . 'Every field is the merchant\'s: ask and never invent. To change an address use '
+                . 'somcp_update_manufacturer_address. One address per call. Not to be retried: if the answer is lost, '
+                . 'read somcp_list_manufacturer_addresses for the brand before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

@@ -49,14 +49,11 @@ class SomcpToolGetManufacturerAddress
         return new SomcpTool(
             'somcp_get_manufacturer_address',
             Somcp::t('Get a brand address'),
-            'Returns every field of one postal address of a brand (manufacturer) of this shop, like the back '
-                . 'office brand address form: brand, last name, first name, address, address line 2, postal '
-                . 'code, city, country and state as ISO codes (state null when the country has none), DNI - '
-                . 'the national ID number, phone, mobile phone and other information. '
-                . 'Identify the address by its identifier, from somcp_list_manufacturer_addresses: never guess '
-                . 'one. Do not use it for the list of addresses, which is somcp_list_manufacturer_addresses, nor '
-                . 'for the brand itself (somcp_get_manufacturer). Customer and supplier addresses are refused: '
-                . 'it reads brand addresses only.',
+            'Returns every field of one brand address, like the brand address form of Catalog > Brands & '
+                . 'Suppliers > Brands: brand, names, address lines, postal code, city, country and state as ISO codes '
+                . '(state null without one), DNI, phones and other information. id_address comes from '
+                . 'somcp_list_manufacturer_addresses: never guess one. For the brand itself use somcp_get_manufacturer. '
+                . 'Customer and supplier addresses are refused.',
             [
                 'type' => 'object',
                 'properties' => [

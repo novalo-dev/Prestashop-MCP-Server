@@ -50,14 +50,11 @@ class SomcpToolListManufacturerAddresses
         return new SomcpTool(
             'somcp_list_manufacturer_addresses',
             Somcp::t('List brand addresses'),
-            'Lists the postal addresses of the brands (manufacturers) of this shop, like the Brand '
-                . 'addresses list of the back office: identifier, brand, last name, first name, postal code, '
-                . 'city, country ISO code and country name. Filters like the columns of that list: '
-                . 'id_manufacturer, taken from somcp_list_manufacturers, for one brand, and parts of the last '
-                . 'name, first name, postal code or city, or a country ISO code. Take an address identifier from here rather than '
-                . 'assuming one. Every field of one address is read with somcp_get_manufacturer_address. '
-                . 'Do not use it for the brands themselves (somcp_list_manufacturers), '
-                . 'nor for customer or supplier addresses: it lists brand addresses only.',
+            'Lists the brand addresses of this shop, like the Brand addresses list of Catalog > Brands & '
+                . 'Suppliers > Brands: identifier, brand, names, postal code, city and country. The filters follow the '
+                . 'columns of that list. Take an address identifier from here rather than guess one, and read one '
+                . 'address in full with somcp_get_manufacturer_address. For the brands themselves use '
+                . 'somcp_list_manufacturers; customer and supplier addresses are not listed.',
             [
                 'type' => 'object',
                 'properties' => [

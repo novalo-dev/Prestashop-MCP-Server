@@ -59,22 +59,12 @@ class SomcpToolUpdateManufacturerAddress extends SomcpToolCreateManufacturerAddr
         return new SomcpTool(
             'somcp_update_manufacturer_address',
             Somcp::t('Change a brand address'),
-            'Changes one existing postal address of a brand (manufacturer) of this shop. Everything '
-                . 'somcp_create_manufacturer_address can write can be changed here, under the same names and with '
-                . 'the same rules - lengths, forbidden characters, the country deciding whether a state, a DNI or a '
-                . 'postal code format is needed. Only what is given changes: a value left out is kept. '
-                . 'id_manufacturer moves the address to another brand. When the country changes, give the state '
-                . 'again if the new country has states. Each field is one text, the same in every language. '
-                . 'Take the address from somcp_list_manufacturer_addresses, never guessed, and read it with '
-                . 'somcp_get_manufacturer_address to know what it holds. Customer and supplier addresses are '
-                . 'refused: it changes brand addresses only. Show the merchant what will change and call once they '
-                . 'agree. Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'The answer gives each field changed with its old and new value. A call that would change nothing '
-                . 'writes nothing and says changed: false. '
-                . 'Do not use it to add an address (somcp_create_manufacturer_address) nor for the brand itself '
-                . '(somcp_update_manufacturer). One address per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the address again with '
-                . 'somcp_get_manufacturer_address and compare before calling again.',
+            'Changes one brand address, as the brand address form of Catalog > Brands & Suppliers > Brands, under '
+                . 'the names and rules of somcp_create_manufacturer_address. id_address comes from '
+                . 'somcp_list_manufacturer_addresses: never guess one; read it first with '
+                . 'somcp_get_manufacturer_address. Only what is given changes. Customer and supplier addresses are refused. Show the merchant the change and call '
+                . 'once they agree. The answer gives the old and new value of each field changed. One address per call. '
+                . 'Not to be retried: if the answer is lost, read somcp_get_manufacturer_address before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

@@ -85,6 +85,15 @@ from the list and is never guessed, that a brand name can exist twice so the
 list is read before a creation, who fills each field, that disabling a brand
 keeps its products on sale, and which read checks a change.
 
+**Shorter brand address tools.** The five tools of the Brand addresses list of
+Catalog > Brands & Suppliers > Brands - list, read, add, change and delete an
+address - now describe themselves in a few sentences, lighter for the
+assistant on every step. What matters is kept: that the brand and the address
+identifiers come from the lists and are never guessed, that the same address
+can be added twice so the list is read first, that every field comes from you
+and is never invented, that customer and supplier addresses are refused, and
+which read checks a change.
+
 ### Fixed
 
 **The module passes the PrestaShop Addons validator again.** The check

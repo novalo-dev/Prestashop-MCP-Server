@@ -1,0 +1,122 @@
+name: UI tests
+
+# A real browser through the module's back office, on the official PrestaShop
+# images: they carry the back office as a merchant gets it, built scripts and
+# styles included, which the sources the integration workflow installs from
+# do not. A few pairs rather than the whole matrix, the way PrestaShop's own
+# sanity run does it: the oldest and the newest PrestaShop, both browsers,
+# both databases.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  # Build for Release runs this workflow on the commit it is about to publish,
+  # and publishes only if every job passed.
+  workflow_call:
+
+permissions:
+  contents: read
+
+# The event is part of the group: the run a release calls must neither cancel
+# nor be cancelled by the one a push to main started on the same branch.
+concurrency:
+  group: ui-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sanity:
+    name: UI sanity (PS ${{ matrix.prestashop }}, PHP ${{ matrix.php }}, ${{ matrix.browser }}, ${{ matrix.db }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { prestashop: '8.0.0', php: '8.1', browser: chromium, db: mysql, db_image: 'mysql:8.0' }
+          - { prestashop: '9.2.0', php: '8.5', browser: chromium, db: mysql, db_image: 'mysql:8.0' }
+          - { prestashop: '9.2.0', php: '8.5', browser: firefox, db: mysql, db_image: 'mysql:8.0' }
+          - { prestashop: '9.2.0', php: '8.5', browser: chromium, db: mariadb, db_image: 'mariadb:11.4' }
+    env:
+      ADMIN_DIR: admin-ui
+      ADMIN_MAIL: demo@example.com
+      ADMIN_PASSWD: Somcp-ui-test-1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: module
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+
+      # The database and the shop share a network of their own, so the shop
+      # finds its database by name, as it would on a host.
+      - name: Start the database and PrestaShop ${{ matrix.prestashop }}
+        run: |
+          docker network create shopnet
+          docker run -d --name db --network shopnet \
+            -e MYSQL_ROOT_PASSWORD=root -e MARIADB_ROOT_PASSWORD=root -e MYSQL_DATABASE=prestashop \
+            "${{ matrix.db_image }}"
+          docker run -d --name shop --network shopnet -p 8080:80 \
+            -e DB_SERVER=db -e DB_USER=root -e DB_PASSWD=root -e DB_NAME=prestashop \
+            -e PS_INSTALL_AUTO=1 -e PS_DOMAIN=localhost:8080 -e PS_LANGUAGE=en -e PS_COUNTRY=fr \
+            -e PS_FOLDER_ADMIN="$ADMIN_DIR" -e ADMIN_MAIL="$ADMIN_MAIL" -e ADMIN_PASSWD="$ADMIN_PASSWD" \
+            "prestashop/prestashop:${{ matrix.prestashop }}-${{ matrix.php }}"
+
+      # The image installs the shop on its first start; until then the front
+      # office does not answer. The end of its log goes to an annotation when
+      # it never comes up, since nobody opens the step log first.
+      - name: Wait for the install
+        run: |
+          for _ in $(seq 1 120); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ || true)
+            [ "$code" = "200" ] && exit 0
+            sleep 5
+          done
+          docker logs shop > shop.log 2>&1 || true
+          echo "::error title=Shop not installed::$(tail -n 40 shop.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"
+          exit 1
+
+      # The back office refuses to sign anyone in while the install folder is
+      # still there.
+      - name: Remove the install folder
+        run: docker exec shop sh -c 'rm -rf /var/www/html/install /var/www/html/install-dev'
+
+      - name: Install somcp
+        run: |
+          # The module as a merchant receives it, with its Composer
+          # dependencies as the builds add them.
+          mkdir somcp
+          git -C module archive HEAD | tar -x -C somcp
+          composer install --working-dir=somcp --no-dev --no-interaction --no-progress --optimize-autoloader
+          docker cp somcp shop:/var/www/html/modules/somcp
+          docker exec shop chown -R www-data:www-data /var/www/html/modules/somcp
+          set -o pipefail
+          docker exec -u www-data shop php bin/console prestashop:module install somcp 2>&1 | tee module.log \
+            || { echo "::error title=Module install failed::$(tail -n 40 module.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Playwright and ${{ matrix.browser }}
+        working-directory: module/dev/ui-tests
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Sanity run
+        working-directory: module/dev/ui-tests
+        run: node sanity.mjs "http://localhost:8080/$ADMIN_DIR/" "$ADMIN_MAIL" "$ADMIN_PASSWD" ${{ matrix.browser }} "$GITHUB_WORKSPACE/ui-shots"
+
+      # What the browser saw when a check failed, and what the shop logged.
+      - name: Shop log
+        if: failure()
+        run: |
+          docker logs shop 2>&1 | tail -n 200
+          docker exec shop sh -c 'tail -n 100 /var/www/html/var/logs/*.log 2>/dev/null' || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ui-shots-${{ matrix.prestashop }}-${{ matrix.browser }}-${{ matrix.db }}
+          path: ui-shots
+          if-no-files-found: ignore

@@ -978,22 +978,56 @@ On 8.0.1 the filter label is **Free Shipping**, on 9.0.0 **Free shipping**; the 
 - `name` filters as the **Name** column of that list does, the same parameter as `somcp_list_manufacturers`, `somcp_list_suppliers` and `somcp_list_attachments`.
 
 #### `somcp_list_customer_groups`
-**State**: draft · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)
+**State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)
 **Nature**: `acts(VIEW, 'AdminGroups')` · **Scope**: `mcp.customers.read`
 
-**Does** - lists the customer groups (Visitor, Guest, Customer and the shop's own) with their identifiers.
+**Does** - lists the customer groups of the token's shop, as **Shop
+Parameters > Customer Settings > Groups** shows them: every column of the
+list, and the groups the shop uses for visitors, guests and registered
+customers (**Default groups options**). It is the source of the `id_group`
+that `somcp_create_customer`, `somcp_update_customer`, the category tools and
+the specific prices of the product tools take. Read only.
 
-**Do not use for** - the customers of a group (→ `somcp_search_customers`).
+**Do not use for** - the customers of a group (→ `somcp_search_customers`);
+one customer's groups (→ `somcp_get_customer`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `name` | string | no | part of **Group name**, case-insensitive; the same parameter as `somcp_list_suppliers`, `somcp_list_manufacturers` and `somcp_list_attachments` |
+| `language` | string | no | ISO code of the language to read the names in, shop default otherwise; a language the shop does not have is refused, naming the ones it has |
 
-**Returns** - per group: `id_group`, `name`, `reduction` (percent), `price_display_method` (tax included or excluded), `show_prices`, `members_count`.
+**Returns** - `groups`, per group:
 
-**Notes** - needed by a specific price aimed at one group.
+| Field | On screen | Notes |
+|---|---|---|
+| `id_group` | **ID** | the name `group_ids`, `id_default_group` and `somcp_get_customer` already use |
+| `name` | **Group name** | in `language` |
+| `reduction` | **Discount (%)** | number, percent as shown (`10` for 10 %) |
+| `price_display_method` | **Price display method** | `tax_excluded` or `tax_included` |
+| `show_prices` | **Show prices** | bool |
+| `members_count` | **Members** | customers not deleted, among those the token's shop shares |
+| `date_add` | **Creation date** | ISO 8601, as `somcp_get_customer` gives its dates |
+| `default_for` | **Default groups options** | list of `visitors`, `guests`, `customers` (one group can hold several); empty when none |
+
+Plus `count`, `customer_groups_enabled` (**Customer groups** of
+**Performance**: when false the shop ignores groups for prices), `language`
+and `language_id`. Groups of the token's shop only (`group_shop`), sorted by
+**ID** as the list.
+
+**Notes**
+- Read with one query on `group`, `group_lang` and `group_shop` for the
+  token's shop, and the member count as `AdminGroupsController` writes it,
+  with the customer sharing of the token's shop (`Shop::getSharedShops()`)
+  rather than the global context. `Group::getGroups()` takes the shop from the
+  context.
+- **Category discount** (`group_reduction`) and **Authorized modules** are
+  settings of one group, shown only on its edit form: they belong to a future
+  `somcp_get_customer_group`, not to the list.
+- Same legacy page, same columns, same options and same tables on PrestaShop
+  8.0.1 and 9.0.0. The page is a tab of **Customer Settings**, not in the side
+  menu, so the right asked is `view` on `AdminGroups` itself.
 
 ### Diagnostics
 
@@ -3648,7 +3682,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `customer` (name, email or company).
 
-**Tools** - `somcp_ping`, `somcp_search_customers`, `somcp_get_customer`, `somcp_search_orders`, `somcp_create_customer`, `somcp_update_customer`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_search_customers`, `somcp_get_customer`, `somcp_search_orders`, `somcp_create_customer`, `somcp_update_customer`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search, then read the one customer the merchant means; the email is more reliable than the name; personal data stays in the answer it was asked for; no password ever goes through the conversation.
 

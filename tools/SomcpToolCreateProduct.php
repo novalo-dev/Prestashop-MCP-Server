@@ -483,7 +483,7 @@ class SomcpToolCreateProduct
                                     'combination' => ['type' => 'integer', 'description' => 'Position in combinations, from 0. Left out: the whole product.'],
                                     'currency' => ['type' => 'string', 'description' => 'ISO code, left out for all currencies.'],
                                     'country' => ['type' => 'string', 'description' => 'ISO code, left out for all countries.'],
-                                    'id_group' => ['type' => 'integer', 'description' => 'As listed under Customers > Groups, 0 for all; ask the merchant.'],
+                                    'id_group' => ['type' => 'integer', 'description' => 'From somcp_list_customer_groups, 0 for all; ask the merchant.'],
                                     'id_customer' => ['type' => 'integer', 'description' => '0 for all customers.'],
                                     'from_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
                                     'price' => ['type' => 'number', 'description' => 'A fixed price tax excluded, or -1 (the default) to keep the product price.'],
@@ -1918,7 +1918,7 @@ class SomcpToolCreateProduct
         if (isset($item['id_group'])) {
             $idGroup = self::integer($item['id_group']);
             if ($idGroup === null || $idGroup < 0 || ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup)))) {
-                $errors[] = $path . '.id_group: no such customer group. Ask the merchant for one listed under Customers > Groups, 0 for all.';
+                $errors[] = $path . '.id_group: no such customer group. Take one from somcp_list_customer_groups, 0 for all.';
             }
             $rule['id_group'] = (int) $idGroup;
         }

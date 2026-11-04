@@ -8,6 +8,7 @@ Never answer from memory or from an earlier answer: accounts change.
 - `somcp_ping`
 - `somcp_search_customers`
 - `somcp_get_customer`
+- `somcp_list_customer_groups`
 - `somcp_search_orders`
 - `somcp_create_customer`
 - `somcp_update_customer`
@@ -56,7 +57,8 @@ When the merchant asks to change a customer, find the `id_customer` with
 `somcp_search_customers`, read the account with `somcp_get_customer`, then call
 `somcp_update_customer` with only the fields the merchant wants changed, under
 the names `somcp_get_customer` returns. `group_ids` is the full list of groups
-after the change, not the groups to add. Tell the merchant each change from the
+after the change, not the groups to add, each `id_group` taken from
+`somcp_list_customer_groups`, never guessed. Tell the merchant each change from the
 answer's `changes`, old and new value. The password is never changed here: the
 customer uses "Forgot your password?" on the shop. If the answer is lost, read
 `somcp_get_customer` again before calling a second time.

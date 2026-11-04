@@ -221,6 +221,7 @@ Grouped by back office page, each object's reads before its writes. A new tool g
 | `somcp_get_customer` | `mcp.customers.read` | `view` on `AdminCustomers` | read |
 | `somcp_create_customer` | `mcp.customers.write` | `add` on `AdminCustomers` | write |
 | `somcp_update_customer` | `mcp.customers.write` | `edit` on `AdminCustomers` | write |
+| `somcp_list_customer_groups` | `mcp.customers.read` | `view` on `AdminGroups` | read |
 
 ### Statistics
 

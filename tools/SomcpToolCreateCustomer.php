@@ -154,13 +154,13 @@ class SomcpToolCreateCustomer
                     'group_ids' => [
                         'type' => 'array',
                         'items' => ['type' => 'integer'],
-                        'description' => 'Group access: the id_group of each group of the customer. Every group of '
-                            . 'the shop by default, as the form preselects them.',
+                        'description' => 'Group access: the id_group of each group of the customer, from '
+                            . 'somcp_list_customer_groups. Every group of the shop by default, as the form preselects them.',
                     ],
                     'id_default_group' => [
                         'type' => 'integer',
-                        'description' => 'Default customer group, which must be one of group_ids. The shop\'s '
-                            . 'Customer group by default.',
+                        'description' => 'Default customer group (an id_group from somcp_list_customer_groups), which '
+                            . 'must be one of group_ids. The shop\'s Customer group by default.',
                     ],
                     'company' => [
                         'type' => 'string',

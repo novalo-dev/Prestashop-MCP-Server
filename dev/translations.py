@@ -646,6 +646,10 @@ T = {
  "Créer un statut de commande",
  "Crear un estado de pedido",
  "Einen Bestellstatus anlegen"),
+"List customer groups": (
+ "Lister les groupes de clients",
+ "Listar los grupos de clientes",
+ "Kundengruppen auflisten"),
 "List return statuses": (
  "Lister les statuts de retour",
  "Listar los estados de devolución",

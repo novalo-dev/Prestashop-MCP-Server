@@ -16,6 +16,17 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Listing the customer groups.** The new tool `somcp_list_customer_groups`
+lists the customer groups of the shop as **Shop Parameters > Customer
+Settings > Groups** shows them: name, discount, price display method, whether
+prices are shown, number of members and creation date, plus the groups used by
+default for visitors, guests and registered customers. The assistant now takes
+the group of a customer, of a category or of a specific price from this list
+instead of guessing it. It needs the `view` right on the **Groups** page and
+is part of the **Find a customer** and **Manage products** prompts.
+
 ### Changed
 
 **The server address shows the shop's "page not found" in a browser.** The

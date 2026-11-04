@@ -125,12 +125,12 @@ class SomcpToolUpdateCustomer
                         'type' => 'array',
                         'items' => ['type' => 'integer'],
                         'description' => 'Group access: the full list of the customer\'s id_group after the change, '
-                            . 'not the groups to add.' . $kept,
+                            . 'not the groups to add, each from somcp_list_customer_groups.' . $kept,
                     ],
                     'id_default_group' => [
                         'type' => 'integer',
-                        'description' => 'Default customer group, which must be one of the customer\'s groups after '
-                            . 'the change.' . $kept,
+                        'description' => 'Default customer group (an id_group from somcp_list_customer_groups), which '
+                            . 'must be one of the customer\'s groups after the change.' . $kept,
                     ],
                     'private_note' => [
                         'type' => 'string',

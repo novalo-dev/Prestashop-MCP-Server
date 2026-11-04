@@ -77,6 +77,21 @@ class SomcpConfig
      * its guides.
      */
     public const PROMPTS_OFF = 'SOMCP_PROMPTS_OFF';
+
+    /**
+     * @var string Tools switched off for the built-in assistant only.
+     *
+     * The two lists above are what assistants connected over MCP are offered;
+     * the chat in the back office reads these instead, so a merchant can keep
+     * a tool for the assistant that asks before every change while hiding it
+     * from the ones that connect from outside - or the other way round. They
+     * follow the "value of its own" box of their counterpart, which is the
+     * one box the page shows for each list.
+     */
+    public const TOOLS_OFF_CHAT = 'SOMCP_TOOLS_OFF_CHAT';
+
+    /** @var string Prompts switched off for the built-in assistant only. */
+    public const PROMPTS_OFF_CHAT = 'SOMCP_PROMPTS_OFF_CHAT';
     public const ADMIN_DIR = 'SOMCP_ADMIN_DIR';
 
     /**
@@ -129,6 +144,8 @@ class SomcpConfig
             self::TOOLS_TTL => '300',
             self::TOOLS_OFF => '',
             self::PROMPTS_OFF => '',
+            self::TOOLS_OFF_CHAT => '',
+            self::PROMPTS_OFF_CHAT => '',
             self::ADMIN_DIR => '',
             // Left empty on purpose: the value is a secret, and a secret
             // written by seed() would be the same on every shop that installed

@@ -14,7 +14,7 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
-## Unreleased
+## 1.2.1 - 2026-11-04
 
 ### Added
 
@@ -48,6 +48,18 @@ right on **Shop Parameters > Traffic & SEO** and is part of the **Audit and
 improve SEO** prompt.
 
 ### Changed
+
+**Each tool and prompt can be switched for the connected assistants and for
+the built-in assistant apart.** On the **Tools and prompts** tab, the box in
+front of each tool and prompt is replaced by two switches on the right: one
+for the assistants connected over MCP, such as Claude or ChatGPT, and one for
+the assistant built into your back office. You can keep a tool for the
+built-in assistant, which asks before every change, and hide it from the
+assistants that connect from outside, or the other way round. Each list also
+has a search field, which finds a tool or a prompt by its name, its title, its
+publisher or the permission it needs. Nothing changes when you update: a tool
+or prompt you had switched off stays off in both columns, and the built-in
+assistant can switch either column when you ask it to.
 
 **The server address shows the shop's "page not found" in a browser.** The
 address you give to an assistant used to answer a browser with a blank error

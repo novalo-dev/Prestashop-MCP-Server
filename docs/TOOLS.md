@@ -164,6 +164,10 @@ tools that are off, not the ones that are on: a tool added by an update works
 without anyone going to allow it, and one switched off stays off even if the
 module publishing it is reinstalled. A tool that is off is left out of the
 listing, refused if called anyway, and stops making its scope worth granting.
+There are two such lists, one per column of the Tools and prompts tab: one for
+the assistants connected over MCP, one for the built-in assistant. A tool can
+be kept for the assistant that asks before every change and hidden from the
+ones that connect from outside, or the other way round. Prompts work the same.
 
 **Shop, and the employee behind the token.** Everything is bound to the shop
 the token belongs to, and the account is checked on every call rather than once

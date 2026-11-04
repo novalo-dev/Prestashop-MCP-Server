@@ -757,10 +757,35 @@
       <source>Available tools</source>
       <target>Available tools</target>
     </trans-unit>
-    <!-- What an assistant may ask this shop to do. A tool switched off here is offered to nobody, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs. -->
-    <trans-unit id="01c4b521fae87e2d7c23cab78640583b" resname="What an assistant may ask this shop to do. A tool switched off here is offered to nobody, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.">
-      <source>What an assistant may ask this shop to do. A tool switched off here is offered to nobody, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.</source>
-      <target>What an assistant may ask this shop to do. A tool switched off here is offered to nobody, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.</target>
+    <!-- What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs. -->
+    <trans-unit id="90d3d65d93d4388a9c120e8bdbe0756c" resname="What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.">
+      <source>What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.</source>
+      <target>What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.</target>
+    </trans-unit>
+    <!-- Search a tool -->
+    <trans-unit id="58ebd9c24b715ba8b7ac6935cfcf38fd" resname="Search a tool">
+      <source>Search a tool</source>
+      <target>Search a tool</target>
+    </trans-unit>
+    <!-- Search a prompt -->
+    <trans-unit id="253997e9f16ffab58ecb3590b79c4bee" resname="Search a prompt">
+      <source>Search a prompt</source>
+      <target>Search a prompt</target>
+    </trans-unit>
+    <!-- No tool matches this search. -->
+    <trans-unit id="713bc5b1c96ad698dd67c2614165ae66" resname="No tool matches this search.">
+      <source>No tool matches this search.</source>
+      <target>No tool matches this search.</target>
+    </trans-unit>
+    <!-- No prompt matches this search. -->
+    <trans-unit id="cfedba852182bfc55be130cee3fc0526" resname="No prompt matches this search.">
+      <source>No prompt matches this search.</source>
+      <target>No prompt matches this search.</target>
+    </trans-unit>
+    <!-- (filtered from %all%) -->
+    <trans-unit id="1701e4292513d19ad887866e22ade68d" resname="(filtered from %all%)">
+      <source>(filtered from %all%)</source>
+      <target>(filtered from %all%)</target>
     </trans-unit>
     <!-- On -->
     <trans-unit id="521c36a31c2762741cf0f8890cbe05e3" resname="On">

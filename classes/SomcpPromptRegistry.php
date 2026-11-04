@@ -185,22 +185,25 @@ class SomcpPromptRegistry
      * Whether the merchant left this prompt switched on for this shop.
      *
      * @param string $name
+     * @param bool $chat true for the built-in assistant, which has its own list
      *
      * @return bool
      */
-    public static function isEnabled(string $name): bool
+    public static function isEnabled(string $name, bool $chat = false): bool
     {
-        return !in_array($name, self::disabled(), true);
+        return !in_array($name, self::disabled($chat), true);
     }
 
     /**
      * The prompts switched off for the shop this request belongs to.
      *
+     * @param bool $chat true for the built-in assistant's list
+     *
      * @return array<int, string>
      */
-    public static function disabled(): array
+    public static function disabled(bool $chat = false): array
     {
-        $raw = trim(SomcpConfig::get(SomcpConfig::PROMPTS_OFF));
+        $raw = trim(SomcpConfig::get($chat ? SomcpConfig::PROMPTS_OFF_CHAT : SomcpConfig::PROMPTS_OFF));
         if ($raw === '') {
             return [];
         }

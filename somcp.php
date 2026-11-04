@@ -105,7 +105,7 @@ class Somcp extends Module
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '1.2.0';
+        $this->version = '1.2.1';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1117,11 +1117,17 @@ class Somcp extends Module
     {
         $inheritable = SomcpConfig::inheritableContext();
         $ownFields = [];
+        // The built-in assistant's lists sit in the same tables as the others
+        // and share their one "value of its own" box.
+        $boxOf = [
+            SomcpConfig::TOOLS_OFF_CHAT => SomcpConfig::TOOLS_OFF,
+            SomcpConfig::PROMPTS_OFF_CHAT => SomcpConfig::PROMPTS_OFF,
+        ];
         foreach (array_keys(SomcpConfig::defaults()) as $key) {
             // A field whose "own value" box is unchecked is not saved at all:
             // its row at this level is removed and the value comes from above.
             if ($inheritable && $key !== SomcpConfig::ADMIN_DIR
-                && Tools::getValue('somcp_own_' . $key) !== '1') {
+                && Tools::getValue('somcp_own_' . ($boxOf[$key] ?? $key)) !== '1') {
                 SomcpConfig::inherit($key);
 
                 continue;
@@ -1173,10 +1179,12 @@ class Somcp extends Module
 
         if (isset($ownFields[SomcpConfig::TOOLS_OFF])) {
             SomcpConfig::set(SomcpConfig::TOOLS_OFF, $this->readToolSwitches());
+            SomcpConfig::set(SomcpConfig::TOOLS_OFF_CHAT, $this->readToolSwitches(true));
         }
 
         if (isset($ownFields[SomcpConfig::PROMPTS_OFF])) {
             SomcpConfig::set(SomcpConfig::PROMPTS_OFF, $this->readPromptSwitches());
+            SomcpConfig::set(SomcpConfig::PROMPTS_OFF_CHAT, $this->readPromptSwitches(true));
         }
 
         if ($errors !== []) {
@@ -1198,16 +1206,18 @@ class Somcp extends Module
      * off. Dropping it would quietly switch it back on the moment that module
      * was enabled again, which is not what the merchant asked for.
      *
+     * @param bool $chat true for the Built-in assistant column
+     *
      * @return string
      */
-    private function readToolSwitches(): string
+    private function readToolSwitches(bool $chat = false): string
     {
         $registry = SomcpToolRegistry::getInstance();
-        $ticked = Tools::getValue('somcp_tool_on');
+        $ticked = Tools::getValue($chat ? 'somcp_tool_chat' : 'somcp_tool_on');
         $ticked = is_array($ticked) ? $ticked : [];
 
         $off = [];
-        foreach (SomcpToolRegistry::disabled() as $name) {
+        foreach (SomcpToolRegistry::disabled($chat) as $name) {
             if (!$registry->has($name)) {
                 $off[] = $name;
             }
@@ -1229,16 +1239,18 @@ class Somcp extends Module
      * of what exists comes from the registry, and a prompt already off whose
      * module is not loaded right now stays off.
      *
+     * @param bool $chat true for the Built-in assistant column
+     *
      * @return string
      */
-    private function readPromptSwitches(): string
+    private function readPromptSwitches(bool $chat = false): string
     {
         $registry = SomcpPromptRegistry::getInstance();
-        $ticked = Tools::getValue('somcp_prompt_on');
+        $ticked = Tools::getValue($chat ? 'somcp_prompt_chat' : 'somcp_prompt_on');
         $ticked = is_array($ticked) ? $ticked : [];
 
         $off = [];
-        foreach (SomcpPromptRegistry::disabled() as $name) {
+        foreach (SomcpPromptRegistry::disabled($chat) as $name) {
             if ($registry->get($name) === null) {
                 $off[] = $name;
             }
@@ -1279,6 +1291,7 @@ class Somcp extends Module
                 'asks' => implode(', ', $asks),
                 'permission' => SomcpPermission::label($prompt->getRequiredPermissions()),
                 'on' => SomcpPromptRegistry::isEnabled($name),
+                'chat' => SomcpPromptRegistry::isEnabled($name, true),
             ];
         }
 
@@ -1329,6 +1342,7 @@ class Somcp extends Module
                 'permission' => SomcpPermission::label($tool->getRequiredPermissions()),
                 'writes' => ($described['annotations']['readOnlyHint'] ?? true) === false,
                 'on' => SomcpToolRegistry::isEnabled($name),
+                'chat' => SomcpToolRegistry::isEnabled($name, true),
             ];
         }
 

@@ -126,25 +126,28 @@
             <div class="panel">
                 <div class="panel-heading"><i class="icon-wrench"></i> {l s='Available tools' d='Modules.Somcp.Admin'} <span class="badge">{$somcp_tools_count|intval}</span></div>
                 {include file='./_inherit.tpl' field='SOMCP_TOOLS_OFF'}
-                <p class="help-block">{l s='What an assistant may ask this shop to do. A tool switched off here is offered to nobody, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.' d='Modules.Somcp.Admin'}</p>
+                <p class="help-block">{l s='What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.' d='Modules.Somcp.Admin'}</p>
                 {if $somcp_tools}
+                    {* No name: the search only filters the rows on screen and is
+                       never posted with the settings. *}
+                    <input type="search" class="form-control somcp-tools-search" data-somcp-search
+                           placeholder="{l s='Search a tool' d='Modules.Somcp.Admin'}"
+                           aria-label="{l s='Search a tool' d='Modules.Somcp.Admin'}"
+                           data-somcp-none="{l s='No tool matches this search.' d='Modules.Somcp.Admin'}">
                     <div class="somcp-tools-scroll">
                     <table class="table somcp-tools">
                         <thead>
                         <tr>
-                            <th class="somcp-tool-on">{l s='On' d='Modules.Somcp.Admin'}</th>
                             <th>{l s='Tool' d='Modules.Somcp.Admin'}</th>
                             <th>{l s='Published by' d='Modules.Somcp.Admin'}</th>
                             <th>{l s='Requires' d='Modules.Somcp.Admin'}</th>
+                            <th class="somcp-tool-on">{l s='Connected assistants' d='Modules.Somcp.Admin'}</th>
+                            <th class="somcp-tool-on">{l s='Built-in assistant' d='Modules.Somcp.Admin'}</th>
                         </tr>
                         </thead>
                         <tbody>
                         {foreach from=$somcp_tools item=tool}
                             <tr>
-                                <td class="somcp-tool-on">
-                                    <input type="checkbox" name="somcp_tool_on[{$tool.name|escape:'html':'UTF-8'}]"
-                                           value="1"{if $tool.on} checked{/if}>
-                                </td>
                                 <td>
                                     <strong>{$tool.title|escape:'html':'UTF-8'}</strong>
                                     {if $tool.writes}
@@ -160,6 +163,14 @@
                                     {if $tool.permission}{$tool.permission|escape:'html':'UTF-8'}
                                     {else}<span class="text-muted">{l s='no particular permission' d='Modules.Somcp.Admin'}</span>{/if}
                                 </td>
+                                <td class="somcp-tool-on">
+                                    <input type="checkbox" class="somcp-toggle" name="somcp_tool_on[{$tool.name|escape:'html':'UTF-8'}]"
+                                           value="1" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $tool.on} checked{/if}>
+                                </td>
+                                <td class="somcp-tool-on">
+                                    <input type="checkbox" class="somcp-toggle" name="somcp_tool_chat[{$tool.name|escape:'html':'UTF-8'}]"
+                                           value="1" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $tool.chat} checked{/if}>
+                                </td>
                             </tr>
                         {/foreach}
                         </tbody>
@@ -174,7 +185,8 @@
                             &laquo; {l s='Previous' d='Modules.Somcp.Admin'}
                         </button>
                         <span class="somcp-tools-count"
-                              data-somcp-range="{l s='Tools %from% to %to% of %total%' d='Modules.Somcp.Admin' js=1}"></span>
+                              data-somcp-range="{l s='Tools %from% to %to% of %total%' d='Modules.Somcp.Admin' js=1}"
+                              data-somcp-filtered="{l s='(filtered from %all%)' d='Modules.Somcp.Admin' js=1}"></span>
                         <button type="button" class="btn btn-default btn-sm" data-somcp-page="1">
                             {l s='Next' d='Modules.Somcp.Admin'} &raquo;
                         </button>
@@ -189,24 +201,25 @@
                 {include file='./_inherit.tpl' field='SOMCP_PROMPTS_OFF'}
                 <p class="help-block">{l s='A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here.' d='Modules.Somcp.Admin'}</p>
                 {if $somcp_prompts}
+                    <input type="search" class="form-control somcp-tools-search" data-somcp-search
+                           placeholder="{l s='Search a prompt' d='Modules.Somcp.Admin'}"
+                           aria-label="{l s='Search a prompt' d='Modules.Somcp.Admin'}"
+                           data-somcp-none="{l s='No prompt matches this search.' d='Modules.Somcp.Admin'}">
                     <div class="somcp-tools-scroll">
                     <table class="table somcp-tools">
                         <thead>
                         <tr>
-                            <th class="somcp-tool-on">{l s='On' d='Modules.Somcp.Admin'}</th>
                             <th>{l s='Prompt' d='Modules.Somcp.Admin'}</th>
                             <th>{l s='Published by' d='Modules.Somcp.Admin'}</th>
                             <th>{l s='Asks for' d='Modules.Somcp.Admin'}</th>
                             <th>{l s='Requires' d='Modules.Somcp.Admin'}</th>
+                            <th class="somcp-tool-on">{l s='Connected assistants' d='Modules.Somcp.Admin'}</th>
+                            <th class="somcp-tool-on">{l s='Built-in assistant' d='Modules.Somcp.Admin'}</th>
                         </tr>
                         </thead>
                         <tbody>
                         {foreach from=$somcp_prompts item=prompt}
                             <tr>
-                                <td class="somcp-tool-on">
-                                    <input type="checkbox" name="somcp_prompt_on[{$prompt.name|escape:'html':'UTF-8'}]"
-                                           value="1"{if $prompt.on} checked{/if}>
-                                </td>
                                 <td>
                                     <strong>{$prompt.title|escape:'html':'UTF-8'}</strong>
                                     <br><code>{$prompt.name|escape:'html':'UTF-8'}</code>
@@ -224,6 +237,14 @@
                                     {if $prompt.permission}{$prompt.permission|escape:'html':'UTF-8'}
                                     {else}<span class="text-muted">{l s='no particular permission' d='Modules.Somcp.Admin'}</span>{/if}
                                 </td>
+                                <td class="somcp-tool-on">
+                                    <input type="checkbox" class="somcp-toggle" name="somcp_prompt_on[{$prompt.name|escape:'html':'UTF-8'}]"
+                                           value="1" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $prompt.on} checked{/if}>
+                                </td>
+                                <td class="somcp-tool-on">
+                                    <input type="checkbox" class="somcp-toggle" name="somcp_prompt_chat[{$prompt.name|escape:'html':'UTF-8'}]"
+                                           value="1" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $prompt.chat} checked{/if}>
+                                </td>
                             </tr>
                         {/foreach}
                         </tbody>
@@ -234,7 +255,8 @@
                             &laquo; {l s='Previous' d='Modules.Somcp.Admin'}
                         </button>
                         <span class="somcp-tools-count"
-                              data-somcp-range="{l s='Prompts %from% to %to% of %total%' d='Modules.Somcp.Admin' js=1}"></span>
+                              data-somcp-range="{l s='Prompts %from% to %to% of %total%' d='Modules.Somcp.Admin' js=1}"
+                              data-somcp-filtered="{l s='(filtered from %all%)' d='Modules.Somcp.Admin' js=1}"></span>
                         <button type="button" class="btn btn-default btn-sm" data-somcp-page="1">
                             {l s='Next' d='Modules.Somcp.Admin'} &raquo;
                         </button>

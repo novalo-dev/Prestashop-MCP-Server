@@ -668,6 +668,26 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
             || !SomcpToolRegistry::isEnabled('somcp_ping')) {
             $failures[] = 'assistant: a tool could not be switched off and on again from the chat';
         }
+        // The two columns of the Tools and prompts tab are two lists: off for
+        // the built-in assistant leaves the tool to the connected assistants,
+        // and the other way round.
+        ++$assistantChecks;
+        $idShop = (int) $context->shop->id;
+        $builtinOff = SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_TOOL_PREFIX . 'somcp_ping', 'off', $idShop) === ''
+            && SomcpToolRegistry::isEnabled('somcp_ping')
+            && !SomcpToolRegistry::isEnabled('somcp_ping', true);
+        $mcpOff = SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_TOOL_PREFIX . 'somcp_ping', 'on', $idShop) === ''
+            && SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'off', $idShop) === ''
+            && !SomcpToolRegistry::isEnabled('somcp_ping')
+            && SomcpToolRegistry::isEnabled('somcp_ping', true);
+        SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'on', $idShop);
+        $promptOff = SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_PROMPT_PREFIX . 'somcp-connection-check', 'off', $idShop) === ''
+            && SomcpPromptRegistry::isEnabled('somcp-connection-check')
+            && !SomcpPromptRegistry::isEnabled('somcp-connection-check', true);
+        SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_PROMPT_PREFIX . 'somcp-connection-check', 'on', $idShop);
+        if (!$builtinOff || !$mcpOff || !$promptOff) {
+            $failures[] = 'assistant: a tool or prompt switched off in one column of Tools and prompts was switched off in the other too';
+        }
         // Strict on what ties settings together, as the form is: a refresh
         // token shorter than the access token, or a profile that does not
         // exist, is refused and nothing changes.

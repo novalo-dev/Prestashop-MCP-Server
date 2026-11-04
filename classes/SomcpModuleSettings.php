@@ -40,6 +40,18 @@ class SomcpModuleSettings
     public const PROMPT_PREFIX = 'prompt:';
 
     /**
+     * @var string Prefix that switches one tool for the built-in assistant.
+     *
+     * The Tools and prompts tab has a column for the assistants connected over
+     * MCP and one for the built-in assistant; tool: and prompt: stay the first
+     * column, as they always were, and these two are the second.
+     */
+    public const BUILTIN_TOOL_PREFIX = 'builtin-tool:';
+
+    /** @var string Prefix that switches one prompt for the built-in assistant. */
+    public const BUILTIN_PROMPT_PREFIX = 'builtin-prompt:';
+
+    /**
      * The settings the chat may read and change: key => tab, label as the
      * page shows them, and the kind of value.
      *
@@ -126,16 +138,26 @@ class SomcpModuleSettings
         $tools = [];
         foreach (SomcpToolRegistry::getInstance()->all() as $name => $tool) {
             $described = $tool->describe();
-            $tools[] = ['name' => $name, 'title' => (string) ($described['title'] ?? $name), 'on' => SomcpToolRegistry::isEnabled($name)];
+            $tools[] = [
+                'name' => $name,
+                'title' => (string) ($described['title'] ?? $name),
+                'on' => SomcpToolRegistry::isEnabled($name),
+                'builtin' => SomcpToolRegistry::isEnabled($name, true),
+            ];
         }
         $prompts = [];
         foreach (SomcpPromptRegistry::getInstance()->all() as $name => $prompt) {
-            $prompts[] = ['name' => $name, 'title' => $prompt->getTitle(), 'on' => SomcpPromptRegistry::isEnabled($name)];
+            $prompts[] = [
+                'name' => $name,
+                'title' => $prompt->getTitle(),
+                'on' => SomcpPromptRegistry::isEnabled($name),
+                'builtin' => SomcpPromptRegistry::isEnabled($name, true),
+            ];
         }
 
         return [
             'shop' => $idShop,
-            'note' => 'Change only what the employee asked for, one setting at a time. When a change needs a choice the employee has not made - a provider, a profile, a value - ask them and wait: never choose for them, never change a second setting on your own. Speak to the employee of a setting by its tab and label, never by its key nor in JSON. set_at says where a value comes from: shop, group, global (all shops) or default. A change made here is written for this shop. API keys are only typed in the form. Tools and prompts switch with the keys tool:<name> and prompt:<name>, values on or off.',
+            'note' => 'Change only what the employee asked for, one setting at a time. When a change needs a choice the employee has not made - a provider, a profile, a value - ask them and wait: never choose for them, never change a second setting on your own. Speak to the employee of a setting by its tab and label, never by its key nor in JSON. set_at says where a value comes from: shop, group, global (all shops) or default. A change made here is written for this shop. API keys are only typed in the form. Each tool and prompt has two switches: on, for the assistants connected over MCP, with the keys tool:<name> and prompt:<name>; builtin, for this built-in assistant, with the keys builtin-tool:<name> and builtin-prompt:<name>. Values on or off. When the employee does not say which, ask.',
             'docs' => $docs,
             'settings' => $settings,
             'assistants' => ['tab' => self::t('Built-in assistant'), 'list' => $assistants],
@@ -147,7 +169,7 @@ class SomcpModuleSettings
     /**
      * Changes one setting, after the employee approved it in the chat.
      *
-     * @param string $key a key of read(), or tool:<name> / prompt:<name>
+     * @param string $key a key of read(), or tool:, prompt:, builtin-tool: or builtin-prompt: and a name
      * @param string $raw the new value
      * @param int $idShop the shop the chat acts on
      *
@@ -156,7 +178,7 @@ class SomcpModuleSettings
     public static function write(string $key, string $raw, int $idShop): string
     {
         $raw = trim($raw);
-        if (strpos($key, self::TOOL_PREFIX) === 0 || strpos($key, self::PROMPT_PREFIX) === 0) {
+        if (self::switchOf($key) !== null) {
             return self::switchOne($key, $raw);
         }
         $catalogue = self::catalogue();
@@ -259,27 +281,27 @@ class SomcpModuleSettings
      */
     public static function state(string $key, int $idShop): string
     {
-        if (strpos($key, self::TOOL_PREFIX) === 0) {
-            $name = substr($key, strlen(self::TOOL_PREFIX));
-            $line = 'Tool ' . $name . ' is ' . (SomcpToolRegistry::isEnabled($name) ? 'on' : 'off') . '.';
-            if (!SomcpToolRegistry::isEnabled($name)) {
+        $switch = self::switchOf($key);
+        if ($switch !== null) {
+            ['name' => $name, 'chat' => $chat] = $switch;
+            $for = $chat ? ' for the built-in assistant' : ' for the assistants connected over MCP';
+            if (!$switch['tool']) {
+                return 'Prompt ' . $name . ' is ' . (SomcpPromptRegistry::isEnabled($name, $chat) ? 'on' : 'off') . $for . '.';
+            }
+            $line = 'Tool ' . $name . ' is ' . (SomcpToolRegistry::isEnabled($name, $chat) ? 'on' : 'off') . $for . '.';
+            if (!SomcpToolRegistry::isEnabled($name, $chat)) {
                 $using = [];
                 foreach (SomcpPromptRegistry::getInstance()->all() as $prompt) {
-                    if (in_array($name, $prompt->getTools(), true) && SomcpPromptRegistry::isEnabled($prompt->getName())) {
+                    if (in_array($name, $prompt->getTools(), true) && SomcpPromptRegistry::isEnabled($prompt->getName(), $chat)) {
                         $using[] = $prompt->getTitle();
                     }
                 }
                 if ($using !== []) {
-                    $line .= ' These prompts use it and are now incomplete: ' . implode(', ', $using) . '.';
+                    $line .= ' These prompts use it and are now incomplete there: ' . implode(', ', $using) . '.';
                 }
             }
 
             return $line;
-        }
-        if (strpos($key, self::PROMPT_PREFIX) === 0) {
-            $name = substr($key, strlen(self::PROMPT_PREFIX));
-
-            return 'Prompt ' . $name . ' is ' . (SomcpPromptRegistry::isEnabled($name) ? 'on' : 'off') . '.';
         }
         $catalogue = self::catalogue();
         if (!isset($catalogue[$key])) {
@@ -310,9 +332,33 @@ class SomcpModuleSettings
     }
 
     /**
-     * Switches one tool or prompt, as its box on the Tools and prompts tab.
+     * Which switch a pseudo setting names, or null for an ordinary setting.
      *
-     * @param string $key tool:<name> or prompt:<name>
+     * @param string $key
+     *
+     * @return array{tool: bool, chat: bool, name: string}|null
+     */
+    private static function switchOf(string $key): ?array
+    {
+        $prefixes = [
+            self::TOOL_PREFIX => [true, false],
+            self::PROMPT_PREFIX => [false, false],
+            self::BUILTIN_TOOL_PREFIX => [true, true],
+            self::BUILTIN_PROMPT_PREFIX => [false, true],
+        ];
+        foreach ($prefixes as $prefix => [$tool, $chat]) {
+            if (strpos($key, $prefix) === 0) {
+                return ['tool' => $tool, 'chat' => $chat, 'name' => substr($key, strlen($prefix))];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Switches one tool or prompt, as its switch on the Tools and prompts tab.
+     *
+     * @param string $key tool:, prompt:, builtin-tool: or builtin-prompt: and a name
      * @param string $raw on or off
      *
      * @return string
@@ -323,17 +369,23 @@ class SomcpModuleSettings
         if ($on === null) {
             return 'Tools and prompts take on or off.';
         }
-        $tool = strpos($key, self::TOOL_PREFIX) === 0;
-        $name = substr($key, strlen($tool ? self::TOOL_PREFIX : self::PROMPT_PREFIX));
+        $switch = self::switchOf($key);
+        if ($switch === null) {
+            return 'Unknown setting. Read the settings first and use one of their keys.';
+        }
+        ['tool' => $tool, 'chat' => $chat, 'name' => $name] = $switch;
         // Which names exist comes from the registry, never from the request,
         // as on the settings page.
         $exists = $tool ? SomcpToolRegistry::getInstance()->has($name) : SomcpPromptRegistry::getInstance()->get($name) !== null;
         if (!$exists) {
             return 'No such ' . ($tool ? 'tool' : 'prompt') . '.';
         }
-        $off = $tool ? SomcpToolRegistry::disabled() : SomcpPromptRegistry::disabled();
+        $off = $tool ? SomcpToolRegistry::disabled($chat) : SomcpPromptRegistry::disabled($chat);
         $off = $on ? array_values(array_diff($off, [$name])) : array_values(array_unique(array_merge($off, [$name])));
-        SomcpConfig::set($tool ? SomcpConfig::TOOLS_OFF : SomcpConfig::PROMPTS_OFF, implode(' ', $off));
+        $setting = $tool
+            ? ($chat ? SomcpConfig::TOOLS_OFF_CHAT : SomcpConfig::TOOLS_OFF)
+            : ($chat ? SomcpConfig::PROMPTS_OFF_CHAT : SomcpConfig::PROMPTS_OFF);
+        SomcpConfig::set($setting, implode(' ', $off));
 
         return '';
     }

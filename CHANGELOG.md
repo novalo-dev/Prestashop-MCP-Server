@@ -69,6 +69,14 @@ identifiers, that every value comes from you and is never invented, that no
 password goes through the conversation and no email is sent to the customer,
 and which read checks a change.
 
+**Shorter supplier tools.** The five tools of Catalog > Brands & Suppliers >
+Suppliers - list, read, create, change, enable or disable a supplier - now
+describe themselves in a few sentences, lighter for the assistant on every
+step. What matters is kept: that the supplier identifier comes from the list
+and is never guessed, that a supplier name can exist twice so the list is read
+before a creation, who fills each field, that disabling is not a deletion, and
+which read checks a change.
+
 ### Fixed
 
 **The module passes the PrestaShop Addons validator again.** The check

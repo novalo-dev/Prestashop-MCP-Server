@@ -79,29 +79,13 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         return new SomcpTool(
             'somcp_create_supplier',
             Somcp::t('Create a supplier'),
-            'Creates one supplier in this shop with every field of the back office supplier form: name, '
-                . 'description, phone, mobile phone, address, address line 2, postal code, city, country, state, '
-                . 'DNI (national identification number), meta title, meta description, meta keywords (PrestaShop 8), '
-                . 'logo and Enabled. Required: name, address1, city and country, plus state when the country has '
-                . 'states and dni when the country asks for one. The supplier is enabled unless told otherwise. '
-                . 'Read somcp_list_suppliers first: the supplier may already exist, and PrestaShop accepts two '
-                . 'suppliers of the same name. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Assistant" - write it yourself in every language being filled, and show it to the '
-                . 'merchant before the call. '
-                . 'The description and the meta texts are objects keyed by ISO code and must be given for every '
-                . 'language in languages; a language of the shop left out takes the default language\'s text. The '
-                . 'name and the contact details are one text each, the same in every language. Lengths count the '
-                . 'visible text, spaces included, HTML tags not counted. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'The logo is given by url or by upload_ref; one that cannot be had is reported in logo and does '
-                . 'not stop the creation. '
-                . 'Do not use it to change a supplier, which is somcp_update_supplier, or to enable or disable '
-                . 'one, which is somcp_set_supplier_active. One supplier per call: for several, call it once per '
-                . 'supplier and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_suppliers and look for the name '
-                . 'before anything else, because a second call creates a second supplier.',
+            'Creates one supplier, as the supplier form of Catalog > Brands & Suppliers > Suppliers, '
+                . 'enabled unless told otherwise. Read somcp_list_suppliers first: PrestaShop accepts two '
+                . 'suppliers of the same name. Each field says who fills it: Merchant - ask and never invent; '
+                . 'Assistant - write it in every language being filled and show it before the call. A logo that '
+                . 'cannot be had does not stop the creation. To change a supplier use somcp_update_supplier. '
+                . 'One supplier per call. Not to be retried: if the answer is lost, look for the name in '
+                . 'somcp_list_suppliers before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],
@@ -156,8 +140,8 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
                     . 'the country asks for one.'),
                 'meta_title' => $text('Assistant. 255 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_description' => $text('Assistant. 512 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
-                'meta_keywords' => $text('Assistant. PrestaShop 8 only, refused on 9, which dropped them. '
-                    . '5 keywords at most, comma separated, without < > = { }.'),
+                'meta_keywords' => $text('Assistant. PrestaShop 8, refused on 9. Up to 5 keywords, comma separated, '
+                    . 'without < > = { }.'),
                 'logo' => self::imageSchema('Merchant. The logo.', 'the logo'),
                 'active' => [
                     'type' => 'boolean',

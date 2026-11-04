@@ -44,15 +44,11 @@ class SomcpToolListSuppliers
         return new SomcpTool(
             'somcp_list_suppliers',
             Somcp::t('List suppliers'),
-            'Lists the suppliers of this shop, as the Suppliers list of the back office: identifier, '
-                . 'name, whether it is enabled (active) and its number of products. Every supplier '
-                . 'matching the filters is returned, sorted by name. '
-                . 'Call it before any call that takes a supplier - creating or changing a product - and '
-                . 'take the identifier from here: supplier identifiers are specific to each shop, so '
-                . 'never assume one. Suppliers that are switched off are listed too unless active is '
-                . 'given, since a product can still point to them. Everything else about one supplier, '
-                . 'its logo included, is read with somcp_get_supplier. Do not use it to find the '
-                . 'products of a supplier: it lists suppliers only.',
+            'Lists the suppliers of this shop, as Catalog > Brands & Suppliers > Suppliers: identifier, '
+                . 'name, Enabled and number of products, sorted by name, disabled ones included unless active '
+                . 'is given. Take an id_supplier from here before any call that needs one: supplier identifiers '
+                . 'are specific to each shop, so never assume one. For everything else about one supplier, its '
+                . 'logo included, use somcp_get_supplier. It does not list the products of a supplier.',
             [
                 'type' => 'object',
                 'properties' => [

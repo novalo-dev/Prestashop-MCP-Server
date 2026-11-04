@@ -50,15 +50,12 @@ class SomcpToolGetSupplier
         return new SomcpTool(
             'somcp_get_supplier',
             Somcp::t('Get a supplier'),
-            'Returns everything the back office supplier form shows for one supplier of this shop: name, '
-                . 'Enabled (active), description, the contact details of its address (phone, mobile phone, '
-                . 'address, address line 2, postal code, city, country and state as ISO codes, DNI - the national '
-                . 'identification number), meta title, meta description, meta keywords (PrestaShop 8, null on 9), '
-                . 'the logo address (null when the supplier has none) and the number of products of this shop it '
-                . 'supplies. '
-                . 'Identify the supplier by its identifier, from somcp_list_suppliers: never guess one. '
-                . 'Do not use it for the list of suppliers, which is somcp_list_suppliers, or for the products of '
-                . 'a supplier: somcp_search_products has no supplier filter.',
+            'Returns what the supplier form of Catalog > Brands & Suppliers > Suppliers shows for one '
+                . 'supplier: name, Enabled, description, the contact details of its address with country and '
+                . 'state as ISO codes, the meta texts (keywords null on PrestaShop 9), the logo address (null '
+                . 'without one) and the number of products of this shop it supplies. id_supplier comes from '
+                . 'somcp_list_suppliers: never guess one. For the list use somcp_list_suppliers; '
+                . 'somcp_search_products has no supplier filter.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -64,25 +64,13 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
         return new SomcpTool(
             'somcp_update_supplier',
             Somcp::t('Change a supplier'),
-            'Changes one existing supplier of this shop. Everything somcp_create_supplier can write can be '
-                . 'changed here, under the same names and with the same rules - who fills each field, lengths, '
-                . 'forbidden characters, the country deciding whether a state, a DNI or a postal code format is '
-                . 'needed. Only what is given changes: a value left out is kept, a text is replaced in the '
-                . 'languages filled and kept in the others, a logo given replaces the current one. The logo is '
-                . 'only removed through remove_logo. When the country changes, give the state again if the new '
-                . 'country has states. When languages is left out every language of the shop is filled, so a text '
-                . 'must then be given in each; to change one language, pass languages with it alone. The name and '
-                . 'the contact details are one text each, the same in every language. '
-                . 'Take the supplier from somcp_list_suppliers, never guessed, and read it with somcp_get_supplier '
-                . 'to know what it holds. Show the merchant what will change and call once they agree. Every '
-                . 'problem is reported at once and nothing is written until the whole call is valid. The logo, by '
-                . 'url or by upload_ref, is written after the change; one that cannot be had is reported in logo '
-                . 'and does not undo it. The answer gives each field changed with its '
-                . 'old and new value. A call that would change nothing writes nothing and says changed: false. '
-                . 'Do not use it to create a supplier (somcp_create_supplier) or only to enable or disable one '
-                . '(somcp_set_supplier_active). One supplier per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the supplier again with '
-                . 'somcp_get_supplier and compare before calling again.',
+            'Changes one supplier, as the supplier form of Catalog > Brands & Suppliers > Suppliers, '
+                . 'under the names and rules of somcp_create_supplier. id_supplier comes from '
+                . 'somcp_list_suppliers: never guess one; read it first with somcp_get_supplier. Only what is '
+                . 'given changes, a text only in the languages filled. Show the merchant what will change and '
+                . 'call once they agree. The answer gives each field changed with its old and new value. Only '
+                . 'to enable or disable, use somcp_set_supplier_active. One supplier per call. Not to be '
+                . 'retried: if the answer is lost, read somcp_get_supplier before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

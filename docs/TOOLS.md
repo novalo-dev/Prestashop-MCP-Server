@@ -169,6 +169,19 @@ the assistants connected over MCP, one for the built-in assistant. A tool can
 be kept for the assistant that asks before every change and hidden from the
 ones that connect from outside, or the other way round. Prompts work the same.
 
+**Switching a group off.** The tab lists the tools grouped by the scope they
+need (`SomcpScope::groupOf()`, the first one besides `mcp.access`), and each
+group has the same two switches, stored as two more lists of what is off
+(`SOMCP_SCOPES_OFF`, `SOMCP_SCOPES_OFF_CHAT`). A tool is offered when its own
+switch is on and none of its scopes is off (`SomcpToolRegistry::isEnabled()`);
+`isSwitchedOn()` is its own switch alone, the one its row shows, so that saving
+the page never writes a group's state into the switches of its tools. A group
+off therefore holds back a tool an update adds to it later, and switching it
+back on gives each tool the switch it had. A prompt is held back where any
+scope it needs is off. `mcp.access` is never a group anyone can switch off. The
+prompts list is grouped the same way; its group switches only set the prompt
+switches of the group in one go and are not stored.
+
 **Shop, and the employee behind the token.** Everything is bound to the shop
 the token belongs to, and the account is checked on every call rather than once
 when the token was issued: an account disabled this morning stops working this

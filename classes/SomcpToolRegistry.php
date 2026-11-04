@@ -428,12 +428,36 @@ class SomcpToolRegistry
      * There is one list for the assistants connected over MCP and one for the
      * built-in assistant, which a merchant may want to trust with more.
      *
+     * A tool is offered only when its own switch is on and none of the scopes
+     * it needs is switched off as a whole group: the group switch also holds
+     * back a tool an update adds to it later.
+     *
      * @param string $name
      * @param bool $chat true for the built-in assistant
      *
      * @return bool
      */
     public static function isEnabled(string $name, bool $chat = false): bool
+    {
+        if (!self::isSwitchedOn($name, $chat)) {
+            return false;
+        }
+        $tool = self::getInstance()->get($name);
+
+        return $tool === null || !SomcpScope::anyOff($tool->getRequiredScopes(), $chat);
+    }
+
+    /**
+     * The tool's own switch, whatever its group says: what the switch on its
+     * row shows, so that saving the page never writes a group's state into
+     * the switches of its tools.
+     *
+     * @param string $name
+     * @param bool $chat true for the built-in assistant
+     *
+     * @return bool
+     */
+    public static function isSwitchedOn(string $name, bool $chat = false): bool
     {
         return !in_array($name, self::disabled($chat), true);
     }

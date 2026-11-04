@@ -549,6 +549,60 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     opacity: .5;
 }
 
+/* A switch half on: some of the prompts of a group, not all. */
+.somcp .somcp-toggle:indeterminate {
+    background: #fbc02d;
+}
+
+.somcp .somcp-toggle:indeterminate::before {
+    left: 10px;
+}
+
+/* The row heading each group of the tools and prompts lists, with its
+   switches and how many of its rows are on. */
+.somcp .somcp-tools .somcp-group-row td {
+    background: #f5f8f9;
+    border-top: 1px solid #dbe6e9;
+}
+
+.somcp .somcp-tools .somcp-group-row code {
+    margin-left: 6px;
+}
+
+.somcp .somcp-group-caret {
+    padding: 0;
+    margin-right: 4px;
+    border: 0;
+    background: none;
+    color: #25b9d7;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.somcp .somcp-group-caret[aria-expanded="false"] .material-icons {
+    transform: rotate(-90deg);
+}
+
+.somcp .somcp-group-count,
+.somcp .somcp-held {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    color: #6c868e;
+}
+
+/* A group switched off in a column: its tools keep their own switch, shown
+   faded since none of them is offered there until the group is back on. */
+.somcp .somcp-off-on [data-somcp-row] [data-somcp-column="on"] .somcp-toggle,
+.somcp .somcp-off-chat [data-somcp-row] [data-somcp-column="chat"] .somcp-toggle {
+    opacity: .35;
+}
+
+.somcp .somcp-tools-none {
+    margin-top: 10px;
+}
+
 /* Buttons under a list, on the right: the tool paging, and the button that
    adds an assistant. The paging stays hidden until the script takes over, so
    a page without JavaScript shows the whole list rather than two dead

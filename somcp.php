@@ -105,7 +105,7 @@ class Somcp extends Module
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '1.2.1';
+        $this->version = '1.2.2';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -897,9 +897,9 @@ class Somcp extends Module
             'somcp_endpoints' => SomcpConfig::contextEndpoints(),
             'somcp_issuer' => SomcpConfig::issuer(),
             'somcp_multistore' => Shop::isFeatureActive(),
-            'somcp_tools' => $tools,
+            'somcp_tools' => $this->scopeGroups($tools),
             'somcp_tools_count' => count($tools),
-            'somcp_prompts' => $prompts,
+            'somcp_prompts' => $this->scopeGroups($prompts),
             'somcp_prompts_count' => count($prompts),
             'somcp_inheritable' => SomcpConfig::inheritableContext(),
             'somcp_inherit' => $this->inheritanceMap(),
@@ -1122,6 +1122,9 @@ class Somcp extends Module
         $boxOf = [
             SomcpConfig::TOOLS_OFF_CHAT => SomcpConfig::TOOLS_OFF,
             SomcpConfig::PROMPTS_OFF_CHAT => SomcpConfig::PROMPTS_OFF,
+            // The group switches sit in the tools list, under its box.
+            SomcpConfig::SCOPES_OFF => SomcpConfig::TOOLS_OFF,
+            SomcpConfig::SCOPES_OFF_CHAT => SomcpConfig::TOOLS_OFF,
         ];
         foreach (array_keys(SomcpConfig::defaults()) as $key) {
             // A field whose "own value" box is unchecked is not saved at all:
@@ -1180,6 +1183,8 @@ class Somcp extends Module
         if (isset($ownFields[SomcpConfig::TOOLS_OFF])) {
             SomcpConfig::set(SomcpConfig::TOOLS_OFF, $this->readToolSwitches());
             SomcpConfig::set(SomcpConfig::TOOLS_OFF_CHAT, $this->readToolSwitches(true));
+            SomcpConfig::set(SomcpConfig::SCOPES_OFF, $this->readScopeSwitches());
+            SomcpConfig::set(SomcpConfig::SCOPES_OFF_CHAT, $this->readScopeSwitches(true));
         }
 
         if (isset($ownFields[SomcpConfig::PROMPTS_OFF])) {
@@ -1276,10 +1281,6 @@ class Somcp extends Module
         $list = [];
         foreach (SomcpPromptRegistry::getInstance()->all() as $name => $prompt) {
             $dash = strpos($name, '-');
-            $asks = [];
-            foreach ($prompt->getArguments() as $argument) {
-                $asks[] = $argument['name'];
-            }
 
             $list[] = [
                 'name' => $name,
@@ -1288,10 +1289,14 @@ class Somcp extends Module
                 // This module's own prompts hold dashes in their names too, so
                 // the module is only read off a name the registry qualified.
                 'module' => !in_array($name, $own, true) && $dash !== false ? Tools::substr($name, 0, $dash) : '',
-                'asks' => implode(', ', $asks),
-                'permission' => SomcpPermission::label($prompt->getRequiredPermissions()),
-                'on' => SomcpPromptRegistry::isEnabled($name),
-                'chat' => SomcpPromptRegistry::isEnabled($name, true),
+                'group' => SomcpScope::groupOf($prompt->getRequiredScopes()),
+                'on' => SomcpPromptRegistry::isSwitchedOn($name),
+                'chat' => SomcpPromptRegistry::isSwitchedOn($name, true),
+                // A prompt also needs the groups of the tools it guides: one of
+                // them switched off takes it down in that column, and the row
+                // says so rather than showing a switch that seems to do nothing.
+                'held' => SomcpScope::anyOff($prompt->getRequiredScopes()),
+                'held_chat' => SomcpScope::anyOff($prompt->getRequiredScopes(), true),
             ];
         }
 
@@ -1335,18 +1340,90 @@ class Somcp extends Module
                 'title' => $described['title'],
                 'description' => $described['description'],
                 'module' => $dash === false ? '' : Tools::substr($name, 0, $dash),
-                'scopes' => implode(' ', $tool->getRequiredScopes()),
-                // The merchant's own words here, not the controller name: this
-                // table is read next to the Team, Permissions page, and the
-                // two have to say the same thing.
-                'permission' => SomcpPermission::label($tool->getRequiredPermissions()),
+                'group' => SomcpScope::groupOf($tool->getRequiredScopes()),
                 'writes' => ($described['annotations']['readOnlyHint'] ?? true) === false,
-                'on' => SomcpToolRegistry::isEnabled($name),
-                'chat' => SomcpToolRegistry::isEnabled($name, true),
+                // The row shows the tool's own switch: its group's switch sits
+                // on the group's row, and saving must not mix the two.
+                'on' => SomcpToolRegistry::isSwitchedOn($name),
+                'chat' => SomcpToolRegistry::isSwitchedOn($name, true),
             ];
         }
 
         return $list;
+    }
+
+    /**
+     * The rows of the tools or prompts list, grouped by scope in the order of
+     * SomcpScope::supported(), each group with its two switches.
+     *
+     * A group's switches are the scope's own settings for the tools list; the
+     * prompts list repeats their state, since a prompt needs the scopes of the
+     * tools it guides, and switches only its own rows.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function scopeGroups(array $rows): array
+    {
+        $groups = [];
+        foreach ($rows as $row) {
+            $groups[(string) $row['group']][] = $row;
+        }
+        $order = array_flip(SomcpScope::supported());
+        uksort($groups, static function ($a, $b) use ($order): int {
+            return ($order[$a] ?? PHP_INT_MAX) <=> ($order[$b] ?? PHP_INT_MAX) ?: strcmp((string) $a, (string) $b);
+        });
+
+        $off = SomcpScope::disabled();
+        $offChat = SomcpScope::disabled(true);
+        $list = [];
+        foreach ($groups as $scope => $items) {
+            $scope = (string) $scope;
+            $list[] = [
+                'scope' => $scope,
+                'label' => SomcpScope::label($scope, $this),
+                // Opening a session cannot be switched off: the group of
+                // somcp_ping says so instead of showing switches.
+                'switchable' => $scope !== SomcpScope::ACCESS,
+                'on' => !in_array($scope, $off, true),
+                'chat' => !in_array($scope, $offChat, true),
+                'items' => $items,
+            ];
+        }
+
+        return $list;
+    }
+
+    /**
+     * The scopes switched off by the form, as the setting stores them.
+     *
+     * Only the scopes of the tools loaded right now have a switch on the page;
+     * one already off whose module is not loaded stays off, as a tool does.
+     *
+     * @param bool $chat true for the Built-in assistant column
+     *
+     * @return string
+     */
+    private function readScopeSwitches(bool $chat = false): string
+    {
+        $ticked = Tools::getValue($chat ? 'somcp_scope_chat' : 'somcp_scope_on');
+        $ticked = is_array($ticked) ? $ticked : [];
+
+        $shown = [];
+        foreach (SomcpToolRegistry::getInstance()->all() as $tool) {
+            $shown[] = SomcpScope::groupOf($tool->getRequiredScopes());
+        }
+        $shown = array_diff(array_unique($shown), [SomcpScope::ACCESS]);
+
+        $off = array_diff(SomcpScope::disabled($chat), $shown);
+        foreach ($shown as $scope) {
+            if (!isset($ticked[$scope])) {
+                $off[] = $scope;
+            }
+        }
+
+        return implode(' ', array_unique($off));
     }
 
     /**

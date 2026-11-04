@@ -16,7 +16,27 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Switch off a whole group of tools at once.** On **Tools and prompts**, the
+tools are now grouped by the permission an assistant is given for them -
+**Orders - read**, **Orders - changes**, **Catalog - read** and so on - and
+each group has its own two switches, one for the assistants connected over MCP
+and one for the built-in assistant. A group switched off holds back every tool
+in it, including the ones a later update adds to it, and every prompt that
+needs it; the assistants are no longer offered that permission when they
+connect. Switching the group back on gives each tool the switch it had. The
+built-in assistant can read and change these group switches too, after your
+approval.
+
 ### Changed
+
+**The Tools and prompts lists are folded by group.** Each group shows how many
+of its tools or prompts are on in each column, and opens with a click; the
+search opens the groups it finds something in. The **Asks for** and
+**Requires** columns are gone, to keep the lists readable: the back office
+right each tool needs is listed in the tools table of the project page, and a
+prompt held back by a group switched off says so on its row.
 
 **The project page is written for merchants.** The front page of the
 repository now says what you can ask, the requirements, how to install the

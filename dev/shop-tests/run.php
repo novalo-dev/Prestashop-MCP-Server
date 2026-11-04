@@ -688,6 +688,31 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
         if (!$builtinOff || !$mcpOff || !$promptOff) {
             $failures[] = 'assistant: a tool or prompt switched off in one column of Tools and prompts was switched off in the other too';
         }
+        // A whole group: the scope switched off holds back its tools and the
+        // prompts needing it in that column only, leaves their own switches
+        // as they were, and drops out of what the consent screen offers.
+        // Opening a session is not a group anyone can switch off.
+        ++$assistantChecks;
+        $groupOff = SomcpModuleSettings::write(SomcpModuleSettings::SCOPE_PREFIX . SomcpScope::ORDERS_READ, 'off', $idShop) === ''
+            && !SomcpToolRegistry::isEnabled('somcp_search_orders')
+            && SomcpToolRegistry::isSwitchedOn('somcp_search_orders')
+            && SomcpToolRegistry::isEnabled('somcp_search_orders', true)
+            && !SomcpPromptRegistry::isEnabled('somcp-order-lookup')
+            && SomcpPromptRegistry::isEnabled('somcp-order-lookup', true)
+            && !in_array(SomcpScope::ORDERS_READ, SomcpScope::grantableFor((int) $employee->id, $idShop), true)
+            && in_array(SomcpScope::ORDERS_READ, SomcpScope::grantableFor((int) $employee->id, $idShop, true), true);
+        $groupOn = SomcpModuleSettings::write(SomcpModuleSettings::SCOPE_PREFIX . SomcpScope::ORDERS_READ, 'on', $idShop) === ''
+            && SomcpToolRegistry::isEnabled('somcp_search_orders')
+            && SomcpPromptRegistry::isEnabled('somcp-order-lookup');
+        $builtinGroup = SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_SCOPE_PREFIX . SomcpScope::ORDERS_READ, 'off', $idShop) === ''
+            && SomcpToolRegistry::isEnabled('somcp_search_orders')
+            && !SomcpToolRegistry::isEnabled('somcp_search_orders', true);
+        SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_SCOPE_PREFIX . SomcpScope::ORDERS_READ, 'on', $idShop);
+        $accessKept = SomcpModuleSettings::write(SomcpModuleSettings::SCOPE_PREFIX . SomcpScope::ACCESS, 'off', $idShop) !== ''
+            && SomcpToolRegistry::isEnabled('somcp_ping');
+        if (!$groupOff || !$groupOn || !$builtinGroup || !$accessKept) {
+            $failures[] = 'assistant: a group of tools switched off by its scope did not hold back exactly its tools and prompts in its column, or the connection itself could be switched off';
+        }
         // Strict on what ties settings together, as the form is: a refresh
         // token shorter than the access token, or a profile that does not
         // exist, is refused and nothing changes.

@@ -372,6 +372,124 @@
             });
         });
 
+        // The tools and prompts lists, grouped by scope. Each group folds under
+        // its heading row, which carries the group's two switches and how many
+        // of its rows are on. Every row stays in the form, hidden rather than
+        // removed, so a folded group still posts its switches; a search unfolds
+        // the groups it finds something in. Without a script the whole list
+        // shows, unfolded, which is the right thing to fall back to.
+        document.querySelectorAll('[data-somcp-grouped]').forEach(function (table) {
+            var panel = table.closest('.panel');
+            var search = panel ? panel.querySelector('[data-somcp-search]') : null;
+            var nothing = panel ? panel.querySelector('[data-somcp-nothing]') : null;
+            var pattern = table.getAttribute('data-somcp-count') || '';
+            var groups = Array.prototype.slice.call(table.querySelectorAll('tbody.somcp-group'));
+            var open = {};
+
+            var boxesOf = function (group, column) {
+                return Array.prototype.slice.call(group.querySelectorAll('[data-somcp-row] [data-somcp-column="' + column + '"] input'));
+            };
+
+            var count = function (group) {
+                ['on', 'chat'].forEach(function (column) {
+                    var boxes = boxesOf(group, column);
+                    var on = boxes.filter(function (box) {
+                        return box.checked;
+                    }).length;
+                    var label = group.querySelector('[data-somcp-counted="' + column + '"]');
+                    if (label) {
+                        label.textContent = pattern.replace('%on%', on).replace('%total%', boxes.length);
+                    }
+                    // The prompts' group switch only reflects its rows: on when
+                    // all are, half when some are.
+                    var all = group.querySelector('[data-somcp-all="' + column + '"]');
+                    if (all) {
+                        all.checked = boxes.length > 0 && on === boxes.length;
+                        all.indeterminate = on > 0 && on < boxes.length;
+                    }
+                    // The tools' group switch is a setting of its own: the rows
+                    // keep their switch, faded while the group is off.
+                    var scope = group.querySelector('[data-somcp-scope="' + column + '"]');
+                    if (scope) {
+                        group.classList.toggle('somcp-off-' + column, !scope.checked);
+                    }
+                });
+            };
+
+            var draw = function () {
+                // Matched on the text the merchant reads - group, title, name,
+                // publisher - so a search finds what the row says.
+                var query = search ? search.value.trim().toLowerCase() : '';
+                var shown = 0;
+                groups.forEach(function (group) {
+                    var head = group.querySelector('.somcp-group-row');
+                    var rows = Array.prototype.slice.call(group.querySelectorAll('[data-somcp-row]'));
+                    var whole = query !== '' && head.textContent.toLowerCase().indexOf(query) !== -1;
+                    var found = false;
+                    rows.forEach(function (row) {
+                        var match = query === ''
+                            ? open[group.getAttribute('data-somcp-group')] === true
+                            : whole || row.textContent.toLowerCase().indexOf(query) !== -1;
+                        row.hidden = !match;
+                        found = found || match;
+                    });
+                    group.hidden = query !== '' && !found;
+                    if (!group.hidden) {
+                        shown += 1;
+                    }
+                    var caret = head.querySelector('[data-somcp-expand]');
+                    if (caret) {
+                        caret.setAttribute('aria-expanded', found ? 'true' : 'false');
+                    }
+                });
+                if (nothing) {
+                    nothing.textContent = search ? search.getAttribute('data-somcp-none') || '' : '';
+                    nothing.hidden = shown > 0;
+                }
+            };
+
+            groups.forEach(function (group) {
+                var key = group.getAttribute('data-somcp-group');
+                var caret = group.querySelector('[data-somcp-expand]');
+                if (caret) {
+                    caret.addEventListener('click', function () {
+                        open[key] = caret.getAttribute('aria-expanded') !== 'true';
+                        if (search && search.value !== '') {
+                            search.value = '';
+                        }
+                        draw();
+                    });
+                }
+                group.querySelectorAll('[data-somcp-all]').forEach(function (all) {
+                    all.addEventListener('change', function () {
+                        boxesOf(group, all.getAttribute('data-somcp-all')).forEach(function (box) {
+                            if (!box.disabled) {
+                                box.checked = all.checked;
+                            }
+                        });
+                        count(group);
+                    });
+                });
+                group.addEventListener('change', function (event) {
+                    if (!event.target.hasAttribute('data-somcp-all')) {
+                        count(group);
+                    }
+                });
+                count(group);
+            });
+
+            if (search) {
+                search.addEventListener('input', draw);
+                // Enter in the search would submit the settings form.
+                search.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                    }
+                });
+            }
+            draw();
+        });
+
         // A setting that inherits from the level above is shown but not editable:
         // its value does not belong to this level, and it is not submitted either
         // - the module removes the row instead of writing what was on screen.

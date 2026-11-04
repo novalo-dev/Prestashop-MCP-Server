@@ -20,8 +20,9 @@
  * The integration workflow calls every tool, but no browser ever opened the
  * pages a merchant works in, so a script error or a pane left empty went
  * unnoticed. This signs in, opens the seven settings pages and the chat, uses
- * the search and a switch of the Tools and prompts tab, and fails on the first
- * uncaught script error, page error or PHP message on screen.
+ * the search, a tool switch and a group switch of the Tools and prompts tab,
+ * and fails on the first uncaught script error, page error or PHP message on
+ * screen.
  *
  * Usage: node sanity.mjs <admin url> <email> <password> <browser> <shot dir> [results file]
  *   browser is chromium or firefox. A screenshot of the page in front is left
@@ -143,10 +144,14 @@ if (signedIn) {
 
     await check('search the tools', async () => {
         await openPane(PAGES.tools);
-        const search = page.locator('#somcp-pane-tools .panel').first().locator('[data-somcp-search]');
-        const rows = page.locator('#somcp-pane-tools .panel').first().locator('.somcp-tools tbody tr:not([hidden])');
-        if ((await rows.count()) === 0) {
-            throw new Error('no tool shown before searching');
+        const panel = page.locator('#somcp-pane-tools .panel').first();
+        const search = panel.locator('[data-somcp-search]');
+        // The tools are folded by group: the group rows show first, and a
+        // search opens the groups it finds a tool in.
+        const groups = panel.locator('tbody.somcp-group:not([hidden])');
+        const rows = panel.locator('tr[data-somcp-row]:not([hidden])');
+        if ((await groups.count()) === 0) {
+            throw new Error('no group of tools shown before searching');
         }
         await search.fill('somcp_ping');
         if ((await rows.count()) !== 1) {
@@ -179,6 +184,27 @@ if (signedIn) {
         await Promise.all([page.waitForLoadState('load'), save().click()]);
         if ((await toggle().isChecked()) !== was) {
             throw new Error('the switch could not be put back');
+        }
+    });
+
+    // A whole group, by its scope, for the built-in assistant: saved, read
+    // back and put back as it was.
+    await check('switch a group of tools for the built-in assistant and save', async () => {
+        const name = 'somcp_scope_chat[mcp.orders.read]';
+        const toggle = () => page.locator(`input[name="${name}"]`);
+        const save = () => page.locator('#somcp-pane-tools button[name="submitSomcpSettings"]').first();
+        await openPane(PAGES.tools);
+        const was = await toggle().isChecked();
+        await toggle().setChecked(!was);
+        await Promise.all([page.waitForLoadState('load'), save().click()]);
+        await noPhpMessage();
+        if ((await toggle().isChecked()) === was) {
+            throw new Error('the group switch did not keep its new position after saving');
+        }
+        await toggle().setChecked(was);
+        await Promise.all([page.waitForLoadState('load'), save().click()]);
+        if ((await toggle().isChecked()) !== was) {
+            throw new Error('the group switch could not be put back');
         }
     });
 

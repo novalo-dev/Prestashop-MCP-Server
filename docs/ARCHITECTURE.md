@@ -110,7 +110,8 @@ For `tools/call`:
   with the scopes missing, so the client can ask the merchant for more;
 - the employee must hold the tool's back office right (`SomcpPermission`), and
   on multistore be attached to the shop (`Employee::hasAuthOnShop()`);
-- the tool must not be switched off by the merchant;
+- the tool must not be switched off by the merchant, neither on its own nor
+  with its group: a scope switched off holds back every tool needing it;
 - the handler runs with a context that carries the shop, the employee and the
   language. The shop always comes from the token, never from the arguments.
 
@@ -201,8 +202,10 @@ Stored in `ps_configuration`, per shop with the usual multistore inheritance:
 module on/off, OAuth on/off, access and refresh token lifetimes (one hour and
 thirty days by default), refresh rotation, dynamic registration, client ID
 metadata documents, allowed redirect hosts, the profile allowed to grant
-access, the log, the tool list cache lifetime, and the tools and prompts the
-merchant switched off.
+access, the log, the tool list cache lifetime, the tools and prompts the
+merchant switched off, and the scopes switched off as whole groups - each of
+these three lists twice, once for the assistants connected over MCP and once
+for the built-in assistant.
 
 ---
 

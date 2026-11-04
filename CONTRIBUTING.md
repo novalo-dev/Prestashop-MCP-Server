@@ -320,6 +320,9 @@ any tool whose `acts()` is not a `view`.
      the code had to differ;
    - a row in the table of its page under **Tools** in `README.md`, inside
      that page's folded block;
+   - nothing on the settings page: the **Tools and prompts** tab lists the
+     tool under the group of its scope by itself, with the group's switches
+     (see "Switching a group off" in `docs/TOOLS.md`);
    - a line in `CHANGELOG.md`, under `## Unreleased`;
    - its name in the **prompt of its section** (see below), in `prompt.json`
      and in the guide `prompt.md`.

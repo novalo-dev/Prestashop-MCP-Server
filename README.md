@@ -147,8 +147,10 @@ Where to paste the address in each of them:
 - **No password and no all-powerful API key.** Assistants sign in with
   OAuth 2.1, and every connection can be withdrawn in one click from the
   module.
-- **You choose what is offered.** Each tool and prompt can be switched off for
-  connected assistants, for the built-in assistant, or both. Changes are
+- **You choose what is offered.** Each tool and prompt, or a whole group of
+  them such as **Orders - changes**, can be switched off for connected
+  assistants, for the built-in assistant, or both. A group switched off also
+  holds back the tools a later update adds to it. Changes are
   flagged as such, which assistants use to ask you before making them.
 - **Every refusal is logged**, in a security log that never contains a token
   or a secret.

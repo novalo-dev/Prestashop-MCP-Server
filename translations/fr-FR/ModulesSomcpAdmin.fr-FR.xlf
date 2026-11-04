@@ -757,15 +757,135 @@
       <source>Available tools</source>
       <target>Outils disponibles</target>
     </trans-unit>
-    <!-- What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs. -->
-    <trans-unit id="90d3d65d93d4388a9c120e8bdbe0756c" resname="What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.">
-      <source>What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.</source>
-      <target>Ce qu'un assistant peut demander à cette boutique. Choisissez pour chaque outil s'il est proposé aux assistants connectés en MCP, à l'assistant intégré, ou aux deux. Un outil désactivé dans une colonne n'y est proposé à personne, quels que soient les droits de son compte. Les outils publiés par un autre module portent le nom de ce module devant le leur.</target>
+    <!-- What an assistant may ask this shop to do, grouped by the permission an assistant is given for it. Choose, for a whole group or for each tool, whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A group switched off holds back every tool in it, including those an update adds later, and switching it back on gives each tool its own switch again. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs. -->
+    <trans-unit id="44256e2cd73143e72f0fab9401586223" resname="What an assistant may ask this shop to do, grouped by the permission an assistant is given for it. Choose, for a whole group or for each tool, whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A group switched off holds back every tool in it, including those an update adds later, and switching it back on gives each tool its own switch again. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.">
+      <source>What an assistant may ask this shop to do, grouped by the permission an assistant is given for it. Choose, for a whole group or for each tool, whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A group switched off holds back every tool in it, including those an update adds later, and switching it back on gives each tool its own switch again. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.</source>
+      <target>Ce qu'un assistant peut demander à cette boutique, regroupé selon l'autorisation qu'un assistant reçoit pour cela. Choisissez, pour un groupe entier ou pour chaque outil, s'il est proposé aux assistants connectés en MCP, à l'assistant intégré, ou aux deux. Un groupe désactivé retient tous ses outils, y compris ceux qu'une mise à jour ajoutera, et le réactiver rend à chaque outil son propre interrupteur. Un outil désactivé dans une colonne n'y est proposé à personne, quels que soient les droits de son compte. Les outils publiés par un autre module portent le nom de ce module devant le leur.</target>
     </trans-unit>
     <!-- Search a tool -->
     <trans-unit id="58ebd9c24b715ba8b7ac6935cfcf38fd" resname="Search a tool">
       <source>Search a tool</source>
       <target>Rechercher un outil</target>
+    </trans-unit>
+    <!-- Connection -->
+    <trans-unit id="c2cc7082a89c1ad6631a2f66af5f00c0" resname="Connection">
+      <source>Connection</source>
+      <target>Connexion</target>
+    </trans-unit>
+    <!-- Orders - read -->
+    <trans-unit id="81315f5d68c5a1b9f89264db082e5fe6" resname="Orders - read">
+      <source>Orders - read</source>
+      <target>Commandes - lecture</target>
+    </trans-unit>
+    <!-- Orders - changes -->
+    <trans-unit id="58b8c8cb19ea55085f9cfb876d46bfd6" resname="Orders - changes">
+      <source>Orders - changes</source>
+      <target>Commandes - modifications</target>
+    </trans-unit>
+    <!-- Catalog - read -->
+    <trans-unit id="d738f17c79ea421838434c28b9ace0af" resname="Catalog - read">
+      <source>Catalog - read</source>
+      <target>Catalogue - lecture</target>
+    </trans-unit>
+    <!-- Catalog - changes -->
+    <trans-unit id="c61cc93fc4f0c59850bbc6bffa68a09e" resname="Catalog - changes">
+      <source>Catalog - changes</source>
+      <target>Catalogue - modifications</target>
+    </trans-unit>
+    <!-- Stock - read -->
+    <trans-unit id="96c4bd77bb96e6dbebc1575397a25f52" resname="Stock - read">
+      <source>Stock - read</source>
+      <target>Stock - lecture</target>
+    </trans-unit>
+    <!-- Stock - changes -->
+    <trans-unit id="44abc02e5059028eb3d915f29b25d2ff" resname="Stock - changes">
+      <source>Stock - changes</source>
+      <target>Stock - modifications</target>
+    </trans-unit>
+    <!-- Customers - read -->
+    <trans-unit id="0cd8252dccfcd4f169c6d6af2ccf7cbc" resname="Customers - read">
+      <source>Customers - read</source>
+      <target>Clients - lecture</target>
+    </trans-unit>
+    <!-- Customers - changes -->
+    <trans-unit id="ac31a9e8c8e121f94ac1a75e4c6d1e4a" resname="Customers - changes">
+      <source>Customers - changes</source>
+      <target>Clients - modifications</target>
+    </trans-unit>
+    <!-- SEO - read -->
+    <trans-unit id="0dc002c1382283f4101b839a1d95ba03" resname="SEO - read">
+      <source>SEO - read</source>
+      <target>SEO - lecture</target>
+    </trans-unit>
+    <!-- SEO - changes -->
+    <trans-unit id="7653e3291aa62b85d614a515a37620f9" resname="SEO - changes">
+      <source>SEO - changes</source>
+      <target>SEO - modifications</target>
+    </trans-unit>
+    <!-- Statistics - read -->
+    <trans-unit id="6146ab8af6c4d71b4903784c1a796d36" resname="Statistics - read">
+      <source>Statistics - read</source>
+      <target>Statistiques - lecture</target>
+    </trans-unit>
+    <!-- Pages - read -->
+    <trans-unit id="213abf6715423d2ea408dd36981f1eee" resname="Pages - read">
+      <source>Pages - read</source>
+      <target>Pages - lecture</target>
+    </trans-unit>
+    <!-- Modules - read -->
+    <trans-unit id="9815d30098ecb86769c5920a224229b1" resname="Modules - read">
+      <source>Modules - read</source>
+      <target>Modules - lecture</target>
+    </trans-unit>
+    <!-- Modules - changes -->
+    <trans-unit id="238deb8f4c678f3820984da6a658eb41" resname="Modules - changes">
+      <source>Modules - changes</source>
+      <target>Modules - modifications</target>
+    </trans-unit>
+    <!-- Design - read -->
+    <trans-unit id="a3e00de8ea70084cc12ba457d9fd1ea9" resname="Design - read">
+      <source>Design - read</source>
+      <target>Apparence - lecture</target>
+    </trans-unit>
+    <!-- Design - changes -->
+    <trans-unit id="bcb8f462dbe60f4c9b407b0187856283" resname="Design - changes">
+      <source>Design - changes</source>
+      <target>Apparence - modifications</target>
+    </trans-unit>
+    <!-- Performance - read -->
+    <trans-unit id="1a4192b8a6ca491bfebac1509ea27f05" resname="Performance - read">
+      <source>Performance - read</source>
+      <target>Performances - lecture</target>
+    </trans-unit>
+    <!-- Performance - changes -->
+    <trans-unit id="7d5a685200d9050e4428b1c1a2287862" resname="Performance - changes">
+      <source>Performance - changes</source>
+      <target>Performances - modifications</target>
+    </trans-unit>
+    <!-- %on% of %total% on -->
+    <trans-unit id="b5775754e124a41ae07a00f47743a1ca" resname="%on% of %total% on">
+      <source>%on% of %total% on</source>
+      <target>%on% sur %total% activés</target>
+    </trans-unit>
+    <!-- Show or hide the tools of this group -->
+    <trans-unit id="a04db081987b29ba77d7e998cab436a5" resname="Show or hide the tools of this group">
+      <source>Show or hide the tools of this group</source>
+      <target>Afficher ou masquer les outils de ce groupe</target>
+    </trans-unit>
+    <!-- Show or hide the prompts of this group -->
+    <trans-unit id="3bdbe9b0473f2c7ab05be67394da4796" resname="Show or hide the prompts of this group">
+      <source>Show or hide the prompts of this group</source>
+      <target>Afficher ou masquer les prompts de ce groupe</target>
+    </trans-unit>
+    <!-- Always on -->
+    <trans-unit id="c65304f1072ff7d3192beb0e3d78a828" resname="Always on">
+      <source>Always on</source>
+      <target>Toujours actif</target>
+    </trans-unit>
+    <!-- group switched off -->
+    <trans-unit id="ed083e902463cf83d515c88a8972e5b4" resname="group switched off">
+      <source>group switched off</source>
+      <target>groupe désactivé</target>
     </trans-unit>
     <!-- Search a prompt -->
     <trans-unit id="253997e9f16ffab58ecb3590b79c4bee" resname="Search a prompt">
@@ -802,11 +922,6 @@
       <source>Published by</source>
       <target>Publié par</target>
     </trans-unit>
-    <!-- Requires -->
-    <trans-unit id="bdc6acb4dbd44761e887045a3fa74ad6" resname="Requires">
-      <source>Requires</source>
-      <target>Exige</target>
-    </trans-unit>
     <!-- changes data -->
     <trans-unit id="0ec85581b40327e913499b0b66e3f6ce" resname="changes data">
       <source>changes data</source>
@@ -816,11 +931,6 @@
     <trans-unit id="06c30a6fd25b6b0c535792db107cc8ce" resname="This module">
       <source>This module</source>
       <target>Ce module</target>
-    </trans-unit>
-    <!-- no particular permission -->
-    <trans-unit id="de43a0de3e38536be10180a677822dc5" resname="no particular permission">
-      <source>no particular permission</source>
-      <target>aucun droit particulier</target>
     </trans-unit>
     <!-- No tool is available on this shop. -->
     <trans-unit id="0dc6496786e8d27fe62cba07b576c81d" resname="No tool is available on this shop.">
@@ -1352,16 +1462,6 @@
       <source>Prompt</source>
       <target>Prompt</target>
     </trans-unit>
-    <!-- Asks for -->
-    <trans-unit id="ec1ee597af7d894dd88170aff37de9d5" resname="Asks for">
-      <source>Asks for</source>
-      <target>Demande</target>
-    </trans-unit>
-    <!-- nothing -->
-    <trans-unit id="3e47b75000b0924b6c9ba5759a7cf15d" resname="nothing">
-      <source>nothing</source>
-      <target>rien</target>
-    </trans-unit>
     <!-- Prompts %from% to %to% of %total% -->
     <trans-unit id="68412adae2476c612a6ef2b47cbca01c" resname="Prompts %from% to %to% of %total%">
       <source>Prompts %from% to %to% of %total%</source>
@@ -1372,10 +1472,10 @@
       <source>No prompt is available on this shop.</source>
       <target>Aucun prompt n'est disponible sur cette boutique.</target>
     </trans-unit>
-    <!-- A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here. -->
-    <trans-unit id="a4663ffd37ee397196dba2c154724be7" resname="A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here.">
-      <source>A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here.</source>
-      <target>Un prompt est une tâche guidée que vous lancez vous-même depuis le menu de votre assistant. Il ne coûte rien tant que vous ne le choisissez pas, puis il donne à l'assistant les instructions pas à pas pour utiliser les outils. Un prompt publié par un autre module place les mots de ce module dans votre assistant, et c'est pourquoi vous pouvez désactiver chacun ici.</target>
+    <!-- A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here. A prompt is also held back where a group of the tools it guides is switched off. -->
+    <trans-unit id="3da261436cabc3262a8384b98f37c8dc" resname="A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here. A prompt is also held back where a group of the tools it guides is switched off.">
+      <source>A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here. A prompt is also held back where a group of the tools it guides is switched off.</source>
+      <target>Un prompt est une tâche guidée que vous lancez vous-même depuis le menu de votre assistant. Il ne coûte rien tant que vous ne le choisissez pas, puis il donne à l'assistant les instructions pas à pas pour utiliser les outils. Un prompt publié par un autre module place les mots de ce module dans votre assistant, et c'est pourquoi vous pouvez désactiver chacun ici. Un prompt est aussi retenu là où un groupe des outils qu'il guide est désactivé.</target>
     </trans-unit>
     <!-- Check the shop connection -->
     <trans-unit id="600ac574dbf4e7d18c54e8db5b8f113d" resname="Check the shop connection">

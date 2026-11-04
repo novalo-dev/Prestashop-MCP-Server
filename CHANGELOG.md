@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**A security and compatibility report with every release.** Each version is
+now published only after the full test suite has passed on the exact code in
+the zip, and the release page carries a report of what was checked: every
+PrestaShop and PHP combination the module was installed and run on, each
+attack tried against a live shop and refused, the permissions of every tool,
+the code and dependency scans, and the SHA-256 of the zip, so you can check
+that the file you downloaded is the one that was tested. The report sits next
+to the zip on the release page, not inside the module.
+
 **Listing the customer groups.** The new tool `somcp_list_customer_groups`
 lists the customer groups of the shop as **Shop Parameters > Customer
 Settings > Groups** shows them: name, discount, price display method, whether

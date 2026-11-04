@@ -4,12 +4,17 @@ on:
   push:
     branches: [main, develop]
   pull_request:
+  # Build for Release runs the whole CI on the commit it is about to publish,
+  # and publishes only if every job passed.
+  workflow_call:
 
 permissions:
   contents: read
 
+# The event is part of the group: the CI a release calls must neither cancel
+# nor be cancelled by the one a push to main started on the same branch.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

@@ -36,7 +36,6 @@ jobs:
           - { prestashop: '9.2.0', php: '8.5', browser: firefox, db: mysql, db_image: 'mysql:8.0' }
           - { prestashop: '9.2.0', php: '8.5', browser: chromium, db: mariadb, db_image: 'mariadb:11.4' }
     env:
-      ADMIN_DIR: admin-ui
       ADMIN_MAIL: demo@example.com
       ADMIN_PASSWD: Somcp-ui-test-1
     steps:
@@ -60,16 +59,18 @@ jobs:
           docker run -d --name shop --network shopnet -p 8080:80 \
             -e DB_SERVER=db -e DB_USER=root -e DB_PASSWD=root -e DB_NAME=prestashop \
             -e PS_INSTALL_AUTO=1 -e PS_DOMAIN=localhost:8080 -e PS_LANGUAGE=en -e PS_COUNTRY=fr \
-            -e PS_FOLDER_ADMIN="$ADMIN_DIR" -e ADMIN_MAIL="$ADMIN_MAIL" -e ADMIN_PASSWD="$ADMIN_PASSWD" \
+            -e ADMIN_MAIL="$ADMIN_MAIL" -e ADMIN_PASSWD="$ADMIN_PASSWD" \
             "prestashop/prestashop:${{ matrix.prestashop }}-${{ matrix.php }}"
 
       # The image installs the shop on its first start; until then the front
-      # office does not answer. The end of its log goes to an annotation when
-      # it never comes up, since nobody opens the step log first.
+      # office does not answer. Redirects are followed: with two languages the
+      # home page sends the visitor to /en/ first. The end of the log goes to
+      # an annotation when the shop never comes up, since nobody opens the
+      # step log first.
       - name: Wait for the install
         run: |
           for _ in $(seq 1 120); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ || true)
+            code=$(curl -sL -o /dev/null -w '%{http_code}' http://localhost:8080/ || true)
             [ "$code" = "200" ] && exit 0
             sleep 5
           done
@@ -78,9 +79,15 @@ jobs:
           exit 1
 
       # The back office refuses to sign anyone in while the install folder is
-      # still there.
-      - name: Remove the install folder
-        run: docker exec shop sh -c 'rm -rf /var/www/html/install /var/www/html/install-dev'
+      # still there. Its own folder is left as the image named it - renaming it
+      # before the install breaks the install on PrestaShop 9 - and read back
+      # here for the browser.
+      - name: Remove the install folder and find the back office
+        run: |
+          docker exec shop sh -c 'rm -rf /var/www/html/install /var/www/html/install-dev'
+          ADMIN_DIR=$(docker exec shop sh -c 'for d in /var/www/html/admin*/; do [ -f "$d/index.php" ] && basename "$d" && break; done')
+          [ -n "$ADMIN_DIR" ] || { echo "::error title=No back office::no admin folder found in the image"; exit 1; }
+          echo "ADMIN_DIR=$ADMIN_DIR" >> "$GITHUB_ENV"
 
       - name: Install somcp
         run: |

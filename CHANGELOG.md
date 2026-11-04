@@ -115,6 +115,17 @@ can be added twice so the list is read first, that every field comes from you
 and is never invented, that customer and supplier addresses are refused, and
 which read checks a change.
 
+**Shorter theme, cache, tax, carrier and file tools.** The two tools of
+Design > Theme & Logo - read the theme and change the layout of a page - and
+the lists of tax rules, carriers and Catalog > Files, with the Clear cache button of
+Advanced Parameters > Performance, now describe themselves in a few sentences,
+lighter for the assistant on every step. What matters is kept: that a page,
+a layout, a tax rule, a carrier or a file is taken from its list and never
+guessed, that a layout is confirmed with you before it changes, that clearing
+the cache clears it for every shop of the installation and slows the next
+pages, that a file's download link is public and stays with you, and which
+read checks a change.
+
 ### Fixed
 
 **The module passes the PrestaShop Addons validator again.** The check

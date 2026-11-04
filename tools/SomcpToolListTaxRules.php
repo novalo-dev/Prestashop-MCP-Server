@@ -46,16 +46,11 @@ class SomcpToolListTaxRules
         return new SomcpTool(
             'somcp_list_tax_rules',
             Somcp::t('List tax rules'),
-            'Lists the tax rules of this shop with their identifier, name, whether they are '
-                . 'enabled, and the rate each one applies in the shop default country (given as '
-                . 'its ISO code), which is the rate the back office product page shows. Call it '
-                . 'before creating or changing a product, and take id_tax_rules_group from here: '
-                . 'identifiers are specific to each shop, so never assume one, and 0 means no tax. '
-                . 'A rate depends on the country: a customer delivered elsewhere may pay another one. '
-                . 'Rules come in identifier order, as on the back office list; give name to find one '
-                . 'without reading them all. '
-                . 'When taxes_enabled is false the shop applies no tax at all, whatever the rule. '
-                . 'Do not use it for the tax of one product: somcp_get_product gives its rule and rate.',
+            'Lists the tax rules, in the order of International > Taxes > Tax Rules, with the rate each '
+                . 'applies in the shop default country, the rate the product page shows; a customer delivered '
+                . 'elsewhere may pay another one. Take id_tax_rules_group from here before creating or changing a '
+                . 'product: never guess one, and 0 means no tax. When taxes_enabled is false the shop applies no '
+                . 'tax at all. For the tax of one product use somcp_get_product.',
             [
                 'type' => 'object',
                 'properties' => [

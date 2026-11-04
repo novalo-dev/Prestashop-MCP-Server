@@ -54,14 +54,12 @@ class SomcpToolClearCache
         return new SomcpTool(
             'somcp_clear_cache',
             Somcp::t('Clear the cache'),
-            'Clears the shop\'s caches, as the Clear cache button of Advanced Parameters > Performance does: '
-                . 'Symfony, Smarty (cache and compiled templates), XML, the theme\'s combined CSS and JavaScript '
-                . 'files and the class index. The caches are shared by every shop of the installation, so this '
-                . 'clears them for all shops, not only the connected one. The Memcache or APC caching system is not '
-                . 'flushed and no setting changes. The storefront and back office are slower until the caches '
-                . 'rebuild, up to several seconds for the next page: do not clear on a busy shop unless the merchant '
-                . 'asks. Every call clears; calling twice is harmless, so a lost answer can be retried. Read the '
-                . 'settings with somcp_get_cache_status.',
+            'Clears the caches, as the Clear cache button of Advanced Parameters > Performance: Symfony, '
+                . 'Smarty, XML, the theme\'s combined CSS and JavaScript and the class index. They are shared by '
+                . 'every shop of the installation, so all shops are cleared. Memcache or APC is not flushed and no '
+                . 'setting changes. Pages are slower until the caches rebuild: do not clear on a busy shop unless '
+                . 'the merchant asks. Calling twice is harmless, so a lost answer can be retried. For the settings '
+                . 'use somcp_get_cache_status.',
             [
                 'type' => 'object',
                 'properties' => new stdClass(),

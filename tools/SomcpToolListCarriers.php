@@ -47,16 +47,12 @@ class SomcpToolListCarriers
         return new SomcpTool(
             'somcp_list_carriers',
             Somcp::t('List carriers'),
-            'Lists the carriers of this shop as Shipping > Carriers shows them, enabled or not, '
-                . 'in the order of that list: identifier, name, delay, whether it is enabled and '
-                . 'free, its position, logo, tracking URL (with @ where the tracking number goes) '
-                . 'and the module that computes its costs when a module created it. '
-                . 'Take id_carrier from here for shipping.carriers of somcp_create_product and '
-                . 'somcp_update_product: identifiers are specific to each shop, so never assume one. '
-                . 'PrestaShop gives a carrier a new id_carrier each time it is edited; id_reference '
-                . 'stays the same, and is what an order placed before the edit can be matched on. '
-                . 'Do not use it for the carrier and tracking number of one order (somcp_get_order), '
-                . 'nor to change a tracking number (somcp_set_order_tracking).',
+            'Lists the carriers as Shipping > Carriers shows them, enabled or not, in its order, with the '
+                . 'tracking URL (@ where the tracking number goes). Take id_carrier from here for shipping.carriers '
+                . 'of somcp_create_product and somcp_update_product: never guess one. PrestaShop gives a carrier a '
+                . 'new id_carrier at each edit; id_reference stays the same and matches the orders placed before. '
+                . 'For the carrier and tracking number of one order use somcp_get_order; to change a tracking '
+                . 'number, somcp_set_order_tracking.',
             [
                 'type' => 'object',
                 'properties' => [

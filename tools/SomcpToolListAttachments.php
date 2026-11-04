@@ -42,16 +42,12 @@ class SomcpToolListAttachments
         return new SomcpTool(
             'somcp_list_attachments',
             Somcp::t('List files'),
-            'Lists the files of this shop (Catalogue > Files: manuals, data sheets) that a product '
-                . 'can carry, with the columns of the back office list: identifier, name, description, '
-                . 'file name, size in bytes, number of products carrying it, MIME type and a download '
-                . 'link, filtered by part of the name or of the file name. Call '
-                . 'it before any call that takes file identifiers - creating or changing a product - and '
-                . 'take id_attachment from here: identifiers are specific to each shop, so never assume '
-                . 'one. The file itself is never sent: download_url is the public storefront link, which '
-                . 'works without being signed in, so anyone holding it can download the file - give it '
-                . 'to the merchant only, never paste it anywhere public. Do not use it for the files of '
-                . 'one product: somcp_get_product lists those. It cannot add a file.',
+            'Lists the files of Catalog > Files (manuals, data sheets) that a product can carry, with the '
+                . 'columns of that list, filtered by part of the name or of the file name. Take id_attachment from '
+                . 'here before creating or changing a product: never guess one. The file itself is never sent: '
+                . 'download_url is the public storefront link, which works without being signed in, so give it to '
+                . 'the merchant only, never paste it anywhere public. For the files of one product use '
+                . 'somcp_get_product. It cannot add a file.',
             [
                 'type' => 'object',
                 'properties' => [

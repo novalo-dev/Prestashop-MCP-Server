@@ -140,7 +140,16 @@
                        posted; without a script every row shows. *}
                     <div class="somcp-tools-scroll">
                     <table class="table somcp-tools" data-somcp-grouped
-                           data-somcp-count="{l s='%on% of %total% on' d='Modules.Somcp.Admin' js=1}">
+                           data-somcp-count="{l s='%on% of %total% on' d='Modules.Somcp.Admin' js=1}"
+                           data-somcp-off="{l s='group switched off' d='Modules.Somcp.Admin' js=1}">
+                        {* Fixed widths: with groups folding and unfolding, columns
+                           sized by their content would jump at every click. *}
+                        <colgroup>
+                            <col>
+                            <col class="somcp-col-publisher">
+                            <col class="somcp-col-switch">
+                            <col class="somcp-col-switch">
+                        </colgroup>
                         <thead>
                         <tr>
                             <th>{l s='Tool' d='Modules.Somcp.Admin'}</th>
@@ -202,6 +211,20 @@
                     </table>
                     </div>
                     <p class="text-muted somcp-tools-none" data-somcp-nothing hidden></p>
+                    {* Paged a few groups at a time in the browser, with every
+                       row left in the form: paging on the server would post
+                       only the switches on screen. *}
+                    <div class="somcp-tools-nav" data-somcp-pager="5" hidden>
+                        <button type="button" class="btn btn-default btn-sm" data-somcp-page="-1">
+                            &laquo; {l s='Previous' d='Modules.Somcp.Admin'}
+                        </button>
+                        <span class="somcp-tools-count"
+                              data-somcp-range="{l s='Tools %from% to %to% of %total%' d='Modules.Somcp.Admin' js=1}"
+                              data-somcp-filtered="{l s='(filtered from %all%)' d='Modules.Somcp.Admin' js=1}"></span>
+                        <button type="button" class="btn btn-default btn-sm" data-somcp-page="1">
+                            {l s='Next' d='Modules.Somcp.Admin'} &raquo;
+                        </button>
+                    </div>
                 {else}
                     <p class="text-muted">{l s='No tool is available on this shop.' d='Modules.Somcp.Admin'}</p>
                 {/if}
@@ -218,7 +241,16 @@
                            data-somcp-none="{l s='No prompt matches this search.' d='Modules.Somcp.Admin'}">
                     <div class="somcp-tools-scroll">
                     <table class="table somcp-tools" data-somcp-grouped
-                           data-somcp-count="{l s='%on% of %total% on' d='Modules.Somcp.Admin' js=1}">
+                           data-somcp-count="{l s='%on% of %total% on' d='Modules.Somcp.Admin' js=1}"
+                           data-somcp-off="{l s='group switched off' d='Modules.Somcp.Admin' js=1}">
+                        {* Fixed widths: with groups folding and unfolding, columns
+                           sized by their content would jump at every click. *}
+                        <colgroup>
+                            <col>
+                            <col class="somcp-col-publisher">
+                            <col class="somcp-col-switch">
+                            <col class="somcp-col-switch">
+                        </colgroup>
                         <thead>
                         <tr>
                             <th>{l s='Prompt' d='Modules.Somcp.Admin'}</th>
@@ -278,6 +310,20 @@
                     </table>
                     </div>
                     <p class="text-muted somcp-tools-none" data-somcp-nothing hidden></p>
+                    {* Paged a few groups at a time in the browser, with every
+                       row left in the form: paging on the server would post
+                       only the switches on screen. *}
+                    <div class="somcp-tools-nav" data-somcp-pager="5" hidden>
+                        <button type="button" class="btn btn-default btn-sm" data-somcp-page="-1">
+                            &laquo; {l s='Previous' d='Modules.Somcp.Admin'}
+                        </button>
+                        <span class="somcp-tools-count"
+                              data-somcp-range="{l s='Prompts %from% to %to% of %total%' d='Modules.Somcp.Admin' js=1}"
+                              data-somcp-filtered="{l s='(filtered from %all%)' d='Modules.Somcp.Admin' js=1}"></span>
+                        <button type="button" class="btn btn-default btn-sm" data-somcp-page="1">
+                            {l s='Next' d='Modules.Somcp.Admin'} &raquo;
+                        </button>
+                    </div>
                 {else}
                     <p class="text-muted">{l s='No prompt is available on this shop.' d='Modules.Somcp.Admin'}</p>
                 {/if}

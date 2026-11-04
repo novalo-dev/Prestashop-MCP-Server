@@ -491,8 +491,29 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
 /* The two switch columns take what their heading needs and no more, so the
    width goes to the tool name, which is the longest thing in the row. */
 .somcp .somcp-tools .somcp-tool-on {
-    width: 130px;
     text-align: center;
+}
+
+/* The grouped lists keep their columns where they are while groups fold,
+   unfold and page: fixed widths, and headings on one line. */
+.somcp .somcp-tools[data-somcp-grouped] {
+    table-layout: fixed;
+}
+
+.somcp .somcp-tools[data-somcp-grouped] th {
+    white-space: nowrap;
+}
+
+.somcp .somcp-tools[data-somcp-grouped] td {
+    overflow-wrap: anywhere;
+}
+
+.somcp .somcp-tools .somcp-col-publisher {
+    width: 170px;
+}
+
+.somcp .somcp-tools .somcp-col-switch {
+    width: 190px;
 }
 
 /* Above each list, the width of a search field rather than of the panel. */

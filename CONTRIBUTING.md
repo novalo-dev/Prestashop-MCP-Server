@@ -46,7 +46,9 @@ composer install --working-dir=dev/tools
 
 ## Checks
 
-CI runs all of these on every pull request. Run them before pushing:
+CI runs all of these on every pull request, in three workflows with a badge
+each on the README: **PHP tests**, **Security** and **Integration**. Run them
+before pushing:
 
 ```bash
 # PrestaShop coding standard
@@ -70,7 +72,7 @@ php .github/scripts/check-multishop.php .
 php .github/scripts/check-headers.php .
 ```
 
-CI also runs a **Security** job, which you can run too:
+The **Security** workflow runs these, which you can run too:
 
 ```bash
 # Semgrep: its PHP rules and the module's own (pip install semgrep)
@@ -93,7 +95,7 @@ The shop test also checks permissions: every tool is refused to an employee
 whose profile has no right, to an account that does not exist and to a token
 without its scope. Only `somcp_ping` may skip `SomcpTool::acts()`.
 
-CI also installs every published PrestaShop 8 and 9, with each PHP version
+The **Integration** workflow installs every published PrestaShop 8 and 9, with each PHP version
 that release accepts, runs PHPStan against that release on that PHP, and
 calls every tool there through
 `dev/shop-tests/run.php`, following its scenario in
@@ -104,7 +106,7 @@ calls every tool there through
 module fails the call too. PrestaShop 8 also runs on PHP 8.2 and later, which
 it does not support: those runs report without failing CI.
 
-CI also lints every file on PHP 8.1 to 8.4 and compiles `config/services.yml`
+The **PHP tests** workflow also lints every file on PHP 8.1 to 8.4 and compiles `config/services.yml`
 with the Symfony versions of PrestaShop 8 (4.4) and 9 (6.4), with and without
 what PrestaShop 9 adds. That last check exists because a service asking for a
 PrestaShop 9 class once took the whole PrestaShop 8 back office down.

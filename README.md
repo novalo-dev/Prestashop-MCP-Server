@@ -1,16 +1,25 @@
 # PrestaShop MCP Server
 
+<div align="center">
+
+[![PHP tests](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/php.yml/badge.svg?branch=develop)](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/php.yml)
+[![Integration](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/integration.yml/badge.svg?branch=develop)](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/integration.yml)
+[![Security](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/security.yml/badge.svg?branch=develop)](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/security.yml)
+
+[![Release](https://img.shields.io/github/v/release/novalo-dev/Prestashop-MCP-Server?style=flat&label=release&color=007EC6)](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest)
 [![PrestaShop](.github/badges/prestashop.svg)](https://prestashop.com)
 [![PHP](.github/badges/php.svg)](https://php.net)
 [![MCP](.github/badges/mcp.svg)](https://modelcontextprotocol.io)
 ![Multistore](.github/badges/multistore.svg)
 [![License](.github/badges/license.svg)](LICENSE.txt)
 [![Docs](.github/badges/docs.svg)](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
-![Version](.github/badges/version.svg)
-[![PRs welcome](.github/badges/prs.svg)](CONTRIBUTING.md)
+
 [![Stars](https://img.shields.io/github/stars/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Stars)](https://github.com/novalo-dev/Prestashop-MCP-Server/stargazers)
 [![Forks](https://img.shields.io/github/forks/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Forks)](https://github.com/novalo-dev/Prestashop-MCP-Server/forks)
 [![Contributors](https://img.shields.io/github/contributors/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Contributors)](https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors)
+[![PRs welcome](.github/badges/prs.svg)](CONTRIBUTING.md)
+
+</div>
 
 A PrestaShop module that turns a shop into an [MCP](https://modelcontextprotocol.io)
 server. Claude, ChatGPT, Le Chat or any MCP-compatible assistant

@@ -10,10 +10,10 @@ name: Build for Release
 # The tag is created here rather than pushed by hand, with the repository
 # token, so the tag and the release always come together.
 #
-# Three jobs: guard reads the version and refuses anything but main, ci runs
-# the whole CI on that commit, and release builds and publishes only once
-# every CI job passed - with a report of what was checked, attached to the
-# release beside the zip, never inside it.
+# guard reads the version and refuses anything but main; the CI workflows -
+# PHP tests, security, integration - then run on that commit; release builds
+# and publishes only once every one of their jobs passed, with a report of
+# what was checked, attached to the release beside the zip, never inside it.
 on:
   workflow_dispatch:
     inputs:
@@ -109,13 +109,23 @@ jobs:
   # The whole CI, on the commit being released: every PrestaShop and PHP
   # combination, the attacks and the scan, the static analysis. A release
   # published on a commit whose own CI was never green is what this prevents.
-  ci:
+  php:
     needs: guard
     if: needs.guard.outputs.skip == 'false'
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/php.yml
+
+  security:
+    needs: guard
+    if: needs.guard.outputs.skip == 'false'
+    uses: ./.github/workflows/security.yml
+
+  integration:
+    needs: guard
+    if: needs.guard.outputs.skip == 'false'
+    uses: ./.github/workflows/integration.yml
 
   release:
-    needs: [guard, ci]
+    needs: [guard, php, security, integration]
     runs-on: ubuntu-latest
     env:
       V: ${{ needs.guard.outputs.number }}

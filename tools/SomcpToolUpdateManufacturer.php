@@ -62,24 +62,13 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
         return new SomcpTool(
             'somcp_update_manufacturer',
             Somcp::t('Change a brand'),
-            'Changes one existing brand (manufacturer) of this shop. Everything somcp_create_manufacturer can '
-                . 'write can be changed here, under the same names and with the same rules - who fills each '
-                . 'field, lengths, forbidden characters. Only what is given changes: a value left out is kept, a '
-                . 'text is replaced in the languages filled and kept in the others, a logo given replaces the '
-                . 'current one. The logo is only removed through remove_logo. When languages is left out every '
-                . 'language of the shop is filled, so a text must then be given in each; to change one language, '
-                . 'pass languages with it alone. The name is one text, the same in every language. '
-                . 'Take the brand from somcp_list_manufacturers, never guessed, and read it with '
-                . 'somcp_get_manufacturer to know what it holds. Show the merchant what will change and call once '
-                . 'they agree. Every problem is reported at once and nothing is written until the whole call is '
-                . 'valid. The logo, by url or by upload_ref, is written after the change; one that cannot be had '
-                . 'is reported in logo and does not undo it. The answer gives each field '
-                . 'changed with its old and new value. A call that would change nothing writes nothing and says '
-                . 'changed: false. '
-                . 'Do not use it to create a brand (somcp_create_manufacturer) or only to enable or disable one '
-                . '(somcp_set_manufacturer_active). One brand per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the brand again with '
-                . 'somcp_get_manufacturer and compare before calling again.',
+            'Changes one brand, as the brand form of Catalog > Brands & Suppliers > Brands, under the names '
+                . 'and rules of somcp_create_manufacturer. id_manufacturer comes from somcp_list_manufacturers: '
+                . 'never guess one; read it first with somcp_get_manufacturer. Only what is given changes, a text '
+                . 'only in the languages filled. Show the merchant the change and call once they agree. The '
+                . 'answer gives the old and new value of each field changed. To enable or disable only: '
+                . 'somcp_set_manufacturer_active. One brand per call. Not to be retried: if the answer is lost, read '
+                . 'somcp_get_manufacturer before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

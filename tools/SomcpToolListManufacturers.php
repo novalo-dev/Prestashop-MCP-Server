@@ -45,15 +45,11 @@ class SomcpToolListManufacturers
         return new SomcpTool(
             'somcp_list_manufacturers',
             Somcp::t('List brands'),
-            'Lists the brands (manufacturers) of this shop, as the Brands list of the back office: '
-                . 'identifier, name, whether it is enabled (active), its number of addresses and its '
-                . 'number of products. Every brand matching the filters is returned, sorted by name. '
-                . 'Call it before any call that takes a brand - creating or changing a product - and '
-                . 'take the identifier from here: brand identifiers are specific to each shop, so '
-                . 'never assume one. Brands that are switched off are listed too unless active is '
-                . 'given, since a product can still point to them. Everything else about one brand, '
-                . 'its logo included, is read with somcp_get_manufacturer. Do not use it to find the '
-                . 'products of a brand: it lists brands only.',
+            'Lists the brands of this shop, as Catalog > Brands & Suppliers > Brands: identifier, name, '
+                . 'Enabled, number of addresses and number of products, sorted by name, disabled ones included '
+                . 'unless active is given. Take an id_manufacturer from here before any call that needs one: brand '
+                . 'identifiers are specific to each shop, so never assume one. For everything else about one brand, '
+                . 'its logo included, use somcp_get_manufacturer. It does not list the products of a brand.',
             [
                 'type' => 'object',
                 'properties' => [

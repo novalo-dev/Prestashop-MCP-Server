@@ -56,16 +56,11 @@ class SomcpToolAuditBrandSeo
         return new SomcpTool(
             'somcp_audit_brand_seo',
             Somcp::t('Audit the SEO of brands'),
-            'Lists the brands of this shop whose search engine fields or descriptions have a problem, one '
-                . 'entry per brand and language, each with its issues: the check that failed and the value at '
-                . 'fault. Checks: meta_title_missing, meta_description_missing, description_missing (the brand '
-                . 'page has no description, tags removed), no_logo, and inactive_with_products (a disabled brand '
-                . 'whose page is gone while products of the shop still carry it; value is the number of '
-                . 'products). no_logo and inactive_with_products concern the whole brand and are repeated on '
-                . 'each language entry. products_count is the number of products of this shop attached to the '
-                . 'brand. Every brand is listed, enabled or not, with active saying which; counts gives the '
-                . 'entries raising each check. Read only. Do not use it to change a brand: '
-                . 'somcp_update_manufacturer does that.',
+            'Lists the brands whose search engine fields or descriptions have a problem, one entry per brand '
+                . 'and language, each issue with its check and the value at fault: meta_title_missing, '
+                . 'meta_description_missing, description_missing, no_logo, inactive_with_products (a disabled brand '
+                . 'still on products of the shop, value is their number). Every brand is listed with active; counts '
+                . 'gives the entries per check. Read only. To fix a brand use somcp_update_manufacturer.',
             [
                 'type' => 'object',
                 'properties' => [

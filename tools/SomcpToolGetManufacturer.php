@@ -48,14 +48,11 @@ class SomcpToolGetManufacturer
         return new SomcpTool(
             'somcp_get_manufacturer',
             Somcp::t('Get a brand'),
-            'Returns everything the back office brand (manufacturer) form shows for one brand of this shop: '
-                . 'name, Enabled (active), short description, description, meta title, meta description, meta '
-                . 'keywords (PrestaShop 8, null on 9), the logo address (null when the brand has none) and the '
-                . 'number of products of this shop attached to it. '
-                . 'Identify the brand by its identifier, from somcp_list_manufacturers: never guess one. '
-                . 'Do not use it for the list of brands, which is somcp_list_manufacturers, or for the products of '
-                . 'a brand: somcp_search_products has no brand filter. A brand\'s postal addresses are not part of '
-                . 'the brand form and are not returned.',
+            'Returns what the brand form of Catalog > Brands & Suppliers > Brands shows for one brand: name, '
+                . 'Enabled, the descriptions, the meta texts (keywords null on PrestaShop 9), the logo address (null '
+                . 'without one) and the number of products of this shop attached to it. id_manufacturer comes from '
+                . 'somcp_list_manufacturers: never guess one. For the list use somcp_list_manufacturers; '
+                . 'somcp_search_products has no brand filter. For its addresses use somcp_list_manufacturer_addresses.',
             [
                 'type' => 'object',
                 'properties' => [

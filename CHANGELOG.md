@@ -77,6 +77,14 @@ and is never guessed, that a supplier name can exist twice so the list is read
 before a creation, who fills each field, that disabling is not a deletion, and
 which read checks a change.
 
+**Shorter brand tools.** The six tools of Catalog > Brands & Suppliers >
+Brands - list, read, create, change, enable or disable a brand, and the SEO
+audit of brands - now describe themselves in a few sentences, lighter for the
+assistant on every step. What matters is kept: that the brand identifier comes
+from the list and is never guessed, that a brand name can exist twice so the
+list is read before a creation, who fills each field, that disabling a brand
+keeps its products on sale, and which read checks a change.
+
 ### Fixed
 
 **The module passes the PrestaShop Addons validator again.** The check

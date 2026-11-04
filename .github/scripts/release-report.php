@@ -23,14 +23,16 @@ declare(strict_types=1);
  * commit that went into the zip and nothing else. Every line is a check that
  * ran: the CI jobs and their steps, each PrestaShop and PHP combination, each
  * HTTP attack the shop test makes, each tool whose permissions were checked,
- * then the release steps. Only results are written - the attacks are named as
+ * each check the browser made in the UI tests, then the release steps. Only results are written - the attacks are named as
  * the public test file names them, and nothing about a fault still being
  * fixed can be in here, since those live in private advisories.
  *
  * Usage: php .github/scripts/release-report.php <jobs.json> <release.txt>
- *        <version> <commit> <run id> [module root]
+ *        <version> <commit> <run id> [module root] [ui results dir]
  *   jobs.json    the run's jobs, as the Actions API lists them
  *   release.txt  one "label<TAB>detail" line per release check that passed
+ *   ui results   the files the UI tests left, one per pair: its name on the
+ *                first line, then one "PASS check" or "FAIL check" per line
  */
 
 if ($argc < 6) {
@@ -39,6 +41,7 @@ if ($argc < 6) {
 }
 [, $jobsFile, $releaseFile, $version, $commit, $runId] = $argv;
 $root = rtrim($argv[6] ?? '.', '/');
+$uiDir = rtrim($argv[7] ?? '', '/');
 
 $decoded = json_decode((string) file_get_contents($jobsFile), true);
 $jobs = is_array($decoded['jobs'] ?? null) ? $decoded['jobs'] : [];
@@ -85,9 +88,14 @@ $out[] = '';
 // Code quality: every job that is not one shop combination, with its steps.
 $combos = [];
 $quality = [];
+$browsers = [];
 foreach ($ci as $job) {
     if (preg_match('/^PrestaShop (\S+) on PHP (\S+)$/', $job['name'], $m)) {
         $combos[$m[1]][] = ['php' => $m[2], 'conclusion' => $job['conclusion'], 'steps' => $job['steps']];
+        continue;
+    }
+    if (strpos($job['name'], 'UI sanity') === 0) {
+        $browsers[] = $job;
         continue;
     }
     $quality[] = $job;
@@ -185,6 +193,31 @@ foreach ($bySection as $section => $names) {
 }
 $out[] = '';
 
+// UI: each pair the browser ran on, and each check it made there, from the
+// files the UI tests left. A pair whose job failed is marked so even when its
+// file is missing.
+$runs = [];
+foreach ($uiDir === '' ? [] : (glob($uiDir . '/*/*.txt') ?: []) as $file) {
+    $rows = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    if ($rows !== []) {
+        $runs[] = $rows;
+    }
+}
+$uiGreen = $browsers !== [] && array_filter($browsers, static function (array $job): bool {
+    return $job['conclusion'] !== 'success';
+}) === [];
+$out[] = $rule('UI: ' . count($browsers) . ' browser runs on a live back office');
+foreach ($browsers as $job) {
+    $out[] = $mark($job['conclusion']) . ' ' . $job['name'];
+}
+foreach ($runs as $rows) {
+    $out[] = '-- ' . array_shift($rows);
+    foreach ($rows as $row) {
+        $out[] = (strpos($row, 'PASS ') === 0 ? '[PASS] ' : '[FAIL] ') . substr($row, 5);
+    }
+}
+$out[] = '';
+
 // Release: what the release job checked, in its own order.
 $out[] = $rule('RELEASE');
 foreach (file($releaseFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $entry) {
@@ -209,4 +242,4 @@ $out[] = "Download: https://github.com/novalo-dev/Prestashop-MCP-Server/releases
 echo implode("\n", $out) . "\n";
 
 // A report saying a check failed must never ride along with a release.
-exit($failed === 0 && $shopsGreen && $attacked !== [] ? 0 : 1);
+exit($failed === 0 && $shopsGreen && $attacked !== [] && $uiGreen ? 0 : 1);

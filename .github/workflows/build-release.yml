@@ -282,6 +282,12 @@ jobs:
       # SHA-256 lets a merchant check the zip they downloaded is the one the
       # CI tested. It is written from this run's own jobs, so it can only
       # describe this commit.
+      # The UI tests leave one file per pair, with a line per check.
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ui-results-*
+          path: ${{ runner.temp }}/ui
+
       - name: Security and compatibility report
         id: report
         env:
@@ -304,7 +310,7 @@ jobs:
             PAGE=$((PAGE + 1))
           done
           jq -s '{jobs: .}' "$RUNNER_TEMP/pages.jsonl" > "$RUNNER_TEMP/jobs.json"
-          if ! php .github/scripts/release-report.php "$RUNNER_TEMP/jobs.json" "$CHECKS" "$V" "$GITHUB_SHA" "$GITHUB_RUN_ID" . > "$REPORT"; then
+          if ! php .github/scripts/release-report.php "$RUNNER_TEMP/jobs.json" "$CHECKS" "$V" "$GITHUB_SHA" "$GITHUB_RUN_ID" . "$RUNNER_TEMP/ui" > "$REPORT"; then
             echo "| Report | **a CI job did not pass, see the report below** |" >> "$GITHUB_STEP_SUMMARY"
             cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
             echo "::error::the report lists a check that did not pass"; exit 1

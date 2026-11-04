@@ -23,15 +23,16 @@
  * the search and a switch of the Tools and prompts tab, and fails on the first
  * uncaught script error, page error or PHP message on screen.
  *
- * Usage: node sanity.mjs <admin url> <email> <password> <browser> <shot dir>
+ * Usage: node sanity.mjs <admin url> <email> <password> <browser> <shot dir> [results file]
  *   browser is chromium or firefox. A screenshot of the page in front is left
- *   in <shot dir> when a check fails.
+ *   in <shot dir> when a check fails. The results file gets one PASS or FAIL
+ *   line per check: the release report lists them.
  */
 
 import { chromium, firefox } from 'playwright';
-import { mkdirSync } from 'node:fs';
+import { appendFileSync, mkdirSync } from 'node:fs';
 
-const [adminUrl, email, password, browserName = 'chromium', shots = 'ui-shots'] = process.argv.slice(2);
+const [adminUrl, email, password, browserName = 'chromium', shots = 'ui-shots', results = ''] = process.argv.slice(2);
 if (!adminUrl || !email || !password) {
     console.error('usage: node sanity.mjs <admin url> <email> <password> <browser> <shot dir>');
     process.exit(2);
@@ -68,7 +69,11 @@ const check = async (name, run) => {
     } catch (error) {
         errors.push(`${name}: ${error.message.split('\n')[0]}`);
     }
-    if (errors.length > before) {
+    const failed = errors.length > before;
+    if (results !== '') {
+        appendFileSync(results, `${failed ? 'FAIL' : 'PASS'} ${name}\n`);
+    }
+    if (failed) {
         await page.screenshot({ path: `${shots}/${name.replace(/[^a-z0-9]+/gi, '-')}.png`, fullPage: true }).catch(() => {});
         console.log(`[FAIL] ${name}`);
         return false;

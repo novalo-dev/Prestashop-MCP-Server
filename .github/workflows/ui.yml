@@ -106,7 +106,20 @@ jobs:
 
       - name: Sanity run
         working-directory: module/dev/ui-tests
-        run: node sanity.mjs "http://localhost:8080/$ADMIN_DIR/" "$ADMIN_MAIL" "$ADMIN_PASSWD" ${{ matrix.browser }} "$GITHUB_WORKSPACE/ui-shots"
+        run: |
+          # The first line names the pair; the release report reads it back.
+          echo "PrestaShop ${{ matrix.prestashop }}, PHP ${{ matrix.php }}, ${{ matrix.browser }}, ${{ matrix.db }}" > "$GITHUB_WORKSPACE/ui-results.txt"
+          node sanity.mjs "http://localhost:8080/$ADMIN_DIR/" "$ADMIN_MAIL" "$ADMIN_PASSWD" ${{ matrix.browser }} \
+            "$GITHUB_WORKSPACE/ui-shots" "$GITHUB_WORKSPACE/ui-results.txt"
+
+      # Kept whatever the outcome: Build for Release lists every check of every
+      # pair in the report it attaches to the release.
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: ui-results-${{ matrix.prestashop }}-${{ matrix.php }}-${{ matrix.browser }}-${{ matrix.db }}
+          path: ui-results.txt
+          if-no-files-found: ignore
 
       # What the browser saw when a check failed, and what the shop logged.
       - name: Shop log

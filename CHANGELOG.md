@@ -60,6 +60,15 @@ stays your responsibility.
 
 ### Changed
 
+**The SEO settings read now cover the rest of the SEO and URLs page.** The tool
+that reads the shop's SEO and URL settings now also reports the two Apache
+options (MultiViews and mod_security), the option that puts the attributes in
+the product meta title, the address pattern of the module pages, and, for each
+language, whether its addresses carry the ISO code - including, on PrestaShop 9,
+the option that keeps the default language without a prefix. Reading the
+settings still changes nothing, and an unexpected field is now refused instead
+of ignored.
+
 **The Tools and prompts lists are folded by group.** Each group shows how many
 of its tools or prompts are on in each column, and opens with a click; the
 search opens the groups it finds something in. The **Asks for** and

@@ -3141,12 +3141,13 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 None.
 
-**Returns** - `friendly_urls`, `accented_urls`, `canonical_redirect` (none, 302 or 301), `https` (whether the shop answers in HTTPS) and `https_everywhere` (the PrestaShop 8 setting serving every page in HTTPS, `null` on PrestaShop 9, which dropped it), `domains` (main first, each with `domain`, `domain_ssl`, `uri`, `main`, `active`), `routes` (`product`, `category`, `brand`, `supplier`, `cms`, `cms_category`, each with its `pattern` and `customized`), `robots_txt_present`, `sitemap_module` (`installed`, `active`), `languages` (`iso_code`, `name`, `active`, `default`), `warnings` (each a `code` and `why`).
+**Returns** - `friendly_urls`, `accented_urls`, `default_language_url_prefix` (**Use prefix for default language**, `null` on PrestaShop 8, which has no such option), `canonical_redirect` (none, 302 or 301), `disable_apache_multiviews` and `disable_apache_mod_security` (the two Apache options of the Set up URLs card), `https` (whether the shop answers in HTTPS) and `https_everywhere` (the PrestaShop 8 setting serving every page in HTTPS, `null` on PrestaShop 9, which dropped it), `domains` (main first, each with `domain`, `domain_ssl`, `uri`, `main`, `active`), `routes` (`product`, `category`, `brand`, `supplier`, `cms`, `cms_category`, `module`, each with its `pattern` and `customized`), `product_attributes_in_title` (**Display attributes in the product meta title**), `robots_txt_present`, `sitemap_module` (`installed`, `active`), `languages` (`iso_code`, `name`, `active`, `default`, `url_prefix` - whether this language's addresses carry its ISO code), `warnings` (each a `code` and `why`).
 
 **Notes**
 - Settings read by their configuration keys in each version, for the shop of the token; a key a version does not have is `null`, never guessed.
 - A route's default pattern is read from `Dispatcher::$default_routes` of the running version (PrestaShop 8 puts the category and the EAN-13 in the product address), and `PS_ROUTE_<route>` replaces it when not empty, as `Dispatcher::loadRoutes()` does.
 - `sitemap_module.active` is read from `module_shop` for the shop of the token, since `Module::isEnabled()` answers for the shop of the global context.
+- A language's `url_prefix` follows what the storefront does: the ISO code is in the addresses only when the shop serves more than one active language, and then every language carries it, except the default language on PrestaShop 9 when **Use prefix for default language** is off.
 - `warnings` names what costs rankings: friendly URLs off (`friendly_urls_off`), no canonical redirection (`no_canonical_redirect`), a shop not served in HTTPS (`not_https`, or `https_not_everywhere` on PrestaShop 8), no robots.txt (`no_robots_txt`), no sitemap module (`no_sitemap_module`).
 
 #### `somcp_get_robots_txt`

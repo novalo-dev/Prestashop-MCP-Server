@@ -14,6 +14,15 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+### Fixed
+
+**robots.txt is no longer rewritten on a shop in demo mode.** The tool
+`somcp_generate_robots_txt` now refuses, with nothing changed, on a shop that
+runs in demo mode, as the **Generate robots.txt file** button of **Shop
+Parameters > Traffic & SEO** does.
+
 ## 1.2.2 - 2026-11-05
 
 ### Added

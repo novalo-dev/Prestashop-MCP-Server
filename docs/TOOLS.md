@@ -3190,6 +3190,7 @@ None.
 - Any line added by hand to the file is lost: the previous content is returned and the assistant tells the merchant before the call.
 - One file for the whole installation, at the root of PrestaShop. On a multistore installation it holds the rules of every shop's folder, but its `Sitemap` line is the one of the shop the call is made for, as when the button is pressed from that shop.
 - The new content can only be known by writing it, so a call that changes nothing still rewrites the same bytes, and answers `changed: false`. A file the web server cannot write is refused with nothing changed.
+- Refused in demo mode (`_PS_MODE_DEMO_`), with nothing read or written, as the button is (`DemoRestricted` on `generateRobotsFileAction`).
 
 #### `somcp_audit_page`
 **State**: written

@@ -3019,12 +3019,12 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 |---|---|---|---|
 | `language` | string | no | ISO code; every language when left out |
 
-**Returns** - `pages`, one entry per page and language: `id_cms`, `meta_title`, `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `total_count`, `counts` per check and `languages` audited.
+**Returns** - `pages`, one entry per page and language: `id_cms`, `title` (the page title, column `meta_title`), `meta_title` (the Meta title, column `head_seo_title`), `seo_title` (the one search engines read), `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `total_count`, `counts` per check and `languages` audited.
 
 **Notes**
-- Checks: `meta_title_too_long`, `meta_title_duplicate`, `meta_description_missing`, `meta_description_long`, `content_short` (under 150 words), `link_rewrite_duplicate`, `not_indexable` (the page's `indexation` flag is off).
-- The title checked is the one search engines read, as `Meta::getCmsMetas()` builds it on PrestaShop 8 and 9: the page's meta title (`head_seo_title`) when it is filled, its title (`meta_title`) otherwise. `meta_title` in the entry is the page title the back office list shows. The title is required by the form, so there is no `meta_title_missing`.
-- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code: over 60 characters for the title, over 160 for the description, under 150 words of content once tags are removed. The `value` is the title, description or friendly URL at fault, the number of words for `content_short`, and an empty string for the checks that report an absence.
+- Checks: `meta_title_too_long`, `meta_title_duplicate`, `meta_description_missing`, `meta_description_short` (under 70 characters), `meta_description_long` (over 160), `content_short` (under 150 words), `link_rewrite_duplicate`, `not_indexable` (the page's `indexation` flag is off).
+- `title`, `meta_title` and `seo_title` carry the same names and meaning as in `somcp_get_cms_page` and `somcp_update_cms_seo`: the form's **Title** is the column `meta_title` and its **Meta title** the column `head_seo_title`, so an assistant that reads a field here writes it back under the right name. `seo_title` is the one search engines read, as `Meta::getCmsMetas()` builds it on PrestaShop 8 and 9: the Meta title when filled, the Title otherwise - and the title the checks look at. The Title is required by the form, so there is no `meta_title_missing`.
+- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code: over 60 characters for the title, under 70 or over 160 for the description, under 150 words of content once tags are removed. The `value` is the title, description or friendly URL at fault, the number of words for `content_short`, and an empty string for the checks that report an absence.
 - Duplicates are found by the database among the pages of this shop in one language, so its collation decides what is the same title or URL.
 - Every page associated with the shop is audited, shown or not, with `active` saying which. A shop has a handful of pages, so they are returned whole, without paging, read in SQL from `cms`, `cms_shop` and `cms_lang`. No write, ever.
 

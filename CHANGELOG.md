@@ -51,6 +51,13 @@ include hidden ones, lets you limit it to the checks you want, and flags a meta
 description that is too short, so the same page gets the same verdict whether
 you audit it as a product or as a category.
 
+**The CMS page audit names the title and the meta title as the page form
+does.** Each page in the CMS SEO audit now carries its page title, its meta
+title and the title search engines read under the same names the other page
+tools use, so an assistant fixing a field passes it back correctly instead of
+writing the page heading into the meta title. The audit also flags a meta
+description that is too short, as the other SEO audits do.
+
 ## 1.2.1 - 2026-11-04
 
 ### Added

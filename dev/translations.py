@@ -1054,6 +1054,10 @@ T = {
  "Auditer la complétude des produits pour les moteurs de réponse",
  "Auditar la completitud de los productos para los motores de respuesta",
  "Die Vollständigkeit der Produkte für Antwortmaschinen prüfen"),
+"Check whether AI crawlers can read the shop": (
+ "Vérifier si les robots d'IA peuvent lire la boutique",
+ "Comprobar si los rastreadores de IA pueden leer la tienda",
+ "Prüfen, ob KI-Crawler den Shop lesen können"),
 "Generate the robots.txt file": (
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",

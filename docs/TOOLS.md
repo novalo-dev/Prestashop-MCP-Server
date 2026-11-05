@@ -3338,22 +3338,30 @@ What answer engines and AI assistants need to recommend a product: complete and 
 - Read only.
 
 #### `somcp_check_ai_crawler_access`
-**State**: to write · [issue #97](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/97)
+**State**: written · [issue #97](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/97)
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
-**Does** - says whether the main AI crawlers may read the shop, from its robots.txt and the robots meta of its pages.
+**Does** - says whether the main AI crawlers may read the shop: for each crawler, whether the shop's robots.txt lets it fetch the home page, a product page and a category page, with the rule deciding it, and whether those pages tell it not to index them (robots meta tag or `X-Robots-Tag` header).
 
-**Do not use for** - the full robots.txt (→ `somcp_get_robots_txt`).
+**Do not use for** - the full robots.txt and all its rules (→ `somcp_get_robots_txt`); writing it again (→ `somcp_generate_robots_txt`); the SEO of one page (→ `somcp_audit_page`).
 
 **Parameters**
 
 None.
 
-**Returns** - per crawler (`GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-SearchBot`, `PerplexityBot`, `Google-Extended`, `Applebot-Extended`, `CCBot`, `Bingbot`): `allowed` on the home page, a product page and a category page, and the rule deciding it. Plus `meta_robots` found on those pages.
+**Returns**
+- `robots_txt_present` - as `present` of `somcp_get_robots_txt`.
+- `pages` - the pages checked, each `type` (`home`, `product`, `category`), `url`, `language` (ISO code), `meta_robots`, `x_robots_tag` (as `somcp_audit_page` returns them, `null` when absent), `fetched` (with `error` when the page could not be read).
+- `crawlers` - one per crawler, in order: `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-SearchBot`, `PerplexityBot`, `Google-Extended`, `Applebot-Extended`, `CCBot`, `Bingbot`. Each: `name` (the user agent token), `purpose` (one line), `group` (the user agents of the robots.txt group that applies, its own group else `*`, `null` when none), and `pages[]` - per page of `pages`: `type`, `language`, `allowed`, `rule` (the deciding line as written in the file, `null` when none matches), `noindex` (true when the page's robots meta or `X-Robots-Tag` says `noindex` or `none` for every robot or for this one, as in `GPTBot: noindex`).
+- `warnings` - `code` and `why`, the shapes of `somcp_get_robots_txt`: `blocked_everywhere` (a crawler refused on every page), `blocks_products`, `blocks_categories` (a crawler refused on that page type), `noindex_page` (a page that keeps every crawler out), `no_robots_txt` (no file, so everything is allowed), `not_at_domain_root`.
 
 **Notes**
-- Applies the robots.txt matching rules (most specific group, longest rule) the way the crawlers document them.
-- Reports only; whether to open the shop to a crawler is the merchant's choice, and the answer says so.
+- The robots.txt is read and matched with `somcp_get_robots_txt` (`samples()`, `parse()`, `rule()`, `matches()`), never a second copy, so the two tools can never disagree on what a rule blocks. Which group applies follows RFC 9309: the group whose user agent matches the crawler's token (case-insensitive), else `*`; the longest matching pattern wins, `Allow` wins a tie.
+- The pages are those of `somcp_get_robots_txt` (first displayed product, first displayed category below Home, in each active language), plus the home page of each language. Each is fetched once with the code of `somcp_audit_page` (`follow()`, the address guard, `load()`), and its robots meta read with its reader (`meta()`) and its `X-Robots-Tag` header, same size and time limits.
+- A page that cannot be fetched is reported in `pages` with `fetched` false and an `error`, never an error for the whole call. Its `allowed` and `rule` still come from the robots.txt; its `noindex` is false, since the page was not read.
+- Reports only; whether to open the shop to a crawler is the merchant's choice.
+- Errors in the shape of #169: unknown arguments.
+- Same **Robots file generation** card and the same robots logic in the core and the Classic theme on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_audit_store_policies`
 **State**: to write · [issue #98](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/98)

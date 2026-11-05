@@ -10,6 +10,7 @@ checked and why it matters.
 - `somcp_ping`
 - `somcp_audit_product_schema`
 - `somcp_audit_product_entities`
+- `somcp_check_ai_crawler_access`
 
 ## Know which shop you are in
 
@@ -48,6 +49,19 @@ installation has its own prices, stock and pages.
 5. **Check again.** After a change, call `somcp_audit_product_schema` on the
    same product: a value in the database is not proof of what the theme
    prints.
+
+## Check that the crawlers can read the shop
+
+Complete data only helps if the crawlers are allowed in. Call
+`somcp_check_ai_crawler_access`: it says, for each of the main AI crawlers,
+whether the shop's robots.txt lets it fetch the home, a product and a category
+page, with the rule deciding it, and whether those pages ask it not to index
+them. Read the `warnings`: `blocked_everywhere`, `blocks_products` or
+`blocks_categories` is a crawler shut out, `noindex_page` a page that keeps
+every crawler out, `no_robots_txt` a shop that allows all of them. Whether to
+open the shop to a crawler is the merchant's choice: report what is blocked and
+why it matters, and change the robots.txt only with `somcp_generate_robots_txt`
+and the merchant's approval, never by hand here.
 
 ## Never invent
 

@@ -38,6 +38,15 @@ description - and lists the least complete products first, naming for each one
 what is missing under the label of its product page. It reads one language and
 changes nothing; fill the gaps with the catalogue tools.
 
+**Check whether AI crawlers can read your shop.** The new tool
+`somcp_check_ai_crawler_access` tells you, for each of the main AI crawlers
+(GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Bingbot and more), whether
+your robots.txt lets it fetch your home page, a product page and a category
+page, with the exact rule that decides it, and whether those pages ask it not
+to index them. It reads your robots.txt and your pages and changes nothing;
+whether to open your shop to a crawler stays your choice, and the tool for
+writing the robots.txt is `somcp_generate_robots_txt`.
+
 ### Changed
 
 **The Tools and prompts lists are folded by group.** Each group shows how many

@@ -1327,6 +1327,11 @@
       <source>Audit how complete products are for answer engines</source>
       <target>Die Vollständigkeit der Produkte für Antwortmaschinen prüfen</target>
     </trans-unit>
+    <!-- Check whether AI crawlers can read the shop -->
+    <trans-unit id="4a5502662025b7b362c5503f1be7adf1" resname="Check whether AI crawlers can read the shop">
+      <source>Check whether AI crawlers can read the shop</source>
+      <target>Prüfen, ob KI-Crawler den Shop lesen können</target>
+    </trans-unit>
     <!-- Generate the robots.txt file -->
     <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
       <source>Generate the robots.txt file</source>

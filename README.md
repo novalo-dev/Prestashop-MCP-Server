@@ -357,6 +357,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 |---|---|---|
 | `somcp_audit_product_schema` | ● Compare a product page with its structured data | Products › view |
 | `somcp_audit_product_entities` | ● Audit how complete products are for answer engines | Products › view |
+| `somcp_check_ai_crawler_access` | ● Check whether AI crawlers can read the shop | SEO & URLs › view |
 
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
 language and currency it is connected to.

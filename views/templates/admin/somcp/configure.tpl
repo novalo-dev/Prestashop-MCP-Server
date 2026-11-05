@@ -283,7 +283,7 @@
                                 </td>
                             </tr>
                             {foreach from=$group.items item=prompt}
-                                <tr data-somcp-row>
+                                <tr data-somcp-row data-somcp-needs="{$prompt.scopes|escape:'html':'UTF-8'}">
                                     <td>
                                         <strong>{$prompt.title|escape:'html':'UTF-8'}</strong>
                                         <br><code>{$prompt.name|escape:'html':'UTF-8'}</code>
@@ -293,15 +293,15 @@
                                         {if $prompt.module}<code>{$prompt.module|escape:'html':'UTF-8'}</code>
                                         {else}{l s='This module' d='Modules.Somcp.Admin'}{/if}
                                     </td>
-                                    <td class="somcp-tool-on" data-somcp-column="on">
+                                    <td class="somcp-tool-on{if $prompt.held} somcp-is-held{/if}" data-somcp-column="on">
                                         <input type="checkbox" class="somcp-toggle" name="somcp_prompt_on[{$prompt.name|escape:'html':'UTF-8'}]"
                                                value="1" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $prompt.on} checked{/if}>
-                                        {if $prompt.held}<span class="somcp-held">{l s='group switched off' d='Modules.Somcp.Admin'}</span>{/if}
+                                        <span class="somcp-held"{if !$prompt.held} hidden{/if}>{l s='group switched off' d='Modules.Somcp.Admin'}</span>
                                     </td>
-                                    <td class="somcp-tool-on" data-somcp-column="chat">
+                                    <td class="somcp-tool-on{if $prompt.held_chat} somcp-is-held{/if}" data-somcp-column="chat">
                                         <input type="checkbox" class="somcp-toggle" name="somcp_prompt_chat[{$prompt.name|escape:'html':'UTF-8'}]"
                                                value="1" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $prompt.chat} checked{/if}>
-                                        {if $prompt.held_chat}<span class="somcp-held">{l s='group switched off' d='Modules.Somcp.Admin'}</span>{/if}
+                                        <span class="somcp-held"{if !$prompt.held_chat} hidden{/if}>{l s='group switched off' d='Modules.Somcp.Admin'}</span>
                                     </td>
                                 </tr>
                             {/foreach}

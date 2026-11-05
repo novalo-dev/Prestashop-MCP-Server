@@ -1297,6 +1297,9 @@ class Somcp extends Module
                 // says so rather than showing a switch that seems to do nothing.
                 'held' => SomcpScope::anyOff($prompt->getRequiredScopes()),
                 'held_chat' => SomcpScope::anyOff($prompt->getRequiredScopes(), true),
+                // For the page to grey the row as soon as a group is switched
+                // in the tools list above, before anything is saved.
+                'scopes' => implode(' ', array_diff($prompt->getRequiredScopes(), [SomcpScope::ACCESS])),
             ];
         }
 

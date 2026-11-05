@@ -559,6 +559,49 @@
             draw();
         });
 
+        // A prompt needs the groups of the tools it guides: switching one of
+        // them off in the tools list greys the prompt in that column at once,
+        // as the server does once the page is saved. A scope with no switch
+        // on the page keeps what the server said.
+        (function () {
+            var switches = document.querySelectorAll('[data-somcp-scope]');
+            var rows = document.querySelectorAll('[data-somcp-needs]');
+            if (switches.length === 0 || rows.length === 0) {
+                return;
+            }
+            var refresh = function () {
+                rows.forEach(function (row) {
+                    var needs = row.getAttribute('data-somcp-needs').split(' ').filter(function (scope) {
+                        return scope !== '';
+                    });
+                    ['on', 'chat'].forEach(function (column) {
+                        var cell = row.querySelector('[data-somcp-column="' + column + '"]');
+                        if (!cell) {
+                            return;
+                        }
+                        var known = false;
+                        var held = needs.some(function (scope) {
+                            var box = document.querySelector('[data-somcp-group="' + scope + '"] [data-somcp-scope="' + column + '"]');
+                            known = known || box !== null;
+                            return box !== null && !box.checked;
+                        });
+                        if (!known) {
+                            return;
+                        }
+                        cell.classList.toggle('somcp-is-held', held);
+                        var label = cell.querySelector('.somcp-held');
+                        if (label) {
+                            label.hidden = !held;
+                        }
+                    });
+                });
+            };
+            switches.forEach(function (box) {
+                box.addEventListener('change', refresh);
+            });
+            refresh();
+        }());
+
         // A setting that inherits from the level above is shown but not editable:
         // its value does not belong to this level, and it is not submitted either
         // - the module removes the row instead of writing what was on screen.

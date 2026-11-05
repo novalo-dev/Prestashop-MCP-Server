@@ -616,7 +616,8 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
 /* A group switched off in a column: its tools keep their own switch, shown
    faded since none of them is offered there until the group is back on. */
 .somcp .somcp-off-on [data-somcp-row] [data-somcp-column="on"] .somcp-toggle,
-.somcp .somcp-off-chat [data-somcp-row] [data-somcp-column="chat"] .somcp-toggle {
+.somcp .somcp-off-chat [data-somcp-row] [data-somcp-column="chat"] .somcp-toggle,
+.somcp .somcp-is-held .somcp-toggle {
     opacity: .35;
 }
 

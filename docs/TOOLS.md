@@ -3045,11 +3045,11 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 **Returns** - `brands`, one entry per brand and language: `id_manufacturer`, `name`, `language`, `active`, `products_count`, `issues` (each a `check` from the list below and the `value` at fault). Plus `total_count`, `counts` per check and `languages` audited.
 
 **Notes**
-- Checks: `meta_title_missing`, `meta_description_missing`, `description_missing`, `no_logo`, `inactive_with_products`.
+- Checks: `meta_title_missing`, `meta_title_too_long` (over 60 characters), `meta_description_missing`, `meta_description_short` (under 70 characters), `meta_description_long` (over 160), `description_missing`, `no_logo`, `inactive_with_products`. The limits are those of `somcp_audit_product_seo`, `somcp_audit_category_seo` and `somcp_audit_cms_seo` (`SomcpToolAuditProductSeo::TITLE_MAX`, `DESCRIPTION_MIN`, `DESCRIPTION_MAX`); the `value` of the three length checks is the text at fault.
 - `description_missing`: the brand's description, the text of its page, holds no word once tags are removed. The short description is not checked.
 - `no_logo`: the shop has no `img/m/<id_manufacturer>.jpg`, the file `somcp_get_manufacturer` reads as the logo.
 - `inactive_with_products`: a disabled brand has no page, while products still carry it. Its `value` is `products_count`.
-- `products_count` is the number of products of this shop attached to the brand, counted as `somcp_get_manufacturer` counts it. The `value` of the other checks is an empty string: they report an absence. `no_logo` and `inactive_with_products` concern the whole brand and repeat on each language entry.
+- `products_count` is the number of products of this shop attached to the brand, counted as `somcp_get_manufacturer` counts it. The `value` of the missing checks and `no_logo` is an empty string: they report an absence. `no_logo` and `inactive_with_products` concern the whole brand and repeat on each language entry.
 - A brand's texts are the same in every shop (`manufacturer_lang` has no `id_shop`); a language the brand has no row in counts as empty. Every brand associated with the shop is audited, enabled or not, and returned whole, without paging, read in SQL from `manufacturer`, `manufacturer_shop` and `manufacturer_lang`. No write, ever.
 
 #### `somcp_update_cms_seo`

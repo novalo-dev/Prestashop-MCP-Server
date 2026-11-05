@@ -58,6 +58,12 @@ tools use, so an assistant fixing a field passes it back correctly instead of
 writing the page heading into the meta title. The audit also flags a meta
 description that is too short, as the other SEO audits do.
 
+**The brand audit checks the length of the meta title and meta description.**
+The brand SEO audit now flags a meta title over 60 characters, which search
+results cut, and a meta description under 70 or over 160 characters, with the
+same limits as the product, category and page audits, so a brand is judged by
+the same rules as the rest of the shop.
+
 ## 1.2.1 - 2026-11-04
 
 ### Added

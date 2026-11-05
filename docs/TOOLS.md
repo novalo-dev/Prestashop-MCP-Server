@@ -3364,23 +3364,36 @@ None.
 - Same **Robots file generation** card and the same robots logic in the core and the Classic theme on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_audit_store_policies`
-**State**: to write · [issue #98](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/98)
+**State**: written · [issue #98](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/98)
 **Nature**: `acts(VIEW, 'AdminCmsContent')` · **Scope**: `mcp.seo.read`
 
-**Does** - checks that the pages buyers and assistants look for before trusting a shop exist, are displayed and are linked.
+**Does** - checks that the pages a buyer, a search engine or an answer engine looks for before trusting a shop exist, are displayed, can be indexed, have real content and are linked from the home page: legal notice, terms and conditions, shipping, returns, privacy, about us, contact. Also reports the settings those pages depend on (terms to accept at checkout, returns, delivery times).
 
-**Do not use for** - the SEO fields of those pages (→ `somcp_audit_cms_seo`).
+**Do not use for** - the SEO fields of these pages (→ `somcp_audit_cms_seo`, `somcp_update_cms_seo`); one page in full (→ `somcp_get_cms_page`); whether robots may crawl them (→ `somcp_check_ai_crawler_access`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages; the shop default when left out; a code the shop does not have is refused |
 
-**Returns** - per expected page (`legal_notice`, `terms`, `shipping`, `returns`, `privacy`, `contact`, `about`): `found`, `id_cms` or the shop page, `active`, `url`, `word_count`. Plus `delivery_times` (whether products carry delivery time texts) and `warnings`.
+**Returns**
+- `language` - the ISO code used.
+- `pages` - one entry per expected page, in this order: `legal_notice`, `terms`, `shipping`, `returns`, `privacy`, `about`, `contact`. Each: `type`, `found`, `matched_by` (`setting` - **Page for terms and conditions**, `role` - `cms_role`, `url` - friendly URL, `title` - **Title**, `controller` - the contact page; `null` when not found), `id_cms` (as `somcp_list_cms_pages`), `title`, `active`, `indexation` (as `somcp_get_cms_page`: **Title**, **Displayed**, **Indexation by search engines**), `url` (storefront address in `language`), `word_count` (words of **Page content**, tags removed), `linked` (true when the home page links to `url`, `null` when the home page could not be read) and, when several pages could match, `candidates` (`id_cms` and `title` of each, for the merchant to choose). `id_cms`, `title`, `active`, `indexation` and `word_count` are `null` for the contact page.
+- `checkout` - `terms_required` (**Terms of service**), `terms_id_cms` (**Page for terms and conditions**, `null` for None).
+- `returns` - `enabled` (**Enable returns**), `days` (**Time limit of validity**).
+- `delivery_times` - `in_stock`, `out_of_stock` (the two **Delivery time** texts of Product Settings in `language`, `null` when empty), `products_without` (active products of the shop set to no delivery time, or to the default one while the in-stock text is empty).
+- `home` - `url`, `fetched`, `error` (when not read).
+- `warnings` - `code` and `why`, plus `type` for a page: `page_missing`, `page_hidden`, `page_noindex`, `page_too_short` (under 100 words, the contact page excepted), `page_not_linked`, `terms_not_required`, `terms_page_mismatch` (**Page for terms and conditions** is hidden or is not the page of the `LEGAL_CONDITIONS` role), `returns_page_but_disabled`, `returns_enabled_no_page`, `no_delivery_time`.
+- `note` - the reminder that the legal content of these pages is the merchant's responsibility.
 
 **Notes**
-- Pages are matched by their friendly URL and title in the shop's languages, then confirmed with the merchant when unsure; the answer says how each was matched.
+- Matching order, the first that answers wins: the setting (`terms` only), the `cms_role` rows (`LEGAL_NOTICE`, `LEGAL_CONDITIONS`), then the friendly URL, then the **Title**, in every active language of the shop, from one keyword list (en, fr, es, de; English for the others). Only CMS pages associated with the token's shop; a page already matched to one type is not offered to the next.
+- The home page is fetched once with the code of `somcp_audit_page` (`hosts()`, `follow()`, `load()`, `links()`), same size and time limits; a home page that cannot be fetched is reported in `home`, never an error for the whole call. The words are counted as every other audit (`SomcpToolAuditProductSeo::words()`).
+- The contact page is the `contact` front controller, not a CMS page.
+- No figure, text or advice about what a policy must say: the tool reports what exists.
+- Errors in the shape of #169: unknown arguments, a `language` the shop does not have.
+- Same pages, roles, settings and labels on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_get_llms_txt`
 **State**: to write · [issue #99](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/99)

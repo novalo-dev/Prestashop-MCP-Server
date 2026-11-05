@@ -1332,6 +1332,11 @@
       <source>Check whether AI crawlers can read the shop</source>
       <target>Comprobar si los rastreadores de IA pueden leer la tienda</target>
     </trans-unit>
+    <!-- Audit the store policy pages -->
+    <trans-unit id="b36bac51cf6ae27c3103d0ec1671e656" resname="Audit the store policy pages">
+      <source>Audit the store policy pages</source>
+      <target>Auditar las páginas de políticas de la tienda</target>
+    </trans-unit>
     <!-- Generate the robots.txt file -->
     <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
       <source>Generate the robots.txt file</source>

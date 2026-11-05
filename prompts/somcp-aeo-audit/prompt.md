@@ -11,6 +11,7 @@ checked and why it matters.
 - `somcp_audit_product_schema`
 - `somcp_audit_product_entities`
 - `somcp_check_ai_crawler_access`
+- `somcp_audit_store_policies`
 
 ## Know which shop you are in
 
@@ -62,6 +63,20 @@ every crawler out, `no_robots_txt` a shop that allows all of them. Whether to
 open the shop to a crawler is the merchant's choice: report what is blocked and
 why it matters, and change the robots.txt only with `somcp_generate_robots_txt`
 and the merchant's approval, never by hand here.
+
+## Check the pages buyers and assistants trust
+
+Call `somcp_audit_store_policies` to see whether the legal notice, terms,
+shipping, returns, privacy, about us and contact pages exist, are displayed,
+can be indexed, say enough and are linked from the home page, with the
+checkout terms, returns and delivery time settings. Each page says how it was
+`matched_by`; a page with `candidates` was picked among several by its
+address or title: ask the merchant which one it is before going further. Read
+the `warnings` and name each setting with its words on screen (**Displayed**,
+**Indexation by search engines**, **Page for terms and conditions**). Report
+what exists and what is missing; never write or suggest the legal text of a
+page, which is the merchant's responsibility. A page is changed with the
+content page tools, after the merchant's approval.
 
 ## Never invent
 

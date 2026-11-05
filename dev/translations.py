@@ -1058,6 +1058,10 @@ T = {
  "Vérifier si les robots d'IA peuvent lire la boutique",
  "Comprobar si los rastreadores de IA pueden leer la tienda",
  "Prüfen, ob KI-Crawler den Shop lesen können"),
+"Audit the store policy pages": (
+ "Auditer les pages de conditions de la boutique",
+ "Auditar las páginas de políticas de la tienda",
+ "Die Richtlinienseiten des Shops prüfen"),
 "Generate the robots.txt file": (
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",

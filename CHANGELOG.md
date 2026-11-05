@@ -47,6 +47,17 @@ to index them. It reads your robots.txt and your pages and changes nothing;
 whether to open your shop to a crawler stays your choice, and the tool for
 writing the robots.txt is `somcp_generate_robots_txt`.
 
+**Check the pages buyers look for before they trust your shop.** The new tool
+`somcp_audit_store_policies` looks for your legal notice, terms and
+conditions, shipping, returns, privacy, about us and contact pages, and says
+for each one whether it was found and how, whether it is **Displayed**,
+whether **Indexation by search engines** is on, how many words it has and
+whether your home page links to it. It also reports the settings these pages
+go with: the terms to accept at checkout, returns and their time limit, and
+the delivery time texts of your products. When several pages could be the same
+one, it lists them so you choose. It changes nothing, and what these pages say
+stays your responsibility.
+
 ### Changed
 
 **The Tools and prompts lists are folded by group.** Each group shows how many

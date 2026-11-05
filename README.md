@@ -47,9 +47,9 @@ In the back office the module is called **O'So MCP Server**.
 
 > "Who is the customer behind order #1042, and what else did they buy?"
 
-94 tools cover orders, catalogue, stock, customers, statistics, SEO, content
-pages, modules and appearance, and 13 ready-made prompts guide the assistant
-through the usual jobs. [See them all](#tools).
+More than 90 tools cover orders, catalogue, stock, customers, statistics, SEO,
+content pages, modules and appearance, and more than 10 ready-made prompts guide
+the assistant through the usual jobs. [See them all](#tools).
 
 ---
 
@@ -154,10 +154,10 @@ Where to paste the address in each of them:
   flagged as such, which assistants use to ask you before making them.
 - **Every refusal is logged**, in a security log that never contains a token
   or a secret.
-- **Tested before every release.** Each version is installed and run on 34
-  PrestaShop versions (74 PrestaShop and PHP combinations), attacked by 40
-  security tests on a live shop and driven through the back office by a real
-  browser. The report is attached to every
+- **Tested before every release.** Each version is installed and run on more
+  than 30 PrestaShop versions (more than 70 PrestaShop and PHP combinations),
+  attacked by more than 35 security tests on a live shop and driven through the
+  back office by a real browser. The report is attached to every
   [release](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest).
 
 Found a security issue? Please do not open an issue: report it privately, see
@@ -364,11 +364,10 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
 language and currency it is connected to.
 
-**13 prompts** ship with the module: check the shop connection, find an order,
-change an order status, manage products, check and adjust stock, find a
-customer, audit and improve SEO, get recommended by AI assistants, sales
-report, read content pages, review modules, cache maintenance, storefront menu
-and layout. The built-in assistant offers them too, each with its icon: those of
+**More than 10 prompts** ship with the module, such as finding an order,
+changing an order status, checking stock, auditing SEO or getting recommended by
+AI assistants; each one is described in [docs/TOOLS.md](docs/TOOLS.md). The
+built-in assistant offers them too, each with its icon: those of
 the page you are on first, and all of them from the **+** of its field.
 
 ---

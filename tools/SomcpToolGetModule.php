@@ -42,14 +42,11 @@ class SomcpToolGetModule
         return new SomcpTool(
             'somcp_get_module',
             Somcp::t('Get a module'),
-            'Returns one module of this shop, installed or only on disk, with the same fields as an '
-                . 'entry of somcp_list_modules: name, display_name, version (files on disk), '
-                . 'version_installed (null when not installed), needs_upgrade, author, description, '
-                . 'installed, active (enabled on this shop) and active_on_mobile (null when not installed), '
-                . 'plus hooks: the hooks the module is attached to on this shop (Design > Positions), each '
-                . 'with its name and position, sorted by hook name, empty when the module is not installed '
-                . 'or not enabled here. Use somcp_list_modules to list or search modules and find the name. '
-                . 'It does not install, enable or disable a module, and does not open its Configure page.',
+            'Returns one module of this shop, installed or only on disk, with the fields of an entry of '
+                . 'somcp_list_modules plus hooks: the hooks it is attached to on this shop (Design > Positions), '
+                . 'each with its name and position, empty when it is not installed or not enabled here. name comes '
+                . 'from somcp_list_modules: never guess one. It does not install, enable or disable a module, and '
+                . 'does not open its Configure page.',
             [
                 'type' => 'object',
                 'properties' => [

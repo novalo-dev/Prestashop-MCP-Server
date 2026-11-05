@@ -171,6 +171,13 @@ add a value "when the shop offers it", although every one of those tools is
 there. The assistant could take it as a tool that may be missing and skip the
 step. They now name the tool plainly.
 
+**Shorter module tools.** The three tools of Modules > Module Manager that
+list, read and install modules now describe themselves in a few sentences,
+lighter for the assistant on every step. What matters is kept: that a module is
+taken from the list and never guessed, that an installed module is refused and
+upgraded in the Module Manager, which shops a multistore install reaches, and
+which read checks an install.
+
 **Shorter customer tools.** The four tools of Customers > Customers - search,
 read, create and change a customer - and the list of customer groups now
 describe themselves in a few sentences, lighter for the assistant on every

@@ -50,16 +50,13 @@ class SomcpToolListModules
         return new SomcpTool(
             'somcp_list_modules',
             Somcp::t('List modules'),
-            'Lists the modules of this shop as Modules > Module Manager shows them, installed or only '
-                . 'on disk: technical name (name, the folder, the identifier every module tool takes), '
-                . 'display name (display_name), the version of the files on disk (version), the version '
-                . 'installed in the database (version_installed, null when not installed), needs_upgrade '
-                . '(true when the files are newer than the installed version, which the next Upgrade '
-                . 'applies), author, description, installed, active (enabled on this shop, false when not '
-                . 'installed) and active_on_mobile (null when not installed). Sorted by display name. '
-                . 'Read from the shop only: the marketplace\'s Upgrade available and categories are not '
-                . 'returned. It does not install, enable or disable '
-                . 'a module.',
+            'Lists the modules of this shop as Modules > Module Manager shows them, installed or only on disk: '
+                . 'name (the folder, the identifier every module tool takes), display_name, version on disk and '
+                . 'version_installed (null when not installed), needs_upgrade, author, description, installed, '
+                . 'active on this shop and active_on_mobile. Sorted by display name. Read from the shop only: '
+                . 'the marketplace\'s upgrades and categories are not returned. For one module and its hooks use '
+                . 'somcp_get_module; to install one somcp_install_module, to enable or disable one '
+                . 'somcp_set_module_active.',
             [
                 'type' => 'object',
                 'properties' => [

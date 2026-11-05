@@ -9,6 +9,7 @@ checked and why it matters.
 
 - `somcp_ping`
 - `somcp_audit_product_schema`
+- `somcp_audit_product_entities`
 
 ## Know which shop you are in
 
@@ -20,7 +21,12 @@ installation has its own prices, stock and pages.
 
 1. **Pick the products.** When a product is given under *This request*, find
    its `id_product` with `somcp_search_products` (`name`, `reference` or
-   `ean13`); never guess an identifier. Otherwise start with the products that
+   `ean13`); never guess an identifier. Otherwise call
+   `somcp_audit_product_entities` first: it scores the whole catalogue on the
+   fields an assistant needs (brand, a GTIN, MPN, features, description,
+   summary, images with a caption, weight, condition, category, meta
+   description) and lists the least complete products, each missing field
+   under its `on_screen` label. Start with those, or with the products that
    sell, and ask the merchant which ones matter most when you cannot tell.
 2. **Compare the page.** Call `somcp_audit_product_schema` for each product,
    with `id_product_attribute` for one combination's page and `language` for

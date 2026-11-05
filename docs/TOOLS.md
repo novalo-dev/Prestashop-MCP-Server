@@ -3311,25 +3311,30 @@ What answer engines and AI assistants need to recommend a product: complete and 
 - Read only.
 
 #### `somcp_audit_product_entities`
-**State**: to write · [issue #96](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/96)
+**State**: written · [issue #96](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/96)
 **Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.seo.read`
 
-**Does** - scores how complete each product's data is for an assistant answering a buyer, and lists what is missing.
+**Does** - scores how complete each product of this shop is for an assistant answering a buyer, the least complete first, and names for each product what is missing, under the labels of the product page.
 
-**Do not use for** - the page as printed (→ `somcp_audit_product_schema`).
+**Do not use for** - the page as printed (→ `somcp_audit_product_schema`); the meta title and description in detail (→ `somcp_audit_product_seo`); to read or fill one product (→ `somcp_get_product`, `somcp_update_product`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `active` | boolean | no | true by default |
-| `max_score` | integer | no | only products scoring at or under this, out of 100 |
+| `active` | boolean | no | `true` by default for active products only, `false` for disabled products only; the Status filter of `somcp_search_products` |
+| `max_score` | integer | no | only products scoring at or under this, 0 to 100; all of them when left out |
+| `language` | string | no | ISO code of one of the shop's active languages; the shop default language when left out; same refusal as `somcp_audit_product_seo` |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per product, worst first: `id_product`, `name`, `score`, `missing` (from the list below). Plus `total_count` and `average_score`.
+**Returns** - `products` worst first, each `id_product` (as `somcp_search_products`), `name`, `score` (0 to 100), `missing` (each `field`, the name of `somcp_get_product`, and `on_screen`, the back office label of the shop's version); plus `returned`, `total_count`, `offset` (the names of `somcp_search_products`), `average_score` (over the whole catalogue audited, not the page) and `language` (the ISO code used).
 
 **Notes**
-- Scored on: brand, a GTIN (ean13, upc or isbn), an mpn, at least 3 features, a description of 150 words or more, a short description, at least 3 images with alternative text, weight, condition, a default category deeper than Home, a meta description. Each item is worth the same; the list says which is missing, the score only sorts.
+- Eleven criteria, each worth the same, the score `100 x met / 11` rounded: brand (`id_manufacturer`), a GTIN (one of `ean13`, `upc`, `isbn`), `mpn`, features (3 or more), description (150 words or more, tags stripped, counted as `somcp_audit_product_seo`), summary (`description_short`), images (3 or more, each with a caption in the language), weight (above 0), condition (set and **Display condition on product page** on), a default category deeper than Home, meta description.
+- The barcode label is **EAN-13 or JAN barcode** on PrestaShop 8 and **GTIN (EAN, JA, ITF or UCC code)** on PrestaShop 9; same columns in the database.
+- The whole catalogue is scored with set queries on `product`, `product_shop`, `product_lang`, `feature_product` and the image tables of the token's shop and language, never one `Product` object per product.
+- Errors in the shape of #169: an unknown language, `max_score` outside 0 to 100, `limit` above 100.
+- Read only.
 
 #### `somcp_check_ai_crawler_access`
 **State**: to write · [issue #97](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/97)

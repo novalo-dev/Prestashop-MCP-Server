@@ -29,6 +29,15 @@ connect. Switching the group back on gives each tool the switch it had. The
 built-in assistant can read and change these group switches too, after your
 approval.
 
+**See which products are ready for AI assistants.** The new tool
+`somcp_audit_product_entities` scores each
+product of your catalogue on the data an answer engine needs to describe it -
+brand, barcode, manufacturer reference, features, a long enough description, a
+summary, images with captions, weight, condition, a real category and a meta
+description - and lists the least complete products first, naming for each one
+what is missing under the label of its product page. It reads one language and
+changes nothing; fill the gaps with the catalogue tools.
+
 ### Changed
 
 **The Tools and prompts lists are folded by group.** Each group shows how many

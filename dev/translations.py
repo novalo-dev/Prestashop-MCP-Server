@@ -1050,6 +1050,10 @@ T = {
  "Comparer une page produit avec ses données structurées",
  "Comparar una página de producto con sus datos estructurados",
  "Eine Produktseite mit ihren strukturierten Daten vergleichen"),
+"Audit how complete products are for answer engines": (
+ "Auditer la complétude des produits pour les moteurs de réponse",
+ "Auditar la completitud de los productos para los motores de respuesta",
+ "Die Vollständigkeit der Produkte für Antwortmaschinen prüfen"),
 "Generate the robots.txt file": (
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",

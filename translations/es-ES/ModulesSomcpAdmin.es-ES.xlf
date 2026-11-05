@@ -1322,6 +1322,11 @@
       <source>Compare a product page with its structured data</source>
       <target>Comparar una página de producto con sus datos estructurados</target>
     </trans-unit>
+    <!-- Audit how complete products are for answer engines -->
+    <trans-unit id="7c545e96690db34f31da1b027fa62319" resname="Audit how complete products are for answer engines">
+      <source>Audit how complete products are for answer engines</source>
+      <target>Auditar la completitud de los productos para los motores de respuesta</target>
+    </trans-unit>
     <!-- Generate the robots.txt file -->
     <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
       <source>Generate the robots.txt file</source>

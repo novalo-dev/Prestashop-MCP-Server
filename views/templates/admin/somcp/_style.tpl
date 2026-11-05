@@ -617,7 +617,9 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
    faded since none of them is offered there until the group is back on. */
 .somcp .somcp-off-on [data-somcp-row] [data-somcp-column="on"] .somcp-toggle,
 .somcp .somcp-off-chat [data-somcp-row] [data-somcp-column="chat"] .somcp-toggle,
-.somcp .somcp-is-held .somcp-toggle {
+.somcp .somcp-is-held .somcp-toggle,
+.somcp .somcp-off-on .somcp-group-row [data-somcp-all="on"],
+.somcp .somcp-off-chat .somcp-group-row [data-somcp-all="chat"] {
     opacity: .35;
 }
 

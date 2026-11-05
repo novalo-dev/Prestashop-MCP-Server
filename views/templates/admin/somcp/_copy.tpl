@@ -410,7 +410,10 @@
                     var on = boxes.filter(function (box) {
                         return box.checked;
                     }).length;
-                    var scope = group.querySelector('[data-somcp-scope="' + column + '"]');
+                    // A prompts group follows the switch of the tools group of
+                    // the same scope, which sits in the list above.
+                    var scope = group.querySelector('[data-somcp-scope="' + column + '"]')
+                        || document.querySelector('tbody[data-somcp-group="' + group.getAttribute('data-somcp-group') + '"] [data-somcp-scope="' + column + '"]');
                     var label = group.querySelector('[data-somcp-counted="' + column + '"]');
                     if (label) {
                         // A group switched off offers none of its rows, whatever
@@ -556,6 +559,13 @@
                     }
                 });
             }
+            // A group switched in the tools list changes the prompts groups
+            // of the same scope too.
+            document.addEventListener('change', function (event) {
+                if (event.target.hasAttribute && event.target.hasAttribute('data-somcp-scope')) {
+                    groups.forEach(count);
+                }
+            });
             draw();
         });
 

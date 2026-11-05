@@ -191,6 +191,14 @@ add a value "when the shop offers it", although every one of those tools is
 there. The assistant could take it as a tool that may be missing and skip the
 step. They now name the tool plainly.
 
+**Shorter return status tools.** The three tools of Shop Parameters > Order
+Settings > Statuses that create, change and delete a return status now
+describe themselves in a few sentences, lighter for the assistant on every
+step. What matters is kept: that a return status is not an order status, that a
+name another return status already has is refused, that the status is taken
+from its list and never guessed, that the five statuses every shop starts with
+cannot be deleted, and which read checks the outcome.
+
 **Shorter menu link tools.** The three tools of the storefront's Main menu -
 list the entries, add one and change a custom link - now describe themselves in
 a few sentences, lighter for the assistant on every step. What matters is kept:

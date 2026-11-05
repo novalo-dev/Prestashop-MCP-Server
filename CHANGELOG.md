@@ -67,6 +67,14 @@ tools use, so an assistant fixing a field passes it back correctly instead of
 writing the page heading into the meta title. The audit also flags a meta
 description that is too short, as the other SEO audits do.
 
+**Any CMS page can have its SEO changed, not only those the audit flags.**
+The tool that changes the meta title, meta description, friendly URL and
+indexation of a CMS page used to send the assistant to the CMS SEO audit to
+find the page, and the audit only lists the pages with a problem: asked to
+change a page with nothing wrong, the assistant could not find it. It now takes
+the page from the list of every CMS page and reads it before and after the
+change; the audit stays the way to find what needs fixing.
+
 **The brand audit checks the length of the meta title and meta description.**
 The brand SEO audit now flags a meta title over 60 characters, which search
 results cut, and a meta description under 70 or over 160 characters, with the

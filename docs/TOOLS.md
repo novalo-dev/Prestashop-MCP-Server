@@ -3064,7 +3064,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_cms` | integer | yes | from `somcp_audit_cms_seo` |
+| `id_cms` | integer | yes | from `somcp_list_cms_pages`, any page of the shop; `somcp_audit_cms_seo` finds the pages to fix |
 | `meta_title` | object | no | per ISO code; the form's **Meta title** (`head_seo_title`); 70 characters at most, an empty text removes it |
 | `meta_description` | object | no | per ISO code; 512 characters at most, a warning over 160 |
 | `link_rewrite` | object | no | per ISO code; `Tools::str2url()` then `Validate::isLinkRewrite()`, 128 characters at most, never empty |
@@ -3073,8 +3073,9 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 **Returns** - `changed`, `id_cms`; when something changed, `changes` (each a `field`, its `language` for a text, the `previous` and `new` value), `seo_warnings` (per ISO code) and `page` (`id_cms`, `active`, `indexation`, and per language changed its `title`, `meta_title`, `seo_title` - the title search engines read -, `meta_description` and `link_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
 
 **Notes**
-- The names follow the CMS page form of Design > Pages, not the columns: the form's **Title** is the column `meta_title`, the page's h1 and its default title tag, and its **Meta title** is `head_seo_title`, which overrides the title tag when filled (`EditCmsPageHandler` on PrestaShop 8 and 9). This tool writes the second under the name `meta_title`; the page title stays with the content. `somcp_audit_cms_seo` returns the page title as `meta_title`, and checks the title search engines read.
+- The names follow the CMS page form of Design > Pages, not the columns: the form's **Title** is the column `meta_title`, the page's h1 and its default title tag, and its **Meta title** is `head_seo_title`, which overrides the title tag when filled (`EditCmsPageHandler` on PrestaShop 8 and 9). This tool writes the second under the name `meta_title`; the page title stays with the content. `somcp_get_cms_page` and `somcp_audit_cms_seo` return `title`, `meta_title` and `seo_title` with the same meaning as this tool.
 - Written through the `CMS` object, after `validateFields()` and `validateFieldsLang()` as the back office handler does, so hooks fire, with `id_shop_list` set to the shop of the token: `cms_lang` of the other shops keeps its texts. `indexation` lives in `cms`, so it is the same in every shop. A page not associated with the shop (`cms_shop`) is answered like one that does not exist. Only the languages given change; an ISO code that is not an active language of the shop is refused, and so is any other field.
+- The page to change is read before with `somcp_get_cms_page`, and an answer lost after the call is checked there too: the audit only returns the pages that fail one of its checks.
 - Every value is checked and compared before anything is written, and every problem reported at once. A call that changes nothing writes nothing and answers `changed: false`.
 - `seo_warnings`, for each language changed: a title search engines read over 60 characters, a `meta_description` over 160 (the lengths of `somcp_audit_product_seo`), and a new `link_rewrite` on a displayed page, whose old URL breaks; the assistant tells the merchant before the call.
 

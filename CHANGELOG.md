@@ -180,6 +180,13 @@ add a value "when the shop offers it", although every one of those tools is
 there. The assistant could take it as a tool that may be missing and skip the
 step. They now name the tool plainly.
 
+**Shorter menu link tools.** The three tools of the storefront's Main menu -
+list the entries, add one and change a custom link - now describe themselves in
+a few sentences, lighter for the assistant on every step. What matters is kept:
+that an entry's object is taken from its list tool and never guessed, that an
+entry already in the menu is refused, that a change touches one link and never
+its place in the menu, and which read checks the outcome.
+
 **Shorter module tools.** The three tools of Modules > Module Manager that
 list, read and install modules now describe themselves in a few sentences,
 lighter for the assistant on every step. What matters is kept: that a module is

@@ -54,6 +54,7 @@ class SomcpToolAuditCategorySeo
         'meta_title_too_long',
         'meta_title_duplicate',
         'meta_description_missing',
+        'meta_description_short',
         'meta_description_long',
         'description_missing',
         'link_rewrite_duplicate',
@@ -72,17 +73,17 @@ class SomcpToolAuditCategorySeo
             'Lists the categories of this shop whose search engine fields have a problem, one entry per '
                 . 'category and language, each with its issues: the check that failed and the value at fault. '
                 . 'Checks: meta_title_missing, meta_title_too_long (over 60 characters), meta_title_duplicate '
-                . '(another category has it in that language), meta_description_missing, meta_description_long '
-                . '(over 160 characters), description_missing (the category page has no text to rank on), '
-                . 'link_rewrite_duplicate (another category has the same friendly URL in that language), '
-                . 'empty_category (a displayed category holding no active product of this shop) and '
-                . 'no_cover_image. The value is the title, description or friendly URL at fault, and an empty '
-                . 'string for the checks that report an absence. empty_category and no_cover_image concern the '
-                . 'whole category and are repeated on each language entry. The root and Home categories are left out: they have no '
-                . 'page of their own. counts gives, per check, the entries raising it over every category, and '
-                . 'total_count the entries with at least one issue: read the next page with offset rather than '
-                . 'concluding from one page. Read only. Do not use it to change a category: '
-                . 'somcp_update_category does that.',
+                . '(another category has it in that language), meta_description_missing, meta_description_short '
+                . '(under 70 characters), meta_description_long (over 160), description_missing (the category '
+                . 'page has no text to rank on), link_rewrite_duplicate (another category has the same friendly '
+                . 'URL in that language), empty_category (a displayed category holding no active product of this '
+                . 'shop) and no_cover_image. The value is the title, description or friendly URL at fault, and an '
+                . 'empty string for the checks that report an absence. empty_category and no_cover_image concern '
+                . 'the whole category and are repeated on each language entry. The root and Home categories are '
+                . 'left out: they have no page of their own. Only displayed categories by default. counts gives, '
+                . 'per check, the entries raising it over every category audited, and total_count the entries '
+                . 'with at least one issue: read the next page with offset rather than concluding from one page. '
+                . 'Read only. Do not use it to change a category: somcp_update_category does that.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -90,6 +91,19 @@ class SomcpToolAuditCategorySeo
                         'type' => 'string',
                         'description' => 'ISO code of one language of the shop, for example en. Every language of '
                             . 'the shop when left out.',
+                    ],
+                    'active' => [
+                        'type' => 'boolean',
+                        'description' => 'true (the default) for displayed categories only - hidden categories '
+                            . 'rank for nothing - false to include hidden ones too.',
+                    ],
+                    'checks' => [
+                        'type' => 'array',
+                        'items' => [
+                            'type' => 'string',
+                            'enum' => self::CHECKS,
+                        ],
+                        'description' => 'Only these checks; all of them when left out.',
                     ],
                     'limit' => [
                         'type' => 'integer',
@@ -129,19 +143,35 @@ class SomcpToolAuditCategorySeo
             );
         }
 
+        $checks = self::checks($arguments);
+        if ($checks === null) {
+            return SomcpTool::text(
+                'checks must be a list of these names: ' . implode(', ', self::CHECKS) . '.',
+                true
+            );
+        }
+
+        $activeOnly = !(array_key_exists('active', $arguments) && $arguments['active'] === false);
+
         $limit = isset($arguments['limit']) && is_numeric($arguments['limit']) ? (int) $arguments['limit'] : self::DEFAULT_LIMIT;
         $limit = max(1, min(self::MAX_LIMIT, $limit));
         $offset = isset($arguments['offset']) && is_numeric($arguments['offset']) ? max(0, (int) $arguments['offset']) : 0;
 
         $idLangs = array_keys($languages);
-        $duplicateTitles = self::duplicates('meta_title', $idShop, $idLangs);
-        $duplicateUrls = self::duplicates('link_rewrite', $idShop, $idLangs);
+        // The duplicate scan is skipped when its check is not asked for, as the
+        // product audit does.
+        $duplicateTitles = in_array('meta_title_duplicate', $checks, true)
+            ? self::duplicates('meta_title', $idShop, $idLangs, $activeOnly)
+            : [];
+        $duplicateUrls = in_array('link_rewrite_duplicate', $checks, true)
+            ? self::duplicates('link_rewrite', $idShop, $idLangs, $activeOnly)
+            : [];
 
-        $counts = array_fill_keys(self::CHECKS, 0);
+        $counts = array_fill_keys($checks, 0);
         $entries = [];
         $total = 0;
 
-        foreach (array_chunk(self::categoryIds($idShop), self::BATCH) as $batch) {
+        foreach (array_chunk(self::categoryIds($idShop, $activeOnly), self::BATCH) as $batch) {
             $products = self::productCounts($batch, $idShop);
 
             foreach (self::rows($batch, $idShop, $idLangs) as $row) {
@@ -149,7 +179,7 @@ class SomcpToolAuditCategorySeo
                 $idLang = (int) $row['id_lang'];
                 $key = $idCategory . '-' . $idLang;
 
-                $issues = self::issues($row, $products[$idCategory] ?? 0, isset($duplicateTitles[$key]), isset($duplicateUrls[$key]));
+                $issues = self::issues($row, $checks, $products[$idCategory] ?? 0, isset($duplicateTitles[$key]), isset($duplicateUrls[$key]));
                 if ($issues === []) {
                     continue;
                 }
@@ -179,8 +209,10 @@ class SomcpToolAuditCategorySeo
             // one page that it has seen everything.
             'total_count' => $total,
             'offset' => $offset,
-            'counts' => $counts,
+            // An object even when no check is left, so a client reads one shape.
+            'counts' => $counts === [] ? new stdClass() : $counts,
             'languages' => array_values($languages),
+            'active_only' => $activeOnly,
         ]);
     }
 
@@ -188,13 +220,14 @@ class SomcpToolAuditCategorySeo
      * The issues of one category in one language.
      *
      * @param array<string, mixed> $row
+     * @param array<int, string> $checks
      * @param int $activeProducts
      * @param bool $duplicateTitle
      * @param bool $duplicateUrl
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function issues(array $row, int $activeProducts, bool $duplicateTitle, bool $duplicateUrl): array
+    private static function issues(array $row, array $checks, int $activeProducts, bool $duplicateTitle, bool $duplicateUrl): array
     {
         $title = trim((string) $row['meta_title']);
         $description = trim((string) $row['meta_description']);
@@ -205,6 +238,8 @@ class SomcpToolAuditCategorySeo
             'meta_title_too_long' => Tools::strlen($title) > SomcpToolAuditProductSeo::TITLE_MAX ? $title : null,
             'meta_title_duplicate' => $duplicateTitle ? $title : null,
             'meta_description_missing' => $description === '' ? '' : null,
+            // Same lower bound as the product audit, from its shared constant.
+            'meta_description_short' => $description !== '' && Tools::strlen($description) < SomcpToolAuditProductSeo::DESCRIPTION_MIN ? $description : null,
             'meta_description_long' => Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX ? $description : null,
             // Counted as words, tags removed: a description holding only
             // markup shows the visitor nothing either.
@@ -219,7 +254,7 @@ class SomcpToolAuditCategorySeo
         ];
 
         $issues = [];
-        foreach (self::CHECKS as $check) {
+        foreach ($checks as $check) {
             if ($found[$check] !== null) {
                 $issues[] = ['check' => $check, 'value' => $found[$check]];
             }
@@ -229,13 +264,39 @@ class SomcpToolAuditCategorySeo
     }
 
     /**
+     * The checks asked for, all of them by default, or null for a bad list.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return array<int, string>|null
+     */
+    private static function checks(array $arguments): ?array
+    {
+        if (!array_key_exists('checks', $arguments) || $arguments['checks'] === null) {
+            return self::CHECKS;
+        }
+        if (!is_array($arguments['checks']) || $arguments['checks'] === []) {
+            return null;
+        }
+        foreach ($arguments['checks'] as $check) {
+            if (!is_string($check) || !in_array($check, self::CHECKS, true)) {
+                return null;
+            }
+        }
+
+        // Kept in the order of the list, so every answer reads the same way.
+        return array_values(array_intersect(self::CHECKS, $arguments['checks']));
+    }
+
+    /**
      * The categories of this shop to audit, in order.
      *
      * @param int $idShop
+     * @param bool $activeOnly
      *
      * @return array<int, int>
      */
-    private static function categoryIds(int $idShop): array
+    private static function categoryIds(int $idShop, bool $activeOnly): array
     {
         $query = new DbQuery();
         $query->select('c.`id_category`');
@@ -244,6 +305,11 @@ class SomcpToolAuditCategorySeo
         // it is not part of its catalogue.
         $query->innerJoin('category_shop', 'cs', 'cs.`id_category` = c.`id_category` AND cs.`id_shop` = ' . $idShop);
         $query->where(self::audited());
+        // Displayed only unless hidden categories are asked for, the field the
+        // form's "Displayed" writes.
+        if ($activeOnly) {
+            $query->where('c.`active` = 1');
+        }
         $query->orderBy('c.`id_category` ASC');
 
         return array_map('intval', array_column(Db::getInstance()->executeS($query) ?: [], 'id_category'));
@@ -311,14 +377,18 @@ class SomcpToolAuditCategorySeo
      * @param string $field meta_title or link_rewrite, never from the caller
      * @param int $idShop
      * @param array<int, int> $idLangs
+     * @param bool $activeOnly
      *
      * @return array<string, true>
      */
-    private static function duplicates(string $field, int $idShop, array $idLangs): array
+    private static function duplicates(string $field, int $idShop, array $idLangs, bool $activeOnly): array
     {
         $column = bqSQL($field);
         $langs = implode(',', array_map('intval', $idLangs));
-        $audited = 'INNER JOIN `' . _DB_PREFIX_ . 'category` c ON c.`id_category` = cl.`id_category` AND ' . self::audited() . '
+        // Compared among the categories audited, so a hidden one dropped from
+        // the audit does not make a displayed title count as a duplicate.
+        $audited = 'INNER JOIN `' . _DB_PREFIX_ . 'category` c ON c.`id_category` = cl.`id_category` AND ' . self::audited()
+             . ($activeOnly ? ' AND c.`active` = 1' : '') . '
              INNER JOIN `' . _DB_PREFIX_ . 'category_shop` cs ON cs.`id_category` = cl.`id_category` AND cs.`id_shop` = ' . $idShop;
 
         // Compared among the categories audited, by the database's own

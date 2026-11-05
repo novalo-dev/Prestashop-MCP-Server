@@ -45,6 +45,12 @@ how your shop stays protected, with the tools folded by back office page. The
 technical details and the installation from the sources moved to the
 contributing guide.
 
+**The category SEO audit judges a page like the product audit.** The category
+SEO audit now looks at displayed categories only by default, with an option to
+include hidden ones, lets you limit it to the checks you want, and flags a meta
+description that is too short, so the same page gets the same verdict whether
+you audit it as a product or as a category.
+
 ## 1.2.1 - 2026-11-04
 
 ### Added

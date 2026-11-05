@@ -49,8 +49,8 @@ class SomcpToolAuditProductSeo
     /** @var int Beyond this, search engines cut the title in their results. Shared by every SEO audit. */
     public const TITLE_MAX = 60;
 
-    /** @var int Under this, a description gives search engines little to show. */
-    private const DESCRIPTION_MIN = 70;
+    /** @var int Under this, a description gives search engines little to show. Shared by every SEO audit. */
+    public const DESCRIPTION_MIN = 70;
 
     /** @var int Beyond this, search engines cut the description in their results. Shared by every SEO audit. */
     public const DESCRIPTION_MAX = 160;

@@ -3397,21 +3397,33 @@ None.
 - Same pages, roles, settings and labels on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_get_llms_txt`
-**State**: to write · [issue #99](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/99)
+**State**: written · [issue #99](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/99)
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
-**Does** - returns the shop's llms.txt, the summary some AI tools read at a site's root, if it has one.
+**Does** - returns the shop's llms.txt, the plain text summary some AI tools read at the root of a site, if it has one, and says whether somcp wrote it.
 
-**Do not use for** - writing it (→ `somcp_generate_llms_txt`).
+**Do not use for** - writing it (→ `somcp_generate_llms_txt`); robots.txt (→ `somcp_get_robots_txt`); whether AI crawlers may read the shop (→ `somcp_check_ai_crawler_access`).
 
 **Parameters**
 
 None.
 
-**Returns** - `present`, `content`, `size`, `last_modified`, `written_by_somcp`.
+**Returns**
+- `present` - as `somcp_get_robots_txt`: false when there is no file or it cannot be read.
+- `content` - the file as it is (first 500 KiB, byte order mark dropped), `null` when absent.
+- `size` - bytes, `null` when absent.
+- `last_modified` - ISO 8601, `null` when absent.
+- `written_by_somcp` - true when the file holds the marker `somcp_generate_llms_txt` writes, `null` when absent.
+- `url` - the address where AI tools ask for it: root of the token's shop domain + `/llms.txt`.
+- `warnings` - `code` and `why`, the shape of `somcp_get_robots_txt`: `no_llms_txt`, `not_at_domain_root` (the shop is in a folder: the file at the root of the domain is the one read), `too_large`, `not_markdown` (no `# ` title line, which the proposed format starts with).
+- `note` - that llms.txt is a proposed convention no crawler or assistant is bound to read, and on a multistore installation that the file is shared by every shop.
 
 **Notes**
-- llms.txt is a proposed convention, not a standard: the answer says so, and that no assistant is bound to read it.
+- The file is read with `somcp_get_robots_txt` (`read()`, `MAX_BYTES`), never a second copy: same root (`_PS_ROOT_DIR_`), same size cap, same byte order mark handling. The marker is one constant, `SomcpToolGetLlmsTxt::MARKER`, used by `somcp_generate_llms_txt` too.
+- Nothing is written or fetched over the network: the file is read from disk. The `.htaccess` of 8.0.1 and 9.0.0 serves an existing file as is; on nginx it depends on the server rules, so the tool reports the file, not what the web server serves.
+- No back office screen shows or edits an llms.txt on either version; the view right is the one of **Shop Parameters > Traffic & SEO**, where robots.txt is managed.
+- Errors in the shape of #169: unknown arguments. An absent or unreadable file is an answer with `present: false`, never an error.
+- Same root and same `.htaccess` rule on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_generate_llms_txt`
 **State**: to write · [issue #100](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/100)

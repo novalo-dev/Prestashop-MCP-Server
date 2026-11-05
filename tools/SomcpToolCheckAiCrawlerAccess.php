@@ -250,13 +250,8 @@ class SomcpToolCheckAiCrawlerAccess
      */
     private static function content(string $file): string
     {
-        // 500 KiB: what Google reads of a robots.txt, as somcp_get_robots_txt.
-        $content = (string) file_get_contents($file, false, null, 0, 512000);
-        if (strncmp($content, "\xEF\xBB\xBF", 3) === 0) {
-            $content = substr($content, 3);
-        }
-
-        return $content;
+        // The same cap and byte order mark handling as somcp_get_robots_txt.
+        return SomcpToolGetRobotsTxt::read($file);
     }
 
     /**

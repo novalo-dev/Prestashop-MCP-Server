@@ -12,6 +12,7 @@ checked and why it matters.
 - `somcp_audit_product_entities`
 - `somcp_check_ai_crawler_access`
 - `somcp_audit_store_policies`
+- `somcp_get_llms_txt`
 
 ## Know which shop you are in
 
@@ -77,6 +78,17 @@ the `warnings` and name each setting with its words on screen (**Displayed**,
 what exists and what is missing; never write or suggest the legal text of a
 page, which is the merchant's responsibility. A page is changed with the
 content page tools, after the merchant's approval.
+
+## Read the llms.txt
+
+Call `somcp_get_llms_txt` to see whether the shop has an llms.txt, the plain
+text summary some AI tools look for at the root of a site, and whether
+`written_by_somcp` says O'So MCP Server wrote it. Read the `warnings`:
+`no_llms_txt` is a shop without one, `not_at_domain_root` a shop in a folder
+whose file is not the one read, `not_markdown` a file without the `# ` title
+line the format opens with. Say plainly that llms.txt is a proposed
+convention, not a standard: no crawler or assistant is bound to read it, so
+never present it as a way to be cited.
 
 ## Never invent
 

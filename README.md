@@ -359,6 +359,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_audit_product_entities` | ● Audit how complete products are for answer engines | Products › view |
 | `somcp_check_ai_crawler_access` | ● Check whether AI crawlers can read the shop | SEO & URLs › view |
 | `somcp_audit_store_policies` | ● Audit the store policy pages | Pages › view |
+| `somcp_get_llms_txt` | ● Read the llms.txt file | SEO & URLs › view |
 
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
 language and currency it is connected to.

@@ -41,9 +41,10 @@ class SomcpToolGetRobotsTxt
 {
     /**
      * Google reads the first 500 KiB of a robots.txt and ignores the rest, so
-     * reading further would report rules no search engine applies.
+     * reading further would report rules no search engine applies. Public so
+     * somcp_get_llms_txt caps the file beside it at the same size.
      */
-    private const MAX_BYTES = 512000;
+    public const MAX_BYTES = 512000;
 
     /**
      * @return SomcpTool
@@ -161,13 +162,15 @@ class SomcpToolGetRobotsTxt
     }
 
     /**
-     * The part of the file search engines read.
+     * The part of the file search engines read. Public so
+     * somcp_check_ai_crawler_access and somcp_get_llms_txt read a file at the
+     * root exactly as this tool does.
      *
      * @param string $file
      *
      * @return string
      */
-    private static function read(string $file): string
+    public static function read(string $file): string
     {
         $content = (string) file_get_contents($file, false, null, 0, self::MAX_BYTES);
         // A byte order mark left by an editor would glue itself to the first

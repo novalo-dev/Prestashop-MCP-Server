@@ -58,6 +58,14 @@ the delivery time texts of your products. When several pages could be the same
 one, it lists them so you choose. It changes nothing, and what these pages say
 stays your responsibility.
 
+**Read your shop's llms.txt.** The new tool `somcp_get_llms_txt` shows the
+llms.txt at the root of your shop, the plain text summary some AI tools look
+for, with its size, its last change and the address where it is asked for, and
+says whether it was written by O'So MCP Server. It warns when there is none,
+when your shop sits in a folder, when the file is too large, or when it does
+not start with a title line. llms.txt is a proposed convention, not a
+standard: no AI tool is bound to read it. The tool changes nothing.
+
 ### Changed
 
 **The SEO settings read now cover the rest of the SEO and URLs page.** The tool

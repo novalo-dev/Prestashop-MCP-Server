@@ -1337,6 +1337,11 @@
       <source>Audit the store policy pages</source>
       <target>Auditer les pages de conditions de la boutique</target>
     </trans-unit>
+    <!-- Read the llms.txt file -->
+    <trans-unit id="5cc060c30568d134d5a4b798b5e0a82e" resname="Read the llms.txt file">
+      <source>Read the llms.txt file</source>
+      <target>Lire le fichier llms.txt</target>
+    </trans-unit>
     <!-- Generate the robots.txt file -->
     <trans-unit id="5265ab497a8959555b34491d6e62e8d4" resname="Generate the robots.txt file">
       <source>Generate the robots.txt file</source>

@@ -1062,6 +1062,10 @@ T = {
  "Auditer les pages de conditions de la boutique",
  "Auditar las páginas de políticas de la tienda",
  "Die Richtlinienseiten des Shops prüfen"),
+"Read the llms.txt file": (
+ "Lire le fichier llms.txt",
+ "Leer el archivo llms.txt",
+ "Die Datei llms.txt lesen"),
 "Generate the robots.txt file": (
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",

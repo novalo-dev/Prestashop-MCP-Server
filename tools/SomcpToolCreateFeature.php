@@ -75,25 +75,12 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
         return new SomcpTool(
             'somcp_create_feature',
             Somcp::t('Create a feature'),
-            'Creates one feature (Composition, Material...) in this shop with every field of the back office '
-                . 'feature form: name, and the faceted search fields of that form - url_name (the word used in '
-                . 'filtered URLs), meta_title and indexable - when the faceted search module is installed and '
-                . 'enabled. Only name is required. The feature is created without values: add them afterwards, '
-                . 'one per call, with somcp_create_feature_value. '
-                . 'Read somcp_list_features first: the feature may already exist, and PrestaShop accepts two '
-                . 'features of the same name. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Assistant" - write it yourself in every language being filled, and show it to the '
-                . 'merchant before the call. '
-                . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
-                . 'language of the shop left out takes the default language\'s text. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Do not use it to add a value to a feature, which is somcp_create_feature_value, or to change a '
-                . 'feature, which is somcp_update_feature. One feature per call: for several, call it once per '
-                . 'feature and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_features and look for the name '
-                . 'before anything else, because a second call creates a second feature.',
+            'Creates one feature (Composition, Material...), as the feature form of Catalog > Attributes & '
+                . 'Features > Features, without values: add them with somcp_create_feature_value. Read '
+                . 'somcp_list_features first: PrestaShop accepts two features of the same name. Each field says who '
+                . 'fills it: Merchant - ask and never invent; Assistant - write it in every language being filled and '
+                . 'show it before the call. To change a feature use somcp_update_feature. One feature per call. Not to '
+                . 'be retried: if the answer is lost, look for the name in somcp_list_features before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

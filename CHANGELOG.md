@@ -64,6 +64,15 @@ results cut, and a meta description under 70 or over 160 characters, with the
 same limits as the product, category and page audits, so a brand is judged by
 the same rules as the rest of the shop.
 
+**Shorter feature tools.** The seven tools of Catalog > Attributes & Features >
+Features - list, read, create and change the features and their values - now
+describe themselves in a few sentences, lighter for the assistant on every
+step. What matters is kept: that a feature or a value is taken from the list
+and never guessed, that each field says whether you or the assistant fill it,
+that renaming a feature or a value changes it on every product that carries
+it and is confirmed with you first, that a value typed on one product only is
+changed on that product, and which read checks a change.
+
 ## 1.2.1 - 2026-11-04
 
 ### Added

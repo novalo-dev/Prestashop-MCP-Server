@@ -60,25 +60,12 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
         return new SomcpTool(
             'somcp_update_feature',
             Somcp::t('Change a feature'),
-            'Changes one existing feature (Composition, Material...) of this shop. Everything '
-                . 'somcp_create_feature can write can be changed here, under the same names and with the same '
-                . 'rules - who fills each field, lengths, forbidden characters: name, and the faceted search '
-                . 'fields url_name, meta_title and indexable when the faceted search module is installed and '
-                . 'enabled. position moves the feature in the list of features, from 0 as somcp_get_feature '
-                . 'gives it; the others shift. Only what is given changes: a value left out is kept, a text is replaced in the '
-                . 'languages filled and kept in the others. When languages is left out every language of the '
-                . 'shop is filled, so a text must then be given in each; to change one language, pass languages '
-                . 'with it alone. '
-                . 'Take the feature from somcp_list_features, never guessed, and read it with somcp_get_feature '
-                . 'to know what it holds. Renaming a feature renames it on every product that carries it: tell '
-                . 'the merchant so, show what will change and call once they agree. Every problem is reported '
-                . 'at once and nothing is written until the whole call is valid. The answer gives each field '
-                . 'changed with its old and new value. A call that would change nothing writes nothing and says '
-                . 'changed: false. '
-                . 'Do not use it to create a feature (somcp_create_feature) or to change one of its values '
-                . '(somcp_update_feature_value). One feature per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the feature again with '
-                . 'somcp_get_feature and compare before calling again.',
+            'Changes one feature, as the feature form of Catalog > Attributes & Features > Features, under the '
+                . 'names and rules of somcp_create_feature, plus position. id_feature comes from somcp_list_features: '
+                . 'never guess one; read it first with somcp_get_feature. Only what is given changes, a text only in '
+                . 'the languages filled. A new name shows on every product carrying it: tell the merchant, show what '
+                . 'will change and call once they agree. For a value use somcp_update_feature_value. One feature per '
+                . 'call. Not to be retried: if the answer is lost, read somcp_get_feature before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

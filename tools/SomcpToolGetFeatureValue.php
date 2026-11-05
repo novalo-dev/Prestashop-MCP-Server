@@ -49,15 +49,12 @@ class SomcpToolGetFeatureValue
         return new SomcpTool(
             'somcp_get_feature_value',
             Somcp::t('Get a feature value'),
-            'Returns everything the back office value form shows for one predefined value of a feature '
-                . 'of this shop (Cotton under Composition...): its text, the feature it belongs to with that '
-                . 'feature\'s name, and the faceted search fields of that form - url_name (the word used in '
-                . 'filtered URLs) and meta_title - which are null when the faceted search module is not '
-                . 'installed and enabled. From PrestaShop 9 on it also gives the position of the value among those of its '
-                . 'feature (0 for the first), a key left out before, where values have no position. Identify the value by its identifier, from somcp_list_features: never guess one. '
-                . 'A custom value, typed on one product only, is refused: read it with somcp_get_product. '
-                . 'Do not use it for the list of features and values, which is somcp_list_features, or for '
-                . 'the feature itself, which is somcp_get_feature.',
+            'Returns what the value form of Catalog > Attributes & Features > Features shows for one predefined '
+                . 'value (Cotton under Composition...): its text, its feature with that feature\'s name, the faceted '
+                . 'search fields (null without the faceted search module) and, from PrestaShop 9 on, its position (0 '
+                . 'for the first). id_feature_value comes from somcp_list_features: never guess one. A value typed on '
+                . 'one product only is refused: read it with somcp_get_product. For the feature itself use '
+                . 'somcp_get_feature.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -1989,12 +1989,12 @@ class SomcpAssistantChat
         if ($this->employee->isSuperAdmin()) {
             $tools[] = new FrontendTool(
                 self::SETTINGS_READ_TOOL,
-                'Read the settings of this module (O\'So MCP Server) for this shop: each with its tab and label as the settings page shows them, where its value comes from, the assistants of the chat, the tools and prompts with their switch, and the address of the documentation.',
+                'Read the settings of this module (O\'So MCP Server) for this shop: each with its tab and label as the settings page shows them, where its value comes from, the assistants of the chat, the tools and prompts with their switch, the groups of tools by scope with theirs, and the address of the documentation.',
                 ['type' => 'object']
             );
             $change = new FrontendTool(
                 self::SETTINGS_WRITE_TOOL,
-                'Change one setting of this module for this shop, with a key read from ' . self::SETTINGS_READ_TOOL . ', only the one the employee asked for. When it needs a choice they have not made, ask them first: never choose for them. Switches take on or off. tool:<name> and prompt:<name> switch one tool or prompt for the assistants connected over MCP, builtin-tool:<name> and builtin-prompt:<name> for this assistant. API keys cannot be set here.',
+                'Change one setting of this module for this shop, with a key read from ' . self::SETTINGS_READ_TOOL . ', only the one the employee asked for. When it needs a choice they have not made, ask them first: never choose for them. Switches take on or off. tool:<name>, prompt:<name> and scope:<scope> switch one tool, one prompt or the whole group of tools needing a scope for the assistants connected over MCP, builtin-tool:<name>, builtin-prompt:<name> and builtin-scope:<scope> for this assistant. API keys cannot be set here.',
                 [
                     'type' => 'object',
                     'properties' => [

@@ -68,16 +68,12 @@ class SomcpToolListMenuLinks
             'somcp_list_menu_links',
             Somcp::t('List main menu entries'),
             'Lists the entries of the storefront\'s main menu, the Selected items of the Menu Top Link panel '
-                . 'of the Main menu module (ps_mainmenu), in menu order: position (1 for the first), the stored '
-                . 'code (item, for example CAT3), its type (category, product, cms_page, cms_category, '
-                . 'all_brands, brand, all_suppliers, supplier, link, shop), the identifier of its object under '
-                . 'the name its list tool gives (id_category, id_product, id_cms, id_cms_category, '
-                . 'id_manufacturer, id_supplier, id_link, id_shop), its label, and for a custom link its url '
-                . 'and new_window. Codes whose object no longer exists are in skipped[], as the screen hides '
-                . 'them. Also returns every custom link of the shop (custom_links[], the Link list), in the '
-                . 'menu or not, with the id_link to give to the menu tools. When ps_mainmenu is not installed '
-                . 'or not enabled on this shop, module_active is false and the lists are empty. Do not use it '
-                . 'for the shop\'s categories (somcp_list_categories) or its CMS pages (somcp_list_cms_pages).',
+                . 'of the Main menu module (ps_mainmenu), in menu order, each with its position, code, type, '
+                . 'the identifier its list tool gives, its label, and for a custom link its url and '
+                . 'new_window. Entries whose object no longer exists are in skipped[]. Also returns every '
+                . 'custom link of the shop in custom_links[], with the id_link the menu tools take. '
+                . 'module_active is false when ps_mainmenu is not installed or enabled here. Use '
+                . 'somcp_list_categories and somcp_list_cms_pages for its categories and CMS pages.',
             [
                 'type' => 'object',
                 'properties' => [

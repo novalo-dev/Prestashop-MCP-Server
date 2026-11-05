@@ -69,22 +69,13 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
         return new SomcpTool(
             'somcp_create_return_status',
             Somcp::t('Create a return status'),
-            'Creates one return status in this shop: a step a merchandise return goes through, with the '
-                . 'fields of the Add new return status form of Shop Parameters > Order Settings > Statuses - '
-                . 'the name, and the colour the status is highlighted in. Only name is required. '
-                . 'These statuses are the steps of a return, not of an order: do not use it for the '
-                . 'statuses of an order, which somcp_list_order_statuses lists and no tool here creates. '
-                . 'Read somcp_list_return_statuses first: a name another return status already has in the '
-                . 'same language is refused, so the merchant can always tell the steps apart. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. '
-                . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
-                . 'language of the shop left out takes the default language\'s text. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'One return status per call: for several, call it once per status and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_return_statuses and look for '
-                . 'the name before anything else.',
+            'Creates one return status, a step of a merchandise return, as the Add new return status form '
+                . 'of Shop Parameters > Order Settings > Statuses: name and color. Not for order statuses. Read '
+                . 'somcp_list_return_statuses first: a name another return status has in the same language is '
+                . 'refused. Each field says who fills it: Merchant - ask and never invent. Nothing is written '
+                . 'unless the whole call is valid. To change a status use somcp_update_return_status. One status '
+                . 'per call. Not to be retried: if the answer is lost, look for the name in '
+                . 'somcp_list_return_statuses before anything else.',
             self::inputSchema(),
             [SomcpScope::ORDERS_WRITE],
             [self::class, 'handle'],
@@ -112,9 +103,9 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
                 ],
                 'name' => [
                     'type' => 'object',
-                    'description' => 'Merchant. Required. The name of the step, shown wherever a return is '
-                        . 'followed, 64 characters at most, without < > = { }. One text per language being '
-                        . 'filled, keyed by ISO code: {"fr": "...", "en": "..."}.',
+                    'description' => 'Merchant. Required. The name of the step, 64 characters at most, without '
+                        . '< > = { }. One text per language being filled, keyed by ISO code: {"fr": "...", '
+                        . '"en": "..."}.',
                     'additionalProperties' => ['type' => 'string'],
                 ],
                 'color' => [

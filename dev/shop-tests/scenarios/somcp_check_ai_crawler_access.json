@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "the crawlers, the pages and the robots.txt of the demo shop; the test shop has no web server, so whether the pages answer depends on the runner, but the structure is always there", "arguments": {}, "expect": "ok", "contains": ["\"robots_txt_present\"", "\"pages\"", "\"crawlers\"", "\"warnings\"", "\"GPTBot\"", "\"ClaudeBot\"", "\"Bingbot\"", "\"allowed\"", "\"noindex\""]},
+    {"why": "a field this tool does not take", "arguments": {"crawler": "GPTBot"}, "expect": "error", "contains": ["not a field of this tool"]}
+  ]
+}

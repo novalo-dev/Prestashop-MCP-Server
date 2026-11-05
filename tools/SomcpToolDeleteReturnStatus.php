@@ -52,17 +52,13 @@ class SomcpToolDeleteReturnStatus
         return new SomcpTool(
             'somcp_delete_return_status',
             Somcp::t('Delete a return status'),
-            'Deletes one return status the merchant created: a step a merchandise return goes through, as '
-                . 'the Delete action of the return status list of Shop Parameters > Order Settings > Statuses '
-                . 'does. Irreversible. Before calling it, read the status with somcp_list_return_statuses and '
-                . 'ask the merchant to confirm, naming the status. Take the status from '
-                . 'somcp_list_return_statuses and use the identifier it returns; never guess one. The five '
-                . 'statuses every shop starts with, identifiers 1 to 5, are refused, as both back offices '
-                . 'refuse them, and so is a status a merchandise return still stands on, with the number of '
-                . 'returns in the answer. Do not use it to change a return status '
-                . '(somcp_update_return_status), and not for the statuses of an order: a return status is not '
-                . 'an order status. One return status per call. Not to be retried on a lost answer: read '
-                . 'somcp_list_return_statuses to see whether it is gone.',
+            'Deletes one return status the merchant created, as the Delete action of the return status list '
+                . 'of Shop Parameters > Order Settings > Statuses. Irreversible: read it with '
+                . 'somcp_list_return_statuses, take its identifier from there, never guessed, and have the '
+                . 'merchant confirm it by name. The five statuses every shop starts with (1 to 5) are refused, '
+                . 'and so is a status a return still stands on. Not for order statuses; use '
+                . 'somcp_update_return_status to change one. One status per call. Do not retry on a lost '
+                . 'answer: read somcp_list_return_statuses to see whether it is gone.',
             [
                 'type' => 'object',
                 'properties' => [

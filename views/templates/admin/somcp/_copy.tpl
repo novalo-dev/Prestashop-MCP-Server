@@ -146,6 +146,10 @@
         // go through the same pager, without a search.
         document.querySelectorAll('[data-somcp-pager]').forEach(function (nav) {
             var group = nav.closest('.panel');
+            // The grouped tools and prompts lists page by group, below.
+            if (group && group.querySelector('[data-somcp-grouped]')) {
+                return;
+            }
             var rows = group ? Array.prototype.slice.call(group.querySelectorAll('.somcp-tools tbody tr, [data-somcp-paged]')) : [];
             var size = parseInt(nav.getAttribute('data-somcp-pager'), 10) || 5;
             var search = group ? group.querySelector('[data-somcp-search]') : null;
@@ -371,6 +375,242 @@
                 }
             });
         });
+
+        // The tools and prompts lists, grouped by scope. Each group folds under
+        // its heading row, which carries the group's two switches and how many
+        // of its rows are on. Every row stays in the form, hidden rather than
+        // removed, so a folded group still posts its switches; a search unfolds
+        // the groups it finds something in. Without a script the whole list
+        // shows, unfolded, which is the right thing to fall back to.
+        document.querySelectorAll('[data-somcp-grouped]').forEach(function (table) {
+            var panel = table.closest('.panel');
+            var search = panel ? panel.querySelector('[data-somcp-search]') : null;
+            var nothing = panel ? panel.querySelector('[data-somcp-nothing]') : null;
+            var pattern = table.getAttribute('data-somcp-count') || '';
+            var offText = table.getAttribute('data-somcp-off') || '';
+            var groups = Array.prototype.slice.call(table.querySelectorAll('tbody.somcp-group'));
+            var open = {};
+            // A few groups a page, counted in rows on the line between the
+            // buttons, so the line says the same as on the other lists.
+            var nav = panel ? panel.querySelector('[data-somcp-pager]') : null;
+            var size = nav ? parseInt(nav.getAttribute('data-somcp-pager'), 10) || 5 : groups.length;
+            var counter = nav ? nav.querySelector('.somcp-tools-count') : null;
+            var range = counter ? counter.getAttribute('data-somcp-range') || '' : '';
+            var filtered = counter ? counter.getAttribute('data-somcp-filtered') || '' : '';
+            var allRows = table.querySelectorAll('[data-somcp-row]').length;
+            var page = 0;
+
+            var boxesOf = function (group, column) {
+                return Array.prototype.slice.call(group.querySelectorAll('[data-somcp-row] [data-somcp-column="' + column + '"] input'));
+            };
+
+            var count = function (group) {
+                ['on', 'chat'].forEach(function (column) {
+                    var boxes = boxesOf(group, column);
+                    var on = boxes.filter(function (box) {
+                        return box.checked;
+                    }).length;
+                    // A prompts group follows the switch of the tools group of
+                    // the same scope, which sits in the list above.
+                    var scope = group.querySelector('[data-somcp-scope="' + column + '"]')
+                        || document.querySelector('tbody[data-somcp-group="' + group.getAttribute('data-somcp-group') + '"] [data-somcp-scope="' + column + '"]');
+                    var label = group.querySelector('[data-somcp-counted="' + column + '"]');
+                    if (label) {
+                        // A group switched off offers none of its rows, whatever
+                        // their own switches say: the line says so instead of
+                        // counting switches that have no effect there.
+                        label.textContent = scope && !scope.checked
+                            ? offText
+                            : pattern.replace('%on%', on).replace('%total%', boxes.length);
+                    }
+                    // The prompts' group switch only reflects its rows: on when
+                    // all are, half when some are.
+                    var all = group.querySelector('[data-somcp-all="' + column + '"]');
+                    if (all) {
+                        all.checked = boxes.length > 0 && on === boxes.length;
+                        all.indeterminate = on > 0 && on < boxes.length;
+                    }
+                    // The tools' group switch is a setting of its own: the rows
+                    // keep their switch, faded while the group is off.
+                    if (scope) {
+                        group.classList.toggle('somcp-off-' + column, !scope.checked);
+                    }
+                });
+            };
+
+            var draw = function () {
+                // Matched on the text the merchant reads - group, title, name,
+                // publisher - so a search finds what the row says.
+                var query = search ? search.value.trim().toLowerCase() : '';
+                var kept = [];
+                var matched = 0;
+                groups.forEach(function (group) {
+                    var head = group.querySelector('.somcp-group-row');
+                    var rows = Array.prototype.slice.call(group.querySelectorAll('[data-somcp-row]'));
+                    var whole = query !== '' && head.textContent.toLowerCase().indexOf(query) !== -1;
+                    var hits = rows.filter(function (row) {
+                        return query === '' || whole || row.textContent.toLowerCase().indexOf(query) !== -1;
+                    });
+                    if (query === '' || hits.length > 0) {
+                        kept.push({ group: group, rows: rows, hits: hits });
+                        matched += hits.length;
+                    } else {
+                        group.hidden = true;
+                        rows.forEach(function (row) {
+                            row.hidden = true;
+                        });
+                    }
+                });
+
+                var pages = Math.max(1, Math.ceil(kept.length / size));
+                page = Math.min(page, pages - 1);
+                var first = 0;
+                var last = 0;
+                var before = 0;
+                kept.forEach(function (entry, i) {
+                    var onPage = i >= page * size && i < (page + 1) * size;
+                    var unfolded = query !== '' || open[entry.group.getAttribute('data-somcp-group')] === true;
+                    entry.group.hidden = !onPage;
+                    entry.rows.forEach(function (row) {
+                        row.hidden = !onPage || !unfolded || entry.hits.indexOf(row) === -1;
+                    });
+                    var caret = entry.group.querySelector('[data-somcp-expand]');
+                    if (caret) {
+                        caret.setAttribute('aria-expanded', unfolded ? 'true' : 'false');
+                    }
+                    if (onPage) {
+                        if (first === 0 && entry.hits.length > 0) {
+                            first = before + 1;
+                        }
+                        last = before + entry.hits.length;
+                    }
+                    before += entry.hits.length;
+                });
+
+                if (nothing) {
+                    nothing.textContent = search ? search.getAttribute('data-somcp-none') || '' : '';
+                    nothing.hidden = kept.length > 0;
+                }
+                if (nav) {
+                    if (counter) {
+                        counter.textContent = matched === 0 ? '' : range
+                            .replace('%from%', first)
+                            .replace('%to%', last)
+                            .replace('%total%', matched)
+                            + (query !== '' && filtered !== '' ? ' ' + filtered.replace('%all%', allRows) : '');
+                    }
+                    nav.querySelector('[data-somcp-page="-1"]').disabled = page === 0;
+                    nav.querySelector('[data-somcp-page="1"]').disabled = page >= pages - 1;
+                    nav.hidden = kept.length <= size;
+                }
+            };
+
+            if (nav) {
+                nav.querySelectorAll('[data-somcp-page]').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        page = Math.max(0, page + parseInt(button.getAttribute('data-somcp-page'), 10));
+                        draw();
+                    });
+                });
+            }
+
+            groups.forEach(function (group) {
+                var key = group.getAttribute('data-somcp-group');
+                var caret = group.querySelector('[data-somcp-expand]');
+                if (caret) {
+                    caret.addEventListener('click', function () {
+                        open[key] = caret.getAttribute('aria-expanded') !== 'true';
+                        // A click during a search leaves the search for the
+                        // whole list, on the page this group sits on.
+                        if (search && search.value !== '') {
+                            search.value = '';
+                            page = Math.floor(groups.indexOf(group) / size);
+                        }
+                        draw();
+                    });
+                }
+                group.querySelectorAll('[data-somcp-all]').forEach(function (all) {
+                    all.addEventListener('change', function () {
+                        boxesOf(group, all.getAttribute('data-somcp-all')).forEach(function (box) {
+                            if (!box.disabled) {
+                                box.checked = all.checked;
+                            }
+                        });
+                        count(group);
+                    });
+                });
+                group.addEventListener('change', function (event) {
+                    if (!event.target.hasAttribute('data-somcp-all')) {
+                        count(group);
+                    }
+                });
+                count(group);
+            });
+
+            if (search) {
+                search.addEventListener('input', function () {
+                    page = 0;
+                    draw();
+                });
+                // Enter in the search would submit the settings form.
+                search.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                    }
+                });
+            }
+            // A group switched in the tools list changes the prompts groups
+            // of the same scope too.
+            document.addEventListener('change', function (event) {
+                if (event.target.hasAttribute && event.target.hasAttribute('data-somcp-scope')) {
+                    groups.forEach(count);
+                }
+            });
+            draw();
+        });
+
+        // A prompt needs the groups of the tools it guides: switching one of
+        // them off in the tools list greys the prompt in that column at once,
+        // as the server does once the page is saved. A scope with no switch
+        // on the page keeps what the server said.
+        (function () {
+            var switches = document.querySelectorAll('[data-somcp-scope]');
+            var rows = document.querySelectorAll('[data-somcp-needs]');
+            if (switches.length === 0 || rows.length === 0) {
+                return;
+            }
+            var refresh = function () {
+                rows.forEach(function (row) {
+                    var needs = row.getAttribute('data-somcp-needs').split(' ').filter(function (scope) {
+                        return scope !== '';
+                    });
+                    ['on', 'chat'].forEach(function (column) {
+                        var cell = row.querySelector('[data-somcp-column="' + column + '"]');
+                        if (!cell) {
+                            return;
+                        }
+                        var known = false;
+                        var held = needs.some(function (scope) {
+                            var box = document.querySelector('[data-somcp-group="' + scope + '"] [data-somcp-scope="' + column + '"]');
+                            known = known || box !== null;
+                            return box !== null && !box.checked;
+                        });
+                        if (!known) {
+                            return;
+                        }
+                        cell.classList.toggle('somcp-is-held', held);
+                        var label = cell.querySelector('.somcp-held');
+                        if (label) {
+                            label.hidden = !held;
+                        }
+                    });
+                });
+            };
+            switches.forEach(function (box) {
+                box.addEventListener('change', refresh);
+            });
+            refresh();
+        }());
 
         // A setting that inherits from the level above is shown but not editable:
         // its value does not belong to this level, and it is not submitted either

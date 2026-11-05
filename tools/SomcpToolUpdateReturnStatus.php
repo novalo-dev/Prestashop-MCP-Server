@@ -66,23 +66,13 @@ class SomcpToolUpdateReturnStatus extends SomcpToolCreateReturnStatus
         return new SomcpTool(
             'somcp_update_return_status',
             Somcp::t('Change a return status'),
-            'Changes one existing return status of this shop: a step a merchandise return goes through, '
-                . 'with everything somcp_create_return_status can write, under the same names and with the '
-                . 'same rules - name and color. Only what is given changes: a value left out is kept, a name '
-                . 'is replaced in the languages filled and kept in the others. When languages is left out '
-                . 'every language of the shop is filled, so a name must then be given in each; to change one '
-                . 'language, pass languages with it alone. '
-                . 'Take the status from somcp_list_return_statuses, never guessed. Every return status can '
-                . 'be changed, the five the shop starts with included. A name another return status already '
-                . 'has in the same language is refused, so the merchant can always tell the steps apart. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'The answer gives each field changed with its old and new value, and the status as '
-                . 'somcp_list_return_statuses lists it. A call that would change nothing writes nothing and '
-                . 'says changed: false. '
-                . 'Do not use it to create a return status (somcp_create_return_status), and not for the '
-                . 'statuses of an order: a return status is not an order status. One return status per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the status again with '
-                . 'somcp_list_return_statuses and compare before calling again.',
+            'Changes one return status, a step of a merchandise return, with the fields and rules of '
+                . 'somcp_create_return_status: name and color. Take id_order_return_state from '
+                . 'somcp_list_return_statuses, never guessed; the five the shop starts with can be changed too. '
+                . 'Only what is given changes; with languages left out every language is filled, so pass '
+                . 'languages to change one. Nothing is written unless the whole call is valid. Not for order '
+                . 'statuses; use somcp_create_return_status to add one. One status per call. Do not retry on a '
+                . 'lost answer: read somcp_list_return_statuses first.',
             self::inputSchema(),
             [SomcpScope::ORDERS_WRITE],
             [self::class, 'handle'],
@@ -106,9 +96,9 @@ class SomcpToolUpdateReturnStatus extends SomcpToolCreateReturnStatus
         $properties = $schema['properties'];
         $kept = ' Left out: unchanged.';
 
-        $properties['name']['description'] = 'Merchant. The name of the step, shown wherever a return is '
-            . 'followed, 64 characters at most, without < > = { }. One text per language being filled, '
-            . 'keyed by ISO code: {"fr": "...", "en": "..."}.' . $kept;
+        $properties['name']['description'] = 'Merchant. The name of the step, 64 characters at most, without '
+            . '< > = { }. One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.'
+            . $kept;
         $properties['color']['description'] .= $kept;
 
         $schema['properties'] = [

@@ -1,5 +1,14 @@
 # Contributing
 
+<div align="center">
+
+[![Stars](https://img.shields.io/github/stars/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Stars)](https://github.com/novalo-dev/Prestashop-MCP-Server/stargazers)
+[![Forks](https://img.shields.io/github/forks/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Forks)](https://github.com/novalo-dev/Prestashop-MCP-Server/forks)
+[![Contributors](https://img.shields.io/github/contributors/novalo-dev/Prestashop-MCP-Server?style=flat&logo=github&label=Contributors)](https://github.com/novalo-dev/Prestashop-MCP-Server/graphs/contributors)
+[![PRs welcome](.github/badges/prs.svg)](CONTRIBUTING.md)
+
+</div>
+
 Thanks for looking. somcp is built for PrestaShop developers by PrestaShop
 developers, and the most useful contributions are the ones listed in
 [ROADMAP.md](ROADMAP.md): more of PrestaShop as tools, tests, clients,
@@ -20,6 +29,97 @@ once, in a few seconds, with your GitHub account.
 
 ---
 
+## How the module works
+
+- **Serves MCP from inside PrestaShop.** No separate service, no Node process.
+  The endpoint is a module front controller.
+- **Runs its own OAuth 2.1 authorization server**: discovery documents (RFC 9728
+  and RFC 8414), PKCE S256, dynamic client registration and client ID metadata
+  documents, refresh token rotation with reuse detection. Tokens are stored
+  hashed and bound to the shop they were issued for.
+- **Uses PrestaShop permissions as they are.** An employee connects an assistant
+  on their own behalf, on a consent screen in the back office. The assistant
+  then holds exactly that employee's rights: each tool is tied to a back office
+  page and one of the four rights PrestaShop already manages, `view`, `add`,
+  `edit` or `delete`.
+- **Supports multistore natively.** Each shop has its own address, its own
+  tokens and its own settings with the usual inheritance. An employee only
+  reaches the shops they are attached to.
+- **Lets any module publish tools and prompts** through two hooks, by returning
+  arrays. No dependency on somcp's classes, so those modules still pass the
+  Addons validator. See [docs/EXTENDING.md](docs/EXTENDING.md).
+- **Has a built-in assistant in the back office.** A chat button at the top
+  right of every page opens a conversation with the AI the merchant connected
+  with their own API key: [Claude](https://console.anthropic.com/settings/keys),
+  [ChatGPT](https://platform.openai.com/api-keys),
+  [Gemini](https://aistudio.google.com/apikey),
+  [Mistral](https://console.mistral.ai/api-keys),
+  [DeepSeek](https://platform.deepseek.com/api_keys),
+  [Grok](https://console.x.ai) or
+  [Cohere](https://dashboard.cohere.com/api-keys) - each link opens the page
+  where that provider gives out keys - or with an AI running on the merchant's
+  own computer, such as Ollama or LM Studio, linked through
+  [O'So AI Relay](https://github.com/novalo-dev/Somcp-Relay) with no key and
+  nothing opened on their network. It uses the same tools, with the rights of the employee
+  signed in, and asks for approval before any change. Several assistants can
+  share the work by role. Each conversation can switch on deep thinking
+  (Claude, Gemini, OpenAI's reasoning models) and web search (Claude and
+  Gemini on their own, the others through one of them), and switch the
+  memory off, from the **+** menu. It knows the module it belongs to, and
+  for super administrators reads and, after approval, changes its settings.
+  Runs on [Neuron AI](https://github.com/neuron-core/neuron-ai).
+- **Speaks both eras of the protocol** from one endpoint: the stateless
+  `2026-07-28` revision, with questions in the middle of a call, and the
+  `2025-11-25`, `2025-06-18` and `2025-03-26` revisions.
+
+## Security model
+
+- **OAuth 2.1 with PKCE (S256 only).** Authorization codes live 60 seconds,
+  access tokens one hour and refresh tokens thirty days by default, both
+  configurable. Refresh tokens rotate; presenting an old one revokes the grant.
+- **Scopes** say what an assistant may do: `mcp.access` to connect,
+  `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
+  `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
+  `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`,
+  `mcp.modules.read`, `mcp.modules.write`, `mcp.appearance.read`,
+  `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`. Other
+  modules
+  declare their own scopes rather than borrowing these.
+- **Back office rights** are checked on every call, against the employee's
+  current profile, and the shop always comes from the token, never from the
+  request.
+- **Redirect URIs** must be `https`, or `http` on loopback. The merchant can
+  restrict them to a list of hosts, and restrict which profile may grant
+  access.
+- **Every connection can be withdrawn** from the settings, and every refusal is
+  written to a security log that never contains a token or a secret.
+
+Found a vulnerability? Please do not open an issue: see [SECURITY.md](SECURITY.md).
+
+## Documentation
+
+- [Wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki): the module
+  documentation for merchants - requirements, installation, configuration,
+  connecting an assistant and the built-in assistant.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how a request travels through
+  the module, OAuth, MCP, multistore, data.
+- [docs/EXTENDING.md](docs/EXTENDING.md): publish tools and prompts from your
+  own module, with a complete [example module](docs/example/mymodule).
+- [docs/TOOLS.md](docs/TOOLS.md): the conventions every tool follows, and each
+  tool in detail.
+- [CHANGELOG.md](CHANGELOG.md): what each release changed, and what waits
+  under Unreleased for the next one.
+
+## Where to help
+
+The protocol layer, OAuth and permissions are in place. What the module needs
+now is reach: more of PrestaShop exposed as tools, more clients tested, more
+languages. [ROADMAP.md](ROADMAP.md) lists concrete pieces of work, and
+this guide explains how to set up, what a pull request
+needs, and which contributions fit.
+
+---
+
 ## Set up
 
 You need a PrestaShop 8 and, ideally, a PrestaShop 9, reachable over HTTPS: an
@@ -37,6 +137,14 @@ MCP client connects from the outside.
 4. Press **Run the diagnostic** in the module settings: every line green means
    a client can connect.
 
+A local shop needs a public HTTPS address for an MCP client to reach it: the
+tunnel of step 2 is that address.
+
+Versions are the releases published on GitHub. Between two releases, `main` may
+change the database schema; the upgrade for existing shops is written when the
+next release is published, so on a development shop, reinstall the module when a
+pull request says its schema changed.
+
 Development tools live apart from the module, so they never touch its
 `vendor/` folder:
 
@@ -46,8 +154,9 @@ composer install --working-dir=dev/tools
 
 ## Checks
 
-CI runs all of these on every pull request, in three workflows with a badge
-each on the README: **PHP tests**, **Security** and **Integration**. Run them
+CI runs all of these on every pull request, in four workflows with a badge
+each on the README: **PHP tests**, **Security**, **Integration** and **UI
+tests** (a real browser through the module's back office pages). Run them
 before pushing:
 
 ```bash
@@ -209,7 +318,14 @@ any tool whose `acts()` is not a `view`.
 6. **Document the tool** in the same pull request:
    - its entry in `docs/TOOLS.md` says **written**, and is corrected wherever
      the code had to differ;
-   - a row in the **Tools** table of `README.md`;
+   - a row in the table of its page under **Tools** in `README.md`, in this
+     form: `` | `somcp_xxx` | ● Its title | Page › right | `` - the tool's name
+     first, then **●** for a read or **✎** for a write and the tool's title as
+     the code gives it, then the back office page as the menu names it and the
+     right it needs (`view`, `add`, `edit` or `delete`);
+   - nothing on the settings page: the **Tools and prompts** tab lists the
+     tool under the group of its scope by itself, with the group's switches
+     (see "Switching a group off" in `docs/TOOLS.md`);
    - a line in `CHANGELOG.md`, under `## Unreleased`;
    - its name in the **prompt of its section** (see below), in `prompt.json`
      and in the guide `prompt.md`.

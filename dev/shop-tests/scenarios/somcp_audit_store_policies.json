@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "the demo pages: the terms by the Order Settings page, the legal notice by its role, delivery and about us by their friendly URL, the contact page by its controller, no privacy or returns page; whether any demo CMS page is set to not be indexed varies between PrestaShop versions (9.2 indexes them all), so page_noindex is not asserted here; the test shop has no web server, so whether the home page answers depends on the runner", "arguments": {}, "expect": "ok", "contains": ["\"pages\"", "\"legal_notice\"", "\"matched_by\": \"setting\"", "\"matched_by\": \"role\"", "\"matched_by\": \"url\"", "\"matched_by\": \"controller\"", "\"page_missing\"", "\"checkout\"", "\"terms_required\"", "\"returns\"", "\"delivery_times\"", "\"products_without\"", "\"home\"", "\"warnings\""]},
+    {"why": "one language by its ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"pages\""]},
+    {"why": "the ISO code in capitals is the same language", "arguments": {"language": "EN"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["not a language of this shop"]},
+    {"why": "a field this tool does not take", "arguments": {"type": "terms"}, "expect": "error", "contains": ["not a field of this tool"]}
+  ]
+}

@@ -9,6 +9,10 @@ checked and why it matters.
 
 - `somcp_ping`
 - `somcp_audit_product_schema`
+- `somcp_audit_product_entities`
+- `somcp_check_ai_crawler_access`
+- `somcp_audit_store_policies`
+- `somcp_get_llms_txt`
 
 ## Know which shop you are in
 
@@ -20,7 +24,12 @@ installation has its own prices, stock and pages.
 
 1. **Pick the products.** When a product is given under *This request*, find
    its `id_product` with `somcp_search_products` (`name`, `reference` or
-   `ean13`); never guess an identifier. Otherwise start with the products that
+   `ean13`); never guess an identifier. Otherwise call
+   `somcp_audit_product_entities` first: it scores the whole catalogue on the
+   fields an assistant needs (brand, a GTIN, MPN, features, description,
+   summary, images with a caption, weight, condition, category, meta
+   description) and lists the least complete products, each missing field
+   under its `on_screen` label. Start with those, or with the products that
    sell, and ask the merchant which ones matter most when you cannot tell.
 2. **Compare the page.** Call `somcp_audit_product_schema` for each product,
    with `id_product_attribute` for one combination's page and `language` for
@@ -42,6 +51,44 @@ installation has its own prices, stock and pages.
 5. **Check again.** After a change, call `somcp_audit_product_schema` on the
    same product: a value in the database is not proof of what the theme
    prints.
+
+## Check that the crawlers can read the shop
+
+Complete data only helps if the crawlers are allowed in. Call
+`somcp_check_ai_crawler_access`: it says, for each of the main AI crawlers,
+whether the shop's robots.txt lets it fetch the home, a product and a category
+page, with the rule deciding it, and whether those pages ask it not to index
+them. Read the `warnings`: `blocked_everywhere`, `blocks_products` or
+`blocks_categories` is a crawler shut out, `noindex_page` a page that keeps
+every crawler out, `no_robots_txt` a shop that allows all of them. Whether to
+open the shop to a crawler is the merchant's choice: report what is blocked and
+why it matters, and change the robots.txt only with `somcp_generate_robots_txt`
+and the merchant's approval, never by hand here.
+
+## Check the pages buyers and assistants trust
+
+Call `somcp_audit_store_policies` to see whether the legal notice, terms,
+shipping, returns, privacy, about us and contact pages exist, are displayed,
+can be indexed, say enough and are linked from the home page, with the
+checkout terms, returns and delivery time settings. Each page says how it was
+`matched_by`; a page with `candidates` was picked among several by its
+address or title: ask the merchant which one it is before going further. Read
+the `warnings` and name each setting with its words on screen (**Displayed**,
+**Indexation by search engines**, **Page for terms and conditions**). Report
+what exists and what is missing; never write or suggest the legal text of a
+page, which is the merchant's responsibility. A page is changed with the
+content page tools, after the merchant's approval.
+
+## Read the llms.txt
+
+Call `somcp_get_llms_txt` to see whether the shop has an llms.txt, the plain
+text summary some AI tools look for at the root of a site, and whether
+`written_by_somcp` says O'So MCP Server wrote it. Read the `warnings`:
+`no_llms_txt` is a shop without one, `not_at_domain_root` a shop in a folder
+whose file is not the one read, `not_markdown` a file without the `# ` title
+line the format opens with. Say plainly that llms.txt is a proposed
+convention, not a standard: no crawler or assistant is bound to read it, so
+never present it as a way to be cited.
 
 ## Never invent
 

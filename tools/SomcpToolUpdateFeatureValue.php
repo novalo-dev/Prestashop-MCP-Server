@@ -59,27 +59,12 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
         return new SomcpTool(
             'somcp_update_feature_value',
             Somcp::t('Change a feature value'),
-            'Changes one existing predefined value (Cotton, Linen...) of a feature of this shop. Everything '
-                . 'somcp_create_feature_value can write can be changed here, under the same names and with the '
-                . 'same rules - who fills each field, lengths, forbidden characters: value, the feature it '
-                . 'belongs to (id_feature), and the faceted search fields url_name and meta_title when the '
-                . 'faceted search module is installed and enabled. Only what is given changes: a field left out '
-                . 'is kept, a text is replaced in the languages filled and kept in the others. When languages is '
-                . 'left out every language of the shop is filled, so a text must then be given in each; to '
-                . 'change one language, pass languages with it alone. '
-                . 'Take the value from somcp_list_features, never guessed, and read it with '
-                . 'somcp_get_feature_value to know what it holds. The value stays on the products that carry '
-                . 'it: changing its text changes it on every one of them, so tell the merchant so, show what '
-                . 'will change and call once they agree. Moving it to another feature is refused while a '
-                . 'product carries it. A text the feature already holds in another of its values is refused. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. The '
-                . 'answer gives each field changed with its old and new value. A call that would change nothing '
-                . 'writes nothing and says changed: false. '
-                . 'Do not use it to add a value (somcp_create_feature_value), to change the feature itself '
-                . '(somcp_update_feature), or for a custom value typed on one product only, which is refused '
-                . 'here and changed with somcp_update_product. One value per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the value again with '
-                . 'somcp_get_feature_value and compare before calling again.',
+            'Changes one predefined value, as the value form of Catalog > Attributes & Features > Features, under '
+                . 'the names and rules of somcp_create_feature_value. id_feature_value comes from somcp_list_features: '
+                . 'never guess one; read it first with somcp_get_feature_value. Only what is given changes. A new text '
+                . 'shows on every product carrying it: tell the merchant, show what will change and call once they '
+                . 'agree. For a value typed on one product use somcp_update_product. One value per call. Not to be '
+                . 'retried: if the answer is lost, read somcp_get_feature_value before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

@@ -191,6 +191,120 @@ class SomcpScope
     }
 
     /**
+     * The scopes the merchant switched off for one kind of assistant.
+     *
+     * Opening a session is never among them: an assistant that cannot connect
+     * cannot even say why, and the merchant has the server switch for that.
+     *
+     * @param bool $chat true for the built-in assistant's list
+     *
+     * @return array<int, string>
+     */
+    public static function disabled(bool $chat = false): array
+    {
+        $raw = trim(SomcpConfig::get($chat ? SomcpConfig::SCOPES_OFF_CHAT : SomcpConfig::SCOPES_OFF));
+
+        return array_values(array_diff(self::parse($raw), [self::ACCESS]));
+    }
+
+    /**
+     * Whether any of these scopes is switched off, which takes down whatever
+     * needs it whatever its own switch says.
+     *
+     * @param array<int, string> $scopes
+     * @param bool $chat true for the built-in assistant
+     *
+     * @return bool
+     */
+    public static function anyOff(array $scopes, bool $chat = false): bool
+    {
+        return array_intersect($scopes, self::disabled($chat)) !== [];
+    }
+
+    /**
+     * The scope a tool or a prompt is listed under on the Tools and prompts
+     * tab: the first one it needs besides opening a session, in the order of
+     * core() and then of the modules that declared theirs.
+     *
+     * @param array<int, string> $scopes
+     *
+     * @return string
+     */
+    public static function groupOf(array $scopes): string
+    {
+        $order = self::supported();
+        $best = self::ACCESS;
+        $rank = PHP_INT_MAX;
+        foreach ($scopes as $scope) {
+            $at = array_search($scope, $order, true);
+            if ($scope !== self::ACCESS && ($at === false ? PHP_INT_MAX - 1 : $at) < $rank) {
+                $rank = $at === false ? PHP_INT_MAX - 1 : $at;
+                $best = $scope;
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * The short name of a scope, as the group rows of the Tools and prompts
+     * tab show it. describe() is the sentence of the consent screen, too long
+     * for a row heading.
+     *
+     * @param string $scope
+     * @param Somcp $module
+     *
+     * @return string
+     */
+    public static function label(string $scope, Somcp $module): string
+    {
+        switch ($scope) {
+            case self::ACCESS:
+                return $module->l10n('Connection');
+            case self::ORDERS_READ:
+                return $module->l10n('Orders - read');
+            case self::ORDERS_WRITE:
+                return $module->l10n('Orders - changes');
+            case self::CATALOG_READ:
+                return $module->l10n('Catalog - read');
+            case self::CATALOG_WRITE:
+                return $module->l10n('Catalog - changes');
+            case self::STOCK_READ:
+                return $module->l10n('Stock - read');
+            case self::STOCK_WRITE:
+                return $module->l10n('Stock - changes');
+            case self::CUSTOMERS_READ:
+                return $module->l10n('Customers - read');
+            case self::CUSTOMERS_WRITE:
+                return $module->l10n('Customers - changes');
+            case self::SEO_READ:
+                return $module->l10n('SEO - read');
+            case self::SEO_WRITE:
+                return $module->l10n('SEO - changes');
+            case self::STATS_READ:
+                return $module->l10n('Statistics - read');
+            case self::CONTENT_READ:
+                return $module->l10n('Pages - read');
+            case self::MODULES_READ:
+                return $module->l10n('Modules - read');
+            case self::MODULES_WRITE:
+                return $module->l10n('Modules - changes');
+            case self::APPEARANCE_READ:
+                return $module->l10n('Design - read');
+            case self::APPEARANCE_WRITE:
+                return $module->l10n('Design - changes');
+            case self::SYSTEM_READ:
+                return $module->l10n('Performance - read');
+            case self::SYSTEM_WRITE:
+                return $module->l10n('Performance - changes');
+            default:
+                // Another module's scope comes with the label it declared,
+                // already in the merchant's language.
+                return self::declared()[$scope] ?? $scope;
+        }
+    }
+
+    /**
      * Turns a space separated scope parameter into a clean list.
      *
      * @param string $raw

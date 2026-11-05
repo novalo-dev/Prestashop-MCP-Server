@@ -56,18 +56,12 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
             'somcp_update_menu_link',
             Somcp::t('Change a main menu custom link'),
             'Changes one custom link of the storefront\'s main menu, as Edit then Update in the Link list of '
-                . 'the Main menu module (ps_mainmenu): its label, its url and new_window. Take id_link from '
-                . 'custom_links of somcp_list_menu_links, never guessed. Only what is given changes: a value '
-                . 'left out is kept, a text is replaced in the languages filled and kept in the others. When '
-                . 'languages is left out every language of the shop is filled, so a label or url must then be '
-                . 'given in each; to change one language, pass languages with it alone. Every problem is '
-                . 'reported at once and nothing is written until the whole call is valid. The answer gives '
-                . 'each field changed with its old and new value, and the link as custom_links of '
-                . 'somcp_list_menu_links lists it. A call that would change nothing writes nothing and says '
-                . 'changed: false. It changes the link only, never its place in the menu. Do not use it to add '
-                . 'an entry or create a custom link (somcp_add_menu_link) or to read the menu '
-                . '(somcp_list_menu_links). One link per call. Not to be retried blindly: if the answer is '
-                . 'lost, read somcp_list_menu_links and compare before calling again.',
+                . 'the Main menu module (ps_mainmenu): its label, url and new_window. Take id_link from '
+                . 'custom_links of somcp_list_menu_links, never guessed. Only what is given changes; with '
+                . 'languages left out every language is filled, so pass languages to change one. Nothing is '
+                . 'written unless the whole call is valid. It never moves the entry. Use somcp_add_menu_link '
+                . 'to add an entry, somcp_list_menu_links to read. One link per call. Do not retry on a lost '
+                . 'answer: read somcp_list_menu_links first.',
             [
                 'type' => 'object',
                 'properties' => [

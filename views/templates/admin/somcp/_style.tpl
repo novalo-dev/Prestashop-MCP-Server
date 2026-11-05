@@ -491,8 +491,29 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
 /* The two switch columns take what their heading needs and no more, so the
    width goes to the tool name, which is the longest thing in the row. */
 .somcp .somcp-tools .somcp-tool-on {
-    width: 130px;
     text-align: center;
+}
+
+/* The grouped lists keep their columns where they are while groups fold,
+   unfold and page: fixed widths, and headings on one line. */
+.somcp .somcp-tools[data-somcp-grouped] {
+    table-layout: fixed;
+}
+
+.somcp .somcp-tools[data-somcp-grouped] th {
+    white-space: nowrap;
+}
+
+.somcp .somcp-tools[data-somcp-grouped] td {
+    overflow-wrap: anywhere;
+}
+
+.somcp .somcp-tools .somcp-col-publisher {
+    width: 170px;
+}
+
+.somcp .somcp-tools .somcp-col-switch {
+    width: 190px;
 }
 
 /* Above each list, the width of a search field rather than of the panel. */
@@ -547,6 +568,63 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
 .somcp .somcp-toggle:disabled {
     cursor: not-allowed;
     opacity: .5;
+}
+
+/* A switch half on: some of the prompts of a group, not all. */
+.somcp .somcp-toggle:indeterminate {
+    background: #fbc02d;
+}
+
+.somcp .somcp-toggle:indeterminate::before {
+    left: 10px;
+}
+
+/* The row heading each group of the tools and prompts lists, with its
+   switches and how many of its rows are on. */
+.somcp .somcp-tools .somcp-group-row td {
+    background: #f5f8f9;
+    border-top: 1px solid #dbe6e9;
+}
+
+.somcp .somcp-tools .somcp-group-row code {
+    margin-left: 6px;
+}
+
+.somcp .somcp-group-caret {
+    padding: 0;
+    margin-right: 4px;
+    border: 0;
+    background: none;
+    color: #25b9d7;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.somcp .somcp-group-caret[aria-expanded="false"] .material-icons {
+    transform: rotate(-90deg);
+}
+
+.somcp .somcp-group-count,
+.somcp .somcp-held {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    color: #6c868e;
+}
+
+/* A group switched off in a column: its tools keep their own switch, shown
+   faded since none of them is offered there until the group is back on. */
+.somcp .somcp-off-on [data-somcp-row] [data-somcp-column="on"] .somcp-toggle,
+.somcp .somcp-off-chat [data-somcp-row] [data-somcp-column="chat"] .somcp-toggle,
+.somcp .somcp-is-held .somcp-toggle,
+.somcp .somcp-off-on .somcp-group-row [data-somcp-all="on"],
+.somcp .somcp-off-chat .somcp-group-row [data-somcp-all="chat"] {
+    opacity: .35;
+}
+
+.somcp .somcp-tools-none {
+    margin-top: 10px;
 }
 
 /* Buttons under a list, on the right: the tool paging, and the button that

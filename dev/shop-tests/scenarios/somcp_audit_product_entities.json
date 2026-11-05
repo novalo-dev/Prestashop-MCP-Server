@@ -1,0 +1,15 @@
+{
+  "calls": [
+    {"why": "the whole demo catalogue scored, worst first, with the missing fields named", "arguments": {}, "expect": "ok", "contains": ["\"products\"", "\"total_count\"", "\"average_score\"", "\"missing\"", "\"score\"", "\"language\""]},
+    {"why": "one language by its ISO code, one product returned", "arguments": {"language": "en", "limit": 1}, "expect": "ok", "contains": ["\"returned\": 1", "\"language\": \"en\""]},
+    {"why": "the ISO code in capitals is the same language", "arguments": {"language": "EN", "limit": 1}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "only products scoring at or under a threshold", "arguments": {"max_score": 50, "limit": 5}, "expect": "ok", "contains": ["\"average_score\"", "\"total_count\""]},
+    {"why": "disabled products only, with the Status filter", "arguments": {"active": false, "limit": 5}, "expect": "ok", "contains": ["\"products\""]},
+    {"why": "a page far beyond the end is empty, not an error", "arguments": {"offset": 100000}, "expect": "ok", "contains": ["\"returned\": 0"]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["not a language of this shop"]},
+    {"why": "a score outside 0 to 100", "arguments": {"max_score": 150}, "expect": "error", "contains": ["max_score: a whole number from 0 to 100"]},
+    {"why": "a negative score", "arguments": {"max_score": -1}, "expect": "error", "contains": ["max_score: a whole number from 0 to 100"]},
+    {"why": "a limit above the maximum", "arguments": {"limit": 500}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "a field this tool does not take", "arguments": {"sort": "score"}, "expect": "error", "contains": ["not a field of this tool"]}
+  ]
+}

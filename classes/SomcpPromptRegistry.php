@@ -182,7 +182,9 @@ class SomcpPromptRegistry
     }
 
     /**
-     * Whether the merchant left this prompt switched on for this shop.
+     * Whether this prompt is offered on this shop: its own switch is on, and
+     * no scope it needs is switched off as a whole group - a guide to tools
+     * the assistant cannot use would only lead it astray.
      *
      * @param string $name
      * @param bool $chat true for the built-in assistant, which has its own list
@@ -190,6 +192,25 @@ class SomcpPromptRegistry
      * @return bool
      */
     public static function isEnabled(string $name, bool $chat = false): bool
+    {
+        if (!self::isSwitchedOn($name, $chat)) {
+            return false;
+        }
+        $prompt = self::getInstance()->get($name);
+
+        return $prompt === null || !SomcpScope::anyOff($prompt->getRequiredScopes(), $chat);
+    }
+
+    /**
+     * The prompt's own switch, whatever the groups of its tools say: what its
+     * row shows on the Tools and prompts tab.
+     *
+     * @param string $name
+     * @param bool $chat true for the built-in assistant
+     *
+     * @return bool
+     */
+    public static function isSwitchedOn(string $name, bool $chat = false): bool
     {
         return !in_array($name, self::disabled($chat), true);
     }

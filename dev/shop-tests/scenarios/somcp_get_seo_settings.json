@@ -1,6 +1,7 @@
 {
   "calls": [
-    {"why": "the settings of the demo shop", "arguments": {}, "expect": "ok", "contains": ["\"friendly_urls\"", "\"accented_urls\"", "\"canonical_redirect\"", "\"https\"", "\"https_everywhere\"", "\"domains\"", "\"main\": true", "\"routes\"", "\"product\"", "\"category\"", "\"brand\"", "\"supplier\"", "\"cms\"", "\"cms_category\"", "\"pattern\"", "\"customized\"", "\"robots_txt_present\"", "\"sitemap_module\"", "\"installed\"", "\"languages\"", "\"default\": true", "\"warnings\""]},
-    {"why": "the product address keeps its identifier in the default pattern", "arguments": {}, "expect": "ok", "contains": ["{id}"]}
+    {"why": "the settings of the demo shop, with the new keys of #89 (the demo values differ between versions, so only the keys are checked)", "arguments": {}, "expect": "ok", "contains": ["\"friendly_urls\"", "\"accented_urls\"", "\"default_language_url_prefix\"", "\"canonical_redirect\"", "\"disable_apache_multiviews\"", "\"disable_apache_mod_security\"", "\"https\"", "\"https_everywhere\"", "\"domains\"", "\"main\": true", "\"routes\"", "\"product\"", "\"category\"", "\"brand\"", "\"supplier\"", "\"cms\"", "\"cms_category\"", "\"module\"", "\"pattern\"", "\"customized\"", "\"product_attributes_in_title\"", "\"robots_txt_present\"", "\"sitemap_module\"", "\"installed\"", "\"languages\"", "\"url_prefix\"", "\"default\": true", "\"warnings\""]},
+    {"why": "the product address keeps its identifier in the default pattern", "arguments": {}, "expect": "ok", "contains": ["{id}"]},
+    {"why": "a field this tool does not take", "arguments": {"section": "urls"}, "expect": "error", "contains": ["not a field of this tool"]}
   ]
 }

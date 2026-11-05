@@ -41,9 +41,10 @@ class SomcpToolGetRobotsTxt
 {
     /**
      * Google reads the first 500 KiB of a robots.txt and ignores the rest, so
-     * reading further would report rules no search engine applies.
+     * reading further would report rules no search engine applies. Public so
+     * somcp_get_llms_txt caps the file beside it at the same size.
      */
-    private const MAX_BYTES = 512000;
+    public const MAX_BYTES = 512000;
 
     /**
      * @return SomcpTool
@@ -161,13 +162,15 @@ class SomcpToolGetRobotsTxt
     }
 
     /**
-     * The part of the file search engines read.
+     * The part of the file search engines read. Public so
+     * somcp_check_ai_crawler_access and somcp_get_llms_txt read a file at the
+     * root exactly as this tool does.
      *
      * @param string $file
      *
      * @return string
      */
-    private static function read(string $file): string
+    public static function read(string $file): string
     {
         $content = (string) file_get_contents($file, false, null, 0, self::MAX_BYTES);
         // A byte order mark left by an editor would glue itself to the first
@@ -181,12 +184,14 @@ class SomcpToolGetRobotsTxt
 
     /**
      * The groups and the Sitemap lines of the file, as RFC 9309 reads them.
+     * Public so somcp_check_ai_crawler_access reads a file exactly as this
+     * tool does, never with a second parser that could disagree on a rule.
      *
      * @param string $content
      *
      * @return array{groups: array<int, array{user_agents: array<int, string>, allow: array<int, string>, disallow: array<int, string>}>, sitemaps: array<int, string>}
      */
-    private static function parse(string $content): array
+    public static function parse(string $content): array
     {
         $groups = [];
         $sitemaps = [];
@@ -300,13 +305,15 @@ class SomcpToolGetRobotsTxt
 
     /**
      * The rule of a group that decides for one path, null when none matches.
+     * Public and paired with matches() so somcp_check_ai_crawler_access
+     * decides a page the same way this tool does.
      *
      * @param array{user_agents: array<int, string>, allow: array<int, string>, disallow: array<int, string>} $group
      * @param string $path
      *
      * @return string|null
      */
-    private static function rule(array $group, string $path): ?string
+    public static function rule(array $group, string $path): ?string
     {
         $best = null;
         $bestLength = -1;
@@ -337,7 +344,7 @@ class SomcpToolGetRobotsTxt
      *
      * @return bool
      */
-    private static function matches(string $pattern, string $path): bool
+    public static function matches(string $pattern, string $path): bool
     {
         $anchored = substr($pattern, -1) === '$';
         if ($anchored) {
@@ -350,13 +357,14 @@ class SomcpToolGetRobotsTxt
 
     /**
      * The address of one displayed product and one displayed category of the
-     * shop, in each of its active languages.
+     * shop, in each of its active languages. Public so
+     * somcp_check_ai_crawler_access checks the same pages this tool does.
      *
      * @param int $idShop
      *
      * @return array<int, array{type: string, url: string, path: string, language: string}>
      */
-    private static function samples(int $idShop): array
+    public static function samples(int $idShop): array
     {
         $db = Db::getInstance();
         $idProduct = (int) $db->getValue(

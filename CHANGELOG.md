@@ -14,6 +14,119 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## 1.2.2 - 2026-11-05
+
+### Added
+
+**Switch off a whole group of tools at once.** On **Tools and prompts**, the
+tools are now grouped by the permission an assistant is given for them -
+**Orders - read**, **Orders - changes**, **Catalog - read** and so on - and
+each group has its own two switches, one for the assistants connected over MCP
+and one for the built-in assistant. A group switched off holds back every tool
+in it, including the ones a later update adds to it, and every prompt that
+needs it; the assistants are no longer offered that permission when they
+connect. Switching the group back on gives each tool the switch it had. The
+built-in assistant can read and change these group switches too, after your
+approval.
+
+**See which products are ready for AI assistants.** The new tool
+`somcp_audit_product_entities` scores each
+product of your catalogue on the data an answer engine needs to describe it -
+brand, barcode, manufacturer reference, features, a long enough description, a
+summary, images with captions, weight, condition, a real category and a meta
+description - and lists the least complete products first, naming for each one
+what is missing under the label of its product page. It reads one language and
+changes nothing; fill the gaps with the catalogue tools.
+
+**Check whether AI crawlers can read your shop.** The new tool
+`somcp_check_ai_crawler_access` tells you, for each of the main AI crawlers
+(GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Bingbot and more), whether
+your robots.txt lets it fetch your home page, a product page and a category
+page, with the exact rule that decides it, and whether those pages ask it not
+to index them. It reads your robots.txt and your pages and changes nothing;
+whether to open your shop to a crawler stays your choice, and the tool for
+writing the robots.txt is `somcp_generate_robots_txt`.
+
+**Check the pages buyers look for before they trust your shop.** The new tool
+`somcp_audit_store_policies` looks for your legal notice, terms and
+conditions, shipping, returns, privacy, about us and contact pages, and says
+for each one whether it was found and how, whether it is **Displayed**,
+whether **Indexation by search engines** is on, how many words it has and
+whether your home page links to it. It also reports the settings these pages
+go with: the terms to accept at checkout, returns and their time limit, and
+the delivery time texts of your products. When several pages could be the same
+one, it lists them so you choose. It changes nothing, and what these pages say
+stays your responsibility.
+
+**Read your shop's llms.txt.** The new tool `somcp_get_llms_txt` shows the
+llms.txt at the root of your shop, the plain text summary some AI tools look
+for, with its size, its last change and the address where it is asked for, and
+says whether it was written by O'So MCP Server. It warns when there is none,
+when your shop sits in a folder, when the file is too large, or when it does
+not start with a title line. llms.txt is a proposed convention, not a
+standard: no AI tool is bound to read it. The tool changes nothing.
+
+### Changed
+
+**The SEO settings read now cover the rest of the SEO and URLs page.** The tool
+that reads the shop's SEO and URL settings now also reports the two Apache
+options (MultiViews and mod_security), the option that puts the attributes in
+the product meta title, the address pattern of the module pages, and, for each
+language, whether its addresses carry the ISO code - including, on PrestaShop 9,
+the option that keeps the default language without a prefix. Reading the
+settings still changes nothing, and an unexpected field is now refused instead
+of ignored.
+
+**The Tools and prompts lists are folded by group.** Each group shows how many
+of its tools or prompts are on in each column, and opens with a click; the
+search opens the groups it finds something in. The **Asks for** and
+**Requires** columns are gone, to keep the lists readable: the back office
+right each tool needs is listed in the tools table of the project page, and a
+prompt held back by a group switched off says so on its row.
+
+**The project page is written for merchants.** The front page of the
+repository now says what you can ask, the requirements, how to install the
+module in three steps from the release zip, which assistants work with it and
+how your shop stays protected, with the tools folded by back office page. The
+technical details and the installation from the sources moved to the
+contributing guide.
+
+**The category SEO audit judges a page like the product audit.** The category
+SEO audit now looks at displayed categories only by default, with an option to
+include hidden ones, lets you limit it to the checks you want, and flags a meta
+description that is too short, so the same page gets the same verdict whether
+you audit it as a product or as a category.
+
+**The CMS page audit names the title and the meta title as the page form
+does.** Each page in the CMS SEO audit now carries its page title, its meta
+title and the title search engines read under the same names the other page
+tools use, so an assistant fixing a field passes it back correctly instead of
+writing the page heading into the meta title. The audit also flags a meta
+description that is too short, as the other SEO audits do.
+
+**Any CMS page can have its SEO changed, not only those the audit flags.**
+The tool that changes the meta title, meta description, friendly URL and
+indexation of a CMS page used to send the assistant to the CMS SEO audit to
+find the page, and the audit only lists the pages with a problem: asked to
+change a page with nothing wrong, the assistant could not find it. It now takes
+the page from the list of every CMS page and reads it before and after the
+change; the audit stays the way to find what needs fixing.
+
+**The brand audit checks the length of the meta title and meta description.**
+The brand SEO audit now flags a meta title over 60 characters, which search
+results cut, and a meta description under 70 or over 160 characters, with the
+same limits as the product, category and page audits, so a brand is judged by
+the same rules as the rest of the shop.
+
+**Shorter feature tools.** The seven tools of Catalog > Attributes & Features >
+Features - list, read, create and change the features and their values - now
+describe themselves in a few sentences, lighter for the assistant on every
+step. What matters is kept: that a feature or a value is taken from the list
+and never guessed, that each field says whether you or the assistant fill it,
+that renaming a feature or a value changes it on every product that carries
+it and is confirmed with you first, that a value typed on one product only is
+changed on that product, and which read checks a change.
+
 ## 1.2.1 - 2026-11-04
 
 ### Added
@@ -94,6 +207,28 @@ feature and attribute tools still told the assistant to use a tool to read or
 add a value "when the shop offers it", although every one of those tools is
 there. The assistant could take it as a tool that may be missing and skip the
 step. They now name the tool plainly.
+
+**Shorter return status tools.** The three tools of Shop Parameters > Order
+Settings > Statuses that create, change and delete a return status now
+describe themselves in a few sentences, lighter for the assistant on every
+step. What matters is kept: that a return status is not an order status, that a
+name another return status already has is refused, that the status is taken
+from its list and never guessed, that the five statuses every shop starts with
+cannot be deleted, and which read checks the outcome.
+
+**Shorter menu link tools.** The three tools of the storefront's Main menu -
+list the entries, add one and change a custom link - now describe themselves in
+a few sentences, lighter for the assistant on every step. What matters is kept:
+that an entry's object is taken from its list tool and never guessed, that an
+entry already in the menu is refused, that a change touches one link and never
+its place in the menu, and which read checks the outcome.
+
+**Shorter module tools.** The three tools of Modules > Module Manager that
+list, read and install modules now describe themselves in a few sentences,
+lighter for the assistant on every step. What matters is kept: that a module is
+taken from the list and never guessed, that an installed module is refused and
+upgraded in the Module Manager, which shops a multistore install reaches, and
+which read checks an install.
 
 **Shorter customer tools.** The four tools of Customers > Customers - search,
 read, create and change a customer - and the list of customer groups now

@@ -598,14 +598,110 @@ T = {
  "Outils disponibles",
  "Herramientas disponibles",
  "Verfügbare Werkzeuge"),
-"What an assistant may ask this shop to do. Choose for each tool whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.": (
- "Ce qu'un assistant peut demander à cette boutique. Choisissez pour chaque outil s'il est proposé aux assistants connectés en MCP, à l'assistant intégré, ou aux deux. Un outil désactivé dans une colonne n'y est proposé à personne, quels que soient les droits de son compte. Les outils publiés par un autre module portent le nom de ce module devant le leur.",
- "Lo que un asistente puede pedir a esta tienda. Elija para cada herramienta si se ofrece a los asistentes conectados por MCP, al asistente integrado o a ambos. Una herramienta desactivada en una columna no se ofrece allí a nadie, sean cuales sean los permisos de su cuenta. Las herramientas publicadas por otro módulo llevan delante el nombre de ese módulo.",
- "Was ein Assistent von diesem Shop verlangen darf. Wählen Sie für jedes Werkzeug, ob es den über MCP verbundenen Assistenten, dem integrierten Assistenten oder beiden angeboten wird. Ein in einer Spalte ausgeschaltetes Werkzeug wird dort niemandem angeboten, unabhängig von den Rechten seines Kontos. Werkzeuge anderer Module tragen deren Modulnamen vor dem eigenen."),
+"What an assistant may ask this shop to do, grouped by the permission an assistant is given for it. Choose, for a whole group or for each tool, whether it is offered to the assistants connected over MCP, to the built-in assistant, or to both. A group switched off holds back every tool in it, including those an update adds later, and switching it back on gives each tool its own switch again. A tool switched off in a column is offered to nobody there, whatever permissions their account holds. Tools published by another module carry that module name in front of theirs.": (
+ "Ce qu'un assistant peut demander à cette boutique, regroupé selon l'autorisation qu'un assistant reçoit pour cela. Choisissez, pour un groupe entier ou pour chaque outil, s'il est proposé aux assistants connectés en MCP, à l'assistant intégré, ou aux deux. Un groupe désactivé retient tous ses outils, y compris ceux qu'une mise à jour ajoutera, et le réactiver rend à chaque outil son propre interrupteur. Un outil désactivé dans une colonne n'y est proposé à personne, quels que soient les droits de son compte. Les outils publiés par un autre module portent le nom de ce module devant le leur.",
+ "Lo que un asistente puede pedir a esta tienda, agrupado según el permiso que recibe un asistente para ello. Elija, para un grupo entero o para cada herramienta, si se ofrece a los asistentes conectados por MCP, al asistente integrado o a ambos. Un grupo desactivado retiene todas sus herramientas, incluidas las que añada una actualización, y volver a activarlo devuelve a cada herramienta su propio interruptor. Una herramienta desactivada en una columna no se ofrece allí a nadie, sean cuales sean los permisos de su cuenta. Las herramientas publicadas por otro módulo llevan delante el nombre de ese módulo.",
+ "Was ein Assistent von diesem Shop verlangen darf, gruppiert nach der Berechtigung, die ein Assistent dafür erhält. Wählen Sie für eine ganze Gruppe oder für jedes Werkzeug, ob es den über MCP verbundenen Assistenten, dem integrierten Assistenten oder beiden angeboten wird. Eine ausgeschaltete Gruppe hält alle ihre Werkzeuge zurück, auch die, die ein Update später hinzufügt, und das erneute Einschalten gibt jedem Werkzeug seinen eigenen Schalter zurück. Ein in einer Spalte ausgeschaltetes Werkzeug wird dort niemandem angeboten, unabhängig von den Rechten seines Kontos. Werkzeuge anderer Module tragen deren Modulnamen vor dem eigenen."),
 "Search a tool": (
  "Rechercher un outil",
  "Buscar una herramienta",
  "Ein Werkzeug suchen"),
+"Connection": (
+ "Connexion",
+ "Conexión",
+ "Verbindung"),
+"Orders - read": (
+ "Commandes - lecture",
+ "Pedidos - lectura",
+ "Bestellungen - lesen"),
+"Orders - changes": (
+ "Commandes - modifications",
+ "Pedidos - cambios",
+ "Bestellungen - Änderungen"),
+"Catalog - read": (
+ "Catalogue - lecture",
+ "Catálogo - lectura",
+ "Katalog - lesen"),
+"Catalog - changes": (
+ "Catalogue - modifications",
+ "Catálogo - cambios",
+ "Katalog - Änderungen"),
+"Stock - read": (
+ "Stock - lecture",
+ "Stock - lectura",
+ "Lagerbestand - lesen"),
+"Stock - changes": (
+ "Stock - modifications",
+ "Stock - cambios",
+ "Lagerbestand - Änderungen"),
+"Customers - read": (
+ "Clients - lecture",
+ "Clientes - lectura",
+ "Kunden - lesen"),
+"Customers - changes": (
+ "Clients - modifications",
+ "Clientes - cambios",
+ "Kunden - Änderungen"),
+"SEO - read": (
+ "SEO - lecture",
+ "SEO - lectura",
+ "SEO - lesen"),
+"SEO - changes": (
+ "SEO - modifications",
+ "SEO - cambios",
+ "SEO - Änderungen"),
+"Statistics - read": (
+ "Statistiques - lecture",
+ "Estadísticas - lectura",
+ "Statistiken - lesen"),
+"Pages - read": (
+ "Pages - lecture",
+ "Páginas - lectura",
+ "Seiten - lesen"),
+"Modules - read": (
+ "Modules - lecture",
+ "Módulos - lectura",
+ "Module - lesen"),
+"Modules - changes": (
+ "Modules - modifications",
+ "Módulos - cambios",
+ "Module - Änderungen"),
+"Design - read": (
+ "Apparence - lecture",
+ "Diseño - lectura",
+ "Design - lesen"),
+"Design - changes": (
+ "Apparence - modifications",
+ "Diseño - cambios",
+ "Design - Änderungen"),
+"Performance - read": (
+ "Performances - lecture",
+ "Rendimiento - lectura",
+ "Leistung - lesen"),
+"Performance - changes": (
+ "Performances - modifications",
+ "Rendimiento - cambios",
+ "Leistung - Änderungen"),
+"%on% of %total% on": (
+ "%on% sur %total% activés",
+ "%on% de %total% activados",
+ "%on% von %total% an"),
+"Show or hide the tools of this group": (
+ "Afficher ou masquer les outils de ce groupe",
+ "Mostrar u ocultar las herramientas de este grupo",
+ "Die Werkzeuge dieser Gruppe ein- oder ausblenden"),
+"Show or hide the prompts of this group": (
+ "Afficher ou masquer les prompts de ce groupe",
+ "Mostrar u ocultar los prompts de este grupo",
+ "Die Prompts dieser Gruppe ein- oder ausblenden"),
+"Always on": (
+ "Toujours actif",
+ "Siempre activo",
+ "Immer an"),
+"group switched off": (
+ "groupe désactivé",
+ "grupo desactivado",
+ "Gruppe ausgeschaltet"),
 "Search a prompt": (
  "Rechercher un prompt",
  "Buscar un prompt",
@@ -634,10 +730,6 @@ T = {
  "Publié par",
  "Publicado por",
  "Veröffentlicht von"),
-"Requires": (
- "Exige",
- "Requiere",
- "Erfordert"),
 "changes data": (
  "modifie des données",
  "modifica datos",
@@ -646,10 +738,6 @@ T = {
  "Ce module",
  "Este módulo",
  "Dieses Modul"),
-"no particular permission": (
- "aucun droit particulier",
- "ningún permiso concreto",
- "keine besondere Berechtigung"),
 "No tool is available on this shop.": (
  "Aucun outil n'est disponible sur cette boutique.",
  "No hay ninguna herramienta disponible en esta tienda.",
@@ -962,6 +1050,22 @@ T = {
  "Comparer une page produit avec ses données structurées",
  "Comparar una página de producto con sus datos estructurados",
  "Eine Produktseite mit ihren strukturierten Daten vergleichen"),
+"Audit how complete products are for answer engines": (
+ "Auditer la complétude des produits pour les moteurs de réponse",
+ "Auditar la completitud de los productos para los motores de respuesta",
+ "Die Vollständigkeit der Produkte für Antwortmaschinen prüfen"),
+"Check whether AI crawlers can read the shop": (
+ "Vérifier si les robots d'IA peuvent lire la boutique",
+ "Comprobar si los rastreadores de IA pueden leer la tienda",
+ "Prüfen, ob KI-Crawler den Shop lesen können"),
+"Audit the store policy pages": (
+ "Auditer les pages de conditions de la boutique",
+ "Auditar las páginas de políticas de la tienda",
+ "Die Richtlinienseiten des Shops prüfen"),
+"Read the llms.txt file": (
+ "Lire le fichier llms.txt",
+ "Leer el archivo llms.txt",
+ "Die Datei llms.txt lesen"),
 "Generate the robots.txt file": (
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",
@@ -1074,14 +1178,6 @@ T = {
  "Prompt",
  "Prompt",
  "Prompt"),
-"Asks for": (
- "Demande",
- "Solicita",
- "Fragt nach"),
-"nothing": (
- "rien",
- "nada",
- "nichts"),
 "Prompts %from% to %to% of %total%": (
  "Prompts %from% à %to% sur %total%",
  "Prompts %from% a %to% de %total%",
@@ -1090,10 +1186,10 @@ T = {
  "Aucun prompt n'est disponible sur cette boutique.",
  "No hay ningún prompt disponible en esta tienda.",
  "Auf diesem Shop ist kein Prompt verfügbar."),
-"A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here.": (
- "Un prompt est une tâche guidée que vous lancez vous-même depuis le menu de votre assistant. Il ne coûte rien tant que vous ne le choisissez pas, puis il donne à l'assistant les instructions pas à pas pour utiliser les outils. Un prompt publié par un autre module place les mots de ce module dans votre assistant, et c'est pourquoi vous pouvez désactiver chacun ici.",
- "Un prompt es una tarea guiada que usted mismo inicia desde el menú de su asistente. No cuesta nada mientras no lo elija; después da al asistente las instrucciones paso a paso para usar las herramientas. Un prompt publicado por otro módulo coloca las palabras de ese módulo en su asistente, y por eso puede desactivar cada uno aquí.",
- "Ein Prompt ist eine geführte Aufgabe, die Sie selbst aus dem Menü Ihres Assistenten starten. Er kostet nichts, solange Sie ihn nicht auswählen, und gibt dem Assistenten dann Schritt-für-Schritt-Anweisungen zur Nutzung der Werkzeuge. Ein von einem anderen Modul veröffentlichter Prompt legt die Worte dieses Moduls in Ihren Assistenten, weshalb Sie jeden einzelnen hier ausschalten können."),
+"A prompt is a guided task you start yourself from your assistant menu. It costs nothing until you pick it, then hands the assistant step-by-step instructions for using the tools. A prompt published by another module puts that module words into your assistant, which is why you can switch each one off here. A prompt is also held back where a group of the tools it guides is switched off.": (
+ "Un prompt est une tâche guidée que vous lancez vous-même depuis le menu de votre assistant. Il ne coûte rien tant que vous ne le choisissez pas, puis il donne à l'assistant les instructions pas à pas pour utiliser les outils. Un prompt publié par un autre module place les mots de ce module dans votre assistant, et c'est pourquoi vous pouvez désactiver chacun ici. Un prompt est aussi retenu là où un groupe des outils qu'il guide est désactivé.",
+ "Un prompt es una tarea guiada que usted mismo inicia desde el menú de su asistente. No cuesta nada mientras no lo elija; después da al asistente las instrucciones paso a paso para usar las herramientas. Un prompt publicado por otro módulo coloca las palabras de ese módulo en su asistente, y por eso puede desactivar cada uno aquí. Un prompt también queda retenido allí donde un grupo de las herramientas que guía está desactivado.",
+ "Ein Prompt ist eine geführte Aufgabe, die Sie selbst aus dem Menü Ihres Assistenten starten. Er kostet nichts, solange Sie ihn nicht auswählen, und gibt dem Assistenten dann Schritt-für-Schritt-Anweisungen zur Nutzung der Werkzeuge. Ein von einem anderen Modul veröffentlichter Prompt legt die Worte dieses Moduls in Ihren Assistenten, weshalb Sie jeden einzelnen hier ausschalten können. Ein Prompt wird auch dort zurückgehalten, wo eine Gruppe der Werkzeuge, die er anleitet, ausgeschaltet ist."),
 "Check the shop connection": (
  "Vérifier la connexion à la boutique",
  "Comprobar la conexión con la tienda",

@@ -174,7 +174,9 @@ $bySection = [];
 $current = '';
 foreach (explode("\n", $readme) as $row) {
     if (preg_match('/^### (.+)$/', $row, $m)) {
-        $current = trim($m[1]);
+        // The README puts an icon in front of each section; the console
+        // report keeps the words only.
+        $current = trim((string) preg_replace('/^[^\p{L}]+/u', '', $m[1]));
     } elseif (preg_match('/^\| `(somcp_[a-z0-9_]+)` \|/', $row, $m)) {
         $bySection[$current][] = substr($m[1], strlen('somcp_'));
     }

@@ -7,7 +7,11 @@
   ],
   "tools": [
     "somcp_ping",
-    "somcp_audit_product_schema"
+    "somcp_audit_product_schema",
+    "somcp_audit_product_entities",
+    "somcp_check_ai_crawler_access",
+    "somcp_audit_store_policies",
+    "somcp_get_llms_txt"
   ],
   "controller": "AdminProducts",
   "action": "view",

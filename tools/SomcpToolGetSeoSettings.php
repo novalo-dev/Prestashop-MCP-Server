@@ -49,6 +49,9 @@ class SomcpToolGetSeoSettings
         'supplier' => 'supplier_rule',
         'cms' => 'cms_rule',
         'cms_category' => 'cms_category_rule',
+        // The route id has no "_rule" suffix in Dispatcher::$default_routes,
+        // and its setting is PS_ROUTE_module, as for the pages above.
+        'module' => 'module',
     ];
 
     /**
@@ -86,6 +89,20 @@ class SomcpToolGetSeoSettings
      */
     public static function handle(array $arguments, array $context): array
     {
+        // This tool takes nothing: every unexpected field is reported in one
+        // answer, so the call is corrected in one go (the shape of #169), as
+        // somcp_check_ai_crawler_access does.
+        $problems = [];
+        foreach (array_keys($arguments) as $field) {
+            $problems[] = '- ' . $field . ': not a field of this tool';
+        }
+        if ($problems !== []) {
+            return SomcpTool::text(
+                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
+                true
+            );
+        }
+
         $idShop = Somcp::currentShopId();
         $idShopGroup = (int) Shop::getGroupFromShop($idShop);
 
@@ -145,11 +162,19 @@ class SomcpToolGetSeoSettings
         return SomcpTool::json([
             'friendly_urls' => $friendlyUrls,
             'accented_urls' => self::flag('PS_ALLOW_ACCENTED_CHARS_URL', $idShopGroup, $idShop),
+            // Use prefix for default language: PrestaShop 9 only, null on 8
+            // which has no such key, as https_everywhere is null on 9.
+            'default_language_url_prefix' => self::flag('PS_DEFAULT_LANGUAGE_URL_PREFIX', $idShopGroup, $idShop),
             'canonical_redirect' => $canonical,
+            // The two Apache options of the Set up URLs card.
+            'disable_apache_multiviews' => self::flag('PS_HTACCESS_DISABLE_MULTIVIEWS', $idShopGroup, $idShop),
+            'disable_apache_mod_security' => self::flag('PS_HTACCESS_DISABLE_MODSEC', $idShopGroup, $idShop),
             'https' => $https,
             'https_everywhere' => $httpsEverywhere,
             'domains' => self::domains($idShop),
             'routes' => self::routes($idShopGroup, $idShop),
+            // Display attributes in the product meta title, the SEO options card.
+            'product_attributes_in_title' => self::flag('PS_PRODUCT_ATTRIBUTES_IN_TITLE', $idShopGroup, $idShop),
             'robots_txt_present' => $robots,
             'sitemap_module' => $sitemap,
             'languages' => self::languages($idShopGroup, $idShop),
@@ -299,13 +324,33 @@ class SomcpToolGetSeoSettings
     {
         $default = (int) Configuration::get('PS_LANG_DEFAULT', null, $idShopGroup, $idShop);
 
+        $all = Language::getLanguages(false, $idShop);
+        // The ISO code prefixes the addresses only when the shop serves more
+        // than one active language, the test Language::isMultiLanguageActivated()
+        // makes; with a single active language no address carries it.
+        $active = 0;
+        foreach ($all as $language) {
+            if ((bool) $language['active']) {
+                ++$active;
+            }
+        }
+        $multi = $active > 1;
+        // PrestaShop 9 can leave the default language's addresses without the
+        // prefix through PS_DEFAULT_LANGUAGE_URL_PREFIX; PrestaShop 8 has no
+        // such option and prefixes the default language too when multilingual.
+        $defaultPrefixed = version_compare(_PS_VERSION_, '9.0.0', '>=')
+            ? self::flag('PS_DEFAULT_LANGUAGE_URL_PREFIX', $idShopGroup, $idShop) === true
+            : true;
+
         $languages = [];
-        foreach (Language::getLanguages(false, $idShop) as $language) {
+        foreach ($all as $language) {
+            $isDefault = (int) $language['id_lang'] === $default;
             $languages[] = [
                 'iso_code' => (string) $language['iso_code'],
                 'name' => (string) $language['name'],
                 'active' => (bool) $language['active'],
-                'default' => (int) $language['id_lang'] === $default,
+                'default' => $isDefault,
+                'url_prefix' => $multi && !($isDefault && !$defaultPrefixed),
             ];
         }
 

@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "the demo shop has no llms.txt: an answer, never an error", "arguments": {}, "expect": "ok", "contains": ["\"present\": false", "\"content\": null", "\"written_by_somcp\": null", "\"url\"", "/llms.txt", "no_llms_txt", "proposed convention"]},
+    {"why": "the tool takes no argument: an unknown one is refused", "arguments": {"language": "en"}, "expect": "error", "contains": ["language: not a field of this tool"]}
+  ]
+}

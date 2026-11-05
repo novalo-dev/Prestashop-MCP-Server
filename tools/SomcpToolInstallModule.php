@@ -42,16 +42,13 @@ class SomcpToolInstallModule
         return new SomcpTool(
             'somcp_install_module',
             Somcp::t('Install a module'),
-            'Installs one module whose folder is already in the shop\'s modules folder and that is not '
-                . 'installed yet, as the Install button of its card in Modules > Module Manager does, with '
-                . 'the module\'s own install checks, hooks and tabs. Find the name with somcp_list_modules '
-                . '(status "uninstalled" lists the candidates). Answers with the module as somcp_get_module '
-                . 'reads it after the install: version, version_installed, installed, active, '
-                . 'active_on_mobile and hooks. A module already installed is refused and left unchanged: '
-                . 'upgrading it is done in the Module Manager. On a multistore installation PrestaShop '
-                . 'installs it for the shops of the current context. Do not retry on a lost answer: read '
-                . 'somcp_get_module to check. It does not upload or download a module, and does not '
-                . 'upgrade, uninstall, reset, enable or disable one.',
+            'Installs one module whose folder is in the shop\'s modules folder and not installed yet, like the '
+                . 'Install button of its card in Modules > Module Manager, with its own install checks, hooks and '
+                . 'tabs. name comes from somcp_list_modules, status uninstalled: never guess one. Answers with '
+                . 'the module as somcp_get_module reads it. An installed module is refused: it is upgraded in the '
+                . 'Module Manager. On multistore, installed for the shops of the current context. Not to be '
+                . 'retried on a lost answer: check with somcp_get_module. It does not upload, upgrade, uninstall, '
+                . 'reset, enable or disable a module.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -385,10 +385,19 @@ the guide is sent, so an existing skill file can be reused as it is.
 ## What the merchant controls
 
 Every tool and prompt you publish appears in the somcp settings with an on/off
-switch, per shop. A switched-off tool is left out of the listing and refused if
-called anyway, and a switched-off prompt cannot be fetched. Settings are stored
-as the list of what is off, so a tool you add in an update is on without anyone
-having to allow it.
+switch, per shop, for the assistants connected over MCP and for the built-in
+assistant. A switched-off tool is left out of the listing and refused if called
+anyway, and a switched-off prompt cannot be fetched. Settings are stored as the
+list of what is off, so a tool you add in an update is on without anyone having
+to allow it.
+
+Your tools are also listed under the scope they need, with the label you
+declared for it, and the merchant can switch that whole group off. Then every
+tool of yours needing that scope is held back, a tool you add to it in a later
+version included, and so is every prompt needing it; the scope is no longer
+offered on the consent screen. Declaring one scope per kind of access - reading
+your data apart from changing it - is what lets the merchant keep one and not
+the other.
 
 ---
 

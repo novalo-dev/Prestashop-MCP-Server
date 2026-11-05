@@ -61,13 +61,11 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
             Somcp::t('Add a main menu entry'),
             'Adds one entry to the storefront\'s main menu, as Add then Save in the Menu Top Link panel of the '
                 . 'Main menu module (ps_mainmenu), at the end or at a given position. type says what it points '
-                . 'to, with the identifier its list tool gives (id_category from somcp_list_categories, '
-                . 'id_product from somcp_search_products, id_cms and id_cms_category from somcp_list_cms_pages, '
-                . 'id_manufacturer from somcp_list_manufacturers, id_supplier from somcp_list_suppliers, id_link '
-                . 'from custom_links of somcp_list_menu_links); none for all_brands and all_suppliers. For type '
-                . 'link without id_link it first creates the custom link from label and url, keyed by ISO code. '
-                . 'An entry already in the menu is refused. Do not retry on a lost answer: read '
-                . 'somcp_list_menu_links. It does not change a custom link already created.',
+                . 'to; give the matching id_* from the list tool its field names, none for all_brands and '
+                . 'all_suppliers. For type link without id_link it creates the custom link from label '
+                . 'and url. An entry already in the menu is refused; a custom link once created is changed '
+                . 'with somcp_update_menu_link, the menu read with somcp_list_menu_links. One entry per call. '
+                . 'Do not retry on a lost answer: read somcp_list_menu_links.',
             [
                 'type' => 'object',
                 'properties' => [

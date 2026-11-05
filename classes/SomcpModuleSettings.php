@@ -52,6 +52,16 @@ class SomcpModuleSettings
     public const BUILTIN_PROMPT_PREFIX = 'builtin-prompt:';
 
     /**
+     * @var string Prefix that switches a whole scope - the group of tools that
+     *             need it, on the Tools and prompts tab - for the assistants
+     *             connected over MCP
+     */
+    public const SCOPE_PREFIX = 'scope:';
+
+    /** @var string Prefix that switches a whole scope for the built-in assistant. */
+    public const BUILTIN_SCOPE_PREFIX = 'builtin-scope:';
+
+    /**
      * The settings the chat may read and change: key => tab, label as the
      * page shows them, and the kind of value.
      *
@@ -141,8 +151,21 @@ class SomcpModuleSettings
             $tools[] = [
                 'name' => $name,
                 'title' => (string) ($described['title'] ?? $name),
-                'on' => SomcpToolRegistry::isEnabled($name),
-                'builtin' => SomcpToolRegistry::isEnabled($name, true),
+                'scope' => SomcpScope::groupOf($tool->getRequiredScopes()),
+                // Its own switch: a group switched off holds it back without
+                // changing it, and the scopes list says which groups are off.
+                'on' => SomcpToolRegistry::isSwitchedOn($name),
+                'builtin' => SomcpToolRegistry::isSwitchedOn($name, true),
+            ];
+        }
+        $scopes = [];
+        $module = Module::getInstanceByName('somcp');
+        foreach (array_diff(SomcpScope::supported(), [SomcpScope::ACCESS]) as $scope) {
+            $scopes[] = [
+                'name' => $scope,
+                'label' => $module instanceof Somcp ? SomcpScope::label($scope, $module) : $scope,
+                'on' => !in_array($scope, SomcpScope::disabled(), true),
+                'builtin' => !in_array($scope, SomcpScope::disabled(true), true),
             ];
         }
         $prompts = [];
@@ -150,18 +173,19 @@ class SomcpModuleSettings
             $prompts[] = [
                 'name' => $name,
                 'title' => $prompt->getTitle(),
-                'on' => SomcpPromptRegistry::isEnabled($name),
-                'builtin' => SomcpPromptRegistry::isEnabled($name, true),
+                'on' => SomcpPromptRegistry::isSwitchedOn($name),
+                'builtin' => SomcpPromptRegistry::isSwitchedOn($name, true),
             ];
         }
 
         return [
             'shop' => $idShop,
-            'note' => 'Change only what the employee asked for, one setting at a time. When a change needs a choice the employee has not made - a provider, a profile, a value - ask them and wait: never choose for them, never change a second setting on your own. Speak to the employee of a setting by its tab and label, never by its key nor in JSON. set_at says where a value comes from: shop, group, global (all shops) or default. A change made here is written for this shop. API keys are only typed in the form. Each tool and prompt has two switches: on, for the assistants connected over MCP, with the keys tool:<name> and prompt:<name>; builtin, for this built-in assistant, with the keys builtin-tool:<name> and builtin-prompt:<name>. Values on or off. When the employee does not say which, ask.',
+            'note' => 'Change only what the employee asked for, one setting at a time. When a change needs a choice the employee has not made - a provider, a profile, a value - ask them and wait: never choose for them, never change a second setting on your own. Speak to the employee of a setting by its tab and label, never by its key nor in JSON. set_at says where a value comes from: shop, group, global (all shops) or default. A change made here is written for this shop. API keys are only typed in the form. Each tool and prompt has two switches: on, for the assistants connected over MCP, with the keys tool:<name> and prompt:<name>; builtin, for this built-in assistant, with the keys builtin-tool:<name> and builtin-prompt:<name>. Values on or off. Tools are grouped by the scope they need, and each scope has the same two switches, scope:<scope> and builtin-scope:<scope>, which hold back every tool of the group and every prompt needing it, including tools added later, without changing their own switches. When the employee does not say which, ask.',
             'docs' => $docs,
             'settings' => $settings,
             'assistants' => ['tab' => self::t('Built-in assistant'), 'list' => $assistants],
             'tools' => ['tab' => self::t('Tools and prompts'), 'list' => $tools],
+            'scopes' => ['tab' => self::t('Tools and prompts'), 'list' => $scopes],
             'prompts' => ['tab' => self::t('Tools and prompts'), 'list' => $prompts],
         ];
     }
@@ -169,7 +193,7 @@ class SomcpModuleSettings
     /**
      * Changes one setting, after the employee approved it in the chat.
      *
-     * @param string $key a key of read(), or tool:, prompt:, builtin-tool: or builtin-prompt: and a name
+     * @param string $key a key of read(), or tool:, prompt:, scope:, or the same with builtin- in front, and a name
      * @param string $raw the new value
      * @param int $idShop the shop the chat acts on
      *
@@ -285,10 +309,26 @@ class SomcpModuleSettings
         if ($switch !== null) {
             ['name' => $name, 'chat' => $chat] = $switch;
             $for = $chat ? ' for the built-in assistant' : ' for the assistants connected over MCP';
-            if (!$switch['tool']) {
-                return 'Prompt ' . $name . ' is ' . (SomcpPromptRegistry::isEnabled($name, $chat) ? 'on' : 'off') . $for . '.';
+            if ($switch['kind'] === 'scope') {
+                $off = in_array($name, SomcpScope::disabled($chat), true);
+                $held = [];
+                foreach (SomcpToolRegistry::getInstance()->all() as $tool) {
+                    if (in_array($name, $tool->getRequiredScopes(), true)) {
+                        $held[] = $tool->getName();
+                    }
+                }
+
+                return 'Group ' . $name . ' is ' . ($off ? 'off' : 'on') . $for . '.'
+                    . ($off && $held !== [] ? ' These tools are held back there, and the prompts needing them too: ' . implode(', ', $held) . '.' : '');
+            }
+            if ($switch['kind'] === 'prompt') {
+                return 'Prompt ' . $name . ' is ' . (SomcpPromptRegistry::isEnabled($name, $chat) ? 'on' : 'off') . $for . '.'
+                    . (SomcpPromptRegistry::isSwitchedOn($name, $chat) && !SomcpPromptRegistry::isEnabled($name, $chat) ? ' Its own switch is on, but a group it needs is off.' : '');
             }
             $line = 'Tool ' . $name . ' is ' . (SomcpToolRegistry::isEnabled($name, $chat) ? 'on' : 'off') . $for . '.';
+            if (SomcpToolRegistry::isSwitchedOn($name, $chat) && !SomcpToolRegistry::isEnabled($name, $chat)) {
+                $line .= ' Its own switch is on, but its group is off.';
+            }
             if (!SomcpToolRegistry::isEnabled($name, $chat)) {
                 $using = [];
                 foreach (SomcpPromptRegistry::getInstance()->all() as $prompt) {
@@ -336,19 +376,23 @@ class SomcpModuleSettings
      *
      * @param string $key
      *
-     * @return array{tool: bool, chat: bool, name: string}|null
+     * @return array{kind: string, chat: bool, name: string}|null
      */
     private static function switchOf(string $key): ?array
     {
+        // The builtin- prefixes first: tool: and scope: are not prefixes of
+        // theirs, but the order keeps it so if one ever is.
         $prefixes = [
-            self::TOOL_PREFIX => [true, false],
-            self::PROMPT_PREFIX => [false, false],
-            self::BUILTIN_TOOL_PREFIX => [true, true],
-            self::BUILTIN_PROMPT_PREFIX => [false, true],
+            self::BUILTIN_TOOL_PREFIX => ['tool', true],
+            self::BUILTIN_PROMPT_PREFIX => ['prompt', true],
+            self::BUILTIN_SCOPE_PREFIX => ['scope', true],
+            self::TOOL_PREFIX => ['tool', false],
+            self::PROMPT_PREFIX => ['prompt', false],
+            self::SCOPE_PREFIX => ['scope', false],
         ];
-        foreach ($prefixes as $prefix => [$tool, $chat]) {
+        foreach ($prefixes as $prefix => [$kind, $chat]) {
             if (strpos($key, $prefix) === 0) {
-                return ['tool' => $tool, 'chat' => $chat, 'name' => substr($key, strlen($prefix))];
+                return ['kind' => $kind, 'chat' => $chat, 'name' => substr($key, strlen($prefix))];
             }
         }
 
@@ -356,9 +400,10 @@ class SomcpModuleSettings
     }
 
     /**
-     * Switches one tool or prompt, as its switch on the Tools and prompts tab.
+     * Switches one tool, prompt or group of tools, as its switch on the Tools
+     * and prompts tab.
      *
-     * @param string $key tool:, prompt:, builtin-tool: or builtin-prompt: and a name
+     * @param string $key tool:, prompt:, scope:, or the same with builtin- in front, and a name
      * @param string $raw on or off
      *
      * @return string
@@ -373,18 +418,28 @@ class SomcpModuleSettings
         if ($switch === null) {
             return 'Unknown setting. Read the settings first and use one of their keys.';
         }
-        ['tool' => $tool, 'chat' => $chat, 'name' => $name] = $switch;
+        ['kind' => $kind, 'chat' => $chat, 'name' => $name] = $switch;
         // Which names exist comes from the registry, never from the request,
-        // as on the settings page.
-        $exists = $tool ? SomcpToolRegistry::getInstance()->has($name) : SomcpPromptRegistry::getInstance()->get($name) !== null;
-        if (!$exists) {
-            return 'No such ' . ($tool ? 'tool' : 'prompt') . '.';
+        // as on the settings page. Opening a session is not a group anyone
+        // can switch off.
+        if ($kind === 'scope') {
+            $exists = $name !== SomcpScope::ACCESS && in_array($name, SomcpScope::supported(), true);
+        } elseif ($kind === 'tool') {
+            $exists = SomcpToolRegistry::getInstance()->has($name);
+        } else {
+            $exists = SomcpPromptRegistry::getInstance()->get($name) !== null;
         }
-        $off = $tool ? SomcpToolRegistry::disabled($chat) : SomcpPromptRegistry::disabled($chat);
+        if (!$exists) {
+            return 'No such ' . $kind . '.';
+        }
+        $lists = [
+            'tool' => [SomcpConfig::TOOLS_OFF, SomcpConfig::TOOLS_OFF_CHAT, SomcpToolRegistry::disabled($chat)],
+            'prompt' => [SomcpConfig::PROMPTS_OFF, SomcpConfig::PROMPTS_OFF_CHAT, SomcpPromptRegistry::disabled($chat)],
+            'scope' => [SomcpConfig::SCOPES_OFF, SomcpConfig::SCOPES_OFF_CHAT, SomcpScope::disabled($chat)],
+        ];
+        [$mcpSetting, $chatSetting, $off] = $lists[$kind];
         $off = $on ? array_values(array_diff($off, [$name])) : array_values(array_unique(array_merge($off, [$name])));
-        $setting = $tool
-            ? ($chat ? SomcpConfig::TOOLS_OFF_CHAT : SomcpConfig::TOOLS_OFF)
-            : ($chat ? SomcpConfig::PROMPTS_OFF_CHAT : SomcpConfig::PROMPTS_OFF);
+        $setting = $chat ? $chatSetting : $mcpSetting;
         SomcpConfig::set($setting, implode(' ', $off));
 
         return '';

@@ -169,6 +169,19 @@ the assistants connected over MCP, one for the built-in assistant. A tool can
 be kept for the assistant that asks before every change and hidden from the
 ones that connect from outside, or the other way round. Prompts work the same.
 
+**Switching a group off.** The tab lists the tools grouped by the scope they
+need (`SomcpScope::groupOf()`, the first one besides `mcp.access`), and each
+group has the same two switches, stored as two more lists of what is off
+(`SOMCP_SCOPES_OFF`, `SOMCP_SCOPES_OFF_CHAT`). A tool is offered when its own
+switch is on and none of its scopes is off (`SomcpToolRegistry::isEnabled()`);
+`isSwitchedOn()` is its own switch alone, the one its row shows, so that saving
+the page never writes a group's state into the switches of its tools. A group
+off therefore holds back a tool an update adds to it later, and switching it
+back on gives each tool the switch it had. A prompt is held back where any
+scope it needs is off. `mcp.access` is never a group anyone can switch off. The
+prompts list is grouped the same way; its group switches only set the prompt
+switches of the group in one go and are not stored.
+
 **Shop, and the employee behind the token.** Everything is bound to the shop
 the token belongs to, and the account is checked on every call rather than once
 when the token was issued: an account disabled this morning stops working this
@@ -2977,15 +2990,17 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `language` | string | no | ISO code; every language when left out |
+| `active` | boolean | no | `true` (default) displayed categories only, `false` hidden ones too |
+| `checks` | array | no | only these checks; all of them when left out |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - `categories`, one entry per category and language: `id_category`, `name`, `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over every category, and `languages` audited.
+**Returns** - `categories`, one entry per category and language: `id_category`, `name`, `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over every category audited, `languages` audited, and `active_only`.
 
 **Notes**
-- Checks: `meta_title_missing`, `meta_title_too_long` (over 60 characters), `meta_title_duplicate` (another category has it in that language), `meta_description_missing`, `meta_description_long` (over 160), `description_missing` (a category page with no text to rank on: no word once tags are removed), `link_rewrite_duplicate`, `empty_category` (displayed, no active product), `no_cover_image`.
+- Checks: `meta_title_missing`, `meta_title_too_long` (over 60 characters), `meta_title_duplicate` (another category has it in that language), `meta_description_missing`, `meta_description_short` (under 70 characters), `meta_description_long` (over 160), `description_missing` (a category page with no text to rank on: no word once tags are removed), `link_rewrite_duplicate`, `empty_category` (displayed, no active product), `no_cover_image`.
 - The root and Home categories are left out: they have no page of their own. The root is the category without a parent, a Home category the one flagged `is_root_category`.
 - The `value` is the title, description or friendly URL at fault, and an empty string for the checks that report an absence. `empty_category` and `no_cover_image` concern the whole category and repeat on each language entry; `counts` counts entries, not categories.
-- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code. Duplicates are found by the database among the categories audited in one language, as for products. Inactive categories are audited too, since they keep their fields, but only a displayed one can be `empty_category`.
+- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code: a meta title over 60 characters, a meta description under 70 or over 160. Duplicates are found by the database among the categories audited in one language, as for products. Displayed categories only by default, like the product audit's active products; `active: false` adds the hidden ones, which keep their fields, but only a displayed one can be `empty_category`. `checks` narrows the audit and the `counts` to the names given, the same list and refusal as the product audit.
 - `empty_category`: no product of the category, directly associated with it, is active in this shop - what the category page lists. A product still being created (`state` 0) does not count.
 - `no_cover_image`: the shop has no `img/c/<id_category>.jpg`, the file the back office form shows as the cover, on PrestaShop 8 and 9.
 - Read in SQL from `category`, `category_shop`, `category_lang` and `category_product` of this shop, in batches; only the page asked for is kept, while `counts` and `total_count` cover every category. No write, ever.
@@ -3004,12 +3019,12 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 |---|---|---|---|
 | `language` | string | no | ISO code; every language when left out |
 
-**Returns** - `pages`, one entry per page and language: `id_cms`, `meta_title`, `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `total_count`, `counts` per check and `languages` audited.
+**Returns** - `pages`, one entry per page and language: `id_cms`, `title` (the page title, column `meta_title`), `meta_title` (the Meta title, column `head_seo_title`), `seo_title` (the one search engines read), `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `total_count`, `counts` per check and `languages` audited.
 
 **Notes**
-- Checks: `meta_title_too_long`, `meta_title_duplicate`, `meta_description_missing`, `meta_description_long`, `content_short` (under 150 words), `link_rewrite_duplicate`, `not_indexable` (the page's `indexation` flag is off).
-- The title checked is the one search engines read, as `Meta::getCmsMetas()` builds it on PrestaShop 8 and 9: the page's meta title (`head_seo_title`) when it is filled, its title (`meta_title`) otherwise. `meta_title` in the entry is the page title the back office list shows. The title is required by the form, so there is no `meta_title_missing`.
-- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code: over 60 characters for the title, over 160 for the description, under 150 words of content once tags are removed. The `value` is the title, description or friendly URL at fault, the number of words for `content_short`, and an empty string for the checks that report an absence.
+- Checks: `meta_title_too_long`, `meta_title_duplicate`, `meta_description_missing`, `meta_description_short` (under 70 characters), `meta_description_long` (over 160), `content_short` (under 150 words), `link_rewrite_duplicate`, `not_indexable` (the page's `indexation` flag is off).
+- `title`, `meta_title` and `seo_title` carry the same names and meaning as in `somcp_get_cms_page` and `somcp_update_cms_seo`: the form's **Title** is the column `meta_title` and its **Meta title** the column `head_seo_title`, so an assistant that reads a field here writes it back under the right name. `seo_title` is the one search engines read, as `Meta::getCmsMetas()` builds it on PrestaShop 8 and 9: the Meta title when filled, the Title otherwise - and the title the checks look at. The Title is required by the form, so there is no `meta_title_missing`.
+- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code: over 60 characters for the title, under 70 or over 160 for the description, under 150 words of content once tags are removed. The `value` is the title, description or friendly URL at fault, the number of words for `content_short`, and an empty string for the checks that report an absence.
 - Duplicates are found by the database among the pages of this shop in one language, so its collation decides what is the same title or URL.
 - Every page associated with the shop is audited, shown or not, with `active` saying which. A shop has a handful of pages, so they are returned whole, without paging, read in SQL from `cms`, `cms_shop` and `cms_lang`. No write, ever.
 
@@ -3030,11 +3045,11 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 **Returns** - `brands`, one entry per brand and language: `id_manufacturer`, `name`, `language`, `active`, `products_count`, `issues` (each a `check` from the list below and the `value` at fault). Plus `total_count`, `counts` per check and `languages` audited.
 
 **Notes**
-- Checks: `meta_title_missing`, `meta_description_missing`, `description_missing`, `no_logo`, `inactive_with_products`.
+- Checks: `meta_title_missing`, `meta_title_too_long` (over 60 characters), `meta_description_missing`, `meta_description_short` (under 70 characters), `meta_description_long` (over 160), `description_missing`, `no_logo`, `inactive_with_products`. The limits are those of `somcp_audit_product_seo`, `somcp_audit_category_seo` and `somcp_audit_cms_seo` (`SomcpToolAuditProductSeo::TITLE_MAX`, `DESCRIPTION_MIN`, `DESCRIPTION_MAX`); the `value` of the three length checks is the text at fault.
 - `description_missing`: the brand's description, the text of its page, holds no word once tags are removed. The short description is not checked.
 - `no_logo`: the shop has no `img/m/<id_manufacturer>.jpg`, the file `somcp_get_manufacturer` reads as the logo.
 - `inactive_with_products`: a disabled brand has no page, while products still carry it. Its `value` is `products_count`.
-- `products_count` is the number of products of this shop attached to the brand, counted as `somcp_get_manufacturer` counts it. The `value` of the other checks is an empty string: they report an absence. `no_logo` and `inactive_with_products` concern the whole brand and repeat on each language entry.
+- `products_count` is the number of products of this shop attached to the brand, counted as `somcp_get_manufacturer` counts it. The `value` of the missing checks and `no_logo` is an empty string: they report an absence. `no_logo` and `inactive_with_products` concern the whole brand and repeat on each language entry.
 - A brand's texts are the same in every shop (`manufacturer_lang` has no `id_shop`); a language the brand has no row in counts as empty. Every brand associated with the shop is audited, enabled or not, and returned whole, without paging, read in SQL from `manufacturer`, `manufacturer_shop` and `manufacturer_lang`. No write, ever.
 
 #### `somcp_update_cms_seo`
@@ -3049,7 +3064,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_cms` | integer | yes | from `somcp_audit_cms_seo` |
+| `id_cms` | integer | yes | from `somcp_list_cms_pages`, any page of the shop; `somcp_audit_cms_seo` finds the pages to fix |
 | `meta_title` | object | no | per ISO code; the form's **Meta title** (`head_seo_title`); 70 characters at most, an empty text removes it |
 | `meta_description` | object | no | per ISO code; 512 characters at most, a warning over 160 |
 | `link_rewrite` | object | no | per ISO code; `Tools::str2url()` then `Validate::isLinkRewrite()`, 128 characters at most, never empty |
@@ -3058,8 +3073,9 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 **Returns** - `changed`, `id_cms`; when something changed, `changes` (each a `field`, its `language` for a text, the `previous` and `new` value), `seo_warnings` (per ISO code) and `page` (`id_cms`, `active`, `indexation`, and per language changed its `title`, `meta_title`, `seo_title` - the title search engines read -, `meta_description` and `link_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
 
 **Notes**
-- The names follow the CMS page form of Design > Pages, not the columns: the form's **Title** is the column `meta_title`, the page's h1 and its default title tag, and its **Meta title** is `head_seo_title`, which overrides the title tag when filled (`EditCmsPageHandler` on PrestaShop 8 and 9). This tool writes the second under the name `meta_title`; the page title stays with the content. `somcp_audit_cms_seo` returns the page title as `meta_title`, and checks the title search engines read.
+- The names follow the CMS page form of Design > Pages, not the columns: the form's **Title** is the column `meta_title`, the page's h1 and its default title tag, and its **Meta title** is `head_seo_title`, which overrides the title tag when filled (`EditCmsPageHandler` on PrestaShop 8 and 9). This tool writes the second under the name `meta_title`; the page title stays with the content. `somcp_get_cms_page` and `somcp_audit_cms_seo` return `title`, `meta_title` and `seo_title` with the same meaning as this tool.
 - Written through the `CMS` object, after `validateFields()` and `validateFieldsLang()` as the back office handler does, so hooks fire, with `id_shop_list` set to the shop of the token: `cms_lang` of the other shops keeps its texts. `indexation` lives in `cms`, so it is the same in every shop. A page not associated with the shop (`cms_shop`) is answered like one that does not exist. Only the languages given change; an ISO code that is not an active language of the shop is refused, and so is any other field.
+- The page to change is read before with `somcp_get_cms_page`, and an answer lost after the call is checked there too: the audit only returns the pages that fail one of its checks.
 - Every value is checked and compared before anything is written, and every problem reported at once. A call that changes nothing writes nothing and answers `changed: false`.
 - `seo_warnings`, for each language changed: a title search engines read over 60 characters, a `meta_description` over 160 (the lengths of `somcp_audit_product_seo`), and a new `link_rewrite` on a displayed page, whose old URL breaks; the assistant tells the merchant before the call.
 
@@ -3125,12 +3141,13 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 None.
 
-**Returns** - `friendly_urls`, `accented_urls`, `canonical_redirect` (none, 302 or 301), `https` (whether the shop answers in HTTPS) and `https_everywhere` (the PrestaShop 8 setting serving every page in HTTPS, `null` on PrestaShop 9, which dropped it), `domains` (main first, each with `domain`, `domain_ssl`, `uri`, `main`, `active`), `routes` (`product`, `category`, `brand`, `supplier`, `cms`, `cms_category`, each with its `pattern` and `customized`), `robots_txt_present`, `sitemap_module` (`installed`, `active`), `languages` (`iso_code`, `name`, `active`, `default`), `warnings` (each a `code` and `why`).
+**Returns** - `friendly_urls`, `accented_urls`, `default_language_url_prefix` (**Use prefix for default language**, `null` on PrestaShop 8, which has no such option), `canonical_redirect` (none, 302 or 301), `disable_apache_multiviews` and `disable_apache_mod_security` (the two Apache options of the Set up URLs card), `https` (whether the shop answers in HTTPS) and `https_everywhere` (the PrestaShop 8 setting serving every page in HTTPS, `null` on PrestaShop 9, which dropped it), `domains` (main first, each with `domain`, `domain_ssl`, `uri`, `main`, `active`), `routes` (`product`, `category`, `brand`, `supplier`, `cms`, `cms_category`, `module`, each with its `pattern` and `customized`), `product_attributes_in_title` (**Display attributes in the product meta title**), `robots_txt_present`, `sitemap_module` (`installed`, `active`), `languages` (`iso_code`, `name`, `active`, `default`, `url_prefix` - whether this language's addresses carry its ISO code), `warnings` (each a `code` and `why`).
 
 **Notes**
 - Settings read by their configuration keys in each version, for the shop of the token; a key a version does not have is `null`, never guessed.
 - A route's default pattern is read from `Dispatcher::$default_routes` of the running version (PrestaShop 8 puts the category and the EAN-13 in the product address), and `PS_ROUTE_<route>` replaces it when not empty, as `Dispatcher::loadRoutes()` does.
 - `sitemap_module.active` is read from `module_shop` for the shop of the token, since `Module::isEnabled()` answers for the shop of the global context.
+- A language's `url_prefix` follows what the storefront does: the ISO code is in the addresses only when the shop serves more than one active language, and then every language carries it, except the default language on PrestaShop 9 when **Use prefix for default language** is off.
 - `warnings` names what costs rankings: friendly URLs off (`friendly_urls_off`), no canonical redirection (`no_canonical_redirect`), a shop not served in HTTPS (`not_https`, or `https_not_everywhere` on PrestaShop 8), no robots.txt (`no_robots_txt`), no sitemap module (`no_sitemap_module`).
 
 #### `somcp_get_robots_txt`
@@ -3296,79 +3313,117 @@ What answer engines and AI assistants need to recommend a product: complete and 
 - Read only.
 
 #### `somcp_audit_product_entities`
-**State**: to write · [issue #96](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/96)
+**State**: written · [issue #96](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/96)
 **Nature**: `acts(VIEW, 'AdminProducts')` · **Scope**: `mcp.seo.read`
 
-**Does** - scores how complete each product's data is for an assistant answering a buyer, and lists what is missing.
+**Does** - scores how complete each product of this shop is for an assistant answering a buyer, the least complete first, and names for each product what is missing, under the labels of the product page.
 
-**Do not use for** - the page as printed (→ `somcp_audit_product_schema`).
+**Do not use for** - the page as printed (→ `somcp_audit_product_schema`); the meta title and description in detail (→ `somcp_audit_product_seo`); to read or fill one product (→ `somcp_get_product`, `somcp_update_product`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `active` | boolean | no | true by default |
-| `max_score` | integer | no | only products scoring at or under this, out of 100 |
+| `active` | boolean | no | `true` by default for active products only, `false` for disabled products only; the Status filter of `somcp_search_products` |
+| `max_score` | integer | no | only products scoring at or under this, 0 to 100; all of them when left out |
+| `language` | string | no | ISO code of one of the shop's active languages; the shop default language when left out; same refusal as `somcp_audit_product_seo` |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per product, worst first: `id_product`, `name`, `score`, `missing` (from the list below). Plus `total_count` and `average_score`.
+**Returns** - `products` worst first, each `id_product` (as `somcp_search_products`), `name`, `score` (0 to 100), `missing` (each `field`, the name of `somcp_get_product`, and `on_screen`, the back office label of the shop's version); plus `returned`, `total_count`, `offset` (the names of `somcp_search_products`), `average_score` (over the whole catalogue audited, not the page) and `language` (the ISO code used).
 
 **Notes**
-- Scored on: brand, a GTIN (ean13, upc or isbn), an mpn, at least 3 features, a description of 150 words or more, a short description, at least 3 images with alternative text, weight, condition, a default category deeper than Home, a meta description. Each item is worth the same; the list says which is missing, the score only sorts.
+- Eleven criteria, each worth the same, the score `100 x met / 11` rounded: brand (`id_manufacturer`), a GTIN (one of `ean13`, `upc`, `isbn`), `mpn`, features (3 or more), description (150 words or more, tags stripped, counted as `somcp_audit_product_seo`), summary (`description_short`), images (3 or more, each with a caption in the language), weight (above 0), condition (set and **Display condition on product page** on), a default category deeper than Home, meta description.
+- The barcode label is **EAN-13 or JAN barcode** on PrestaShop 8 and **GTIN (EAN, JA, ITF or UCC code)** on PrestaShop 9; same columns in the database.
+- The whole catalogue is scored with set queries on `product`, `product_shop`, `product_lang`, `feature_product` and the image tables of the token's shop and language, never one `Product` object per product.
+- Errors in the shape of #169: an unknown language, `max_score` outside 0 to 100, `limit` above 100.
+- Read only.
 
 #### `somcp_check_ai_crawler_access`
-**State**: to write · [issue #97](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/97)
+**State**: written · [issue #97](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/97)
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
-**Does** - says whether the main AI crawlers may read the shop, from its robots.txt and the robots meta of its pages.
+**Does** - says whether the main AI crawlers may read the shop: for each crawler, whether the shop's robots.txt lets it fetch the home page, a product page and a category page, with the rule deciding it, and whether those pages tell it not to index them (robots meta tag or `X-Robots-Tag` header).
 
-**Do not use for** - the full robots.txt (→ `somcp_get_robots_txt`).
+**Do not use for** - the full robots.txt and all its rules (→ `somcp_get_robots_txt`); writing it again (→ `somcp_generate_robots_txt`); the SEO of one page (→ `somcp_audit_page`).
 
 **Parameters**
 
 None.
 
-**Returns** - per crawler (`GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-SearchBot`, `PerplexityBot`, `Google-Extended`, `Applebot-Extended`, `CCBot`, `Bingbot`): `allowed` on the home page, a product page and a category page, and the rule deciding it. Plus `meta_robots` found on those pages.
+**Returns**
+- `robots_txt_present` - as `present` of `somcp_get_robots_txt`.
+- `pages` - the pages checked, each `type` (`home`, `product`, `category`), `url`, `language` (ISO code), `meta_robots`, `x_robots_tag` (as `somcp_audit_page` returns them, `null` when absent), `fetched` (with `error` when the page could not be read).
+- `crawlers` - one per crawler, in order: `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-SearchBot`, `PerplexityBot`, `Google-Extended`, `Applebot-Extended`, `CCBot`, `Bingbot`. Each: `name` (the user agent token), `purpose` (one line), `group` (the user agents of the robots.txt group that applies, its own group else `*`, `null` when none), and `pages[]` - per page of `pages`: `type`, `language`, `allowed`, `rule` (the deciding line as written in the file, `null` when none matches), `noindex` (true when the page's robots meta or `X-Robots-Tag` says `noindex` or `none` for every robot or for this one, as in `GPTBot: noindex`).
+- `warnings` - `code` and `why`, the shapes of `somcp_get_robots_txt`: `blocked_everywhere` (a crawler refused on every page), `blocks_products`, `blocks_categories` (a crawler refused on that page type), `noindex_page` (a page that keeps every crawler out), `no_robots_txt` (no file, so everything is allowed), `not_at_domain_root`.
 
 **Notes**
-- Applies the robots.txt matching rules (most specific group, longest rule) the way the crawlers document them.
-- Reports only; whether to open the shop to a crawler is the merchant's choice, and the answer says so.
+- The robots.txt is read and matched with `somcp_get_robots_txt` (`samples()`, `parse()`, `rule()`, `matches()`), never a second copy, so the two tools can never disagree on what a rule blocks. Which group applies follows RFC 9309: the group whose user agent matches the crawler's token (case-insensitive), else `*`; the longest matching pattern wins, `Allow` wins a tie.
+- The pages are those of `somcp_get_robots_txt` (first displayed product, first displayed category below Home, in each active language), plus the home page of each language. Each is fetched once with the code of `somcp_audit_page` (`follow()`, the address guard, `load()`), and its robots meta read with its reader (`meta()`) and its `X-Robots-Tag` header, same size and time limits.
+- A page that cannot be fetched is reported in `pages` with `fetched` false and an `error`, never an error for the whole call. Its `allowed` and `rule` still come from the robots.txt; its `noindex` is false, since the page was not read.
+- Reports only; whether to open the shop to a crawler is the merchant's choice.
+- Errors in the shape of #169: unknown arguments.
+- Same **Robots file generation** card and the same robots logic in the core and the Classic theme on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_audit_store_policies`
-**State**: to write · [issue #98](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/98)
+**State**: written · [issue #98](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/98)
 **Nature**: `acts(VIEW, 'AdminCmsContent')` · **Scope**: `mcp.seo.read`
 
-**Does** - checks that the pages buyers and assistants look for before trusting a shop exist, are displayed and are linked.
+**Does** - checks that the pages a buyer, a search engine or an answer engine looks for before trusting a shop exist, are displayed, can be indexed, have real content and are linked from the home page: legal notice, terms and conditions, shipping, returns, privacy, about us, contact. Also reports the settings those pages depend on (terms to accept at checkout, returns, delivery times).
 
-**Do not use for** - the SEO fields of those pages (→ `somcp_audit_cms_seo`).
+**Do not use for** - the SEO fields of these pages (→ `somcp_audit_cms_seo`, `somcp_update_cms_seo`); one page in full (→ `somcp_get_cms_page`); whether robots may crawl them (→ `somcp_check_ai_crawler_access`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages; the shop default when left out; a code the shop does not have is refused |
 
-**Returns** - per expected page (`legal_notice`, `terms`, `shipping`, `returns`, `privacy`, `contact`, `about`): `found`, `id_cms` or the shop page, `active`, `url`, `word_count`. Plus `delivery_times` (whether products carry delivery time texts) and `warnings`.
+**Returns**
+- `language` - the ISO code used.
+- `pages` - one entry per expected page, in this order: `legal_notice`, `terms`, `shipping`, `returns`, `privacy`, `about`, `contact`. Each: `type`, `found`, `matched_by` (`setting` - **Page for terms and conditions**, `role` - `cms_role`, `url` - friendly URL, `title` - **Title**, `controller` - the contact page; `null` when not found), `id_cms` (as `somcp_list_cms_pages`), `title`, `active`, `indexation` (as `somcp_get_cms_page`: **Title**, **Displayed**, **Indexation by search engines**), `url` (storefront address in `language`), `word_count` (words of **Page content**, tags removed), `linked` (true when the home page links to `url`, `null` when the home page could not be read) and, when several pages could match, `candidates` (`id_cms` and `title` of each, for the merchant to choose). `id_cms`, `title`, `active`, `indexation` and `word_count` are `null` for the contact page.
+- `checkout` - `terms_required` (**Terms of service**), `terms_id_cms` (**Page for terms and conditions**, `null` for None).
+- `returns` - `enabled` (**Enable returns**), `days` (**Time limit of validity**).
+- `delivery_times` - `in_stock`, `out_of_stock` (the two **Delivery time** texts of Product Settings in `language`, `null` when empty), `products_without` (active products of the shop set to no delivery time, or to the default one while the in-stock text is empty).
+- `home` - `url`, `fetched`, `error` (when not read).
+- `warnings` - `code` and `why`, plus `type` for a page: `page_missing`, `page_hidden`, `page_noindex`, `page_too_short` (under 100 words, the contact page excepted), `page_not_linked`, `terms_not_required`, `terms_page_mismatch` (**Page for terms and conditions** is hidden or is not the page of the `LEGAL_CONDITIONS` role), `returns_page_but_disabled`, `returns_enabled_no_page`, `no_delivery_time`.
+- `note` - the reminder that the legal content of these pages is the merchant's responsibility.
 
 **Notes**
-- Pages are matched by their friendly URL and title in the shop's languages, then confirmed with the merchant when unsure; the answer says how each was matched.
+- Matching order, the first that answers wins: the setting (`terms` only), the `cms_role` rows (`LEGAL_NOTICE`, `LEGAL_CONDITIONS`), then the friendly URL, then the **Title**, in every active language of the shop, from one keyword list (en, fr, es, de; English for the others). Only CMS pages associated with the token's shop; a page already matched to one type is not offered to the next.
+- The home page is fetched once with the code of `somcp_audit_page` (`hosts()`, `follow()`, `load()`, `links()`), same size and time limits; a home page that cannot be fetched is reported in `home`, never an error for the whole call. The words are counted as every other audit (`SomcpToolAuditProductSeo::words()`).
+- The contact page is the `contact` front controller, not a CMS page.
+- No figure, text or advice about what a policy must say: the tool reports what exists.
+- Errors in the shape of #169: unknown arguments, a `language` the shop does not have.
+- Same pages, roles, settings and labels on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_get_llms_txt`
-**State**: to write · [issue #99](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/99)
+**State**: written · [issue #99](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/99)
 **Nature**: `acts(VIEW, 'AdminMeta')` · **Scope**: `mcp.seo.read`
 
-**Does** - returns the shop's llms.txt, the summary some AI tools read at a site's root, if it has one.
+**Does** - returns the shop's llms.txt, the plain text summary some AI tools read at the root of a site, if it has one, and says whether somcp wrote it.
 
-**Do not use for** - writing it (→ `somcp_generate_llms_txt`).
+**Do not use for** - writing it (→ `somcp_generate_llms_txt`); robots.txt (→ `somcp_get_robots_txt`); whether AI crawlers may read the shop (→ `somcp_check_ai_crawler_access`).
 
 **Parameters**
 
 None.
 
-**Returns** - `present`, `content`, `size`, `last_modified`, `written_by_somcp`.
+**Returns**
+- `present` - as `somcp_get_robots_txt`: false when there is no file or it cannot be read.
+- `content` - the file as it is (first 500 KiB, byte order mark dropped), `null` when absent.
+- `size` - bytes, `null` when absent.
+- `last_modified` - ISO 8601, `null` when absent.
+- `written_by_somcp` - true when the file holds the marker `somcp_generate_llms_txt` writes, `null` when absent.
+- `url` - the address where AI tools ask for it: root of the token's shop domain + `/llms.txt`.
+- `warnings` - `code` and `why`, the shape of `somcp_get_robots_txt`: `no_llms_txt`, `not_at_domain_root` (the shop is in a folder: the file at the root of the domain is the one read), `too_large`, `not_markdown` (no `# ` title line, which the proposed format starts with).
+- `note` - that llms.txt is a proposed convention no crawler or assistant is bound to read, and on a multistore installation that the file is shared by every shop.
 
 **Notes**
-- llms.txt is a proposed convention, not a standard: the answer says so, and that no assistant is bound to read it.
+- The file is read with `somcp_get_robots_txt` (`read()`, `MAX_BYTES`), never a second copy: same root (`_PS_ROOT_DIR_`), same size cap, same byte order mark handling. The marker is one constant, `SomcpToolGetLlmsTxt::MARKER`, used by `somcp_generate_llms_txt` too.
+- Nothing is written or fetched over the network: the file is read from disk. The `.htaccess` of 8.0.1 and 9.0.0 serves an existing file as is; on nginx it depends on the server rules, so the tool reports the file, not what the web server serves.
+- No back office screen shows or edits an llms.txt on either version; the view right is the one of **Shop Parameters > Traffic & SEO**, where robots.txt is managed.
+- Errors in the shape of #169: unknown arguments. An absent or unreadable file is an answer with `present: false`, never an error.
+- Same root and same `.htaccess` rule on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_generate_llms_txt`
 **State**: to write · [issue #100](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/100)

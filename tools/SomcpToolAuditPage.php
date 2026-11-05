@@ -778,14 +778,16 @@ class SomcpToolAuditPage
     }
 
     /**
-     * The content of a named meta tag, whatever the case of its name.
+     * The content of a named meta tag, whatever the case of its name. Public
+     * so somcp_check_ai_crawler_access reads the robots meta with this reader
+     * rather than a copy of it.
      *
      * @param DOMXPath $xpath
      * @param string $name lower case
      *
      * @return string|null
      */
-    private static function meta(DOMXPath $xpath, string $name): ?string
+    public static function meta(DOMXPath $xpath, string $name): ?string
     {
         $content = self::attribute(
             $xpath,

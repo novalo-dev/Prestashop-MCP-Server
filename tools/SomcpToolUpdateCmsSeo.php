@@ -76,16 +76,17 @@ class SomcpToolUpdateCmsSeo
             Somcp::t('Change the SEO of a CMS page'),
             'Changes the Meta title, meta description, Friendly URL and Indexation of one CMS page, like '
                 . 'its form in Design > Pages; only the languages given change. Not the Title or the content. '
-                . 'Read the page with somcp_audit_cms_seo first and show the merchant the new values; warn that a '
+                . 'Any page, from somcp_list_cms_pages; somcp_audit_cms_seo finds those to fix. Read the page '
+                . 'with somcp_get_cms_page first and show the merchant the new values; warn that a '
                 . 'new friendly URL breaks the old address of a displayed page. Nothing is written until the '
                 . 'whole call is valid. One page per call. Not to be retried on a lost answer: check with '
-                . 'somcp_audit_cms_seo.',
+                . 'somcp_get_cms_page.',
             [
                 'type' => 'object',
                 'properties' => [
                     'id_cms' => [
                         'type' => 'integer',
-                        'description' => 'The CMS page to change, from somcp_audit_cms_seo.',
+                        'description' => 'The CMS page to change, from somcp_list_cms_pages.',
                     ],
                     'meta_title' => [
                         'type' => 'object',
@@ -137,7 +138,7 @@ class SomcpToolUpdateCmsSeo
         $cms = self::page($arguments['id_cms'] ?? null, $idShop);
         if ($cms === null) {
             return SomcpTool::text(
-                'No CMS page of this shop has this identifier. Nothing was changed. Find it with somcp_audit_cms_seo.',
+                'No CMS page of this shop has this identifier. Nothing was changed. Find it with somcp_list_cms_pages.',
                 true
             );
         }
@@ -367,7 +368,7 @@ class SomcpToolUpdateCmsSeo
             );
 
             return SomcpTool::text(
-                'The page could not be changed: ' . $failure . '. Read it again with somcp_audit_cms_seo, tell the '
+                'The page could not be changed: ' . $failure . '. Read it again with somcp_get_cms_page, tell the '
                     . 'merchant what it holds now, and do not call again before.',
                 true
             );

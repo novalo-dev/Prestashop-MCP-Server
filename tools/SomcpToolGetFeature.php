@@ -48,14 +48,11 @@ class SomcpToolGetFeature
         return new SomcpTool(
             'somcp_get_feature',
             Somcp::t('Get a feature'),
-            'Returns everything the back office feature form shows for one feature of this shop '
-                . '(Composition, Material...): name, position (0 for the first, the order of the back office '
-                . 'list and of the product page), the number of predefined values it holds, and the faceted '
-                . 'search fields of that form - url_name (the word used in filtered URLs), meta_title and '
-                . 'indexable - which are null when the faceted search module is not installed and enabled. '
-                . 'Identify the feature by its identifier, from somcp_list_features: never guess one. '
-                . 'Do not use it for the list of features or the names of their values, which is '
-                . 'somcp_list_features, or for one value: somcp_get_feature_value.',
+            'Returns what the feature form of Catalog > Attributes & Features > Features shows for one feature '
+                . '(Composition, Material...): name, position (0 for the first), the number of its predefined values '
+                . 'and the faceted search fields, null without the faceted search module. id_feature comes from '
+                . 'somcp_list_features: never guess one. For the list and the names of the values use '
+                . 'somcp_list_features; for one value somcp_get_feature_value.',
             [
                 'type' => 'object',
                 'properties' => [

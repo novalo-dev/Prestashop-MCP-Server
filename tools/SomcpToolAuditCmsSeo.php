@@ -44,6 +44,7 @@ class SomcpToolAuditCmsSeo
         'meta_title_too_long',
         'meta_title_duplicate',
         'meta_description_missing',
+        'meta_description_short',
         'meta_description_long',
         'content_short',
         'link_rewrite_duplicate',
@@ -67,9 +68,13 @@ class SomcpToolAuditCmsSeo
             Somcp::t('Audit the SEO of CMS pages'),
             'Lists the CMS pages of this shop, displayed or not, whose search engine fields have a problem: '
                 . 'one entry per page and language with the failed checks and the value at fault, and counts per '
-                . 'check. The title checked is the one search engines read: the meta title when filled, the page '
-                . 'title otherwise. Limits: meta title 60 characters, meta description 160, content 150 words. '
-                . 'Read only. To change these fields, use somcp_update_cms_seo.',
+                . 'check. Each entry carries title (the page title, column meta_title), meta_title (the Meta '
+                . 'title, column head_seo_title) and seo_title (the one search engines read: the meta title when '
+                . 'filled, the page title otherwise), the same names as somcp_get_cms_page and '
+                . 'somcp_update_cms_seo. The title checked is seo_title. Checks: meta_title_too_long (over 60 '
+                . 'characters), meta_title_duplicate, meta_description_missing, meta_description_short (under 70 '
+                . 'characters), meta_description_long (over 160), content_short (under 150 words) and '
+                . 'not_indexable. Read only. To change these fields, use somcp_update_cms_seo.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -130,7 +135,15 @@ class SomcpToolAuditCmsSeo
             }
             $pages[] = [
                 'id_cms' => $idCms,
-                'meta_title' => (string) $row['meta_title'],
+                // The same three names as somcp_get_cms_page and
+                // somcp_update_cms_seo: title is the form's Title
+                // (meta_title column), meta_title its Meta title
+                // (head_seo_title), seo_title the one search engines read. An
+                // assistant that fixes a field here passes it back under the
+                // right name.
+                'title' => (string) $row['meta_title'],
+                'meta_title' => (string) $row['head_seo_title'],
+                'seo_title' => (string) $row['seo_title'],
                 'language' => $languages[$idLang],
                 'active' => (bool) $row['active'],
                 'issues' => $issues,
@@ -164,6 +177,8 @@ class SomcpToolAuditCmsSeo
             'meta_title_too_long' => Tools::strlen($title) > SomcpToolAuditProductSeo::TITLE_MAX ? $title : null,
             'meta_title_duplicate' => $duplicateTitle ? $title : null,
             'meta_description_missing' => $description === '' ? '' : null,
+            // Same lower bound as the product audit, from its shared constant.
+            'meta_description_short' => $description !== '' && Tools::strlen($description) < SomcpToolAuditProductSeo::DESCRIPTION_MIN ? $description : null,
             'meta_description_long' => Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX ? $description : null,
             // The value is the number of words, the thing to raise.
             'content_short' => $words < SomcpToolAuditProductSeo::WORDS_MIN ? $words : null,
@@ -194,7 +209,7 @@ class SomcpToolAuditCmsSeo
     private static function rows(int $idShop, array $idLangs): array
     {
         $query = new DbQuery();
-        $query->select('c.`id_cms`, c.`active`, c.`indexation`, cl.`id_lang`, cl.`meta_title`, cl.`meta_description`');
+        $query->select('c.`id_cms`, c.`active`, c.`indexation`, cl.`id_lang`, cl.`meta_title`, cl.`head_seo_title`, cl.`meta_description`');
         $query->select('cl.`content`, cl.`link_rewrite`, ' . self::TITLE_SQL . ' AS `seo_title`');
         $query->from('cms', 'c');
         // The shop comes from the token, and a page not associated with it

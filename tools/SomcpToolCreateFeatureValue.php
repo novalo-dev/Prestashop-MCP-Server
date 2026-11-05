@@ -72,25 +72,12 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
         return new SomcpTool(
             'somcp_create_feature_value',
             Somcp::t('Create a feature value'),
-            'Adds one predefined value (Cotton, Linen...) to a feature of this shop, with every field of the '
-                . 'back office value form: value, and the faceted search fields of that form - url_name (the '
-                . 'word used in filtered URLs) and meta_title - when the faceted search module is installed and '
-                . 'enabled. id_feature and value are required; take id_feature from somcp_list_features, never '
-                . 'guess it. Read somcp_list_features first: the value may already exist, and a value whose text '
-                . 'the feature already holds is refused. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Assistant" - write it yourself in every language being filled, and show it to the '
-                . 'merchant before the call. '
-                . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
-                . 'language of the shop left out takes the default language\'s text. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Do not use it to create a feature, which is somcp_create_feature, to change a value, which is '
-                . 'somcp_update_feature_value, or to give one product its own value, which is '
-                . 'somcp_update_product with a custom value in features. One value per call: '
-                . 'for several, call it once per value and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_features and look for the value '
-                . 'before anything else.',
+            'Adds one predefined value (Cotton, Linen...) to a feature, as the value form of Catalog > Attributes '
+                . '& Features > Features. id_feature comes from somcp_list_features: never guess one; read it first, a '
+                . 'text the feature already holds is refused. Each field says who fills it: Merchant - ask and never '
+                . 'invent; Assistant - write it in every language being filled and show it before the call. For a value '
+                . 'of one product only use somcp_update_product. One value per call. Not to be retried: if the answer '
+                . 'is lost, look for the value in somcp_list_features before anything else.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

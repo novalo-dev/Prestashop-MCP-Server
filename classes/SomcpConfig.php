@@ -92,6 +92,20 @@ class SomcpConfig
 
     /** @var string Prompts switched off for the built-in assistant only. */
     public const PROMPTS_OFF_CHAT = 'SOMCP_PROMPTS_OFF_CHAT';
+
+    /**
+     * @var string Scopes the merchant switched off, space separated.
+     *
+     * A whole group of tools at once, the ones needing that scope - including
+     * a tool an update adds to the group later, which a list of tool names
+     * could not hold back. Off rather than on for the same reason as the tool
+     * lists, and kept apart from them so that switching a group back on gives
+     * each of its tools the switch it had before.
+     */
+    public const SCOPES_OFF = 'SOMCP_SCOPES_OFF';
+
+    /** @var string Scopes switched off for the built-in assistant only. */
+    public const SCOPES_OFF_CHAT = 'SOMCP_SCOPES_OFF_CHAT';
     public const ADMIN_DIR = 'SOMCP_ADMIN_DIR';
 
     /**
@@ -146,6 +160,8 @@ class SomcpConfig
             self::PROMPTS_OFF => '',
             self::TOOLS_OFF_CHAT => '',
             self::PROMPTS_OFF_CHAT => '',
+            self::SCOPES_OFF => '',
+            self::SCOPES_OFF_CHAT => '',
             self::ADMIN_DIR => '',
             // Left empty on purpose: the value is a secret, and a secret
             // written by seed() would be the same on every shop that installed

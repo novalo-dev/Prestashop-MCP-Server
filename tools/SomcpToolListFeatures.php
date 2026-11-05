@@ -43,16 +43,11 @@ class SomcpToolListFeatures
         return new SomcpTool(
             'somcp_list_features',
             Somcp::t('List features'),
-            'Lists the features of this shop (Composition, Material...) and, under each, its '
-                . 'predefined values: identifier, name and position, and for each feature the number of '
-                . 'its predefined values. Positions start at 0 and give the back office order; values only '
-                . 'have one from PrestaShop 9 on, where the key is left out before. Call it before any call that '
-                . 'takes feature values - creating or changing a product - and take the id_feature and '
-                . 'id_feature_value from here: identifiers are specific to each shop, so never assume '
-                . 'one. Custom values, typed on one product, are not listed: they belong to that product. '
-                . 'Give id_feature to read one feature only. Everything else about one feature or one '
-                . 'value is read with somcp_get_feature or somcp_get_feature_value. '
-                . 'Do not use it for the features of a product: somcp_get_product lists those.',
+            'Lists the features of Catalog > Attributes & Features > Features (Composition, Material...) and, '
+                . 'under each, its predefined values, with identifier, name and position (0 for the first; values only '
+                . 'from PrestaShop 9 on). Call it before creating or changing a product with features and take '
+                . 'id_feature and id_feature_value from here: never guess one. Values typed on one product only are not '
+                . 'listed. Give id_feature for one feature. For the features of a product use somcp_get_product.',
             [
                 'type' => 'object',
                 'properties' => [

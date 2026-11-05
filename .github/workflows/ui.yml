@@ -103,6 +103,16 @@ jobs:
           # sorts before the back office's renamed folder.
           ADMIN_DIR=$(docker exec shop sh -c 'for d in /var/www/html/admin*/; do [ "$(basename "$d")" != admin-api ] && [ -f "$d/index.php" ] && basename "$d" && break; done')
           [ -n "$ADMIN_DIR" ] || { echo "::error title=No back office::no admin folder found in the image"; exit 1; }
+          # A back office still named admin is renamed by PrestaShop 8 on the
+          # first visit of its login page, and when that rename fails the page
+          # shows a warning instead of the form. Docker's overlay filesystem
+          # refuses to rename a folder of the image on some runners, so the
+          # sign-in passed or timed out depending on the runner. mv falls back
+          # to a copy where rename cannot, as an installed shop would have it.
+          if [ "$ADMIN_DIR" = admin ]; then
+            docker exec shop mv /var/www/html/admin /var/www/html/admin-ui-test
+            ADMIN_DIR=admin-ui-test
+          fi
           echo "ADMIN_DIR=$ADMIN_DIR" >> "$GITHUB_ENV"
 
       - name: Install somcp

@@ -16,6 +16,18 @@ are:
 
 ## Unreleased
 
+### Changed
+
+**Shorter attribute tools.** The seven tools of Catalog > Attributes &
+Features > Attributes - list, read, create and change the attribute groups and
+their values - now describe themselves in a few sentences, lighter for the
+assistant on every step. What matters is kept: that a group or a value is taken
+from the list and never guessed, that each field says whether you or the
+assistant fill it, that a new name, public name, type or colour shows on every
+product page or combination using it and is confirmed with you first, that a
+value used by a combination cannot move to another group, and which read
+checks a change.
+
 ### Fixed
 
 **robots.txt is no longer rewritten on a shop in demo mode.** The tool

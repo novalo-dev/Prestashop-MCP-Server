@@ -62,30 +62,12 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         return new SomcpTool(
             'somcp_update_attribute_value',
             Somcp::t('Change an attribute value'),
-            'Changes one existing attribute value (M under Size, Red under Colour...) of this shop. Everything '
-                . 'somcp_create_attribute_value can write can be changed here, under the same names and with the '
-                . 'same rules - who fills each field, lengths, forbidden characters: name, the group it belongs to '
-                . '(id_attribute_group), for a group of type color its colour and texture, and the faceted search '
-                . 'fields url_name and meta_title when the faceted search module is installed and enabled. '
-                . 'remove_texture: true removes the texture. position moves the value among the values of its '
-                . 'group, from 0 as somcp_get_attribute_value gives it; the others shift. Only what is given changes: a field left out is '
-                . 'kept, a text is replaced in the languages filled and kept in the others. When languages is '
-                . 'left out every language of the shop is filled, so a text must then be given in each; to change '
-                . 'one language, pass languages with it alone. '
-                . 'Take the value from somcp_list_attributes, never guessed, and read it with '
-                . 'somcp_get_attribute_value to know what it holds. The value stays on the combinations that use '
-                . 'it: a new name or colour shows on every one of them, so tell the merchant so, show what will '
-                . 'change and call once they agree. Moving it to another group is refused while a combination '
-                . 'uses it. A name the group already holds in another of its values is refused. A texture given '
-                . 'is downloaded again and replaces the current one; if it cannot be used, the current one is '
-                . 'kept and texture says why. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. The '
-                . 'answer gives each field changed with its old and new value. A call that would change nothing '
-                . 'writes nothing and says changed: false. '
-                . 'Do not use it to add a value (somcp_create_attribute_value) or to change the group itself '
-                . '(somcp_update_attribute_group). One value per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the value again with '
-                . 'somcp_get_attribute_value and compare before calling again.',
+            'Changes one attribute value, as the value form of Catalog > Attributes & Features > Attributes, under '
+                . 'the names and rules of somcp_create_attribute_value. id_attribute comes from somcp_list_attributes: '
+                . 'never guess one; read it first with somcp_get_attribute_value. Only what is given changes. A new name '
+                . 'or colour shows on every combination using it: tell the merchant, show what will change and call '
+                . 'once they agree. Moving it to another group is refused while a combination uses it. One value per '
+                . 'call. Not to be retried: if the answer is lost, read somcp_get_attribute_value before anything else.',
             self::valueSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

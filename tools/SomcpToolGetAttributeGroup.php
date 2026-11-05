@@ -48,16 +48,11 @@ class SomcpToolGetAttributeGroup
         return new SomcpTool(
             'somcp_get_attribute_group',
             Somcp::t('Get an attribute group'),
-            'Returns everything the back office attribute form shows for one attribute group of this '
-                . 'shop (Size, Colour...): name (the one the back office lists), public_name (the one '
-                . 'customers see on the product page), group_type (select, radio or color: how customers '
-                . 'pick a value), position (0 for the first, the order of the back office list and of the '
-                . 'product page), the number of values it holds, and the faceted search fields of that '
-                . 'form - url_name (the word used in filtered URLs), meta_title and indexable - which are '
-                . 'null when the faceted search module is not installed and enabled. '
-                . 'Identify the group by its identifier, from somcp_list_attributes: never guess one. '
-                . 'Do not use it for the list of groups or the names of their values, which is '
-                . 'somcp_list_attributes, or for one value: somcp_get_attribute_value.',
+            'Returns what the attribute form of Catalog > Attributes & Features > Attributes shows for one group '
+                . '(Size, Colour...): name (back office), public_name (product page), group_type, position (0 for the '
+                . 'first), the number of its values and the faceted search fields, null without the faceted search '
+                . 'module. id_attribute_group comes from somcp_list_attributes: never guess one. For the list and the '
+                . 'names of the values use somcp_list_attributes; for one value somcp_get_attribute_value.',
             [
                 'type' => 'object',
                 'properties' => [

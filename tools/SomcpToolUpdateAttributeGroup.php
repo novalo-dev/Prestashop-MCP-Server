@@ -61,27 +61,13 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
         return new SomcpTool(
             'somcp_update_attribute_group',
             Somcp::t('Change an attribute group'),
-            'Changes one existing attribute group (Size, Colour...) of this shop. Everything '
-                . 'somcp_create_attribute_group can write can be changed here, under the same names and with the '
-                . 'same rules - who fills each field, lengths, forbidden characters: name (the one the back office '
-                . 'lists), public_name (the one customers see on the product page), group_type (select, radio or '
-                . 'color), and the faceted search fields url_name, meta_title and indexable when the faceted '
-                . 'search module is installed and enabled. position moves the group in the list of attribute '
-                . 'groups, from 0 as somcp_get_attribute_group gives it; the others shift. Only what is given changes: a value left out is kept, a '
-                . 'text is replaced in the languages filled and kept in the others. When languages is left out '
-                . 'every language of the shop is filled, so a text must then be given in each; to change one '
-                . 'language, pass languages with it alone. '
-                . 'Take the group from somcp_list_attributes, never guessed, and read it with '
-                . 'somcp_get_attribute_group to know what it holds. A new public name or type shows on every '
-                . 'product page offering the group: tell the merchant so, show what will change and call once '
-                . 'they agree. Changing group_type away from color keeps the colours and textures of the values '
-                . 'but no longer shows them. Every problem is reported at once and nothing is written until the '
-                . 'whole call is valid. The answer gives each field changed with its old and new value. A call '
-                . 'that would change nothing writes nothing and says changed: false. '
-                . 'Do not use it to create a group (somcp_create_attribute_group) or to change one of its values '
-                . '(somcp_update_attribute_value). One group per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the group again with '
-                . 'somcp_get_attribute_group and compare before calling again.',
+            'Changes one attribute group, as the attribute form of Catalog > Attributes & Features > Attributes, '
+                . 'under the names and rules of somcp_create_attribute_group. id_attribute_group comes from '
+                . 'somcp_list_attributes: never guess one; read it first with somcp_get_attribute_group. Only what is '
+                . 'given changes. A new public name or type shows on every product page with the group: tell the '
+                . 'merchant, show what will change and call once they agree. For a value use '
+                . 'somcp_update_attribute_value. One group per call. Not to be retried: if the answer is lost, read '
+                . 'somcp_get_attribute_group before anything else.',
             self::groupSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

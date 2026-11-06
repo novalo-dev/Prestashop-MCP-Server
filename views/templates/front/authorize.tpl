@@ -23,113 +23,185 @@
 <meta name="robots" content="noindex, nofollow">
 <title>{$somcp_text.title|escape:'html':'UTF-8'} - {$somcp_shop_name|escape:'html':'UTF-8'}</title>
 <style>
-    :root { color-scheme: light dark; --fg: #1f2933; --muted: #5f6b7a; --bg: #f4f5f7; --card: #fff; --line: #d9dde3; --accent: #25b9d7; --warn-bg: #fff4e5; --warn-fg: #7a4b00; --bad-bg: #fdecea; --bad-fg: #8a1c14; }
-    @media (prefers-color-scheme: dark) { :root { --fg: #e6e9ed; --muted: #a3acb8; --bg: #15181c; --card: #1f2329; --line: #343a42; --warn-bg: #3a2c12; --warn-fg: #f5cf8e; --bad-bg: #3d1a17; --bad-fg: #f3b3ad; } }
+    {* The colours of the module logo: its ink, its cream line and its orange dot. *}
+    :root { color-scheme: light dark; --ink: #0f1419; --cream: #fbf9f4; --accent: #d55d3e; --accent-soft: #e8876d; --accent-bg: #fbeee9;
+        --fg: #0f1419; --text: #4a4e52; --muted: #6b6f73; --bg: #fbf9f4; --field: #fff; --line: #d8d2c4; --rule: #ece7dc; --bar: #fff;
+        --side-muted: #a7a9a6; --side-faint: #6f7476; }
+    @media (prefers-color-scheme: dark) { :root { --fg: #f1efe9; --text: #c9c7c1; --muted: #9a9d9f; --bg: #161b21; --field: #1d242c; --line: #343c46; --rule: #262e37; --bar: #1b2128; --accent-bg: #3a221b; } }
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-    main { max-width: 480px; margin: 40px auto; padding: 0 16px; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px; }
-    h1 { font-size: 20px; margin: 0 0 4px; }
-    .shop { color: var(--muted); margin: 0 0 20px; }
-    .host { margin: 16px 0; padding: 14px; border-radius: 8px; background: var(--warn-bg); color: var(--warn-fg); }
-    .host strong { display: block; font-size: 24px; line-height: 1.2; word-break: break-all; margin: 4px 0 6px; }
-    .refused { padding: 10px 12px; border-radius: 8px; background: var(--bad-bg); color: var(--bad-fg); margin: 0 0 16px; }
-    label { display: block; font-weight: 600; margin: 12px 0 4px; }
-    input[type=email], input[type=password] { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); font: inherit; }
-    button { font: inherit; padding: 10px 16px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
-    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-    .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
-    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-    th, td { text-align: left; vertical-align: top; padding: 6px 0; border-bottom: 1px solid var(--line); }
-    th { width: 40%; color: var(--muted); font-weight: 500; padding-right: 8px; }
-    code { word-break: break-all; font-size: 13px; }
-    .muted { color: var(--muted); }
-    ul { padding-left: 20px; }
-    .captcha { margin-top: 16px; }
-    h2.abilities { font-size: 16px; margin: 16px 0 4px; }
+    html, body { margin: 0; height: 100%; }
+    body { background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    #somcp-authorize { display: grid; grid-template-columns: minmax(360px, 40%) 1fr; min-height: 100%; }
+    .side { background: var(--ink); color: var(--cream); padding: 48px 56px; display: flex; flex-direction: column; gap: 40px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; }
+    .brand img { width: 36px; height: 36px; border-radius: 7px; display: block; }
+    .side h1 { margin: 0; font-size: 34px; line-height: 1.2; font-weight: 700; letter-spacing: -.02em; }
+    .side .lead { margin: 14px 0 0; color: var(--side-muted); font-size: 16px; }
+    .side .lead strong { color: var(--cream); }
+    .side .shop { margin-top: auto; font-size: 13px; color: var(--side-faint); }
+    .host { border-left: 4px solid var(--accent); padding: 4px 0 4px 20px; color: var(--side-muted); font-size: 13px; }
+    .host strong { display: block; margin: 6px 0 10px; color: var(--cream); font: 700 40px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: -.02em; word-break: break-all; }
+    .host span { display: block; color: var(--accent-soft); font-size: 13.5px; }
+    .details { display: grid; grid-template-columns: auto 1fr; gap: 10px 24px; margin: 0; font-size: 14.5px; }
+    .details dt { color: var(--side-muted); }
+    .details dd { margin: 0; font-weight: 600; word-break: break-all; }
+    .details small { display: block; font-weight: 400; color: var(--side-muted); }
+    code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 400; }
+    .main { display: flex; align-items: center; padding: 48px 96px; }
+    .main > div { width: 100%; max-width: 440px; }
+    .main h2 { margin: 0; font-size: 26px; font-weight: 700; }
+    .main p { color: var(--text); }
+    .refused { padding: 12px 16px; border-radius: 6px; background: var(--accent-bg); border-left: 4px solid var(--accent); color: var(--fg); }
+    form.signin { margin-top: 28px; display: flex; flex-direction: column; gap: 18px; }
+    label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    input[type=email], input[type=password] { width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
+    input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(213, 93, 62, .18); }
+    {* The widget's own look, set through the variables it reads. *}
+    altcha-widget { --altcha-max-width: 100%; --altcha-border-radius: 6px; --altcha-border-color: var(--line); --altcha-color-base: var(--field);
+        --altcha-color-base-content: var(--fg); --altcha-color-primary: var(--accent); --altcha-checkbox-border-color: var(--line); }
+    button { font: inherit; font-size: 15.5px; font-weight: 650; height: 50px; padding: 0 20px; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--fg); background: transparent; color: var(--fg); }
+    button.primary { border-color: var(--accent); background: var(--accent); color: #fff; }
+    .signin button { width: 100%; }
+    .consent { display: flex; flex-direction: column; height: 100vh; }
+    .consent header { padding: 48px 72px 16px; border-bottom: 1px solid var(--rule); }
+    .consent .list { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 72px 24px; }
+    .consent ul { list-style: none; margin: 0; padding: 0; }
+    .consent .list p { margin: 18px 0 0; font-size: 13.5px; max-width: 640px; }
+    .consent li { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+    .consent li svg { flex: none; width: 34px; height: 34px; padding: 8px; border-radius: 8px; background: var(--rule); color: var(--muted); }
+    .consent li.write svg { background: var(--accent-bg); color: var(--accent); }
+    .consent li strong { display: block; font-size: 14.5px; }
+    .consent li span { color: var(--text); font-size: 14px; }
+    .consent footer { flex: none; padding: 18px 72px 24px; border-top: 1px solid var(--rule); background: var(--bar); }
+    .consent form { display: flex; gap: 14px; max-width: 520px; }
+    .consent form button { flex: 1; }
+    .message { font-size: 17px; }
+    @media (max-width: 900px) {
+        #somcp-authorize { display: block; }
+        .side { padding: 22px 22px 28px; gap: 24px; }
+        .side h1 { font-size: 25px; }
+        .side .shop { display: none; }
+        .host strong { font-size: 28px; }
+        .main { display: block; padding: 28px 22px 40px; }
+        .main > div { max-width: none; }
+        .main h2 { font-size: 21px; }
+        .consent { height: auto; }
+        .consent header { padding: 22px 22px 8px; border: 0; }
+        .consent .list { overflow: visible; padding: 0 22px 16px; }
+        .consent form button { padding: 0 8px; font-size: 14px; white-space: nowrap; }
+        {* The answer buttons stay in reach while the list is scrolled. *}
+        .consent footer { position: sticky; bottom: 0; padding: 14px 22px 20px; box-shadow: 0 -6px 16px rgba(15, 20, 25, .08); }
+    }
 </style>
 </head>
 <body>
-<main>
-    <div class="card" id="somcp-authorize" data-somcp-state="{$somcp_state|escape:'html':'UTF-8'}">
-        <h1>{$somcp_text.title|escape:'html':'UTF-8'}</h1>
-        <p class="shop">{$somcp_shop_name|escape:'html':'UTF-8'}</p>
+<div id="somcp-authorize" data-somcp-state="{$somcp_state|escape:'html':'UTF-8'}">
+    <aside class="side">
+        <div class="brand"><img src="{$somcp_logo|escape:'html':'UTF-8'}" alt="">{$somcp_brand|escape:'html':'UTF-8'}</div>
+        <div>
+            <h1>{$somcp_text.title|escape:'html':'UTF-8'}</h1>
+            {if $somcp_state != 'message'}
+                <p class="lead">{$somcp_text.intro|escape:'html':'UTF-8'}</p>
+            {/if}
+            {if $somcp_state == 'signin'}
+                <p class="lead">{$somcp_text.application|escape:'html':'UTF-8'} <strong>{$somcp.client_name|escape:'html':'UTF-8'}</strong></p>
+            {/if}
+        </div>
 
-        {if $somcp_state == 'message'}
-            <p>{$somcp.message|escape:'html':'UTF-8'}</p>
-        {else}
-            <p>{$somcp_text.intro|escape:'html':'UTF-8'}</p>
-            <p><span class="muted">{$somcp_text.application|escape:'html':'UTF-8'}</span> <strong>{$somcp.client_name|escape:'html':'UTF-8'}</strong></p>
+        {if $somcp_state == 'consent'}
+            <dl class="details">
+                <dt>{$somcp_text.application|escape:'html':'UTF-8'}</dt>
+                <dd>{$somcp.client_name|escape:'html':'UTF-8'}{if $somcp.client_uri}<small>{$somcp.client_uri|escape:'html':'UTF-8'}</small>{/if}<small>{$somcp.client_origin|escape:'html':'UTF-8'}</small></dd>
+                <dt>{$somcp_text.identifier|escape:'html':'UTF-8'}</dt>
+                <dd><code>{$somcp.client_id|escape:'html':'UTF-8'}</code></dd>
+                <dt>{$somcp_text.signed_in_as|escape:'html':'UTF-8'}</dt>
+                <dd>{$somcp.employee|escape:'html':'UTF-8'}</dd>
+                <dt>{$somcp_text.shop|escape:'html':'UTF-8'}</dt>
+                <dd>{$somcp.shop|escape:'html':'UTF-8'}</dd>
+                <dt>{$somcp_text.sent_back|escape:'html':'UTF-8'}</dt>
+                <dd><code>{$somcp.redirect_uri|escape:'html':'UTF-8'}</code></dd>
+            </dl>
+        {/if}
 
+        {if $somcp_state != 'message'}
             <div class="host" id="somcp-return-host">
                 {$somcp_text.return_to|escape:'html':'UTF-8'}
                 <strong>{$somcp.return_host|escape:'html':'UTF-8'}</strong>
-                {$somcp_text.return_check|escape:'html':'UTF-8'}
+                <span>{$somcp_text.return_check|escape:'html':'UTF-8'}</span>
             </div>
+        {/if}
 
-            {if $somcp_state == 'signin'}
-                <p class="muted">{$somcp_text.signin_intro|escape:'html':'UTF-8'}</p>
+        <div class="shop">{$somcp_shop_name|escape:'html':'UTF-8'}</div>
+    </aside>
+
+    {if $somcp_state == 'message'}
+        <main class="main">
+            <div><p class="message">{$somcp.message|escape:'html':'UTF-8'}</p></div>
+        </main>
+    {elseif $somcp_state == 'signin'}
+        <main class="main">
+            <div>
+                <h2>{$somcp_text.signin|escape:'html':'UTF-8'}</h2>
+                <p>{$somcp_text.signin_intro|escape:'html':'UTF-8'}</p>
                 {if $somcp.refused}
                     <p class="refused" role="alert">{$somcp_text.refused|escape:'html':'UTF-8'}</p>
                 {/if}
-                <form method="post" action="{$somcp_action|escape:'html':'UTF-8'}" autocomplete="on">
+                <form class="signin" method="post" action="{$somcp_action|escape:'html':'UTF-8'}" autocomplete="on">
                     <input type="hidden" name="somcp_step" value="signin">
                     <input type="hidden" name="somcp_csrf" value="{$somcp.csrf|escape:'html':'UTF-8'}">
-                    <label for="somcp_email">{$somcp_text.email|escape:'html':'UTF-8'}</label>
-                    <input type="email" id="somcp_email" name="somcp_email" autocomplete="username" required>
-                    <label for="somcp_password">{$somcp_text.password|escape:'html':'UTF-8'}</label>
-                    <input type="password" id="somcp_password" name="somcp_password" autocomplete="current-password" required>
+                    <div>
+                        <label for="somcp_email">{$somcp_text.email|escape:'html':'UTF-8'}</label>
+                        <input type="email" id="somcp_email" name="somcp_email" autocomplete="username" required>
+                    </div>
+                    <div>
+                        <label for="somcp_password">{$somcp_text.password|escape:'html':'UTF-8'}</label>
+                        <input type="password" id="somcp_password" name="somcp_password" autocomplete="current-password" required>
+                    </div>
                     {* The anti-robot check, served from the module itself: the
                        challenge is written here rather than fetched, so the page
-                       makes no request of its own. *}
+                       makes no request of its own. Its footer stays visible so
+                       the merchant can see what checks the form. *}
                     <div class="captcha">
                         <altcha-widget name="somcp_altcha"
                                        challenge="{$somcp.challenge|escape:'html':'UTF-8'}"
-                                       language="{$somcp_lang|escape:'html':'UTF-8'}"
-                                       configuration="{literal}{&quot;hideFooter&quot;:true,&quot;hideLogo&quot;:true}{/literal}"></altcha-widget>
+                                       language="{$somcp_lang|escape:'html':'UTF-8'}"></altcha-widget>
                     </div>
-                    <div class="actions">
-                        <button type="submit" class="primary">{$somcp_text.signin|escape:'html':'UTF-8'}</button>
-                    </div>
+                    <button type="submit" class="primary">{$somcp_text.signin|escape:'html':'UTF-8'}</button>
                 </form>
-            {else}
-                <table>
-                    <tbody>
-                        <tr>
-                            <th>{$somcp_text.application|escape:'html':'UTF-8'}</th>
-                            <td>
-                                <strong>{$somcp.client_name|escape:'html':'UTF-8'}</strong>
-                                {if $somcp.client_uri}<br><span class="muted">{$somcp.client_uri|escape:'html':'UTF-8'}</span>{/if}
-                                <br><span class="muted">{$somcp.client_origin|escape:'html':'UTF-8'}</span>
-                            </td>
-                        </tr>
-                        <tr><th>{$somcp_text.identifier|escape:'html':'UTF-8'}</th><td><code>{$somcp.client_id|escape:'html':'UTF-8'}</code></td></tr>
-                        <tr><th>{$somcp_text.signed_in_as|escape:'html':'UTF-8'}</th><td>{$somcp.employee|escape:'html':'UTF-8'}</td></tr>
-                        <tr><th>{$somcp_text.shop|escape:'html':'UTF-8'}</th><td>{$somcp.shop|escape:'html':'UTF-8'}</td></tr>
-                        <tr><th>{$somcp_text.sent_back|escape:'html':'UTF-8'}</th><td><code>{$somcp.redirect_uri|escape:'html':'UTF-8'}</code></td></tr>
-                    </tbody>
-                </table>
-
-                <h2 class="abilities">{$somcp_text.abilities|escape:'html':'UTF-8'}</h2>
+            </div>
+        </main>
+    {else}
+        <main class="consent">
+            <header><h2>{$somcp_text.abilities|escape:'html':'UTF-8'}</h2></header>
+            <div class="list">
                 <ul>
                     {foreach from=$somcp.scopes item=scope}
-                        <li>{$scope.label|escape:'html':'UTF-8'} <span class="muted">({$scope.name|escape:'html':'UTF-8'})</span></li>
+                        <li{if $scope.write} class="write"{/if}>
+                            {if $scope.write}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>
+                            {else}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                            {/if}
+                            <div>
+                                <strong>{$scope.title|escape:'html':'UTF-8'}</strong>
+                                <span>{$scope.label|escape:'html':'UTF-8'}</span>
+                            </div>
+                        </li>
                     {/foreach}
                 </ul>
-                <p class="muted">{$somcp_text.rights|escape:'html':'UTF-8'}</p>
-
+                <p>{$somcp_text.rights|escape:'html':'UTF-8'}</p>
+            </div>
+            <footer>
                 <form method="post" action="{$somcp_action|escape:'html':'UTF-8'}">
                     <input type="hidden" name="somcp_step" value="consent">
                     <input type="hidden" name="somcp_csrf" value="{$somcp.csrf|escape:'html':'UTF-8'}">
-                    <div class="actions">
-                        <button type="submit" name="decision" value="deny">{$somcp_text.refuse|escape:'html':'UTF-8'}</button>
-                        <button type="submit" name="decision" value="allow" class="primary">{$somcp_text.allow|escape:'html':'UTF-8'}</button>
-                    </div>
+                    <button type="submit" name="decision" value="deny">{$somcp_text.refuse|escape:'html':'UTF-8'}</button>
+                    <button type="submit" name="decision" value="allow" class="primary">{$somcp_text.allow|escape:'html':'UTF-8'}</button>
                 </form>
-            {/if}
-        {/if}
-    </div>
-</main>
+            </footer>
+        </main>
+    {/if}
+</div>
 {if $somcp_state == 'signin'}
 <script type="module" src="{$somcp.altcha_js|escape:'html':'UTF-8'}"></script>
 {/if}

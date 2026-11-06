@@ -416,7 +416,14 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
         $scopes = [];
         foreach (self::grantedScopes($request, (int) $employee->id) as $scope) {
-            $scopes[] = ['name' => $scope, 'label' => SomcpScope::describe($scope, $this->module)];
+            $scopes[] = [
+                'name' => $scope,
+                'title' => SomcpScope::label($scope, $this->module),
+                'label' => SomcpScope::describe($scope, $this->module),
+                // Changes are drawn apart from reading, so what can alter the
+                // shop stands out in a long list.
+                'write' => substr($scope, -6) === '.write',
+            ];
         }
 
         $this->renderPage('consent', [
@@ -464,6 +471,8 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             'somcp_state' => $state,
             'somcp' => $vars,
             'somcp_shop_name' => (string) Configuration::get('PS_SHOP_NAME'),
+            'somcp_brand' => (string) $module->displayName,
+            'somcp_logo' => $module->getPathUri() . 'logo.png',
             'somcp_lang' => (string) $this->context->language->iso_code,
             'somcp_action' => $this->context->link->getModuleLink('somcp', 'authorize', [], true),
             'somcp_text' => [

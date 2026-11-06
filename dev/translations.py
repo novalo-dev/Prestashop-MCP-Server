@@ -2411,6 +2411,30 @@ T = {
  "Chaque nouvelle conversation démarre avec ce modèle ; il peut être changé dans le chat pour une conversation. La liste vient de votre fournisseur.",
  "Cada nueva conversación empieza con este modelo; se puede cambiar en el chat para una conversación. La lista viene de su proveedor.",
  "Jede neue Unterhaltung beginnt mit diesem Modell; es kann im Chat für eine Unterhaltung geändert werden. Die Liste kommt von Ihrem Anbieter."),
+"List abandoned carts": (
+ "Lister les paniers abandonnés",
+ "Listar los carritos abandonados",
+ "Verlassene Warenkörbe auflisten"),
+"Sales - read": (
+ "Ventes - lecture",
+ "Ventas - lectura",
+ "Verkauf - lesen"),
+"Read abandoned carts, searches, product views and promotions": (
+ "Lire les paniers abandonnés, les recherches, les produits consultés et les promotions",
+ "Leer los carritos abandonados, las búsquedas, los productos vistos y las promociones",
+ "Verlassene Warenkörbe, Suchanfragen, angesehene Produkte und Aktionen lesen"),
+"Boost sales": (
+ "Booster les ventes",
+ "Impulsar las ventas",
+ "Verkäufe steigern"),
+"Find the products, searches and carts where sales are lost, and set up promotions with the merchant's approval.": (
+ "Trouver les produits, les recherches et les paniers où des ventes se perdent, et mettre en place des promotions avec l'accord du marchand.",
+ "Encontrar los productos, las búsquedas y los carritos donde se pierden ventas, y crear promociones con la aprobación del comerciante.",
+ "Die Produkte, Suchanfragen und Warenkörbe finden, bei denen Verkäufe verloren gehen, und Aktionen mit Zustimmung des Händlers einrichten."),
+"Number of days to look back, 30 by default": (
+ "Nombre de jours à remonter, 30 par défaut",
+ "Número de días hacia atrás, 30 por defecto",
+ "Anzahl der Tage zurück, standardmäßig 30"),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

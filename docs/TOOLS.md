@@ -3467,27 +3467,55 @@ The levers that turn visits into orders: carts left behind, what customers searc
 **Not here**: sales figures over a period (→ Statistics), the orders themselves (→ Orders), a product's own specific prices (→ `somcp_update_product`).
 
 #### `somcp_list_abandoned_carts`
-**State**: to write · [issue #101](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/101)
+**State**: written · [issue #101](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/101)
 **Nature**: `acts(VIEW, 'AdminCarts')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the carts with products that never became an order, newest first.
+**Does** - lists the carts that hold products and never became an order, newest first, as the **Abandoned cart** carts of **Orders > Shopping Carts**. Read only.
 
-**Do not use for** - placed orders (→ `somcp_search_orders`).
+**Do not use for** - placed orders (→ `somcp_search_orders`); one customer's history (→ `somcp_get_customer`); sales figures (→ `somcp_get_sales_summary`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `older_than_hours` | integer | no | 2 by default: a cart still being filled is not abandoned |
-| `date_from` / `date_to` | string | no | `YYYY-MM-DD` |
-| `with_customer` | boolean | no | only carts of a known customer |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `older_than_hours` | integer | no | 24 by default, the back office rule; 1 at least |
+| `date_from` / `date_to` | string | no | `YYYY-MM-DD` on `cart.date_add`, the **Date** column; an invalid date is refused, not ignored (#169) |
+| `with_customer` | boolean | no | true: only carts linked to a customer account (guest accounts included); false: only carts without one |
+| `customer_name` | string | no | the **Customer** filter: first name, last name or both, whole or partial |
+| `online` | boolean | no | the **Online** filter |
+| `language` | string | no | ISO code of one of the shop's active languages for product names (#149); shop default when left out; unknown code refused |
+| `limit` / `offset` | integer | no | as `somcp_search_orders`: 20 by default, 100 at most |
 
-**Returns** - per cart: `id_cart`, `date_upd`, `customer` (id and name, or `null` for a guest), `products_count`, `total_tax_incl`, `currency`, `top_products` (the three most expensive lines). Plus `total_count` and `total_value`.
+**Returns**
+
+| Field | Notes |
+|---|---|
+| `carts[].id_cart` | **ID** |
+| `carts[].date_add` / `date_upd` | **Date** of the list is `date_add`; **Last updated** of the 9.0.0 page is `date_upd` |
+| `carts[].id_customer` | 0 when the cart has no customer, as `somcp_get_order` |
+| `carts[].customer_name` | full name, empty when none; no email, phone or address (shared conventions); `somcp_get_customer` gives the rest under the right scope |
+| `carts[].is_guest` | the customer is a guest account |
+| `carts[].online` | **Online**: the cart's visitor had a connection in the last 30 minutes |
+| `carts[].carrier` | **Carrier** name, empty when none |
+| `carts[].products_count` | total quantity of products |
+| `carts[].total_products_tax_excl` / `total_products_tax_incl` | **Total** of the list, products only; `null` when the cart can no longer be priced |
+| `carts[].currency` | ISO code |
+| `carts[].products` | the three most expensive lines: `id_product`, `id_product_attribute`, `name` (with the combination), `reference`, `quantity`, `unit_price_tax_incl` |
+| `returned`, `total_count`, `offset` | as `somcp_search_orders` |
+| `older_than_hours` | the age used |
+| `total_value_tax_incl` | sum of `total_products_tax_incl` over every matching cart, not only this page, keyed by currency ISO code (no conversion) |
+| `total_value_complete` | false when more than 1000 carts match: the sum then covers the 1000 newest, each cart being priced by PrestaShop itself |
+| `language` | ISO code used |
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments, `older_than_hours` below 1, invalid dates, `date_from` after `date_to`, `limit` outside 1 to 100, a negative `offset`, an unknown language.
 
 **Notes**
-- A cart with an order is never listed. Personal data stays plain in the list: no email or phone, as the shared conventions require.
-- Read only: the tool sends nothing to anyone.
+- The back office rule on both versions: a cart with no order, created more than 24 hours ago (`AdminCartsController` on 8.0.1, `CartStatus::ABANDONED_CART_EXPIRATION_TIME` in `CartQueryBuilder` on 9.0.0, both on `cart.date_add` against PHP's clock). A younger cart without an order is **Non ordered**.
+- A cart with an order is never listed, nor a cart with no product line (the back office lists those; nothing to recover in them).
+- The amounts are computed by the cart itself (`Cart::getOrderTotal()` with `Cart::ONLY_PRODUCTS`), so specific prices and taxes follow the shop's rules: **Total** of the list is the products only, without shipping.
+- Read only: the tool sends nothing to anyone and never returns the **Share this cart** link of 9.0.0 or its token.
+- Carts are per shop (`cart.id_shop`): the token's shop only. An `edit` right on `AdminCarts` is not needed: the list and the cart page are open with `view`.
+- 8.0.1 has no **Status** column (the status is a text in **Order ID**) and shows **Online** only with guest checkout on; 9.0.0 has both. The tool returns the same fields on both.
 
 #### `somcp_list_search_terms`
 **State**: to write · [issue #102](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/102)
@@ -3743,7 +3771,7 @@ request: one line, stroke paths on a 24 px grid.
 | `somcp-cache-maintenance` | System | written |
 | `somcp-seo-audit` | SEO | written |
 | `somcp-aeo-audit` | AEO | written · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
-| `somcp-sales-boost` | Sales | to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
+| `somcp-sales-boost` | Sales | written · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
 
 #### `somcp-catalogue-manage`
 **State**: written
@@ -3886,7 +3914,7 @@ request: one line, stroke paths on a 24 px grid.
 **The guide must say** - no tool can guarantee that an assistant cites the shop, and the guide never promises it; start with `somcp_check_ai_crawler_access` and `somcp_audit_store_policies`, then the products that sell; fix the data itself (brand, GTIN, features, description) with the Catalogue tools rather than adding text for robots; never invent a fact, a review or a figure about a product: ask the merchant; check the public page with `somcp_audit_product_schema` after a change.
 
 #### `somcp-sales-boost`
-**State**: to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81)
+**State**: written · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81)
 **Section**: Sales · **Scope**: `mcp.sales.read` · **Permission**: `view` on `AdminStats` · **Icon**: `cart`
 
 **Title** - Boost sales

@@ -89,6 +89,9 @@ class SomcpScope
     /** @var string Acting on how the shop runs: clearing its cache. */
     public const SYSTEM_WRITE = 'mcp.system.write';
 
+    /** @var string Reading where sales are lost: abandoned carts, searches, product views and promotions. */
+    public const SALES_READ = 'mcp.sales.read';
+
     /**
      * The scopes this module owns.
      *
@@ -96,7 +99,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ, self::SYSTEM_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ, self::SYSTEM_WRITE, self::SALES_READ];
     }
 
     /**
@@ -297,6 +300,8 @@ class SomcpScope
                 return $module->l10n('Performance - read');
             case self::SYSTEM_WRITE:
                 return $module->l10n('Performance - changes');
+            case self::SALES_READ:
+                return $module->l10n('Sales - read');
             default:
                 // Another module's scope comes with the label it declared,
                 // already in the merchant's language.
@@ -413,6 +418,8 @@ class SomcpScope
                 return $module->l10n('Read how this shop runs: its performance settings, cache and debug mode');
             case self::SYSTEM_WRITE:
                 return $module->l10n('Clear the cache of this shop and of every shop of the installation, which slows them until it rebuilds');
+            case self::SALES_READ:
+                return $module->l10n('Read abandoned carts, searches, product views and promotions');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

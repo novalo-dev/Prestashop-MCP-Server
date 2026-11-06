@@ -1,0 +1,21 @@
+{
+  "title": "Boost sales",
+  "description": "Find the products, searches and carts where sales are lost, and set up promotions with the merchant's approval.",
+  "icon": "cart",
+  "scopes": [
+    "mcp.sales.read"
+  ],
+  "tools": [
+    "somcp_ping",
+    "somcp_list_abandoned_carts"
+  ],
+  "controller": "AdminStats",
+  "action": "view",
+  "arguments": [
+    {
+      "name": "period",
+      "description": "Number of days to look back, 30 by default",
+      "required": false
+    }
+  ]
+}

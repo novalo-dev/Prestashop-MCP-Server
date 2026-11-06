@@ -3037,6 +3037,36 @@
       <source>Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider.</source>
       <target>Cada nueva conversación empieza con este modelo; se puede cambiar en el chat para una conversación. La lista viene de su proveedor.</target>
     </trans-unit>
+    <!-- List abandoned carts -->
+    <trans-unit id="9507ae86e84760501caa64c872b860de" resname="List abandoned carts">
+      <source>List abandoned carts</source>
+      <target>Listar los carritos abandonados</target>
+    </trans-unit>
+    <!-- Sales - read -->
+    <trans-unit id="ede5d1f408783f0b1c89a003431b3712" resname="Sales - read">
+      <source>Sales - read</source>
+      <target>Ventas - lectura</target>
+    </trans-unit>
+    <!-- Read abandoned carts, searches, product views and promotions -->
+    <trans-unit id="3c505dea7233009a2d8a9ed6f3fa55bf" resname="Read abandoned carts, searches, product views and promotions">
+      <source>Read abandoned carts, searches, product views and promotions</source>
+      <target>Leer los carritos abandonados, las búsquedas, los productos vistos y las promociones</target>
+    </trans-unit>
+    <!-- Boost sales -->
+    <trans-unit id="8c883385a642028c9366bb087618b216" resname="Boost sales">
+      <source>Boost sales</source>
+      <target>Impulsar las ventas</target>
+    </trans-unit>
+    <!-- Find the products, searches and carts where sales are lost, and set up promotions with the merchant's approval. -->
+    <trans-unit id="4d09b1c7e91b2c3d65907a070ea6483b" resname="Find the products, searches and carts where sales are lost, and set up promotions with the merchant&#x27;s approval.">
+      <source>Find the products, searches and carts where sales are lost, and set up promotions with the merchant's approval.</source>
+      <target>Encontrar los productos, las búsquedas y los carritos donde se pierden ventas, y crear promociones con la aprobación del comerciante.</target>
+    </trans-unit>
+    <!-- Number of days to look back, 30 by default -->
+    <trans-unit id="9e9d7a2264656376e54ce95a9d5d98b9" resname="Number of days to look back, 30 by default">
+      <source>Number of days to look back, 30 by default</source>
+      <target>Número de días hacia atrás, 30 por defecto</target>
+    </trans-unit>
     </body>
   </file>
 </xliff>

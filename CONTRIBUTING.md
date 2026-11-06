@@ -82,7 +82,8 @@ once, in a few seconds, with your GitHub account.
   `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
   `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`,
   `mcp.modules.read`, `mcp.modules.write`, `mcp.appearance.read`,
-  `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`. Other
+  `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`,
+  `mcp.sales.read`. Other
   modules
   declare their own scopes rather than borrowing these.
 - **Back office rights** are checked on every call, against the employee's

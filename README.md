@@ -362,6 +362,12 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_llms_txt` | ● Read the llms.txt file | SEO & URLs › view |
 | `somcp_generate_llms_txt` | ✎ Generate the llms.txt file | SEO & URLs › add, edit, delete |
 
+### 🛒 Sales
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_abandoned_carts` | ● List abandoned carts | Shopping Carts › view |
+
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
 language and currency it is connected to.
 

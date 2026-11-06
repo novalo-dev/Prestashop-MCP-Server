@@ -26,6 +26,21 @@ the contact page, in the language asked for. A file the merchant wrote by hand
 is replaced only when asked, and a shop whose root is not writable is told so
 without anything being changed.
 
+**See the carts that never became an order.** The new tool
+`somcp_list_abandoned_carts` lists the carts that hold products and were left
+without an order, newest first, with the same rule as the **Abandoned cart**
+rows of **Orders > Shopping Carts**: no order, created more than 24 hours ago.
+For each cart it gives the customer's name, whether the visitor is still on the
+shop, the carrier, the products total tax excluded and included, and the three
+most expensive products left in it, plus the total value of every matching cart
+per currency. It can be narrowed to a period, to the carts of customer accounts
+or without one, to a customer's name or to the visitors online. Nothing is sent
+to anyone, no email, phone or address is given, and the **Share this cart**
+link never leaves the shop. It opens the **Boost sales** prompt and needs the
+new permission `mcp.sales.read`, which the consent screen describes as reading
+abandoned carts, searches, product views and promotions, and the `view` right
+on **Orders > Shopping Carts**.
+
 ### Changed
 
 **Shorter attribute tools.** The seven tools of Catalog > Attributes &

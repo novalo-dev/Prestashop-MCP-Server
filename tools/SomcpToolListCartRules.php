@@ -325,7 +325,7 @@ class SomcpToolListCartRules
      *
      * @param array<string, mixed> $row a cart_rule row, with its reduction and gift columns
      *
-     * @return array{reduction: array<string, mixed>|null, reduction_applies_to: string|null, gift: array<string, int>|null, summary: string}
+     * @return array{reduction: array<string, mixed>|null, reduction_applies_to: string|null, gift: array<string, int>|null, summary: string, free_shipping: bool}
      */
     public static function describe(array $row): array
     {

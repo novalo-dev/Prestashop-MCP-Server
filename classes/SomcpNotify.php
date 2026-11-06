@@ -88,7 +88,7 @@ class SomcpNotify
             $sent = Mail::send(
                 $idLang,
                 self::TEMPLATE,
-                Context::getContext()->getTranslator()->trans('A new assistant is connected to your shop', [], 'Modules.Somcp.Admin', $locale),
+                Somcp::legacyContext()->getTranslator()->trans('A new assistant is connected to your shop', [], 'Modules.Somcp.Admin', $locale),
                 [
                     // The name is the one the application gave itself: the
                     // characters that could open markup in the HTML version

@@ -68,7 +68,7 @@ final class DbRateLimiter extends ConfigurableRateLimiter implements RateLimiter
         $this->prefix = $prefix;
         // Each shop of a multistore counts for itself: a block on one storefront
         // does not lock the merchant out of the others.
-        $this->idShop = (int) \Context::getContext()->shop->id;
+        $this->idShop = \Somcp::currentShopId();
     }
 
     /**

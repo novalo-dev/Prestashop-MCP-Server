@@ -21,8 +21,8 @@
  * pages a merchant works in, so a script error or a pane left empty went
  * unnoticed. This signs in, opens the seven settings pages and the chat, uses
  * the search, a tool switch and a group switch of the Tools and prompts tab,
- * and fails on the first uncaught script error, page error or PHP message on
- * screen.
+ * connects an assistant through the authorization page, and fails on the
+ * first uncaught script error, page error or PHP message on screen.
  *
  * Usage: node sanity.mjs <admin url> <email> <password> <browser> <shot dir> [results file]
  *   browser is chromium or firefox. A screenshot of the page in front is left
@@ -214,6 +214,65 @@ if (signedIn) {
         await noPhpMessage();
     });
 }
+
+// The page an assistant sends the merchant to: sign in with the back office
+// account, solve the anti-robot check, approve, and the code goes back to the
+// assistant. Nothing on the way names the administration folder.
+await check('connect an assistant through the sign-in page', async () => {
+    const shop = new URL(adminUrl).origin;
+    const adminFolder = new URL(adminUrl).pathname.split('/').filter(Boolean)[0] || '';
+    const front = (controller, query) => `${shop}/index.php?fc=module&module=somcp&controller=${controller}&${query}`;
+    const callback = 'http://127.0.0.1:9/callback';
+
+    const registered = await page.request.post(front('oauth', 'a=register'), {
+        data: { client_name: 'UI sanity', redirect_uris: [callback] },
+    });
+    if (registered.status() !== 201) {
+        throw new Error(`registering a client answered ${registered.status()}`);
+    }
+    const clientId = (await registered.json()).client_id;
+    const { createHash, randomBytes } = await import('node:crypto');
+    const verifier = randomBytes(32).toString('base64url');
+    const challenge = createHash('sha256').update(verifier).digest('base64url');
+
+    await page.goto(front('authorize', new URLSearchParams({
+        response_type: 'code', client_id: clientId, redirect_uri: callback,
+        code_challenge: challenge, code_challenge_method: 'S256', state: 'ui',
+    }).toString()));
+    await page.locator('#somcp-authorize[data-somcp-state="signin"]').waitFor({ timeout: 15000 });
+    await noPhpMessage();
+    const shown = async (what) => {
+        if (adminFolder !== '' && (await page.content()).includes(adminFolder)) {
+            throw new Error(`the ${what} names the administration folder`);
+        }
+    };
+    await shown('sign-in page');
+
+    await page.locator('#somcp_email').fill(email);
+    await page.locator('#somcp_password').fill(password);
+    await page.locator('altcha-widget input[type="checkbox"]').first().click();
+    await page.waitForFunction(() => {
+        const input = document.querySelector('altcha-widget')?.querySelector('input[name="somcp_altcha"]')
+            || document.querySelector('input[name="somcp_altcha"]');
+        return input && input.value.length > 0;
+    }, null, { timeout: 30000 });
+    await Promise.all([page.waitForLoadState('load'), page.locator('form button[type="submit"]').first().click()]);
+    await page.locator('#somcp-authorize[data-somcp-state="consent"]').waitFor({ timeout: 15000 });
+    await shown('consent page');
+    if (!(await page.locator('#somcp-return-host').innerText()).includes('127.0.0.1')) {
+        throw new Error('the consent page does not show where the answer goes');
+    }
+
+    // The assistant's own address is not listening here: the request the
+    // browser makes to it is the answer, and is caught rather than waited on.
+    const [toAssistant] = await Promise.all([
+        page.waitForRequest((request) => request.url().startsWith(callback), { timeout: 15000 }),
+        page.locator('button[name="decision"][value="allow"]').click({ noWaitAfter: true }),
+    ]);
+    if (!new URL(toAssistant.url()).searchParams.get('code')) {
+        throw new Error(`the assistant got no code: ${toAssistant.url()}`);
+    }
+});
 
 await browser.close();
 

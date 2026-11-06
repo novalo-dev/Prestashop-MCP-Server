@@ -65,6 +65,24 @@ class SomcpPrmModuleFrontController extends ModuleFrontController
     }
 
     /**
+     * Hands a browser over to the shop's "page not found" before anything else.
+     *
+     * This address is for programs; a person who opens it, or a link built to
+     * see what the shop runs, gets the same page as for any dead link. It has
+     * to happen before the parent init (see SomcpHttp::notFoundPage()).
+     */
+    public function init()
+    {
+        Somcp::bootClasses();
+
+        if (Tools::strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'GET' && SomcpHttp::isBrowser()) {
+            SomcpHttp::notFoundPage();
+        }
+
+        parent::init();
+    }
+
+    /**
      * Emits the document and stops the script.
      */
     public function initContent()

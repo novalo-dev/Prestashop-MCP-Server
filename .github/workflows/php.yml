@@ -126,6 +126,17 @@ jobs:
         # pull request from a fork cannot be written to. The message gives
         # the command that fixes it locally.
         run: php .github/scripts/check-headers.php .
+      - name: Nothing loaded from outside the shop
+        # Every script, style sheet, font and image the module's pages and
+        # e-mails use is shipped in the module: a file fetched from another
+        # site runs with the page, the sign-in form included, and tells that
+        # site who opened it. Links a person clicks are not concerned.
+        run: |
+          pattern="(<script[^>]*src=[\"']?|<link[^>]*href=[\"']?|@import[[:space:]]+(url\()?[\"']?|url\([[:space:]]*[\"']?)(https?:)?//"
+          if grep -rnE "$pattern" views/ mails/ --include=*.tpl --include=*.css --include=*.js --include=*.html; then
+            echo "::error::A file above loads a resource from outside the shop. Ship it in the module instead."
+            exit 1
+          fi
 
   multishop:
     name: Multistore

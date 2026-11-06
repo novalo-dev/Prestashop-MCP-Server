@@ -181,6 +181,11 @@ php .github/scripts/check-multishop.php .
 # Every PHP, JS, CSS and template file with the module's licence header
 # (add --fix to write it into the files that lack it, then commit)
 php .github/scripts/check-headers.php .
+
+# Nothing loaded from another site: every script, style sheet, font and image
+# of the pages and e-mails is shipped in the module (no output means none)
+grep -rnE "(<script[^>]*src=[\"']?|<link[^>]*href=[\"']?|@import[[:space:]]+(url\()?[\"']?|url\([[:space:]]*[\"']?)(https?:)?//" \
+  views/ mails/ --include=*.tpl --include=*.css --include=*.js --include=*.html
 ```
 
 The **Security** workflow runs these, which you can run too:

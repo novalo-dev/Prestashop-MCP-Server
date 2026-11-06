@@ -191,6 +191,14 @@ if (!$expect('a valid token is served', $http('POST', $mcpUrl, $bearer($valid['a
 $expect('GET is not allowed', $http('GET', $mcpUrl), 405);
 $expect('GET opening a stream is not allowed', $http('GET', $mcpUrl, ['Accept: text/event-stream']), 405);
 $expect('a browser gets the page not found', $http('GET', $mcpUrl, ['Accept: text/html,application/xhtml+xml']), 404);
+// The other addresses meant for programs answer a browser the same way.
+$browser = ['Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'];
+foreach (['oauth' => 'a=token', 'relay' => 'action=next', 'prm' => '', 'wellknown' => ''] as $controller => $query) {
+    $expect('a browser on ' . $controller . ' gets the page not found', $http('GET', $endpoint($controller, $query), $browser), 404);
+}
+$expect('a program still reads the resource document', $http('GET', $endpoint('prm'), ['Accept: application/json']), 200);
+$expect('a program still reads the authorization server document', $http('GET', $endpoint('wellknown'), ['Accept: application/json']), 200);
+$expect('a program sending GET to the token address', $http('GET', $endpoint('oauth', 'a=token'), ['Accept: application/json']), 405);
 $missing = $http('POST', $mcpUrl, $json, $ping);
 $expect('no token', $missing, 401);
 if (stripos($missing['headers']['www-authenticate'] ?? '', 'Bearer') !== 0) {

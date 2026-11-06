@@ -179,6 +179,12 @@ shop's default language when the module speaks it (English, French, Spanish,
 German), in English otherwise, and it is listed with the shop's other e-mails,
 so you can reword it.
 
+**The module's machine addresses stay out of sight.** The addresses meant for
+assistants and for O'So AI Relay (sign-in tokens, discovery documents, relay)
+now show the shop's ordinary "page not found" when someone opens them in a
+browser, as the main assistant address already did. Assistants and the relay
+are not affected.
+
 ## 1.2.2 - 2026-11-05
 
 ### Added

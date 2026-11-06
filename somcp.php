@@ -75,6 +75,7 @@ class Somcp extends Module
         'SomcpElicitation',
         'SomcpUpload',
         'SomcpTool',
+        'SomcpStats',
         'SomcpProductImage',
         'SomcpCatalog',
         'SomcpModules',

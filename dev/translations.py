@@ -2419,6 +2419,10 @@ T = {
  "Lister les recherches de la boutique",
  "Listar las búsquedas de la tienda",
  "Suchbegriffe des Shops auflisten"),
+"List products viewed but not sold": (
+ "Lister les produits vus mais non vendus",
+ "Listar los productos vistos pero no vendidos",
+ "Angesehene, aber nicht verkaufte Produkte auflisten"),
 "Sales - read": (
  "Ventes - lecture",
  "Ventas - lectura",

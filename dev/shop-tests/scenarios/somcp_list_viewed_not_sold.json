@@ -1,0 +1,16 @@
+{
+  "calls": [
+    {"why": "a long period on a fresh install: page views are off, so with the default minimum of one view nothing is listed and the note says why", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31"}, "expect": "ok", "contains": ["\"date_from\": \"2000-01-01\"", "\"date_to\": \"2099-12-31\"", "\"language\": \"en\"", "\"page_views_recorded\": false", "\"products\": []", "\"returned\": 0", "\"total_count\": 0", "\"note\""]},
+    {"why": "with min_page_views 0 every saved product is listed, each with zero page views", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "min_page_views": 0}, "expect": "ok", "contains": ["\"products\"", "\"page_views\": 0", "\"conversion_rate\": null", "\"page_views_recorded\": false"]},
+    {"why": "narrowed to the Home category, still answers", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "min_page_views": 0, "id_category": 2}, "expect": "ok", "contains": ["\"products\"", "\"total_count\""]},
+    {"why": "the next page", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "min_page_views": 0, "limit": 1, "offset": 1}, "expect": "ok", "contains": ["\"offset\": 1"]},
+    {"why": "names read in a language the shop has, said by its code", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "min_page_views": 0, "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "an unknown category is refused, naming the field", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "id_category": 999999}, "expect": "error", "contains": ["id_category"]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]},
+    {"why": "the end before the start is refused, naming the field", "arguments": {"date_from": "2001-02-10", "date_to": "2001-02-01"}, "expect": "error", "contains": ["date_to: a date not before date_from"]},
+    {"why": "a missing date is refused", "arguments": {"date_from": "2001-02-01"}, "expect": "error", "contains": ["date_to: a date, YYYY-MM-DD"]},
+    {"why": "fewer than zero views is refused", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "min_page_views": -1}, "expect": "error", "contains": ["min_page_views: a whole number, 0 at least"]},
+    {"why": "more than 100 products at once is refused", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1, "date_from": "2001-02-01", "date_to": "2001-02-10"}, "expect": "error", "contains": ["foo: not a field of this tool", "offset: a whole number, 0 at least"]}
+  ]
+}

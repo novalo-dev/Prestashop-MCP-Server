@@ -3047,6 +3047,11 @@
       <source>List shop search terms</source>
       <target>List shop search terms</target>
     </trans-unit>
+    <!-- List products viewed but not sold -->
+    <trans-unit id="6b23cc156740dd699fa8fe53087d261d" resname="List products viewed but not sold">
+      <source>List products viewed but not sold</source>
+      <target>List products viewed but not sold</target>
+    </trans-unit>
     <!-- Sales - read -->
     <trans-unit id="ede5d1f408783f0b1c89a003431b3712" resname="Sales - read">
       <source>Sales - read</source>

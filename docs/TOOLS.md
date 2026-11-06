@@ -3557,25 +3557,48 @@ Sorted by `searches`, highest first, then `keywords`.
 - No difference between 8.0.1 and 9.0.0 (`statssearch` 2.0.2 on both).
 
 #### `somcp_list_viewed_not_sold`
-**State**: to write · [issue #103](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/103)
+**State**: written · [issue #103](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/103)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the products customers looked at most over a period, with what they sold, so the ones that are seen but not bought stand out.
+**Does** - lists the saved products of the shop with their page views and what they sold over a period, most viewed first, so the ones seen but not bought stand out - the figures **Stats > Product details** shows one product at a time. Read only.
 
-**Do not use for** - best sellers (→ `somcp_list_best_sellers`).
+**Do not use for** - best sellers (→ `somcp_list_best_sellers`); products that sold nothing whether viewed or not; stock (→ `somcp_get_stock`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `date_from` / `date_to` | string | no | the last 30 days by default |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `date_from` / `date_to` | string | yes | **From:** / **To:**, `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; the employee's saved stats period is never read nor changed |
+| `id_category` | integer | no | **Choose a category**: only the products of that category, from `somcp_list_categories`; unknown in the shop is refused |
+| `min_page_views` | integer | no | only the products viewed at least this many times; 1 by default, so a product nobody opened is left out; 0 lists every product |
+| `language` | string | no | ISO code of one of the shop's active languages for `name`, as #149; shop default when left out; an unknown code is refused |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per product: `id_product`, `name`, `views`, `quantity_sold`, `conversion` (orders per hundred views), `price_tax_incl`, `quantity` in stock. Sorted by views with the lowest conversion first among equals.
+**Returns**
+
+| Field | Notes |
+|---|---|
+| `page_views_recorded` | `true` when `statsdata` is installed and enabled and **Save global page views** is on; `false` adds a `note` saying every `page_views` is 0 for that reason, the sales staying real |
+| `products[].id_product`, `reference`, `name` | **Reference**, **Name**, under the names of `somcp_list_best_sellers` |
+| `products[].page_views` | **Total Viewed** |
+| `products[].quantity_sold` | **Total bought**, valid orders dated by their order date |
+| `products[].revenue_tax_excl` | **Sales (tax excluded)**, divided by the order's conversion rate so it is in the default currency |
+| `products[].conversion_rate` | **Conversion rate**, `quantity_sold / page_views`, two decimals, units bought per view; `null` when `page_views` is 0 |
+| `products[].quantity` | **Available quantity for sale**, as `somcp_list_best_sellers` |
+| `products[].active` | whether the product is on sale |
+| `date_from` / `date_to`, `language` | what was used |
+| `returned`, `total_count`, `offset` | `total_count` counts the products after `id_category` and `min_page_views` |
+
+Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, then `id_product`: the products most seen and least bought come first.
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `id_category` not a whole number or unknown in the shop; `min_page_views` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149.
 
 **Notes**
-- Views come from the tables the statsdata module fills, with page views recorded; when it does not record them, the answer says so.
-- Sales count valid orders only (`Order::valid`).
+- Saved products of the token's shop only (`product_shop`, `p.state = Product::STATE_SAVED`); orders of the token's shop only.
+- Page views and the stock quantity are read through the shared `SomcpStats` subqueries, the same way `somcp_list_best_sellers` reads them.
+- **Save global page views** (`PS_STATSDATA_PAGESVIEWS`) is off by default: without it `page_viewed` is empty and every `page_views` is a true 0.
+- No customer is returned: the orders behind a product are `somcp_search_orders`.
+- No difference between 8.0.1 and 9.0.0 (`statsproduct` 2.1.1 / 2.1.3, `statsdata` 2.1.0 / 2.1.2).
 
 #### `somcp_list_unsold_products`
 **State**: to write · [issue #104](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/104)

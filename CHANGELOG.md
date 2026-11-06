@@ -18,6 +18,16 @@ are:
 
 ### Added
 
+**Spot the products that are looked at but not bought.** The new tool
+`somcp_list_viewed_not_sold` lists the products of the shop with their page
+views and what they sold over a period, most viewed first, as **Stats >
+Product details** shows one product at a time: Total Viewed, Total bought and
+the conversion rate side by side, so the products that draw interest and miss
+the sale stand out. Page views are counted only when **Save global page views**
+is on in the **Data mining for statistics** module; when it is off the answer
+says so rather than reading as nobody looked. It joins the **Boost sales**
+prompt and needs the `view` right on **Stats**.
+
 **See what visitors search for on the shop.** The new tool
 `somcp_list_search_terms` lists what visitors typed in the shop's search box
 over a period, as **Stats > Shop search**: for each term, how many times it was

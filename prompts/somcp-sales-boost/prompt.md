@@ -9,6 +9,7 @@ identifier, so the merchant can find it in the back office.
 - `somcp_ping`
 - `somcp_list_abandoned_carts`
 - `somcp_list_search_terms`
+- `somcp_list_viewed_not_sold`
 
 ## Know which shop you are in
 
@@ -57,6 +58,21 @@ dates you used.
 3. **Say when the module is off.** When the tool answers that the Shop search
    module is not active, nothing was recorded: never read it as nobody
    searched.
+
+## Products viewed but not sold
+
+1. **List them** with `somcp_list_viewed_not_sold` and the dates of the period.
+   As on **Stats > Product details**, it gives each product its `page_views`
+   (Total Viewed), `quantity_sold` (Total bought) and `conversion_rate` (units
+   bought per view), most viewed first and lowest conversion first among
+   equals. `id_category` narrows it to one category.
+2. **Read page views honestly.** When `page_views_recorded` is false, every
+   `page_views` is 0 because **Save global page views** is off: say so, and do
+   not read a 0 as "never seen". The sales figures stay real.
+3. **Point at the gap.** A product with many views and few or no sales is a
+   lead: a price, a photo or a description to look at. `min_page_views: 0`
+   adds the products nobody opened, which are more about an empty catalogue
+   than a lost sale.
 
 ## Never
 

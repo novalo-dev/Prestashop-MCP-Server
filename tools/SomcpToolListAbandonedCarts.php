@@ -157,7 +157,7 @@ class SomcpToolListAbandonedCarts
             if (!is_int($arguments['older_than_hours']) || $arguments['older_than_hours'] < 1) {
                 $problems[] = '- older_than_hours: a whole number of hours, 1 at least';
             } else {
-                $hours = $arguments['older_than_hours'];
+                $hours = (int) $arguments['older_than_hours'];
             }
         }
 
@@ -182,7 +182,9 @@ class SomcpToolListAbandonedCarts
             if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT) {
                 $problems[] = '- limit: a whole number from 1 to ' . self::MAX_LIMIT;
             } else {
-                $limit = $arguments['limit'];
+                // Cast although checked: the value goes into the LIMIT clause,
+                // where only a number may ever land.
+                $limit = (int) $arguments['limit'];
             }
         }
         $offset = 0;
@@ -190,7 +192,7 @@ class SomcpToolListAbandonedCarts
             if (!is_int($arguments['offset']) || $arguments['offset'] < 0) {
                 $problems[] = '- offset: a whole number, 0 at least';
             } else {
-                $offset = $arguments['offset'];
+                $offset = (int) $arguments['offset'];
             }
         }
 

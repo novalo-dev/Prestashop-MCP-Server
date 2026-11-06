@@ -25,13 +25,13 @@ function upgrade_module_1_3_0($module)
     $table = _DB_PREFIX_ . 'configuration';
 
     // The list of allowed return addresses used to mean "anything goes" when
-    // empty, and it was empty on almost every shop. It now means "refuse every
-    // public host", so an empty list is filled before the new rule applies:
-    // with the clients the module is known to work with, plus the hosts of the
-    // assistants already connected - a self-hosted n8n, for one, would
-    // otherwise stop working the moment the shop is updated. Only clients an
-    // employee has approved count: an application that merely registered
-    // itself has proved nothing and stays out.
+    // empty, and it was empty on almost every shop. An empty value now reads
+    // as the known clients (SomcpConfig::NO_HOSTS is what a list emptied on
+    // purpose is stored as), which would cut off the other assistants already
+    // connected - a self-hosted n8n, for one. So an empty list is written out:
+    // the known clients plus the hosts of the assistants already connected.
+    // Only clients an employee has approved count: an application that merely
+    // registered itself has proved nothing and stays out.
     $known = array_keys(SomcpOAuthClient::KNOWN_HOSTS);
     $connectedHosts = static function (?int $idShop) use ($db): array {
         $sql = 'SELECT DISTINCT c.`redirect_uris` FROM `' . _DB_PREFIX_ . 'somcp_oauth_client` c'

@@ -311,7 +311,7 @@ $registerHttps = static function (string $uri) use ($http, $endpoint, $json): ar
     ]));
 };
 $expect('client registering a host that is not on the list', $registerHttps('https://attacker.example/callback'), 400);
-SomcpConfig::set(SomcpConfig::REDIRECT_HOSTS, '');
+SomcpConfig::set(SomcpConfig::REDIRECT_HOSTS, SomcpConfig::clean(SomcpConfig::REDIRECT_HOSTS, ''));
 $expect('client registering a known host while the list is empty', $registerHttps('https://claude.ai/api/mcp/auth_callback'), 400);
 // A client registered while its host was allowed, then the host taken off
 // the list: the check at sign-in time is what stops it, not the registration.

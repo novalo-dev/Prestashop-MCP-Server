@@ -45,6 +45,16 @@ class SomcpConfig
     public const CIMD_ENABLED = 'SOMCP_CIMD_ENABLED';
     public const DCR_ENABLED = 'SOMCP_DCR_ENABLED';
     public const REDIRECT_HOSTS = 'SOMCP_REDIRECT_HOSTS';
+
+    /**
+     * @var string What an emptied list of return addresses is stored as.
+     *
+     * Not an empty value: every shop installed before the list had a default
+     * holds one, saved when an empty list still meant "anything goes", and
+     * those must read the default list until their upgrade fills them in.
+     * Only a list the merchant empties on purpose refuses every public host.
+     */
+    public const NO_HOSTS = '-';
     public const REQUIRED_PROFILE = 'SOMCP_REQUIRED_PROFILE';
     public const LOG_ENABLED = 'SOMCP_LOG_ENABLED';
 
@@ -153,7 +163,7 @@ class SomcpConfig
             self::CIMD_ENABLED => '1',
             self::DCR_ENABLED => '1',
             // The clients the module is known to work with. Emptied by the
-            // merchant, the list refuses every public host: see get().
+            // merchant, the list refuses every public host: see NO_HOSTS.
             self::REDIRECT_HOSTS => SomcpOAuthClient::defaultHosts(),
             self::REQUIRED_PROFILE => '0',
             self::LOG_ENABLED => '1',
@@ -186,10 +196,7 @@ class SomcpConfig
     public static function get(string $key, ?int $idShop = null): string
     {
         $value = Configuration::get($key, null, null, $idShop);
-        // An emptied list of return addresses means "refuse them all", which
-        // falling back on the default list would silently turn into "allow the
-        // usual ones". Only a missing value takes the default there.
-        if ($value === '' && $key === self::REDIRECT_HOSTS) {
+        if ($key === self::REDIRECT_HOSTS && $value === self::NO_HOSTS) {
             return '';
         }
         if ($value === false || $value === '') {
@@ -262,9 +269,9 @@ class SomcpConfig
             case self::REDIRECT_HOSTS:
                 // Host names only: anything else here would silently widen what
                 // the module accepts as a return address.
-                $hosts = (string) preg_replace('/[^a-zA-Z0-9.\-\s,;]/', '', $raw);
+                $hosts = trim((string) preg_replace('/[^a-zA-Z0-9.\-\s,;]/', '', $raw), " \t\n\r\0\x0B,;-");
 
-                return (string) Tools::substr(trim($hosts), 0, 500);
+                return $hosts === '' ? self::NO_HOSTS : (string) Tools::substr($hosts, 0, 500);
             default:
                 return $raw;
         }

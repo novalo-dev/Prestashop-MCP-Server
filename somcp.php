@@ -69,6 +69,7 @@ class Somcp extends Module
         'SomcpOAuthToken',
         'SomcpOAuthServer',
         'SomcpGuard',
+        'SomcpNotify',
         'SomcpBackOffice',
         'SomcpJsonRpc',
         'SomcpProtocol',

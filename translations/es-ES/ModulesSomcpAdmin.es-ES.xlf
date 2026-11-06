@@ -102,6 +102,11 @@
       <source>Too many attempts from this address. Wait 15 minutes, then try again.</source>
       <target>Demasiados intentos desde esta dirección. Espere 15 minutos y vuelva a intentarlo.</target>
     </trans-unit>
+    <!-- A new assistant is connected to your shop -->
+    <trans-unit id="7c4960744211d044c345f44f61f0a641" resname="A new assistant is connected to your shop">
+      <source>A new assistant is connected to your shop</source>
+      <target>Un nuevo asistente está conectado a su tienda</target>
+    </trans-unit>
     <!-- Connect an assistant -->
     <trans-unit id="1d3106889f4f5b717317255e6c9e8812" resname="Connect an assistant">
       <source>Connect an assistant</source>

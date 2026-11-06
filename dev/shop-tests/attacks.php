@@ -495,7 +495,20 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     } else {
         echo "  ok    consent with the token from before the sign-in\n";
     }
+    $logBefore = (int) $db->getValue('SELECT MAX(`id_log`) FROM `' . _DB_PREFIX_ . 'somcp_log`');
     $granted = $consent($consentCsrf);
+    // The e-mail about the new connection: whether the shop can deliver it
+    // depends on its mail settings, but building it must not fail.
+    $mailError = (string) $db->getValue('SELECT `message` FROM `' . _DB_PREFIX_ . 'somcp_log`'
+        . " WHERE `event` = 'new_assistant_mail_failed' AND `id_log` > " . $logBefore
+        . " AND `message` <> 'the shop did not send the e-mail'");
+    ++$checks;
+    if ($mailError !== '') {
+        $failures[] = 'the e-mail about a new connection could not be built: ' . $mailError;
+        echo "  FAIL  e-mail about the new connection built\n";
+    } else {
+        echo "  ok    e-mail about the new connection built\n";
+    }
     $location = (string) ($granted['headers']['location'] ?? '');
     ++$checks;
     if ($granted['status'] !== 302 || strpos($location, 'http://127.0.0.1:9/callback?') !== 0 || strpos($location, 'code=') === false) {

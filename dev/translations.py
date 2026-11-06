@@ -89,6 +89,10 @@ T = {
  "Trop de tentatives depuis cette adresse. Attendez 15 minutes, puis réessayez.",
  "Demasiados intentos desde esta dirección. Espere 15 minutos y vuelva a intentarlo.",
  "Zu viele Versuche von dieser Adresse. Warten Sie 15 Minuten und versuchen Sie es dann erneut."),
+"A new assistant is connected to your shop": (
+ "Un nouvel assistant est connecté à votre boutique",
+ "Un nuevo asistente está conectado a su tienda",
+ "Ein neuer Assistent ist mit Ihrem Shop verbunden"),
 "Connect an assistant": (
  "Connecter un assistant",
  "Conectar un asistente",

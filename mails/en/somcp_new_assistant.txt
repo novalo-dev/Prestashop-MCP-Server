@@ -1,0 +1,11 @@
+Hello,
+
+{client_name} has just been connected to {connected_shop} by {employee_email}, on {connected_at}.
+
+Its answers are sent to: {return_host}
+
+If you did not expect this connection, disconnect it now from the module, in the Connected assistants tab, and change the password of that account.
+
+--
+{shop_name} - {shop_url}
+You receive this e-mail because an assistant was connected to your shop. It is sent each time, to the employee who approved the connection, to the shop's address and to the super administrators.

@@ -84,6 +84,12 @@ request; only that account can then give the consent, with its own rights. Every
 refusal reads the same on screen and the reason goes to the module's log. No
 page or redirect of this flow names the administration folder.
 
+Each granted consent sends an e-mail (`SomcpNotify`, templates in `mails/<iso>/`)
+to the employee who approved it and to the shop's address, with the super
+administrators in blind copy - `Mail::send()` has no Cc. It is written in the
+shop's default language, and `Mail::send()` falls back on the English template
+for a language the module does not have.
+
 `SomcpGuard` puts limits on the public addresses: an ALTCHA proof of work on the
 sign-in form (the widget is shipped in `views/js/altcha/`, the check made with
 the `altcha-org/altcha` library), a block of fifteen minutes after five failed

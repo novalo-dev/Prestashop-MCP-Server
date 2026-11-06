@@ -326,6 +326,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         $code = SomcpOAuthToken::issueCode($request, $idEmployee, $granted);
 
         SomcpLogger::log('consent_granted', SomcpLogger::OUTCOME_SUCCESS, '', (string) $client['client_id'], $idEmployee);
+        SomcpNotify::newAssistant($client, $employee, (int) $request['id_shop'], (string) $request['redirect_uri']);
 
         $this->leaveTo($request, ['code' => $code]);
     }

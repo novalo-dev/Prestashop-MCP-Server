@@ -1,0 +1,11 @@
+Bonjour,
+
+{client_name} vient d'être connecté à {connected_shop} par {employee_email}, le {connected_at}.
+
+Ses réponses sont envoyées à : {return_host}
+
+Si vous n'attendiez pas cette connexion, déconnectez-la dès maintenant depuis le module, dans l'onglet Assistants connectés, et changez le mot de passe de ce compte.
+
+--
+{shop_name} - {shop_url}
+Vous recevez cet e-mail parce qu'un assistant a été connecté à votre boutique. Il est envoyé à chaque fois à l'employé qui a autorisé la connexion, à l'adresse de la boutique et aux super administrateurs.

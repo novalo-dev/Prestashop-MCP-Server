@@ -170,6 +170,15 @@ minutes, even with the right password. An address that sends too many connection
 requests, or registers too many applications in an hour, is turned away for a
 while too.
 
+**An e-mail each time an assistant is connected.** It goes to the employee who
+approved the connection and to the shop's address, with the super
+administrators in blind copy, and says which assistant, by whom, when, and where
+its answers are sent - so a connection nobody expected is noticed at once and
+can be removed from the **Connected assistants** tab. It is written in the
+shop's default language when the module speaks it (English, French, Spanish,
+German), in English otherwise, and it is listed with the shop's other e-mails,
+so you can reword it.
+
 ## 1.2.2 - 2026-11-05
 
 ### Added

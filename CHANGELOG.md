@@ -18,6 +18,21 @@ are:
 
 ### Added
 
+**Create a voucher or a cart discount.** The new tool `somcp_create_cart_rule`
+creates one rule of **Catalog > Discounts > Cart Rules**, with the fields of the
+**Information**, **Conditions** and **Actions** tabs: the name in each language,
+the code (or none, for a discount applied on its own), the validity dates, a
+single customer, the minimum amount, the quantities, free shipping, a percent
+or an amount off the order, a product, the cheapest product or the selected
+products, and a free gift. It refuses what the back office refuses, a code
+already used or a rule that gives nothing among them, and a gift with required
+customization fields on PrestaShop 8 as on 9. As on screen, a discount on one
+product limits the rule to carts that hold it, and the rules that restrict
+their compatibility accept the new one. The rule is created switched off unless
+asked otherwise, so the merchant reads it before customers can use it;
+restrictions stay in the back office. It joins the **Boost sales** prompt,
+needs the `add` right on **Cart Rules** and the new **Sales - changes** access.
+
 **Read one cart rule in full.** The new tool `somcp_get_cart_rule` gives every
 field of a rule as the three tabs **Information**, **Conditions** and
 **Actions** of **Catalog > Discounts > Cart Rules > Edit** show it: the name in

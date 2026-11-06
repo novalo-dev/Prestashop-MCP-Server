@@ -12,6 +12,8 @@ identifier, so the merchant can find it in the back office.
 - `somcp_list_viewed_not_sold`
 - `somcp_list_unsold_products`
 - `somcp_list_cart_rules`
+- `somcp_get_cart_rule`
+- `somcp_create_cart_rule`
 
 ## Know which shop you are in
 
@@ -110,8 +112,25 @@ dates you used.
    the rule: the name in every language, the minimum amount, the quantities,
    each restriction as a list of identifiers and names (carriers by
    `id_reference`, product selection as groups of rules), and what the rule
-   gives, with the same `reduction` and `summary` as the list. Neither tool
-   sets a rule on or off, nor creates one.
+   gives, with the same `reduction` and `summary` as the list.
+
+## Creating a voucher or a discount
+
+1. **Agree on every field with the merchant first**: the name the customer
+   reads, the code (none means the rule applies on its own to every cart that
+   meets its conditions), the dates, and what it gives. Never invent a code,
+   an amount or a date. Show the merchant the rule before the call.
+2. **Create it** with `somcp_create_cart_rule`, under the names and shapes
+   `somcp_get_cart_rule` returns. A rule must give something: a `reduction`,
+   `free_shipping` or a `gift`. `id_customer` comes from
+   `somcp_search_customers`, a product from `somcp_search_products`, a gift's
+   combination from `somcp_get_product`. The answer names every problem at
+   once: correct them all and call again.
+3. **It is created off** unless `active` is true: say so, and leave switching
+   it on to the merchant. Countries, carriers, groups, other rules and the
+   product selection are set on the rule's **Conditions** tab in the back
+   office. If an answer is lost, look for the rule with
+   `somcp_list_cart_rules` before calling again.
 
 ## Never
 

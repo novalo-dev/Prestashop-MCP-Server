@@ -123,12 +123,8 @@ class SomcpToolGetCartRule
         }
         [$idLang, $iso] = $language;
 
-        $row = Db::getInstance()->getRow(
-            'SELECT cr.*, ' . SomcpToolListCartRules::timesUsed() . ' AS `times_used`
-             FROM `' . _DB_PREFIX_ . 'cart_rule` cr
-             WHERE cr.`id_cart_rule` = ' . $idCartRule . ' AND ' . SomcpToolListCartRules::inShop($idShop)
-        );
-        if (!is_array($row) || $row === []) {
+        $cartRule = self::byId($idCartRule, $idLang, $idShop);
+        if ($cartRule === null) {
             return SomcpTool::text(
                 "Nothing was read. Correct these and call again:\n- id_cart_rule: no cart rule of this shop has the identifier "
                     . $idCartRule . ' - find it with somcp_list_cart_rules',
@@ -137,9 +133,31 @@ class SomcpToolGetCartRule
         }
 
         return SomcpTool::json([
-            'cart_rule' => self::cartRule($row, $idLang, $idShop),
+            'cart_rule' => $cartRule,
             'language' => $iso,
         ]);
+    }
+
+    /**
+     * One rule as this tool returns it, or null when the token's shop cannot
+     * use it. Public so the write tools answer with the rule read back the
+     * same way, rather than echoing their arguments.
+     *
+     * @param int $idCartRule
+     * @param int $idLang language of the names of the restrictions and the gift
+     * @param int $idShop
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function byId(int $idCartRule, int $idLang, int $idShop): ?array
+    {
+        $row = Db::getInstance()->getRow(
+            'SELECT cr.*, ' . SomcpToolListCartRules::timesUsed() . ' AS `times_used`
+             FROM `' . _DB_PREFIX_ . 'cart_rule` cr
+             WHERE cr.`id_cart_rule` = ' . (int) $idCartRule . ' AND ' . SomcpToolListCartRules::inShop($idShop)
+        );
+
+        return is_array($row) && $row !== [] ? self::cartRule($row, $idLang, $idShop) : null;
     }
 
     /**

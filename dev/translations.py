@@ -2443,6 +2443,18 @@ T = {
  "Lire les paniers abandonnés, les recherches, les produits consultés et les promotions",
  "Leer los carritos abandonados, las búsquedas, los productos vistos y las promociones",
  "Verlassene Warenkörbe, Suchanfragen, angesehene Produkte und Aktionen lesen"),
+"Create a cart rule": (
+ "Créer une règle panier",
+ "Crear una regla de carrito",
+ "Eine Warenkorbregel erstellen"),
+"Sales - changes": (
+ "Ventes - modifications",
+ "Ventas - cambios",
+ "Verkauf - Änderungen"),
+"Create and change cart rules and catalogue price rules": (
+ "Créer et modifier les règles panier et les règles de prix catalogue",
+ "Crear y modificar las reglas de carrito y las reglas de precios del catálogo",
+ "Warenkorbregeln und Katalogpreisregeln erstellen und ändern"),
 "Boost sales": (
  "Booster les ventes",
  "Impulsar las ventas",

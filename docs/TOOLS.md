@@ -3752,35 +3752,50 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 - No difference between 8.0.1 and 9.0.0 apart from the type of `description` (`text` / `mediumtext`).
 
 #### `somcp_create_cart_rule`
-**State**: to write · [issue #107](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/107)
+**State**: written · [issue #107](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/107)
 **Nature**: `acts(ADD, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
 
-**Does** - creates one cart rule: a voucher code or an automatic discount.
+**Does** - creates one cart rule - a voucher the customer types, or a discount applied on its own - with the fields of the **Information**, **Conditions** and **Actions** tabs of **Catalog > Discounts > Cart Rules > Add new**, restrictions apart.
 
-**Do not use for** - changing a rule (→ `somcp_update_cart_rule`), or a discount on products in the catalogue (→ `somcp_create_catalog_price_rule`).
+**Do not use for** - changing a rule (→ `somcp_update_cart_rule`), switching it on (→ `somcp_set_cart_rule_active`), a discount on products of the catalogue (→ `somcp_create_catalog_price_rule`), a discount on one order already placed (→ `somcp_add_order_discount`).
 
-**Parameters**
+**Parameters** - the names and shapes `somcp_get_cart_rule` returns, so a rule read there can be given back.
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `name` | object | yes | per ISO code, shown to the customer |
-| `code` | string | no | empty for an automatic rule; refused if another rule has it |
-| `date_from` / `date_to` | string | yes | `YYYY-MM-DD HH:MM:SS` |
-| `reduction_percent` / `reduction_amount` | number | no | one of the two, or `free_shipping` |
-| `reduction_tax` | boolean | no | whether an amount includes tax |
-| `reduction_currency` | string | no | ISO code of an amount |
-| `free_shipping` | boolean | no |  |
-| `minimum_amount` | number | no | with `minimum_amount_tax` and `minimum_amount_currency` |
-| `quantity` / `quantity_per_user` | integer | no | 1 each by default |
-| `reduction_product` | integer | no | apply to one product only |
-| `id_customer` | integer | no | a rule for one customer |
-| `active` | boolean | no | false by default: the merchant switches it on |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages` | | array | no | ISO codes of the languages to fill (#149), all active ones by default; a language left out takes the default one's name |
+| `name` | **Name** | object | yes | per ISO code, shown to the customer; 254 characters at most, `CartRule` validation |
+| `description` | **Description** | string | no | for the merchant only, empty by default |
+| `code` | **Code** | string | no | empty: the rule applies on its own to every cart that meets the conditions; refused if another rule of any shop has it; 254 characters at most |
+| `highlight` | **Highlight** | boolean | no | false by default |
+| `partial_use` | **Partial use** | boolean | no | true by default, as the form |
+| `priority` | **Priority** | integer | no | 1 by default, 1 at least |
+| `active` | **Status** | boolean | no | **false by default**, unlike the form: the merchant switches it on after reading it |
+| `id_customer` | **Limit to a single customer** | integer or null | no | from `somcp_search_customers`; left out or `null`: everyone |
+| `date_from` / `date_to` | **Valid** **From** / **To** | string | no | ISO 8601 as `somcp_get_cart_rule` returns it, or `YYYY-MM-DD HH:MM:SS`, shop time; now and now plus one month by default, as the form |
+| `minimum_amount` | **Minimum amount** | object or null | no | `{"value", "currency", "tax_included", "shipping_included"}`; `currency` an ISO code of an active currency of the shop, the default one when left out |
+| `quantity` / `quantity_per_user` | **Total available** / **Total available for each user** | integer | no | 1 each by default, 0 at least |
+| `free_shipping` | **Free shipping** | boolean | no | false by default |
+| `reduction` | **Apply a discount** | object or null | no | `{"type": "percent", "value": 10}` or `{"type": "amount", "value": 5, "currency": "EUR", "tax_included": true}`, with `id_product` for a specific product, as `somcp_get_cart_rule`; `null`: **None** |
+| `reduction_applies_to` | **Apply a discount to** | string or object | no | `order` (default), `specific_product`, `cheapest_product` or `selected_products`, the string `somcp_get_cart_rule` returns; `{"type": "specific_product", "id_product": 12}` also accepted; the last two refused with an `amount` |
+| `reduction_exclude_special` | **Exclude discounted products** | boolean | no | false by default; only with a `percent` |
+| `gift` | **Send a free gift** | object or null | no | `{"id_product", "id_product_attribute"}` (`name`, as read, is ignored); the combination required when the product has some, refused when it has none |
 
-**Returns** - `created`, `id_cart_rule`, and the rule as `somcp_get_cart_rule` returns it.
+`id_cart_rule`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are refused as worked out by the shop; `restrictions` is refused unless every one of them is `null`.
+
+**Returns** - `created: true`, `id_cart_rule`, and `cart_rule` as `somcp_get_cart_rule` returns it, read back with its function (`SomcpToolGetCartRule::byId()`), names in the default language.
+
+**Errors** - in the shape of #169 (`Nothing was created. Correct these and call again:` then one line per problem), every problem found before anything is written: unknown arguments; the checks of `AdminCartRulesController::postProcess()` with the core's wording, under their field: **The voucher cannot end before it begins.** (`date_to`), **The minimum amount cannot be lower than zero.** (`minimum_amount.value`), **Reduction percentage must be between 0% and 100%** and **Reduction amount cannot be lower than zero.** (`reduction.value`), **This cart rule code is already used** (`code`), **An action is required for this cart rule.** (`reduction`), **Product with required customization fields cannot be used as a gift.** (`gift.id_product`); an unknown customer, product or combination (`<path>: no <thing> of this shop has the identifier <n> - find it with <tool>`); an unknown or inactive currency; a language of #149.
 
 **Notes**
-- Written through `CartRule`, so hooks fire. Product, category, carrier and country restrictions are not set by this tool in its first version: the answer says so when asked, and the back office remains the place for them.
-- Created inactive by default, so a rule never reaches customers before the merchant has seen it.
+- Written through `CartRule::add()`, so `actionObjectCartRuleAddAfter` fires, as in the back office. The checks live in one protected function, `SomcpToolCreateCartRule::planRule()`, that `somcp_update_cart_rule` extends.
+- Then the rows `AdminCartRulesController::afterAdd()` writes and `CartRule::add()` does not, with `Db::insert` as the controller (these tables have no ObjectModel), only once `add()` succeeded: for **Specific product**, that product in **Product selection** (one group, quantity 1, type `products`) and `product_restriction = 1`, so the rule only applies to carts that hold it; on a multistore, a `cart_rule_shop` row for the token's shop and `shop_restriction = 1`; and the new rule on the white list of every rule with `cart_rule_restriction = 1`, as the form does on every save. If one of them fails, the rule is deleted again and nothing is kept.
+- **Restrictions** (**Country selection**, **Carrier selection**, **Customer group selection**, **Compatibility with other cart rules**, **Product selection** beyond the automatic one, **Store selection**) are not set by this tool: the description points to the back office.
+- Not to be retried blindly: if the answer is lost, look for the rule with `somcp_list_cart_rules` (`code`, or `name`) before calling again.
+
+**Differences between 8.0.1 and 9.0.0**
+- 9.0.0 refuses a gift product with required customization fields; 8.0.1 saves it. The tool refuses it on both versions, with the 9.0.0 wording.
+- The same form fields and table on both, apart from the type of `description` (`text` / `mediumtext`).
 
 #### `somcp_update_cart_rule`
 **State**: to write · [issue #108](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/108)

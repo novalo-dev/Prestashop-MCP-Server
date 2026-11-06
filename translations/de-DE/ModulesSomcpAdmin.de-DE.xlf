@@ -3077,6 +3077,21 @@
       <source>Read abandoned carts, searches, product views and promotions</source>
       <target>Verlassene Warenkörbe, Suchanfragen, angesehene Produkte und Aktionen lesen</target>
     </trans-unit>
+    <!-- Create a cart rule -->
+    <trans-unit id="ad22230dddf1a9a1753321aec746efdb" resname="Create a cart rule">
+      <source>Create a cart rule</source>
+      <target>Eine Warenkorbregel erstellen</target>
+    </trans-unit>
+    <!-- Sales - changes -->
+    <trans-unit id="a1be5de2a33a782765a42196dbdc0c93" resname="Sales - changes">
+      <source>Sales - changes</source>
+      <target>Verkauf - Änderungen</target>
+    </trans-unit>
+    <!-- Create and change cart rules and catalogue price rules -->
+    <trans-unit id="ede39df57c93ea16375416f4c34e850d" resname="Create and change cart rules and catalogue price rules">
+      <source>Create and change cart rules and catalogue price rules</source>
+      <target>Warenkorbregeln und Katalogpreisregeln erstellen und ändern</target>
+    </trans-unit>
     <!-- Boost sales -->
     <trans-unit id="8c883385a642028c9366bb087618b216" resname="Boost sales">
       <source>Boost sales</source>

@@ -100,6 +100,7 @@ class SomcpGuard
     public static function challenge(): string
     {
         self::dependencies();
+
         $challenge = self::altcha()->createChallenge(new AltchaOrg\Altcha\CreateChallengeOptions(
             algorithm: new AltchaOrg\Altcha\Algorithm\Pbkdf2(),
             cost: self::CAPTCHA_COST,
@@ -127,6 +128,7 @@ class SomcpGuard
         }
 
         self::dependencies();
+
         try {
             $parsed = AltchaOrg\Altcha\Payload::fromBase64($payload);
             $result = self::altcha()->verifySolution(new AltchaOrg\Altcha\VerifySolutionOptions(
@@ -197,6 +199,7 @@ class SomcpGuard
     private static function limiter(string $what, int $hits, int $seconds): Novalo\Somcp\Security\DbRateLimiter
     {
         self::dependencies();
+
         return new Novalo\Somcp\Security\DbRateLimiter(RateLimit\Rate::custom($hits, $seconds), $what);
     }
 

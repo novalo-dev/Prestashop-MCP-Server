@@ -284,14 +284,17 @@ await check('connect an assistant through the sign-in page', async () => {
         throw new Error('the consent page does not show where the answer goes');
     }
 
-    // The assistant's own address is not listening here: the request the
-    // browser makes to it is the answer, and is caught rather than waited on.
-    const [toAssistant] = await Promise.all([
-        page.waitForRequest((request) => request.url().startsWith(callback), { timeout: 15000 }),
+    // The answer to the consent form is the redirect to the assistant, read
+    // from the response itself: the assistant's own address is not listening
+    // here, and Firefox does not report the request it never manages to send.
+    const [answer] = await Promise.all([
+        page.waitForResponse((response) => response.request().method() === 'POST'
+            && /authorize/.test(response.url()), { timeout: 15000 }),
         page.locator('button[name="decision"][value="allow"]').click({ noWaitAfter: true }),
     ]);
-    if (!new URL(toAssistant.url()).searchParams.get('code')) {
-        throw new Error(`the assistant got no code: ${toAssistant.url()}`);
+    const location = answer.headers().location || '';
+    if (answer.status() !== 302 || !location.startsWith(callback) || !new URL(location).searchParams.get('code')) {
+        throw new Error(`the assistant got no code: ${answer.status()} ${location}`);
     }
 });
 

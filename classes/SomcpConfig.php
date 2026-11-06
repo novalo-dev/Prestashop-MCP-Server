@@ -132,6 +132,9 @@ class SomcpConfig
     /** @var string Secret the anti-robot challenges of the authorization page are signed with. */
     public const CAPTCHA_KEY = 'SOMCP_CAPTCHA_KEY';
 
+    /** @var string Secret the diagnostic signs its visit of the authorization page with. */
+    public const PROBE_KEY = 'SOMCP_PROBE_KEY';
+
     /** @var string Path of the module inside the shop, used as the issuer suffix. */
     public const ISSUER_PATH = 'module/somcp';
 
@@ -184,6 +187,7 @@ class SomcpConfig
             // first time it signs anything.
             self::STATE_KEY => '',
             self::CAPTCHA_KEY => '',
+            self::PROBE_KEY => '',
         ];
     }
 

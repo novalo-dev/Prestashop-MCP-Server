@@ -52,6 +52,9 @@ class SomcpGuard
         'register' => [10, 3600],
     ];
 
+    /** @var int Seconds a diagnostic visit of the authorization page stays valid. */
+    private const PROBE_TTL = 60;
+
     /** @var int PBKDF2 iterations per attempt of the anti-robot challenge. */
     private const CAPTCHA_COST = 1000;
 
@@ -112,6 +115,38 @@ class SomcpGuard
     }
 
     /**
+     * A short-lived pass the diagnostic opens the authorization page with.
+     *
+     * Without a request that page is the shop's "page not found", like every
+     * other address of the module; the pass is what lets the diagnostic still
+     * see the module's own page and tell it apart from one another module
+     * serves in its place. Only the shop can write it.
+     *
+     * @return string
+     */
+    public static function probe(): string
+    {
+        $expires = (string) (time() + self::PROBE_TTL);
+
+        return $expires . '.' . hash_hmac('sha256', 'probe|' . $expires, self::probeKey());
+    }
+
+    /**
+     * @param string $pass what the visit carried
+     *
+     * @return bool
+     */
+    public static function isProbe(string $pass): bool
+    {
+        $parts = explode('.', $pass, 2);
+        if (count($parts) !== 2 || !ctype_digit($parts[0]) || (int) $parts[0] < time()) {
+            return false;
+        }
+
+        return hash_equals(hash_hmac('sha256', 'probe|' . $parts[0], self::probeKey()), $parts[1]);
+    }
+
+    /**
      * Whether the visitor solved a challenge of this shop, and solved it now.
      *
      * Each challenge is accepted once: a solution that passed is remembered
@@ -169,6 +204,22 @@ class SomcpGuard
         if (is_file($autoload)) {
             require_once $autoload;
         }
+    }
+
+    /**
+     * Its own key, like the other secrets the module seeds, minted on first use.
+     *
+     * @return string
+     */
+    private static function probeKey(): string
+    {
+        $key = (string) Configuration::get(SomcpConfig::PROBE_KEY);
+        if ($key === '') {
+            $key = SomcpRandom::token(32);
+            Configuration::updateValue(SomcpConfig::PROBE_KEY, $key, false, 0, 0);
+        }
+
+        return $key;
     }
 
     /**

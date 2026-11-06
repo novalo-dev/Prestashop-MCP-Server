@@ -192,7 +192,9 @@ so you can reword it.
 assistants and for O'So AI Relay (sign-in tokens, discovery documents, relay)
 now show the shop's ordinary "page not found" when someone opens them in a
 browser, as the main assistant address already did. Assistants and the relay
-are not affected.
+are not affected. The page where you approve an assistant does the same when it
+is opened without a real connection request - by hand, for an unknown
+application or with a return address off the list.
 
 ## 1.2.2 - 2026-11-05
 

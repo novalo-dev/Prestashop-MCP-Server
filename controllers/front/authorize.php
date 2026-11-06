@@ -79,11 +79,16 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     }
 
     /**
-     * Validates a new request before the shop page is set up.
+     * Decides, before the shop page is set up, whether this visit gets the
+     * module's page at all.
      *
-     * A return address on a host the merchant has not allowed gets the
-     * shop's "page not found", and that page can only be produced before the
-     * parent init (see SomcpHttp::notFoundPage()).
+     * Only a connection request an assistant really made, or the rest of one
+     * already started in this browser, does. Anything else - the address
+     * opened by hand, an unknown application, a return address off the list -
+     * gets the shop's "page not found", like every other address of the
+     * module, so nothing confirms the module is there. That page can only be
+     * produced before the parent init (see SomcpHttp::notFoundPage()). The
+     * diagnostic carries a pass of the shop's own to see the page anyway.
      */
     public function init()
     {
@@ -91,31 +96,65 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
         $this->open = SomcpConfig::isOn(SomcpConfig::ENABLED) && SomcpConfig::isOn(SomcpConfig::OAUTH_ENABLED);
 
-        if ($this->open && !$this->isPost()) {
-            $this->query = [
-                'client_id' => (string) Tools::getValue('client_id', ''),
-                'redirect_uri' => (string) Tools::getValue('redirect_uri', ''),
-                'response_type' => (string) Tools::getValue('response_type', ''),
-                'scope' => (string) Tools::getValue('scope', ''),
-                'state' => (string) Tools::getValue('state', ''),
-                'code_challenge' => (string) Tools::getValue('code_challenge', ''),
-                'code_challenge_method' => (string) Tools::getValue('code_challenge_method', ''),
-                'resource' => (string) Tools::getValue('resource', ''),
-            ];
-            $this->check = SomcpOAuthServer::validateAuthorizationRequest($this->query);
-
-            if ($this->check['hidden']) {
-                SomcpLogger::log(
-                    'redirect_host_refused',
-                    SomcpLogger::OUTCOME_FAILURE,
-                    'return address host is not allowed: ' . Tools::substr((string) parse_url($this->query['redirect_uri'], PHP_URL_HOST), 0, 100),
-                    $this->query['client_id']
-                );
-                SomcpHttp::notFoundPage();
-            }
+        if (!$this->isPost() && !SomcpGuard::isProbe((string) Tools::getValue('somcp_probe', '')) && !$this->isRealVisit()) {
+            SomcpHttp::notFoundPage();
         }
 
         parent::init();
+    }
+
+    /**
+     * Whether a GET comes from an assistant's request or from a sign-in in
+     * progress. Sets the request check initContent() goes on with.
+     */
+    private function isRealVisit(): bool
+    {
+        if (!$this->open) {
+            return false;
+        }
+
+        $this->query = [
+            'client_id' => (string) Tools::getValue('client_id', ''),
+            'redirect_uri' => (string) Tools::getValue('redirect_uri', ''),
+            'response_type' => (string) Tools::getValue('response_type', ''),
+            'scope' => (string) Tools::getValue('scope', ''),
+            'state' => (string) Tools::getValue('state', ''),
+            'code_challenge' => (string) Tools::getValue('code_challenge', ''),
+            'code_challenge_method' => (string) Tools::getValue('code_challenge_method', ''),
+            'resource' => (string) Tools::getValue('resource', ''),
+        ];
+
+        if ($this->query['client_id'] === '') {
+            // A reload, or the page reached from history: the cookie says
+            // where the visitor was.
+            return SomcpOAuthServer::loadPendingRequest($this->requestSecret()) !== null;
+        }
+
+        $this->check = SomcpOAuthServer::validateAuthorizationRequest($this->query);
+        if ($this->check['hidden']) {
+            SomcpLogger::log(
+                'redirect_host_refused',
+                SomcpLogger::OUTCOME_FAILURE,
+                'return address host is not allowed: ' . Tools::substr((string) parse_url($this->query['redirect_uri'], PHP_URL_HOST), 0, 100),
+                $this->query['client_id']
+            );
+
+            return false;
+        }
+        if (!$this->check['ok'] && !$this->check['redirectable']) {
+            // Nothing can be sent back to an address that was not verified as
+            // the client's, and nothing is shown either: the reason is logged.
+            SomcpLogger::log(
+                'authorization_refused',
+                SomcpLogger::OUTCOME_FAILURE,
+                $this->check['error'] . ': ' . $this->check['description'],
+                $this->query['client_id']
+            );
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

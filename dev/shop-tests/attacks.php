@@ -288,22 +288,35 @@ if (stripos($location, 'attacker.example') !== false) {
 } else {
     echo "  ok    sign-in page with an unregistered redirect address ({$authorize['status']}, not sent there)\n";
 }
+$expect('sign-in page with an unregistered redirect address', $authorize, 404);
+// Opened by hand, the address is a dead link like any other: nothing says the
+// module is there. The diagnostic's pass, which only the shop can write, is
+// what still shows the module's page - and a forged or stale one does not.
+$expect('sign-in page opened with no request', $http('GET', $endpoint('authorize'), ['Accept: text/html']), 404);
+$pass = SomcpGuard::probe();
+$stale = (string) (time() - 1);
+$staleSignature = hash_hmac('sha256', 'probe|' . $stale, (string) Configuration::get(SomcpConfig::PROBE_KEY));
+$withPass = static function (string $pass) use ($http, $endpoint): array {
+    return $http('GET', $endpoint('authorize', 'somcp_probe=' . rawurlencode($pass)), ['Accept: text/html']);
+};
+$expect('sign-in page opened with a forged diagnostic pass', $withPass((time() + 60) . '.' . str_repeat('0', 64)), 404);
+$expect('sign-in page opened with an expired diagnostic pass', $withPass($stale . '.' . $staleSignature), 404);
+$probed = $withPass($pass);
+// The diagnostic's Sign-in page line looks for this marker: if the template
+// loses it, every shop reports a false error.
 ++$checks;
-if (strtoupper($authorize['headers']['x-frame-options'] ?? '') !== 'DENY') {
+if ($probed['status'] !== 200 || strpos($probed['body'], 'id="somcp-authorize"') === false) {
+    $failures[] = 'the sign-in page opened with the diagnostic pass does not show the module page: ' . $probed['status'];
+    echo "  FAIL  sign-in page opened with the diagnostic pass ({$probed['status']})\n";
+} else {
+    echo "  ok    sign-in page opened with the diagnostic pass\n";
+}
+++$checks;
+if (strtoupper($probed['headers']['x-frame-options'] ?? '') !== 'DENY') {
     $failures[] = 'sign-in page can be shown inside a frame by another site (no X-Frame-Options: DENY)';
     echo "  FAIL  sign-in page refuses to be framed\n";
 } else {
     echo "  ok    sign-in page refuses to be framed\n";
-}
-// The diagnostic's Sign-in page line opens the address the same way and looks
-// for this marker: if the template loses it, every shop reports a false error.
-$bare = $http('GET', $endpoint('authorize'));
-++$checks;
-if ($bare['status'] !== 200 || strpos($bare['body'], 'id="somcp-authorize"') === false) {
-    $failures[] = 'the sign-in page opened with no request does not show the module page the diagnostic looks for: ' . $bare['status'];
-    echo "  FAIL  sign-in page opened with no request, as the diagnostic does ({$bare['status']})\n";
-} else {
-    echo "  ok    sign-in page opened with no request, as the diagnostic does\n";
 }
 $expect('client registering a plain-http address on the internet', $http('POST', $endpoint('oauth', 'a=register'), $json, (string) json_encode([
     'client_name' => 'Attack test',

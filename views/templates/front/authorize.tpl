@@ -29,68 +29,75 @@
         --side-muted: #a7a9a6; --side-faint: #6f7476; }
     @media (prefers-color-scheme: dark) { :root { --fg: #f1efe9; --text: #c9c7c1; --muted: #9a9d9f; --bg: #161b21; --field: #1d242c; --line: #343c46; --rule: #262e37; --bar: #1b2128; --accent-bg: #3a221b; } }
     * { box-sizing: border-box; }
-    html, body { margin: 0; height: 100%; }
-    body { background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-    #somcp-authorize { display: grid; grid-template-columns: minmax(360px, 40%) 1fr; min-height: 100%; }
-    .side { background: var(--ink); color: var(--cream); padding: 48px 56px; display: flex; flex-direction: column; gap: 40px; }
-    .brand { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; }
-    .brand img { width: 36px; height: 36px; border-radius: 7px; display: block; }
-    .side h1 { margin: 0; font-size: 34px; line-height: 1.2; font-weight: 700; letter-spacing: -.02em; }
-    .side .lead { margin: 14px 0 0; color: var(--side-muted); font-size: 16px; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body { background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    {* The page never scrolls as a whole: it fills the window, and only the
+       list of permissions scrolls, so the answer buttons are always in sight. *}
+    #somcp-authorize { display: grid; grid-template-columns: minmax(320px, 34%) 1fr; height: 100vh; height: 100dvh; }
+    .side { background: var(--ink); color: var(--cream); padding: 24px 32px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
+    .brand img { width: 28px; height: 28px; border-radius: 6px; display: block; }
+    .side h1 { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 700; }
+    .side .lead { margin: 6px 0 0; color: var(--side-muted); }
     .side .lead strong { color: var(--cream); }
-    .side .shop { margin-top: auto; font-size: 13px; color: var(--side-faint); }
-    .host { border-left: 4px solid var(--accent); padding: 4px 0 4px 20px; color: var(--side-muted); font-size: 13px; }
-    .host strong { display: block; margin: 6px 0 10px; color: var(--cream); font: 700 40px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: -.02em; word-break: break-all; }
-    .host span { display: block; color: var(--accent-soft); font-size: 13.5px; }
-    .details { display: grid; grid-template-columns: auto 1fr; gap: 10px 24px; margin: 0; font-size: 14.5px; }
+    .side .shop { margin-top: auto; font-size: 12px; color: var(--side-faint); }
+    .host { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; color: var(--side-muted); font-size: 12.5px; }
+    .host strong { display: block; margin: 2px 0 4px; color: var(--cream); font: 700 26px/1.15 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    .host span { display: block; color: var(--accent-soft); }
+    .details { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; font-size: 13px; }
     .details dt { color: var(--side-muted); }
-    .details dd { margin: 0; font-weight: 600; word-break: break-all; }
+    .details dd { margin: 0; font-weight: 600; overflow-wrap: break-word; min-width: 0; }
     .details small { display: block; font-weight: 400; color: var(--side-muted); }
-    code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 400; }
-    .main { display: flex; align-items: center; padding: 48px 96px; }
-    .main > div { width: 100%; max-width: 440px; }
-    .main h2 { margin: 0; font-size: 26px; font-weight: 700; }
-    .main p { color: var(--text); }
-    .refused { padding: 12px 16px; border-radius: 6px; background: var(--accent-bg); border-left: 4px solid var(--accent); color: var(--fg); }
-    form.signin { margin-top: 28px; display: flex; flex-direction: column; gap: 18px; }
-    label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-    input[type=email], input[type=password] { width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
+    {* Only addresses and identifiers may break anywhere: they have no words. *}
+    code { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+    .main { display: flex; align-items: center; padding: 24px 48px; overflow-y: auto; }
+    .main > div { width: 100%; max-width: 400px; }
+    .main h2 { margin: 0; font-size: 20px; font-weight: 700; }
+    .main p { margin: 6px 0 0; color: var(--text); }
+    .refused { padding: 8px 12px; border-radius: 6px; background: var(--accent-bg); border-left: 3px solid var(--accent); color: var(--fg); }
+    form.signin { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    input[type=email], input[type=password] { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--fg); font: inherit; font-size: 15px; }
     input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(213, 93, 62, .18); }
     {* The widget's own look, set through the variables it reads. *}
     altcha-widget { --altcha-max-width: 100%; --altcha-border-radius: 6px; --altcha-border-color: var(--line); --altcha-color-base: var(--field);
         --altcha-color-base-content: var(--fg); --altcha-color-primary: var(--accent); --altcha-checkbox-border-color: var(--line); }
-    button { font: inherit; font-size: 15.5px; font-weight: 650; height: 50px; padding: 0 20px; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--fg); background: transparent; color: var(--fg); }
+    button { font: inherit; font-size: 14.5px; font-weight: 650; height: 42px; padding: 0 16px; border-radius: 6px; cursor: pointer; border: 1.5px solid var(--fg); background: transparent; color: var(--fg); white-space: nowrap; }
     button.primary { border-color: var(--accent); background: var(--accent); color: #fff; }
-    .signin button { width: 100%; }
-    .consent { display: flex; flex-direction: column; height: 100vh; }
-    .consent header { padding: 48px 72px 16px; border-bottom: 1px solid var(--rule); }
-    .consent .list { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 72px 24px; }
+    .signin button { width: 100%; margin-top: 4px; }
+    .consent { display: flex; flex-direction: column; min-height: 0; }
+    .consent header { padding: 20px 40px 10px; border-bottom: 1px solid var(--rule); }
+    .consent h2 { margin: 0; font-size: 18px; }
+    .consent .list { flex: 1; min-height: 0; overflow-y: auto; padding: 0 40px 12px; }
     .consent ul { list-style: none; margin: 0; padding: 0; }
-    .consent .list p { margin: 18px 0 0; font-size: 13.5px; max-width: 640px; }
-    .consent li { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
-    .consent li svg { flex: none; width: 34px; height: 34px; padding: 8px; border-radius: 8px; background: var(--rule); color: var(--muted); }
+    .consent .list p { margin: 12px 0 0; font-size: 12.5px; color: var(--text); }
+    .consent li { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule); }
+    .consent li svg { flex: none; width: 26px; height: 26px; padding: 5px; border-radius: 6px; background: var(--rule); color: var(--muted); }
     .consent li.write svg { background: var(--accent-bg); color: var(--accent); }
-    .consent li strong { display: block; font-size: 14.5px; }
-    .consent li span { color: var(--text); font-size: 14px; }
-    .consent footer { flex: none; padding: 18px 72px 24px; border-top: 1px solid var(--rule); background: var(--bar); }
-    .consent form { display: flex; gap: 14px; max-width: 520px; }
+    .consent li strong { display: block; font-size: 13.5px; }
+    .consent li span { color: var(--text); font-size: 13px; }
+    .consent footer { flex: none; padding: 12px 40px; border-top: 1px solid var(--rule); background: var(--bar); }
+    .consent form { display: flex; gap: 10px; max-width: 460px; }
     .consent form button { flex: 1; }
-    .message { font-size: 17px; }
+    .message { font-size: 15px; }
     @media (max-width: 900px) {
-        #somcp-authorize { display: block; }
-        .side { padding: 22px 22px 28px; gap: 24px; }
-        .side h1 { font-size: 25px; }
-        .side .shop { display: none; }
-        .host strong { font-size: 28px; }
-        .main { display: block; padding: 28px 22px 40px; }
+        #somcp-authorize { display: flex; flex-direction: column; }
+        .side { flex: none; padding: 14px 16px; gap: 10px; }
+        .side .lead, .side .shop { display: none; }
+        .side h1 { font-size: 17px; }
+        .host strong { font-size: 20px; }
+        {* On a phone the summary keeps at most a third of the screen, so the
+           list below it always has room. *}
+        #somcp-authorize[data-somcp-state=consent] .side { max-height: 36dvh; }
+        .main { flex: 1; min-height: 0; display: block; padding: 16px; }
         .main > div { max-width: none; }
-        .main h2 { font-size: 21px; }
-        .consent { height: auto; }
-        .consent header { padding: 22px 22px 8px; border: 0; }
-        .consent .list { overflow: visible; padding: 0 22px 16px; }
-        .consent form button { padding: 0 8px; font-size: 14px; white-space: nowrap; }
-        {* The answer buttons stay in reach while the list is scrolled. *}
-        .consent footer { position: sticky; bottom: 0; padding: 14px 22px 20px; box-shadow: 0 -6px 16px rgba(15, 20, 25, .08); }
+        .main h2 { font-size: 17px; }
+        .consent { flex: 1; }
+        .consent header { padding: 12px 16px 6px; }
+        .consent h2 { font-size: 16px; }
+        .consent .list { padding: 0 16px 10px; }
+        .consent footer { padding: 10px 16px 14px; }
+        .consent form button { padding: 0 8px; font-size: 13.5px; }
     }
 </style>
 </head>
@@ -108,6 +115,14 @@
             {/if}
         </div>
 
+        {if $somcp_state != 'message'}
+            <div class="host" id="somcp-return-host">
+                {$somcp_text.return_to|escape:'html':'UTF-8'}
+                <strong>{$somcp.return_host|escape:'html':'UTF-8'}</strong>
+                <span>{$somcp_text.return_check|escape:'html':'UTF-8'}</span>
+            </div>
+        {/if}
+
         {if $somcp_state == 'consent'}
             <dl class="details">
                 <dt>{$somcp_text.application|escape:'html':'UTF-8'}</dt>
@@ -121,14 +136,6 @@
                 <dt>{$somcp_text.sent_back|escape:'html':'UTF-8'}</dt>
                 <dd><code>{$somcp.redirect_uri|escape:'html':'UTF-8'}</code></dd>
             </dl>
-        {/if}
-
-        {if $somcp_state != 'message'}
-            <div class="host" id="somcp-return-host">
-                {$somcp_text.return_to|escape:'html':'UTF-8'}
-                <strong>{$somcp.return_host|escape:'html':'UTF-8'}</strong>
-                <span>{$somcp_text.return_check|escape:'html':'UTF-8'}</span>
-            </div>
         {/if}
 
         <div class="shop">{$somcp_shop_name|escape:'html':'UTF-8'}</div>

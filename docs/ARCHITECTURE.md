@@ -28,9 +28,11 @@ RFC 8414 anchors the authorization server document at the **domain root**. somcp
 puts it there through the `moduleRoutes` hook, which needs friendly URLs, and a
 shop installed in a subfolder cannot serve it at all. The diagnostic in the
 settings calls each address for real and says which one fails. It also opens the
-authorization endpoint with no request, which only shows a message, and checks
-that the module's page answers: a module that redirects visitors without an
-account would otherwise leave the employee unable to approve anything.
+authorization endpoint with no request and checks that the module's page
+answers: a module that redirects visitors without an account would otherwise
+leave the employee unable to approve anything. Opened that way by anyone else,
+the endpoint is the shop's "page not found"; the diagnostic carries a pass
+signed with `SOMCP_PROBE_KEY`, valid one minute (`SomcpGuard::probe()`).
 
 These addresses opt out of maintenance mode: maintenance hides the storefront
 from visitors, and these belong to the merchant.

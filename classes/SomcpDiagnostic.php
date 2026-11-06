@@ -463,8 +463,9 @@ class SomcpDiagnostic
      * Opens the page where an employee signs in to connect an assistant, the
      * way a browser does, and checks that the module's own page answers.
      *
-     * Called without a request, the page only says the request is not valid:
-     * nothing is parked, nothing is counted against the attempt limit. What
+     * Called with the diagnostic's pass and no request, the page only says the
+     * request is not valid: nothing is parked, nothing is counted against the
+     * attempt limit. What
      * this catches is another module answering in its place - one that sends
      * every visitor without an account to a login, an age check or a country
      * page - which leaves the assistant waiting on a page the merchant never
@@ -479,7 +480,8 @@ class SomcpDiagnostic
     {
         $url = SomcpConfig::authorizationEndpoint($shop);
         $label = $module->l10n('Sign-in page');
-        $response = SomcpHttp::fetch($url, false);
+        // With the pass, or the module's page would be the shop's 404 too.
+        $response = SomcpHttp::fetch($url . '?somcp_probe=' . rawurlencode(SomcpGuard::probe()), false);
 
         if ($response['status'] >= 300 && $response['status'] < 400) {
             return self::line(

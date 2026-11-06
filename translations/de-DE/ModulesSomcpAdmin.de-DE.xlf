@@ -3042,6 +3042,11 @@
       <source>List abandoned carts</source>
       <target>Verlassene Warenkörbe auflisten</target>
     </trans-unit>
+    <!-- List cart rules -->
+    <trans-unit id="f732bccbf781bb0d2aea4ee74c0fb5e1" resname="List cart rules">
+      <source>List cart rules</source>
+      <target>Warenkorbregeln auflisten</target>
+    </trans-unit>
     <!-- List shop search terms -->
     <trans-unit id="5cce1729418b2a496f4a0c8c5e7ade72" resname="List shop search terms">
       <source>List shop search terms</source>

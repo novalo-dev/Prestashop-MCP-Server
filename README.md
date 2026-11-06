@@ -370,6 +370,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_search_terms` | ● List shop search terms | Stats › view |
 | `somcp_list_viewed_not_sold` | ● List products viewed but not sold | Stats › view |
 | `somcp_list_unsold_products` | ● List products never purchased | Stats › view |
+| `somcp_list_cart_rules` | ● List cart rules | Cart Rules › view |
 
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
 language and currency it is connected to.

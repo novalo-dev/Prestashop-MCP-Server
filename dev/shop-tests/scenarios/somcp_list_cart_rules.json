@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "the cart rules of the shop, whatever the demo data holds on a fresh install", "arguments": {}, "expect": "ok", "contains": ["\"cart_rules\"", "\"returned\"", "\"total_count\"", "\"offset\": 0", "\"language\""]},
+    {"why": "only the vouchers that carry a code", "arguments": {"has_code": true}, "expect": "ok", "contains": ["\"cart_rules\""]},
+    {"why": "only the active rules, one page of five", "arguments": {"active": true, "limit": 5}, "expect": "ok", "contains": ["\"cart_rules\""]},
+    {"why": "only the rules valid right now", "arguments": {"current": true}, "expect": "ok", "contains": ["\"cart_rules\""]},
+    {"why": "a name no rule has: an empty list, not an error", "arguments": {"name": "Nozzzsuch Rule Somcp"}, "expect": "ok", "contains": ["\"total_count\": 0", "\"returned\": 0"]},
+    {"why": "rule names in a language asked by its ISO code", "arguments": {"language": "en", "offset": 0}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["language: not a language of this shop"]},
+    {"why": "an empty code is refused: the split between coded and uncoded rules is has_code", "arguments": {"code": ""}, "expect": "error", "contains": ["code: a piece of a code to look for"]},
+    {"why": "more than 100 rules at once is refused", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1}, "expect": "error", "contains": ["foo: not a field of this tool", "offset: a whole number, 0 at least"]}
+  ]
+}

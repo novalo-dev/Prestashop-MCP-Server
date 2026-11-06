@@ -3647,25 +3647,54 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 - No difference between 8.0.1 and 9.0.0 (`statscatalog` 2.0.4 on both).
 
 #### `somcp_list_cart_rules`
-**State**: to write · [issue #105](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/105)
+**State**: written · [issue #105](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/105)
 **Nature**: `acts(VIEW, 'AdminCartRules')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the cart rules (vouchers and automatic discounts) with their dates, code and use.
+**Does** - lists the cart rules of this shop - vouchers with a code and discounts applied on their own - newest first, as **Catalog > Discounts > Cart Rules**, with what each one gives in one line. Read only.
 
-**Do not use for** - reading one rule (→ `somcp_get_cart_rule`), or catalogue price rules (→ `somcp_list_catalog_price_rules`).
+**Do not use for** - one rule with its conditions (→ `somcp_get_cart_rule`); catalogue price rules (→ `somcp_list_catalog_price_rules`); the vouchers of one order (→ `somcp_get_order`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `active` | boolean | no |  |
-| `current` | boolean | no | only rules valid today |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `active` | boolean | no | the **Status** filter |
+| `name` | string | no | part of the **Name**, without case, in `language` |
+| `code` | string | no | part of the **Code**, without case; an empty code is refused (use `has_code`) |
+| `has_code` | boolean | no | true: vouchers the customer types a code for; false: rules applied on their own, with no code |
+| `current` | boolean | no | only the rules valid now: **Valid** **From**/**To** holds the shop's current time and **Quantity** is above 0 |
+| `language` | string | no | ISO code of one of the shop's active languages for `name` (#149); shop default when left out; unknown code refused |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per rule: `id_cart_rule`, `name`, `code`, `active`, `date_from`, `date_to`, `quantity` left, `reduction` (percent, amount with currency and tax, free shipping, gift product, summarised), `times_used`. Plus `total_count`.
+**Returns** - `cart_rules`, in the list's order (`id_cart_rule` descending, newest first), each with:
+
+| Field | Notes |
+|---|---|
+| `id_cart_rule` | **ID** |
+| `name` | **Name**, in `language` |
+| `priority` | **Priority** |
+| `code` | **Code**, empty string when none |
+| `quantity` | **Total available**: uses left, lowered at each order |
+| `quantity_per_user` | **Total available for each user** |
+| `date_from` / `date_to` | **Valid** **From**/**To** (**Expiration date** in the list), ISO 8601, empty string for no date |
+| `active` | **Status** |
+| `id_customer` | **Limit to a single customer**: the identifier `somcp_get_customer` takes, `null` when the rule is for everyone |
+| `free_shipping` | **Free shipping** |
+| `reduction` | **Apply a discount**: `{"type":"percent","value":10}`, or `{"type":"amount","value":5,"currency":"EUR","tax_included":true}`, plus `id_product` when it is a specific product; `null` for **None** |
+| `reduction_applies_to` | **Apply a discount to**: `order`, `specific_product`, `cheapest_product` or `selected_products` (`reduction_product` 0, above 0, -1, -2); `null` when `reduction` is `null` |
+| `gift` | **Send a free gift**: `{"id_product":...,"id_product_attribute":...}` or `null` |
+| `summary` | one English line built from the three above, e.g. `10% off the order, free shipping` |
+| `has_restrictions` | the restrictions that are on (`country`, `carrier`, `group`, `cart_rule`, `product`, `shop`), so the assistant knows when to read the rule with `somcp_get_cart_rule` |
+| `times_used` | orders that used the rule (`order_cart_rule`, not deleted), the use the screen does not show |
+| `returned`, `total_count`, `offset`, `language` | as `somcp_list_abandoned_carts` |
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; an empty `code`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `cart_rules: []`, `total_count: 0`.
 
 **Notes**
-- Only the rules this shop can use.
+- The back office list shows every shop's rules; the token's shop keeps the rules it can use (`shop_restriction = 0`, or a `cart_rule_shop` row for it).
+- `reduction`, `reduction_applies_to`, `gift` and `summary` are built by one shared method (`SomcpToolListCartRules::describe()`) that `somcp_get_cart_rule` (#106) calls, so a rule reads the same whichever tool reads it.
+- No minimum amount, restriction list or product selection here: they belong to `somcp_get_cart_rule`. Read only.
+- No difference between 8.0.1 and 9.0.0: the same legacy controller, list and `cart_rule` table on both.
 
 #### `somcp_get_cart_rule`
 **State**: to write · [issue #106](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/106)

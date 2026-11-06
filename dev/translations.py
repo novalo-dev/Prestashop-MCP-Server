@@ -2415,6 +2415,10 @@ T = {
  "Lister les paniers abandonnés",
  "Listar los carritos abandonados",
  "Verlassene Warenkörbe auflisten"),
+"List cart rules": (
+ "Lister les règles panier",
+ "Listar las reglas de carrito",
+ "Warenkorbregeln auflisten"),
 "List shop search terms": (
  "Lister les recherches de la boutique",
  "Listar las búsquedas de la tienda",

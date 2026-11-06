@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**List the shop's vouchers and cart discounts.** The new tool
+`somcp_list_cart_rules` lists the cart rules of **Catalog > Discounts > Cart
+Rules**, newest first, telling vouchers with a code from discounts applied on
+their own, with what each one gives in one line: the discount, free shipping,
+a free gift, how many uses are left, whether it has conditions to read, and
+the number of orders that already used it. Read only, the current shop's rules
+only. It joins the **Boost sales** prompt and needs the `view` right on **Cart
+Rules**.
+
 **Find the stock that never sells.** The new tool `somcp_list_unsold_products`
 lists the active products of the shop that no valid order bought, as
 **Products never purchased** on **Stats > Catalog statistics**, with what the

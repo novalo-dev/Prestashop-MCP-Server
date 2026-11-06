@@ -11,6 +11,7 @@ identifier, so the merchant can find it in the back office.
 - `somcp_list_search_terms`
 - `somcp_list_viewed_not_sold`
 - `somcp_list_unsold_products`
+- `somcp_list_cart_rules`
 
 ## Know which shop you are in
 
@@ -90,6 +91,23 @@ dates you used.
 3. **Say what the figures cover.** Orders are those of this shop only, and
    `last_sold` tells a product that sold long ago from one that never did.
    Setting a product offline or discounting it is the merchant's call.
+
+## Cart rules and vouchers
+
+1. **List them** with `somcp_list_cart_rules`, as **Catalog > Discounts > Cart
+   Rules**: vouchers with a code and discounts applied on their own, newest
+   first. `has_code` splits the two; `current: true` keeps only the rules valid
+   now (their period holds and they have uses left); `active`, `name` and
+   `code` filter as the list does.
+2. **Read what each one gives from `summary`**, the one line built from
+   `reduction`, `free_shipping` and `gift`. `reduction` is `null`, a percent,
+   or an amount with its `currency` and whether tax is in it; `reduction_applies_to`
+   says whether it lands on the order or a product. `times_used` is how many
+   orders already spent it.
+3. **Open a rule only when needed.** `has_restrictions` names the conditions a
+   rule carries (country, carrier, group, product); read the full rule with
+   `somcp_get_cart_rule` when one of them matters. This tool does not set a
+   rule on or off, nor create one.
 
 ## Never
 

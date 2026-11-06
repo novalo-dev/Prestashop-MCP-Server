@@ -191,7 +191,7 @@ class SomcpToolGenerateLlmsTxt
                     . 'overwrite set to true to replace it. Its current content is returned so the merchant can '
                     . 'see what would be lost.',
                 'previous_content' => $previous,
-            ], true);
+            ]);
         }
 
         $shop = Somcp::currentShop();

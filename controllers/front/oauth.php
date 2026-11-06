@@ -150,6 +150,13 @@ class SomcpOauthModuleFrontController extends ModuleFrontController
             SomcpHttp::json(['error' => 'access_denied', 'error_description' => 'registration is disabled'], 403);
         }
 
+        // Every attempt counts, the refused ones too: a script trying to fill
+        // the table is stopped whether or not its addresses pass.
+        if (!SomcpGuard::allow('register')) {
+            SomcpLogger::log('client_registration_throttled', SomcpLogger::OUTCOME_FAILURE);
+            SomcpHttp::json(['error' => 'too_many_requests', 'error_description' => 'too many registrations from this address, try again later'], 429, ['Retry-After' => '3600']);
+        }
+
         $metadata = json_decode((string) file_get_contents('php://input'), true);
         if (!is_array($metadata)) {
             SomcpHttp::json(['error' => 'invalid_client_metadata', 'error_description' => 'invalid JSON body'], 400);

@@ -45,6 +45,7 @@
     code { word-break: break-all; font-size: 13px; }
     .muted { color: var(--muted); }
     ul { padding-left: 20px; }
+    .captcha { margin-top: 16px; }
     h2.abilities { font-size: 16px; margin: 16px 0 4px; }
 </style>
 </head>
@@ -78,6 +79,15 @@
                     <input type="email" id="somcp_email" name="somcp_email" autocomplete="username" required>
                     <label for="somcp_password">{$somcp_text.password|escape:'html':'UTF-8'}</label>
                     <input type="password" id="somcp_password" name="somcp_password" autocomplete="current-password" required>
+                    {* The anti-robot check, served from the module itself: the
+                       challenge is written here rather than fetched, so the page
+                       makes no request of its own. *}
+                    <div class="captcha">
+                        <altcha-widget name="somcp_altcha"
+                                       challenge="{$somcp.challenge|escape:'html':'UTF-8'}"
+                                       language="{$somcp_lang|escape:'html':'UTF-8'}"
+                                       configuration="{literal}{&quot;hideFooter&quot;:true,&quot;hideLogo&quot;:true}{/literal}"></altcha-widget>
+                    </div>
                     <div class="actions">
                         <button type="submit" class="primary">{$somcp_text.signin|escape:'html':'UTF-8'}</button>
                     </div>
@@ -120,5 +130,8 @@
         {/if}
     </div>
 </main>
+{if $somcp_state == 'signin'}
+<script type="module" src="{$somcp.altcha_js|escape:'html':'UTF-8'}"></script>
+{/if}
 </body>
 </html>

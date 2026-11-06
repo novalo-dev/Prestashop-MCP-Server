@@ -84,6 +84,14 @@ request; only that account can then give the consent, with its own rights. Every
 refusal reads the same on screen and the reason goes to the module's log. No
 page or redirect of this flow names the administration folder.
 
+`SomcpGuard` puts limits on the public addresses: an ALTCHA proof of work on the
+sign-in form (the widget is shipped in `views/js/altcha/`, the check made with
+the `altcha-org/altcha` library), a block of fifteen minutes after five failed
+sign-ins from one address, and quotas on new authorization requests and on
+dynamic registrations. The counters use `nikolaposa/rate-limit` with a storage
+in the shop's database (`src/Security/DbRateLimiter.php`, table
+`somcp_rate_limit`), since a shared hosting offers neither Redis nor APCu.
+
 The file deposit page is still a back office page. PrestaShop 8 accepts a legacy
 back office address with a computed token. PrestaShop 9 demands a Symfony CSRF
 token that a front controller cannot produce, so somcp enters through a Symfony
@@ -194,9 +202,11 @@ that is still empty gets the address again as text.
 
 ## Data
 
-Nine tables, created by `sql/install.sql` and dropped by `sql/uninstall.sql`:
-OAuth clients, pending requests, codes, access tokens, refresh tokens, consents,
-the security log, deposits and deposited files.
+Seventeen tables, created by `sql/install.sql` and dropped by
+`sql/uninstall.sql`: OAuth clients, pending requests, codes, access tokens,
+refresh tokens, consents, the security log, deposits and deposited files, the
+built-in assistant's own (assistants, relays and their jobs, usage, threads,
+messages, runs) and the counters of the public addresses.
 
 The security log (`SomcpLogger`, table `somcp_log`) records connections,
 refusals, tool calls and configuration problems. It never contains a token, a

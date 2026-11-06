@@ -162,6 +162,14 @@ switched off, a profile not allowed to connect assistants or an account not
 attached to that shop all get the same message, and the real reason is written
 in the module's log.
 
+**Fewer ways for a robot to try its luck.** The sign-in page of a connection
+now has an "I'm not a robot" box, a proof of work your browser solves in about a
+second - no image to read, nothing sent to another company, nothing to set up.
+After five failed sign-ins, the address they come from is blocked for fifteen
+minutes, even with the right password. An address that sends too many connection
+requests, or registers too many applications in an hour, is turned away for a
+while too.
+
 ## 1.2.2 - 2026-11-05
 
 ### Added

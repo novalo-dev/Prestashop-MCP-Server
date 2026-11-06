@@ -119,6 +119,9 @@ class SomcpConfig
      */
     public const STATE_KEY = 'SOMCP_STATE_KEY';
 
+    /** @var string Secret the anti-robot challenges of the authorization page are signed with. */
+    public const CAPTCHA_KEY = 'SOMCP_CAPTCHA_KEY';
+
     /** @var string Path of the module inside the shop, used as the issuer suffix. */
     public const ISSUER_PATH = 'module/somcp';
 
@@ -170,6 +173,7 @@ class SomcpConfig
             // the module from the same archive. SomcpRequestState mints one the
             // first time it signs anything.
             self::STATE_KEY => '',
+            self::CAPTCHA_KEY => '',
         ];
     }
 

@@ -97,6 +97,11 @@
       <source>The page where you send a file to an assistant can be reached.</source>
       <target>Die Seite, auf der Sie einem Assistenten eine Datei senden, ist erreichbar.</target>
     </trans-unit>
+    <!-- Too many attempts from this address. Wait 15 minutes, then try again. -->
+    <trans-unit id="83112de15f0bb6d802b91df72cc32b0c" resname="Too many attempts from this address. Wait 15 minutes, then try again.">
+      <source>Too many attempts from this address. Wait 15 minutes, then try again.</source>
+      <target>Zu viele Versuche von dieser Adresse. Warten Sie 15 Minuten und versuchen Sie es dann erneut.</target>
+    </trans-unit>
     <!-- Connect an assistant -->
     <trans-unit id="1d3106889f4f5b717317255e6c9e8812" resname="Connect an assistant">
       <source>Connect an assistant</source>

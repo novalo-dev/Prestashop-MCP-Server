@@ -49,6 +49,8 @@ if (!Module::isInstalled('somcp') || !Module::getInstanceByName('somcp') instanc
     exit(1);
 }
 Somcp::bootClasses();
+// The anti-robot check is solved below with the module's own library.
+require_once _PS_MODULE_DIR_ . 'somcp/vendor/autoload.php';
 
 $db = Db::getInstance();
 $prefix = _DB_PREFIX_;
@@ -360,6 +362,22 @@ $noAdmin = static function (string $what, array $response) use (&$adminLeaks, $a
         $adminLeaks[] = $what;
     }
 };
+// The anti-robot check, solved the way the visitor's browser does.
+$solve = static function (array $page): string {
+    if (!preg_match('/challenge="([^"]+)"/', $page['body'], $m)) {
+        return '';
+    }
+    $challenge = AltchaOrg\Altcha\Challenge::fromArray((array) json_decode(html_entity_decode($m[1]), true));
+    $altcha = new AltchaOrg\Altcha\Altcha();
+    $solution = $altcha->solveChallenge(new AltchaOrg\Altcha\SolveChallengeOptions(
+        algorithm: new AltchaOrg\Altcha\Algorithm\Pbkdf2(),
+        challenge: $challenge,
+    ));
+
+    return $solution === null ? '' : (new AltchaOrg\Altcha\Payload($challenge, $solution))->toBase64();
+};
+// Counters left by an earlier run would block the sign-ins below.
+$db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
 $authorizeUrl = $endpoint('authorize');
 $started = $http('GET', $endpoint('authorize', http_build_query([
     'response_type' => 'code',
@@ -379,13 +397,22 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
 } else {
     echo "  ok    sign-in form shown\n";
     $withCookie = array_merge($form, ['Cookie: ' . SomcpOAuthServer::REQUEST_COOKIE . '=' . $requestCookie]);
-    $signin = static function (string $email, string $password, string $token) use ($http, $authorizeUrl, $withCookie): array {
-        return $http('POST', $authorizeUrl, $withCookie, http_build_query([
+    // The page the last answer showed: its anti-robot challenge is the one to
+    // solve for the next attempt.
+    $lastPage = $started;
+    $signin = static function (string $email, string $password, string $token, ?string $captcha = null) use ($http, $authorizeUrl, $withCookie, $solve, &$lastPage): array {
+        $response = $http('POST', $authorizeUrl, $withCookie, http_build_query([
             'somcp_step' => 'signin',
             'somcp_csrf' => $token,
             'somcp_email' => $email,
             'somcp_password' => $password,
+            'somcp_altcha' => $captcha ?? $solve($lastPage),
         ]));
+        if (strpos($response['body'], 'challenge="') !== false) {
+            $lastPage = $response;
+        }
+
+        return $response;
     };
     $refusedPage = static function (string $what, array $response) use (&$failures, &$checks): void {
         ++$checks;
@@ -403,13 +430,22 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     $refusedPage('unknown email', $unknown);
     // The two refusals must read the same, or the page tells which emails exist.
     ++$checks;
-    if (preg_replace('/value="[^"]*"/', '', $wrong['body']) !== preg_replace('/value="[^"]*"/', '', $unknown['body'])) {
+    // The form token and the anti-robot challenge change on every page.
+    if (preg_replace('/(value|challenge)="[^"]*"/', '', $wrong['body']) !== preg_replace('/(value|challenge)="[^"]*"/', '', $unknown['body'])) {
         $failures[] = 'a wrong password and an unknown email are not answered with the same page';
         echo "  FAIL  same answer for a wrong password and an unknown email\n";
     } else {
         echo "  ok    same answer for a wrong password and an unknown email\n";
     }
     $refusedPage('right password without the form token', $signin((string) $signinEmployee->email, $signinPassword, 'forged'));
+    $refusedPage('right password without the anti-robot check', $signin((string) $signinEmployee->email, $signinPassword, $csrf, ''));
+    // Three failures so far; the counter starts again so the checks below
+    // stay under the block, which has its own check further down.
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+    $usedOnce = $solve($lastPage);
+    $refusedPage('wrong password with a solved check', $signin((string) $signinEmployee->email, 'still-not-it', $csrf, $usedOnce));
+    $refusedPage('right password with a check already used', $signin((string) $signinEmployee->email, $signinPassword, $csrf, $usedOnce));
+
     $requiredBefore = SomcpConfig::get(SomcpConfig::REQUIRED_PROFILE);
     $otherProfile = (int) Db::getInstance()->getValue('SELECT `id_profile` FROM `' . _DB_PREFIX_ . 'profile` WHERE `id_profile` <> ' . (int) _PS_ADMIN_PROFILE_);
     if ($otherProfile > 0) {
@@ -478,6 +514,42 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     } else {
         echo "  ok    consent sent a second time\n";
     }
+
+    // Guessing: five wrong passwords, then the right one is refused too.
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+    $again = $http('GET', $endpoint('authorize', http_build_query([
+        'response_type' => 'code',
+        'client_id' => $clientA,
+        'redirect_uri' => 'http://127.0.0.1:9/callback',
+        'code_challenge' => $challenge,
+        'code_challenge_method' => 'S256',
+        'state' => 'guess',
+    ])), ['Accept: text/html']);
+    $withCookie = array_merge($form, ['Cookie: ' . SomcpOAuthServer::REQUEST_COOKIE . '=' . $cookieOf($again)]);
+    $lastPage = $again;
+    $guessCsrf = $csrfOf($again);
+    $guess = static function (string $password) use ($http, $authorizeUrl, &$withCookie, $solve, &$lastPage, $guessCsrf, $signinEmployee): array {
+        $response = $http('POST', $authorizeUrl, $withCookie, http_build_query([
+            'somcp_step' => 'signin',
+            'somcp_csrf' => $guessCsrf,
+            'somcp_email' => (string) $signinEmployee->email,
+            'somcp_password' => $password,
+            'somcp_altcha' => $solve($lastPage),
+        ]));
+        if (strpos($response['body'], 'challenge="') !== false) {
+            $lastPage = $response;
+        }
+
+        return $response;
+    };
+    for ($i = 1; $i <= SomcpGuard::SIGNIN_ATTEMPTS - 1; ++$i) {
+        $guess('guess-' . $i);
+    }
+    $expect('fifth wrong password blocks the address', $guess('guess-5'), 429);
+    $blocked = $guess($signinPassword);
+    $expect('right password from a blocked address', $blocked, 429);
+    $noAdmin('blocked address', $blocked);
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
 }
 ++$checks;
 if ($adminLeaks !== []) {
@@ -487,6 +559,29 @@ if ($adminLeaks !== []) {
     echo "  ok    administration folder never named\n";
 }
 $signinEmployee->delete();
+
+$section('Registering in a loop');
+$db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+$registered = 0;
+for ($i = 1; $i <= 10; ++$i) {
+    $one = $http('POST', $endpoint('oauth', 'a=register'), $json, (string) json_encode([
+        'client_name' => 'Attack loop ' . $i,
+        'redirect_uris' => ['http://127.0.0.1:9/callback'],
+    ]));
+    $registered += $one['status'] === 201 ? 1 : 0;
+}
+++$checks;
+if ($registered !== 10) {
+    $failures[] = 'ten registrations from one address were not all accepted (' . $registered . ' were)';
+    echo "  FAIL  ten registrations accepted\n";
+} else {
+    echo "  ok    ten registrations accepted\n";
+}
+$expect('eleventh registration within the hour', $http('POST', $endpoint('oauth', 'a=register'), $json, (string) json_encode([
+    'client_name' => 'Attack loop 11',
+    'redirect_uris' => ['http://127.0.0.1:9/callback'],
+])), 429);
+$db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
 
 // ---------------------------------------------------------------------------
 $section('Relay');

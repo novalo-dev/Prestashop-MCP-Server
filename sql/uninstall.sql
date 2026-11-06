@@ -14,3 +14,4 @@ DROP TABLE IF EXISTS `PREFIX_somcp_oauth_access_token`;
 DROP TABLE IF EXISTS `PREFIX_somcp_oauth_code`;
 DROP TABLE IF EXISTS `PREFIX_somcp_oauth_request`;
 DROP TABLE IF EXISTS `PREFIX_somcp_oauth_client`;
+DROP TABLE IF EXISTS `PREFIX_somcp_rate_limit`;

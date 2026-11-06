@@ -18,6 +18,8 @@
     },
     "require": {
         "php": ">=8.1",
-        "neuron-core/neuron-ai": "4.1.19"
+        "altcha-org/altcha": "2.3.0",
+        "neuron-core/neuron-ai": "4.1.19",
+        "nikolaposa/rate-limit": "3.3.0"
     }
 }

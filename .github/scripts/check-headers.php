@@ -58,8 +58,9 @@ const STYLES = [
 ];
 
 // Third-party code, generated files and the documentation's own examples,
-// which show a module that is not this one.
-const SKIPPED = ['vendor', 'node_modules', 'docs', 'dev/tools/vendor'];
+// which show a module that is not this one. views/js/altcha is the ALTCHA
+// widget as its authors publish it, with its own MIT licence beside it.
+const SKIPPED = ['vendor', 'node_modules', 'docs', 'dev/tools/vendor', 'views/js/altcha'];
 
 $args = array_slice($argv, 1);
 $fix = in_array('--fix', $args, true);

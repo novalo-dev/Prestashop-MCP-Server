@@ -183,6 +183,11 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
                 'This connection request is not valid, so nothing was sent back to the application that made it.')]);
         }
 
+        if (!SomcpGuard::allow('authorize')) {
+            SomcpLogger::log('authorization_throttled', SomcpLogger::OUTCOME_FAILURE, '', $this->query['client_id']);
+            $this->renderTooMany();
+        }
+
         $secret = SomcpOAuthServer::createPendingRequest($check['data']);
         $this->rememberRequest($secret);
 
@@ -213,6 +218,12 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      */
     private function signIn(array $request): never
     {
+        // Before anything else, the password included: once an address is
+        // blocked, the right password is refused too, or guessing goes on.
+        if (SomcpGuard::signinBlocked()) {
+            SomcpLogger::log('signin_blocked', SomcpLogger::OUTCOME_FAILURE);
+            $this->renderTooMany();
+        }
         if (!$this->csrfMatches($request)) {
             SomcpLogger::log('signin_csrf_failed', SomcpLogger::OUTCOME_FAILURE);
             $this->renderSignIn($request);
@@ -223,19 +234,21 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         $client = SomcpOAuthClient::findById((int) $request['id_client']);
         $clientId = $client !== null ? (string) $client['client_id'] : '';
 
+        if (!SomcpGuard::solved((string) Tools::getValue('somcp_altcha', ''))) {
+            $this->refuseSignIn($request, 'anti-robot check not solved', $clientId);
+        }
+
         $employee = false;
         if (Validate::isEmail($email) && $password !== '' && Tools::strlen($password) <= 255) {
             $employee = (new Employee())->getByEmail($email, $password);
         }
         if (!$employee instanceof Employee || (int) $employee->id <= 0) {
-            SomcpLogger::log('signin_failed', SomcpLogger::OUTCOME_FAILURE, 'wrong email or password, or account switched off', $clientId);
-            $this->renderSignIn($request, true);
+            $this->refuseSignIn($request, 'wrong email or password, or account switched off', $clientId);
         }
 
         $refusal = $this->refusalFor($employee, (int) $request['id_shop']);
         if ($refusal !== '') {
-            SomcpLogger::log('signin_refused', SomcpLogger::OUTCOME_FAILURE, $refusal, $clientId, (int) $employee->id);
-            $this->renderSignIn($request, true);
+            $this->refuseSignIn($request, $refusal, $clientId, (int) $employee->id);
         }
 
         SomcpOAuthServer::attachEmployee((int) $request['id_request'], (int) $employee->id);
@@ -244,6 +257,25 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         // Sent to the same page by GET, so a reload of the consent screen
         // does not post the password a second time.
         SomcpHttp::redirect($this->context->link->getModuleLink('somcp', 'authorize', [], true));
+    }
+
+    /**
+     * Counts a failed sign-in, logs its real reason and shows the form again,
+     * or the block once the address has failed too often.
+     *
+     * @param array<string, mixed> $request
+     * @param string $reason
+     * @param string $clientId
+     * @param int $idEmployee
+     */
+    private function refuseSignIn(array $request, string $reason, string $clientId, int $idEmployee = 0): never
+    {
+        SomcpGuard::signinFailed();
+        SomcpLogger::log('signin_refused', SomcpLogger::OUTCOME_FAILURE, $reason, $clientId, $idEmployee);
+        if (SomcpGuard::signinBlocked()) {
+            $this->renderTooMany();
+        }
+        $this->renderSignIn($request, true);
     }
 
     /**
@@ -365,6 +397,8 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             'return_host' => self::host((string) $request['redirect_uri']),
             'csrf' => (string) $request['csrf_token'],
             'refused' => $refused,
+            'challenge' => SomcpGuard::challenge(),
+            'altcha_js' => $this->module->getPathUri() . 'views/js/altcha/altcha.i18n.min.js',
         ]);
     }
 
@@ -400,6 +434,15 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         ]);
     }
 
+    /**
+     * The answer once an address has asked or failed too often.
+     */
+    private function renderTooMany(): never
+    {
+        $this->render('message', ['message' => $this->module->l10n(
+            'Too many attempts from this address. Wait 15 minutes, then try again.')], 429);
+    }
+
     private function renderExpired(): never
     {
         $this->render('message', ['message' => $this->module->l10n(
@@ -411,8 +454,9 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      *
      * @param string $state signin, consent or message
      * @param array<string, mixed> $vars
+     * @param int $status HTTP status of the page
      */
-    private function render(string $state, array $vars): never
+    private function render(string $state, array $vars, int $status = 200): never
     {
         $module = $this->module;
         $this->context->smarty->assign([
@@ -447,8 +491,11 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
         SomcpHttp::pageHeaders();
         if (!headers_sent()) {
-            // Nothing but the module's own files on this page.
-            header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; base-uri 'none'; object-src 'none'");
+            http_response_code($status);
+            // Nothing but the module's own files on this page. The anti-robot
+            // widget starts its workers from a data: or blob: address and
+            // writes its own styles, hence those two exceptions.
+            header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; worker-src 'self' blob: data:; connect-src 'self'; base-uri 'none'; object-src 'none'");
             header('Referrer-Policy: no-referrer');
             header('Cache-Control: no-store');
             header('Content-Type: text/html; charset=utf-8');

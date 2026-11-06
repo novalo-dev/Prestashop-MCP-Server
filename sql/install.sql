@@ -354,3 +354,16 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_run` (
     `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`partition`, `key`)
 ) ENGINE=InnoDB;
+
+-- somcp_rate_limit - the counters of the public addresses and of the
+-- authorization page (SomcpGuard), one row per shop, thing counted and visitor
+-- address, hashed together: no address is stored in clear. A row lives for the
+-- length of its window and is dropped as the table is used.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_rate_limit` (
+    `bucket`     CHAR(64)  NOT NULL,
+    `id_shop`    INT(11)   NOT NULL DEFAULT 1,
+    `hits`       INT(11)   NOT NULL DEFAULT 0,
+    `window_end` DATETIME  NOT NULL,
+    PRIMARY KEY (`bucket`),
+    KEY `idx_window_end` (`window_end`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

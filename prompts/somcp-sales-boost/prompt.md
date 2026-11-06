@@ -106,8 +106,12 @@ dates you used.
    orders already spent it.
 3. **Open a rule only when needed.** `has_restrictions` names the conditions a
    rule carries (country, carrier, group, product); read the full rule with
-   `somcp_get_cart_rule` when one of them matters. This tool does not set a
-   rule on or off, nor create one.
+   `somcp_get_cart_rule` when one of them matters. It gives the three tabs of
+   the rule: the name in every language, the minimum amount, the quantities,
+   each restriction as a list of identifiers and names (carriers by
+   `id_reference`, product selection as groups of rules), and what the rule
+   gives, with the same `reduction` and `summary` as the list. Neither tool
+   sets a rule on or off, nor creates one.
 
 ## Never
 

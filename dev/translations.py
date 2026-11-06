@@ -2415,6 +2415,10 @@ T = {
  "Lister les paniers abandonnés",
  "Listar los carritos abandonados",
  "Verlassene Warenkörbe auflisten"),
+"Get a cart rule": (
+ "Lire une règle panier",
+ "Leer una regla de carrito",
+ "Eine Warenkorbregel abrufen"),
 "List cart rules": (
  "Lister les règles panier",
  "Listar las reglas de carrito",

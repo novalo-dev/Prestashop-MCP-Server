@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "an identifier no cart rule has: the demo data holds none, so it is refused and points to the list", "arguments": {"id_cart_rule": 999999}, "expect": "error", "contains": ["id_cart_rule: no cart rule of this shop has the identifier 999999", "somcp_list_cart_rules"]},
+    {"why": "the same unknown rule asked in a language of the shop by its ISO code", "arguments": {"id_cart_rule": 999999, "language": "en"}, "expect": "error", "contains": ["no cart rule of this shop has the identifier 999999"]},
+    {"why": "the identifier is required", "arguments": {}, "expect": "error", "contains": ["id_cart_rule: a whole number above 0"]},
+    {"why": "zero is not an identifier", "arguments": {"id_cart_rule": 0}, "expect": "error", "contains": ["id_cart_rule: a whole number above 0"]},
+    {"why": "a language the shop does not have is refused", "arguments": {"id_cart_rule": 1, "language": "zz"}, "expect": "error", "contains": ["language: not a language of this shop"]},
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "id_cart_rule": "one"}, "expect": "error", "contains": ["foo: not a field of this tool", "id_cart_rule: a whole number above 0"]}
+  ]
+}

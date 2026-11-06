@@ -3700,23 +3700,56 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 - No difference between 8.0.1 and 9.0.0: the same legacy controller, list and `cart_rule` table on both.
 
 #### `somcp_get_cart_rule`
-**State**: to write · [issue #106](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/106)
+**State**: written · [issue #106](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/106)
 **Nature**: `acts(VIEW, 'AdminCartRules')` · **Scope**: `mcp.sales.read`
 
-**Does** - returns every field of one cart rule, as its three back office tabs show it.
+**Does** - returns every field of one cart rule, as the three tabs of **Catalog > Discounts > Cart Rules > Edit** show it (**Information**, **Conditions**, **Actions**), with its restrictions as lists of identifiers and names. Read only.
 
-**Do not use for** - listing rules (→ `somcp_list_cart_rules`).
+**Do not use for** - listing rules (→ `somcp_list_cart_rules`); catalogue price rules (→ `somcp_list_catalog_price_rules`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_cart_rule` | integer | yes |  |
+| `id_cart_rule` | integer | yes | the **ID** of the list, from `somcp_list_cart_rules` |
+| `language` | string | no | ISO code of one of the shop's active languages (#149), for the names of the restrictions and of the gift; shop default when left out; unknown code refused |
 
-**Returns** - Information (name per language, description, code, highlight, partial use, priority, active), Conditions (customer, dates, minimum amount with currency and tax, quantities, carrier, country, group and product restrictions as lists), Actions (free shipping, percent or amount with currency and tax, the product it applies to, gift product).
+**Returns** - `cart_rule`, with `language` at the top level:
+
+| Field | Notes |
+|---|---|
+| `id_cart_rule` | |
+| `name` | **Information** > **Name**, an object keyed by ISO code with every active language of the shop, so it can be given back to `somcp_update_cart_rule` as is |
+| `description` | **Description**, plain text, empty string when none |
+| `code` | **Code**, empty string when the rule applies on its own |
+| `highlight` / `partial_use` | **Highlight** / **Partial use**, booleans |
+| `priority` | **Priority** |
+| `active` | **Status** |
+| `id_customer` | **Conditions** > **Limit to a single customer**: `null` for everyone; with `customer` (`firstname`, `lastname`) beside it, the identifier `somcp_get_customer` takes |
+| `date_from` / `date_to` | **Valid** **From** / **To**, ISO 8601, as `somcp_list_cart_rules` |
+| `minimum_amount` | **Minimum amount**: `null` when 0, else `{"value": 50, "currency": "EUR", "tax_included": false, "shipping_included": false}` |
+| `quantity` / `quantity_per_user` | **Total available** / **Total available for each user** |
+| `restrictions.country` | **Country selection**: `null` when off, else `[{"id_country", "name"}]` |
+| `restrictions.carrier` | **Carrier selection**: `null` when off, else `[{"id_reference", "name"}]`, the `id_reference` of `somcp_list_carriers` (the core stores the reference, not `id_carrier`) |
+| `restrictions.group` | **Customer group selection**: `null` when off, else `[{"id_group", "name"}]` |
+| `restrictions.cart_rule` | **Compatibility with other cart rules**: `null` when off, else the rules it combines with, `[{"id_cart_rule", "name"}]` |
+| `restrictions.product` | **Product selection**: `null` when off, else the groups `[{"quantity": 1, "rules": [{"type": "products", "values": [{"id", "name"}]}]}]`, `type` one of `products`, `categories`, `attributes` (named "Group - Value", as the form), `manufacturers`, `suppliers` |
+| `restrictions.shop` | **Store selection** (multistore): `null` when off, else `[{"id_shop", "name"}]` |
+| `free_shipping` | **Actions** > **Free shipping** |
+| `reduction` / `reduction_applies_to` | **Apply a discount** / **Apply a discount to**, built by `SomcpToolListCartRules::describe()`, the shapes of `somcp_list_cart_rules` |
+| `reduction_exclude_special` | **Exclude discounted products**, meaningful for a percent |
+| `gift` | **Send a free gift**: `{"id_product", "id_product_attribute", "name"}` or `null` |
+| `summary` | the one line of `somcp_list_cart_rules` |
+| `times_used` | as `somcp_list_cart_rules` |
+| `date_add` / `date_upd` | ISO 8601 |
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; a missing or non-positive `id_cart_rule`; an unknown language (#149). An `id_cart_rule` no rule of this shop has: `id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`, the token's shop deciding as in `somcp_list_cart_rules`.
 
 **Notes**
-- Restrictions are returned as names and identifiers, read from the core's own tables.
+- The rules this shop can use and `times_used` are read by the same functions as `somcp_list_cart_rules` (`inShop()`, `timesUsed()`), so a rule the list hides is one this tool refuses.
+- The restrictions are read by one public function, `SomcpToolGetCartRule::restrictions()`, that `somcp_update_cart_rule` calls to compare. Product selection is read with the core's `CartRule::getProductRuleGroups()`.
+- A restriction pointing to something deleted since (a carrier, a product) is left out of its list, as the back office leaves it out of the form. When **Apply a discount to** is **Specific product**, the back office adds that product to **Product selection** on its own: it shows there too, as stored.
+- No difference between 8.0.1 and 9.0.0 apart from the type of `description` (`text` / `mediumtext`).
 
 #### `somcp_create_cart_rule`
 **State**: to write · [issue #107](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/107)

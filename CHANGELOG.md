@@ -18,6 +18,16 @@ are:
 
 ### Added
 
+**Read one cart rule in full.** The new tool `somcp_get_cart_rule` gives every
+field of a rule as the three tabs **Information**, **Conditions** and
+**Actions** of **Catalog > Discounts > Cart Rules > Edit** show it: the name in
+each language, the code, the validity dates, the minimum amount with its
+currency, tax and shipping, the quantities, each restriction (countries,
+carriers, customer groups, other cart rules, product selection, stores) with
+the names of what it is limited to, and what the rule gives, in the same
+words as the list. Read only, the current shop's rules only. It joins the
+**Boost sales** prompt and needs the `view` right on **Cart Rules**.
+
 **List the shop's vouchers and cart discounts.** The new tool
 `somcp_list_cart_rules` lists the cart rules of **Catalog > Discounts > Cart
 Rules**, newest first, telling vouchers with a code from discounts applied on

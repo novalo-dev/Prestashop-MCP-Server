@@ -210,9 +210,7 @@ class SomcpToolListCartRules
         $total = (int) $db->getValue('SELECT COUNT(*) FROM ' . $from . ' WHERE ' . $where);
 
         $rows = $db->executeS(
-            'SELECT cr.*, crl.`name`,
-                    (SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'order_cart_rule` ocr
-                     WHERE ocr.`id_cart_rule` = cr.`id_cart_rule` AND ocr.`deleted` = 0) AS `times_used`
+            'SELECT cr.*, crl.`name`, ' . self::timesUsed() . ' AS `times_used`
              FROM ' . $from . '
              WHERE ' . $where . '
              ORDER BY cr.`id_cart_rule` DESC
@@ -265,12 +263,7 @@ class SomcpToolListCartRules
      */
     private static function conditions(array $arguments, int $idShop): string
     {
-        // The back office lists every shop's rules; the token reaches one shop,
-        // and a rule restricted to another shop could never apply to it.
-        $conditions = [
-            '(cr.`shop_restriction` = 0 OR EXISTS (SELECT 1 FROM `' . _DB_PREFIX_ . 'cart_rule_shop` crs
-                WHERE crs.`id_cart_rule` = cr.`id_cart_rule` AND crs.`id_shop` = ' . $idShop . '))',
-        ];
+        $conditions = [self::inShop($idShop)];
 
         if (isset($arguments['active']) && is_bool($arguments['active'])) {
             $conditions[] = 'cr.`active` = ' . ($arguments['active'] ? 1 : 0);
@@ -293,6 +286,36 @@ class SomcpToolListCartRules
         }
 
         return implode(' AND ', $conditions);
+    }
+
+    /**
+     * The rules this shop can use, as a condition on the alias cr. Shared with
+     * the detail get, so a rule the list hides is also one the get refuses.
+     *
+     * The back office lists every shop's rules; the token reaches one shop,
+     * and a rule restricted to another shop could never apply to it.
+     *
+     * @param int $idShop
+     *
+     * @return string
+     */
+    public static function inShop(int $idShop): string
+    {
+        return '(cr.`shop_restriction` = 0 OR EXISTS (SELECT 1 FROM `' . _DB_PREFIX_ . 'cart_rule_shop` crs
+                WHERE crs.`id_cart_rule` = cr.`id_cart_rule` AND crs.`id_shop` = ' . $idShop . '))';
+    }
+
+    /**
+     * The orders that spent a rule, as a subquery on the alias cr: the use the
+     * screen does not show. A deleted order_cart_rule line is a voucher taken
+     * off the order, so it does not count.
+     *
+     * @return string
+     */
+    public static function timesUsed(): string
+    {
+        return '(SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'order_cart_rule` ocr
+                     WHERE ocr.`id_cart_rule` = cr.`id_cart_rule` AND ocr.`deleted` = 0)';
     }
 
     /**
@@ -421,7 +444,7 @@ class SomcpToolListCartRules
      *
      * @return string
      */
-    private static function iso(string $value): string
+    public static function iso(string $value): string
     {
         if ($value === '' || strpos($value, '0000-00-00') === 0) {
             return '';
@@ -439,7 +462,7 @@ class SomcpToolListCartRules
      *
      * @return string
      */
-    private static function currencyIso(int $idCurrency): string
+    public static function currencyIso(int $idCurrency): string
     {
         if ($idCurrency <= 0) {
             $idCurrency = (int) Configuration::get('PS_CURRENCY_DEFAULT');

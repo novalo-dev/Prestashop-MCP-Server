@@ -11,7 +11,8 @@
     "somcp_list_search_terms",
     "somcp_list_viewed_not_sold",
     "somcp_list_unsold_products",
-    "somcp_list_cart_rules"
+    "somcp_list_cart_rules",
+    "somcp_get_cart_rule"
   ],
   "controller": "AdminStats",
   "action": "view",

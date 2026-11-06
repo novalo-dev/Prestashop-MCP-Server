@@ -3,7 +3,8 @@
   "description": "Check that answer engines and AI assistants can read the shop and trust its product data, and fix what they would miss.",
   "icon": "bulb",
   "scopes": [
-    "mcp.seo.read"
+    "mcp.seo.read",
+    "mcp.seo.write"
   ],
   "tools": [
     "somcp_ping",
@@ -11,7 +12,8 @@
     "somcp_audit_product_entities",
     "somcp_check_ai_crawler_access",
     "somcp_audit_store_policies",
-    "somcp_get_llms_txt"
+    "somcp_get_llms_txt",
+    "somcp_generate_llms_txt"
   ],
   "controller": "AdminProducts",
   "action": "view",

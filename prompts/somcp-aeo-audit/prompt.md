@@ -90,6 +90,20 @@ line the format opens with. Say plainly that llms.txt is a proposed
 convention, not a standard: no crawler or assistant is bound to read it, so
 never present it as a way to be cited.
 
+## Write the llms.txt
+
+When the shop has no llms.txt, or the merchant wants to refresh it, call
+`somcp_generate_llms_txt`. It writes the file from the shop's own data: its
+name, a `summary` paragraph, the main categories, the policy and information
+pages and the contact page, in the `language` asked for. Agree the `summary`
+with the merchant first, since it is the one line that is not already on the
+shop; left out, the home page meta description is used. A file somcp did not
+write is shown and replaced only with `overwrite`, so read it first with
+`somcp_get_llms_txt` and show what would go. Read the `warnings`:
+`pages_not_indexable` is a listed page the shop asks search engines to skip.
+Only what the shop holds is written: never add a claim, a figure or a review
+to the summary.
+
 ## Never invent
 
 Never invent a fact, a review, a rating or a figure about a product: when the

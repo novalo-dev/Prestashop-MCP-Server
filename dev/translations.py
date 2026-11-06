@@ -1070,6 +1070,10 @@ T = {
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",
  "Die Datei robots.txt erzeugen"),
+"Generate the llms.txt file": (
+ "Générer le fichier llms.txt",
+ "Generar el archivo llms.txt",
+ "Die Datei llms.txt erzeugen"),
 "Change the SEO of a CMS page": (
  "Modifier le SEO d'une page CMS",
  "Cambiar el SEO de una página CMS",

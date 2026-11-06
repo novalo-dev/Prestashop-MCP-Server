@@ -16,6 +16,16 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Write an llms.txt for the shop.** The tool `somcp_generate_llms_txt` writes
+an llms.txt at the root of the shop, the plain text summary some AI tools read
+at the root of a site, from the shop's own data: its name, a summary written
+with the merchant, the main categories, the policy and information pages and
+the contact page, in the language asked for. A file the merchant wrote by hand
+is replaced only when asked, and a shop whose root is not writable is told so
+without anything being changed.
+
 ### Changed
 
 **Shorter attribute tools.** The seven tools of Catalog > Attributes &

@@ -3427,26 +3427,38 @@ None.
 - Same root and same `.htaccess` rule on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_generate_llms_txt`
-**State**: to write · [issue #100](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/100)
-**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`
+**State**: written · [issue #100](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/100)
+**Nature**: `acts(EDIT, 'AdminMeta')` with `add` and `delete` · **Scope**: `mcp.seo.write`
 
-**Does** - writes an llms.txt at the shop root from the shop's own data: name, description, main categories and their URLs, policy pages.
+**Does** - writes an llms.txt at the root of the installation, the plain text summary some AI tools read at the root of a site, from the shop's own data: name, a summary agreed with the merchant, the main categories, the policy and information pages, the contact page.
 
-**Do not use for** - robots.txt (→ `somcp_generate_robots_txt`).
+**Do not use for** - reading the file (→ `somcp_get_llms_txt`); robots.txt (→ `somcp_generate_robots_txt`); whether AI crawlers may read the shop (→ `somcp_check_ai_crawler_access`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `summary` | object | no | per ISO code: the paragraph describing the shop, written with the merchant |
-| `overwrite` | boolean | no | required to replace a file somcp did not write |
+| `language` | string | no | ISO code of one of the shop's active languages, the language of the file and of its links; shop default when left out; an unknown code refused with `SomcpTool::languageRefused()` |
+| `summary` | string | no | the paragraph describing the shop, written with the merchant; the home page meta description when left out; 1000 characters at most |
+| `max_categories` | integer | no | 20 by default, 100 at most: the first categories under Home in their Position order |
+| `overwrite` | boolean | no | required to replace a file somcp did not write (no marker) |
 
-**Returns** - `changed`, `previous_content`, `content`, `url`.
+**Returns**
+- `changed` - false when the content written is the one already on disk (the file is then not rewritten).
+- `written` - whether the file was written this call.
+- `previous_content` - the file before, `null` when there was none; the only copy left of a file written by hand.
+- `content` - what was written.
+- `url` - as `somcp_get_llms_txt`: root of the token's shop domain + `/llms.txt`.
+- `language` - the ISO code used.
+- `warnings` - `code` and `why`, the shape of `somcp_get_robots_txt`: `not_at_domain_root` (the shop is in a folder), `shared_by_shops` (one file for every shop of the installation), `pages_not_indexable` (a listed CMS page has Indexation by search engines set to No).
 
 **Notes**
-- Only factual content from the shop: no claim, review or figure invented. Active categories and CMS pages only, in the default language first.
-- A file written by someone else is never replaced without `overwrite`, and its content comes back in the answer. A marker comment records that somcp wrote it.
-- The file is written atomically next to robots.txt; a shop whose root is not writable gets a clear refusal.
+- No back office screen writes an llms.txt on either version, so the tool assembles the file itself. It is written atomically next to robots.txt (a temporary file in the same folder, then renamed), so a reader never gets half a file.
+- The file is read with `somcp_get_robots_txt` (`read()`, `MAX_BYTES`) and the marker is the one constant `SomcpToolGetLlmsTxt::MARKER`, shared with `somcp_get_llms_txt`. Which CMS page is a policy page is decided by `SomcpToolAuditStorePolicies::policyPages()`, called not copied, so the policy pages come first in the file.
+- The rights are those of `somcp_generate_robots_txt`: `add`, `edit` and `delete` on `AdminMeta`, since it replaces a file at the root whole. A file somcp did not write is replaced only with `overwrite: true`, and its content comes back in the answer. A shop whose root is not writable gets a clear refusal, nothing changed, as `somcp_generate_robots_txt`.
+- Only what the shop holds is written: no claim, review, price or figure is invented. One file at the root means one language per file. Nothing is fetched over the network.
+- Errors in the shape of #169: unknown arguments; unknown language; `summary` too long; `max_categories` out of range; an existing file without the marker and no `overwrite: true`.
+- Same root, same `.htaccess` rule and same sources on 8.0.1 and 9.0.0.
 
 ### Sales
 

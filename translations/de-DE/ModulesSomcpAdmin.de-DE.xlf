@@ -1347,6 +1347,11 @@
       <source>Generate the robots.txt file</source>
       <target>Die Datei robots.txt erzeugen</target>
     </trans-unit>
+    <!-- Generate the llms.txt file -->
+    <trans-unit id="af00e4cb7dd98a43fa6e1d659d9c4d37" resname="Generate the llms.txt file">
+      <source>Generate the llms.txt file</source>
+      <target>Die Datei llms.txt erzeugen</target>
+    </trans-unit>
     <!-- Change the SEO of a CMS page -->
     <trans-unit id="39a2ae54e85acae56f94b93320441737" resname="Change the SEO of a CMS page">
       <source>Change the SEO of a CMS page</source>

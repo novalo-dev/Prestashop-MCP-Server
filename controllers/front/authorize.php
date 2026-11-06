@@ -126,7 +126,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         Somcp::bootClasses();
 
         if (!$this->open) {
-            $this->render('message', ['message' => $this->module->l10n(
+            $this->renderPage('message', ['message' => $this->module->l10n(
                 'This shop is not accepting connections from assistants right now.')]);
         }
 
@@ -149,7 +149,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         // page reached from history. The cookie says where the visitor was.
         $request = SomcpOAuthServer::loadPendingRequest($this->requestSecret());
         if ($request === null) {
-            $this->render('message', ['message' => $this->module->l10n(
+            $this->renderPage('message', ['message' => $this->module->l10n(
                 'This connection request is not valid, so nothing was sent back to the application that made it.')]);
         }
         if ((int) $request['id_employee'] > 0) {
@@ -179,7 +179,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
             // Nothing is sent to an address that has not been verified as
             // belonging to the client: that is what an open redirect is.
-            $this->render('message', ['message' => $this->module->l10n(
+            $this->renderPage('message', ['message' => $this->module->l10n(
                 'This connection request is not valid, so nothing was sent back to the application that made it.')]);
         }
 
@@ -393,7 +393,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             $this->renderExpired();
         }
 
-        $this->render('signin', [
+        $this->renderPage('signin', [
             'client_name' => SomcpOAuthClient::displayName($client),
             'return_host' => self::host((string) $request['redirect_uri']),
             'csrf' => (string) $request['csrf_token'],
@@ -419,7 +419,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             $scopes[] = ['name' => $scope, 'label' => SomcpScope::describe($scope, $this->module)];
         }
 
-        $this->render('consent', [
+        $this->renderPage('consent', [
             'client_name' => SomcpOAuthClient::displayName($client),
             'client_uri' => (string) $client['client_uri'],
             'client_id' => (string) $client['client_id'],
@@ -440,13 +440,13 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      */
     private function renderTooMany(): never
     {
-        $this->render('message', ['message' => $this->module->l10n(
+        $this->renderPage('message', ['message' => $this->module->l10n(
             'Too many attempts from this address. Wait 15 minutes, then try again.')], 429);
     }
 
     private function renderExpired(): never
     {
-        $this->render('message', ['message' => $this->module->l10n(
+        $this->renderPage('message', ['message' => $this->module->l10n(
             'This connection request has expired or has already been answered. Start the connection again from your assistant.')]);
     }
 
@@ -457,7 +457,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * @param array<string, mixed> $vars
      * @param int $status HTTP status of the page
      */
-    private function render(string $state, array $vars, int $status = 200): never
+    private function renderPage(string $state, array $vars, int $status = 200): never
     {
         $module = $this->module;
         $this->context->smarty->assign([

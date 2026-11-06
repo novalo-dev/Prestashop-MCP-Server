@@ -295,6 +295,16 @@ if (strtoupper($authorize['headers']['x-frame-options'] ?? '') !== 'DENY') {
 } else {
     echo "  ok    sign-in page refuses to be framed\n";
 }
+// The diagnostic's Sign-in page line opens the address the same way and looks
+// for this marker: if the template loses it, every shop reports a false error.
+$bare = $http('GET', $endpoint('authorize'));
+++$checks;
+if ($bare['status'] !== 200 || strpos($bare['body'], 'id="somcp-authorize"') === false) {
+    $failures[] = 'the sign-in page opened with no request does not show the module page the diagnostic looks for: ' . $bare['status'];
+    echo "  FAIL  sign-in page opened with no request, as the diagnostic does ({$bare['status']})\n";
+} else {
+    echo "  ok    sign-in page opened with no request, as the diagnostic does\n";
+}
 $expect('client registering a plain-http address on the internet', $http('POST', $endpoint('oauth', 'a=register'), $json, (string) json_encode([
     'client_name' => 'Attack test',
     'redirect_uris' => ['http://attacker.example/callback'],

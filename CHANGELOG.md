@@ -104,6 +104,12 @@ new permission `mcp.sales.read`, which the consent screen describes as reading
 abandoned carts, searches, product views and promotions, and the `view` right
 on **Orders > Shopping Carts**.
 
+**The diagnostic checks the sign-in page.** A new line, **Sign-in page**,
+opens the page where you approve an assistant, as your browser would, and turns
+red when something else answers in its place - typically another module that
+sends visitors without an account to a login, an age check or a country page.
+Left unnoticed, the assistant would wait on a page you never see.
+
 ### Changed
 
 **Shorter audit and sales tools.** Four tools that went a little over the
@@ -160,7 +166,10 @@ through the back office. Only the account that signed in can approve, with its
 own rights, on the shop the assistant was sent to. A wrong password, an account
 switched off, a profile not allowed to connect assistants or an account not
 attached to that shop all get the same message, and the real reason is written
-in the module's log.
+in the module's log. The page carries the module's logo, fits a phone as well as
+a computer, keeps the **Refuse** and **Allow** buttons in reach however long the
+list of what the assistant may do, and sets apart what it may change from what
+it may only read.
 
 **Fewer ways for a robot to try its luck.** The sign-in page of a connection
 now has an "I'm not a robot" box, a proof of work your browser solves in about a

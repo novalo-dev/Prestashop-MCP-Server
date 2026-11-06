@@ -66,8 +66,9 @@ the assistant through the usual jobs. [See them all](#tools).
 | Languages | English, French, Spanish, German |
 
 The **Run the diagnostic** button in the module checks all of this from the
-outside: certificate, SSL setting, friendly URLs, location and the addresses an
-assistant calls. No line should be red before you connect an assistant.
+outside: certificate, SSL setting, friendly URLs, location, the addresses an
+assistant calls and the sign-in page where you approve it. No line should be red
+before you connect an assistant.
 
 ---
 

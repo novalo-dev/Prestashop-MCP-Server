@@ -110,6 +110,9 @@ class SomcpDiagnostic
             $blocking === []
                 ? self::checkEndpointChallenge($module, $shop)
                 : self::skipped($module, $module->l10n('MCP endpoint'), $blocking, SomcpConfig::resourceUri($shop)),
+            $blocking === []
+                ? self::checkSignInPage($module, $shop)
+                : self::skipped($module, $module->l10n('Sign-in page'), $blocking, SomcpConfig::authorizationEndpoint($shop)),
         ];
     }
 
@@ -454,6 +457,56 @@ class SomcpDiagnostic
             $module->l10n('Answers with the expected challenge, and credentials reach the module.'),
             $url
         );
+    }
+
+    /**
+     * Opens the page where an employee signs in to connect an assistant, the
+     * way a browser does, and checks that the module's own page answers.
+     *
+     * Called without a request, the page only says the request is not valid:
+     * nothing is parked, nothing is counted against the attempt limit. What
+     * this catches is another module answering in its place - one that sends
+     * every visitor without an account to a login, an age check or a country
+     * page - which leaves the assistant waiting on a page the merchant never
+     * sees.
+     *
+     * @param Somcp $module
+     * @param Shop $shop
+     *
+     * @return array{status:string, label:string, detail:string, url:string, fix:string}
+     */
+    private static function checkSignInPage(Somcp $module, Shop $shop): array
+    {
+        $url = SomcpConfig::authorizationEndpoint($shop);
+        $label = $module->l10n('Sign-in page');
+        $response = SomcpHttp::fetch($url, false);
+
+        if ($response['status'] >= 300 && $response['status'] < 400) {
+            return self::line(
+                self::ERROR,
+                $label,
+                $module->l10n(
+                    'This page sends visitors elsewhere (%location%) instead of showing the sign-in form. Another module or a rule of the hosting redirects it, so no employee can approve an assistant. Exclude this address from that redirection.',
+                    ['%location%' => Tools::substr((string) ($response['headers']['location'] ?? ''), 0, 200)]
+                ),
+                $url
+            );
+        }
+
+        if ($response['status'] !== 200 || strpos($response['body'], 'id="somcp-authorize"') === false) {
+            return self::line(
+                self::ERROR,
+                $label,
+                self::failure($module, $response, $shop)
+                    ?? $module->l10n(
+                        'This page answered %status%, but not with the module\'s sign-in form. Something else on the shop answers this address in its place, so no employee can approve an assistant.',
+                        ['%status%' => (string) $response['status']]
+                    ),
+                $url
+            );
+        }
+
+        return self::line(self::OK, $label, $module->l10n('Shows the module\'s sign-in form.'), $url);
     }
 
     /**

@@ -137,7 +137,7 @@ MCP client connects from the outside.
    `composer install` in it for Neuron AI, which runs the built-in assistant,
    and install the module.
 4. Press **Run the diagnostic** in the module settings: every line green means
-   a client can connect.
+   a client can connect, and that the sign-in page shows the module's own form.
 
 A local shop needs a public HTTPS address for an MCP client to reach it: the
 tunnel of step 2 is that address.

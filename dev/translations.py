@@ -293,6 +293,22 @@ T = {
  "Répond avec l'en-tête attendu, et les identifiants arrivent bien jusqu'au module.",
  "Responde con la cabecera esperada, y las credenciales llegan al módulo.",
  "Antwortet mit dem erwarteten Header, und die Anmeldedaten erreichen das Modul."),
+"Sign-in page": (
+ "Page de connexion",
+ "Página de inicio de sesión",
+ "Anmeldeseite"),
+"This page sends visitors elsewhere (%location%) instead of showing the sign-in form. Another module or a rule of the hosting redirects it, so no employee can approve an assistant. Exclude this address from that redirection.": (
+ "Cette page envoie les visiteurs ailleurs (%location%) au lieu d'afficher le formulaire de connexion. Un autre module ou une règle de l'hébergement la redirige : aucun employé ne peut donc autoriser un assistant. Excluez cette adresse de cette redirection.",
+ "Esta página envía a los visitantes a otro sitio (%location%) en lugar de mostrar el formulario de inicio de sesión. Otro módulo o una regla del alojamiento la redirige, así que ningún empleado puede autorizar a un asistente. Excluya esta dirección de esa redirección.",
+ "Diese Seite schickt Besucher woandershin (%location%), statt das Anmeldeformular anzuzeigen. Ein anderes Modul oder eine Regel des Hostings leitet sie um, sodass kein Mitarbeiter einen Assistenten freigeben kann. Nehmen Sie diese Adresse von dieser Umleitung aus."),
+"This page answered %status%, but not with the module's sign-in form. Something else on the shop answers this address in its place, so no employee can approve an assistant.": (
+ "Cette page a répondu %status%, mais pas avec le formulaire de connexion du module. Autre chose sur la boutique répond à sa place à cette adresse : aucun employé ne peut donc autoriser un assistant.",
+ "Esta página respondió %status%, pero no con el formulario de inicio de sesión del módulo. Otra cosa en la tienda responde en su lugar a esta dirección, así que ningún empleado puede autorizar a un asistente.",
+ "Diese Seite hat %status% geantwortet, aber nicht mit dem Anmeldeformular des Moduls. Etwas anderes im Shop beantwortet diese Adresse an seiner Stelle, sodass kein Mitarbeiter einen Assistenten freigeben kann."),
+"Shows the module's sign-in form.": (
+ "Affiche le formulaire de connexion du module.",
+ "Muestra el formulario de inicio de sesión del módulo.",
+ "Zeigt das Anmeldeformular des Moduls an."),
 "An application is asking to connect to your shop on your behalf.": (
  "Une application demande à se connecter à votre boutique en votre nom.",
  "Una aplicación solicita conectarse a su tienda en su nombre.",

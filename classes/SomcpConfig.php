@@ -555,11 +555,13 @@ class SomcpConfig
     }
 
     /**
+     * @param Shop|null $shop defaults to the shop answering the request
+     *
      * @return string
      */
-    public static function authorizationEndpoint(): string
+    public static function authorizationEndpoint(?Shop $shop = null): string
     {
-        return rtrim(self::shopBaseUrl(), '/') . '/' . self::ISSUER_PATH . '/authorize';
+        return rtrim(self::shopBaseUrl($shop), '/') . '/' . self::ISSUER_PATH . '/authorize';
     }
 
     /**

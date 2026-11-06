@@ -357,6 +357,26 @@
       <source>Answers with the expected challenge, and credentials reach the module.</source>
       <target>Répond avec l'en-tête attendu, et les identifiants arrivent bien jusqu'au module.</target>
     </trans-unit>
+    <!-- Sign-in page -->
+    <trans-unit id="9e5ffac02070831572fb04932fc0a648" resname="Sign-in page">
+      <source>Sign-in page</source>
+      <target>Page de connexion</target>
+    </trans-unit>
+    <!-- This page sends visitors elsewhere (%location%) instead of showing the sign-in form. Another module or a rule of the hosting redirects it, so no employee can approve an assistant. Exclude this address from that redirection. -->
+    <trans-unit id="541d8f1d64833e8b67595948bf008475" resname="This page sends visitors elsewhere (%location%) instead of showing the sign-in form. Another module or a rule of the hosting redirects it, so no employee can approve an assistant. Exclude this address from that redirection.">
+      <source>This page sends visitors elsewhere (%location%) instead of showing the sign-in form. Another module or a rule of the hosting redirects it, so no employee can approve an assistant. Exclude this address from that redirection.</source>
+      <target>Cette page envoie les visiteurs ailleurs (%location%) au lieu d'afficher le formulaire de connexion. Un autre module ou une règle de l'hébergement la redirige : aucun employé ne peut donc autoriser un assistant. Excluez cette adresse de cette redirection.</target>
+    </trans-unit>
+    <!-- This page answered %status%, but not with the module's sign-in form. Something else on the shop answers this address in its place, so no employee can approve an assistant. -->
+    <trans-unit id="4f8f7cd2a32c60575e4f02b466f75290" resname="This page answered %status%, but not with the module&#x27;s sign-in form. Something else on the shop answers this address in its place, so no employee can approve an assistant.">
+      <source>This page answered %status%, but not with the module's sign-in form. Something else on the shop answers this address in its place, so no employee can approve an assistant.</source>
+      <target>Cette page a répondu %status%, mais pas avec le formulaire de connexion du module. Autre chose sur la boutique répond à sa place à cette adresse : aucun employé ne peut donc autoriser un assistant.</target>
+    </trans-unit>
+    <!-- Shows the module's sign-in form. -->
+    <trans-unit id="91565f59e18178d6dfc9e684b41bcee6" resname="Shows the module&#x27;s sign-in form.">
+      <source>Shows the module's sign-in form.</source>
+      <target>Affiche le formulaire de connexion du module.</target>
+    </trans-unit>
     <!-- An application is asking to connect to your shop on your behalf. -->
     <trans-unit id="8f7ee43c0da7822a1b4449591af4aeee" resname="An application is asking to connect to your shop on your behalf.">
       <source>An application is asking to connect to your shop on your behalf.</source>

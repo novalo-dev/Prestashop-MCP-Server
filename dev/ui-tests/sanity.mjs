@@ -219,6 +219,13 @@ if (signedIn) {
 // account, solve the anti-robot check, approve, and the code goes back to the
 // assistant. Nothing on the way names the administration folder.
 await check('connect an assistant through the sign-in page', async () => {
+    // What the page's scripts say goes to the log, so a widget that fails
+    // quietly can still be told apart from one that was never loaded.
+    page.on('console', (message) => {
+        if (message.type() === 'error' || message.type() === 'warning') {
+            console.log(`  console ${message.type()}: ${message.text()}`);
+        }
+    });
     const shop = new URL(adminUrl).origin;
     const adminFolder = new URL(adminUrl).pathname.split('/').filter(Boolean)[0] || '';
     const front = (controller, query) => `${shop}/index.php?fc=module&module=somcp&controller=${controller}&${query}`;
@@ -250,7 +257,13 @@ await check('connect an assistant through the sign-in page', async () => {
 
     await page.locator('#somcp_email').fill(email);
     await page.locator('#somcp_password').fill(password);
-    await page.locator('altcha-widget input[type="checkbox"]').first().click();
+    // The widget draws its own box over a hidden checkbox, so the checkbox is
+    // clicked the way the widget's own drawing does it, not by mouse position.
+    await page.locator('altcha-widget input[type="checkbox"]').first().waitFor({ state: 'attached', timeout: 15000 })
+        .catch(async () => {
+            throw new Error(`the anti-robot widget was not drawn: ${(await page.locator('#somcp-authorize .captcha').innerHTML()).slice(0, 300)}`);
+        });
+    await page.locator('altcha-widget input[type="checkbox"]').first().evaluate((box) => box.click());
     await page.waitForFunction(() => {
         const input = document.querySelector('altcha-widget')?.querySelector('input[name="somcp_altcha"]')
             || document.querySelector('input[name="somcp_altcha"]');

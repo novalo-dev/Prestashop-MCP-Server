@@ -60,13 +60,12 @@ class SomcpToolListViewedNotSold
         return new SomcpTool(
             'somcp_list_viewed_not_sold',
             Somcp::t('List products viewed but not sold'),
-            'Lists the products of the shop with their page views and what they sold over a period, most '
-                . 'viewed first, so the ones seen but not bought stand out: the figures Stats > Product '
-                . 'details shows one product at a time. page_views is Total Viewed, quantity_sold is Total '
-                . 'bought, conversion_rate is units bought per view, revenue_tax_excl is Sales tax excluded '
-                . 'in the default currency, quantity is what is available for sale. Page views need Save '
-                . 'global page views on; when off, page_views is 0 and the answer says so. Read only. Best '
-                . 'sellers are somcp_list_best_sellers, the stock of a product somcp_get_stock.',
+            'Lists the products with their page views and sales over a period, most viewed first, so the ones '
+                . 'seen but not bought stand out, as Stats > Product details shows one product at a time. page_views '
+                . 'is Total Viewed, quantity_sold Total bought, conversion_rate units bought per view, '
+                . 'revenue_tax_excl Sales tax excluded in the default currency, quantity what is available for sale. '
+                . 'Page views need Save global page views on; when off, page_views is 0 and the answer says so. Read '
+                . 'only. Best sellers: somcp_list_best_sellers; a product\'s stock: somcp_get_stock.',
             [
                 'type' => 'object',
                 'properties' => [

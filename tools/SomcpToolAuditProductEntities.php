@@ -81,15 +81,13 @@ class SomcpToolAuditProductEntities
         return new SomcpTool(
             'somcp_audit_product_entities',
             Somcp::t('Audit how complete products are for answer engines'),
-            'Scores how complete each product of this shop is for an assistant answering a buyer, the least '
-                . 'complete first, and names for each product what is missing, under the labels of the product '
-                . 'page. Eleven criteria, each worth the same, so the score is 100 x filled / 11: brand, a GTIN '
-                . '(EAN-13, UPC or ISBN), MPN, features (3 or more), description (150 words or more), summary, '
-                . 'images (3 or more, each with a caption), weight, condition shown, a category deeper than Home, '
-                . 'and a meta description. Texts are read in one language. Read only. Use somcp_get_product to '
-                . 'read one product and somcp_update_product to fill what is missing; somcp_audit_product_schema '
-                . 'for what the page actually prints, and somcp_audit_product_seo for the meta titles and '
-                . 'descriptions in detail.',
+            'Scores how complete each product is for an assistant answering a buyer, least complete first, '
+                . 'naming what is missing with the labels of the product page. Eleven criteria of equal weight, score '
+                . '100 x filled / 11: brand, GTIN (EAN-13, UPC or ISBN), MPN, 3 or more features, a description of '
+                . '150 words or more, summary, 3 or more images each with a caption, weight, condition shown, a '
+                . 'category below Home, meta description. Texts in one language. Read only. To fill the gaps use '
+                . 'somcp_update_product; what the page prints: somcp_audit_product_schema; meta texts in detail: '
+                . 'somcp_audit_product_seo.',
             [
                 'type' => 'object',
                 'properties' => [

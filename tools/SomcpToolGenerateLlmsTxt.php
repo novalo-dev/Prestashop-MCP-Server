@@ -67,14 +67,13 @@ class SomcpToolGenerateLlmsTxt
         return new SomcpTool(
             'somcp_generate_llms_txt',
             Somcp::t('Generate the llms.txt file'),
-            'Writes an llms.txt at the root of the shop, the plain text summary some AI tools read at the root of '
-                . 'a site, from the shop\'s own data: name, a summary, the main categories, the policy and '
-                . 'information pages, the contact page. llms.txt is a proposed convention, not a standard: no '
-                . 'crawler or assistant is bound to read it. A file written by hand is replaced only with '
-                . 'overwrite: read it first with somcp_get_llms_txt, show the merchant what will go, and call once '
-                . 'they agree. One file holds one language. On a multistore installation the file is shared by '
-                . 'every shop. Not to be retried: if the answer is lost, read the file with somcp_get_llms_txt. '
-                . 'For robots.txt use somcp_generate_robots_txt; to read this file use somcp_get_llms_txt.',
+            'Writes llms.txt at the shop root, a plain text summary for AI tools, from the '
+                . 'shop\'s own data: name, summary, main categories, policy and information pages, contact page. A '
+                . 'proposed convention, not a standard: no crawler is bound to read it. A file written by hand is '
+                . 'replaced only with overwrite: read it first with somcp_get_llms_txt, show the merchant what will '
+                . 'go, and call once they agree. One language per file; on a multistore installation every shop '
+                . 'shares it. Not to be retried: if the answer is lost, read the file with somcp_get_llms_txt. For '
+                . 'robots.txt use somcp_generate_robots_txt.',
             [
                 'type' => 'object',
                 'properties' => [

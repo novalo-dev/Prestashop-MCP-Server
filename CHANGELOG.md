@@ -106,6 +106,14 @@ on **Orders > Shopping Carts**.
 
 ### Changed
 
+**Shorter audit and sales tools.** Four tools that went a little over the
+length agreed for a tool description - the CMS pages SEO audit, the product
+completeness audit for answer engines, the llms.txt generator and the list of
+products viewed but not sold - now describe themselves in a few sentences,
+lighter for the assistant on every step. What matters is kept: the names of
+every check and figure, that a hand-written llms.txt is replaced only once you
+agree, that it is never retried blindly, and which tool to use instead.
+
 **A recorded payment now names who took it.** The answer of
 `somcp_add_order_payment`, and each payment of `somcp_get_order`, now report
 the employee who recorded the payment on PrestaShop 9, as the **Employee**

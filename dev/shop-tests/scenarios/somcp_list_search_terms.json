@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "a long period on a fresh install: the table is empty, an empty list and no error", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31"}, "expect": "ok", "contains": ["\"date_from\": \"2000-01-01\"", "\"date_to\": \"2099-12-31\"", "\"terms\"", "\"returned\"", "\"total_count\"", "\"offset\": 0"]},
+    {"why": "the terms searched once too, only those that found nothing, one page of five", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "min_searches": 1, "no_results_only": true, "limit": 5}, "expect": "ok", "contains": ["\"terms\""]},
+    {"why": "a period with no search: nothing listed, not an error", "arguments": {"date_from": "2001-01-01", "date_to": "2001-01-31"}, "expect": "ok", "contains": ["\"terms\": []", "\"total_count\": 0", "\"returned\": 0"]},
+    {"why": "the next page", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "offset": 20}, "expect": "ok", "contains": ["\"offset\": 20"]},
+    {"why": "a period that ends before it starts is refused", "arguments": {"date_from": "2026-02-01", "date_to": "2026-01-01"}, "expect": "error", "contains": ["date_to: a date not before date_from"]},
+    {"why": "a missing date is refused", "arguments": {"date_from": "2026-02-01"}, "expect": "error", "contains": ["date_to: a date, YYYY-MM-DD"]},
+    {"why": "a date that does not exist is refused, not ignored", "arguments": {"date_from": "2026-13-01", "date_to": "2026-12-31"}, "expect": "error", "contains": ["date_from: a date, YYYY-MM-DD"]},
+    {"why": "fewer than one search is refused", "arguments": {"date_from": "2026-01-01", "date_to": "2026-01-31", "min_searches": 0}, "expect": "error", "contains": ["min_searches: a whole number, 1 at least"]},
+    {"why": "more than 100 terms at once is refused", "arguments": {"date_from": "2026-01-01", "date_to": "2026-01-31", "limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1, "date_from": "2026-01-01", "date_to": "2026-01-31"}, "expect": "error", "contains": ["foo: not a field of this tool", "offset: a whole number, 0 at least"]}
+  ]
+}

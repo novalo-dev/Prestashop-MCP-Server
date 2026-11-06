@@ -3518,26 +3518,43 @@ The levers that turn visits into orders: carts left behind, what customers searc
 - 8.0.1 has no **Status** column (the status is a text in **Order ID**) and shows **Online** only with guest checkout on; 9.0.0 has both. The tool returns the same fields on both.
 
 #### `somcp_list_search_terms`
-**State**: to write · [issue #102](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/102)
+**State**: written · [issue #102](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/102)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists what customers typed in the shop's search, with how often and how many results they got.
+**Does** - lists what visitors typed in the shop's search box over a period, with how many times and how many products each search found, as **Stats > Shop search**. Read only.
 
-**Do not use for** - search engine queries from outside the shop, which need Search Console.
+**Do not use for** - search engine queries from outside the shop, which need Search Console; the products that sold (→ `somcp_list_best_sellers`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `date_from` / `date_to` | string | no | `YYYY-MM-DD`, the last 30 days by default |
-| `no_results_only` | boolean | no | the searches that found nothing |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `date_from` / `date_to` | string | yes | **From:** / **To:**, `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; the employee's saved stats period is never read nor changed |
+| `min_searches` | integer | no | 2 by default, as the screen ("searched for more than once"); 1 to include terms searched once |
+| `no_results_only` | boolean | no | only the terms whose **Results** is 0: what visitors looked for and the catalogue does not have |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per term: `keywords`, `searches`, `average_results`, `last_searched`. Plus `total_count`.
+**Returns**
+
+| Field | Notes |
+|---|---|
+| `terms[].keywords` | **Keywords**, as stored (the first spelling the grouping keeps) |
+| `terms[].searches` | **Occurrences** |
+| `terms[].results` | **Results**: the most products found by that term in the period (`MAX(results)`), not an average |
+| `terms[].last_searched` | `MAX(date_add)`, `YYYY-MM-DD HH:MM:SS`; not on the screen, so an old gap can be told from a new one |
+| `date_from` / `date_to` | the period used |
+| `returned`, `total_count`, `offset` | `total_count` counts the terms after the minimum length and `min_searches`, so it matches the rows of the screen |
+
+Sorted by `searches`, highest first, then `keywords`.
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `min_searches` below 1; `limit` outside 1 to 100; a negative `offset`. When `statssearch` is not installed and enabled, the call is refused with a text that names **Shop search** (`statssearch`) and says nothing is recorded without it: an empty list would read as "nobody searched".
 
 **Notes**
-- Read from the table the statssearch module fills; when that module is not installed or active, the answer says so and returns nothing, rather than an empty list that would read as no searches.
-- Terms are grouped case- and accent-insensitively.
+- Read from the `statssearch` table, one row per search of the shop (`hookActionSearch`). Rows are grouped by `keywords` in SQL, so the collation of the install merges spellings as the screen does: `Mug` and `mug` are one term.
+- Terms shorter than the minimum word length of **Shop Parameters > Search** (`PS_SEARCH_MINWORDLEN`) are left out in SQL, not after paging, so a page is never short.
+- The table holds no customer, no IP and no session: nothing personal is returned. A term is returned as text, never as a link.
+- The token's shop only (`id_shop`), as the screen.
+- No difference between 8.0.1 and 9.0.0 (`statssearch` 2.0.2 on both).
 
 #### `somcp_list_viewed_not_sold`
 **State**: to write · [issue #103](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/103)

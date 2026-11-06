@@ -3042,6 +3042,11 @@
       <source>List abandoned carts</source>
       <target>Lister les paniers abandonnés</target>
     </trans-unit>
+    <!-- List shop search terms -->
+    <trans-unit id="5cce1729418b2a496f4a0c8c5e7ade72" resname="List shop search terms">
+      <source>List shop search terms</source>
+      <target>Lister les recherches de la boutique</target>
+    </trans-unit>
     <!-- Sales - read -->
     <trans-unit id="ede5d1f408783f0b1c89a003431b3712" resname="Sales - read">
       <source>Sales - read</source>

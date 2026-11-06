@@ -8,6 +8,7 @@ identifier, so the merchant can find it in the back office.
 
 - `somcp_ping`
 - `somcp_list_abandoned_carts`
+- `somcp_list_search_terms`
 
 ## Know which shop you are in
 
@@ -43,6 +44,19 @@ dates you used.
    promotion.
 4. **Read the next page** with `offset` when `total_count` is larger than
    what came back, rather than concluding from one page.
+
+## Searches on the shop
+
+1. **List them** with `somcp_list_search_terms` and the dates of the period.
+   As on **Stats > Shop search**, only the terms searched more than once come
+   back; `min_searches: 1` adds the ones searched once.
+2. **Read `results` as named**: the most products the term found in the
+   period, not an average. `no_results_only: true` keeps the terms that found
+   nothing: products visitors want and the catalogue does not show, a lead for
+   the merchant (a missing product, a missing word in a product name).
+3. **Say when the module is off.** When the tool answers that the Shop search
+   module is not active, nothing was recorded: never read it as nobody
+   searched.
 
 ## Never
 

@@ -18,6 +18,16 @@ are:
 
 ### Added
 
+**See what visitors search for on the shop.** The new tool
+`somcp_list_search_terms` lists what visitors typed in the shop's search box
+over a period, as **Stats > Shop search**: for each term, how many times it was
+searched and the most products it found. As on that page, only the terms
+searched more than once are listed unless asked otherwise, and it can keep only
+the searches that found nothing - what visitors looked for and the catalogue
+does not have. When the **Shop search** module is not active the answer says
+so, instead of an empty list that would read as nobody searched. It joins the
+**Boost sales** prompt and needs the `view` right on **Stats**.
+
 **Write an llms.txt for the shop.** The tool `somcp_generate_llms_txt` writes
 an llms.txt at the root of the shop, the plain text summary some AI tools read
 at the root of a site, from the shop's own data: its name, a summary written

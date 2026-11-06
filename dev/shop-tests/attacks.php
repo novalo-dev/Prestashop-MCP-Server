@@ -82,7 +82,12 @@ $http = static function (string $method, string $url, array $headers = [], ?stri
         CURLOPT_HEADERFUNCTION => static function ($curl, string $line) use (&$received): int {
             $parts = explode(':', $line, 2);
             if (count($parts) === 2) {
-                $received[strtolower(trim($parts[0]))] = trim($parts[1]);
+                $name = strtolower(trim($parts[0]));
+                // PrestaShop sets its own cookie on the same answer: every
+                // Set-Cookie is kept, or the module's would be overwritten.
+                $received[$name] = $name === 'set-cookie' && isset($received[$name])
+                    ? $received[$name] . "\n" . trim($parts[1])
+                    : trim($parts[1]);
             }
 
             return strlen($line);
@@ -400,7 +405,13 @@ $requestCookie = $cookieOf($started);
 $csrf = $csrfOf($started);
 ++$checks;
 if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpos($started['body'], 'somcp_password') === false) {
-    $failures[] = 'the authorization page does not show the sign-in form for a valid request (HTTP ' . $started['status'] . ')';
+    $failures[] = sprintf(
+        'the authorization page does not show the sign-in form for a valid request (HTTP %d, request cookie %s, form token %s, password field %s)',
+        $started['status'],
+        $requestCookie === '' ? 'missing' : 'set',
+        $csrf === '' ? 'missing' : 'present',
+        strpos($started['body'], 'somcp_password') === false ? 'missing' : 'present'
+    );
     echo "  FAIL  sign-in form shown\n";
 } else {
     echo "  ok    sign-in form shown\n";

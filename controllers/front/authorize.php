@@ -88,7 +88,6 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     public function init()
     {
         Somcp::bootClasses();
-        Somcp::ensureSchema();
 
         $this->open = SomcpConfig::isOn(SomcpConfig::ENABLED) && SomcpConfig::isOn(SomcpConfig::OAUTH_ENABLED);
 

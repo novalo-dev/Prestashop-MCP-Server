@@ -47,7 +47,7 @@ class SomcpToolListCartRules
     /** @var array<int, string> */
     private const FIELDS = ['active', 'name', 'code', 'has_code', 'current', 'language', 'limit', 'offset'];
 
-    /** @var array<int, string> The restriction columns, in the order has_restrictions reports them. */
+    /** @var array<string, string> The restriction columns, in the order has_restrictions reports them. */
     private const RESTRICTIONS = [
         'country_restriction' => 'country',
         'carrier_restriction' => 'carrier',
@@ -201,17 +201,19 @@ class SomcpToolListCartRules
         $where = self::conditions($arguments, $idShop);
         $db = Db::getInstance();
 
-        $total = (int) $db->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'cart_rule` cr WHERE ' . $where
-        );
+        // The count joins the names as the page does: the name filter reads
+        // them, and a total counted on other rows would not match the list.
+        $from = '`' . _DB_PREFIX_ . 'cart_rule` cr
+             LEFT JOIN `' . _DB_PREFIX_ . 'cart_rule_lang` crl
+                    ON crl.`id_cart_rule` = cr.`id_cart_rule` AND crl.`id_lang` = ' . (int) $idLang;
+
+        $total = (int) $db->getValue('SELECT COUNT(*) FROM ' . $from . ' WHERE ' . $where);
 
         $rows = $db->executeS(
             'SELECT cr.*, crl.`name`,
                     (SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'order_cart_rule` ocr
                      WHERE ocr.`id_cart_rule` = cr.`id_cart_rule` AND ocr.`deleted` = 0) AS `times_used`
-             FROM `' . _DB_PREFIX_ . 'cart_rule` cr
-             LEFT JOIN `' . _DB_PREFIX_ . 'cart_rule_lang` crl
-                    ON crl.`id_cart_rule` = cr.`id_cart_rule` AND crl.`id_lang` = ' . (int) $idLang . '
+             FROM ' . $from . '
              WHERE ' . $where . '
              ORDER BY cr.`id_cart_rule` DESC
              LIMIT ' . $offset . ', ' . $limit
@@ -295,14 +297,10 @@ class SomcpToolListCartRules
 
     /**
      * What a cart rule gives, built from its own columns: the discount, what it
-     * applies to, the gift, and a one-line summary. Shared with the detail tool
-     * the detail get (#106) so a rule is read the same way whichever tool
-     * reads it.
+     * applies to, the gift, and a one-line summary. Shared with the detail get
+     * (#106) so a rule is read the same way whichever tool reads it.
      *
-     * @param array<string, mixed> $row a cart_rule row, with free_shipping,
-     *                                   reduction_percent, reduction_amount,
-     *                                   reduction_tax, reduction_currency and
-     *                                   reduction_product
+     * @param array<string, mixed> $row a cart_rule row, with its reduction and gift columns
      *
      * @return array{reduction: array<string, mixed>|null, reduction_applies_to: string|null, gift: array<string, int>|null, summary: string}
      */

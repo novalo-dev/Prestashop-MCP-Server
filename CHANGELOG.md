@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Find the stock that never sells.** The new tool `somcp_list_unsold_products`
+lists the active products of the shop that no valid order bought, as
+**Products never purchased** on **Stats > Catalog statistics**, with what the
+screen does not show: the quantity for sale, the cost price and what that
+stock is worth, the costliest first, and the date each product last sold. With
+no period it counts every order ever, as the screen; with one, the products
+not bought in it. It reads the orders of the current shop only, joins the
+**Boost sales** prompt and needs the `view` right on **Stats**.
+
 **Spot the products that are looked at but not bought.** The new tool
 `somcp_list_viewed_not_sold` lists the products of the shop with their page
 views and what they sold over a period, most viewed first, as **Stats >

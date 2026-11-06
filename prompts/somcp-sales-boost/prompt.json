@@ -9,7 +9,8 @@
     "somcp_ping",
     "somcp_list_abandoned_carts",
     "somcp_list_search_terms",
-    "somcp_list_viewed_not_sold"
+    "somcp_list_viewed_not_sold",
+    "somcp_list_unsold_products"
   ],
   "controller": "AdminStats",
   "action": "view",

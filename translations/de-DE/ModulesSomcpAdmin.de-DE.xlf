@@ -3052,6 +3052,11 @@
       <source>List products viewed but not sold</source>
       <target>Angesehene, aber nicht verkaufte Produkte auflisten</target>
     </trans-unit>
+    <!-- List products never purchased -->
+    <trans-unit id="83a9005a09f16263a09f19145c3a3829" resname="List products never purchased">
+      <source>List products never purchased</source>
+      <target>Nie gekaufte Produkte auflisten</target>
+    </trans-unit>
     <!-- Sales - read -->
     <trans-unit id="ede5d1f408783f0b1c89a003431b3712" resname="Sales - read">
       <source>Sales - read</source>

@@ -10,6 +10,7 @@ identifier, so the merchant can find it in the back office.
 - `somcp_list_abandoned_carts`
 - `somcp_list_search_terms`
 - `somcp_list_viewed_not_sold`
+- `somcp_list_unsold_products`
 
 ## Know which shop you are in
 
@@ -73,6 +74,22 @@ dates you used.
    lead: a price, a photo or a description to look at. `min_page_views: 0`
    adds the products nobody opened, which are more about an empty catalogue
    than a lost sale.
+
+## Products never purchased
+
+1. **List them** with `somcp_list_unsold_products`. The period is optional:
+   left out, it lists the active products no valid order ever bought, as
+   **Products never purchased** on **Stats > Catalog statistics**; given, the
+   ones not bought in it, leaving out those added to the shop after its start.
+   Never add a period the merchant did not ask for.
+2. **Start with the costliest stock.** The list is sorted by
+   `stock_value_tax_excl`, units for sale times the cost price; a product
+   without a cost price has `null` there and comes last. By default only the
+   products with stock are listed: `min_quantity: 0` gives every product, as
+   the screen, and `products_available` is the count it compares with.
+3. **Say what the figures cover.** Orders are those of this shop only, and
+   `last_sold` tells a product that sold long ago from one that never did.
+   Setting a product offline or discounting it is the merchant's call.
 
 ## Never
 

@@ -3601,25 +3601,50 @@ Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, the
 - No difference between 8.0.1 and 9.0.0 (`statsproduct` 2.1.1 / 2.1.3, `statsdata` 2.1.0 / 2.1.2).
 
 #### `somcp_list_unsold_products`
-**State**: to write · [issue #104](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/104)
+**State**: written · [issue #104](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/104)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists active products in stock that sold nothing over a period.
+**Does** - lists the active products of the shop that no valid order bought, over a period or ever, with their stock and what that stock is worth - the **Products never purchased** list of **Stats > Catalog statistics**, with the stock the screen does not show. Read only.
 
-**Do not use for** - low stock (→ `somcp_list_low_stock`).
+**Do not use for** - low stock (→ `somcp_list_low_stock`); products seen but not bought (→ `somcp_list_viewed_not_sold`); what sold most (→ `somcp_list_best_sellers`); the stock of one product (→ `somcp_get_stock`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `days` | integer | no | 90 by default |
-| `min_quantity` | integer | no | only products with at least this much in stock; 1 by default |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `date_from` / `date_to` | string | no | `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; both or neither. Left out: no period, every valid order ever, as the screen. Given: products bought by no valid order dated (`o.date_add`) in the period, products added to the shop (`product_shop.date_add`) after `date_from` left out |
+| `id_category` | integer | no | **Choose a category**: only the products of that category, from `somcp_list_categories`; unknown in the shop is refused |
+| `min_quantity` | integer | no | only the products with at least this quantity for sale; 1 by default, so the stock that does not move; 0 lists every product, as the screen |
+| `language` | string | no | ISO code of one of the shop's active languages for `name`, as #149; shop default when left out; an unknown code is refused |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per product: `id_product`, `name`, `quantity`, `price_tax_incl`, `stock_value_tax_excl` (quantity times wholesale price, when set), `date_add`, `last_sold` (or `null`). Plus `total_count` and `total_stock_value`.
+**Returns**
+
+| Field | Notes |
+|---|---|
+| `products[].id_product`, `reference`, `name` | **ID**, **Name**, under the names of `somcp_list_best_sellers` |
+| `products[].quantity` | quantity for sale, as `somcp_list_best_sellers` |
+| `products[].price_tax_excl` | the base price, tax excluded (`product_shop.price`), as `somcp_get_product` |
+| `products[].wholesale_price` | **Cost price** of the product page, as `somcp_get_product` names it; `null` when 0, which means not set |
+| `products[].stock_value_tax_excl` | `quantity` times `wholesale_price`, rounded to the default currency's precision; `null` when `wholesale_price` is `null` |
+| `products[].date_add` | the date the product was added to the shop, ISO 8601 |
+| `products[].last_sold` | the date of the last valid order of the shop holding the product, any date, ISO 8601; `null` when never bought |
+| `total_count` | **Products never purchased**, with the filters, before paging |
+| `products_available` | **Products available**: the active products `id_category` and `min_quantity` keep |
+| `total_stock_value_tax_excl` | sum of `stock_value_tax_excl` over every product of `total_count`, not only the page |
+| `date_from` / `date_to`, `language` | what was used; `null` dates when left out |
+| `returned`, `offset` | as `somcp_list_best_sellers` |
+
+Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, highest first, then `id_product`: the stock that costs the most comes first.
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`), one given without the other; `id_category` not a whole number or unknown in the shop; `min_quantity` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149. An empty list is `products: []`, `total_count: 0`.
 
 **Notes**
-- Products created during the period are left out: they had no chance to sell yet.
+- Active, saved products of the token's shop only (`product_shop.active = 1`, `p.state = Product::STATE_SAVED`); orders of the token's shop only (`o.id_shop`). The screen counts the orders of every shop: the figures differ only in a multistore shop.
+- A product counts as bought when any of its combinations was (`order_detail.product_id`), as the screen.
+- The stock quantity is read through the shared `SomcpStats` subquery, the same way `somcp_list_best_sellers` reads it; a product without a stock row has 0.
+- Amounts are in the shop's default currency, read as stored, without the tax or specific prices of a customer.
+- No difference between 8.0.1 and 9.0.0 (`statscatalog` 2.0.4 on both).
 
 #### `somcp_list_cart_rules`
 **State**: to write · [issue #105](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/105)

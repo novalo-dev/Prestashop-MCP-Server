@@ -81,4 +81,26 @@ class SomcpStats
                 WHERE sa.`id_product` = ' . $productColumn . ' AND sa.`id_product_attribute` = 0'
                 . (string) StockAvailable::addSqlShopRestriction(null, $shop, 'sa') . ' LIMIT 1)';
     }
+
+    /**
+     * Whether a category with this id exists in the shop.
+     *
+     * The stats tools that filter on Choose a category refuse an identifier the
+     * shop does not have rather than answer with an empty list, which would read
+     * as "nothing in that category".
+     *
+     * @param int $idCategory
+     * @param int $idShop
+     *
+     * @return bool
+     */
+    public static function categoryInShop(int $idCategory, int $idShop): bool
+    {
+        // No LIMIT here: getValue() appends its own, and a second one is a
+        // syntax error.
+        return (bool) Db::getInstance()->getValue(
+            'SELECT 1 FROM `' . _DB_PREFIX_ . 'category_shop` cs
+             WHERE cs.`id_category` = ' . (int) $idCategory . ' AND cs.`id_shop` = ' . (int) $idShop
+        );
+    }
 }

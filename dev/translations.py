@@ -2423,6 +2423,10 @@ T = {
  "Lister les produits vus mais non vendus",
  "Listar los productos vistos pero no vendidos",
  "Angesehene, aber nicht verkaufte Produkte auflisten"),
+"List products never purchased": (
+ "Lister les produits jamais achetés",
+ "Listar los productos nunca comprados",
+ "Nie gekaufte Produkte auflisten"),
 "Sales - read": (
  "Ventes - lecture",
  "Ventas - lectura",

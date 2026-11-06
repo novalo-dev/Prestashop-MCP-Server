@@ -163,7 +163,7 @@ class SomcpToolListViewedNotSold
             $value = $arguments['id_category'];
             if (!is_int($value) || $value < 1) {
                 $problems[] = '- id_category: a whole number, the identifier somcp_list_categories gives';
-            } elseif (!self::categoryInShop((int) $value, $idShop)) {
+            } elseif (!SomcpStats::categoryInShop((int) $value, $idShop)) {
                 $problems[] = '- id_category: no category of this shop has this identifier, find it with somcp_list_categories';
             } else {
                 $idCategory = (int) $value;
@@ -295,23 +295,5 @@ class SomcpToolListViewedNotSold
         }
 
         return SomcpTool::json($answer);
-    }
-
-    /**
-     * Whether a category with this id exists in the shop.
-     *
-     * @param int $idCategory
-     * @param int $idShop
-     *
-     * @return bool
-     */
-    private static function categoryInShop(int $idCategory, int $idShop): bool
-    {
-        // No LIMIT here: getValue() appends its own, and a second one is a
-        // syntax error.
-        return (bool) Db::getInstance()->getValue(
-            'SELECT 1 FROM `' . _DB_PREFIX_ . 'category_shop` cs
-             WHERE cs.`id_category` = ' . (int) $idCategory . ' AND cs.`id_shop` = ' . (int) $idShop
-        );
     }
 }

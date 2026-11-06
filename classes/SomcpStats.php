@@ -43,9 +43,9 @@ class SomcpStats
      * column is an outer-query reference such as p.`id_product`, so the
      * subquery stays correlated to the row being read.
      *
-     * @param int    $idShop        shop the views are counted for
-     * @param string $start         quoted start literal, inclusive
-     * @param string $end           quoted end literal, inclusive
+     * @param int $idShop shop the views are counted for
+     * @param string $start quoted start literal, inclusive
+     * @param string $end quoted end literal, inclusive
      * @param string $productColumn outer reference to the product id column
      *
      * @return string a scalar subquery, parentheses included
@@ -70,7 +70,7 @@ class SomcpStats
      * addSqlShopRestriction, exactly as the back office reads it. The product
      * column is an outer-query reference such as p.`id_product`.
      *
-     * @param Shop   $shop          shop the stock is read for
+     * @param Shop $shop shop the stock is read for
      * @param string $productColumn outer reference to the product id column
      *
      * @return string a scalar subquery, parentheses included

@@ -307,9 +307,11 @@ class SomcpToolListViewedNotSold
      */
     private static function categoryInShop(int $idCategory, int $idShop): bool
     {
+        // No LIMIT here: getValue() appends its own, and a second one is a
+        // syntax error.
         return (bool) Db::getInstance()->getValue(
             'SELECT 1 FROM `' . _DB_PREFIX_ . 'category_shop` cs
-             WHERE cs.`id_category` = ' . (int) $idCategory . ' AND cs.`id_shop` = ' . (int) $idShop . ' LIMIT 1'
+             WHERE cs.`id_category` = ' . (int) $idCategory . ' AND cs.`id_shop` = ' . (int) $idShop
         );
     }
 }

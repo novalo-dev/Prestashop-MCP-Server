@@ -286,6 +286,51 @@ $expect('client registering a plain-http address on the internet', $http('POST',
 ])), 400);
 
 // ---------------------------------------------------------------------------
+$section('Allowed return addresses');
+$adminFolder = basename((string) _PS_ADMIN_DIR_);
+$hostsBefore = SomcpConfig::get(SomcpConfig::REDIRECT_HOSTS);
+$registerHttps = static function (string $uri) use ($http, $endpoint, $json): array {
+    return $http('POST', $endpoint('oauth', 'a=register'), $json, (string) json_encode([
+        'client_name' => 'Attack test',
+        'redirect_uris' => [$uri],
+    ]));
+};
+$expect('client registering a host that is not on the list', $registerHttps('https://attacker.example/callback'), 400);
+SomcpConfig::set(SomcpConfig::REDIRECT_HOSTS, '');
+$expect('client registering a known host while the list is empty', $registerHttps('https://claude.ai/api/mcp/auth_callback'), 400);
+// A client registered while its host was allowed, then the host taken off
+// the list: the check at sign-in time is what stops it, not the registration.
+SomcpConfig::set(SomcpConfig::REDIRECT_HOSTS, 'partner.example');
+$partner = SomcpOAuthClient::register([
+    'client_name' => 'Attack test partner',
+    'redirect_uris' => ['https://partner.example/callback'],
+]);
+SomcpConfig::set(SomcpConfig::REDIRECT_HOSTS, $hostsBefore);
+if ($partner === null) {
+    ++$checks;
+    $failures[] = 'could not register the partner test client while its host was allowed';
+    echo "  FAIL  partner test client registered\n";
+} else {
+    $offList = $http('GET', $endpoint('authorize', http_build_query([
+        'response_type' => 'code',
+        'client_id' => (string) $partner['client_id'],
+        'redirect_uri' => 'https://partner.example/callback',
+        'code_challenge' => $challenge,
+        'code_challenge_method' => 'S256',
+        'state' => 'attack',
+    ])), ['Accept: text/html']);
+    $expect('sign-in page for a return address taken off the list', $offList, 404);
+    ++$checks;
+    if (stripos($offList['body'] . implode(' ', $offList['headers']), 'partner.example') !== false
+        || ($adminFolder !== '' && stripos($offList['body'] . implode(' ', $offList['headers']), $adminFolder) !== false)) {
+        $failures[] = 'the refusal for a return address off the list names the address or the administration folder';
+        echo "  FAIL  refusal says nothing\n";
+    } else {
+        echo "  ok    refusal says nothing\n";
+    }
+}
+
+// ---------------------------------------------------------------------------
 $section('Relay');
 $relayUrl = static function (string $action) use ($endpoint): string {
     return $endpoint('relay', 'action=' . $action);

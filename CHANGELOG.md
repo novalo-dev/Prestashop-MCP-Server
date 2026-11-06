@@ -138,6 +138,20 @@ checks a change.
 runs in demo mode, as the **Generate robots.txt file** button of **Shop
 Parameters > Traffic & SEO** does.
 
+### Security
+
+**Only the assistants you allow can be connected.** The list of allowed return
+addresses (**Access and security** tab of the module, **Only allow these return
+addresses**) is now filled in on a new shop with the assistants the module works
+with - Claude, ChatGPT, Le Chat, Make, n8n Cloud, VS Code and Cursor - and an
+empty list now refuses them all, where it used to accept any address. The list
+is also checked each time someone signs in, not only when an application
+registers, so taking a host off the list cuts it off at once. A connection link
+that points anywhere else opens the shop's ordinary "page not found". Desktop
+assistants and coding agents, which answer on your own computer, are still
+always allowed. On update, an empty list is filled with the same assistants plus
+those already connected to your shop, so nothing you use stops working.
+
 ## 1.2.2 - 2026-11-05
 
 ### Added

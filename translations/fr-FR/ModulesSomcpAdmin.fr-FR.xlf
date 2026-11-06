@@ -612,10 +612,10 @@
       <source>Only allow these return addresses</source>
       <target>N'autoriser que ces adresses de retour</target>
     </trans-unit>
-    <!-- Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added. -->
-    <trans-unit id="71a7f567b7fef6921759d852d43111be" resname="Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.">
-      <source>Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.</source>
-      <target>Saisissez un nom de domaine, par exemple claude.ai, puis appuyez sur Entrée. Laissez vide pour accepter toute adresse enregistrée par une application. Les assistants de bureau et les agents de code passent par votre propre ordinateur et sont toujours autorisés ; un n8n auto-hébergé demande d'ajouter son propre nom de domaine.</target>
+    <!-- Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added. -->
+    <trans-unit id="7bb97209b8e425ccb8553f115213bf31" resname="Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.">
+      <source>Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.</source>
+      <target>Saisissez un nom de domaine, par exemple claude.ai, puis appuyez sur Entrée. Seuls ces domaines peuvent recevoir une connexion, et une liste vide les refuse tous. Les assistants de bureau et les agents de code passent par votre propre ordinateur et sont toujours autorisés ; un n8n auto-hébergé demande d'ajouter son propre nom de domaine.</target>
     </trans-unit>
     <!-- After the update, reconnect your assistants so that their access includes the new permissions. -->
     <trans-unit id="8f877834ba5aff2460d728d322ee9fac" resname="After the update, reconnect your assistants so that their access includes the new permissions.">

@@ -250,6 +250,42 @@ class SomcpHttp
     }
 
     /**
+     * Whether the request comes from a person's browser rather than a program.
+     *
+     * A browser asks for a page; an MCP client never does - the older
+     * revisions open their stream with text/event-stream, and must keep
+     * getting the 405 the specification tells them to expect, since a 404
+     * reads to them as a session that has gone.
+     *
+     * @return bool
+     */
+    public static function isBrowser(): bool
+    {
+        $accept = Tools::strtolower(self::header('Accept'));
+
+        return strpos($accept, 'text/html') !== false && strpos($accept, 'text/event-stream') === false;
+    }
+
+    /**
+     * Shows the shop's own "page not found" and stops the script, the way the
+     * dispatcher does for an address it does not know.
+     *
+     * The module's addresses are meant for assistants, not people: a visitor
+     * who opens one, or a link built to send a merchant somewhere they should
+     * not go, meets the same page as any other dead link - nothing that
+     * confirms the module is there.
+     *
+     * Callers run it from init(), before the parent init: the front controller
+     * sets the shop up only once per request, so a page-not-found controller
+     * started after it would find no service container and render nothing.
+     */
+    public static function notFoundPage(): void
+    {
+        Controller::getController('PageNotFoundController')->run();
+        exit;
+    }
+
+    /**
      * Sends the browser somewhere else and stops the script.
      *
      * PrestaShop's own Tools::redirect() and Tools::redirectAdmin() are

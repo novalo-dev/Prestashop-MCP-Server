@@ -202,7 +202,8 @@ still attached to one of them.
 Stored in `ps_configuration`, per shop with the usual multistore inheritance:
 module on/off, OAuth on/off, access and refresh token lifetimes (one hour and
 thirty days by default), refresh rotation, dynamic registration, client ID
-metadata documents, allowed redirect hosts, the profile allowed to grant
+metadata documents, allowed redirect hosts (the known clients by default; an
+empty list refuses every public host), the profile allowed to grant
 access, the log, the tool list cache lifetime, the tools and prompts the
 merchant switched off, and the scopes switched off as whole groups - each of
 these three lists twice, once for the assistants connected over MCP and once

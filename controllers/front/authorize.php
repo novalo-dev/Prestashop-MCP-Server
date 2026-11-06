@@ -46,6 +46,14 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     public $ssl = true;
 
     /**
+     * @var array{ok:bool, redirectable:bool, hidden:bool, error:string, description:string, data:array<string,mixed>}|null the validated request, worked out in init()
+     */
+    private $check;
+
+    /** @var array<string, string> */
+    private $query = [];
+
+    /**
      * The MCP endpoints answer even while the shop is closed.
      *
      * Maintenance mode hides the storefront from visitors. These addresses are
@@ -63,6 +71,44 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     }
 
     /**
+     * Validates the request before the shop page is set up.
+     *
+     * A return address on a host the merchant has not allowed gets the
+     * shop's "page not found", and that page can only be produced before the
+     * parent init (see SomcpHttp::notFoundPage()).
+     */
+    public function init()
+    {
+        Somcp::bootClasses();
+
+        if (SomcpConfig::isOn(SomcpConfig::ENABLED) && SomcpConfig::isOn(SomcpConfig::OAUTH_ENABLED)) {
+            $this->query = [
+                'client_id' => (string) Tools::getValue('client_id', ''),
+                'redirect_uri' => (string) Tools::getValue('redirect_uri', ''),
+                'response_type' => (string) Tools::getValue('response_type', ''),
+                'scope' => (string) Tools::getValue('scope', ''),
+                'state' => (string) Tools::getValue('state', ''),
+                'code_challenge' => (string) Tools::getValue('code_challenge', ''),
+                'code_challenge_method' => (string) Tools::getValue('code_challenge_method', ''),
+                'resource' => (string) Tools::getValue('resource', ''),
+            ];
+            $this->check = SomcpOAuthServer::validateAuthorizationRequest($this->query);
+
+            if ($this->check['hidden']) {
+                SomcpLogger::log(
+                    'redirect_host_refused',
+                    SomcpLogger::OUTCOME_FAILURE,
+                    'return address host is not allowed: ' . Tools::substr((string) parse_url($this->query['redirect_uri'], PHP_URL_HOST), 0, 100),
+                    $this->query['client_id']
+                );
+                SomcpHttp::notFoundPage();
+            }
+        }
+
+        parent::init();
+    }
+
+    /**
      * Validates the request and moves the visitor on.
      */
     public function initContent()
@@ -72,25 +118,15 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         Somcp::bootClasses();
         SomcpHttp::pageHeaders();
 
-        if (!SomcpConfig::isOn(SomcpConfig::ENABLED) || !SomcpConfig::isOn(SomcpConfig::OAUTH_ENABLED)) {
+        if ($this->check === null) {
             $this->refuse($this->module->l10n(
                 'This shop is not accepting connections from assistants right now.'));
 
             return;
         }
 
-        $query = [
-            'client_id' => (string) Tools::getValue('client_id', ''),
-            'redirect_uri' => (string) Tools::getValue('redirect_uri', ''),
-            'response_type' => (string) Tools::getValue('response_type', ''),
-            'scope' => (string) Tools::getValue('scope', ''),
-            'state' => (string) Tools::getValue('state', ''),
-            'code_challenge' => (string) Tools::getValue('code_challenge', ''),
-            'code_challenge_method' => (string) Tools::getValue('code_challenge_method', ''),
-            'resource' => (string) Tools::getValue('resource', ''),
-        ];
-
-        $check = SomcpOAuthServer::validateAuthorizationRequest($query);
+        $query = $this->query;
+        $check = $this->check;
 
         if (!$check['ok']) {
             SomcpLogger::log(

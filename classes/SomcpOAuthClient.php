@@ -38,8 +38,9 @@ class SomcpOAuthClient
     public const ORIGIN_STATIC = 'static';
 
     /**
-     * Return-address hosts of the clients the module is known to work with,
-     * offered as one-click suggestions on the settings page. Checked against
+     * Return-address hosts of the clients the module is known to work with.
+     * They are the default list of allowed return addresses on a new shop, and
+     * the one-click suggestions on the settings page. Checked against
      * each client's published redirect URI: Claude (claude.ai and claude.com),
      * ChatGPT, Make (www.make.com/oauth/cb/mcp), n8n Cloud
      * (oauth.n8n.cloud/oauth2/callback), VS Code for the web (vscode.dev/redirect)
@@ -329,8 +330,8 @@ class SomcpOAuthClient
     /**
      * Keeps the redirect URIs the module is willing to send a merchant to.
      *
-     * A plain http:// URI is only accepted on the loopback address, and the
-     * merchant can narrow public hosts further with the allowed hosts setting.
+     * A plain http:// URI is only accepted on the loopback address, and a
+     * public https:// URI only on a host of the allowed list.
      *
      * @param mixed $uris
      *
@@ -362,7 +363,7 @@ class SomcpOAuthClient
                     continue;
                 }
             } elseif ($scheme === 'https') {
-                if ($host === '' || ($allowedHosts !== [] && !in_array(Tools::strtolower($host), $allowedHosts, true))) {
+                if ($host === '' || (!self::isLoopbackHost($host) && !in_array(Tools::strtolower($host), $allowedHosts, true))) {
                     continue;
                 }
             } else {
@@ -376,6 +377,52 @@ class SomcpOAuthClient
         }
 
         return array_values(array_unique($clean));
+    }
+
+    /**
+     * Whether the module may send a merchant's browser to this address.
+     *
+     * Checked on every authorization request and not only when a client
+     * registers. A client registered before the list was narrowed, or one
+     * whose metadata document was fetched then, keeps the addresses it gave
+     * at the time; without this check a host taken off the list would still
+     * receive codes. The loopback address is always allowed: it is the
+     * merchant's own computer, where desktop assistants and coding agents wait
+     * for the answer, so a code sent there never reaches a third party.
+     *
+     * An empty list allows no public host at all. A list that falls back to
+     * "anything goes" when emptied would turn a mistaken click into a shop
+     * open to any application that registers.
+     *
+     * @param string $redirectUri
+     *
+     * @return bool
+     */
+    public static function redirectHostAllowed(string $redirectUri): bool
+    {
+        $parts = parse_url($redirectUri);
+        if (!is_array($parts)) {
+            return false;
+        }
+        $host = Tools::strtolower((string) ($parts['host'] ?? ''));
+        if ($host === '') {
+            return false;
+        }
+        if (self::isLoopbackHost($host)) {
+            return true;
+        }
+
+        return ($parts['scheme'] ?? '') === 'https' && in_array($host, self::allowedHosts(), true);
+    }
+
+    /**
+     * The default list of allowed return-address hosts, as it is saved.
+     *
+     * @return string
+     */
+    public static function defaultHosts(): string
+    {
+        return implode(' ', array_keys(self::KNOWN_HOSTS));
     }
 
     /**

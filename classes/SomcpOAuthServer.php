@@ -47,14 +47,21 @@ class SomcpOAuthServer
      *
      * @param array<string, string> $query
      *
-     * @return array{ok:bool, redirectable:bool, error:string, description:string, data:array<string,mixed>}
+     * A third kind is not answered at all: a return address on a host the
+     * merchant has not allowed. Whoever sends a merchant such a link is most
+     * likely trying to have a code delivered to their own server, and the page
+     * that answers them is the shop's ordinary "page not found" - nothing that
+     * confirms the module is there or says what to change.
+     *
+     * @return array{ok:bool, redirectable:bool, hidden:bool, error:string, description:string, data:array<string,mixed>}
      */
     public static function validateAuthorizationRequest(array $query): array
     {
-        $refuse = static function (string $error, string $description, bool $redirectable, array $data = []): array {
+        $refuse = static function (string $error, string $description, bool $redirectable, array $data = [], bool $hidden = false): array {
             return [
                 'ok' => false,
                 'redirectable' => $redirectable,
+                'hidden' => $hidden,
                 'error' => $error,
                 'description' => $description,
                 'data' => $data,
@@ -84,6 +91,9 @@ class SomcpOAuthServer
             );
 
             return $refuse('invalid_request', 'redirect_uri is not registered', false);
+        }
+        if (!SomcpOAuthClient::redirectHostAllowed($redirectUri)) {
+            return $refuse('access_denied', 'the return address is not on the list of allowed hosts', false, [], true);
         }
 
         // From here on the client and its address are known, so errors travel
@@ -127,7 +137,7 @@ class SomcpOAuthServer
         $data['code_challenge'] = $challenge;
         $data['code_challenge_method'] = $method;
 
-        return ['ok' => true, 'redirectable' => true, 'error' => '', 'description' => '', 'data' => $data];
+        return ['ok' => true, 'redirectable' => true, 'hidden' => false, 'error' => '', 'description' => '', 'data' => $data];
     }
 
     /**

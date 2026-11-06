@@ -149,7 +149,9 @@ class SomcpConfig
             self::REFRESH_ROTATION => '1',
             self::CIMD_ENABLED => '1',
             self::DCR_ENABLED => '1',
-            self::REDIRECT_HOSTS => '',
+            // The clients the module is known to work with. Emptied by the
+            // merchant, the list refuses every public host: see get().
+            self::REDIRECT_HOSTS => SomcpOAuthClient::defaultHosts(),
             self::REQUIRED_PROFILE => '0',
             self::LOG_ENABLED => '1',
             // Five minutes: long enough that an assistant is not re-reading the
@@ -180,6 +182,12 @@ class SomcpConfig
     public static function get(string $key, ?int $idShop = null): string
     {
         $value = Configuration::get($key, null, null, $idShop);
+        // An emptied list of return addresses means "refuse them all", which
+        // falling back on the default list would silently turn into "allow the
+        // usual ones". Only a missing value takes the default there.
+        if ($value === '' && $key === self::REDIRECT_HOSTS) {
+            return '';
+        }
         if ($value === false || $value === '') {
             $defaults = self::defaults();
 

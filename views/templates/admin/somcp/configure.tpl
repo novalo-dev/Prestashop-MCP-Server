@@ -466,7 +466,7 @@
                                 <button type="button" class="somcp-tag-suggest" data-somcp-host="{$somcp_host|escape:'html':'UTF-8'}">+ {$somcp_host|escape:'html':'UTF-8'} <span class="text-muted">{$somcp_client|escape:'html':'UTF-8'}</span></button>
                             {/foreach}
                         </p>
-                        <p class="help-block">{l s='Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.' d='Modules.Somcp.Admin'}</p>
+                        <p class="help-block">{l s='Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 

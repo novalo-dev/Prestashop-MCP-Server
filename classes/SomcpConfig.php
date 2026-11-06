@@ -132,6 +132,9 @@ class SomcpConfig
     /** @var string Secret the anti-robot challenges of the authorization page are signed with. */
     public const CAPTCHA_KEY = 'SOMCP_CAPTCHA_KEY';
 
+    /** @var string Fingerprint of sql/install.sql when the module's tables were last brought up to date. */
+    public const SCHEMA = 'SOMCP_SCHEMA';
+
     /** @var string Path of the module inside the shop, used as the issuer suffix. */
     public const ISSUER_PATH = 'module/somcp';
 
@@ -184,6 +187,7 @@ class SomcpConfig
             // first time it signs anything.
             self::STATE_KEY => '',
             self::CAPTCHA_KEY => '',
+            self::SCHEMA => '',
         ];
     }
 

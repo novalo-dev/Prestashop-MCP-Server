@@ -408,6 +408,7 @@ class Somcp extends Module
     public function hookDisplayBackOfficeHeader(): string
     {
         self::bootClasses();
+        self::ensureSchema();
         SomcpBackOffice::rememberAdminDir();
 
         $employee = $this->context->employee;
@@ -1529,9 +1530,48 @@ class Somcp extends Module
      *
      * @return bool
      */
+    /**
+     * Creates the tables and columns the module's code expects and the shop
+     * does not have yet.
+     *
+     * An upgrade script only runs when the version number changes. A test
+     * build, or files copied over a module of the same version, brings code
+     * that reads a new table while the shop still has the old ones - and the
+     * page that needs it fails with "Table doesn't exist". So the pages that
+     * use the newest tables call this first: it compares a fingerprint of
+     * sql/install.sql with the one recorded at the last run, and only when it
+     * differs runs installDatabase(), which adds what is missing and touches
+     * nothing that exists. Once per request at most.
+     */
+    public static function ensureSchema(): void
+    {
+        static $checked = false;
+        if ($checked) {
+            return;
+        }
+        $checked = true;
+
+        $file = _PS_MODULE_DIR_ . 'somcp/sql/install.sql';
+        $fingerprint = is_file($file) ? (string) md5_file($file) : '';
+        if ($fingerprint === '' || (string) Configuration::getGlobalValue(SomcpConfig::SCHEMA) === $fingerprint) {
+            return;
+        }
+
+        $module = Module::getInstanceByName('somcp');
+        if ($module instanceof self && Module::isInstalled('somcp')) {
+            $module->installDatabase();
+        }
+    }
+
     public function installDatabase(): bool
     {
-        return $this->runSqlFile('install.sql') && $this->addMissingColumns();
+        if (!$this->runSqlFile('install.sql') || !$this->addMissingColumns()) {
+            return false;
+        }
+        // Recorded so ensureSchema() leaves the shop alone until install.sql changes.
+        Configuration::updateGlobalValue(SomcpConfig::SCHEMA, (string) md5_file(_PS_MODULE_DIR_ . 'somcp/sql/install.sql'));
+
+        return true;
     }
 
     /**

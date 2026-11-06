@@ -33,11 +33,23 @@ if (!defined('_PS_VERSION_')) {
 /*
  * The door into the deposit screen, on PrestaShop 9.
  *
- * Identical in purpose to ConsentEntryController, and for the identical reason:
- * TokenizedUrlsListener demands a Symfony token on any admin route whose name
- * does not start with "_" or "api_", and only a request PrestaShop has already
- * authenticated can produce one. An assistant hands the merchant a plain
- * address; this route turns it into one the legacy page will accept.
+ * Every legacy back office page of PrestaShop 9 is served by one route,
+ * admin_legacy_controller_route, and TokenizedUrlsListener demands a Symfony
+ * CSRF token on any admin route whose name does not begin with "_" or "api_".
+ * That token belongs to the back office session, so an address handed out by
+ * an assistant cannot carry one, and an employee already signed in was met
+ * with the "token compromised" warning. This route is named with the api_
+ * prefix the listener leaves alone and carries no condition - a route condition
+ * is evaluated against a request Symfony builds from the path alone when the
+ * shop context is worked out, which on 9.1.0 turns a missed match into a server
+ * error. The firewall still applies: an employee who is not signed in is sent
+ * to the usual login form and comes back here afterwards. From inside that
+ * authenticated request, it builds the address of the legacy page with the
+ * tokens it needs, then redirects.
+ *
+ * PrestaShop 8 keeps the legacy address. Its own listener lets those through,
+ * its legacy pages never reach the Symfony router, and its firewall leaves
+ * authentication to each controller.
  *
  * The reference travels through and is not read here. It names a deposit and
  * grants nothing: the page behind checks that whoever arrives is the employee

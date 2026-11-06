@@ -38,7 +38,8 @@ once, in a few seconds, with your GitHub account.
   documents, refresh token rotation with reuse detection. Tokens are stored
   hashed and bound to the shop they were issued for.
 - **Uses PrestaShop permissions as they are.** An employee connects an assistant
-  on their own behalf, on a consent screen in the back office. The assistant
+  on their own behalf: they sign in with their back office account on the
+  shop's authorization page and approve what it may do. The assistant
   then holds exactly that employee's rights: each tool is tied to a back office
   page and one of the four rights PrestaShop already manages, `view`, `add`,
   `edit` or `delete`.

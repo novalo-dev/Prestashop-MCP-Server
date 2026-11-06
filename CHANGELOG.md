@@ -152,6 +152,16 @@ assistants and coding agents, which answer on your own computer, are still
 always allowed. On update, an empty list is filled with the same assistants plus
 those already connected to your shop, so nothing you use stops working.
 
+**Connecting an assistant happens on a page of your shop.** When an assistant
+asks to connect, a page of the shop itself now asks for your back office email
+and password, then shows what the assistant will be able to do and, in large
+letters, the address the answer will be sent to - the same page, without going
+through the back office. Only the account that signed in can approve, with its
+own rights, on the shop the assistant was sent to. A wrong password, an account
+switched off, a profile not allowed to connect assistants or an account not
+attached to that shop all get the same message, and the real reason is written
+in the module's log.
+
 ## 1.2.2 - 2026-11-05
 
 ### Added

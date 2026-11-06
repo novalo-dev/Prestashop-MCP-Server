@@ -79,5 +79,25 @@ function upgrade_module_1_3_0($module)
         Configuration::updateGlobalValue(SomcpConfig::REDIRECT_HOSTS, $listFor(null));
     }
 
+    // The employee who signs in on the authorization page is recorded on the
+    // pending request.
+    if (!$module->installDatabase()) {
+        return false;
+    }
+
+    // The consent screen left the back office for the shop front's
+    // authorization page: its hidden tab has nothing left to open. Its
+    // PrestaShop 9 route went with it, and Symfony keeps a compiled copy of the
+    // routes and services that still names the removed class until the cache
+    // is rebuilt.
+    $idTab = (int) Tab::getIdFromClassName('AdminSomcpConsent');
+    if ($idTab > 0) {
+        $tab = new Tab($idTab);
+        $tab->delete();
+    }
+    if (method_exists('Tools', 'clearSf2Cache')) {
+        Tools::clearSf2Cache();
+    }
+
     return true;
 }

@@ -279,7 +279,7 @@ class SomcpHttp
      * sets the shop up only once per request, so a page-not-found controller
      * started after it would find no service container and render nothing.
      */
-    public static function notFoundPage(): void
+    public static function notFoundPage(): never
     {
         Controller::getController('PageNotFoundController')->run();
         exit;
@@ -297,7 +297,7 @@ class SomcpHttp
      *
      * @param string $url absolute URL, already validated by the caller
      */
-    public static function redirect(string $url): void
+    public static function redirect(string $url): never
     {
         if (!headers_sent()) {
             header('Location: ' . $url);

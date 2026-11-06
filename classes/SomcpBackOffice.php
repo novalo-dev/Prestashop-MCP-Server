@@ -17,7 +17,8 @@
 declare(strict_types=1);
 
 /*
- * SomcpBackOffice - sending a visitor from the shop front to the consent screen.
+ * SomcpBackOffice - sending a visitor from outside the back office to one of
+ * the module's back office pages (the file deposit screen).
  *
  * Two things stand in the way and both are handled here.
  *
@@ -42,16 +43,12 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpBackOffice
 {
-    /** @var string Controller that shows the consent screen. */
-    public const CONSENT_CONTROLLER = 'AdminSomcpConsent';
-
     /**
      * @var string Controller the merchant deposits a file on.
      *
-     * The second page reached from outside the back office, and it goes through
-     * the same door for the same reasons: PrestaShop decides who the visitor is,
-     * and an employee who is not signed in is sent to the login form and comes
-     * back here on an address PrestaShop built.
+     * The page reached from outside the back office: PrestaShop decides who the
+     * visitor is, and an employee who is not signed in is sent to the login
+     * form and comes back here on an address PrestaShop built.
      */
     public const UPLOAD_CONTROLLER = 'AdminSomcpUpload';
 
@@ -70,9 +67,9 @@ class SomcpBackOffice
      * may connect one on their own behalf - and the assistant then holds
      * exactly their rights, no more.
      *
-     * Read from here by both the consent screen and the settings page, so the
-     * button an employee is offered and the answer they get when they press it
-     * can never disagree.
+     * Read from here by both the authorization page and the settings page, so
+     * the button an employee is offered and the answer they get when they press
+     * it can never disagree.
      *
      * @param int $idProfile
      *
@@ -121,24 +118,13 @@ class SomcpBackOffice
     }
 
     /**
-     * Absolute URL of the consent screen.
-     *
-     * @return string empty when the administration folder is unknown
-     */
-    public static function consentUrl(): string
-    {
-        return self::entryUrl(self::CONSENT_CONTROLLER, 'consent', []);
-    }
-
-    /**
      * Absolute URL of the page a file is deposited on.
      *
      * The reference travels in the address because the page has to know which
      * deposit it is serving. It authorizes nothing on its own: the page is
      * behind the back office session, and the deposit is refused unless the
      * employee signed in is the one the invitation was opened for. That check
-     * is what the specification demands of a URL-mode elicitation, and it is the
-     * same one the consent screen already makes.
+     * is what the specification demands of a URL-mode elicitation.
      *
      * @param string $reference
      * @param int $idEmployee the account the deposit was opened for
@@ -192,19 +178,6 @@ class SomcpBackOffice
             '',
             $extra
         );
-    }
-
-    /**
-     * Address of the consent screen in its legacy form.
-     *
-     * @param int $idEmployee employee the legacy token is computed for, 0 when unknown
-     * @param string $symfonyToken CSRF token of the back office session, empty on PrestaShop 8
-     *
-     * @return string
-     */
-    public static function legacyConsentUrl(int $idEmployee, string $symfonyToken): string
-    {
-        return self::legacyUrl(self::CONSENT_CONTROLLER, $idEmployee, $symfonyToken, []);
     }
 
     /**

@@ -45,26 +45,50 @@ T = {
  "Réglages enregistrés.",
  "Ajustes guardados.",
  "Einstellungen gespeichert."),
-"Nothing to approve": (
- "Rien à autoriser",
- "Nada que autorizar",
- "Nichts freizugeben"),
 "This connection request has expired or has already been answered. Start the connection again from your assistant.": (
  "Cette demande de connexion a expiré ou a déjà reçu une réponse. Relancez la connexion depuis votre assistant.",
  "Esta solicitud de conexión ha caducado o ya ha sido respondida. Vuelva a iniciar la conexión desde su asistente.",
  "Diese Verbindungsanfrage ist abgelaufen oder wurde bereits beantwortet. Starten Sie die Verbindung erneut aus Ihrem Assistenten."),
-"The application behind this request is no longer known to the shop.": (
- "L'application à l'origine de cette demande n'est plus connue de la boutique.",
- "La aplicación que originó esta solicitud ya no es conocida por la tienda.",
- "Die Anwendung hinter dieser Anfrage ist dem Shop nicht mehr bekannt."),
+"Sign in with your back office account to see what it asks for and answer.": (
+ "Connectez-vous avec votre compte du back-office pour voir ce qu'elle demande et répondre.",
+ "Inicie sesión con su cuenta del back office para ver lo que solicita y responder.",
+ "Melden Sie sich mit Ihrem Backoffice-Konto an, um zu sehen, was sie anfragt, und zu antworten."),
+"Email address": (
+ "Adresse e-mail",
+ "Dirección de correo electrónico",
+ "E-Mail-Adresse"),
+"Password": (
+ "Mot de passe",
+ "Contraseña",
+ "Passwort"),
+"Sign in": (
+ "Se connecter",
+ "Iniciar sesión",
+ "Anmelden"),
+"These sign-in details are not accepted.": (
+ "Ces identifiants ne sont pas acceptés.",
+ "Estos datos de acceso no se aceptan.",
+ "Diese Anmeldedaten werden nicht akzeptiert."),
+"Answers will be sent to": (
+ "Les réponses seront envoyées à",
+ "Las respuestas se enviarán a",
+ "Antworten werden gesendet an"),
+"Only continue if this address belongs to the assistant you are connecting yourself. If you did not start this connection, close this page.": (
+ "Ne continuez que si cette adresse appartient à l'assistant que vous êtes vous-même en train de connecter. Si vous n'avez pas lancé cette connexion, fermez cette page.",
+ "Continúe solo si esta dirección pertenece al asistente que usted mismo está conectando. Si no ha iniciado esta conexión, cierre esta página.",
+ "Fahren Sie nur fort, wenn diese Adresse zu dem Assistenten gehört, den Sie selbst gerade verbinden. Wenn Sie diese Verbindung nicht gestartet haben, schließen Sie diese Seite."),
+"Sending a file to an assistant": (
+ "Envoi d'un fichier à un assistant",
+ "Envío de un archivo a un asistente",
+ "Senden einer Datei an einen Assistenten"),
+"The page where you send a file to an assistant can be reached.": (
+ "La page où vous envoyez un fichier à un assistant est accessible.",
+ "La página en la que envía un archivo a un asistente es accesible.",
+ "Die Seite, auf der Sie einem Assistenten eine Datei senden, ist erreichbar."),
 "Connect an assistant": (
  "Connecter un assistant",
  "Conectar un asistente",
  "Einen Assistenten verbinden"),
-"Your account is not allowed to connect assistants to this shop. Ask an administrator to change the required profile in the module settings.": (
- "Votre compte n'a pas le droit de connecter un assistant à cette boutique. Demandez à un administrateur de modifier le profil requis dans les réglages du module.",
- "Su cuenta no tiene permiso para conectar asistentes a esta tienda. Pida a un administrador que cambie el perfil requerido en los ajustes del módulo.",
- "Ihr Konto darf keine Assistenten mit diesem Shop verbinden. Bitten Sie einen Administrator, das erforderliche Profil in den Moduleinstellungen zu ändern."),
 "Identified by the description it publishes at that address": (
  "Identifiée par la description qu'elle publie à cette adresse",
  "Identificada por la descripción que publica en esa dirección",
@@ -85,10 +109,6 @@ T = {
  "Cette demande de connexion n'est pas valide : rien n'a été renvoyé à l'application qui l'a émise.",
  "Esta solicitud de conexión no es válida, por lo que no se ha devuelto nada a la aplicación que la hizo.",
  "Diese Verbindungsanfrage ist ungültig, daher wurde nichts an die anfragende Anwendung zurückgesendet."),
-"The module cannot find the administration area of this shop yet. Open the module settings once and save them, then try again.": (
- "Le module ne trouve pas encore l'administration de cette boutique. Ouvrez les réglages du module, enregistrez-les une fois, puis réessayez.",
- "El módulo aún no encuentra la administración de esta tienda. Abra los ajustes del módulo, guárdelos una vez y vuelva a intentarlo.",
- "Das Modul findet die Verwaltung dieses Shops noch nicht. Öffnen Sie einmal die Moduleinstellungen, speichern Sie sie und versuchen Sie es erneut."),
 "Connect to this shop, see the list of available tools, and read your account details and the shop configuration": (
  "Se connecter à cette boutique, voir la liste des outils disponibles, et lire les informations de votre compte ainsi que la configuration de la boutique",
  "Conectarse a esta tienda, ver la lista de herramientas disponibles y leer los datos de su cuenta y la configuración de la tienda",
@@ -217,14 +237,6 @@ T = {
  "Aller au réglage",
  "Ir al ajuste",
  "Zur Einstellung"),
-"Consent screen": (
- "Écran d'autorisation",
- "Pantalla de autorización",
- "Freigabe-Bildschirm"),
-"The consent screen can be reached from the authorization flow.": (
- "L'écran d'autorisation est joignable depuis le parcours de connexion.",
- "La pantalla de autorización es accesible desde el proceso de conexión.",
- "Der Freigabe-Bildschirm ist über den Verbindungsablauf erreichbar."),
 "The administration folder is not known yet. Save the settings once and this resolves itself.": (
  "Le dossier d'administration n'est pas encore connu. Enregistrez les réglages une fois et le problème disparaît.",
  "La carpeta de administración aún no se conoce. Guarde los ajustes una vez y esto se resuelve solo.",
@@ -1462,10 +1474,6 @@ T = {
  "Le fichier n'a pas pu être enregistré. Vérifiez que la boutique peut écrire dans son dossier modules.",
  "El archivo no se ha podido guardar. Compruebe que la tienda puede escribir en su carpeta de módulos.",
  "Die Datei konnte nicht gespeichert werden. Prüfen Sie, ob der Shop in seinen Modulordner schreiben kann."),
-"Your account is not attached to this shop, so it cannot connect an assistant to it. Ask an administrator to give you access to that shop.": (
- "Votre compte n'est pas rattaché à cette boutique, il ne peut donc pas y connecter d'assistant. Demandez à un administrateur de vous donner accès à cette boutique.",
- "Su cuenta no está asociada a esta tienda, así que no puede conectarle un asistente. Pida a un administrador que le dé acceso a esa tienda.",
- "Ihr Konto ist diesem Shop nicht zugeordnet und kann daher keinen Assistenten mit ihm verbinden. Bitten Sie einen Administrator, Ihnen Zugang zu diesem Shop zu geben."),
 
 "Send files to your assistant": (
  "Envoyer des fichiers à votre assistant",

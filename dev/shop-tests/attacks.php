@@ -320,15 +320,173 @@ if ($partner === null) {
         'state' => 'attack',
     ])), ['Accept: text/html']);
     $expect('sign-in page for a return address taken off the list', $offList, 404);
+    // The shop's own 404 repeats the address it was asked for in its links
+    // (languages, canonical), so the host typed by the caller may show up:
+    // what must never show up is anything the caller did not already know.
     ++$checks;
-    if (stripos($offList['body'] . implode(' ', $offList['headers']), 'partner.example') !== false
-        || ($adminFolder !== '' && stripos($offList['body'] . implode(' ', $offList['headers']), $adminFolder) !== false)) {
-        $failures[] = 'the refusal for a return address off the list names the address or the administration folder';
+    if ($adminFolder !== '' && stripos($offList['body'] . implode(' ', $offList['headers']), $adminFolder) !== false) {
+        $failures[] = 'the refusal for a return address off the list names the administration folder';
         echo "  FAIL  refusal says nothing\n";
     } else {
         echo "  ok    refusal says nothing\n";
     }
 }
+
+// ---------------------------------------------------------------------------
+$section('Signing in on the authorization page');
+// An employee whose password the test knows, removed at the end.
+$signinPassword = 'Attack-' . bin2hex(random_bytes(8));
+$signinEmployee = new Employee();
+$signinEmployee->firstname = 'Attack';
+$signinEmployee->lastname = 'Signin';
+$signinEmployee->email = 'attack-signin-' . bin2hex(random_bytes(4)) . '@example.com';
+$signinEmployee->passwd = password_hash($signinPassword, PASSWORD_BCRYPT);
+$signinEmployee->id_profile = (int) _PS_ADMIN_PROFILE_;
+$signinEmployee->id_lang = (int) Configuration::get('PS_LANG_DEFAULT');
+$signinEmployee->active = true;
+$signinEmployee->add();
+
+$cookieOf = static function (array $response): string {
+    $line = (string) ($response['headers']['set-cookie'] ?? '');
+
+    return preg_match('/' . preg_quote(SomcpOAuthServer::REQUEST_COOKIE, '/') . '=([^;]+)/', $line, $m) ? $m[1] : '';
+};
+$csrfOf = static function (array $response): string {
+    return preg_match('/name="somcp_csrf" value="([^"]+)"/', $response['body'], $m) ? html_entity_decode($m[1]) : '';
+};
+$adminLeaks = [];
+$noAdmin = static function (string $what, array $response) use (&$adminLeaks, $adminFolder): void {
+    if ($adminFolder !== '' && stripos($response['body'] . ' ' . implode(' ', $response['headers']), $adminFolder) !== false) {
+        $adminLeaks[] = $what;
+    }
+};
+$authorizeUrl = $endpoint('authorize');
+$started = $http('GET', $endpoint('authorize', http_build_query([
+    'response_type' => 'code',
+    'client_id' => $clientA,
+    'redirect_uri' => 'http://127.0.0.1:9/callback',
+    'code_challenge' => $challenge,
+    'code_challenge_method' => 'S256',
+    'state' => 'signin',
+])), ['Accept: text/html']);
+$noAdmin('sign-in page', $started);
+$requestCookie = $cookieOf($started);
+$csrf = $csrfOf($started);
+++$checks;
+if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpos($started['body'], 'somcp_password') === false) {
+    $failures[] = 'the authorization page does not show the sign-in form for a valid request (HTTP ' . $started['status'] . ')';
+    echo "  FAIL  sign-in form shown\n";
+} else {
+    echo "  ok    sign-in form shown\n";
+    $withCookie = array_merge($form, ['Cookie: ' . SomcpOAuthServer::REQUEST_COOKIE . '=' . $requestCookie]);
+    $signin = static function (string $email, string $password, string $token) use ($http, $authorizeUrl, $withCookie): array {
+        return $http('POST', $authorizeUrl, $withCookie, http_build_query([
+            'somcp_step' => 'signin',
+            'somcp_csrf' => $token,
+            'somcp_email' => $email,
+            'somcp_password' => $password,
+        ]));
+    };
+    $refusedPage = static function (string $what, array $response) use (&$failures, &$checks): void {
+        ++$checks;
+        if ($response['status'] !== 200 || isset($response['headers']['location']) || strpos($response['body'], 'somcp_password') === false) {
+            $failures[] = $what . ': not refused on the sign-in page (HTTP ' . $response['status'] . ')';
+            echo "  FAIL  $what\n";
+        } else {
+            echo "  ok    $what\n";
+        }
+    };
+    $wrong = $signin((string) $signinEmployee->email, 'not-the-password', $csrf);
+    $refusedPage('wrong password', $wrong);
+    $noAdmin('wrong password', $wrong);
+    $unknown = $signin('nobody-' . bin2hex(random_bytes(4)) . '@example.com', $signinPassword, $csrf);
+    $refusedPage('unknown email', $unknown);
+    // The two refusals must read the same, or the page tells which emails exist.
+    ++$checks;
+    if (preg_replace('/value="[^"]*"/', '', $wrong['body']) !== preg_replace('/value="[^"]*"/', '', $unknown['body'])) {
+        $failures[] = 'a wrong password and an unknown email are not answered with the same page';
+        echo "  FAIL  same answer for a wrong password and an unknown email\n";
+    } else {
+        echo "  ok    same answer for a wrong password and an unknown email\n";
+    }
+    $refusedPage('right password without the form token', $signin((string) $signinEmployee->email, $signinPassword, 'forged'));
+    $requiredBefore = SomcpConfig::get(SomcpConfig::REQUIRED_PROFILE);
+    $otherProfile = (int) Db::getInstance()->getValue('SELECT `id_profile` FROM `' . _DB_PREFIX_ . 'profile` WHERE `id_profile` <> ' . (int) _PS_ADMIN_PROFILE_);
+    if ($otherProfile > 0) {
+        // A super administrator always passes the required profile, so the
+        // test employee is moved to another profile for this one check.
+        $signinEmployee->id_profile = $otherProfile;
+        $signinEmployee->update();
+        SomcpConfig::set(SomcpConfig::REQUIRED_PROFILE, (string) _PS_ADMIN_PROFILE_);
+        $refusedPage('right password on a profile not allowed to connect assistants', $signin((string) $signinEmployee->email, $signinPassword, $csrf));
+        SomcpConfig::set(SomcpConfig::REQUIRED_PROFILE, $requiredBefore);
+        $signinEmployee->id_profile = (int) _PS_ADMIN_PROFILE_;
+        $signinEmployee->update();
+    }
+
+    $signedIn = $signin((string) $signinEmployee->email, $signinPassword, $csrf);
+    $expect('right email and password', $signedIn, 302);
+    $noAdmin('after signing in', $signedIn);
+    $consentPage = $http('GET', $authorizeUrl, $withCookie);
+    $noAdmin('consent page', $consentPage);
+    $consentCsrf = $csrfOf($consentPage);
+    ++$checks;
+    if ($consentPage['status'] !== 200 || strpos($consentPage['body'], 'value="allow"') === false || strpos($consentPage['body'], '127.0.0.1') === false) {
+        $failures[] = 'after signing in, the consent page with the return host is not shown (HTTP ' . $consentPage['status'] . ')';
+        echo "  FAIL  consent page shown with the return host\n";
+    } else {
+        echo "  ok    consent page shown with the return host\n";
+    }
+    ++$checks;
+    if ($consentCsrf === '' || hash_equals($csrf, $consentCsrf)) {
+        $failures[] = 'the form token is not renewed at sign-in';
+        echo "  FAIL  form token renewed at sign-in\n";
+    } else {
+        echo "  ok    form token renewed at sign-in\n";
+    }
+    $consent = static function (string $token) use ($http, $authorizeUrl, $withCookie): array {
+        return $http('POST', $authorizeUrl, $withCookie, http_build_query([
+            'somcp_step' => 'consent',
+            'somcp_csrf' => $token,
+            'decision' => 'allow',
+        ]));
+    };
+    $stale = $consent($csrf);
+    ++$checks;
+    if (isset($stale['headers']['location'])) {
+        $failures[] = 'the consent was accepted with the form token shown before signing in';
+        echo "  FAIL  consent with the token from before the sign-in\n";
+    } else {
+        echo "  ok    consent with the token from before the sign-in\n";
+    }
+    $granted = $consent($consentCsrf);
+    $location = (string) ($granted['headers']['location'] ?? '');
+    ++$checks;
+    if ($granted['status'] !== 302 || strpos($location, 'http://127.0.0.1:9/callback?') !== 0 || strpos($location, 'code=') === false) {
+        $failures[] = 'allowing the connection does not send a code back to the assistant: ' . $location;
+        echo "  FAIL  code sent back to the assistant\n";
+    } else {
+        echo "  ok    code sent back to the assistant\n";
+        parse_str((string) parse_url($location, PHP_URL_QUERY), $back);
+        $expect('code from the page redeemed with its verifier', $redeem((string) ($back['code'] ?? ''), $clientA, $verifier), 200);
+    }
+    $replayed = $consent($consentCsrf);
+    ++$checks;
+    if (isset($replayed['headers']['location'])) {
+        $failures[] = 'the same consent was accepted twice';
+        echo "  FAIL  consent sent a second time\n";
+    } else {
+        echo "  ok    consent sent a second time\n";
+    }
+}
+++$checks;
+if ($adminLeaks !== []) {
+    $failures[] = 'the authorization pages name the administration folder: ' . implode(', ', $adminLeaks);
+    echo "  FAIL  administration folder never named\n";
+} else {
+    echo "  ok    administration folder never named\n";
+}
+$signinEmployee->delete();
 
 // ---------------------------------------------------------------------------
 $section('Relay');

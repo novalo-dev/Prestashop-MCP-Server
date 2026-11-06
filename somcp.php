@@ -1635,11 +1635,12 @@ class Somcp extends Module
     /**
      * The back office pages reached from outside the menu.
      *
-     * The consent screen, where an assistant is allowed in, and the deposit
-     * screen, where a file is handed to one. Neither belongs in the menu -
-     * nobody opens them on purpose, they are the destination of a flow - but
-     * both need a tab, because a controller without one has no security token
-     * and PrestaShop refuses the page.
+     * The deposit screen, where a file is handed to an assistant, and the page
+     * the chat of the built-in assistant talks to. Neither belongs in the menu -
+     * nobody opens them on purpose - but both need a tab, because a controller
+     * without one has no security token and PrestaShop refuses the page. The
+     * consent screen used to be one of them; it is now the shop front's
+     * authorization page, and upgrade-1.3.0 removes its tab.
      *
      * A method rather than a class constant, and that is not a style choice.
      * PrestaShop reflects on this class to validate the module, and
@@ -1653,7 +1654,6 @@ class Somcp extends Module
     private static function hiddenTabs(): array
     {
         return [
-            SomcpBackOffice::CONSENT_CONTROLLER,
             SomcpBackOffice::UPLOAD_CONTROLLER,
             SomcpBackOffice::ASSISTANT_CONTROLLER,
         ];

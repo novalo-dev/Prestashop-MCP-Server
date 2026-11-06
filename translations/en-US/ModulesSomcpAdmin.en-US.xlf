@@ -47,30 +47,60 @@
       <source>Settings saved.</source>
       <target>Settings saved.</target>
     </trans-unit>
-    <!-- Nothing to approve -->
-    <trans-unit id="70b4860f6924675f94b8416e3838230e" resname="Nothing to approve">
-      <source>Nothing to approve</source>
-      <target>Nothing to approve</target>
-    </trans-unit>
     <!-- This connection request has expired or has already been answered. Start the connection again from your assistant. -->
     <trans-unit id="54991db2bae4951265de5f01f0e667a6" resname="This connection request has expired or has already been answered. Start the connection again from your assistant.">
       <source>This connection request has expired or has already been answered. Start the connection again from your assistant.</source>
       <target>This connection request has expired or has already been answered. Start the connection again from your assistant.</target>
     </trans-unit>
-    <!-- The application behind this request is no longer known to the shop. -->
-    <trans-unit id="09fdb0237c71dead304799a20d9d9b03" resname="The application behind this request is no longer known to the shop.">
-      <source>The application behind this request is no longer known to the shop.</source>
-      <target>The application behind this request is no longer known to the shop.</target>
+    <!-- Sign in with your back office account to see what it asks for and answer. -->
+    <trans-unit id="4deaefd9b90c3731da61588297350616" resname="Sign in with your back office account to see what it asks for and answer.">
+      <source>Sign in with your back office account to see what it asks for and answer.</source>
+      <target>Sign in with your back office account to see what it asks for and answer.</target>
+    </trans-unit>
+    <!-- Email address -->
+    <trans-unit id="b357b524e740bc85b9790a0712d84a30" resname="Email address">
+      <source>Email address</source>
+      <target>Email address</target>
+    </trans-unit>
+    <!-- Password -->
+    <trans-unit id="dc647eb65e6711e155375218212b3964" resname="Password">
+      <source>Password</source>
+      <target>Password</target>
+    </trans-unit>
+    <!-- Sign in -->
+    <trans-unit id="b6d4223e60986fa4c9af77ee5f7149c5" resname="Sign in">
+      <source>Sign in</source>
+      <target>Sign in</target>
+    </trans-unit>
+    <!-- These sign-in details are not accepted. -->
+    <trans-unit id="476e58fd06f48a6238a4d675de06b567" resname="These sign-in details are not accepted.">
+      <source>These sign-in details are not accepted.</source>
+      <target>These sign-in details are not accepted.</target>
+    </trans-unit>
+    <!-- Answers will be sent to -->
+    <trans-unit id="287a73e46d32925b082ab17339dbe7e7" resname="Answers will be sent to">
+      <source>Answers will be sent to</source>
+      <target>Answers will be sent to</target>
+    </trans-unit>
+    <!-- Only continue if this address belongs to the assistant you are connecting yourself. If you did not start this connection, close this page. -->
+    <trans-unit id="1d9881ee421b372ec9a13d7426ca5a6f" resname="Only continue if this address belongs to the assistant you are connecting yourself. If you did not start this connection, close this page.">
+      <source>Only continue if this address belongs to the assistant you are connecting yourself. If you did not start this connection, close this page.</source>
+      <target>Only continue if this address belongs to the assistant you are connecting yourself. If you did not start this connection, close this page.</target>
+    </trans-unit>
+    <!-- Sending a file to an assistant -->
+    <trans-unit id="44209d36bbc49e61e084e8688e149a1d" resname="Sending a file to an assistant">
+      <source>Sending a file to an assistant</source>
+      <target>Sending a file to an assistant</target>
+    </trans-unit>
+    <!-- The page where you send a file to an assistant can be reached. -->
+    <trans-unit id="941ec8bd8603af4b91c3e064f0bb6844" resname="The page where you send a file to an assistant can be reached.">
+      <source>The page where you send a file to an assistant can be reached.</source>
+      <target>The page where you send a file to an assistant can be reached.</target>
     </trans-unit>
     <!-- Connect an assistant -->
     <trans-unit id="1d3106889f4f5b717317255e6c9e8812" resname="Connect an assistant">
       <source>Connect an assistant</source>
       <target>Connect an assistant</target>
-    </trans-unit>
-    <!-- Your account is not allowed to connect assistants to this shop. Ask an administrator to change the required profile in the module settings. -->
-    <trans-unit id="9e447929970e342164debb02d3302637" resname="Your account is not allowed to connect assistants to this shop. Ask an administrator to change the required profile in the module settings.">
-      <source>Your account is not allowed to connect assistants to this shop. Ask an administrator to change the required profile in the module settings.</source>
-      <target>Your account is not allowed to connect assistants to this shop. Ask an administrator to change the required profile in the module settings.</target>
     </trans-unit>
     <!-- Identified by the description it publishes at that address -->
     <trans-unit id="1b885966cbb809a432ac074a83a6118c" resname="Identified by the description it publishes at that address">
@@ -96,11 +126,6 @@
     <trans-unit id="2381b06010ab6fa0bc01ea6d48cbd7a9" resname="This connection request is not valid, so nothing was sent back to the application that made it.">
       <source>This connection request is not valid, so nothing was sent back to the application that made it.</source>
       <target>This connection request is not valid, so nothing was sent back to the application that made it.</target>
-    </trans-unit>
-    <!-- The module cannot find the administration area of this shop yet. Open the module settings once and save them, then try again. -->
-    <trans-unit id="b204962c75ef9a14503bc1813f3814dd" resname="The module cannot find the administration area of this shop yet. Open the module settings once and save them, then try again.">
-      <source>The module cannot find the administration area of this shop yet. Open the module settings once and save them, then try again.</source>
-      <target>The module cannot find the administration area of this shop yet. Open the module settings once and save them, then try again.</target>
     </trans-unit>
     <!-- Connect to this shop, see the list of available tools, and read your account details and the shop configuration -->
     <trans-unit id="001491cd9b5bd52f9ad1460a192aa6bd" resname="Connect to this shop, see the list of available tools, and read your account details and the shop configuration">
@@ -261,16 +286,6 @@
     <trans-unit id="382a341ede33d92cbd9ca1ef25ca64b2" resname="Go to the setting">
       <source>Go to the setting</source>
       <target>Go to the setting</target>
-    </trans-unit>
-    <!-- Consent screen -->
-    <trans-unit id="b5b4f3f787f2e5a15a6c5da5015c923c" resname="Consent screen">
-      <source>Consent screen</source>
-      <target>Consent screen</target>
-    </trans-unit>
-    <!-- The consent screen can be reached from the authorization flow. -->
-    <trans-unit id="189dd480f172dad83a6edae97bf4faf8" resname="The consent screen can be reached from the authorization flow.">
-      <source>The consent screen can be reached from the authorization flow.</source>
-      <target>The consent screen can be reached from the authorization flow.</target>
     </trans-unit>
     <!-- The administration folder is not known yet. Save the settings once and this resolves itself. -->
     <trans-unit id="e9fb83e2898fe03e702e4657f2c2dca3" resname="The administration folder is not known yet. Save the settings once and this resolves itself.">
@@ -1836,11 +1851,6 @@
     <trans-unit id="001b5ce52c2089287cb3d1b38eac2d8f" resname="The file could not be stored. Check that the shop can write inside its modules folder.">
       <source>The file could not be stored. Check that the shop can write inside its modules folder.</source>
       <target>The file could not be stored. Check that the shop can write inside its modules folder.</target>
-    </trans-unit>
-    <!-- Your account is not attached to this shop, so it cannot connect an assistant to it. Ask an administrator to give you access to that shop. -->
-    <trans-unit id="8cfb8d7443fa3604825dc8b0309ddc49" resname="Your account is not attached to this shop, so it cannot connect an assistant to it. Ask an administrator to give you access to that shop.">
-      <source>Your account is not attached to this shop, so it cannot connect an assistant to it. Ask an administrator to give you access to that shop.</source>
-      <target>Your account is not attached to this shop, so it cannot connect an assistant to it. Ask an administrator to give you access to that shop.</target>
     </trans-unit>
     <!-- Send files to your assistant -->
     <trans-unit id="37e86bd2ba14b2401bcab0413f5eaf85" resname="Send files to your assistant">

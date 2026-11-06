@@ -83,8 +83,9 @@ assistant calls. No line should be red before you connect an assistant.
    ChatGPT or another assistant
    ([where to paste it](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant)).
 
-The first time, the assistant opens your back office: you sign in and approve
-what it may do. That's it. Step by step with screenshots:
+The first time, the assistant opens a page of your shop: you sign in with your
+back office email and password, check where the answer goes, and approve what
+it may do. That's it. Step by step with screenshots:
 [Installation](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Installation).
 
 ---

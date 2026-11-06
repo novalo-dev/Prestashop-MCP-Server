@@ -219,6 +219,30 @@ class SomcpOAuthServer
     }
 
     /**
+     * Records which employee signed in to answer a pending request.
+     *
+     * The form token is renewed at the same time: the one shown before the
+     * sign-in was on a page anyone holding the link could open, and only the
+     * consent form, shown once the password is checked, gets the new one.
+     *
+     * @param int $idRequest
+     * @param int $idEmployee
+     *
+     * @return string the new form token
+     */
+    public static function attachEmployee(int $idRequest, int $idEmployee): string
+    {
+        $csrf = SomcpRandom::token(16);
+        Db::getInstance()->update(
+            'somcp_oauth_request',
+            ['id_employee' => (int) $idEmployee, 'csrf_token' => pSQL($csrf)],
+            '`id_request` = ' . (int) $idRequest . ' AND `consumed_at` IS NULL'
+        );
+
+        return $csrf;
+    }
+
+    /**
      * Marks a pending request as dealt with, whatever the merchant answered.
      *
      * @param int $idRequest

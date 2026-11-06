@@ -309,8 +309,8 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     background: #fdf3f4;
 }
 
-/* Consent screen: narrow column, because the merchant has one decision to make
-   and a full-width back office table buries it. */
+/* File deposit screen: narrow column, because the merchant has one decision to
+   make and a full-width back office table buries it. */
 .somcp-consent {
     max-width: 680px;
     margin: 0 auto;

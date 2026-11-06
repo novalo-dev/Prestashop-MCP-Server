@@ -37,15 +37,16 @@ from visitors, and these belong to the merchant.
 ## Connecting: discovery and OAuth
 
 ```
-client                      shop (somcp)                        back office
+client                      shop (somcp)
   |  POST /mcp (no token)  -->|
   |<-- 401 WWW-Authenticate: resource_metadata=".../prm"
   |  GET /prm  ------------->|  -> authorization server
   |  GET /.well-known/...  ->|  -> endpoints, PKCE S256, DCR / CIMD
   |  register (DCR) or present a client id metadata document (CIMD)
-  |  GET /authorize  ------->|  request parked in the database
-  |                          |-------------------------------->  consent screen
-  |                          |   employee signs in, reads the scopes, approves
+  |  GET /authorize  ------->|  return host checked against the allowed list
+  |                          |  request parked in the database
+  |                          |  same page: employee email and password,
+  |                          |  then the scopes and the return host, approve
   |<-- redirect with code (valid 60 s)
   |  POST token (code + PKCE verifier) --> access + refresh token
   |  POST /mcp  Authorization: Bearer ...
@@ -56,8 +57,10 @@ The pieces, in `classes/`:
 - `SomcpMetadata` builds both discovery documents.
 - `SomcpOAuthClient` identifies the client, by dynamic registration or by a
   client ID metadata document, and validates its redirect URIs: `https`, or
-  `http` on loopback only, optionally restricted to a list of hosts the
-  merchant sets.
+  `http` on loopback only, and a public host only when it is on the list the
+  merchant sets (the known clients by default). The host is checked again on
+  every authorization request, and one off the list gets the shop's "page not
+  found".
 - `SomcpOAuthServer` runs the authorization request and the consent.
 - `SomcpOAuthToken` issues codes and tokens. Everything is stored **hashed**.
   Tokens are bound to the resource they were issued for (RFC 8707), so a token
@@ -72,17 +75,25 @@ The pieces, in `classes/`:
   `mcp.appearance.read`, `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`,
   `mcp.sales.read`, `mcp.sales.write`.
 
-Reaching the consent screen from a front controller is its own problem.
-PrestaShop 8 accepts a legacy back office address with a computed token.
-PrestaShop 9 demands a Symfony CSRF token that a front controller cannot
-produce, so somcp enters through a Symfony route of its own
-(`src/Controller/ConsentEntryController.php`, route `api_somcp_consent`), which
-PrestaShop authenticates natively and which then forwards with both tokens.
-`SomcpBackOffice` builds these addresses.
+The employee signs in on the authorization page itself, a bare page of the
+shop front (`controllers/front/authorize.php`, `views/templates/front/authorize.tpl`)
+with no theme script on it. The page checks the email and password with
+PrestaShop's own `Employee::getByEmail()`, then the module's required profile
+and the employee's shop associations, and records the employee on the pending
+request; only that account can then give the consent, with its own rights. Every
+refusal reads the same on screen and the reason goes to the module's log. No
+page or redirect of this flow names the administration folder.
+
+The file deposit page is still a back office page. PrestaShop 8 accepts a legacy
+back office address with a computed token. PrestaShop 9 demands a Symfony CSRF
+token that a front controller cannot produce, so somcp enters through a Symfony
+route of its own (`src/Controller/UploadEntryController.php`, route
+`api_somcp_upload`), which PrestaShop authenticates natively and which then
+forwards with both tokens. `SomcpBackOffice` builds this address.
 
 `config/services.yml` is compiled on PrestaShop 8 too, even though the route is
-only used on 9. Those controllers therefore take nothing in their constructor
-and look the PrestaShop 9 token up at run time: a constructor asking for a class
+only used on 9. The controller therefore takes nothing in its constructor and
+looks the PrestaShop 9 token up at run time: a constructor asking for a class
 that only exists on 9 stops Symfony from building its container on 8, and the
 whole back office answers 500. CI compiles the container on both.
 

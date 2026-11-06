@@ -312,9 +312,9 @@ class SomcpDiagnostic
 
         return self::line(
             $known ? self::OK : self::WARNING,
-            $module->l10n('Consent screen'),
+            $module->l10n('Sending a file to an assistant'),
             $known
-                ? $module->l10n('The consent screen can be reached from the authorization flow.')
+                ? $module->l10n('The page where you send a file to an assistant can be reached.')
                 : $module->l10n('The administration folder is not known yet. Save the settings once and this resolves itself.'),
             ''
         );

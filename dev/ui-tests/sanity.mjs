@@ -264,11 +264,19 @@ await check('connect an assistant through the sign-in page', async () => {
             throw new Error(`the anti-robot widget was not drawn: ${(await page.locator('#somcp-authorize .captcha').innerHTML()).slice(0, 300)}`);
         });
     await page.locator('altcha-widget input[type="checkbox"]').first().evaluate((box) => box.click());
-    await page.waitForFunction(() => {
-        const input = document.querySelector('altcha-widget')?.querySelector('input[name="somcp_altcha"]')
-            || document.querySelector('input[name="somcp_altcha"]');
-        return input && input.value.length > 0;
-    }, null, { timeout: 30000 });
+    // Polled from the test rather than with waitForFunction, which runs its
+    // check through eval() - and the page's Content-Security-Policy refuses
+    // eval, as it should.
+    const payload = page.locator('input[name="somcp_altcha"]').first();
+    for (let waited = 0; ; waited += 500) {
+        if ((await payload.count()) > 0 && (await payload.inputValue()) !== '') {
+            break;
+        }
+        if (waited >= 30000) {
+            throw new Error('the anti-robot check was not solved within 30 seconds');
+        }
+        await page.waitForTimeout(500);
+    }
     await Promise.all([page.waitForLoadState('load'), page.locator('form button[type="submit"]').first().click()]);
     await page.locator('#somcp-authorize[data-somcp-state="consent"]').waitFor({ timeout: 15000 });
     await shown('consent page');

@@ -99,6 +99,7 @@ class SomcpGuard
      */
     public static function challenge(): string
     {
+        self::dependencies();
         $challenge = self::altcha()->createChallenge(new AltchaOrg\Altcha\CreateChallengeOptions(
             algorithm: new AltchaOrg\Altcha\Algorithm\Pbkdf2(),
             cost: self::CAPTCHA_COST,
@@ -125,6 +126,7 @@ class SomcpGuard
             return false;
         }
 
+        self::dependencies();
         try {
             $parsed = AltchaOrg\Altcha\Payload::fromBase64($payload);
             $result = self::altcha()->verifySolution(new AltchaOrg\Altcha\VerifySolutionOptions(
@@ -149,10 +151,30 @@ class SomcpGuard
     }
 
     /**
+     * Loads the module's Composer dependencies when nothing has yet.
+     *
+     * PrestaShop registers a module's autoloader through its Symfony kernel,
+     * which a legacy front controller of PrestaShop 8 never boots: there, the
+     * classes of vendor/ and of src/ were simply not found.
+     */
+    private static function dependencies(): void
+    {
+        if (class_exists('RateLimit\\Rate') && class_exists('AltchaOrg\\Altcha\\Altcha')
+            && class_exists('Novalo\\Somcp\\Security\\DbRateLimiter')) {
+            return;
+        }
+        $autoload = _PS_MODULE_DIR_ . 'somcp/vendor/autoload.php';
+        if (is_file($autoload)) {
+            require_once $autoload;
+        }
+    }
+
+    /**
      * @return AltchaOrg\Altcha\Altcha
      */
     private static function altcha(): AltchaOrg\Altcha\Altcha
     {
+        self::dependencies();
         // Its own key rather than the shop's, written at the all-shops level
         // like the other secrets the module seeds: a challenge signed on one
         // shop of a multistore is solved on the page of that same shop anyway.
@@ -174,6 +196,7 @@ class SomcpGuard
      */
     private static function limiter(string $what, int $hits, int $seconds): Novalo\Somcp\Security\DbRateLimiter
     {
+        self::dependencies();
         return new Novalo\Somcp\Security\DbRateLimiter(RateLimit\Rate::custom($hits, $seconds), $what);
     }
 

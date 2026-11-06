@@ -414,7 +414,8 @@ customer has none. The count joins the same tables as the list, so
   `shipping_cost_tax_included`, `tracking_number`, `tracking_url`;
 - `totals`: `taxes`, `wrapping_tax_excluded` and `wrapping_tax_included`;
 - `payments`, each with `currency`, `invoice_number` (empty when not tied to an
-  invoice) and `employee` (PrestaShop 9 only, empty on 8);
+  invoice), `id_employee` and `employee` (who recorded it, PrestaShop 9 only,
+  `null` and empty on 8);
 - `documents`: `invoices` (with `id_order_invoice`), `delivery_slips`
   (`id_order_invoice`, `number` with the shop's prefix, `date`,
   `total_tax_included`) and `credit_slips`;
@@ -654,7 +655,7 @@ order paid (→ `somcp_set_order_status`).
 | `id_order` | integer | one of the two | identifier |
 | `reference` | string | one of the two | reference |
 | `amount` | number | yes | greater than 0, in `currency` |
-| `payment_method` | string | yes | as the merchant would type it, for example "Bank wire"; 255 characters at most, without `< > = { }` |
+| `payment_method` | string | yes | best given as the **Payment** block suggests it: the name of the shop's payment module, for example "Bank transfer", "Payments by check" or "Cash on delivery (COD)", so the Payment table and the order read the same method; 255 characters at most, without `< > = { }` |
 | `currency` | string | no | ISO code; the order's currency by default |
 | `payment_date` | string | no | ISO 8601; now by default |
 | `transaction_id` | string | no | the bank's or the processor's reference, 254 characters at most |
@@ -662,10 +663,12 @@ order paid (→ `somcp_set_order_status`).
 
 **Returns** - `added`, `order` (`id_order` and `reference`), `id_order_payment`,
 `amount`, `currency`, `payment_method`, `transaction_id`, `payment_date` (in the
-shop's time), `total_paid_real` after the payment, `total_tax_included` of the
-order, `order_currency`, `remaining` (what is still due, never below zero), and
-`warning` when the payment row was added but the order or its invoice could not
-be fully updated.
+shop's time), `id_employee` (who recorded it, as the **Employee** column of
+9.0.0; `null` on 8.0.1, which has neither the column nor the argument, and
+matches `id_employee` of `payments[]` in `somcp_get_order`), `total_paid_real`
+after the payment, `total_tax_included` of the order, `order_currency`,
+`remaining` (what is still due, never below zero), and `warning` when the
+payment row was added but the order or its invoice could not be fully updated.
 
 **Notes** - the block holds a table (Date, Payment method, Transaction ID,
 Amount, Invoice, and **Employee** on 9.0.0 only) and a line to add one: date,

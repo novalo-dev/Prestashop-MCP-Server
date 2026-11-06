@@ -81,6 +81,13 @@ on **Orders > Shopping Carts**.
 
 ### Changed
 
+**A recorded payment now names who took it.** The answer of
+`somcp_add_order_payment`, and each payment of `somcp_get_order`, now report
+the employee who recorded the payment on PrestaShop 9, as the **Employee**
+column of the **Payment** block shows it (nothing on PrestaShop 8, which has no
+such column). The payment method is best given as the name of the shop's
+payment module, so the Payment table and the order read the same method.
+
 **Shorter attribute tools.** The seven tools of Catalog > Attributes &
 Features > Attributes - list, read, create and change the attribute groups and
 their values - now describe themselves in a few sentences, lighter for the

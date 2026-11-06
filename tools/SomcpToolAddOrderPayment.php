@@ -83,8 +83,10 @@ class SomcpToolAddOrderPayment
                     ],
                     'payment_method' => [
                         'type' => 'string',
-                        'description' => 'The payment method as the merchant would type it, for example "Bank '
-                            . 'wire" or "Cheque". 255 characters at most, without < > = { }.',
+                        'description' => 'The payment method, best given as the Payment block suggests it: the name '
+                            . 'of the shop\'s payment module, for example "Bank transfer", "Payments by check" or '
+                            . '"Cash on delivery (COD)", so the Payment table and the order read the same method. '
+                            . '255 characters at most, without < > = { }.',
                     ],
                     'currency' => [
                         'type' => 'string',
@@ -141,7 +143,7 @@ class SomcpToolAddOrderPayment
         $method = is_string($arguments['payment_method'] ?? null) ? trim($arguments['payment_method']) : '';
         if ($method === '') {
             return SomcpTool::text(
-                'Nothing was recorded: payment_method is required, for example "Bank wire".',
+                'Nothing was recorded: payment_method is required, for example "Bank transfer".',
                 true
             );
         }
@@ -239,8 +241,11 @@ class SomcpToolAddOrderPayment
         // PrestaShop 9 stores who took the payment (order_payment.id_employee)
         // through a seventh argument that 8.0.1 does not have. The signature
         // says which, rather than the version number.
-        if ((new ReflectionMethod($order, 'addOrderPayment'))->getNumberOfParameters() >= 7) {
-            $arguments[] = $idEmployee > 0 ? $idEmployee : null;
+        $storesEmployee = (new ReflectionMethod($order, 'addOrderPayment'))->getNumberOfParameters() >= 7;
+        $storedEmployee = null;
+        if ($storesEmployee) {
+            $storedEmployee = $idEmployee > 0 ? $idEmployee : null;
+            $arguments[] = $storedEmployee;
         }
 
         try {
@@ -293,6 +298,10 @@ class SomcpToolAddOrderPayment
             'payment_method' => $method,
             'transaction_id' => $transaction,
             'payment_date' => $date,
+            // Who recorded it, as the Employee column of the Payment block on
+            // PrestaShop 9; null on 8.0.1, which has neither the column nor the
+            // argument. Matches id_employee of payments[] in somcp_get_order.
+            'id_employee' => $storedEmployee,
             'total_paid_real' => $paid,
             'total_tax_included' => $total,
             'order_currency' => Validate::isLoadedObject($orderCurrency) ? (string) $orderCurrency->iso_code : '',

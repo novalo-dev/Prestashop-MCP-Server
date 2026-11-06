@@ -578,8 +578,10 @@ class SomcpToolGetOrder
             // The Employee column exists on PrestaShop 9 only: the property
             // is not there on 8, where the payment says nothing of who took it.
             $employee = '';
+            $idEmployee = null;
             if (property_exists($payment, 'id_employee') && (int) $payment->id_employee > 0) {
-                $who = new Employee((int) $payment->id_employee);
+                $idEmployee = (int) $payment->id_employee;
+                $who = new Employee($idEmployee);
                 if (Validate::isLoadedObject($who)) {
                     $employee = trim((string) $who->firstname . ' ' . (string) $who->lastname);
                 }
@@ -596,6 +598,10 @@ class SomcpToolGetOrder
                 'invoice_number' => $invoice instanceof OrderInvoice
                     ? (string) $invoice->getInvoiceNumberFormatted((int) $order->id_lang, (int) $order->id_shop)
                     : '',
+                // The Employee column of PrestaShop 9: the name for a person to
+                // read, the id for somcp_add_order_payment to match its own
+                // answer against. Both null or empty on 8, where there is none.
+                'id_employee' => $idEmployee,
                 'employee' => $employee,
             ];
         }

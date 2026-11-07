@@ -79,6 +79,23 @@ function upgrade_module_1_3_0($module)
         Configuration::updateGlobalValue(SomcpConfig::REDIRECT_HOSTS, $listFor(null));
     }
 
+    // "Accept new connections" is gone: the consent page now decides on new
+    // connections, and "Enable the MCP server" stops everything at once. Its
+    // name promised less than it did - off, it also refused to renew the
+    // tokens of the assistants already connected. Where a merchant had it
+    // off, at any level, the server is switched off at that level instead, so
+    // a shop closed to assistants stays closed.
+    $oauthRows = $db->executeS('SELECT `id_shop_group`, `id_shop` FROM `' . bqSQL($table) . '`'
+        . " WHERE `name` = 'SOMCP_OAUTH_ENABLED' AND `value` = '0'");
+    foreach (is_array($oauthRows) ? $oauthRows : [] as $row) {
+        if ($row['id_shop'] === null && $row['id_shop_group'] === null) {
+            Configuration::updateGlobalValue(SomcpConfig::ENABLED, '0');
+        } else {
+            Configuration::updateValue(SomcpConfig::ENABLED, '0', false, (int) $row['id_shop_group'], (int) $row['id_shop']);
+        }
+    }
+    Configuration::deleteByName('SOMCP_OAUTH_ENABLED');
+
     // The employee who signs in on the authorization page is recorded on the
     // pending request.
     if (!$module->installDatabase()) {

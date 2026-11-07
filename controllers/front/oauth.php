@@ -90,7 +90,7 @@ class SomcpOauthModuleFrontController extends ModuleFrontController
     {
         Somcp::bootClasses();
 
-        if (!SomcpConfig::isOn(SomcpConfig::ENABLED) || !SomcpConfig::isOn(SomcpConfig::OAUTH_ENABLED)) {
+        if (!SomcpConfig::isOn(SomcpConfig::ENABLED)) {
             SomcpHttp::json(['error' => 'temporarily_unavailable'], 503);
         }
 

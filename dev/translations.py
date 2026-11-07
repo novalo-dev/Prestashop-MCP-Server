@@ -533,10 +533,6 @@ T = {
  "OAuth 2.1",
  "OAuth 2.1",
  "OAuth 2.1"),
-"Accept new connections": (
- "Accepter les nouvelles connexions",
- "Aceptar nuevas conexiones",
- "Neue Verbindungen annehmen"),
 "Access token lifetime (seconds)": (
  "Durée de vie du jeton d'accès (secondes)",
  "Duración del token de acceso (segundos)",

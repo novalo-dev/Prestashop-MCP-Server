@@ -223,6 +223,15 @@ are not affected. The page where you approve an assistant does the same when it
 is opened without a real connection request - by hand, for an unknown
 application or with a return address off the list.
 
+### Removed
+
+**The "Accept new connections" switch.** Off, it did more than its name said:
+it also stopped the assistants already connected from renewing their access,
+so they dropped within the hour. New connections are now the **Consent page**
+switch's job, and **Enable the MCP server** stops everything at once. A shop
+that had it off gets the MCP server switched off on update, so it stays closed
+to assistants.
+
 ## 1.2.2 - 2026-11-05
 
 ### Added

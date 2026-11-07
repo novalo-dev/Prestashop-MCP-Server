@@ -91,7 +91,7 @@ class SomcpWellknownModuleFrontController extends ModuleFrontController
     {
         Somcp::bootClasses();
 
-        if (!SomcpConfig::isOn(SomcpConfig::ENABLED) || !SomcpConfig::isOn(SomcpConfig::OAUTH_ENABLED)) {
+        if (!SomcpConfig::isOn(SomcpConfig::ENABLED)) {
             SomcpHttp::noContent(404);
         }
 

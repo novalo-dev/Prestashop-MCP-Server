@@ -78,7 +78,6 @@ class SomcpModuleSettings
             SomcpConfig::ENABLED => ['tab' => $config, 'label' => 'Enable the MCP server', 'kind' => 'switch'],
             SomcpConfig::TOOLS_TTL => ['tab' => $tools, 'label' => 'How long an assistant keeps the list of tools', 'kind' => 'seconds'],
             SomcpConfig::REQUIRED_PROFILE => ['tab' => $access, 'label' => 'Employees allowed to connect an assistant', 'kind' => 'profile'],
-            SomcpConfig::OAUTH_ENABLED => ['tab' => $access, 'label' => 'Accept new connections', 'kind' => 'switch'],
             SomcpConfig::CONSENT_PAGE => ['tab' => $access, 'label' => 'Consent page', 'kind' => 'switch'],
             SomcpConfig::ACCESS_TTL => ['tab' => $access, 'label' => 'Access token lifetime (seconds)', 'kind' => 'seconds'],
             SomcpConfig::REFRESH_TTL => ['tab' => $access, 'label' => 'Refresh token lifetime (seconds)', 'kind' => 'seconds'],
@@ -353,11 +352,6 @@ class SomcpModuleSettings
             case SomcpConfig::ENABLED:
                 if (SomcpConfig::get($key, $idShop) !== '1') {
                     $line .= ' No assistant connected over MCP can reach the shop any more; the built-in assistant still works.';
-                }
-                break;
-            case SomcpConfig::OAUTH_ENABLED:
-                if (SomcpConfig::get($key, $idShop) !== '1') {
-                    $line .= ' New connections are refused: the registration settings and the return addresses have no effect until it is on again.';
                 }
                 break;
             case SomcpConfig::CONSENT_PAGE:

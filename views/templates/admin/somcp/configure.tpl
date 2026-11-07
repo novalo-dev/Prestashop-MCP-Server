@@ -372,20 +372,6 @@
 
                 <hr>
                 <h4>{l s='OAuth 2.1' d='Modules.Somcp.Admin'}</h4>
-                <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Accept new connections' d='Modules.Somcp.Admin'}</label>
-                    <div class="col-lg-8">
-                        {include file='./_inherit.tpl' field='SOMCP_OAUTH_ENABLED'}
-                        <span class="switch prestashop-switch fixed-width-lg">
-                            <input type="radio" name="SOMCP_OAUTH_ENABLED" id="SOMCP_OAUTH_ENABLED_on" value="1"{if $somcp_settings.SOMCP_OAUTH_ENABLED === '1'} checked{/if}>
-                            <label for="SOMCP_OAUTH_ENABLED_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
-                            <input type="radio" name="SOMCP_OAUTH_ENABLED" id="SOMCP_OAUTH_ENABLED_off" value="0"{if $somcp_settings.SOMCP_OAUTH_ENABLED !== '1'} checked{/if}>
-                            <label for="SOMCP_OAUTH_ENABLED_off">{l s='No' d='Modules.Somcp.Admin'}</label>
-                            <a class="slide-button btn"></a>
-                        </span>
-                    </div>
-                </div>
-
                 <div class="form-group" id="somcp-consent-page">
                     <label class="control-label col-lg-4">{l s='Consent page' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-8">

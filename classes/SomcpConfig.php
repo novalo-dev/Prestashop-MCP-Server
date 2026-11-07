@@ -38,7 +38,6 @@ if (!defined('_PS_VERSION_')) {
 class SomcpConfig
 {
     public const ENABLED = 'SOMCP_ENABLED';
-    public const OAUTH_ENABLED = 'SOMCP_OAUTH_ENABLED';
 
     /**
      * @var string Whether the page where an employee approves a new assistant
@@ -176,7 +175,6 @@ class SomcpConfig
     {
         return [
             self::ENABLED => '1',
-            self::OAUTH_ENABLED => '1',
             self::CONSENT_PAGE => '0',
             // One hour. Short enough that a stolen token expires before it is
             // worth much, long enough not to spend a refresh on every call.
@@ -275,7 +273,6 @@ class SomcpConfig
     {
         switch ($key) {
             case self::ENABLED:
-            case self::OAUTH_ENABLED:
             case self::CONSENT_PAGE:
             case self::REFRESH_ROTATION:
             case self::CIMD_ENABLED:

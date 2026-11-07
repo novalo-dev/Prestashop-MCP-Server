@@ -1143,7 +1143,6 @@ class Somcp extends Module
 
         $switches = [
             SomcpConfig::ENABLED,
-            SomcpConfig::OAUTH_ENABLED,
             SomcpConfig::CONSENT_PAGE,
             SomcpConfig::REFRESH_ROTATION,
             SomcpConfig::CIMD_ENABLED,

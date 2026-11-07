@@ -657,11 +657,6 @@
       <source>OAuth 2.1</source>
       <target>OAuth 2.1</target>
     </trans-unit>
-    <!-- Accept new connections -->
-    <trans-unit id="c2dcddc0ec595b09db02ae020722f7fd" resname="Accept new connections">
-      <source>Accept new connections</source>
-      <target>Aceptar nuevas conexiones</target>
-    </trans-unit>
     <!-- Access token lifetime (seconds) -->
     <trans-unit id="32b9df579c78d61821c0238338d75311" resname="Access token lifetime (seconds)">
       <source>Access token lifetime (seconds)</source>

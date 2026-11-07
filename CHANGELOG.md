@@ -18,11 +18,12 @@ are:
 
 ### Added
 
-**Install with Composer.** Agencies and automated deployments can now install
-the module with `composer require novalo/prestashop-mcp-server` from the
-shop's root folder: it lands in `modules/somcp`, exactly where the zip puts
-it, so a shop can move from one way to the other. The zip from the back office
-stays the usual way to install it.
+**Install with Composer on PrestaShop 9.** Agencies and automated deployments
+can now install the module with `composer require novalo/prestashop-mcp-server`
+from the shop's root folder: it lands in `modules/somcp`, exactly where the zip
+puts it, so a shop can move from one way to the other. The zip from the back
+office stays the usual way to install it, and the only one on PrestaShop 8,
+whose own packages refuse the PHP version the module needs.
 
 ### Changed
 

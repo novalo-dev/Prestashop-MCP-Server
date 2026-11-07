@@ -92,8 +92,8 @@ answer goes, and approve what it may do. Then turn **Consent page** off again:
 the assistant keeps working. Step by step with screenshots:
 [Installation](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Installation).
 
-**With Composer**, for agencies and automated deployments, from the shop's root
-folder:
+**With Composer**, on PrestaShop 9, for agencies and automated deployments,
+from the shop's root folder:
 
 ```
 composer config allow-plugins.composer/installers true
@@ -101,12 +101,10 @@ composer require novalo/prestashop-mcp-server
 php bin/console prestashop:module install somcp
 ```
 
-On PrestaShop 8, first tell Composer the PHP version your server runs, for
-example `composer config platform.php 8.1`: PrestaShop 8 declares PHP 7.2.5,
-and the module needs 8.1 or later.
-
 The module lands in `modules/somcp`, as with the zip, and its dependencies join
-the shop's own `vendor/`. Then carry on from step 3.
+the shop's own `vendor/`. Then carry on from step 3. On PrestaShop 8, use the
+zip: some packages of its core declare PHP 8.0 at most, and the module needs
+8.1, so Composer refuses to install them together.
 
 ---
 

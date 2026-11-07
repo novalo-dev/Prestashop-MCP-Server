@@ -144,12 +144,11 @@ MCP client connects from the outside.
    domain, and enable friendly URLs.
 3. Clone this repository into `modules/somcp` (the folder name matters), run
    `composer install` in it for Neuron AI, which runs the built-in assistant,
-   and install the module. Or, from the shop's root folder, add the clone as a
-   Composer path repository and `composer require
+   and install the module. Or, on PrestaShop 9, from the shop's root folder,
+   add the clone as a Composer path repository and `composer require
    novalo/prestashop-mcp-server`: `composer/installers` puts it in
-   `modules/somcp` and its dependencies in the shop's `vendor/`. On
-   PrestaShop 8, set `composer config platform.php` to your PHP version first:
-   the core declares 7.2.5.
+   `modules/somcp` and its dependencies in the shop's `vendor/`. PrestaShop 8
+   cannot take it this way: packages of its core declare PHP 8.0 at most.
 4. Press **Run the diagnostic** in the module settings: every line green means
    a client can connect, and that the sign-in page shows the module's own form.
 5. Before connecting a client, turn on **Access and security > Consent page**.
@@ -239,11 +238,13 @@ calls every tool there through
 module fails the call too. PrestaShop 8 also runs on PHP 8.2 and later, which
 it does not support: those runs report without failing CI.
 
-Three of those pairs - the oldest PrestaShop 8, the last one and the newest
-PrestaShop 9, marked `composer` in the matrix - install the module with
+Three of those pairs - the oldest PrestaShop 9, one in the middle and the
+newest, marked `composer` in the matrix - install the module with
 `composer require novalo/prestashop-mcp-server` from the shop's root instead of
 from the zip, the package built by `git archive` as GitHub serves it. A
-dependency that no longer fits beside the core's own fails there.
+dependency that no longer fits beside the core's own fails there. PrestaShop 8
+is not among them: packages locked by its core declare PHP 8.0 at most, so
+Composer refuses the module there, and it installs from the zip.
 
 The **PHP tests** workflow also lints every file on PHP 8.1 to 8.4 and compiles `config/services.yml`
 with the Symfony versions of PrestaShop 8 (4.4) and 9 (6.4), with and without

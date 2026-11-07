@@ -143,6 +143,47 @@
     max-height: none;
 }
 
+/* Enlarged, the messages and the field keep a margin on both sides, so a line
+   stays short enough to read across the wider panel. */
+#somcp-chat.somcp-chat-wide .somcp-chat-body {
+    padding: 24px 72px;
+}
+
+#somcp-chat.somcp-chat-wide .somcp-composer {
+    margin: 4px 72px 0;
+}
+
+#somcp-chat.somcp-chat-wide .somcp-chat-foot {
+    padding: 8px 76px 12px;
+}
+
+/* Enlarged on a screen that has the room, the conversations are a column
+   added beside the chat - the panel grows by its width, the chat keeps its
+   own - rather than a bar sliding over it. Narrower, they stay that bar. The
+   width is the one docked() reads in assistant.js. */
+@media (min-width: 1192px) {
+    #somcp-chat.somcp-chat-wide.somcp-threads-open {
+        box-sizing: border-box;
+        width: 1160px;
+        padding-left: 300px;
+    }
+
+    #somcp-chat.somcp-chat-wide .somcp-chat-shade {
+        display: none;
+    }
+
+    #somcp-chat.somcp-chat-wide .somcp-chat-threads {
+        border-right: 1px solid var(--somcp-line);
+        box-shadow: none;
+        transition: none;
+    }
+
+    /* The tokens are already at the foot of the open column: not twice. */
+    #somcp-chat.somcp-chat-wide.somcp-threads-open .somcp-chat-foot > :last-child {
+        display: none;
+    }
+}
+
 #somcp-chat .somcp-icon {
     flex: 0 0 auto;
     display: block;
@@ -516,6 +557,10 @@
 #somcp-chat .somcp-spend-bar {
     height: 6px;
     background: var(--somcp-accent);
+}
+
+#somcp-chat .somcp-credit {
+    text-align: center;
 }
 
 #somcp-chat .somcp-credit a {

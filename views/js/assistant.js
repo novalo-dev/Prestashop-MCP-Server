@@ -1308,7 +1308,7 @@
             open.type = 'button';
             open.title = thread.title || thread.date;
             open.addEventListener('click', function () {
-                closeThreads();
+                leaveThreads();
                 run('load', { thread_id: thread.thread_id });
             });
             var shop = manyShops() ? shopOf(thread.id_shop) : null;
@@ -1378,6 +1378,20 @@
         panel.classList.remove('somcp-threads-open');
     }
 
+    // Enlarged on a screen wide enough, the list of conversations is a column
+    // beside the chat rather than a bar over it, so picking a conversation
+    // leaves it open. The width matches the media query of assistant.css.
+    function docked() {
+        return panel.classList.contains('somcp-chat-wide')
+            && !!window.matchMedia && window.matchMedia('(min-width: 1192px)').matches;
+    }
+
+    function leaveThreads() {
+        if (!docked()) {
+            closeThreads();
+        }
+    }
+
     function build() {
         panel = el('div');
         panel.id = 'somcp-chat';
@@ -1407,6 +1421,13 @@
         var widen = iconButton('expand', text.enlarge, 'somcp-widen');
         var setWide = function (wide) {
             panel.classList.toggle('somcp-chat-wide', wide);
+            // Enlarged, the conversations open beside the chat; back to the
+            // usual size, they go back to a bar opened on demand.
+            if (docked()) {
+                openThreads();
+            } else {
+                closeThreads();
+            }
             widen.innerHTML = '';
             widen.appendChild(icon(wide ? 'shrink' : 'expand'));
             widen.title = wide ? text.reduce : text.enlarge;
@@ -1450,7 +1471,7 @@
         fresh.appendChild(icon('plus', 16));
         fresh.appendChild(el('span', '', text.newThread));
         fresh.addEventListener('click', function () {
-            closeThreads();
+            leaveThreads();
             // On several shops, the conversation is created once its shop is
             // picked on the cards; until then nothing is asked of the server.
             if (state.pickShop) {

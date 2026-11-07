@@ -24,6 +24,14 @@ colours, which turns solid orange while the chat is open, so you see at a
 glance whether it is. The round button shown on pages without a header follows
 the same colours.
 
+**More room in the enlarged chat.** Enlarged, the chat now shows the list of
+conversations open in a column beside it, and the panel grows by that column
+instead of the messages losing room; picking a conversation leaves the list
+open. Messages and the field to type in keep a margin on both sides, so lines
+stay easy to read. The tokens used are shown once, at the foot of that list,
+and "Powered by Neuron AI" is centred. On a screen too narrow for both, the
+list still slides over the chat as before.
+
 ## 1.3.0 - 2026-11-07
 
 **Your assistants have to be connected again after this update.** Every

@@ -278,8 +278,10 @@ class SomcpHttp
      * Callers run it from init(), before the parent init: the front controller
      * sets the shop up only once per request, so a page-not-found controller
      * started after it would find no service container and render nothing.
+     *
+     * @return never
      */
-    public static function notFoundPage(): never
+    public static function notFoundPage(): void
     {
         // The shop's page, but answering for the module: it must not hand out
         // the PHP version the module's own pages hide.
@@ -299,8 +301,10 @@ class SomcpHttp
      * setRedirectAfter() to hand anything to.
      *
      * @param string $url absolute URL, already validated by the caller
+     *
+     * @return never
      */
-    public static function redirect(string $url): never
+    public static function redirect(string $url): void
     {
         if (!headers_sent()) {
             header('Location: ' . $url);

@@ -210,8 +210,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * Shows the step a pending request has reached.
      *
      * @param array<string, mixed> $request
+     *
+     * @return never
      */
-    private function resume(array $request): never
+    private function resume(array $request): void
     {
         if ((int) $request['id_employee'] <= 0) {
             $this->renderSignIn($request);
@@ -226,8 +228,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * Parks a new request and shows the sign-in form.
      *
      * @param array{ok:bool, redirectable:bool, hidden:bool, error:string, description:string, data:array<string,mixed>} $check
+     *
+     * @return never
      */
-    private function start(array $check): never
+    private function start(array $check): void
     {
         if (!$check['ok']) {
             SomcpLogger::log(
@@ -279,8 +283,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * goes to the module's log, where the merchant can read it.
      *
      * @param array<string, mixed> $request
+     *
+     * @return never
      */
-    private function signIn(array $request): never
+    private function signIn(array $request): void
     {
         // Signed in already: a second sign-in would be a way round the wait
         // between codes and the limit of three.
@@ -364,8 +370,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * closed and the assistant has to start again.
      *
      * @param array<string, mixed> $request
+     *
+     * @return never
      */
-    private function verifyCode(array $request): never
+    private function verifyCode(array $request): void
     {
         $employee = new Employee((int) $request['id_employee']);
         if ((int) $request['id_employee'] <= 0 || !Validate::isLoadedObject($employee)) {
@@ -406,8 +414,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * Sends another code, once the wait after the last one is over.
      *
      * @param array<string, mixed> $request
+     *
+     * @return never
      */
-    private function resendCode(array $request): never
+    private function resendCode(array $request): void
     {
         $employee = new Employee((int) $request['id_employee']);
         if ((int) $request['id_employee'] <= 0 || !Validate::isLoadedObject($employee)) {
@@ -435,8 +445,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * assistant: the link is dead, and the visitor starts over or goes away.
      *
      * @param array<string, mixed> $request
+     *
+     * @return never
      */
-    private function closeRequest(array $request): never
+    private function closeRequest(array $request): void
     {
         SomcpOAuthServer::consumePendingRequest((int) $request['id_request']);
         $this->forgetRequest();
@@ -447,8 +459,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
     /**
      * Back to this page by GET, which shows the step the request has reached.
+     *
+     * @return never
      */
-    private function backToPage(): never
+    private function backToPage(): void
     {
         SomcpHttp::redirect($this->context->link->getModuleLink('somcp', 'authorize', [], true));
     }
@@ -462,8 +476,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * @param string $clientId
      * @param int $idEmployee
      * @param string $email the account tried, counted once the anti-robot check passed
+     *
+     * @return never
      */
-    private function refuseSignIn(array $request, string $reason, string $clientId, int $idEmployee = 0, string $email = ''): never
+    private function refuseSignIn(array $request, string $reason, string $clientId, int $idEmployee = 0, string $email = ''): void
     {
         SomcpGuard::signinFailed($email);
         SomcpLogger::log('signin_refused', SomcpLogger::OUTCOME_FAILURE, $reason, $clientId, $idEmployee);
@@ -477,8 +493,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * Reads the merchant's answer on the consent form.
      *
      * @param array<string, mixed> $request
+     *
+     * @return never
      */
-    private function answer(array $request): never
+    private function answer(array $request): void
     {
         $idEmployee = (int) $request['id_employee'];
         if ($idEmployee <= 0) {
@@ -584,8 +602,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     /**
      * @param array<string, mixed> $request
      * @param bool $refused whether the last sign-in attempt was refused
+     *
+     * @return never
      */
-    private function renderSignIn(array $request, bool $refused = false): never
+    private function renderSignIn(array $request, bool $refused = false): void
     {
         $client = SomcpOAuthClient::findById((int) $request['id_client']);
         if ($client === null) {
@@ -607,8 +627,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      *
      * @param array<string, mixed> $request
      * @param string $notice '', 'wrong' or 'spent': what became of the last entry
+     *
+     * @return never
      */
-    private function renderCode(array $request, string $notice = ''): never
+    private function renderCode(array $request, string $notice = ''): void
     {
         $client = SomcpOAuthClient::findById((int) $request['id_client']);
         $employee = new Employee((int) $request['id_employee']);
@@ -655,8 +677,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
     /**
      * @param array<string, mixed> $request
+     *
+     * @return never
      */
-    private function renderConsent(array $request): never
+    private function renderConsent(array $request): void
     {
         $client = SomcpOAuthClient::findById((int) $request['id_client']);
         $employee = new Employee((int) $request['id_employee']);
@@ -694,14 +718,19 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
     /**
      * The answer once an address has asked or failed too often.
+     *
+     * @return never
      */
-    private function renderTooMany(): never
+    private function renderTooMany(): void
     {
         $this->renderPage('message', ['message' => $this->module->l10n(
             'Too many attempts. Wait 15 minutes, then try again.')], 429);
     }
 
-    private function renderExpired(): never
+    /**
+     * @return never
+     */
+    private function renderExpired(): void
     {
         $this->renderPage('message', ['message' => $this->module->l10n(
             'This connection request has expired or has already been answered. Start the connection again from your assistant.')]);
@@ -713,8 +742,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * @param string $state signin, otp, consent or message
      * @param array<string, mixed> $vars
      * @param int $status HTTP status of the page
+     *
+     * @return never
      */
-    private function renderPage(string $state, array $vars, int $status = 200): never
+    private function renderPage(string $state, array $vars, int $status = 200): void
     {
         $module = $this->module;
         $this->context->smarty->assign([
@@ -898,8 +929,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      *
      * @param array<string, mixed> $data
      * @param array<string, string> $params
+     *
+     * @return never
      */
-    private function sendBack(array $data, array $params): never
+    private function sendBack(array $data, array $params): void
     {
         if (!empty($data['state'])) {
             $params['state'] = (string) $data['state'];
@@ -917,8 +950,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      *
      * @param array<string, mixed> $request
      * @param array<string, string> $params
+     *
+     * @return never
      */
-    private function leaveTo(array $request, array $params): never
+    private function leaveTo(array $request, array $params): void
     {
         if ((string) $request['state'] !== '') {
             $params['state'] = (string) $request['state'];

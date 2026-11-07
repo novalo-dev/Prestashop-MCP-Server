@@ -41,6 +41,14 @@ stay easy to read. The tokens used are shown once, at the foot of that list,
 and "Powered by Neuron AI" is centred. On a screen too narrow for both, the
 list still slides over the chat as before.
 
+### Fixed
+
+**The PrestaShop Addons validator can check the module again.** Its
+compatibility step stopped with an error on 1.3.0. The sign-in and consent
+pages used a way of writing PHP that only PHP 8.1 understands, which the
+validator's checks may not read; they are written the older way, and work
+exactly as before.
+
 ## 1.3.0 - 2026-11-07
 
 **Your assistants have to be connected again after this update.** Every

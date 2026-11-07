@@ -164,7 +164,7 @@ class SomcpScope
      * @param int|null $idShop the shop the assistant is being connected to,
      *                         named rather than taken from the context: the
      *                         request may have been made on another shop than
-     *                         the one in context, so it is not guessed.
+     *                         the one in context, so it is not guessed
      * @param bool $chat true for the built-in assistant, which reads its own
      *                   list of tools switched off
      *

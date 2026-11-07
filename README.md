@@ -55,6 +55,7 @@ the assistant through the usual jobs. [See them all](#tools).
 
 ## Requirements
 
+|||
 |---|---|
 | PrestaShop | 8.0 to 9.x |
 | PHP | 8.1 or later, with the cURL extension |

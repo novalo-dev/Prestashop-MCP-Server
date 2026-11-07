@@ -14,7 +14,7 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
-## 1.3.0 - 2026-11-06
+## 1.3.0 - 2026-11-07
 
 **Your assistants have to be connected again after this update.** Every
 connection made so far was approved on a page that asked for a password alone,

@@ -227,8 +227,8 @@ class SomcpHttp
     }
 
     /**
-     * The headers of the module's own HTML pages: the sign-in page and the
-     * consent screen.
+     * The headers of the HTML pages the module answers with: the sign-in page,
+     * the consent screen, and the shop's 404 it shows in their place.
      *
      * Those pages carry the button that hands a shop to an assistant. Framed
      * invisibly by another site, a merchant who is signed in could be led to
@@ -281,6 +281,9 @@ class SomcpHttp
      */
     public static function notFoundPage(): never
     {
+        // The shop's page, but answering for the module: it must not hand out
+        // the PHP version the module's own pages hide.
+        self::pageHeaders();
         Controller::getController('PageNotFoundController')->run();
         exit;
     }

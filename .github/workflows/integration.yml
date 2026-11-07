@@ -234,7 +234,7 @@ jobs:
           mkdir -p zap && chmod 777 zap
           docker run --rm --network host \
             -v "$PWD/module/dev/security:/zap/plan:ro" -v "$PWD/zap:/zap/wrk" \
-            -e SHOP_URL=http://localhost -e ZAP_TOKEN="$(cat zap-token)" -e REPORT_DIR=/zap/wrk \
+            -e SHOP_URL=http://localhost -e ZAP_TOKEN="$(cat zap-token)" -e ZAP_CLIENT="$(cat zap-token-client)" -e REPORT_DIR=/zap/wrk \
             "ghcr.io/zaproxy/zaproxy:$ZAP_VERSION" zap.sh -cmd -autorun /zap/plan/zap.yaml
           php module/dev/security/zap-verdict.php zap/zap-report.json
       # After the tools have run, so the shop holds everything the module

@@ -11,7 +11,8 @@
 # The MCP calls carry a real token with every scope, so the attacks reach the
 # tools instead of stopping at the 401.
 #
-# Read by the CI with SHOP_URL, ZAP_TOKEN and REPORT_DIR in the environment;
+# Read by the CI with SHOP_URL, ZAP_TOKEN, ZAP_CLIENT (a registered application,
+# for the sign-in page) and REPORT_DIR in the environment;
 # dev/security/zap-verdict.php then decides from the report.
 env:
   contexts:
@@ -71,7 +72,7 @@ jobs:
           - "Content-Type:application/json"
         data: '{"client_name":"Scanner","redirect_uris":["http://127.0.0.1:9/callback"]}'
       - name: Sign-in page
-        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=authorize&response_type=code&client_id=somcp-unknown&redirect_uri=http%3A%2F%2F127.0.0.1%3A9%2Fcallback&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=scan&scope=mcp.access
+        url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=authorize&response_type=code&client_id=${ZAP_CLIENT}&redirect_uri=http%3A%2F%2F127.0.0.1%3A9%2Fcallback&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=scan&scope=mcp.access
       - name: Authorization server metadata
         url: ${SHOP_URL}/index.php?fc=module&module=somcp&controller=wellknown
       - name: Protected resource metadata

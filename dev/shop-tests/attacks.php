@@ -681,6 +681,9 @@ $expect('expired link', $http('GET', $endpoint('file', http_build_query([
 // ---------------------------------------------------------------------------
 if (isset($argv[3])) {
     file_put_contents($argv[3], $pair($all)['access_token']);
+    // A registered application, so the scan reaches the sign-in page itself
+    // rather than the shop's 404 an unknown one gets.
+    file_put_contents($argv[3] . '-client', $clientA);
 }
 
 printf("\n%d checks, %d failed\n", $checks, count($failures));

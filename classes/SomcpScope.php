@@ -161,11 +161,10 @@ class SomcpScope
      * grant what they do not have.
      *
      * @param int $idEmployee
-     * @param int|null $idShop the shop the assistant is being connected to. The
-     *                         consent screen runs in the back office, where the
-     *                         shop in context is whichever one the administrator
-     *                         is working on and not the one being connected, so
-     *                         it names it rather than letting it be guessed.
+     * @param int|null $idShop the shop the assistant is being connected to,
+     *                         named rather than taken from the context: the
+     *                         request may have been made on another shop than
+     *                         the one in context, so it is not guessed.
      * @param bool $chat true for the built-in assistant, which reads its own
      *                   list of tools switched off
      *

@@ -24,8 +24,8 @@ declare(strict_types=1);
  * tool asks instead, the assistant opens this page, and the merchant chooses
  * the file here. Nothing about it passes through the assistant.
  *
- * It lives in the back office for the same reason the consent screen does:
- * PrestaShop decides who the visitor is. The specification is explicit that a
+ * It lives in the back office so that PrestaShop decides who the visitor is,
+ * from the employee's own session. The specification is explicit that a
  * server MUST verify the identity of whoever opens the address before accepting
  * anything - the attack being that one person triggers the call and has someone
  * else deposit. Here the employee signed in is compared with the one the
@@ -67,9 +67,8 @@ class AdminSomcpUploadController extends ModuleAdminController
     /**
      * The permission slug of this controller, unchanged from the parent.
      *
-     * Declared for the same reason as on the consent screen: PrestaShop 9 works
-     * out whether a legacy controller carries its own rules by reflecting on
-     * THIS method, not on viewAccess. Without it, viewAccess below is never
+     * Declared because PrestaShop 9 works out whether a legacy controller
+     * carries its own rules by reflecting on THIS method, not on viewAccess. Without it, viewAccess below is never
      * consulted and every profile but the super administrator gets a 403.
      *
      * @return string

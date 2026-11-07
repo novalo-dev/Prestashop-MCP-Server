@@ -16,9 +16,7 @@
 
 {* Inline rather than a media file, for the same reason as the script: the
    settings page is rendered by Symfony on PrestaShop 9, where the controller
-   addCSS() would need is a proxy without that method. The stylesheet used to
-   sit in views/css and was only ever loaded by the consent screen, so none of
-   these rules applied to the settings page at all. *}
+   addCSS() would need is a proxy without that method. *}
 <style type="text/css">
 /* The heart of the Become a sponsor button, in the thank-you window. A primary
    button, so the heart is white like its text. Drawn as an image rather than

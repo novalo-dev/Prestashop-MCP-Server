@@ -111,8 +111,8 @@ jobs:
             done
           fi
 
-      # The user guide, as Build for Release makes it: docs/readme_<iso>.pdf in
-      # the module. Reported, never enforced, like the checks below. The PDF
+      # The user guide, as Build for Release makes it, in an artifact of its
+      # own beside the module. Reported, never enforced, like the checks below. The PDF
       # builder is main's for a pull request, as the check scripts are; the
       # Markdown of the code under test is only drawn, its scripts never run.
       - name: User guide, without blocking
@@ -131,15 +131,14 @@ jobs:
           fi
           python3 -m pip install --quiet --break-system-packages markdown pypdf playwright
           python3 -m playwright install --with-deps chromium > /dev/null
-          mkdir -p build/somcp/docs
+          mkdir -p guide
           LIST=""
           for md in docs/guide/*.md; do
             ISO=$(basename "$md" .md)
-            python3 "$BUILDER" "$ISO" "build/somcp/docs/readme_$ISO.pdf" "$GITHUB_WORKSPACE"
+            python3 "$BUILDER" "$ISO" "guide/readme_$ISO.pdf" "$GITHUB_WORKSPACE"
             LIST="$LIST readme_$ISO.pdf"
           done
-          cp build/somcp/views/index.php build/somcp/docs/index.php
-          echo "| User guide | docs/$LIST |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| User guide |$LIST, in the guide artifact |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check, without blocking
         continue-on-error: true
@@ -202,6 +201,13 @@ jobs:
           # told otherwise, and the module's .htaccess is one: without it the
           # Addons validator reports the folder as listable.
           include-hidden-files: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.name.outputs.artifact }}-guide
+          path: guide/
+          retention-days: 1
+          if-no-files-found: ignore
 
       - name: How to use it
         run: |

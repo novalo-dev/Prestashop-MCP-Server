@@ -397,8 +397,8 @@ the page you are on first, and all of them from the **+** of its field.
 
 - **Documentation:** the [wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
   covers requirements, installation, settings, each assistant and the built-in
-  assistant. The same guide comes as a PDF, `docs/readme_en.pdf`, in the zip
-  and with every [release](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest).
+  assistant. The same guide comes as a PDF, `readme_en.pdf`, with every
+  [release](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest).
 - **A bug or an idea:** open an [issue](https://github.com/novalo-dev/Prestashop-MCP-Server/issues).
 - **Installation, setup or a tool made for your shop:** [Novalo](https://novalo.fr).
 - **What changed in each version:** [CHANGELOG.md](CHANGELOG.md).

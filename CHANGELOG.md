@@ -25,10 +25,9 @@ diagnostic shows when the page is off, with a link to the switch.
 
 ### Added
 
-**A user guide in PDF.** `docs/readme_en.pdf`, in the module and attached to
-each release: requirements, installation, each settings tab, connecting an
-assistant step by step and the built-in assistant, with the path of every
-button and switch.
+**A user guide in PDF.** `readme_en.pdf`, attached to each release:
+requirements, installation, each settings tab, connecting an assistant step by
+step and the built-in assistant, with the path of every button and switch.
 
 **Create a voucher or a cart discount.** The new tool `somcp_create_cart_rule`
 creates one rule of **Catalog > Discounts > Cart Rules**, with the fields of the

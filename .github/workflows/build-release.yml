@@ -231,9 +231,9 @@ jobs:
           echo "| Tools and prompts | $(tail -1 /tmp/tools.txt) |" >> "$GITHUB_STEP_SUMMARY"
           printf 'Tools and prompts\t%s\n' "$(tail -1 /tmp/tools.txt | cut -c1-70)" >> "$CHECKS"
 
-      # PrestaShop Addons wants the user guide as docs/readme_<iso>.pdf inside
-      # the module. It is built here from docs/guide/<iso>.md, so the PDF of a
-      # release always describes that release.
+      # The user guide, readme_<iso>.pdf, built from docs/guide/<iso>.md and
+      # attached to the release beside the zip - not put in it - so the PDF
+      # of a release always describes that release.
       - name: User guide
         id: guide
         run: |
@@ -266,11 +266,6 @@ jobs:
             --no-scripts --no-plugins --optimize-autoloader
           rm -f /tmp/pack/somcp/composer.lock
           dev/package/prune.sh /tmp/pack/somcp
-          # docs/ of the repository stays out (export-ignore): only the PDF
-          # guides go in, where Addons looks for them.
-          mkdir -p /tmp/pack/somcp/docs
-          cp /tmp/guide/readme_*.pdf /tmp/pack/somcp/docs/
-          cp /tmp/pack/somcp/views/index.php /tmp/pack/somcp/docs/index.php
           (cd /tmp/pack && zip -qr "$GITHUB_WORKSPACE/$NAME" somcp)
           N=$(unzip -l "$NAME" | tail -1 | awk '{print $2}')
           SIZE=$(du -h "$NAME" | cut -f1)
@@ -287,13 +282,7 @@ jobs:
               echo "::error::$f missing from the archive"; exit 1
             fi
           done
-          if ! unzip -l "$NAME" somcp/docs/readme_en.pdf > /dev/null 2>&1; then
-            echo "| Archive contents | **somcp/docs/readme_en.pdf is missing** |" >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::somcp/docs/readme_en.pdf missing from the archive"; exit 1
-          fi
-          # docs/ may hold the PDF guides and its index.php, nothing else.
-          if unzip -Z1 "$NAME" | grep -E 'somcp/(\.github/|dev/|\.git|README\.md|CONTRIBUTING\.md|CLA\.md|docs/)' \
-              | grep -qvE '^somcp/docs/(readme_[a-z]{2}\.pdf|index\.php)?$'; then
+          if unzip -l "$NAME" | grep -qE 'somcp/(\.github/|dev/|docs/|\.git|README\.md|CONTRIBUTING\.md|CLA\.md)'; then
             echo "| Archive contents | **repository plumbing leaked in** |" >> "$GITHUB_STEP_SUMMARY"
             echo "::error::repository plumbing leaked into the archive"; exit 1
           fi
@@ -306,7 +295,7 @@ jobs:
             echo "::error::index.php missing in some folders"; exit 1
           fi
           echo "| Archive contents | root folder \`somcp/\`, module present, no plumbing, index.php everywhere |" >> "$GITHUB_STEP_SUMMARY"
-          printf 'Archive contents\troot folder somcp/, user guide in docs/, no dev/ .github/, index.php everywhere\n' >> "$CHECKS"
+          printf 'Archive contents\troot folder somcp/, no dev/ .github/ docs/, index.php everywhere\n' >> "$CHECKS"
 
       # The report says which commit and which archive it vouches for: the
       # SHA-256 lets a merchant check the zip they downloaded is the one the

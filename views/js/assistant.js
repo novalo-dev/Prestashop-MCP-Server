@@ -1750,6 +1750,12 @@
         }
         panel.hidden = !panel.hidden;
         rememberOpen(!panel.hidden);
+        // Every way of opening or closing the chat passes here, so the button
+        // shows its state - and says it to screen readers - from this line only.
+        var button = document.getElementById('somcp-chat-button');
+        if (button) {
+            button.setAttribute('aria-expanded', panel.hidden ? 'false' : 'true');
+        }
         if (!panel.hidden) {
             if (!loaded) {
                 loaded = true;
@@ -1782,7 +1788,6 @@
         var button = document.getElementById('somcp-chat-button');
         if (button) {
             var holder = document.getElementById('somcp-chat-component');
-            var shop = document.getElementById('header_shopname');
             // The legacy pages hold the link or the list in #header-list, the
             // Symfony pages in .shop-list - wrapped in #header-shop-list-container
             // on some of them, directly in the header on others.
@@ -1800,13 +1805,7 @@
             } else if (holder && before && before.parentNode) {
                 before.parentNode.insertBefore(holder, before);
             }
-            // The header colours differ between PrestaShop versions and pages,
-            // so the button takes the colour of the link it sits beside - or of
-            // the bell when it sits before it - rather than one written here.
-            var model = shop || document.querySelector('#shop-list > .btn, #header_shop, #header-notifications-container .notification, #notification .notification');
-            if (holder && model && window.getComputedStyle) {
-                holder.style.setProperty('--somcp-header-color', window.getComputedStyle(model).color);
-            }
+            button.setAttribute('aria-expanded', 'false');
             button.addEventListener('click', function (event) {
                 event.preventDefault();
                 toggle();
@@ -1822,6 +1821,7 @@
         button.type = 'button';
         button.title = text.open;
         button.setAttribute('aria-label', text.open);
+        button.setAttribute('aria-expanded', 'false');
         button.appendChild(el('i', 'material-icons', 'forum'));
         button.addEventListener('click', toggle);
         document.body.appendChild(button);

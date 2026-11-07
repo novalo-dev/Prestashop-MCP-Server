@@ -123,6 +123,12 @@ Left unnoticed, the assistant would wait on a page you never see.
 
 ### Changed
 
+**The Assistant button stands out in the header.** It used to be a grey link
+like **View my shop** beside it. It is now a soft orange button in the module's
+colours, which turns solid orange while the chat is open, so you see at a
+glance whether it is. The round button shown on pages without a header follows
+the same colours.
+
 **Shorter audit and sales tools.** Four tools that went a little over the
 length agreed for a tool description - the CMS pages SEO audit, the product
 completeness audit for answer engines, the llms.txt generator and the list of

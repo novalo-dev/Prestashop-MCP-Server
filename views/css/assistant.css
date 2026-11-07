@@ -19,9 +19,9 @@
    a white panel, one accent colour, line icons. Every rule is scoped to the
    chat's own ids so nothing leaks onto the page around it. */
 
-/* The header link, printed by the displayBackOfficeTop hook: drawn like
-   "View my shop" beside it, in that link's colour and icon size, and with its
-   own spacing so it never touches its neighbour. */
+/* The header link, printed by the displayBackOfficeTop hook: a soft button in
+   the module's colours, so it is found at a glance among the grey links of the
+   header, turning solid while the chat is open so the state shows. */
 #somcp-chat-component {
     display: flex;
     align-items: center;
@@ -31,11 +31,15 @@
 #somcp-chat-button.somcp-header-link {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 0 4px;
-    /* Set by the script from the link beside it; grey until then. */
-    color: var(--somcp-header-color, #6c868e);
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 6px;
+    background: #fbeee9;
+    box-shadow: inset 0 0 0 1px #f0cfc4;
+    color: #d55d3e;
     font-size: 0.875rem;
+    font-weight: 600;
     line-height: 1;
     text-decoration: none;
     white-space: nowrap;
@@ -46,8 +50,20 @@
    focus is marked only when it comes from the keyboard. */
 #somcp-chat-button.somcp-header-link:hover,
 #somcp-chat-button.somcp-header-link:focus-visible {
-    color: #25b9d7;
+    background: #f8e0d7;
+    color: #c04e31;
     text-decoration: none;
+}
+
+#somcp-chat-button.somcp-header-link[aria-expanded="true"] {
+    background: #d55d3e;
+    box-shadow: none;
+    color: #fff;
+}
+
+#somcp-chat-button.somcp-header-link[aria-expanded="true"]:hover {
+    background: #c04e31;
+    color: #fff;
 }
 
 #somcp-chat-button.somcp-header-link:focus,
@@ -79,10 +95,15 @@
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: #25b9d7;
-    color: #fff;
+    background: #fbeee9;
+    color: #d55d3e;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
     cursor: pointer;
+}
+
+#somcp-chat-button.somcp-floating[aria-expanded="true"] {
+    background: #d55d3e;
+    color: #fff;
 }
 
 #somcp-chat {

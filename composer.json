@@ -1,8 +1,32 @@
 {
-    "name": "novalo/somcp",
-    "description": "O'So MCP Server",
+    "name": "novalo/prestashop-mcp-server",
+    "description": "Free PrestaShop module that turns your shop into an MCP server: connect Claude, ChatGPT, Le Chat or Cursor, with each employee approving what the AI may do.",
     "type": "prestashop-module",
+    "keywords": [
+        "prestashop",
+        "prestashop-module",
+        "mcp",
+        "mcp-server",
+        "model-context-protocol",
+        "oauth2",
+        "ai",
+        "chatgpt",
+        "claude",
+        "somcp"
+    ],
+    "homepage": "https://github.com/novalo-dev/Prestashop-MCP-Server",
     "license": "AFL-3.0",
+    "authors": [
+        {
+            "name": "Ouanis MERMOURI (Novalo)",
+            "homepage": "https://novalo.fr"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/novalo-dev/Prestashop-MCP-Server/issues",
+        "docs": "https://github.com/novalo-dev/Prestashop-MCP-Server/wiki",
+        "security": "https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/SECURITY.md"
+    },
     "autoload": {
         "psr-4": {
             "Novalo\\Somcp\\": "src/"
@@ -14,12 +38,19 @@
         "sort-packages": true,
         "platform": {
             "php": "8.1.0"
+        },
+        "allow-plugins": {
+            "composer/installers": false
         }
     },
     "require": {
         "php": ">=8.1",
         "altcha-org/altcha": "2.3.0",
+        "composer/installers": "^1.0 || ^2.0",
         "neuron-core/neuron-ai": "4.1.19",
         "nikolaposa/rate-limit": "3.3.0"
+    },
+    "extra": {
+        "installer-name": "somcp"
     }
 }

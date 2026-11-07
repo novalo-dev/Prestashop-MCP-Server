@@ -116,6 +116,10 @@ Found a vulnerability? Please do not open an issue: see [SECURITY.md](SECURITY.m
   tool in detail.
 - [CHANGELOG.md](CHANGELOG.md): what each release changed, and what waits
   under Unreleased for the next one.
+- [llms.txt](llms.txt): what the module is and where its documentation lives,
+  for the AI assistants and answer engines that read the repository. It gives
+  the number of tools and prompts and links every wiki page: a change to any
+  of those updates it in the same commit.
 
 ## Where to help
 
@@ -140,7 +144,11 @@ MCP client connects from the outside.
    domain, and enable friendly URLs.
 3. Clone this repository into `modules/somcp` (the folder name matters), run
    `composer install` in it for Neuron AI, which runs the built-in assistant,
-   and install the module.
+   and install the module. Or, on PrestaShop 9, from the shop's root folder,
+   add the clone as a Composer path repository and `composer require
+   novalo/prestashop-mcp-server`: `composer/installers` puts it in
+   `modules/somcp` and its dependencies in the shop's `vendor/`. PrestaShop 8
+   cannot take it this way: packages of its core declare PHP 8.0 at most.
 4. Press **Run the diagnostic** in the module settings: every line green means
    a client can connect, and that the sign-in page shows the module's own form.
 5. Before connecting a client, turn on **Access and security > Consent page**.
@@ -229,6 +237,14 @@ calls every tool there through
 `contains`, text the answer must hold. A notice raised from a file of the
 module fails the call too. PrestaShop 8 also runs on PHP 8.2 and later, which
 it does not support: those runs report without failing CI.
+
+Three of those pairs - the oldest PrestaShop 9, one in the middle and the
+newest, marked `composer` in the matrix - install the module with
+`composer require novalo/prestashop-mcp-server` from the shop's root instead of
+from the zip, the package built by `git archive` as GitHub serves it. A
+dependency that no longer fits beside the core's own fails there. PrestaShop 8
+is not among them: packages locked by its core declare PHP 8.0 at most, so
+Composer refuses the module there, and it installs from the zip.
 
 The **PHP tests** workflow also lints every file on PHP 8.1 to 8.4 and compiles `config/services.yml`
 with the Symfony versions of PrestaShop 8 (4.4) and 9 (6.4), with and without
@@ -343,7 +359,9 @@ any tool whose `acts()` is not a `view`.
      (see "Switching a group off" in `docs/TOOLS.md`);
    - a line in `CHANGELOG.md`, under `## Unreleased`;
    - its name in the **prompt of its section** (see below), in `prompt.json`
-     and in the guide `prompt.md`.
+     and in the guide `prompt.md`;
+   - the number of tools in `llms.txt`, and the domains it lists when the tool
+     opens a new one.
 7. **Test** on PrestaShop 8 and 9, multistore included if you can, with a real
    MCP client: the call that should work, the account without the permission,
    and for a write, the call that changes nothing. Then write its **scenario**,
@@ -376,7 +394,8 @@ does not have.
 A prompt can only list tools that exist, so it is written in the pull request
 of the first tool of its section, and each later tool of that section adds
 itself to it. Its title, description and argument descriptions are translated
-like any other text.
+like any other text. A new prompt also goes into the list of prompts in
+`llms.txt`, with the number beside it.
 
 ## Translations
 
@@ -419,8 +438,8 @@ A good pull request:
 - does one thing, and says what and why in a few sentences;
 - says on which PrestaShop versions it was tried, multistore or not, and with
   which MCP client;
-- updates `docs/TOOLS.md`, `docs/EXTENDING.md` or `docs/ARCHITECTURE.md` when
-  it changes what they describe;
+- updates `docs/TOOLS.md`, `docs/EXTENDING.md`, `docs/ARCHITECTURE.md` or
+  `llms.txt` when it changes what they describe;
 - passes CI.
 
 Commits are yours, under your name. Keep the history readable: squash the

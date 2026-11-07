@@ -294,7 +294,15 @@ jobs:
             echo "$MISSING"
             echo "::error::index.php missing in some folders"; exit 1
           fi
-          echo "| Archive contents | root folder \`somcp/\`, module present, no plumbing, index.php everywhere |" >> "$GITHUB_STEP_SUMMARY"
+          # A hidden file is flagged by the Addons validator: the module's own
+          # .htaccess is the one that has to be there.
+          HIDDEN=$(find /tmp/zip/somcp -name '.*' ! -path /tmp/zip/somcp/.htaccess -print)
+          if [ -n "$HIDDEN" ]; then
+            echo "| Archive contents | **hidden files in the archive** |" >> "$GITHUB_STEP_SUMMARY"
+            echo "$HIDDEN"
+            echo "::error::hidden files in the archive"; exit 1
+          fi
+          echo "| Archive contents | root folder \`somcp/\`, module present, no plumbing, index.php everywhere, no hidden file |" >> "$GITHUB_STEP_SUMMARY"
           printf 'Archive contents\troot folder somcp/, no dev/ .github/ docs/, index.php everywhere\n' >> "$CHECKS"
 
       # The report says which commit and which archive it vouches for: the

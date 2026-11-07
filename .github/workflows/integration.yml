@@ -34,6 +34,14 @@ jobs:
     # Only the pairs PrestaShop supports: PrestaShop 8 refuses PHP above 8.1,
     # and a failure there would say more about the core than about the
     # module.
+    #
+    # The pairs marked composer install the module the way an agency does,
+    # with composer require from the shop's root, instead of from the zip:
+    # the oldest PrestaShop 9, one in the middle and the newest, so a
+    # dependency that no longer fits beside the core's own shows up there.
+    # Only PrestaShop 9: the composer.lock of PrestaShop 8 holds core packages
+    # that declare PHP 8.0 at most, so Composer refuses any package needing
+    # 8.1 there whatever the platform says. PrestaShop 8 installs from the zip.
     name: PrestaShop ${{ matrix.prestashop }} on PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
     strategy:
@@ -63,7 +71,7 @@ jobs:
           - { prestashop: '8.2.6', php: '8.1' }
           - { prestashop: '8.2.7', php: '8.1' }
           - { prestashop: '8.2.8', php: '8.1', attack: true }
-          - { prestashop: '9.0.0', php: '8.1' }
+          - { prestashop: '9.0.0', php: '8.1', composer: true }
           - { prestashop: '9.0.0', php: '8.2' }
           - { prestashop: '9.0.0', php: '8.3' }
           - { prestashop: '9.0.0', php: '8.4' }
@@ -106,13 +114,13 @@ jobs:
           - { prestashop: '9.1.4', php: '8.5' }
           - { prestashop: '9.1.5', php: '8.1' }
           - { prestashop: '9.1.5', php: '8.2' }
-          - { prestashop: '9.1.5', php: '8.3' }
+          - { prestashop: '9.1.5', php: '8.3', composer: true }
           - { prestashop: '9.1.5', php: '8.4' }
           - { prestashop: '9.1.5', php: '8.5' }
           - { prestashop: '9.2.0', php: '8.1' }
           - { prestashop: '9.2.0', php: '8.2' }
           - { prestashop: '9.2.0', php: '8.3' }
-          - { prestashop: '9.2.0', php: '8.4' }
+          - { prestashop: '9.2.0', php: '8.4', composer: true }
           - { prestashop: '9.2.0', php: '8.5', attack: true }
     services:
       mysql:
@@ -190,15 +198,33 @@ jobs:
       - name: Install somcp
         id: install
         run: |
-          # The module as a merchant receives it: git archive leaves out what
-          # export-ignore keeps out of the package.
-          mkdir shop/modules/somcp
-          git -C module archive HEAD | tar -x -C shop/modules/somcp
-          # The builds add vendor/ the same way. Not pruned here: the test of
-          # the assistant drives it with Neuron AI's own fake provider, which
-          # the archive leaves out. The dependency job checks the pruned copy.
-          composer install --working-dir=shop/modules/somcp --no-dev --no-interaction --no-progress --optimize-autoloader
           set -o pipefail
+          if [ "${{ matrix.composer }}" = "true" ]; then
+            # The package as Packagist hands it out: GitHub builds its zip with
+            # git archive, so export-ignore applies there too. composer/installers
+            # puts a prestashop-module in modules/<installer-name>, and the
+            # module's dependencies join the shop's own vendor/, resolved
+            # against the versions the core has locked - a conflict fails here.
+            mkdir package
+            git -C module archive HEAD | tar -x -C package
+            composer config --working-dir=shop repositories.somcp '{"type": "path", "url": "../package", "options": {"symlink": false}}'
+            composer config --working-dir=shop --no-plugins allow-plugins.composer/installers true
+            composer require --working-dir=shop --no-interaction --no-progress 'novalo/prestashop-mcp-server:*@dev' 2>&1 | tee composer.log \
+              || { echo "::error title=composer require failed::$(tail -n 40 composer.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
+            [ -f shop/modules/somcp/somcp.php ] \
+              || { echo "::error title=Wrong folder::composer did not install the module in modules/somcp"; exit 1; }
+            [ ! -e shop/vendor/novalo ] \
+              || { echo "::error title=Wrong folder::composer put the module in vendor/ instead of modules/somcp"; exit 1; }
+          else
+            # The module as a merchant receives it: git archive leaves out what
+            # export-ignore keeps out of the package.
+            mkdir shop/modules/somcp
+            git -C module archive HEAD | tar -x -C shop/modules/somcp
+            # The builds add vendor/ the same way. Not pruned here: the test of
+            # the assistant drives it with Neuron AI's own fake provider, which
+            # the archive leaves out. The dependency job checks the pruned copy.
+            composer install --working-dir=shop/modules/somcp --no-dev --no-interaction --no-progress --optimize-autoloader
+          fi
           php shop/bin/console prestashop:module install somcp 2>&1 | tee module.log \
             || { echo "::error title=Module install failed::$(tail -n 40 module.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
       - name: Call every tool

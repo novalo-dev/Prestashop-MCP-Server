@@ -27,3 +27,28 @@ neuron-core/neuron-ai/src/Chat/History/EloquentMessageStore.php
 neuron-core/neuron-ai/src/Workflow/Persistence/EloquentPersistence.php
 neuron-core/neuron-ai/src/Workflow/Persistence/RedisPersistence.php
 neuron-core/neuron-ai/src/Tools/Toolkits/*/
+
+# The Composer plugin that places the module in modules/somcp when an agency
+# installs it with composer require. The module's own install runs with
+# plugins off and a shop never calls it.
+composer/installers
+
+# What the dependencies' authors keep for their own repository: code style,
+# editor and git settings, CI. A hidden file in a module is something the
+# Addons validator flags, and .php-cs-fixer.php names classes that are not
+# shipped. Every package sits two levels down, vendor/<vendor>/<package>.
+*/*/.php-cs-fixer.php
+*/*/.php-cs-fixer.dist.php
+*/*/.php_cs
+*/*/.php_cs.dist
+*/*/.editorconfig
+*/*/.gitignore
+*/*/.gitattributes
+*/*/.github
+*/*/.travis.yml
+*/*/.scrutinizer.yml
+*/*/phpstan.neon
+*/*/phpstan.neon.dist
+*/*/phpunit.xml
+*/*/phpunit.xml.dist
+*/*/psalm.xml

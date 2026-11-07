@@ -1,0 +1,41 @@
+# O'So MCP Server for PrestaShop
+
+> Free and open source PrestaShop module (8.0 to 9.x, PHP 8.1+) that turns a shop into a remote MCP server. Claude, ChatGPT, Le Chat, Cursor, n8n and any assistant that connects to a remote MCP server with OAuth can read and manage the shop - orders, catalog, stock, customers, content, SEO, sales - with exactly the back office rights of the employee who connected it. It also ships an assistant built into the back office that uses the same tools with the employee's own API key.
+
+Key facts:
+
+- MCP address of a shop: `https://<shop>/module/somcp/mcp`, shown in the module under Shop Parameters > MCP server > Configuration.
+- Authorization: OAuth 2.1 with PKCE (S256) and dynamic client registration. The employee signs in on a page of the shop, types a code e-mailed to them, then approves. That page answers "page not found" unless Access and security > Consent page is on.
+- 106 tools covering orders, catalog, stock, customers, statistics, content, modules, appearance, system, SEO, AEO and sales. Each needs a back office permission in Team > Permissions; tools that change data are flagged so assistants ask before running them. Each tool, prompt or group of tools can be switched off for connected assistants, for the built-in assistant, or both.
+- 14 prompts (guided tasks): find an order, change an order status, find a customer, manage products, check and adjust stock, sales report, boost sales, audit and improve SEO, get recommended by AI assistants, read content pages, storefront menu and layout, review modules, cache maintenance, check the shop connection.
+- Requirements: HTTPS reachable from the internet, friendly URLs on, shop at the root of a domain or subdomain. Multistore supported. Interface in English, French, Spanish and German.
+- Installation: upload the release zip in Modules > Module Manager, or, on PrestaShop 9 only, run `composer require novalo/prestashop-mcp-server` from the shop's root folder; composer/installers puts it in `modules/somcp`.
+- The module's technical name, used in its URLs and folders, is `somcp`. Licence: Academic Free License 3.0. Published by Novalo (novalo.fr).
+
+## Docs
+
+- [README](https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/README.md): what the module does, requirements, installation, compatible assistants, security, full tool list
+- [Requirements](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Requirements): PrestaShop, PHP, HTTPS and URL requirements
+- [Installation](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Installation): upload the zip and open the settings
+- [Configuration](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Configuration): enable the server, copy the address, run the diagnostic
+- [Access and security](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Access-and-security): employees allowed, consent page, allowed return addresses
+- [Connect an assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant): where to paste the address in each assistant, sign-in, code and approval
+- [Employee rights](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Employee-rights): how Team > Permissions limits what an assistant can do
+- [Tools and prompts](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Tools-and-prompts): switching tools, groups and prompts on or off
+- [Built-in assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Built%E2%80%90in-assistant): the back office chat, providers, API keys and monthly cap
+- [Troubleshooting](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Troubleshooting): common errors and their fixes
+- [Updates and support](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Updates-and-support): update checks and where to ask for help
+
+## Reference
+
+- [Tools](https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/docs/TOOLS.md): what each tool does, requires and returns
+- [Architecture](https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/docs/ARCHITECTURE.md): how OAuth, MCP and multistore work inside the module
+- [Extending](https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/docs/EXTENDING.md): publishing tools and prompts from another PrestaShop module
+- [Security policy](https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/SECURITY.md): how to report a vulnerability privately
+- [Changelog](https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/CHANGELOG.md): what changed in each version
+
+## Optional
+
+- [Latest release](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest): the module zip and the user guide PDF
+- [O'So AI Relay](https://github.com/novalo-dev/Somcp-Relay): connects the built-in assistant to an AI running on your own computer, such as Ollama or LM Studio
+- [Contributing](https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/CONTRIBUTING.md): installing from the sources and contributing

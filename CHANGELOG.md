@@ -14,6 +14,47 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## 1.3.1 - 2026-11-07
+
+### Added
+
+**Install with Composer on PrestaShop 9.** Agencies and automated deployments
+can now install the module with `composer require novalo/prestashop-mcp-server`
+from the shop's root folder: it lands in `modules/somcp`, exactly where the zip
+puts it, so a shop can move from one way to the other. The zip from the back
+office stays the usual way to install it, and the only one on PrestaShop 8,
+whose own packages refuse the PHP version the module needs.
+
+### Changed
+
+**The Assistant button stands out in the header.** It used to be a grey link
+like **View my shop** beside it. It is now a soft orange button in the module's
+colours, which turns solid orange while the chat is open, so you see at a
+glance whether it is. The round button shown on pages without a header follows
+the same colours.
+
+**More room in the enlarged chat.** Enlarged, the chat now shows the list of
+conversations open in a column beside it, and the panel grows by that column
+instead of the messages losing room; picking a conversation leaves the list
+open. Messages and the field to type in keep a margin on both sides, so lines
+stay easy to read. The tokens used are shown once, at the foot of that list,
+and "Powered by Neuron AI" is centred. On a screen too narrow for both, the
+list still slides over the chat as before.
+
+### Fixed
+
+**The PrestaShop Addons validator can check the module again.** Its
+compatibility step stopped with an error on 1.3.0. The sign-in and consent
+pages used a way of writing PHP that only PHP 8.1 understands, which the
+validator's checks may not read; they are written the older way, and work
+exactly as before.
+
+**A lighter zip, without the libraries' own housekeeping.** The libraries the
+module ships came with files their authors use for their own repository -
+code style and editor settings, test and CI configuration - and the Composer
+plugin used only by a Composer install. They are left out of the zip, which
+holds no hidden file besides the module's own `.htaccess`.
+
 ## 1.3.0 - 2026-11-07
 
 **Your assistants have to be connected again after this update.** Every

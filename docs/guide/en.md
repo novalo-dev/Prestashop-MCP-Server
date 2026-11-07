@@ -20,7 +20,7 @@ subtitle: Connect Claude, ChatGPT and other AI assistants to your PrestaShop sho
 
 ### Step 1 - Upload the module
 
-**Modules > Module Manager > Upload a module** ①, then drop `OSo-MCP-Server-1.3.0.zip` ②.
+**Modules > Module Manager > Upload a module** ①, then drop `OSo-MCP-Server-1.3.1.zip` ②.
 
 ### Step 2 - Open the settings
 

@@ -9,6 +9,7 @@ Key facts:
 - 106 tools covering orders, catalog, stock, customers, statistics, content, modules, appearance, system, SEO, AEO and sales. Each needs a back office permission in Team > Permissions; tools that change data are flagged so assistants ask before running them. Each tool, prompt or group of tools can be switched off for connected assistants, for the built-in assistant, or both.
 - 14 prompts (guided tasks): find an order, change an order status, find a customer, manage products, check and adjust stock, sales report, boost sales, audit and improve SEO, get recommended by AI assistants, read content pages, storefront menu and layout, review modules, cache maintenance, check the shop connection.
 - Requirements: HTTPS reachable from the internet, friendly URLs on, shop at the root of a domain or subdomain. Multistore supported. Interface in English, French, Spanish and German.
+- Installation: upload the release zip in Modules > Module Manager, or run `composer require novalo/prestashop-mcp-server` from the shop's root folder; composer/installers puts it in `modules/somcp`.
 - The module's technical name, used in its URLs and folders, is `somcp`. Licence: Academic Free License 3.0. Published by Novalo (novalo.fr).
 
 ## Docs

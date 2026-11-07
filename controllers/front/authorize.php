@@ -273,6 +273,15 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         $client = SomcpOAuthClient::findById((int) $request['id_client']);
         $clientId = $client !== null ? (string) $client['client_id'] : '';
 
+        // The same answer as a blocked address, so the page never says
+        // whether it is the address or the account that is blocked.
+        if (SomcpGuard::accountBlocked($email)) {
+            SomcpLogger::log('signin_blocked', SomcpLogger::OUTCOME_FAILURE, 'too many failed sign-ins on this account', $clientId);
+            $this->renderTooMany();
+        }
+
+        // Not counted against the account: anyone who knows an employee's
+        // e-mail could otherwise block it without solving a single check.
         if (!SomcpGuard::solved((string) Tools::getValue('somcp_altcha', ''))) {
             $this->refuseSignIn($request, 'anti-robot check not solved', $clientId);
         }
@@ -282,12 +291,12 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             $employee = (new Employee())->getByEmail($email, $password);
         }
         if (!$employee instanceof Employee || (int) $employee->id <= 0) {
-            $this->refuseSignIn($request, 'wrong email or password, or account switched off', $clientId);
+            $this->refuseSignIn($request, 'wrong email or password, or account switched off', $clientId, 0, $email);
         }
 
         $refusal = $this->refusalFor($employee, (int) $request['id_shop']);
         if ($refusal !== '') {
-            $this->refuseSignIn($request, $refusal, $clientId, (int) $employee->id);
+            $this->refuseSignIn($request, $refusal, $clientId, (int) $employee->id, $email);
         }
 
         SomcpOAuthServer::attachEmployee((int) $request['id_request'], (int) $employee->id);
@@ -306,12 +315,13 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * @param string $reason
      * @param string $clientId
      * @param int $idEmployee
+     * @param string $email the account tried, counted once the anti-robot check passed
      */
-    private function refuseSignIn(array $request, string $reason, string $clientId, int $idEmployee = 0): never
+    private function refuseSignIn(array $request, string $reason, string $clientId, int $idEmployee = 0, string $email = ''): never
     {
-        SomcpGuard::signinFailed();
+        SomcpGuard::signinFailed($email);
         SomcpLogger::log('signin_refused', SomcpLogger::OUTCOME_FAILURE, $reason, $clientId, $idEmployee);
-        if (SomcpGuard::signinBlocked()) {
+        if (SomcpGuard::signinBlocked() || ($email !== '' && SomcpGuard::accountBlocked($email))) {
             $this->renderTooMany();
         }
         $this->renderSignIn($request, true);
@@ -487,7 +497,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     private function renderTooMany(): never
     {
         $this->renderPage('message', ['message' => $this->module->l10n(
-            'Too many attempts from this address. Wait 15 minutes, then try again.')], 429);
+            'Too many attempts. Wait 15 minutes, then try again.')], 429);
     }
 
     private function renderExpired(): never

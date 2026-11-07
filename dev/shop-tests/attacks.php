@@ -583,8 +583,11 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     $withCookie = array_merge($form, ['Cookie: ' . SomcpOAuthServer::REQUEST_COOKIE . '=' . $cookieOf($again)]);
     $lastPage = $again;
     $guessCsrf = $csrfOf($again);
-    $guess = static function (string $password) use ($http, $authorizeUrl, &$withCookie, $solve, &$lastPage, $guessCsrf, $signinEmployee): array {
-        $response = $http('POST', $authorizeUrl, $withCookie, http_build_query([
+    // $forwarded is the X-Forwarded-For a proxy in front of the shop would
+    // pass on: what the visitor wrote, then the address the proxy saw.
+    $guess = static function (string $password, string $forwarded = '') use ($http, $authorizeUrl, &$withCookie, $solve, &$lastPage, $guessCsrf, $signinEmployee): array {
+        $headers = $forwarded === '' ? $withCookie : array_merge($withCookie, ['X-Forwarded-For: ' . $forwarded]);
+        $response = $http('POST', $authorizeUrl, $headers, http_build_query([
             'somcp_step' => 'signin',
             'somcp_csrf' => $guessCsrf,
             'somcp_email' => (string) $signinEmployee->email,
@@ -604,6 +607,31 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     $blocked = $guess($signinPassword);
     $expect('right password from a blocked address', $blocked, 429);
     $noAdmin('blocked address', $blocked);
+
+    // The shop sees these requests from its own network, as behind a proxy.
+    // The address the visitor writes at the front of X-Forwarded-For changes
+    // with each guess; the one the proxy appended does not, and is counted.
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+    for ($i = 1; $i <= SomcpGuard::SIGNIN_ATTEMPTS - 1; ++$i) {
+        $guess('spoof-' . $i, '81.56.20.' . $i . ', 81.56.10.9');
+    }
+    $expect('fifth wrong password with a new forged address in front', $guess('spoof-5', '81.56.20.5, 81.56.10.9'), 429);
+
+    // An IPv6 connection holds a whole /64: moving inside it is no new address.
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+    for ($i = 1; $i <= SomcpGuard::SIGNIN_ATTEMPTS - 1; ++$i) {
+        $guess('six-' . $i, '2a01:e0a:1:2::' . $i);
+    }
+    $expect('fifth wrong password from another address of the same IPv6 /64', $guess('six-5', '2a01:e0a:1:2::ff'), 429);
+
+    // A new address for each guess, as through rotating proxies: the account
+    // tried is what stops it, and then even the right password is refused.
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+    for ($i = 1; $i <= SomcpGuard::ACCOUNT_ATTEMPTS - 1; ++$i) {
+        $guess('rotate-' . $i, '81.56.30.' . $i);
+    }
+    $expect('tenth wrong password on one account from ten addresses', $guess('rotate-10', '81.56.30.10'), 429);
+    $expect('right password on a blocked account from a fresh address', $guess($signinPassword, '81.56.31.1'), 429);
     $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
 }
 ++$checks;

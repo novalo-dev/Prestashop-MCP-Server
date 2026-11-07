@@ -174,10 +174,15 @@ it may only read.
 **Fewer ways for a robot to try its luck.** The sign-in page of a connection
 now has an "I'm not a robot" box, a proof of work your browser solves in about a
 second - no image to read, nothing sent to another company, nothing to set up.
+Each failed sign-in makes the next box longer to solve, up to about ten seconds.
 After five failed sign-ins, the address they come from is blocked for fifteen
-minutes, even with the right password. An address that sends too many connection
-requests, or registers too many applications in an hour, is turned away for a
-while too.
+minutes, even with the right password; after ten on one account, from any
+addresses, that account is blocked on this page for fifteen minutes too, so
+changing proxy for each guess gains nothing. Your back office login is not
+affected. On a shop behind a proxy or Cloudflare, the visitor's real address is
+the one counted, not one they wrote in a header. An address that sends too many
+connection requests, or registers too many applications in an hour, is turned
+away for a while too.
 
 **An e-mail each time an assistant is connected.** It goes to the employee who
 approved the connection and to the shop's address, with the super

@@ -97,10 +97,10 @@
       <source>The page where you send a file to an assistant can be reached.</source>
       <target>La page où vous envoyez un fichier à un assistant est accessible.</target>
     </trans-unit>
-    <!-- Too many attempts from this address. Wait 15 minutes, then try again. -->
-    <trans-unit id="83112de15f0bb6d802b91df72cc32b0c" resname="Too many attempts from this address. Wait 15 minutes, then try again.">
-      <source>Too many attempts from this address. Wait 15 minutes, then try again.</source>
-      <target>Trop de tentatives depuis cette adresse. Attendez 15 minutes, puis réessayez.</target>
+    <!-- Too many attempts. Wait 15 minutes, then try again. -->
+    <trans-unit id="189b102613e44c464dc9a8d3d8cc9221" resname="Too many attempts. Wait 15 minutes, then try again.">
+      <source>Too many attempts. Wait 15 minutes, then try again.</source>
+      <target>Trop de tentatives. Attendez 15 minutes, puis réessayez.</target>
     </trans-unit>
     <!-- A new assistant is connected to your shop -->
     <trans-unit id="7c4960744211d044c345f44f61f0a641" resname="A new assistant is connected to your shop">

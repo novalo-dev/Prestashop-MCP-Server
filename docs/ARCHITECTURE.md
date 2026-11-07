@@ -97,9 +97,14 @@ for a language the module does not have.
 
 `SomcpGuard` puts limits on the public addresses: an ALTCHA proof of work on the
 sign-in form (the widget is shipped in `views/js/altcha/`, the check made with
-the `altcha-org/altcha` library), a block of fifteen minutes after five failed
-sign-ins from one address, and quotas on new authorization requests and on
-dynamic registrations. The counters use `nikolaposa/rate-limit` with a storage
+the `altcha-org/altcha` library) whose work grows with each failed sign-in from
+the address, a block of fifteen minutes after five failed sign-ins from one
+address or ten on one account, and quotas on new authorization requests and on
+dynamic registrations. The address is not `Tools::getRemoteAddr()`, which takes
+the first, visitor-written entry of `X-Forwarded-For`: behind a proxy on the
+server's network or Cloudflare, the chain is read from the right and the first
+address that is not such a proxy is counted, and an IPv6 address counts as its
+/64. The counters use `nikolaposa/rate-limit` with a storage
 in the shop's database (`src/Security/DbRateLimiter.php`, table
 `somcp_rate_limit`), since a shared hosting offers neither Redis nor APCu.
 

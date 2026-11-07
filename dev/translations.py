@@ -85,10 +85,10 @@ T = {
  "La page où vous envoyez un fichier à un assistant est accessible.",
  "La página en la que envía un archivo a un asistente es accesible.",
  "Die Seite, auf der Sie einem Assistenten eine Datei senden, ist erreichbar."),
-"Too many attempts from this address. Wait 15 minutes, then try again.": (
- "Trop de tentatives depuis cette adresse. Attendez 15 minutes, puis réessayez.",
- "Demasiados intentos desde esta dirección. Espere 15 minutos y vuelva a intentarlo.",
- "Zu viele Versuche von dieser Adresse. Warten Sie 15 Minuten und versuchen Sie es dann erneut."),
+"Too many attempts. Wait 15 minutes, then try again.": (
+ "Trop de tentatives. Attendez 15 minutes, puis réessayez.",
+ "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.",
+ "Zu viele Versuche. Warten Sie 15 Minuten und versuchen Sie es dann erneut."),
 "A new assistant is connected to your shop": (
  "Un nouvel assistant est connecté à votre boutique",
  "Un nuevo asistente está conectado a su tienda",

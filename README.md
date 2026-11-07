@@ -152,6 +152,9 @@ Where to paste the address in each of them:
 - **No password and no all-powerful API key.** Assistants sign in with
   OAuth 2.1, and every connection can be withdrawn in one click from the
   module.
+- **A connection takes your password and a code by e-mail**, on a page that
+  stays closed - the shop's "page not found" - until you open it in **Access
+  and security > Consent page**.
 - **You choose what is offered.** Each tool and prompt, or a whole group of
   them such as **Orders - changes**, can be switched off for connected
   assistants, for the built-in assistant, or both. A group switched off also
@@ -394,7 +397,8 @@ the page you are on first, and all of them from the **+** of its field.
 
 - **Documentation:** the [wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
   covers requirements, installation, settings, each assistant and the built-in
-  assistant.
+  assistant. The same guide comes as a PDF, `docs/readme_en.pdf`, in the zip
+  and with every [release](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest).
 - **A bug or an idea:** open an [issue](https://github.com/novalo-dev/Prestashop-MCP-Server/issues).
 - **Installation, setup or a tool made for your shop:** [Novalo](https://novalo.fr).
 - **What changed in each version:** [CHANGELOG.md](CHANGELOG.md).

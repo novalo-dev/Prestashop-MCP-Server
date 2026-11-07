@@ -39,7 +39,8 @@ once, in a few seconds, with your GitHub account.
   hashed and bound to the shop they were issued for.
 - **Uses PrestaShop permissions as they are.** An employee connects an assistant
   on their own behalf: they sign in with their back office account on the
-  shop's authorization page and approve what it may do. The assistant
+  shop's authorization page, type the code e-mailed to them, and approve what
+  it may do. The assistant
   then holds exactly that employee's rights: each tool is tied to a back office
   page and one of the four rights PrestaShop already manages, `view`, `add`,
   `edit` or `delete`.
@@ -90,6 +91,10 @@ once, in a few seconds, with your GitHub account.
 - **Back office rights** are checked on every call, against the employee's
   current profile, and the shop always comes from the token, never from the
   request.
+- **The authorization page is off by default** (**Access and security >
+  Consent page**): off, it is the shop's 404. Signing in there takes the
+  password, an anti-robot check and a 6-digit code e-mailed to the employee,
+  with failures counted per address and per account.
 - **Redirect URIs** must be `https`, or `http` on loopback. The merchant can
   restrict them to a list of hosts, and restrict which profile may grant
   access.
@@ -138,6 +143,9 @@ MCP client connects from the outside.
    and install the module.
 4. Press **Run the diagnostic** in the module settings: every line green means
    a client can connect, and that the sign-in page shows the module's own form.
+5. Before connecting a client, turn on **Access and security > Consent page**.
+   The code asked after the password is e-mailed to the employee, so the shop
+   has to send e-mail (**Advanced Parameters > E-mail**).
 
 A local shop needs a public HTTPS address for an MCP client to reach it: the
 tunnel of step 2 is that address.

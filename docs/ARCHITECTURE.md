@@ -48,9 +48,11 @@ client                      shop (somcp)
   |  GET /prm  ------------->|  -> authorization server
   |  GET /.well-known/...  ->|  -> endpoints, PKCE S256, DCR / CIMD
   |  register (DCR) or present a client id metadata document (CIMD)
-  |  GET /authorize  ------->|  return host checked against the allowed list
+  |  GET /authorize  ------->|  404 unless the consent page is on; return
+  |                          |  host checked against the allowed list
   |                          |  request parked in the database
   |                          |  same page: employee email and password,
+  |                          |  then the code e-mailed to them,
   |                          |  then the scopes and the return host, approve
   |<-- redirect with code (valid 60 s)
   |  POST token (code + PKCE verifier) --> access + refresh token

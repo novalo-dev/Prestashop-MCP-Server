@@ -155,6 +155,10 @@ checks a change.
 runs in demo mode, as the **Generate robots.txt file** button of **Shop
 Parameters > Traffic & SEO** does.
 
+**The zip passes the PrestaShop Addons validator again.** A folder added in
+this version had no `index.php`, and the anti-robot widget's script had no
+licence header at its top. Both are in place.
+
 ### Security
 
 **A page to approve assistants that only opens when you open it.** The page

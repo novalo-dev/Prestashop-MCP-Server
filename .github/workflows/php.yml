@@ -126,6 +126,16 @@ jobs:
         # pull request from a fork cannot be written to. The message gives
         # the command that fixes it locally.
         run: php .github/scripts/check-headers.php .
+      - name: An index.php in every module folder
+        # The Addons validator refuses a package with a folder that lacks one.
+        # The release build checks its zip too, but only once it is too late:
+        # here a new folder is caught in the pull request that adds it.
+        run: |
+          MISSING=$(find classes config controllers mails prompts sql src tools translations upgrade views -type d ! -exec test -e '{}/index.php' ';' -print)
+          if [ -n "$MISSING" ]; then
+            echo "$MISSING" | sed 's/^/::error::index.php missing in /'
+            exit 1
+          fi
       - name: Nothing loaded from outside the shop
         # Every script, style sheet, font and image the module's pages and
         # e-mails use is shipped in the module: a file fetched from another

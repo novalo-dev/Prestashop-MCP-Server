@@ -206,6 +206,10 @@ jobs:
             git -C module archive HEAD | tar -x -C package
             composer config --working-dir=shop repositories.somcp '{"type": "path", "url": "../package", "options": {"symlink": false}}'
             composer config --working-dir=shop --no-plugins allow-plugins.composer/installers true
+            # PrestaShop 8 pins config.platform.php to 7.2.5, the oldest PHP it
+            # supports, so Composer refuses any package that needs PHP 8.1.
+            # An agency sets it to the PHP its server runs, as done here.
+            composer config --working-dir=shop platform.php "$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION . "." . PHP_RELEASE_VERSION;')"
             composer require --working-dir=shop --no-interaction --no-progress 'novalo/prestashop-mcp-server:*@dev' 2>&1 | tee composer.log \
               || { echo "::error title=composer require failed::$(tail -n 40 composer.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
             [ -f shop/modules/somcp/somcp.php ] \

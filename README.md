@@ -101,6 +101,10 @@ composer require novalo/prestashop-mcp-server
 php bin/console prestashop:module install somcp
 ```
 
+On PrestaShop 8, first tell Composer the PHP version your server runs, for
+example `composer config platform.php 8.1`: PrestaShop 8 declares PHP 7.2.5,
+and the module needs 8.1 or later.
+
 The module lands in `modules/somcp`, as with the zip, and its dependencies join
 the shop's own `vendor/`. Then carry on from step 3.
 

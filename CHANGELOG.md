@@ -49,6 +49,12 @@ pages used a way of writing PHP that only PHP 8.1 understands, which the
 validator's checks may not read; they are written the older way, and work
 exactly as before.
 
+**A lighter zip, without the libraries' own housekeeping.** The libraries the
+module ships came with files their authors use for their own repository -
+code style and editor settings, test and CI configuration - and the Composer
+plugin used only by a Composer install. They are left out of the zip, which
+holds no hidden file besides the module's own `.htaccess`.
+
 ## 1.3.0 - 2026-11-07
 
 **Your assistants have to be connected again after this update.** Every

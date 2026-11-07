@@ -189,6 +189,15 @@ jobs:
             find build/somcp -type d ! -exec test -e '{}/index.php' ';' -print
           fi
 
+          # The module's own .htaccess is the one hidden file it ships.
+          HIDDEN=$(find build/somcp -name '.*' ! -path build/somcp/.htaccess | wc -l)
+          if [ "$HIDDEN" -eq 0 ]; then
+            echo "| Hidden files | none besides the module's .htaccess |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| Hidden files | **$HIDDEN in the archive, the Addons validator flags them** |" >> "$GITHUB_STEP_SUMMARY"
+            find build/somcp -name '.*' ! -path build/somcp/.htaccess
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.name.outputs.artifact }}

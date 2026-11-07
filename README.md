@@ -72,7 +72,7 @@ before you connect an assistant.
 
 ---
 
-## Install in 3 steps
+## Install in 4 steps
 
 1. **Download** `OSo-MCP-Server-x.y.z.zip` from the
    [latest release](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest).
@@ -91,6 +91,18 @@ back office email and password, type the code e-mailed to you, check where the
 answer goes, and approve what it may do. Then turn **Consent page** off again:
 the assistant keeps working. Step by step with screenshots:
 [Installation](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Installation).
+
+**With Composer**, for agencies and automated deployments, from the shop's root
+folder:
+
+```
+composer config allow-plugins.composer/installers true
+composer require novalo/prestashop-mcp-server
+php bin/console prestashop:module install somcp
+```
+
+The module lands in `modules/somcp`, as with the zip, and its dependencies join
+the shop's own `vendor/`. Then carry on from step 3.
 
 ---
 

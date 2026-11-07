@@ -1,0 +1,13 @@
+Hello,
+
+Your code to connect an assistant to {connected_shop}:
+
+{code}
+
+It works once, for {minutes} minutes.
+
+If you did not just try to connect an assistant, someone has your password: change it now.
+
+--
+{shop_name} - {shop_url}
+You receive this e-mail because your back office account signed in on the page where an assistant is connected.

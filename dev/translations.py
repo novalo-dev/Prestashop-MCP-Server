@@ -93,6 +93,70 @@ T = {
  "Un nouvel assistant est connecté à votre boutique",
  "Un nuevo asistente está conectado a su tienda",
  "Ein neuer Assistent ist mit Ihrem Shop verbunden"),
+"Consent page": (
+ "Page de consentement",
+ "Página de consentimiento",
+ "Freigabeseite"),
+"The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.": (
+ "La page où un employé se connecte et autorise un nouvel assistant. Activez-la le temps d'en connecter un, puis désactivez-la : les assistants déjà connectés continuent de fonctionner, et tant qu'elle est désactivée, un lien que quelqu'un vous envoie ne mène nulle part.",
+ "La página en la que un empleado inicia sesión y autoriza a un nuevo asistente. Actívela mientras conecta uno y desactívela después: los asistentes ya conectados siguen funcionando y, mientras esté desactivada, un enlace que alguien le envíe no lleva a ninguna parte.",
+ "Die Seite, auf der sich ein Mitarbeiter anmeldet und einen neuen Assistenten freigibt. Schalten Sie sie ein, während Sie einen verbinden, und danach wieder aus: Bereits verbundene Assistenten funktionieren weiter, und solange sie aus ist, führt ein Link, den Ihnen jemand schickt, ins Leere."),
+"Switched off: no new assistant can be connected, and this address is the shop's \"page not found\". Turn on the consent page in Access and security while you connect one. The assistants already connected keep working.": (
+ "Désactivée : aucun nouvel assistant ne peut être connecté, et cette adresse affiche la page « introuvable » de la boutique. Activez la page de consentement dans Accès et sécurité le temps d'en connecter un. Les assistants déjà connectés continuent de fonctionner.",
+ "Desactivada: no se puede conectar ningún asistente nuevo y esta dirección muestra la página «no encontrada» de la tienda. Active la página de consentimiento en Acceso y seguridad mientras conecta uno. Los asistentes ya conectados siguen funcionando.",
+ "Ausgeschaltet: Es kann kein neuer Assistent verbunden werden, und diese Adresse zeigt die Seite „nicht gefunden“ des Shops. Schalten Sie die Freigabeseite unter Zugang und Sicherheit ein, während Sie einen verbinden. Bereits verbundene Assistenten funktionieren weiter."),
+"Your code to connect an assistant": (
+ "Votre code pour connecter un assistant",
+ "Su código para conectar un asistente",
+ "Ihr Code zum Verbinden eines Assistenten"),
+"Check your e-mail": (
+ "Vérifiez votre e-mail",
+ "Revise su correo",
+ "Prüfen Sie Ihre E-Mails"),
+"Enter the 6-digit code sent to": (
+ "Saisissez le code à 6 chiffres envoyé à",
+ "Introduzca el código de 6 cifras enviado a",
+ "Geben Sie den 6-stelligen Code ein, der gesendet wurde an"),
+"Verification code": (
+ "Code de vérification",
+ "Código de verificación",
+ "Bestätigungscode"),
+"Digit": (
+ "Chiffre",
+ "Cifra",
+ "Ziffer"),
+"Verify": (
+ "Valider",
+ "Validar",
+ "Bestätigen"),
+"The code works for %minutes% minutes and only once.": (
+ "Le code est valable %minutes% minutes et ne sert qu'une seule fois.",
+ "El código es válido durante %minutes% minutos y solo sirve una vez.",
+ "Der Code gilt %minutes% Minuten und nur ein einziges Mal."),
+"This code is not right.": (
+ "Ce code n'est pas le bon.",
+ "Este código no es correcto.",
+ "Dieser Code ist nicht richtig."),
+"This code no longer works. Ask for a new one.": (
+ "Ce code ne fonctionne plus. Demandez-en un nouveau.",
+ "Este código ya no funciona. Pida uno nuevo.",
+ "Dieser Code funktioniert nicht mehr. Fordern Sie einen neuen an."),
+"This is the last code: no other will be sent.": (
+ "C'est le dernier code : aucun autre ne sera envoyé.",
+ "Es el último código: no se enviará ningún otro.",
+ "Das ist der letzte Code: Es wird kein weiterer gesendet."),
+"Send a new code": (
+ "Renvoyer un code",
+ "Enviar un código nuevo",
+ "Neuen Code senden"),
+"Send a new code in %time%": (
+ "Renvoyer un code dans %time%",
+ "Enviar un código nuevo en %time%",
+ "Neuen Code senden in %time%"),
+"Every code of this connection has been used up. It is closed: start it again from your assistant.": (
+ "Tous les codes de cette connexion ont été utilisés. Elle est fermée : recommencez depuis votre assistant.",
+ "Se han agotado todos los códigos de esta conexión. Está cerrada: vuelva a empezar desde su asistente.",
+ "Alle Codes dieser Verbindung sind aufgebraucht. Sie ist geschlossen: Starten Sie sie erneut über Ihren Assistenten."),
 "Connect an assistant": (
  "Connecter un assistant",
  "Conectar un asistente",

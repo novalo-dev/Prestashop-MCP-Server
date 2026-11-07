@@ -243,6 +243,109 @@ class SomcpOAuthServer
     }
 
     /**
+     * Writes a new code for the employee signed in on a pending request and
+     * returns it, to be e-mailed. The one sent before, if any, stops working.
+     *
+     * Six digits are few, which is why a code lives ten minutes, survives five
+     * wrong entries, and only three are ever sent for one request: an attacker
+     * holding the password gets fifteen guesses in a million.
+     *
+     * @param int $idRequest
+     *
+     * @return string the code, never stored as such
+     */
+    public static function issueOtp(int $idRequest): string
+    {
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        Db::getInstance()->execute(
+            'UPDATE `' . _DB_PREFIX_ . "somcp_oauth_request`
+             SET `otp_hash` = '" . pSQL(self::otpHash($idRequest, $code)) . "',
+                 `otp_expires_at` = '" . pSQL(date('Y-m-d H:i:s', time() + SomcpConfig::OTP_TTL)) . "',
+                 `otp_sent_at` = '" . pSQL(date('Y-m-d H:i:s')) . "',
+                 `otp_sends` = `otp_sends` + 1,
+                 `otp_tries` = 0
+             WHERE `id_request` = " . (int) $idRequest . ' AND `consumed_at` IS NULL'
+        );
+
+        return $code;
+    }
+
+    /**
+     * Seconds before another code may be sent for this request: 0 when it may
+     * be now, -1 when no other will be.
+     *
+     * @param array<string, mixed> $request
+     *
+     * @return int
+     */
+    public static function otpWait(array $request): int
+    {
+        $sends = (int) $request['otp_sends'];
+        if (!isset(SomcpConfig::OTP_WAITS[$sends])) {
+            return -1;
+        }
+
+        return max(0, strtotime((string) $request['otp_sent_at']) + SomcpConfig::OTP_WAITS[$sends] - time());
+    }
+
+    /**
+     * Checks a code typed on the page. A right code is spent at once - it
+     * opens the consent form one time only - and renews the form token.
+     *
+     * @param array<string, mixed> $request
+     * @param string $code
+     *
+     * @return string 'ok', 'wrong' or 'spent' (expired, used, or too many wrong entries)
+     */
+    public static function checkOtp(array $request, string $code): string
+    {
+        $idRequest = (int) $request['id_request'];
+        if ((string) $request['otp_hash'] === ''
+            || strtotime((string) $request['otp_expires_at']) < time()
+            || (int) $request['otp_tries'] >= SomcpConfig::OTP_TRIES) {
+            return 'spent';
+        }
+
+        // Counted before the comparison and in the same statement as the
+        // limit, so two entries posted at once cannot both slip under it.
+        $db = Db::getInstance();
+        $db->execute(
+            'UPDATE `' . _DB_PREFIX_ . 'somcp_oauth_request` SET `otp_tries` = `otp_tries` + 1
+             WHERE `id_request` = ' . $idRequest . ' AND `otp_tries` < ' . (int) SomcpConfig::OTP_TRIES
+        );
+        if ($db->Affected_Rows() < 1) {
+            return 'spent';
+        }
+
+        if (!preg_match('/^\d{6}$/', $code) || !hash_equals((string) $request['otp_hash'], self::otpHash($idRequest, $code))) {
+            return (int) $request['otp_tries'] + 1 >= SomcpConfig::OTP_TRIES ? 'spent' : 'wrong';
+        }
+
+        $db->execute(
+            'UPDATE `' . _DB_PREFIX_ . "somcp_oauth_request`
+             SET `otp_verified` = 1, `otp_hash` = '', `csrf_token` = '" . pSQL(SomcpRandom::token(16)) . "'
+             WHERE `id_request` = " . $idRequest . " AND `otp_hash` = '" . pSQL((string) $request['otp_hash']) . "'"
+        );
+
+        // Only the request that emptied the hash wins a code posted twice.
+        return $db->Affected_Rows() === 1 ? 'ok' : 'spent';
+    }
+
+    /**
+     * What is stored of a code. Public for the tests, which cannot read the
+     * e-mail and write a code of their own in its place.
+     *
+     * @param int $idRequest
+     * @param string $code
+     *
+     * @return string
+     */
+    public static function otpHash(int $idRequest, string $code): string
+    {
+        return hash('sha256', $idRequest . '|' . $code);
+    }
+
+    /**
      * Marks a pending request as dealt with, whatever the merchant answered.
      *
      * @param int $idRequest

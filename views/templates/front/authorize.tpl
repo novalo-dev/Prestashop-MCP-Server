@@ -80,6 +80,18 @@
     .consent form { display: flex; gap: 10px; max-width: 460px; }
     .consent form button { flex: 1; }
     .message { font-size: 15px; }
+    .code { text-align: center; }
+    .code .icon { width: 48px; height: 48px; margin: 0 auto 14px; border-radius: 50%; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+    .code .icon svg { width: 22px; height: 22px; }
+    .code strong { color: var(--fg); }
+    .code .notice { margin-top: 14px; text-align: left; }
+    .code fieldset { border: 0; margin: 20px 0 0; padding: 0; display: flex; justify-content: center; gap: 8px; }
+    .code legend { position: absolute; left: -9999px; }
+    input.digit { width: 52px; height: 60px; padding: 0; border: 1.5px solid var(--line); border-radius: 8px; background: var(--field); color: var(--fg); text-align: center; font: 600 26px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .code form.verify button { width: 100%; margin-top: 20px; }
+    .code .rule { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+    .code form.resend button { height: auto; padding: 4px; border: 0; background: none; color: var(--accent-soft); font-size: 13px; text-decoration: underline; }
+    .code form.resend button:disabled { color: var(--muted); text-decoration: none; cursor: default; }
     @media (max-width: 900px) {
         #somcp-authorize { display: flex; flex-direction: column; }
         .side { flex: none; padding: 14px 16px; gap: 10px; }
@@ -98,6 +110,8 @@
         .consent .list { padding: 0 16px 10px; }
         .consent footer { padding: 10px 16px 14px; }
         .consent form button { padding: 0 8px; font-size: 13.5px; }
+        .code fieldset { gap: 6px; }
+        input.digit { width: 44px; height: 54px; font-size: 22px; }
     }
 </style>
 </head>
@@ -110,7 +124,7 @@
             {if $somcp_state != 'message'}
                 <p class="lead">{$somcp_text.intro|escape:'html':'UTF-8'}</p>
             {/if}
-            {if $somcp_state == 'signin'}
+            {if $somcp_state == 'signin' || $somcp_state == 'otp'}
                 <p class="lead">{$somcp_text.application|escape:'html':'UTF-8'} <strong>{$somcp.client_name|escape:'html':'UTF-8'}</strong></p>
             {/if}
         </div>
@@ -177,6 +191,43 @@
                 </form>
             </div>
         </main>
+    {elseif $somcp_state == 'otp'}
+        <main class="main">
+            <div class="code">
+                <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></div>
+                <h2>{$somcp_text.otp_title|escape:'html':'UTF-8'}</h2>
+                <p>{$somcp_text.otp_intro|escape:'html':'UTF-8'}<br><strong>{$somcp.email|escape:'html':'UTF-8'}</strong></p>
+                {if $somcp.notice == 'wrong'}
+                    <p class="refused notice" role="alert">{$somcp_text.otp_wrong|escape:'html':'UTF-8'}</p>
+                {elseif $somcp.notice == 'spent'}
+                    <p class="refused notice" role="alert">{$somcp_text.otp_spent|escape:'html':'UTF-8'}</p>
+                {/if}
+                <form class="verify" id="somcp-otp" method="post" action="{$somcp_action|escape:'html':'UTF-8'}" autocomplete="off">
+                    <input type="hidden" name="somcp_step" value="otp">
+                    <input type="hidden" name="somcp_csrf" value="{$somcp.csrf|escape:'html':'UTF-8'}">
+                    <fieldset>
+                        <legend>{$somcp_text.otp_code|escape:'html':'UTF-8'}</legend>
+                        {for $digit=1 to 6}
+                            <input class="digit" type="text" name="somcp_otp[]" inputmode="numeric" pattern="[0-9]" maxlength="1" required
+                                   {if $digit == 1}autocomplete="one-time-code" {/if}aria-label="{$somcp_text.otp_digit|escape:'html':'UTF-8'} {$digit|intval}">
+                        {/for}
+                    </fieldset>
+                    <button type="submit" class="primary">{$somcp_text.verify|escape:'html':'UTF-8'}</button>
+                </form>
+                <p class="rule">{$somcp_text.otp_rule|escape:'html':'UTF-8'}</p>
+                {if $somcp.last}
+                    <p class="rule">{$somcp_text.otp_last|escape:'html':'UTF-8'}</p>
+                {else}
+                    <form class="resend" method="post" action="{$somcp_action|escape:'html':'UTF-8'}">
+                        <input type="hidden" name="somcp_step" value="resend">
+                        <input type="hidden" name="somcp_csrf" value="{$somcp.csrf|escape:'html':'UTF-8'}">
+                        <button type="submit" id="somcp-resend" data-wait="{$somcp.wait|intval}"
+                                data-label="{$somcp_text.resend|escape:'html':'UTF-8'}"
+                                data-label-wait="{$somcp_text.resend_in|escape:'html':'UTF-8'}"{if $somcp.wait > 0} disabled{/if}>{$somcp_text.resend|escape:'html':'UTF-8'}</button>
+                    </form>
+                {/if}
+            </div>
+        </main>
     {else}
         <main class="consent">
             <header><h2>{$somcp_text.abilities|escape:'html':'UTF-8'}</h2></header>
@@ -211,6 +262,8 @@
 </div>
 {if $somcp_state == 'signin'}
 <script type="module" src="{$somcp.altcha_js|escape:'html':'UTF-8'}"></script>
+{elseif $somcp_state == 'otp'}
+<script src="{$somcp.otp_js|escape:'html':'UTF-8'}"></script>
 {/if}
 </body>
 </html>

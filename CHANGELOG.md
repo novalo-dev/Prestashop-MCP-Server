@@ -16,6 +16,13 @@ are:
 
 ## 1.3.0 - 2026-11-06
 
+**Your assistants have to be connected again after this update.** Every
+connection made so far was approved on a page that asked for a password alone,
+and none of them is kept. To connect an assistant again: turn on **Consent
+page** in the **Access and security** tab of the module, connect the assistant
+from Claude, ChatGPT or wherever you use it, then turn the page off again. The
+diagnostic shows when the page is off, with a link to the switch.
+
 ### Added
 
 **Create a voucher or a cart discount.** The new tool `somcp_create_cart_rule`
@@ -145,6 +152,21 @@ runs in demo mode, as the **Generate robots.txt file** button of **Shop
 Parameters > Traffic & SEO** does.
 
 ### Security
+
+**A page to approve assistants that only opens when you open it.** The page
+where an employee signs in and approves a new assistant is now off unless you
+turn on **Consent page** in **Access and security**, and while it is off every
+link to it is the shop's ordinary "page not found" - including one somebody
+sends you to have you approve their own assistant. Turn it on for the minutes
+you connect one: the assistants already connected keep working with it off.
+
+**A code by e-mail after the password.** Once the password is accepted, the
+page asks for a 6-digit code e-mailed to that employee. A code works once and
+for ten minutes, a new one can be asked for after 30 seconds and a third after
+45 more, and there is no fourth: once the third is mistyped five times or
+expires, the connection is closed and has to be started again from the
+assistant. A stolen password alone no longer connects anything, and an
+employee who receives a code they did not ask for knows their password is out.
 
 **Only the assistants you allow can be connected.** The list of allowed return
 addresses (**Access and security** tab of the module, **Only allow these return

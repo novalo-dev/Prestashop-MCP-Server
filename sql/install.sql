@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_oauth_client` (
 -- The front controller validates the request and stores it here; the browser
 -- carries nothing but an opaque id, in a cookie. The employee who signs in on
 -- the authorization page is recorded on the row, so the consent that follows
--- can only be given by that account.
+-- can only be given by that account, and only once they entered the code
+-- e-mailed to them.
 CREATE TABLE IF NOT EXISTS `PREFIX_somcp_oauth_request` (
     `id_request`             INT(11)      NOT NULL AUTO_INCREMENT,
     `request_id`             VARCHAR(64)  NOT NULL COMMENT 'sha256 of the value held in the browser cookie',
@@ -46,6 +47,12 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_oauth_request` (
     `resource`               VARCHAR(500) NOT NULL DEFAULT '',
     `csrf_token`             VARCHAR(64)  NOT NULL COMMENT 'guards the sign-in and consent forms, renewed at sign-in',
     `id_employee`            INT(11)      NOT NULL DEFAULT 0 COMMENT 'who signed in on the authorization page, 0 until then',
+    `otp_hash`               VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'sha256 of the code e-mailed to that employee, emptied once used',
+    `otp_expires_at`         DATETIME     DEFAULT NULL,
+    `otp_sent_at`            DATETIME     DEFAULT NULL,
+    `otp_sends`              TINYINT(3)   NOT NULL DEFAULT 0 COMMENT 'codes sent for this request',
+    `otp_tries`              TINYINT(3)   NOT NULL DEFAULT 0 COMMENT 'wrong entries of the current code',
+    `otp_verified`           TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'the employee entered a right code: the consent may follow',
     `expires_at`             DATETIME     NOT NULL,
     `consumed_at`            DATETIME     DEFAULT NULL,
     `date_add`               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

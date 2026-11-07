@@ -79,6 +79,7 @@ class SomcpModuleSettings
             SomcpConfig::TOOLS_TTL => ['tab' => $tools, 'label' => 'How long an assistant keeps the list of tools', 'kind' => 'seconds'],
             SomcpConfig::REQUIRED_PROFILE => ['tab' => $access, 'label' => 'Employees allowed to connect an assistant', 'kind' => 'profile'],
             SomcpConfig::OAUTH_ENABLED => ['tab' => $access, 'label' => 'Accept new connections', 'kind' => 'switch'],
+            SomcpConfig::CONSENT_PAGE => ['tab' => $access, 'label' => 'Consent page', 'kind' => 'switch'],
             SomcpConfig::ACCESS_TTL => ['tab' => $access, 'label' => 'Access token lifetime (seconds)', 'kind' => 'seconds'],
             SomcpConfig::REFRESH_TTL => ['tab' => $access, 'label' => 'Refresh token lifetime (seconds)', 'kind' => 'seconds'],
             SomcpConfig::REFRESH_ROTATION => ['tab' => $access, 'label' => 'Replace the refresh token on every use', 'kind' => 'switch'],
@@ -358,6 +359,11 @@ class SomcpModuleSettings
                 if (SomcpConfig::get($key, $idShop) !== '1') {
                     $line .= ' New connections are refused: the registration settings and the return addresses have no effect until it is on again.';
                 }
+                break;
+            case SomcpConfig::CONSENT_PAGE:
+                $line .= SomcpConfig::get($key, $idShop) === '1'
+                    ? ' An employee can approve a new assistant; the assistants already connected work either way.'
+                    : ' No new assistant can be connected; the assistants already connected keep working.';
                 break;
             case SomcpAssistantMemory::ON:
             case SomcpAssistantMemory::PROVIDER:

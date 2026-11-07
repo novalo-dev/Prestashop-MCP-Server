@@ -107,6 +107,86 @@
       <source>A new assistant is connected to your shop</source>
       <target>A new assistant is connected to your shop</target>
     </trans-unit>
+    <!-- Consent page -->
+    <trans-unit id="db6d1fc6047205def469279ff68b9e3d" resname="Consent page">
+      <source>Consent page</source>
+      <target>Consent page</target>
+    </trans-unit>
+    <!-- The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere. -->
+    <trans-unit id="a76e0c340e11c3d3e3b75cc5e9270d4c" resname="The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.">
+      <source>The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.</source>
+      <target>The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.</target>
+    </trans-unit>
+    <!-- Switched off: no new assistant can be connected, and this address is the shop's "page not found". Turn on the consent page in Access and security while you connect one. The assistants already connected keep working. -->
+    <trans-unit id="c277c375da058044eeb86f6fc49bdc6b" resname="Switched off: no new assistant can be connected, and this address is the shop&#x27;s &quot;page not found&quot;. Turn on the consent page in Access and security while you connect one. The assistants already connected keep working.">
+      <source>Switched off: no new assistant can be connected, and this address is the shop's "page not found". Turn on the consent page in Access and security while you connect one. The assistants already connected keep working.</source>
+      <target>Switched off: no new assistant can be connected, and this address is the shop's "page not found". Turn on the consent page in Access and security while you connect one. The assistants already connected keep working.</target>
+    </trans-unit>
+    <!-- Your code to connect an assistant -->
+    <trans-unit id="38e04f8425a9307a5e3169fdd561cc27" resname="Your code to connect an assistant">
+      <source>Your code to connect an assistant</source>
+      <target>Your code to connect an assistant</target>
+    </trans-unit>
+    <!-- Check your e-mail -->
+    <trans-unit id="7f27317e84e28bf5a0ae9e4f52bf254d" resname="Check your e-mail">
+      <source>Check your e-mail</source>
+      <target>Check your e-mail</target>
+    </trans-unit>
+    <!-- Enter the 6-digit code sent to -->
+    <trans-unit id="9126e501b0a464c6d174aaa9bf8d672f" resname="Enter the 6-digit code sent to">
+      <source>Enter the 6-digit code sent to</source>
+      <target>Enter the 6-digit code sent to</target>
+    </trans-unit>
+    <!-- Verification code -->
+    <trans-unit id="943769b205da24c9b0fe9808370b97b1" resname="Verification code">
+      <source>Verification code</source>
+      <target>Verification code</target>
+    </trans-unit>
+    <!-- Digit -->
+    <trans-unit id="83d25adab16b42ea36124318d7e6f4c1" resname="Digit">
+      <source>Digit</source>
+      <target>Digit</target>
+    </trans-unit>
+    <!-- Verify -->
+    <trans-unit id="5a750f86ef41f22f852c43351e3ff383" resname="Verify">
+      <source>Verify</source>
+      <target>Verify</target>
+    </trans-unit>
+    <!-- The code works for %minutes% minutes and only once. -->
+    <trans-unit id="7fc712ce373557376f582c0b55f1509a" resname="The code works for %minutes% minutes and only once.">
+      <source>The code works for %minutes% minutes and only once.</source>
+      <target>The code works for %minutes% minutes and only once.</target>
+    </trans-unit>
+    <!-- This code is not right. -->
+    <trans-unit id="0651b4de488e37d958ea7364bd182a9c" resname="This code is not right.">
+      <source>This code is not right.</source>
+      <target>This code is not right.</target>
+    </trans-unit>
+    <!-- This code no longer works. Ask for a new one. -->
+    <trans-unit id="70a72817a70e06805df59f2ee5499be7" resname="This code no longer works. Ask for a new one.">
+      <source>This code no longer works. Ask for a new one.</source>
+      <target>This code no longer works. Ask for a new one.</target>
+    </trans-unit>
+    <!-- This is the last code: no other will be sent. -->
+    <trans-unit id="25d61c2a8db1f02ca1dc22a3a99f83c6" resname="This is the last code: no other will be sent.">
+      <source>This is the last code: no other will be sent.</source>
+      <target>This is the last code: no other will be sent.</target>
+    </trans-unit>
+    <!-- Send a new code -->
+    <trans-unit id="af0f9d1d9dc31145d44cf18a811fac91" resname="Send a new code">
+      <source>Send a new code</source>
+      <target>Send a new code</target>
+    </trans-unit>
+    <!-- Send a new code in %time% -->
+    <trans-unit id="50dfb6c0558656eced7e3d9f942240d1" resname="Send a new code in %time%">
+      <source>Send a new code in %time%</source>
+      <target>Send a new code in %time%</target>
+    </trans-unit>
+    <!-- Every code of this connection has been used up. It is closed: start it again from your assistant. -->
+    <trans-unit id="03918163bf2e77f442c6081f1f658025" resname="Every code of this connection has been used up. It is closed: start it again from your assistant.">
+      <source>Every code of this connection has been used up. It is closed: start it again from your assistant.</source>
+      <target>Every code of this connection has been used up. It is closed: start it again from your assistant.</target>
+    </trans-unit>
     <!-- Connect an assistant -->
     <trans-unit id="1d3106889f4f5b717317255e6c9e8812" resname="Connect an assistant">
       <source>Connect an assistant</source>

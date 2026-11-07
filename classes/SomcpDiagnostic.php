@@ -480,6 +480,18 @@ class SomcpDiagnostic
     {
         $url = SomcpConfig::authorizationEndpoint($shop);
         $label = $module->l10n('Sign-in page');
+        // Off is the default and a choice, not a fault: said plainly, with
+        // the way to the switch, since a merchant connecting an assistant
+        // and finding a 404 looks here first.
+        if (SomcpConfig::get(SomcpConfig::CONSENT_PAGE, (int) $shop->id) !== '1') {
+            return self::line(
+                self::WARNING,
+                $label,
+                $module->l10n('Switched off: no new assistant can be connected, and this address is the shop\'s "page not found". Turn on the consent page in Access and security while you connect one. The assistants already connected keep working.'),
+                $url,
+                self::settingsPage('AdminSomcpAccess')
+            );
+        }
         // With the pass, or the module's page would be the shop's 404 too.
         $response = SomcpHttp::fetch($url . '?somcp_probe=' . rawurlencode(SomcpGuard::probe()), false);
 

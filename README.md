@@ -79,14 +79,17 @@ before you connect an assistant.
    Do not unzip it.
 2. In your back office, open **Modules > Module Manager**, click
    **Upload a module** and drop the zip, then **Configure**.
-3. Copy **the address to give to your assistant** - it looks like
+3. In the **Access and security** tab, turn on **Consent page** - it is off
+   unless you are connecting an assistant.
+4. Copy **the address to give to your assistant** - it looks like
    `https://your-shop.example/module/somcp/mcp` - and paste it into Claude,
    ChatGPT or another assistant
    ([where to paste it](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant)).
 
 The first time, the assistant opens a page of your shop: you sign in with your
-back office email and password, check where the answer goes, and approve what
-it may do. That's it. Step by step with screenshots:
+back office email and password, type the code e-mailed to you, check where the
+answer goes, and approve what it may do. Then turn **Consent page** off again:
+the assistant keeps working. Step by step with screenshots:
 [Installation](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Installation).
 
 ---

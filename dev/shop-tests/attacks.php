@@ -272,6 +272,16 @@ if ($expect('a refresh token is exchanged', $next, 200) && SomcpConfig::isOn(Som
 
 // ---------------------------------------------------------------------------
 $section('Sign-in and registration');
+// The consent page is off by default: then even a valid request is a 404.
+SomcpConfig::set(SomcpConfig::CONSENT_PAGE, '0');
+$expect('valid request while the consent page is switched off', $http('GET', $endpoint('authorize', http_build_query([
+    'response_type' => 'code',
+    'client_id' => $clientA,
+    'redirect_uri' => 'http://127.0.0.1:9/callback',
+    'code_challenge' => $challenge,
+    'code_challenge_method' => 'S256',
+])), ['Accept: text/html']), 404);
+SomcpConfig::set(SomcpConfig::CONSENT_PAGE, '1');
 $authorize = $http('GET', $endpoint('authorize', http_build_query([
     'response_type' => 'code',
     'client_id' => $clientA,
@@ -505,6 +515,59 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     $signedIn = $signin((string) $signinEmployee->email, $signinPassword, $csrf);
     $expect('right email and password', $signedIn, 302);
     $noAdmin('after signing in', $signedIn);
+
+    // The password leads to the code e-mailed to the employee, not to the
+    // consent. The test cannot read the e-mail, so it writes a code of its
+    // own over the one sent - what only someone with the database could do.
+    $codePage = $http('GET', $authorizeUrl, $withCookie);
+    ++$checks;
+    if ($codePage['status'] !== 200 || strpos($codePage['body'], 'data-somcp-state="otp"') === false || strpos($codePage['body'], 'value="allow"') !== false) {
+        $failures[] = 'after the password, the page does not ask for the e-mailed code (HTTP ' . $codePage['status'] . ')';
+        echo "  FAIL  the password leads to the code page, not the consent\n";
+    } else {
+        echo "  ok    the password leads to the code page, not the consent\n";
+    }
+    $codeCsrf = $csrfOf($codePage);
+    $pending = SomcpOAuthServer::loadPendingRequest($requestCookie);
+    $setCode = static function (string $code) use ($db, $pending): void {
+        $db->update('somcp_oauth_request', [
+            'otp_hash' => pSQL(SomcpOAuthServer::otpHash((int) $pending['id_request'], $code)),
+            'otp_expires_at' => pSQL(date('Y-m-d H:i:s', time() + 600)),
+            'otp_tries' => 0,
+        ], '`id_request` = ' . (int) $pending['id_request']);
+    };
+    $typeCode = static function (string $code, string $token, string $step = 'otp') use ($http, $authorizeUrl, $withCookie): array {
+        return $http('POST', $authorizeUrl, $withCookie, http_build_query([
+            'somcp_step' => $step,
+            'somcp_csrf' => $token,
+            'somcp_otp' => str_split($code),
+        ]));
+    };
+    $setCode('482913');
+    $expect('consent posted before the code was typed', $http('POST', $authorizeUrl, $withCookie, http_build_query([
+        'somcp_step' => 'consent',
+        'somcp_csrf' => $codeCsrf,
+        'decision' => 'allow',
+    ])), 200);
+    $wrongCode = $typeCode('000000', $codeCsrf);
+    ++$checks;
+    if ($wrongCode['status'] !== 200 || strpos($wrongCode['body'], 'data-somcp-state="otp"') === false || isset($wrongCode['headers']['location'])) {
+        $failures[] = 'a wrong code is not refused on the code page (HTTP ' . $wrongCode['status'] . ')';
+        echo "  FAIL  wrong code refused\n";
+    } else {
+        echo "  ok    wrong code refused\n";
+    }
+    $expect('a new code asked for before the wait is over', $typeCode('', $codeCsrf, 'resend'), 302);
+    ++$checks;
+    if ((int) $db->getValue('SELECT `otp_sends` FROM `' . _DB_PREFIX_ . 'somcp_oauth_request` WHERE `id_request` = ' . (int) $pending['id_request']) !== 1) {
+        $failures[] = 'a new code was sent before the wait was over';
+        echo "  FAIL  no new code before the wait is over\n";
+    } else {
+        echo "  ok    no new code before the wait is over\n";
+    }
+    $expect('right code', $typeCode('482913', $codeCsrf), 302);
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+
     $consentPage = $http('GET', $authorizeUrl, $withCookie);
     $noAdmin('consent page', $consentPage);
     $consentCsrf = $csrfOf($consentPage);
@@ -516,8 +579,8 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
         echo "  ok    consent page shown with the return host\n";
     }
     ++$checks;
-    if ($consentCsrf === '' || hash_equals($csrf, $consentCsrf)) {
-        $failures[] = 'the form token is not renewed at sign-in';
+    if ($consentCsrf === '' || hash_equals($csrf, $consentCsrf) || hash_equals($codeCsrf, $consentCsrf)) {
+        $failures[] = 'the form token is not renewed at sign-in and again at the code';
         echo "  FAIL  form token renewed at sign-in\n";
     } else {
         echo "  ok    form token renewed at sign-in\n";
@@ -632,6 +695,50 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     }
     $expect('tenth wrong password on one account from ten addresses', $guess('rotate-10', '81.56.30.10'), 429);
     $expect('right password on a blocked account from a fresh address', $guess($signinPassword, '81.56.31.1'), 429);
+
+    // Three codes, no fourth: the last one mistyped five times closes the
+    // request, and its link leads nowhere after that.
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
+    $third = $http('GET', $endpoint('authorize', http_build_query([
+        'response_type' => 'code',
+        'client_id' => $clientA,
+        'redirect_uri' => 'http://127.0.0.1:9/callback',
+        'code_challenge' => $challenge,
+        'code_challenge_method' => 'S256',
+        'state' => 'codes',
+    ])), ['Accept: text/html']);
+    $thirdCookie = $cookieOf($third);
+    $thirdHeaders = array_merge($form, ['Cookie: ' . SomcpOAuthServer::REQUEST_COOKIE . '=' . $thirdCookie]);
+    $http('POST', $authorizeUrl, $thirdHeaders, http_build_query([
+        'somcp_step' => 'signin',
+        'somcp_csrf' => $csrfOf($third),
+        'somcp_email' => (string) $signinEmployee->email,
+        'somcp_password' => $signinPassword,
+        'somcp_altcha' => $solve($third),
+    ]));
+    $thirdRequest = SomcpOAuthServer::loadPendingRequest($thirdCookie);
+    $db->update('somcp_oauth_request', [
+        'otp_hash' => pSQL(SomcpOAuthServer::otpHash((int) ($thirdRequest['id_request'] ?? 0), '135790')),
+        'otp_expires_at' => pSQL(date('Y-m-d H:i:s', time() + 600)),
+        'otp_sends' => 3,
+        'otp_tries' => 0,
+    ], '`id_request` = ' . (int) ($thirdRequest['id_request'] ?? 0));
+    $thirdCsrf = $csrfOf($http('GET', $authorizeUrl, $thirdHeaders));
+    $lastTry = [];
+    for ($i = 1; $i <= SomcpConfig::OTP_TRIES; ++$i) {
+        $lastTry = $http('POST', $authorizeUrl, $thirdHeaders, http_build_query([
+            'somcp_step' => 'otp',
+            'somcp_csrf' => $thirdCsrf,
+            'somcp_otp' => str_split('00000' . $i),
+        ]));
+    }
+    $expect('fifth wrong entry of the last code closes the request', $lastTry, 403);
+    $expect('right code once the request is closed', $http('POST', $authorizeUrl, $thirdHeaders, http_build_query([
+        'somcp_step' => 'otp',
+        'somcp_csrf' => $thirdCsrf,
+        'somcp_otp' => str_split('135790'),
+    ])), 200);
+    $expect('the link of a closed request opened again', $http('GET', $authorizeUrl, $thirdHeaders), 404);
     $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_rate_limit`');
 }
 ++$checks;

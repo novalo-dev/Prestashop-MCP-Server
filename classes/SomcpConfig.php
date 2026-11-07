@@ -39,6 +39,14 @@ class SomcpConfig
 {
     public const ENABLED = 'SOMCP_ENABLED';
     public const OAUTH_ENABLED = 'SOMCP_OAUTH_ENABLED';
+
+    /**
+     * @var string Whether the page where an employee approves a new assistant
+     *             answers at all. Off by default: the page is only needed for
+     *             the few minutes a merchant spends connecting one, and off it
+     *             is the shop's 404, so a link someone else sends leads nowhere.
+     */
+    public const CONSENT_PAGE = 'SOMCP_CONSENT_PAGE';
     public const ACCESS_TTL = 'SOMCP_ACCESS_TTL';
     public const REFRESH_TTL = 'SOMCP_REFRESH_TTL';
     public const REFRESH_ROTATION = 'SOMCP_REFRESH_ROTATION';
@@ -141,6 +149,19 @@ class SomcpConfig
     /** @var int Seconds an authorization code stays valid. OAuth 2.1 recommends one minute or less. */
     public const CODE_TTL = 60;
 
+    /** @var int Seconds the code e-mailed at sign-in stays valid. */
+    public const OTP_TTL = 600;
+
+    /** @var int Wrong entries a code survives before it is spent. */
+    public const OTP_TRIES = 5;
+
+    /**
+     * @var array<int, int> Seconds to wait before asking for another code,
+     *                      after the first and after the second. There is
+     *                      no fourth: after the third the request is closed.
+     */
+    public const OTP_WAITS = [1 => 30, 2 => 45];
+
     /** @var int Seconds a pending authorization request waits for the merchant to sign in and answer. */
     public const REQUEST_TTL = 900;
 
@@ -156,6 +177,7 @@ class SomcpConfig
         return [
             self::ENABLED => '1',
             self::OAUTH_ENABLED => '1',
+            self::CONSENT_PAGE => '0',
             // One hour. Short enough that a stolen token expires before it is
             // worth much, long enough not to spend a refresh on every call.
             self::ACCESS_TTL => '3600',
@@ -254,6 +276,7 @@ class SomcpConfig
         switch ($key) {
             case self::ENABLED:
             case self::OAUTH_ENABLED:
+            case self::CONSENT_PAGE:
             case self::REFRESH_ROTATION:
             case self::CIMD_ENABLED:
             case self::DCR_ENABLED:

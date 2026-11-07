@@ -89,6 +89,9 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      * module, so nothing confirms the module is there. That page can only be
      * produced before the parent init (see SomcpHttp::notFoundPage()). The
      * diagnostic carries a pass of the shop's own to see the page anyway.
+     *
+     * While the consent page is switched off in the settings - its default -
+     * every visit is that 404, a sign-in already under way included.
      */
     public function init()
     {
@@ -96,7 +99,8 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
         $this->open = SomcpConfig::isOn(SomcpConfig::ENABLED) && SomcpConfig::isOn(SomcpConfig::OAUTH_ENABLED);
 
-        if (!$this->isPost() && !SomcpGuard::isProbe((string) Tools::getValue('somcp_probe', '')) && !$this->isRealVisit()) {
+        if (!SomcpGuard::isProbe((string) Tools::getValue('somcp_probe', ''))
+            && (!SomcpConfig::isOn(SomcpConfig::CONSENT_PAGE) || (!$this->isPost() && !$this->isRealVisit()))) {
             SomcpHttp::notFoundPage();
         }
 
@@ -158,7 +162,8 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     }
 
     /**
-     * Routes the visit: a new request, the sign-in form or the consent form.
+     * Routes the visit: a new request, the sign-in form, the code e-mailed
+     * after it, or the consent form.
      */
     public function initContent()
     {
@@ -174,8 +179,15 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             if ($request === null) {
                 $this->renderExpired();
             }
-            if (Tools::getValue('somcp_step') === 'consent') {
+            $step = (string) Tools::getValue('somcp_step');
+            if ($step === 'consent') {
                 $this->answer($request);
+            }
+            if ($step === 'otp') {
+                $this->verifyCode($request);
+            }
+            if ($step === 'resend') {
+                $this->resendCode($request);
             }
             $this->signIn($request);
         }
@@ -191,10 +203,23 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
             $this->renderPage('message', ['message' => $this->module->l10n(
                 'This connection request is not valid, so nothing was sent back to the application that made it.')]);
         }
-        if ((int) $request['id_employee'] > 0) {
-            $this->renderConsent($request);
+        $this->resume($request);
+    }
+
+    /**
+     * Shows the step a pending request has reached.
+     *
+     * @param array<string, mixed> $request
+     */
+    private function resume(array $request): never
+    {
+        if ((int) $request['id_employee'] <= 0) {
+            $this->renderSignIn($request);
         }
-        $this->renderSignIn($request);
+        if ((int) $request['otp_verified'] !== 1) {
+            $this->renderCode($request);
+        }
+        $this->renderConsent($request);
     }
 
     /**
@@ -257,6 +282,11 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
      */
     private function signIn(array $request): never
     {
+        // Signed in already: a second sign-in would be a way round the wait
+        // between codes and the limit of three.
+        if ((int) $request['id_employee'] > 0) {
+            $this->resume($request);
+        }
         // Before anything else, the password included: once an address is
         // blocked, the right password is refused too, or guessing goes on.
         if (SomcpGuard::signinBlocked()) {
@@ -301,9 +331,125 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
 
         SomcpOAuthServer::attachEmployee((int) $request['id_request'], (int) $employee->id);
         SomcpLogger::log('signin_succeeded', SomcpLogger::OUTCOME_SUCCESS, '', $clientId, (int) $employee->id);
+        $this->sendCode($request, $employee);
 
-        // Sent to the same page by GET, so a reload of the consent screen
-        // does not post the password a second time.
+        // Sent to the same page by GET, so a reload of the next step does not
+        // post the password a second time.
+        $this->backToPage();
+    }
+
+    /**
+     * E-mails a new code to the employee signed in on the request.
+     *
+     * The password alone does not open the consent form: whoever stole it
+     * still needs the employee's mailbox, and the e-mail tells the employee
+     * their password is known if they did not ask for it.
+     *
+     * @param array<string, mixed> $request
+     * @param Employee $employee
+     */
+    private function sendCode(array $request, Employee $employee): void
+    {
+        $code = SomcpOAuthServer::issueOtp((int) $request['id_request']);
+        SomcpNotify::code($employee, $code, (int) $request['id_shop']);
+        SomcpLogger::log('code_sent', SomcpLogger::OUTCOME_INFO, '', '', (int) $employee->id);
+    }
+
+    /**
+     * Reads the code typed on the page.
+     *
+     * A wrong code counts against the address and the account like a wrong
+     * password. A code that no longer works - expired, used, or mistyped five
+     * times - can be replaced twice; once the third is spent, the request is
+     * closed and the assistant has to start again.
+     *
+     * @param array<string, mixed> $request
+     */
+    private function verifyCode(array $request): never
+    {
+        $employee = new Employee((int) $request['id_employee']);
+        if ((int) $request['id_employee'] <= 0 || !Validate::isLoadedObject($employee)) {
+            $this->renderSignIn($request);
+        }
+        if ((int) $request['otp_verified'] === 1) {
+            $this->backToPage();
+        }
+        if (SomcpGuard::signinBlocked() || SomcpGuard::accountBlocked((string) $employee->email)) {
+            SomcpLogger::log('signin_blocked', SomcpLogger::OUTCOME_FAILURE, '', '', (int) $employee->id);
+            $this->renderTooMany();
+        }
+        if (!$this->csrfMatches($request)) {
+            SomcpLogger::log('code_csrf_failed', SomcpLogger::OUTCOME_FAILURE, '', '', (int) $employee->id);
+            $this->renderCode($request);
+        }
+
+        // One field per digit, or a single one where a client posts it whole.
+        $typed = Tools::getValue('somcp_otp', '');
+        $code = (string) preg_replace('/\D/', '', is_array($typed) ? implode('', array_map('strval', $typed)) : (string) $typed);
+
+        $result = SomcpOAuthServer::checkOtp($request, $code);
+        if ($result === 'ok') {
+            SomcpLogger::log('code_verified', SomcpLogger::OUTCOME_SUCCESS, '', '', (int) $employee->id);
+            $this->backToPage();
+        }
+
+        SomcpGuard::signinFailed((string) $employee->email);
+        SomcpLogger::log('code_refused', SomcpLogger::OUTCOME_FAILURE, $result === 'wrong' ? 'wrong code' : 'code spent', '', (int) $employee->id);
+        $request = SomcpOAuthServer::loadPendingRequest($this->requestSecret()) ?? $request;
+        if ($result === 'spent' && SomcpOAuthServer::otpWait($request) === -1) {
+            $this->closeRequest($request);
+        }
+        $this->renderCode($request, $result);
+    }
+
+    /**
+     * Sends another code, once the wait after the last one is over.
+     *
+     * @param array<string, mixed> $request
+     */
+    private function resendCode(array $request): never
+    {
+        $employee = new Employee((int) $request['id_employee']);
+        if ((int) $request['id_employee'] <= 0 || !Validate::isLoadedObject($employee)) {
+            $this->renderSignIn($request);
+        }
+        if (!$this->csrfMatches($request)) {
+            SomcpLogger::log('code_csrf_failed', SomcpLogger::OUTCOME_FAILURE, '', '', (int) $employee->id);
+            $this->renderCode($request);
+        }
+
+        $wait = SomcpOAuthServer::otpWait($request);
+        if ($wait === -1) {
+            $this->closeRequest($request);
+        }
+        // Checked here and not only by the page's countdown, which anyone can
+        // skip by posting the form themselves.
+        if ($wait === 0) {
+            $this->sendCode($request, $employee);
+        }
+        $this->backToPage();
+    }
+
+    /**
+     * Closes a request whose codes are all spent. Nothing is sent back to the
+     * assistant: the link is dead, and the visitor starts over or goes away.
+     *
+     * @param array<string, mixed> $request
+     */
+    private function closeRequest(array $request): never
+    {
+        SomcpOAuthServer::consumePendingRequest((int) $request['id_request']);
+        $this->forgetRequest();
+        SomcpLogger::log('code_exhausted', SomcpLogger::OUTCOME_FAILURE, '', '', (int) $request['id_employee']);
+        $this->renderPage('message', ['message' => $this->module->l10n(
+            'Every code of this connection has been used up. It is closed: start it again from your assistant.')], 403);
+    }
+
+    /**
+     * Back to this page by GET, which shows the step the request has reached.
+     */
+    private function backToPage(): never
+    {
         SomcpHttp::redirect($this->context->link->getModuleLink('somcp', 'authorize', [], true));
     }
 
@@ -337,6 +483,10 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
         $idEmployee = (int) $request['id_employee'];
         if ($idEmployee <= 0) {
             $this->renderSignIn($request);
+        }
+        // The consent form only follows a code typed right.
+        if ((int) $request['otp_verified'] !== 1) {
+            $this->renderCode($request);
         }
         if (!$this->csrfMatches($request)) {
             // The consent form is the one step that hands out access, so it
@@ -453,6 +603,57 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     }
 
     /**
+     * The page asking for the code e-mailed after the password.
+     *
+     * @param array<string, mixed> $request
+     * @param string $notice '', 'wrong' or 'spent': what became of the last entry
+     */
+    private function renderCode(array $request, string $notice = ''): never
+    {
+        $client = SomcpOAuthClient::findById((int) $request['id_client']);
+        $employee = new Employee((int) $request['id_employee']);
+        if ($client === null || !Validate::isLoadedObject($employee)) {
+            $this->renderExpired();
+        }
+
+        $wait = SomcpOAuthServer::otpWait($request);
+        $spent = (string) $request['otp_hash'] === '' || strtotime((string) $request['otp_expires_at']) < time()
+            || (int) $request['otp_tries'] >= SomcpConfig::OTP_TRIES;
+        if ($spent && $wait === -1) {
+            $this->closeRequest($request);
+        }
+
+        $this->renderPage('otp', [
+            'client_name' => SomcpOAuthClient::displayName($client),
+            'return_host' => self::host((string) $request['redirect_uri']),
+            'csrf' => (string) $request['csrf_token'],
+            'email' => self::maskEmail((string) $employee->email),
+            'notice' => $notice !== '' ? $notice : ($spent ? 'spent' : ''),
+            'wait' => $wait,
+            'last' => $wait === -1,
+            'otp_js' => $this->module->getPathUri() . 'views/js/authorize-otp.js',
+        ]);
+    }
+
+    /**
+     * An address shown on a page anyone with the link could reach once the
+     * password was given: enough for the employee to recognise it.
+     *
+     * @param string $email
+     *
+     * @return string
+     */
+    private static function maskEmail(string $email): string
+    {
+        $at = strrpos($email, '@');
+        if ($at === false || $at < 1) {
+            return '***';
+        }
+
+        return Tools::substr($email, 0, 1) . '***' . Tools::substr($email, $at);
+    }
+
+    /**
      * @param array<string, mixed> $request
      */
     private function renderConsent(array $request): never
@@ -509,7 +710,7 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
     /**
      * Writes the page and stops the script.
      *
-     * @param string $state signin, consent or message
+     * @param string $state signin, otp, consent or message
      * @param array<string, mixed> $vars
      * @param int $status HTTP status of the page
      */
@@ -543,6 +744,17 @@ class SomcpAuthorizeModuleFrontController extends ModuleFrontController
                 'rights' => $module->l10n('The application never gets more rights than your own account. You can disconnect it at any time from the module settings.'),
                 'refuse' => $module->l10n('Refuse'),
                 'allow' => $module->l10n('Allow the connection'),
+                'otp_title' => $module->l10n('Check your e-mail'),
+                'otp_intro' => $module->l10n('Enter the 6-digit code sent to'),
+                'otp_code' => $module->l10n('Verification code'),
+                'otp_digit' => $module->l10n('Digit'),
+                'verify' => $module->l10n('Verify'),
+                'otp_rule' => $module->l10n('The code works for %minutes% minutes and only once.', ['%minutes%' => (string) intdiv(SomcpConfig::OTP_TTL, 60)]),
+                'otp_wrong' => $module->l10n('This code is not right.'),
+                'otp_spent' => $module->l10n('This code no longer works. Ask for a new one.'),
+                'otp_last' => $module->l10n('This is the last code: no other will be sent.'),
+                'resend' => $module->l10n('Send a new code'),
+                'resend_in' => $module->l10n('Send a new code in %time%'),
             ],
         ]);
 

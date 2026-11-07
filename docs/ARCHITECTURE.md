@@ -85,7 +85,12 @@ shop front (`controllers/front/authorize.php`, `views/templates/front/authorize.
 with no theme script on it. The page checks the email and password with
 PrestaShop's own `Employee::getByEmail()`, then the module's required profile
 and the employee's shop associations, and records the employee on the pending
-request; only that account can then give the consent, with its own rights. Every
+request. A 6-digit code is then e-mailed to that employee (`SomcpNotify::code()`,
+stored as a hash on the request row, single use, ten minutes, five wrong entries,
+three codes at most with 30 and 45 seconds between them, after which the request
+is closed); only once it is typed can that account give the consent, with its
+own rights. The whole page is the shop's 404 unless `SOMCP_CONSENT_PAGE` is on,
+which it is not by default. Every
 refusal reads the same on screen and the reason goes to the module's log. No
 page or redirect of this flow names the administration folder.
 

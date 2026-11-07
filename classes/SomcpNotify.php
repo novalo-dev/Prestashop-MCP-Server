@@ -17,7 +17,9 @@
 declare(strict_types=1);
 
 /*
- * SomcpNotify - the e-mail sent each time an employee connects an assistant.
+ * SomcpNotify - the e-mails of the authorization page: the code an employee
+ * types after their password, and the notice sent each time one connects an
+ * assistant.
  *
  * A connection approved by mistake - a merchant who clicked through a page
  * someone else sent them - only does harm for as long as nobody notices. The
@@ -41,6 +43,9 @@ class SomcpNotify
     /** @var string */
     public const TEMPLATE = 'somcp_new_assistant';
 
+    /** @var string */
+    public const CODE_TEMPLATE = 'somcp_code';
+
     /** @var array<int, string> the languages the module's e-mails exist in */
     private const LANGUAGES = ['en', 'fr', 'es', 'de'];
 
@@ -58,9 +63,7 @@ class SomcpNotify
     public static function newAssistant(array $client, Employee $employee, int $idShop, string $redirectUri): bool
     {
         try {
-            $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
-            $language = new Language($idLang);
-            $locale = in_array((string) $language->iso_code, self::LANGUAGES, true) ? (string) $language->locale : 'en-US';
+            [$idLang, $locale] = self::language($idShop);
 
             $to = [];
             $names = [];
@@ -121,6 +124,70 @@ class SomcpNotify
         }
 
         return (bool) $sent;
+    }
+
+    /**
+     * Sends the code to type on the authorization page, to the employee who
+     * just gave their password, and to nobody else. Never throws: the page
+     * offers to send another.
+     *
+     * @param Employee $employee
+     * @param string $code
+     * @param int $idShop the shop the assistant is being connected to
+     *
+     * @return bool whether PrestaShop accepted the e-mail
+     */
+    public static function code(Employee $employee, string $code, int $idShop): bool
+    {
+        try {
+            [$idLang, $locale] = self::language($idShop);
+            $shop = new Shop($idShop);
+            $sent = Mail::send(
+                $idLang,
+                self::CODE_TEMPLATE,
+                Somcp::legacyContext()->getTranslator()->trans('Your code to connect an assistant', [], 'Modules.Somcp.Admin', $locale),
+                [
+                    '{code}' => $code,
+                    '{connected_shop}' => Validate::isLoadedObject($shop) ? (string) $shop->name : (string) Configuration::get('PS_SHOP_NAME'),
+                    '{minutes}' => (string) intdiv(SomcpConfig::OTP_TTL, 60),
+                ],
+                (string) $employee->email,
+                trim($employee->firstname . ' ' . $employee->lastname),
+                null,
+                null,
+                null,
+                null,
+                _PS_MODULE_DIR_ . 'somcp/mails/',
+                false,
+                $idShop
+            );
+        } catch (Throwable $e) {
+            SomcpLogger::log('code_mail_failed', SomcpLogger::OUTCOME_FAILURE, Tools::substr($e->getMessage(), 0, 200), '', (int) $employee->id);
+
+            return false;
+        }
+
+        if (!$sent) {
+            SomcpLogger::log('code_mail_failed', SomcpLogger::OUTCOME_FAILURE, 'the shop did not send the e-mail', '', (int) $employee->id);
+        }
+
+        return (bool) $sent;
+    }
+
+    /**
+     * The language of the module's e-mails on a shop: its default one when
+     * the module is translated into it, English otherwise.
+     *
+     * @param int $idShop
+     *
+     * @return array{0:int, 1:string} the language id and its locale
+     */
+    private static function language(int $idShop): array
+    {
+        $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
+        $language = new Language($idLang);
+
+        return [$idLang, in_array((string) $language->iso_code, self::LANGUAGES, true) ? (string) $language->locale : 'en-US'];
     }
 
     /**

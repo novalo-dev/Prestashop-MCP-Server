@@ -386,6 +386,21 @@
                     </div>
                 </div>
 
+                <div class="form-group" id="somcp-consent-page">
+                    <label class="control-label col-lg-4">{l s='Consent page' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-8">
+                        {include file='./_inherit.tpl' field='SOMCP_CONSENT_PAGE'}
+                        <span class="switch prestashop-switch fixed-width-lg">
+                            <input type="radio" name="SOMCP_CONSENT_PAGE" id="SOMCP_CONSENT_PAGE_on" value="1"{if $somcp_settings.SOMCP_CONSENT_PAGE === '1'} checked{/if}>
+                            <label for="SOMCP_CONSENT_PAGE_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
+                            <input type="radio" name="SOMCP_CONSENT_PAGE" id="SOMCP_CONSENT_PAGE_off" value="0"{if $somcp_settings.SOMCP_CONSENT_PAGE !== '1'} checked{/if}>
+                            <label for="SOMCP_CONSENT_PAGE_off">{l s='No' d='Modules.Somcp.Admin'}</label>
+                            <a class="slide-button btn"></a>
+                        </span>
+                        <p class="help-block">{l s='The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label class="control-label col-lg-4">{l s='Access token lifetime (seconds)' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-8">

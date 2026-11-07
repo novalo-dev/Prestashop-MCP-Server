@@ -99,5 +99,18 @@ function upgrade_module_1_3_0($module)
         Tools::clearSf2Cache();
     }
 
+    // Every assistant connected so far was approved on a page that asked for
+    // a password alone, and with no limit on the guesses. None of those
+    // approvals is kept: each assistant goes through the sign-in, the e-mailed
+    // code and the consent again. Done last, once the return addresses above
+    // were read from those same consents.
+    $now = pSQL(date('Y-m-d H:i:s'));
+    foreach (['somcp_oauth_access_token', 'somcp_oauth_refresh_token'] as $tokens) {
+        $db->execute('UPDATE `' . _DB_PREFIX_ . $tokens . "` SET `revoked_at` = '" . $now . "' WHERE `revoked_at` IS NULL");
+    }
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_oauth_code`');
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_oauth_consent`');
+    $db->execute('DELETE FROM `' . _DB_PREFIX_ . 'somcp_oauth_request`');
+
     return true;
 }

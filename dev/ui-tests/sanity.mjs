@@ -32,6 +32,7 @@
 
 import { chromium, firefox } from 'playwright';
 import { appendFileSync, mkdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 const [adminUrl, email, password, browserName = 'chromium', shots = 'ui-shots', results = ''] = process.argv.slice(2);
 if (!adminUrl || !email || !password) {
@@ -278,6 +279,19 @@ await check('connect an assistant through the sign-in page', async () => {
         await page.waitForTimeout(500);
     }
     await Promise.all([page.waitForLoadState('load'), page.locator('form button[type="submit"]').first().click()]);
+
+    // The password leads to the code e-mailed to the employee. The test shop
+    // sends no e-mail, so a known code is written in its place, then typed
+    // in the six boxes as a person would: the page moves from box to box and
+    // posts the form once the last one is filled.
+    await page.locator('#somcp-authorize[data-somcp-state="otp"]').waitFor({ timeout: 15000 });
+    await shown('code page');
+    execFileSync('docker', ['exec', '-u', 'www-data', 'shop', 'php', '/tmp/somcp-dev/ui-tests/consent.php', '/var/www/html', '482913']);
+    if (!(await page.locator('#somcp-resend').isDisabled())) {
+        throw new Error('a new code can be asked for at once, before the wait');
+    }
+    await page.locator('input.digit').first().click();
+    await Promise.all([page.waitForLoadState('load'), page.keyboard.type('482913', { delay: 40 })]);
     await page.locator('#somcp-authorize[data-somcp-state="consent"]').waitFor({ timeout: 15000 });
     await shown('consent page');
     if (!(await page.locator('#somcp-return-host').innerText()).includes('127.0.0.1')) {

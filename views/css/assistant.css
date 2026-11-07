@@ -168,7 +168,9 @@
         padding-left: 300px;
     }
 
-    #somcp-chat.somcp-chat-wide .somcp-chat-shade {
+    /* Three classes, so it outweighs the rule that shows the shade whenever
+       the list is open, written further down at the same weight. */
+    #somcp-chat.somcp-chat-wide.somcp-threads-open .somcp-chat-shade {
         display: none;
     }
 

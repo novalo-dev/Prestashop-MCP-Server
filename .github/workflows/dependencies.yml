@@ -1,13 +1,16 @@
 name: Dependencies
 
-# Every Monday, and on demand: is a newer Neuron AI out, and does the version
-# the module pins have a known vulnerability? Either one opens an issue - one
-# per version, never a duplicate - with what to read before moving the pin.
-# Nothing is upgraded here: the pin moves in a commit, and the CI dependency
-# job then checks the new version against the API the assistant calls.
+# Every three days, and on demand: is a newer version out of something the
+# module ships or follows - Neuron AI, the other pinned libraries, the ALTCHA
+# widget, the MCP specification, PrestaShop itself - and does anything the
+# module ships have a known vulnerability? Each opens an issue - one per
+# version, never a duplicate - with what to read before moving. Nothing is
+# upgraded here: a version moves in a commit, checked by the CI.
 on:
   schedule:
-    - cron: '17 6 * * 1'
+    # Days 1, 4, 7... of the month: every 72 hours, except across the end of a
+    # month, where cron has no notion of "three days after the last run".
+    - cron: '17 6 */3 * *'
   workflow_dispatch:
 
 permissions:
@@ -73,3 +76,100 @@ jobs:
           \`\`\`"
           fi
           exit 1
+
+      # The other libraries composer.json pins to one version. Neuron AI has
+      # its own step above, with what its upgrade needs checked.
+      - name: Newer pinned libraries
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          php -r '$c = json_decode(file_get_contents("composer.json"), true); foreach ($c["require"] as $n => $v) { if (strpos($n, "/") !== false && $n !== "neuron-core/neuron-ai" && preg_match("/^\d+\.\d+\.\d+$/", $v)) { echo "$n $v\n"; } }' > /tmp/pinned.txt
+          while read -r NAME PINNED; do
+            LATEST=$(curl -fsSL "https://repo.packagist.org/p2/$NAME.json" \
+              | php -r '$d = json_decode(stream_get_contents(STDIN), true); foreach (reset($d["packages"]) as $p) { if (preg_match("/^v?\d+\.\d+\.\d+$/", $p["version"])) { echo ltrim($p["version"], "v"); break; } }')
+            echo "| $NAME | pinned $PINNED, latest $LATEST |" >> "$GITHUB_STEP_SUMMARY"
+            if [ -z "$LATEST" ] || [ "$(printf '%s\n%s\n' "$PINNED" "$LATEST" | sort -V | tail -1)" = "$PINNED" ]; then
+              continue
+            fi
+            TITLE="$NAME $LATEST is out (pinned: $PINNED)"
+            gh issue list --state all --search "\"$TITLE\" in:title" --json number --jq '.[0].number' | grep -q . && continue
+            gh issue create --title "$TITLE" --label dependencies --body "Version **$LATEST** of \`$NAME\` is published; the module pins **$PINNED** in \`composer.json\`. Read its changelog, change the version, run \`composer install\`, then push: the CI runs the attacks on the sign-in page and every tool on every PrestaShop release." \
+              || gh issue create --title "$TITLE" --body "$NAME $LATEST is published; the module pins $PINNED."
+          done < /tmp/pinned.txt
+
+      # The ALTCHA widget is copied into views/js/altcha/ by hand, so Composer
+      # neither updates it nor audits it: its version is read from the file,
+      # its newer releases from npm and its advisories from GitHub's database.
+      - name: ALTCHA widget
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHIPPED=$(grep -oE '"mounted","[0-9]+\.[0-9]+\.[0-9]+"' views/js/altcha/altcha.i18n.min.js | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          LATEST=$(curl -fsSL https://registry.npmjs.org/altcha/latest | php -r 'echo json_decode(stream_get_contents(STDIN), true)["version"] ?? "";')
+          echo "| ALTCHA widget | shipped $SHIPPED, latest $LATEST |" >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$SHIPPED" ]; then
+            echo "::error::the version of views/js/altcha/altcha.i18n.min.js could not be read"; exit 1
+          fi
+          ADVISORIES=$(gh api "/advisories?ecosystem=npm&affects=altcha@$SHIPPED&per_page=100" --jq '.[] | "- \(.ghsa_id) (\(.severity)): \(.summary)"')
+          if [ -n "$ADVISORIES" ]; then
+            TITLE="Security advisory on the ALTCHA widget $SHIPPED"
+            gh issue list --state all --search "\"$TITLE\" in:title" --json number --jq '.[0].number' | grep -q . \
+              || gh issue create --title "$TITLE" --label dependencies --body "The ALTCHA widget shipped in \`views/js/altcha/\` is $SHIPPED, and GitHub's advisory database lists:
+
+          $ADVISORIES
+
+          Replace the file with a fixed release from npm, keeping the licence header at its top." \
+              || gh issue create --title "$TITLE" --body "$ADVISORIES"
+          fi
+          if [ -n "$LATEST" ] && [ "$(printf '%s\n%s\n' "$SHIPPED" "$LATEST" | sort -V | tail -1)" != "$SHIPPED" ]; then
+            TITLE="ALTCHA widget $LATEST is out (shipped: $SHIPPED)"
+            gh issue list --state all --search "\"$TITLE\" in:title" --json number --jq '.[0].number' | grep -q . \
+              || gh issue create --title "$TITLE" --label dependencies --body "The widget shipped in \`views/js/altcha/\` is $SHIPPED; npm has $LATEST. Read https://github.com/altcha-org/altcha/releases, replace \`altcha.i18n.min.js\` with the new build, keep the licence header at its top, and check that the sign-in page still solves its challenge: the UI tests do it in a real browser." \
+              || gh issue create --title "$TITLE" --body "ALTCHA widget $LATEST is out; the module ships $SHIPPED."
+          fi
+
+      # A new revision of the MCP specification can change the protocol or the
+      # way assistants are authorized. The newest one the module speaks is
+      # SomcpProtocol::LATEST; the specification repository has one folder per
+      # revision under schema/.
+      - name: MCP specification
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          OURS=$(grep -oE "LATEST = '[0-9]{4}-[0-9]{2}-[0-9]{2}'" classes/SomcpProtocol.php | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          THEIRS=$(gh api repos/modelcontextprotocol/modelcontextprotocol/contents/schema --jq '.[].name' | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | sort | tail -1)
+          echo "| MCP specification | module $OURS, latest $THEIRS |" >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$OURS" ] || [ -z "$THEIRS" ]; then
+            echo "::error::a revision could not be read (module: '$OURS', specification: '$THEIRS')"; exit 1
+          fi
+          [ "$THEIRS" \> "$OURS" ] || exit 0
+          TITLE="MCP specification $THEIRS is out (module speaks up to $OURS)"
+          gh issue list --state all --search "\"$TITLE\" in:title" --json number --jq '.[0].number' | grep -q . && exit 0
+          gh issue create --title "$TITLE" --label dependencies --body "A new revision of the Model Context Protocol, **$THEIRS**, is published; \`SomcpProtocol::LATEST\` is $OURS.
+
+          1. Read the changelog of the revision: https://modelcontextprotocol.io/specification/$THEIRS/changelog
+          2. Check what touches the transport (\`controllers/front/mcp.php\`), the protocol (\`classes/SomcpProtocol.php\`, \`classes/SomcpJsonRpc.php\`) and the authorization (\`classes/SomcpOAuthServer.php\`, \`classes/SomcpMetadata.php\`).
+          3. Add the revision to what the module negotiates only once it follows it." \
+            || gh issue create --title "$TITLE" --body "MCP specification $THEIRS is out; the module speaks up to $OURS."
+
+      # The Integration matrix lists PrestaShop releases by hand. A stable 8.x
+      # or 9.x release missing from it is a release the module was never run on.
+      - name: PrestaShop releases
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api 'repos/PrestaShop/PrestaShop/releases?per_page=50' --jq '.[] | select(.prerelease | not) | .tag_name' \
+            | grep -E '^(8|9)\.[0-9]+\.[0-9]+$' | sort -V > /tmp/released.txt
+          grep -oE "prestashop: '[0-9]+\.[0-9]+\.[0-9]+'" .github/workflows/integration.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u > /tmp/tested.txt
+          MISSING=$(comm -23 /tmp/released.txt /tmp/tested.txt | tr '\n' ' ')
+          echo "| PrestaShop | not in the Integration matrix: ${MISSING:-none} |" >> "$GITHUB_STEP_SUMMARY"
+          for V in $MISSING; do
+            TITLE="PrestaShop $V is out and not tested"
+            gh issue list --state all --search "\"$TITLE\" in:title" --json number --jq '.[0].number' | grep -q . && continue
+            gh issue create --title "$TITLE" --label dependencies --body "PrestaShop **$V** is published and missing from the matrix of \`.github/workflows/integration.yml\`. Add it with each PHP version it supports, and to \`ps_versions_compliancy\` if it is past the current maximum." \
+              || gh issue create --title "$TITLE" --body "PrestaShop $V is out and not in the Integration matrix."
+          done

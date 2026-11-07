@@ -68,7 +68,7 @@ jobs:
     # names that was pruned away, or a part of Neuron's API the module calls
     # that is gone or changed shape - which is how an
     # upgrade that would break the chat shows up here and not in a shop.
-    # The weekly Dependencies workflow says when a newer version is out.
+    # The Dependencies workflow, every three days, says when a newer version is out.
     name: Dependencies
     runs-on: ubuntu-latest
     steps:

@@ -414,7 +414,8 @@ customer has none. The count joins the same tables as the list, so
   `shipping_cost_tax_included`, `tracking_number`, `tracking_url`;
 - `totals`: `taxes`, `wrapping_tax_excluded` and `wrapping_tax_included`;
 - `payments`, each with `currency`, `invoice_number` (empty when not tied to an
-  invoice) and `employee` (PrestaShop 9 only, empty on 8);
+  invoice), `id_employee` and `employee` (who recorded it, PrestaShop 9 only,
+  `null` and empty on 8);
 - `documents`: `invoices` (with `id_order_invoice`), `delivery_slips`
   (`id_order_invoice`, `number` with the shop's prefix, `date`,
   `total_tax_included`) and `credit_slips`;
@@ -654,7 +655,7 @@ order paid (→ `somcp_set_order_status`).
 | `id_order` | integer | one of the two | identifier |
 | `reference` | string | one of the two | reference |
 | `amount` | number | yes | greater than 0, in `currency` |
-| `payment_method` | string | yes | as the merchant would type it, for example "Bank wire"; 255 characters at most, without `< > = { }` |
+| `payment_method` | string | yes | best given as the **Payment** block suggests it: the name of the shop's payment module, for example "Bank transfer", "Payments by check" or "Cash on delivery (COD)", so the Payment table and the order read the same method; 255 characters at most, without `< > = { }` |
 | `currency` | string | no | ISO code; the order's currency by default |
 | `payment_date` | string | no | ISO 8601; now by default |
 | `transaction_id` | string | no | the bank's or the processor's reference, 254 characters at most |
@@ -662,10 +663,12 @@ order paid (→ `somcp_set_order_status`).
 
 **Returns** - `added`, `order` (`id_order` and `reference`), `id_order_payment`,
 `amount`, `currency`, `payment_method`, `transaction_id`, `payment_date` (in the
-shop's time), `total_paid_real` after the payment, `total_tax_included` of the
-order, `order_currency`, `remaining` (what is still due, never below zero), and
-`warning` when the payment row was added but the order or its invoice could not
-be fully updated.
+shop's time), `id_employee` (who recorded it, as the **Employee** column of
+9.0.0; `null` on 8.0.1, which has neither the column nor the argument, and
+matches `id_employee` of `payments[]` in `somcp_get_order`), `total_paid_real`
+after the payment, `total_tax_included` of the order, `order_currency`,
+`remaining` (what is still due, never below zero), and `warning` when the
+payment row was added but the order or its invoice could not be fully updated.
 
 **Notes** - the block holds a table (Date, Payment method, Transaction ID,
 Amount, Invoice, and **Employee** on 9.0.0 only) and a line to add one: date,
@@ -3190,6 +3193,7 @@ None.
 - Any line added by hand to the file is lost: the previous content is returned and the assistant tells the merchant before the call.
 - One file for the whole installation, at the root of PrestaShop. On a multistore installation it holds the rules of every shop's folder, but its `Sitemap` line is the one of the shop the call is made for, as when the button is pressed from that shop.
 - The new content can only be known by writing it, so a call that changes nothing still rewrites the same bytes, and answers `changed: false`. A file the web server cannot write is refused with nothing changed.
+- Refused in demo mode (`_PS_MODE_DEMO_`), with nothing read or written, as the button is (`DemoRestricted` on `generateRobotsFileAction`).
 
 #### `somcp_audit_page`
 **State**: written
@@ -3426,26 +3430,38 @@ None.
 - Same root and same `.htaccess` rule on 8.0.1 and 9.0.0. Read only.
 
 #### `somcp_generate_llms_txt`
-**State**: to write · [issue #100](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/100)
-**Nature**: `acts(EDIT, 'AdminMeta')` · **Scope**: `mcp.seo.write`
+**State**: written · [issue #100](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/100)
+**Nature**: `acts(EDIT, 'AdminMeta')` with `add` and `delete` · **Scope**: `mcp.seo.write`
 
-**Does** - writes an llms.txt at the shop root from the shop's own data: name, description, main categories and their URLs, policy pages.
+**Does** - writes an llms.txt at the root of the installation, the plain text summary some AI tools read at the root of a site, from the shop's own data: name, a summary agreed with the merchant, the main categories, the policy and information pages, the contact page.
 
-**Do not use for** - robots.txt (→ `somcp_generate_robots_txt`).
+**Do not use for** - reading the file (→ `somcp_get_llms_txt`); robots.txt (→ `somcp_generate_robots_txt`); whether AI crawlers may read the shop (→ `somcp_check_ai_crawler_access`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `summary` | object | no | per ISO code: the paragraph describing the shop, written with the merchant |
-| `overwrite` | boolean | no | required to replace a file somcp did not write |
+| `language` | string | no | ISO code of one of the shop's active languages, the language of the file and of its links; shop default when left out; an unknown code refused with `SomcpTool::languageRefused()` |
+| `summary` | string | no | the paragraph describing the shop, written with the merchant; the home page meta description when left out; 1000 characters at most |
+| `max_categories` | integer | no | 20 by default, 100 at most: the first categories under Home in their Position order |
+| `overwrite` | boolean | no | required to replace a file somcp did not write (no marker) |
 
-**Returns** - `changed`, `previous_content`, `content`, `url`.
+**Returns**
+- `changed` - false when the content written is the one already on disk (the file is then not rewritten).
+- `written` - whether the file was written this call.
+- `previous_content` - the file before, `null` when there was none; the only copy left of a file written by hand.
+- `content` - what was written.
+- `url` - as `somcp_get_llms_txt`: root of the token's shop domain + `/llms.txt`.
+- `language` - the ISO code used.
+- `warnings` - `code` and `why`, the shape of `somcp_get_robots_txt`: `not_at_domain_root` (the shop is in a folder), `shared_by_shops` (one file for every shop of the installation), `pages_not_indexable` (a listed CMS page has Indexation by search engines set to No).
 
 **Notes**
-- Only factual content from the shop: no claim, review or figure invented. Active categories and CMS pages only, in the default language first.
-- A file written by someone else is never replaced without `overwrite`, and its content comes back in the answer. A marker comment records that somcp wrote it.
-- The file is written atomically next to robots.txt; a shop whose root is not writable gets a clear refusal.
+- No back office screen writes an llms.txt on either version, so the tool assembles the file itself. It is written atomically next to robots.txt (a temporary file in the same folder, then renamed), so a reader never gets half a file.
+- The file is read with `somcp_get_robots_txt` (`read()`, `MAX_BYTES`) and the marker is the one constant `SomcpToolGetLlmsTxt::MARKER`, shared with `somcp_get_llms_txt`. Which CMS page is a policy page is decided by `SomcpToolAuditStorePolicies::policyPages()`, called not copied, so the policy pages come first in the file.
+- The rights are those of `somcp_generate_robots_txt`: `add`, `edit` and `delete` on `AdminMeta`, since it replaces a file at the root whole. A file somcp did not write is replaced only with `overwrite: true`, and its content comes back in the answer. A shop whose root is not writable gets a clear refusal, nothing changed, as `somcp_generate_robots_txt`.
+- Only what the shop holds is written: no claim, review, price or figure is invented. One file at the root means one language per file. Nothing is fetched over the network.
+- Errors in the shape of #169: unknown arguments; unknown language; `summary` too long; `max_categories` out of range; an existing file without the marker and no `overwrite: true`.
+- Same root, same `.htaccess` rule and same sources on 8.0.1 and 9.0.0.
 
 ### Sales
 
@@ -3454,162 +3470,332 @@ The levers that turn visits into orders: carts left behind, what customers searc
 **Not here**: sales figures over a period (→ Statistics), the orders themselves (→ Orders), a product's own specific prices (→ `somcp_update_product`).
 
 #### `somcp_list_abandoned_carts`
-**State**: to write · [issue #101](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/101)
+**State**: written · [issue #101](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/101)
 **Nature**: `acts(VIEW, 'AdminCarts')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the carts with products that never became an order, newest first.
+**Does** - lists the carts that hold products and never became an order, newest first, as the **Abandoned cart** carts of **Orders > Shopping Carts**. Read only.
 
-**Do not use for** - placed orders (→ `somcp_search_orders`).
+**Do not use for** - placed orders (→ `somcp_search_orders`); one customer's history (→ `somcp_get_customer`); sales figures (→ `somcp_get_sales_summary`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `older_than_hours` | integer | no | 2 by default: a cart still being filled is not abandoned |
-| `date_from` / `date_to` | string | no | `YYYY-MM-DD` |
-| `with_customer` | boolean | no | only carts of a known customer |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `older_than_hours` | integer | no | 24 by default, the back office rule; 1 at least |
+| `date_from` / `date_to` | string | no | `YYYY-MM-DD` on `cart.date_add`, the **Date** column; an invalid date is refused, not ignored (#169) |
+| `with_customer` | boolean | no | true: only carts linked to a customer account (guest accounts included); false: only carts without one |
+| `customer_name` | string | no | the **Customer** filter: first name, last name or both, whole or partial |
+| `online` | boolean | no | the **Online** filter |
+| `language` | string | no | ISO code of one of the shop's active languages for product names (#149); shop default when left out; unknown code refused |
+| `limit` / `offset` | integer | no | as `somcp_search_orders`: 20 by default, 100 at most |
 
-**Returns** - per cart: `id_cart`, `date_upd`, `customer` (id and name, or `null` for a guest), `products_count`, `total_tax_incl`, `currency`, `top_products` (the three most expensive lines). Plus `total_count` and `total_value`.
+**Returns**
+
+| Field | Notes |
+|---|---|
+| `carts[].id_cart` | **ID** |
+| `carts[].date_add` / `date_upd` | **Date** of the list is `date_add`; **Last updated** of the 9.0.0 page is `date_upd` |
+| `carts[].id_customer` | 0 when the cart has no customer, as `somcp_get_order` |
+| `carts[].customer_name` | full name, empty when none; no email, phone or address (shared conventions); `somcp_get_customer` gives the rest under the right scope |
+| `carts[].is_guest` | the customer is a guest account |
+| `carts[].online` | **Online**: the cart's visitor had a connection in the last 30 minutes |
+| `carts[].carrier` | **Carrier** name, empty when none |
+| `carts[].products_count` | total quantity of products |
+| `carts[].total_products_tax_excl` / `total_products_tax_incl` | **Total** of the list, products only; `null` when the cart can no longer be priced |
+| `carts[].currency` | ISO code |
+| `carts[].products` | the three most expensive lines: `id_product`, `id_product_attribute`, `name` (with the combination), `reference`, `quantity`, `unit_price_tax_incl` |
+| `returned`, `total_count`, `offset` | as `somcp_search_orders` |
+| `older_than_hours` | the age used |
+| `total_value_tax_incl` | sum of `total_products_tax_incl` over every matching cart, not only this page, keyed by currency ISO code (no conversion) |
+| `total_value_complete` | false when more than 1000 carts match: the sum then covers the 1000 newest, each cart being priced by PrestaShop itself |
+| `language` | ISO code used |
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments, `older_than_hours` below 1, invalid dates, `date_from` after `date_to`, `limit` outside 1 to 100, a negative `offset`, an unknown language.
 
 **Notes**
-- A cart with an order is never listed. Personal data stays plain in the list: no email or phone, as the shared conventions require.
-- Read only: the tool sends nothing to anyone.
+- The back office rule on both versions: a cart with no order, created more than 24 hours ago (`AdminCartsController` on 8.0.1, `CartStatus::ABANDONED_CART_EXPIRATION_TIME` in `CartQueryBuilder` on 9.0.0, both on `cart.date_add` against PHP's clock). A younger cart without an order is **Non ordered**.
+- A cart with an order is never listed, nor a cart with no product line (the back office lists those; nothing to recover in them).
+- The amounts are computed by the cart itself (`Cart::getOrderTotal()` with `Cart::ONLY_PRODUCTS`), so specific prices and taxes follow the shop's rules: **Total** of the list is the products only, without shipping.
+- Read only: the tool sends nothing to anyone and never returns the **Share this cart** link of 9.0.0 or its token.
+- Carts are per shop (`cart.id_shop`): the token's shop only. An `edit` right on `AdminCarts` is not needed: the list and the cart page are open with `view`.
+- 8.0.1 has no **Status** column (the status is a text in **Order ID**) and shows **Online** only with guest checkout on; 9.0.0 has both. The tool returns the same fields on both.
 
 #### `somcp_list_search_terms`
-**State**: to write · [issue #102](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/102)
+**State**: written · [issue #102](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/102)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists what customers typed in the shop's search, with how often and how many results they got.
+**Does** - lists what visitors typed in the shop's search box over a period, with how many times and how many products each search found, as **Stats > Shop search**. Read only.
 
-**Do not use for** - search engine queries from outside the shop, which need Search Console.
+**Do not use for** - search engine queries from outside the shop, which need Search Console; the products that sold (→ `somcp_list_best_sellers`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `date_from` / `date_to` | string | no | `YYYY-MM-DD`, the last 30 days by default |
-| `no_results_only` | boolean | no | the searches that found nothing |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `date_from` / `date_to` | string | yes | **From:** / **To:**, `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; the employee's saved stats period is never read nor changed |
+| `min_searches` | integer | no | 2 by default, as the screen ("searched for more than once"); 1 to include terms searched once |
+| `no_results_only` | boolean | no | only the terms whose **Results** is 0: what visitors looked for and the catalogue does not have |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per term: `keywords`, `searches`, `average_results`, `last_searched`. Plus `total_count`.
+**Returns**
+
+| Field | Notes |
+|---|---|
+| `terms[].keywords` | **Keywords**, as stored (the first spelling the grouping keeps) |
+| `terms[].searches` | **Occurrences** |
+| `terms[].results` | **Results**: the most products found by that term in the period (`MAX(results)`), not an average |
+| `terms[].last_searched` | `MAX(date_add)`, `YYYY-MM-DD HH:MM:SS`; not on the screen, so an old gap can be told from a new one |
+| `date_from` / `date_to` | the period used |
+| `returned`, `total_count`, `offset` | `total_count` counts the terms after the minimum length and `min_searches`, so it matches the rows of the screen |
+
+Sorted by `searches`, highest first, then `keywords`.
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `min_searches` below 1; `limit` outside 1 to 100; a negative `offset`. When `statssearch` is not installed and enabled, the call is refused with a text that names **Shop search** (`statssearch`) and says nothing is recorded without it: an empty list would read as "nobody searched".
 
 **Notes**
-- Read from the table the statssearch module fills; when that module is not installed or active, the answer says so and returns nothing, rather than an empty list that would read as no searches.
-- Terms are grouped case- and accent-insensitively.
+- Read from the `statssearch` table, one row per search of the shop (`hookActionSearch`). Rows are grouped by `keywords` in SQL, so the collation of the install merges spellings as the screen does: `Mug` and `mug` are one term.
+- Terms shorter than the minimum word length of **Shop Parameters > Search** (`PS_SEARCH_MINWORDLEN`) are left out in SQL, not after paging, so a page is never short.
+- The table holds no customer, no IP and no session: nothing personal is returned. A term is returned as text, never as a link.
+- The token's shop only (`id_shop`), as the screen.
+- No difference between 8.0.1 and 9.0.0 (`statssearch` 2.0.2 on both).
 
 #### `somcp_list_viewed_not_sold`
-**State**: to write · [issue #103](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/103)
+**State**: written · [issue #103](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/103)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the products customers looked at most over a period, with what they sold, so the ones that are seen but not bought stand out.
+**Does** - lists the saved products of the shop with their page views and what they sold over a period, most viewed first, so the ones seen but not bought stand out - the figures **Stats > Product details** shows one product at a time. Read only.
 
-**Do not use for** - best sellers (→ `somcp_list_best_sellers`).
+**Do not use for** - best sellers (→ `somcp_list_best_sellers`); products that sold nothing whether viewed or not; stock (→ `somcp_get_stock`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `date_from` / `date_to` | string | no | the last 30 days by default |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `date_from` / `date_to` | string | yes | **From:** / **To:**, `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; the employee's saved stats period is never read nor changed |
+| `id_category` | integer | no | **Choose a category**: only the products of that category, from `somcp_list_categories`; unknown in the shop is refused |
+| `min_page_views` | integer | no | only the products viewed at least this many times; 1 by default, so a product nobody opened is left out; 0 lists every product |
+| `language` | string | no | ISO code of one of the shop's active languages for `name`, as #149; shop default when left out; an unknown code is refused |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per product: `id_product`, `name`, `views`, `quantity_sold`, `conversion` (orders per hundred views), `price_tax_incl`, `quantity` in stock. Sorted by views with the lowest conversion first among equals.
+**Returns**
+
+| Field | Notes |
+|---|---|
+| `page_views_recorded` | `true` when `statsdata` is installed and enabled and **Save global page views** is on; `false` adds a `note` saying every `page_views` is 0 for that reason, the sales staying real |
+| `products[].id_product`, `reference`, `name` | **Reference**, **Name**, under the names of `somcp_list_best_sellers` |
+| `products[].page_views` | **Total Viewed** |
+| `products[].quantity_sold` | **Total bought**, valid orders dated by their order date |
+| `products[].revenue_tax_excl` | **Sales (tax excluded)**, divided by the order's conversion rate so it is in the default currency |
+| `products[].conversion_rate` | **Conversion rate**, `quantity_sold / page_views`, two decimals, units bought per view; `null` when `page_views` is 0 |
+| `products[].quantity` | **Available quantity for sale**, as `somcp_list_best_sellers` |
+| `products[].active` | whether the product is on sale |
+| `date_from` / `date_to`, `language` | what was used |
+| `returned`, `total_count`, `offset` | `total_count` counts the products after `id_category` and `min_page_views` |
+
+Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, then `id_product`: the products most seen and least bought come first.
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `id_category` not a whole number or unknown in the shop; `min_page_views` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149.
 
 **Notes**
-- Views come from the tables the statsdata module fills, with page views recorded; when it does not record them, the answer says so.
-- Sales count valid orders only (`Order::valid`).
+- Saved products of the token's shop only (`product_shop`, `p.state = Product::STATE_SAVED`); orders of the token's shop only.
+- Page views and the stock quantity are read through the shared `SomcpStats` subqueries, the same way `somcp_list_best_sellers` reads them.
+- **Save global page views** (`PS_STATSDATA_PAGESVIEWS`) is off by default: without it `page_viewed` is empty and every `page_views` is a true 0.
+- No customer is returned: the orders behind a product are `somcp_search_orders`.
+- No difference between 8.0.1 and 9.0.0 (`statsproduct` 2.1.1 / 2.1.3, `statsdata` 2.1.0 / 2.1.2).
 
 #### `somcp_list_unsold_products`
-**State**: to write · [issue #104](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/104)
+**State**: written · [issue #104](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/104)
 **Nature**: `acts(VIEW, 'AdminStats')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists active products in stock that sold nothing over a period.
+**Does** - lists the active products of the shop that no valid order bought, over a period or ever, with their stock and what that stock is worth - the **Products never purchased** list of **Stats > Catalog statistics**, with the stock the screen does not show. Read only.
 
-**Do not use for** - low stock (→ `somcp_list_low_stock`).
+**Do not use for** - low stock (→ `somcp_list_low_stock`); products seen but not bought (→ `somcp_list_viewed_not_sold`); what sold most (→ `somcp_list_best_sellers`); the stock of one product (→ `somcp_get_stock`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `days` | integer | no | 90 by default |
-| `min_quantity` | integer | no | only products with at least this much in stock; 1 by default |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `date_from` / `date_to` | string | no | `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; both or neither. Left out: no period, every valid order ever, as the screen. Given: products bought by no valid order dated (`o.date_add`) in the period, products added to the shop (`product_shop.date_add`) after `date_from` left out |
+| `id_category` | integer | no | **Choose a category**: only the products of that category, from `somcp_list_categories`; unknown in the shop is refused |
+| `min_quantity` | integer | no | only the products with at least this quantity for sale; 1 by default, so the stock that does not move; 0 lists every product, as the screen |
+| `language` | string | no | ISO code of one of the shop's active languages for `name`, as #149; shop default when left out; an unknown code is refused |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per product: `id_product`, `name`, `quantity`, `price_tax_incl`, `stock_value_tax_excl` (quantity times wholesale price, when set), `date_add`, `last_sold` (or `null`). Plus `total_count` and `total_stock_value`.
+**Returns**
+
+| Field | Notes |
+|---|---|
+| `products[].id_product`, `reference`, `name` | **ID**, **Name**, under the names of `somcp_list_best_sellers` |
+| `products[].quantity` | quantity for sale, as `somcp_list_best_sellers` |
+| `products[].price_tax_excl` | the base price, tax excluded (`product_shop.price`), as `somcp_get_product` |
+| `products[].wholesale_price` | **Cost price** of the product page, as `somcp_get_product` names it; `null` when 0, which means not set |
+| `products[].stock_value_tax_excl` | `quantity` times `wholesale_price`, rounded to the default currency's precision; `null` when `wholesale_price` is `null` |
+| `products[].date_add` | the date the product was added to the shop, ISO 8601 |
+| `products[].last_sold` | the date of the last valid order of the shop holding the product, any date, ISO 8601; `null` when never bought |
+| `total_count` | **Products never purchased**, with the filters, before paging |
+| `products_available` | **Products available**: the active products `id_category` and `min_quantity` keep |
+| `total_stock_value_tax_excl` | sum of `stock_value_tax_excl` over every product of `total_count`, not only the page |
+| `date_from` / `date_to`, `language` | what was used; `null` dates when left out |
+| `returned`, `offset` | as `somcp_list_best_sellers` |
+
+Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, highest first, then `id_product`: the stock that costs the most comes first.
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`), one given without the other; `id_category` not a whole number or unknown in the shop; `min_quantity` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149. An empty list is `products: []`, `total_count: 0`.
 
 **Notes**
-- Products created during the period are left out: they had no chance to sell yet.
+- Active, saved products of the token's shop only (`product_shop.active = 1`, `p.state = Product::STATE_SAVED`); orders of the token's shop only (`o.id_shop`). The screen counts the orders of every shop: the figures differ only in a multistore shop.
+- A product counts as bought when any of its combinations was (`order_detail.product_id`), as the screen.
+- The stock quantity is read through the shared `SomcpStats` subquery, the same way `somcp_list_best_sellers` reads it; a product without a stock row has 0.
+- Amounts are in the shop's default currency, read as stored, without the tax or specific prices of a customer.
+- No difference between 8.0.1 and 9.0.0 (`statscatalog` 2.0.4 on both).
 
 #### `somcp_list_cart_rules`
-**State**: to write · [issue #105](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/105)
+**State**: written · [issue #105](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/105)
 **Nature**: `acts(VIEW, 'AdminCartRules')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the cart rules (vouchers and automatic discounts) with their dates, code and use.
+**Does** - lists the cart rules of this shop - vouchers with a code and discounts applied on their own - newest first, as **Catalog > Discounts > Cart Rules**, with what each one gives in one line. Read only.
 
-**Do not use for** - reading one rule (→ `somcp_get_cart_rule`), or catalogue price rules (→ `somcp_list_catalog_price_rules`).
+**Do not use for** - one rule with its conditions (→ `somcp_get_cart_rule`); catalogue price rules (→ `somcp_list_catalog_price_rules`); the vouchers of one order (→ `somcp_get_order`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `active` | boolean | no |  |
-| `current` | boolean | no | only rules valid today |
-| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+| `active` | boolean | no | the **Status** filter |
+| `name` | string | no | part of the **Name**, without case, in `language` |
+| `code` | string | no | part of the **Code**, without case; an empty code is refused (use `has_code`) |
+| `has_code` | boolean | no | true: vouchers the customer types a code for; false: rules applied on their own, with no code |
+| `current` | boolean | no | only the rules valid now: **Valid** **From**/**To** holds the shop's current time and **Quantity** is above 0 |
+| `language` | string | no | ISO code of one of the shop's active languages for `name` (#149); shop default when left out; unknown code refused |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per rule: `id_cart_rule`, `name`, `code`, `active`, `date_from`, `date_to`, `quantity` left, `reduction` (percent, amount with currency and tax, free shipping, gift product, summarised), `times_used`. Plus `total_count`.
+**Returns** - `cart_rules`, in the list's order (`id_cart_rule` descending, newest first), each with:
+
+| Field | Notes |
+|---|---|
+| `id_cart_rule` | **ID** |
+| `name` | **Name**, in `language` |
+| `priority` | **Priority** |
+| `code` | **Code**, empty string when none |
+| `quantity` | **Total available**: uses left, lowered at each order |
+| `quantity_per_user` | **Total available for each user** |
+| `date_from` / `date_to` | **Valid** **From**/**To** (**Expiration date** in the list), ISO 8601, empty string for no date |
+| `active` | **Status** |
+| `id_customer` | **Limit to a single customer**: the identifier `somcp_get_customer` takes, `null` when the rule is for everyone |
+| `free_shipping` | **Free shipping** |
+| `reduction` | **Apply a discount**: `{"type":"percent","value":10}`, or `{"type":"amount","value":5,"currency":"EUR","tax_included":true}`, plus `id_product` when it is a specific product; `null` for **None** |
+| `reduction_applies_to` | **Apply a discount to**: `order`, `specific_product`, `cheapest_product` or `selected_products` (`reduction_product` 0, above 0, -1, -2); `null` when `reduction` is `null` |
+| `gift` | **Send a free gift**: `{"id_product":...,"id_product_attribute":...}` or `null` |
+| `summary` | one English line built from the three above, e.g. `10% off the order, free shipping` |
+| `has_restrictions` | the restrictions that are on (`country`, `carrier`, `group`, `cart_rule`, `product`, `shop`), so the assistant knows when to read the rule with `somcp_get_cart_rule` |
+| `times_used` | orders that used the rule (`order_cart_rule`, not deleted), the use the screen does not show |
+| `returned`, `total_count`, `offset`, `language` | as `somcp_list_abandoned_carts` |
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; an empty `code`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `cart_rules: []`, `total_count: 0`.
 
 **Notes**
-- Only the rules this shop can use.
+- The back office list shows every shop's rules; the token's shop keeps the rules it can use (`shop_restriction = 0`, or a `cart_rule_shop` row for it).
+- `reduction`, `reduction_applies_to`, `gift` and `summary` are built by one shared method (`SomcpToolListCartRules::describe()`) that `somcp_get_cart_rule` (#106) calls, so a rule reads the same whichever tool reads it.
+- No minimum amount, restriction list or product selection here: they belong to `somcp_get_cart_rule`. Read only.
+- No difference between 8.0.1 and 9.0.0: the same legacy controller, list and `cart_rule` table on both.
 
 #### `somcp_get_cart_rule`
-**State**: to write · [issue #106](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/106)
+**State**: written · [issue #106](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/106)
 **Nature**: `acts(VIEW, 'AdminCartRules')` · **Scope**: `mcp.sales.read`
 
-**Does** - returns every field of one cart rule, as its three back office tabs show it.
+**Does** - returns every field of one cart rule, as the three tabs of **Catalog > Discounts > Cart Rules > Edit** show it (**Information**, **Conditions**, **Actions**), with its restrictions as lists of identifiers and names. Read only.
 
-**Do not use for** - listing rules (→ `somcp_list_cart_rules`).
+**Do not use for** - listing rules (→ `somcp_list_cart_rules`); catalogue price rules (→ `somcp_list_catalog_price_rules`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_cart_rule` | integer | yes |  |
+| `id_cart_rule` | integer | yes | the **ID** of the list, from `somcp_list_cart_rules` |
+| `language` | string | no | ISO code of one of the shop's active languages (#149), for the names of the restrictions and of the gift; shop default when left out; unknown code refused |
 
-**Returns** - Information (name per language, description, code, highlight, partial use, priority, active), Conditions (customer, dates, minimum amount with currency and tax, quantities, carrier, country, group and product restrictions as lists), Actions (free shipping, percent or amount with currency and tax, the product it applies to, gift product).
+**Returns** - `cart_rule`, with `language` at the top level:
+
+| Field | Notes |
+|---|---|
+| `id_cart_rule` | |
+| `name` | **Information** > **Name**, an object keyed by ISO code with every active language of the shop, so it can be given back to `somcp_update_cart_rule` as is |
+| `description` | **Description**, plain text, empty string when none |
+| `code` | **Code**, empty string when the rule applies on its own |
+| `highlight` / `partial_use` | **Highlight** / **Partial use**, booleans |
+| `priority` | **Priority** |
+| `active` | **Status** |
+| `id_customer` | **Conditions** > **Limit to a single customer**: `null` for everyone; with `customer` (`firstname`, `lastname`) beside it, the identifier `somcp_get_customer` takes |
+| `date_from` / `date_to` | **Valid** **From** / **To**, ISO 8601, as `somcp_list_cart_rules` |
+| `minimum_amount` | **Minimum amount**: `null` when 0, else `{"value": 50, "currency": "EUR", "tax_included": false, "shipping_included": false}` |
+| `quantity` / `quantity_per_user` | **Total available** / **Total available for each user** |
+| `restrictions.country` | **Country selection**: `null` when off, else `[{"id_country", "name"}]` |
+| `restrictions.carrier` | **Carrier selection**: `null` when off, else `[{"id_reference", "name"}]`, the `id_reference` of `somcp_list_carriers` (the core stores the reference, not `id_carrier`) |
+| `restrictions.group` | **Customer group selection**: `null` when off, else `[{"id_group", "name"}]` |
+| `restrictions.cart_rule` | **Compatibility with other cart rules**: `null` when off, else the rules it combines with, `[{"id_cart_rule", "name"}]` |
+| `restrictions.product` | **Product selection**: `null` when off, else the groups `[{"quantity": 1, "rules": [{"type": "products", "values": [{"id", "name"}]}]}]`, `type` one of `products`, `categories`, `attributes` (named "Group - Value", as the form), `manufacturers`, `suppliers` |
+| `restrictions.shop` | **Store selection** (multistore): `null` when off, else `[{"id_shop", "name"}]` |
+| `free_shipping` | **Actions** > **Free shipping** |
+| `reduction` / `reduction_applies_to` | **Apply a discount** / **Apply a discount to**, built by `SomcpToolListCartRules::describe()`, the shapes of `somcp_list_cart_rules` |
+| `reduction_exclude_special` | **Exclude discounted products**, meaningful for a percent |
+| `gift` | **Send a free gift**: `{"id_product", "id_product_attribute", "name"}` or `null` |
+| `summary` | the one line of `somcp_list_cart_rules` |
+| `times_used` | as `somcp_list_cart_rules` |
+| `date_add` / `date_upd` | ISO 8601 |
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; a missing or non-positive `id_cart_rule`; an unknown language (#149). An `id_cart_rule` no rule of this shop has: `id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`, the token's shop deciding as in `somcp_list_cart_rules`.
 
 **Notes**
-- Restrictions are returned as names and identifiers, read from the core's own tables.
+- The rules this shop can use and `times_used` are read by the same functions as `somcp_list_cart_rules` (`inShop()`, `timesUsed()`), so a rule the list hides is one this tool refuses.
+- The restrictions are read by one public function, `SomcpToolGetCartRule::restrictions()`, that `somcp_update_cart_rule` calls to compare. Product selection is read with the core's `CartRule::getProductRuleGroups()`.
+- A restriction pointing to something deleted since (a carrier, a product) is left out of its list, as the back office leaves it out of the form. When **Apply a discount to** is **Specific product**, the back office adds that product to **Product selection** on its own: it shows there too, as stored.
+- No difference between 8.0.1 and 9.0.0 apart from the type of `description` (`text` / `mediumtext`).
 
 #### `somcp_create_cart_rule`
-**State**: to write · [issue #107](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/107)
+**State**: written · [issue #107](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/107)
 **Nature**: `acts(ADD, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
 
-**Does** - creates one cart rule: a voucher code or an automatic discount.
+**Does** - creates one cart rule - a voucher the customer types, or a discount applied on its own - with the fields of the **Information**, **Conditions** and **Actions** tabs of **Catalog > Discounts > Cart Rules > Add new**, restrictions apart.
 
-**Do not use for** - changing a rule (→ `somcp_update_cart_rule`), or a discount on products in the catalogue (→ `somcp_create_catalog_price_rule`).
+**Do not use for** - changing a rule (→ `somcp_update_cart_rule`), switching it on (→ `somcp_set_cart_rule_active`), a discount on products of the catalogue (→ `somcp_create_catalog_price_rule`), a discount on one order already placed (→ `somcp_add_order_discount`).
 
-**Parameters**
+**Parameters** - the names and shapes `somcp_get_cart_rule` returns, so a rule read there can be given back.
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `name` | object | yes | per ISO code, shown to the customer |
-| `code` | string | no | empty for an automatic rule; refused if another rule has it |
-| `date_from` / `date_to` | string | yes | `YYYY-MM-DD HH:MM:SS` |
-| `reduction_percent` / `reduction_amount` | number | no | one of the two, or `free_shipping` |
-| `reduction_tax` | boolean | no | whether an amount includes tax |
-| `reduction_currency` | string | no | ISO code of an amount |
-| `free_shipping` | boolean | no |  |
-| `minimum_amount` | number | no | with `minimum_amount_tax` and `minimum_amount_currency` |
-| `quantity` / `quantity_per_user` | integer | no | 1 each by default |
-| `reduction_product` | integer | no | apply to one product only |
-| `id_customer` | integer | no | a rule for one customer |
-| `active` | boolean | no | false by default: the merchant switches it on |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages` | | array | no | ISO codes of the languages to fill (#149), all active ones by default; a language left out takes the default one's name |
+| `name` | **Name** | object | yes | per ISO code, shown to the customer; 254 characters at most, `CartRule` validation |
+| `description` | **Description** | string | no | for the merchant only, empty by default |
+| `code` | **Code** | string | no | empty: the rule applies on its own to every cart that meets the conditions; refused if another rule of any shop has it; 254 characters at most |
+| `highlight` | **Highlight** | boolean | no | false by default |
+| `partial_use` | **Partial use** | boolean | no | true by default, as the form |
+| `priority` | **Priority** | integer | no | 1 by default, 1 at least |
+| `active` | **Status** | boolean | no | **false by default**, unlike the form: the merchant switches it on after reading it |
+| `id_customer` | **Limit to a single customer** | integer or null | no | from `somcp_search_customers`; left out or `null`: everyone |
+| `date_from` / `date_to` | **Valid** **From** / **To** | string | no | ISO 8601 as `somcp_get_cart_rule` returns it, or `YYYY-MM-DD HH:MM:SS`, shop time; now and now plus one month by default, as the form |
+| `minimum_amount` | **Minimum amount** | object or null | no | `{"value", "currency", "tax_included", "shipping_included"}`; `currency` an ISO code of an active currency of the shop, the default one when left out |
+| `quantity` / `quantity_per_user` | **Total available** / **Total available for each user** | integer | no | 1 each by default, 0 at least |
+| `free_shipping` | **Free shipping** | boolean | no | false by default |
+| `reduction` | **Apply a discount** | object or null | no | `{"type": "percent", "value": 10}` or `{"type": "amount", "value": 5, "currency": "EUR", "tax_included": true}`, with `id_product` for a specific product, as `somcp_get_cart_rule`; `null`: **None** |
+| `reduction_applies_to` | **Apply a discount to** | string or object | no | `order` (default), `specific_product`, `cheapest_product` or `selected_products`, the string `somcp_get_cart_rule` returns; `{"type": "specific_product", "id_product": 12}` also accepted; the last two refused with an `amount` |
+| `reduction_exclude_special` | **Exclude discounted products** | boolean | no | false by default; only with a `percent` |
+| `gift` | **Send a free gift** | object or null | no | `{"id_product", "id_product_attribute"}` (`name`, as read, is ignored); the combination required when the product has some, refused when it has none |
 
-**Returns** - `created`, `id_cart_rule`, and the rule as `somcp_get_cart_rule` returns it.
+`id_cart_rule`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are refused as worked out by the shop; `restrictions` is refused unless every one of them is `null`.
+
+**Returns** - `created: true`, `id_cart_rule`, and `cart_rule` as `somcp_get_cart_rule` returns it, read back with its function (`SomcpToolGetCartRule::byId()`), names in the default language.
+
+**Errors** - in the shape of #169 (`Nothing was created. Correct these and call again:` then one line per problem), every problem found before anything is written: unknown arguments; the checks of `AdminCartRulesController::postProcess()` with the core's wording, under their field: **The voucher cannot end before it begins.** (`date_to`), **The minimum amount cannot be lower than zero.** (`minimum_amount.value`), **Reduction percentage must be between 0% and 100%** and **Reduction amount cannot be lower than zero.** (`reduction.value`), **This cart rule code is already used** (`code`), **An action is required for this cart rule.** (`reduction`), **Product with required customization fields cannot be used as a gift.** (`gift.id_product`); an unknown customer, product or combination (`<path>: no <thing> of this shop has the identifier <n> - find it with <tool>`); an unknown or inactive currency; a language of #149.
 
 **Notes**
-- Written through `CartRule`, so hooks fire. Product, category, carrier and country restrictions are not set by this tool in its first version: the answer says so when asked, and the back office remains the place for them.
-- Created inactive by default, so a rule never reaches customers before the merchant has seen it.
+- Written through `CartRule::add()`, so `actionObjectCartRuleAddAfter` fires, as in the back office. The checks live in one protected function, `SomcpToolCreateCartRule::planRule()`, that `somcp_update_cart_rule` extends.
+- Then the rows `AdminCartRulesController::afterAdd()` writes and `CartRule::add()` does not, with `Db::insert` as the controller (these tables have no ObjectModel), only once `add()` succeeded: for **Specific product**, that product in **Product selection** (one group, quantity 1, type `products`) and `product_restriction = 1`, so the rule only applies to carts that hold it; on a multistore, a `cart_rule_shop` row for the token's shop and `shop_restriction = 1`; and the new rule on the white list of every rule with `cart_rule_restriction = 1`, as the form does on every save. If one of them fails, the rule is deleted again and nothing is kept.
+- **Restrictions** (**Country selection**, **Carrier selection**, **Customer group selection**, **Compatibility with other cart rules**, **Product selection** beyond the automatic one, **Store selection**) are not set by this tool: the description points to the back office.
+- Not to be retried blindly: if the answer is lost, look for the rule with `somcp_list_cart_rules` (`code`, or `name`) before calling again.
+
+**Differences between 8.0.1 and 9.0.0**
+- 9.0.0 refuses a gift product with required customization fields; 8.0.1 saves it. The tool refuses it on both versions, with the 9.0.0 wording.
+- The same form fields and table on both, apart from the type of `description` (`text` / `mediumtext`).
 
 #### `somcp_update_cart_rule`
 **State**: to write · [issue #108](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/108)
@@ -3730,7 +3916,7 @@ request: one line, stroke paths on a 24 px grid.
 | `somcp-cache-maintenance` | System | written |
 | `somcp-seo-audit` | SEO | written |
 | `somcp-aeo-audit` | AEO | written · [issue #80](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/80) |
-| `somcp-sales-boost` | Sales | to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
+| `somcp-sales-boost` | Sales | written · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81) |
 
 #### `somcp-catalogue-manage`
 **State**: written
@@ -3873,7 +4059,7 @@ request: one line, stroke paths on a 24 px grid.
 **The guide must say** - no tool can guarantee that an assistant cites the shop, and the guide never promises it; start with `somcp_check_ai_crawler_access` and `somcp_audit_store_policies`, then the products that sell; fix the data itself (brand, GTIN, features, description) with the Catalogue tools rather than adding text for robots; never invent a fact, a review or a figure about a product: ask the merchant; check the public page with `somcp_audit_product_schema` after a change.
 
 #### `somcp-sales-boost`
-**State**: to write · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81)
+**State**: written · [issue #81](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/81)
 **Section**: Sales · **Scope**: `mcp.sales.read` · **Permission**: `view` on `AdminStats` · **Icon**: `cart`
 
 **Title** - Boost sales

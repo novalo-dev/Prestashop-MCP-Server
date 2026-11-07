@@ -61,7 +61,7 @@ class AdminSomcpAssistantController extends ModuleAdminController
     /**
      * The permission slug of this controller, unchanged from the parent.
      *
-     * Declared for the same reason as on the consent screen: PrestaShop 9
+     * Declared because PrestaShop 9
      * reflects on THIS method to decide whether viewAccess below is consulted
      * at all. Without it every profile but the super administrator gets a 403.
      *

@@ -345,6 +345,42 @@ class SomcpToolAuditStorePolicies
     }
 
     /**
+     * The CMS pages this tool identifies as policy pages, keyed by id_cms and
+     * in the order the types are reported (legal notice, terms, shipping,
+     * returns, privacy, about). Public so somcp_generate_llms_txt orders the
+     * same pages first in the llms.txt without a second matching that could
+     * disagree with this tool. The contact page is a front controller, not a
+     * CMS page, and is left to the caller.
+     *
+     * @param int $idShop
+     *
+     * @return array<int, string> id_cms => type
+     */
+    public static function policyPages(int $idShop): array
+    {
+        $idLangs = array_keys(SomcpTool::activeLanguages($idShop));
+        $cms = self::cmsPages($idShop, $idLangs);
+        $roles = self::roles();
+        $idShopGroup = (int) Shop::getGroupFromShop($idShop);
+        $termsIdCms = (int) Configuration::get('PS_CONDITIONS_CMS_ID', null, $idShopGroup, $idShop);
+
+        $taken = [];
+        $order = [];
+        foreach (self::TYPES as $type) {
+            if ($type === 'contact') {
+                continue;
+            }
+            $match = self::find($type, $cms, $roles, $termsIdCms, $taken);
+            if ($match !== null) {
+                $taken[$match['id_cms']] = true;
+                $order[$match['id_cms']] = $type;
+            }
+        }
+
+        return $order;
+    }
+
+    /**
      * The page of one type: the Order Settings page for the terms, then the
      * cms_role rows, then the friendly URL, then the Title, in any language
      * of the shop. The first step that answers wins; a page already given to

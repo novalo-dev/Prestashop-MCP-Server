@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<title>O'So MCP Server - {{title}}</title>
+<style>
+@page { size: A4; margin: 16mm 16mm 16mm; }
+@page :first { margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 10pt/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #1f2328; }
+a { color: #b8482c; text-decoration: none; }
+.cover { height: 297mm; background: #0f1419; color: #fbf9f4; padding: 34mm 22mm; display: flex; flex-direction: column; page-break-after: always; }
+.cover .brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 13pt; }
+.cover .brand img { width: 40px; height: 40px; border-radius: 8px; }
+.cover h1 { margin: 70mm 0 0; font-size: 34pt; line-height: 1.1; letter-spacing: -.02em; }
+.cover .bar { width: 28mm; height: 3px; background: #d55d3e; margin-top: 10mm; }
+.cover .sub { margin-top: 8mm; font-size: 14pt; color: #a7a9a6; max-width: 135mm; }
+.cover .meta { margin-top: auto; font-size: 10pt; color: #a7a9a6; display: grid; grid-template-columns: auto 1fr; gap: 3mm 10mm; }
+.cover .meta b { color: #fbf9f4; font-weight: 600; }
+.toc { page-break-after: always; }
+.toc ol { padding: 0; list-style: none; }
+.toc li a { display: flex; gap: 3mm; padding: 2.6mm 0; border-bottom: 1px solid #ece7dc; font-size: 11.5pt; color: #1f2328; }
+.toc .num { color: #d55d3e; font-weight: 700; width: 8mm; }
+.toc ol li { padding: 0; }
+.toc ol li::before { content: none; }
+h2 { font-size: 17pt; margin: 0 0 3mm; page-break-before: always; color: #0f1419; letter-spacing: -.01em; page-break-after: avoid; }
+.toc h2 { page-break-before: auto; }
+h2 .n { color: #d55d3e; margin-right: 3mm; }
+h3 { font-size: 11.5pt; margin: 4mm 0 1.5mm; color: #0f1419; page-break-after: avoid; }
+h4 { font-size: 11pt; margin: 6mm 0 2mm; page-break-after: avoid; }
+p { margin: 0 0 2mm; }
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 3mm; font-size: 9.5pt; }
+th, td { padding: 1.6mm 2.5mm; border-bottom: 1px solid #ece7dc; vertical-align: top; text-align: left; }
+td:first-child { font-weight: 600; color: #0f1419; }
+thead { display: table-header-group; }
+th { font-size: 9pt; color: #6b6f73; font-weight: 600; }
+ol { padding: 0; list-style: none; counter-reset: st; margin: 3mm 0 5mm; }
+ol li { position: relative; padding: 0 0 2.5mm 10mm; counter-increment: st; }
+ol li::before { content: counter(st); position: absolute; left: 0; top: .2mm; width: 6.5mm; height: 6.5mm; border-radius: 50%; background: #d55d3e; color: #fff; font-weight: 700; font-size: 8.5pt; display: flex; align-items: center; justify-content: center; }
+ul { margin: 2mm 0 4mm; padding-left: 5mm; }
+ul li { margin-bottom: 1.5mm; }
+figure { margin: 2mm 0 2.5mm; page-break-inside: avoid; }
+figure img { max-width: 100%; max-height: 120mm; width: auto; border: 1px solid #ddd8cc; border-radius: 4px; display: block; }
+figcaption { font-size: 8.5pt; color: #6b6f73; margin-top: 1.5mm; }
+.placeholder { border: 2px dashed #d8d2c4; border-radius: 4px; height: 55mm; display: flex; align-items: center; justify-content: center; color: #9a9d9f; font-size: 10pt; background: #faf8f3; }
+.callout { padding: 2.5mm 3.5mm; border-radius: 0 4px 4px 0; margin: 2.5mm 0; font-size: 10pt; page-break-inside: avoid; }
+.callout p { margin: 0; }
+.callout.note { border-left: 3px solid #d55d3e; background: #fbeee9; }
+.callout.tip { border-left: 3px solid #2f7d5b; background: #e9f4ee; }
+.callout.warning { border-left: 3px solid #b7791f; background: #fdf3e1; }
+.b { display: inline-flex; align-items: center; justify-content: center; width: 4.6mm; height: 4.6mm; border-radius: 50%; background: #d55d3e; color: #fff; font-weight: 700; font-size: 7.5pt; vertical-align: .2mm; margin: 0 .5mm; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 9pt; background: #f1eee6; padding: .3mm 1.2mm; border-radius: 3px; }
+</style>
+</head>
+<body>
+<section class="cover">
+  <div class="brand"><img src="data:image/png;base64,{{logo}}" alt="">O'So MCP Server</div>
+  <h1>{{title}}</h1>
+  <div class="bar"></div>
+  <div class="sub">{{subtitle}}</div>
+  <div class="meta"><span>Version</span><b>{{version}}</b><span>PrestaShop</span><b>8.0 to 9.x</b><span>PHP</span><b>8.1 or later</b><span>Publisher</span><b>Novalo - novalo.fr</b></div>
+</section>
+<section class="toc">
+  <h2>Contents</h2>
+  <ol>{{contents}}</ol>
+</section>
+{{body}}
+</body>
+</html>

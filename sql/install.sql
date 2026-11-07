@@ -29,11 +29,11 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_oauth_client` (
 
 -- somcp_oauth_request - an authorization request waiting for the merchant.
 --
--- The front controller validates the request, stores it here, and sends the
--- browser to the back office carrying nothing but an opaque id. PrestaShop 8
--- drops the query string when it bounces a visitor through the login form
--- (AdminLoginController only carries a controller name), so the OAuth parameters
--- cannot travel that way and have to wait here instead.
+-- The front controller validates the request and stores it here; the browser
+-- carries nothing but an opaque id, in a cookie. The employee who signs in on
+-- the authorization page is recorded on the row, so the consent that follows
+-- can only be given by that account, and only once they entered the code
+-- e-mailed to them.
 CREATE TABLE IF NOT EXISTS `PREFIX_somcp_oauth_request` (
     `id_request`             INT(11)      NOT NULL AUTO_INCREMENT,
     `request_id`             VARCHAR(64)  NOT NULL COMMENT 'sha256 of the value held in the browser cookie',
@@ -45,7 +45,14 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_oauth_request` (
     `code_challenge`         VARCHAR(128) NOT NULL,
     `code_challenge_method`  VARCHAR(10)  NOT NULL DEFAULT 'S256',
     `resource`               VARCHAR(500) NOT NULL DEFAULT '',
-    `csrf_token`             VARCHAR(64)  NOT NULL COMMENT 'guards the consent form, not the OAuth request',
+    `csrf_token`             VARCHAR(64)  NOT NULL COMMENT 'guards the sign-in and consent forms, renewed at sign-in',
+    `id_employee`            INT(11)      NOT NULL DEFAULT 0 COMMENT 'who signed in on the authorization page, 0 until then',
+    `otp_hash`               VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'sha256 of the code e-mailed to that employee, emptied once used',
+    `otp_expires_at`         DATETIME     DEFAULT NULL,
+    `otp_sent_at`            DATETIME     DEFAULT NULL,
+    `otp_sends`              TINYINT(3)   NOT NULL DEFAULT 0 COMMENT 'codes sent for this request',
+    `otp_tries`              TINYINT(3)   NOT NULL DEFAULT 0 COMMENT 'wrong entries of the current code',
+    `otp_verified`           TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'the employee entered a right code: the consent may follow',
     `expires_at`             DATETIME     NOT NULL,
     `consumed_at`            DATETIME     DEFAULT NULL,
     `date_add`               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -354,3 +361,16 @@ CREATE TABLE IF NOT EXISTS `PREFIX_somcp_assistant_run` (
     `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`partition`, `key`)
 ) ENGINE=InnoDB;
+
+-- somcp_rate_limit - the counters of the public addresses and of the
+-- authorization page (SomcpGuard), one row per shop, thing counted and visitor
+-- address, hashed together: no address is stored in clear. A row lives for the
+-- length of its window and is dropped as the table is used.
+CREATE TABLE IF NOT EXISTS `PREFIX_somcp_rate_limit` (
+    `bucket`     CHAR(64)  NOT NULL,
+    `id_shop`    INT(11)   NOT NULL DEFAULT 1,
+    `hits`       INT(11)   NOT NULL DEFAULT 0,
+    `window_end` DATETIME  NOT NULL,
+    PRIMARY KEY (`bucket`),
+    KEY `idx_window_end` (`window_end`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

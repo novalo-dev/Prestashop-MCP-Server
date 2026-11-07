@@ -21,11 +21,14 @@ parameters:
         - vendor
         - dev
         - docs
-    # Read, not analysed: the built-in assistant calls Neuron AI, which
-    # composer install puts in vendor/ - CI installs it before this runs.
+    # Read, not analysed: the dependencies the module calls, which composer
+    # install puts in vendor/ - CI installs them before this runs.
     scanDirectories:
         - vendor/neuron-core/neuron-ai/src
         - vendor/psr/event-dispatcher/src
+        # The limits and the anti-robot check of the authorization page.
+        - vendor/nikolaposa/rate-limit/src
+        - vendor/altcha-org/altcha/src
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         # StockAvailable::dependsOnStock() exists on 8 and was removed on 9.

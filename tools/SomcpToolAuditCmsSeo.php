@@ -66,15 +66,13 @@ class SomcpToolAuditCmsSeo
         return new SomcpTool(
             'somcp_audit_cms_seo',
             Somcp::t('Audit the SEO of CMS pages'),
-            'Lists the CMS pages of this shop, displayed or not, whose search engine fields have a problem: '
-                . 'one entry per page and language with the failed checks and the value at fault, and counts per '
-                . 'check. Each entry carries title (the page title, column meta_title), meta_title (the Meta '
-                . 'title, column head_seo_title) and seo_title (the one search engines read: the meta title when '
-                . 'filled, the page title otherwise), the same names as somcp_get_cms_page and '
-                . 'somcp_update_cms_seo. The title checked is seo_title. Checks: meta_title_too_long (over 60 '
-                . 'characters), meta_title_duplicate, meta_description_missing, meta_description_short (under 70 '
-                . 'characters), meta_description_long (over 160), content_short (under 150 words) and '
-                . 'not_indexable. Read only. To change these fields, use somcp_update_cms_seo.',
+            'Lists the CMS pages of this shop, displayed or not, whose search engine fields fail a check: one '
+                . 'entry per page and language with the failed checks and the value at fault, and counts per check. '
+                . 'title (page title), meta_title (Meta title) and seo_title (what search engines read, the one '
+                . 'checked) are named as in somcp_get_cms_page. Checks: meta_title_too_long (over 60 characters), '
+                . 'meta_title_duplicate, meta_description_missing, meta_description_short (under 70), '
+                . 'meta_description_long (over 160), content_short (under 150 words), not_indexable. Read only. To '
+                . 'fix them use somcp_update_cms_seo.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -66,8 +66,9 @@ the assistant through the usual jobs. [See them all](#tools).
 | Languages | English, French, Spanish, German |
 
 The **Run the diagnostic** button in the module checks all of this from the
-outside: certificate, SSL setting, friendly URLs, location and the addresses an
-assistant calls. No line should be red before you connect an assistant.
+outside: certificate, SSL setting, friendly URLs, location, the addresses an
+assistant calls and the sign-in page where you approve it. No line should be red
+before you connect an assistant.
 
 ---
 
@@ -78,13 +79,17 @@ assistant calls. No line should be red before you connect an assistant.
    Do not unzip it.
 2. In your back office, open **Modules > Module Manager**, click
    **Upload a module** and drop the zip, then **Configure**.
-3. Copy **the address to give to your assistant** - it looks like
+3. In the **Access and security** tab, turn on **Consent page** - it is off
+   unless you are connecting an assistant.
+4. Copy **the address to give to your assistant** - it looks like
    `https://your-shop.example/module/somcp/mcp` - and paste it into Claude,
    ChatGPT or another assistant
    ([where to paste it](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant)).
 
-The first time, the assistant opens your back office: you sign in and approve
-what it may do. That's it. Step by step with screenshots:
+The first time, the assistant opens a page of your shop: you sign in with your
+back office email and password, type the code e-mailed to you, check where the
+answer goes, and approve what it may do. Then turn **Consent page** off again:
+the assistant keeps working. Step by step with screenshots:
 [Installation](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Installation).
 
 ---
@@ -147,6 +152,9 @@ Where to paste the address in each of them:
 - **No password and no all-powerful API key.** Assistants sign in with
   OAuth 2.1, and every connection can be withdrawn in one click from the
   module.
+- **A connection takes your password and a code by e-mail**, on a page that
+  stays closed - the shop's "page not found" - until you open it in **Access
+  and security > Consent page**.
 - **You choose what is offered.** Each tool and prompt, or a whole group of
   them such as **Orders - changes**, can be switched off for connected
   assistants, for the built-in assistant, or both. A group switched off also
@@ -360,6 +368,19 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_check_ai_crawler_access` | ● Check whether AI crawlers can read the shop | SEO & URLs › view |
 | `somcp_audit_store_policies` | ● Audit the store policy pages | Pages › view |
 | `somcp_get_llms_txt` | ● Read the llms.txt file | SEO & URLs › view |
+| `somcp_generate_llms_txt` | ✎ Generate the llms.txt file | SEO & URLs › add, edit, delete |
+
+### 🛒 Sales
+
+| Tool | What it does | Needs, in Team › Permissions |
+|---|---|---|
+| `somcp_list_abandoned_carts` | ● List abandoned carts | Shopping Carts › view |
+| `somcp_list_search_terms` | ● List shop search terms | Stats › view |
+| `somcp_list_viewed_not_sold` | ● List products viewed but not sold | Stats › view |
+| `somcp_list_unsold_products` | ● List products never purchased | Stats › view |
+| `somcp_list_cart_rules` | ● List cart rules | Cart Rules › view |
+| `somcp_get_cart_rule` | ● Get a cart rule | Cart Rules › view |
+| `somcp_create_cart_rule` | ✎ Create a cart rule | Cart Rules › add |
 
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
 language and currency it is connected to.
@@ -376,7 +397,8 @@ the page you are on first, and all of them from the **+** of its field.
 
 - **Documentation:** the [wiki](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
   covers requirements, installation, settings, each assistant and the built-in
-  assistant.
+  assistant. The same guide comes as a PDF, `readme_en.pdf`, with every
+  [release](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest).
 - **A bug or an idea:** open an [issue](https://github.com/novalo-dev/Prestashop-MCP-Server/issues).
 - **Installation, setup or a tool made for your shop:** [Novalo](https://novalo.fr).
 - **What changed in each version:** [CHANGELOG.md](CHANGELOG.md).

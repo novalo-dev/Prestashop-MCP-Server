@@ -1,10 +1,11 @@
 # O'So MCP Server - Novalo
 #
-# The back office entry point of the authorization flow, on PrestaShop 9.
+# The back office entry point of the deposit screen, on PrestaShop 9.
 #
 # The name begins with api_ because TokenizedUrlsListener skips those, and that
-# listener is what demanded a Symfony token a front controller cannot produce -
-# the "token compromised" screen an already signed-in employee used to meet.
+# listener is what demanded a Symfony token an address handed out by an
+# assistant cannot carry - the "token compromised" screen an already signed-in
+# employee used to meet.
 #
 # No condition on the route, deliberately: a condition is evaluated against a
 # request built from the path alone when PrestaShop works out the shop context,
@@ -13,22 +14,9 @@
 #
 # The path is stated without the /modules prefix, which YamlModuleLoader adds by
 # itself, and tolerates a trailing slash because the path reaching the router
-# carries one.
-api_somcp_consent:
-  path: /somcp/consent{trailingSlash}
-  requirements:
-    trailingSlash: '/?'
-  defaults:
-    trailingSlash: ''
-  methods: [GET]
-  # The method is named, not left to the invokable shorthand: PrestaShop 9.1.0
-  # splits _controller on "::" to look for its shop-context attribute, and a
-  # single-part value makes that split fail.
-  controller: Novalo\Somcp\Controller\ConsentEntryController::__invoke
-
-# The door into the deposit screen, same shape and same reasons as the one
-# above: api_ so the token listener leaves it alone, no condition, and the
-# trailing slash tolerated because the path reaching the router carries one.
+# carries one. The controller method is named, not left to the invokable
+# shorthand: PrestaShop 9.1.0 splits _controller on "::" to look for its
+# shop-context attribute, and a single-part value makes that split fail.
 api_somcp_upload:
   path: /somcp/upload{trailingSlash}
   requirements:

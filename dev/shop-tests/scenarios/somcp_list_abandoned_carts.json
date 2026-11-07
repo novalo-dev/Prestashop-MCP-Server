@@ -1,0 +1,16 @@
+{
+  "calls": [
+    {"why": "the abandoned carts by the back office rule, whatever the age of the demo carts on a fresh install", "arguments": {}, "expect": "ok", "contains": ["\"carts\"", "\"returned\"", "\"total_count\"", "\"offset\": 0", "\"older_than_hours\": 24", "\"total_value_tax_incl\"", "\"total_value_complete\": true", "\"language\""]},
+    {"why": "a shorter age, carts of customer accounts only, one page of five", "arguments": {"older_than_hours": 1, "with_customer": true, "limit": 5}, "expect": "ok", "contains": ["\"older_than_hours\": 1", "\"carts\""]},
+    {"why": "carts without a customer whose visitor is not online", "arguments": {"with_customer": false, "online": false}, "expect": "ok", "contains": ["\"carts\""]},
+    {"why": "a customer name nobody has: nothing listed, not an error", "arguments": {"customer_name": "Nobody Somcpzz"}, "expect": "ok", "contains": ["\"total_count\": 0", "\"returned\": 0"]},
+    {"why": "a period with no cart: an empty list and an empty total", "arguments": {"date_from": "2000-01-01", "date_to": "2000-01-31"}, "expect": "ok", "contains": ["\"total_count\": 0", "\"total_value_tax_incl\": {}"]},
+    {"why": "product names in a language asked by its ISO code", "arguments": {"language": "en", "offset": 0}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["language: not a language of this shop"]},
+    {"why": "an age below one hour is refused", "arguments": {"older_than_hours": 0}, "expect": "error", "contains": ["older_than_hours: a whole number of hours, 1 at least"]},
+    {"why": "a date that does not exist is refused, not ignored", "arguments": {"date_from": "2026-13-01"}, "expect": "error", "contains": ["date_from: a date, YYYY-MM-DD"]},
+    {"why": "a period that ends before it starts is refused", "arguments": {"date_from": "2026-02-01", "date_to": "2026-01-01"}, "expect": "error", "contains": ["date_to: a date not before date_from"]},
+    {"why": "more than 100 carts at once is refused", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1}, "expect": "error", "contains": ["foo: not a field of this tool", "offset: a whole number, 0 at least"]}
+  ]
+}

@@ -54,7 +54,7 @@ abstract class SomcpSettingsController extends ModuleAdminController
     /**
      * The permission slug of this controller, unchanged from the parent.
      *
-     * Declared for the same reason as on the consent screen: PrestaShop 9 works
+     * Declared because PrestaShop 9 works
      * out whether a legacy controller carries its own rules by reflecting on
      * THIS method, not on viewAccess. Without it, viewAccess below is never
      * consulted.

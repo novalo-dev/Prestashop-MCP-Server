@@ -1,0 +1,11 @@
+Hallo,
+
+{client_name} wurde soeben von {employee_email} mit {connected_shop} verbunden, am {connected_at}.
+
+Seine Antworten werden gesendet an: {return_host}
+
+Wenn Sie diese Verbindung nicht erwartet haben, trennen Sie sie jetzt im Modul im Tab Verbundene Assistenten und ändern Sie das Passwort dieses Kontos.
+
+--
+{shop_name} - {shop_url}
+Sie erhalten diese E-Mail, weil ein Assistent mit Ihrem Shop verbunden wurde. Sie wird jedes Mal an den Mitarbeiter gesendet, der die Verbindung freigegeben hat, an die Adresse des Shops und an die Super-Administratoren.

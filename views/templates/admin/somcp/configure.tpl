@@ -372,17 +372,18 @@
 
                 <hr>
                 <h4>{l s='OAuth 2.1' d='Modules.Somcp.Admin'}</h4>
-                <div class="form-group">
-                    <label class="control-label col-lg-4">{l s='Accept new connections' d='Modules.Somcp.Admin'}</label>
+                <div class="form-group" id="somcp-consent-page">
+                    <label class="control-label col-lg-4">{l s='Consent page' d='Modules.Somcp.Admin'}</label>
                     <div class="col-lg-8">
-                        {include file='./_inherit.tpl' field='SOMCP_OAUTH_ENABLED'}
+                        {include file='./_inherit.tpl' field='SOMCP_CONSENT_PAGE'}
                         <span class="switch prestashop-switch fixed-width-lg">
-                            <input type="radio" name="SOMCP_OAUTH_ENABLED" id="SOMCP_OAUTH_ENABLED_on" value="1"{if $somcp_settings.SOMCP_OAUTH_ENABLED === '1'} checked{/if}>
-                            <label for="SOMCP_OAUTH_ENABLED_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
-                            <input type="radio" name="SOMCP_OAUTH_ENABLED" id="SOMCP_OAUTH_ENABLED_off" value="0"{if $somcp_settings.SOMCP_OAUTH_ENABLED !== '1'} checked{/if}>
-                            <label for="SOMCP_OAUTH_ENABLED_off">{l s='No' d='Modules.Somcp.Admin'}</label>
+                            <input type="radio" name="SOMCP_CONSENT_PAGE" id="SOMCP_CONSENT_PAGE_on" value="1"{if $somcp_settings.SOMCP_CONSENT_PAGE === '1'} checked{/if}>
+                            <label for="SOMCP_CONSENT_PAGE_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
+                            <input type="radio" name="SOMCP_CONSENT_PAGE" id="SOMCP_CONSENT_PAGE_off" value="0"{if $somcp_settings.SOMCP_CONSENT_PAGE !== '1'} checked{/if}>
+                            <label for="SOMCP_CONSENT_PAGE_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
+                        <p class="help-block">{l s='The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
@@ -466,7 +467,7 @@
                                 <button type="button" class="somcp-tag-suggest" data-somcp-host="{$somcp_host|escape:'html':'UTF-8'}">+ {$somcp_host|escape:'html':'UTF-8'} <span class="text-muted">{$somcp_client|escape:'html':'UTF-8'}</span></button>
                             {/foreach}
                         </p>
-                        <p class="help-block">{l s='Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.' d='Modules.Somcp.Admin'}</p>
+                        <p class="help-block">{l s='Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 

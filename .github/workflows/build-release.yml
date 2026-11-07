@@ -231,6 +231,25 @@ jobs:
           echo "| Tools and prompts | $(tail -1 /tmp/tools.txt) |" >> "$GITHUB_STEP_SUMMARY"
           printf 'Tools and prompts\t%s\n' "$(tail -1 /tmp/tools.txt | cut -c1-70)" >> "$CHECKS"
 
+      # The user guide, readme_<iso>.pdf, built from docs/guide/<iso>.md and
+      # attached to the release beside the zip - not put in it - so the PDF
+      # of a release always describes that release.
+      - name: User guide
+        id: guide
+        run: |
+          python3 -m pip install --quiet --break-system-packages markdown pypdf playwright
+          python3 -m playwright install --with-deps chromium > /dev/null
+          mkdir -p /tmp/guide
+          LIST=""
+          for md in docs/guide/*.md; do
+            ISO=$(basename "$md" .md)
+            python3 dev/guide/build.py "$ISO" "/tmp/guide/readme_$ISO.pdf"
+            LIST="$LIST readme_$ISO.pdf"
+          done
+          [ -f /tmp/guide/readme_en.pdf ] || { echo "::error::readme_en.pdf, which Addons requires, was not built"; exit 1; }
+          echo "| User guide |$LIST |" >> "$GITHUB_STEP_SUMMARY"
+          printf 'User guide\t%s\n' "$LIST" >> "$CHECKS"
+
       # --prefix is what makes the archive installable: PrestaShop takes the
       # module's technical name from the folder inside the zip.
       # export-ignore in .gitattributes keeps the repository plumbing out.
@@ -368,7 +387,8 @@ jobs:
             --title "O'So MCP Server ${{ needs.guard.outputs.number }}" \
             --notes-file NOTES.md \
             "${{ steps.build.outputs.name }}" \
-            "${{ steps.report.outputs.name }}")
+            "${{ steps.report.outputs.name }}" \
+            /tmp/guide/readme_*.pdf)
           {
             echo "| Published | ${{ needs.guard.outputs.tag }} on \`$(git rev-parse --short HEAD)\` |"
             echo ""

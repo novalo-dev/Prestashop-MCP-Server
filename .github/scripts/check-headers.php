@@ -58,8 +58,14 @@ const STYLES = [
 ];
 
 // Third-party code, generated files and the documentation's own examples,
-// which show a module that is not this one.
-const SKIPPED = ['vendor', 'node_modules', 'docs', 'dev/tools/vendor'];
+// which show a module that is not this one. views/js/altcha is the ALTCHA
+// widget as its authors publish it, with its own MIT licence beside it.
+const SKIPPED = ['vendor', 'node_modules', 'docs', 'dev/tools/vendor', 'views/js/altcha'];
+
+// Shipped third-party files carry their own licence, but the Addons validator
+// still wants a licence header at the top of every file of the package: these
+// need one naming theirs, checked below.
+const THIRD_PARTY = ['views/js/altcha'];
 
 $args = array_slice($argv, 1);
 $fix = in_array('--fix', $args, true);
@@ -141,6 +147,24 @@ foreach ($files as $file) {
         $body = $replacing ? ltrim(substr(ltrim($rest), strlen(ltrim($first))), "\n") : ltrim($rest, "\n");
         file_put_contents($path, $prefix . $header . (trim($body) === '' ? '' : $body));
         ++$fixed;
+    }
+}
+
+// Not given the module's header, which would claim them: their first comment
+// must name their own licence.
+foreach (THIRD_PARTY as $folder) {
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/' . $folder, FilesystemIterator::SKIP_DOTS)) as $file) {
+        if (!isset(STYLES[strtolower($file->getExtension())])) {
+            continue;
+        }
+        ++$checked;
+        $content = (string) file_get_contents($file->getPathname());
+        $start = strpos($content, '/*');
+        $end = $start === false ? false : strpos($content, '*/', $start);
+        $lead = $start === false ? '' : trim(substr($content, 0, $start));
+        if ($end === false || !in_array($lead, ['', '<?php'], true) || stripos(substr($content, $start, $end - $start), '@license') === false) {
+            $problems[] = substr($file->getPathname(), strlen($root) + 1) . ': no licence header naming its own licence';
+        }
     }
 }
 

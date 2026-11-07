@@ -173,23 +173,10 @@ class SomcpToolListBestSellers
         // gets 0 rather than a negative rate.
         $days = '(1 + LEAST(TO_DAYS(' . $end . '), TO_DAYS(NOW())) - GREATEST(TO_DAYS(' . $start . '), TO_DAYS(ps.`date_add`)))';
 
-        // Page views are saved by statsdata per day range; the screen keeps
-        // the ranges that lie inside the period.
-        $pageViews = '(SELECT IFNULL(SUM(pv.`counter`), 0)
-                FROM `' . _DB_PREFIX_ . 'page` pa
-                INNER JOIN `' . _DB_PREFIX_ . 'page_type` pt ON pt.`id_page_type` = pa.`id_page_type`
-                INNER JOIN `' . _DB_PREFIX_ . 'page_viewed` pv ON pv.`id_page` = pa.`id_page` AND pv.`id_shop` = ' . $idShop . '
-                INNER JOIN `' . _DB_PREFIX_ . 'date_range` dr ON dr.`id_date_range` = pv.`id_date_range`
-                WHERE pa.`id_object` = p.`id_product` AND pt.`name` = \'product\'
-                    AND dr.`time_start` BETWEEN ' . $start . ' AND ' . $end . '
-                    AND dr.`time_end` BETWEEN ' . $start . ' AND ' . $end . ')';
-
-        // The total quantity sits on the row without a combination; whether it
-        // belongs to the shop or to its group depends on stock sharing, which
-        // the core decides.
-        $stock = '(SELECT sa.`quantity` FROM `' . _DB_PREFIX_ . 'stock_available` sa
-                WHERE sa.`id_product` = p.`id_product` AND sa.`id_product_attribute` = 0'
-                . (string) StockAvailable::addSqlShopRestriction(null, $shop, 'sa') . ' LIMIT 1)';
+        // Page views and stock are read the same way by every stats tool:
+        // one shared function builds each subquery rather than a second copy.
+        $pageViews = SomcpStats::pageViewsSubquery($idShop, $start, $end, 'p.`id_product`');
+        $stock = SomcpStats::productStockSubquery($shop, 'p.`id_product`');
 
         $rows = $db->executeS(
             'SELECT p.`id_product`, p.`reference`,

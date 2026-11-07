@@ -89,6 +89,12 @@ class SomcpScope
     /** @var string Acting on how the shop runs: clearing its cache. */
     public const SYSTEM_WRITE = 'mcp.system.write';
 
+    /** @var string Reading where sales are lost: abandoned carts, searches, product views and promotions. */
+    public const SALES_READ = 'mcp.sales.read';
+
+    /** @var string Acting on promotions: creating and changing cart rules and catalogue price rules. */
+    public const SALES_WRITE = 'mcp.sales.write';
+
     /**
      * The scopes this module owns.
      *
@@ -96,7 +102,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ, self::SYSTEM_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ, self::SYSTEM_WRITE, self::SALES_READ, self::SALES_WRITE];
     }
 
     /**
@@ -155,11 +161,10 @@ class SomcpScope
      * grant what they do not have.
      *
      * @param int $idEmployee
-     * @param int|null $idShop the shop the assistant is being connected to. The
-     *                         consent screen runs in the back office, where the
-     *                         shop in context is whichever one the administrator
-     *                         is working on and not the one being connected, so
-     *                         it names it rather than letting it be guessed.
+     * @param int|null $idShop the shop the assistant is being connected to,
+     *                         named rather than taken from the context: the
+     *                         request may have been made on another shop than
+     *                         the one in context, so it is not guessed
      * @param bool $chat true for the built-in assistant, which reads its own
      *                   list of tools switched off
      *
@@ -297,6 +302,10 @@ class SomcpScope
                 return $module->l10n('Performance - read');
             case self::SYSTEM_WRITE:
                 return $module->l10n('Performance - changes');
+            case self::SALES_READ:
+                return $module->l10n('Sales - read');
+            case self::SALES_WRITE:
+                return $module->l10n('Sales - changes');
             default:
                 // Another module's scope comes with the label it declared,
                 // already in the merchant's language.
@@ -413,6 +422,10 @@ class SomcpScope
                 return $module->l10n('Read how this shop runs: its performance settings, cache and debug mode');
             case self::SYSTEM_WRITE:
                 return $module->l10n('Clear the cache of this shop and of every shop of the installation, which slows them until it rebuilds');
+            case self::SALES_READ:
+                return $module->l10n('Read abandoned carts, searches, product views and promotions');
+            case self::SALES_WRITE:
+                return $module->l10n('Create and change cart rules and catalogue price rules');
             case self::ACCESS:
                 return $module->l10n(
                     'Connect to this shop, see the list of available tools, and read your account details'

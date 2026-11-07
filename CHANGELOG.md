@@ -14,6 +14,232 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## 1.3.0 - 2026-11-07
+
+**Your assistants have to be connected again after this update.** Every
+connection made so far was approved on a page that asked for a password alone,
+and none of them is kept. To connect an assistant again: turn on **Consent
+page** in the **Access and security** tab of the module, connect the assistant
+from Claude, ChatGPT or wherever you use it, then turn the page off again. The
+diagnostic shows when the page is off, with a link to the switch.
+
+### Added
+
+**A user guide in PDF.** `readme_en.pdf`, attached to each release:
+requirements, installation, each settings tab, connecting an assistant step by
+step and the built-in assistant, with the path of every button and switch.
+
+**Create a voucher or a cart discount.** The new tool `somcp_create_cart_rule`
+creates one rule of **Catalog > Discounts > Cart Rules**, with the fields of the
+**Information**, **Conditions** and **Actions** tabs: the name in each language,
+the code (or none, for a discount applied on its own), the validity dates, a
+single customer, the minimum amount, the quantities, free shipping, a percent
+or an amount off the order, a product, the cheapest product or the selected
+products, and a free gift. It refuses what the back office refuses, a code
+already used or a rule that gives nothing among them, and a gift with required
+customization fields on PrestaShop 8 as on 9. As on screen, a discount on one
+product limits the rule to carts that hold it, and the rules that restrict
+their compatibility accept the new one. The rule is created switched off unless
+asked otherwise, so the merchant reads it before customers can use it;
+restrictions stay in the back office. It joins the **Boost sales** prompt,
+needs the `add` right on **Cart Rules** and the new **Sales - changes** access.
+
+**Read one cart rule in full.** The new tool `somcp_get_cart_rule` gives every
+field of a rule as the three tabs **Information**, **Conditions** and
+**Actions** of **Catalog > Discounts > Cart Rules > Edit** show it: the name in
+each language, the code, the validity dates, the minimum amount with its
+currency, tax and shipping, the quantities, each restriction (countries,
+carriers, customer groups, other cart rules, product selection, stores) with
+the names of what it is limited to, and what the rule gives, in the same
+words as the list. Read only, the current shop's rules only. It joins the
+**Boost sales** prompt and needs the `view` right on **Cart Rules**.
+
+**List the shop's vouchers and cart discounts.** The new tool
+`somcp_list_cart_rules` lists the cart rules of **Catalog > Discounts > Cart
+Rules**, newest first, telling vouchers with a code from discounts applied on
+their own, with what each one gives in one line: the discount, free shipping,
+a free gift, how many uses are left, whether it has conditions to read, and
+the number of orders that already used it. Read only, the current shop's rules
+only. It joins the **Boost sales** prompt and needs the `view` right on **Cart
+Rules**.
+
+**Find the stock that never sells.** The new tool `somcp_list_unsold_products`
+lists the active products of the shop that no valid order bought, as
+**Products never purchased** on **Stats > Catalog statistics**, with what the
+screen does not show: the quantity for sale, the cost price and what that
+stock is worth, the costliest first, and the date each product last sold. With
+no period it counts every order ever, as the screen; with one, the products
+not bought in it. It reads the orders of the current shop only, joins the
+**Boost sales** prompt and needs the `view` right on **Stats**.
+
+**Spot the products that are looked at but not bought.** The new tool
+`somcp_list_viewed_not_sold` lists the products of the shop with their page
+views and what they sold over a period, most viewed first, as **Stats >
+Product details** shows one product at a time: Total Viewed, Total bought and
+the conversion rate side by side, so the products that draw interest and miss
+the sale stand out. Page views are counted only when **Save global page views**
+is on in the **Data mining for statistics** module; when it is off the answer
+says so rather than reading as nobody looked. It joins the **Boost sales**
+prompt and needs the `view` right on **Stats**.
+
+**See what visitors search for on the shop.** The new tool
+`somcp_list_search_terms` lists what visitors typed in the shop's search box
+over a period, as **Stats > Shop search**: for each term, how many times it was
+searched and the most products it found. As on that page, only the terms
+searched more than once are listed unless asked otherwise, and it can keep only
+the searches that found nothing - what visitors looked for and the catalogue
+does not have. When the **Shop search** module is not active the answer says
+so, instead of an empty list that would read as nobody searched. It joins the
+**Boost sales** prompt and needs the `view` right on **Stats**.
+
+**Write an llms.txt for the shop.** The tool `somcp_generate_llms_txt` writes
+an llms.txt at the root of the shop, the plain text summary some AI tools read
+at the root of a site, from the shop's own data: its name, a summary written
+with the merchant, the main categories, the policy and information pages and
+the contact page, in the language asked for. A file the merchant wrote by hand
+is replaced only when asked, and a shop whose root is not writable is told so
+without anything being changed.
+
+**See the carts that never became an order.** The new tool
+`somcp_list_abandoned_carts` lists the carts that hold products and were left
+without an order, newest first, with the same rule as the **Abandoned cart**
+rows of **Orders > Shopping Carts**: no order, created more than 24 hours ago.
+For each cart it gives the customer's name, whether the visitor is still on the
+shop, the carrier, the products total tax excluded and included, and the three
+most expensive products left in it, plus the total value of every matching cart
+per currency. It can be narrowed to a period, to the carts of customer accounts
+or without one, to a customer's name or to the visitors online. Nothing is sent
+to anyone, no email, phone or address is given, and the **Share this cart**
+link never leaves the shop. It opens the **Boost sales** prompt and needs the
+new permission `mcp.sales.read`, which the consent screen describes as reading
+abandoned carts, searches, product views and promotions, and the `view` right
+on **Orders > Shopping Carts**.
+
+**The diagnostic checks the sign-in page.** A new line, **Sign-in page**,
+opens the page where you approve an assistant, as your browser would, and turns
+red when something else answers in its place - typically another module that
+sends visitors without an account to a login, an age check or a country page.
+Left unnoticed, the assistant would wait on a page you never see.
+
+### Changed
+
+**Shorter audit and sales tools.** Four tools that went a little over the
+length agreed for a tool description - the CMS pages SEO audit, the product
+completeness audit for answer engines, the llms.txt generator and the list of
+products viewed but not sold - now describe themselves in a few sentences,
+lighter for the assistant on every step. What matters is kept: the names of
+every check and figure, that a hand-written llms.txt is replaced only once you
+agree, that it is never retried blindly, and which tool to use instead.
+
+**A recorded payment now names who took it.** The answer of
+`somcp_add_order_payment`, and each payment of `somcp_get_order`, now report
+the employee who recorded the payment on PrestaShop 9, as the **Employee**
+column of the **Payment** block shows it (nothing on PrestaShop 8, which has no
+such column). The payment method is best given as the name of the shop's
+payment module, so the Payment table and the order read the same method.
+
+**Shorter attribute tools.** The seven tools of Catalog > Attributes &
+Features > Attributes - list, read, create and change the attribute groups and
+their values - now describe themselves in a few sentences, lighter for the
+assistant on every step. What matters is kept: that a group or a value is taken
+from the list and never guessed, that each field says whether you or the
+assistant fill it, that a new name, public name, type or colour shows on every
+product page or combination using it and is confirmed with you first, that a
+value used by a combination cannot move to another group, and which read
+checks a change.
+
+### Fixed
+
+**robots.txt is no longer rewritten on a shop in demo mode.** The tool
+`somcp_generate_robots_txt` now refuses, with nothing changed, on a shop that
+runs in demo mode, as the **Generate robots.txt file** button of **Shop
+Parameters > Traffic & SEO** does.
+
+**The zip passes the PrestaShop Addons validator again.** A folder added in
+this version had no `index.php`, and the anti-robot widget's script had no
+licence header at its top. Both are in place.
+
+### Security
+
+**A page to approve assistants that only opens when you open it.** The page
+where an employee signs in and approves a new assistant is now off unless you
+turn on **Consent page** in **Access and security**, and while it is off every
+link to it is the shop's ordinary "page not found" - including one somebody
+sends you to have you approve their own assistant. Turn it on for the minutes
+you connect one: the assistants already connected keep working with it off.
+
+**A code by e-mail after the password.** Once the password is accepted, the
+page asks for a 6-digit code e-mailed to that employee. A code works once and
+for ten minutes, a new one can be asked for after 30 seconds and a third after
+45 more, and there is no fourth: once the third is mistyped five times or
+expires, the connection is closed and has to be started again from the
+assistant. A stolen password alone no longer connects anything, and an
+employee who receives a code they did not ask for knows their password is out.
+
+**Only the assistants you allow can be connected.** The list of allowed return
+addresses (**Access and security** tab of the module, **Only allow these return
+addresses**) is now filled in on a new shop with the assistants the module works
+with - Claude, ChatGPT, Le Chat, Make, n8n Cloud, VS Code and Cursor - and an
+empty list now refuses them all, where it used to accept any address. The list
+is also checked each time someone signs in, not only when an application
+registers, so taking a host off the list cuts it off at once. A connection link
+that points anywhere else opens the shop's ordinary "page not found". Desktop
+assistants and coding agents, which answer on your own computer, are still
+always allowed. On update, an empty list is filled with the same assistants plus
+those already connected to your shop, so nothing you use stops working.
+
+**Connecting an assistant happens on a page of your shop.** When an assistant
+asks to connect, a page of the shop itself now asks for your back office email
+and password, then shows what the assistant will be able to do and, in large
+letters, the address the answer will be sent to - the same page, without going
+through the back office. Only the account that signed in can approve, with its
+own rights, on the shop the assistant was sent to. A wrong password, an account
+switched off, a profile not allowed to connect assistants or an account not
+attached to that shop all get the same message, and the real reason is written
+in the module's log. The page carries the module's logo, fits a phone as well as
+a computer, keeps the **Refuse** and **Allow** buttons in reach however long the
+list of what the assistant may do, and sets apart what it may change from what
+it may only read.
+
+**Fewer ways for a robot to try its luck.** The sign-in page of a connection
+now has an "I'm not a robot" box, a proof of work your browser solves in about a
+second - no image to read, nothing sent to another company, nothing to set up.
+Each failed sign-in makes the next box longer to solve, up to about ten seconds.
+After five failed sign-ins, the address they come from is blocked for fifteen
+minutes, even with the right password; after ten on one account, from any
+addresses, that account is blocked on this page for fifteen minutes too, so
+changing proxy for each guess gains nothing. Your back office login is not
+affected. On a shop behind a proxy or Cloudflare, the visitor's real address is
+the one counted, not one they wrote in a header. An address that sends too many
+connection requests, or registers too many applications in an hour, is turned
+away for a while too.
+
+**An e-mail each time an assistant is connected.** It goes to the employee who
+approved the connection and to the shop's address, with the super
+administrators in blind copy, and says which assistant, by whom, when, and where
+its answers are sent - so a connection nobody expected is noticed at once and
+can be removed from the **Connected assistants** tab. It is written in the
+shop's default language when the module speaks it (English, French, Spanish,
+German), in English otherwise, and it is listed with the shop's other e-mails,
+so you can reword it.
+
+**The module's machine addresses stay out of sight.** The addresses meant for
+assistants and for O'So AI Relay (sign-in tokens, discovery documents, relay)
+now show the shop's ordinary "page not found" when someone opens them in a
+browser, as the main assistant address already did. Assistants and the relay
+are not affected. The page where you approve an assistant does the same when it
+is opened without a real connection request - by hand, for an unknown
+application or with a return address off the list.
+
+### Removed
+
+**The "Accept new connections" switch.** Off, it did more than its name said:
+it also stopped the assistants already connected from renewing their access,
+so they dropped within the hour. New connections are now the **Consent page**
+switch's job, and **Enable the MCP server** stops everything at once. A shop
+that had it off gets the MCP server switched off on update, so it stays closed
+to assistants.
+
 ## 1.2.2 - 2026-11-05
 
 ### Added

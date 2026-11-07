@@ -45,26 +45,122 @@ T = {
  "Réglages enregistrés.",
  "Ajustes guardados.",
  "Einstellungen gespeichert."),
-"Nothing to approve": (
- "Rien à autoriser",
- "Nada que autorizar",
- "Nichts freizugeben"),
 "This connection request has expired or has already been answered. Start the connection again from your assistant.": (
  "Cette demande de connexion a expiré ou a déjà reçu une réponse. Relancez la connexion depuis votre assistant.",
  "Esta solicitud de conexión ha caducado o ya ha sido respondida. Vuelva a iniciar la conexión desde su asistente.",
  "Diese Verbindungsanfrage ist abgelaufen oder wurde bereits beantwortet. Starten Sie die Verbindung erneut aus Ihrem Assistenten."),
-"The application behind this request is no longer known to the shop.": (
- "L'application à l'origine de cette demande n'est plus connue de la boutique.",
- "La aplicación que originó esta solicitud ya no es conocida por la tienda.",
- "Die Anwendung hinter dieser Anfrage ist dem Shop nicht mehr bekannt."),
+"Sign in with your back office account to see what it asks for and answer.": (
+ "Connectez-vous avec votre compte du back-office pour voir ce qu'elle demande et répondre.",
+ "Inicie sesión con su cuenta del back office para ver lo que solicita y responder.",
+ "Melden Sie sich mit Ihrem Backoffice-Konto an, um zu sehen, was sie anfragt, und zu antworten."),
+"Email address": (
+ "Adresse e-mail",
+ "Dirección de correo electrónico",
+ "E-Mail-Adresse"),
+"Password": (
+ "Mot de passe",
+ "Contraseña",
+ "Passwort"),
+"Sign in": (
+ "Se connecter",
+ "Iniciar sesión",
+ "Anmelden"),
+"These sign-in details are not accepted.": (
+ "Ces identifiants ne sont pas acceptés.",
+ "Estos datos de acceso no se aceptan.",
+ "Diese Anmeldedaten werden nicht akzeptiert."),
+"Answers will be sent to": (
+ "Les réponses seront envoyées à",
+ "Las respuestas se enviarán a",
+ "Antworten werden gesendet an"),
+"Only continue if this address belongs to the assistant you are connecting yourself. If you did not start this connection, close this page.": (
+ "Ne continuez que si cette adresse appartient à l'assistant que vous êtes vous-même en train de connecter. Si vous n'avez pas lancé cette connexion, fermez cette page.",
+ "Continúe solo si esta dirección pertenece al asistente que usted mismo está conectando. Si no ha iniciado esta conexión, cierre esta página.",
+ "Fahren Sie nur fort, wenn diese Adresse zu dem Assistenten gehört, den Sie selbst gerade verbinden. Wenn Sie diese Verbindung nicht gestartet haben, schließen Sie diese Seite."),
+"Sending a file to an assistant": (
+ "Envoi d'un fichier à un assistant",
+ "Envío de un archivo a un asistente",
+ "Senden einer Datei an einen Assistenten"),
+"The page where you send a file to an assistant can be reached.": (
+ "La page où vous envoyez un fichier à un assistant est accessible.",
+ "La página en la que envía un archivo a un asistente es accesible.",
+ "Die Seite, auf der Sie einem Assistenten eine Datei senden, ist erreichbar."),
+"Too many attempts. Wait 15 minutes, then try again.": (
+ "Trop de tentatives. Attendez 15 minutes, puis réessayez.",
+ "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.",
+ "Zu viele Versuche. Warten Sie 15 Minuten und versuchen Sie es dann erneut."),
+"A new assistant is connected to your shop": (
+ "Un nouvel assistant est connecté à votre boutique",
+ "Un nuevo asistente está conectado a su tienda",
+ "Ein neuer Assistent ist mit Ihrem Shop verbunden"),
+"Consent page": (
+ "Page de consentement",
+ "Página de consentimiento",
+ "Freigabeseite"),
+"The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.": (
+ "La page où un employé se connecte et autorise un nouvel assistant. Activez-la le temps d'en connecter un, puis désactivez-la : les assistants déjà connectés continuent de fonctionner, et tant qu'elle est désactivée, un lien que quelqu'un vous envoie ne mène nulle part.",
+ "La página en la que un empleado inicia sesión y autoriza a un nuevo asistente. Actívela mientras conecta uno y desactívela después: los asistentes ya conectados siguen funcionando y, mientras esté desactivada, un enlace que alguien le envíe no lleva a ninguna parte.",
+ "Die Seite, auf der sich ein Mitarbeiter anmeldet und einen neuen Assistenten freigibt. Schalten Sie sie ein, während Sie einen verbinden, und danach wieder aus: Bereits verbundene Assistenten funktionieren weiter, und solange sie aus ist, führt ein Link, den Ihnen jemand schickt, ins Leere."),
+"Switched off: no new assistant can be connected, and this address is the shop's \"page not found\". Turn on the consent page in Access and security while you connect one. The assistants already connected keep working.": (
+ "Désactivée : aucun nouvel assistant ne peut être connecté, et cette adresse affiche la page « introuvable » de la boutique. Activez la page de consentement dans Accès et sécurité le temps d'en connecter un. Les assistants déjà connectés continuent de fonctionner.",
+ "Desactivada: no se puede conectar ningún asistente nuevo y esta dirección muestra la página «no encontrada» de la tienda. Active la página de consentimiento en Acceso y seguridad mientras conecta uno. Los asistentes ya conectados siguen funcionando.",
+ "Ausgeschaltet: Es kann kein neuer Assistent verbunden werden, und diese Adresse zeigt die Seite „nicht gefunden“ des Shops. Schalten Sie die Freigabeseite unter Zugang und Sicherheit ein, während Sie einen verbinden. Bereits verbundene Assistenten funktionieren weiter."),
+"Your code to connect an assistant": (
+ "Votre code pour connecter un assistant",
+ "Su código para conectar un asistente",
+ "Ihr Code zum Verbinden eines Assistenten"),
+"Check your e-mail": (
+ "Vérifiez votre e-mail",
+ "Revise su correo",
+ "Prüfen Sie Ihre E-Mails"),
+"Enter the 6-digit code sent to": (
+ "Saisissez le code à 6 chiffres envoyé à",
+ "Introduzca el código de 6 cifras enviado a",
+ "Geben Sie den 6-stelligen Code ein, der gesendet wurde an"),
+"Verification code": (
+ "Code de vérification",
+ "Código de verificación",
+ "Bestätigungscode"),
+"Digit": (
+ "Chiffre",
+ "Cifra",
+ "Ziffer"),
+"Verify": (
+ "Valider",
+ "Validar",
+ "Bestätigen"),
+"The code works for %minutes% minutes and only once.": (
+ "Le code est valable %minutes% minutes et ne sert qu'une seule fois.",
+ "El código es válido durante %minutes% minutos y solo sirve una vez.",
+ "Der Code gilt %minutes% Minuten und nur ein einziges Mal."),
+"This code is not right.": (
+ "Ce code n'est pas le bon.",
+ "Este código no es correcto.",
+ "Dieser Code ist nicht richtig."),
+"This code no longer works. Ask for a new one.": (
+ "Ce code ne fonctionne plus. Demandez-en un nouveau.",
+ "Este código ya no funciona. Pida uno nuevo.",
+ "Dieser Code funktioniert nicht mehr. Fordern Sie einen neuen an."),
+"This is the last code: no other will be sent.": (
+ "C'est le dernier code : aucun autre ne sera envoyé.",
+ "Es el último código: no se enviará ningún otro.",
+ "Das ist der letzte Code: Es wird kein weiterer gesendet."),
+"Send a new code": (
+ "Renvoyer un code",
+ "Enviar un código nuevo",
+ "Neuen Code senden"),
+"Send a new code in %time%": (
+ "Renvoyer un code dans %time%",
+ "Enviar un código nuevo en %time%",
+ "Neuen Code senden in %time%"),
+"Every code of this connection has been used up. It is closed: start it again from your assistant.": (
+ "Tous les codes de cette connexion ont été utilisés. Elle est fermée : recommencez depuis votre assistant.",
+ "Se han agotado todos los códigos de esta conexión. Está cerrada: vuelva a empezar desde su asistente.",
+ "Alle Codes dieser Verbindung sind aufgebraucht. Sie ist geschlossen: Starten Sie sie erneut über Ihren Assistenten."),
 "Connect an assistant": (
  "Connecter un assistant",
  "Conectar un asistente",
  "Einen Assistenten verbinden"),
-"Your account is not allowed to connect assistants to this shop. Ask an administrator to change the required profile in the module settings.": (
- "Votre compte n'a pas le droit de connecter un assistant à cette boutique. Demandez à un administrateur de modifier le profil requis dans les réglages du module.",
- "Su cuenta no tiene permiso para conectar asistentes a esta tienda. Pida a un administrador que cambie el perfil requerido en los ajustes del módulo.",
- "Ihr Konto darf keine Assistenten mit diesem Shop verbinden. Bitten Sie einen Administrator, das erforderliche Profil in den Moduleinstellungen zu ändern."),
 "Identified by the description it publishes at that address": (
  "Identifiée par la description qu'elle publie à cette adresse",
  "Identificada por la descripción que publica en esa dirección",
@@ -85,10 +181,6 @@ T = {
  "Cette demande de connexion n'est pas valide : rien n'a été renvoyé à l'application qui l'a émise.",
  "Esta solicitud de conexión no es válida, por lo que no se ha devuelto nada a la aplicación que la hizo.",
  "Diese Verbindungsanfrage ist ungültig, daher wurde nichts an die anfragende Anwendung zurückgesendet."),
-"The module cannot find the administration area of this shop yet. Open the module settings once and save them, then try again.": (
- "Le module ne trouve pas encore l'administration de cette boutique. Ouvrez les réglages du module, enregistrez-les une fois, puis réessayez.",
- "El módulo aún no encuentra la administración de esta tienda. Abra los ajustes del módulo, guárdelos una vez y vuelva a intentarlo.",
- "Das Modul findet die Verwaltung dieses Shops noch nicht. Öffnen Sie einmal die Moduleinstellungen, speichern Sie sie und versuchen Sie es erneut."),
 "Connect to this shop, see the list of available tools, and read your account details and the shop configuration": (
  "Se connecter à cette boutique, voir la liste des outils disponibles, et lire les informations de votre compte ainsi que la configuration de la boutique",
  "Conectarse a esta tienda, ver la lista de herramientas disponibles y leer los datos de su cuenta y la configuración de la tienda",
@@ -217,14 +309,6 @@ T = {
  "Aller au réglage",
  "Ir al ajuste",
  "Zur Einstellung"),
-"Consent screen": (
- "Écran d'autorisation",
- "Pantalla de autorización",
- "Freigabe-Bildschirm"),
-"The consent screen can be reached from the authorization flow.": (
- "L'écran d'autorisation est joignable depuis le parcours de connexion.",
- "La pantalla de autorización es accesible desde el proceso de conexión.",
- "Der Freigabe-Bildschirm ist über den Verbindungsablauf erreichbar."),
 "The administration folder is not known yet. Save the settings once and this resolves itself.": (
  "Le dossier d'administration n'est pas encore connu. Enregistrez les réglages une fois et le problème disparaît.",
  "La carpeta de administración aún no se conoce. Guarde los ajustes una vez y esto se resuelve solo.",
@@ -273,6 +357,22 @@ T = {
  "Répond avec l'en-tête attendu, et les identifiants arrivent bien jusqu'au module.",
  "Responde con la cabecera esperada, y las credenciales llegan al módulo.",
  "Antwortet mit dem erwarteten Header, und die Anmeldedaten erreichen das Modul."),
+"Sign-in page": (
+ "Page de connexion",
+ "Página de inicio de sesión",
+ "Anmeldeseite"),
+"This page sends visitors elsewhere (%location%) instead of showing the sign-in form. Another module or a rule of the hosting redirects it, so no employee can approve an assistant. Exclude this address from that redirection.": (
+ "Cette page envoie les visiteurs ailleurs (%location%) au lieu d'afficher le formulaire de connexion. Un autre module ou une règle de l'hébergement la redirige : aucun employé ne peut donc autoriser un assistant. Excluez cette adresse de cette redirection.",
+ "Esta página envía a los visitantes a otro sitio (%location%) en lugar de mostrar el formulario de inicio de sesión. Otro módulo o una regla del alojamiento la redirige, así que ningún empleado puede autorizar a un asistente. Excluya esta dirección de esa redirección.",
+ "Diese Seite schickt Besucher woandershin (%location%), statt das Anmeldeformular anzuzeigen. Ein anderes Modul oder eine Regel des Hostings leitet sie um, sodass kein Mitarbeiter einen Assistenten freigeben kann. Nehmen Sie diese Adresse von dieser Umleitung aus."),
+"This page answered %status%, but not with the module's sign-in form. Something else on the shop answers this address in its place, so no employee can approve an assistant.": (
+ "Cette page a répondu %status%, mais pas avec le formulaire de connexion du module. Autre chose sur la boutique répond à sa place à cette adresse : aucun employé ne peut donc autoriser un assistant.",
+ "Esta página respondió %status%, pero no con el formulario de inicio de sesión del módulo. Otra cosa en la tienda responde en su lugar a esta dirección, así que ningún empleado puede autorizar a un asistente.",
+ "Diese Seite hat %status% geantwortet, aber nicht mit dem Anmeldeformular des Moduls. Etwas anderes im Shop beantwortet diese Adresse an seiner Stelle, sodass kein Mitarbeiter einen Assistenten freigeben kann."),
+"Shows the module's sign-in form.": (
+ "Affiche le formulaire de connexion du module.",
+ "Muestra el formulario de inicio de sesión del módulo.",
+ "Zeigt das Anmeldeformular des Moduls an."),
 "An application is asking to connect to your shop on your behalf.": (
  "Une application demande à se connecter à votre boutique en votre nom.",
  "Una aplicación solicita conectarse a su tienda en su nombre.",
@@ -433,10 +533,6 @@ T = {
  "OAuth 2.1",
  "OAuth 2.1",
  "OAuth 2.1"),
-"Accept new connections": (
- "Accepter les nouvelles connexions",
- "Aceptar nuevas conexiones",
- "Neue Verbindungen annehmen"),
 "Access token lifetime (seconds)": (
  "Durée de vie du jeton d'accès (secondes)",
  "Duración del token de acceso (segundos)",
@@ -497,10 +593,10 @@ T = {
  "N'autoriser que ces adresses de retour",
  "Permitir solo estas direcciones de retorno",
  "Nur diese Rückleitungsadressen zulassen"),
-"Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.": (
- "Saisissez un nom de domaine, par exemple claude.ai, puis appuyez sur Entrée. Laissez vide pour accepter toute adresse enregistrée par une application. Les assistants de bureau et les agents de code passent par votre propre ordinateur et sont toujours autorisés ; un n8n auto-hébergé demande d'ajouter son propre nom de domaine.",
- "Escriba un nombre de dominio, por ejemplo claude.ai, y pulse Intro. Déjelo vacío para aceptar cualquier dirección registrada por una aplicación. Los asistentes de escritorio y los agentes de código usan su propio ordenador y siempre están permitidos; un n8n autoalojado necesita que se añada su propio nombre de dominio.",
- "Geben Sie einen Hostnamen ein, zum Beispiel claude.ai, und drücken Sie Enter. Leer lassen, um jede von einer Anwendung eingetragene Adresse zu akzeptieren. Desktop-Assistenten und Coding-Agenten laufen über Ihren eigenen Rechner und sind immer erlaubt; für ein selbst gehostetes n8n muss sein eigener Hostname hinzugefügt werden."),
+"Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.": (
+ "Saisissez un nom de domaine, par exemple claude.ai, puis appuyez sur Entrée. Seuls ces domaines peuvent recevoir une connexion, et une liste vide les refuse tous. Les assistants de bureau et les agents de code passent par votre propre ordinateur et sont toujours autorisés ; un n8n auto-hébergé demande d'ajouter son propre nom de domaine.",
+ "Escriba un nombre de dominio, por ejemplo claude.ai, y pulse Intro. Solo estos dominios pueden recibir una conexión, y una lista vacía los rechaza todos. Los asistentes de escritorio y los agentes de código usan su propio ordenador y siempre están permitidos; un n8n autoalojado necesita que se añada su propio nombre de dominio.",
+ "Geben Sie einen Hostnamen ein, zum Beispiel claude.ai, und drücken Sie Enter. Nur diese Hosts können eine Verbindung erhalten, und eine leere Liste lehnt alle ab. Desktop-Assistenten und Coding-Agenten laufen über Ihren eigenen Rechner und sind immer erlaubt; für ein selbst gehostetes n8n muss sein eigener Hostname hinzugefügt werden."),
 "After the update, reconnect your assistants so that their access includes the new permissions.": (
  "Après la mise à jour, reconnectez vos assistants pour que leur accès inclue les nouvelles permissions.",
  "Después de la actualización, vuelva a conectar sus asistentes para que su acceso incluya los nuevos permisos.",
@@ -1070,6 +1166,10 @@ T = {
  "Générer le fichier robots.txt",
  "Generar el archivo robots.txt",
  "Die Datei robots.txt erzeugen"),
+"Generate the llms.txt file": (
+ "Générer le fichier llms.txt",
+ "Generar el archivo llms.txt",
+ "Die Datei llms.txt erzeugen"),
 "Change the SEO of a CMS page": (
  "Modifier le SEO d'une page CMS",
  "Cambiar el SEO de una página CMS",
@@ -1458,10 +1558,6 @@ T = {
  "Le fichier n'a pas pu être enregistré. Vérifiez que la boutique peut écrire dans son dossier modules.",
  "El archivo no se ha podido guardar. Compruebe que la tienda puede escribir en su carpeta de módulos.",
  "Die Datei konnte nicht gespeichert werden. Prüfen Sie, ob der Shop in seinen Modulordner schreiben kann."),
-"Your account is not attached to this shop, so it cannot connect an assistant to it. Ask an administrator to give you access to that shop.": (
- "Votre compte n'est pas rattaché à cette boutique, il ne peut donc pas y connecter d'assistant. Demandez à un administrateur de vous donner accès à cette boutique.",
- "Su cuenta no está asociada a esta tienda, así que no puede conectarle un asistente. Pida a un administrador que le dé acceso a esa tienda.",
- "Ihr Konto ist diesem Shop nicht zugeordnet und kann daher keinen Assistenten mit ihm verbinden. Bitten Sie einen Administrator, Ihnen Zugang zu diesem Shop zu geben."),
 
 "Send files to your assistant": (
  "Envoyer des fichiers à votre assistant",
@@ -2407,6 +2503,62 @@ T = {
  "Chaque nouvelle conversation démarre avec ce modèle ; il peut être changé dans le chat pour une conversation. La liste vient de votre fournisseur.",
  "Cada nueva conversación empieza con este modelo; se puede cambiar en el chat para una conversación. La lista viene de su proveedor.",
  "Jede neue Unterhaltung beginnt mit diesem Modell; es kann im Chat für eine Unterhaltung geändert werden. Die Liste kommt von Ihrem Anbieter."),
+"List abandoned carts": (
+ "Lister les paniers abandonnés",
+ "Listar los carritos abandonados",
+ "Verlassene Warenkörbe auflisten"),
+"Get a cart rule": (
+ "Lire une règle panier",
+ "Leer una regla de carrito",
+ "Eine Warenkorbregel abrufen"),
+"List cart rules": (
+ "Lister les règles panier",
+ "Listar las reglas de carrito",
+ "Warenkorbregeln auflisten"),
+"List shop search terms": (
+ "Lister les recherches de la boutique",
+ "Listar las búsquedas de la tienda",
+ "Suchbegriffe des Shops auflisten"),
+"List products viewed but not sold": (
+ "Lister les produits vus mais non vendus",
+ "Listar los productos vistos pero no vendidos",
+ "Angesehene, aber nicht verkaufte Produkte auflisten"),
+"List products never purchased": (
+ "Lister les produits jamais achetés",
+ "Listar los productos nunca comprados",
+ "Nie gekaufte Produkte auflisten"),
+"Sales - read": (
+ "Ventes - lecture",
+ "Ventas - lectura",
+ "Verkauf - lesen"),
+"Read abandoned carts, searches, product views and promotions": (
+ "Lire les paniers abandonnés, les recherches, les produits consultés et les promotions",
+ "Leer los carritos abandonados, las búsquedas, los productos vistos y las promociones",
+ "Verlassene Warenkörbe, Suchanfragen, angesehene Produkte und Aktionen lesen"),
+"Create a cart rule": (
+ "Créer une règle panier",
+ "Crear una regla de carrito",
+ "Eine Warenkorbregel erstellen"),
+"Sales - changes": (
+ "Ventes - modifications",
+ "Ventas - cambios",
+ "Verkauf - Änderungen"),
+"Create and change cart rules and catalogue price rules": (
+ "Créer et modifier les règles panier et les règles de prix catalogue",
+ "Crear y modificar las reglas de carrito y las reglas de precios del catálogo",
+ "Warenkorbregeln und Katalogpreisregeln erstellen und ändern"),
+"Boost sales": (
+ "Booster les ventes",
+ "Impulsar las ventas",
+ "Verkäufe steigern"),
+"Find the products, searches and carts where sales are lost, and set up promotions with the merchant's approval.": (
+ "Trouver les produits, les recherches et les paniers où des ventes se perdent, et mettre en place des promotions avec l'accord du marchand.",
+ "Encontrar los productos, las búsquedas y los carritos donde se pierden ventas, y crear promociones con la aprobación del comerciante.",
+ "Die Produkte, Suchanfragen und Warenkörbe finden, bei denen Verkäufe verloren gehen, und Aktionen mit Zustimmung des Händlers einrichten."),
+"Number of days to look back, 30 by default": (
+ "Nombre de jours à remonter, 30 par défaut",
+ "Número de días hacia atrás, 30 por defecto",
+ "Anzahl der Tage zurück, standardmäßig 30"),
 }
 LANGS = [("fr-FR", 0), ("es-ES", 1), ("de-DE", 2)]
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "translations")

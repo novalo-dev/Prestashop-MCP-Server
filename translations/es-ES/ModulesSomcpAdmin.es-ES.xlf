@@ -47,30 +47,150 @@
       <source>Settings saved.</source>
       <target>Ajustes guardados.</target>
     </trans-unit>
-    <!-- Nothing to approve -->
-    <trans-unit id="70b4860f6924675f94b8416e3838230e" resname="Nothing to approve">
-      <source>Nothing to approve</source>
-      <target>Nada que autorizar</target>
-    </trans-unit>
     <!-- This connection request has expired or has already been answered. Start the connection again from your assistant. -->
     <trans-unit id="54991db2bae4951265de5f01f0e667a6" resname="This connection request has expired or has already been answered. Start the connection again from your assistant.">
       <source>This connection request has expired or has already been answered. Start the connection again from your assistant.</source>
       <target>Esta solicitud de conexión ha caducado o ya ha sido respondida. Vuelva a iniciar la conexión desde su asistente.</target>
     </trans-unit>
-    <!-- The application behind this request is no longer known to the shop. -->
-    <trans-unit id="09fdb0237c71dead304799a20d9d9b03" resname="The application behind this request is no longer known to the shop.">
-      <source>The application behind this request is no longer known to the shop.</source>
-      <target>La aplicación que originó esta solicitud ya no es conocida por la tienda.</target>
+    <!-- Sign in with your back office account to see what it asks for and answer. -->
+    <trans-unit id="4deaefd9b90c3731da61588297350616" resname="Sign in with your back office account to see what it asks for and answer.">
+      <source>Sign in with your back office account to see what it asks for and answer.</source>
+      <target>Inicie sesión con su cuenta del back office para ver lo que solicita y responder.</target>
+    </trans-unit>
+    <!-- Email address -->
+    <trans-unit id="b357b524e740bc85b9790a0712d84a30" resname="Email address">
+      <source>Email address</source>
+      <target>Dirección de correo electrónico</target>
+    </trans-unit>
+    <!-- Password -->
+    <trans-unit id="dc647eb65e6711e155375218212b3964" resname="Password">
+      <source>Password</source>
+      <target>Contraseña</target>
+    </trans-unit>
+    <!-- Sign in -->
+    <trans-unit id="b6d4223e60986fa4c9af77ee5f7149c5" resname="Sign in">
+      <source>Sign in</source>
+      <target>Iniciar sesión</target>
+    </trans-unit>
+    <!-- These sign-in details are not accepted. -->
+    <trans-unit id="476e58fd06f48a6238a4d675de06b567" resname="These sign-in details are not accepted.">
+      <source>These sign-in details are not accepted.</source>
+      <target>Estos datos de acceso no se aceptan.</target>
+    </trans-unit>
+    <!-- Answers will be sent to -->
+    <trans-unit id="287a73e46d32925b082ab17339dbe7e7" resname="Answers will be sent to">
+      <source>Answers will be sent to</source>
+      <target>Las respuestas se enviarán a</target>
+    </trans-unit>
+    <!-- Only continue if this address belongs to the assistant you are connecting yourself. If you did not start this connection, close this page. -->
+    <trans-unit id="1d9881ee421b372ec9a13d7426ca5a6f" resname="Only continue if this address belongs to the assistant you are connecting yourself. If you did not start this connection, close this page.">
+      <source>Only continue if this address belongs to the assistant you are connecting yourself. If you did not start this connection, close this page.</source>
+      <target>Continúe solo si esta dirección pertenece al asistente que usted mismo está conectando. Si no ha iniciado esta conexión, cierre esta página.</target>
+    </trans-unit>
+    <!-- Sending a file to an assistant -->
+    <trans-unit id="44209d36bbc49e61e084e8688e149a1d" resname="Sending a file to an assistant">
+      <source>Sending a file to an assistant</source>
+      <target>Envío de un archivo a un asistente</target>
+    </trans-unit>
+    <!-- The page where you send a file to an assistant can be reached. -->
+    <trans-unit id="941ec8bd8603af4b91c3e064f0bb6844" resname="The page where you send a file to an assistant can be reached.">
+      <source>The page where you send a file to an assistant can be reached.</source>
+      <target>La página en la que envía un archivo a un asistente es accesible.</target>
+    </trans-unit>
+    <!-- Too many attempts. Wait 15 minutes, then try again. -->
+    <trans-unit id="189b102613e44c464dc9a8d3d8cc9221" resname="Too many attempts. Wait 15 minutes, then try again.">
+      <source>Too many attempts. Wait 15 minutes, then try again.</source>
+      <target>Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.</target>
+    </trans-unit>
+    <!-- A new assistant is connected to your shop -->
+    <trans-unit id="7c4960744211d044c345f44f61f0a641" resname="A new assistant is connected to your shop">
+      <source>A new assistant is connected to your shop</source>
+      <target>Un nuevo asistente está conectado a su tienda</target>
+    </trans-unit>
+    <!-- Consent page -->
+    <trans-unit id="db6d1fc6047205def469279ff68b9e3d" resname="Consent page">
+      <source>Consent page</source>
+      <target>Página de consentimiento</target>
+    </trans-unit>
+    <!-- The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere. -->
+    <trans-unit id="a76e0c340e11c3d3e3b75cc5e9270d4c" resname="The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.">
+      <source>The page where an employee signs in and approves a new assistant. Turn it on while you connect one, then off again: the assistants already connected keep working, and while it is off a link someone sends you leads nowhere.</source>
+      <target>La página en la que un empleado inicia sesión y autoriza a un nuevo asistente. Actívela mientras conecta uno y desactívela después: los asistentes ya conectados siguen funcionando y, mientras esté desactivada, un enlace que alguien le envíe no lleva a ninguna parte.</target>
+    </trans-unit>
+    <!-- Switched off: no new assistant can be connected, and this address is the shop's "page not found". Turn on the consent page in Access and security while you connect one. The assistants already connected keep working. -->
+    <trans-unit id="c277c375da058044eeb86f6fc49bdc6b" resname="Switched off: no new assistant can be connected, and this address is the shop&#x27;s &quot;page not found&quot;. Turn on the consent page in Access and security while you connect one. The assistants already connected keep working.">
+      <source>Switched off: no new assistant can be connected, and this address is the shop's "page not found". Turn on the consent page in Access and security while you connect one. The assistants already connected keep working.</source>
+      <target>Desactivada: no se puede conectar ningún asistente nuevo y esta dirección muestra la página «no encontrada» de la tienda. Active la página de consentimiento en Acceso y seguridad mientras conecta uno. Los asistentes ya conectados siguen funcionando.</target>
+    </trans-unit>
+    <!-- Your code to connect an assistant -->
+    <trans-unit id="38e04f8425a9307a5e3169fdd561cc27" resname="Your code to connect an assistant">
+      <source>Your code to connect an assistant</source>
+      <target>Su código para conectar un asistente</target>
+    </trans-unit>
+    <!-- Check your e-mail -->
+    <trans-unit id="7f27317e84e28bf5a0ae9e4f52bf254d" resname="Check your e-mail">
+      <source>Check your e-mail</source>
+      <target>Revise su correo</target>
+    </trans-unit>
+    <!-- Enter the 6-digit code sent to -->
+    <trans-unit id="9126e501b0a464c6d174aaa9bf8d672f" resname="Enter the 6-digit code sent to">
+      <source>Enter the 6-digit code sent to</source>
+      <target>Introduzca el código de 6 cifras enviado a</target>
+    </trans-unit>
+    <!-- Verification code -->
+    <trans-unit id="943769b205da24c9b0fe9808370b97b1" resname="Verification code">
+      <source>Verification code</source>
+      <target>Código de verificación</target>
+    </trans-unit>
+    <!-- Digit -->
+    <trans-unit id="83d25adab16b42ea36124318d7e6f4c1" resname="Digit">
+      <source>Digit</source>
+      <target>Cifra</target>
+    </trans-unit>
+    <!-- Verify -->
+    <trans-unit id="5a750f86ef41f22f852c43351e3ff383" resname="Verify">
+      <source>Verify</source>
+      <target>Validar</target>
+    </trans-unit>
+    <!-- The code works for %minutes% minutes and only once. -->
+    <trans-unit id="7fc712ce373557376f582c0b55f1509a" resname="The code works for %minutes% minutes and only once.">
+      <source>The code works for %minutes% minutes and only once.</source>
+      <target>El código es válido durante %minutes% minutos y solo sirve una vez.</target>
+    </trans-unit>
+    <!-- This code is not right. -->
+    <trans-unit id="0651b4de488e37d958ea7364bd182a9c" resname="This code is not right.">
+      <source>This code is not right.</source>
+      <target>Este código no es correcto.</target>
+    </trans-unit>
+    <!-- This code no longer works. Ask for a new one. -->
+    <trans-unit id="70a72817a70e06805df59f2ee5499be7" resname="This code no longer works. Ask for a new one.">
+      <source>This code no longer works. Ask for a new one.</source>
+      <target>Este código ya no funciona. Pida uno nuevo.</target>
+    </trans-unit>
+    <!-- This is the last code: no other will be sent. -->
+    <trans-unit id="25d61c2a8db1f02ca1dc22a3a99f83c6" resname="This is the last code: no other will be sent.">
+      <source>This is the last code: no other will be sent.</source>
+      <target>Es el último código: no se enviará ningún otro.</target>
+    </trans-unit>
+    <!-- Send a new code -->
+    <trans-unit id="af0f9d1d9dc31145d44cf18a811fac91" resname="Send a new code">
+      <source>Send a new code</source>
+      <target>Enviar un código nuevo</target>
+    </trans-unit>
+    <!-- Send a new code in %time% -->
+    <trans-unit id="50dfb6c0558656eced7e3d9f942240d1" resname="Send a new code in %time%">
+      <source>Send a new code in %time%</source>
+      <target>Enviar un código nuevo en %time%</target>
+    </trans-unit>
+    <!-- Every code of this connection has been used up. It is closed: start it again from your assistant. -->
+    <trans-unit id="03918163bf2e77f442c6081f1f658025" resname="Every code of this connection has been used up. It is closed: start it again from your assistant.">
+      <source>Every code of this connection has been used up. It is closed: start it again from your assistant.</source>
+      <target>Se han agotado todos los códigos de esta conexión. Está cerrada: vuelva a empezar desde su asistente.</target>
     </trans-unit>
     <!-- Connect an assistant -->
     <trans-unit id="1d3106889f4f5b717317255e6c9e8812" resname="Connect an assistant">
       <source>Connect an assistant</source>
       <target>Conectar un asistente</target>
-    </trans-unit>
-    <!-- Your account is not allowed to connect assistants to this shop. Ask an administrator to change the required profile in the module settings. -->
-    <trans-unit id="9e447929970e342164debb02d3302637" resname="Your account is not allowed to connect assistants to this shop. Ask an administrator to change the required profile in the module settings.">
-      <source>Your account is not allowed to connect assistants to this shop. Ask an administrator to change the required profile in the module settings.</source>
-      <target>Su cuenta no tiene permiso para conectar asistentes a esta tienda. Pida a un administrador que cambie el perfil requerido en los ajustes del módulo.</target>
     </trans-unit>
     <!-- Identified by the description it publishes at that address -->
     <trans-unit id="1b885966cbb809a432ac074a83a6118c" resname="Identified by the description it publishes at that address">
@@ -96,11 +216,6 @@
     <trans-unit id="2381b06010ab6fa0bc01ea6d48cbd7a9" resname="This connection request is not valid, so nothing was sent back to the application that made it.">
       <source>This connection request is not valid, so nothing was sent back to the application that made it.</source>
       <target>Esta solicitud de conexión no es válida, por lo que no se ha devuelto nada a la aplicación que la hizo.</target>
-    </trans-unit>
-    <!-- The module cannot find the administration area of this shop yet. Open the module settings once and save them, then try again. -->
-    <trans-unit id="b204962c75ef9a14503bc1813f3814dd" resname="The module cannot find the administration area of this shop yet. Open the module settings once and save them, then try again.">
-      <source>The module cannot find the administration area of this shop yet. Open the module settings once and save them, then try again.</source>
-      <target>El módulo aún no encuentra la administración de esta tienda. Abra los ajustes del módulo, guárdelos una vez y vuelva a intentarlo.</target>
     </trans-unit>
     <!-- Connect to this shop, see the list of available tools, and read your account details and the shop configuration -->
     <trans-unit id="001491cd9b5bd52f9ad1460a192aa6bd" resname="Connect to this shop, see the list of available tools, and read your account details and the shop configuration">
@@ -262,16 +377,6 @@
       <source>Go to the setting</source>
       <target>Ir al ajuste</target>
     </trans-unit>
-    <!-- Consent screen -->
-    <trans-unit id="b5b4f3f787f2e5a15a6c5da5015c923c" resname="Consent screen">
-      <source>Consent screen</source>
-      <target>Pantalla de autorización</target>
-    </trans-unit>
-    <!-- The consent screen can be reached from the authorization flow. -->
-    <trans-unit id="189dd480f172dad83a6edae97bf4faf8" resname="The consent screen can be reached from the authorization flow.">
-      <source>The consent screen can be reached from the authorization flow.</source>
-      <target>La pantalla de autorización es accesible desde el proceso de conexión.</target>
-    </trans-unit>
     <!-- The administration folder is not known yet. Save the settings once and this resolves itself. -->
     <trans-unit id="e9fb83e2898fe03e702e4657f2c2dca3" resname="The administration folder is not known yet. Save the settings once and this resolves itself.">
       <source>The administration folder is not known yet. Save the settings once and this resolves itself.</source>
@@ -331,6 +436,26 @@
     <trans-unit id="730ad63203931c109190a5882bd51178" resname="Answers with the expected challenge, and credentials reach the module.">
       <source>Answers with the expected challenge, and credentials reach the module.</source>
       <target>Responde con la cabecera esperada, y las credenciales llegan al módulo.</target>
+    </trans-unit>
+    <!-- Sign-in page -->
+    <trans-unit id="9e5ffac02070831572fb04932fc0a648" resname="Sign-in page">
+      <source>Sign-in page</source>
+      <target>Página de inicio de sesión</target>
+    </trans-unit>
+    <!-- This page sends visitors elsewhere (%location%) instead of showing the sign-in form. Another module or a rule of the hosting redirects it, so no employee can approve an assistant. Exclude this address from that redirection. -->
+    <trans-unit id="541d8f1d64833e8b67595948bf008475" resname="This page sends visitors elsewhere (%location%) instead of showing the sign-in form. Another module or a rule of the hosting redirects it, so no employee can approve an assistant. Exclude this address from that redirection.">
+      <source>This page sends visitors elsewhere (%location%) instead of showing the sign-in form. Another module or a rule of the hosting redirects it, so no employee can approve an assistant. Exclude this address from that redirection.</source>
+      <target>Esta página envía a los visitantes a otro sitio (%location%) en lugar de mostrar el formulario de inicio de sesión. Otro módulo o una regla del alojamiento la redirige, así que ningún empleado puede autorizar a un asistente. Excluya esta dirección de esa redirección.</target>
+    </trans-unit>
+    <!-- This page answered %status%, but not with the module's sign-in form. Something else on the shop answers this address in its place, so no employee can approve an assistant. -->
+    <trans-unit id="4f8f7cd2a32c60575e4f02b466f75290" resname="This page answered %status%, but not with the module&#x27;s sign-in form. Something else on the shop answers this address in its place, so no employee can approve an assistant.">
+      <source>This page answered %status%, but not with the module's sign-in form. Something else on the shop answers this address in its place, so no employee can approve an assistant.</source>
+      <target>Esta página respondió %status%, pero no con el formulario de inicio de sesión del módulo. Otra cosa en la tienda responde en su lugar a esta dirección, así que ningún empleado puede autorizar a un asistente.</target>
+    </trans-unit>
+    <!-- Shows the module's sign-in form. -->
+    <trans-unit id="91565f59e18178d6dfc9e684b41bcee6" resname="Shows the module&#x27;s sign-in form.">
+      <source>Shows the module's sign-in form.</source>
+      <target>Muestra el formulario de inicio de sesión del módulo.</target>
     </trans-unit>
     <!-- An application is asking to connect to your shop on your behalf. -->
     <trans-unit id="8f7ee43c0da7822a1b4449591af4aeee" resname="An application is asking to connect to your shop on your behalf.">
@@ -532,11 +657,6 @@
       <source>OAuth 2.1</source>
       <target>OAuth 2.1</target>
     </trans-unit>
-    <!-- Accept new connections -->
-    <trans-unit id="c2dcddc0ec595b09db02ae020722f7fd" resname="Accept new connections">
-      <source>Accept new connections</source>
-      <target>Aceptar nuevas conexiones</target>
-    </trans-unit>
     <!-- Access token lifetime (seconds) -->
     <trans-unit id="32b9df579c78d61821c0238338d75311" resname="Access token lifetime (seconds)">
       <source>Access token lifetime (seconds)</source>
@@ -612,10 +732,10 @@
       <source>Only allow these return addresses</source>
       <target>Permitir solo estas direcciones de retorno</target>
     </trans-unit>
-    <!-- Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added. -->
-    <trans-unit id="71a7f567b7fef6921759d852d43111be" resname="Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.">
-      <source>Type a host name, for example claude.ai, and press Enter. Leave empty to accept any address an application registers. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.</source>
-      <target>Escriba un nombre de dominio, por ejemplo claude.ai, y pulse Intro. Déjelo vacío para aceptar cualquier dirección registrada por una aplicación. Los asistentes de escritorio y los agentes de código usan su propio ordenador y siempre están permitidos; un n8n autoalojado necesita que se añada su propio nombre de dominio.</target>
+    <!-- Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added. -->
+    <trans-unit id="7bb97209b8e425ccb8553f115213bf31" resname="Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.">
+      <source>Type a host name, for example claude.ai, and press Enter. Only these hosts can receive a connection, and an empty list refuses them all. Desktop assistants and coding agents use your own computer and are always allowed; a self-hosted n8n needs its own host name added.</source>
+      <target>Escriba un nombre de dominio, por ejemplo claude.ai, y pulse Intro. Solo estos dominios pueden recibir una conexión, y una lista vacía los rechaza todos. Los asistentes de escritorio y los agentes de código usan su propio ordenador y siempre están permitidos; un n8n autoalojado necesita que se añada su propio nombre de dominio.</target>
     </trans-unit>
     <!-- After the update, reconnect your assistants so that their access includes the new permissions. -->
     <trans-unit id="8f877834ba5aff2460d728d322ee9fac" resname="After the update, reconnect your assistants so that their access includes the new permissions.">
@@ -1347,6 +1467,11 @@
       <source>Generate the robots.txt file</source>
       <target>Generar el archivo robots.txt</target>
     </trans-unit>
+    <!-- Generate the llms.txt file -->
+    <trans-unit id="af00e4cb7dd98a43fa6e1d659d9c4d37" resname="Generate the llms.txt file">
+      <source>Generate the llms.txt file</source>
+      <target>Generar el archivo llms.txt</target>
+    </trans-unit>
     <!-- Change the SEO of a CMS page -->
     <trans-unit id="39a2ae54e85acae56f94b93320441737" resname="Change the SEO of a CMS page">
       <source>Change the SEO of a CMS page</source>
@@ -1831,11 +1956,6 @@
     <trans-unit id="001b5ce52c2089287cb3d1b38eac2d8f" resname="The file could not be stored. Check that the shop can write inside its modules folder.">
       <source>The file could not be stored. Check that the shop can write inside its modules folder.</source>
       <target>El archivo no se ha podido guardar. Compruebe que la tienda puede escribir en su carpeta de módulos.</target>
-    </trans-unit>
-    <!-- Your account is not attached to this shop, so it cannot connect an assistant to it. Ask an administrator to give you access to that shop. -->
-    <trans-unit id="8cfb8d7443fa3604825dc8b0309ddc49" resname="Your account is not attached to this shop, so it cannot connect an assistant to it. Ask an administrator to give you access to that shop.">
-      <source>Your account is not attached to this shop, so it cannot connect an assistant to it. Ask an administrator to give you access to that shop.</source>
-      <target>Su cuenta no está asociada a esta tienda, así que no puede conectarle un asistente. Pida a un administrador que le dé acceso a esa tienda.</target>
     </trans-unit>
     <!-- Send files to your assistant -->
     <trans-unit id="37e86bd2ba14b2401bcab0413f5eaf85" resname="Send files to your assistant">
@@ -3031,6 +3151,76 @@
     <trans-unit id="2800e2286adc87fa3b64171f8f97ecd4" resname="Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider.">
       <source>Each new conversation starts with this model; it can be changed in the chat for one conversation. The list comes from your provider.</source>
       <target>Cada nueva conversación empieza con este modelo; se puede cambiar en el chat para una conversación. La lista viene de su proveedor.</target>
+    </trans-unit>
+    <!-- List abandoned carts -->
+    <trans-unit id="9507ae86e84760501caa64c872b860de" resname="List abandoned carts">
+      <source>List abandoned carts</source>
+      <target>Listar los carritos abandonados</target>
+    </trans-unit>
+    <!-- Get a cart rule -->
+    <trans-unit id="c29167a85871b64bcfdab6773a242b8b" resname="Get a cart rule">
+      <source>Get a cart rule</source>
+      <target>Leer una regla de carrito</target>
+    </trans-unit>
+    <!-- List cart rules -->
+    <trans-unit id="f732bccbf781bb0d2aea4ee74c0fb5e1" resname="List cart rules">
+      <source>List cart rules</source>
+      <target>Listar las reglas de carrito</target>
+    </trans-unit>
+    <!-- List shop search terms -->
+    <trans-unit id="5cce1729418b2a496f4a0c8c5e7ade72" resname="List shop search terms">
+      <source>List shop search terms</source>
+      <target>Listar las búsquedas de la tienda</target>
+    </trans-unit>
+    <!-- List products viewed but not sold -->
+    <trans-unit id="6b23cc156740dd699fa8fe53087d261d" resname="List products viewed but not sold">
+      <source>List products viewed but not sold</source>
+      <target>Listar los productos vistos pero no vendidos</target>
+    </trans-unit>
+    <!-- List products never purchased -->
+    <trans-unit id="83a9005a09f16263a09f19145c3a3829" resname="List products never purchased">
+      <source>List products never purchased</source>
+      <target>Listar los productos nunca comprados</target>
+    </trans-unit>
+    <!-- Sales - read -->
+    <trans-unit id="ede5d1f408783f0b1c89a003431b3712" resname="Sales - read">
+      <source>Sales - read</source>
+      <target>Ventas - lectura</target>
+    </trans-unit>
+    <!-- Read abandoned carts, searches, product views and promotions -->
+    <trans-unit id="3c505dea7233009a2d8a9ed6f3fa55bf" resname="Read abandoned carts, searches, product views and promotions">
+      <source>Read abandoned carts, searches, product views and promotions</source>
+      <target>Leer los carritos abandonados, las búsquedas, los productos vistos y las promociones</target>
+    </trans-unit>
+    <!-- Create a cart rule -->
+    <trans-unit id="ad22230dddf1a9a1753321aec746efdb" resname="Create a cart rule">
+      <source>Create a cart rule</source>
+      <target>Crear una regla de carrito</target>
+    </trans-unit>
+    <!-- Sales - changes -->
+    <trans-unit id="a1be5de2a33a782765a42196dbdc0c93" resname="Sales - changes">
+      <source>Sales - changes</source>
+      <target>Ventas - cambios</target>
+    </trans-unit>
+    <!-- Create and change cart rules and catalogue price rules -->
+    <trans-unit id="ede39df57c93ea16375416f4c34e850d" resname="Create and change cart rules and catalogue price rules">
+      <source>Create and change cart rules and catalogue price rules</source>
+      <target>Crear y modificar las reglas de carrito y las reglas de precios del catálogo</target>
+    </trans-unit>
+    <!-- Boost sales -->
+    <trans-unit id="8c883385a642028c9366bb087618b216" resname="Boost sales">
+      <source>Boost sales</source>
+      <target>Impulsar las ventas</target>
+    </trans-unit>
+    <!-- Find the products, searches and carts where sales are lost, and set up promotions with the merchant's approval. -->
+    <trans-unit id="4d09b1c7e91b2c3d65907a070ea6483b" resname="Find the products, searches and carts where sales are lost, and set up promotions with the merchant&#x27;s approval.">
+      <source>Find the products, searches and carts where sales are lost, and set up promotions with the merchant's approval.</source>
+      <target>Encontrar los productos, las búsquedas y los carritos donde se pierden ventas, y crear promociones con la aprobación del comerciante.</target>
+    </trans-unit>
+    <!-- Number of days to look back, 30 by default -->
+    <trans-unit id="9e9d7a2264656376e54ce95a9d5d98b9" resname="Number of days to look back, 30 by default">
+      <source>Number of days to look back, 30 by default</source>
+      <target>Número de días hacia atrás, 30 por defecto</target>
     </trans-unit>
     </body>
   </file>

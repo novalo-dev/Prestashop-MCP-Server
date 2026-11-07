@@ -48,17 +48,11 @@ class SomcpToolGetAttributeValue
         return new SomcpTool(
             'somcp_get_attribute_value',
             Somcp::t('Get an attribute value'),
-            'Returns everything the back office value form shows for one attribute value of this shop '
-                . '(M under Size, Red under Colour...): its name, the group it belongs to with that group\'s '
-                . 'name (the one the back office lists), its position in the group (0 for the first), and for '
-                . 'a group of type color its colour (hex code) and the URL of its texture image, null when it '
-                . 'has none; both are null for a value of a drop-down list or radio buttons group, where the '
-                . 'product page does not show them. Also the faceted search fields of that form - url_name '
-                . '(the word used in filtered URLs) and meta_title - which are null when the faceted search '
-                . 'module is not installed and enabled. '
-                . 'Identify the value by its identifier, from somcp_list_attributes: never guess one. '
-                . 'Do not use it for the list of groups and values, which is somcp_list_attributes, or for '
-                . 'the group itself, which is somcp_get_attribute_group.',
+            'Returns what the value form of Catalog > Attributes & Features > Attributes shows for one value (M '
+                . 'under Size, Red under Colour...): name, its group, position (0 for the first), and for a colour group '
+                . 'its colour and texture URL, null otherwise, and the faceted search fields, null without the faceted '
+                . 'search module. id_attribute comes from somcp_list_attributes: never guess one. For the list use '
+                . 'somcp_list_attributes; for the group somcp_get_attribute_group.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -38,13 +38,30 @@ if (!defined('_PS_VERSION_')) {
 class SomcpConfig
 {
     public const ENABLED = 'SOMCP_ENABLED';
-    public const OAUTH_ENABLED = 'SOMCP_OAUTH_ENABLED';
+
+    /**
+     * @var string Whether the page where an employee approves a new assistant
+     *             answers at all. Off by default: the page is only needed for
+     *             the few minutes a merchant spends connecting one, and off it
+     *             is the shop's 404, so a link someone else sends leads nowhere.
+     */
+    public const CONSENT_PAGE = 'SOMCP_CONSENT_PAGE';
     public const ACCESS_TTL = 'SOMCP_ACCESS_TTL';
     public const REFRESH_TTL = 'SOMCP_REFRESH_TTL';
     public const REFRESH_ROTATION = 'SOMCP_REFRESH_ROTATION';
     public const CIMD_ENABLED = 'SOMCP_CIMD_ENABLED';
     public const DCR_ENABLED = 'SOMCP_DCR_ENABLED';
     public const REDIRECT_HOSTS = 'SOMCP_REDIRECT_HOSTS';
+
+    /**
+     * @var string What an emptied list of return addresses is stored as.
+     *
+     * Not an empty value: every shop installed before the list had a default
+     * holds one, saved when an empty list still meant "anything goes", and
+     * those must read the default list until their upgrade fills them in.
+     * Only a list the merchant empties on purpose refuses every public host.
+     */
+    public const NO_HOSTS = '-';
     public const REQUIRED_PROFILE = 'SOMCP_REQUIRED_PROFILE';
     public const LOG_ENABLED = 'SOMCP_LOG_ENABLED';
 
@@ -119,11 +136,30 @@ class SomcpConfig
      */
     public const STATE_KEY = 'SOMCP_STATE_KEY';
 
+    /** @var string Secret the anti-robot challenges of the authorization page are signed with. */
+    public const CAPTCHA_KEY = 'SOMCP_CAPTCHA_KEY';
+
+    /** @var string Secret the diagnostic signs its visit of the authorization page with. */
+    public const PROBE_KEY = 'SOMCP_PROBE_KEY';
+
     /** @var string Path of the module inside the shop, used as the issuer suffix. */
     public const ISSUER_PATH = 'module/somcp';
 
     /** @var int Seconds an authorization code stays valid. OAuth 2.1 recommends one minute or less. */
     public const CODE_TTL = 60;
+
+    /** @var int Seconds the code e-mailed at sign-in stays valid. */
+    public const OTP_TTL = 600;
+
+    /** @var int Wrong entries a code survives before it is spent. */
+    public const OTP_TRIES = 5;
+
+    /**
+     * @var array<int, int> Seconds to wait before asking for another code,
+     *                      after the first and after the second. There is
+     *                      no fourth: after the third the request is closed.
+     */
+    public const OTP_WAITS = [1 => 30, 2 => 45];
 
     /** @var int Seconds a pending authorization request waits for the merchant to sign in and answer. */
     public const REQUEST_TTL = 900;
@@ -139,7 +175,7 @@ class SomcpConfig
     {
         return [
             self::ENABLED => '1',
-            self::OAUTH_ENABLED => '1',
+            self::CONSENT_PAGE => '0',
             // One hour. Short enough that a stolen token expires before it is
             // worth much, long enough not to spend a refresh on every call.
             self::ACCESS_TTL => '3600',
@@ -149,7 +185,9 @@ class SomcpConfig
             self::REFRESH_ROTATION => '1',
             self::CIMD_ENABLED => '1',
             self::DCR_ENABLED => '1',
-            self::REDIRECT_HOSTS => '',
+            // The clients the module is known to work with. Emptied by the
+            // merchant, the list refuses every public host: see NO_HOSTS.
+            self::REDIRECT_HOSTS => SomcpOAuthClient::defaultHosts(),
             self::REQUIRED_PROFILE => '0',
             self::LOG_ENABLED => '1',
             // Five minutes: long enough that an assistant is not re-reading the
@@ -168,6 +206,8 @@ class SomcpConfig
             // the module from the same archive. SomcpRequestState mints one the
             // first time it signs anything.
             self::STATE_KEY => '',
+            self::CAPTCHA_KEY => '',
+            self::PROBE_KEY => '',
         ];
     }
 
@@ -180,6 +220,9 @@ class SomcpConfig
     public static function get(string $key, ?int $idShop = null): string
     {
         $value = Configuration::get($key, null, null, $idShop);
+        if ($key === self::REDIRECT_HOSTS && $value === self::NO_HOSTS) {
+            return '';
+        }
         if ($value === false || $value === '') {
             $defaults = self::defaults();
 
@@ -230,7 +273,7 @@ class SomcpConfig
     {
         switch ($key) {
             case self::ENABLED:
-            case self::OAUTH_ENABLED:
+            case self::CONSENT_PAGE:
             case self::REFRESH_ROTATION:
             case self::CIMD_ENABLED:
             case self::DCR_ENABLED:
@@ -250,9 +293,9 @@ class SomcpConfig
             case self::REDIRECT_HOSTS:
                 // Host names only: anything else here would silently widen what
                 // the module accepts as a return address.
-                $hosts = (string) preg_replace('/[^a-zA-Z0-9.\-\s,;]/', '', $raw);
+                $hosts = trim((string) preg_replace('/[^a-zA-Z0-9.\-\s,;]/', '', $raw), " \t\n\r\0\x0B,;-");
 
-                return (string) Tools::substr(trim($hosts), 0, 500);
+                return $hosts === '' ? self::NO_HOSTS : (string) Tools::substr($hosts, 0, 500);
             default:
                 return $raw;
         }
@@ -536,11 +579,13 @@ class SomcpConfig
     }
 
     /**
+     * @param Shop|null $shop defaults to the shop answering the request
+     *
      * @return string
      */
-    public static function authorizationEndpoint(): string
+    public static function authorizationEndpoint(?Shop $shop = null): string
     {
-        return rtrim(self::shopBaseUrl(), '/') . '/' . self::ISSUER_PATH . '/authorize';
+        return rtrim(self::shopBaseUrl($shop), '/') . '/' . self::ISSUER_PATH . '/authorize';
     }
 
     /**

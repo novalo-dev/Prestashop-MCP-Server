@@ -1,0 +1,13 @@
+Hola:
+
+Su código para conectar un asistente a {connected_shop}:
+
+{code}
+
+Solo sirve una vez, durante {minutes} minutos.
+
+Si no está conectando un asistente en este momento, alguien tiene su contraseña: cámbiela ahora.
+
+--
+{shop_name} - {shop_url}
+Recibe este correo porque su cuenta del back office inició sesión en la página donde se conecta un asistente.

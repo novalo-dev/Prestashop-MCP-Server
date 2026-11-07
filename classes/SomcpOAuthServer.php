@@ -47,14 +47,21 @@ class SomcpOAuthServer
      *
      * @param array<string, string> $query
      *
-     * @return array{ok:bool, redirectable:bool, error:string, description:string, data:array<string,mixed>}
+     * A third kind is not answered at all: a return address on a host the
+     * merchant has not allowed. Whoever sends a merchant such a link is most
+     * likely trying to have a code delivered to their own server, and the page
+     * that answers them is the shop's ordinary "page not found" - nothing that
+     * confirms the module is there or says what to change.
+     *
+     * @return array{ok:bool, redirectable:bool, hidden:bool, error:string, description:string, data:array<string,mixed>}
      */
     public static function validateAuthorizationRequest(array $query): array
     {
-        $refuse = static function (string $error, string $description, bool $redirectable, array $data = []): array {
+        $refuse = static function (string $error, string $description, bool $redirectable, array $data = [], bool $hidden = false): array {
             return [
                 'ok' => false,
                 'redirectable' => $redirectable,
+                'hidden' => $hidden,
                 'error' => $error,
                 'description' => $description,
                 'data' => $data,
@@ -84,6 +91,9 @@ class SomcpOAuthServer
             );
 
             return $refuse('invalid_request', 'redirect_uri is not registered', false);
+        }
+        if (!SomcpOAuthClient::redirectHostAllowed($redirectUri)) {
+            return $refuse('access_denied', 'the return address is not on the list of allowed hosts', false, [], true);
         }
 
         // From here on the client and its address are known, so errors travel
@@ -127,7 +137,7 @@ class SomcpOAuthServer
         $data['code_challenge'] = $challenge;
         $data['code_challenge_method'] = $method;
 
-        return ['ok' => true, 'redirectable' => true, 'error' => '', 'description' => '', 'data' => $data];
+        return ['ok' => true, 'redirectable' => true, 'hidden' => false, 'error' => '', 'description' => '', 'data' => $data];
     }
 
     /**
@@ -206,6 +216,133 @@ class SomcpOAuthServer
         }
 
         return $row;
+    }
+
+    /**
+     * Records which employee signed in to answer a pending request.
+     *
+     * The form token is renewed at the same time: the one shown before the
+     * sign-in was on a page anyone holding the link could open, and only the
+     * consent form, shown once the password is checked, gets the new one.
+     *
+     * @param int $idRequest
+     * @param int $idEmployee
+     *
+     * @return string the new form token
+     */
+    public static function attachEmployee(int $idRequest, int $idEmployee): string
+    {
+        $csrf = SomcpRandom::token(16);
+        Db::getInstance()->update(
+            'somcp_oauth_request',
+            ['id_employee' => (int) $idEmployee, 'csrf_token' => pSQL($csrf)],
+            '`id_request` = ' . (int) $idRequest . ' AND `consumed_at` IS NULL'
+        );
+
+        return $csrf;
+    }
+
+    /**
+     * Writes a new code for the employee signed in on a pending request and
+     * returns it, to be e-mailed. The one sent before, if any, stops working.
+     *
+     * Six digits are few, which is why a code lives ten minutes, survives five
+     * wrong entries, and only three are ever sent for one request: an attacker
+     * holding the password gets fifteen guesses in a million.
+     *
+     * @param int $idRequest
+     *
+     * @return string the code, never stored as such
+     */
+    public static function issueOtp(int $idRequest): string
+    {
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        Db::getInstance()->execute(
+            'UPDATE `' . _DB_PREFIX_ . "somcp_oauth_request`
+             SET `otp_hash` = '" . pSQL(self::otpHash($idRequest, $code)) . "',
+                 `otp_expires_at` = '" . pSQL(date('Y-m-d H:i:s', time() + SomcpConfig::OTP_TTL)) . "',
+                 `otp_sent_at` = '" . pSQL(date('Y-m-d H:i:s')) . "',
+                 `otp_sends` = `otp_sends` + 1,
+                 `otp_tries` = 0
+             WHERE `id_request` = " . (int) $idRequest . ' AND `consumed_at` IS NULL'
+        );
+
+        return $code;
+    }
+
+    /**
+     * Seconds before another code may be sent for this request: 0 when it may
+     * be now, -1 when no other will be.
+     *
+     * @param array<string, mixed> $request
+     *
+     * @return int
+     */
+    public static function otpWait(array $request): int
+    {
+        $sends = (int) $request['otp_sends'];
+        if (!isset(SomcpConfig::OTP_WAITS[$sends])) {
+            return -1;
+        }
+
+        return max(0, strtotime((string) $request['otp_sent_at']) + SomcpConfig::OTP_WAITS[$sends] - time());
+    }
+
+    /**
+     * Checks a code typed on the page. A right code is spent at once - it
+     * opens the consent form one time only - and renews the form token.
+     *
+     * @param array<string, mixed> $request
+     * @param string $code
+     *
+     * @return string 'ok', 'wrong' or 'spent' (expired, used, or too many wrong entries)
+     */
+    public static function checkOtp(array $request, string $code): string
+    {
+        $idRequest = (int) $request['id_request'];
+        if ((string) $request['otp_hash'] === ''
+            || strtotime((string) $request['otp_expires_at']) < time()
+            || (int) $request['otp_tries'] >= SomcpConfig::OTP_TRIES) {
+            return 'spent';
+        }
+
+        // Counted before the comparison and in the same statement as the
+        // limit, so two entries posted at once cannot both slip under it.
+        $db = Db::getInstance();
+        $db->execute(
+            'UPDATE `' . _DB_PREFIX_ . 'somcp_oauth_request` SET `otp_tries` = `otp_tries` + 1
+             WHERE `id_request` = ' . $idRequest . ' AND `otp_tries` < ' . (int) SomcpConfig::OTP_TRIES
+        );
+        if ($db->Affected_Rows() < 1) {
+            return 'spent';
+        }
+
+        if (!preg_match('/^\d{6}$/', $code) || !hash_equals((string) $request['otp_hash'], self::otpHash($idRequest, $code))) {
+            return (int) $request['otp_tries'] + 1 >= SomcpConfig::OTP_TRIES ? 'spent' : 'wrong';
+        }
+
+        $db->execute(
+            'UPDATE `' . _DB_PREFIX_ . "somcp_oauth_request`
+             SET `otp_verified` = 1, `otp_hash` = '', `csrf_token` = '" . pSQL(SomcpRandom::token(16)) . "'
+             WHERE `id_request` = " . $idRequest . " AND `otp_hash` = '" . pSQL((string) $request['otp_hash']) . "'"
+        );
+
+        // Only the request that emptied the hash wins a code posted twice.
+        return $db->Affected_Rows() === 1 ? 'ok' : 'spent';
+    }
+
+    /**
+     * What is stored of a code. Public for the tests, which cannot read the
+     * e-mail and write a code of their own in its place.
+     *
+     * @param int $idRequest
+     * @param string $code
+     *
+     * @return string
+     */
+    public static function otpHash(int $idRequest, string $code): string
+    {
+        return hash('sha256', $idRequest . '|' . $code);
     }
 
     /**

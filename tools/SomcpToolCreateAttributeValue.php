@@ -75,28 +75,12 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         return new SomcpTool(
             'somcp_create_attribute_value',
             Somcp::t('Create an attribute value'),
-            'Adds one value (M under Size, Red under Colour...) to an attribute group of this shop, with every '
-                . 'field of the back office value form: name, and for a group of type color its colour (hex '
-                . 'code) and texture (an image shown instead of the colour), and the faceted search fields of '
-                . 'that form - url_name (the word used in filtered URLs) and meta_title - when the faceted search '
-                . 'module is installed and enabled. id_attribute_group and name are required; take '
-                . 'id_attribute_group from somcp_list_attributes, never guess it. Read somcp_list_attributes '
-                . 'first: the value may already exist, and a name the group already holds is refused. '
-                . 'The value is placed last in its group. '
-                . 'The texture is a public https address the shop downloads itself; if it cannot be used, the '
-                . 'value is still created and texture says why. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Assistant" - write it yourself in every language being filled, and show it to the '
-                . 'merchant before the call. '
-                . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
-                . 'language of the shop left out takes the default language\'s text. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Do not use it to create a group, which is somcp_create_attribute_group, or to change a value, '
-                . 'which is somcp_update_attribute_value. One value per call: for several, call it once per '
-                . 'value and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_attributes and look for the name '
-                . 'before anything else.',
+            'Adds one value (M under Size, Red under Colour...) to an attribute group, placed last, as the value '
+                . 'form of Catalog > Attributes & Features > Attributes. id_attribute_group comes from '
+                . 'somcp_list_attributes: never guess one; read it first, a name the group already holds is refused. '
+                . 'Each field says who fills it: Merchant - ask and never invent; Assistant - write it in every language '
+                . 'being filled and show it before the call. One value per call. Not to be retried: if the answer is '
+                . 'lost, look for the value in somcp_list_attributes before anything else.',
             self::valueSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

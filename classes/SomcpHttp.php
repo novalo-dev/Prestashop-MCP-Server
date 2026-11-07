@@ -227,8 +227,8 @@ class SomcpHttp
     }
 
     /**
-     * The headers of the module's own HTML pages: the sign-in page and the
-     * consent screen.
+     * The headers of the HTML pages the module answers with: the sign-in page,
+     * the consent screen, and the shop's 404 it shows in their place.
      *
      * Those pages carry the button that hands a shop to an assistant. Framed
      * invisibly by another site, a merchant who is signed in could be led to
@@ -250,6 +250,45 @@ class SomcpHttp
     }
 
     /**
+     * Whether the request comes from a person's browser rather than a program.
+     *
+     * A browser asks for a page; an MCP client never does - the older
+     * revisions open their stream with text/event-stream, and must keep
+     * getting the 405 the specification tells them to expect, since a 404
+     * reads to them as a session that has gone.
+     *
+     * @return bool
+     */
+    public static function isBrowser(): bool
+    {
+        $accept = Tools::strtolower(self::header('Accept'));
+
+        return strpos($accept, 'text/html') !== false && strpos($accept, 'text/event-stream') === false;
+    }
+
+    /**
+     * Shows the shop's own "page not found" and stops the script, the way the
+     * dispatcher does for an address it does not know.
+     *
+     * The module's addresses are meant for assistants, not people: a visitor
+     * who opens one, or a link built to send a merchant somewhere they should
+     * not go, meets the same page as any other dead link - nothing that
+     * confirms the module is there.
+     *
+     * Callers run it from init(), before the parent init: the front controller
+     * sets the shop up only once per request, so a page-not-found controller
+     * started after it would find no service container and render nothing.
+     */
+    public static function notFoundPage(): never
+    {
+        // The shop's page, but answering for the module: it must not hand out
+        // the PHP version the module's own pages hide.
+        self::pageHeaders();
+        Controller::getController('PageNotFoundController')->run();
+        exit;
+    }
+
+    /**
      * Sends the browser somewhere else and stops the script.
      *
      * PrestaShop's own Tools::redirect() and Tools::redirectAdmin() are
@@ -261,7 +300,7 @@ class SomcpHttp
      *
      * @param string $url absolute URL, already validated by the caller
      */
-    public static function redirect(string $url): void
+    public static function redirect(string $url): never
     {
         if (!headers_sent()) {
             header('Location: ' . $url);

@@ -27,7 +27,12 @@ domain.
 RFC 8414 anchors the authorization server document at the **domain root**. somcp
 puts it there through the `moduleRoutes` hook, which needs friendly URLs, and a
 shop installed in a subfolder cannot serve it at all. The diagnostic in the
-settings calls each address for real and says which one fails.
+settings calls each address for real and says which one fails. It also opens the
+authorization endpoint with no request and checks that the module's page
+answers: a module that redirects visitors without an account would otherwise
+leave the employee unable to approve anything. Opened that way by anyone else,
+the endpoint is the shop's "page not found"; the diagnostic carries a pass
+signed with `SOMCP_PROBE_KEY`, valid one minute (`SomcpGuard::probe()`).
 
 These addresses opt out of maintenance mode: maintenance hides the storefront
 from visitors, and these belong to the merchant.
@@ -37,15 +42,18 @@ from visitors, and these belong to the merchant.
 ## Connecting: discovery and OAuth
 
 ```
-client                      shop (somcp)                        back office
+client                      shop (somcp)
   |  POST /mcp (no token)  -->|
   |<-- 401 WWW-Authenticate: resource_metadata=".../prm"
   |  GET /prm  ------------->|  -> authorization server
   |  GET /.well-known/...  ->|  -> endpoints, PKCE S256, DCR / CIMD
   |  register (DCR) or present a client id metadata document (CIMD)
-  |  GET /authorize  ------->|  request parked in the database
-  |                          |-------------------------------->  consent screen
-  |                          |   employee signs in, reads the scopes, approves
+  |  GET /authorize  ------->|  404 unless the consent page is on; return
+  |                          |  host checked against the allowed list
+  |                          |  request parked in the database
+  |                          |  same page: employee email and password,
+  |                          |  then the code e-mailed to them,
+  |                          |  then the scopes and the return host, approve
   |<-- redirect with code (valid 60 s)
   |  POST token (code + PKCE verifier) --> access + refresh token
   |  POST /mcp  Authorization: Bearer ...
@@ -56,8 +64,10 @@ The pieces, in `classes/`:
 - `SomcpMetadata` builds both discovery documents.
 - `SomcpOAuthClient` identifies the client, by dynamic registration or by a
   client ID metadata document, and validates its redirect URIs: `https`, or
-  `http` on loopback only, optionally restricted to a list of hosts the
-  merchant sets.
+  `http` on loopback only, and a public host only when it is on the list the
+  merchant sets (the known clients by default). The host is checked again on
+  every authorization request, and one off the list gets the shop's "page not
+  found".
 - `SomcpOAuthServer` runs the authorization request and the consent.
 - `SomcpOAuthToken` issues codes and tokens. Everything is stored **hashed**.
   Tokens are bound to the resource they were issued for (RFC 8707), so a token
@@ -69,19 +79,52 @@ The pieces, in `classes/`:
   `mcp.catalog.write`, `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`,
   `mcp.customers.write`, `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`,
   `mcp.content.read`, `mcp.modules.read`, `mcp.modules.write`,
-  `mcp.appearance.read`, `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`.
+  `mcp.appearance.read`, `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`,
+  `mcp.sales.read`, `mcp.sales.write`.
 
-Reaching the consent screen from a front controller is its own problem.
-PrestaShop 8 accepts a legacy back office address with a computed token.
-PrestaShop 9 demands a Symfony CSRF token that a front controller cannot
-produce, so somcp enters through a Symfony route of its own
-(`src/Controller/ConsentEntryController.php`, route `api_somcp_consent`), which
-PrestaShop authenticates natively and which then forwards with both tokens.
-`SomcpBackOffice` builds these addresses.
+The employee signs in on the authorization page itself, a bare page of the
+shop front (`controllers/front/authorize.php`, `views/templates/front/authorize.tpl`)
+with no theme script on it. The page checks the email and password with
+PrestaShop's own `Employee::getByEmail()`, then the module's required profile
+and the employee's shop associations, and records the employee on the pending
+request. A 6-digit code is then e-mailed to that employee (`SomcpNotify::code()`,
+stored as a hash on the request row, single use, ten minutes, five wrong entries,
+three codes at most with 30 and 45 seconds between them, after which the request
+is closed); only once it is typed can that account give the consent, with its
+own rights. The whole page is the shop's 404 unless `SOMCP_CONSENT_PAGE` is on,
+which it is not by default. Every
+refusal reads the same on screen and the reason goes to the module's log. No
+page or redirect of this flow names the administration folder.
+
+Each granted consent sends an e-mail (`SomcpNotify`, templates in `mails/<iso>/`)
+to the employee who approved it and to the shop's address, with the super
+administrators in blind copy - `Mail::send()` has no Cc. It is written in the
+shop's default language, and `Mail::send()` falls back on the English template
+for a language the module does not have.
+
+`SomcpGuard` puts limits on the public addresses: an ALTCHA proof of work on the
+sign-in form (the widget is shipped in `views/js/altcha/`, the check made with
+the `altcha-org/altcha` library) whose work grows with each failed sign-in from
+the address, a block of fifteen minutes after five failed sign-ins from one
+address or ten on one account, and quotas on new authorization requests and on
+dynamic registrations. The address is not `Tools::getRemoteAddr()`, which takes
+the first, visitor-written entry of `X-Forwarded-For`: behind a proxy on the
+server's network or Cloudflare, the chain is read from the right and the first
+address that is not such a proxy is counted, and an IPv6 address counts as its
+/64. The counters use `nikolaposa/rate-limit` with a storage
+in the shop's database (`src/Security/DbRateLimiter.php`, table
+`somcp_rate_limit`), since a shared hosting offers neither Redis nor APCu.
+
+The file deposit page is still a back office page. PrestaShop 8 accepts a legacy
+back office address with a computed token. PrestaShop 9 demands a Symfony CSRF
+token that a front controller cannot produce, so somcp enters through a Symfony
+route of its own (`src/Controller/UploadEntryController.php`, route
+`api_somcp_upload`), which PrestaShop authenticates natively and which then
+forwards with both tokens. `SomcpBackOffice` builds this address.
 
 `config/services.yml` is compiled on PrestaShop 8 too, even though the route is
-only used on 9. Those controllers therefore take nothing in their constructor
-and look the PrestaShop 9 token up at run time: a constructor asking for a class
+only used on 9. The controller therefore takes nothing in its constructor and
+looks the PrestaShop 9 token up at run time: a constructor asking for a class
 that only exists on 9 stops Symfony from building its container on 8, and the
 whole back office answers 500. CI compiles the container on both.
 
@@ -182,9 +225,11 @@ that is still empty gets the address again as text.
 
 ## Data
 
-Nine tables, created by `sql/install.sql` and dropped by `sql/uninstall.sql`:
-OAuth clients, pending requests, codes, access tokens, refresh tokens, consents,
-the security log, deposits and deposited files.
+Seventeen tables, created by `sql/install.sql` and dropped by
+`sql/uninstall.sql`: OAuth clients, pending requests, codes, access tokens,
+refresh tokens, consents, the security log, deposits and deposited files, the
+built-in assistant's own (assistants, relays and their jobs, usage, threads,
+messages, runs) and the counters of the public addresses.
 
 The security log (`SomcpLogger`, table `somcp_log`) records connections,
 refusals, tool calls and configuration problems. It never contains a token, a
@@ -201,7 +246,8 @@ still attached to one of them.
 Stored in `ps_configuration`, per shop with the usual multistore inheritance:
 module on/off, OAuth on/off, access and refresh token lifetimes (one hour and
 thirty days by default), refresh rotation, dynamic registration, client ID
-metadata documents, allowed redirect hosts, the profile allowed to grant
+metadata documents, allowed redirect hosts (the known clients by default; an
+empty list refuses every public host), the profile allowed to grant
 access, the log, the tool list cache lifetime, the tools and prompts the
 merchant switched off, and the scopes switched off as whole groups - each of
 these three lists twice, once for the assistants connected over MCP and once

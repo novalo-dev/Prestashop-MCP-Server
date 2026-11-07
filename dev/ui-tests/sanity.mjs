@@ -21,8 +21,8 @@
  * pages a merchant works in, so a script error or a pane left empty went
  * unnoticed. This signs in, opens the seven settings pages and the chat, uses
  * the search, a tool switch and a group switch of the Tools and prompts tab,
- * and fails on the first uncaught script error, page error or PHP message on
- * screen.
+ * connects an assistant through the authorization page, and fails on the
+ * first uncaught script error, page error or PHP message on screen.
  *
  * Usage: node sanity.mjs <admin url> <email> <password> <browser> <shot dir> [results file]
  *   browser is chromium or firefox. A screenshot of the page in front is left
@@ -32,6 +32,7 @@
 
 import { chromium, firefox } from 'playwright';
 import { appendFileSync, mkdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 const [adminUrl, email, password, browserName = 'chromium', shots = 'ui-shots', results = ''] = process.argv.slice(2);
 if (!adminUrl || !email || !password) {
@@ -214,6 +215,102 @@ if (signedIn) {
         await noPhpMessage();
     });
 }
+
+// The page an assistant sends the merchant to: sign in with the back office
+// account, solve the anti-robot check, approve, and the code goes back to the
+// assistant. Nothing on the way names the administration folder.
+await check('connect an assistant through the sign-in page', async () => {
+    // What the page's scripts say goes to the log, so a widget that fails
+    // quietly can still be told apart from one that was never loaded.
+    page.on('console', (message) => {
+        if (message.type() === 'error' || message.type() === 'warning') {
+            console.log(`  console ${message.type()}: ${message.text()}`);
+        }
+    });
+    const shop = new URL(adminUrl).origin;
+    const adminFolder = new URL(adminUrl).pathname.split('/').filter(Boolean)[0] || '';
+    const front = (controller, query) => `${shop}/index.php?fc=module&module=somcp&controller=${controller}&${query}`;
+    const callback = 'http://127.0.0.1:9/callback';
+
+    const registered = await page.request.post(front('oauth', 'a=register'), {
+        data: { client_name: 'UI sanity', redirect_uris: [callback] },
+    });
+    if (registered.status() !== 201) {
+        throw new Error(`registering a client answered ${registered.status()}`);
+    }
+    const clientId = (await registered.json()).client_id;
+    const { createHash, randomBytes } = await import('node:crypto');
+    const verifier = randomBytes(32).toString('base64url');
+    const challenge = createHash('sha256').update(verifier).digest('base64url');
+
+    await page.goto(front('authorize', new URLSearchParams({
+        response_type: 'code', client_id: clientId, redirect_uri: callback,
+        code_challenge: challenge, code_challenge_method: 'S256', state: 'ui',
+    }).toString()));
+    await page.locator('#somcp-authorize[data-somcp-state="signin"]').waitFor({ timeout: 15000 });
+    await noPhpMessage();
+    const shown = async (what) => {
+        if (adminFolder !== '' && (await page.content()).includes(adminFolder)) {
+            throw new Error(`the ${what} names the administration folder`);
+        }
+    };
+    await shown('sign-in page');
+
+    await page.locator('#somcp_email').fill(email);
+    await page.locator('#somcp_password').fill(password);
+    // The widget draws its own box over a hidden checkbox, so the checkbox is
+    // clicked the way the widget's own drawing does it, not by mouse position.
+    await page.locator('altcha-widget input[type="checkbox"]').first().waitFor({ state: 'attached', timeout: 15000 })
+        .catch(async () => {
+            throw new Error(`the anti-robot widget was not drawn: ${(await page.locator('#somcp-authorize .captcha').innerHTML()).slice(0, 300)}`);
+        });
+    await page.locator('altcha-widget input[type="checkbox"]').first().evaluate((box) => box.click());
+    // Polled from the test rather than with waitForFunction, which runs its
+    // check through eval() - and the page's Content-Security-Policy refuses
+    // eval, as it should.
+    const payload = page.locator('input[name="somcp_altcha"]').first();
+    for (let waited = 0; ; waited += 500) {
+        if ((await payload.count()) > 0 && (await payload.inputValue()) !== '') {
+            break;
+        }
+        if (waited >= 30000) {
+            throw new Error('the anti-robot check was not solved within 30 seconds');
+        }
+        await page.waitForTimeout(500);
+    }
+    await Promise.all([page.waitForLoadState('load'), page.locator('form button[type="submit"]').first().click()]);
+
+    // The password leads to the code e-mailed to the employee. The test shop
+    // sends no e-mail, so a known code is written in its place, then typed
+    // in the six boxes as a person would: the page moves from box to box and
+    // posts the form once the last one is filled.
+    await page.locator('#somcp-authorize[data-somcp-state="otp"]').waitFor({ timeout: 15000 });
+    await shown('code page');
+    execFileSync('docker', ['exec', '-u', 'www-data', 'shop', 'php', '/tmp/somcp-dev/ui-tests/consent.php', '/var/www/html', '482913']);
+    if (!(await page.locator('#somcp-resend').isDisabled())) {
+        throw new Error('a new code can be asked for at once, before the wait');
+    }
+    await page.locator('input.digit').first().click();
+    await Promise.all([page.waitForLoadState('load'), page.keyboard.type('482913', { delay: 40 })]);
+    await page.locator('#somcp-authorize[data-somcp-state="consent"]').waitFor({ timeout: 15000 });
+    await shown('consent page');
+    if (!(await page.locator('#somcp-return-host').innerText()).includes('127.0.0.1')) {
+        throw new Error('the consent page does not show where the answer goes');
+    }
+
+    // The answer to the consent form is the redirect to the assistant, read
+    // from the response itself: the assistant's own address is not listening
+    // here, and Firefox does not report the request it never manages to send.
+    const [answer] = await Promise.all([
+        page.waitForResponse((response) => response.request().method() === 'POST'
+            && /authorize/.test(response.url()), { timeout: 15000 }),
+        page.locator('button[name="decision"][value="allow"]').click({ noWaitAfter: true }),
+    ]);
+    const location = answer.headers().location || '';
+    if (answer.status() !== 302 || !location.startsWith(callback) || !new URL(location).searchParams.get('code')) {
+        throw new Error(`the assistant got no code: ${answer.status()} ${location}`);
+    }
+});
 
 await browser.close();
 

@@ -136,8 +136,11 @@ jobs:
           docker exec shop mkdir -p /tmp/somcp-dev/ui-tests
           docker cp module/dev/shop-tests shop:/tmp/somcp-dev/shop-tests
           docker cp module/dev/ui-tests/assistant.php shop:/tmp/somcp-dev/ui-tests/assistant.php
+          docker cp module/dev/ui-tests/consent.php shop:/tmp/somcp-dev/ui-tests/consent.php
           docker exec shop chmod -R a+rX /tmp/somcp-dev
           docker exec -u www-data shop php /tmp/somcp-dev/ui-tests/assistant.php /var/www/html
+          # Off by default on a new install, and the test connects an assistant.
+          docker exec -u www-data shop php /tmp/somcp-dev/ui-tests/consent.php /var/www/html on
 
       - uses: actions/setup-node@v4
         with:

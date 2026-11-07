@@ -1,0 +1,54 @@
+{
+  "calls": [
+    {
+      "why": "the demo shop has no llms.txt: the file is written from the shop data",
+      "arguments": {},
+      "expect": "ok",
+      "contains": [
+        "\"changed\": true",
+        "\"previous_content\": null",
+        "## Contact",
+        "## Pages",
+        "MCP Server --"
+      ]
+    },
+    {
+      "why": "a second call right after writes the same file and changes nothing",
+      "arguments": {},
+      "expect": "ok",
+      "contains": [
+        "\"changed\": false"
+      ]
+    },
+    {
+      "why": "a language the shop does not have is refused",
+      "arguments": {
+        "language": "zz"
+      },
+      "expect": "error",
+      "contains": [
+        "not a language of this shop"
+      ]
+    },
+    {
+      "why": "an unknown argument is refused",
+      "arguments": {
+        "foo": 1
+      },
+      "expect": "error",
+      "contains": [
+        "foo: not a field of this tool"
+      ]
+    },
+    {
+      "why": "a summary over 1000 characters is refused",
+      "arguments": {
+        "summary": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "expect": "error",
+      "contains": [
+        "summary: longer than 1000 characters"
+      ]
+    }
+  ]
+}

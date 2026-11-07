@@ -68,6 +68,8 @@ class Somcp extends Module
         'SomcpOAuthClient',
         'SomcpOAuthToken',
         'SomcpOAuthServer',
+        'SomcpGuard',
+        'SomcpNotify',
         'SomcpBackOffice',
         'SomcpJsonRpc',
         'SomcpProtocol',
@@ -75,6 +77,7 @@ class Somcp extends Module
         'SomcpElicitation',
         'SomcpUpload',
         'SomcpTool',
+        'SomcpStats',
         'SomcpProductImage',
         'SomcpCatalog',
         'SomcpModules',
@@ -105,7 +108,7 @@ class Somcp extends Module
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '1.2.2';
+        $this->version = '1.3.0';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1140,7 +1143,7 @@ class Somcp extends Module
 
         $switches = [
             SomcpConfig::ENABLED,
-            SomcpConfig::OAUTH_ENABLED,
+            SomcpConfig::CONSENT_PAGE,
             SomcpConfig::REFRESH_ROTATION,
             SomcpConfig::CIMD_ENABLED,
             SomcpConfig::DCR_ENABLED,
@@ -1634,11 +1637,12 @@ class Somcp extends Module
     /**
      * The back office pages reached from outside the menu.
      *
-     * The consent screen, where an assistant is allowed in, and the deposit
-     * screen, where a file is handed to one. Neither belongs in the menu -
-     * nobody opens them on purpose, they are the destination of a flow - but
-     * both need a tab, because a controller without one has no security token
-     * and PrestaShop refuses the page.
+     * The deposit screen, where a file is handed to an assistant, and the page
+     * the chat of the built-in assistant talks to. Neither belongs in the menu -
+     * nobody opens them on purpose - but both need a tab, because a controller
+     * without one has no security token and PrestaShop refuses the page. The
+     * consent screen used to be one of them; it is now the shop front's
+     * authorization page, and upgrade-1.3.0 removes its tab.
      *
      * A method rather than a class constant, and that is not a style choice.
      * PrestaShop reflects on this class to validate the module, and
@@ -1652,7 +1656,6 @@ class Somcp extends Module
     private static function hiddenTabs(): array
     {
         return [
-            SomcpBackOffice::CONSENT_CONTROLLER,
             SomcpBackOffice::UPLOAD_CONTROLLER,
             SomcpBackOffice::ASSISTANT_CONTROLLER,
         ];

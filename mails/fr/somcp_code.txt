@@ -1,0 +1,13 @@
+Bonjour,
+
+Votre code pour connecter un assistant à {connected_shop} :
+
+{code}
+
+Il ne sert qu'une fois, pendant {minutes} minutes.
+
+Si vous n'êtes pas en train de connecter un assistant, quelqu'un a votre mot de passe : changez-le dès maintenant.
+
+--
+{shop_name} - {shop_url}
+Vous recevez cet e-mail parce que votre compte du back-office s'est connecté sur la page où l'on connecte un assistant.

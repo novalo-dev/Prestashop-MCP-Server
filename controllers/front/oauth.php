@@ -66,13 +66,31 @@ class SomcpOauthModuleFrontController extends ModuleFrontController
     }
 
     /**
+     * Hands a browser over to the shop's "page not found" before anything else.
+     *
+     * This address is for programs; a person who opens it, or a link built to
+     * see what the shop runs, gets the same page as for any dead link. It has
+     * to happen before the parent init (see SomcpHttp::notFoundPage()).
+     */
+    public function init()
+    {
+        Somcp::bootClasses();
+
+        if (Tools::strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'GET' && SomcpHttp::isBrowser()) {
+            SomcpHttp::notFoundPage();
+        }
+
+        parent::init();
+    }
+
+    /**
      * Routes to the requested action and stops the script.
      */
     public function initContent()
     {
         Somcp::bootClasses();
 
-        if (!SomcpConfig::isOn(SomcpConfig::ENABLED) || !SomcpConfig::isOn(SomcpConfig::OAUTH_ENABLED)) {
+        if (!SomcpConfig::isOn(SomcpConfig::ENABLED)) {
             SomcpHttp::json(['error' => 'temporarily_unavailable'], 503);
         }
 
@@ -148,6 +166,13 @@ class SomcpOauthModuleFrontController extends ModuleFrontController
     {
         if (!SomcpConfig::isOn(SomcpConfig::DCR_ENABLED)) {
             SomcpHttp::json(['error' => 'access_denied', 'error_description' => 'registration is disabled'], 403);
+        }
+
+        // Every attempt counts, the refused ones too: a script trying to fill
+        // the table is stopped whether or not its addresses pass.
+        if (!SomcpGuard::allow('register')) {
+            SomcpLogger::log('client_registration_throttled', SomcpLogger::OUTCOME_FAILURE);
+            SomcpHttp::json(['error' => 'too_many_requests', 'error_description' => 'too many registrations from this address, try again later'], 429, ['Retry-After' => '3600']);
         }
 
         $metadata = json_decode((string) file_get_contents('php://input'), true);

@@ -42,17 +42,12 @@ class SomcpToolListAttributes
         return new SomcpTool(
             'somcp_list_attributes',
             Somcp::t('List attributes'),
-            'Lists the attribute groups of this shop (Size, Colour...) and, under each, its values: '
-                . 'identifier, name and position, plus the type and the number of values of each group '
-                . 'and the colour of each value of a colour group. Call it before any call that takes attribute '
-                . 'values - creating or changing the combinations of a product - and take the '
-                . 'id_attribute from here: identifiers are specific to each shop, so never assume one. '
-                . 'Two groups can hold a value of the same name: when the merchant names a value, '
-                . 'check which group it belongs to, and ask when it is in more than one. Give '
-                . 'id_attribute_group to read one group only. Everything else about one group or one '
-                . 'value is read with somcp_get_attribute_group or somcp_get_attribute_value. '
-                . 'Do not use it for the combinations of a product: '
-                . 'somcp_get_product lists those.',
+            'Lists the attribute groups of Catalog > Attributes & Features > Attributes (Size, Colour...) and, '
+                . 'under each, its values, with identifier, name and position, the type of each group and the colour of '
+                . 'each value of a colour group. Call it before creating or changing combinations and take '
+                . 'id_attribute from here: never guess one. Two groups can hold a value of the same name: check which '
+                . 'group, and ask when it is in more than one. Give id_attribute_group for one group. For the '
+                . 'combinations of a product use somcp_get_product.',
             [
                 'type' => 'object',
                 'properties' => [

@@ -31,7 +31,9 @@ Include what you can of:
 
 - The OAuth flow: client registration, redirect URI validation, PKCE,
   authorization codes, access and refresh tokens, revocation.
-- The consent screen and the deposit page, and how they identify the employee.
+- The authorization page (employee sign-in, e-mailed code and consent) and the
+  deposit page,
+  and how they identify the employee.
 - The MCP endpoint: authentication, scope and back office permission checks,
   the shop boundary on multistore installs, the sealed state used between the
   two halves of a call.

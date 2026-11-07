@@ -73,28 +73,12 @@ class SomcpToolCreateAttributeGroup extends SomcpToolCreateFeature
         return new SomcpTool(
             'somcp_create_attribute_group',
             Somcp::t('Create an attribute group'),
-            'Creates one attribute group (Size, Colour...) in this shop with every field of the back office '
-                . 'attribute form: name (the one the back office lists), public_name (the one customers see on '
-                . 'the product page), group_type (how customers pick a value: select for a drop-down list, radio '
-                . 'for radio buttons, color for colour swatches), and the faceted search fields of that form - '
-                . 'url_name (the word used in filtered URLs), meta_title and indexable - when the faceted search '
-                . 'module is installed and enabled. name, public_name and group_type are required. The group is '
-                . 'created without values and placed last: add the values afterwards, one per call, with '
-                . 'somcp_create_attribute_value. '
-                . 'Read somcp_list_attributes first: the group may already exist, and PrestaShop accepts two '
-                . 'groups of the same name. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Assistant" - write it yourself in every language being filled, and show it to the '
-                . 'merchant before the call. '
-                . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
-                . 'language of the shop left out takes the default language\'s text. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Do not use it to add a value to a group, which is somcp_create_attribute_value, or to change a '
-                . 'group, which is somcp_update_attribute_group. One group per call: for several, call it once '
-                . 'per group and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_attributes and look for the name '
-                . 'before anything else, because a second call creates a second group.',
+            'Creates one attribute group (Size, Colour...), as the attribute form of Catalog > Attributes & '
+                . 'Features > Attributes, placed last and without values: add them with somcp_create_attribute_value. '
+                . 'Read somcp_list_attributes first: PrestaShop accepts two groups of the same name. Each field says who '
+                . 'fills it: Merchant - ask and never invent; Assistant - write it in every language being filled and '
+                . 'show it before the call. To change a group use somcp_update_attribute_group. One group per call. Not '
+                . 'to be retried: if the answer is lost, look for the name in somcp_list_attributes before anything else.',
             self::groupSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

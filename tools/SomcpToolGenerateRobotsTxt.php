@@ -79,6 +79,12 @@ class SomcpToolGenerateRobotsTxt
      */
     public static function handle(array $arguments, array $context): array
     {
+        // The button is restricted in demo mode (DemoRestricted on
+        // generateRobotsFileAction), so the tool refuses where the screen does.
+        if (SomcpBackOffice::constant('_PS_MODE_DEMO_')) {
+            return SomcpTool::text('This shop runs in demo mode, where robots.txt cannot be generated. Nothing was changed.', true);
+        }
+
         // The same path Tools::generateRobotsFile() writes to.
         $file = _PS_ROOT_DIR_ . '/robots.txt';
 

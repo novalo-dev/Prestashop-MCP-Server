@@ -1,0 +1,17 @@
+{
+  "calls": [
+    {"why": "no period: the active products in stock that no valid order ever bought, with the counts of the screen", "arguments": {}, "expect": "ok", "contains": ["\"date_from\": null", "\"date_to\": null", "\"language\": \"en\"", "\"products\"", "\"total_count\"", "\"products_available\"", "\"total_stock_value_tax_excl\""]},
+    {"why": "min_quantity 0 lists every product, as Products never purchased on the screen", "arguments": {"min_quantity": 0}, "expect": "ok", "contains": ["\"products\"", "\"total_count\"", "\"products_available\""]},
+    {"why": "a period: the products not bought in it, the dates said back", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "min_quantity": 0}, "expect": "ok", "contains": ["\"date_from\": \"2000-01-01\"", "\"date_to\": \"2099-12-31\"", "\"total_count\""]},
+    {"why": "narrowed to the Home category, still answers", "arguments": {"min_quantity": 0, "id_category": 2}, "expect": "ok", "contains": ["\"products\"", "\"products_available\""]},
+    {"why": "the next page", "arguments": {"min_quantity": 0, "limit": 1, "offset": 1}, "expect": "ok", "contains": ["\"offset\": 1"]},
+    {"why": "names read in a language the shop has, said by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "an unknown category is refused, naming the field", "arguments": {"id_category": 999999}, "expect": "error", "contains": ["id_category: no category of this shop has this identifier"]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]},
+    {"why": "half a period is refused, naming the missing end", "arguments": {"date_from": "2001-02-01"}, "expect": "error", "contains": ["date_to: a date, YYYY-MM-DD, given with date_from or neither"]},
+    {"why": "the end before the start is refused, naming the field", "arguments": {"date_from": "2001-02-10", "date_to": "2001-02-01"}, "expect": "error", "contains": ["date_to: a date not before date_from"]},
+    {"why": "a stock below zero is refused", "arguments": {"min_quantity": -1}, "expect": "error", "contains": ["min_quantity: a whole number, 0 at least"]},
+    {"why": "more than 100 products at once is refused", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1}, "expect": "error", "contains": ["foo: not a field of this tool", "offset: a whole number, 0 at least"]}
+  ]
+}

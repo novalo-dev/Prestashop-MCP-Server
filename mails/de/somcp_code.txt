@@ -1,0 +1,13 @@
+Hallo,
+
+Ihr Code, um einen Assistenten mit {connected_shop} zu verbinden:
+
+{code}
+
+Er gilt einmal, {minutes} Minuten lang.
+
+Wenn Sie gerade keinen Assistenten verbinden, kennt jemand Ihr Passwort: Ändern Sie es sofort.
+
+--
+{shop_name} - {shop_url}
+Sie erhalten diese E-Mail, weil sich Ihr Back-Office-Konto auf der Seite angemeldet hat, auf der ein Assistent verbunden wird.

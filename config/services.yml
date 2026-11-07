@@ -1,9 +1,9 @@
 # O'So MCP Server - Novalo
 #
 # PrestaShop loads this file for every active module (AppKernel), so the Symfony
-# classes of the module become services the router can reach. Both are entry
-# points: a route PrestaShop authenticates natively, which then forwards to the
-# legacy page with the tokens that page requires.
+# classes of the module become services the router can reach. The one here is
+# an entry point: a route PrestaShop authenticates natively, which then forwards
+# to the legacy page with the tokens that page requires.
 #
 # Nothing is autowired, on purpose. This file is compiled on PrestaShop 8 too,
 # where the routes are never used, and a constructor asking for a class that
@@ -11,10 +11,6 @@
 # whole back office answered 500. The controllers take nothing and look up
 # what they need when they run.
 services:
-  Novalo\Somcp\Controller\ConsentEntryController:
-    class: Novalo\Somcp\Controller\ConsentEntryController
-    public: true
-
   Novalo\Somcp\Controller\UploadEntryController:
     class: Novalo\Somcp\Controller\UploadEntryController
     public: true

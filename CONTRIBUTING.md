@@ -471,8 +471,18 @@ The version of Neuron AI is pinned in `composer.json`. The CI **Dependencies**
 job checks it for known vulnerabilities, checks the part of its API the
 assistant calls (`dev/package/contract.php`), that every class of the pruned
 archive still loads and that every Neuron class the module names is still in
-it (`dev/package/loads.php`), both on the pruned copy; the weekly **Dependencies** workflow opens an issue when a
-newer version is out.
+it (`dev/package/loads.php`), both on the pruned copy.
+
+Every three days, the **Dependencies** workflow opens an issue, labelled
+`dependencies`, when one of these needs a look:
+
+- a newer Neuron AI, or a newer version of another library `composer.json`
+  pins;
+- a known vulnerability in what the module ships, from `composer audit`;
+- a newer ALTCHA widget on npm, or an advisory on the one in
+  `views/js/altcha/`, which Composer neither updates nor audits;
+- a revision of the MCP specification newer than `SomcpProtocol::LATEST`;
+- a stable PrestaShop 8 or 9 release missing from the Integration matrix.
 
 ## Security
 

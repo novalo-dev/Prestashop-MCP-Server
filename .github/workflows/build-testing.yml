@@ -59,6 +59,7 @@ jobs:
           sparse-checkout: |
             .github/scripts
             dev/package
+            dev/guide
           persist-credentials: false
 
       - name: Name the build
@@ -109,6 +110,36 @@ jobs:
               [ -e "$dir/index.php" ] || cp build/somcp/index.php "$dir/index.php"
             done
           fi
+
+      # The user guide, as Build for Release makes it: docs/readme_<iso>.pdf in
+      # the module. Reported, never enforced, like the checks below. The PDF
+      # builder is main's for a pull request, as the check scripts are; the
+      # Markdown of the code under test is only drawn, its scripts never run.
+      - name: User guide, without blocking
+        continue-on-error: true
+        env:
+          PR: ${{ inputs.pull_request }}
+        run: |
+          if [ -f .trusted/dev/guide/build.py ]; then
+            BUILDER=.trusted/dev/guide/build.py
+          elif [ -z "$PR" ]; then
+            # A branch of this repository: its own builder, until main has one.
+            BUILDER=dev/guide/build.py
+          else
+            echo "| User guide | not built: main has no dev/guide/build.py yet |" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python3 -m pip install --quiet --break-system-packages markdown pypdf playwright
+          python3 -m playwright install --with-deps chromium > /dev/null
+          mkdir -p build/somcp/docs
+          LIST=""
+          for md in docs/guide/*.md; do
+            ISO=$(basename "$md" .md)
+            python3 "$BUILDER" "$ISO" "build/somcp/docs/readme_$ISO.pdf" "$GITHUB_WORKSPACE"
+            LIST="$LIST readme_$ISO.pdf"
+          done
+          cp build/somcp/views/index.php build/somcp/docs/index.php
+          echo "| User guide | docs/$LIST |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check, without blocking
         continue-on-error: true
@@ -183,5 +214,5 @@ jobs:
             echo "**Modules > Upload a module**. Install it on a test shop, never on a shop in"
             echo "production."
             echo ""
-            echo "Nothing was published: no tag, no release. Kept for 14 days."
+            echo "Nothing was published: no tag, no release. Kept for one day."
           } >> "$GITHUB_STEP_SUMMARY"

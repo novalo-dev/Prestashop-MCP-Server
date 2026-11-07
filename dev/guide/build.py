@@ -2,8 +2,12 @@
 # Builds the user guide PDF that PrestaShop Addons asks for, docs/readme_<iso>.pdf
 # in the module zip, from docs/guide/<iso>.md and its images.
 #
-# Usage: python3 dev/guide/build.py <iso> <output.pdf>
+# Usage: python3 dev/guide/build.py <iso> <output.pdf> [<module root>]
 #        python3 dev/guide/build.py en build/readme_en.pdf
+#
+# The module root, where docs/guide, config.xml and logo.png are read, is this
+# repository unless given: Build for Testing runs main's copy of this script
+# on the code of a pull request.
 #
 # Needs the Python packages markdown, playwright and pypdf, and Playwright's
 # Chromium.
@@ -15,11 +19,11 @@ import markdown
 import pypdf
 from playwright.sync_api import sync_playwright
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+ROOT = os.path.abspath(sys.argv[3] if len(sys.argv) > 3 else os.path.join(os.path.dirname(__file__), '..', '..'))
 GUIDE = os.path.join(ROOT, 'docs', 'guide')
 
-if len(sys.argv) != 3:
-    sys.exit('Usage: python3 dev/guide/build.py <iso> <output.pdf>')
+if len(sys.argv) not in (3, 4):
+    sys.exit('Usage: python3 dev/guide/build.py <iso> <output.pdf> [<module root>]')
 iso, output = sys.argv[1], os.path.abspath(sys.argv[2])
 source = os.path.join(GUIDE, iso + '.md')
 text = open(source, encoding='utf-8').read()
@@ -110,7 +114,9 @@ footer = (
 cover = re.sub(r'</section>.*</body>', '</section></body>', page, flags=re.S)
 with sync_playwright() as p:
     browser = p.chromium.launch()
-    tab = browser.new_page()
+    # The guide is a document: whatever HTML its Markdown holds is drawn,
+    # never run.
+    tab = browser.new_page(java_script_enabled=False)
     # The margins are the template's @page rules, so the cover can bleed.
     tab.set_content(page, wait_until='load')
     tab.pdf(path=output, print_background=True, display_header_footer=True,

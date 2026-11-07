@@ -14,6 +14,16 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+### Changed
+
+**The Assistant button stands out in the header.** It used to be a grey link
+like **View my shop** beside it. It is now a soft orange button in the module's
+colours, which turns solid orange while the chat is open, so you see at a
+glance whether it is. The round button shown on pages without a header follows
+the same colours.
+
 ## 1.3.0 - 2026-11-07
 
 **Your assistants have to be connected again after this update.** Every
@@ -122,12 +132,6 @@ sends visitors without an account to a login, an age check or a country page.
 Left unnoticed, the assistant would wait on a page you never see.
 
 ### Changed
-
-**The Assistant button stands out in the header.** It used to be a grey link
-like **View my shop** beside it. It is now a soft orange button in the module's
-colours, which turns solid orange while the chat is open, so you see at a
-glance whether it is. The round button shown on pages without a header follows
-the same colours.
 
 **Shorter audit and sales tools.** Four tools that went a little over the
 length agreed for a tool description - the CMS pages SEO audit, the product

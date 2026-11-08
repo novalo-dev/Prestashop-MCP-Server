@@ -1,0 +1,46 @@
+# The module's PHPStan settings, without the PrestaShop extension: each runner
+# brings that one itself. phpstan.dist.neon adds it from dev/tools for the
+# shop jobs; PrestaShop's own PHPStan action, which the PHP tests run too, adds
+# it from the module's vendor folder and runs the PHPStan version locked by
+# the PrestaShop release it checks out (1.x on 8.2 and 9.0). So every setting
+# here reads the same on PHPStan 1 and 2: errors are ignored by message, not by
+# identifier, which PHPStan 1.9 does not know.
+parameters:
+    level: 5
+    # PHP 8.1 is the lowest the module supports, whatever PHP the runner has.
+    phpVersion: 80100
+    paths:
+        - somcp.php
+        - classes
+        - controllers
+        - src
+        - tools
+    excludePaths:
+        - vendor
+        - dev
+        - docs
+    # Read, not analysed: the dependencies the module calls, which composer
+    # install puts in vendor/ - CI installs them before this runs.
+    scanDirectories:
+        - vendor/neuron-core/neuron-ai/src
+        - vendor/psr/event-dispatcher/src
+        # The limits and the anti-robot check of the authorization page.
+        - vendor/nikolaposa/rate-limit/src
+        - vendor/altcha-org/altcha/src
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # StockAvailable::dependsOnStock() exists on 8 and was removed on 9.
+        # Each run sees one version, where the answer is known, so PHPStan
+        # reports the guard as useless. It is what keeps the other one working.
+        -
+            message: '#StockAvailable::dependsOnStock\(\)#'
+            path: tools/SomcpToolSetOrderStatus.php
+        -
+            message: '#^Call to function is_callable\(\) .* will always evaluate to (true|false)\.$#'
+            path: tools/SomcpToolSetOrderStatus.php
+        # The PrestaShop 9 token manager, read from the container at run time:
+        # get() is typed as returning an object on Symfony 6, the check stays
+        # for a service another module could have replaced.
+        -
+            message: '#^Call to function (is_object|method_exists)\(\) .* will always evaluate to true\.$#'
+            path: classes/SomcpBackOffice.php

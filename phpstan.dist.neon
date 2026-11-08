@@ -6,43 +6,9 @@
 # against, one release and one PHP version per shop job:
 #
 #   _PS_ROOT_DIR_=/path/to/prestashop dev/tools/vendor/bin/phpstan analyse -c phpstan.dist.neon
+#
+# The settings themselves are in phpstan-module.neon, shared with PrestaShop's
+# own PHPStan action.
 includes:
     - dev/tools/vendor/prestashop/php-dev-tools/phpstan/ps-module-extension.neon
-
-parameters:
-    level: 5
-    paths:
-        - somcp.php
-        - classes
-        - controllers
-        - src
-        - tools
-    excludePaths:
-        - vendor
-        - dev
-        - docs
-    # Read, not analysed: the dependencies the module calls, which composer
-    # install puts in vendor/ - CI installs them before this runs.
-    scanDirectories:
-        - vendor/neuron-core/neuron-ai/src
-        - vendor/psr/event-dispatcher/src
-        # The limits and the anti-robot check of the authorization page.
-        - vendor/nikolaposa/rate-limit/src
-        - vendor/altcha-org/altcha/src
-    reportUnmatchedIgnoredErrors: false
-    ignoreErrors:
-        # StockAvailable::dependsOnStock() exists on 8 and was removed on 9.
-        # Each run sees one version, where the answer is known, so PHPStan
-        # reports the guard as useless. It is what keeps the other one working.
-        -
-            identifier: staticMethod.notFound
-            path: tools/SomcpToolSetOrderStatus.php
-        -
-            identifier: function.alreadyNarrowedType
-            path: tools/SomcpToolSetOrderStatus.php
-        # The PrestaShop 9 token manager, read from the container at run time:
-        # get() is typed as returning an object on Symfony 6, the check stays
-        # for a service another module could have replaced.
-        -
-            identifier: function.alreadyNarrowedType
-            path: classes/SomcpBackOffice.php
+    - phpstan-module.neon

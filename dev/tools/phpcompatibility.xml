@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!--
+  PHPCompatibility: every construct, function and class the module uses must
+  exist on PHP 8.1, the lowest version it supports, and still exist on the
+  newest. php -l only proves the files parse on the PHP running it; this reads
+  them against every version from 8.1 up. The command is in CONTRIBUTING.md
+  (an XML comment cannot hold the double hyphen of its options).
+-->
+<ruleset name="somcp PHP compatibility">
+    <file>../../somcp.php</file>
+    <file>../../classes</file>
+    <file>../../controllers</file>
+    <file>../../src</file>
+    <file>../../tools</file>
+    <file>../../upgrade</file>
+    <arg name="extensions" value="php"/>
+    <config name="testVersion" value="8.1-"/>
+
+    <rule ref="PHPCompatibility">
+        <!-- Matches functions by prefix: SomcpRandom::familyId() reads as a
+             call into the fam extension, gone since PHP 5.1. The module
+             loads no extension that PrestaShop does not already require. -->
+        <exclude name="PHPCompatibility.Extensions.RemovedExtensions"/>
+    </rule>
+</ruleset>

@@ -4,14 +4,20 @@
     "license": "AFL-3.0",
     "require": {
         "php": ">=8.1",
-        "prestashop/php-dev-tools": "^5.0",
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "friendsofphp/php-cs-fixer": "^3.64",
+        "phpcompatibility/php-compatibility": "10.0.0-alpha2",
         "phpstan/phpstan": "^2.1",
-        "friendsofphp/php-cs-fixer": "^3.64"
+        "prestashop/php-dev-tools": "^5.0",
+        "squizlabs/php_codesniffer": "^3.13"
     },
     "config": {
         "platform": {
             "php": "8.1.0"
         },
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }

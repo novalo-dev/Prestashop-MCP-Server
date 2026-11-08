@@ -184,6 +184,15 @@ dev/tools/vendor/bin/php-cs-fixer fix --dry-run --diff
 # Static analysis, against a PrestaShop folder
 _PS_ROOT_DIR_=/path/to/prestashop dev/tools/vendor/bin/phpstan analyse -c phpstan.dist.neon
 
+# Every construct, function and class available from PHP 8.1 up
+dev/tools/vendor/bin/phpcs -p -s --standard=dev/tools/phpcompatibility.xml
+
+# The archive as it ships, held to the Addons rules: index.php in every
+# folder, no hidden file but .htaccess, no forbidden file type, no eval or
+# process call, the request read through Tools::getValue(), config.xml
+# matching somcp.php, the logo
+dev/package/build.sh /tmp/pack && php dev/package/addons-check.php /tmp/pack/somcp
+
 # Every visible string in the four languages
 php .github/scripts/check-translations.php .
 
@@ -245,6 +254,15 @@ from the zip, the package built by `git archive` as GitHub serves it. A
 dependency that no longer fits beside the core's own fails there. PrestaShop 8
 is not among them: packages locked by its core declare PHP 8.0 at most, so
 Composer refuses the module there, and it installs from the zip.
+
+The **PHP tests** workflow also runs PrestaShop's own PHPStan action, the
+one PrestaShop's modules use, on PrestaShop 8.2 and 9.0: it checks out the
+PrestaShop sources, analyses with the PHPStan version they lock and reads
+`phpstan-module.neon`, the settings `phpstan.dist.neon` shares. Write those
+settings so PHPStan 1 and 2 both read them: ignore an error by its message,
+not by its identifier. A rule of `dev/package/addons-check.php` that an
+exception needs, such as a superglobal read directly, takes the file and the
+reason in that script, never a blanket skip.
 
 The **PHP tests** workflow also lints every file on PHP 8.1 to 8.4 and compiles `config/services.yml`
 with the Symfony versions of PrestaShop 8 (4.4) and 9 (6.4), with and without

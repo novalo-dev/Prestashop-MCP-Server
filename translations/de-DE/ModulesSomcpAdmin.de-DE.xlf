@@ -3202,6 +3202,11 @@
       <source>Change a cart rule</source>
       <target>Eine Warenkorbregel ändern</target>
     </trans-unit>
+    <!-- Switch a cart rule on or off -->
+    <trans-unit id="90671197484dd3219c184fa4580e68bf" resname="Switch a cart rule on or off">
+      <source>Switch a cart rule on or off</source>
+      <target>Eine Warenkorbregel aktivieren oder deaktivieren</target>
+    </trans-unit>
     <!-- Sales - changes -->
     <trans-unit id="a1be5de2a33a782765a42196dbdc0c93" resname="Sales - changes">
       <source>Sales - changes</source>

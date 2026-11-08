@@ -27,7 +27,17 @@ lists each change with its old and new value; a call that would change nothing
 writes nothing. It refuses what the back office refuses, checked on the rule as
 it will be, so a start date after the end date kept is refused. The rule's
 countries, carriers, groups, compatible rules, product selection and shops are
-left exactly as they were, and switching it on or off stays in the back office.
+left exactly as they were, and switching it on or off is left to the tool below.
+
+**Switch a voucher or a cart discount on or off.** The new tool
+`somcp_set_cart_rule_active` is the **Status** switch of the list
+**Catalog > Discounts > Cart Rules**: it switches one rule on or off and
+changes nothing else, so a promotion can be stopped early and started again;
+orders that already used the rule keep their discount. A rule already in that
+state is left untouched. When a rule is switched on but cannot apply as
+expected - its dates are over or still to come, nothing is left of **Total
+available**, or it has no code and so applies on its own to every cart - the
+answer says so.
 
 ### Changed
 

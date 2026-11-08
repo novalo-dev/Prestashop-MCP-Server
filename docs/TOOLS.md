@@ -3803,7 +3803,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Does** - changes one cart rule with everything `somcp_create_cart_rule` can write: the fields of the **Information**, **Conditions** and **Actions** tabs of **Catalog > Discounts > Cart Rules > Edit**, restrictions apart. Only what is given changes.
 
-**Do not use for** - switching a rule on or off (→ `somcp_set_cart_rule_active`, back office until it is written), creating one (→ `somcp_create_cart_rule`), its restrictions (back office).
+**Do not use for** - switching a rule on or off (→ `somcp_set_cart_rule_active`), creating one (→ `somcp_create_cart_rule`), its restrictions (back office).
 
 **Parameters** - the names and shapes of `somcp_create_cart_rule`, so a rule read with `somcp_get_cart_rule` can be given back as is.
 
@@ -3814,7 +3814,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `name` | **Name** | object | no | per ISO code; changes in the languages given and keeps the others; never empty once given |
 | every other field of `somcp_create_cart_rule` but `active` | as there | as there | no | same names, same shapes, same checks; left out: unchanged |
 
-`active`, `restrictions`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are accepted when given back unchanged from `somcp_get_cart_rule` (the names it adds in its reading language apart), and refused when they differ: `active` and `restrictions` point to the back office, the others are worked out by the shop.
+`active`, `restrictions`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are accepted when given back unchanged from `somcp_get_cart_rule` (the names it adds in its reading language apart), and refused when they differ: `active` points to `somcp_set_cart_rule_active`, `restrictions` to the back office, the others are worked out by the shop.
 
 **Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, and `language` for `name`), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to, `product_selection` says that product is still in **Product selection**. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
@@ -3831,24 +3831,33 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 - The 9.0.0 gift check of `somcp_create_cart_rule`, applied on both versions.
 
 #### `somcp_set_cart_rule_active`
-**State**: to write · [issue #109](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/109)
+**State**: written · [issue #109](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/109)
 **Nature**: `acts(EDIT, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
 
-**Does** - switches one cart rule on or off.
+**Does** - switches one cart rule on or off: the **Status** switch of the list **Catalog > Discounts > Cart Rules**, and of **Information** > **Status** in its form. Nothing else changes.
 
-**Do not use for** - changing its content (→ `somcp_update_cart_rule`).
+**Do not use for** - changing anything else of the rule (→ `somcp_update_cart_rule`), deleting it (back office).
 
 **Parameters**
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `id_cart_rule` | integer | yes |  |
-| `active` | boolean | yes |  |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_cart_rule` | **ID** | integer | yes | from `somcp_list_cart_rules` |
+| `active` | **Status** | boolean | yes | `true` or `false`, nothing else (a string or a number is refused, never read as true) |
 
-**Returns** - `changed`, `id_cart_rule`, `active`.
+**Returns** - `changed: true`, `id_cart_rule`, `active`, and `warnings` when the rule is switched on but cannot apply yet or any more: the end of **Valid** passed, its start still to come, **Total available** at 0, or no **Code** (it then applies on its own to every cart that meets its conditions - the **Caution!** of the form). A rule already in that state answers `changed: false` with a `reason`, and nothing is written.
+
+**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): unknown arguments; `active: true or false`; an `id_cart_rule` that is not a whole number above 0; an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`).
 
 **Notes**
-- Reversible, and said so: switching off is how a promotion is stopped early.
+- The rules this shop can use are those of `somcp_list_cart_rules` (`shop_restriction = 0`, or a `cart_rule_shop` row for it), tested with its `SomcpToolListCartRules::inShop()`.
+- Written as the list's switch writes it (`ObjectModel::toggleStatus()`): `setFieldsToUpdate(['active' => true])`, then `update()`, so `actionObjectCartRuleUpdateAfter` fires and the rule's other fields as loaded are never written back over a change made since. The form is not followed: it saves every field and rewrites the restrictions (`afterUpdate()`).
+- Reversible, and the description says so: switching off is how a promotion is stopped early; orders that already used the rule keep their discount.
+- A rule switched on with no code reaches every customer at once: the description tells the assistant to say so to the merchant before calling.
+- Not to be retried blindly: if the answer is lost, read the rule with `somcp_get_cart_rule` before calling again.
+
+**Differences between 8.0.1 and 9.0.0**
+- None: the same list, the same switch and the same column.
 
 #### `somcp_list_catalog_price_rules`
 **State**: to write · [issue #110](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/110)

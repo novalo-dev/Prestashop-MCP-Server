@@ -86,7 +86,7 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
             'Changes one cart rule, as Catalog > Discounts > Cart Rules > Edit, under the names of '
                 . 'somcp_create_cart_rule; what somcp_get_cart_rule returns can be given back. id_cart_rule from '
                 . 'somcp_list_cart_rules. Only what is given changes. quantity is what is left. Placed orders keep their '
-                . 'amount. Status and restrictions stay in the back office. Show the merchant the change and call once '
+                . 'amount. Status: somcp_set_cart_rule_active; restrictions stay in the back office. Show the merchant the change and call once '
                 . 'they agree. Not to be retried: if the answer is lost, read somcp_get_cart_rule first.',
             self::inputSchema(),
             [SomcpScope::SALES_WRITE],
@@ -137,7 +137,7 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         foreach (self::KEPT_AS_READ as $field) {
             $schema['properties'][$field] = [
                 'description' => 'As somcp_get_cart_rule returns it, accepted unchanged only: '
-                    . ($field === 'active' ? 'the merchant switches the rule on or off in the back office.'
+                    . ($field === 'active' ? 'switched with somcp_set_cart_rule_active.'
                         : ($field === 'restrictions' ? 'the merchant sets them on the Conditions tab of the rule.' : 'worked out by the shop.')),
             ];
         }
@@ -215,7 +215,7 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
             // there and given back whole is not refused for what it carries.
             if (json_encode(self::withoutNames($arguments[$key])) !== json_encode(self::withoutNames($current[$key] ?? null))) {
                 if ($key === 'active') {
-                    $errors[] = 'active: not changed by this tool - the merchant switches the rule on or off in the list of Catalog > Discounts > Cart Rules';
+                    $errors[] = 'active: not changed by this tool - switch the rule on or off with somcp_set_cart_rule_active';
                 } elseif ($key === 'restrictions') {
                     $errors[] = 'restrictions: not set by this tool - the merchant sets them on the Conditions tab of the rule in the back office';
                 } else {

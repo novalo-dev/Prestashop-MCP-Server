@@ -15,6 +15,7 @@ identifier, so the merchant can find it in the back office.
 - `somcp_get_cart_rule`
 - `somcp_create_cart_rule`
 - `somcp_update_cart_rule`
+- `somcp_set_cart_rule_active`
 
 ## Know which shop you are in
 
@@ -127,8 +128,8 @@ dates you used.
    `somcp_search_customers`, a product from `somcp_search_products`, a gift's
    combination from `somcp_get_product`. The answer names every problem at
    once: correct them all and call again.
-3. **It is created off** unless `active` is true: say so, and leave switching
-   it on to the merchant. Countries, carriers, groups, other rules and the
+3. **It is created off** unless `active` is true: say so, and switch it on
+   with `somcp_set_cart_rule_active` only once the merchant asks. Countries, carriers, groups, other rules and the
    product selection are set on the rule's **Conditions** tab in the back
    office. If an answer is lost, look for the rule with
    `somcp_list_cart_rules` before calling again.
@@ -143,10 +144,23 @@ dates you used.
    **Total available** is what is left, orders using the rule have lowered it
    already: do not add those uses again. Orders already placed keep the amount
    they had.
-3. The status, countries, carriers, groups, other rules and the product
-   selection stay with the merchant in the back office. A call that changes
-   nothing answers `changed: false`. If an answer is lost, read the rule again
-   with `somcp_get_cart_rule` before calling again.
+3. The countries, carriers, groups, other rules and the product selection
+   stay with the merchant in the back office. A call that changes nothing
+   answers `changed: false`. If an answer is lost, read the rule again with
+   `somcp_get_cart_rule` before calling again.
+
+## Switching a voucher or a discount on or off
+
+1. Take the rule's `id_cart_rule` from `somcp_list_cart_rules`, and switch it
+   with `somcp_set_cart_rule_active`, `active` true or false. Nothing else of
+   the rule changes. Switching off stops a promotion early; orders that used
+   it keep their discount.
+2. A rule **with no code** applies on its own to every cart that meets its
+   conditions: tell the merchant before switching it on.
+3. Read the `warnings` of the answer to the merchant: a rule switched on whose
+   dates are over or still to come, or with nothing left of **Total
+   available**, does not apply yet. If an answer is lost, read the rule with
+   `somcp_get_cart_rule` before calling again.
 
 ## Never
 

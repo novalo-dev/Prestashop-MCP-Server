@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "an identifier no cart rule has: the demo data holds none, so it is refused and points to the list", "arguments": {"id_cart_rule": 999999, "active": false}, "expect": "error", "contains": ["Nothing was changed", "id_cart_rule: no cart rule of this shop has the identifier 999999", "somcp_list_cart_rules"]},
+    {"why": "the same unknown rule switched on is refused the same way", "arguments": {"id_cart_rule": 999999, "active": true}, "expect": "error", "contains": ["no cart rule of this shop has the identifier 999999"]},
+    {"why": "a state given as a string is refused, never read as true", "arguments": {"id_cart_rule": 999999, "active": "yes"}, "expect": "error", "contains": ["active: true or false"]},
+    {"why": "a state given as a number is refused", "arguments": {"id_cart_rule": 999999, "active": 1}, "expect": "error", "contains": ["active: true or false"]},
+    {"why": "both fields are required", "arguments": {}, "expect": "error", "contains": ["id_cart_rule: a whole number above 0", "active: true or false"]},
+    {"why": "zero is not an identifier", "arguments": {"id_cart_rule": 0, "active": false}, "expect": "error", "contains": ["id_cart_rule: a whole number above 0"]},
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "id_cart_rule": "one", "active": "off"}, "expect": "error", "contains": ["foo: not a field of this tool", "id_cart_rule: a whole number above 0", "active: true or false"]}
+  ]
+}

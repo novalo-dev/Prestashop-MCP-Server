@@ -655,7 +655,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     protected static function categoryImages(array $arguments, array &$errors): array
     {
         $images = [];
-        $cover = self::imageArgument($arguments, 'cover_image', $errors, 'the cover image');
+        $cover = self::imageArgument($arguments, 'cover_image', $errors, 'cover image');
         if ($cover !== null) {
             $images[] = $cover + ['for' => 'cover_image'];
         }
@@ -686,7 +686,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 is_array($item) && !array_is_list($item) ? $item : [],
                 'menu_thumbnails[' . $i . ']',
                 $errors,
-                'a menu thumbnail'
+                'menu thumbnail'
             );
             if ($source !== null) {
                 $images[] = $source + ['for' => 'menu_thumbnails'];
@@ -784,7 +784,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      * Each image downloaded, checked and written where the core's uploaders write it.
      *
      * @param int $idCategory
-     * @param array<int, array{url: string, for: string}> $images
+     * @param array<int, array{url: string, upload_ref: string, for: string}> $images
      *
      * @return array<int, array<string, mixed>>
      */

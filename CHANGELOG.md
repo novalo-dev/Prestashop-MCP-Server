@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Partial refunds.** The new tool `somcp_issue_partial_refund` pays back part
+of a paid order, as the **Partial refund** button of the order page does: some
+units of a line, part of a line's price, part of the shipping, with a credit
+slip, a voucher or both. Each amount is given in the tax mode the order page
+shows, a line that is not one of the order's or an amount above what is left
+is refused instead of being lowered, and the answer gives the credit slip and
+the voucher created.
+
 **Create a catalogue price rule.** The new tool
 `somcp_create_catalog_price_rule` creates one rule of
 **Catalog > Discounts > Catalog Price Rules**, with everything the form holds:

@@ -1387,6 +1387,11 @@
       <source>Record a payment for an order</source>
       <target>Enregistrer un paiement pour une commande</target>
     </trans-unit>
+    <!-- Issue a partial refund on an order -->
+    <trans-unit id="e9fb74c07706b21328f2d3549f688b4e" resname="Issue a partial refund on an order">
+      <source>Issue a partial refund on an order</source>
+      <target>Effectuer un remboursement partiel sur une commande</target>
+    </trans-unit>
     <!-- Audit the SEO of products -->
     <trans-unit id="6cf0dd16e3dec0f64c02b9f6dbc7ddbf" resname="Audit the SEO of products">
       <source>Audit the SEO of products</source>

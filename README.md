@@ -266,6 +266,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_add_order_message` | ✎ Add a message to an order | Orders › edit |
 | `somcp_set_order_note` | ✎ Set the private note of an order | Orders › edit |
 | `somcp_add_order_payment` | ✎ Record a payment for an order | Orders › edit |
+| `somcp_issue_partial_refund` | ✎ Issue a partial refund on an order | Orders › edit |
 | `somcp_create_return_status` | ✎ Create a return status | Statuses › add |
 | `somcp_update_return_status` | ✎ Change a return status | Statuses › edit |
 | `somcp_delete_return_status` | ✎ Delete a return status | Statuses › delete |

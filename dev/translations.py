@@ -1102,6 +1102,10 @@ T = {
  "Enregistrer un paiement pour une commande",
  "Registrar un pago de un pedido",
  "Eine Zahlung für eine Bestellung erfassen"),
+"Issue a partial refund on an order": (
+ "Effectuer un remboursement partiel sur une commande",
+ "Realizar un reembolso parcial de un pedido",
+ "Eine Teilerstattung für eine Bestellung vornehmen"),
 "Audit the SEO of products": (
  "Auditer le SEO des produits",
  "Auditar el SEO de los productos",

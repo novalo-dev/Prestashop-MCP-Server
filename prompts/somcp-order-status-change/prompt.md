@@ -19,6 +19,7 @@ of it can be undone by calling again.
 - `somcp_add_order_message`
 - `somcp_set_order_note`
 - `somcp_add_order_payment`
+- `somcp_issue_partial_refund`
 
 ## Know which shop you are in
 
@@ -114,6 +115,24 @@ wants it.
 - When the order has an invoice, `id_order_invoice` is required: take it from
   `documents.invoices` of `somcp_get_order`, never guess it.
 - A refund is not a negative payment: it is refused.
+
+## A partial refund
+
+When the merchant wants to pay back part of a paid order - some units of a
+line, a part of a line's price, part of the shipping - use
+`somcp_issue_partial_refund`. A partial refund is money paid back: say the
+amounts and what will be generated (a credit slip, a voucher or both), and
+wait for the merchant's go-ahead before the call.
+
+- Read the order with `somcp_get_order` first: each line is named by its
+  `products[].id_order_detail`, and `quantity_refunded` says what was already
+  refunded.
+- Give each amount in the tax mode of the order: `amount_tax_excluded` or
+  `amount_tax_included`. A wrong one is refused with the right field named.
+- A credit slip is generated unless the merchant says otherwise; a voucher
+  only when asked. `restock` only matters once the order is delivered.
+- Never repeat the call on a lost answer: check `quantity_refunded` and
+  `documents.credit_slips` with `somcp_get_order`.
 
 ## A new order status
 

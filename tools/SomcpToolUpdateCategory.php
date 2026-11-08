@@ -106,10 +106,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             . 'while it is not displayed - 301 or 302 (redirect), 404 or 410.' . $kept;
         $properties['id_type_redirected']['description'] = 'Assistant. PrestaShop 9 only: the category a 301 or 302 '
             . 'redirects to, from somcp_list_categories; 0 for the closest parent.' . $kept;
-        $properties['cover_image']['description'] = 'Merchant. Public https address of a new cover image, which '
-            . 'replaces the current one. Downloaded by the shop: no redirect, 10 MB at most, JPEG, PNG, GIF or WebP.';
+        $properties['cover_image']['description'] = 'Merchant. A new cover image that replaces the current one. Give '
+            . 'its url, downloaded by the shop (public https only, no redirect, 10 MB at most), or the upload_ref of a '
+            . 'file already on the shop. JPEG, PNG, GIF or WebP. Never file content.';
         $properties['menu_thumbnails']['description'] = 'Merchant. PrestaShop 8 only, refused on 9, which dropped '
-            . 'them: up to 3 public https addresses, which replace the current menu thumbnails, downloaded like the cover.';
+            . 'them: up to 3 images that replace the current menu thumbnails, each given by url or upload_ref like the cover.';
         $properties['position'] = [
             'type' => 'integer',
             'description' => 'Merchant. Place among the categories of its parent, from 0 as in somcp_get_category (the '
@@ -275,7 +276,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             'category' => [],
             'groups' => null,
             'position' => null,
-            'images' => self::imageUrls($arguments, $errors),
+            'images' => self::categoryImages($arguments, $errors),
             'remove_cover' => false,
             'remove_thumbnails' => false,
             'replace_thumbnails' => false,
@@ -613,7 +614,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             return $image['for'] === 'cover_image';
         }));
         if ($covers !== []) {
-            self::record($plan, 'cover_image', $before['cover_image'], $covers[0]['url']);
+            self::record($plan, 'cover_image', $before['cover_image'], self::imageOrigin($covers[0]));
         } elseif ($plan['remove_cover']) {
             if ($before['cover_image'] === null) {
                 $plan['remove_cover'] = false;
@@ -621,8 +622,8 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
                 self::record($plan, 'cover_image', $before['cover_image'], null);
             }
         }
-        $thumbnails = array_values(array_map(static function (array $image): string {
-            return $image['url'];
+        $thumbnails = array_values(array_map(static function (array $image): array {
+            return self::imageOrigin($image);
         }, array_filter($plan['images'], static function (array $image): bool {
             return $image['for'] === 'menu_thumbnails';
         })));

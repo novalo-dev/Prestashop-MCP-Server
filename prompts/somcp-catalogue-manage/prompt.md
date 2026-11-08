@@ -283,7 +283,9 @@ the merchant says otherwise. Before calling it:
    yourself, in every language being filled, and show them first. Lengths
    count the visible text, spaces included, HTML tags not counted. A language
    of the shop left out of `languages` takes the default language's text.
-3. An image is given by a public `https` address, which the shop downloads.
+3. An image is given by `url` (a public `https` address the shop downloads) or
+   by `upload_ref` (a file already on the shop - one attached in the chat,
+   deposited by the merchant, or generated here); one of the two, never both.
 
 When it succeeds, show the merchant the category as returned, the
 `seo_warnings`, and any image in `images` that was refused, with its reason. On

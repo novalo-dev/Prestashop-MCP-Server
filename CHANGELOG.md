@@ -60,6 +60,15 @@ answer says so.
 
 ### Changed
 
+**A photo from the chat can be a category image.** The cover and the menu
+thumbnails of `somcp_create_category` and `somcp_update_category` now take an
+image the same way the product and brand tools do: either a public `https`
+address the shop downloads, or a file already on the shop - one attached in the
+assistant chat, deposited by the merchant, or generated in the chat. A photo
+the merchant drops into the conversation can now be used straight away as a
+category cover or menu thumbnail. The plain address form is replaced by this
+object: give `{"url": "https://..."}` instead of the bare address.
+
 **Clearer order status list.** The tool that lists the order statuses now
 returns each status's icon, and renames three answer keys to match what the
 status form shows: `status_id` (was `id`), `in_transit` (was `delivery`, the

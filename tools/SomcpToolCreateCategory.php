@@ -166,16 +166,12 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                     'description' => 'Assistant. PrestaShop 9 only: the category a 301 or 302 redirects to, from '
                         . 'somcp_list_categories; 0 or left out for the closest parent.',
                 ],
-                'cover_image' => [
-                    'type' => 'string',
-                    'description' => 'Merchant. Public https address of the cover image. Downloaded by the shop: '
-                        . 'no redirect, 10 MB at most, JPEG, PNG, GIF or WebP.',
-                ],
+                'cover_image' => self::imageSchema('Merchant. The cover image.', 'the cover image'),
                 'menu_thumbnails' => [
                     'type' => 'array',
-                    'description' => 'Merchant. PrestaShop 8 only, refused on 9, which dropped them: up to 3 '
-                        . 'public https addresses of the images the main menu shows, downloaded like the cover.',
-                    'items' => ['type' => 'string'],
+                    'description' => 'Merchant. PrestaShop 8 only, refused on 9, which dropped them: up to 3 images '
+                        . 'the main menu shows, each given like the cover image.',
+                    'items' => self::imageSchema('Merchant. One menu thumbnail.', 'a menu thumbnail'),
                 ],
             ],
             'required' => ['name'],
@@ -246,7 +242,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             ],
             'texts' => [],
             'groups' => self::customerGroups($arguments['groups'] ?? null, $errors),
-            'images' => self::imageUrls($arguments, $errors),
+            'images' => self::categoryImages($arguments, $errors),
         ];
 
         if (array_key_exists('active', $arguments)) {
@@ -644,23 +640,24 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     }
 
     /**
-     * The image addresses, checked for shape only: they are fetched once the category exists.
+     * The images, each read as a url or an upload_ref object, checked for shape
+     * only: the bytes are fetched once the category exists.
+     *
+     * The same object and the same errors as every other image field, through
+     * the shared imageSource(): a photo attached in the chat reaches the tool
+     * as an upload_ref, so the category cover and thumbnails accept it too.
      *
      * @param array<string, mixed> $arguments
      * @param array<int, string> $errors
      *
-     * @return array<int, array{url: string, for: string}>
+     * @return array<int, array{url: string, upload_ref: string, for: string}>
      */
-    protected static function imageUrls(array $arguments, array &$errors): array
+    protected static function categoryImages(array $arguments, array &$errors): array
     {
         $images = [];
-        if (array_key_exists('cover_image', $arguments)) {
-            $url = self::string($arguments['cover_image']);
-            if ($url === null || trim($url) === '') {
-                $errors[] = 'cover_image: a public https address';
-            } else {
-                $images[] = ['url' => trim($url), 'for' => 'cover_image'];
-            }
+        $cover = self::imageArgument($arguments, 'cover_image', $errors, 'the cover image');
+        if ($cover !== null) {
+            $images[] = $cover + ['for' => 'cover_image'];
         }
 
         if (!array_key_exists('menu_thumbnails', $arguments)) {
@@ -673,19 +670,27 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
 
             return $images;
         }
-        $urls = self::items($arguments['menu_thumbnails'], 'menu_thumbnails', $errors, false);
-        if (count($urls) > self::MENU_THUMBNAILS_MAX) {
-            $errors[] = 'menu_thumbnails: ' . self::MENU_THUMBNAILS_MAX . ' at most, ' . count($urls) . ' given';
+        $items = $arguments['menu_thumbnails'];
+        if (!is_array($items) || !array_is_list($items)) {
+            $errors[] = 'menu_thumbnails: a list of images';
 
             return $images;
         }
-        foreach ($urls as $i => $url) {
-            $url = self::string($url);
-            if ($url === null || trim($url) === '') {
-                $errors[] = 'menu_thumbnails[' . $i . ']: a public https address';
-                continue;
+        if (count($items) > self::MENU_THUMBNAILS_MAX) {
+            $errors[] = 'menu_thumbnails: ' . self::MENU_THUMBNAILS_MAX . ' at most, ' . count($items) . ' given';
+
+            return $images;
+        }
+        foreach ($items as $i => $item) {
+            $source = self::imageSource(
+                is_array($item) && !array_is_list($item) ? $item : [],
+                'menu_thumbnails[' . $i . ']',
+                $errors,
+                'a menu thumbnail'
+            );
+            if ($source !== null) {
+                $images[] = $source + ['for' => 'menu_thumbnails'];
             }
-            $images[] = ['url' => trim($url), 'for' => 'menu_thumbnails'];
         }
 
         return $images;
@@ -791,15 +796,14 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         foreach ($images as $image) {
             $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
             if ($file === false) {
-                $report[] = ['url' => $image['url'], 'for' => $image['for'], 'refused' => 'the shop has no room to receive it'];
+                $report[] = self::imageOrigin($image) + ['for' => $image['for'], 'refused' => 'the shop has no room to receive it'];
                 continue;
             }
 
             try {
-                $refusal = self::download($image['url'], $file);
-                if ($refusal === '') {
-                    $refusal = self::checkImage($file);
-                }
+                // url or upload_ref, then the image check: the same path every
+                // tool takes, so a guard added there reaches the category too.
+                $refusal = self::fetchImage(['url' => $image['url'], 'upload_ref' => $image['upload_ref']], $file);
                 if ($refusal === '') {
                     if ($image['for'] === 'cover_image') {
                         // CategoryCoverImageUploader: the original as
@@ -826,7 +830,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 @unlink($file);
             }
 
-            $report[] = ['url' => $image['url'], 'for' => $image['for']]
+            $report[] = self::imageOrigin($image) + ['for' => $image['for']]
                 + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
         }
 

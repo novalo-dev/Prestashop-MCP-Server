@@ -59,7 +59,7 @@ class SomcpToolListCatalogPriceRules
      *
      * @var array<string, string>
      */
-    private const CONDITION_IDS = [
+    public const CONDITION_IDS = [
         'category' => 'id_category',
         'manufacturer' => 'id_manufacturer',
         'supplier' => 'id_supplier',

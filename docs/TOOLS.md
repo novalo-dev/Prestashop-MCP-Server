@@ -3915,31 +3915,45 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 - No difference between 8.0.1 and 9.0.0 in what the tool reads: the same legacy controller, list, class and tables; the multistore column is **Shop** on 8.0.1 and **Store** on 9.0.0.
 
 #### `somcp_create_catalog_price_rule`
-**State**: to write · [issue #111](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/111)
+**State**: written · [issue #111](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/111)
 **Nature**: `acts(ADD, 'AdminSpecificPriceRule')` · **Scope**: `mcp.sales.write`
 
-**Does** - creates one catalogue price rule, optionally limited to some categories, and applies it.
+**Does** - creates one catalogue price rule, as **Catalog > Discounts > Catalog Price Rules > Add new catalog price rule** does, with its conditions, and applies it at once to the products it picks.
 
-**Do not use for** - a voucher (→ `somcp_create_cart_rule`), or one product's own price (→ `somcp_update_product`).
+**Do not use for** - a voucher or a cart discount (→ `somcp_create_cart_rule`); one product's own specific price (→ `somcp_update_product`).
 
-**Parameters**
+**Parameters** - the names `somcp_list_catalog_price_rules` returns, so a rule read there can be given back.
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `name` | string | yes |  |
-| `reduction` | number | yes |  |
-| `reduction_type` | enum | yes | `percentage` or `amount` |
-| `reduction_tax` | boolean | no | for an amount |
-| `from` / `to` | string | yes | `YYYY-MM-DD HH:MM:SS` |
-| `from_quantity` | integer | no | 1 by default |
-| `currency` / `country` / `group` | string or integer | no | ISO codes, and a group from `somcp_list_customer_groups`; all by default |
-| `categories` | array of integer | no | limit the rule to products of these categories |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** | string | yes | 255 characters at most, `isCleanHtml` |
+| `currency` | **Currency** | string | no | ISO code of a currency of the shop; left out: **All currencies** |
+| `country` | **Country** | string | no | ISO code; left out: **All countries** |
+| `id_group` | **Group** | integer | no | from `somcp_list_customer_groups`, 0 (the default) for **All groups** |
+| `from_quantity` | **From quantity** | integer | no | 1 by default, 1 or more |
+| `price` | **Price (tax excl.)** / **Leave initial price** | number | no | a fixed price tax excluded, or -1 (the default, **Leave initial price**) |
+| `reduction_type` | **Reduction type** | string | no | `amount` (the default) or `percentage` |
+| `reduction` | **Reduction** | number | yes | an amount, or for a percentage the fraction as in `somcp_create_product` (`0.1` for 10 %), stored ×100 the way the form stores it |
+| `reduction_tax` | **Reduction with or without taxes** | boolean | no | `true` (the default, **Tax included**) |
+| `from` / `to` | **From** / **To** | string | no | `YYYY-MM-DD HH:MM:SS`; left out: no start, no end |
+| `condition_groups` | **Conditions** | array of arrays | no | each group a list of `{"type": "category", "id_category": 4}`, `manufacturer`/`id_manufacturer`, `supplier`/`id_supplier`, `attribute`/`id_attribute`, `feature`/`id_feature_value`, the shape `somcp_list_catalog_price_rules` returns; `name` accepted and ignored. Left out or `[]`: every product |
 
-**Returns** - `created`, `id_specific_price_rule`, the rule, and `products_affected` (count).
+`id_shop` is the token's shop; no **Shop** argument. The fields the list returns but the shop works out (`id_specific_price_rule`, `id_shop`, `group_name`, `amounts_currency`, `current`) are refused by name.
+
+**Returns** - `created: true`, `catalog_price_rule` (one entry of `somcp_list_catalog_price_rules`, read back from the shop, names in the shop default language), `all_products` and `products_affected`: the number of distinct products `getAffectedProducts()` picked, or for a rule without condition (`all_products: true`, one specific price for product 0) the number of products of the shop.
+
+**Errors** - in the shape of #169, all in one answer, nothing written: unknown arguments; `name` missing, empty, too long or refused by `isCleanHtml`; `reduction` missing; the checks of one rule of `specific_prices` in `somcp_create_product`, with the same texts (unknown currency, country or group, `from_quantity` below 1, a negative `price` other than -1, a negative `reduction`, above 1 for a percentage, neither a price nor a reduction, bad dates or `to` before `from`); an unknown condition `type`, an empty group, a missing or unknown identifier, each naming the list tool to take it from.
 
 **Notes**
-- Written through `SpecificPriceRule` and its condition groups, then `apply()`, as the back office does.
-- The answer says how many products the rule reaches, so the merchant sees its size before it runs a day.
+- The checks of the price and the reduction are `SomcpToolCreateProduct::rule()`, called rather than copied: the rule writes specific prices.
+- How conditions combine, said in the description: the conditions of one group must all hold (AND), one group is enough (OR); an attribute condition touches combinations, not the whole product.
+- Writes: `SpecificPriceRule::add()`, then `addConditions()` once per group, then `apply()`, in the order of `processSave()`. A group that cannot be written deletes the rule again. The core reapplies every rule when a product is saved, so the tool has nothing else to do.
+- No update or delete tool yet: a rule is changed or removed in the back office.
+- Cart rules keep their own shape for a percentage (`{"type": "percent", "value": 10}`): this tool follows the product specific prices, the notion it writes.
+- Not to be retried blindly: if the answer is lost, look for the rule with `somcp_list_catalog_price_rules`.
+
+**Differences between 8.0.1 and 9.0.0**
+- None in what the tool writes: the same class, tables and save. `name` is checked for 255 characters by the tool on both, since only 9.0.0 declares the `size`. The multistore field is **Shop** on 8.0.1 and **Store** on 9.0.0.
 
 ## Prompts
 

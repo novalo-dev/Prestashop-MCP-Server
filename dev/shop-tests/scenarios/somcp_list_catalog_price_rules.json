@@ -1,6 +1,7 @@
 {
   "calls": [
-    {"why": "the catalogue price rules of the shop; the demo data holds none on a fresh install", "arguments": {}, "expect": "ok", "contains": ["\"catalog_price_rules\": []", "\"returned\": 0", "\"total_count\": 0", "\"offset\": 0", "\"language\""]},
+    {"why": "the catalogue price rules of the shop: the demo data holds none, and the scenario of somcp_create_catalog_price_rule runs first and writes some", "arguments": {}, "expect": "ok", "contains": ["\"catalog_price_rules\"", "\"returned\"", "\"total_count\"", "\"offset\": 0", "\"language\""]},
+    {"why": "a rule written by the create tool is read back by its name, with its condition", "arguments": {"name": "Somcp men ten percent"}, "expect": "ok", "contains": ["\"name\": \"Somcp men ten percent\"", "\"reduction\": 0.1", "\"id_category\": 4", "\"total_count\": 1"]},
     {"why": "only the percentage rules, one page of five", "arguments": {"reduction_type": "percentage", "limit": 5}, "expect": "ok", "contains": ["\"catalog_price_rules\""]},
     {"why": "only the rules in force right now", "arguments": {"current": true}, "expect": "ok", "contains": ["\"catalog_price_rules\""]},
     {"why": "the rules for one customer group and for all groups", "arguments": {"id_group": 3}, "expect": "ok", "contains": ["\"catalog_price_rules\""]},

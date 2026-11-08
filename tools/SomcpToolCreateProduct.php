@@ -1899,11 +1899,14 @@ class SomcpToolCreateProduct
      */
     protected static function rule(array $item, string $path, array $rule, int $combinations, int $idShop, array &$errors): array
     {
+        // An empty path names the fields alone, for somcp_create_catalog_price_rule,
+        // whose rule is the whole call rather than one entry of a list.
+        $at = $path === '' ? '' : $path . '.';
         if (isset($item['combination'])) {
             $rule['combination'] = self::position($item, 'combination', $combinations, $path, $errors);
         }
         if (isset($item['currency'])) {
-            $rule['id_currency'] = self::currency($item['currency'], $idShop, $path . '.currency', $errors);
+            $rule['id_currency'] = self::currency($item['currency'], $idShop, $at . 'currency', $errors);
         }
         if (isset($item['country'])) {
             $iso = self::string($item['country']);
@@ -1911,49 +1914,49 @@ class SomcpToolCreateProduct
             // rather than answering false, so the code is checked first.
             $idCountry = $iso !== null && Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
             if ($idCountry <= 0) {
-                $errors[] = $path . '.country: no country with this ISO code';
+                $errors[] = $at . 'country: no country with this ISO code';
             }
             $rule['id_country'] = $idCountry;
         }
         if (isset($item['id_group'])) {
             $idGroup = self::integer($item['id_group']);
             if ($idGroup === null || $idGroup < 0 || ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup)))) {
-                $errors[] = $path . '.id_group: no such customer group. Take one from somcp_list_customer_groups, 0 for all.';
+                $errors[] = $at . 'id_group: no such customer group. Take one from somcp_list_customer_groups, 0 for all.';
             }
             $rule['id_group'] = (int) $idGroup;
         }
         if (isset($item['id_customer'])) {
             $idCustomer = self::integer($item['id_customer']);
             if ($idCustomer === null || $idCustomer < 0 || ($idCustomer > 0 && !Customer::customerIdExistsStatic($idCustomer))) {
-                $errors[] = $path . '.id_customer: no such customer, 0 for all';
+                $errors[] = $at . 'id_customer: no such customer, 0 for all';
             }
             $rule['id_customer'] = (int) $idCustomer;
         }
         if (isset($item['from_quantity'])) {
             $from = self::integer($item['from_quantity']);
             if ($from === null || $from < 1) {
-                $errors[] = $path . '.from_quantity: a whole number, 1 or more';
+                $errors[] = $at . 'from_quantity: a whole number, 1 or more';
             }
             $rule['from_quantity'] = (int) $from;
         }
         if (isset($item['price'])) {
             $price = self::float($item['price']);
             if ($price === null || ($price < 0 && $price !== -1.0)) {
-                $errors[] = $path . '.price: a price tax excluded, or -1 to keep the product price';
+                $errors[] = $at . 'price: a price tax excluded, or -1 to keep the product price';
             }
             $rule['price'] = (float) $price;
         }
         if (isset($item['reduction_type'])) {
             $type = self::string($item['reduction_type']);
             if (!in_array($type, ['amount', 'percentage'], true)) {
-                $errors[] = $path . '.reduction_type: amount or percentage';
+                $errors[] = $at . 'reduction_type: amount or percentage';
             }
             $rule['reduction_type'] = (string) $type;
         }
         if (isset($item['reduction'])) {
             $reduction = self::float($item['reduction']);
             if ($reduction === null || $reduction < 0) {
-                $errors[] = $path . '.reduction: a positive number';
+                $errors[] = $at . 'reduction: a positive number';
             }
             $rule['reduction'] = (float) $reduction;
         }
@@ -1962,28 +1965,28 @@ class SomcpToolCreateProduct
         if ($rule['reduction_type'] === 'percentage' && (float) $rule['reduction'] > 1) {
             // Stored as a fraction, which is also how somcp_get_product
             // returns it. 20 here would be a 2000 % reduction.
-            $errors[] = $path . '.reduction: for a percentage, the fraction - 0.2 for 20 %';
+            $errors[] = $at . 'reduction: for a percentage, the fraction - 0.2 for 20 %';
         }
         if (isset($item['reduction_tax'])) {
             $tax = self::bool($item['reduction_tax']);
             if ($tax === null) {
-                $errors[] = $path . '.reduction_tax: true or false';
+                $errors[] = $at . 'reduction_tax: true or false';
             }
             $rule['reduction_tax'] = $tax ? 1 : 0;
         }
         foreach (['from', 'to'] as $bound) {
             if (isset($item[$bound])) {
-                $rule[$bound] = (string) self::dateTime($item[$bound], $path . '.' . $bound, $errors);
+                $rule[$bound] = (string) self::dateTime($item[$bound], $at . $bound, $errors);
             }
         }
         if (strpos((string) $rule['to'], '0000') !== 0 && strpos((string) $rule['from'], '0000') !== 0 && $rule['to'] < $rule['from']) {
-            $errors[] = $path . ': to comes before from';
+            $errors[] = ($path === '' ? 'to' : $path) . ': to comes before from';
         }
         if ((float) $rule['price'] < 0 && (float) $rule['reduction'] <= 0) {
-            $errors[] = $path . ': neither a price nor a reduction, so the rule would change nothing';
+            $errors[] = ($path === '' ? 'reduction' : $path) . ': neither a price nor a reduction, so the rule would change nothing';
         }
         if (($check = (new SpecificPrice())->validateField('reduction_type', $rule['reduction_type'])) !== true) {
-            $errors[] = $path . '.reduction_type: ' . self::reason($check);
+            $errors[] = $at . 'reduction_type: ' . self::reason($check);
         }
 
         return $rule;

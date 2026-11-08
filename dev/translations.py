@@ -2515,6 +2515,10 @@ T = {
  "Lister les règles panier",
  "Listar las reglas de carrito",
  "Warenkorbregeln auflisten"),
+"Create a catalogue price rule": (
+ "Créer une règle de prix catalogue",
+ "Crear una regla de precios de catálogo",
+ "Katalogpreisregel erstellen"),
 "List catalogue price rules": (
  "Lister les règles de prix catalogue",
  "Listar las reglas de precios de catálogo",

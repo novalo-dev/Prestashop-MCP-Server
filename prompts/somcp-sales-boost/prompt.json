@@ -16,7 +16,8 @@
     "somcp_create_cart_rule",
     "somcp_update_cart_rule",
     "somcp_set_cart_rule_active",
-    "somcp_list_catalog_price_rules"
+    "somcp_list_catalog_price_rules",
+    "somcp_create_catalog_price_rule"
   ],
   "controller": "AdminStats",
   "action": "view",

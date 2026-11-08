@@ -3167,6 +3167,11 @@
       <source>List cart rules</source>
       <target>Lister les règles panier</target>
     </trans-unit>
+    <!-- Create a catalogue price rule -->
+    <trans-unit id="6c0debbc7ffcc3eac397964f4c30481b" resname="Create a catalogue price rule">
+      <source>Create a catalogue price rule</source>
+      <target>Créer une règle de prix catalogue</target>
+    </trans-unit>
     <!-- List catalogue price rules -->
     <trans-unit id="0da55c946e030e97004cd0aaf928b404" resname="List catalogue price rules">
       <source>List catalogue price rules</source>

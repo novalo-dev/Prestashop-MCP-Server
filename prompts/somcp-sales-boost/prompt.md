@@ -17,6 +17,7 @@ identifier, so the merchant can find it in the back office.
 - `somcp_update_cart_rule`
 - `somcp_set_cart_rule_active`
 - `somcp_list_catalog_price_rules`
+- `somcp_create_catalog_price_rule`
 
 ## Know which shop you are in
 
@@ -174,8 +175,15 @@ in the shop, unlike cart rules which act in the cart.
    rules in force right now.
 2. A percentage comes back as a fraction (`0.1` for 10 %), the same number
    `somcp_get_product` reports on the products the rule touches. The
-   `condition_groups` say which products a rule picks; an empty list means every
-   product.
+   `condition_groups` say which products a rule picks: a product must meet
+   every condition of one group, and one group is enough; an empty list means
+   every product.
+3. **Create one** with `somcp_create_catalog_price_rule` only once the merchant
+   has agreed to it: it is applied to its products at once. Give a percentage
+   as the fraction (`0.1` for 10 %), take the identifiers of the conditions
+   from the list tools, and tell the merchant how many products the answer says
+   it reaches. If an answer is lost, look for the rule with
+   `somcp_list_catalog_price_rules` before calling again.
 
 ## Never
 

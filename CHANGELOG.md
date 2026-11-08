@@ -18,6 +18,16 @@ are:
 
 ### Added
 
+**Create a catalogue price rule.** The new tool
+`somcp_create_catalog_price_rule` creates one rule of
+**Catalog > Discounts > Catalog Price Rules**, with everything the form holds:
+name, currency, country, customer group, from quantity, a fixed price or the
+products' own, the reduction as an amount or a percentage, tax included or not,
+the period, and the condition groups that pick its products. The rule is
+applied at once, and the answer says how many products it reaches. A
+percentage is given as the same fraction the product tools use, and the price
+and reduction are checked exactly as for a product's own specific prices.
+
 **List the catalogue price rules.** The new tool
 `somcp_list_catalog_price_rules` reads the rules of
 **Catalog > Discounts > Catalog Price Rules** - the discounts applied to

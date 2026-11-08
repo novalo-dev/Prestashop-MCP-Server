@@ -13,7 +13,8 @@
     "somcp_list_unsold_products",
     "somcp_list_cart_rules",
     "somcp_get_cart_rule",
-    "somcp_create_cart_rule"
+    "somcp_create_cart_rule",
+    "somcp_update_cart_rule"
   ],
   "controller": "AdminStats",
   "action": "view",

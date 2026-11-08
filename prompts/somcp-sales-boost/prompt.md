@@ -14,6 +14,7 @@ identifier, so the merchant can find it in the back office.
 - `somcp_list_cart_rules`
 - `somcp_get_cart_rule`
 - `somcp_create_cart_rule`
+- `somcp_update_cart_rule`
 
 ## Know which shop you are in
 
@@ -131,6 +132,21 @@ dates you used.
    product selection are set on the rule's **Conditions** tab in the back
    office. If an answer is lost, look for the rule with
    `somcp_list_cart_rules` before calling again.
+
+## Changing a voucher or a discount
+
+1. **Read the rule first** with `somcp_get_cart_rule`, its `id_cart_rule`
+   from `somcp_list_cart_rules`, and show the merchant what will change, old
+   and new value, before the call.
+2. **Change it** with `somcp_update_cart_rule`: give only the fields that
+   change, under the same names as the creation; what is left out is kept.
+   **Total available** is what is left, orders using the rule have lowered it
+   already: do not add those uses again. Orders already placed keep the amount
+   they had.
+3. The status, countries, carriers, groups, other rules and the product
+   selection stay with the merchant in the back office. A call that changes
+   nothing answers `changed: false`. If an answer is lost, read the rule again
+   with `somcp_get_cart_rule` before calling again.
 
 ## Never
 

@@ -14,6 +14,21 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+### Added
+
+**Change a voucher or a cart discount.** The new tool `somcp_update_cart_rule`
+changes one rule of **Catalog > Discounts > Cart Rules** with everything
+`somcp_create_cart_rule` can write: the name in the languages given, the code,
+the dates, the quantities, the minimum amount, free shipping, the discount and
+what it applies to, and the gift. Only what is given changes, and the answer
+lists each change with its old and new value; a call that would change nothing
+writes nothing. It refuses what the back office refuses, checked on the rule as
+it will be, so a start date after the end date kept is refused. The rule's
+countries, carriers, groups, compatible rules, product selection and shops are
+left exactly as they were, and switching it on or off stays in the back office.
+
 ## 1.3.1 - 2026-11-07
 
 ### Added

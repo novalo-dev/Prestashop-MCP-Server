@@ -3197,6 +3197,11 @@
       <source>Create a cart rule</source>
       <target>Create a cart rule</target>
     </trans-unit>
+    <!-- Change a cart rule -->
+    <trans-unit id="f5c1357f155dffa6ad6286892753b5a6" resname="Change a cart rule">
+      <source>Change a cart rule</source>
+      <target>Change a cart rule</target>
+    </trans-unit>
     <!-- Sales - changes -->
     <trans-unit id="a1be5de2a33a782765a42196dbdc0c93" resname="Sales - changes">
       <source>Sales - changes</source>

@@ -2539,6 +2539,10 @@ T = {
  "Créer une règle panier",
  "Crear una regla de carrito",
  "Eine Warenkorbregel erstellen"),
+"Change a cart rule": (
+ "Modifier une règle panier",
+ "Modificar una regla de carrito",
+ "Eine Warenkorbregel ändern"),
 "Sales - changes": (
  "Ventes - modifications",
  "Ventas - cambios",

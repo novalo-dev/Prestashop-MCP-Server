@@ -3798,24 +3798,37 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 - The same form fields and table on both, apart from the type of `description` (`text` / `mediumtext`).
 
 #### `somcp_update_cart_rule`
-**State**: to write · [issue #108](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/108)
+**State**: written · [issue #108](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/108)
 **Nature**: `acts(EDIT, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
 
-**Does** - changes the dates, quantities, amounts or texts of one cart rule.
+**Does** - changes one cart rule with everything `somcp_create_cart_rule` can write: the fields of the **Information**, **Conditions** and **Actions** tabs of **Catalog > Discounts > Cart Rules > Edit**, restrictions apart. Only what is given changes.
 
-**Do not use for** - switching a rule on or off (→ `somcp_set_cart_rule_active`).
+**Do not use for** - switching a rule on or off (→ `somcp_set_cart_rule_active`, back office until it is written), creating one (→ `somcp_create_cart_rule`), its restrictions (back office).
 
-**Parameters**
+**Parameters** - the names and shapes of `somcp_create_cart_rule`, so a rule read with `somcp_get_cart_rule` can be given back as is.
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `id_cart_rule` | integer | yes |  |
-| ... |  | no | the fields of `somcp_create_cart_rule`, each optional |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_cart_rule` | **ID** of the list | integer | yes | from `somcp_list_cart_rules` |
+| `languages` | | array | no | ISO codes of the languages `name` is given in (#149), all active ones by default |
+| `name` | **Name** | object | no | per ISO code; changes in the languages given and keeps the others; never empty once given |
+| every other field of `somcp_create_cart_rule` but `active` | as there | as there | no | same names, same shapes, same checks; left out: unchanged |
 
-**Returns** - `changed`, per field `previous` and new value, and the rule.
+`active`, `restrictions`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are accepted when given back unchanged from `somcp_get_cart_rule` (the names it adds in its reading language apart), and refused when they differ: `active` and `restrictions` point to the back office, the others are worked out by the shop.
+
+**Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, and `language` for `name`), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to, `product_selection` says that product is still in **Product selection**. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
+
+**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): those of `somcp_create_cart_rule`, checked by its `planRule()` on the rule as it will be once merged with what is kept (for example `date_from` given alone after the kept `date_to`: **The voucher cannot end before it begins.**; `reduction` set to `null` on a rule with no free shipping and no gift: **An action is required for this cart rule.**); `code` already used by another rule (its own code is accepted, as the form compares with `id_cart_rule`); an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`).
 
 **Notes**
-- Only what is given changes; a call that changes nothing writes nothing and answers `changed: false`.
+- Written with `CartRule::update()` only. The back office's `afterUpdate()` deletes every restriction row of the rule (`cart_rule_country`, `_carrier`, `_group`, `_product_rule_group`, `_shop`, `cart_rule_combination`) and writes back what the form posted; this tool posts no restriction, so it leaves those tables alone.
+- Only the columns of the fields given are compared and written. The currency and tax switch of an amount that is zero, or of a percent, are not compared, so giving back what was read changes nothing.
+- A `reduction` given without `id_product` on a **Specific product** discount keeps that product. Switching **Apply a discount to** to **Specific product** adds that product to **Product selection** (one group, quantity 1, type `products`) and sets `product_restriction`, with the rows `somcp_create_cart_rule` writes (`SomcpToolCreateCartRule::productSelection()`). Switching away keeps the product restriction, as the form keeps it.
+- **Total available** (`quantity`) is what is left: every order using the rule has lowered it. A rule already used keeps its history: orders hold their own copy (`order_cart_rule`).
+- Not to be retried blindly: if the answer is lost, read the rule with `somcp_get_cart_rule` and compare before calling again.
+
+**Differences between 8.0.1 and 9.0.0**
+- The 9.0.0 gift check of `somcp_create_cart_rule`, applied on both versions.
 
 #### `somcp_set_cart_rule_active`
 **State**: to write · [issue #109](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/109)

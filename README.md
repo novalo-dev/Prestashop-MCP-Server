@@ -395,6 +395,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_cart_rules` | ● List cart rules | Cart Rules › view |
 | `somcp_get_cart_rule` | ● Get a cart rule | Cart Rules › view |
 | `somcp_create_cart_rule` | ✎ Create a cart rule | Cart Rules › add |
+| `somcp_update_cart_rule` | ✎ Change a cart rule | Cart Rules › edit |
 
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
 language and currency it is connected to.

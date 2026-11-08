@@ -4,19 +4,30 @@
 
 Key facts:
 
-- MCP address of a shop: `https://<shop>/module/somcp/mcp`, shown in the module under Shop Parameters > MCP server > Configuration.
-- Authorization: OAuth 2.1 with PKCE (S256) and dynamic client registration. The employee signs in on a page of the shop, types a code e-mailed to them, then approves. That page answers "page not found" unless Access and security > Consent page is on.
-- 110 tools covering orders, catalog, stock, customers, statistics, content, modules, appearance, system, SEO, AEO and sales. Each needs a back office permission in Team > Permissions; tools that change data are flagged so assistants ask before running them. Each tool, prompt or group of tools can be switched off for connected assistants, for the built-in assistant, or both.
-- 14 prompts (guided tasks): find an order, change an order status, find a customer, manage products, check and adjust stock, sales report, boost sales, audit and improve SEO, get recommended by AI assistants, read content pages, storefront menu and layout, review modules, cache maintenance, check the shop connection.
-- Team of agents in the built-in assistant: several assistants can be switched on, each with a role (for example orders, SEO, product photos). The default one leads the conversation and hands each agent the work of its role; an agent at the Images level (Gemini or OpenAI image models) creates product photos, which the lead agent can add to a product once the employee approves. A delegated agent sees only its task, never the conversation or the shop's tools, so every change goes through the lead agent and its approval.
-- 5 tools of the built-in assistant only, not offered over MCP: somcp_find_tools (loads only the tools a request needs), somcp_ask_assistant (hands a task to the agent of that role), somcp_web_search, somcp_get_module_settings and somcp_update_module_setting (the module's settings, super administrators only).
 - Requirements: HTTPS reachable from the internet, friendly URLs on, shop at the root of a domain or subdomain. Multistore supported. Interface in English, French, Spanish and German.
 - Installation: upload the release zip in Modules > Module Manager, or, on PrestaShop 9 only, run `composer require novalo/prestashop-mcp-server` from the shop's root folder; composer/installers puts it in `modules/somcp`.
+- 110 shop tools covering orders, catalog, stock, customers, statistics, content, modules, appearance, system, SEO, AEO and sales, offered both over MCP and in the built-in chat. Each needs a back office permission in Team > Permissions; tools that change data are flagged so assistants ask before running them. Each tool, prompt or group of tools can be switched off for connected assistants, for the built-in chat, or both.
+- 14 prompts (guided tasks): find an order, change an order status, find a customer, manage products, check and adjust stock, sales report, boost sales, audit and improve SEO, get recommended by AI assistants, read content pages, storefront menu and layout, review modules, cache maintenance, check the shop connection.
 - The module's technical name, used in its URLs and folders, is `somcp`. Licence: Academic Free License 3.0. Published by Novalo (novalo.fr).
+
+## MCP server
+
+- For Claude, ChatGPT, Le Chat, Cursor, n8n and any assistant that connects to a remote MCP server with OAuth.
+- MCP address of a shop: `https://<shop>/module/somcp/mcp`, shown in the module under Shop Parameters > MCP server > Configuration.
+- Authorization: OAuth 2.1 with PKCE (S256) and dynamic client registration. The employee signs in on a page of the shop, types a code e-mailed to them, then approves. That page answers "page not found" unless Access and security > Consent page is on.
+- The assistant acts with exactly the back office rights of the employee who connected it, on the shops that employee is attached to.
+
+## Built-in chat
+
+- A chat button at the top of every back office page. It uses the same shop tools, with the rights of the employee signed in, and asks for approval before any change.
+- Providers, with the employee's own API key: Claude, ChatGPT, Gemini, Mistral, DeepSeek, Grok, Cohere; or an AI on the merchant's computer (Ollama, LM Studio) through O'So AI Relay.
+- Switches of each conversation, from the + menu: Deep thinking (the model thinks before it answers; Claude 3.7 and later, Gemini 2.5 and later, OpenAI reasoning models), Web search (looks things up on the web and names its sources; Claude or Gemini, or another assistant lending one of them), Memory (keeps what matters from one conversation to the next, once switched on in the module's settings).
+- Team of agents: several assistants can be switched on, each with a role (for example orders, SEO, product photos). The default one leads the conversation and hands each agent the work of its role; an agent at the Images level (Gemini or OpenAI image models) creates product photos, which the lead agent can add to a product once the employee approves. A delegated agent sees only its task, never the conversation or the shop's tools, so every change goes through the lead agent and its approval.
+- 5 tools of the chat only, not offered over MCP: somcp_find_tools (loads only the tools a request needs), somcp_ask_assistant (hands a task to the agent of that role), somcp_web_search, somcp_get_module_settings and somcp_update_module_setting (the module's settings, super administrators only).
 
 ## Docs
 
-- [README](https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/README.md): what the module does, requirements, installation, compatible assistants, security, full tool list
+- [README](https://github.com/novalo-dev/Prestashop-MCP-Server/blob/main/README.md): what the module does, requirements, installation, the MCP server and compatible assistants, the built-in chat and its agents, security, full tool list
 - [Requirements](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Requirements): PrestaShop, PHP, HTTPS and URL requirements
 - [Installation](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Installation): upload the zip and open the settings
 - [Configuration](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Configuration): enable the server, copy the address, run the diagnostic

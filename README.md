@@ -72,25 +72,17 @@ before you connect an assistant.
 
 ---
 
-## Install in 4 steps
+## Install
 
 1. **Download** `OSo-MCP-Server-x.y.z.zip` from the
    [latest release](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest).
    Do not unzip it.
 2. In your back office, open **Modules > Module Manager**, click
    **Upload a module** and drop the zip, then **Configure**.
-3. In the **Access and security** tab, turn on **Consent page** - it is off
-   unless you are connecting an assistant.
-4. Copy **the address to give to your assistant** - it looks like
-   `https://your-shop.example/module/somcp/mcp` - and paste it into Claude,
-   ChatGPT or another assistant
-   ([where to paste it](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant)).
 
-The first time, the assistant opens a page of your shop: you sign in with your
-back office email and password, type the code e-mailed to you, check where the
-answer goes, and approve what it may do. Then turn **Consent page** off again:
-the assistant keeps working. Step by step with screenshots:
-[Installation](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Installation).
+Then use it either way, or both:
+[connect Claude, ChatGPT or another assistant](#1-mcp-server-claude-chatgpt-and-other-assistants)
+over MCP, or [open the chat built into your back office](#2-the-chat-built-into-your-back-office).
 
 **With Composer**, on PrestaShop 9, for agencies and automated deployments,
 from the shop's root folder:
@@ -102,57 +94,33 @@ php bin/console prestashop:module install somcp
 ```
 
 The module lands in `modules/somcp`, as with the zip, and its dependencies join
-the shop's own `vendor/`. Then carry on from step 3. On PrestaShop 8, use the
-zip: some packages of its core declare PHP 8.0 at most, and the module needs
-8.1, so Composer refuses to install them together.
+the shop's own `vendor/`. On PrestaShop 8, use the zip: some packages of its
+core declare PHP 8.0 at most, and the module needs 8.1, so Composer refuses to
+install them together.
 
 ---
 
-## Or use the assistant built into your back office
+## 1. MCP server: Claude, ChatGPT and other assistants
 
-No account to connect: a chat button at the top of every back office page opens
-an assistant that works with the same tools, with the rights of the employee
-signed in, and asks for your approval before any change.
+Your shop becomes a remote MCP server: an assistant you already use connects
+to it and works with [the shop's tools](#tools).
 
-- Bring your own key from [Claude](https://console.anthropic.com/settings/keys),
-  [ChatGPT](https://platform.openai.com/api-keys),
-  [Gemini](https://aistudio.google.com/apikey),
-  [Mistral](https://console.mistral.ai/api-keys),
-  [DeepSeek](https://platform.deepseek.com/api_keys),
-  [Grok](https://console.x.ai) or
-  [Cohere](https://dashboard.cohere.com/api-keys) - each link opens the page
-  where that provider gives out keys.
-- Or run an AI on your own computer, such as Ollama or LM Studio, with
-  [O'So AI Relay](https://github.com/novalo-dev/Somcp-Relay): no key, and
-  nothing opened on your network.
-- Deep thinking, web search and memory can be switched on or off for each
-  conversation, from the **+** menu.
+### Connect an assistant
 
-### A team of agents, each with its role
+1. In the **Access and security** tab, turn on **Consent page** - it is off
+   unless you are connecting an assistant.
+2. Copy **the address to give to your assistant** - it looks like
+   `https://your-shop.example/module/somcp/mcp` - and paste it into Claude,
+   ChatGPT or another assistant
+   ([where to paste it](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant)).
 
-Switch on several assistants and give each a **Role**: they work as a team.
-The **Default** one leads the conversation and hands each agent the work of
-its role, then brings their answers back into the chat.
+The first time, the assistant opens a page of your shop: you sign in with your
+back office email and password, type the code e-mailed to you, check where the
+answer goes, and approve what it may do. Then turn **Consent page** off again:
+the assistant keeps working. Step by step with screenshots:
+[Installation](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Installation).
 
-- **One agent per job**: for example Claude for orders and customers, Mistral
-  for SEO and product pages, Gemini or ChatGPT at the **Images** level to
-  create product photos.
-- **Product photos**: the image agent creates the picture, the chat shows it,
-  and the lead agent can add it to the product page once you approve.
-- **Safe by design**: an agent sees only the task it was handed - not the
-  conversation, not the shop's tools. Every change to the shop goes through
-  the lead agent and waits for your approval.
-
-The lead agent hands out the work with `somcp_ask_assistant`, one of the
-[tools of the built-in assistant only](#-built-in-assistant-only).
-
-More in the wiki: [Built-in assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Built%E2%80%90in-assistant).
-
-![The settings pages of O'So MCP Server, one after the other](docs/images/somcp-tour.gif)
-
----
-
-## Compatible assistants
+### Compatible assistants
 
 Any assistant that connects to a remote MCP server with OAuth can use your
 shop's address. These can:
@@ -172,6 +140,71 @@ shop's address. These can:
 
 Where to paste the address in each of them:
 [Connect an assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant).
+
+---
+
+## 2. The chat built into your back office
+
+No account to connect: a chat button at the top of every back office page opens
+an assistant that works with the same tools, with the rights of the employee
+signed in, and asks for your approval before any change.
+
+- Bring your own key from [Claude](https://console.anthropic.com/settings/keys),
+  [ChatGPT](https://platform.openai.com/api-keys),
+  [Gemini](https://aistudio.google.com/apikey),
+  [Mistral](https://console.mistral.ai/api-keys),
+  [DeepSeek](https://platform.deepseek.com/api_keys),
+  [Grok](https://console.x.ai) or
+  [Cohere](https://dashboard.cohere.com/api-keys) - each link opens the page
+  where that provider gives out keys.
+- Or run an AI on your own computer, such as Ollama or LM Studio, with
+  [O'So AI Relay](https://github.com/novalo-dev/Somcp-Relay): no key, and
+  nothing opened on your network.
+
+### Switches of each conversation
+
+Set from the **+** menu of the chat, for each conversation.
+
+| Switch | What it does | Needs |
+|---|---|---|
+| **Deep thinking** | The assistant thinks the request through before it answers: slower, for an audit, a plan or a tricky order | a model that can think: Claude 3.7 and later, Gemini 2.5 and later, OpenAI's reasoning models |
+| **Web search** | The assistant looks things up on the web when the shop's data does not answer, and names its sources | Claude or Gemini, or another assistant lending one of them |
+| **Memory** | The assistant keeps what matters from one conversation to the next | memory switched on in the module's settings |
+
+### A team of agents, each with its role
+
+Switch on several assistants and give each a **Role**: they work as a team.
+The **Default** one leads the conversation and hands each agent the work of
+its role, then brings their answers back into the chat.
+
+- **One agent per job**: for example Claude for orders and customers, Mistral
+  for SEO and product pages, Gemini or ChatGPT at the **Images** level to
+  create product photos.
+- **Product photos**: the image agent creates the picture, the chat shows it,
+  and the lead agent can add it to the product page once you approve.
+- **Safe by design**: an agent sees only the task it was handed - not the
+  conversation, not the shop's tools. Every change to the shop goes through
+  the lead agent and waits for your approval.
+
+The lead agent hands out the work with `somcp_ask_assistant`, one of the
+[tools of the chat only](#tools-of-the-chat-only).
+
+### Tools of the chat only
+
+Besides [the shop's tools](#tools), the chat has these of its own. They are
+not offered over MCP, so no connected assistant sees them.
+
+| Tool | What it does | Needs |
+|---|---|---|
+| `somcp_find_tools` | ● Find a tool | nothing: the chat loads only the tools a request needs |
+| `somcp_ask_assistant` | ● Ask another assistant | a second assistant switched on, with its **Role** ([agents](#a-team-of-agents-each-with-its-role)) |
+| `somcp_web_search` | ● Web search | web search switched on in the **+** menu |
+| `somcp_get_module_settings` | ● Read the module settings | super administrator |
+| `somcp_update_module_setting` | ✎ Change a module setting | super administrator |
+
+More in the wiki: [Built-in assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Built%E2%80%90in-assistant).
+
+![The settings pages of O'So MCP Server, one after the other](docs/images/somcp-tour.gif)
 
 ---
 
@@ -206,7 +239,8 @@ Found a security issue? Please do not open an issue: report it privately, see
 
 ## Tools
 
-Grouped by back office page, each object's reads before its writes. **●** reads
+Offered both to assistants connected over MCP and to the chat built into your
+back office. Grouped by back office page, each object's reads before its writes. **●** reads
 only and is safe to repeat; **✎** changes data, one thing per call, and is
 flagged so assistants ask you before running it. The last column is the right
 the employee needs in **Team › Permissions** for the assistant to use the tool.
@@ -416,19 +450,6 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_set_cart_rule_active` | ✎ Switch a cart rule on or off | Cart Rules › edit |
 | `somcp_list_catalog_price_rules` | ● List catalogue price rules | Catalog Price Rules › view |
 | `somcp_create_catalog_price_rule` | ✎ Create a catalogue price rule | Catalog Price Rules › add |
-
-### 💬 Built-in assistant only
-
-The chat in your back office has these tools of its own. They are not offered
-over MCP, so no connected assistant sees them.
-
-| Tool | What it does | Needs |
-|---|---|---|
-| `somcp_find_tools` | ● Find a tool | nothing: the chat loads only the tools a request needs |
-| `somcp_ask_assistant` | ● Ask another assistant | a second assistant switched on, with its **Role** ([agents](#a-team-of-agents-each-with-its-role)) |
-| `somcp_web_search` | ● Web search | web search switched on in the **+** menu |
-| `somcp_get_module_settings` | ● Read the module settings | super administrator |
-| `somcp_update_module_setting` | ✎ Change a module setting | super administrator |
 
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
 language and currency it is connected to.

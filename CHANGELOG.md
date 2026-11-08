@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**List the catalogue price rules.** The new tool
+`somcp_list_catalog_price_rules` reads the rules of
+**Catalog > Discounts > Catalog Price Rules** - the discounts applied to
+products before the cart - as the list shows them: name, currency, country,
+customer group, from quantity, reduction and period, with the conditions that
+pick each rule's products. It filters by currency, country, group, reduction
+type, and by the rules in force right now, and reads a percentage as the same
+fraction the product tools report. Read only.
+
 **Change a voucher or a cart discount.** The new tool `somcp_update_cart_rule`
 changes one rule of **Catalog > Discounts > Cart Rules** with everything
 `somcp_create_cart_rule` can write: the name in the languages given, the code,

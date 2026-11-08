@@ -3167,6 +3167,11 @@
       <source>List cart rules</source>
       <target>Listar las reglas de carrito</target>
     </trans-unit>
+    <!-- List catalogue price rules -->
+    <trans-unit id="0da55c946e030e97004cd0aaf928b404" resname="List catalogue price rules">
+      <source>List catalogue price rules</source>
+      <target>Listar las reglas de precios de catálogo</target>
+    </trans-unit>
     <!-- List shop search terms -->
     <trans-unit id="5cce1729418b2a496f4a0c8c5e7ade72" resname="List shop search terms">
       <source>List shop search terms</source>

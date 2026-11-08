@@ -16,6 +16,7 @@ identifier, so the merchant can find it in the back office.
 - `somcp_create_cart_rule`
 - `somcp_update_cart_rule`
 - `somcp_set_cart_rule_active`
+- `somcp_list_catalog_price_rules`
 
 ## Know which shop you are in
 
@@ -161,6 +162,20 @@ dates you used.
    dates are over or still to come, or with nothing left of **Total
    available**, does not apply yet. If an answer is lost, read the rule with
    `somcp_get_cart_rule` before calling again.
+
+## Catalogue price rules
+
+Catalogue price rules discount products **before** the cart, on the price shown
+in the shop, unlike cart rules which act in the cart.
+
+1. **List them** with `somcp_list_catalog_price_rules`, as
+   **Catalog > Discounts > Catalog Price Rules** shows them. Filter by
+   `currency`, `country`, `id_group`, `reduction_type`, or `current` for the
+   rules in force right now.
+2. A percentage comes back as a fraction (`0.1` for 10 %), the same number
+   `somcp_get_product` reports on the products the rule touches. The
+   `condition_groups` say which products a rule picks; an empty list means every
+   product.
 
 ## Never
 

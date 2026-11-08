@@ -3860,23 +3860,54 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 - None: the same list, the same switch and the same column.
 
 #### `somcp_list_catalog_price_rules`
-**State**: to write · [issue #110](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/110)
+**State**: written · [issue #110](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/110)
 **Nature**: `acts(VIEW, 'AdminSpecificPriceRule')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the catalogue price rules, the discounts applied to products before the cart.
+**Does** - lists the catalogue price rules of this shop - the discounts applied to products before the cart - as **Catalog > Discounts > Catalog Price Rules** shows them (`id_specific_price_rule` ascending), with the conditions that pick each rule's products. Read only.
 
-**Do not use for** - cart rules (→ `somcp_list_cart_rules`), or one product's specific prices (→ `somcp_get_product`).
+**Do not use for** - cart rules and vouchers (→ `somcp_list_cart_rules`); one product's own specific prices (→ `somcp_get_product`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `current` | boolean | no | only rules valid today |
+| `name` | string | no | part of the **Name**, without case |
+| `currency` | string | no | ISO code, the **Currency** filter; keeps that currency and **All currencies** |
+| `country` | string | no | ISO code, the **Country** filter; keeps that country and **All countries** |
+| `id_group` | integer | no | the **Group** filter, from `somcp_list_customer_groups`; keeps that group and **All groups** |
+| `reduction_type` | string | no | `amount` or `percentage`, the **Reduction type** filter |
+| `current` | boolean | no | only the rules whose **Beginning**/**End** period holds the shop's current time (an empty bound is open on that side) |
+| `language` | string | no | ISO code of one of the shop's active languages for the names of currencies, countries, groups and conditions (#149); shop default when left out; unknown code refused |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per rule: `id_specific_price_rule`, `name`, `from`, `to`, `reduction` with `reduction_type` and `reduction_tax`, `from_quantity`, `currency`, `country`, `group`, `conditions` (summarised).
+**Returns** - `catalog_price_rules`, in the list's order (`id_specific_price_rule` ascending), each with:
+
+| Field | Notes |
+|---|---|
+| `id_specific_price_rule` | **ID** |
+| `name` | **Name** (not translated: the rule has no language table) |
+| `id_shop` | **Shop** / **Store** on 9.0.0 |
+| `currency` | **Currency**, ISO code, `null` for **All currencies** |
+| `country` | **Country**, ISO code, `null` for **All countries** |
+| `id_group` | **Group**, 0 for **All groups**; plus `group_name`, in `language` |
+| `from_quantity` | **From quantity** |
+| `price` | **Price (tax excl.)**, `-1` for **Leave initial price**, as `somcp_get_product` |
+| `reduction_type` | **Reduction type**: `amount` or `percentage` |
+| `reduction` | **Reduction**, in the shape of `somcp_get_product`: an amount, or for a percentage the fraction (`0.1` for 10 %) |
+| `reduction_tax` | **Reduction with or without taxes**: `true` for **Tax included** |
+| `amounts_currency` | the currency of `price` and of an amount: `currency`, or the shop default when `null`, as `somcp_get_product` |
+| `from` / `to` | **Beginning**/**End**, `YYYY-MM-DD HH:MM:SS` as `somcp_get_product`, `null` for no date |
+| `condition_groups` | a list of groups, each a list of conditions `{"type":..., "<id>":..., "name":...}`: `category`/`id_category`, `manufacturer`/`id_manufacturer`, `supplier`/`id_supplier`, `attribute`/`id_attribute`, `feature`/`id_feature_value`; `name` in `language`. `[]` when the rule applies to every product |
+| `current` | the period holds the shop's current time |
+| `returned`, `total_count`, `offset`, `language` | as `somcp_list_abandoned_carts` |
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; an unknown `currency`, `country` or `id_group`; a `reduction_type` other than `amount`/`percentage`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `catalog_price_rules: []`, `total_count: 0`.
 
 **Notes**
-- Only this shop's rules.
+- The back office lists every shop's rules (`CONTEXT_ALL`); the token's shop keeps `id_shop` 0 and its own.
+- The conditions of one group must all hold (AND); a product is touched when one group holds (OR); no group means every product.
+- Building one rule (with `condition_groups` and the percentage-to-fraction conversion) is one method (`SomcpToolListCatalogPriceRules::buildRule()`) that `somcp_create_catalog_price_rule` (#111) calls, so a rule reads the same whichever tool reads it.
+- No difference between 8.0.1 and 9.0.0 in what the tool reads: the same legacy controller, list, class and tables; the multistore column is **Shop** on 8.0.1 and **Store** on 9.0.0.
 
 #### `somcp_create_catalog_price_rule`
 **State**: to write · [issue #111](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/111)

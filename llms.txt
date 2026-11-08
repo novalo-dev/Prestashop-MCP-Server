@@ -1,6 +1,6 @@
 # O'So MCP Server for PrestaShop
 
-> Free and open source PrestaShop module (8.0 to 9.x, PHP 8.1+) that turns a shop into a remote MCP server. Claude, ChatGPT, Le Chat, Cursor, n8n and any assistant that connects to a remote MCP server with OAuth can read and manage the shop - orders, catalog, stock, customers, content, SEO, sales - with exactly the back office rights of the employee who connected it. It also ships an assistant built into the back office that uses the same tools with the employee's own API key.
+> Free and open source PrestaShop module (8.0 to 9.x, PHP 8.1+) that turns a shop into a remote MCP server. Claude, ChatGPT, Le Chat, Cursor, n8n and any assistant that connects to a remote MCP server with OAuth can read and manage the shop - orders, catalog, stock, customers, content, SEO, sales - with exactly the back office rights of the employee who connected it. It also ships an assistant built into the back office that uses the same tools with the employee's own API key, and can run as a team of agents, each with its role.
 
 Key facts:
 
@@ -8,6 +8,7 @@ Key facts:
 - Authorization: OAuth 2.1 with PKCE (S256) and dynamic client registration. The employee signs in on a page of the shop, types a code e-mailed to them, then approves. That page answers "page not found" unless Access and security > Consent page is on.
 - 110 tools covering orders, catalog, stock, customers, statistics, content, modules, appearance, system, SEO, AEO and sales. Each needs a back office permission in Team > Permissions; tools that change data are flagged so assistants ask before running them. Each tool, prompt or group of tools can be switched off for connected assistants, for the built-in assistant, or both.
 - 14 prompts (guided tasks): find an order, change an order status, find a customer, manage products, check and adjust stock, sales report, boost sales, audit and improve SEO, get recommended by AI assistants, read content pages, storefront menu and layout, review modules, cache maintenance, check the shop connection.
+- Team of agents in the built-in assistant: several assistants can be switched on, each with a role (for example orders, SEO, product photos). The default one leads the conversation and hands each agent the work of its role; an agent at the Images level (Gemini or OpenAI image models) creates product photos, which the lead agent can add to a product once the employee approves. A delegated agent sees only its task, never the conversation or the shop's tools, so every change goes through the lead agent and its approval.
 - Requirements: HTTPS reachable from the internet, friendly URLs on, shop at the root of a domain or subdomain. Multistore supported. Interface in English, French, Spanish and German.
 - Installation: upload the release zip in Modules > Module Manager, or, on PrestaShop 9 only, run `composer require novalo/prestashop-mcp-server` from the shop's root folder; composer/installers puts it in `modules/somcp`.
 - The module's technical name, used in its URLs and folders, is `somcp`. Licence: Academic Free License 3.0. Published by Novalo (novalo.fr).
@@ -22,7 +23,7 @@ Key facts:
 - [Connect an assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant): where to paste the address in each assistant, sign-in, code and approval
 - [Employee rights](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Employee-rights): how Team > Permissions limits what an assistant can do
 - [Tools and prompts](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Tools-and-prompts): switching tools, groups and prompts on or off
-- [Built-in assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Built%E2%80%90in-assistant): the back office chat, providers, API keys and monthly cap
+- [Built-in assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Built%E2%80%90in-assistant): the back office chat, providers, API keys, monthly cap and the team of agents
 - [Troubleshooting](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Troubleshooting): common errors and their fixes
 - [Updates and support](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Updates-and-support): update checks and where to ask for help
 

@@ -126,8 +126,22 @@ signed in, and asks for your approval before any change.
   [O'So AI Relay](https://github.com/novalo-dev/Somcp-Relay): no key, and
   nothing opened on your network.
 - Deep thinking, web search and memory can be switched on or off for each
-  conversation, from the **+** menu. Several assistants can share the work by
-  role.
+  conversation, from the **+** menu.
+
+### A team of agents, each with its role
+
+Switch on several assistants and give each a **Role**: they work as a team.
+The **Default** one leads the conversation and hands each agent the work of
+its role, then brings their answers back into the chat.
+
+- **One agent per job**: for example Claude for orders and customers, Mistral
+  for SEO and product pages, Gemini or ChatGPT at the **Images** level to
+  create product photos.
+- **Product photos**: the image agent creates the picture, the chat shows it,
+  and the lead agent can add it to the product page once you approve.
+- **Safe by design**: an agent sees only the task it was handed - not the
+  conversation, not the shop's tools. Every change to the shop goes through
+  the lead agent and waits for your approval.
 
 More in the wiki: [Built-in assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Built%E2%80%90in-assistant).
 

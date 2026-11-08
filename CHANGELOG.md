@@ -29,6 +29,17 @@ it will be, so a start date after the end date kept is refused. The rule's
 countries, carriers, groups, compatible rules, product selection and shops are
 left exactly as they were, and switching it on or off stays in the back office.
 
+### Changed
+
+**Shorter order status tools.** The two tools of Shop Parameters > Order
+Settings > Statuses that list and create an order status now describe
+themselves in a few sentences, lighter for the assistant on every step. What
+matters is kept: that a status is taken from the list and never assumed, that
+a status is matched on its role rather than on its name, that an order status
+is not a return status, that a name another status already has is refused,
+that each field says whether you or the assistant fill it, and which read
+checks a creation whose answer was lost.
+
 ## 1.3.1 - 2026-11-07
 
 ### Added

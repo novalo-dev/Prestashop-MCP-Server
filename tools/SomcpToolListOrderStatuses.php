@@ -50,18 +50,12 @@ class SomcpToolListOrderStatuses
         return new SomcpTool(
             'somcp_list_order_statuses',
             Somcp::t('List order statuses'),
-            'Lists the order statuses of this shop with their identifiers, and what each one '
-                . 'means: whether it counts the order as paid, shipped or delivered, whether '
-                . 'reaching it sends the customer an email and what that email carries. Call it '
-                . 'before filtering orders by status, and before changing the status of an '
-                . 'order. Status identifiers are specific to each shop - a merchant renames '
-                . 'them, adds their own and removes others - so never assume one. '
-                . 'Each status also lists the roles it plays in the shop, such as shipped, '
-                . 'delivered, refunded or payment_accepted. Match on a role rather than on a '
-                . 'name: the name is translated and the merchant can change it, the role cannot. '
-                . 'A status with no role is one the merchant created. '
-                . 'Do not use it to read orders: somcp_search_orders finds them, and counts '
-                . 'them by status.',
+            'Lists the order statuses of this shop with their identifiers and what each means: paid, shipped '
+                . 'or delivered, whether reaching it emails the customer and with what. Call it before filtering '
+                . 'orders by status or changing one. Identifiers differ from shop to shop: never assume one. Each '
+                . 'status lists its roles (shipped, delivered, refunded, payment_accepted...): match on a role, not '
+                . 'on the name, which is translated and the merchant can change; no role means the merchant created '
+                . 'it. To read orders use somcp_search_orders.',
             [
                 'type' => 'object',
                 'properties' => [

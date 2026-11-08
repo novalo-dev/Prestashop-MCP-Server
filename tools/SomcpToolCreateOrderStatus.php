@@ -95,32 +95,13 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         return new SomcpTool(
             'somcp_create_order_status',
             Somcp::t('Create an order status'),
-            'Creates one order status in this shop, with every field of the Add new order status form of '
-                . 'Shop Parameters > Order Settings > Statuses: the name, the colour, the GIF icon, the nine '
-                . 'boxes that say what reaching the status sets off, and the email template per language. '
-                . 'Only name is required; every box is off by default, as on the empty form. '
-                . 'These are the statuses of an order, not of a return: do not use it for the steps of a '
-                . 'merchandise return, which somcp_create_return_status creates. '
-                . 'Read somcp_list_order_statuses first: a new status is only needed when none of the '
-                . 'existing ones plays the role, and a name another order status already has in the same '
-                . 'language is refused, so the merchant can always tell the statuses apart. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. '
-                . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
-                . 'language of the shop left out takes the default language\'s text. '
-                . 'The icon is a GIF, given as an object with url (a public https address the shop downloads '
-                . 'itself) or upload_ref (a file already on the shop), one of the two. It is written after '
-                . 'the status is created: one that cannot be fetched or is not a GIF leaves the status '
-                . 'without an icon, and the answer says so under icon. '
-                . 'A template is only stored with send_email: without it the templates are stored empty, as '
-                . 'the form does. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Do not use it to change an existing status, or to give an order '
-                . 'a status, which is somcp_set_order_status. '
-                . 'One order status per call: for several, call it once per status and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_order_statuses and look for '
-                . 'the name before anything else, because a second call is refused on the name anyway.',
+            'Creates one order status, as the Add new order status form of Shop Parameters > Order Settings > '
+                . 'Statuses: name, colour, GIF icon, the nine boxes and the email templates. Not for '
+                . 'return statuses (somcp_create_return_status), nor to give an order a status '
+                . '(somcp_set_order_status). Read somcp_list_order_statuses first: create one only when none '
+                . 'plays the role; a name another status has in the same language is refused. Each field says '
+                . 'who fills it: Merchant - ask and never invent. One status per call. Not to be retried: if the '
+                . 'answer is lost, look for the name in somcp_list_order_statuses first.',
             self::inputSchema(),
             [SomcpScope::ORDERS_WRITE],
             [self::class, 'handle'],
@@ -155,9 +136,9 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
                 ],
                 'name' => [
                     'type' => 'object',
-                    'description' => 'Merchant. Required. The name of the status, shown wherever an order is '
-                        . 'followed, 64 characters at most, without < > = { }. One text per language being '
-                        . 'filled, keyed by ISO code: {"fr": "...", "en": "..."}.',
+                    'description' => 'Merchant. Required. Shown wherever an order is followed, 64 characters at '
+                        . 'most, without < > = { }. One per language being filled, keyed by ISO code: '
+                        . '{"fr": "...", "en": "..."}.',
                     'additionalProperties' => ['type' => 'string'],
                 ],
                 'color' => [
@@ -187,10 +168,9 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
                 'in_transit' => $box('Set the order as in transit - the box the 8.0.1 form labels "Show delivery PDF".'),
                 'template' => [
                     'type' => 'object',
-                    'description' => 'Merchant. The mail template of the email the status sends, one per '
-                        . 'language being filled, keyed by ISO code: {"fr": "...", "en": "..."}. Each must '
-                        . 'be one of the mail templates of that language, as the form lists them. Only with '
-                        . 'send_email: without it, the templates are stored empty, as the form does.',
+                    'description' => 'Merchant. The mail template sent, one per language being filled, keyed by '
+                        . 'ISO code, among those the form lists for it. Only with send_email: without it, stored '
+                        . 'empty, as the form does.',
                     'additionalProperties' => ['type' => 'string'],
                 ],
             ],

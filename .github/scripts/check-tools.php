@@ -56,6 +56,15 @@ foreach (glob($root . '/tools/Somcp*.php') ?: [] as $file) {
     }
 }
 
+// The chat's own tools, declared in SomcpAssistantChat rather than tools/:
+// the README lists them in a table of their own, so they count as shipped
+// there, and only there - they have no scope, prompt or MCP entry.
+$chatOnly = [];
+preg_match_all("/public const [A-Z_]+_TOOL = '(somcp_[a-z0-9_]+)'/", (string) @file_get_contents($root . '/classes/SomcpAssistantChat.php'), $m);
+foreach ($m[1] as $tool) {
+    $chatOnly[$tool] = true;
+}
+
 // 2. README.md: the table under "## Tools".
 $readme = (string) @file_get_contents($root . '/README.md');
 $listed = [];
@@ -190,7 +199,7 @@ foreach ($shipped as $tool => $file) {
 }
 
 foreach (array_keys($listed) as $tool) {
-    if (!isset($shipped[$tool])) {
+    if (!isset($shipped[$tool]) && !isset($chatOnly[$tool])) {
         $errors[] = "README.md: lists $tool, which the module does not ship";
     }
 }

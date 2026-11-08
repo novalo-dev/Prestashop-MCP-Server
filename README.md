@@ -143,6 +143,9 @@ its role, then brings their answers back into the chat.
   conversation, not the shop's tools. Every change to the shop goes through
   the lead agent and waits for your approval.
 
+The lead agent hands out the work with `somcp_ask_assistant`, one of the
+[tools of the built-in assistant only](#-built-in-assistant-only).
+
 More in the wiki: [Built-in assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Built%E2%80%90in-assistant).
 
 ![The settings pages of O'So MCP Server, one after the other](docs/images/somcp-tour.gif)
@@ -413,6 +416,19 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_set_cart_rule_active` | ✎ Switch a cart rule on or off | Cart Rules › edit |
 | `somcp_list_catalog_price_rules` | ● List catalogue price rules | Catalog Price Rules › view |
 | `somcp_create_catalog_price_rule` | ✎ Create a catalogue price rule | Catalog Price Rules › add |
+
+### 💬 Built-in assistant only
+
+The chat in your back office has these tools of its own. They are not offered
+over MCP, so no connected assistant sees them.
+
+| Tool | What it does | Needs |
+|---|---|---|
+| `somcp_find_tools` | ● Find a tool | nothing: the chat loads only the tools a request needs |
+| `somcp_ask_assistant` | ● Ask another assistant | a second assistant switched on, with its **Role** ([agents](#a-team-of-agents-each-with-its-role)) |
+| `somcp_web_search` | ● Web search | web search switched on in the **+** menu |
+| `somcp_get_module_settings` | ● Read the module settings | super administrator |
+| `somcp_update_module_setting` | ✎ Change a module setting | super administrator |
 
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
 language and currency it is connected to.

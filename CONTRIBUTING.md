@@ -174,8 +174,11 @@ composer install --working-dir=dev/tools
 
 CI runs all of these on every pull request, in four workflows with a badge
 each on the README: **PHP tests**, **Security**, **Integration** and **UI
-tests** (a real browser through the module's back office pages). Run them
-before pushing:
+tests** (a real browser through the module's back office pages). A pull
+request into `main` merges only once every job of all four is green; Integration
+and UI report that through one job each, **Integration passed** and **UI
+passed**, so their matrices can change without touching the branch rules. Run
+them before pushing:
 
 ```bash
 # PrestaShop coding standard
@@ -474,14 +477,12 @@ that module), reformatting unrelated code.
 ## Building the Addons package
 
 Files only useful to developers are marked `export-ignore` in
-`.gitattributes`. The builds lay the module out from git, add its Composer
-dependencies, then remove what the module never runs, listed in
-`dev/package/prune.txt`:
+`.gitattributes`. `dev/package/build.sh` lays the module out from git, adds
+its Composer dependencies, then removes what the module never runs, listed in
+`dev/package/prune.txt`. Build for Release and the PHP tests both call it:
 
 ```bash
-mkdir -p build && git archive --prefix=somcp/ HEAD | tar -x -C build
-composer install --working-dir=build/somcp --no-dev --no-scripts --no-plugins --optimize-autoloader
-dev/package/prune.sh build/somcp
+dev/package/build.sh build
 (cd build && zip -qr ../somcp.zip somcp)
 ```
 

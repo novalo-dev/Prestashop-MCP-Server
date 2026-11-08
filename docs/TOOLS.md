@@ -71,8 +71,9 @@ not need to be announced. What never leaves: the not-to-be-retried sentence,
 "never guess" where an identifier is asked, an email sent to the customer, and
 one object per call. A parameter that takes an identifier names the tool that
 gives it. `php dev/tools/measure.php .` prints the size of each tool and page
-and the texts above the budget. The tools are brought within it page by page;
-the budget is checked by `check-tools.php` once every page fits.
+and the texts above the budget. `check-tools.php` refuses a text above it,
+except the ones written before the budget and listed in that script until
+they are cut; a listed text cut within the budget must leave the list.
 
 **Nature and permission.** `SomcpTool::acts($action, $controller)`: one
 declaration, from which the module takes the permission required and what the

@@ -68,6 +68,13 @@ answer says so.
 
 ### Changed
 
+**Tool descriptions stay short.** Every tool the assistant can use is sent to
+it on each step of a conversation, so a long description slows every answer
+and costs more. The descriptions of the tools now stay within 600 characters
+and those of their fields within 200, and a new tool can no longer be added
+above that: the few longer texts left, mostly on the product page, are listed
+until they are shortened.
+
 **A photo from the chat can be a category image.** The cover and the menu
 thumbnails of `somcp_create_category` and `somcp_update_category` now take an
 image the same way the product and brand tools do: either a public `https`

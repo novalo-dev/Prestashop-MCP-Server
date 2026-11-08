@@ -51,18 +51,12 @@ class SomcpToolGetCategory
         return new SomcpTool(
             'somcp_get_category',
             Somcp::t('Get a category'),
-            'Returns everything the back office category form shows for one category of this shop: name, '
-                . 'Displayed (active), parent and its name, level in the tree, position, description, additional '
-                . 'description, the customer groups that can see it, friendly URL and full URL, meta title, meta '
-                . 'description, meta keywords (PrestaShop 8, null on 9), cover image and menu thumbnails '
-                . '(addresses; menu thumbnails null on PrestaShop 9), the number of products in it and of '
-                . 'subcategories, and what the page does while hidden (redirect_type and id_type_redirected, '
-                . 'PrestaShop 9, null on 8). The field names are the ones somcp_create_category and '
-                . 'somcp_update_category take, so a value read here can be given back as it is. '
-                . 'Identify the category by its identifier, from somcp_list_categories: never guess one. Use it '
-                . 'to tell apart two categories of the same name, by their parent. '
-                . 'Do not use it for the list of categories, which is somcp_list_categories, or for the products '
-                . 'of a category, which somcp_search_products finds with id_category.',
+            'Returns what the form of Catalog > Categories > Edit shows for one category: names, Displayed, '
+                . 'parent, position, descriptions, customer groups, friendly and full URL, meta fields, images, '
+                . 'product and subcategory counts, and what the page does while hidden; a field this PrestaShop '
+                . 'version lacks is null. Same names as somcp_create_category and somcp_update_category, so a value '
+                . 'read here can be given back. id_category from somcp_list_categories: never guess one. Read only. '
+                . 'For the list use somcp_list_categories, for its products somcp_search_products.',
             [
                 'type' => 'object',
                 'properties' => [

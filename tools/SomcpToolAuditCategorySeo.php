@@ -70,20 +70,12 @@ class SomcpToolAuditCategorySeo
         return new SomcpTool(
             'somcp_audit_category_seo',
             Somcp::t('Audit the SEO of categories'),
-            'Lists the categories of this shop whose search engine fields have a problem, one entry per '
-                . 'category and language, each with its issues: the check that failed and the value at fault. '
-                . 'Checks: meta_title_missing, meta_title_too_long (over 60 characters), meta_title_duplicate '
-                . '(another category has it in that language), meta_description_missing, meta_description_short '
-                . '(under 70 characters), meta_description_long (over 160), description_missing (the category '
-                . 'page has no text to rank on), link_rewrite_duplicate (another category has the same friendly '
-                . 'URL in that language), empty_category (a displayed category holding no active product of this '
-                . 'shop) and no_cover_image. The value is the title, description or friendly URL at fault, and an '
-                . 'empty string for the checks that report an absence. empty_category and no_cover_image concern '
-                . 'the whole category and are repeated on each language entry. The root and Home categories are '
-                . 'left out: they have no page of their own. Only displayed categories by default. counts gives, '
-                . 'per check, the entries raising it over every category audited, and total_count the entries '
-                . 'with at least one issue: read the next page with offset rather than concluding from one page. '
-                . 'Read only. Do not use it to change a category: somcp_update_category does that.',
+            'Lists the categories of this shop whose search engine fields of Catalog > Categories > Edit have '
+                . 'a problem, one entry per category and language, each with the checks that failed and the value '
+                . 'at fault (empty for a missing one). Root and Home are left out; displayed categories only by '
+                . 'default. counts gives the entries per check over every category audited, total_count those with '
+                . 'an issue: read the next page with offset rather than conclude from one page. Read only. To fix a '
+                . 'category use somcp_update_category.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -103,7 +95,8 @@ class SomcpToolAuditCategorySeo
                             'type' => 'string',
                             'enum' => self::CHECKS,
                         ],
-                        'description' => 'Only these checks; all of them when left out.',
+                        'description' => 'Only these checks, all of them when left out. Meta title over 60 characters, meta '
+                            . 'description under 70 or over 160; empty_category and no_cover_image are per category.',
                     ],
                     'limit' => [
                         'type' => 'integer',

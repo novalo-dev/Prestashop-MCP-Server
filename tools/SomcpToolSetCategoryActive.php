@@ -54,18 +54,13 @@ class SomcpToolSetCategoryActive
         return new SomcpTool(
             'somcp_set_category_active',
             Somcp::t('Show or hide a category'),
-            'Shows or hides one category of this shop on the storefront, exactly like the Displayed toggle '
-                . 'of the back office category list, and changes nothing else. Hiding a category does not '
-                . 'switch its products off: they stay reachable through search and through their other '
-                . 'categories, so tell the merchant. It is reversible: it is not a deletion. Find the category '
-                . 'with somcp_list_categories first and use the identifier it returns; never guess one. When the '
-                . 'category already has the state asked for, nothing is written and the answer says '
-                . 'changed: false. The root category and Home cannot be hidden. On a multistore installation, '
-                . 'PrestaShop keeps Displayed once for every shop sharing the category, so the change shows in '
-                . 'each of them. Do not use it to change anything else about a category (somcp_update_category). '
-                . 'One category per call: for several, call it once per category and report each result. Not '
-                . 'to be retried on a lost answer: read the category with somcp_get_category to see whether the '
-                . 'change went through.',
+            'Shows or hides one category on the storefront, like the Displayed toggle of Catalog > '
+                . 'Categories, and changes nothing else. Its products stay online, reachable through search and '
+                . 'their other categories: tell the merchant. Reversible, not a deletion. The root category and '
+                . 'Home cannot be hidden. On multistore, Displayed is shared by every shop of the category. '
+                . 'id_category from somcp_list_categories: never guess one. To change anything else use '
+                . 'somcp_update_category. One category per call. Not to be retried: if the answer is lost, read '
+                . 'somcp_get_category first.',
             [
                 'type' => 'object',
                 'properties' => [

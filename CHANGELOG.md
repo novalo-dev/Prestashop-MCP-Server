@@ -50,6 +50,17 @@ is not a return status, that a name another status already has is refused,
 that each field says whether you or the assistant fill it, and which read
 checks a creation whose answer was lost.
 
+**Shorter category tools.** The six tools of Catalog > Categories that list,
+read, audit, create, change and show or hide a category now describe
+themselves in a few sentences, lighter for the assistant on every step. What
+matters is kept: that a category is taken from the list and never assumed,
+that two categories can share a name in different branches, that the root
+category is never changed and Home never moved or hidden, that hiding a
+category leaves its products online, that each field says whether you or the
+assistant fill it, and which read checks a change whose answer was lost. The
+rules on the length of texts and on languages left out now sit in the
+catalogue prompt, where the assistant reads them when you pick it.
+
 ## 1.3.1 - 2026-11-07
 
 ### Added

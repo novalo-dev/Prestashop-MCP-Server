@@ -280,7 +280,9 @@ the merchant says otherwise. Before calling it:
    in different branches, so name the parent's branch to the merchant.
 2. Ask the merchant for the name, the parent, whether it is displayed and
    which customer groups see it. Write the descriptions and the SEO texts
-   yourself, in every language being filled, and show them first.
+   yourself, in every language being filled, and show them first. Lengths
+   count the visible text, spaces included, HTML tags not counted. A language
+   of the shop left out of `languages` takes the default language's text.
 3. An image is given by a public `https` address, which the shop downloads.
 
 When it succeeds, show the merchant the category as returned, the

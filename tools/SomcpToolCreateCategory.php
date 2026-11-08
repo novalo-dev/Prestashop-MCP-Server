@@ -90,28 +90,14 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         return new SomcpTool(
             'somcp_create_category',
             Somcp::t('Create a category'),
-            'Creates one category in this shop with every field of the back office category form: name, '
-                . 'parent, Displayed, description, additional description, group access, friendly URL, meta '
-                . 'title, meta description, meta keywords (PrestaShop 8), what the page does while hidden '
-                . '(PrestaShop 9), cover image and menu thumbnails (PrestaShop 8). Only name is required: the '
-                . 'category goes under Home and is displayed unless told otherwise. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Merchant, from the shop" - show the list read with somcp_list_categories and '
-                . 'let the merchant pick, or the customer groups read with somcp_list_customer_groups; never guess an identifier. '
-                . '"Assistant" - write it yourself in every language being filled, and show it to the merchant '
-                . 'before the call. '
-                . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
-                . 'language of the shop left out takes the default language\'s text. Lengths count the visible '
-                . 'text, spaces included, HTML tags not counted. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Images are downloaded by the shop from public https addresses; one that cannot be fetched '
-                . 'is reported in images and does not stop the creation. '
-                . 'Do not use it to change a category, which is somcp_update_category, or to show or hide one, '
-                . 'which is somcp_set_category_active. One category per call: for several, call it once per '
-                . 'category and report each result. '
-                . 'Not to be retried: if the answer is lost, read somcp_list_categories and look for the name '
-                . 'before anything else, because a second call creates a second category.',
+            'Creates one category, as Catalog > Categories > Add new category: name, parent, Displayed, '
+                . 'descriptions, groups, SEO fields and images. Only name is required; it goes under Home. Each '
+                . 'field says who fills it: Merchant - ask and never invent; from the shop - let the merchant pick '
+                . 'from the list read; '
+                . 'Assistant - write it in every language being filled and show it before the call. An image that '
+                . 'cannot be fetched is reported in images. To change one use somcp_update_category. One category '
+                . 'per call. Not to be retried: if the answer is lost, look for the name in somcp_list_categories '
+                . 'first.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],
@@ -168,7 +154,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                     . 'name when left out.'),
                 'meta_title' => $text('Assistant. 70 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_description' => $text('Assistant. 150 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
-                'meta_keywords' => $text('Assistant. PrestaShop 8 only, refused on 9, which dropped them. '
+                'meta_keywords' => $text('Assistant. PrestaShop 8 only, refused on 9. '
                     . '5 keywords at most, comma separated, without < > = { }.'),
                 'redirect_type' => [
                     'type' => 'string',

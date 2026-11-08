@@ -64,7 +64,7 @@ class SomcpToolCreateCatalogPriceRule extends SomcpToolCreateProduct
 
     /**
      * @var array<string, array{0: string, 1: string}> Per condition type, the table that holds the identifier and the
-     *                                                 list tool that gives it.
+     *                                                 list tool that gives it
      */
     private const CONDITION_SOURCES = [
         'category' => ['category', 'somcp_list_categories'],

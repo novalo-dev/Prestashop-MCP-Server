@@ -851,7 +851,7 @@ action wrong.
 **Nature**: `acts(VIEW, 'AdminStatuses')` · **Scope**: `mcp.orders.read`
 
 **Does** - lists the order statuses of this shop with their identifiers, the role
-each one plays in the shop, and what each one sets off: paid, shipped, delivery,
+each one plays in the shop, and what each one sets off: paid, shipped, in transit,
 invoice, whether it emails the customer and what that email carries.
 
 **Do not use for** - reading orders, or counting them by status (→
@@ -863,10 +863,14 @@ invoice, whether it emails the customer and what that email carries.
 |---|---|---|---|
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - per status: `id`, `name`, `roles`, `paid`, `shipped`, `delivery`,
-`sends_email`, `invoice`, `counts_as_valid`, `hidden_from_customer`,
+**Returns** - per status: `status_id`, `name`, `roles`, `paid`, `shipped`,
+`in_transit`, `sends_email`, `invoice`, `counts_as_valid`, `hidden_from_customer`,
 `attaches_invoice_pdf`, `attaches_delivery_slip_pdf`, `built_in`,
-`email_template`, `payment_module`, `color`. Plus `count` and `language_id`.
+`email_template`, `payment_module`, `color`, `icon`. Plus `count` and `language`
+(the ISO code used). `in_transit` is the box 9.0.0 labels **Set the order as in
+transit** and 8.0.1 **Show delivery PDF**; it is not the `delivered` role.
+`icon` is the public URL of the status icon (`img/os/<status_id>.gif`), `null`
+when there is none, never the bytes. An unknown `language` is refused (#149).
 
 **Notes** - in Configuration, not in Orders: an order uses a status without
 containing one. Every field is a real column of `order_state`, checked against
@@ -878,7 +882,8 @@ that is the only reliable way to find one: the name is translated and the
 merchant can rename it. Without it, an assistant asked to mark an order shipped
 guesses from a label. A list rather than one value, because
 `PS_OS_OUTOFSTOCK` and `PS_OS_OUTOFSTOCK_UNPAID` land on the same status in a
-default install. Empty for a status the merchant created.
+default install. Empty for a status the merchant or a module created (a
+`ps_checkout` status has no `PS_OS_*` key; `payment_module` says which module).
 
 No count of orders per status here, on purpose. It would hand order data to an
 account holding only the right to see the statuses page, and the count already

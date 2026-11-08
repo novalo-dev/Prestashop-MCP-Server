@@ -622,7 +622,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      */
     private static function status(int $idOrderState, int $idLang): array
     {
-        $roles = self::roles();
+        $roles = SomcpToolListOrderStatuses::roles();
         foreach (OrderState::getOrderStates($idLang) as $state) {
             if ((int) $state['id_order_state'] === $idOrderState) {
                 return [
@@ -642,7 +642,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
                     'email_template' => (string) $state['template'],
                     'payment_module' => (string) $state['module_name'],
                     'color' => (string) $state['color'],
-                    'icon' => self::iconUrl($idOrderState),
+                    'icon' => SomcpToolListOrderStatuses::iconUrl($idOrderState),
                 ];
             }
         }
@@ -669,66 +669,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
             'email_template' => (string) $stored->template,
             'payment_module' => (string) $stored->module_name,
             'color' => (string) $stored->color,
-            'icon' => self::iconUrl($idOrderState),
+            'icon' => SomcpToolListOrderStatuses::iconUrl($idOrderState),
         ];
-    }
-
-    /**
-     * Which status plays which part in this shop, by status identifier.
-     *
-     * The same fourteen keys somcp_list_order_statuses reads: PrestaShop
-     * records the part in its own configuration, and a renamed status keeps
-     * pointing at the right row.
-     *
-     * @return array<int, array<int, string>>
-     */
-    private static function roles(): array
-    {
-        $parts = [
-            'PS_OS_PAYMENT' => 'payment_accepted',
-            'PS_OS_WS_PAYMENT' => 'payment_accepted_remotely',
-            'PS_OS_PREPARATION' => 'preparation_in_progress',
-            'PS_OS_SHIPPING' => 'shipped',
-            'PS_OS_DELIVERED' => 'delivered',
-            'PS_OS_CANCELED' => 'canceled',
-            'PS_OS_REFUND' => 'refunded',
-            'PS_OS_ERROR' => 'payment_error',
-            'PS_OS_OUTOFSTOCK' => 'out_of_stock',
-            'PS_OS_OUTOFSTOCK_PAID' => 'out_of_stock_paid',
-            'PS_OS_OUTOFSTOCK_UNPAID' => 'out_of_stock_unpaid',
-            'PS_OS_BANKWIRE' => 'awaiting_bank_wire_payment',
-            'PS_OS_CHEQUE' => 'awaiting_cheque_payment',
-            'PS_OS_COD_VALIDATION' => 'awaiting_cash_on_delivery_validation',
-        ];
-
-        $roles = [];
-        foreach ($parts as $key => $role) {
-            $id = (int) Configuration::get($key);
-            if ($id > 0) {
-                $roles[$id][] = $role;
-            }
-        }
-
-        return $roles;
-    }
-
-    /**
-     * Public address of the icon of a status, as somcp_list_carriers gives a logo's.
-     *
-     * The icon is not a column: the back office stores the file under the
-     * status identifier, and only that file tells whether there is one.
-     *
-     * @param int $idOrderState
-     *
-     * @return string|null null when the status has no icon
-     */
-    private static function iconUrl(int $idOrderState): ?string
-    {
-        if (!is_file(_PS_IMG_DIR_ . 'os/' . $idOrderState . '.gif')) {
-            return null;
-        }
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        return (string) $link->getMediaLink('img/os/' . $idOrderState . '.gif');
     }
 }

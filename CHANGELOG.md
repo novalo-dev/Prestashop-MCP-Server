@@ -50,6 +50,14 @@ answer says so.
 
 ### Changed
 
+**Clearer order status list.** The tool that lists the order statuses now
+returns each status's icon, and renames three answer keys to match what the
+status form shows: `status_id` (was `id`), `in_transit` (was `delivery`, the
+box 9.0.0 labels "Set the order as in transit") and `language`, the ISO code
+used (was `language_id`). It now reads the name in any active language of the
+shop and refuses an unknown language code or an unknown argument instead of
+ignoring it. An assistant reading the list should use the new key names.
+
 **Shorter order status tools.** The two tools of Shop Parameters > Order
 Settings > Statuses that list and create an order status now describe
 themselves in a few sentences, lighter for the assistant on every step. What

@@ -83,22 +83,13 @@ class SomcpToolAuditProductSeo
         return new SomcpTool(
             'somcp_audit_product_seo',
             Somcp::t('Audit the SEO of products'),
-            'Lists the products of this shop whose search engine fields have a problem, one entry per product '
-                . 'and language, each with its issues: the check that failed and the value at fault. Checks: '
-                . 'meta_title_missing, meta_title_too_long (over 60 characters), meta_title_duplicate (another '
-                . 'product has it in that language), meta_description_missing, meta_description_short (under 70 '
-                . 'characters), meta_description_long (over 160), link_rewrite_duplicate (another product has '
-                . 'the same friendly URL in that language), description_short (the description holds under 150 '
-                . 'words, tags removed), image_legend_missing (an image without its alternative text in that '
-                . 'language; value lists the image ids), no_image, no_brand, no_gtin (no EAN-13, UPC nor ISBN), '
-                . 'and inactive_without_redirect (an inactive product whose page sends no redirection; checked '
-                . 'only with active: false; on PrestaShop 9 the shop default is applied to a product left on it). '
-                . 'The product-wide checks (no_image, no_brand, no_gtin, '
-                . 'inactive_without_redirect) are repeated on each language entry. counts gives, per check, the '
-                . 'entries raising it over the whole catalogue, and total_count the entries with at least one '
-                . 'issue: read the next page with offset rather than concluding from one page. Only active '
-                . 'products by default. Read only. Do not use it to read or change one product: '
-                . 'somcp_get_product and somcp_update_product do that.',
+            'Lists the products of this shop whose search engine fields of Catalog > Products > SEO have a '
+                . 'problem, one entry per product and language, each with the checks that failed and the value at '
+                . 'fault. Product-wide checks (no_image, no_brand, no_gtin, inactive_without_redirect) repeat on '
+                . 'each language entry. Active products only by default. counts gives the entries per check over '
+                . 'the catalogue, total_count those with an issue: read the next page with offset rather than '
+                . 'conclude from one page. Read only. To read or fix a product use somcp_get_product or '
+                . 'somcp_update_product.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -118,7 +109,9 @@ class SomcpToolAuditProductSeo
                             'type' => 'string',
                             'enum' => self::CHECKS,
                         ],
-                        'description' => 'Only these checks; all of them when left out.',
+                        'description' => 'Only these checks, all when left out. Meta title over 60 characters, meta '
+                            . 'description under 70 or over 160, description_short under 150 words; '
+                            . 'inactive_without_redirect needs active false.',
                     ],
                     'limit' => [
                         'type' => 'integer',

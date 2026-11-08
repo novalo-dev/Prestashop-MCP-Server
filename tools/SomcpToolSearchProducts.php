@@ -51,19 +51,12 @@ class SomcpToolSearchProducts
         return new SomcpTool(
             'somcp_search_products',
             Somcp::t('Search products'),
-            'Finds products of this shop with the filters of the back office product list - '
-                . 'identifier, name, reference, category, price without or with tax, quantity, '
-                . 'status, EAN13, MPN, UPC, ISBN - and returns a short line for each: reference, '
-                . 'name, base price without and with tax, total quantity, status, default category '
-                . '(identifier and name) and the small cover image URL (null without a cover). Every filter is optional and they combine. A reference or an EAN13 '
-                . 'also finds the product through one of its combinations, and says which ones '
-                . 'matched. Prices are the base price of the product, before specific prices and '
-                . 'combination impacts; the price with tax uses the tax rule of the shop default '
-                . 'country. Use it to find a product, or to answer questions about several. '
-                . 'Do not use it to read a product already identified - somcp_get_product returns '
-                . 'everything about it. Do not use it to review stock levels across the catalogue - '
-                . 'that is somcp_list_low_stock. Category identifiers are specific to each shop: '
-                . 'take them from somcp_list_categories, never guess one.',
+            'Finds products of this shop with the filters of the Catalog > Products list, all optional and '
+                . 'combined, and returns a short line for each: reference, name, base price without and with tax, '
+                . 'quantity, status, default category and cover image. A reference or an EAN13 also finds a '
+                . 'product through its combinations and says which matched. Prices are before specific prices '
+                . 'and combination impacts. To read one product use somcp_get_product; for stock levels across '
+                . 'the catalogue, somcp_list_low_stock. id_category from somcp_list_categories: never guess one.',
             [
                 'type' => 'object',
                 'properties' => [

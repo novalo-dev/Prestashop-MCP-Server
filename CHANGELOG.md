@@ -88,6 +88,16 @@ assistant fill it, and which read checks a change whose answer was lost. The
 rules on the length of texts and on languages left out now sit in the
 catalogue prompt, where the assistant reads them when you pick it.
 
+**Shorter product tools.** The tools of Catalog > Products that search, read,
+audit the SEO of, switch on or off and delete a product now describe themselves
+in a few sentences, lighter for the assistant on every step. What matters is
+kept: that a product is taken from the search and never assumed, that a
+promotion is never mistaken for the price, that switching off can be undone
+and is offered before a deletion, which cannot, that a deleted product leaves
+only this shop and orders keep their lines, and which read checks a change
+whose answer was lost. The thresholds of the SEO audit now sit with its list of
+checks.
+
 ## 1.3.1 - 2026-11-07
 
 ### Added

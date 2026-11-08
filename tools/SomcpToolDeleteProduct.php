@@ -46,16 +46,12 @@ class SomcpToolDeleteProduct
         return new SomcpTool(
             'somcp_delete_product',
             Somcp::t('Delete a product'),
-            'Deletes one product of this shop, with its combinations, images and stock, as the back office '
-                . 'does. Irreversible. Before calling it, read the product with somcp_get_product, ask the '
-                . 'merchant to confirm naming it by its name and reference, and offer to switch it off instead '
-                . 'with somcp_set_product_active, which hides it from customers and can be undone. Find the '
-                . 'product with somcp_search_products first and use the identifier it returns; never guess one. '
-                . 'Orders that contain the product keep their lines as sold. On a multistore installation it '
-                . 'leaves this shop only: still_in_shops in the answer says how many other shops still carry '
-                . 'it, which the merchant removes from a connection to each of them. One product per call: for '
-                . 'several, confirm and call once per product. Not to be retried on a lost answer: search for '
-                . 'the product with somcp_search_products to see whether it is gone.',
+            'Deletes one product with its combinations, images and stock, as Catalog > Products does. '
+                . 'Irreversible: read it with somcp_get_product, have the merchant confirm it by name and '
+                . 'reference, and offer somcp_set_product_active instead, which can be undone. id_product from '
+                . 'somcp_search_products: never guess one. Orders keep their lines. On multistore it leaves this '
+                . 'shop only; still_in_shops says how many others carry it. One product per call. Not to be '
+                . 'retried: if the answer is lost, look with somcp_search_products first.',
             [
                 'type' => 'object',
                 'properties' => [

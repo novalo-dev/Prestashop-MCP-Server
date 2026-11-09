@@ -346,7 +346,7 @@ class SomcpToolSetOrderCarrier
         }
 
         $allowed = [];
-        foreach (is_array($rows) ? $rows : [] as $row) {
+        foreach ($rows as $row) {
             $id = (int) ($row['id_carrier'] ?? 0);
             if ($id <= 0) {
                 continue;

@@ -22,12 +22,14 @@ use PrestaShop\PrestaShop\Adapter\ContextStateManager;
 use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShop\PrestaShop\Adapter\Order\CommandHandler\IssuePartialRefundHandler;
 use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderRefundCalculator;
+use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderRefundSummary;
 use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderRefundUpdater;
 use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderSlipCreator;
 use PrestaShop\PrestaShop\Adapter\Order\Refund\VoucherGenerator;
 use PrestaShop\PrestaShop\Core\Domain\Order\Command\IssuePartialRefundCommand;
 use PrestaShop\PrestaShop\Core\Domain\Order\Exception\InvalidCancelProductException;
 use PrestaShop\PrestaShop\Core\Domain\Order\Exception\InvalidOrderStateException;
+use PrestaShop\PrestaShop\Core\Domain\Order\Exception\ReturnProductDisabledException;
 use PrestaShop\PrestaShop\Core\Domain\Order\VoucherRefundType;
 
 /*
@@ -325,9 +327,33 @@ class SomcpToolIssuePartialRefund
             // The core's own refusals and any failure of a side effect end
             // here alike: coreRefused() tells which, and whether something
             // was written.
-            return self::coreRefused($order, $e, $slipBefore, $voucherBefore, $idEmployee);
+            return self::coreRefused($order, $e, $slipBefore, $voucherBefore, $idEmployee, 'order_partial_refund_failed', 'a partial refund');
         }
 
+        return self::report($order, $summary, $restocked, $creditSlip, $voucher, $slipBefore, $voucherBefore, 'order_partial_refund', $idEmployee);
+    }
+
+    /**
+     * What a refund recorded, in the answer shared by the refund tools.
+     *
+     * The handlers give nothing back: the lines and the shipping come from
+     * the summary computed before the call, the slip and the voucher from the
+     * highest ids after it.
+     *
+     * @param Order $order
+     * @param OrderRefundSummary $summary
+     * @param bool $restocked
+     * @param bool $creditSlip
+     * @param bool $voucher
+     * @param int $slipBefore
+     * @param int $voucherBefore
+     * @param string $event
+     * @param int $idEmployee
+     *
+     * @return array<string, mixed>
+     */
+    public static function report(Order $order, OrderRefundSummary $summary, bool $restocked, bool $creditSlip, bool $voucher, int $slipBefore, int $voucherBefore, string $event, int $idEmployee): array
+    {
         $order = new Order((int) $order->id);
         $currency = new Currency((int) $order->id_currency);
         $precision = self::precision($order);
@@ -395,7 +421,7 @@ class SomcpToolIssuePartialRefund
         }
 
         SomcpLogger::log(
-            'order_partial_refund',
+            $event,
             $missing === [] ? SomcpLogger::OUTCOME_SUCCESS : SomcpLogger::OUTCOME_FAILURE,
             'order ' . (int) $order->id . ', slip ' . ($slip['id_order_slip'] ?? 0)
                 . ', voucher ' . ($generated['id_cart_rule'] ?? 0),
@@ -541,15 +567,7 @@ class SomcpToolIssuePartialRefund
                 continue;
             }
 
-            // What is left, read as OrderRefundCalculator reads it.
-            if ((int) $detail->id_customization > 0) {
-                $customization = new Customization((int) $detail->id_customization);
-                $left = (int) $customization->quantity - (int) $customization->quantity_refunded
-                    - (int) $customization->quantity_returned;
-            } else {
-                $left = (int) $detail->product_quantity - (int) $detail->product_quantity_refunded
-                    - (int) $detail->product_quantity_return;
-            }
+            $left = self::leftToRefund($detail);
 
             $quantity = $line['quantity'];
             if ($quantity === null) {
@@ -584,6 +602,28 @@ class SomcpToolIssuePartialRefund
     }
 
     /**
+     * How many units of a line are left to refund, read as
+     * OrderRefundCalculator reads it: the customization's own counts when the
+     * line has one.
+     *
+     * @param OrderDetail $detail
+     *
+     * @return int
+     */
+    public static function leftToRefund(OrderDetail $detail): int
+    {
+        if ((int) $detail->id_customization > 0) {
+            $customization = new Customization((int) $detail->id_customization);
+
+            return (int) $customization->quantity - (int) $customization->quantity_refunded
+                - (int) $customization->quantity_returned;
+        }
+
+        return (int) $detail->product_quantity - (int) $detail->product_quantity_refunded
+            - (int) $detail->product_quantity_return;
+    }
+
+    /**
      * Turns what the core threw into the tool's error, after checking that
      * nothing was left half written.
      *
@@ -592,15 +632,17 @@ class SomcpToolIssuePartialRefund
      * @param int $slipBefore
      * @param int $voucherBefore
      * @param int $idEmployee
+     * @param string $event the journal entry of the failure
+     * @param string $kind the refund named in the answer, "a partial refund"
      *
      * @return array<string, mixed>
      */
-    private static function coreRefused(Order $order, Throwable $e, int $slipBefore, int $voucherBefore, int $idEmployee): array
+    public static function coreRefused(Order $order, Throwable $e, int $slipBefore, int $voucherBefore, int $idEmployee, string $event, string $kind): array
     {
         $written = self::lastSlipId($order) > $slipBefore || self::lastVoucherId($order) > $voucherBefore;
 
         SomcpLogger::log(
-            'order_partial_refund_failed',
+            $event,
             SomcpLogger::OUTCOME_FAILURE,
             'order ' . (int) $order->id . ', ' . get_class($e) . ' ' . (int) $e->getCode(),
             '',
@@ -631,7 +673,12 @@ class SomcpToolIssuePartialRefund
                     break;
             }
         } elseif ($e instanceof InvalidOrderStateException) {
-            $problem = 'id_order: this order is neither paid nor has a payment - a partial refund needs one';
+            $problem = $e->getCode() === InvalidOrderStateException::UNEXPECTED_DELIVERY
+                ? 'id_order: this order is already delivered - ' . $kind . ' is only for an order not delivered yet'
+                : 'id_order: this order is neither paid nor has a payment - ' . $kind . ' needs one';
+        } elseif ($e instanceof ReturnProductDisabledException) {
+            $problem = 'id_order: merchandise returns are disabled (Customer Service > Merchandise Returns) - use '
+                . 'somcp_issue_partial_refund';
         }
 
         return self::refused([$problem]);
@@ -644,7 +691,7 @@ class SomcpToolIssuePartialRefund
      *
      * @return array<string, mixed>
      */
-    private static function refused(array $problems): array
+    public static function refused(array $problems): array
     {
         return SomcpTool::text("Nothing was recorded.\n- " . implode("\n- ", $problems), true);
     }
@@ -673,7 +720,7 @@ class SomcpToolIssuePartialRefund
      *
      * @return int
      */
-    private static function precision(Order $order): int
+    public static function precision(Order $order): int
     {
         $currency = new Currency((int) $order->id_currency);
 
@@ -711,7 +758,7 @@ class SomcpToolIssuePartialRefund
      *
      * @return bool
      */
-    private static function flag(array $arguments, string $name, bool $default, array &$problems): bool
+    public static function flag(array $arguments, string $name, bool $default, array &$problems): bool
     {
         if (!array_key_exists($name, $arguments)) {
             return $default;
@@ -732,7 +779,7 @@ class SomcpToolIssuePartialRefund
      *
      * @return float|null
      */
-    private static function number($value): ?float
+    public static function number($value): ?float
     {
         if (is_int($value) || is_float($value)) {
             return is_finite((float) $value) ? (float) $value : null;
@@ -751,7 +798,7 @@ class SomcpToolIssuePartialRefund
      *
      * @return int|null
      */
-    private static function integer($value): ?int
+    public static function integer($value): ?int
     {
         if (is_int($value)) {
             return $value;
@@ -770,7 +817,7 @@ class SomcpToolIssuePartialRefund
      *
      * @return string
      */
-    private static function decimal(float $value): string
+    public static function decimal(float $value): string
     {
         return sprintf('%.6F', $value);
     }
@@ -782,7 +829,7 @@ class SomcpToolIssuePartialRefund
      *
      * @return int
      */
-    private static function lastSlipId(Order $order): int
+    public static function lastSlipId(Order $order): int
     {
         return (int) Db::getInstance()->getValue(
             'SELECT MAX(`id_order_slip`) FROM `' . _DB_PREFIX_ . 'order_slip`
@@ -799,7 +846,7 @@ class SomcpToolIssuePartialRefund
      *
      * @return int
      */
-    private static function lastVoucherId(Order $order): int
+    public static function lastVoucherId(Order $order): int
     {
         return (int) Db::getInstance()->getValue(
             'SELECT MAX(`id_cart_rule`) FROM `' . _DB_PREFIX_ . 'cart_rule`

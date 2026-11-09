@@ -20,6 +20,7 @@ of it can be undone by calling again.
 - `somcp_set_order_note`
 - `somcp_add_order_payment`
 - `somcp_issue_partial_refund`
+- `somcp_issue_standard_refund`
 
 ## Know which shop you are in
 
@@ -131,6 +132,22 @@ wait for the merchant's go-ahead before the call.
   `amount_tax_included`. A wrong one is refused with the right field named.
 - A credit slip is generated unless the merchant says otherwise; a voucher
   only when asked. `restock` only matters once the order is delivered.
+- Never repeat the call on a lost answer: check `quantity_refunded` and
+  `documents.credit_slips` with `somcp_get_order`.
+
+## A standard refund
+
+A standard refund pays back whole lines of a paid order not shipped yet and
+puts them back in stock: use `somcp_issue_standard_refund`. Confirm the lines
+and what will be generated first (a credit slip, a voucher or both), and wait
+for the merchant's go-ahead before the call.
+
+- Each line is named by its `products[].id_order_detail` from
+  `somcp_get_order`, with a whole quantity: the line's price is refunded, no
+  amount is given. The shipping only with `refund_shipping`.
+- It needs merchandise returns on (**Customer Service > Merchandise
+  Returns**). When they are off, or for a chosen amount, use
+  `somcp_issue_partial_refund`; a delivered order is refused.
 - Never repeat the call on a lost answer: check `quantity_refunded` and
   `documents.credit_slips` with `somcp_get_order`.
 

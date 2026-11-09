@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Standard refunds.** The new tool `somcp_issue_standard_refund` pays back
+whole lines of a paid order that is not delivered yet, as the **Standard
+refund** button of the order page does: the chosen quantities go back in
+stock, the shipping is refunded when asked, with a credit slip, a voucher or
+both. When merchandise returns are off or the order is already delivered, the
+refusal says which tool to use instead.
+
 **Partial refunds.** The new tool `somcp_issue_partial_refund` pays back part
 of a paid order, as the **Partial refund** button of the order page does: some
 units of a line, part of a line's price, part of the shipping, with a credit

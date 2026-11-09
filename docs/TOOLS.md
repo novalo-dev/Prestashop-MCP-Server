@@ -783,6 +783,79 @@ Not replayable: a refund issued twice is money paid back twice. A lost answer
 is checked with `somcp_get_order` (`products[].quantity_refunded`,
 `documents.credit_slips`).
 
+#### `somcp_issue_standard_refund`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - issues a standard refund on one paid order that is not delivered
+yet - whole quantities of some lines, the shipping if asked - as the
+**Standard refund** button of the order page does, with a credit slip, a
+voucher or both. The refunded quantities go back in stock.
+
+**Do not use for** - a chosen amount rather than whole lines, or a shop with
+merchandise returns off (→ `somcp_issue_partial_refund`), a delivered order
+(→ `somcp_return_order_products`), an unpaid order
+(→ `somcp_cancel_order_products`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `lines` | array | yes | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`) and `quantity` (at least 1, at most what is left to refund); no amount, the line's price is refunded |
+| `refund_shipping` | boolean | no | the **Shipping** checkbox: what is left of the order's shipping; false by default |
+| `credit_slip` | boolean | no | **Generate a credit slip**; true by default, as the box is ticked when the form opens |
+| `voucher` | boolean | no | **Generate a voucher**; false by default, as on screen |
+| `voucher_refund_type` | enum | no | only for an order partly paid with a voucher: `product_prices` (**Product(s) price:**) or `product_prices_excluding_voucher` (**Product(s) price, excluding amount of initial voucher:**, the default the page pre-selects); refused on an order without voucher |
+
+At least one of `credit_slip` and `voucher` must be true, as on screen.
+
+**Returns** - the answer of `somcp_issue_partial_refund`: `refunded`, `order`
+(`id_order` and `reference`), `lines` (per line: `id_order_detail`,
+`product_name`, `quantity`, `amount_tax_excluded`, `amount_tax_included`),
+`shipping_refunded_tax_included`, `total_refunded_tax_excluded`,
+`total_refunded_tax_included`, `currency`, `restocked`, `credit_slip`
+(`id_order_slip` and its totals, or `null`), `voucher` (`id_cart_rule`,
+`code`, `amount`, `tax_included`, or `null`), and `warning` when the refund was
+recorded but the slip or the voucher cannot be found afterwards.
+
+**Errors** - every problem at once, nothing recorded when one check fails,
+each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+line; no lines; the order not found or a reference shared by several orders; a
+line that is not one of this order's; a quantity below 1 or above what is
+left; `credit_slip` and `voucher` both false; `voucher_refund_type` on an order
+without voucher; merchandise returns off (naming **Customer Service >
+Merchandise Returns** and `somcp_issue_partial_refund`); an order neither paid
+nor with payments; an order already delivered (naming
+`somcp_issue_partial_refund` until `somcp_return_order_products` is written).
+The core's own refusals are put in the same shape.
+
+**Notes** - the button is shown only when merchandise returns are on
+(`PS_ORDER_RETURN`), the order is not delivered, and it has been paid or has
+payments; otherwise the same place shows **Return products** (delivered) or
+**Cancel products** (not paid). The form is `cancel_product`: per line a
+checkbox and **Quantity**, the **Shipping** checkbox, **Generate a credit
+slip** (ticked), **Generate a voucher** and the voucher choice.
+
+The core's `IssueStandardRefundHandler` does the work, built with `new` with
+the same services as the partial refund, whose constructors are the same on
+8.0.1 and 9.0.0: stock put back for every refunded quantity,
+`actionProductCancel` per line with the standard refund action, the carrier
+weight, the credit slip, the refund data of the lines, and the voucher. The
+handler does not check that a line belongs to the order: the tool does. The
+shipping refunded is the order's whole shipping tax included, which the core
+caps to what earlier slips left. The checks, the refusals and the answer are
+shared with `somcp_issue_partial_refund`.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler or the form.
+The new slip is found as the highest `id_order_slip` of the order after the
+call, and the voucher as the highest cart rule of the customer.
+
+Not replayable: a refund issued twice is money paid back twice. A lost answer
+is checked with `somcp_get_order` (`products[].quantity_refunded`,
+`documents.credit_slips`).
+
 #### `somcp_list_return_statuses`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminStatuses')` · **Scope**: `mcp.orders.read`

@@ -1106,6 +1106,10 @@ T = {
  "Effectuer un remboursement partiel sur une commande",
  "Realizar un reembolso parcial de un pedido",
  "Eine Teilerstattung für eine Bestellung vornehmen"),
+"Issue a standard refund on an order": (
+ "Effectuer un remboursement standard sur une commande",
+ "Realizar un reembolso estándar de un pedido",
+ "Eine Standarderstattung für eine Bestellung vornehmen"),
 "Audit the SEO of products": (
  "Auditer le SEO des produits",
  "Auditar el SEO de los productos",

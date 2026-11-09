@@ -284,7 +284,7 @@ class SomcpToolCreateProduct
                 'features' => [
                     'type' => 'array',
                     'description' => 'Merchant, from the shop: features from somcp_list_features, each with an '
-                        . 'existing value or a custom value typed for this product only.',
+                        . 'existing value or a custom value for this product only.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
@@ -400,9 +400,8 @@ class SomcpToolCreateProduct
                         'file' => [
                             'type' => 'object',
                             'description' => 'Merchant. Required. url: a public https address the shop downloads '
-                                . '(no redirect); upload_ref: a file already on the shop - attached, deposited or '
-                                . 'generated in the built-in assistant. One of the two, never file content. Within '
-                                . 'the shop\'s maximum attachment size.',
+                                . '(no redirect); upload_ref: a file already on the shop. One of the two, never file '
+                                . 'content; within the shop\'s maximum attachment size.',
                             'properties' => [
                                 'url' => ['type' => 'string'],
                                 'upload_ref' => ['type' => 'string'],
@@ -513,19 +512,17 @@ class SomcpToolCreateProduct
                         'link_rewrite' => $text('Assistant. The friendly URL; generated from the name when left out.'),
                         'redirect_type' => [
                             'type' => 'string',
-                            'description' => 'Assistant. What the product page does while inactive: 404, 410, '
-                                . '301-product, 302-product, 301-category, 302-category; PrestaShop 9 adds default, '
-                                . '200-displayed, 404-displayed, 410-displayed. Left out: the shop default.',
+                            'description' => 'Assistant. Product page while inactive: 404, 410, 301-product, '
+                                . '302-product, 301-category, 302-category; PrestaShop 9 adds default, 200-displayed, '
+                                . '404-displayed, 410-displayed. Left out: shop default.',
                         ],
                         'id_type_redirected' => [
                             'type' => 'integer',
                             'description' => 'Assistant. The product or category a 301 or 302 redirects to.',
                         ],
                         'meta_keywords' => $text('Assistant. PrestaShop 8 only; refused on 9, which dropped them.'),
-                        'tags' => $text('Assistant and merchant. The tags (Étiquettes), a comma separated list per '
-                            . 'language: "pixel 8, smartphone google, android 14". Written to the shop tag field, '
-                            . 'which is separate from meta_keywords and kept on every PrestaShop version. Each tag is '
-                            . '32 characters at most and may not hold < > = # { }.'),
+                        'tags' => $text('Assistant and merchant. Tags (Étiquettes), comma separated, not meta_keywords; '
+                            . '32 characters each, no < > = # { }.'),
                     ],
                     'additionalProperties' => false,
                 ],
@@ -574,10 +571,8 @@ class SomcpToolCreateProduct
                 'images' => [
                     'type' => 'array',
                     'description' => 'Merchant and assistant: the merchant gives the images, the assistant '
-                        . 'writes the legends. Each image is a url, downloaded by the shop (public https only, '
-                        . 'no redirect, 10 MB at most), or the upload_ref of a file already on the shop - one '
-                        . 'the merchant attached or deposited, or an image generated in the built-in assistant. '
-                        . 'JPEG, PNG, GIF or WebP. Never file content.',
+                        . 'writes the legends. Each by url (public https, no redirect, 10 MB at most) or '
+                        . 'upload_ref: JPEG, PNG, GIF, WebP, never file content.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [

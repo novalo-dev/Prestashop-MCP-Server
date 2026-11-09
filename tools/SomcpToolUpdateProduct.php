@@ -183,9 +183,9 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         unset($properties['basics']['required'], $properties['pricing']['required'], $properties['combinations']['items']['required'], $properties['images']['items']['required']);
         $properties['basics']['properties']['name']['description'] = 'Merchant. 128 characters at most, never empty. '
             . 'One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.';
-        $properties['basics']['properties']['product_type']['description'] = 'Merchant. Changes as in the back office; '
-            . 'a product that still has combinations stays combinations until they are removed, and a pack or a '
-            . 'virtual product keeps its type while it has contents or a file.';
+        $properties['basics']['properties']['product_type']['description'] = 'Merchant. Changes as in the back office: '
+            . 'combinations stay combinations until they are removed, a pack or a virtual product keeps its type '
+            . 'while it has contents or a file.';
         $properties['pricing']['properties']['price_tax_excl']['description'] = 'Merchant. Selling price, tax excluded.';
         $properties['pricing']['properties']['id_tax_rules_group']['description'] = 'Merchant, from the shop: tax rule '
             . 'from somcp_list_tax_rules, 0 for no tax.';
@@ -194,15 +194,15 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             . 'product has combinations, each of which has its own.';
         $properties['stock']['properties']['location']['description'] = 'Merchant. Where it is stored; refused while the '
             . 'product has combinations, each of which has its own.';
-        $properties['pack']['properties']['items']['description'] .= ' Given, the list replaces the pack\'s '
-            . 'contents entirely; to take some out without restating the others, use remove_pack_items.';
+        $properties['pack']['properties']['items']['description'] .= ' Given, it replaces the pack\'s contents; '
+            . 'to take some out alone, use remove_pack_items.';
         unset($properties['virtual_file']['required']);
         $properties['virtual_file']['description'] = 'A virtual product only: the file customers download. Only '
             . 'the fields given change. A file given replaces the current one; file and display_filename are '
             . 'required when the product has no file yet.';
         $properties['seo']['properties']['link_rewrite']['description'] = 'Assistant. The friendly URL, only in the '
-            . 'languages given. On an active product the old address stops working: tell the merchant first. '
-            . 'One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.';
+            . 'languages given; on an active product the old address stops working: tell the merchant first. '
+            . 'Keyed by ISO code: {"fr": "...", "en": "..."}.';
         $properties['categories']['properties']['categories']['description'] .= $kept;
         $properties['categories']['properties']['id_category_default']['description'] = 'Merchant, from the shop: the '
             . 'main category, one of the product\'s categories (added to them if missing).';
@@ -216,8 +216,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $properties['suppliers']['properties']['suppliers']['description'] = 'Merchant: per supplier, and per '
             . 'combination when it differs. A row already there has the values given replaced, the others kept.';
 
-        $position = 'Position in combinations of this call, from 0. To point at an existing combination without '
-            . 'changing it, list it in combinations with its id_product_attribute alone.';
+        $position = 'Position in combinations of this call, from 0. An existing combination left unchanged is '
+            . 'listed there with its id_product_attribute alone.';
         $properties['specific_prices']['properties']['rules']['items']['properties']['combination']['description'] = $position . ' Left out: unchanged, or the whole product for a new rule.';
         $properties['suppliers']['properties']['suppliers']['items']['properties']['combination']['description'] = $position . ' Left out: the product.';
         $properties['images']['items']['properties']['combinations']['description'] = $position . ' Given, replaces '
@@ -229,20 +229,17 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             'id_specific_price' => ['type' => 'integer', 'description' => 'A rule of this product, from somcp_get_product.'],
         ] + $properties['specific_prices']['properties']['rules']['items']['properties'];
 
-        $properties['images']['description'] = 'Merchant and assistant. With id_image, that image has its legend, '
-            . 'cover, position or combinations changed; with url or upload_ref, an image is added: a url is '
-            . 'downloaded by the shop (public https only, no redirect, 10 MB at most), an upload_ref names a file '
-            . 'already on the shop - attached, deposited or generated in the built-in assistant. JPEG, PNG, GIF '
-            . 'or WebP. Never file content.';
+        $properties['images']['description'] = 'Merchant and assistant. id_image: edits that image (legend, cover, '
+            . 'position, combinations). url (public https, no redirect, 10 MB max) or upload_ref: adds one: JPEG, '
+            . 'PNG, GIF, WebP, no file content.';
         $properties['images']['items']['properties'] = [
             'id_image' => ['type' => 'integer', 'description' => 'An image of this product, from somcp_get_product.'],
         ] + $properties['images']['items']['properties'];
         $properties['images']['items']['properties']['url']['description'] = 'Public https address of an image to add. Give url or upload_ref, not both.';
 
-        $properties['combinations']['description'] = 'Merchant and assistant. With id_product_attribute, that '
-            . 'combination has the values given replaced and keeps the others; its attributes do not change. '
-            . 'Without, a combination is added: attributes are then required, and two combinations cannot have '
-            . 'the same ones.';
+        $properties['combinations']['description'] = 'Merchant and assistant. With id_product_attribute, the values '
+            . 'given replace that combination\'s, its attributes unchanged. Without, one is added: attributes '
+            . 'required, never those of another.';
         $properties['combinations']['items']['properties'] = [
             'id_product_attribute' => ['type' => 'integer', 'description' => 'A combination of this product, from somcp_get_product.'],
         ] + $properties['combinations']['items']['properties'];
@@ -271,9 +268,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         ];
         $properties['remove_virtual_file'] = [
             'type' => 'boolean',
-            'description' => 'Merchant: true deletes the downloadable file of the virtual product and its settings. '
-                . 'Customers who bought it can no longer download it: say so to the merchant before the call. '
-                . 'Not next to virtual_file.',
+            'description' => 'Merchant: true deletes the downloadable file of the virtual product and its settings; '
+                . 'buyers can no longer download it, so tell the merchant first. Not next to virtual_file.',
         ];
 
         $schema['properties'] = [

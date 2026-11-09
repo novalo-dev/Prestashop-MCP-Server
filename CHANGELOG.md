@@ -160,6 +160,11 @@ categories, brands and suppliers - cover image, menu thumbnails, logo - now
 each fit within 200 characters: an image is still given by its address or by
 a file already on the shop, in the same words in every tool.
 
+**Shorter product fields.** The fields of the tools that create and change a
+product - its type, features, pack contents, downloadable file, combinations,
+images, friendly URL, redirection and tags - now each fit within 200
+characters: no field of the products page is longer than that any more.
+
 **A photo from the chat can be a category image.** The cover and the menu
 thumbnails of `somcp_create_category` and `somcp_update_category` now take an
 image the same way the product and brand tools do: either a public `https`

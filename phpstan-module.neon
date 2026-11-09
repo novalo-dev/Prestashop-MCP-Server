@@ -48,7 +48,9 @@ parameters:
         # Tools::getContextLocale) against LocaleInterface, while VoucherGenerator
         # still requires the concrete Locale - its only implementation, so the value
         # handed over is always a Locale at run time. PrestaShop 8 types the same
-        # accessors as Locale and does not report this.
+        # accessors as Locale and does not report this. Both refund tools build the
+        # generator through SomcpToolIssuePartialRefund::voucherGenerator(), so the
+        # ignore stays on that one call.
         -
             message: '#\$locale of class .*VoucherGenerator constructor expects .*\\Locale, .*\\LocaleInterface given#'
             path: tools/SomcpToolIssuePartialRefund.php

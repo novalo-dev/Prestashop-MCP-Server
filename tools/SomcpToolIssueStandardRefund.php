@@ -25,7 +25,6 @@ use PrestaShop\PrestaShop\Adapter\Order\CommandHandler\IssueStandardRefundHandle
 use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderRefundCalculator;
 use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderRefundUpdater;
 use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderSlipCreator;
-use PrestaShop\PrestaShop\Adapter\Order\Refund\VoucherGenerator;
 use PrestaShop\PrestaShop\Core\Domain\Order\Command\IssueStandardRefundCommand;
 use PrestaShop\PrestaShop\Core\Domain\Order\VoucherRefundType;
 
@@ -273,9 +272,9 @@ class SomcpToolIssueStandardRefund
                 $configuration,
                 $calculator,
                 new OrderSlipCreator($configuration, $translator),
-                // The locale is set by the front controller; built from the
-                // context otherwise, as the core does for a missing one.
-                new VoucherGenerator($legacy->getCurrentLocale() ?? Tools::getContextLocale($legacy), $translator),
+                // Shared with the partial refund, which owns the locale typing
+                // workaround PrestaShop 9 needs.
+                SomcpToolIssuePartialRefund::voucherGenerator($legacy),
                 new OrderRefundUpdater(),
                 $contextManager
             );

@@ -316,9 +316,7 @@ class SomcpToolIssuePartialRefund
                 $configuration,
                 $calculator,
                 new OrderSlipCreator($configuration, $translator),
-                // The locale is set by the front controller; built from the
-                // context otherwise, as the core does for a missing one.
-                new VoucherGenerator($legacy->getCurrentLocale() ?? Tools::getContextLocale($legacy), $translator),
+                self::voucherGenerator($legacy),
                 new OrderRefundUpdater(),
                 $contextManager
             );
@@ -835,6 +833,25 @@ class SomcpToolIssuePartialRefund
             'SELECT MAX(`id_order_slip`) FROM `' . _DB_PREFIX_ . 'order_slip`
              WHERE `id_order` = ' . (int) $order->id
         );
+    }
+
+    /**
+     * The core voucher generator, built the one way both refund tools need.
+     *
+     * The locale is set by the front controller; built from the context
+     * otherwise, as the core does for a missing one. PrestaShop 9 types both
+     * accessors against LocaleInterface while VoucherGenerator still wants the
+     * concrete Locale, its only implementation - the cross-version typing
+     * ignore in phpstan-module.neon is scoped to this one call, so the
+     * standard refund comes here rather than building its own.
+     *
+     * @param Context $legacy
+     *
+     * @return VoucherGenerator
+     */
+    public static function voucherGenerator(Context $legacy): VoucherGenerator
+    {
+        return new VoucherGenerator($legacy->getCurrentLocale() ?? Tools::getContextLocale($legacy), $legacy->getTranslator());
     }
 
     /**

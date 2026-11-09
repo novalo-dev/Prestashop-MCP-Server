@@ -275,6 +275,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_delete_order_discount` | ✎ Remove a discount from an order | Orders › edit |
 | `somcp_set_order_address` | ✎ Change an address of an order | Orders › edit |
 | `somcp_set_order_carrier` | ✎ Change the carrier of an order | Orders › edit |
+| `somcp_resend_order_status_email` | ✎ Resend the email of an order status | Orders › edit |
 | `somcp_create_return_status` | ✎ Create a return status | Statuses › add |
 | `somcp_update_return_status` | ✎ Change a return status | Statuses › edit |
 | `somcp_delete_return_status` | ✎ Delete a return status | Statuses › delete |

@@ -1392,6 +1392,11 @@
       <source>Change the carrier of an order</source>
       <target>Modifier le transporteur d'une commande</target>
     </trans-unit>
+    <!-- Resend the email of an order status -->
+    <trans-unit id="03f58c6b43594f9afdf1f216be9a098e" resname="Resend the email of an order status">
+      <source>Resend the email of an order status</source>
+      <target>Renvoyer l'e-mail d'un statut de commande</target>
+    </trans-unit>
     <!-- Add a message to an order -->
     <trans-unit id="c336eae6c62dfc77a0f7a99f52e6ba5b" resname="Add a message to an order">
       <source>Add a message to an order</source>

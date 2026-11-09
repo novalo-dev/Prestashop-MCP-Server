@@ -1209,6 +1209,51 @@ on screen adds the delay on 8.0.1 only.
 Not replayable: a lost answer is checked with `somcp_get_order`
 (`shipping.shipments[].id_carrier`).
 
+#### `somcp_resend_order_status_email`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - sends again the email of one past status of an order, as **Resend
+email** on a line of the **Status** tab of the order page does. The status line
+is taken from `history` of `somcp_get_order`; the status is read from the line
+and the email is the one that status sends.
+
+**Do not use for** - changing the status (→ `somcp_set_order_status`), or
+writing to the customer (→ `somcp_add_order_message`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_history` | integer | yes | which status line to resend, `history[].id_order_history` of `somcp_get_order`; never guessed |
+
+**Returns** - `sent`, `order` (`id_order` and `reference`), `history_line` in
+the shape of one entry of `history` of `somcp_get_order` (`id_order_history`,
+`date`, `status`, `status_id`, `employee`), and `template` (the status's email
+template). A send that fails is `sent: false` with a `warning` and nothing
+changed.
+
+**Errors** - every problem at once, nothing sent when one check fails, each
+under "Nothing was sent.": a field the tool does not take; the order not found
+or a reference shared by several orders; `id_order_history` missing or not a
+whole number; `id_order_history: not a status line of this order - find it in
+history of somcp_get_order`; `id_order_history: the status <name> sends no
+email` when the status's `send_email` is 0.
+
+**Notes** - the core path (`ResendOrderEmailCommand` then
+`ResendOrderEmailHandler`) does not check that the history line belongs to the
+order nor that its status matches; the tool takes the line only, checks it
+belongs to the order and reads the status from it. When the status is
+`PS_OS_SHIPPING` and the order carries a shipping number, `{followup}` is the
+carrier URL with the number in place of the `@`, as the back office adds it.
+
+**Differences between 8.0.1 and 9.0.0** - none.
+
+Not replayable: every call emails the customer and the order records nothing;
+the description tells the assistant to call it once.
+
 #### `somcp_list_return_statuses`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminStatuses')` · **Scope**: `mcp.orders.read`

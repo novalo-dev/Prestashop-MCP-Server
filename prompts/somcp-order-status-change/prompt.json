@@ -28,7 +28,8 @@
     "somcp_add_order_discount",
     "somcp_delete_order_discount",
     "somcp_set_order_address",
-    "somcp_set_order_carrier"
+    "somcp_set_order_carrier",
+    "somcp_resend_order_status_email"
   ],
   "controller": "AdminOrders",
   "action": "edit",

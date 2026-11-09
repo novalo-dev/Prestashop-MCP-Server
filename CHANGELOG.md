@@ -34,6 +34,13 @@ refused with the list of the ones that are. The tracking number is left as it
 is and no email is sent. `somcp_get_order` now gives the `id_carrier` of each
 shipment, so the assistant can tell whether a carrier is already in place.
 
+**Order status email resent.** The new tool `somcp_resend_order_status_email`
+sends again the email of one past status of an order, as **Resend email** on a
+line of the **Status** tab of the order page does. The status line is taken from
+the order history, and the status is read from it; a status the shop does not
+email is refused rather than reported as sent. Every call emails the customer
+and the order records nothing, so the assistant is told to send it once.
+
 **Order discounts.** The new tool `somcp_add_order_discount` adds a discount to
 an order, as the **Add a discount** button of the order page does: a
 percentage, an amount including taxes, or free shipping, on the whole order or

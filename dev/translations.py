@@ -1106,6 +1106,10 @@ T = {
  "Modifier le transporteur d'une commande",
  "Cambiar el transportista de un pedido",
  "Den Versanddienstleister einer Bestellung ändern"),
+"Resend the email of an order status": (
+ "Renvoyer l'e-mail d'un statut de commande",
+ "Reenviar el correo de un estado de pedido",
+ "Die E-Mail eines Bestellstatus erneut senden"),
 "Add a message to an order": (
  "Ajouter un message à une commande",
  "Añadir un mensaje a un pedido",

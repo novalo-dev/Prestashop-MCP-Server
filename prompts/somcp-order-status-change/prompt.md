@@ -328,6 +328,19 @@ returns; never guess it. The tracking number stays with
   On a lost answer, read `shipping.shipments[].id_carrier` with
   `somcp_get_order` rather than calling again.
 
+## Resending a status email
+
+When a customer says they did not receive the email of a status, resend it once
+with `somcp_resend_order_status_email` rather than setting the status again:
+setting it again would move the order and fire its hooks a second time.
+
+- Take `id_order_history` from `history[].id_order_history` of
+  `somcp_get_order`; never guess it.
+- A status the shop does not email (`send_email` 0) is refused: nothing is sent,
+  so do not try to force it.
+- Every call emails the customer and the order records nothing. Call it once; on
+  a lost answer, do not repeat it, or the customer is emailed twice.
+
 ## Several orders
 
 One call per order. Never present a batch as one action.

@@ -411,7 +411,7 @@ customer has none. The count joins the same tables as the list, so
   `free_shipping`;
 - `history`, each step with `id_order_history`;
 - `shipping.shipments`, one per shipment: `id_order_carrier`, `date`,
-  `carrier`, `weight`, `shipping_cost_tax_excluded`,
+  `id_carrier`, `carrier`, `weight`, `shipping_cost_tax_excluded`,
   `shipping_cost_tax_included`, `tracking_number`, `tracking_url`;
 - `totals`: `taxes`, `wrapping_tax_excluded` and `wrapping_tax_included`;
 - `payments`, each with `currency`, `invoice_number` (empty when not tied to an
@@ -1153,6 +1153,61 @@ wording of the options on screen (9.0.0 adds the alias).
 
 Not replayable: a lost answer is checked with `somcp_get_order`
 (`addresses.delivery.id_address`, `addresses.invoice.id_address`).
+
+#### `somcp_set_order_carrier`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes the carrier of one shipment of one order, as the **Carrier**
+field of the **Edit shipping details** window (Carriers tab of the order page)
+does, and lets the core recompute the shipping cost and the order totals.
+
+**Do not use for** - the tracking number (→ `somcp_set_order_tracking`), or the
+address (→ `somcp_set_order_address`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_carrier` | integer | yes | one of the carriers the order may use, from `somcp_list_carriers` or the list a refused call returns; never guessed |
+| `id_order_carrier` | integer | no | which shipment, `shipping.shipments[].id_order_carrier` of `somcp_get_order`; required only when the order has more than one |
+
+**Returns** - `changed`, `order` (`id_order` and `reference`),
+`previous_carrier` and `carrier` (`id_carrier`, `name`, as
+`somcp_list_carriers` names them), `previous_shipment` and `shipment`, each in
+the shape of one entry of `shipping.shipments` of `somcp_get_order` built by
+the same function, then the order totals after the change
+(`shipping_tax_excluded`, `shipping_tax_included`, `total_tax_excluded`,
+`total_tax_included`) as `totals` of `somcp_get_order` names them, and
+`currency`. The carrier already in place is `changed: false` with a `reason`,
+`carrier` and `shipment`, and nothing happens.
+
+**Errors** - every problem at once, nothing changed when one check fails, each
+under "Nothing was changed.": a field the tool does not take; the order not
+found or a reference shared by several orders; `id_carrier` missing or not a
+whole number; `id_order_carrier: required, this order has <n> shipments` or
+`id_order_carrier: not a shipment of this order`, followed by the shipments
+(`id_order_carrier`, `date`, `carrier`, `weight`, `tracking_number`);
+`id_carrier: not a carrier this order can use - find one with
+somcp_list_carriers`, followed by the carriers the order may use
+(`id_carrier`, `name`, `delay`). A failure inside the core is reported without
+its raw message, with the advice to read the order before trying again.
+
+**Notes** - the core's `UpdateOrderShippingDetailsHandler` also saves the
+tracking number of the form and may email the customer; the tool runs only its
+carrier part, in the same steps (the cart's delivery option, the
+`OrderCarrier`, the `Order`, then `OrderAmountUpdater::update()`) on the
+order's language, and sends no email. The handler accepts any carrier; the
+choices on screen come from `Carrier::getCarriersForOrder()` for the delivery
+zone and the customer's groups, and the tool refuses any other.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler; the option label
+on screen adds the delay on 8.0.1 only.
+
+Not replayable: a lost answer is checked with `somcp_get_order`
+(`shipping.shipments[].id_carrier`).
 
 #### `somcp_list_return_statuses`
 **State**: written

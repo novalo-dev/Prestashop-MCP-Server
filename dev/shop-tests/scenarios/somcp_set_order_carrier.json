@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "id_carrier": 2}, "expect": "error", "contains": ["No order of this shop", "Nothing was changed"]},
+    {"why": "a reference no order of the shop has", "arguments": {"reference": "SOMCPNONE", "id_carrier": 2}, "expect": "error", "contains": ["No order of this shop has this reference", "somcp_search_orders", "Nothing was changed"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"id_carrier": 2}, "expect": "error", "contains": ["Give id_order or reference", "Nothing was changed"]},
+    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "id_carrier": 2, "tracking_number": "X1"}, "expect": "error", "contains": ["tracking_number: not a field of this tool", "Nothing was changed"]},
+    {"why": "a carrier identifier that is not a whole number is not read as 1", "arguments": {"id_order": 1, "id_carrier": [2]}, "expect": "error", "contains": ["id_carrier: give the carrier identifier, a whole number", "Nothing was changed"]},
+    {"why": "a shipment of another order", "arguments": {"id_order": 1, "id_carrier": 2, "id_order_carrier": 999999}, "expect": "error", "contains": ["id_order_carrier: not a shipment of this order", "shipments of this order", "Nothing was changed"]},
+    {"why": "a carrier the order cannot use, refused with the ones it can", "arguments": {"id_order": 1, "id_carrier": 999999}, "expect": "error", "contains": ["id_carrier: not a carrier this order can use", "somcp_list_carriers", "carriers this order can use", "Nothing was changed"]},
+    {"why": "the carrier already in place changes nothing", "arguments": {"id_order": 1, "id_carrier": 2}, "expect": "ok", "contains": ["\"changed\": false", "already uses this carrier", "id_order_carrier"]}
+  ]
+}

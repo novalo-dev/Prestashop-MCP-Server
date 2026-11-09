@@ -528,6 +528,9 @@ class SomcpToolGetOrder
             $shipments[] = [
                 'id_order_carrier' => (int) $orderCarrier->id,
                 'date' => (string) $orderCarrier->date_add,
+                // The identifier somcp_set_order_carrier takes, so a read tells
+                // whether the carrier asked for is already the one in place.
+                'id_carrier' => (int) $orderCarrier->id_carrier,
                 'carrier' => Validate::isLoadedObject($carrier) ? (string) $carrier->name : '',
                 'weight' => (float) $orderCarrier->weight,
                 'shipping_cost_tax_excluded' => (float) $orderCarrier->shipping_cost_tax_excl,

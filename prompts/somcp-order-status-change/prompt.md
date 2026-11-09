@@ -312,6 +312,22 @@ guess it.
   lost answer, read `addresses` with `somcp_get_order` rather than calling
   again.
 
+## The carrier of the order
+
+`somcp_set_order_carrier` changes the carrier of one shipment, as the
+**Carrier** field of **Edit shipping details** on the Carriers tab does. Take
+`id_carrier` from `somcp_list_carriers`, or from the list a refused call
+returns; never guess it. The tracking number stays with
+`somcp_set_order_tracking`.
+
+- Changing the carrier **changes the shipping cost and the total**. Say the new
+  amount before the change, not after.
+- A carrier that does not deliver this order is refused with the carriers that
+  do: pick from that list.
+- The carrier already in place answers `changed: false` and nothing happens.
+  On a lost answer, read `shipping.shipments[].id_carrier` with
+  `somcp_get_order` rather than calling again.
+
 ## Several orders
 
 One call per order. Never present a batch as one action.

@@ -89,8 +89,8 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
         $properties = $schema['properties'];
         $kept = ' Left out: unchanged.';
 
-        $properties['name']['description'] = 'Merchant. The name shown on the product page, 128 characters at '
-            . 'most, never empty, without < > = { }. Renamed on every product carrying the feature.'
+        $properties['name']['description'] = 'Merchant. The name on product pages, 128 characters at most; '
+            . 'renamed on every product using it.'
             . ' One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.' . $kept;
         foreach (['url_name', 'meta_title'] as $field) {
             $properties[$field]['description'] .= $kept;

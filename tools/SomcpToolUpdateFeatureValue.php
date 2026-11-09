@@ -90,8 +90,8 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
 
         $properties['id_feature']['description'] = 'Merchant. Moves the value to this feature, from '
             . 'somcp_list_features. Refused while a product carries the value.' . $kept;
-        $properties['value']['description'] = 'Merchant. The value shown on the product page, 255 characters '
-            . 'at most, never empty, without < > = { }. Changed on every product carrying it.'
+        $properties['value']['description'] = 'Merchant. The value on product pages, 255 characters at most; '
+            . 'changed on every product using it.'
             . ' One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.' . $kept;
         foreach (['url_name', 'meta_title'] as $field) {
             $properties[$field]['description'] .= $kept;

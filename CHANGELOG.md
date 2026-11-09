@@ -102,6 +102,11 @@ change attribute groups and values - names, public name, type, URL word, title
 tag, texture, position - now each fit within 200 characters: no text of the
 attributes page is longer than that any more.
 
+**Shorter feature fields.** The fields of the four tools that create and
+change features and feature values - name, value, URL word, title tag - now
+each fit within 200 characters: no text of the features page is longer than
+that any more.
+
 **A photo from the chat can be a category image.** The cover and the menu
 thumbnails of `somcp_create_category` and `somcp_update_category` now take an
 image the same way the product and brand tools do: either a public `https`

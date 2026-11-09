@@ -90,10 +90,7 @@ class SomcpToolGetManufacturer
 
         // A cast would read an array as 1 and answer about a brand nobody
         // asked for: only a whole number is an identifier.
-        $value = $arguments['id_manufacturer'] ?? null;
-        $idManufacturer = is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
+        $idManufacturer = SomcpTool::id($arguments, 'id_manufacturer');
 
         if (self::existingManufacturer($idManufacturer, $idShop) === null) {
             return SomcpTool::text('No brand of this shop has this identifier. Find it with somcp_list_manufacturers.', true);

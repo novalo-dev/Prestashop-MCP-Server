@@ -151,7 +151,7 @@ class SomcpToolGetOrder
      */
     public static function find(array $arguments)
     {
-        $byReference = (int) ($arguments['id_order'] ?? 0) <= 0;
+        $byReference = SomcpTool::id($arguments, 'id_order') <= 0;
         if ($byReference && (!isset($arguments['reference']) || !is_string($arguments['reference'])
             || trim($arguments['reference']) === '')) {
             return 'Give id_order or reference. Find the order with somcp_search_orders.';
@@ -191,7 +191,7 @@ class SomcpToolGetOrder
     private static function candidates(array $arguments): array
     {
         $idShop = Somcp::currentShopId();
-        $idOrder = (int) ($arguments['id_order'] ?? 0);
+        $idOrder = SomcpTool::id($arguments, 'id_order');
         $ids = [];
 
         if ($idOrder > 0) {
@@ -231,7 +231,9 @@ class SomcpToolGetOrder
         $state = new OrderState((int) $order->current_state, $idLang);
 
         return [
-            'id' => (int) $order->current_state,
+            // The same name as the input of somcp_set_order_status and the
+            // rows of somcp_list_order_statuses, so it is handed on as is.
+            'status_id' => (int) $order->current_state,
             'name' => Validate::isLoadedObject($state) ? (string) $state->name : '',
             'paid' => Validate::isLoadedObject($state) ? (bool) $state->paid : false,
             'shipped' => Validate::isLoadedObject($state) ? (bool) $state->shipped : false,

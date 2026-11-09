@@ -139,8 +139,9 @@ class SomcpToolGetCustomer
      */
     private static function locate(array $arguments, int $idShop)
     {
-        if (isset($arguments['id_customer']) && is_numeric($arguments['id_customer']) && (int) $arguments['id_customer'] > 0) {
-            $id = (int) $arguments['id_customer'];
+        // is_numeric() would let "1.5" or "1e3" through as another customer.
+        $id = SomcpTool::id($arguments, 'id_customer');
+        if ($id > 0) {
             $customer = new Customer($id);
             if (!Validate::isLoadedObject($customer) || (int) $customer->id_shop !== $idShop || (int) $customer->deleted === 1) {
                 return 'No customer ' . $id . ' in this shop. Find one with somcp_search_customers.';
@@ -346,7 +347,7 @@ class SomcpToolGetCustomer
                 'reference' => (string) $row['reference'],
                 'date_add' => SomcpToolSearchCustomers::isoDate($row['date_add']),
                 'payment' => (string) $row['payment'],
-                'status' => ['id_order_state' => (int) $row['current_state'], 'name' => (string) ($row['status'] ?? '')],
+                'status' => ['status_id' => (int) $row['current_state'], 'name' => (string) ($row['status'] ?? '')],
                 'products_count' => (int) ($row['products_count'] ?? 0),
                 'total_paid_tax_incl' => round((float) $row['total_paid_tax_incl'], 2),
                 'currency' => (string) ($row['currency'] ?? ''),

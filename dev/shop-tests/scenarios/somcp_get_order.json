@@ -4,6 +4,9 @@
     {"why": "reads another demo order", "arguments": {"id_order": 2}, "expect": "ok", "contains": ["customizations", "private_note"]},
     {"why": "the identifiers the order write tools act on, and the address details", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["\"id_order_detail\"", "\"id_order_history\"", "\"pack_items\"", "\"id_address\"", "\"alias\"", "\"state\"", "\"dni\""]},
     {"why": "an order that does not exist", "arguments": {"id_order": 999999}, "expect": "error"},
-    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "error"}
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "error"},
+    {"why": "the current status under the name somcp_set_order_status takes", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["\"status\": {\n            \"status_id\": "]},
+    {"why": "an identifier given as a string of digits is read as that order", "arguments": {"id_order": "1"}, "expect": "ok", "contains": ["\"id_order\": 1,"]},
+    {"why": "an identifier given in an array is not read as an order", "arguments": {"id_order": ["1"]}, "expect": "error", "contains": ["Give id_order or reference"]}
   ]
 }

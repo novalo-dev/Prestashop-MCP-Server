@@ -394,8 +394,9 @@ customer has none. The count joins the same tables as the list, so
 `products`, `discounts`, `shipping`, `totals`, `payments`, `history`,
 `documents`, `messages`. Among them, what the order page shows:
 
-- `order`: `note` (Order note / Order private note), `id_cart`, `gift`,
-  `gift_message`, `recycled_packaging`;
+- `order`: `status` (`status_id`, the identifier `somcp_set_order_status`
+  takes, `name`, `paid`, `shipped`), `note` (Order note / Order private note),
+  `id_cart`, `gift`, `gift_message`, `recycled_packaging`;
 - `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
   `total_spent` with `total_spent_currency`, `private_note` (read only);
 - `addresses.delivery` and `addresses.invoice`: `id_address`, `alias`,
@@ -454,8 +455,8 @@ orders in one call, which it refuses by design.
 | `reference` | string | one of the two | reference |
 | `status_id` | integer | yes | from `somcp_list_order_statuses`, never guessed |
 
-**Returns** - `changed`, `order`, `previous_status`, `status`,
-`status_sends_email`, `email_sent`, `warning`, `changed_by_employee_id`. When the
+**Returns** - `changed`, `order`, `previous_status` and `status` (each
+`status_id`, `name`), `status_sends_email`, `email_sent`, `warning`, `changed_by_employee_id`. When the
 order already has that status: `changed: false` with a `reason`, and nothing
 happens.
 
@@ -2968,7 +2969,7 @@ A customer of another shop, or deleted with their data kept (`deleted = 1`), ans
 - `customer`: `id_customer`, `firstname`, `lastname`, `email`, `id_gender`, `social_title`, `birthday` (`YYYY-MM-DD`, `null` when none), `age` (`null` when no birthday), `date_add`, `last_visit` (`null` when never), `customer_language` (ISO code of the language the customer uses), `newsletter`, `newsletter_date_add`, `partner_offers`, `date_upd`, `active`, `is_guest`, `private_note` (as `somcp_get_order` names it), and the B2B fields, always given and empty when unset: `company`, `siret`, `ape`, `website`, `allowed_outstanding_amount` with `currency` (the default currency), `max_payment_days`, `id_risk`, `risk`.
 - `groups`: each `id_group`, `name`, `default`.
 - `addresses`: each `id_address`, `alias`, `company`, `firstname`, `lastname`, `address1`, `address2`, `postcode`, `city`, `state`, `country`, `country_iso`, `phone`, `phone_mobile`, `vat_number`, `dni`, `other` (the names of the addresses of `somcp_get_order`).
-- `orders`: `count`, `valid_count`, `valid_total_tax_incl` with `currency` (**for a total amount of**, `SUM(total_paid_tax_incl / conversion_rate)` of the valid orders, in the default currency), `invalid_count`, `sales_rank` (`null` with no valid order), and `latest`, the 10 newest: `id_order`, `reference`, `date_add`, `payment`, `status` (`id_order_state`, `name`), `products_count` (units ordered), `total_paid_tax_incl`, `currency` (the order's). More with `somcp_search_orders` (`customer_email`).
+- `orders`: `count`, `valid_count`, `valid_total_tax_incl` with `currency` (**for a total amount of**, `SUM(total_paid_tax_incl / conversion_rate)` of the valid orders, in the default currency), `invalid_count`, `sales_rank` (`null` with no valid order), and `latest`, the 10 newest: `id_order`, `reference`, `date_add`, `payment`, `status` (`status_id`, `name`), `products_count` (units ordered), `total_paid_tax_incl`, `currency` (the order's). More with `somcp_search_orders` (`customer_email`).
 - `carts`: `count` and `latest`, the 10 newest: `id_cart`, `date_add`, `carrier`, `total_tax_incl` (`null` when the cart cannot be priced any more), `currency`, `id_order` (`null` when not ordered).
 - `purchased_products`: the 10 newest order lines, every order valid or not: `date_add`, `id_order`, `valid`, `id_product`, `id_product_attribute`, `name` (with its combination), `quantity`.
 - `viewed_products`: the 10 product pages most recently visited: `id_product`, `name`.

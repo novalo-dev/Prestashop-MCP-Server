@@ -205,7 +205,7 @@ class SomcpToolAddOrderDiscount
         // order's. Read now so a wrong invoice is reported with the rest.
         $idOrderInvoice = null;
         if (array_key_exists('id_order_invoice', $arguments)) {
-            $idOrderInvoice = self::identifier($arguments['id_order_invoice']);
+            $idOrderInvoice = SomcpTool::id($arguments, 'id_order_invoice');
             if ($idOrderInvoice <= 0) {
                 $problems[] = 'id_order_invoice: an invoice identifier from somcp_get_order.';
             } elseif (!$order->hasInvoice()) {
@@ -454,27 +454,5 @@ class SomcpToolAddOrderDiscount
         $size = is_array($field) && isset($field['size']) ? (int) $field['size'] : 0;
 
         return $size > 0 ? $size : 254;
-    }
-
-    /**
-     * An identifier as a client may send it: an integer, or digits in a string.
-     *
-     * A cast would read an array as 1 and point at an invoice nobody named.
-     * Public so somcp_delete_order_discount reads its identifier the same way.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    public static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            return (int) trim($value);
-        }
-
-        return 0;
     }
 }

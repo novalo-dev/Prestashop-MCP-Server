@@ -51,10 +51,10 @@ use PrestaShop\PrestaShop\Core\Domain\Order\Command\ChangeOrderInvoiceAddressCom
  * SomcpToolGetOrder::address(), the same mapping somcp_get_order uses, rather
  * than a second copy.
  *
- * Note on the shared helpers assumed by issue #126: SomcpTool::id() (#139) and
- * SomcpTool::refused() (#169, #170) are not on develop yet, so the identifier
- * is read like the other order tools read theirs, and the refusal is built
- * here in the order tools' shape; both converge when those issues land.
+ * Note on the shared helpers assumed by issue #126: the identifier is read by
+ * SomcpTool::id(), like every order tool's; SomcpTool::refused() (#169, #170)
+ * is not on develop yet, so the refusal is built here in the order tools'
+ * shape until that issue lands.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -153,7 +153,7 @@ class SomcpToolSetOrderAddress
         if (!array_key_exists('id_address', $arguments)) {
             $problems[] = 'id_address: give the address identifier, a whole number';
         } else {
-            $idAddress = self::identifier($arguments['id_address']);
+            $idAddress = SomcpTool::id($arguments, 'id_address');
             if ($idAddress <= 0) {
                 $problems[] = 'id_address: give the address identifier, a whole number';
             }
@@ -340,27 +340,5 @@ class SomcpToolSetOrderAddress
     private static function refused(array $problems): array
     {
         return SomcpTool::text("Nothing was changed.\n- " . implode("\n- ", $problems), true);
-    }
-
-    /**
-     * An identifier as a client may send it: an integer, or digits in a string.
-     *
-     * A cast would read an array as 1 and move the order onto an address nobody
-     * named.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            return (int) trim($value);
-        }
-
-        return 0;
     }
 }

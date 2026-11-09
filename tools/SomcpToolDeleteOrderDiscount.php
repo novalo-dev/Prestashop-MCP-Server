@@ -122,7 +122,7 @@ class SomcpToolDeleteOrderDiscount
             $problems[] = 'id_order_cart_rule: give the discount to remove, from discounts[].id_order_cart_rule '
                 . 'of somcp_get_order.';
         } else {
-            $idOrderCartRule = SomcpToolAddOrderDiscount::identifier($arguments['id_order_cart_rule']);
+            $idOrderCartRule = SomcpTool::id($arguments, 'id_order_cart_rule');
             if ($idOrderCartRule <= 0) {
                 $problems[] = 'id_order_cart_rule: a whole number, from discounts[].id_order_cart_rule of '
                     . 'somcp_get_order.';

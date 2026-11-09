@@ -101,7 +101,7 @@ class SomcpToolSetOrderStatus
         }
 
         $idLang = (int) $order->id_lang;
-        $target = new OrderState((int) ($arguments['status_id'] ?? 0), $idLang);
+        $target = new OrderState(SomcpTool::id($arguments, 'status_id'), $idLang);
         if (!Validate::isLoadedObject($target)) {
             return SomcpTool::text(
                 'No such status in this shop. Call somcp_list_order_statuses to get the identifiers.',
@@ -111,18 +111,18 @@ class SomcpToolSetOrderStatus
 
         $current = $order->getCurrentOrderState();
         $previous = Validate::isLoadedObject($current)
-            ? ['id' => (int) $current->id, 'name' => (string) (new OrderState((int) $current->id, $idLang))->name]
+            ? ['status_id' => (int) $current->id, 'name' => (string) (new OrderState((int) $current->id, $idLang))->name]
             : null;
 
         // The core refuses this too, in UpdateOrderStatusHandler. Refusing it
         // here as well is what keeps a retried call from mailing the customer a
         // second time - the single likeliest way this tool causes harm.
-        if ($previous !== null && $previous['id'] === (int) $target->id) {
+        if ($previous !== null && $previous['status_id'] === (int) $target->id) {
             return SomcpTool::json([
                 'changed' => false,
                 'reason' => 'The order already has this status. Nothing was changed and no email was sent.',
                 'order' => self::identify($order),
-                'status' => ['id' => (int) $target->id, 'name' => (string) $target->name],
+                'status' => ['status_id' => (int) $target->id, 'name' => (string) $target->name],
             ]);
         }
 
@@ -196,7 +196,7 @@ class SomcpToolSetOrderStatus
             'changed' => true,
             'order' => self::identify($order),
             'previous_status' => $previous,
-            'status' => ['id' => (int) $target->id, 'name' => (string) $target->name],
+            'status' => ['status_id' => (int) $target->id, 'name' => (string) $target->name],
             // What the shop is set to do at this status, and what actually
             // happened to the mail. Reported apart because a status that mails
             // the customer can still fail to send.
@@ -260,7 +260,7 @@ class SomcpToolSetOrderStatus
     private static function locate(array $arguments): ?Order
     {
         $idShop = Somcp::currentShopId();
-        $idOrder = (int) ($arguments['id_order'] ?? 0);
+        $idOrder = SomcpTool::id($arguments, 'id_order');
 
         if ($idOrder <= 0 && !empty($arguments['reference'])) {
             $idOrder = (int) Db::getInstance()->getValue(

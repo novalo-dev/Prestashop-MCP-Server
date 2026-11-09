@@ -36,11 +36,10 @@ declare(strict_types=1);
  * customer and the order keeps no trace of it, so the description tells the
  * assistant to call it once and never retry on a lost answer.
  *
- * Note on the shared helpers assumed by issue #128: SomcpTool::id() (#139) and
- * SomcpTool::refused() (#169, #170) are not on develop yet, so id_order_history
- * is read like the other order tools read their identifiers, and the refusal
- * is built here in the order tools' shape; both converge when those issues
- * land.
+ * Note on the shared helpers assumed by issue #128: id_order_history is read
+ * by SomcpTool::id(), like every order tool's identifiers;
+ * SomcpTool::refused() (#169, #170) is not on develop yet, so the refusal is
+ * built here in the order tools' shape until that issue lands.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -119,7 +118,7 @@ class SomcpToolResendOrderStatusEmail
         // Read like the other order tools read identifiers: a cast would turn
         // an array into 1 and resend a status line nobody named.
         $idOrderHistory = array_key_exists('id_order_history', $arguments)
-            ? self::identifier($arguments['id_order_history'])
+            ? SomcpTool::id($arguments, 'id_order_history')
             : 0;
         if (!array_key_exists('id_order_history', $arguments)) {
             $problems[] = 'id_order_history: required, the status line to resend - take it from history of '
@@ -292,26 +291,5 @@ class SomcpToolResendOrderStatusEmail
     private static function refused(array $problems): array
     {
         return SomcpTool::text("Nothing was sent.\n- " . implode("\n- ", $problems), true);
-    }
-
-    /**
-     * An identifier as a client may send it: an integer, or digits in a string.
-     *
-     * A cast would read an array as 1 and resend a line nobody named.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            return (int) trim($value);
-        }
-
-        return 0;
     }
 }

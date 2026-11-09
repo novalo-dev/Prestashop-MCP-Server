@@ -40,10 +40,10 @@ use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderProductRemover;
  * carriers of Carrier::getCarriersForOrder() for the delivery zone and the
  * customer's groups, so the tool refuses anything else, with that list.
  *
- * Note on the shared helpers assumed by issue #127: SomcpTool::id() (#139) and
- * SomcpTool::refused() (#169, #170) are not on develop yet, so identifiers are
- * read like the other order tools read theirs, and the refusal is built here
- * in the order tools' shape; both converge when those issues land.
+ * Note on the shared helpers assumed by issue #127: identifiers are read by
+ * SomcpTool::id(), like every order tool's; SomcpTool::refused() (#169, #170)
+ * is not on develop yet, so the refusal is built here in the order tools'
+ * shape until that issue lands.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -126,14 +126,14 @@ class SomcpToolSetOrderCarrier
 
         // Read like the other order tools read identifiers: a cast would turn
         // an array into 1 and put the parcel on a carrier nobody named.
-        $idCarrier = array_key_exists('id_carrier', $arguments) ? self::identifier($arguments['id_carrier']) : 0;
+        $idCarrier = array_key_exists('id_carrier', $arguments) ? SomcpTool::id($arguments, 'id_carrier') : 0;
         if ($idCarrier <= 0) {
             $problems[] = 'id_carrier: give the carrier identifier, a whole number';
         }
 
         $idOrderCarrier = null;
         if (array_key_exists('id_order_carrier', $arguments)) {
-            $idOrderCarrier = self::identifier($arguments['id_order_carrier']);
+            $idOrderCarrier = SomcpTool::id($arguments, 'id_order_carrier');
             if ($idOrderCarrier <= 0) {
                 $problems[] = 'id_order_carrier: give the shipment identifier, a whole number';
             }
@@ -439,26 +439,5 @@ class SomcpToolSetOrderCarrier
     private static function refused(array $problems): array
     {
         return SomcpTool::text("Nothing was changed.\n- " . implode("\n- ", $problems), true);
-    }
-
-    /**
-     * An identifier as a client may send it: an integer, or digits in a string.
-     *
-     * A cast would read an array as 1 and act on a carrier nobody named.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            return (int) trim($value);
-        }
-
-        return 0;
     }
 }

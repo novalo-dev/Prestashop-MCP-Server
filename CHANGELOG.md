@@ -132,6 +132,15 @@ answer says so.
 
 ### Changed
 
+**One name for the order status in every order and customer tool.**
+`somcp_get_order`, `somcp_set_order_status` and the latest orders of
+`somcp_get_customer` now give the status as `status_id`, the name
+`somcp_set_order_status` takes and `somcp_list_order_statuses` returns, so the
+assistant hands it on without guessing. The answer key changes: it was `id`
+(`id_order_state` in `somcp_get_customer`). An order, status or customer
+identifier that is not a whole number - a decimal, a list, true - is now
+refused instead of being read as another order, status or customer.
+
 **Tool descriptions stay short.** Every tool the assistant can use is sent to
 it on each step of a conversation, so a long description slows every answer
 and costs more. The descriptions of the tools now stay within 600 characters

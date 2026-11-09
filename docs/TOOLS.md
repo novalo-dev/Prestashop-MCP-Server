@@ -1102,6 +1102,58 @@ Not replayable: a lost answer is checked with `somcp_get_order` (`discounts`):
 `Order::getCartRules()` skips removed discounts, so one missing from
 `discounts[]` was removed.
 
+#### `somcp_set_order_address`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - points the delivery or the invoice address of one order to another
+address of its customer, as **Select another address** of the **Shipping
+address** and **Invoice address** blocks of the order page does, and lets the
+core recompute the taxes and the totals. The country can change the tax, so the
+new total is reported.
+
+**Do not use for** - correcting the content of an address (→ the address and
+customer tools), or changing the carrier of the order.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `address_type` | enum | yes | `delivery` (**Shipping address**) or `invoice` (**Invoice address**), the two keys of `addresses` in `somcp_get_order` |
+| `id_address` | integer | yes | an address of the order's customer, from `addresses[].id_address` of `somcp_get_customer`, or the list a refused call returns; never guessed |
+
+**Returns** - `changed`, `order` (`id_order` and `reference`), `address_type`,
+`previous_address` and `address`, each in the shape of `addresses.delivery` of
+`somcp_get_order` built by the same function (`id_address`, `alias`,
+`firstname`, `lastname`, `company`, `address1`, `address2`, `postcode`, `city`,
+`state`, `country`, ...), and the order totals after the change
+(`total_tax_excluded`, `total_tax_included`, `currency`), as `totals` of
+`somcp_get_order` names them. The same address as now is `changed: false` with
+a `reason`, and nothing happens.
+
+**Errors** - every problem at once, nothing changed when one check fails, each
+under "Nothing was changed.": a field the tool does not take; the order not
+found or a reference shared by several orders; `address_type: one of delivery,
+invoice`; `id_address` missing or not a whole number; `id_address: no address
+of this customer has the identifier <n> - find it with somcp_get_customer` for
+an unknown, deleted or other customer's address, followed in the same answer by
+the list of the customer's addresses (`id_address`, `alias`, `address1`,
+`postcode`, `city`, `country`). The core's exceptions are put in the same shape.
+
+**Notes** - the delivery address is moved by the core's
+`ChangeOrderDeliveryAddressHandler` (it also keeps the carrier's delivery
+option and synchronises the gift lines), the invoice address by the lighter
+`ChangeOrderInvoiceAddressHandler`; both are built with `new`, whose
+constructors are the same on 8.0.1 and 9.0.0, and run on the order's context.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handlers; only the
+wording of the options on screen (9.0.0 adds the alias).
+
+Not replayable: a lost answer is checked with `somcp_get_order`
+(`addresses.delivery.id_address`, `addresses.invoice.id_address`).
+
 #### `somcp_list_return_statuses`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminStatuses')` · **Scope**: `mcp.orders.read`

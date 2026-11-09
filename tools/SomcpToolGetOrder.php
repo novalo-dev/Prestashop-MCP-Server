@@ -279,12 +279,16 @@ class SomcpToolGetOrder
     }
 
     /**
+     * One address in the shape the order page and the change of address of
+     * an order both read it. Public so somcp_set_order_address reports the
+     * addresses it moves between without a second copy of this mapping.
+     *
      * @param int $idAddress
      * @param int $idLang
      *
      * @return array<string, mixed>
      */
-    private static function address(int $idAddress, int $idLang): array
+    public static function address(int $idAddress, int $idLang): array
     {
         $address = new Address($idAddress);
         if (!Validate::isLoadedObject($address)) {

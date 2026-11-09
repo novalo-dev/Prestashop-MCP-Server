@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Order address changed.** The new tool `somcp_set_order_address` points the
+delivery or the invoice address of an order to another address of the same
+customer, as **Select another address** of the order page does. PrestaShop
+recomputes the taxes and the totals - a new country can change the tax - and
+the assistant is told to say the new total before the change. An address that
+is not the customer's is refused with the list of the ones that are.
+
 **Order discounts.** The new tool `somcp_add_order_discount` adds a discount to
 an order, as the **Add a discount** button of the order page does: a
 percentage, an amount including taxes, or free shipping, on the whole order or

@@ -26,7 +26,8 @@
     "somcp_cancel_order_products",
     "somcp_generate_order_invoice",
     "somcp_add_order_discount",
-    "somcp_delete_order_discount"
+    "somcp_delete_order_discount",
+    "somcp_set_order_address"
   ],
   "controller": "AdminOrders",
   "action": "edit",

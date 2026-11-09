@@ -295,6 +295,23 @@ action of the discounts table does. It takes the `id_order_cart_rule` of
   On a lost answer, read `discounts` with `somcp_get_order`: a discount no
   longer listed was removed. Do not call again.
 
+## An address of the order
+
+`somcp_set_order_address` points the `delivery` or the `invoice` address of an
+order to another address of the same customer, as **Select another address** of
+the order page does. Take `id_address` from `somcp_get_customer`
+(`addresses[].id_address`), or from the list a refused call returns; never
+guess it.
+
+- Changing the delivery address **can change the taxes and the total**, because
+  the tax follows the country. Say the new total (`total_tax_included` in the
+  answer) before the change, not after.
+- An address that is not the customer's is refused with the list of the ones
+  that are: pick from that list.
+- The same address as now answers `changed: false` and nothing happens. On a
+  lost answer, read `addresses` with `somcp_get_order` rather than calling
+  again.
+
 ## Several orders
 
 One call per order. Never present a batch as one action.

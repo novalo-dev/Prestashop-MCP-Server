@@ -1382,6 +1382,11 @@
       <source>Remove a discount from an order</source>
       <target>Supprimer une remise d'une commande</target>
     </trans-unit>
+    <!-- Change an address of an order -->
+    <trans-unit id="a49144e80ad2ed0e2739c1e120a505c3" resname="Change an address of an order">
+      <source>Change an address of an order</source>
+      <target>Modifier une adresse d'une commande</target>
+    </trans-unit>
     <!-- Add a message to an order -->
     <trans-unit id="c336eae6c62dfc77a0f7a99f52e6ba5b" resname="Add a message to an order">
       <source>Add a message to an order</source>

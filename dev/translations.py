@@ -1098,6 +1098,10 @@ T = {
  "Supprimer une remise d'une commande",
  "Eliminar un descuento de un pedido",
  "Einen Rabatt aus einer Bestellung entfernen"),
+"Change an address of an order": (
+ "Modifier une adresse d'une commande",
+ "Cambiar una dirección de un pedido",
+ "Eine Adresse einer Bestellung ändern"),
 "Add a message to an order": (
  "Ajouter un message à une commande",
  "Añadir un mensaje a un pedido",

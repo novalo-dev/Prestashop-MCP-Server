@@ -995,6 +995,64 @@ read and checked as by `somcp_issue_standard_refund`.
 Not replayable: a lost answer is checked with `somcp_get_order`
 (`products[].quantity`, `order.status`).
 
+#### `somcp_add_order_discount`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - adds one discount to one order - a percentage, an amount tax
+included or free shipping - as **Add a discount** on the order page does, and
+recomputes the order totals. It lowers what the customer owes.
+
+**Do not use for** - a voucher a customer types at checkout
+(→ `somcp_create_cart_rule`), removing a discount
+(→ [`somcp_delete_order_discount`](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/125), not written yet).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `name` | string | yes | the discount name the customer reads on the invoice; one plain text, stored in the shop's default language, not an object per ISO code; at most the length `CartRule` allows (254 on 8.0.1, the setting on 9.0.0) |
+| `type` | string | yes | `percent`, `amount_tax_included` (the amount includes taxes, as the screen says) or `free_shipping` |
+| `value` | number | for `percent` and `amount_tax_included` | the percentage (1 to 100) or the amount tax included; refused for `free_shipping` |
+| `id_order_invoice` | integer | no | **Invoice**, only when the order has invoices; from `documents.invoices[].id_order_invoice` of `somcp_get_order`; must be one of this order's |
+
+**Returns** - `added`, `order` (`id_order` and `reference`), `discount`
+(`id_order_cart_rule`, `id_cart_rule`, `id_order_invoice`, `name`,
+`value_tax_excluded`, `value_tax_included`, `free_shipping`), and the order
+totals after the change (`discounts_tax_included`, `total_tax_excluded`,
+`total_tax_included`, `currency`). `discount` carries the keys of `discounts[]`
+of `somcp_get_order` plus `id_cart_rule`, so the same discount reads the same
+in both answers, and its `id_order_cart_rule` is what
+[`somcp_delete_order_discount`](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/125) will take.
+
+**Errors** - every problem at once, nothing recorded when one check fails, each
+under "Nothing was recorded.": `name` missing, empty, too long or not clean;
+`type` not one of the three; `value` missing for `percent` /
+`amount_tax_included`, given for `free_shipping`, at or below 0, above 100 for a
+percent, or above the total for an amount (giving that total); the order not
+found or a reference shared by several orders; `id_order_invoice` given on an
+order without invoices, or not an invoice of this order (naming
+`somcp_get_order`). The core's own refusals (invalid percent or amount) are put
+in the same shape.
+
+**Notes** - the discount is one line of **Add new cart rule**
+(`add_order_cart_rule`): **Name**, **Type** (Percent, Amount, Free shipping),
+**Value**, and **Invoice** when the order has invoices. The core's
+`AddCartRuleToOrderHandler` does the work, built with `new` with
+`OrderAmountUpdater` (itself from `Configuration`, `ContextStateManager`,
+`OrderDetailUpdater` and `OrderProductRemover`), whose constructors are the
+same on 8.0.1 and 9.0.0: a one-time inactive `CartRule` in the order's
+currency, added to the order's cart, then the order, its lines and its invoice
+recomputed on the order's context. The handler owns the amount ceiling against
+the invoices, so the tool does not keep a second copy of it.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler or the form.
+
+Not replayable: two identical discounts are both applied. A lost answer is
+checked with `somcp_get_order` (`discounts`).
+
 #### `somcp_list_return_statuses`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminStatuses')` · **Scope**: `mcp.orders.read`

@@ -24,6 +24,7 @@ of it can be undone by calling again.
 - `somcp_return_order_products`
 - `somcp_cancel_order_products`
 - `somcp_generate_order_invoice`
+- `somcp_add_order_discount`
 
 ## Know which shop you are in
 
@@ -262,6 +263,23 @@ let them say yes to that one before calling. Deleting is final.
   a refusal as it comes back; do not work around it.
 - If an answer is lost, read `somcp_list_return_statuses`: a status that
   is no longer listed is deleted. Do not call again.
+
+## A discount on the order
+
+`somcp_add_order_discount` adds a discount to an order already placed, as
+**Add a discount** on the order page does: a `percent`, an
+`amount_tax_included` or `free_shipping`, on the whole order or on one
+`id_order_invoice`. It changes what the customer owes.
+
+- A discount **lowers the total**. Say the new total before adding it, not
+  after: the answer gives `total_tax_included` and `discounts_tax_included`,
+  but the merchant decides on the figure first.
+- `name` is one plain text, the line the customer reads on the invoice.
+- A percentage is 1 to 100; an amount is at most the order total (the refusal
+  gives that total). `free_shipping` takes no value.
+- **Do not repeat the call** on a lost answer: two identical discounts are both
+  applied. Check `discounts` with `somcp_get_order`, and remove an extra one
+  with `somcp_delete_order_discount`.
 
 ## Several orders
 

@@ -18,6 +18,12 @@ are:
 
 ### Added
 
+**Order discounts.** The new tool `somcp_add_order_discount` adds a discount to
+an order, as the **Add a discount** button of the order page does: a
+percentage, an amount including taxes, or free shipping, on the whole order or
+on one of its invoices. The order totals follow, and the assistant is told to
+say the new total before adding it.
+
 **Invoices generated.** The new tool `somcp_generate_order_invoice` generates
 the invoice of an order that has none yet, as the **Generate invoice** button of
 the order page does: the invoice takes the shop's next number, and nothing is

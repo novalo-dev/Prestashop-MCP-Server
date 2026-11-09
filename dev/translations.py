@@ -1090,6 +1090,10 @@ T = {
  "Renseigner le numéro de suivi d'une commande",
  "Indicar el número de seguimiento de un pedido",
  "Die Sendungsnummer einer Bestellung eintragen"),
+"Add a discount to an order": (
+ "Ajouter une remise à une commande",
+ "Añadir un descuento a un pedido",
+ "Einer Bestellung einen Rabatt hinzufügen"),
 "Add a message to an order": (
  "Ajouter un message à une commande",
  "Añadir un mensaje a un pedido",

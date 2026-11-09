@@ -271,6 +271,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_return_order_products` | ✎ Return products of an order | Orders › edit |
 | `somcp_cancel_order_products` | ✎ Cancel products of an order | Orders › edit |
 | `somcp_generate_order_invoice` | ✎ Generate the invoice of an order | Orders › edit |
+| `somcp_add_order_discount` | ✎ Add a discount to an order | Orders › edit |
 | `somcp_create_return_status` | ✎ Create a return status | Statuses › add |
 | `somcp_update_return_status` | ✎ Change a return status | Statuses › edit |
 | `somcp_delete_return_status` | ✎ Delete a return status | Statuses › delete |

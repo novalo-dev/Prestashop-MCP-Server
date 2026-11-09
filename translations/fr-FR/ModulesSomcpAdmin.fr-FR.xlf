@@ -1372,6 +1372,11 @@
       <source>Set the tracking number of an order</source>
       <target>Renseigner le numéro de suivi d'une commande</target>
     </trans-unit>
+    <!-- Add a discount to an order -->
+    <trans-unit id="9d86fd6925b0e51a60921fc1e7fa1584" resname="Add a discount to an order">
+      <source>Add a discount to an order</source>
+      <target>Ajouter une remise à une commande</target>
+    </trans-unit>
     <!-- Add a message to an order -->
     <trans-unit id="c336eae6c62dfc77a0f7a99f52e6ba5b" resname="Add a message to an order">
       <source>Add a message to an order</source>

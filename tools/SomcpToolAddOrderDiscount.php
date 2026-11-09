@@ -197,6 +197,7 @@ class SomcpToolAddOrderDiscount
             $problems[] = (array_key_exists('reference', $arguments) && (int) ($arguments['id_order'] ?? 0) <= 0
                 ? 'reference: '
                 : 'id_order: ') . $order;
+
             return SomcpToolIssuePartialRefund::refused($problems);
         }
 
@@ -221,8 +222,11 @@ class SomcpToolAddOrderDiscount
             return SomcpToolIssuePartialRefund::refused($problems);
         }
 
-        /** @var string $name */
-        /** @var string $type */
+        // No problem left means both were read as strings above; the casts
+        // only tell the static analysis so, as a docblock cannot sit here.
+        $name = (string) $name;
+        $type = (string) $type;
+
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($order, $name, $type, $value, $idOrderInvoice, $idEmployee): array {
             return self::apply($order, $name, $type, $value, $idOrderInvoice, $idEmployee);
         });

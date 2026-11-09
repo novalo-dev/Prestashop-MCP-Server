@@ -83,10 +83,9 @@ class SomcpToolAddOrderPayment
                     ],
                     'payment_method' => [
                         'type' => 'string',
-                        'description' => 'The payment method, best given as the Payment block suggests it: the name '
-                            . 'of the shop\'s payment module, for example "Bank transfer", "Payments by check" or '
-                            . '"Cash on delivery (COD)", so the Payment table and the order read the same method. '
-                            . '255 characters at most, without < > = { }.',
+                        'description' => 'The payment method, as the Payment block suggests it: the name of a payment '
+                            . 'module of the shop, for example "Bank transfer" or "Payments by check". 255 characters '
+                            . 'at most, without < > = { }.',
                     ],
                     'currency' => [
                         'type' => 'string',

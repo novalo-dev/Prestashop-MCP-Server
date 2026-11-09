@@ -189,8 +189,6 @@ $overBudgetAllowed = [
     'somcp_create_product',
     'somcp_update_product',
     // Property descriptions, by tool name and path in the schema.
-    'somcp_get_cart_rule.language',
-    'somcp_add_order_payment.payment_method',
     'somcp_create_product.virtual_file.file',
     'somcp_create_product.seo.redirect_type',
     'somcp_create_product.seo.tags',

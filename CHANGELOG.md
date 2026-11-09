@@ -142,6 +142,12 @@ change features and feature values - name, value, URL word, title tag - now
 each fit within 200 characters: no text of the features page is longer than
 that any more.
 
+**Shorter cart rule language and payment method fields.** The language field
+of `somcp_get_cart_rule` and the payment method field of
+`somcp_add_order_payment` now each fit within 200 characters: the payment
+method is still best given as the Payment block of the order page suggests it,
+the name of one of the shop's payment modules.
+
 **Shorter image fields.** The image fields of the tools that create and change
 categories, brands and suppliers - cover image, menu thumbnails, logo - now
 each fit within 200 characters: an image is still given by its address or by

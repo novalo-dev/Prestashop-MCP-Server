@@ -2257,9 +2257,8 @@ class SomcpToolCreateProduct
     {
         return [
             'type' => 'object',
-            'description' => $description . ' Give its url, downloaded by the shop (public https only, no redirect, '
-                . '10 MB at most), or the upload_ref of a file already on the shop - one the merchant attached or '
-                . 'deposited, or an image generated in the built-in assistant. JPEG, PNG, GIF or WebP. Never file content.',
+            'description' => $description . ' Its url (public https, no redirect, 10 MB at most) or the upload_ref '
+                . 'of a file already on the shop. JPEG, PNG, GIF or WebP; never file content.',
             'properties' => [
                 'url' => ['type' => 'string', 'description' => 'Public https address of ' . $of . '. Give url or upload_ref, not both.'],
                 'upload_ref' => ['type' => 'string', 'description' => 'Reference of ' . $of . ' already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],

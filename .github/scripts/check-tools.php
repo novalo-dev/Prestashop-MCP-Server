@@ -190,12 +190,6 @@ $overBudgetAllowed = [
     'somcp_update_product',
     // Property descriptions, by tool name and path in the schema.
     'somcp_get_cart_rule.language',
-    'somcp_create_category.cover_image',
-    'somcp_create_category.menu_thumbnails[]',
-    'somcp_update_category.cover_image',
-    'somcp_update_category.menu_thumbnails[]',
-    'somcp_create_manufacturer.logo',
-    'somcp_update_manufacturer.logo',
     'somcp_add_order_payment.payment_method',
     'somcp_create_product.virtual_file.file',
     'somcp_create_product.seo.redirect_type',
@@ -213,8 +207,6 @@ $overBudgetAllowed = [
     'somcp_update_product.images[].combinations',
     'somcp_update_product.combinations',
     'somcp_update_product.remove_virtual_file',
-    'somcp_create_supplier.logo',
-    'somcp_update_supplier.logo',
 ];
 $measure = $root . '/dev/tools/measure.php';
 if (!is_file($measure)) {

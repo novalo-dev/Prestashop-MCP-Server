@@ -106,9 +106,9 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             . 'while it is not displayed - 301 or 302 (redirect), 404 or 410.' . $kept;
         $properties['id_type_redirected']['description'] = 'Assistant. PrestaShop 9 only: the category a 301 or 302 '
             . 'redirects to, from somcp_list_categories; 0 for the closest parent.' . $kept;
-        $properties['cover_image']['description'] = 'Merchant. A new cover image that replaces the current one. Give '
-            . 'its url, downloaded by the shop (public https only, no redirect, 10 MB at most), or the upload_ref of a '
-            . 'file already on the shop. JPEG, PNG, GIF or WebP. Never file content.';
+        $properties['cover_image']['description'] = 'Merchant. A new cover image, replacing the current one. Its url '
+            . '(public https, no redirect, 10 MB at most) or the upload_ref of a file already on the shop. JPEG, PNG, '
+            . 'GIF or WebP; never file content.';
         $properties['menu_thumbnails']['description'] = 'Merchant. PrestaShop 8 only, refused on 9, which dropped '
             . 'them: up to 3 images that replace the current menu thumbnails, each given by url or upload_ref like the cover.';
         $properties['position'] = [

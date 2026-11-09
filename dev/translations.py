@@ -1114,6 +1114,10 @@ T = {
  "Retourner des produits d'une commande",
  "Devolver productos de un pedido",
  "Produkte einer Bestellung zurücknehmen"),
+"Cancel products of an order": (
+ "Annuler des produits d'une commande",
+ "Cancelar productos de un pedido",
+ "Produkte einer Bestellung stornieren"),
 "Audit the SEO of products": (
  "Auditer le SEO des produits",
  "Auditar el SEO de los productos",

@@ -933,6 +933,68 @@ Not replayable: a refund issued twice is money paid back twice. A lost answer
 is checked with `somcp_get_order` (`products[].quantity_refunded`,
 `documents.credit_slips`).
 
+#### `somcp_cancel_order_products`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - removes quantities of some lines from one order that is not paid
+yet, as the **Cancel products** button of the order page does: the order
+totals and the stock follow. When no line is left, the order goes to
+**Canceled** and the customer is emailed.
+
+**Do not use for** - a paid order not delivered
+(→ `somcp_issue_standard_refund`, or `somcp_issue_partial_refund` for a chosen
+amount), a delivered order (→ `somcp_return_order_products`), cancelling the
+whole order with its status (→ `somcp_set_order_status`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `lines` | array | yes | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`) and `quantity` (at least 1, at most what is left on the line) |
+
+**Returns** - `cancelled`, `order` (`id_order` and `reference`), `lines` (per
+line: `id_order_detail`, `product_name`, `quantity_cancelled`,
+`quantity_left`), the order totals after the change (`total_tax_excluded`,
+`total_tax_included`, `currency`), `order_cancelled` (true when no line was
+left and the status changed), `status` after the call (`id`, `name`), and
+`warning` when the order was cancelled but the customer email failed.
+
+**Errors** - every problem at once, nothing recorded when one check fails,
+each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+line; no lines; the order not found or a reference shared by several orders; a
+line that is not one of this order's (naming `somcp_get_order`); a quantity
+below 1 or above what is left (giving that quantity); merchandise returns off
+(naming **Customer Service > Merchandise Returns** and
+`somcp_set_order_status`); an order delivered (naming
+`somcp_return_order_products`); an order paid or with payments (naming
+`somcp_issue_standard_refund` and `somcp_issue_partial_refund`). The core's own
+refusals are put in the same shape.
+
+**Notes** - the button is shown only when merchandise returns are on
+(`PS_ORDER_RETURN`) and the order is neither delivered nor paid nor with
+payments; otherwise the same place shows **Standard refund** or **Return
+products**. The form is `cancel_product`: per line a checkbox and
+**Quantity**, nothing else - no credit slip, no voucher, since nothing was
+paid.
+
+The core's `CancelOrderProductHandler` does the work, built with `new` with
+`OrderProductQuantityUpdater` (itself built from `OrderAmountUpdater`,
+`OrderDetailUpdater`, `OrderProductRemover` and `ContextStateManager`), whose
+constructors are the same on 8.0.1 and 9.0.0: per line the new quantity, the
+recomputed totals and stock, `actionProductCancel` with the cancel action, and
+when no line is left the status **Canceled** with its email, the token's
+employee on the history row. The handler neither checks that a line belongs to
+the order nor looks at merchandise returns: the tool does both. The lines are
+read and checked as by `somcp_issue_standard_refund`.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler or the form.
+
+Not replayable: a lost answer is checked with `somcp_get_order`
+(`products[].quantity`, `order.status`).
+
 #### `somcp_list_return_statuses`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminStatuses')` · **Scope**: `mcp.orders.read`

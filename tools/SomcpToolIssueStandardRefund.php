@@ -291,18 +291,20 @@ class SomcpToolIssueStandardRefund
 
     /**
      * Reads lines, keeping the problems found entry by entry. Shared with the
-     * return of products, which takes its lines the same way.
+     * return and the cancellation of products, which take their lines the
+     * same way.
      *
      * @param array<string, mixed> $arguments
      * @param string[] $problems
+     * @param string $verb what is done to the lines, as the refusals say it
      *
      * @return array<int, array<string, mixed>>
      */
-    public static function lines(array $arguments, array &$problems): array
+    public static function lines(array $arguments, array &$problems, string $verb = 'refund'): array
     {
         $given = $arguments['lines'] ?? null;
         if (!is_array($given) || $given === [] || array_keys($given) !== range(0, count($given) - 1)) {
-            $problems[] = 'lines: give the lines to refund, a list of id_order_detail and quantity';
+            $problems[] = 'lines: give the lines to ' . $verb . ', a list of id_order_detail and quantity';
 
             return [];
         }
@@ -349,14 +351,17 @@ class SomcpToolIssueStandardRefund
     /**
      * Checks each line against the order and builds what the command takes;
      * also what IssueReturnProductCommand takes, which has the same shape.
+     * The cancellation of products checks its lines here too: the core
+     * bounds a cancelled quantity by the same count.
      *
      * @param Order $order
      * @param array<int, array<string, mixed>> $lines
      * @param string[] $problems
+     * @param string $verb what is done to the lines, as the refusals say it
      *
      * @return array<int, array{quantity: int}>
      */
-    public static function checkLines(Order $order, array $lines, array &$problems): array
+    public static function checkLines(Order $order, array $lines, array &$problems, string $verb = 'refund'): array
     {
         $refunds = [];
         foreach ($lines as $line) {
@@ -367,8 +372,8 @@ class SomcpToolIssueStandardRefund
             }
 
             $detail = new OrderDetail((int) $idDetail);
-            // The core handler takes any line id: one of another order would
-            // refund someone else's purchase.
+            // The core handlers take any line id: one of another order would
+            // refund or cancel someone else's purchase.
             if (!Validate::isLoadedObject($detail) || (int) $detail->id_order !== (int) $order->id) {
                 $problems[] = $path . '.id_order_detail: no line of this order has the identifier ' . $idDetail
                     . ' - find it with somcp_get_order';
@@ -381,8 +386,8 @@ class SomcpToolIssueStandardRefund
             }
             $left = SomcpToolIssuePartialRefund::leftToRefund($detail);
             if ($quantity > $left) {
-                $problems[] = $path . '.quantity: ' . ($left > 0 ? 'at most ' . $left . ' left to refund on this line'
-                    : 'nothing is left to refund on this line');
+                $problems[] = $path . '.quantity: ' . ($left > 0 ? 'at most ' . $left . ' left to ' . $verb . ' on this line'
+                    : 'nothing is left to ' . $verb . ' on this line');
                 continue;
             }
 

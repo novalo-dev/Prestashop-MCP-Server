@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Cancelled products.** The new tool `somcp_cancel_order_products` takes
+products off an order that is not paid yet, as the **Cancel products** button
+of the order page does: the chosen quantities are removed, the order total and
+the stock follow, and when no product is left the order goes to Canceled and
+the customer is emailed. A paid or delivered order, or a shop with merchandise
+returns off, is refused with the tool to use instead.
+
 **Returned products.** The new tool `somcp_return_order_products` records the
 products a customer sent back on a delivered order and refunds them, as the
 **Return products** button of the order page does: the chosen quantities are

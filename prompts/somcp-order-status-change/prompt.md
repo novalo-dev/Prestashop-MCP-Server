@@ -22,6 +22,7 @@ of it can be undone by calling again.
 - `somcp_issue_partial_refund`
 - `somcp_issue_standard_refund`
 - `somcp_return_order_products`
+- `somcp_cancel_order_products`
 
 ## Know which shop you are in
 
@@ -169,6 +170,24 @@ the call.
   `somcp_issue_standard_refund`.
 - Never repeat the call on a lost answer: check `quantity_refunded` and
   `documents.credit_slips` with `somcp_get_order`.
+
+## Products taken off an unpaid order
+
+Products removed from an order that is not paid yet go through
+`somcp_cancel_order_products`. On an unpaid order, removing products changes
+what the customer will pay; when every line goes, the order is cancelled and
+the customer emailed. Confirm the lines and quantities, and wait for the
+merchant's go-ahead before the call.
+
+- Each line is named by its `products[].id_order_detail` from
+  `somcp_get_order`, with a whole quantity.
+- It needs merchandise returns on (**Customer Service > Merchandise
+  Returns**); when they are off, the whole order can still be cancelled with
+  `somcp_set_order_status`. A paid order goes to
+  `somcp_issue_standard_refund`, a delivered one to
+  `somcp_return_order_products`.
+- Never repeat the call on a lost answer: check `products[].quantity` and
+  `status` with `somcp_get_order`.
 
 ## A new order status
 

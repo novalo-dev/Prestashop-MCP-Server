@@ -22,7 +22,8 @@
     "somcp_add_order_payment",
     "somcp_issue_partial_refund",
     "somcp_issue_standard_refund",
-    "somcp_return_order_products"
+    "somcp_return_order_products",
+    "somcp_cancel_order_products"
   ],
   "controller": "AdminOrders",
   "action": "edit",

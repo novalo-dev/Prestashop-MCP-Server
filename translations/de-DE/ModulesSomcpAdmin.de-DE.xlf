@@ -1402,6 +1402,11 @@
       <source>Return products of an order</source>
       <target>Produkte einer Bestellung zurücknehmen</target>
     </trans-unit>
+    <!-- Cancel products of an order -->
+    <trans-unit id="89a3678658c0e83ada6d5d9dc3b6b2ae" resname="Cancel products of an order">
+      <source>Cancel products of an order</source>
+      <target>Produkte einer Bestellung stornieren</target>
+    </trans-unit>
     <!-- Audit the SEO of products -->
     <trans-unit id="6cf0dd16e3dec0f64c02b9f6dbc7ddbf" resname="Audit the SEO of products">
       <source>Audit the SEO of products</source>

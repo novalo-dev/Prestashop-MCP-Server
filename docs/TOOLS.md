@@ -1114,7 +1114,45 @@ slips. They follow from an order without being the order.
 **Not here**: the amounts of an order, which belong to the order itself
 (→ Orders).
 
-_No tool described yet._
+#### `somcp_generate_order_invoice`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - generates the invoice of one order that has none yet, as the
+**Generate invoice** button of the **Documents** tab of the order page does:
+the invoice takes the shop's next number and prefix, and the payments without
+invoice are tied to it. Nothing is emailed.
+
+**Do not use for** - reading invoices (→ `somcp_get_order`, `documents.invoices`),
+or sending one to the customer (→ `somcp_set_order_status` with a status that
+attaches the invoice).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+
+**Returns** - `generated`, `order` (`id_order` and `reference`), `invoice`
+(`id_order_invoice`, `number` formatted with the prefix for the order's shop as
+`payments[].invoice_number` of `somcp_get_order`, `date`, `total_tax_excluded`,
+`total_tax_included`, `currency`). When the order already has an invoice:
+`generated: false` with a `reason` and the existing invoice, and nothing
+happens.
+
+**Errors** - every problem at once, nothing generated when one check fails,
+each as `<path>: <problem>` under "Nothing was generated.": unknown fields;
+neither `id_order` nor `reference`, the order not found, or a reference shared
+by several orders; invoices off (naming **Orders > Invoices**, **Invoice
+options > Enable invoices**). An exception of the core is put in the same
+shape, never sent raw.
+
+**Notes**
+- The core path is the same on 8.0.1 and 9.0.0: `GenerateInvoiceHandler` refuses when invoices are off for the order's shop (`PS_INVOICE`) or the order already has one (`Order::hasInvoice()`), then calls `Order::setInvoice(true)`. The tool makes the same two checks, as readable refusals, then the same call.
+- The button only shows on an order with no document at all (no invoice, no delivery slip, no credit slip) and invoices on (`documents.html.twig`); the handler only refuses an order that already has an invoice. The tool follows the handler, so it can generate the invoice of an order that has a credit slip but no invoice, which the button does not offer.
+- Not replayable, even with the guard: a lost answer is checked with `somcp_get_order` (`documents.invoices`).
+- No difference between 8.0.1 and 9.0.0.
 
 ### Carts
 

@@ -1407,6 +1407,11 @@
       <source>Cancel products of an order</source>
       <target>Cancel products of an order</target>
     </trans-unit>
+    <!-- Generate the invoice of an order -->
+    <trans-unit id="a2638d1f963c3036182adfc638058aa1" resname="Generate the invoice of an order">
+      <source>Generate the invoice of an order</source>
+      <target>Generate the invoice of an order</target>
+    </trans-unit>
     <!-- Audit the SEO of products -->
     <trans-unit id="6cf0dd16e3dec0f64c02b9f6dbc7ddbf" resname="Audit the SEO of products">
       <source>Audit the SEO of products</source>

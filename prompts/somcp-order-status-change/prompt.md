@@ -23,6 +23,7 @@ of it can be undone by calling again.
 - `somcp_issue_standard_refund`
 - `somcp_return_order_products`
 - `somcp_cancel_order_products`
+- `somcp_generate_order_invoice`
 
 ## Know which shop you are in
 
@@ -118,6 +119,18 @@ wants it.
 - When the order has an invoice, `id_order_invoice` is required: take it from
   `documents.invoices` of `somcp_get_order`, never guess it.
 - A refund is not a negative payment: it is refused.
+
+## An invoice
+
+An order paid by bank wire may need its invoice before the status changes.
+Generate it with `somcp_generate_order_invoice` (the order only), then change
+the status if the merchant wants the customer to receive it: generating an
+invoice emails nobody, and only a status that attaches the invoice sends it.
+
+- `generated: false` means the order already had one: it is in the answer,
+  nothing was made twice.
+- A shop with invoices turned off is refused: say where the merchant turns
+  them on, never work around it.
 
 ## A partial refund
 

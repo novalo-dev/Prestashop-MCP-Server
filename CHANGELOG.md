@@ -18,6 +18,12 @@ are:
 
 ### Added
 
+**Invoices generated.** The new tool `somcp_generate_order_invoice` generates
+the invoice of an order that has none yet, as the **Generate invoice** button of
+the order page does: the invoice takes the shop's next number, and nothing is
+emailed. An order that already has one gets it back instead of a second
+invoice, and a shop with invoices turned off is told where to turn them on.
+
 **Cancelled products.** The new tool `somcp_cancel_order_products` takes
 products off an order that is not paid yet, as the **Cancel products** button
 of the order page does: the chosen quantities are removed, the order total and

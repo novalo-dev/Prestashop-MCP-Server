@@ -1118,6 +1118,10 @@ T = {
  "Annuler des produits d'une commande",
  "Cancelar productos de un pedido",
  "Produkte einer Bestellung stornieren"),
+"Generate the invoice of an order": (
+ "Générer la facture d'une commande",
+ "Generar la factura de un pedido",
+ "Die Rechnung einer Bestellung erstellen"),
 "Audit the SEO of products": (
  "Auditer le SEO des produits",
  "Auditar el SEO de los productos",

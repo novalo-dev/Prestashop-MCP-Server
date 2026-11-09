@@ -21,6 +21,7 @@ of it can be undone by calling again.
 - `somcp_add_order_payment`
 - `somcp_issue_partial_refund`
 - `somcp_issue_standard_refund`
+- `somcp_return_order_products`
 
 ## Know which shop you are in
 
@@ -147,7 +148,25 @@ for the merchant's go-ahead before the call.
   amount is given. The shipping only with `refund_shipping`.
 - It needs merchandise returns on (**Customer Service > Merchandise
   Returns**). When they are off, or for a chosen amount, use
-  `somcp_issue_partial_refund`; a delivered order is refused.
+  `somcp_issue_partial_refund`; a delivered order goes to
+  `somcp_return_order_products`.
+- Never repeat the call on a lost answer: check `quantity_refunded` and
+  `documents.credit_slips` with `somcp_get_order`.
+
+## Products sent back
+
+Products sent back by the customer after delivery are recorded and refunded
+with `somcp_return_order_products`. Ask first whether they go back in stock
+(`restock`, no default), then confirm the lines and what will be generated (a
+credit slip, a voucher or both), and wait for the merchant's go-ahead before
+the call.
+
+- Each line is named by its `products[].id_order_detail` from
+  `somcp_get_order`, with a whole quantity: the line's price is refunded. The
+  shipping only with `refund_shipping`.
+- It needs merchandise returns on (**Customer Service > Merchandise
+  Returns**) and a delivered order; an order not delivered yet goes to
+  `somcp_issue_standard_refund`.
 - Never repeat the call on a lost answer: check `quantity_refunded` and
   `documents.credit_slips` with `somcp_get_order`.
 

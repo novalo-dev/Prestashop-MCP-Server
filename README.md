@@ -268,6 +268,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_add_order_payment` | ✎ Record a payment for an order | Orders › edit |
 | `somcp_issue_partial_refund` | ✎ Issue a partial refund on an order | Orders › edit |
 | `somcp_issue_standard_refund` | ✎ Issue a standard refund on an order | Orders › edit |
+| `somcp_return_order_products` | ✎ Return products of an order | Orders › edit |
 | `somcp_create_return_status` | ✎ Create a return status | Statuses › add |
 | `somcp_update_return_status` | ✎ Change a return status | Statuses › edit |
 | `somcp_delete_return_status` | ✎ Delete a return status | Statuses › delete |

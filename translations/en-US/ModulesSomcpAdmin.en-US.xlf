@@ -1397,6 +1397,11 @@
       <source>Issue a standard refund on an order</source>
       <target>Issue a standard refund on an order</target>
     </trans-unit>
+    <!-- Return products of an order -->
+    <trans-unit id="759048422815538ef24a202f7435c963" resname="Return products of an order">
+      <source>Return products of an order</source>
+      <target>Return products of an order</target>
+    </trans-unit>
     <!-- Audit the SEO of products -->
     <trans-unit id="6cf0dd16e3dec0f64c02b9f6dbc7ddbf" resname="Audit the SEO of products">
       <source>Audit the SEO of products</source>

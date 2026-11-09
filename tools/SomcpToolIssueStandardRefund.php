@@ -209,7 +209,8 @@ class SomcpToolIssueStandardRefund
         }
         if ($order->hasBeenDelivered()) {
             $problems[] = 'id_order: this order is already delivered - a standard refund is only for an order '
-                . 'not delivered yet; somcp_issue_partial_refund refunds a delivered order';
+                . 'not delivered yet; somcp_return_order_products records products sent back, '
+                . 'somcp_issue_partial_refund refunds a chosen amount';
         }
 
         if ($problems !== []) {
@@ -289,14 +290,15 @@ class SomcpToolIssueStandardRefund
     }
 
     /**
-     * Reads lines, keeping the problems found entry by entry.
+     * Reads lines, keeping the problems found entry by entry. Shared with the
+     * return of products, which takes its lines the same way.
      *
      * @param array<string, mixed> $arguments
      * @param string[] $problems
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function lines(array $arguments, array &$problems): array
+    public static function lines(array $arguments, array &$problems): array
     {
         $given = $arguments['lines'] ?? null;
         if (!is_array($given) || $given === [] || array_keys($given) !== range(0, count($given) - 1)) {
@@ -345,7 +347,8 @@ class SomcpToolIssueStandardRefund
     }
 
     /**
-     * Checks each line against the order and builds what the command takes.
+     * Checks each line against the order and builds what the command takes;
+     * also what IssueReturnProductCommand takes, which has the same shape.
      *
      * @param Order $order
      * @param array<int, array<string, mixed>> $lines
@@ -353,7 +356,7 @@ class SomcpToolIssueStandardRefund
      *
      * @return array<int, array{quantity: int}>
      */
-    private static function checkLines(Order $order, array $lines, array &$problems): array
+    public static function checkLines(Order $order, array $lines, array &$problems): array
     {
         $refunds = [];
         foreach ($lines as $line) {

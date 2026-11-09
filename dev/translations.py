@@ -1110,6 +1110,10 @@ T = {
  "Effectuer un remboursement standard sur une commande",
  "Realizar un reembolso estándar de un pedido",
  "Eine Standarderstattung für eine Bestellung vornehmen"),
+"Return products of an order": (
+ "Retourner des produits d'une commande",
+ "Devolver productos de un pedido",
+ "Produkte einer Bestellung zurücknehmen"),
 "Audit the SEO of products": (
  "Auditer le SEO des produits",
  "Auditar el SEO de los productos",

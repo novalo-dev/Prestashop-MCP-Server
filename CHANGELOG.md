@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Returned products.** The new tool `somcp_return_order_products` records the
+products a customer sent back on a delivered order and refunds them, as the
+**Return products** button of the order page does: the chosen quantities are
+counted as returned, go back in stock only when you say so, the shipping is
+refunded when asked, with a credit slip, a voucher or both. When merchandise
+returns are off or the order is not delivered yet, the refusal says which tool
+to use instead.
+
 **Standard refunds.** The new tool `somcp_issue_standard_refund` pays back
 whole lines of a paid order that is not delivered yet, as the **Standard
 refund** button of the order page does: the chosen quantities go back in

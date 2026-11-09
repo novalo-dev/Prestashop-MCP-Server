@@ -44,3 +44,11 @@ parameters:
         -
             message: '#^Call to function (is_object|method_exists)\(\) .* will always evaluate to true\.$#'
             path: classes/SomcpBackOffice.php
+        # PrestaShop 9 types the context locale accessors (Context::getCurrentLocale,
+        # Tools::getContextLocale) against LocaleInterface, while VoucherGenerator
+        # still requires the concrete Locale - its only implementation, so the value
+        # handed over is always a Locale at run time. PrestaShop 8 types the same
+        # accessors as Locale and does not report this.
+        -
+            message: '#\$locale of class .*VoucherGenerator constructor expects .*\\Locale, .*\\LocaleInterface given#'
+            path: tools/SomcpToolIssuePartialRefund.php

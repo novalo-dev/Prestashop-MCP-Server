@@ -1005,7 +1005,7 @@ recomputes the order totals. It lowers what the customer owes.
 
 **Do not use for** - a voucher a customer types at checkout
 (→ `somcp_create_cart_rule`), removing a discount
-(→ [`somcp_delete_order_discount`](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/125), not written yet).
+(→ `somcp_delete_order_discount`).
 
 **Parameters**
 
@@ -1025,7 +1025,7 @@ totals after the change (`discounts_tax_included`, `total_tax_excluded`,
 `total_tax_included`, `currency`). `discount` carries the keys of `discounts[]`
 of `somcp_get_order` plus `id_cart_rule`, so the same discount reads the same
 in both answers, and its `id_order_cart_rule` is what
-[`somcp_delete_order_discount`](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/125) will take.
+`somcp_delete_order_discount` takes.
 
 **Errors** - every problem at once, nothing recorded when one check fails, each
 under "Nothing was recorded.": `name` missing, empty, too long or not clean;
@@ -1052,6 +1052,55 @@ the invoices, so the tool does not keep a second copy of it.
 
 Not replayable: two identical discounts are both applied. A lost answer is
 checked with `somcp_get_order` (`discounts`).
+
+#### `somcp_delete_order_discount`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - removes one discount from one order, as the delete action of the
+discounts table (**Name**, **Value**, **Actions**) of the order page does, and
+recomputes the order totals. It raises what the customer owes.
+
+**Do not use for** - switching off a voucher for every customer
+(→ `somcp_set_cart_rule_active`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_cart_rule` | integer | yes | from `discounts[].id_order_cart_rule` of `somcp_get_order`, or from the answer of `somcp_add_order_discount`; never guessed |
+
+**Returns** - `deleted`, `order` (`id_order` and `reference`), `discount`
+with the keys of `discounts[]` of `somcp_get_order` (`id_order_cart_rule`,
+`id_order_invoice`, `name`, `value_tax_included`, `value_tax_excluded`,
+`free_shipping`), `gift_line_updated` (the discount gave a gift product and
+its line lost one unit), and the order totals after the change
+(`discounts_tax_included`, `total_tax_excluded`, `total_tax_included`,
+`currency`), as `somcp_add_order_discount` returns them. A discount already
+removed is `deleted: false` with a `reason`, and nothing happens.
+
+**Errors** - every problem at once, nothing deleted when one check fails, each
+under "Nothing was deleted.": a field the tool does not take; the order not
+found or a reference shared by several orders; `id_order_cart_rule` missing or
+not a whole number; `id_order_cart_rule: no discount of this order has the
+identifier <n> - find it with somcp_get_order` when the row does not exist or
+belongs to another order. The core's exceptions are put in the same shape.
+
+**Notes** - the route (`admin_orders_remove_cart_rule`) asks for update on
+`AdminOrders`, not delete: the discount is part of the order being edited. The
+core's `DeleteCartRuleFromOrderHandler` does the work, built with `new` with
+`OrderAmountUpdater` and `OrderProductQuantityUpdater`, whose constructors are
+the same on 8.0.1 and 9.0.0: on the order's context, the `order_cart_rule` row
+is soft-deleted, the rule leaves the cart, and either the gift line loses one
+unit (which recomputes the order) or the amounts are recomputed.
+
+**Differences between 8.0.1 and 9.0.0** - none.
+
+Not replayable: a lost answer is checked with `somcp_get_order` (`discounts`):
+`Order::getCartRules()` skips removed discounts, so one missing from
+`discounts[]` was removed.
 
 #### `somcp_list_return_statuses`
 **State**: written

@@ -460,12 +460,13 @@ class SomcpToolAddOrderDiscount
      * An identifier as a client may send it: an integer, or digits in a string.
      *
      * A cast would read an array as 1 and point at an invoice nobody named.
+     * Public so somcp_delete_order_discount reads its identifier the same way.
      *
      * @param mixed $value
      *
      * @return int
      */
-    private static function identifier($value): int
+    public static function identifier($value): int
     {
         if (is_int($value)) {
             return $value;

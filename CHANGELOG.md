@@ -24,6 +24,13 @@ percentage, an amount including taxes, or free shipping, on the whole order or
 on one of its invoices. The order totals follow, and the assistant is told to
 say the new total before adding it.
 
+**Order discounts removed.** The new tool `somcp_delete_order_discount` removes
+a discount from an order, as the delete action of the discounts table of the
+order page does. The order totals follow, a free gift product given by the
+discount loses its unit, and the assistant is told to say the new total before
+removing it. A discount already removed is reported as such, and nothing
+changes.
+
 **Invoices generated.** The new tool `somcp_generate_order_invoice` generates
 the invoice of an order that has none yet, as the **Generate invoice** button of
 the order page does: the invoice takes the shop's next number, and nothing is

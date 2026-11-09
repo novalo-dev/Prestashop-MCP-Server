@@ -1377,6 +1377,11 @@
       <source>Add a discount to an order</source>
       <target>Einer Bestellung einen Rabatt hinzufügen</target>
     </trans-unit>
+    <!-- Remove a discount from an order -->
+    <trans-unit id="74e2f7aae82c02268bb38348de50af0a" resname="Remove a discount from an order">
+      <source>Remove a discount from an order</source>
+      <target>Einen Rabatt aus einer Bestellung entfernen</target>
+    </trans-unit>
     <!-- Add a message to an order -->
     <trans-unit id="c336eae6c62dfc77a0f7a99f52e6ba5b" resname="Add a message to an order">
       <source>Add a message to an order</source>

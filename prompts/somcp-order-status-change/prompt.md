@@ -25,6 +25,7 @@ of it can be undone by calling again.
 - `somcp_cancel_order_products`
 - `somcp_generate_order_invoice`
 - `somcp_add_order_discount`
+- `somcp_delete_order_discount`
 
 ## Know which shop you are in
 
@@ -280,6 +281,19 @@ let them say yes to that one before calling. Deleting is final.
 - **Do not repeat the call** on a lost answer: two identical discounts are both
   applied. Check `discounts` with `somcp_get_order`, and remove an extra one
   with `somcp_delete_order_discount`.
+
+`somcp_delete_order_discount` removes one discount from an order, as the delete
+action of the discounts table does. It takes the `id_order_cart_rule` of
+`discounts[]` in `somcp_get_order`, or of the answer of
+`somcp_add_order_discount`; never guess it.
+
+- Removing a discount **raises what the customer owes**. Say the new total
+  first, then remove it.
+- A discount that gave a free gift product also takes one unit off that line
+  (`gift_line_updated`).
+- A discount already removed answers `deleted: false` and nothing changes.
+  On a lost answer, read `discounts` with `somcp_get_order`: a discount no
+  longer listed was removed. Do not call again.
 
 ## Several orders
 

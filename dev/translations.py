@@ -1094,6 +1094,10 @@ T = {
  "Ajouter une remise à une commande",
  "Añadir un descuento a un pedido",
  "Einer Bestellung einen Rabatt hinzufügen"),
+"Remove a discount from an order": (
+ "Supprimer une remise d'une commande",
+ "Eliminar un descuento de un pedido",
+ "Einen Rabatt aus einer Bestellung entfernen"),
 "Add a message to an order": (
  "Ajouter un message à une commande",
  "Añadir un mensaje a un pedido",

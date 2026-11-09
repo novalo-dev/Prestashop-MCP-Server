@@ -307,6 +307,12 @@ class SomcpHttp
     public static function redirect(string $url): void
     {
         if (!headers_sent()) {
+            // The same two lines as every other answer of the module: the
+            // PHP version tells whoever follows the redirect which known
+            // flaws to try, and a redirect that carries an authorization
+            // code in its URL must not be kept by a cache.
+            header('Cache-Control: no-store');
+            header_remove('X-Powered-By');
             header('Location: ' . $url);
         }
 

@@ -207,6 +207,12 @@ only this shop and orders keep their lines, and which read checks a change
 whose answer was lost. The thresholds of the SEO audit now sit with its list of
 checks.
 
+### Security
+
+**Redirects send the same headers as the rest of the module.** The redirects
+of the connection page no longer tell which PHP version the shop runs, and
+are never kept by a cache.
+
 ## 1.3.1 - 2026-11-07
 
 ### Added

@@ -115,7 +115,7 @@ class SomcpToolCreateAttributeGroup extends SomcpToolCreateFeature
                 'name' => $text('Merchant. Required. The name the back office lists the group under, 128 '
                     . 'characters at most, without < > = { }.'),
                 'public_name' => $text('Merchant. Required. The name customers see on the product page, 64 '
-                    . 'characters at most, without < > = { }. Often the same as name.'),
+                    . 'characters at most.'),
                 'group_type' => [
                     'type' => 'string',
                     'enum' => self::GROUP_TYPES,
@@ -123,11 +123,10 @@ class SomcpToolCreateAttributeGroup extends SomcpToolCreateFeature
                         . '(a drop-down list), radio (radio buttons) or color (colour swatches, each value then '
                         . 'carrying a colour or a texture).',
                 ],
-                'url_name' => $text('Assistant. Faceted search: the word used in filtered URLs instead of the '
-                    . 'name, lower case letters, digits and hyphens, for example "size". Empty for the name. '
-                    . '128 characters at most.'),
-                'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages instead of the '
-                    . 'name. 128 characters at most, without < > = { }.'),
+                'url_name' => $text('Assistant. Faceted search: the URL word of filters, a-z, 0-9, hyphens '
+                    . '("size"); empty: the name.'),
+                'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages, 128 characters '
+                    . 'at most.'),
                 'indexable' => [
                     'type' => 'boolean',
                     'description' => 'Merchant. Faceted search: whether filtered pages on this group are open to '

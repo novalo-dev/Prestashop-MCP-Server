@@ -94,8 +94,8 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         $properties['id_attribute_group']['description'] = 'Merchant. Moves the value to this attribute group, '
             . 'from somcp_list_attributes; it is placed last there, or at position when given. Refused while a '
             . 'combination uses the value.' . $kept;
-        $properties['name']['description'] = 'Merchant. The value shown on the product page, 128 characters at '
-            . 'most, never empty, without < > = { } (nor ; # on PrestaShop 9). Changed on every combination using it.'
+        $properties['name']['description'] = 'Merchant. The value on the product page, changed on every '
+            . 'combination using it.'
             . ' One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.' . $kept;
         foreach (['url_name', 'meta_title', 'color'] as $field) {
             $properties[$field]['description'] .= $kept;
@@ -115,9 +115,8 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
             ],
             'position' => [
                 'type' => 'integer',
-                'description' => 'Merchant. The place among the values of its group, from 0 as '
-                    . 'somcp_get_attribute_value gives it (the back office list shows it plus 1); the others shift. '
-                    . 'With id_attribute_group, the place in the group it moves to.' . $kept,
+                'description' => 'Merchant. The place in its group, or in id_attribute_group, from 0 as '
+                    . 'somcp_get_attribute_value gives it; the others shift.' . $kept,
             ],
         ];
         $schema['required'] = ['id_attribute'];

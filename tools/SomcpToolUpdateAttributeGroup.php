@@ -93,12 +93,11 @@ class SomcpToolUpdateAttributeGroup extends SomcpToolCreateAttributeGroup
         $perLanguage = ' One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.';
 
         $properties['name']['description'] = 'Merchant. The name the back office lists the group under, 128 '
-            . 'characters at most, never empty, without < > = { }.' . $perLanguage . $kept;
+            . 'characters at most.' . $perLanguage . $kept;
         $properties['public_name']['description'] = 'Merchant. The name customers see on the product page, 64 '
-            . 'characters at most, never empty, without < > = { }.' . $perLanguage . $kept;
-        $properties['group_type']['description'] = 'Merchant. How customers pick a value on the product page: '
-            . 'select (a drop-down list), radio (radio buttons) or color (colour swatches). Away from color, '
-            . 'the colours and textures of the values are kept but no longer shown.' . $kept;
+            . 'characters at most.' . $perLanguage . $kept;
+        $properties['group_type']['description'] = 'Merchant. How the product page offers the values: a list, '
+            . 'radio buttons or swatches. Away from color, their colours and textures are kept, not shown.' . $kept;
         foreach (['url_name', 'meta_title'] as $field) {
             $properties[$field]['description'] .= $kept;
         }

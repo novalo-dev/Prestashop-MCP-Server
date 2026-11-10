@@ -173,6 +173,27 @@ name, and say that the rate is the one of the country given: a customer
 delivered elsewhere may pay another one. When `taxes_enabled` is false the
 shop charges no tax at all, whatever the rule.
 
+## Who fills each field
+
+Every field of `somcp_create_product` and `somcp_update_product` says at the
+start of its description who provides it, and that is a rule for you:
+
+- **Merchant** - ask the merchant and never invent the value; you may suggest
+  one for them to confirm.
+- **Merchant, from the shop** - show the list read with the matching
+  `somcp_list_*` tool (categories, brands, carriers, tax rules, suppliers,
+  attributes, features, attachments, customer groups) and let the merchant
+  pick; never guess an identifier, and never create the object - the tool
+  refuses one that does not exist.
+- **Assistant** - write it yourself in every language being filled, and show it
+  to the merchant before the call.
+- **Merchant and assistant** - the merchant gives the material, you prepare the
+  rest and show it first.
+
+Texts are objects keyed by ISO code, given for every language in `languages`; a
+language of the shop left out takes the default language's text. Lengths count
+the visible text, spaces included, HTML tags not counted.
+
 ## Prices
 
 Every price is either **tax included** or **tax excluded**: the field name says

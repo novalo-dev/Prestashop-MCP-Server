@@ -221,6 +221,15 @@ only this shop and orders keep their lines, and which read checks a change
 whose answer was lost. The thresholds of the SEO audit now sit with its list of
 checks.
 
+**Shorter product create and change tools.** The two tools of Catalog >
+Products that create and change a product now describe themselves in a few
+sentences, lighter for the assistant on every step. What matters is kept: that
+identifiers come from the list tools, that only what is given changes and a
+removal is final, which read to run before a change, and that a creation is not
+retried blindly. The rules on who fills each field, on the length of texts and
+on languages left out now sit in the catalogue prompt, where the assistant
+reads them when you pick it.
+
 ### Security
 
 **Redirects send the same headers as the rest of the module.** The redirects

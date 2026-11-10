@@ -185,9 +185,7 @@ foreach ($sources as $tool => $source) {
 // unnoticed. The sizes come from dev/tools/measure.php, the one measurement
 // the pull requests quote.
 $overBudgetAllowed = [
-    // Tool descriptions, by tool name.
-    'somcp_create_product',
-    'somcp_update_product',
+    // Tool descriptions, by tool name. Empty: every tool is within budget.
 ];
 $measure = $root . '/dev/tools/measure.php';
 if (!is_file($measure)) {

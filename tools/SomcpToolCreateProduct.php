@@ -161,33 +161,13 @@ class SomcpToolCreateProduct
         return new SomcpTool(
             'somcp_create_product',
             Somcp::t('Create a product'),
-            'Creates one product in this shop, inactive unless options.active says otherwise. Everything '
-                . 'somcp_get_product reads can be given, in the same groups and under the same names: texts, '
-                . 'categories, brand, related products, references, features, attachments, condition, '
-                . 'customization, stock, the products of a pack, the downloadable file of a virtual product, '
-                . 'shipping and carriers, pricing and tax, specific prices, SEO, options, suppliers, images and '
-                . 'combinations. Only basics.name and pricing.price_tax_excl '
-                . 'are required. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Merchant, from the shop" - show the list read with the matching somcp_list_* tool '
-                . '(categories, brands, carriers, tax rules, suppliers, attributes, features, attachments, '
-                . 'customer groups) and let the merchant pick; never guess an identifier, and never create '
-                . 'the object - this tool refuses one that does not exist. "Assistant" - write it yourself in '
-                . 'every language being filled, and show it to the merchant before the call. "Merchant and '
-                . 'assistant" - the merchant gives the material, you prepare the rest and show it first. '
-                . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
-                . 'language of the shop left out takes the default language\'s text. Lengths count the visible '
-                . 'text, spaces included, HTML tags not counted. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Images are downloaded by the shop from public https addresses, or taken from a file already '
-                . 'on the shop by its upload_ref; one that cannot be had is reported in images and does not stop '
-                . 'the creation. The products of a pack and the file of a virtual product are reported the same '
-                . 'way, in pack_items and virtual_file. '
-                . 'Do not use it to change an existing product, which is somcp_update_product. One product per '
-                . 'call: for several, call it once per product and report each result. '
-                . 'Not to be retried: if the answer is lost, search with somcp_search_products by the '
-                . 'reference or the name before anything else, because a second call creates a second product.',
+            'Creates one product in this shop, inactive unless options.active is set. Takes everything '
+                . 'somcp_get_product reads, in the same groups and under the same names; only basics.name and '
+                . 'pricing.price_tax_excl are required. Identifiers come from the somcp_list_* tools; who fills '
+                . 'each field, and how texts and languages work, is set out in the Managing products prompt. '
+                . 'One product per call. To change an existing product use somcp_update_product. Not to be '
+                . 'retried: if the answer is lost, find the product with somcp_search_products first, because a '
+                . 'second call creates a second product.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

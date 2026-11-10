@@ -131,32 +131,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         return new SomcpTool(
             'somcp_update_product',
             Somcp::t('Change a product'),
-            'Changes one existing product of this shop. Everything somcp_create_product can write can be '
-                . 'changed here, in the same groups, under the same names and with the same rules - who fills '
-                . 'each field, lengths, identifiers from the somcp_list_* tools. Only what is given changes: a '
-                . 'value left out is kept, a text is replaced in the languages filled and kept in the others, '
-                . 'and a list that is a set (categories, related products, features, attachments, carriers, '
-                . 'customization fields) replaces the current one entirely when given. In combinations, images '
-                . 'and specific_prices, an item with its identifier changes that one, an item without adds one. '
-                . 'pack.items given replaces the contents of a pack; a file given in virtual_file replaces the '
-                . 'file of a virtual product, and its other fields change alone. '
-                . 'Removing is only ever explicit, through remove_combinations, remove_images, '
-                . 'remove_specific_prices, remove_suppliers, remove_pack_items and remove_virtual_file; a removed '
-                . 'combination takes its stock with it and a removed file can no longer be downloaded, so name '
-                . 'each one to the merchant first. Read the product with somcp_get_product before, show '
-                . 'the merchant what will change, and call once they agree. When languages is left out every '
-                . 'language of the shop is filled, so a text must then be given in each; to change one language, '
-                . 'pass languages with it alone. A product that still has combinations cannot become another '
-                . 'type. Changing link_rewrite on an active product breaks its old address: tell the merchant '
-                . 'before. Every problem is reported at once and nothing is written until the whole call is '
-                . 'valid; if writing still fails, the answer names what was already written. Images, the pack '
-                . 'contents and the file are handled last and each is reported in images, pack_items and '
-                . 'virtual_file without stopping the change. The answer gives each field changed with its old and '
-                . 'new value. A call that would change nothing writes nothing and says changed: false. '
-                . 'Do not use it to create a product (somcp_create_product), to switch one on or off alone '
-                . '(somcp_set_product_active) or to delete one (somcp_delete_product). One product per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the product with somcp_get_product '
-                . 'and compare before calling again - an image added by url would be added twice.',
+            'Changes one existing product, with the fields and rules of somcp_create_product. Only what is '
+                . 'given changes; a list that is a set replaces the current one. Removing is only through the '
+                . 'remove_* fields and is final: name each to the merchant. Read it with '
+                . 'somcp_get_product, show what changes, and call once the merchant agrees. Who fills '
+                . 'each field and how languages work is in the Managing products prompt. Not for creating, '
+                . 'switching active (somcp_set_product_active) or deleting (somcp_delete_product). Not to be '
+                . 'retried blindly: re-read with somcp_get_product, or a url image is added twice.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],

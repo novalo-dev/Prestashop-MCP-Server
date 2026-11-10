@@ -239,6 +239,19 @@ client that declared it can open one, or as text the assistant shows. Because a
 client can declare the first and not do it, a call that comes back to a deposit
 that is still empty gets the address again as text.
 
+A private file goes out the same way, through `SomcpDownload` and
+`AdminSomcpDownloadController`, the outgoing counterpart of the deposit page. A
+tool that produces a private file never returns the bytes: it hands out a
+signed link to that back office page. The link names the file by its kind and
+its identifier, never by a path, and carries only `kind`, `id`, `e` (expiry)
+and `s` (signature); the employee and shop it was signed for are not in the
+address but folded into the signature, which reuses the key that signs the chat
+file links. The page requires the back office session of that same employee, so
+a leaked link is useless, checks the **view** right of the screen the document
+belongs to (`AdminOrders`), and builds the file on demand with the core `PDF`
+class, so nothing is written to disk. Links expire after fifteen minutes, like a
+deposit.
+
 ---
 
 ## Data

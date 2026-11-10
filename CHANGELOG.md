@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Private documents handed over safely.** When the assistant gives you a
+private document, it hands over a link that opens in your own back office,
+signed in - never the file itself in the conversation. The link works only for
+the employee it was asked for, and only for fifteen minutes, after which you ask
+again. This adds a hidden back office page to the module, so a shop upgrading in
+place gains it on upgrade.
+
 **Order currency changed.** The new tool `somcp_set_order_currency` changes
 the currency of an order that is not validated yet, as **Change currency** in
 the **Payment** block of the order page does: every amount of the order, its

@@ -53,6 +53,16 @@ class SomcpBackOffice
     public const UPLOAD_CONTROLLER = 'AdminSomcpUpload';
 
     /**
+     * @var string Controller a private file is handed over on.
+     *
+     * The outgoing counterpart of the deposit page, reached the same way: an
+     * employee who is not signed in is sent to the login form and comes back
+     * here on an address PrestaShop built. The signed link alone authorizes
+     * nothing; the page checks the session behind it.
+     */
+    public const DOWNLOAD_CONTROLLER = 'AdminSomcpDownload';
+
+    /**
      * @var string Controller the chat bubble of the back office talks to.
      *
      * Hidden like the two above, for the token it gives every request: tied to
@@ -134,6 +144,25 @@ class SomcpBackOffice
     public static function uploadUrl(string $reference, int $idEmployee): string
     {
         return self::entryUrl(self::UPLOAD_CONTROLLER, 'upload', ['ref' => $reference], $idEmployee);
+    }
+
+    /**
+     * Absolute URL of the page a private file is handed over on.
+     *
+     * The signed parameters travel in the address; who the link was made for
+     * and which shop it belongs to are not among them, but are folded into the
+     * signature. The page is behind the back office session, and the document
+     * is served only when the employee signed in is the one the link was signed
+     * for - the same guarantee the deposit page relies on.
+     *
+     * @param array<string, string> $query the kind, id, e and s of the link
+     * @param int $idEmployee the account the link was handed to, for the legacy token
+     *
+     * @return string empty when the administration folder is unknown
+     */
+    public static function downloadUrl(array $query, int $idEmployee): string
+    {
+        return self::entryUrl(self::DOWNLOAD_CONTROLLER, 'download', $query, $idEmployee);
     }
 
     /**

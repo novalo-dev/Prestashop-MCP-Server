@@ -1657,6 +1657,7 @@ class Somcp extends Module
     {
         return [
             SomcpBackOffice::UPLOAD_CONTROLLER,
+            SomcpBackOffice::DOWNLOAD_CONTROLLER,
             SomcpBackOffice::ASSISTANT_CONTROLLER,
         ];
     }

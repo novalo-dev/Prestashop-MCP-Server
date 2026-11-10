@@ -1582,6 +1582,22 @@ T = {
  "Fichier reçu",
  "Archivo recibido",
  "Datei empfangen"),
+"This link has expired. Ask the assistant for the document again.": (
+ "Ce lien a expiré. Redemandez le document à l'assistant.",
+ "Este enlace ha caducado. Vuelva a pedir el documento al asistente.",
+ "Dieser Link ist abgelaufen. Fragen Sie den Assistenten erneut nach dem Dokument."),
+"This link was made for another employee.": (
+ "Ce lien a été créé pour un autre employé.",
+ "Este enlace se ha creado para otro empleado.",
+ "Dieser Link wurde für einen anderen Mitarbeiter erstellt."),
+"You do not have permission to view this.": (
+ "Vous n'avez pas la permission de voir ceci.",
+ "No tiene permiso para ver esto.",
+ "Sie haben keine Berechtigung, dies anzusehen."),
+"This document no longer exists.": (
+ "Ce document n'existe plus.",
+ "Este documento ya no existe.",
+ "Dieses Dokument existiert nicht mehr."),
 "The file has been received. Go back to your assistant and let it carry on.": (
  "Le fichier a bien été reçu. Retournez dans votre assistant et laissez-le continuer.",
  "El archivo se ha recibido. Vuelva a su asistente y deje que continúe.",

@@ -1987,6 +1987,26 @@
       <source>File received</source>
       <target>File received</target>
     </trans-unit>
+    <!-- This link has expired. Ask the assistant for the document again. -->
+    <trans-unit id="d10e4516fd18490c3afbd028db10331a" resname="This link has expired. Ask the assistant for the document again.">
+      <source>This link has expired. Ask the assistant for the document again.</source>
+      <target>This link has expired. Ask the assistant for the document again.</target>
+    </trans-unit>
+    <!-- This link was made for another employee. -->
+    <trans-unit id="bfeb0db5e5516aae235f5b8606ef3f39" resname="This link was made for another employee.">
+      <source>This link was made for another employee.</source>
+      <target>This link was made for another employee.</target>
+    </trans-unit>
+    <!-- You do not have permission to view this. -->
+    <trans-unit id="b42cd3af71fc00ef268910709255320a" resname="You do not have permission to view this.">
+      <source>You do not have permission to view this.</source>
+      <target>You do not have permission to view this.</target>
+    </trans-unit>
+    <!-- This document no longer exists. -->
+    <trans-unit id="9ca23074496b7b110a1cf6b86283bbac" resname="This document no longer exists.">
+      <source>This document no longer exists.</source>
+      <target>This document no longer exists.</target>
+    </trans-unit>
     <!-- The file has been received. Go back to your assistant and let it carry on. -->
     <trans-unit id="47a0248667b14e6b7a1a49a400e02579" resname="The file has been received. Go back to your assistant and let it carry on.">
       <source>The file has been received. Go back to your assistant and let it carry on.</source>

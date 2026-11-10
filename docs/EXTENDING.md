@@ -194,6 +194,14 @@ and do not go through the translation system. They are read by the assistant,
 not shown to the merchant. The `title`, the scope labels and everything in a
 prompt's menu entry are shown to the merchant, so those are translated.
 
+Keep them short. An assistant connected over MCP reads every tool of the list,
+and somcp's own tools hold to 600 characters for a tool description and 200 for
+a property description (see **Descriptions** in [TOOLS.md](TOOLS.md)). Your
+tools are not checked against that budget, but each extra paragraph is paid on
+every message. The built-in assistant finds your tools by keywords in their
+name, title and description, and shows the first sentence of each match: start the
+description with what the tool does, in the words of the screen.
+
 ---
 
 ## The handler

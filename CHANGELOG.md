@@ -23,7 +23,20 @@ changes the unit price, the quantity or the invoice of one product line of an
 order not delivered, as the **Edit** action of a line in the **Products** block
 of the order page does, and recomputes the totals. Only the fields given are
 changed; a quantity of 0 is refused and points to removing the line, and the
-assistant is told to say the new total before the change.
+assistant is told to say the new total before the change. On PrestaShop 9.2 and
+later, which edit the line together with its shipments, the tool refuses and
+points to the Edit action of the order page.
+
+**Order product line removed.** The new tool `somcp_delete_order_product`
+takes one product line off an order not delivered, as the **Delete** action of
+a line in the **Products** block of the order page does, and recomputes the
+totals. Nothing is refunded and no credit slip is made: the assistant is told to
+say what the customer owes afterwards and to wait for your go-ahead. The last
+line of an order is refused, since an order left without a product cannot be
+put right; cancel the order instead. On PrestaShop 9.2 and later the tool
+refuses and points to the order page, like the other order line tools. The tools
+that add, edit and cancel order lines now point to one another when the request
+belongs to another of them.
 
 **Order address changed.** The new tool `somcp_set_order_address` points the
 delivery or the invoice address of an order to another address of the same

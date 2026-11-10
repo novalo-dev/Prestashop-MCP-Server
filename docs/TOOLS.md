@@ -1060,7 +1060,8 @@ internals differ between the versions, which is why they are called and never
 copied.
 
 **Differences between 8.0.1 and 9.0.0** - none in the form or the handler
-sequence.
+sequence. PrestaShop 9.2 and later: refused, the handler there takes services
+for the shipments that only the back office builds.
 
 Not replayable: a second call adds the quantity again or is refused as a
 duplicate. A lost answer is checked with `somcp_get_order` (`products`).
@@ -1106,18 +1107,73 @@ as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the order
 not found or a reference shared by several orders; `id_order_detail` missing or
 not a line of the order; `quantity` 0 (pointing to `somcp_delete_order_product`)
 or below; prices not numbers, below 0, or not agreeing with the tax rate;
-`id_order_invoice` not an invoice of the order; no field to change given. Then
-the core's refusals, each in plain English: a delivered order, a product no
-longer in the catalogue, not enough stock with orders denied out of stock, the
-same product already in the target invoice.
+`id_order_invoice` not an invoice of the order; no field to change given;
+PrestaShop 9.2 or later, where the order page edits the line together with its
+shipments (after the other checks, pointing to the **Edit** action of the order
+page). Then the core's refusals, each in plain English: a delivered order, a
+product no longer in the catalogue, not enough stock with orders denied out of
+stock, the same product already in the target invoice.
 
 **Differences between 8.0.1 and 9.0.0** - none in the form or the handler
 sequence; the internals of `OrderProductQuantityUpdater` differ, which is why
-they are called and never copied.
+they are called and never copied. PrestaShop 9.2 and later: refused, the
+handler there takes services for the shipments that only the back office
+builds.
 
 Not replayable in general: the values are absolute, so the same call again
 changes nothing. A lost answer is checked with `somcp_get_order` (`products`)
 before anything else.
+
+#### `somcp_delete_order_product`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - removes one product line from one order that has not been
+delivered, as the **Delete** action of a line in the **Products** block of the
+order page does, and recomputes the order totals. It is neither a cancellation
+nor a refund: the line goes, with no credit slip and no voucher.
+
+**Do not use for** - cancelling a quantity the customer paid for
+(→ `somcp_cancel_order_products`), refunding (→ `somcp_issue_partial_refund`,
+`somcp_issue_standard_refund`), changing a quantity
+(→ `somcp_update_order_product`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_order` | - | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | - | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_detail` | the line, **Delete** | integer | yes | from `products[].id_order_detail` of `somcp_get_order`; must belong to the order |
+
+**Returns** - `deleted`, `order` (`id_order`, `reference`), `line` (the line as
+it was before the removal, exactly as `somcp_get_order` returns one of
+`products[]`), `totals` (after the change, exactly as `somcp_get_order` returns
+them) and `currency`.
+
+**Errors** - every problem at once, nothing recorded when one check fails, each
+as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the order
+not found or a reference shared by several orders; `id_order_detail` missing or
+not a line of the order (`id_order_detail: no line of this order has the
+identifier <n> - find it with somcp_get_order`). Then, each with its reason: the
+last line of the order (the back office lets it go and leaves an order with no
+product; pointing to `somcp_set_order_status` to cancel it), a delivered order,
+PrestaShop 9.2 or later (after the other checks, pointing to the **Delete**
+action of the order page, as the other order line tools do).
+
+**Notes** - the core's `DeleteProductFromOrderHandler` does the work, built
+with `new` with `ContextStateManager` and `OrderProductQuantityUpdater`, from
+the same builder as the other order line tools
+(`SomcpToolUpdateOrderProduct::services()`): the context set to the order, the
+quantity brought to 0 on the line's invoice, the amounts and
+`actionOrderEdited`, the token's employee on the context.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler; the internals
+of `OrderProductQuantityUpdater` differ, which is why they are called and never
+copied. PrestaShop 9.2 and later: refused, like the other order line tools.
+
+Not replayable: a second call on the same line finds nothing and says so. A
+lost answer is checked with `somcp_get_order` (`products`).
 
 #### `somcp_add_order_discount`
 **State**: written

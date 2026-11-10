@@ -77,8 +77,9 @@ class SomcpToolUpdateOrderProduct
             'Changes the unit price, the quantity or the invoice of one product line of an order not delivered, '
                 . 'like Edit on a line in the Products block of the order page, and recomputes the totals '
                 . '(id_order_detail from products of somcp_get_order). To add a product use '
-                . 'somcp_add_order_product; a quantity of 0 is refused. Say the new total and wait for the '
-                . 'go-ahead. Never to be retried on a lost answer: check products of somcp_get_order.',
+                . 'somcp_add_order_product, to remove a line somcp_delete_order_product; units the customer will '
+                . 'not get go through somcp_cancel_order_products or somcp_issue_partial_refund. Say the new total '
+                . 'and wait for the go-ahead. Never to be retried on a lost answer: check somcp_get_order.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -98,7 +99,7 @@ class SomcpToolUpdateOrderProduct
                     'quantity' => [
                         'type' => 'integer',
                         'description' => 'New quantity, at least 1. Left out: unchanged. A quantity of 0 is '
-                            . 'refused: remove the line on the order page.',
+                            . 'refused: remove the line with somcp_delete_order_product.',
                     ],
                     'unit_price_tax_excluded' => [
                         'type' => 'number',
@@ -149,7 +150,8 @@ class SomcpToolUpdateOrderProduct
             $problems[] = 'quantity: must be a whole number, at least 1';
             $quantity = null;
         } elseif ($wantsQuantity && $quantity === 0) {
-            $problems[] = 'quantity: 0 removes the line, which this tool does not do - remove it on the order page';
+            $problems[] = 'quantity: 0 removes the line, which this tool does not do - remove it with '
+                . 'somcp_delete_order_product';
             $quantity = null;
         }
 
@@ -347,13 +349,45 @@ class SomcpToolUpdateOrderProduct
     }
 
     /**
-     * Whether the core handler still takes the three services the tool builds.
+     * Whether the order line handlers still take the services services()
+     * builds.
+     *
+     * PrestaShop 9.2 gave the add and edit handlers more services, for the
+     * shipments of the improved shipping feature, which only the Symfony
+     * container builds. A line written without them would be unknown to the
+     * shipments, so the tools that add, edit and remove a line refuse from
+     * 9.2 on, all on this one check.
      *
      * @return bool
      */
-    private static function supported(): bool
+    public static function supported(): bool
     {
         return version_compare(_PS_VERSION_, '9.2.0', '<');
+    }
+
+    /**
+     * The core services the order line handlers are built with in the back
+     * office, built with new since a front controller has no Symfony
+     * container. Shared by the tools that add, edit, cancel and remove a line,
+     * so the chain is the same wherever an order line changes.
+     *
+     * @return array{context: ContextStateManager, remover: OrderProductRemover, detail: OrderDetailUpdater, amount: OrderAmountUpdater, quantity: OrderProductQuantityUpdater}
+     */
+    public static function services(): array
+    {
+        $configuration = new CoreConfiguration();
+        $contextManager = new ContextStateManager(new LegacyContext());
+        $remover = new OrderProductRemover();
+        $detailUpdater = new OrderDetailUpdater($contextManager, $configuration);
+        $amountUpdater = new OrderAmountUpdater($configuration, $contextManager, $detailUpdater, $remover);
+
+        return [
+            'context' => $contextManager,
+            'remover' => $remover,
+            'detail' => $detailUpdater,
+            'amount' => $amountUpdater,
+            'quantity' => new OrderProductQuantityUpdater($amountUpdater, $remover, $contextManager),
+        ];
     }
 
     /**
@@ -372,12 +406,7 @@ class SomcpToolUpdateOrderProduct
      */
     private static function apply(Order $order, int $idOrderDetail, array $amounts, int $quantity, bool $wantsInvoice, int $idInvoice, array $changes, int $idEmployee): array
     {
-        $configuration = new CoreConfiguration();
-        $contextManager = new ContextStateManager(new LegacyContext());
-        $remover = new OrderProductRemover();
-        $detailUpdater = new OrderDetailUpdater($contextManager, $configuration);
-        $amountUpdater = new OrderAmountUpdater($configuration, $contextManager, $detailUpdater, $remover);
-        $quantityUpdater = new OrderProductQuantityUpdater($amountUpdater, $remover, $contextManager);
+        $services = self::services();
 
         try {
             $command = new UpdateProductInOrderCommand(
@@ -392,9 +421,9 @@ class SomcpToolUpdateOrderProduct
             // of every version supported() lets through, and PHPStan, which
             // reads one version at a time, would refuse it on 9.2.
             $handler = (new ReflectionClass(UpdateProductInOrderHandler::class))->newInstanceArgs([
-                $quantityUpdater,
-                $detailUpdater,
-                $contextManager,
+                $services['quantity'],
+                $services['detail'],
+                $services['context'],
             ]);
             $handler->handle($command);
         } catch (Throwable $e) {

@@ -26,6 +26,7 @@ of it can be undone by calling again.
 - `somcp_cancel_order_products`
 - `somcp_add_order_product`
 - `somcp_update_order_product`
+- `somcp_delete_order_product`
 - `somcp_generate_order_invoice`
 - `somcp_add_order_discount`
 - `somcp_delete_order_discount`
@@ -217,10 +218,25 @@ the merchant's go-ahead.
 
 - The line comes from `products[].id_order_detail` of `somcp_get_order`. Give
   only the fields to change; the others keep their value.
-- A quantity of 0 is refused: to take the line off, remove it on the order
-  page; to add one, `somcp_add_order_product`.
+- A quantity of 0 is refused: to take the line off, use
+  `somcp_delete_order_product`; to add one, `somcp_add_order_product`.
 - The values are absolute, not a delta. Never repeat the call on a lost
   answer: check `products` with `somcp_get_order`.
+
+## A product line removed
+
+A line of an order not delivered is taken off with
+`somcp_delete_order_product`, as Delete on the order page does. Removing a
+line is not a refund: say what the customer owes once it is gone, say that
+nothing is refunded, and wait for the merchant's go-ahead.
+
+- The line comes from `products[].id_order_detail` of `somcp_get_order`.
+- The last line of an order is refused: to drop the whole order, cancel it
+  with `somcp_set_order_status`.
+- Units the customer paid for and will not receive go through
+  `somcp_cancel_order_products` or `somcp_issue_partial_refund` instead.
+- Never repeat the call on a lost answer: check `products` with
+  `somcp_get_order`.
 
 ## Products taken off an unpaid order
 

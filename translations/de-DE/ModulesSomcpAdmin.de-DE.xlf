@@ -1442,6 +1442,11 @@
       <source>Edit a product line of an order</source>
       <target>Eine Produktzeile einer Bestellung bearbeiten</target>
     </trans-unit>
+    <!-- Remove a product line from an order -->
+    <trans-unit id="562a2e640e4c084951cb5e1c88e8b452" resname="Remove a product line from an order">
+      <source>Remove a product line from an order</source>
+      <target>Eine Produktzeile aus einer Bestellung entfernen</target>
+    </trans-unit>
     <!-- Generate the invoice of an order -->
     <trans-unit id="a2638d1f963c3036182adfc638058aa1" resname="Generate the invoice of an order">
       <source>Generate the invoice of an order</source>

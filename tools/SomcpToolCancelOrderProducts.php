@@ -17,14 +17,7 @@
 
 declare(strict_types=1);
 
-use PrestaShop\PrestaShop\Adapter\Configuration as CoreConfiguration;
-use PrestaShop\PrestaShop\Adapter\ContextStateManager;
-use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShop\PrestaShop\Adapter\Order\CommandHandler\CancelOrderProductHandler;
-use PrestaShop\PrestaShop\Adapter\Order\OrderAmountUpdater;
-use PrestaShop\PrestaShop\Adapter\Order\OrderDetailUpdater;
-use PrestaShop\PrestaShop\Adapter\Order\OrderProductQuantityUpdater;
-use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderProductRemover;
 use PrestaShop\PrestaShop\Core\Domain\Order\Command\CancelOrderProductCommand;
 use PrestaShop\PrestaShop\Core\Domain\Order\Exception\InvalidCancelProductException;
 use PrestaShop\PrestaShop\Core\Domain\Order\Exception\InvalidOrderStateException;
@@ -36,7 +29,8 @@ use Psr\Log\AbstractLogger;
  * cancelled when nothing is left.
  *
  * The core's own CancelOrderProductHandler does the work, built with new and
- * the services it is built with in the back office: the totals recomputed,
+ * the services the order line tools share (SomcpToolUpdateOrderProduct::
+ * services()), as in the back office: the totals recomputed,
  * the stock, actionProductCancel with the cancel action and the status
  * Canceled with its customer email stay exactly as the button does them. The
  * lines are read and checked by the standard refund, and the refusals take
@@ -54,6 +48,7 @@ require_once __DIR__ . '/SomcpToolGetOrder.php';
 require_once __DIR__ . '/SomcpToolCreateProduct.php';
 require_once __DIR__ . '/SomcpToolIssuePartialRefund.php';
 require_once __DIR__ . '/SomcpToolIssueStandardRefund.php';
+require_once __DIR__ . '/SomcpToolUpdateOrderProduct.php';
 
 class SomcpToolCancelOrderProducts
 {
@@ -184,9 +179,6 @@ class SomcpToolCancelOrderProducts
     private static function apply(Order $order, array $quantities, int $idEmployee): array
     {
         $legacy = Somcp::legacyContext();
-        $configuration = new CoreConfiguration();
-        $contextManager = new ContextStateManager(new LegacyContext());
-        $remover = new OrderProductRemover();
 
         $before = [];
         foreach (array_keys($quantities) as $idDetail) {
@@ -214,16 +206,7 @@ class SomcpToolCancelOrderProducts
 
         try {
             $handler = new CancelOrderProductHandler(
-                new OrderProductQuantityUpdater(
-                    new OrderAmountUpdater(
-                        $configuration,
-                        $contextManager,
-                        new OrderDetailUpdater($contextManager, $configuration),
-                        $remover
-                    ),
-                    $remover,
-                    $contextManager
-                ),
+                SomcpToolUpdateOrderProduct::services()['quantity'],
                 $logger,
                 $legacy->getTranslator()
             );

@@ -17,14 +17,7 @@
 
 declare(strict_types=1);
 
-use PrestaShop\PrestaShop\Adapter\Configuration as CoreConfiguration;
-use PrestaShop\PrestaShop\Adapter\ContextStateManager;
-use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShop\PrestaShop\Adapter\Order\CommandHandler\AddProductToOrderHandler;
-use PrestaShop\PrestaShop\Adapter\Order\OrderAmountUpdater;
-use PrestaShop\PrestaShop\Adapter\Order\OrderDetailUpdater;
-use PrestaShop\PrestaShop\Adapter\Order\OrderProductQuantityUpdater;
-use PrestaShop\PrestaShop\Adapter\Order\Refund\OrderProductRemover;
 use PrestaShop\PrestaShop\Core\Domain\Order\Product\Command\AddProductToOrderCommand;
 
 /*
@@ -54,6 +47,7 @@ if (!defined('_PS_VERSION_')) {
 require_once __DIR__ . '/SomcpToolGetOrder.php';
 require_once __DIR__ . '/SomcpToolCreateProduct.php';
 require_once __DIR__ . '/SomcpToolIssuePartialRefund.php';
+require_once __DIR__ . '/SomcpToolUpdateOrderProduct.php';
 
 class SomcpToolAddOrderProduct
 {
@@ -73,8 +67,9 @@ class SomcpToolAddOrderProduct
             Somcp::t('Add a product to an order'),
             'Adds one product or combination to one order not shipped yet, like Add a product in the Products '
                 . 'block of the order page, and recomputes the totals (id_product from somcp_search_products). A '
-                . 'product already in the order is refused, not added twice. Say the new total and wait '
-                . 'for the go-ahead. Never to be retried on a lost answer: check products of somcp_get_order.',
+                . 'product already there is refused: change it with somcp_update_order_product, remove a line '
+                . 'with somcp_delete_order_product. Say the new total and wait for the go-ahead. Never to be '
+                . 'retried on a lost answer: check products of somcp_get_order.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -235,7 +230,7 @@ class SomcpToolAddOrderProduct
                 if ((int) $line['product_id'] === $idProduct && (int) $line['product_attribute_id'] === $idCombination
                     && (!$order->hasInvoice() || ($idInvoice > 0 && (int) $line['id_order_invoice'] === $idInvoice))) {
                     $problems[] = 'id_product: this product is already a line of the order (id_order_detail '
-                        . (int) $line['id_order_detail'] . ') - change that line on the order page rather than adding it again';
+                        . (int) $line['id_order_detail'] . ') - change that line with somcp_update_order_product';
                     break;
                 }
             }
@@ -252,7 +247,7 @@ class SomcpToolAddOrderProduct
 
         // Last of the checks, so the mistakes in the arguments still come back
         // on every version.
-        if (!self::supported()) {
+        if (!SomcpToolUpdateOrderProduct::supported()) {
             return SomcpToolIssuePartialRefund::refused([
                 'this PrestaShop version adds a product to an order together with its shipments, which this tool '
                     . 'cannot do yet - use Add a product in the Products block of the order page',
@@ -356,16 +351,6 @@ class SomcpToolAddOrderProduct
     }
 
     /**
-     * Whether the core handler still takes the five services the tool builds.
-     *
-     * @return bool
-     */
-    private static function supported(): bool
-    {
-        return version_compare(_PS_VERSION_, '9.2.0', '<');
-    }
-
-    /**
      * Runs the core handler and reports the new line and the totals.
      *
      * @param Order $order
@@ -382,11 +367,7 @@ class SomcpToolAddOrderProduct
     private static function apply(Order $order, int $idProduct, int $idCombination, int $quantity, array $amounts, int $idInvoice, ?bool $freeShipping, int $idEmployee): array
     {
         $legacy = Somcp::legacyContext();
-        $configuration = new CoreConfiguration();
-        $contextManager = new ContextStateManager(new LegacyContext());
-        $remover = new OrderProductRemover();
-        $detailUpdater = new OrderDetailUpdater($contextManager, $configuration);
-        $amountUpdater = new OrderAmountUpdater($configuration, $contextManager, $detailUpdater, $remover);
+        $services = SomcpToolUpdateOrderProduct::services();
 
         $before = [];
         foreach ($order->getProducts() as $line) {
@@ -414,14 +395,15 @@ class SomcpToolAddOrderProduct
                     $freeShipping
                 );
             // Built through reflection: the five-service constructor is the
-            // one of every version supported() lets through, and PHPStan,
-            // which reads one version at a time, would refuse it on 9.2.
+            // one of every version SomcpToolUpdateOrderProduct::supported()
+            // lets through, and PHPStan, which reads one version at a time,
+            // would refuse it on 9.2.
             $handler = (new ReflectionClass(AddProductToOrderHandler::class))->newInstanceArgs([
                 $legacy->getTranslator(),
-                $contextManager,
-                $amountUpdater,
-                new OrderProductQuantityUpdater($amountUpdater, $remover, $contextManager),
-                $detailUpdater,
+                $services['context'],
+                $services['amount'],
+                $services['quantity'],
+                $services['detail'],
             ]);
             $handler->handle($command);
         } catch (Throwable $e) {
@@ -494,8 +476,8 @@ class SomcpToolAddOrderProduct
         switch ($class) {
             case 'DuplicateProductInOrderException':
             case 'DuplicateProductInOrderInvoiceException':
-                return 'id_product: this product is already a line of the order - change that line on '
-                    . 'the order page rather than adding it again';
+                return 'id_product: this product is already a line of the order - change that line with '
+                    . 'somcp_update_order_product';
             case 'ProductOutOfStockException':
                 return 'quantity: not enough stock, and the shop refuses orders out of stock';
         }

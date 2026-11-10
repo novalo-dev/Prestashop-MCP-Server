@@ -1146,6 +1146,10 @@ T = {
  "Modifier une ligne de produit d'une commande",
  "Editar una línea de producto de un pedido",
  "Eine Produktzeile einer Bestellung bearbeiten"),
+"Remove a product line from an order": (
+ "Supprimer une ligne de produit d'une commande",
+ "Eliminar una línea de producto de un pedido",
+ "Eine Produktzeile aus einer Bestellung entfernen"),
 "Generate the invoice of an order": (
  "Générer la facture d'une commande",
  "Generar la factura de un pedido",

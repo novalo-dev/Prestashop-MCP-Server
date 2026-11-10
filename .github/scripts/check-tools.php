@@ -32,6 +32,7 @@ declare(strict_types=1);
  *
  * Tools also point to each other: every tool a file names must exist, without
  * hedging the link, and every write must name a read that shows its outcome.
+ * Their texts stay within the description budget, but for a listed few.
  *
  * Usage: php .github/scripts/check-tools.php [module root]
  * Exit code 0 when everything is in order, 1 otherwise.
@@ -54,6 +55,15 @@ foreach (glob($root . '/tools/Somcp*.php') ?: [] as $file) {
     } else {
         $errors[] = 'tools/' . basename($file) . ': no tool name found';
     }
+}
+
+// The chat's own tools, declared in SomcpAssistantChat rather than tools/:
+// the README lists them in a table of their own, so they count as shipped
+// there, and only there - they have no scope, prompt or MCP entry.
+$chatOnly = [];
+preg_match_all("/public const [A-Z_]+_TOOL = '(somcp_[a-z0-9_]+)'/", (string) @file_get_contents($root . '/classes/SomcpAssistantChat.php'), $m);
+foreach ($m[1] as $tool) {
+    $chatOnly[$tool] = true;
 }
 
 // 2. README.md: the table under "## Tools".
@@ -166,6 +176,54 @@ foreach ($sources as $tool => $source) {
     }
 }
 
+// 9. The description budget (see Descriptions in docs/TOOLS.md): 600
+// characters for a tool, 200 for a property. Every loaded tool is sent to the
+// model on each step of a conversation, so a long text is paid again and
+// again, and without a check every new tool could land above it. The texts
+// written before the budget and not cut yet are listed below; the list only
+// shrinks: a text cut within the budget must leave it, so it cannot grow back
+// unnoticed. The sizes come from dev/tools/measure.php, the one measurement
+// the pull requests quote.
+$overBudgetAllowed = [
+    // Tool descriptions, by tool name. Empty: every tool is within budget.
+];
+$measure = $root . '/dev/tools/measure.php';
+if (!is_file($measure)) {
+    $errors[] = 'dev/tools/measure.php: missing, the description budget cannot be checked';
+} else {
+    $output = [];
+    $status = 1;
+    exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($measure) . ' ' . escapeshellarg($root) . ' --json 2>&1', $output, $status);
+    $measured = $status === 0 ? json_decode(implode("\n", $output), true) : null;
+    if (!is_array($measured) || !isset($measured['tools']) || !is_array($measured['tools'])) {
+        $errors[] = 'dev/tools/measure.php: could not measure the tools: ' . implode(' ', array_slice($output, 0, 3));
+    } else {
+        $allowed = array_fill_keys($overBudgetAllowed, true);
+        $stillOver = [];
+        foreach ($measured['tools'] as $row) {
+            $name = (string) $row['name'];
+            $file = $shipped[$name] ?? 'tools/';
+            if ((int) $row['description'] > (int) $measured['tool_budget']) {
+                $stillOver[$name] = true;
+                if (!isset($allowed[$name])) {
+                    $errors[] = "$file: the description of $name holds {$row['description']} characters, above the budget of {$measured['tool_budget']}; see Descriptions in docs/TOOLS.md";
+                }
+            }
+            foreach ((array) $row['over'] as $path => $length) {
+                $stillOver[$name . $path] = true;
+                if (!isset($allowed[$name . $path])) {
+                    $errors[] = "$file: the description of property $path of $name holds $length characters, above the budget of {$measured['property_budget']}; see Descriptions in docs/TOOLS.md";
+                }
+            }
+        }
+        foreach ($overBudgetAllowed as $entry) {
+            if (!isset($stillOver[$entry])) {
+                $errors[] = ".github/scripts/check-tools.php: $entry is within the description budget now, remove it from \$overBudgetAllowed";
+            }
+        }
+    }
+}
+
 foreach ($shipped as $tool => $file) {
     if (!isset($listed[$tool])) {
         $errors[] = "$file: $tool is missing from the Tools table of README.md";
@@ -190,7 +248,7 @@ foreach ($shipped as $tool => $file) {
 }
 
 foreach (array_keys($listed) as $tool) {
-    if (!isset($shipped[$tool])) {
+    if (!isset($shipped[$tool]) && !isset($chatOnly[$tool])) {
         $errors[] = "README.md: lists $tool, which the module does not ship";
     }
 }

@@ -71,8 +71,9 @@ not need to be announced. What never leaves: the not-to-be-retried sentence,
 "never guess" where an identifier is asked, an email sent to the customer, and
 one object per call. A parameter that takes an identifier names the tool that
 gives it. `php dev/tools/measure.php .` prints the size of each tool and page
-and the texts above the budget. The tools are brought within it page by page;
-the budget is checked by `check-tools.php` once every page fits.
+and the texts above the budget. `check-tools.php` refuses a text above it,
+except the ones written before the budget and listed in that script until
+they are cut; a listed text cut within the budget must leave the list.
 
 **Nature and permission.** `SomcpTool::acts($action, $controller)`: one
 declaration, from which the module takes the permission required and what the
@@ -387,14 +388,15 @@ customer has none. The count joins the same tables as the list, so
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 
 **Returns** - `order`, `customer`, `addresses` (delivery and invoice),
 `products`, `discounts`, `shipping`, `totals`, `payments`, `history`,
 `documents`, `messages`. Among them, what the order page shows:
 
-- `order`: `note` (Order note / Order private note), `id_cart`, `gift`,
-  `gift_message`, `recycled_packaging`;
+- `order`: `status` (`status_id`, the identifier `somcp_set_order_status`
+  takes, `name`, `paid`, `shipped`), `note` (Order note / Order private note),
+  `id_cart`, `gift`, `gift_message`, `recycled_packaging`;
 - `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
   `total_spent` with `total_spent_currency`, `private_note` (read only);
 - `addresses.delivery` and `addresses.invoice`: `id_address`, `alias`,
@@ -410,13 +412,13 @@ customer has none. The count joins the same tables as the list, so
   `free_shipping`;
 - `history`, each step with `id_order_history`;
 - `shipping.shipments`, one per shipment: `id_order_carrier`, `date`,
-  `carrier`, `weight`, `shipping_cost_tax_excluded`,
+  `id_carrier`, `carrier`, `weight`, `shipping_cost_tax_excluded`,
   `shipping_cost_tax_included`, `tracking_number`, `tracking_url`;
 - `totals`: `taxes`, `wrapping_tax_excluded` and `wrapping_tax_included`;
 - `payments`, each with `currency`, `invoice_number` (empty when not tied to an
   invoice), `id_employee` and `employee` (who recorded it, PrestaShop 9 only,
   `null` and empty on 8);
-- `documents`: `invoices` (with `id_order_invoice`), `delivery_slips`
+- `documents`: `invoices` (with `id_order_invoice` and `note`), `delivery_slips`
   (`id_order_invoice`, `number` with the shop's prefix, `date`,
   `total_tax_included`) and `credit_slips`;
 - `messages`, each with `from` (`employee` or `customer`) and `from_name`.
@@ -450,11 +452,11 @@ orders in one call, which it refuses by design.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `status_id` | integer | yes | from `somcp_list_order_statuses`, never guessed |
 
-**Returns** - `changed`, `order`, `previous_status`, `status`,
-`status_sends_email`, `email_sent`, `warning`, `changed_by_employee_id`. When the
+**Returns** - `changed`, `order`, `previous_status` and `status` (each
+`status_id`, `name`), `status_sends_email`, `email_sent`, `warning`, `changed_by_employee_id`. When the
 order already has that status: `changed: false` with a `reason`, and nothing
 happens.
 
@@ -462,6 +464,14 @@ happens.
 on 8.0.0 and 9.1.5 rather than reinvented: refuse a redundant status, set
 `id_employee`, `changeIdOrderState()` with the payments carried over when there
 is no invoice yet, then `addWithemail()`.
+
+Two inputs the **Update status** button can never send are refused, with
+nothing changed: a reference shared by several orders (a split cart), answered
+with the list of its orders through the lookup every order tool shares
+(`SomcpToolGetOrder::find()`), and a status deleted on **Shop Parameters >
+Order Settings > Statuses** (`order_state.deleted` = 1, which the order page
+leaves out through `OrderState::getOrderStates()`), refused as an unknown
+status.
 
 Refusing a status the order already has is not politeness, it is the guard
 against the likeliest harm this tool can do - a retried call mailing the
@@ -553,7 +563,7 @@ order itself - that is the order note (→ `somcp_set_order_note`).
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `message` | string | yes | 1200 characters at most, plain text, refused if it holds HTML scripts or events |
 | `display_to_customer` | boolean | yes | the **Display to customer?** checkbox. No default: the assistant must decide whether the customer sees and receives it |
 
@@ -612,7 +622,7 @@ page is `customer.note`.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `note` | string | yes | the whole new note; an empty string clears it |
 
 **Returns** - `changed`, `order` (`id_order` and `reference`),
@@ -653,7 +663,7 @@ order paid (→ `somcp_set_order_status`).
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `amount` | number | yes | greater than 0, in `currency` |
 | `payment_method` | string | yes | best given as the **Payment** block suggests it: the name of the shop's payment module, for example "Bank transfer", "Payments by check" or "Cash on delivery (COD)", so the Payment table and the order read the same method; 255 characters at most, without `< > = { }` |
 | `currency` | string | no | ISO code; the order's currency by default |
@@ -706,6 +716,770 @@ One payment per call. Not replayable: a payment added twice is money counted
 twice. A lost answer is checked with `somcp_get_order`, whose `payments` lists
 it. The card fields of `order_payment` (`card_number`, `card_brand`,
 `card_expiration`, `card_holder`) are not on the screen and are not taken.
+
+#### `somcp_issue_partial_refund`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - issues a partial refund on one order - chosen quantities and amounts
+of some lines, and part of the shipping - as the **Partial refund** button of
+the order page does, with a credit slip, a voucher or both.
+
+**Do not use for** - refunding whole lines of a paid order not shipped yet
+(→ `somcp_issue_standard_refund`), products sent back by the customer after
+delivery (→ `somcp_return_order_products`), removing products from an unpaid
+order (→ `somcp_cancel_order_products`), or recording money received
+(→ `somcp_add_order_payment`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `lines` | array | yes, unless only shipping is refunded | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`), `quantity` (at least 1, at most what is left to refund), and the amount in the tax mode the page shows for this order, `amount_tax_excluded` **or** `amount_tax_included` (greater than 0, at most quantity times the unit price); the other one is refused with the right name |
+| `shipping_amount_tax_included` | number | no | part of the shipping to refund, at most what is left of it; 0 by default |
+| `restock` | boolean | no | **Re-stock products**; only matters once the order is delivered - before that the core always puts the quantities back. False by default |
+| `credit_slip` | boolean | no | **Generate a credit slip**; true by default, as the box is ticked when the form opens |
+| `voucher` | boolean | no | **Generate a voucher**; false by default |
+| `voucher_refund_type` | enum | no | only for an order partly paid with a voucher: `product_prices` (**Product(s) price:**) or `product_prices_excluding_voucher` (**Product(s) price, excluding amount of initial voucher:**, the default the page pre-selects); refused on an order without voucher |
+
+At least one of `credit_slip` and `voucher` must be true, as on screen.
+
+**Returns** - `refunded`, `order` (`id_order` and `reference`), `lines` (per
+line: `id_order_detail`, `product_name`, `quantity`, `amount_tax_excluded`,
+`amount_tax_included`), `shipping_refunded_tax_included`,
+`total_refunded_tax_excluded`, `total_refunded_tax_included`, `currency`,
+`restocked`, `credit_slip` (`id_order_slip` and its totals, or `null`),
+`voucher` (`id_cart_rule`, `code`, `amount`, `tax_included`, or `null`), and
+`warning` when the refund was recorded but the slip or the voucher cannot be
+found afterwards.
+
+**Errors** - every problem at once, nothing recorded when one check fails,
+each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+line; the order not found or a reference shared by several orders; a line that
+is not one of this order's; a quantity below 1 or above what is left; an amount
+missing, not above 0, above the line's maximum, or in the wrong tax mode;
+the shipping negative or above what is left; `credit_slip` and `voucher` both
+false; `voucher_refund_type` on an order without voucher; an order neither paid
+nor with payments. The core's own refusals are put in the same shape.
+
+**Notes** - the button is shown when the order has been paid or has payments
+(`hasBeenPaid()` or `hasPayments()`), and turns the **Products** table into the
+`cancel_product` form: per line **Quantity** and **Amount**, under the totals
+**Shipping**, then **Re-stock products**, **Generate a credit slip** (ticked),
+**Generate a voucher** and the voucher choice. The Amount label follows the
+customer group of the order (`Group::getPriceDisplayMethod()` of its default
+group), and so does the field the tool takes.
+
+The core's `IssuePartialRefundHandler` does the work, built with `new` with its
+services (`OrderRefundCalculator`, `OrderSlipCreator`, `VoucherGenerator`,
+`OrderRefundUpdater`, `ContextStateManager`), whose constructors are the same
+on 8.0.1 and 9.0.0: stock put back when the order is not delivered or with
+`restock`, `actionProductCancel` per line, the carrier weight, the credit
+slip, the refund data of the lines, and the voucher. The handler does not check
+that a line belongs to the order, and lowers an amount above the line's maximum
+instead of refusing it: the tool checks both first. The shipping amount is read
+in the order's tax mode, as the form sends it, and capped like the core caps it
+(the order's shipping minus what earlier slips refunded).
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler or the form.
+`OrderSlipCreator` keeps the slip it created on 9.0.0 only: the new slip is
+found as the highest `id_order_slip` of the order after the call, and the
+voucher as the highest cart rule of the customer.
+
+Not replayable: a refund issued twice is money paid back twice. A lost answer
+is checked with `somcp_get_order` (`products[].quantity_refunded`,
+`documents.credit_slips`).
+
+#### `somcp_issue_standard_refund`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - issues a standard refund on one paid order that is not delivered
+yet - whole quantities of some lines, the shipping if asked - as the
+**Standard refund** button of the order page does, with a credit slip, a
+voucher or both. The refunded quantities go back in stock.
+
+**Do not use for** - a chosen amount rather than whole lines, or a shop with
+merchandise returns off (→ `somcp_issue_partial_refund`), a delivered order
+(→ `somcp_return_order_products`), an unpaid order
+(→ `somcp_cancel_order_products`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `lines` | array | yes | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`) and `quantity` (at least 1, at most what is left to refund); no amount, the line's price is refunded |
+| `refund_shipping` | boolean | no | the **Shipping** checkbox: what is left of the order's shipping; false by default |
+| `credit_slip` | boolean | no | **Generate a credit slip**; true by default, as the box is ticked when the form opens |
+| `voucher` | boolean | no | **Generate a voucher**; false by default, as on screen |
+| `voucher_refund_type` | enum | no | only for an order partly paid with a voucher: `product_prices` (**Product(s) price:**) or `product_prices_excluding_voucher` (**Product(s) price, excluding amount of initial voucher:**, the default the page pre-selects); refused on an order without voucher |
+
+At least one of `credit_slip` and `voucher` must be true, as on screen.
+
+**Returns** - the answer of `somcp_issue_partial_refund`: `refunded`, `order`
+(`id_order` and `reference`), `lines` (per line: `id_order_detail`,
+`product_name`, `quantity`, `amount_tax_excluded`, `amount_tax_included`),
+`shipping_refunded_tax_included`, `total_refunded_tax_excluded`,
+`total_refunded_tax_included`, `currency`, `restocked`, `credit_slip`
+(`id_order_slip` and its totals, or `null`), `voucher` (`id_cart_rule`,
+`code`, `amount`, `tax_included`, or `null`), and `warning` when the refund was
+recorded but the slip or the voucher cannot be found afterwards.
+
+**Errors** - every problem at once, nothing recorded when one check fails,
+each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+line; no lines; the order not found or a reference shared by several orders; a
+line that is not one of this order's; a quantity below 1 or above what is
+left; `credit_slip` and `voucher` both false; `voucher_refund_type` on an order
+without voucher; merchandise returns off (naming **Customer Service >
+Merchandise Returns** and `somcp_issue_partial_refund`); an order neither paid
+nor with payments; an order already delivered (naming
+`somcp_return_order_products` and `somcp_issue_partial_refund`).
+The core's own refusals are put in the same shape.
+
+**Notes** - the button is shown only when merchandise returns are on
+(`PS_ORDER_RETURN`), the order is not delivered, and it has been paid or has
+payments; otherwise the same place shows **Return products** (delivered) or
+**Cancel products** (not paid). The form is `cancel_product`: per line a
+checkbox and **Quantity**, the **Shipping** checkbox, **Generate a credit
+slip** (ticked), **Generate a voucher** and the voucher choice.
+
+The core's `IssueStandardRefundHandler` does the work, built with `new` with
+the same services as the partial refund, whose constructors are the same on
+8.0.1 and 9.0.0: stock put back for every refunded quantity,
+`actionProductCancel` per line with the standard refund action, the carrier
+weight, the credit slip, the refund data of the lines, and the voucher. The
+handler does not check that a line belongs to the order: the tool does. The
+shipping refunded is the order's whole shipping tax included, which the core
+caps to what earlier slips left. The checks, the refusals and the answer are
+shared with `somcp_issue_partial_refund`.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler or the form.
+The new slip is found as the highest `id_order_slip` of the order after the
+call, and the voucher as the highest cart rule of the customer.
+
+Not replayable: a refund issued twice is money paid back twice. A lost answer
+is checked with `somcp_get_order` (`products[].quantity_refunded`,
+`documents.credit_slips`).
+
+#### `somcp_return_order_products`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - records products sent back by the customer on one delivered order
+and refunds them - whole quantities of some lines, the shipping if asked - as
+the **Return products** button of the order page does, with a credit slip, a
+voucher or both. The quantities count as returned, and go back in stock only
+when asked.
+
+**Do not use for** - an order not delivered yet
+(→ `somcp_issue_standard_refund`), a chosen amount rather than whole lines
+(→ `somcp_issue_partial_refund`), removing products from an unpaid order
+(→ `somcp_cancel_order_products`), the return requests customers send from
+their account (**Customer Service > Merchandise Returns**, another page, no
+tool yet).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `lines` | array | yes | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`) and `quantity` (at least 1, at most what is left to refund); no amount, the line's price is refunded |
+| `restock` | boolean | yes | **Re-stock products**: no default, although the box opens unticked, because the merchant must be asked whether the returned goods can be sold again |
+| `refund_shipping` | boolean | no | the **Shipping** checkbox: what is left of the order's shipping; false by default |
+| `credit_slip` | boolean | no | **Generate a credit slip**; true by default, as the box is ticked when the form opens |
+| `voucher` | boolean | no | **Generate a voucher**; false by default, as on screen |
+| `voucher_refund_type` | enum | no | only for an order partly paid with a voucher: `product_prices` (**Product(s) price:**) or `product_prices_excluding_voucher` (**Product(s) price, excluding amount of initial voucher:**, the default the page pre-selects); refused on an order without voucher |
+
+At least one of `credit_slip` and `voucher` must be true, as on screen.
+
+**Returns** - the answer of `somcp_issue_partial_refund`: `refunded`, `order`
+(`id_order` and `reference`), `lines` (per line: `id_order_detail`,
+`product_name`, `quantity`, `amount_tax_excluded`, `amount_tax_included`),
+`shipping_refunded_tax_included`, `total_refunded_tax_excluded`,
+`total_refunded_tax_included`, `currency`, `restocked` (what `restock` said),
+`credit_slip` (`id_order_slip` and its totals, or `null`), `voucher`
+(`id_cart_rule`, `code`, `amount`, `tax_included`, or `null`), and `warning`
+when the refund was recorded but the slip or the voucher cannot be found
+afterwards.
+
+**Errors** - every problem at once, nothing recorded when one check fails,
+each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+line; no lines; `restock` missing; the order not found or a reference shared
+by several orders; a line that is not one of this order's; a quantity below 1
+or above what is left; `credit_slip` and `voucher` both false;
+`voucher_refund_type` on an order without voucher; merchandise returns off
+(naming **Customer Service > Merchandise Returns** and
+`somcp_issue_partial_refund`); an order not delivered yet (naming
+`somcp_issue_standard_refund`). The core's own refusals are put in the same
+shape.
+
+**Notes** - the button is shown only when merchandise returns are on
+(`PS_ORDER_RETURN`) and the order is delivered; otherwise the same place shows
+**Standard refund** (paid, not delivered) or **Cancel products** (not paid).
+The form is `cancel_product`: per line a checkbox and **Quantity**, then
+**Re-stock products**, the **Shipping** checkbox, **Generate a credit slip**
+(ticked), **Generate a voucher** and the voucher choice.
+
+The core's `IssueReturnProductHandler` does the work, built with `new` with
+the same services as the other refunds, whose constructors are the same on
+8.0.1 and 9.0.0: stock put back only when `restock`, `actionProductCancel` per
+line with the return action, the carrier weight, the credit slip, the refund
+data of the lines counted as returned (`product_quantity_return`), and the
+voucher. The handler does not check that a line belongs to the order: the tool
+does. The lines are read and checked as by `somcp_issue_standard_refund`; the
+refusals and the answer are shared with `somcp_issue_partial_refund`.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler or the form.
+The new slip is found as the highest `id_order_slip` of the order after the
+call, and the voucher as the highest cart rule of the customer.
+
+Not replayable: a refund issued twice is money paid back twice. A lost answer
+is checked with `somcp_get_order` (`products[].quantity_refunded`,
+`documents.credit_slips`).
+
+#### `somcp_cancel_order_products`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - removes quantities of some lines from one order that is not paid
+yet, as the **Cancel products** button of the order page does: the order
+totals and the stock follow. When no line is left, the order goes to
+**Canceled** and the customer is emailed.
+
+**Do not use for** - a paid order not delivered
+(→ `somcp_issue_standard_refund`, or `somcp_issue_partial_refund` for a chosen
+amount), a delivered order (→ `somcp_return_order_products`), cancelling the
+whole order with its status (→ `somcp_set_order_status`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `lines` | array | yes | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`) and `quantity` (at least 1, at most what is left on the line) |
+
+**Returns** - `cancelled`, `order` (`id_order` and `reference`), `lines` (per
+line: `id_order_detail`, `product_name`, `quantity_cancelled`,
+`quantity_left`), the order totals after the change (`total_tax_excluded`,
+`total_tax_included`, `currency`), `order_cancelled` (true when no line was
+left and the status changed), `status` after the call (`id`, `name`), and
+`warning` when the order was cancelled but the customer email failed.
+
+**Errors** - every problem at once, nothing recorded when one check fails,
+each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+line; no lines; the order not found or a reference shared by several orders; a
+line that is not one of this order's (naming `somcp_get_order`); a quantity
+below 1 or above what is left (giving that quantity); merchandise returns off
+(naming **Customer Service > Merchandise Returns** and
+`somcp_set_order_status`); an order delivered (naming
+`somcp_return_order_products`); an order paid or with payments (naming
+`somcp_issue_standard_refund` and `somcp_issue_partial_refund`). The core's own
+refusals are put in the same shape.
+
+**Notes** - the button is shown only when merchandise returns are on
+(`PS_ORDER_RETURN`) and the order is neither delivered nor paid nor with
+payments; otherwise the same place shows **Standard refund** or **Return
+products**. The form is `cancel_product`: per line a checkbox and
+**Quantity**, nothing else - no credit slip, no voucher, since nothing was
+paid.
+
+The core's `CancelOrderProductHandler` does the work, built with `new` with
+`OrderProductQuantityUpdater` (itself built from `OrderAmountUpdater`,
+`OrderDetailUpdater`, `OrderProductRemover` and `ContextStateManager`), whose
+constructors are the same on 8.0.1 and 9.0.0: per line the new quantity, the
+recomputed totals and stock, `actionProductCancel` with the cancel action, and
+when no line is left the status **Canceled** with its email, the token's
+employee on the history row. The handler neither checks that a line belongs to
+the order nor looks at merchandise returns: the tool does both. The lines are
+read and checked as by `somcp_issue_standard_refund`.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler or the form.
+
+Not replayable: a lost answer is checked with `somcp_get_order`
+(`products[].quantity`, `order.status`).
+
+#### `somcp_add_order_product`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - adds one product, or one combination of a product, to one order
+that has not been shipped, as **Add a product** in the **Products** block of
+the order page does, and recomputes the order totals.
+
+**Do not use for** - changing the quantity or price of a line already in the
+order (→ `somcp_update_order_product`), removing one
+(→ `somcp_delete_order_product`), creating an order (→ `somcp_create_order`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_order` | - | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | - | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_product` | **Search for a product** | integer | yes | from `somcp_search_products` |
+| `id_product_attribute` | combination select | integer | when the product has combinations | from `combinations[].id_product_attribute` of `somcp_get_product`; refused when it is not of the product |
+| `quantity` | **Quantity** | integer | yes | from 1 |
+| `unit_price_tax_excluded` | **tax excl.** | number | no | left out with the other price, the product's price for the order's customer, currency and delivery address |
+| `unit_price_tax_included` | **tax incl.** | number | no | given alone, the price tax excluded is worked out with the line's tax rate; both given, they must agree with it to the currency's precision |
+| `id_order_invoice` | **Invoice** | integer | no | an invoice of the order, from `documents.invoices[].id_order_invoice` of `somcp_get_order`; left out on an invoiced order, a new invoice is made |
+| `free_shipping` | **Free shipping** | boolean | no | only with a new invoice |
+
+Prices are in the order's currency, as on the screen.
+
+**Returns** - `added`, `order` (`id_order`, `reference`), `line` (the new
+line exactly as `somcp_get_order` returns one of `products[]`), `invoice`
+(`id_order_invoice` when the line went to one, `null` otherwise), `totals`
+(exactly as `somcp_get_order` returns them) and `currency`.
+
+**Errors** - every problem at once, nothing recorded when one check fails,
+each as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the
+order not found or a reference shared by several orders; `id_product` unknown
+in the shop; `id_product_attribute` missing, unknown or not of the product;
+`quantity` below 1; prices not numbers, below 0, or not agreeing with the tax
+rate; `id_order_invoice` not an invoice of the order; `free_shipping` without
+a new invoice; a shipped order; a product already in the order or in the
+invoice (that line is changed instead); PrestaShop 9.2 or later, where the
+order page adds the product together with its shipments (after the other
+checks, pointing to **Add a product**). The core's refusals (not enough
+stock with orders denied out of stock, minimum quantity) are put in the same
+shape.
+
+**Notes** - the core's `AddProductToOrderHandler` does the work, built with
+`new` with `OrderAmountUpdater`, `OrderProductQuantityUpdater` and
+`OrderDetailUpdater` (from `ContextStateManager`, `OrderProductRemover` and the
+configuration), whose constructors are the same on 8.0.1 and 9.0.0: the cart,
+the invoice and its free shipping cart rule, the order line, the prices given,
+the totals and `actionOrderEdited`, the token's employee on the context. Their
+internals differ between the versions, which is why they are called and never
+copied.
+
+**Differences between 8.0.1 and 9.0.0** - none in the form or the handler
+sequence. PrestaShop 9.2 and later: refused, the handler there takes services
+for the shipments that only the back office builds.
+
+Not replayable: a second call adds the quantity again or is refused as a
+duplicate. A lost answer is checked with `somcp_get_order` (`products`).
+
+#### `somcp_update_order_product`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes the unit price, the quantity or the invoice of one product
+line of an order that has not been delivered, as the **Edit** action of a line
+in the **Products** block of the order page does, and recomputes the order
+totals. A field left out keeps its current value; the values are absolute, not
+a delta.
+
+**Do not use for** - adding a product (→ `somcp_add_order_product`), removing a
+line (→ `somcp_delete_order_product`), refunding or cancelling a quantity the
+customer will not receive (→ `somcp_issue_partial_refund`,
+`somcp_cancel_order_products`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_order` | - | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | - | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_detail` | the line | integer | yes | from `products[].id_order_detail` of `somcp_get_order`; must belong to the order |
+| `quantity` | **Quantity** | integer | no | from 1; left out, unchanged |
+| `unit_price_tax_excluded` | **tax excl.** | number | no | left out, unchanged |
+| `unit_price_tax_included` | **tax incl.** | number | no | given alone, the price tax excluded is worked out with the line's tax rate; both given, they must agree with it to the currency's precision |
+| `id_order_invoice` | **Invoice** | integer | no | moves the line to another invoice of the order, from `documents.invoices[].id_order_invoice` of `somcp_get_order`; left out, unchanged |
+
+At least one of `quantity`, a price and `id_order_invoice`; a call that changes
+nothing writes nothing and answers `changed: false` with a `reason`. Prices are
+in the order's currency, as on the screen.
+
+**Returns** - `changed`, `order` (`id_order`, `reference`), `changes` (per
+changed field its `old` and `new` value, under the parameter names), `line`
+(the edited line exactly as `somcp_get_order` returns one of `products[]`),
+`totals` (exactly as `somcp_get_order` returns them) and `currency`.
+
+**Errors** - every problem at once, nothing recorded when one check fails, each
+as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the order
+not found or a reference shared by several orders; `id_order_detail` missing or
+not a line of the order; `quantity` 0 (pointing to `somcp_delete_order_product`)
+or below; prices not numbers, below 0, or not agreeing with the tax rate;
+`id_order_invoice` not an invoice of the order; no field to change given;
+PrestaShop 9.2 or later, where the order page edits the line together with its
+shipments (after the other checks, pointing to the **Edit** action of the order
+page). Then the core's refusals, each in plain English: a delivered order, a
+product no longer in the catalogue, not enough stock with orders denied out of
+stock, the same product already in the target invoice.
+
+**Differences between 8.0.1 and 9.0.0** - none in the form or the handler
+sequence; the internals of `OrderProductQuantityUpdater` differ, which is why
+they are called and never copied. PrestaShop 9.2 and later: refused, the
+handler there takes services for the shipments that only the back office
+builds.
+
+Not replayable in general: the values are absolute, so the same call again
+changes nothing. A lost answer is checked with `somcp_get_order` (`products`)
+before anything else.
+
+#### `somcp_delete_order_product`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - removes one product line from one order that has not been
+delivered, as the **Delete** action of a line in the **Products** block of the
+order page does, and recomputes the order totals. It is neither a cancellation
+nor a refund: the line goes, with no credit slip and no voucher.
+
+**Do not use for** - cancelling a quantity the customer paid for
+(→ `somcp_cancel_order_products`), refunding (→ `somcp_issue_partial_refund`,
+`somcp_issue_standard_refund`), changing a quantity
+(→ `somcp_update_order_product`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_order` | - | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | - | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_detail` | the line, **Delete** | integer | yes | from `products[].id_order_detail` of `somcp_get_order`; must belong to the order |
+
+**Returns** - `deleted`, `order` (`id_order`, `reference`), `line` (the line as
+it was before the removal, exactly as `somcp_get_order` returns one of
+`products[]`), `totals` (after the change, exactly as `somcp_get_order` returns
+them) and `currency`.
+
+**Errors** - every problem at once, nothing recorded when one check fails, each
+as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the order
+not found or a reference shared by several orders; `id_order_detail` missing or
+not a line of the order (`id_order_detail: no line of this order has the
+identifier <n> - find it with somcp_get_order`). Then, each with its reason: the
+last line of the order (the back office lets it go and leaves an order with no
+product; pointing to `somcp_set_order_status` to cancel it), a delivered order,
+PrestaShop 9.2 or later (after the other checks, pointing to the **Delete**
+action of the order page, as the other order line tools do).
+
+**Notes** - the core's `DeleteProductFromOrderHandler` does the work, built
+with `new` with `ContextStateManager` and `OrderProductQuantityUpdater`, from
+the same builder as the other order line tools
+(`SomcpToolUpdateOrderProduct::services()`): the context set to the order, the
+quantity brought to 0 on the line's invoice, the amounts and
+`actionOrderEdited`, the token's employee on the context.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler; the internals
+of `OrderProductQuantityUpdater` differ, which is why they are called and never
+copied. PrestaShop 9.2 and later: refused, like the other order line tools.
+
+Not replayable: a second call on the same line finds nothing and says so. A
+lost answer is checked with `somcp_get_order` (`products`).
+
+#### `somcp_add_order_discount`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - adds one discount to one order - a percentage, an amount tax
+included or free shipping - as **Add a discount** on the order page does, and
+recomputes the order totals. It lowers what the customer owes.
+
+**Do not use for** - a voucher a customer types at checkout
+(→ `somcp_create_cart_rule`), removing a discount
+(→ `somcp_delete_order_discount`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `name` | string | yes | the discount name the customer reads on the invoice; one plain text, stored in the shop's default language, not an object per ISO code; at most the length `CartRule` allows (254 on 8.0.1, the setting on 9.0.0) |
+| `type` | string | yes | `percent`, `amount_tax_included` (the amount includes taxes, as the screen says) or `free_shipping` |
+| `value` | number | for `percent` and `amount_tax_included` | the percentage (1 to 100) or the amount tax included; refused for `free_shipping` |
+| `id_order_invoice` | integer | no | **Invoice**, only when the order has invoices; from `documents.invoices[].id_order_invoice` of `somcp_get_order`; must be one of this order's |
+
+**Returns** - `added`, `order` (`id_order` and `reference`), `discount`
+(`id_order_cart_rule`, `id_cart_rule`, `id_order_invoice`, `name`,
+`value_tax_excluded`, `value_tax_included`, `free_shipping`), and the order
+totals after the change (`discounts_tax_included`, `total_tax_excluded`,
+`total_tax_included`, `currency`). `discount` carries the keys of `discounts[]`
+of `somcp_get_order` plus `id_cart_rule`, so the same discount reads the same
+in both answers, and its `id_order_cart_rule` is what
+`somcp_delete_order_discount` takes.
+
+**Errors** - every problem at once, nothing recorded when one check fails, each
+under "Nothing was recorded.": `name` missing, empty, too long or not clean;
+`type` not one of the three; `value` missing for `percent` /
+`amount_tax_included`, given for `free_shipping`, at or below 0, above 100 for a
+percent, or above the total for an amount (giving that total); the order not
+found or a reference shared by several orders; `id_order_invoice` given on an
+order without invoices, or not an invoice of this order (naming
+`somcp_get_order`). The core's own refusals (invalid percent or amount) are put
+in the same shape.
+
+**Notes** - the discount is one line of **Add new cart rule**
+(`add_order_cart_rule`): **Name**, **Type** (Percent, Amount, Free shipping),
+**Value**, and **Invoice** when the order has invoices. The core's
+`AddCartRuleToOrderHandler` does the work, built with `new` with
+`OrderAmountUpdater` (itself from `Configuration`, `ContextStateManager`,
+`OrderDetailUpdater` and `OrderProductRemover`), whose constructors are the
+same on 8.0.1 and 9.0.0: a one-time inactive `CartRule` in the order's
+currency, added to the order's cart, then the order, its lines and its invoice
+recomputed on the order's context. The handler owns the amount ceiling against
+the invoices, so the tool does not keep a second copy of it.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler or the form.
+
+Not replayable: two identical discounts are both applied. A lost answer is
+checked with `somcp_get_order` (`discounts`).
+
+#### `somcp_delete_order_discount`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - removes one discount from one order, as the delete action of the
+discounts table (**Name**, **Value**, **Actions**) of the order page does, and
+recomputes the order totals. It raises what the customer owes.
+
+**Do not use for** - switching off a voucher for every customer
+(→ `somcp_set_cart_rule_active`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_cart_rule` | integer | yes | from `discounts[].id_order_cart_rule` of `somcp_get_order`, or from the answer of `somcp_add_order_discount`; never guessed |
+
+**Returns** - `deleted`, `order` (`id_order` and `reference`), `discount`
+with the keys of `discounts[]` of `somcp_get_order` (`id_order_cart_rule`,
+`id_order_invoice`, `name`, `value_tax_included`, `value_tax_excluded`,
+`free_shipping`), `gift_line_updated` (the discount gave a gift product and
+its line lost one unit), and the order totals after the change
+(`discounts_tax_included`, `total_tax_excluded`, `total_tax_included`,
+`currency`), as `somcp_add_order_discount` returns them. A discount already
+removed is `deleted: false` with a `reason`, and nothing happens.
+
+**Errors** - every problem at once, nothing deleted when one check fails, each
+under "Nothing was deleted.": a field the tool does not take; the order not
+found or a reference shared by several orders; `id_order_cart_rule` missing or
+not a whole number; `id_order_cart_rule: no discount of this order has the
+identifier <n> - find it with somcp_get_order` when the row does not exist or
+belongs to another order. The core's exceptions are put in the same shape.
+
+**Notes** - the route (`admin_orders_remove_cart_rule`) asks for update on
+`AdminOrders`, not delete: the discount is part of the order being edited. The
+core's `DeleteCartRuleFromOrderHandler` does the work, built with `new` with
+`OrderAmountUpdater` and `OrderProductQuantityUpdater`, whose constructors are
+the same on 8.0.1 and 9.0.0: on the order's context, the `order_cart_rule` row
+is soft-deleted, the rule leaves the cart, and either the gift line loses one
+unit (which recomputes the order) or the amounts are recomputed.
+
+**Differences between 8.0.1 and 9.0.0** - none.
+
+Not replayable: a lost answer is checked with `somcp_get_order` (`discounts`):
+`Order::getCartRules()` skips removed discounts, so one missing from
+`discounts[]` was removed.
+
+#### `somcp_set_order_address`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - points the delivery or the invoice address of one order to another
+address of its customer, as **Select another address** of the **Shipping
+address** and **Invoice address** blocks of the order page does, and lets the
+core recompute the taxes and the totals. The country can change the tax, so the
+new total is reported.
+
+**Do not use for** - correcting the content of an address (→ the address and
+customer tools), or changing the carrier of the order.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `address_type` | enum | yes | `delivery` (**Shipping address**) or `invoice` (**Invoice address**), the two keys of `addresses` in `somcp_get_order` |
+| `id_address` | integer | yes | an address of the order's customer, from `addresses[].id_address` of `somcp_get_customer`, or the list a refused call returns; never guessed |
+
+**Returns** - `changed`, `order` (`id_order` and `reference`), `address_type`,
+`previous_address` and `address`, each in the shape of `addresses.delivery` of
+`somcp_get_order` built by the same function (`id_address`, `alias`,
+`firstname`, `lastname`, `company`, `address1`, `address2`, `postcode`, `city`,
+`state`, `country`, ...), and the order totals after the change
+(`total_tax_excluded`, `total_tax_included`, `currency`), as `totals` of
+`somcp_get_order` names them. The same address as now is `changed: false` with
+a `reason`, and nothing happens.
+
+**Errors** - every problem at once, nothing changed when one check fails, each
+under "Nothing was changed.": a field the tool does not take; the order not
+found or a reference shared by several orders; `address_type: one of delivery,
+invoice`; `id_address` missing or not a whole number; `id_address: no address
+of this customer has the identifier <n> - find it with somcp_get_customer` for
+an unknown, deleted or other customer's address, followed in the same answer by
+the list of the customer's addresses (`id_address`, `alias`, `address1`,
+`postcode`, `city`, `country`). The core's exceptions are put in the same shape.
+
+**Notes** - the delivery address is moved by the core's
+`ChangeOrderDeliveryAddressHandler` (it also keeps the carrier's delivery
+option and synchronises the gift lines), the invoice address by the lighter
+`ChangeOrderInvoiceAddressHandler`; both are built with `new`, whose
+constructors are the same on 8.0.1 and 9.0.0, and run on the order's context.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handlers; only the
+wording of the options on screen (9.0.0 adds the alias).
+
+Not replayable: a lost answer is checked with `somcp_get_order`
+(`addresses.delivery.id_address`, `addresses.invoice.id_address`).
+
+#### `somcp_set_order_carrier`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes the carrier of one shipment of one order, as the **Carrier**
+field of the **Edit shipping details** window (Carriers tab of the order page)
+does, and lets the core recompute the shipping cost and the order totals.
+
+**Do not use for** - the tracking number (→ `somcp_set_order_tracking`), or the
+address (→ `somcp_set_order_address`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_carrier` | integer | yes | one of the carriers the order may use, from `somcp_list_carriers` or the list a refused call returns; never guessed |
+| `id_order_carrier` | integer | no | which shipment, `shipping.shipments[].id_order_carrier` of `somcp_get_order`; required only when the order has more than one |
+
+**Returns** - `changed`, `order` (`id_order` and `reference`),
+`previous_carrier` and `carrier` (`id_carrier`, `name`, as
+`somcp_list_carriers` names them), `previous_shipment` and `shipment`, each in
+the shape of one entry of `shipping.shipments` of `somcp_get_order` built by
+the same function, then the order totals after the change
+(`shipping_tax_excluded`, `shipping_tax_included`, `total_tax_excluded`,
+`total_tax_included`) as `totals` of `somcp_get_order` names them, and
+`currency`. The carrier already in place is `changed: false` with a `reason`,
+`carrier` and `shipment`, and nothing happens.
+
+**Errors** - every problem at once, nothing changed when one check fails, each
+under "Nothing was changed.": a field the tool does not take; the order not
+found or a reference shared by several orders; `id_carrier` missing or not a
+whole number; `id_order_carrier: required, this order has <n> shipments` or
+`id_order_carrier: not a shipment of this order`, followed by the shipments
+(`id_order_carrier`, `date`, `carrier`, `weight`, `tracking_number`);
+`id_carrier: not a carrier this order can use - find one with
+somcp_list_carriers`, followed by the carriers the order may use
+(`id_carrier`, `name`, `delay`). A failure inside the core is reported without
+its raw message, with the advice to read the order before trying again.
+
+**Notes** - the core's `UpdateOrderShippingDetailsHandler` also saves the
+tracking number of the form and may email the customer; the tool runs only its
+carrier part, in the same steps (the cart's delivery option, the
+`OrderCarrier`, the `Order`, then `OrderAmountUpdater::update()`) on the
+order's language, and sends no email. The handler accepts any carrier; the
+choices on screen come from `Carrier::getCarriersForOrder()` for the delivery
+zone and the customer's groups, and the tool refuses any other.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler; the option label
+on screen adds the delay on 8.0.1 only.
+
+Not replayable: a lost answer is checked with `somcp_get_order`
+(`shipping.shipments[].id_carrier`).
+
+#### `somcp_set_order_currency`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes the currency of one order that is not validated yet,
+converting every amount, as **Change currency** in the **Payment** block of the
+order page does.
+
+**Do not use for** - a validated order, which the back office refuses too; the
+exchange rates of the shop (**International > Localization > Currencies**, no
+tool yet).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_order` | - | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | **Reference** | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `currency` | **Change currency** | string | yes | ISO code of an active currency of the shop, as `somcp_get_order` returns `currency`; refused otherwise, with the shop's active currencies |
+
+**Returns** - `changed`, `order` (`id_order`, `reference`), `old_currency` and
+`new_currency` (ISO codes), and `totals_before` / `totals_after`, each exactly
+as `somcp_get_order` returns `totals` (built by the same function).
+
+**Errors** - every problem at once, nothing changed when one check fails, each
+under "Nothing was changed.": a field the tool does not take; the order not
+found or a reference shared by several orders (the text of
+`SomcpToolGetOrder::find()`); `currency` missing, unknown or inactive, followed
+by the shop's active currencies; a validated order, with the core's sentence
+"You cannot change the currency." and the reason (its amounts are final). A
+failure inside the conversion is reported without its raw message, with the
+advice to read the order.
+
+**Notes** - the tool runs the sequence of `ChangeOrderCurrencyHandler` (the
+order lines, the order carrier, each invoice, the cart, then the order with its
+`conversion_rate`), every amount converted with `Tools::convertPriceFull()` at
+the shop's rates of today. The core lists `reduction_amount` twice and so
+converts it twice; the tool converts it once. No hook is fired, as in the core.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler nor in the form;
+only the template line moves (`payments.html.twig` 128 / 131). The block shows
+only when the order is not validated and the shop has another currency.
+
+Replayable: the currency the order already has writes nothing and answers
+`changed: false`, where the core refuses it. A lost answer is checked with
+`somcp_get_order` (`currency`).
+
+#### `somcp_resend_order_status_email`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - sends again the email of one past status of an order, as **Resend
+email** on a line of the **Status** tab of the order page does. The status line
+is taken from `history` of `somcp_get_order`; the status is read from the line
+and the email is the one that status sends.
+
+**Do not use for** - changing the status (→ `somcp_set_order_status`), or
+writing to the customer (→ `somcp_add_order_message`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_history` | integer | yes | which status line to resend, `history[].id_order_history` of `somcp_get_order`; never guessed |
+
+**Returns** - `sent`, `order` (`id_order` and `reference`), `history_line` in
+the shape of one entry of `history` of `somcp_get_order` (`id_order_history`,
+`date`, `status`, `status_id`, `employee`), and `template` (the status's email
+template). A send that fails is `sent: false` with a `warning` and nothing
+changed.
+
+**Errors** - every problem at once, nothing sent when one check fails, each
+under "Nothing was sent.": a field the tool does not take; the order not found
+or a reference shared by several orders; `id_order_history` missing or not a
+whole number; `id_order_history: not a status line of this order - find it in
+history of somcp_get_order`; `id_order_history: the status <name> sends no
+email` when the status's `send_email` is 0.
+
+**Notes** - the core path (`ResendOrderEmailCommand` then
+`ResendOrderEmailHandler`) does not check that the history line belongs to the
+order nor that its status matches; the tool takes the line only, checks it
+belongs to the order and reads the status from it. When the status is
+`PS_OS_SHIPPING` and the order carries a shipping number, `{followup}` is the
+carrier URL with the number in place of the `@`, as the back office adds it.
+
+**Differences between 8.0.1 and 9.0.0** - none.
+
+Not replayable: every call emails the customer and the order records nothing;
+the description tells the assistant to call it once.
 
 #### `somcp_list_return_statuses`
 **State**: written
@@ -826,7 +1600,84 @@ slips. They follow from an order without being the order.
 **Not here**: the amounts of an order, which belong to the order itself
 (→ Orders).
 
-_No tool described yet._
+#### `somcp_generate_order_invoice`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - generates the invoice of one order that has none yet, as the
+**Generate invoice** button of the **Documents** tab of the order page does:
+the invoice takes the shop's next number and prefix, and the payments without
+invoice are tied to it. Nothing is emailed.
+
+**Do not use for** - reading invoices (→ `somcp_get_order`, `documents.invoices`),
+or sending one to the customer (→ `somcp_set_order_status` with a status that
+attaches the invoice).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+
+**Returns** - `generated`, `order` (`id_order` and `reference`), `invoice`
+(`id_order_invoice`, `number` formatted with the prefix for the order's shop as
+`payments[].invoice_number` of `somcp_get_order`, `date`, `total_tax_excluded`,
+`total_tax_included`, `currency`). When the order already has an invoice:
+`generated: false` with a `reason` and the existing invoice, and nothing
+happens.
+
+**Errors** - every problem at once, nothing generated when one check fails,
+each as `<path>: <problem>` under "Nothing was generated.": unknown fields;
+neither `id_order` nor `reference`, the order not found, or a reference shared
+by several orders; invoices off (naming **Orders > Invoices**, **Invoice
+options > Enable invoices**). An exception of the core is put in the same
+shape, never sent raw.
+
+**Notes**
+- The core path is the same on 8.0.1 and 9.0.0: `GenerateInvoiceHandler` refuses when invoices are off for the order's shop (`PS_INVOICE`) or the order already has one (`Order::hasInvoice()`), then calls `Order::setInvoice(true)`. The tool makes the same two checks, as readable refusals, then the same call.
+- The button only shows on an order with no document at all (no invoice, no delivery slip, no credit slip) and invoices on (`documents.html.twig`); the handler only refuses an order that already has an invoice. The tool follows the handler, so it can generate the invoice of an order that has a credit slip but no invoice, which the button does not offer.
+- Not replayable, even with the guard: a lost answer is checked with `somcp_get_order` (`documents.invoices`).
+- No difference between 8.0.1 and 9.0.0.
+
+#### `somcp_set_invoice_note`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - sets the note printed on one invoice of an order, as **Add note** /
+**Edit note** on an invoice line of the **Documents** tab of the order page
+does. The note is on the invoice PDF the customer receives. An empty note
+clears it.
+
+**Do not use for** - the order's private note the shop alone reads
+(→ `somcp_set_order_note`), a message to the customer (→ `somcp_add_order_message`),
+or generating the invoice (→ `somcp_generate_order_invoice`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_invoice` | integer | yes | the invoice, from `documents.invoices[].id_order_invoice` of `somcp_get_order` |
+| `note` | string | yes | the whole note, trimmed; `""` clears it; no HTML; the length limit is read from the model, when the version has one |
+
+**Returns** - `changed`, `order` (`id_order`, `reference`), `invoice`
+(`id_order_invoice`, `number` as `documents.invoices[].number` of
+`somcp_get_order`), `old` and `new` note. The same note again writes nothing
+and answers `changed: false`.
+
+**Errors** - every problem at once, nothing changed when one check fails, each
+as `<path>: <problem>` under "Nothing was generated.": unknown fields; neither
+`id_order` nor `reference`, or the order not found; `id_order_invoice` missing
+or not an invoice of this order; `note` missing, holding HTML (`isCleanHtml`),
+or longer than the limit.
+
+**Notes**
+- The core path is the same on 8.0.1 and 9.0.0 (`UpdateInvoiceNoteHandler`: load the `OrderInvoice`, set `note`, `save()`). The core guard (`!isLoadedObject() && isCleanHtml()`) lets an unknown invoice with a dirty note through, so the tool checks instead that the invoice exists and belongs to the order, and that the note passes `Validate::isCleanHtml()`.
+- The length limit is read from `OrderInvoice::$definition['fields']['note']['size']`: present on 9.0.0 (`LIMIT_MEDIUMTEXT_UTF8_MB4`, 4194303), absent on 8.0.1, where no limit is checked. The constant is never named in the code.
+- `somcp_get_order` returns the note of each invoice under `documents.invoices[].note`, so the change can be read back.
+- Not replayable: a lost answer is checked with `somcp_get_order` (`documents.invoices[].note`).
 
 ### Carts
 
@@ -851,7 +1702,7 @@ action wrong.
 **Nature**: `acts(VIEW, 'AdminStatuses')` · **Scope**: `mcp.orders.read`
 
 **Does** - lists the order statuses of this shop with their identifiers, the role
-each one plays in the shop, and what each one sets off: paid, shipped, delivery,
+each one plays in the shop, and what each one sets off: paid, shipped, in transit,
 invoice, whether it emails the customer and what that email carries.
 
 **Do not use for** - reading orders, or counting them by status (→
@@ -863,10 +1714,14 @@ invoice, whether it emails the customer and what that email carries.
 |---|---|---|---|
 | `language` | string | no | ISO code, shop default otherwise |
 
-**Returns** - per status: `id`, `name`, `roles`, `paid`, `shipped`, `delivery`,
-`sends_email`, `invoice`, `counts_as_valid`, `hidden_from_customer`,
+**Returns** - per status: `status_id`, `name`, `roles`, `paid`, `shipped`,
+`in_transit`, `sends_email`, `invoice`, `counts_as_valid`, `hidden_from_customer`,
 `attaches_invoice_pdf`, `attaches_delivery_slip_pdf`, `built_in`,
-`email_template`, `payment_module`, `color`. Plus `count` and `language_id`.
+`email_template`, `payment_module`, `color`, `icon`. Plus `count` and `language`
+(the ISO code used). `in_transit` is the box 9.0.0 labels **Set the order as in
+transit** and 8.0.1 **Show delivery PDF**; it is not the `delivered` role.
+`icon` is the public URL of the status icon (`img/os/<status_id>.gif`), `null`
+when there is none, never the bytes. An unknown `language` is refused (#149).
 
 **Notes** - in Configuration, not in Orders: an order uses a status without
 containing one. Every field is a real column of `order_state`, checked against
@@ -878,7 +1733,8 @@ that is the only reliable way to find one: the name is translated and the
 merchant can rename it. Without it, an assistant asked to mark an order shipped
 guesses from a label. A list rather than one value, because
 `PS_OS_OUTOFSTOCK` and `PS_OS_OUTOFSTOCK_UNPAID` land on the same status in a
-default install. Empty for a status the merchant created.
+default install. Empty for a status the merchant or a module created (a
+`ps_checkout` status has no `PS_OS_*` key; `payment_module` says which module).
 
 No count of orders per status here, on purpose. It would hand order data to an
 account holding only the right to see the statuses page, and the count already
@@ -1370,7 +2226,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - per category: `id_category`, `name`. Plus `count`.
 
@@ -1393,7 +2249,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_category` | integer | yes | from `somcp_list_categories` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_category`, `name`, `active` (Displayed), `id_parent` and `parent_name`, `level`, `position`, `description`, `additional_description`, `groups` (id and name of each customer group with access), `link_rewrite`, `url`, `meta_title`, `meta_description`, `meta_keywords`, `cover_image` (URL), `menu_thumbnails` (URLs), `products_count`, `children_count`, and on PrestaShop 9 `redirect_type` with `id_type_redirected`.
 
@@ -1427,10 +2283,10 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
 | `redirect_type` | assistant | PrestaShop 9 only, refused on 8 with a clear message: what the page does while not displayed, a value of the core's `RedirectType` (`301`, `302`, `404`, `410`); the shop default when left out |
 | `id_type_redirected` | merchant, from the shop | PrestaShop 9 only: the category a `301` or `302` goes to, from `somcp_list_categories`; 0 or left out for the closest parent, as the storefront does; refused next to a `404` or `410` |
-| `cover_image` | merchant | a public `https` URL, downloaded with the guards of `somcp_create_product` |
-| `menu_thumbnails` | merchant | PrestaShop 8 only, refused on 9, which removed them from the form: up to 3 public `https` URLs, same guards |
+| `cover_image` | merchant | an object with `url` or `upload_ref` (one of the two, never both), downloaded or redeemed with the guards of `somcp_create_product`'s images |
+| `menu_thumbnails` | merchant | PrestaShop 8 only, refused on 9, which removed them from the form: up to 3 images, each an object with `url` or `upload_ref`, same guards |
 
-**Returns** - `created`, `id_category`, `seo_warnings` (no meta title or description in a language, a `link_rewrite` already used by another category), `images` (per URL: `for` - `cover_image` or `menu_thumbnails` - and `stored: true` or the reason it was `refused`), and `category`, with the fields `somcp_get_category` returns (`menu_thumbnails` is `null` on PrestaShop 9, like `meta_keywords`).
+**Returns** - `created`, `id_category`, `seo_warnings` (no meta title or description in a language, a `link_rewrite` already used by another category), `images` (per image, named by `url` or `upload_ref`: `for` - `cover_image` or `menu_thumbnails` - and `stored: true` or the reason it was `refused`), and `category`, with the fields `somcp_get_category` returns (`menu_thumbnails` is `null` on PrestaShop 9, like `meta_keywords`).
 
 **Notes**
 - Written through `Category::add()` in the shop of the token (`id_shop_list`), so `actionCategoryAdd` fires, the tree is rebuilt and the position and group access are set as in the back office. If the add fails after the row went in, the category is deleted again.
@@ -1519,7 +2375,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_manufacturer` | integer | yes | from `somcp_list_manufacturers` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_manufacturer`, `name`, `short_description`, `description`, `meta_title`, `meta_description`, `meta_keywords`, `logo` (URL), `active`, `products_count`.
 
@@ -1766,7 +2622,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_supplier` | integer | yes | from `somcp_list_suppliers` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_supplier`, `name`, `description`, `phone`, `phone_mobile`, `address1`, `address2`, `postcode`, `city`, `country` (ISO code), `state` (ISO code, when the country has states), `dni` (national ID number), `meta_title`, `meta_description`, `meta_keywords`, `logo` (URL), `active`, `products_count`.
 
@@ -1876,7 +2732,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | no | one group only |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `attribute_groups`, per group: `id_attribute_group`, `name`, `group_type` (`select`, `radio` or `color`), `position` (0 for the first, the **Position** column), `values_count` (the **Values** column), and its `values`: `id_attribute`, `name`, `position`, `color` (`#RRGGBB`, `null` outside a group of type `color`). The fields keep the names of `somcp_get_attribute_group` and `somcp_get_attribute_value`. Plus `count`, the number of groups. An `id_attribute_group` that is not a group of this shop is an error, not an empty list.
 
@@ -1898,7 +2754,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | yes | from `somcp_list_attributes` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A group that is not one of this shop is an error.
 
@@ -1971,7 +2827,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute` | integer | yes | from `somcp_list_attributes` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (URL of the current texture, `null` when there is none), and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. A value that is not one of this shop is an error.
 
@@ -2048,7 +2904,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | no | one feature only |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `features`, per feature: `id_feature`, `name`, `position` (0 for the first, as `somcp_get_feature` returns it), `values_count` (the **Values** column: its predefined values), and its `values`: `id_feature_value`, `value`, and on PrestaShop 9 `position`. Plus `count`, the number of features. An `id_feature` that is not a feature of this shop is an error, not an empty list.
 
@@ -2070,7 +2926,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | yes | from `somcp_list_features` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_feature`, `name`, `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
 
@@ -2141,7 +2997,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). A value that is not one of this shop is an error.
 
@@ -2249,7 +3105,7 @@ The quantities the storefront sells against, per product and combination.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_product` | integer | yes |  |
-| `language` | string | no | ISO code for the product and attribute names, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_product`, `name`, `reference`, `id_supplier`, `supplier`, `active`, the product line - `quantity` (total), `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `low_stock_alert`, `reserved_by` - and per combination: `id_product_attribute`, `attributes`, `reference`, `quantity`, `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `low_stock_alert`, `reserved_by`. Each `reserved_by` entry is `id_order`, `reference` and `quantity`.
 
@@ -2378,7 +3234,7 @@ A customer of another shop, or deleted with their data kept (`deleted = 1`), ans
 - `customer`: `id_customer`, `firstname`, `lastname`, `email`, `id_gender`, `social_title`, `birthday` (`YYYY-MM-DD`, `null` when none), `age` (`null` when no birthday), `date_add`, `last_visit` (`null` when never), `customer_language` (ISO code of the language the customer uses), `newsletter`, `newsletter_date_add`, `partner_offers`, `date_upd`, `active`, `is_guest`, `private_note` (as `somcp_get_order` names it), and the B2B fields, always given and empty when unset: `company`, `siret`, `ape`, `website`, `allowed_outstanding_amount` with `currency` (the default currency), `max_payment_days`, `id_risk`, `risk`.
 - `groups`: each `id_group`, `name`, `default`.
 - `addresses`: each `id_address`, `alias`, `company`, `firstname`, `lastname`, `address1`, `address2`, `postcode`, `city`, `state`, `country`, `country_iso`, `phone`, `phone_mobile`, `vat_number`, `dni`, `other` (the names of the addresses of `somcp_get_order`).
-- `orders`: `count`, `valid_count`, `valid_total_tax_incl` with `currency` (**for a total amount of**, `SUM(total_paid_tax_incl / conversion_rate)` of the valid orders, in the default currency), `invalid_count`, `sales_rank` (`null` with no valid order), and `latest`, the 10 newest: `id_order`, `reference`, `date_add`, `payment`, `status` (`id_order_state`, `name`), `products_count` (units ordered), `total_paid_tax_incl`, `currency` (the order's). More with `somcp_search_orders` (`customer_email`).
+- `orders`: `count`, `valid_count`, `valid_total_tax_incl` with `currency` (**for a total amount of**, `SUM(total_paid_tax_incl / conversion_rate)` of the valid orders, in the default currency), `invalid_count`, `sales_rank` (`null` with no valid order), and `latest`, the 10 newest: `id_order`, `reference`, `date_add`, `payment`, `status` (`status_id`, `name`), `products_count` (units ordered), `total_paid_tax_incl`, `currency` (the order's). More with `somcp_search_orders` (`customer_email`).
 - `carts`: `count` and `latest`, the 10 newest: `id_cart`, `date_add`, `carrier`, `total_tax_incl` (`null` when the cart cannot be priced any more), `currency`, `id_order` (`null` when not ordered).
 - `purchased_products`: the 10 newest order lines, every order valid or not: `date_add`, `id_order`, `valid`, `id_product`, `id_product_attribute`, `name` (with its combination), `quantity`.
 - `viewed_products`: the 10 product pages most recently visited: `id_product`, `name`.
@@ -3798,90 +4654,157 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 - The same form fields and table on both, apart from the type of `description` (`text` / `mediumtext`).
 
 #### `somcp_update_cart_rule`
-**State**: to write · [issue #108](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/108)
+**State**: written · [issue #108](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/108)
 **Nature**: `acts(EDIT, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
 
-**Does** - changes the dates, quantities, amounts or texts of one cart rule.
+**Does** - changes one cart rule with everything `somcp_create_cart_rule` can write: the fields of the **Information**, **Conditions** and **Actions** tabs of **Catalog > Discounts > Cart Rules > Edit**, restrictions apart. Only what is given changes.
 
-**Do not use for** - switching a rule on or off (→ `somcp_set_cart_rule_active`).
+**Do not use for** - switching a rule on or off (→ `somcp_set_cart_rule_active`), creating one (→ `somcp_create_cart_rule`), its restrictions (back office).
 
-**Parameters**
+**Parameters** - the names and shapes of `somcp_create_cart_rule`, so a rule read with `somcp_get_cart_rule` can be given back as is.
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `id_cart_rule` | integer | yes |  |
-| ... |  | no | the fields of `somcp_create_cart_rule`, each optional |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_cart_rule` | **ID** of the list | integer | yes | from `somcp_list_cart_rules` |
+| `languages` | | array | no | ISO codes of the languages `name` is given in (#149), all active ones by default |
+| `name` | **Name** | object | no | per ISO code; changes in the languages given and keeps the others; never empty once given |
+| every other field of `somcp_create_cart_rule` but `active` | as there | as there | no | same names, same shapes, same checks; left out: unchanged |
 
-**Returns** - `changed`, per field `previous` and new value, and the rule.
+`active`, `restrictions`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are accepted when given back unchanged from `somcp_get_cart_rule` (the names it adds in its reading language apart), and refused when they differ: `active` points to `somcp_set_cart_rule_active`, `restrictions` to the back office, the others are worked out by the shop.
+
+**Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, and `language` for `name`), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to, `product_selection` says that product is still in **Product selection**. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
+
+**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): those of `somcp_create_cart_rule`, checked by its `planRule()` on the rule as it will be once merged with what is kept (for example `date_from` given alone after the kept `date_to`: **The voucher cannot end before it begins.**; `reduction` set to `null` on a rule with no free shipping and no gift: **An action is required for this cart rule.**); `code` already used by another rule (its own code is accepted, as the form compares with `id_cart_rule`); an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`).
 
 **Notes**
-- Only what is given changes; a call that changes nothing writes nothing and answers `changed: false`.
+- Written with `CartRule::update()` only. The back office's `afterUpdate()` deletes every restriction row of the rule (`cart_rule_country`, `_carrier`, `_group`, `_product_rule_group`, `_shop`, `cart_rule_combination`) and writes back what the form posted; this tool posts no restriction, so it leaves those tables alone.
+- Only the columns of the fields given are compared and written. The currency and tax switch of an amount that is zero, or of a percent, are not compared, so giving back what was read changes nothing.
+- A `reduction` given without `id_product` on a **Specific product** discount keeps that product. Switching **Apply a discount to** to **Specific product** adds that product to **Product selection** (one group, quantity 1, type `products`) and sets `product_restriction`, with the rows `somcp_create_cart_rule` writes (`SomcpToolCreateCartRule::productSelection()`). Switching away keeps the product restriction, as the form keeps it.
+- **Total available** (`quantity`) is what is left: every order using the rule has lowered it. A rule already used keeps its history: orders hold their own copy (`order_cart_rule`).
+- Not to be retried blindly: if the answer is lost, read the rule with `somcp_get_cart_rule` and compare before calling again.
+
+**Differences between 8.0.1 and 9.0.0**
+- The 9.0.0 gift check of `somcp_create_cart_rule`, applied on both versions.
 
 #### `somcp_set_cart_rule_active`
-**State**: to write · [issue #109](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/109)
+**State**: written · [issue #109](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/109)
 **Nature**: `acts(EDIT, 'AdminCartRules')` · **Scope**: `mcp.sales.write`
 
-**Does** - switches one cart rule on or off.
+**Does** - switches one cart rule on or off: the **Status** switch of the list **Catalog > Discounts > Cart Rules**, and of **Information** > **Status** in its form. Nothing else changes.
 
-**Do not use for** - changing its content (→ `somcp_update_cart_rule`).
+**Do not use for** - changing anything else of the rule (→ `somcp_update_cart_rule`), deleting it (back office).
 
 **Parameters**
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `id_cart_rule` | integer | yes |  |
-| `active` | boolean | yes |  |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_cart_rule` | **ID** | integer | yes | from `somcp_list_cart_rules` |
+| `active` | **Status** | boolean | yes | `true` or `false`, nothing else (a string or a number is refused, never read as true) |
 
-**Returns** - `changed`, `id_cart_rule`, `active`.
+**Returns** - `changed: true`, `id_cart_rule`, `active`, and `warnings` when the rule is switched on but cannot apply yet or any more: the end of **Valid** passed, its start still to come, **Total available** at 0, or no **Code** (it then applies on its own to every cart that meets its conditions - the **Caution!** of the form). A rule already in that state answers `changed: false` with a `reason`, and nothing is written.
+
+**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): unknown arguments; `active: true or false`; an `id_cart_rule` that is not a whole number above 0; an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`).
 
 **Notes**
-- Reversible, and said so: switching off is how a promotion is stopped early.
+- The rules this shop can use are those of `somcp_list_cart_rules` (`shop_restriction = 0`, or a `cart_rule_shop` row for it), tested with its `SomcpToolListCartRules::inShop()`.
+- Written as the list's switch writes it (`ObjectModel::toggleStatus()`): `setFieldsToUpdate(['active' => true])`, then `update()`, so `actionObjectCartRuleUpdateAfter` fires and the rule's other fields as loaded are never written back over a change made since. The form is not followed: it saves every field and rewrites the restrictions (`afterUpdate()`).
+- Reversible, and the description says so: switching off is how a promotion is stopped early; orders that already used the rule keep their discount.
+- A rule switched on with no code reaches every customer at once: the description tells the assistant to say so to the merchant before calling.
+- Not to be retried blindly: if the answer is lost, read the rule with `somcp_get_cart_rule` before calling again.
+
+**Differences between 8.0.1 and 9.0.0**
+- None: the same list, the same switch and the same column.
 
 #### `somcp_list_catalog_price_rules`
-**State**: to write · [issue #110](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/110)
+**State**: written · [issue #110](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/110)
 **Nature**: `acts(VIEW, 'AdminSpecificPriceRule')` · **Scope**: `mcp.sales.read`
 
-**Does** - lists the catalogue price rules, the discounts applied to products before the cart.
+**Does** - lists the catalogue price rules of this shop - the discounts applied to products before the cart - as **Catalog > Discounts > Catalog Price Rules** shows them (`id_specific_price_rule` ascending), with the conditions that pick each rule's products. Read only.
 
-**Do not use for** - cart rules (→ `somcp_list_cart_rules`), or one product's specific prices (→ `somcp_get_product`).
+**Do not use for** - cart rules and vouchers (→ `somcp_list_cart_rules`); one product's own specific prices (→ `somcp_get_product`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `current` | boolean | no | only rules valid today |
+| `name` | string | no | part of the **Name**, without case |
+| `currency` | string | no | ISO code, the **Currency** filter; keeps that currency and **All currencies** |
+| `country` | string | no | ISO code, the **Country** filter; keeps that country and **All countries** |
+| `id_group` | integer | no | the **Group** filter, from `somcp_list_customer_groups`; keeps that group and **All groups** |
+| `reduction_type` | string | no | `amount` or `percentage`, the **Reduction type** filter |
+| `current` | boolean | no | only the rules whose **Beginning**/**End** period holds the shop's current time (an empty bound is open on that side) |
+| `language` | string | no | ISO code of one of the shop's active languages for the names of currencies, countries, groups and conditions (#149); shop default when left out; unknown code refused |
+| `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
-**Returns** - per rule: `id_specific_price_rule`, `name`, `from`, `to`, `reduction` with `reduction_type` and `reduction_tax`, `from_quantity`, `currency`, `country`, `group`, `conditions` (summarised).
+**Returns** - `catalog_price_rules`, in the list's order (`id_specific_price_rule` ascending), each with:
+
+| Field | Notes |
+|---|---|
+| `id_specific_price_rule` | **ID** |
+| `name` | **Name** (not translated: the rule has no language table) |
+| `id_shop` | **Shop** / **Store** on 9.0.0 |
+| `currency` | **Currency**, ISO code, `null` for **All currencies** |
+| `country` | **Country**, ISO code, `null` for **All countries** |
+| `id_group` | **Group**, 0 for **All groups**; plus `group_name`, in `language` |
+| `from_quantity` | **From quantity** |
+| `price` | **Price (tax excl.)**, `-1` for **Leave initial price**, as `somcp_get_product` |
+| `reduction_type` | **Reduction type**: `amount` or `percentage` |
+| `reduction` | **Reduction**, in the shape of `somcp_get_product`: an amount, or for a percentage the fraction (`0.1` for 10 %) |
+| `reduction_tax` | **Reduction with or without taxes**: `true` for **Tax included** |
+| `amounts_currency` | the currency of `price` and of an amount: `currency`, or the shop default when `null`, as `somcp_get_product` |
+| `from` / `to` | **Beginning**/**End**, `YYYY-MM-DD HH:MM:SS` as `somcp_get_product`, `null` for no date |
+| `condition_groups` | a list of groups, each a list of conditions `{"type":..., "<id>":..., "name":...}`: `category`/`id_category`, `manufacturer`/`id_manufacturer`, `supplier`/`id_supplier`, `attribute`/`id_attribute`, `feature`/`id_feature_value`; `name` in `language`. `[]` when the rule applies to every product |
+| `current` | the period holds the shop's current time |
+| `returned`, `total_count`, `offset`, `language` | as `somcp_list_abandoned_carts` |
+
+**Errors** - in the shape of #169, all in one answer: unknown arguments; an unknown `currency`, `country` or `id_group`; a `reduction_type` other than `amount`/`percentage`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `catalog_price_rules: []`, `total_count: 0`.
 
 **Notes**
-- Only this shop's rules.
+- The back office lists every shop's rules (`CONTEXT_ALL`); the token's shop keeps `id_shop` 0 and its own.
+- The conditions of one group must all hold (AND); a product is touched when one group holds (OR); no group means every product.
+- Building one rule (with `condition_groups` and the percentage-to-fraction conversion) is one method (`SomcpToolListCatalogPriceRules::buildRule()`) that `somcp_create_catalog_price_rule` (#111) calls, so a rule reads the same whichever tool reads it.
+- No difference between 8.0.1 and 9.0.0 in what the tool reads: the same legacy controller, list, class and tables; the multistore column is **Shop** on 8.0.1 and **Store** on 9.0.0.
 
 #### `somcp_create_catalog_price_rule`
-**State**: to write · [issue #111](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/111)
+**State**: written · [issue #111](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/111)
 **Nature**: `acts(ADD, 'AdminSpecificPriceRule')` · **Scope**: `mcp.sales.write`
 
-**Does** - creates one catalogue price rule, optionally limited to some categories, and applies it.
+**Does** - creates one catalogue price rule, as **Catalog > Discounts > Catalog Price Rules > Add new catalog price rule** does, with its conditions, and applies it at once to the products it picks.
 
-**Do not use for** - a voucher (→ `somcp_create_cart_rule`), or one product's own price (→ `somcp_update_product`).
+**Do not use for** - a voucher or a cart discount (→ `somcp_create_cart_rule`); one product's own specific price (→ `somcp_update_product`).
 
-**Parameters**
+**Parameters** - the names `somcp_list_catalog_price_rules` returns, so a rule read there can be given back.
 
-| Name | Type | Required | Role |
-|---|---|---|---|
-| `name` | string | yes |  |
-| `reduction` | number | yes |  |
-| `reduction_type` | enum | yes | `percentage` or `amount` |
-| `reduction_tax` | boolean | no | for an amount |
-| `from` / `to` | string | yes | `YYYY-MM-DD HH:MM:SS` |
-| `from_quantity` | integer | no | 1 by default |
-| `currency` / `country` / `group` | string or integer | no | ISO codes, and a group from `somcp_list_customer_groups`; all by default |
-| `categories` | array of integer | no | limit the rule to products of these categories |
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** | string | yes | 255 characters at most, `isCleanHtml` |
+| `currency` | **Currency** | string | no | ISO code of a currency of the shop; left out: **All currencies** |
+| `country` | **Country** | string | no | ISO code; left out: **All countries** |
+| `id_group` | **Group** | integer | no | from `somcp_list_customer_groups`, 0 (the default) for **All groups** |
+| `from_quantity` | **From quantity** | integer | no | 1 by default, 1 or more |
+| `price` | **Price (tax excl.)** / **Leave initial price** | number | no | a fixed price tax excluded, or -1 (the default, **Leave initial price**) |
+| `reduction_type` | **Reduction type** | string | no | `amount` (the default) or `percentage` |
+| `reduction` | **Reduction** | number | yes | an amount, or for a percentage the fraction as in `somcp_create_product` (`0.1` for 10 %), stored ×100 the way the form stores it |
+| `reduction_tax` | **Reduction with or without taxes** | boolean | no | `true` (the default, **Tax included**) |
+| `from` / `to` | **From** / **To** | string | no | `YYYY-MM-DD HH:MM:SS`; left out: no start, no end |
+| `condition_groups` | **Conditions** | array of arrays | no | each group a list of `{"type": "category", "id_category": 4}`, `manufacturer`/`id_manufacturer`, `supplier`/`id_supplier`, `attribute`/`id_attribute`, `feature`/`id_feature_value`, the shape `somcp_list_catalog_price_rules` returns; `name` accepted and ignored. Left out or `[]`: every product |
 
-**Returns** - `created`, `id_specific_price_rule`, the rule, and `products_affected` (count).
+`id_shop` is the token's shop; no **Shop** argument. The fields the list returns but the shop works out (`id_specific_price_rule`, `id_shop`, `group_name`, `amounts_currency`, `current`) are refused by name.
+
+**Returns** - `created: true`, `catalog_price_rule` (one entry of `somcp_list_catalog_price_rules`, read back from the shop, names in the shop default language), `all_products` and `products_affected`: the number of distinct products `getAffectedProducts()` picked, or for a rule without condition (`all_products: true`, one specific price for product 0) the number of products of the shop.
+
+**Errors** - in the shape of #169, all in one answer, nothing written: unknown arguments; `name` missing, empty, too long or refused by `isCleanHtml`; `reduction` missing; the checks of one rule of `specific_prices` in `somcp_create_product`, with the same texts (unknown currency, country or group, `from_quantity` below 1, a negative `price` other than -1, a negative `reduction`, above 1 for a percentage, neither a price nor a reduction, bad dates or `to` before `from`); an unknown condition `type`, an empty group, a missing or unknown identifier, each naming the list tool to take it from.
 
 **Notes**
-- Written through `SpecificPriceRule` and its condition groups, then `apply()`, as the back office does.
-- The answer says how many products the rule reaches, so the merchant sees its size before it runs a day.
+- The checks of the price and the reduction are `SomcpToolCreateProduct::rule()`, called rather than copied: the rule writes specific prices.
+- How conditions combine, said in the description: the conditions of one group must all hold (AND), one group is enough (OR); an attribute condition touches combinations, not the whole product.
+- Writes: `SpecificPriceRule::add()`, then `addConditions()` once per group, then `apply()`, in the order of `processSave()`. A group that cannot be written deletes the rule again. The core reapplies every rule when a product is saved, so the tool has nothing else to do.
+- No update or delete tool yet: a rule is changed or removed in the back office.
+- Cart rules keep their own shape for a percentage (`{"type": "percent", "value": 10}`): this tool follows the product specific prices, the notion it writes.
+- Not to be retried blindly: if the answer is lost, look for the rule with `somcp_list_catalog_price_rules`.
+
+**Differences between 8.0.1 and 9.0.0**
+- None in what the tool writes: the same class, tables and save. `name` is checked for 255 characters by the tool on both, since only 9.0.0 declares the `size`. The multistore field is **Shop** on 8.0.1 and **Store** on 9.0.0.
 
 ## Prompts
 

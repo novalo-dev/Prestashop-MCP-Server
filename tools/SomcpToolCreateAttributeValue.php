@@ -120,12 +120,11 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
                     'items' => ['type' => 'string'],
                 ],
                 'name' => $text('Merchant. Required. The value shown on the product page, 128 characters at '
-                    . 'most, without < > = { } (nor ; # on PrestaShop 9).'),
-                'url_name' => $text('Assistant. Faceted search: the word used in filtered URLs instead of the '
-                    . 'name, lower case letters, digits and hyphens, for example "dark-blue". Empty for the name. '
-                    . '128 characters at most.'),
-                'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages instead of the '
-                    . 'name. 128 characters at most, without < > = { }.'),
+                    . 'most.'),
+                'url_name' => $text('Assistant. Faceted search: the URL word of filters, a-z, 0-9, hyphens '
+                    . '("blue"); empty: the name.'),
+                'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages, 128 characters '
+                    . 'at most.'),
                 'color' => [
                     'type' => 'string',
                     'description' => 'Merchant. Groups of type color only: the colour of the swatch, as a hex code '
@@ -134,8 +133,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
                 'texture' => [
                     'type' => 'string',
                     'description' => 'Merchant. Groups of type color only: the public https address of an image '
-                        . '(JPEG, PNG, GIF or WebP, 10 MB at most) shown instead of the colour, for a pattern or '
-                        . 'a material. The shop downloads it itself.',
+                        . '(JPEG, PNG, GIF or WebP, 10 MB at most) shown instead of the colour.',
                 ],
             ],
             'required' => ['id_attribute_group', 'name'],

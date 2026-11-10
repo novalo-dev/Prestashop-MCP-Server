@@ -50,18 +50,12 @@ class SomcpToolListOrderStatuses
         return new SomcpTool(
             'somcp_list_order_statuses',
             Somcp::t('List order statuses'),
-            'Lists the order statuses of this shop with their identifiers, and what each one '
-                . 'means: whether it counts the order as paid, shipped or delivered, whether '
-                . 'reaching it sends the customer an email and what that email carries. Call it '
-                . 'before filtering orders by status, and before changing the status of an '
-                . 'order. Status identifiers are specific to each shop - a merchant renames '
-                . 'them, adds their own and removes others - so never assume one. '
-                . 'Each status also lists the roles it plays in the shop, such as shipped, '
-                . 'delivered, refunded or payment_accepted. Match on a role rather than on a '
-                . 'name: the name is translated and the merchant can change it, the role cannot. '
-                . 'A status with no role is one the merchant created. '
-                . 'Do not use it to read orders: somcp_search_orders finds them, and counts '
-                . 'them by status.',
+            'Lists the order statuses of this shop with their identifiers and what each sets off: whether it '
+                . 'counts the order as paid or shipped, whether reaching it emails the customer and with what. Call '
+                . 'it before filtering orders by status or changing one. Identifiers differ from shop to shop: never '
+                . 'assume one. Each status lists its roles (shipped, delivered, refunded, payment_accepted...): match '
+                . 'on a role, not on the name, which is translated and the merchant can change; no role means the '
+                . 'merchant or a module created it. To read orders use somcp_search_orders.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -89,46 +83,113 @@ class SomcpToolListOrderStatuses
      */
     public static function handle(array $arguments, array $context): array
     {
-        $idLang = self::language($arguments);
+        $idShop = Somcp::currentShopId();
+
+        // Every mistake is reported in one answer, so the call is corrected in
+        // one go (the shape of #170).
+        $problems = [];
+        foreach (array_keys($arguments) as $field) {
+            if ($field !== 'language') {
+                $problems[] = '- ' . $field . ': not a field of this tool';
+            }
+        }
+
+        $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
+        if ($asked && $language === null) {
+            $problems[] = '- language: not a language of this shop, which has '
+                . implode(', ', SomcpTool::activeLanguages($idShop));
+        }
+
+        if ($problems !== []) {
+            return SomcpTool::text(
+                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
+                true
+            );
+        }
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $iso] = $language;
 
         $roles = self::roles();
 
         $statuses = [];
         foreach (OrderState::getOrderStates($idLang) as $state) {
-            $id = (int) $state['id_order_state'];
-            $statuses[] = [
-                'id' => $id,
-                'name' => (string) $state['name'],
-                // The part this status plays in the shop, which survives a
-                // rename where the name does not.
-                'roles' => $roles[$id] ?? [],
-                // What reaching this status does, which is what tells one shop's
-                // "Payment accepted" from another's "Awaiting bank wire".
-                'paid' => (bool) $state['paid'],
-                'shipped' => (bool) $state['shipped'],
-                'delivery' => (bool) $state['delivery'],
-                'sends_email' => (bool) $state['send_email'],
-                'invoice' => (bool) $state['invoice'],
-                'counts_as_valid' => (bool) $state['logable'],
-                'hidden_from_customer' => (bool) $state['hidden'],
-                // Attached to the email the status sends, when it sends one.
-                'attaches_invoice_pdf' => (bool) $state['pdf_invoice'],
-                'attaches_delivery_slip_pdf' => (bool) $state['pdf_delivery'],
-                // A status PrestaShop itself relies on. Telling these apart from
-                // the merchant's own says which ones are safe to reason about
-                // across shops.
-                'built_in' => (bool) $state['unremovable'],
-                'email_template' => (string) $state['template'],
-                'payment_module' => (string) $state['module_name'],
-                'color' => (string) $state['color'],
-            ];
+            $statuses[] = self::row($state, $roles);
         }
 
         return SomcpTool::json([
             'statuses' => $statuses,
             'count' => count($statuses),
-            'language_id' => $idLang,
+            'language' => $iso,
         ]);
+    }
+
+    /**
+     * One status, as the list shows it: its identifier, name, roles, the boxes
+     * of the status form, its icon and colour. The row of this list, built once
+     * here so the write tools (#168, #142) answer the same shape rather than
+     * each keeping a copy that could drift.
+     *
+     * @param array<string, mixed> $state an OrderState::getOrderStates() row
+     * @param array<int, array<int, string>> $roles the role map of roles()
+     *
+     * @return array<string, mixed>
+     */
+    public static function row(array $state, array $roles): array
+    {
+        $id = (int) $state['id_order_state'];
+
+        return [
+            'status_id' => $id,
+            'name' => (string) $state['name'],
+            // The part this status plays in the shop, which survives a rename
+            // where the name does not.
+            'roles' => $roles[$id] ?? [],
+            // What reaching this status does, which is what tells one shop's
+            // "Payment accepted" from another's "Awaiting bank wire".
+            'paid' => (bool) $state['paid'],
+            'shipped' => (bool) $state['shipped'],
+            // The "Set the order as in transit" box (9.0.0); 8.0.1 labels the
+            // same box "Show delivery PDF". Not the delivered role (PS_OS_DELIVERED).
+            'in_transit' => (bool) $state['delivery'],
+            'sends_email' => (bool) $state['send_email'],
+            'invoice' => (bool) $state['invoice'],
+            'counts_as_valid' => (bool) $state['logable'],
+            'hidden_from_customer' => (bool) $state['hidden'],
+            // Attached to the email the status sends, when it sends one.
+            'attaches_invoice_pdf' => (bool) $state['pdf_invoice'],
+            'attaches_delivery_slip_pdf' => (bool) $state['pdf_delivery'],
+            // A status PrestaShop itself relies on. Telling these apart from the
+            // merchant's own says which ones are safe to reason about across shops.
+            'built_in' => (bool) $state['unremovable'],
+            'email_template' => (string) $state['template'],
+            'payment_module' => (string) $state['module_name'],
+            'color' => (string) $state['color'],
+            // The public URL of the status icon, never the bytes; null when the
+            // status has none.
+            'icon' => self::iconUrl($id),
+        ];
+    }
+
+    /**
+     * The public URL of a status icon (img/os/<id>.gif), or null when the file
+     * is not there. Shared with the write tools so an icon reads the same
+     * whichever tool answers.
+     *
+     * @param int $idOrderState
+     *
+     * @return string|null
+     */
+    public static function iconUrl(int $idOrderState): ?string
+    {
+        if (!is_file(_PS_IMG_DIR_ . 'os/' . $idOrderState . '.gif')) {
+            return null;
+        }
+        $link = Somcp::legacyContext()->link ?? new Link();
+
+        return (string) $link->getMediaLink('img/os/' . $idOrderState . '.gif');
     }
 
     /**
@@ -145,11 +206,12 @@ class SomcpToolListOrderStatuses
      *
      * The fourteen keys are the same on 8.0.0 and on 9.1.5, checked against the
      * installer of both. Configuration::get() resolves them through the shop
-     * this request belongs to on its own, so nothing is passed to it.
+     * this request belongs to on its own, so nothing is passed to it. Shared
+     * with the write tools, so a role reads the same whichever tool answers.
      *
      * @return array<int, array<int, string>>
      */
-    private static function roles(): array
+    public static function roles(): array
     {
         $parts = [
             'PS_OS_PAYMENT' => 'payment_accepted',
@@ -177,25 +239,5 @@ class SomcpToolListOrderStatuses
         }
 
         return $roles;
-    }
-
-    /**
-     * The language to read the names in.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return int
-     */
-    private static function language(array $arguments): int
-    {
-        $iso = trim((string) ($arguments['language'] ?? ''));
-        if ($iso !== '') {
-            $idLang = (int) Language::getIdByIso($iso);
-            if ($idLang > 0) {
-                return $idLang;
-            }
-        }
-
-        return (int) Somcp::legacyContext()->language->id;
     }
 }

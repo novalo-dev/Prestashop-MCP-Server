@@ -64,9 +64,9 @@ class SomcpToolGetCartRule
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of one of the shop\'s active languages, for example fr, for the names '
-                            . 'of the restrictions and of the gift; a code the shop does not have is refused. The shop '
-                            . 'default language when left out. The rule\'s own name comes in every language.',
+                        'description' => 'ISO code of an active language of the shop, for example fr, for the names of '
+                            . 'the restrictions and the gift. The shop default when left out. The rule\'s name comes in '
+                            . 'every language.',
                     ],
                 ],
                 'required' => ['id_cart_rule'],

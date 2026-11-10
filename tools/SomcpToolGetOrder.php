@@ -58,7 +58,9 @@ class SomcpToolGetOrder
                     ],
                     'reference' => [
                         'type' => 'string',
-                        'description' => 'Reference of the order to read, used when no identifier is known.',
+                        'description' => 'Reference of the order, used when no identifier is known. A '
+                            . 'reference shared by several orders (a split cart) is refused with their '
+                            . 'identifiers.',
                     ],
                 ],
                 'additionalProperties' => false,
@@ -77,9 +79,12 @@ class SomcpToolGetOrder
      */
     public static function handle(array $arguments, array $context): array
     {
-        $order = self::locate($arguments);
-        if ($order === null) {
-            return SomcpTool::text('No order of this shop matches what was given.', true);
+        // Refused like the writes on a reference shared by several orders:
+        // answering one of them would describe one parcel as the whole
+        // purchase, and the list it gets instead is what it needs to read each.
+        $order = self::find($arguments);
+        if (!$order instanceof Order) {
+            return SomcpTool::text($order, true);
         }
 
         $idLang = (int) $order->id_lang;
@@ -120,24 +125,6 @@ class SomcpToolGetOrder
     }
 
     /**
-     * Finds the order, and only within the shop the token belongs to.
-     *
-     * Public so the order tools that write find an order exactly as this one
-     * reads it. A reference shared by several orders gives the newest of them;
-     * find() is the lookup that refuses such a reference instead.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return Order|null
-     */
-    public static function locate(array $arguments): ?Order
-    {
-        $orders = self::candidates($arguments);
-
-        return $orders === [] ? null : $orders[0];
-    }
-
-    /**
      * Finds one order by id_order or reference, or explains why it cannot.
      *
      * A cart split across carriers gives its orders one reference, and each of
@@ -151,7 +138,7 @@ class SomcpToolGetOrder
      */
     public static function find(array $arguments)
     {
-        $byReference = (int) ($arguments['id_order'] ?? 0) <= 0;
+        $byReference = SomcpTool::id($arguments, 'id_order') <= 0;
         if ($byReference && (!isset($arguments['reference']) || !is_string($arguments['reference'])
             || trim($arguments['reference']) === '')) {
             return 'Give id_order or reference. Find the order with somcp_search_orders.';
@@ -191,7 +178,7 @@ class SomcpToolGetOrder
     private static function candidates(array $arguments): array
     {
         $idShop = Somcp::currentShopId();
-        $idOrder = (int) ($arguments['id_order'] ?? 0);
+        $idOrder = SomcpTool::id($arguments, 'id_order');
         $ids = [];
 
         if ($idOrder > 0) {
@@ -231,7 +218,9 @@ class SomcpToolGetOrder
         $state = new OrderState((int) $order->current_state, $idLang);
 
         return [
-            'id' => (int) $order->current_state,
+            // The same name as the input of somcp_set_order_status and the
+            // rows of somcp_list_order_statuses, so it is handed on as is.
+            'status_id' => (int) $order->current_state,
             'name' => Validate::isLoadedObject($state) ? (string) $state->name : '',
             'paid' => Validate::isLoadedObject($state) ? (bool) $state->paid : false,
             'shipped' => Validate::isLoadedObject($state) ? (bool) $state->shipped : false,
@@ -279,12 +268,16 @@ class SomcpToolGetOrder
     }
 
     /**
+     * One address in the shape the order page and the change of address of
+     * an order both read it. Public so somcp_set_order_address reports the
+     * addresses it moves between without a second copy of this mapping.
+     *
      * @param int $idAddress
      * @param int $idLang
      *
      * @return array<string, mixed>
      */
-    private static function address(int $idAddress, int $idLang): array
+    public static function address(int $idAddress, int $idLang): array
     {
         $address = new Address($idAddress);
         if (!Validate::isLoadedObject($address)) {
@@ -324,7 +317,7 @@ class SomcpToolGetOrder
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function products(Order $order, int $idLang, int $idShop): array
+    public static function products(Order $order, int $idLang, int $idShop): array
     {
         $lines = [];
         // getProducts() already adds what the Products table of the order page
@@ -524,6 +517,9 @@ class SomcpToolGetOrder
             $shipments[] = [
                 'id_order_carrier' => (int) $orderCarrier->id,
                 'date' => (string) $orderCarrier->date_add,
+                // The identifier somcp_set_order_carrier takes, so a read tells
+                // whether the carrier asked for is already the one in place.
+                'id_carrier' => (int) $orderCarrier->id_carrier,
                 'carrier' => Validate::isLoadedObject($carrier) ? (string) $carrier->name : '',
                 'weight' => (float) $orderCarrier->weight,
                 'shipping_cost_tax_excluded' => (float) $orderCarrier->shipping_cost_tax_excl,
@@ -543,7 +539,7 @@ class SomcpToolGetOrder
      *
      * @return array<string, float>
      */
-    private static function totals(Order $order): array
+    public static function totals(Order $order): array
     {
         return [
             'products_tax_excluded' => (float) $order->total_products,
@@ -658,6 +654,9 @@ class SomcpToolGetOrder
                 'date' => (string) $invoice->date_add,
                 'total_tax_excluded' => (float) $invoice->total_paid_tax_excl,
                 'total_tax_included' => (float) $invoice->total_paid_tax_incl,
+                // The note printed on the invoice PDF, so somcp_set_invoice_note
+                // can be read back after it writes.
+                'note' => (string) $invoice->note,
             ];
         }
 

@@ -61,31 +61,13 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         return new SomcpTool(
             'somcp_update_category',
             Somcp::t('Change a category'),
-            'Changes one existing category of this shop. Everything somcp_create_category can write can be '
-                . 'changed here, under the same names and with the same rules - who fills each field, lengths, '
-                . 'identifiers from somcp_list_categories and somcp_list_customer_groups. Only what is given '
-                . 'changes: a value left out is kept, a text is replaced in the languages filled and kept in the '
-                . 'others, groups given replaces the whole set, menu_thumbnails given replaces the current ones. '
-                . 'The cover image and the menu thumbnails are only removed through remove_cover_image and '
-                . 'remove_menu_thumbnails. When languages is left out every language of the shop is filled, so '
-                . 'a text must then be given in each; to change one language, pass languages with it alone. '
-                . 'The friendly URL is never made again from a new name: give link_rewrite to change it, and tell '
-                . 'the merchant first when the category is displayed, because its old address stops working. '
-                . 'position places the category among those of the same parent, from 0, as somcp_get_category '
-                . 'numbers it; the others shift, as when the merchant drags it in the list. Home, the top category '
-                . 'of this shop, can be changed with the fields of its own form in the back office, but never '
-                . 'moved: id_parent and position are refused on it, and on PrestaShop 9 it only answers 404 or 410 '
-                . 'while hidden. The root category cannot be changed here, and a category cannot be moved under '
-                . 'itself or one of its subcategories. Show the merchant what will change and call once they '
-                . 'agree. Every problem is reported at once and nothing is written until the whole call is '
-                . 'valid. Images are downloaded by the shop from public https addresses after the change; one '
-                . 'that cannot be fetched is reported in images and does not undo it. The answer gives each '
-                . 'field changed with its old and new value. A call that would change nothing writes nothing '
-                . 'and says changed: false. '
-                . 'Do not use it to create a category (somcp_create_category) or only to show or hide one '
-                . '(somcp_set_category_active). One category per call. '
-                . 'Not to be retried blindly: if the answer is lost, read the category again with '
-                . 'somcp_get_category and compare before calling again.',
+            'Changes one category, as Catalog > Categories > Edit, under the names and rules of '
+                . 'somcp_create_category; what somcp_get_category returns can be given back. id_category from '
+                . 'somcp_list_categories: never guess one. Only what is given changes, a text in the languages '
+                . 'given. The root category cannot be changed, Home cannot be moved. An image that cannot be '
+                . 'fetched is reported in images. To show or hide one only, use somcp_set_category_active. Show the '
+                . 'merchant the change and call once they agree. One category per call. Not to be retried: if the '
+                . 'answer is lost, read somcp_get_category first.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],
@@ -117,23 +99,23 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $properties['active']['description'] = 'Merchant. Displayed on the storefront.' . $kept;
         $properties['groups']['description'] = 'Merchant, from the shop: the customer groups that can see the '
             . 'category, their id_group from somcp_list_customer_groups. Given, it replaces the current set entirely.' . $kept;
-        $properties['link_rewrite']['description'] = 'Assistant. The friendly URL, 128 characters at most, only in '
-            . 'the languages given; never made again from a new name. On a displayed category the old address '
-            . 'stops working: tell the merchant first. One text per language being filled, keyed by ISO code: '
-            . '{"fr": "...", "en": "..."}.';
+        $properties['link_rewrite']['description'] = 'Assistant. The friendly URL, 128 characters at most, keyed by ISO '
+            . 'code; never made again from a new name. On a displayed category the old address stops working: tell '
+            . 'the merchant first.';
         $properties['redirect_type']['description'] = 'Assistant. PrestaShop 9 only: what the category page does '
             . 'while it is not displayed - 301 or 302 (redirect), 404 or 410.' . $kept;
         $properties['id_type_redirected']['description'] = 'Assistant. PrestaShop 9 only: the category a 301 or 302 '
             . 'redirects to, from somcp_list_categories; 0 for the closest parent.' . $kept;
-        $properties['cover_image']['description'] = 'Merchant. Public https address of a new cover image, which '
-            . 'replaces the current one. Downloaded by the shop: no redirect, 10 MB at most, JPEG, PNG, GIF or WebP.';
+        $properties['cover_image']['description'] = 'Merchant. A new cover image, replacing the current one. Its url '
+            . '(public https, no redirect, 10 MB at most) or the upload_ref of a file already on the shop. JPEG, PNG, '
+            . 'GIF or WebP; never file content.';
         $properties['menu_thumbnails']['description'] = 'Merchant. PrestaShop 8 only, refused on 9, which dropped '
-            . 'them: up to 3 public https addresses, which replace the current menu thumbnails, downloaded like the cover.';
+            . 'them: up to 3 images that replace the current menu thumbnails, each given by url or upload_ref like the cover.';
         $properties['position'] = [
             'type' => 'integer',
-            'description' => 'Merchant. The place among the categories of the same parent, from 0 as somcp_get_category '
-                . 'gives it (the back office list shows it plus 1); the others shift. With id_parent, the place under '
-                . 'the new parent. Refused on Home.' . $kept,
+            'description' => 'Merchant. Place among the categories of its parent, from 0 as in somcp_get_category (the '
+                . 'list shows it plus 1); others shift. With id_parent, under the new one. Refused on '
+                . 'Home.' . $kept,
         ];
         $properties['remove_cover_image'] = [
             'type' => 'boolean',
@@ -294,7 +276,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             'category' => [],
             'groups' => null,
             'position' => null,
-            'images' => self::imageUrls($arguments, $errors),
+            'images' => self::categoryImages($arguments, $errors),
             'remove_cover' => false,
             'remove_thumbnails' => false,
             'replace_thumbnails' => false,
@@ -632,7 +614,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             return $image['for'] === 'cover_image';
         }));
         if ($covers !== []) {
-            self::record($plan, 'cover_image', $before['cover_image'], $covers[0]['url']);
+            self::record($plan, 'cover_image', $before['cover_image'], self::imageOrigin($covers[0]));
         } elseif ($plan['remove_cover']) {
             if ($before['cover_image'] === null) {
                 $plan['remove_cover'] = false;
@@ -640,8 +622,8 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
                 self::record($plan, 'cover_image', $before['cover_image'], null);
             }
         }
-        $thumbnails = array_values(array_map(static function (array $image): string {
-            return $image['url'];
+        $thumbnails = array_values(array_map(static function (array $image): array {
+            return self::imageOrigin($image);
         }, array_filter($plan['images'], static function (array $image): bool {
             return $image['for'] === 'menu_thumbnails';
         })));

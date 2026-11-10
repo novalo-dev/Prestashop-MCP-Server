@@ -25,3 +25,16 @@ api_somcp_upload:
     trailingSlash: ''
   methods: [GET]
   controller: Novalo\Somcp\Controller\UploadEntryController::__invoke
+
+# The back office entry point of the download screen, on PrestaShop 9. Same
+# shape and the same reasons as api_somcp_upload above: the api_ prefix keeps
+# TokenizedUrlsListener away, and no condition keeps 9.1.0 from turning a missed
+# match into a server error. It carries the signed download parameters through.
+api_somcp_download:
+  path: /somcp/download{trailingSlash}
+  requirements:
+    trailingSlash: '/?'
+  defaults:
+    trailingSlash: ''
+  methods: [GET]
+  controller: Novalo\Somcp\Controller\DownloadEntryController::__invoke

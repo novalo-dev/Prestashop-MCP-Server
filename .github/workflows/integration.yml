@@ -289,3 +289,19 @@ jobs:
         env:
           _PS_ROOT_DIR_: ${{ github.workspace }}/shop
         run: php -d memory_limit=1G dev/tools/vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress --error-format=github
+
+  passed:
+    # The one name the main branch ruleset requires from this workflow. The
+    # matrix names change with every PrestaShop release added or dropped, and
+    # a required name no job reports any more blocks every merge for good.
+    # always(): skipped would count as passing, so a cancelled or failed shop
+    # job has to be read here and turned into a failure.
+    name: Integration passed
+    needs: shop
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every PrestaShop and PHP pair green
+        run: |
+          echo "shop jobs: ${{ needs.shop.result }}"
+          [ "${{ needs.shop.result }}" = success ]

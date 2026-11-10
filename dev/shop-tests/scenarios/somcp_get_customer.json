@@ -7,6 +7,8 @@
     {"why": "a customer that does not exist", "arguments": {"id_customer": 999999}, "expect": "error", "contains": ["No customer 999999 in this shop"]},
     {"why": "an email nobody has", "arguments": {"email": "nobody-zz@example.invalid"}, "expect": "error", "contains": ["No customer with this email in this shop"]},
     {"why": "neither an identifier nor an email", "arguments": {}, "expect": "error", "contains": ["Give id_customer or email"]},
-    {"why": "the first customer by identifier, whoever the demo data made it", "arguments": {"id_customer": 1}, "expect": "any", "contains": []}
+    {"why": "the first customer by identifier, whoever the demo data made it", "arguments": {"id_customer": 1}, "expect": "any", "contains": []},
+    {"why": "the status of the latest orders under the name the order tools use", "arguments": {"email": "pub@prestashop.com"}, "expect": "ok", "contains": ["\"status_id\""]},
+    {"why": "an identifier that is not a whole number is not read as another customer", "arguments": {"id_customer": "1.5"}, "expect": "error", "contains": ["Give id_customer or email"]}
   ]
 }

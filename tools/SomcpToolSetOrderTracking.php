@@ -139,7 +139,7 @@ class SomcpToolSetOrderTracking
             );
         }
 
-        // find() rather than locate(): the number emails the customer, so a
+        // find() rather than the newest order of a reference: the number emails the customer, so a
         // reference shared by the orders of a split cart is refused with their
         // list instead of landing on the newest of them.
         $order = SomcpToolGetOrder::find($arguments);
@@ -319,7 +319,7 @@ class SomcpToolSetOrderTracking
             return count($shipments) === 1 ? $shipments[0] : null;
         }
 
-        $idOrderCarrier = self::identifier($arguments['id_order_carrier']);
+        $idOrderCarrier = SomcpTool::id($arguments, 'id_order_carrier');
         foreach ($shipments as $shipment) {
             if ($idOrderCarrier > 0 && (int) $shipment['id_order_carrier'] === $idOrderCarrier) {
                 return $shipment;
@@ -363,26 +363,5 @@ class SomcpToolSetOrderTracking
             'id_order' => (int) $order->id,
             'reference' => (string) $order->reference,
         ];
-    }
-
-    /**
-     * An identifier as a client may send it: an integer, or digits in a string.
-     *
-     * A cast would read an array as 1 and write on a shipment nobody named.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            return (int) trim($value);
-        }
-
-        return 0;
     }
 }

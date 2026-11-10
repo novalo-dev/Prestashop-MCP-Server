@@ -14,6 +14,328 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## 1.4.0 - 2026-11-10
+
+### Added
+
+**Private documents handed over safely.** When the assistant gives you a
+private document, it hands over a link that opens in your own back office,
+signed in - never the file itself in the conversation. The link works only for
+the employee it was asked for, and only for fifteen minutes, after which you ask
+again. This adds a hidden back office page to the module, so a shop upgrading in
+place gains it on upgrade.
+
+**Order currency changed.** The new tool `somcp_set_order_currency` changes
+the currency of an order that is not validated yet, as **Change currency** in
+the **Payment** block of the order page does: every amount of the order, its
+lines, its shipping and its invoices is converted at the shop's exchange rates
+of today, and the answer gives the totals before and after. A validated order
+is refused, as the back office refuses it, and asking for the currency the
+order already has changes nothing.
+
+**A note on an invoice.** The new tool `somcp_set_invoice_note` sets the note
+printed on one invoice of an order, as **Add note** / **Edit note** on an
+invoice line of the **Documents** tab of the order page does. It is the note
+the customer reads on the invoice PDF, not the order's private note the shop
+keeps to itself; an empty note clears it. `somcp_get_order` now shows the note
+of each invoice, so the change can be read back.
+
+**Order product line edited.** The new tool `somcp_update_order_product`
+changes the unit price, the quantity or the invoice of one product line of an
+order not delivered, as the **Edit** action of a line in the **Products** block
+of the order page does, and recomputes the totals. Only the fields given are
+changed; a quantity of 0 is refused and points to removing the line, and the
+assistant is told to say the new total before the change. On PrestaShop 9.2 and
+later, which edit the line together with its shipments, the tool refuses and
+points to the Edit action of the order page.
+
+**Order product line removed.** The new tool `somcp_delete_order_product`
+takes one product line off an order not delivered, as the **Delete** action of
+a line in the **Products** block of the order page does, and recomputes the
+totals. Nothing is refunded and no credit slip is made: the assistant is told to
+say what the customer owes afterwards and to wait for your go-ahead. The last
+line of an order is refused, since an order left without a product cannot be
+put right; cancel the order instead. On PrestaShop 9.2 and later the tool
+refuses and points to the order page, like the other order line tools. The tools
+that add, edit and cancel order lines now point to one another when the request
+belongs to another of them.
+
+**Order address changed.** The new tool `somcp_set_order_address` points the
+delivery or the invoice address of an order to another address of the same
+customer, as **Select another address** of the order page does. PrestaShop
+recomputes the taxes and the totals - a new country can change the tax - and
+the assistant is told to say the new total before the change. An address that
+is not the customer's is refused with the list of the ones that are.
+
+**Order carrier changed.** The new tool `somcp_set_order_carrier` changes the
+carrier of a shipment of an order, as the **Carrier** field of the **Edit
+shipping details** window of the order page does. PrestaShop recomputes the
+shipping cost and the totals, and the assistant is told to say the new total
+before the change. Only the carriers the order may use are taken: any other is
+refused with the list of the ones that are. The tracking number is left as it
+is and no email is sent. `somcp_get_order` now gives the `id_carrier` of each
+shipment, so the assistant can tell whether a carrier is already in place.
+
+**Order status email resent.** The new tool `somcp_resend_order_status_email`
+sends again the email of one past status of an order, as **Resend email** on a
+line of the **Status** tab of the order page does. The status line is taken from
+the order history, and the status is read from it; a status the shop does not
+email is refused rather than reported as sent. Every call emails the customer
+and the order records nothing, so the assistant is told to send it once.
+
+**Order discounts.** The new tool `somcp_add_order_discount` adds a discount to
+an order, as the **Add a discount** button of the order page does: a
+percentage, an amount including taxes, or free shipping, on the whole order or
+on one of its invoices. The order totals follow, and the assistant is told to
+say the new total before adding it.
+
+**Order discounts removed.** The new tool `somcp_delete_order_discount` removes
+a discount from an order, as the delete action of the discounts table of the
+order page does. The order totals follow, a free gift product given by the
+discount loses its unit, and the assistant is told to say the new total before
+removing it. A discount already removed is reported as such, and nothing
+changes.
+
+**Invoices generated.** The new tool `somcp_generate_order_invoice` generates
+the invoice of an order that has none yet, as the **Generate invoice** button of
+the order page does: the invoice takes the shop's next number, and nothing is
+emailed. An order that already has one gets it back instead of a second
+invoice, and a shop with invoices turned off is told where to turn them on.
+
+**Cancelled products.** The new tool `somcp_cancel_order_products` takes
+products off an order that is not paid yet, as the **Cancel products** button
+of the order page does: the chosen quantities are removed, the order total and
+the stock follow, and when no product is left the order goes to Canceled and
+the customer is emailed. A paid or delivered order, or a shop with merchandise
+returns off, is refused with the tool to use instead.
+
+**Products added to an order.** The new tool `somcp_add_order_product` adds a
+product, or one of its combinations, to an order that is not shipped yet, as
+**Add a product** in the Products block of the order page does: the order total
+is recomputed, and on an invoiced order the line goes to the invoice you name
+or to a new one, with free shipping when asked. Left out, the price is the
+product's price for that customer. A shipped order, a product already in the
+order or a quantity the stock cannot cover is refused with the reason. On
+PrestaShop 9.2 and later, which add the product together with its shipments,
+the tool refuses and points to the button of the order page.
+
+**Returned products.** The new tool `somcp_return_order_products` records the
+products a customer sent back on a delivered order and refunds them, as the
+**Return products** button of the order page does: the chosen quantities are
+counted as returned, go back in stock only when you say so, the shipping is
+refunded when asked, with a credit slip, a voucher or both. When merchandise
+returns are off or the order is not delivered yet, the refusal says which tool
+to use instead.
+
+**Standard refunds.** The new tool `somcp_issue_standard_refund` pays back
+whole lines of a paid order that is not delivered yet, as the **Standard
+refund** button of the order page does: the chosen quantities go back in
+stock, the shipping is refunded when asked, with a credit slip, a voucher or
+both. When merchandise returns are off or the order is already delivered, the
+refusal says which tool to use instead.
+
+**Partial refunds.** The new tool `somcp_issue_partial_refund` pays back part
+of a paid order, as the **Partial refund** button of the order page does: some
+units of a line, part of a line's price, part of the shipping, with a credit
+slip, a voucher or both. Each amount is given in the tax mode the order page
+shows, a line that is not one of the order's or an amount above what is left
+is refused instead of being lowered, and the answer gives the credit slip and
+the voucher created.
+
+**Create a catalogue price rule.** The new tool
+`somcp_create_catalog_price_rule` creates one rule of
+**Catalog > Discounts > Catalog Price Rules**, with everything the form holds:
+name, currency, country, customer group, from quantity, a fixed price or the
+products' own, the reduction as an amount or a percentage, tax included or not,
+the period, and the condition groups that pick its products. The rule is
+applied at once, and the answer says how many products it reaches. A
+percentage is given as the same fraction the product tools use, and the price
+and reduction are checked exactly as for a product's own specific prices.
+
+**List the catalogue price rules.** The new tool
+`somcp_list_catalog_price_rules` reads the rules of
+**Catalog > Discounts > Catalog Price Rules** - the discounts applied to
+products before the cart - as the list shows them: name, currency, country,
+customer group, from quantity, reduction and period, with the conditions that
+pick each rule's products. It filters by currency, country, group, reduction
+type, and by the rules in force right now, and reads a percentage as the same
+fraction the product tools report. Read only.
+
+**Change a voucher or a cart discount.** The new tool `somcp_update_cart_rule`
+changes one rule of **Catalog > Discounts > Cart Rules** with everything
+`somcp_create_cart_rule` can write: the name in the languages given, the code,
+the dates, the quantities, the minimum amount, free shipping, the discount and
+what it applies to, and the gift. Only what is given changes, and the answer
+lists each change with its old and new value; a call that would change nothing
+writes nothing. It refuses what the back office refuses, checked on the rule as
+it will be, so a start date after the end date kept is refused. The rule's
+countries, carriers, groups, compatible rules, product selection and shops are
+left exactly as they were, and switching it on or off is left to the tool below.
+
+**Switch a voucher or a cart discount on or off.** The new tool
+`somcp_set_cart_rule_active` is the **Status** switch of the list
+**Catalog > Discounts > Cart Rules**: it switches one rule on or off and
+changes nothing else, so a promotion can be stopped early and started again;
+orders that already used the rule keep their discount. A rule already in that
+state is left untouched. When a rule is switched on but cannot apply as
+expected - its dates are over or still to come, nothing is left of **Total
+available**, or it has no code and so applies on its own to every cart - the
+answer says so.
+
+### Changed
+
+**Categories, brands, suppliers and stock read in a language the shop has.**
+`somcp_list_categories`, `somcp_get_category`, `somcp_get_manufacturer`,
+`somcp_get_supplier` and `somcp_get_stock` now read in the shop's default
+language when no language is given, rather than in a language picked from the
+assistant's browser settings, and say in their answer which language the texts
+are in. A language the shop does not have is refused with the list of the ones
+it has, instead of quietly answering in another one.
+
+**Attributes and features read in a language the shop has.** The tools that read
+attribute groups, attribute values, features and feature values
+(`somcp_list_attributes`, `somcp_get_attribute_group`,
+`somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`,
+`somcp_get_feature_value`) now read in the shop's default language when no
+language is given, rather than in a language picked from the assistant's
+browser settings, and say in their answer which language the texts are in. A
+language the shop does not have is refused with the list of the ones it has,
+instead of quietly answering in another language that the assistant could then
+write back under the wrong one.
+
+**One name for the order status in every order and customer tool.**
+`somcp_get_order`, `somcp_set_order_status` and the latest orders of
+`somcp_get_customer` now give the status as `status_id`, the name
+`somcp_set_order_status` takes and `somcp_list_order_statuses` returns, so the
+assistant hands it on without guessing. The answer key changes: it was `id`
+(`id_order_state` in `somcp_get_customer`). An order, status or customer
+identifier that is not a whole number - a decimal, a list, true - is now
+refused instead of being read as another order, status or customer.
+
+**An order reference shared by several orders is no longer guessed.** When a
+cart is split across carriers, PrestaShop gives its orders one reference, and
+each has its own page in Orders > Orders. Reading an order, changing its
+status, adding a message or a payment, and setting its private note by that
+reference used to act on the newest of them without a word. They now change
+nothing, send nothing to the customer, and answer with the identifiers of the
+orders that share the reference, so the assistant asks which one is meant.
+Every order tool now answers the same way when the order is not found, and
+points to the order search.
+
+**The built-in assistant knows the tools of the page you are on.** Opened on
+the order page, the chat could not answer "what is this order" before looking
+up the tools it needed, one more step before every first answer. It now has
+the reading tools of the page you opened it from at hand from the first
+message - reading an order or searching orders on the order page, for example.
+The tools that change something on that page still go through the search and
+still ask for your approval, and an employee without the right on the page gets
+none of them.
+
+**Tool descriptions stay short.** Every tool the assistant can use is sent to
+it on each step of a conversation, so a long description slows every answer
+and costs more. The descriptions of the tools now stay within 600 characters
+and those of their fields within 200, and a new tool can no longer be added
+above that: the few longer texts left, mostly on the product page, are listed
+until they are shortened.
+
+**Shorter attribute fields.** The fields of the four tools that create and
+change attribute groups and values - names, public name, type, URL word, title
+tag, texture, position - now each fit within 200 characters: no text of the
+attributes page is longer than that any more.
+
+**Shorter feature fields.** The fields of the four tools that create and
+change features and feature values - name, value, URL word, title tag - now
+each fit within 200 characters: no text of the features page is longer than
+that any more.
+
+**Shorter cart rule language and payment method fields.** The language field
+of `somcp_get_cart_rule` and the payment method field of
+`somcp_add_order_payment` now each fit within 200 characters: the payment
+method is still best given as the Payment block of the order page suggests it,
+the name of one of the shop's payment modules.
+
+**Shorter image fields.** The image fields of the tools that create and change
+categories, brands and suppliers - cover image, menu thumbnails, logo - now
+each fit within 200 characters: an image is still given by its address or by
+a file already on the shop, in the same words in every tool.
+
+**Shorter product fields.** The fields of the tools that create and change a
+product - its type, features, pack contents, downloadable file, combinations,
+images, friendly URL, redirection and tags - now each fit within 200
+characters: no field of the products page is longer than that any more.
+
+**A photo from the chat can be a category image.** The cover and the menu
+thumbnails of `somcp_create_category` and `somcp_update_category` now take an
+image the same way the product and brand tools do: either a public `https`
+address the shop downloads, or a file already on the shop - one attached in the
+assistant chat, deposited by the merchant, or generated in the chat. A photo
+the merchant drops into the conversation can now be used straight away as a
+category cover or menu thumbnail. The plain address form is replaced by this
+object: give `{"url": "https://..."}` instead of the bare address.
+
+**Clearer order status list.** The tool that lists the order statuses now
+returns each status's icon, and renames three answer keys to match what the
+status form shows: `status_id` (was `id`), `in_transit` (was `delivery`, the
+box 9.0.0 labels "Set the order as in transit") and `language`, the ISO code
+used (was `language_id`). It now reads the name in any active language of the
+shop and refuses an unknown language code or an unknown argument instead of
+ignoring it. An assistant reading the list should use the new key names.
+
+**Shorter order status tools.** The two tools of Shop Parameters > Order
+Settings > Statuses that list and create an order status now describe
+themselves in a few sentences, lighter for the assistant on every step. What
+matters is kept: that a status is taken from the list and never assumed, that
+a status is matched on its role rather than on its name, that an order status
+is not a return status, that a name another status already has is refused,
+that each field says whether you or the assistant fill it, and which read
+checks a creation whose answer was lost.
+
+**Shorter category tools.** The six tools of Catalog > Categories that list,
+read, audit, create, change and show or hide a category now describe
+themselves in a few sentences, lighter for the assistant on every step. What
+matters is kept: that a category is taken from the list and never assumed,
+that two categories can share a name in different branches, that the root
+category is never changed and Home never moved or hidden, that hiding a
+category leaves its products online, that each field says whether you or the
+assistant fill it, and which read checks a change whose answer was lost. The
+rules on the length of texts and on languages left out now sit in the
+catalogue prompt, where the assistant reads them when you pick it.
+
+**Shorter product tools.** The tools of Catalog > Products that search, read,
+audit the SEO of, switch on or off and delete a product now describe themselves
+in a few sentences, lighter for the assistant on every step. What matters is
+kept: that a product is taken from the search and never assumed, that a
+promotion is never mistaken for the price, that switching off can be undone
+and is offered before a deletion, which cannot, that a deleted product leaves
+only this shop and orders keep their lines, and which read checks a change
+whose answer was lost. The thresholds of the SEO audit now sit with its list of
+checks.
+
+**Shorter product create and change tools.** The two tools of Catalog >
+Products that create and change a product now describe themselves in a few
+sentences, lighter for the assistant on every step. What matters is kept: that
+identifiers come from the list tools, that only what is given changes and a
+removal is final, which read to run before a change, and that a creation is not
+retried blindly. The rules on who fills each field, on the length of texts and
+on languages left out now sit in the catalogue prompt, where the assistant
+reads them when you pick it.
+
+### Fixed
+
+**A deleted order status can no longer be set.** Deleting a status on **Shop
+Parameters > Order Settings > Statuses** keeps it for the orders already on it,
+and the order page no longer offers it - but the assistant could still move an
+order to it. It is now refused like a status the shop does not have, and
+nothing changes. The order status guide also tells the assistant to look up an
+order given by its reference first, since a cart split across carriers gives
+several orders the same reference.
+
+### Security
+
+**Redirects send the same headers as the rest of the module.** The redirects
+of the connection page no longer tell which PHP version the shop runs, and
+are never kept by a cache.
+
 ## 1.3.1 - 2026-11-07
 
 ### Added

@@ -42,23 +42,19 @@ class SomcpToolListCategories
         return new SomcpTool(
             'somcp_list_categories',
             Somcp::t('List categories'),
-            'Lists the categories of this shop: identifier and name, nothing else. Call it '
-                . 'before any call that takes a category - filtering products by category, '
-                . 'creating or changing a product - and take the identifier from here: category '
-                . 'identifiers are specific to each shop, so never assume one. Two categories can '
-                . 'share a name in different branches (Men > T-shirts, Women > T-shirts): when a '
-                . 'name comes back more than once, ask the merchant which one they mean, or read '
-                . 'each with somcp_get_category, before writing anything. '
-                . 'The root category is left out, since nothing can be placed in it; Home is listed. '
-                . 'Do not use it to find the products of a category: somcp_search_products does '
-                . 'that with id_category.',
+            'Lists the categories of this shop, as Catalog > Categories: identifier and name only. Take the '
+                . 'identifier of a category from here before any call that takes one: identifiers differ in each '
+                . 'shop, never assume one. Two categories can share a name in different branches (Men > T-shirts, '
+                . 'Women > T-shirts): ask the merchant, or read each with somcp_get_category, before writing. The '
+                . 'root category is left out, Home is listed. For the products of a category use '
+                . 'somcp_search_products with id_category.',
             [
                 'type' => 'object',
                 'properties' => [
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the names in, '
-                            . 'for example fr. The shop default is used otherwise.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                 ],
                 'additionalProperties' => false,
@@ -80,7 +76,11 @@ class SomcpToolListCategories
     public static function handle(array $arguments, array $context): array
     {
         $idShop = (int) Somcp::currentShop()->id;
-        $idLang = self::language($arguments);
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $iso] = $language;
 
         // A query rather than Category::getSimpleCategories(), which reads the
         // shop from the global context: here it comes from the token and is
@@ -112,28 +112,9 @@ class SomcpToolListCategories
         }
 
         return SomcpTool::json([
+            'language' => $iso,
             'categories' => $categories,
             'count' => count($categories),
         ]);
-    }
-
-    /**
-     * The language to read the names in.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return int
-     */
-    private static function language(array $arguments): int
-    {
-        $iso = isset($arguments['language']) && is_scalar($arguments['language']) ? trim((string) $arguments['language']) : '';
-        if ($iso !== '') {
-            $idLang = (int) Language::getIdByIso($iso);
-            if ($idLang > 0) {
-                return $idLang;
-            }
-        }
-
-        return (int) Somcp::legacyContext()->language->id;
     }
 }

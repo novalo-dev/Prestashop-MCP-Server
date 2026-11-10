@@ -29,7 +29,10 @@ declare(strict_types=1);
  * It runs without a shop: the tools only need their own classes to define
  * themselves, and the title translation is replaced by its English source.
  *
- * Usage: php dev/tools/measure.php <module folder>
+ * With --json it prints the same rows as JSON instead, for check-tools.php,
+ * which refuses the texts above the budget: one measurement, read by both.
+ *
+ * Usage: php dev/tools/measure.php <module folder> [--json]
  */
 
 const TOOL_BUDGET = 600;
@@ -119,6 +122,11 @@ foreach (glob($root . '/tools/SomcpTool*.php') ?: [] as $file) {
 usort($rows, function ($a, $b) {
     return [$a['page'], $a['name']] <=> [$b['page'], $b['name']];
 });
+
+if (in_array('--json', $argv, true)) {
+    echo json_encode(['tool_budget' => TOOL_BUDGET, 'property_budget' => PROPERTY_BUDGET, 'tools' => $rows]), "\n";
+    exit(0);
+}
 
 $pages = [];
 $total = 0;

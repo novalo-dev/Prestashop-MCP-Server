@@ -71,7 +71,9 @@ class SomcpToolAddOrderMessage
                     ],
                     'reference' => [
                         'type' => 'string',
-                        'description' => 'Reference of the order, used when no identifier is known.',
+                        'description' => 'Reference of the order, used when no identifier is known. A '
+                            . 'reference shared by several orders (a split cart) is refused with their '
+                            . 'identifiers.',
                     ],
                     'message' => [
                         'type' => 'string',
@@ -139,9 +141,12 @@ class SomcpToolAddOrderMessage
             );
         }
 
-        $order = SomcpToolGetOrder::locate($arguments);
-        if ($order === null) {
-            return SomcpTool::text('No order of this shop matches what was given. Nothing was sent.', true);
+        // find() rather than the newest order of a reference: a split cart
+        // gives several orders one reference, and writing on one of them
+        // would act on a parcel nobody chose.
+        $order = SomcpToolGetOrder::find($arguments);
+        if (!$order instanceof Order) {
+            return SomcpTool::text($order . ' Nothing was sent.', true);
         }
 
         // Refused as the core refuses it: the thread is keyed on the customer's

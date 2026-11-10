@@ -69,11 +69,14 @@ class SomcpToolSetOrderStatus
                     ],
                     'reference' => [
                         'type' => 'string',
-                        'description' => 'Reference of the order to change, used when no identifier is known.',
+                        'description' => 'Reference of the order, used when no identifier is known. A '
+                            . 'reference shared by several orders (a split cart) is refused with their '
+                            . 'identifiers.',
                     ],
                     'status_id' => [
                         'type' => 'integer',
-                        'description' => 'Identifier of the status to set, taken from somcp_list_order_statuses.',
+                        'description' => 'Identifier of the status to set, taken from somcp_list_order_statuses. '
+                            . 'A deleted status is refused.',
                     ],
                 ],
                 'required' => ['status_id'],
@@ -95,14 +98,21 @@ class SomcpToolSetOrderStatus
      */
     public static function handle(array $arguments, array $context): array
     {
-        $order = self::locate($arguments);
-        if ($order === null) {
-            return SomcpTool::text('No order of this shop matches what was given.', true);
+        // The lookup every order tool shares: a reference held by several
+        // orders (a split cart) is refused with their identifiers, since the
+        // status change can email the customer about a parcel nobody chose.
+        $order = SomcpToolGetOrder::find($arguments);
+        if (!$order instanceof Order) {
+            return SomcpTool::text($order . ' Nothing was changed.', true);
         }
 
         $idLang = (int) $order->id_lang;
-        $target = new OrderState((int) ($arguments['status_id'] ?? 0), $idLang);
-        if (!Validate::isLoadedObject($target)) {
+        $target = new OrderState(SomcpTool::id($arguments, 'status_id'), $idLang);
+        // A deleted status still loads: Delete on the Statuses page only flags
+        // it, since orders may still stand on it. The order page never offers
+        // one (OrderState::getOrderStates() filters them out), so neither does
+        // this tool.
+        if (!Validate::isLoadedObject($target) || (bool) $target->deleted) {
             return SomcpTool::text(
                 'No such status in this shop. Call somcp_list_order_statuses to get the identifiers.',
                 true
@@ -111,18 +121,18 @@ class SomcpToolSetOrderStatus
 
         $current = $order->getCurrentOrderState();
         $previous = Validate::isLoadedObject($current)
-            ? ['id' => (int) $current->id, 'name' => (string) (new OrderState((int) $current->id, $idLang))->name]
+            ? ['status_id' => (int) $current->id, 'name' => (string) (new OrderState((int) $current->id, $idLang))->name]
             : null;
 
         // The core refuses this too, in UpdateOrderStatusHandler. Refusing it
         // here as well is what keeps a retried call from mailing the customer a
         // second time - the single likeliest way this tool causes harm.
-        if ($previous !== null && $previous['id'] === (int) $target->id) {
+        if ($previous !== null && $previous['status_id'] === (int) $target->id) {
             return SomcpTool::json([
                 'changed' => false,
                 'reason' => 'The order already has this status. Nothing was changed and no email was sent.',
                 'order' => self::identify($order),
-                'status' => ['id' => (int) $target->id, 'name' => (string) $target->name],
+                'status' => ['status_id' => (int) $target->id, 'name' => (string) $target->name],
             ]);
         }
 
@@ -134,7 +144,7 @@ class SomcpToolSetOrderStatus
      *
      * @param Order $order
      * @param OrderState $target
-     * @param array{id:int, name:string}|null $previous
+     * @param array{status_id:int, name:string}|null $previous
      * @param int $idEmployee
      *
      * @return array<string, mixed>
@@ -196,7 +206,7 @@ class SomcpToolSetOrderStatus
             'changed' => true,
             'order' => self::identify($order),
             'previous_status' => $previous,
-            'status' => ['id' => (int) $target->id, 'name' => (string) $target->name],
+            'status' => ['status_id' => (int) $target->id, 'name' => (string) $target->name],
             // What the shop is set to do at this status, and what actually
             // happened to the mail. Reported apart because a status that mails
             // the customer can still fail to send.
@@ -248,38 +258,5 @@ class SomcpToolSetOrderStatus
             'id_order' => (int) $order->id,
             'reference' => (string) $order->reference,
         ];
-    }
-
-    /**
-     * Finds the order, and only within the shop the token belongs to.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return Order|null
-     */
-    private static function locate(array $arguments): ?Order
-    {
-        $idShop = Somcp::currentShopId();
-        $idOrder = (int) ($arguments['id_order'] ?? 0);
-
-        if ($idOrder <= 0 && !empty($arguments['reference'])) {
-            $idOrder = (int) Db::getInstance()->getValue(
-                'SELECT `id_order` FROM `' . _DB_PREFIX_ . "orders`
-                 WHERE `reference` = '" . pSQL((string) $arguments['reference']) . "'
-                   AND `id_shop` = " . $idShop . '
-                 ORDER BY `id_order` DESC'
-            );
-        }
-
-        if ($idOrder <= 0) {
-            return null;
-        }
-
-        $order = new Order($idOrder);
-        if (!Validate::isLoadedObject($order) || (int) $order->id_shop !== $idShop) {
-            return null;
-        }
-
-        return $order;
     }
 }

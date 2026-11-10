@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "id_order_history": 1}, "expect": "error", "contains": ["No order of this shop has this identifier", "somcp_search_orders", "Nothing was sent"]},
+    {"why": "a reference no order of the shop has", "arguments": {"reference": "SOMCPNONE", "id_order_history": 1}, "expect": "error", "contains": ["No order of this shop has this reference", "Nothing was sent"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"id_order_history": 1}, "expect": "error", "contains": ["Give id_order or reference", "Nothing was sent"]},
+    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "id_order_history": 1, "status_id": 3}, "expect": "error", "contains": ["status_id: not a field of this tool", "Nothing was sent"]},
+    {"why": "the status line is missing", "arguments": {"id_order": 1}, "expect": "error", "contains": ["id_order_history: required", "somcp_get_order", "Nothing was sent"]},
+    {"why": "a status line identifier that is not a whole number is not read as 1", "arguments": {"id_order": 1, "id_order_history": [1]}, "expect": "error", "contains": ["id_order_history: give the status line identifier, a whole number", "Nothing was sent"]},
+    {"why": "a status line that is not this order's", "arguments": {"id_order": 1, "id_order_history": 999999}, "expect": "error", "contains": ["id_order_history: not a status line of this order", "somcp_get_order", "Nothing was sent"]}
+  ]
+}

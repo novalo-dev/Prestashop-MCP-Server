@@ -11,6 +11,7 @@
     {"why": "display_to_customer left out is not read as private", "arguments": {"id_order": 1, "message": "Hello"}, "expect": "error", "contains": ["display_to_customer must be true"]},
     {"why": "display_to_customer as a string is not read as true", "arguments": {"id_order": 1, "message": "Hello", "display_to_customer": "false"}, "expect": "error", "contains": ["display_to_customer must be true"]},
     {"why": "an order that does not exist", "arguments": {"id_order": 999999, "message": "Hello", "display_to_customer": false}, "expect": "error", "contains": ["No order of this shop"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"message": "Hello", "display_to_customer": false}, "expect": "error", "contains": ["No order of this shop"]}
+    {"why": "neither an identifier nor a reference", "arguments": {"message": "Hello", "display_to_customer": false}, "expect": "error", "contains": ["Give id_order or reference", "somcp_search_orders"]},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "message": "Hello", "display_to_customer": false}, "expect": "error", "contains": ["No order of this shop has this reference"]}
   ]
 }

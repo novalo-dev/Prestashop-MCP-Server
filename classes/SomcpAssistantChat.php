@@ -397,8 +397,9 @@ class SomcpAssistantChat
 
     /**
      * Tells the model which back office page the employee has open, so "this
-     * order" or "here" has a meaning. Sent by the browser, hence kept to the
-     * shape of a controller name.
+     * order" or "here" has a meaning, and offers the read tools of that page
+     * from the first message (see tools()). Sent by the browser, hence kept to
+     * the shape of a controller name; an unknown one simply matches no tool.
      *
      * @param string $page
      */
@@ -1926,11 +1927,11 @@ class SomcpAssistantChat
      * by another module reaches the chat the moment it is registered, with
      * nothing to wire here. A tool that is not read-only asks for approval.
      *
-     * Only the BASE_TOOLS and those the conversation loaded are described to
-     * the model; the rest are reached through FIND_TOOL. The chat's own tools
-     * come with them when they apply: web search when switched on, the
-     * module's settings for a super administrator, another assistant when
-     * there is one to ask.
+     * Only the BASE_TOOLS, those the conversation loaded and the read tools of
+     * the page the chat is open on are described to the model; the rest are
+     * reached through FIND_TOOL. The chat's own tools come with them when they
+     * apply: web search when switched on, the module's settings for a super
+     * administrator, another assistant when there is one to ask.
      *
      * @param array<string, mixed> $assistant
      * @param array<string, mixed> $thread
@@ -1943,7 +1944,12 @@ class SomcpAssistantChat
         $tools = [];
         $scopes = $this->scopes();
         $idEmployee = (int) $this->employee->id;
-        $wanted = array_merge(self::BASE_TOOLS, $this->loaded($thread));
+        // The reads of the page the chat is open on come from the first
+        // message, so "this order" needs no search first. They follow the
+        // page rather than the conversation: kept out of the loaded list and
+        // of MAX_LOADED, a conversation reopened elsewhere gets that page's.
+        $page = $this->page !== '' ? SomcpToolRegistry::getInstance()->forPage($this->page) : [];
+        $wanted = array_merge(self::BASE_TOOLS, $this->loaded($thread), $page);
 
         $tools[] = new FrontendTool(
             self::FIND_TOOL,

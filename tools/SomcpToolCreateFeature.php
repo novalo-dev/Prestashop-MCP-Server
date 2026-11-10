@@ -116,11 +116,10 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
                 ],
                 'name' => $text('Merchant. Required. The name shown on the product page, 128 characters at most, '
                     . 'without < > = { }.'),
-                'url_name' => $text('Assistant. Faceted search: the word used in filtered URLs instead of the '
-                    . 'name, lower case letters, digits and hyphens, for example "material". Empty for the name. '
-                    . '128 characters at most.'),
-                'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages instead of the '
-                    . 'name. 128 characters at most, without < > = { }.'),
+                'url_name' => $text('Assistant. Faceted search: the URL word of filters, a-z, 0-9, hyphens; '
+                    . 'empty: the name.'),
+                'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages, 128 characters '
+                    . 'at most.'),
                 'indexable' => [
                     'type' => 'boolean',
                     'description' => 'Merchant. Faceted search: whether filtered pages on this feature are open to '

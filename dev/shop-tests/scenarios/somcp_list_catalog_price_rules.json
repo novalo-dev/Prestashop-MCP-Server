@@ -1,0 +1,17 @@
+{
+  "calls": [
+    {"why": "the catalogue price rules of the shop: the demo data holds none, and the scenario of somcp_create_catalog_price_rule runs first and writes some", "arguments": {}, "expect": "ok", "contains": ["\"catalog_price_rules\"", "\"returned\"", "\"total_count\"", "\"offset\": 0", "\"language\""]},
+    {"why": "a rule written by the create tool is read back by its name, with its condition", "arguments": {"name": "Somcp men ten percent"}, "expect": "ok", "contains": ["\"name\": \"Somcp men ten percent\"", "\"reduction\": 0.1", "\"id_category\": 4", "\"total_count\": 1"]},
+    {"why": "only the percentage rules, one page of five", "arguments": {"reduction_type": "percentage", "limit": 5}, "expect": "ok", "contains": ["\"catalog_price_rules\""]},
+    {"why": "only the rules in force right now", "arguments": {"current": true}, "expect": "ok", "contains": ["\"catalog_price_rules\""]},
+    {"why": "the rules for one customer group and for all groups", "arguments": {"id_group": 3}, "expect": "ok", "contains": ["\"catalog_price_rules\""]},
+    {"why": "names in a language asked by its ISO code", "arguments": {"language": "en", "offset": 0}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a currency the shop does not have is refused", "arguments": {"currency": "XXX"}, "expect": "error", "contains": ["currency: not a currency of this shop"]},
+    {"why": "a country the shop does not have is refused", "arguments": {"country": "ZZ"}, "expect": "error", "contains": ["country: no country of this shop has the ISO code"]},
+    {"why": "a group no shop has is refused", "arguments": {"id_group": 999999}, "expect": "error", "contains": ["id_group: not a group of this shop"]},
+    {"why": "a reduction type that is neither amount nor percentage is refused", "arguments": {"reduction_type": "free"}, "expect": "error", "contains": ["reduction_type: amount or percentage"]},
+    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["language: not a language of this shop"]},
+    {"why": "more than 100 rules at once is refused", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1}, "expect": "error", "contains": ["foo: not a field of this tool", "offset: a whole number, 0 at least"]}
+  ]
+}

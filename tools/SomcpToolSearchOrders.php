@@ -252,7 +252,9 @@ class SomcpToolSearchOrders
         $conditions = ['o.`id_shop` = ' . $idShop];
 
         if (!empty($arguments['id_order'])) {
-            $conditions[] = 'o.`id_order` = ' . (int) $arguments['id_order'];
+            // A value that is not a whole number matches no order rather than
+            // being cast to another one.
+            $conditions[] = 'o.`id_order` = ' . SomcpTool::id($arguments, 'id_order');
         }
         if (!empty($arguments['reference'])) {
             $conditions[] = "o.`reference` LIKE '%" . pSQL((string) $arguments['reference']) . "%'";
@@ -279,7 +281,7 @@ class SomcpToolSearchOrders
             $conditions[] = "o.`date_add` <= '" . pSQL((string) $arguments['date_to']) . " 23:59:59'";
         }
         if (!empty($arguments['status_id'])) {
-            $conditions[] = 'o.`current_state` = ' . (int) $arguments['status_id'];
+            $conditions[] = 'o.`current_state` = ' . SomcpTool::id($arguments, 'status_id');
         }
         if (isset($arguments['total_min']) && is_numeric($arguments['total_min'])) {
             $conditions[] = 'o.`total_paid_tax_incl` >= ' . (float) $arguments['total_min'];

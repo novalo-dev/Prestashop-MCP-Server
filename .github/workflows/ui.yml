@@ -180,3 +180,18 @@ jobs:
           name: ui-shots-${{ matrix.prestashop }}-${{ matrix.browser }}-${{ matrix.db }}
           path: ui-shots
           if-no-files-found: ignore
+
+  passed:
+    # The one name the main branch ruleset requires from this workflow, so the
+    # matrix can change its PrestaShop, PHP, browser or database without
+    # leaving a required name nothing reports. always(): a failed or cancelled
+    # sanity job is read here and turned into a failure.
+    name: UI passed
+    needs: sanity
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every browser and database green
+        run: |
+          echo "sanity jobs: ${{ needs.sanity.result }}"
+          [ "${{ needs.sanity.result }}" = success ]

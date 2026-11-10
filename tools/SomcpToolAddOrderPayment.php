@@ -75,7 +75,9 @@ class SomcpToolAddOrderPayment
                     ],
                     'reference' => [
                         'type' => 'string',
-                        'description' => 'Reference of the order, used when no identifier is known.',
+                        'description' => 'Reference of the order, used when no identifier is known. A '
+                            . 'reference shared by several orders (a split cart) is refused with their '
+                            . 'identifiers.',
                     ],
                     'amount' => [
                         'type' => 'number',
@@ -83,10 +85,9 @@ class SomcpToolAddOrderPayment
                     ],
                     'payment_method' => [
                         'type' => 'string',
-                        'description' => 'The payment method, best given as the Payment block suggests it: the name '
-                            . 'of the shop\'s payment module, for example "Bank transfer", "Payments by check" or '
-                            . '"Cash on delivery (COD)", so the Payment table and the order read the same method. '
-                            . '255 characters at most, without < > = { }.',
+                        'description' => 'The payment method, as the Payment block suggests it: the name of a payment '
+                            . 'module of the shop, for example "Bank transfer" or "Payments by check". 255 characters '
+                            . 'at most, without < > = { }.',
                     ],
                     'currency' => [
                         'type' => 'string',
@@ -181,9 +182,12 @@ class SomcpToolAddOrderPayment
             );
         }
 
-        $order = SomcpToolGetOrder::locate($arguments);
-        if ($order === null) {
-            return SomcpTool::text('No order of this shop matches what was given. Nothing was recorded.', true);
+        // find() rather than the newest order of a reference: a split cart
+        // gives several orders one reference, and writing on one of them
+        // would act on a parcel nobody chose.
+        $order = SomcpToolGetOrder::find($arguments);
+        if (!$order instanceof Order) {
+            return SomcpTool::text($order . ' Nothing was recorded.', true);
         }
 
         $currency = self::currency($arguments['currency'] ?? null, $order);

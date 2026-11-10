@@ -161,33 +161,13 @@ class SomcpToolCreateProduct
         return new SomcpTool(
             'somcp_create_product',
             Somcp::t('Create a product'),
-            'Creates one product in this shop, inactive unless options.active says otherwise. Everything '
-                . 'somcp_get_product reads can be given, in the same groups and under the same names: texts, '
-                . 'categories, brand, related products, references, features, attachments, condition, '
-                . 'customization, stock, the products of a pack, the downloadable file of a virtual product, '
-                . 'shipping and carriers, pricing and tax, specific prices, SEO, options, suppliers, images and '
-                . 'combinations. Only basics.name and pricing.price_tax_excl '
-                . 'are required. '
-                . 'Who fills each field is said at the start of its description, and is a rule for you: '
-                . '"Merchant" - ask the merchant and never invent the value; you may suggest one for them to '
-                . 'confirm. "Merchant, from the shop" - show the list read with the matching somcp_list_* tool '
-                . '(categories, brands, carriers, tax rules, suppliers, attributes, features, attachments, '
-                . 'customer groups) and let the merchant pick; never guess an identifier, and never create '
-                . 'the object - this tool refuses one that does not exist. "Assistant" - write it yourself in '
-                . 'every language being filled, and show it to the merchant before the call. "Merchant and '
-                . 'assistant" - the merchant gives the material, you prepare the rest and show it first. '
-                . 'Texts are objects keyed by ISO code and must be given for every language in languages; a '
-                . 'language of the shop left out takes the default language\'s text. Lengths count the visible '
-                . 'text, spaces included, HTML tags not counted. '
-                . 'Every problem is reported at once and nothing is written until the whole call is valid. '
-                . 'Images are downloaded by the shop from public https addresses, or taken from a file already '
-                . 'on the shop by its upload_ref; one that cannot be had is reported in images and does not stop '
-                . 'the creation. The products of a pack and the file of a virtual product are reported the same '
-                . 'way, in pack_items and virtual_file. '
-                . 'Do not use it to change an existing product, which is somcp_update_product. One product per '
-                . 'call: for several, call it once per product and report each result. '
-                . 'Not to be retried: if the answer is lost, search with somcp_search_products by the '
-                . 'reference or the name before anything else, because a second call creates a second product.',
+            'Creates one product in this shop, inactive unless options.active is set. Takes everything '
+                . 'somcp_get_product reads, in the same groups and under the same names; only basics.name and '
+                . 'pricing.price_tax_excl are required. Identifiers come from the somcp_list_* tools; who fills '
+                . 'each field, and how texts and languages work, is set out in the Managing products prompt. '
+                . 'One product per call. To change an existing product use somcp_update_product. Not to be '
+                . 'retried: if the answer is lost, find the product with somcp_search_products first, because a '
+                . 'second call creates a second product.',
             self::inputSchema(),
             [SomcpScope::CATALOG_WRITE],
             [self::class, 'handle'],
@@ -284,7 +264,7 @@ class SomcpToolCreateProduct
                 'features' => [
                     'type' => 'array',
                     'description' => 'Merchant, from the shop: features from somcp_list_features, each with an '
-                        . 'existing value or a custom value typed for this product only.',
+                        . 'existing value or a custom value for this product only.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
@@ -400,9 +380,8 @@ class SomcpToolCreateProduct
                         'file' => [
                             'type' => 'object',
                             'description' => 'Merchant. Required. url: a public https address the shop downloads '
-                                . '(no redirect); upload_ref: a file already on the shop - attached, deposited or '
-                                . 'generated in the built-in assistant. One of the two, never file content. Within '
-                                . 'the shop\'s maximum attachment size.',
+                                . '(no redirect); upload_ref: a file already on the shop. One of the two, never file '
+                                . 'content; within the shop\'s maximum attachment size.',
                             'properties' => [
                                 'url' => ['type' => 'string'],
                                 'upload_ref' => ['type' => 'string'],
@@ -513,19 +492,17 @@ class SomcpToolCreateProduct
                         'link_rewrite' => $text('Assistant. The friendly URL; generated from the name when left out.'),
                         'redirect_type' => [
                             'type' => 'string',
-                            'description' => 'Assistant. What the product page does while inactive: 404, 410, '
-                                . '301-product, 302-product, 301-category, 302-category; PrestaShop 9 adds default, '
-                                . '200-displayed, 404-displayed, 410-displayed. Left out: the shop default.',
+                            'description' => 'Assistant. Product page while inactive: 404, 410, 301-product, '
+                                . '302-product, 301-category, 302-category; PrestaShop 9 adds default, 200-displayed, '
+                                . '404-displayed, 410-displayed. Left out: shop default.',
                         ],
                         'id_type_redirected' => [
                             'type' => 'integer',
                             'description' => 'Assistant. The product or category a 301 or 302 redirects to.',
                         ],
                         'meta_keywords' => $text('Assistant. PrestaShop 8 only; refused on 9, which dropped them.'),
-                        'tags' => $text('Assistant and merchant. The tags (Étiquettes), a comma separated list per '
-                            . 'language: "pixel 8, smartphone google, android 14". Written to the shop tag field, '
-                            . 'which is separate from meta_keywords and kept on every PrestaShop version. Each tag is '
-                            . '32 characters at most and may not hold < > = # { }.'),
+                        'tags' => $text('Assistant and merchant. Tags (Étiquettes), comma separated, not meta_keywords; '
+                            . '32 characters each, no < > = # { }.'),
                     ],
                     'additionalProperties' => false,
                 ],
@@ -574,10 +551,8 @@ class SomcpToolCreateProduct
                 'images' => [
                     'type' => 'array',
                     'description' => 'Merchant and assistant: the merchant gives the images, the assistant '
-                        . 'writes the legends. Each image is a url, downloaded by the shop (public https only, '
-                        . 'no redirect, 10 MB at most), or the upload_ref of a file already on the shop - one '
-                        . 'the merchant attached or deposited, or an image generated in the built-in assistant. '
-                        . 'JPEG, PNG, GIF or WebP. Never file content.',
+                        . 'writes the legends. Each by url (public https, no redirect, 10 MB at most) or '
+                        . 'upload_ref: JPEG, PNG, GIF, WebP, never file content.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
@@ -1899,11 +1874,14 @@ class SomcpToolCreateProduct
      */
     protected static function rule(array $item, string $path, array $rule, int $combinations, int $idShop, array &$errors): array
     {
+        // An empty path names the fields alone, for somcp_create_catalog_price_rule,
+        // whose rule is the whole call rather than one entry of a list.
+        $at = $path === '' ? '' : $path . '.';
         if (isset($item['combination'])) {
             $rule['combination'] = self::position($item, 'combination', $combinations, $path, $errors);
         }
         if (isset($item['currency'])) {
-            $rule['id_currency'] = self::currency($item['currency'], $idShop, $path . '.currency', $errors);
+            $rule['id_currency'] = self::currency($item['currency'], $idShop, $at . 'currency', $errors);
         }
         if (isset($item['country'])) {
             $iso = self::string($item['country']);
@@ -1911,49 +1889,49 @@ class SomcpToolCreateProduct
             // rather than answering false, so the code is checked first.
             $idCountry = $iso !== null && Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
             if ($idCountry <= 0) {
-                $errors[] = $path . '.country: no country with this ISO code';
+                $errors[] = $at . 'country: no country with this ISO code';
             }
             $rule['id_country'] = $idCountry;
         }
         if (isset($item['id_group'])) {
             $idGroup = self::integer($item['id_group']);
             if ($idGroup === null || $idGroup < 0 || ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup)))) {
-                $errors[] = $path . '.id_group: no such customer group. Take one from somcp_list_customer_groups, 0 for all.';
+                $errors[] = $at . 'id_group: no such customer group. Take one from somcp_list_customer_groups, 0 for all.';
             }
             $rule['id_group'] = (int) $idGroup;
         }
         if (isset($item['id_customer'])) {
             $idCustomer = self::integer($item['id_customer']);
             if ($idCustomer === null || $idCustomer < 0 || ($idCustomer > 0 && !Customer::customerIdExistsStatic($idCustomer))) {
-                $errors[] = $path . '.id_customer: no such customer, 0 for all';
+                $errors[] = $at . 'id_customer: no such customer, 0 for all';
             }
             $rule['id_customer'] = (int) $idCustomer;
         }
         if (isset($item['from_quantity'])) {
             $from = self::integer($item['from_quantity']);
             if ($from === null || $from < 1) {
-                $errors[] = $path . '.from_quantity: a whole number, 1 or more';
+                $errors[] = $at . 'from_quantity: a whole number, 1 or more';
             }
             $rule['from_quantity'] = (int) $from;
         }
         if (isset($item['price'])) {
             $price = self::float($item['price']);
             if ($price === null || ($price < 0 && $price !== -1.0)) {
-                $errors[] = $path . '.price: a price tax excluded, or -1 to keep the product price';
+                $errors[] = $at . 'price: a price tax excluded, or -1 to keep the product price';
             }
             $rule['price'] = (float) $price;
         }
         if (isset($item['reduction_type'])) {
             $type = self::string($item['reduction_type']);
             if (!in_array($type, ['amount', 'percentage'], true)) {
-                $errors[] = $path . '.reduction_type: amount or percentage';
+                $errors[] = $at . 'reduction_type: amount or percentage';
             }
             $rule['reduction_type'] = (string) $type;
         }
         if (isset($item['reduction'])) {
             $reduction = self::float($item['reduction']);
             if ($reduction === null || $reduction < 0) {
-                $errors[] = $path . '.reduction: a positive number';
+                $errors[] = $at . 'reduction: a positive number';
             }
             $rule['reduction'] = (float) $reduction;
         }
@@ -1962,28 +1940,28 @@ class SomcpToolCreateProduct
         if ($rule['reduction_type'] === 'percentage' && (float) $rule['reduction'] > 1) {
             // Stored as a fraction, which is also how somcp_get_product
             // returns it. 20 here would be a 2000 % reduction.
-            $errors[] = $path . '.reduction: for a percentage, the fraction - 0.2 for 20 %';
+            $errors[] = $at . 'reduction: for a percentage, the fraction - 0.2 for 20 %';
         }
         if (isset($item['reduction_tax'])) {
             $tax = self::bool($item['reduction_tax']);
             if ($tax === null) {
-                $errors[] = $path . '.reduction_tax: true or false';
+                $errors[] = $at . 'reduction_tax: true or false';
             }
             $rule['reduction_tax'] = $tax ? 1 : 0;
         }
         foreach (['from', 'to'] as $bound) {
             if (isset($item[$bound])) {
-                $rule[$bound] = (string) self::dateTime($item[$bound], $path . '.' . $bound, $errors);
+                $rule[$bound] = (string) self::dateTime($item[$bound], $at . $bound, $errors);
             }
         }
         if (strpos((string) $rule['to'], '0000') !== 0 && strpos((string) $rule['from'], '0000') !== 0 && $rule['to'] < $rule['from']) {
-            $errors[] = $path . ': to comes before from';
+            $errors[] = ($path === '' ? 'to' : $path) . ': to comes before from';
         }
         if ((float) $rule['price'] < 0 && (float) $rule['reduction'] <= 0) {
-            $errors[] = $path . ': neither a price nor a reduction, so the rule would change nothing';
+            $errors[] = ($path === '' ? 'reduction' : $path) . ': neither a price nor a reduction, so the rule would change nothing';
         }
         if (($check = (new SpecificPrice())->validateField('reduction_type', $rule['reduction_type'])) !== true) {
-            $errors[] = $path . '.reduction_type: ' . self::reason($check);
+            $errors[] = $at . 'reduction_type: ' . self::reason($check);
         }
 
         return $rule;
@@ -2254,9 +2232,8 @@ class SomcpToolCreateProduct
     {
         return [
             'type' => 'object',
-            'description' => $description . ' Give its url, downloaded by the shop (public https only, no redirect, '
-                . '10 MB at most), or the upload_ref of a file already on the shop - one the merchant attached or '
-                . 'deposited, or an image generated in the built-in assistant. JPEG, PNG, GIF or WebP. Never file content.',
+            'description' => $description . ' Its url (public https, no redirect, 10 MB at most) or the upload_ref '
+                . 'of a file already on the shop. JPEG, PNG, GIF or WebP; never file content.',
             'properties' => [
                 'url' => ['type' => 'string', 'description' => 'Public https address of ' . $of . '. Give url or upload_ref, not both.'],
                 'upload_ref' => ['type' => 'string', 'description' => 'Reference of ' . $of . ' already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],

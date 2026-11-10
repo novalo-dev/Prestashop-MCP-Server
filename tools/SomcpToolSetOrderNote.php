@@ -73,7 +73,9 @@ class SomcpToolSetOrderNote
                     ],
                     'reference' => [
                         'type' => 'string',
-                        'description' => 'Reference of the order, used when no identifier is known.',
+                        'description' => 'Reference of the order, used when no identifier is known. A '
+                            . 'reference shared by several orders (a split cart) is refused with their '
+                            . 'identifiers.',
                     ],
                     'note' => [
                         'type' => 'string',
@@ -109,9 +111,12 @@ class SomcpToolSetOrderNote
         // text would make the same note look new.
         $note = trim($arguments['note']);
 
-        $order = SomcpToolGetOrder::locate($arguments);
-        if ($order === null) {
-            return SomcpTool::text('No order of this shop matches what was given. Nothing was changed.', true);
+        // find() rather than the newest order of a reference: a split cart
+        // gives several orders one reference, and writing on one of them
+        // would act on a parcel nobody chose.
+        $order = SomcpToolGetOrder::find($arguments);
+        if (!$order instanceof Order) {
+            return SomcpTool::text($order . ' Nothing was changed.', true);
         }
 
         // PrestaShop 9 declares the size of the field on the class and

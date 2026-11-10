@@ -174,8 +174,11 @@ composer install --working-dir=dev/tools
 
 CI runs all of these on every pull request, in four workflows with a badge
 each on the README: **PHP tests**, **Security**, **Integration** and **UI
-tests** (a real browser through the module's back office pages). Run them
-before pushing:
+tests** (a real browser through the module's back office pages). A pull
+request into `main` merges only once every job of all four is green; Integration
+and UI report that through one job each, **Integration passed** and **UI
+passed**, so their matrices can change without touching the branch rules. Run
+them before pushing:
 
 ```bash
 # PrestaShop coding standard
@@ -183,6 +186,15 @@ dev/tools/vendor/bin/php-cs-fixer fix --dry-run --diff
 
 # Static analysis, against a PrestaShop folder
 _PS_ROOT_DIR_=/path/to/prestashop dev/tools/vendor/bin/phpstan analyse -c phpstan.dist.neon
+
+# Every construct, function and class available from PHP 8.1 up
+dev/tools/vendor/bin/phpcs -p -s --standard=dev/tools/phpcompatibility.xml
+
+# The archive as it ships, held to the Addons rules: index.php in every
+# folder, no hidden file but .htaccess, no forbidden file type, no eval or
+# process call, the request read through Tools::getValue(), config.xml
+# matching somcp.php, the logo
+dev/package/build.sh /tmp/pack && php dev/package/addons-check.php /tmp/pack/somcp
 
 # Every visible string in the four languages
 php .github/scripts/check-translations.php .
@@ -245,6 +257,15 @@ from the zip, the package built by `git archive` as GitHub serves it. A
 dependency that no longer fits beside the core's own fails there. PrestaShop 8
 is not among them: packages locked by its core declare PHP 8.0 at most, so
 Composer refuses the module there, and it installs from the zip.
+
+The **PHP tests** workflow also runs PrestaShop's own PHPStan action, the
+one PrestaShop's modules use, on PrestaShop 8.2 and 9.0: it checks out the
+PrestaShop sources, analyses with the PHPStan version they lock and reads
+`phpstan-module.neon`, the settings `phpstan.dist.neon` shares. Write those
+settings so PHPStan 1 and 2 both read them: ignore an error by its message,
+not by its identifier. A rule of `dev/package/addons-check.php` that an
+exception needs, such as a superglobal read directly, takes the file and the
+reason in that script, never a blanket skip.
 
 The **PHP tests** workflow also lints every file on PHP 8.1 to 8.4 and compiles `config/services.yml`
 with the Symfony versions of PrestaShop 8 (4.4) and 9 (6.4), with and without
@@ -456,14 +477,12 @@ that module), reformatting unrelated code.
 ## Building the Addons package
 
 Files only useful to developers are marked `export-ignore` in
-`.gitattributes`. The builds lay the module out from git, add its Composer
-dependencies, then remove what the module never runs, listed in
-`dev/package/prune.txt`:
+`.gitattributes`. `dev/package/build.sh` lays the module out from git, adds
+its Composer dependencies, then removes what the module never runs, listed in
+`dev/package/prune.txt`. Build for Release and the PHP tests both call it:
 
 ```bash
-mkdir -p build && git archive --prefix=somcp/ HEAD | tar -x -C build
-composer install --working-dir=build/somcp --no-dev --no-scripts --no-plugins --optimize-autoloader
-dev/package/prune.sh build/somcp
+dev/package/build.sh build
 (cd build && zip -qr ../somcp.zip somcp)
 ```
 

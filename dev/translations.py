@@ -1090,6 +1090,26 @@ T = {
  "Renseigner le numéro de suivi d'une commande",
  "Indicar el número de seguimiento de un pedido",
  "Die Sendungsnummer einer Bestellung eintragen"),
+"Add a discount to an order": (
+ "Ajouter une remise à une commande",
+ "Añadir un descuento a un pedido",
+ "Einer Bestellung einen Rabatt hinzufügen"),
+"Remove a discount from an order": (
+ "Supprimer une remise d'une commande",
+ "Eliminar un descuento de un pedido",
+ "Einen Rabatt aus einer Bestellung entfernen"),
+"Change an address of an order": (
+ "Modifier une adresse d'une commande",
+ "Cambiar una dirección de un pedido",
+ "Eine Adresse einer Bestellung ändern"),
+"Change the carrier of an order": (
+ "Modifier le transporteur d'une commande",
+ "Cambiar el transportista de un pedido",
+ "Den Versanddienstleister einer Bestellung ändern"),
+"Resend the email of an order status": (
+ "Renvoyer l'e-mail d'un statut de commande",
+ "Reenviar el correo de un estado de pedido",
+ "Die E-Mail eines Bestellstatus erneut senden"),
 "Add a message to an order": (
  "Ajouter un message à une commande",
  "Añadir un mensaje a un pedido",
@@ -1102,6 +1122,46 @@ T = {
  "Enregistrer un paiement pour une commande",
  "Registrar un pago de un pedido",
  "Eine Zahlung für eine Bestellung erfassen"),
+"Issue a partial refund on an order": (
+ "Effectuer un remboursement partiel sur une commande",
+ "Realizar un reembolso parcial de un pedido",
+ "Eine Teilerstattung für eine Bestellung vornehmen"),
+"Issue a standard refund on an order": (
+ "Effectuer un remboursement standard sur une commande",
+ "Realizar un reembolso estándar de un pedido",
+ "Eine Standarderstattung für eine Bestellung vornehmen"),
+"Return products of an order": (
+ "Retourner des produits d'une commande",
+ "Devolver productos de un pedido",
+ "Produkte einer Bestellung zurücknehmen"),
+"Cancel products of an order": (
+ "Annuler des produits d'une commande",
+ "Cancelar productos de un pedido",
+ "Produkte einer Bestellung stornieren"),
+"Add a product to an order": (
+ "Ajouter un produit à une commande",
+ "Añadir un producto a un pedido",
+ "Ein Produkt zu einer Bestellung hinzufügen"),
+"Edit a product line of an order": (
+ "Modifier une ligne de produit d'une commande",
+ "Editar una línea de producto de un pedido",
+ "Eine Produktzeile einer Bestellung bearbeiten"),
+"Remove a product line from an order": (
+ "Supprimer une ligne de produit d'une commande",
+ "Eliminar una línea de producto de un pedido",
+ "Eine Produktzeile aus einer Bestellung entfernen"),
+"Generate the invoice of an order": (
+ "Générer la facture d'une commande",
+ "Generar la factura de un pedido",
+ "Die Rechnung einer Bestellung erstellen"),
+"Set the note on an invoice": (
+ "Définir la note d'une facture",
+ "Establecer la nota de una factura",
+ "Die Notiz einer Rechnung festlegen"),
+"Change the currency of an order": (
+ "Changer la devise d'une commande",
+ "Cambiar la moneda de un pedido",
+ "Die Währung einer Bestellung ändern"),
 "Audit the SEO of products": (
  "Auditer le SEO des produits",
  "Auditar el SEO de los productos",
@@ -1522,6 +1582,22 @@ T = {
  "Fichier reçu",
  "Archivo recibido",
  "Datei empfangen"),
+"This link has expired. Ask the assistant for the document again.": (
+ "Ce lien a expiré. Redemandez le document à l'assistant.",
+ "Este enlace ha caducado. Vuelva a pedir el documento al asistente.",
+ "Dieser Link ist abgelaufen. Fragen Sie den Assistenten erneut nach dem Dokument."),
+"This link was made for another employee.": (
+ "Ce lien a été créé pour un autre employé.",
+ "Este enlace se ha creado para otro empleado.",
+ "Dieser Link wurde für einen anderen Mitarbeiter erstellt."),
+"You do not have permission to view this.": (
+ "Vous n'avez pas la permission de voir ceci.",
+ "No tiene permiso para ver esto.",
+ "Sie haben keine Berechtigung, dies anzusehen."),
+"This document no longer exists.": (
+ "Ce document n'existe plus.",
+ "Este documento ya no existe.",
+ "Dieses Dokument existiert nicht mehr."),
 "The file has been received. Go back to your assistant and let it carry on.": (
  "Le fichier a bien été reçu. Retournez dans votre assistant et laissez-le continuer.",
  "El archivo se ha recibido. Vuelva a su asistente y deje que continúe.",
@@ -2515,6 +2591,14 @@ T = {
  "Lister les règles panier",
  "Listar las reglas de carrito",
  "Warenkorbregeln auflisten"),
+"Create a catalogue price rule": (
+ "Créer une règle de prix catalogue",
+ "Crear una regla de precios de catálogo",
+ "Katalogpreisregel erstellen"),
+"List catalogue price rules": (
+ "Lister les règles de prix catalogue",
+ "Listar las reglas de precios de catálogo",
+ "Katalogpreisregeln auflisten"),
 "List shop search terms": (
  "Lister les recherches de la boutique",
  "Listar las búsquedas de la tienda",
@@ -2539,6 +2623,14 @@ T = {
  "Créer une règle panier",
  "Crear una regla de carrito",
  "Eine Warenkorbregel erstellen"),
+"Change a cart rule": (
+ "Modifier une règle panier",
+ "Modificar una regla de carrito",
+ "Eine Warenkorbregel ändern"),
+"Switch a cart rule on or off": (
+ "Activer ou désactiver une règle panier",
+ "Activar o desactivar una regla de carrito",
+ "Eine Warenkorbregel aktivieren oder deaktivieren"),
 "Sales - changes": (
  "Ventes - modifications",
  "Ventas - cambios",

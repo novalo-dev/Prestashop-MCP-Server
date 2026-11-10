@@ -62,8 +62,8 @@ class SomcpToolGetAttributeValue
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the texts in, for example fr. '
-                            . 'The shop default is used otherwise.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                 ],
                 'required' => ['id_attribute'],
@@ -86,7 +86,11 @@ class SomcpToolGetAttributeValue
     public static function handle(array $arguments, array $context): array
     {
         $idShop = (int) Somcp::currentShop()->id;
-        $idLang = self::language($arguments);
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $iso] = $language;
 
         // A cast would read an array as 1 and answer about a value nobody
         // asked for: only a whole number is an identifier.
@@ -102,7 +106,7 @@ class SomcpToolGetAttributeValue
             );
         }
 
-        return SomcpTool::json(self::attributeValue($idAttribute, $idLang));
+        return SomcpTool::json(['language' => $iso] + self::attributeValue($idAttribute, $idLang));
     }
 
     /**
@@ -210,25 +214,5 @@ class SomcpToolGetAttributeValue
         $link = Somcp::legacyContext()->link ?? new Link();
 
         return (string) $link->getMediaLink(_THEME_COL_DIR_ . $idAttribute . '.jpg');
-    }
-
-    /**
-     * The language to read the texts in.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return int
-     */
-    private static function language(array $arguments): int
-    {
-        $iso = isset($arguments['language']) && is_scalar($arguments['language']) ? trim((string) $arguments['language']) : '';
-        if ($iso !== '') {
-            $idLang = (int) Language::getIdByIso($iso);
-            if ($idLang > 0) {
-                return $idLang;
-            }
-        }
-
-        return (int) Somcp::legacyContext()->language->id;
     }
 }

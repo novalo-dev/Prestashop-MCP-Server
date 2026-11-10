@@ -13,12 +13,23 @@ of it can be undone by calling again.
 - `somcp_list_carriers`
 - `somcp_create_return_status`
 - `somcp_update_return_status`
+- `somcp_search_orders`
 - `somcp_get_order`
 - `somcp_set_order_status`
 - `somcp_set_order_tracking`
 - `somcp_add_order_message`
 - `somcp_set_order_note`
 - `somcp_add_order_payment`
+- `somcp_issue_partial_refund`
+- `somcp_issue_standard_refund`
+- `somcp_return_order_products`
+- `somcp_cancel_order_products`
+- `somcp_add_order_product`
+- `somcp_update_order_product`
+- `somcp_delete_order_product`
+- `somcp_generate_order_invoice`
+- `somcp_add_order_discount`
+- `somcp_delete_order_discount`
 
 ## Know which shop you are in
 
@@ -32,7 +43,11 @@ an email sent to someone else's customer.
 ## Workflow
 
 1. Identify **one** order. A reference or an identifier. If the merchant named
-   several, handle them one at a time - see below.
+   several, handle them one at a time - see below. When the merchant gives a
+   reference, find the order first with `somcp_search_orders`: a split cart
+   gives several orders one reference, and a reference shared by several is
+   refused. Then confirm with the merchant which one, and call with
+   `id_order`.
 2. Call `somcp_list_order_statuses`. Always, even if you called it a moment
    ago in this conversation: the merchant may have changed a status since.
    Not `somcp_list_return_statuses`: those are the steps of a merchandise
@@ -115,6 +130,145 @@ wants it.
   `documents.invoices` of `somcp_get_order`, never guess it.
 - A refund is not a negative payment: it is refused.
 
+## An invoice
+
+An order paid by bank wire may need its invoice before the status changes.
+Generate it with `somcp_generate_order_invoice` (the order only), then change
+the status if the merchant wants the customer to receive it: generating an
+invoice emails nobody, and only a status that attaches the invoice sends it.
+
+- `generated: false` means the order already had one: it is in the answer,
+  nothing was made twice.
+- A shop with invoices turned off is refused: say where the merchant turns
+  them on, never work around it.
+
+## A note on an invoice
+
+`somcp_set_invoice_note` sets the note printed on one invoice (the
+`id_order_invoice`, from `documents.invoices` of `somcp_get_order`), as **Add
+note** / **Edit note** on the invoice line of the **Documents** tab does.
+
+- This note is **on the invoice PDF the customer receives**, unlike the order
+  note (`somcp_set_order_note`), which the shop alone reads.
+- The note **replaces** the current one: send the whole text. An empty note
+  (`""`) clears it, only when the merchant asked.
+- `changed: false` means the invoice already had that note; nothing was
+  written.
+
+## A partial refund
+
+When the merchant wants to pay back part of a paid order - some units of a
+line, a part of a line's price, part of the shipping - use
+`somcp_issue_partial_refund`. A partial refund is money paid back: say the
+amounts and what will be generated (a credit slip, a voucher or both), and
+wait for the merchant's go-ahead before the call.
+
+- Read the order with `somcp_get_order` first: each line is named by its
+  `products[].id_order_detail`, and `quantity_refunded` says what was already
+  refunded.
+- Give each amount in the tax mode of the order: `amount_tax_excluded` or
+  `amount_tax_included`. A wrong one is refused with the right field named.
+- A credit slip is generated unless the merchant says otherwise; a voucher
+  only when asked. `restock` only matters once the order is delivered.
+- Never repeat the call on a lost answer: check `quantity_refunded` and
+  `documents.credit_slips` with `somcp_get_order`.
+
+## A standard refund
+
+A standard refund pays back whole lines of a paid order not shipped yet and
+puts them back in stock: use `somcp_issue_standard_refund`. Confirm the lines
+and what will be generated first (a credit slip, a voucher or both), and wait
+for the merchant's go-ahead before the call.
+
+- Each line is named by its `products[].id_order_detail` from
+  `somcp_get_order`, with a whole quantity: the line's price is refunded, no
+  amount is given. The shipping only with `refund_shipping`.
+- It needs merchandise returns on (**Customer Service > Merchandise
+  Returns**). When they are off, or for a chosen amount, use
+  `somcp_issue_partial_refund`; a delivered order goes to
+  `somcp_return_order_products`.
+- Never repeat the call on a lost answer: check `quantity_refunded` and
+  `documents.credit_slips` with `somcp_get_order`.
+
+## Products sent back
+
+Products sent back by the customer after delivery are recorded and refunded
+with `somcp_return_order_products`. Ask first whether they go back in stock
+(`restock`, no default), then confirm the lines and what will be generated (a
+credit slip, a voucher or both), and wait for the merchant's go-ahead before
+the call.
+
+- Each line is named by its `products[].id_order_detail` from
+  `somcp_get_order`, with a whole quantity: the line's price is refunded. The
+  shipping only with `refund_shipping`.
+- It needs merchandise returns on (**Customer Service > Merchandise
+  Returns**) and a delivered order; an order not delivered yet goes to
+  `somcp_issue_standard_refund`.
+- Never repeat the call on a lost answer: check `quantity_refunded` and
+  `documents.credit_slips` with `somcp_get_order`.
+
+## A product added to an order
+
+A product added to an order that is not shipped yet goes through
+`somcp_add_order_product`. Adding a product changes what the customer owes:
+say the new total before adding it, and wait for the merchant's go-ahead.
+
+- The product comes from `somcp_search_products`, the combination from
+  `somcp_get_product`; a product already in the order is refused: its line
+  is changed instead, never added twice.
+- Left out, the prices are those of the product for this customer; on an
+  invoiced order, the line goes to a new invoice unless `id_order_invoice`
+  names one.
+- Never repeat the call on a lost answer: check `products` with
+  `somcp_get_order`.
+
+## A product line edited
+
+The unit price, the quantity or the invoice of a line of an order not
+delivered is changed with `somcp_update_order_product`. Changing a price or a
+quantity changes what the customer owes: say the new total first, and wait for
+the merchant's go-ahead.
+
+- The line comes from `products[].id_order_detail` of `somcp_get_order`. Give
+  only the fields to change; the others keep their value.
+- A quantity of 0 is refused: to take the line off, use
+  `somcp_delete_order_product`; to add one, `somcp_add_order_product`.
+- The values are absolute, not a delta. Never repeat the call on a lost
+  answer: check `products` with `somcp_get_order`.
+
+## A product line removed
+
+A line of an order not delivered is taken off with
+`somcp_delete_order_product`, as Delete on the order page does. Removing a
+line is not a refund: say what the customer owes once it is gone, say that
+nothing is refunded, and wait for the merchant's go-ahead.
+
+- The line comes from `products[].id_order_detail` of `somcp_get_order`.
+- The last line of an order is refused: to drop the whole order, cancel it
+  with `somcp_set_order_status`.
+- Units the customer paid for and will not receive go through
+  `somcp_cancel_order_products` or `somcp_issue_partial_refund` instead.
+- Never repeat the call on a lost answer: check `products` with
+  `somcp_get_order`.
+
+## Products taken off an unpaid order
+
+Products removed from an order that is not paid yet go through
+`somcp_cancel_order_products`. On an unpaid order, removing products changes
+what the customer will pay; when every line goes, the order is cancelled and
+the customer emailed. Confirm the lines and quantities, and wait for the
+merchant's go-ahead before the call.
+
+- Each line is named by its `products[].id_order_detail` from
+  `somcp_get_order`, with a whole quantity.
+- It needs merchandise returns on (**Customer Service > Merchandise
+  Returns**); when they are off, the whole order can still be cancelled with
+  `somcp_set_order_status`. A paid order goes to
+  `somcp_issue_standard_refund`, a delivered one to
+  `somcp_return_order_products`.
+- Never repeat the call on a lost answer: check `products[].quantity` and
+  `status` with `somcp_get_order`.
+
 ## A new order status
 
 When the merchant wants a status the shop does not have yet, create it
@@ -175,6 +329,96 @@ let them say yes to that one before calling. Deleting is final.
   a refusal as it comes back; do not work around it.
 - If an answer is lost, read `somcp_list_return_statuses`: a status that
   is no longer listed is deleted. Do not call again.
+
+## A discount on the order
+
+`somcp_add_order_discount` adds a discount to an order already placed, as
+**Add a discount** on the order page does: a `percent`, an
+`amount_tax_included` or `free_shipping`, on the whole order or on one
+`id_order_invoice`. It changes what the customer owes.
+
+- A discount **lowers the total**. Say the new total before adding it, not
+  after: the answer gives `total_tax_included` and `discounts_tax_included`,
+  but the merchant decides on the figure first.
+- `name` is one plain text, the line the customer reads on the invoice.
+- A percentage is 1 to 100; an amount is at most the order total (the refusal
+  gives that total). `free_shipping` takes no value.
+- **Do not repeat the call** on a lost answer: two identical discounts are both
+  applied. Check `discounts` with `somcp_get_order`, and remove an extra one
+  with `somcp_delete_order_discount`.
+
+`somcp_delete_order_discount` removes one discount from an order, as the delete
+action of the discounts table does. It takes the `id_order_cart_rule` of
+`discounts[]` in `somcp_get_order`, or of the answer of
+`somcp_add_order_discount`; never guess it.
+
+- Removing a discount **raises what the customer owes**. Say the new total
+  first, then remove it.
+- A discount that gave a free gift product also takes one unit off that line
+  (`gift_line_updated`).
+- A discount already removed answers `deleted: false` and nothing changes.
+  On a lost answer, read `discounts` with `somcp_get_order`: a discount no
+  longer listed was removed. Do not call again.
+
+## An address of the order
+
+`somcp_set_order_address` points the `delivery` or the `invoice` address of an
+order to another address of the same customer, as **Select another address** of
+the order page does. Take `id_address` from `somcp_get_customer`
+(`addresses[].id_address`), or from the list a refused call returns; never
+guess it.
+
+- Changing the delivery address **can change the taxes and the total**, because
+  the tax follows the country. Say the new total (`total_tax_included` in the
+  answer) before the change, not after.
+- An address that is not the customer's is refused with the list of the ones
+  that are: pick from that list.
+- The same address as now answers `changed: false` and nothing happens. On a
+  lost answer, read `addresses` with `somcp_get_order` rather than calling
+  again.
+
+## The carrier of the order
+
+`somcp_set_order_carrier` changes the carrier of one shipment, as the
+**Carrier** field of **Edit shipping details** on the Carriers tab does. Take
+`id_carrier` from `somcp_list_carriers`, or from the list a refused call
+returns; never guess it. The tracking number stays with
+`somcp_set_order_tracking`.
+
+- Changing the carrier **changes the shipping cost and the total**. Say the new
+  amount before the change, not after.
+- A carrier that does not deliver this order is refused with the carriers that
+  do: pick from that list.
+- The carrier already in place answers `changed: false` and nothing happens.
+  On a lost answer, read `shipping.shipments[].id_carrier` with
+  `somcp_get_order` rather than calling again.
+
+## The currency of the order
+
+`somcp_set_order_currency` changes the currency of an order that is not
+validated yet, as **Change currency** in the Payment block does. Give the ISO
+code (`EUR`, `USD`); a refused call lists the shop's active currencies.
+
+- A currency change **converts every amount of the order at today's rate**.
+  Say the new total first, before the change, and suggest checking the
+  exchange rates of the shop beforehand.
+- A validated order is refused, as on screen: its amounts are final.
+- The currency already in place answers `changed: false` and nothing happens.
+  On a lost answer, read `currency` with `somcp_get_order` rather than calling
+  again.
+
+## Resending a status email
+
+When a customer says they did not receive the email of a status, resend it once
+with `somcp_resend_order_status_email` rather than setting the status again:
+setting it again would move the order and fire its hooks a second time.
+
+- Take `id_order_history` from `history[].id_order_history` of
+  `somcp_get_order`; never guess it.
+- A status the shop does not email (`send_email` 0) is refused: nothing is sent,
+  so do not try to force it.
+- Every call emails the customer and the order records nothing. Call it once; on
+  a lost answer, do not repeat it, or the customer is emailed twice.
 
 ## Several orders
 

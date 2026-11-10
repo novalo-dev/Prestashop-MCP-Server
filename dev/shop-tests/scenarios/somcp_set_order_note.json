@@ -11,6 +11,7 @@
     {"why": "a note given as a list", "arguments": {"id_order": 3, "note": ["a", "b"]}, "expect": "error", "contains": ["note must be a string"]},
     {"why": "the note left out is not read as clearing it", "arguments": {"id_order": 3}, "expect": "error", "contains": ["note must be a string"]},
     {"why": "an order that does not exist", "arguments": {"id_order": 999999, "note": "Hello"}, "expect": "error", "contains": ["No order of this shop"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"note": "Hello"}, "expect": "error", "contains": ["No order of this shop"]}
+    {"why": "neither an identifier nor a reference", "arguments": {"note": "Hello"}, "expect": "error", "contains": ["Give id_order or reference", "somcp_search_orders"]},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "note": "Hello"}, "expect": "error", "contains": ["No order of this shop has this reference"]}
   ]
 }

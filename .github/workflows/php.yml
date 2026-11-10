@@ -1,7 +1,9 @@
 name: PHP tests
 
-# The code read on its own: syntax, coding standard, static analysis against
-# PrestaShop 8 and 9, translations, tools and prompts, multistore, container.
+# The code read on its own: syntax, PHP 8.1 compatibility, coding standard,
+# static analysis against PrestaShop 8 and 9 (ours and PrestaShop's action),
+# translations, tools and prompts, multistore, container, and the archive
+# held to the Addons rules.
 on:
   push:
     branches: [main, develop]
@@ -89,6 +91,67 @@ jobs:
             prestashop/prestashop:${{ matrix.prestashop }} \
             -d memory_limit=1G \
             dev/tools/vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress --error-format=github
+
+  phpstan-prestashop:
+    # PrestaShop's own PHPStan action, the one its modules run: PrestaShop
+    # sources at that release, the PHPStan version they lock, the module's
+    # vendor and phpstan-module.neon. A second reading of the same code by the
+    # tooling PrestaShop itself trusts. Pinned to a commit: a change upstream
+    # is read before it can fail this repository.
+    name: PrestaShop PHPStan action on ${{ matrix.prestashop }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The maintained 8 branch and the first 9 release: 9.0.x has no
+        # branch of its own, so a tag.
+        prestashop: ['8.2.x', '9.0.3']
+    steps:
+      # The action copies the module from a folder named after it.
+      - uses: actions/checkout@v4
+        with:
+          path: somcp
+      - uses: PrestaShop/.github/.github/actions/php-ci/phpstan@d44abaa07d60927acbe6ece78e649f342c5b7169
+        with:
+          php-version: '8.1'
+          presta-version: ${{ matrix.prestashop }}
+          module-name: somcp
+          phpstan-config: phpstan-module.neon
+
+  php-compatibility:
+    # php -l proves the files parse on the PHP running it. This reads every
+    # construct, function and class against each version from 8.1 up, so
+    # code that only works on a newer PHP fails here, not in a shop on 8.1.
+    name: PHP 8.1+ compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: cs2pr
+      - name: Install dev tools
+        run: composer install --working-dir=dev/tools --no-interaction --no-progress
+      - name: PHPCompatibility
+        run: dev/tools/vendor/bin/phpcs -q --standard=dev/tools/phpcompatibility.xml --report=checkstyle | cs2pr
+
+  package:
+    # The archive a merchant installs, built as Build for Release builds it,
+    # held to the rules of an Addons module on every push rather than found
+    # out at release time.
+    name: Addons package rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+      - name: Build the module folder
+        run: dev/package/build.sh "$RUNNER_TEMP/pack"
+      - name: index.php, hidden files, file types, calls, request reads, config.xml, logo
+        run: php dev/package/addons-check.php "$RUNNER_TEMP/pack/somcp"
 
   translations:
     name: Translations

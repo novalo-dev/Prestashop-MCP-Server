@@ -197,10 +197,11 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      * @param array<string, mixed> $arguments
      * @param int $idShop
      * @param array<int, string> $errors
+     * @param int $idSelf the rule being changed, whose own code is not a conflict, 0 for a new one
      *
      * @return array<string, mixed>|null
      */
-    protected static function planRule(array $arguments, int $idShop, array &$errors): ?array
+    protected static function planRule(array $arguments, int $idShop, array &$errors, int $idSelf = 0): ?array
     {
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;
@@ -266,9 +267,11 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                 $errors[] = 'code: ' . self::TEXT_MAX . ' characters at most';
             } elseif ($code !== '' && ($check = $probe->validateField('code', $code)) !== true) {
                 $errors[] = 'code: ' . self::reason($check);
-            } elseif ($code !== '' && ($same = (int) CartRule::getIdByCode($code)) > 0) {
+            } elseif ($code !== '' && ($same = (int) CartRule::getIdByCode($code)) > 0 && $same !== $idSelf) {
                 // Compared on every shop, as the back office does: a code is
                 // what the customer types, and two rules cannot answer to it.
+                // The rule being changed keeps its own, as the form compares
+                // with its id_cart_rule.
                 $errors[] = 'code: This cart rule code is already used (conflict with cart rule ' . $same . ')';
             } else {
                 $fields['code'] = $code;
@@ -609,7 +612,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      *
      * @return int
      */
-    protected static function activeCurrency($value, int $idShop, string $path, array &$errors): int
+    public static function activeCurrency($value, int $idShop, string $path, array &$errors): int
     {
         $idCurrency = self::currency($value, $idShop, $path, $errors);
         if ($idCurrency > 0 && !(bool) (new Currency($idCurrency))->active) {
@@ -730,20 +733,8 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             return 'the shop of the rule could not be saved';
         }
 
-        // Specific product: one group, quantity 1, holding that product, so the
-        // rule only applies to carts that contain it.
-        if ($idProduct > 0) {
-            if (!$db->insert('cart_rule_product_rule_group', ['id_cart_rule' => $idCartRule, 'quantity' => 1])) {
-                return 'the product selection could not be saved';
-            }
-            $idGroup = (int) $db->Insert_ID();
-            if (!$db->insert('cart_rule_product_rule', ['id_product_rule_group' => $idGroup, 'type' => 'products'])) {
-                return 'the product selection could not be saved';
-            }
-            $idRule = (int) $db->Insert_ID();
-            if (!$db->insert('cart_rule_product_rule_value', ['id_product_rule' => $idRule, 'id_item' => $idProduct])) {
-                return 'the product selection could not be saved';
-            }
+        if ($idProduct > 0 && ($failure = self::productSelection($idCartRule, $idProduct)) !== '') {
+            return $failure;
         }
 
         // The new rule restricts nothing, so every rule that restricts its
@@ -756,6 +747,36 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
              WHERE `cart_rule_restriction` = 1 AND `id_cart_rule` != ' . $idCartRule
         )) {
             return 'the compatibility with the other cart rules could not be saved';
+        }
+
+        return '';
+    }
+
+    /**
+     * Product selection for a discount on one product: one group, quantity 1,
+     * holding that product, so the rule only applies to carts that contain it.
+     * Written the way the back office writes it, these tables having no
+     * ObjectModel. Protected for the update tool, which writes the same rows
+     * when a discount moves to a product.
+     *
+     * @param int $idCartRule
+     * @param int $idProduct
+     *
+     * @return string empty when every row went in, else what failed
+     */
+    protected static function productSelection(int $idCartRule, int $idProduct): string
+    {
+        $db = Db::getInstance();
+        if (!$db->insert('cart_rule_product_rule_group', ['id_cart_rule' => (int) $idCartRule, 'quantity' => 1])) {
+            return 'the product selection could not be saved';
+        }
+        $idGroup = (int) $db->Insert_ID();
+        if (!$db->insert('cart_rule_product_rule', ['id_product_rule_group' => $idGroup, 'type' => 'products'])) {
+            return 'the product selection could not be saved';
+        }
+        $idRule = (int) $db->Insert_ID();
+        if (!$db->insert('cart_rule_product_rule_value', ['id_product_rule' => $idRule, 'id_item' => (int) $idProduct])) {
+            return 'the product selection could not be saved';
         }
 
         return '';

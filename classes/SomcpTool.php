@@ -541,6 +541,32 @@ class SomcpTool
     }
 
     /**
+     * One identifier from the arguments, or 0 when it is absent or not one.
+     *
+     * A cast would read an array or true as 1 and "abc" as 0, so a malformed
+     * value could act on an object nobody asked for. Only a whole number, or
+     * a string of digits as some clients send it, is an identifier; every
+     * tool reads its identifiers here so they all accept the same values.
+     *
+     * @param array<string, mixed> $arguments
+     * @param string $key
+     *
+     * @return int
+     */
+    public static function id(array $arguments, string $key): int
+    {
+        $value = $arguments[$key] ?? null;
+        if (is_int($value)) {
+            return $value > 0 ? $value : 0;
+        }
+        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
+            return (int) trim($value);
+        }
+
+        return 0;
+    }
+
+    /**
      * The active languages of a shop, keyed by id_lang, with their ISO code.
      *
      * The one list every tool checks a language against: an installed

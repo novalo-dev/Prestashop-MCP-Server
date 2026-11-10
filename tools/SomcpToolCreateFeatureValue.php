@@ -118,11 +118,10 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
                 ],
                 'value' => $text('Merchant. Required. The value shown on the product page, 255 characters at '
                     . 'most, without < > = { }.'),
-                'url_name' => $text('Assistant. Faceted search: the word used in filtered URLs instead of the '
-                    . 'value, lower case letters, digits and hyphens, for example "linen". Empty for the value. '
-                    . '128 characters at most.'),
-                'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages instead of the '
-                    . 'value. 128 characters at most, without < > = { }.'),
+                'url_name' => $text('Assistant. Faceted search: the URL word of filters, a-z, 0-9, hyphens; '
+                    . 'empty: the value.'),
+                'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages, 128 characters '
+                    . 'at most.'),
             ],
             'required' => ['id_feature', 'value'],
             'additionalProperties' => false,

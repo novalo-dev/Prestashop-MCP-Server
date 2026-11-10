@@ -14,6 +14,10 @@ identifier, so the merchant can find it in the back office.
 - `somcp_list_cart_rules`
 - `somcp_get_cart_rule`
 - `somcp_create_cart_rule`
+- `somcp_update_cart_rule`
+- `somcp_set_cart_rule_active`
+- `somcp_list_catalog_price_rules`
+- `somcp_create_catalog_price_rule`
 
 ## Know which shop you are in
 
@@ -126,11 +130,60 @@ dates you used.
    `somcp_search_customers`, a product from `somcp_search_products`, a gift's
    combination from `somcp_get_product`. The answer names every problem at
    once: correct them all and call again.
-3. **It is created off** unless `active` is true: say so, and leave switching
-   it on to the merchant. Countries, carriers, groups, other rules and the
+3. **It is created off** unless `active` is true: say so, and switch it on
+   with `somcp_set_cart_rule_active` only once the merchant asks. Countries, carriers, groups, other rules and the
    product selection are set on the rule's **Conditions** tab in the back
    office. If an answer is lost, look for the rule with
    `somcp_list_cart_rules` before calling again.
+
+## Changing a voucher or a discount
+
+1. **Read the rule first** with `somcp_get_cart_rule`, its `id_cart_rule`
+   from `somcp_list_cart_rules`, and show the merchant what will change, old
+   and new value, before the call.
+2. **Change it** with `somcp_update_cart_rule`: give only the fields that
+   change, under the same names as the creation; what is left out is kept.
+   **Total available** is what is left, orders using the rule have lowered it
+   already: do not add those uses again. Orders already placed keep the amount
+   they had.
+3. The countries, carriers, groups, other rules and the product selection
+   stay with the merchant in the back office. A call that changes nothing
+   answers `changed: false`. If an answer is lost, read the rule again with
+   `somcp_get_cart_rule` before calling again.
+
+## Switching a voucher or a discount on or off
+
+1. Take the rule's `id_cart_rule` from `somcp_list_cart_rules`, and switch it
+   with `somcp_set_cart_rule_active`, `active` true or false. Nothing else of
+   the rule changes. Switching off stops a promotion early; orders that used
+   it keep their discount.
+2. A rule **with no code** applies on its own to every cart that meets its
+   conditions: tell the merchant before switching it on.
+3. Read the `warnings` of the answer to the merchant: a rule switched on whose
+   dates are over or still to come, or with nothing left of **Total
+   available**, does not apply yet. If an answer is lost, read the rule with
+   `somcp_get_cart_rule` before calling again.
+
+## Catalogue price rules
+
+Catalogue price rules discount products **before** the cart, on the price shown
+in the shop, unlike cart rules which act in the cart.
+
+1. **List them** with `somcp_list_catalog_price_rules`, as
+   **Catalog > Discounts > Catalog Price Rules** shows them. Filter by
+   `currency`, `country`, `id_group`, `reduction_type`, or `current` for the
+   rules in force right now.
+2. A percentage comes back as a fraction (`0.1` for 10 %), the same number
+   `somcp_get_product` reports on the products the rule touches. The
+   `condition_groups` say which products a rule picks: a product must meet
+   every condition of one group, and one group is enough; an empty list means
+   every product.
+3. **Create one** with `somcp_create_catalog_price_rule` only once the merchant
+   has agreed to it: it is applied to its products at once. Give a percentage
+   as the fraction (`0.1` for 10 %), take the identifiers of the conditions
+   from the list tools, and tell the merchant how many products the answer says
+   it reaches. If an answer is lost, look for the rule with
+   `somcp_list_catalog_price_rules` before calling again.
 
 ## Never
 

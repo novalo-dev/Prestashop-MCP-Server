@@ -46,16 +46,12 @@ class SomcpToolSetProductActive
         return new SomcpTool(
             'somcp_set_product_active',
             Somcp::t('Switch a product on or off'),
-            'Switches one product of this shop on or off on the storefront, exactly like the Status toggle '
-                . 'of the back office product list, and changes nothing else. Switching off hides the product '
-                . 'from customers and is reversible: it is not a deletion. Find the product with '
-                . 'somcp_search_products first and use the identifier it returns; never guess one. '
-                . 'When the product already has the status asked for, nothing is written and the answer says '
-                . 'changed: false. A product with no name in the shop default language cannot be switched on. '
-                . 'Do not use it to change anything else about a product (somcp_update_product), nor to delete '
-                . 'one (somcp_delete_product). One product per call: for several, call it once per product and '
-                . 'report each result. Not to be retried on a lost answer: read the product with '
-                . 'somcp_get_product to see whether the change went through.',
+            'Switches one product on or off on the storefront, like the Status toggle of Catalog > Products, '
+                . 'and changes nothing else. Off hides it from customers and can be undone: not a deletion. '
+                . 'Already in that state: nothing written, changed false. A product without a name in the default '
+                . 'language cannot be switched on. id_product from somcp_search_products: never guess one. For '
+                . 'other changes use somcp_update_product, to delete somcp_delete_product. One product per call. '
+                . 'Not to be retried: if the answer is lost, read somcp_get_product first.',
             [
                 'type' => 'object',
                 'properties' => [

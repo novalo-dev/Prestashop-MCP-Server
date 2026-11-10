@@ -182,6 +182,24 @@ cache lifetime (a setting, five minutes by default) and `cacheScope: private`.
   the employee may use (`SomcpAssistantChat::prompts()`), suggests those of the
   page open first, and sends a picked prompt's guide in the same message as the
   employee's words, so only the conversations that use a guide pay for it.
+- The built-in assistant does not send every tool to the model: with all of
+  them described, a plain hello cost tens of thousands of tokens. Each step
+  offers `somcp_ping`, the chat's own tools where they apply, the finder
+  (`somcp_find_tools`) and the shop tools this conversation loaded
+  (`SomcpAssistantChat::tools()`). The finder searches the registry by
+  keywords, one line per tool, and loads the ones the model picks; they are
+  kept in the `tools` column of `somcp_assistant_thread` (at most 15, the
+  oldest let go), not in the messages, because older messages are summarized.
+  The read tools of the page the chat is open on (`SomcpToolRegistry::forPage()`:
+  every permission on that controller, `readOnlyHint` true) are offered from
+  the first message beside them, without being stored or counted in the 15;
+  the writes of that page stay behind the finder, and a delegated assistant
+  gets none. A prompt picked from the + menu loads the tools its guide names.
+  Search, load and call all go through the same
+  `SomcpToolRegistry::isEnabled()` and `isAvailableTo()` as the Tools and
+  prompts tab, so the finder never offers a tool the employee could not call,
+  and a write still asks for approval. MCP
+  clients are unchanged: `tools/list` stays the full list for the token.
 - `SomcpContract` is the translation layer for other modules: they return
   arrays from the hooks and from their handlers, and it turns those into tools,
   prompts and results. See [EXTENDING.md](EXTENDING.md).
@@ -220,6 +238,19 @@ The address reaches the merchant one of two ways: as a URL question for a
 client that declared it can open one, or as text the assistant shows. Because a
 client can declare the first and not do it, a call that comes back to a deposit
 that is still empty gets the address again as text.
+
+A private file goes out the same way, through `SomcpDownload` and
+`AdminSomcpDownloadController`, the outgoing counterpart of the deposit page. A
+tool that produces a private file never returns the bytes: it hands out a
+signed link to that back office page. The link names the file by its kind and
+its identifier, never by a path, and carries only `kind`, `id`, `e` (expiry)
+and `s` (signature); the employee and shop it was signed for are not in the
+address but folded into the signature, which reuses the key that signs the chat
+file links. The page requires the back office session of that same employee, so
+a leaked link is useless, checks the **view** right of the screen the document
+belongs to (`AdminOrders`), and builds the file on demand with the core `PDF`
+class, so nothing is written to disk. Links expire after fifteen minutes, like a
+deposit.
 
 ---
 

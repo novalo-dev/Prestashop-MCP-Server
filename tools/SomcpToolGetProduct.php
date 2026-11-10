@@ -61,20 +61,12 @@ class SomcpToolGetProduct
         return new SomcpTool(
             'somcp_get_product',
             Somcp::t('Get a product'),
-            'Returns everything the back office product page shows for one product of this shop, '
-                . 'grouped like its tabs: basics (type, name, summary, description), categories, '
-                . 'brand, related products, references (reference, MPN, UPC, EAN13, ISBN), '
-                . 'features, attachments, condition, customization, stock and its labels (minimum '
-                . 'quantity, low stock level and alert, pack stock behaviour), the products of a pack, '
-                . 'the downloadable file settings of a virtual product, shipping and carriers, pricing, '
-                . 'tax and ecotax, specific prices and their priorities, SEO, options, suppliers, '
-                . 'images, and every combination with its own codes, stock, low stock level and '
-                . 'impacts. Prices are the product\'s own, before specific prices: those are listed '
-                . 'apart in specific_prices, so a promotion is never mistaken for the price. '
-                . 'Identify the product by its identifier, and optionally one of its combinations. '
-                . 'Do not use it to look for products - somcp_search_products finds them from a '
-                . 'name, a reference or an EAN13, including the combination that matched, and '
-                . 'this tool reads one already identified.',
+            'Returns everything Catalog > Products > Edit shows for one product, grouped like its tabs: '
+                . 'basics, categories, brand, references, features, attachments, stock, pack, virtual file, '
+                . 'shipping, pricing and tax, specific prices, SEO, options, suppliers, images and every '
+                . 'combination. Prices are the product\'s own: promotions are apart in specific_prices, never '
+                . 'mistaken for the price. id_product from somcp_search_products: never guess one. To find '
+                . 'products from a name, a reference or an EAN13 use somcp_search_products.',
             [
                 'type' => 'object',
                 'properties' => [

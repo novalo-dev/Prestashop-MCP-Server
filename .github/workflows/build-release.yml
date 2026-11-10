@@ -257,15 +257,9 @@ jobs:
         id: build
         run: |
           NAME="OSo-MCP-Server-${{ needs.guard.outputs.number }}.zip"
-          # The archive is laid out, given its Composer dependencies, pruned
-          # of what the module never runs, then zipped: the shop has no
-          # Composer, so vendor/ ships inside the module.
-          mkdir -p /tmp/pack
-          git archive --format=tar --prefix=somcp/ HEAD | tar -x -C /tmp/pack
-          composer install --working-dir=/tmp/pack/somcp --no-dev --no-interaction --no-progress \
-            --no-scripts --no-plugins --optimize-autoloader
-          rm -f /tmp/pack/somcp/composer.lock
-          dev/package/prune.sh /tmp/pack/somcp
+          # Laid out by the same script as the PHP tests: files, Composer
+          # dependencies, pruned. Only the zipping is done here.
+          dev/package/build.sh /tmp/pack
           (cd /tmp/pack && zip -qr "$GITHUB_WORKSPACE/$NAME" somcp)
           N=$(unzip -l "$NAME" | tail -1 | awk '{print $2}')
           SIZE=$(du -h "$NAME" | cut -f1)
@@ -286,24 +280,17 @@ jobs:
             echo "| Archive contents | **repository plumbing leaked in** |" >> "$GITHUB_STEP_SUMMARY"
             echo "::error::repository plumbing leaked into the archive"; exit 1
           fi
-          # The Addons validator refuses a module folder without index.php.
+          # The rules the PHP tests check on every push, run again on the
+          # archive itself: index.php everywhere, no hidden file but the
+          # module's .htaccess, no forbidden file type or call, config.xml.
           mkdir -p /tmp/zip && unzip -q "$NAME" -d /tmp/zip
-          MISSING=$(find /tmp/zip/somcp -type d ! -exec test -e '{}/index.php' ';' -print)
-          if [ -n "$MISSING" ]; then
-            echo "| Archive contents | **index.php missing in some folders** |" >> "$GITHUB_STEP_SUMMARY"
-            echo "$MISSING"
-            echo "::error::index.php missing in some folders"; exit 1
+          if ! php dev/package/addons-check.php /tmp/zip/somcp > /tmp/addons.txt; then
+            echo "| Archive contents | **$(tail -1 /tmp/addons.txt)** |" >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/addons.txt
+            exit 1
           fi
-          # A hidden file is flagged by the Addons validator: the module's own
-          # .htaccess is the one that has to be there.
-          HIDDEN=$(find /tmp/zip/somcp -name '.*' ! -path /tmp/zip/somcp/.htaccess -print)
-          if [ -n "$HIDDEN" ]; then
-            echo "| Archive contents | **hidden files in the archive** |" >> "$GITHUB_STEP_SUMMARY"
-            echo "$HIDDEN"
-            echo "::error::hidden files in the archive"; exit 1
-          fi
-          echo "| Archive contents | root folder \`somcp/\`, module present, no plumbing, index.php everywhere, no hidden file |" >> "$GITHUB_STEP_SUMMARY"
-          printf 'Archive contents\troot folder somcp/, no dev/ .github/ docs/, index.php everywhere\n' >> "$CHECKS"
+          echo "| Archive contents | root folder \`somcp/\`, module present, no plumbing, $(tail -1 /tmp/addons.txt) |" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Archive contents\troot folder somcp/, no dev/ .github/ docs/, %s\n' "$(tail -1 /tmp/addons.txt)" >> "$CHECKS"
 
       # The report says which commit and which archive it vouches for: the
       # SHA-256 lets a merchant check the zip they downloaded is the one the

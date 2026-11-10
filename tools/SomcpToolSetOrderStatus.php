@@ -134,7 +134,7 @@ class SomcpToolSetOrderStatus
      *
      * @param Order $order
      * @param OrderState $target
-     * @param array{id:int, name:string}|null $previous
+     * @param array{status_id:int, name:string}|null $previous
      * @param int $idEmployee
      *
      * @return array<string, mixed>

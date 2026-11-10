@@ -79,7 +79,15 @@ class SomcpToolGetOrder
     {
         $order = self::locate($arguments);
         if ($order === null) {
-            return SomcpTool::text('No order of this shop matches what was given.', true);
+            // locate() returns null only when nothing matched; find() then tells
+            // the reason apart - no identifier given, or none of this shop's
+            // orders - in the same words the order write tools answer with.
+            $reason = self::find($arguments);
+
+            return SomcpTool::text(
+                is_string($reason) ? $reason : 'No order of this shop matches what was given.',
+                true
+            );
         }
 
         $idLang = (int) $order->id_lang;

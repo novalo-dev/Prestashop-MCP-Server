@@ -355,6 +355,39 @@ class SomcpToolRegistry
     }
 
     /**
+     * The read tools of one back office page: those whose permissions all
+     * fall on that controller and that change nothing.
+     *
+     * Read from what each tool declares through acts(), so a tool added by an
+     * update or another module follows its page with no list to keep. Writes
+     * are left out: they carry the heaviest schemas, and preloading them would
+     * weigh on every request made from that page. Nothing here checks the
+     * employee's rights; the caller filters these like any other tool.
+     *
+     * @param string $controller back office controller, e.g. AdminOrders
+     *
+     * @return array<int, string> tool names
+     */
+    public function forPage(string $controller): array
+    {
+        $names = [];
+        foreach ($this->tools as $tool) {
+            $permissions = $tool->getRequiredPermissions();
+            if ($permissions === [] || ($tool->describe()['annotations']['readOnlyHint'] ?? false) !== true) {
+                continue;
+            }
+            foreach ($permissions as $permission) {
+                if (($permission['controller'] ?? '') !== $controller) {
+                    continue 2;
+                }
+            }
+            $names[] = $tool->getName();
+        }
+
+        return $names;
+    }
+
+    /**
      * The tools a given token is allowed to see.
      *
      * A tool the token cannot use is left out of the listing rather than shown

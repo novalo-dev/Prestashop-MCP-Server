@@ -330,6 +330,46 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
         if ((new SomcpAssistantChat($other, (int) $context->shop->id))->thread((string) $thread['thread_id']) !== null) {
             $failures[] = 'assistant: another employee could open the conversation';
         }
+
+        // The reads of the page the chat is open on come with the first
+        // message, its writes stay behind the finder, and another page gets
+        // none of them. An employee without the right on the page gets none
+        // either: they go through the same rights check as any tool.
+        $firstOffer = static function (string $page) use ($employee, $context): array {
+            $fake = new NeuronAI\Testing\FakeAIProvider(new NeuronAI\Chat\Messages\AssistantMessage('Seen.'));
+            SomcpAssistantChat::overrideProvider($fake);
+            $on = new SomcpAssistantChat($employee, (int) $context->shop->id);
+            $on->openOn($page);
+            $opened = $on->newThread(0);
+            $on->send($opened, 'What is this?');
+            $on->deleteThread($opened);
+
+            return array_map(static function ($tool): string {
+                return (string) $tool->getName();
+            }, $fake->getRecorded()[0]->tools ?? []);
+        };
+        $pageReads = SomcpToolRegistry::getInstance()->forPage('AdminOrders');
+        ++$assistantChecks;
+        if (!in_array('somcp_get_order', $pageReads, true) || !in_array('somcp_search_orders', $pageReads, true) || in_array('somcp_set_order_status', $pageReads, true)) {
+            $failures[] = 'assistant: the reads of the orders page are ' . implode(', ', $pageReads);
+        }
+        ++$assistantChecks;
+        $names = $firstOffer('AdminOrders');
+        if (!in_array('somcp_get_order', $names, true) || in_array('somcp_set_order_status', $names, true)) {
+            $failures[] = 'assistant: a chat opened on the orders page first offers ' . implode(', ', $names);
+        }
+        ++$assistantChecks;
+        $names = $firstOffer('AdminDashboard');
+        if (in_array('somcp_get_order', $names, true)) {
+            $failures[] = 'assistant: a chat opened on the dashboard offers the reads of the orders page';
+        }
+        ++$assistantChecks;
+        foreach ($pageReads as $name) {
+            $read = SomcpToolRegistry::getInstance()->get($name);
+            if ($nobody > 0 && $read !== null && $read->isAvailableTo(implode(' ', $read->getRequiredScopes()), $nobody)) {
+                $failures[] = "assistant: $name of the orders page is offered to an employee without the right";
+            }
+        }
     } catch (Throwable $e) {
         $failures[] = 'assistant: ' . get_class($e) . ' - ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine();
     }

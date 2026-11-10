@@ -190,10 +190,15 @@ cache lifetime (a setting, five minutes by default) and `cacheScope: private`.
   keywords, one line per tool, and loads the ones the model picks; they are
   kept in the `tools` column of `somcp_assistant_thread` (at most 15, the
   oldest let go), not in the messages, because older messages are summarized.
-  A prompt picked from the + menu loads the tools its guide names. Search,
-  load and call all go through the same `SomcpToolRegistry::isEnabled()` and
-  `isAvailableTo()` as the Tools and prompts tab, so the finder never offers a
-  tool the employee could not call, and a write still asks for approval. MCP
+  The read tools of the page the chat is open on (`SomcpToolRegistry::forPage()`:
+  every permission on that controller, `readOnlyHint` true) are offered from
+  the first message beside them, without being stored or counted in the 15;
+  the writes of that page stay behind the finder, and a delegated assistant
+  gets none. A prompt picked from the + menu loads the tools its guide names.
+  Search, load and call all go through the same
+  `SomcpToolRegistry::isEnabled()` and `isAvailableTo()` as the Tools and
+  prompts tab, so the finder never offers a tool the employee could not call,
+  and a write still asks for approval. MCP
   clients are unchanged: `tools/list` stays the full list for the token.
 - `SomcpContract` is the translation layer for other modules: they return
   arrays from the hooks and from their handlers, and it turns those into tools,

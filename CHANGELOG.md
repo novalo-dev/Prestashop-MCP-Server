@@ -168,6 +168,15 @@ orders that share the reference, so the assistant asks which one is meant.
 Every order tool now answers the same way when the order is not found, and
 points to the order search.
 
+**The built-in assistant knows the tools of the page you are on.** Opened on
+the order page, the chat could not answer "what is this order" before looking
+up the tools it needed, one more step before every first answer. It now has
+the reading tools of the page you opened it from at hand from the first
+message - reading an order or searching orders on the order page, for example.
+The tools that change something on that page still go through the search and
+still ask for your approval, and an employee without the right on the page gets
+none of them.
+
 **Tool descriptions stay short.** Every tool the assistant can use is sent to
 it on each step of a conversation, so a long description slows every answer
 and costs more. The descriptions of the tools now stay within 600 characters

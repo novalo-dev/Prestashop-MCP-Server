@@ -1158,6 +1158,10 @@ T = {
  "Définir la note d'une facture",
  "Establecer la nota de una factura",
  "Die Notiz einer Rechnung festlegen"),
+"Change the currency of an order": (
+ "Changer la devise d'une commande",
+ "Cambiar la moneda de un pedido",
+ "Die Währung einer Bestellung ändern"),
 "Audit the SEO of products": (
  "Auditer le SEO des produits",
  "Auditar el SEO de los productos",

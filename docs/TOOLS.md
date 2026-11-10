@@ -1389,6 +1389,53 @@ on screen adds the delay on 8.0.1 only.
 Not replayable: a lost answer is checked with `somcp_get_order`
 (`shipping.shipments[].id_carrier`).
 
+#### `somcp_set_order_currency`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes the currency of one order that is not validated yet,
+converting every amount, as **Change currency** in the **Payment** block of the
+order page does.
+
+**Do not use for** - a validated order, which the back office refuses too; the
+exchange rates of the shop (**International > Localization > Currencies**, no
+tool yet).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_order` | - | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | **Reference** | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `currency` | **Change currency** | string | yes | ISO code of an active currency of the shop, as `somcp_get_order` returns `currency`; refused otherwise, with the shop's active currencies |
+
+**Returns** - `changed`, `order` (`id_order`, `reference`), `old_currency` and
+`new_currency` (ISO codes), and `totals_before` / `totals_after`, each exactly
+as `somcp_get_order` returns `totals` (built by the same function).
+
+**Errors** - every problem at once, nothing changed when one check fails, each
+under "Nothing was changed.": a field the tool does not take; the order not
+found or a reference shared by several orders (the text of
+`SomcpToolGetOrder::find()`); `currency` missing, unknown or inactive, followed
+by the shop's active currencies; a validated order, with the core's sentence
+"You cannot change the currency." and the reason (its amounts are final). A
+failure inside the conversion is reported without its raw message, with the
+advice to read the order.
+
+**Notes** - the tool runs the sequence of `ChangeOrderCurrencyHandler` (the
+order lines, the order carrier, each invoice, the cart, then the order with its
+`conversion_rate`), every amount converted with `Tools::convertPriceFull()` at
+the shop's rates of today. The core lists `reduction_amount` twice and so
+converts it twice; the tool converts it once. No hook is fired, as in the core.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler nor in the form;
+only the template line moves (`payments.html.twig` 128 / 131). The block shows
+only when the order is not validated and the shop has another currency.
+
+Replayable: the currency the order already has writes nothing and answers
+`changed: false`, where the core refuses it. A lost answer is checked with
+`somcp_get_order` (`currency`).
+
 #### `somcp_resend_order_status_email`
 **State**: written
 **Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`

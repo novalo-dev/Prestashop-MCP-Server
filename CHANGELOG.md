@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**Order currency changed.** The new tool `somcp_set_order_currency` changes
+the currency of an order that is not validated yet, as **Change currency** in
+the **Payment** block of the order page does: every amount of the order, its
+lines, its shipping and its invoices is converted at the shop's exchange rates
+of today, and the answer gives the totals before and after. A validated order
+is refused, as the back office refuses it, and asking for the currency the
+order already has changes nothing.
+
 **A note on an invoice.** The new tool `somcp_set_invoice_note` sets the note
 printed on one invoice of an order, as **Add note** / **Edit note** on an
 invoice line of the **Documents** tab of the order page does. It is the note

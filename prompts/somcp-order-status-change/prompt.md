@@ -393,6 +393,20 @@ returns; never guess it. The tracking number stays with
   On a lost answer, read `shipping.shipments[].id_carrier` with
   `somcp_get_order` rather than calling again.
 
+## The currency of the order
+
+`somcp_set_order_currency` changes the currency of an order that is not
+validated yet, as **Change currency** in the Payment block does. Give the ISO
+code (`EUR`, `USD`); a refused call lists the shop's active currencies.
+
+- A currency change **converts every amount of the order at today's rate**.
+  Say the new total first, before the change, and suggest checking the
+  exchange rates of the shop beforehand.
+- A validated order is refused, as on screen: its amounts are final.
+- The currency already in place answers `changed: false` and nothing happens.
+  On a lost answer, read `currency` with `somcp_get_order` rather than calling
+  again.
+
 ## Resending a status email
 
 When a customer says they did not receive the email of a status, resend it once

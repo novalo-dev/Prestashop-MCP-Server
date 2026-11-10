@@ -612,7 +612,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      *
      * @return int
      */
-    protected static function activeCurrency($value, int $idShop, string $path, array &$errors): int
+    public static function activeCurrency($value, int $idShop, string $path, array &$errors): int
     {
         $idCurrency = self::currency($value, $idShop, $path, $errors);
         if ($idCurrency > 0 && !(bool) (new Currency($idCurrency))->active) {

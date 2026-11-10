@@ -1457,6 +1457,11 @@
       <source>Set the note on an invoice</source>
       <target>Set the note on an invoice</target>
     </trans-unit>
+    <!-- Change the currency of an order -->
+    <trans-unit id="ecbed0631c39413916a9f89ad36e1e3f" resname="Change the currency of an order">
+      <source>Change the currency of an order</source>
+      <target>Change the currency of an order</target>
+    </trans-unit>
     <!-- Audit the SEO of products -->
     <trans-unit id="6cf0dd16e3dec0f64c02b9f6dbc7ddbf" resname="Audit the SEO of products">
       <source>Audit the SEO of products</source>

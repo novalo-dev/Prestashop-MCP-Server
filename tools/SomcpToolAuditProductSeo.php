@@ -144,11 +144,7 @@ class SomcpToolAuditProductSeo
 
         $languages = self::languages($arguments, $idShop);
         if ($languages === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
-                    . 'language out for all of them.',
-                true
-            );
+            return SomcpTool::languageRefused($idShop, true);
         }
 
         $checks = self::checks($arguments);

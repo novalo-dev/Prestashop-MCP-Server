@@ -81,9 +81,8 @@ class SomcpToolGetProduct
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the texts in, for example fr: '
-                            . 'one of the shop\'s active languages, refused otherwise. The shop default is '
-                            . 'used when left out.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                 ],
                 'required' => ['id_product'],
@@ -105,14 +104,11 @@ class SomcpToolGetProduct
     {
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
-        $idLang = self::language($arguments, $idShop);
-        if ($idLang === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
-                    . 'language out for the shop default.',
-                true
-            );
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
         }
+        [$idLang, $iso] = $language;
 
         $product = self::locate((int) ($arguments['id_product'] ?? 0), $idLang, $idShop);
         if ($product === null) {
@@ -138,6 +134,7 @@ class SomcpToolGetProduct
         $isPack = (string) $product->getProductType() === 'pack';
 
         return SomcpTool::json([
+            'language' => $iso,
             'basics' => [
                 'id_product' => (int) $product->id,
                 'product_type' => (string) $product->getProductType(),
@@ -997,28 +994,5 @@ class SomcpToolGetProduct
         }
 
         return self::$schema[$key];
-    }
-
-    /**
-     * The language to read the texts in, or null when the caller named one
-     * the shop does not have.
-     *
-     * Refused rather than read in the default language, as the other read
-     * tools do: texts in another language than asked would be taken back by
-     * the write tools into the wrong one.
-     *
-     * @param array<string, mixed> $arguments
-     * @param int $idShop
-     *
-     * @return int|null
-     */
-    private static function language(array $arguments, int $idShop): ?int
-    {
-        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
-            return (int) Somcp::legacyContext()->language->id;
-        }
-        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
-
-        return $languages === null ? null : (int) array_key_first($languages);
     }
 }

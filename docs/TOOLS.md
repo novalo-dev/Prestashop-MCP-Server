@@ -2029,10 +2029,10 @@ The products and the categories they are sorted into: texts, prices, combination
 | `upc` | string | no | part of the product's UPC barcode |
 | `isbn` | string | no | part of the product's ISBN |
 | `sort` | enum | no | `date_add_desc` (default), `name_asc`, `price_asc`, `price_desc`, `quantity_asc`, `quantity_desc` |
-| `language` | string | no | ISO code of one of the shop's active languages, shop default otherwise; a code the shop does not have is refused |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per product: `id_product`, `reference`, `name`, `price_tax_excl`, `price_tax_incl`, `currency`, `quantity`, `active`, `id_category_default`, `category_default` (the name of the default category in `language`, the Category column), `cover_image` (URL of the cover in the small image type, the Image column; `null` when the product has none), `ean13`. When the product was found through a combination's reference or EAN13: `matched_combinations`, a list of `id_product_attribute`, `reference`, `ean13` for the combinations that matched. Plus `returned`, `total_count` and `offset`.
+**Returns** - per product: `id_product`, `reference`, `name`, `price_tax_excl`, `price_tax_incl`, `currency`, `quantity`, `active`, `id_category_default`, `category_default` (the name of the default category in `language`, the Category column), `cover_image` (URL of the cover in the small image type, the Image column; `null` when the product has none), `ean13`. When the product was found through a combination's reference or EAN13: `matched_combinations`, a list of `id_product_attribute`, `reference`, `ean13` for the combinations that matched. Plus `returned`, `total_count`, `offset` and `language` (the ISO code the names are read in).
 
 **Notes**
 - Read through a query (`DbQuery`), not through Product objects. Same columns as the back office product list: `product_shop` for price and status, `product_lang` for the name, `category_product` for the category, `stock_available` with `id_product_attribute = 0` for the quantity.
@@ -2058,9 +2058,9 @@ The products and the categories they are sorted into: texts, prices, combination
 |---|---|---|---|
 | `id_product` | integer | yes | from `somcp_search_products` |
 | `id_product_attribute` | integer | no | one combination of that product: `combinations` then holds that one only, and `specific_prices` and `suppliers` keep what applies to it |
-| `language` | string | no | ISO code of one of the shop's active languages, shop default otherwise; a code the shop does not have is refused |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
-**Returns** - one object, grouped like the tabs of the product page. Texts are in `language`; every amount comes with `currency`. Values are the ones PrestaShop stores, so the write tools can take them back as they are.
+**Returns** - one object, grouped like the tabs of the product page, with `language` (the ISO code the texts are read in) at the top. Texts are in `language`; every amount comes with `currency`. Values are the ones PrestaShop stores, so the write tools can take them back as they are.
 
 | Group | Fields | Where it is read |
 |---|---|---|
@@ -4020,7 +4020,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise; refused when the shop does not have it |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `pages`, per page: `id_meta`, `page` (the controller name), `title`, `description`, `keywords` (the **Meta keywords**, PrestaShop 8 only, `null` on 9), `url_rewrite`, `url`, `configurable`. Plus `count` and the `language` read.
 

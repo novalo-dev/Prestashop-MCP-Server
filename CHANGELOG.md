@@ -46,6 +46,15 @@ of a line are not part of it yet. It needs the **add** right on **Orders**.
 
 ### Fixed
 
+**Products and shop pages read in the shop's default language.**
+`somcp_get_product`, `somcp_search_products` and `somcp_list_meta_pages` now
+read in the shop's default language when no language is given, rather than in
+a language picked from the assistant's browser settings, and say in their
+answer which language the texts are in. A language the shop does not have is
+refused with the list of the ones it has, as the SEO audits now do too. A
+product or a category created with texts in some languages only fills the
+others from the default language of the shop being written to.
+
 **Test the connection can no longer be switched off.** The Connection group of
 **Tools and prompts** said **Always on**, yet `somcp_ping` under it kept two
 switches that did switch it off, and a connected assistant could no longer

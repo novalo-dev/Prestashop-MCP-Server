@@ -128,9 +128,8 @@ class SomcpToolSearchProducts
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read and search the names in, '
-                            . 'for example fr: one of the shop\'s active languages, refused otherwise. '
-                            . 'The shop default is used when left out.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                     'limit' => [
                         'type' => 'integer',
@@ -159,14 +158,13 @@ class SomcpToolSearchProducts
     {
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
-        $idLang = self::language($arguments, $idShop);
-        if ($idLang === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
-                    . 'language out for the shop default.',
-                true
-            );
+        // Names are searched in this language too: a name searched in the
+        // wrong one finds nothing, and the product would look missing.
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
         }
+        [$idLang, $iso] = $language;
         $prices = self::priceExpressions($idShop);
 
         $count = self::query($arguments, $shop, $idLang, $prices);
@@ -231,6 +229,7 @@ class SomcpToolSearchProducts
         }
 
         return SomcpTool::json([
+            'language' => $iso,
             'products' => $products,
             'returned' => count($products),
             // So the assistant knows there is more instead of concluding from
@@ -561,28 +560,5 @@ class SomcpToolSearchProducts
         $limit = (int) ($arguments['limit'] ?? self::DEFAULT_LIMIT);
 
         return max(1, min(self::MAX_LIMIT, $limit));
-    }
-
-    /**
-     * The language to read and search the names in, or null when the caller
-     * named one the shop does not have.
-     *
-     * Refused rather than read in the default language, as the other read
-     * tools do: names searched in the wrong language find nothing, and the
-     * assistant would conclude the product does not exist.
-     *
-     * @param array<string, mixed> $arguments
-     * @param int $idShop
-     *
-     * @return int|null
-     */
-    private static function language(array $arguments, int $idShop): ?int
-    {
-        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
-            return (int) Somcp::legacyContext()->language->id;
-        }
-        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
-
-        return $languages === null ? null : (int) array_key_first($languages);
     }
 }

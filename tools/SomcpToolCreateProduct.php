@@ -865,7 +865,9 @@ class SomcpToolCreateProduct
 
         // A language left out takes the text of the default one, as the back
         // office does - or of the first one filled, when the default is not.
-        $default = (int) Configuration::get('PS_LANG_DEFAULT');
+        // The default of the token's shop, which may differ from the global
+        // one in a multistore.
+        $default = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
         $fallback = isset($filled[$default]) ? $default : (int) array_key_first($filled);
 
         return [

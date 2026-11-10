@@ -636,16 +636,23 @@ class SomcpTool
      * The answer to a language readLanguage() refused, naming the ones the
      * shop has so the next call can pick one.
      *
+     * The SEO audits read every language when none is given, so their
+     * refusal says so instead of promising the shop default: one text, with
+     * only the way out that is true for the tool.
+     *
      * @param int $idShop
+     * @param bool $everyLanguage true for a tool that reads all the shop's
+     *                            languages when language is left out
      *
      * @return array<string, mixed>
      */
-    public static function languageRefused(int $idShop): array
+    public static function languageRefused(int $idShop, bool $everyLanguage = false): array
     {
         return self::text(
             'This language is not one of the shop\'s, which has '
                 . implode(', ', self::activeLanguages($idShop))
-                . '. Give the ISO code of one of them, or leave language out for the shop default.',
+                . '. Give the ISO code of one of them, or leave language out for '
+                . ($everyLanguage ? 'all of them.' : 'the shop default.'),
             true
         );
     }

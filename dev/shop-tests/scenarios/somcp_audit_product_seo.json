@@ -9,7 +9,7 @@
     {"why": "the redirection check is dropped for active products only", "arguments": {"checks": ["inactive_without_redirect"]}, "expect": "ok", "contains": ["\"total_count\": 0", "\"returned\": 0"]},
     {"why": "the duplicate and length checks together", "arguments": {"checks": ["meta_title_duplicate", "link_rewrite_duplicate", "meta_title_too_long", "meta_description_short", "meta_description_long", "description_short", "image_legend_missing", "no_image"]}, "expect": "ok", "contains": ["\"link_rewrite_duplicate\""]},
     {"why": "a page far beyond the end is empty, not an error", "arguments": {"offset": 100000}, "expect": "ok", "contains": ["\"returned\": 0"]},
-    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]},
+    {"why": "a language the shop does not have, refused with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's, which has", "leave language out for all of them"]},
     {"why": "a check that does not exist", "arguments": {"checks": ["meta_keywords"]}, "expect": "error", "contains": ["checks must be a list"]},
     {"why": "checks given as a string", "arguments": {"checks": "no_gtin"}, "expect": "error", "contains": ["checks must be a list"]}
   ]

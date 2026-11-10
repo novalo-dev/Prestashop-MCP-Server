@@ -377,7 +377,7 @@ class SomcpToolRegistry
                 continue;
             }
             foreach ($permissions as $permission) {
-                if (($permission['controller'] ?? '') !== $controller) {
+                if ($permission['controller'] !== $controller) {
                     continue 2;
                 }
             }

@@ -1036,7 +1036,9 @@ in the shop; `id_product_attribute` missing, unknown or not of the product;
 `quantity` below 1; prices not numbers, below 0, or not agreeing with the tax
 rate; `id_order_invoice` not an invoice of the order; `free_shipping` without
 a new invoice; a shipped order; a product already in the order or in the
-invoice (that line is changed instead). The core's refusals (not enough
+invoice (that line is changed instead); PrestaShop 9.2 or later, where the
+order page adds the product together with its shipments (after the other
+checks, pointing to **Add a product**). The core's refusals (not enough
 stock with orders denied out of stock, minimum quantity) are put in the same
 shape.
 

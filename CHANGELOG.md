@@ -73,7 +73,9 @@ product, or one of its combinations, to an order that is not shipped yet, as
 is recomputed, and on an invoiced order the line goes to the invoice you name
 or to a new one, with free shipping when asked. Left out, the price is the
 product's price for that customer. A shipped order, a product already in the
-order or a quantity the stock cannot cover is refused with the reason.
+order or a quantity the stock cannot cover is refused with the reason. On
+PrestaShop 9.2 and later, which add the product together with its shipments,
+the tool refuses and points to the button of the order page.
 
 **Returned products.** The new tool `somcp_return_order_products` records the
 products a customer sent back on a delivered order and refunds them, as the

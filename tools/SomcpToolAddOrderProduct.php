@@ -33,10 +33,15 @@ use PrestaShop\PrestaShop\Core\Domain\Order\Product\Command\AddProductToOrderCom
  * totals recomputed.
  *
  * The core's own AddProductToOrderHandler does the work, built with new and
- * the services it is built with in the back office (the same constructor on
- * 8.0.1 and 9.0.0): the cart, the invoice, the order lines, the totals and
+ * the services it is built with in the back office (the same constructor from
+ * 8.0.0 to 9.1): the cart, the invoice, the order lines, the totals and
  * actionOrderEdited stay exactly as the button does them. The tool checks the
  * arguments first so every mistake comes back in one answer.
+ *
+ * PrestaShop 9.2 gave the handler three more services, for the shipments of
+ * the improved shipping feature, which only the Symfony container builds and
+ * which a front controller does not have. Rather than fake them and record a
+ * line the shipments do not know about, the tool refuses on 9.2 and later.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -245,6 +250,15 @@ class SomcpToolAddOrderProduct
             return SomcpToolIssuePartialRefund::refused($problems);
         }
 
+        // Last of the checks, so the mistakes in the arguments still come back
+        // on every version.
+        if (!self::supported()) {
+            return SomcpToolIssuePartialRefund::refused([
+                'this PrestaShop version adds a product to an order together with its shipments, which this tool '
+                    . 'cannot do yet - use Add a product in the Products block of the order page',
+            ]);
+        }
+
         $quantity = (int) $quantity;
 
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($order, $idProduct, $idCombination, $quantity, $amounts, $idInvoice, $freeShipping, $idEmployee): array {
@@ -299,7 +313,7 @@ class SomcpToolAddOrderProduct
             $null = null;
             // getPriceStatic() answers in the context currency: set to the
             // order's for the call, as the order page does when it searches.
-            $context = Context::getContext();
+            $context = Somcp::legacyContext();
             $previousCurrency = $context->currency;
             $context->currency = $currency;
             try {
@@ -339,6 +353,16 @@ class SomcpToolAddOrderProduct
         }
 
         return ['excl' => (float) $excl, 'incl' => (float) $incl];
+    }
+
+    /**
+     * Whether the core handler still takes the five services the tool builds.
+     *
+     * @return bool
+     */
+    private static function supported(): bool
+    {
+        return version_compare(_PS_VERSION_, '9.2.0', '<');
     }
 
     /**
@@ -389,13 +413,16 @@ class SomcpToolAddOrderProduct
                     $quantity,
                     $freeShipping
                 );
-            $handler = new AddProductToOrderHandler(
+            // Built through reflection: the five-service constructor is the
+            // one of every version supported() lets through, and PHPStan,
+            // which reads one version at a time, would refuse it on 9.2.
+            $handler = (new ReflectionClass(AddProductToOrderHandler::class))->newInstanceArgs([
                 $legacy->getTranslator(),
                 $contextManager,
                 $amountUpdater,
                 new OrderProductQuantityUpdater($amountUpdater, $remover, $contextManager),
-                $detailUpdater
-            );
+                $detailUpdater,
+            ]);
             $handler->handle($command);
         } catch (Throwable $e) {
             SomcpLogger::log(

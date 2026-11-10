@@ -388,7 +388,7 @@ customer has none. The count joins the same tables as the list, so
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 
 **Returns** - `order`, `customer`, `addresses` (delivery and invoice),
 `products`, `discounts`, `shipping`, `totals`, `payments`, `history`,
@@ -452,7 +452,7 @@ orders in one call, which it refuses by design.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `status_id` | integer | yes | from `somcp_list_order_statuses`, never guessed |
 
 **Returns** - `changed`, `order`, `previous_status` and `status` (each
@@ -555,7 +555,7 @@ order itself - that is the order note (→ `somcp_set_order_note`).
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `message` | string | yes | 1200 characters at most, plain text, refused if it holds HTML scripts or events |
 | `display_to_customer` | boolean | yes | the **Display to customer?** checkbox. No default: the assistant must decide whether the customer sees and receives it |
 
@@ -614,7 +614,7 @@ page is `customer.note`.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `note` | string | yes | the whole new note; an empty string clears it |
 
 **Returns** - `changed`, `order` (`id_order` and `reference`),
@@ -655,7 +655,7 @@ order paid (→ `somcp_set_order_status`).
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
-| `reference` | string | one of the two | reference |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `amount` | number | yes | greater than 0, in `currency` |
 | `payment_method` | string | yes | best given as the **Payment** block suggests it: the name of the shop's payment module, for example "Bank transfer", "Payments by check" or "Cash on delivery (COD)", so the Payment table and the order read the same method; 255 characters at most, without `< > = { }` |
 | `currency` | string | no | ISO code; the order's currency by default |

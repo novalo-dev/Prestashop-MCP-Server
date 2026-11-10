@@ -127,7 +127,7 @@ class SomcpToolResendOrderStatusEmail
             $problems[] = 'id_order_history: give the status line identifier, a whole number';
         }
 
-        // find() rather than locate(): the resend emails the customer, so a
+        // find() rather than the newest order of a reference: the resend emails the customer, so a
         // reference shared by the orders of a split cart is refused with their
         // list instead of landing on the newest of them.
         $order = SomcpToolGetOrder::find($arguments);

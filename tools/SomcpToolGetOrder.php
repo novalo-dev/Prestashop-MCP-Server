@@ -58,7 +58,9 @@ class SomcpToolGetOrder
                     ],
                     'reference' => [
                         'type' => 'string',
-                        'description' => 'Reference of the order to read, used when no identifier is known.',
+                        'description' => 'Reference of the order, used when no identifier is known. A '
+                            . 'reference shared by several orders (a split cart) is refused with their '
+                            . 'identifiers.',
                     ],
                 ],
                 'additionalProperties' => false,
@@ -77,17 +79,12 @@ class SomcpToolGetOrder
      */
     public static function handle(array $arguments, array $context): array
     {
-        $order = self::locate($arguments);
-        if ($order === null) {
-            // locate() returns null only when nothing matched; find() then tells
-            // the reason apart - no identifier given, or none of this shop's
-            // orders - in the same words the order write tools answer with.
-            $reason = self::find($arguments);
-
-            return SomcpTool::text(
-                is_string($reason) ? $reason : 'No order of this shop matches what was given.',
-                true
-            );
+        // Refused like the writes on a reference shared by several orders:
+        // answering one of them would describe one parcel as the whole
+        // purchase, and the list it gets instead is what it needs to read each.
+        $order = self::find($arguments);
+        if (!$order instanceof Order) {
+            return SomcpTool::text($order, true);
         }
 
         $idLang = (int) $order->id_lang;
@@ -125,24 +122,6 @@ class SomcpToolGetOrder
             'documents' => self::documents($order, $idLang),
             'messages' => self::messages($order),
         ]);
-    }
-
-    /**
-     * Finds the order, and only within the shop the token belongs to.
-     *
-     * Public so the order tools that write find an order exactly as this one
-     * reads it. A reference shared by several orders gives the newest of them;
-     * find() is the lookup that refuses such a reference instead.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return Order|null
-     */
-    public static function locate(array $arguments): ?Order
-    {
-        $orders = self::candidates($arguments);
-
-        return $orders === [] ? null : $orders[0];
     }
 
     /**

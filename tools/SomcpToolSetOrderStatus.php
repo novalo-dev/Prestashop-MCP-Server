@@ -69,7 +69,9 @@ class SomcpToolSetOrderStatus
                     ],
                     'reference' => [
                         'type' => 'string',
-                        'description' => 'Reference of the order to change, used when no identifier is known.',
+                        'description' => 'Reference of the order, used when no identifier is known. A '
+                            . 'reference shared by several orders (a split cart) is refused with their '
+                            . 'identifiers.',
                     ],
                     'status_id' => [
                         'type' => 'integer',
@@ -95,9 +97,12 @@ class SomcpToolSetOrderStatus
      */
     public static function handle(array $arguments, array $context): array
     {
-        $order = self::locate($arguments);
-        if ($order === null) {
-            return SomcpTool::text('No order of this shop matches what was given.', true);
+        // The lookup every order tool shares: a reference held by several
+        // orders (a split cart) is refused with their identifiers, since the
+        // status change can email the customer about a parcel nobody chose.
+        $order = SomcpToolGetOrder::find($arguments);
+        if (!$order instanceof Order) {
+            return SomcpTool::text($order . ' Nothing was changed.', true);
         }
 
         $idLang = (int) $order->id_lang;
@@ -248,38 +253,5 @@ class SomcpToolSetOrderStatus
             'id_order' => (int) $order->id,
             'reference' => (string) $order->reference,
         ];
-    }
-
-    /**
-     * Finds the order, and only within the shop the token belongs to.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return Order|null
-     */
-    private static function locate(array $arguments): ?Order
-    {
-        $idShop = Somcp::currentShopId();
-        $idOrder = SomcpTool::id($arguments, 'id_order');
-
-        if ($idOrder <= 0 && !empty($arguments['reference'])) {
-            $idOrder = (int) Db::getInstance()->getValue(
-                'SELECT `id_order` FROM `' . _DB_PREFIX_ . "orders`
-                 WHERE `reference` = '" . pSQL((string) $arguments['reference']) . "'
-                   AND `id_shop` = " . $idShop . '
-                 ORDER BY `id_order` DESC'
-            );
-        }
-
-        if ($idOrder <= 0) {
-            return null;
-        }
-
-        $order = new Order($idOrder);
-        if (!Validate::isLoadedObject($order) || (int) $order->id_shop !== $idShop) {
-            return null;
-        }
-
-        return $order;
     }
 }

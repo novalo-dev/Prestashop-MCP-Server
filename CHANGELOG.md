@@ -141,6 +141,16 @@ assistant hands it on without guessing. The answer key changes: it was `id`
 identifier that is not a whole number - a decimal, a list, true - is now
 refused instead of being read as another order, status or customer.
 
+**An order reference shared by several orders is no longer guessed.** When a
+cart is split across carriers, PrestaShop gives its orders one reference, and
+each has its own page in Orders > Orders. Reading an order, changing its
+status, adding a message or a payment, and setting its private note by that
+reference used to act on the newest of them without a word. They now change
+nothing, send nothing to the customer, and answer with the identifiers of the
+orders that share the reference, so the assistant asks which one is meant.
+Every order tool now answers the same way when the order is not found, and
+points to the order search.
+
 **Tool descriptions stay short.** Every tool the assistant can use is sent to
 it on each step of a conversation, so a long description slows every answer
 and costs more. The descriptions of the tools now stay within 600 characters

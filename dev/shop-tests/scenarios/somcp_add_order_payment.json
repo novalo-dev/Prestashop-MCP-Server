@@ -19,6 +19,7 @@
     {"why": "a transaction ID longer than the field", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "transaction_id": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"}, "expect": "error", "contains": ["254 characters"]},
     {"why": "a transaction ID that is not a string", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "transaction_id": 42}, "expect": "error", "contains": ["transaction_id must be a string"]},
     {"why": "an order that does not exist", "arguments": {"id_order": 999999, "amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["No order of this shop"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["No order of this shop"]}
+    {"why": "neither an identifier nor a reference", "arguments": {"amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["Give id_order or reference", "somcp_search_orders"]},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["No order of this shop has this reference"]}
   ]
 }

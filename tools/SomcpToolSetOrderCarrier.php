@@ -139,7 +139,7 @@ class SomcpToolSetOrderCarrier
             }
         }
 
-        // find() rather than locate(): the shipping cost and the total change,
+        // find() rather than the newest order of a reference: the shipping cost and the total change,
         // so a reference shared by the orders of a split cart is refused with
         // their list instead of landing on the newest of them.
         $order = SomcpToolGetOrder::find($arguments);

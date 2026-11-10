@@ -177,6 +177,14 @@ answer says so.
 
 ### Changed
 
+**Categories, brands, suppliers and stock read in a language the shop has.**
+`somcp_list_categories`, `somcp_get_category`, `somcp_get_manufacturer`,
+`somcp_get_supplier` and `somcp_get_stock` now read in the shop's default
+language when no language is given, rather than in a language picked from the
+assistant's browser settings, and say in their answer which language the texts
+are in. A language the shop does not have is refused with the list of the ones
+it has, instead of quietly answering in another one.
+
 **Attributes and features read in a language the shop has.** The tools that read
 attribute groups, attribute values, features and feature values
 (`somcp_list_attributes`, `somcp_get_attribute_group`,

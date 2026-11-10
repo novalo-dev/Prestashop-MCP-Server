@@ -2226,7 +2226,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - per category: `id_category`, `name`. Plus `count`.
 
@@ -2249,7 +2249,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_category` | integer | yes | from `somcp_list_categories` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_category`, `name`, `active` (Displayed), `id_parent` and `parent_name`, `level`, `position`, `description`, `additional_description`, `groups` (id and name of each customer group with access), `link_rewrite`, `url`, `meta_title`, `meta_description`, `meta_keywords`, `cover_image` (URL), `menu_thumbnails` (URLs), `products_count`, `children_count`, and on PrestaShop 9 `redirect_type` with `id_type_redirected`.
 
@@ -2375,7 +2375,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_manufacturer` | integer | yes | from `somcp_list_manufacturers` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_manufacturer`, `name`, `short_description`, `description`, `meta_title`, `meta_description`, `meta_keywords`, `logo` (URL), `active`, `products_count`.
 
@@ -2622,7 +2622,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_supplier` | integer | yes | from `somcp_list_suppliers` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_supplier`, `name`, `description`, `phone`, `phone_mobile`, `address1`, `address2`, `postcode`, `city`, `country` (ISO code), `state` (ISO code, when the country has states), `dni` (national ID number), `meta_title`, `meta_description`, `meta_keywords`, `logo` (URL), `active`, `products_count`.
 
@@ -3105,7 +3105,7 @@ The quantities the storefront sells against, per product and combination.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_product` | integer | yes |  |
-| `language` | string | no | ISO code for the product and attribute names, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_product`, `name`, `reference`, `id_supplier`, `supplier`, `active`, the product line - `quantity` (total), `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `low_stock_alert`, `reserved_by` - and per combination: `id_product_attribute`, `attributes`, `reference`, `quantity`, `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `low_stock_alert`, `reserved_by`. Each `reserved_by` entry is `id_order`, `reference` and `quantity`.
 

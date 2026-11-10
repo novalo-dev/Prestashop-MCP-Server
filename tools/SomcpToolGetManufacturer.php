@@ -62,8 +62,8 @@ class SomcpToolGetManufacturer
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the texts in, for example fr. '
-                            . 'The shop default is used otherwise.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                 ],
                 'required' => ['id_manufacturer'],
@@ -86,7 +86,11 @@ class SomcpToolGetManufacturer
     public static function handle(array $arguments, array $context): array
     {
         $idShop = (int) Somcp::currentShop()->id;
-        $idLang = self::language($arguments);
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $iso] = $language;
 
         // A cast would read an array as 1 and answer about a brand nobody
         // asked for: only a whole number is an identifier.
@@ -96,7 +100,7 @@ class SomcpToolGetManufacturer
             return SomcpTool::text('No brand of this shop has this identifier. Find it with somcp_list_manufacturers.', true);
         }
 
-        return SomcpTool::json(self::manufacturer($idManufacturer, $idLang, $idShop));
+        return SomcpTool::json(['language' => $iso] + self::manufacturer($idManufacturer, $idLang, $idShop));
     }
 
     /**
@@ -186,25 +190,5 @@ class SomcpToolGetManufacturer
             . ' INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = p.`id_product` AND ps.`id_shop` = ' . (int) $idShop
             . ' WHERE p.`id_manufacturer` = ' . (int) $idManufacturer
         );
-    }
-
-    /**
-     * The language to read the texts in.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return int
-     */
-    private static function language(array $arguments): int
-    {
-        $iso = isset($arguments['language']) && is_scalar($arguments['language']) ? trim((string) $arguments['language']) : '';
-        if ($iso !== '') {
-            $idLang = (int) Language::getIdByIso($iso);
-            if ($idLang > 0) {
-                return $idLang;
-            }
-        }
-
-        return (int) Somcp::legacyContext()->language->id;
     }
 }

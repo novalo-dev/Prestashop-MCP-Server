@@ -654,6 +654,9 @@ class SomcpToolGetOrder
                 'date' => (string) $invoice->date_add,
                 'total_tax_excluded' => (float) $invoice->total_paid_tax_excl,
                 'total_tax_included' => (float) $invoice->total_paid_tax_incl,
+                // The note printed on the invoice PDF, so somcp_set_invoice_note
+                // can be read back after it writes.
+                'note' => (string) $invoice->note,
             ];
         }
 

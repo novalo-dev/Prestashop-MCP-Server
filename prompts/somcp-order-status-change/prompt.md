@@ -142,6 +142,19 @@ invoice emails nobody, and only a status that attaches the invoice sends it.
 - A shop with invoices turned off is refused: say where the merchant turns
   them on, never work around it.
 
+## A note on an invoice
+
+`somcp_set_invoice_note` sets the note printed on one invoice (the
+`id_order_invoice`, from `documents.invoices` of `somcp_get_order`), as **Add
+note** / **Edit note** on the invoice line of the **Documents** tab does.
+
+- This note is **on the invoice PDF the customer receives**, unlike the order
+  note (`somcp_set_order_note`), which the shop alone reads.
+- The note **replaces** the current one: send the whole text. An empty note
+  (`""`) clears it, only when the merchant asked.
+- `changed: false` means the invoice already had that note; nothing was
+  written.
+
 ## A partial refund
 
 When the merchant wants to pay back part of a paid order - some units of a

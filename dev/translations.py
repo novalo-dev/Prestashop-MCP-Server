@@ -1154,6 +1154,10 @@ T = {
  "Générer la facture d'une commande",
  "Generar la factura de un pedido",
  "Die Rechnung einer Bestellung erstellen"),
+"Set the note on an invoice": (
+ "Définir la note d'une facture",
+ "Establecer la nota de una factura",
+ "Die Notiz einer Rechnung festlegen"),
 "Audit the SEO of products": (
  "Auditer le SEO des produits",
  "Auditar el SEO de los productos",

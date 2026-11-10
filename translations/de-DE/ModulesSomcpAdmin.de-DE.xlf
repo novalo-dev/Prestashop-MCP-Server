@@ -1452,6 +1452,11 @@
       <source>Generate the invoice of an order</source>
       <target>Die Rechnung einer Bestellung erstellen</target>
     </trans-unit>
+    <!-- Set the note on an invoice -->
+    <trans-unit id="c6b7feb4235b01023ef8b570c6d31fcd" resname="Set the note on an invoice">
+      <source>Set the note on an invoice</source>
+      <target>Die Notiz einer Rechnung festlegen</target>
+    </trans-unit>
     <!-- Audit the SEO of products -->
     <trans-unit id="6cf0dd16e3dec0f64c02b9f6dbc7ddbf" resname="Audit the SEO of products">
       <source>Audit the SEO of products</source>

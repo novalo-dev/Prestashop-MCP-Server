@@ -29,6 +29,7 @@
     "somcp_update_order_product",
     "somcp_delete_order_product",
     "somcp_generate_order_invoice",
+    "somcp_set_invoice_note",
     "somcp_add_order_discount",
     "somcp_delete_order_discount",
     "somcp_set_order_address",

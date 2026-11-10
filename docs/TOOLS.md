@@ -418,7 +418,7 @@ customer has none. The count joins the same tables as the list, so
 - `payments`, each with `currency`, `invoice_number` (empty when not tied to an
   invoice), `id_employee` and `employee` (who recorded it, PrestaShop 9 only,
   `null` and empty on 8);
-- `documents`: `invoices` (with `id_order_invoice`), `delivery_slips`
+- `documents`: `invoices` (with `id_order_invoice` and `note`), `delivery_slips`
   (`id_order_invoice`, `number` with the shop's prefix, `date`,
   `total_tax_included`) and `credit_slips`;
 - `messages`, each with `from` (`employee` or `customer`) and `from_name`.
@@ -1592,6 +1592,45 @@ shape, never sent raw.
 - The button only shows on an order with no document at all (no invoice, no delivery slip, no credit slip) and invoices on (`documents.html.twig`); the handler only refuses an order that already has an invoice. The tool follows the handler, so it can generate the invoice of an order that has a credit slip but no invoice, which the button does not offer.
 - Not replayable, even with the guard: a lost answer is checked with `somcp_get_order` (`documents.invoices`).
 - No difference between 8.0.1 and 9.0.0.
+
+#### `somcp_set_invoice_note`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - sets the note printed on one invoice of an order, as **Add note** /
+**Edit note** on an invoice line of the **Documents** tab of the order page
+does. The note is on the invoice PDF the customer receives. An empty note
+clears it.
+
+**Do not use for** - the order's private note the shop alone reads
+(→ `somcp_set_order_note`), a message to the customer (→ `somcp_add_order_message`),
+or generating the invoice (→ `somcp_generate_order_invoice`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_invoice` | integer | yes | the invoice, from `documents.invoices[].id_order_invoice` of `somcp_get_order` |
+| `note` | string | yes | the whole note, trimmed; `""` clears it; no HTML; the length limit is read from the model, when the version has one |
+
+**Returns** - `changed`, `order` (`id_order`, `reference`), `invoice`
+(`id_order_invoice`, `number` as `documents.invoices[].number` of
+`somcp_get_order`), `old` and `new` note. The same note again writes nothing
+and answers `changed: false`.
+
+**Errors** - every problem at once, nothing changed when one check fails, each
+as `<path>: <problem>` under "Nothing was generated.": unknown fields; neither
+`id_order` nor `reference`, or the order not found; `id_order_invoice` missing
+or not an invoice of this order; `note` missing, holding HTML (`isCleanHtml`),
+or longer than the limit.
+
+**Notes**
+- The core path is the same on 8.0.1 and 9.0.0 (`UpdateInvoiceNoteHandler`: load the `OrderInvoice`, set `note`, `save()`). The core guard (`!isLoadedObject() && isCleanHtml()`) lets an unknown invoice with a dirty note through, so the tool checks instead that the invoice exists and belongs to the order, and that the note passes `Validate::isCleanHtml()`.
+- The length limit is read from `OrderInvoice::$definition['fields']['note']['size']`: present on 9.0.0 (`LIMIT_MEDIUMTEXT_UTF8_MB4`, 4194303), absent on 8.0.1, where no limit is checked. The constant is never named in the code.
+- `somcp_get_order` returns the note of each invoice under `documents.invoices[].note`, so the change can be read back.
+- Not replayable: a lost answer is checked with `somcp_get_order` (`documents.invoices[].note`).
 
 ### Carts
 

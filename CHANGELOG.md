@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**A note on an invoice.** The new tool `somcp_set_invoice_note` sets the note
+printed on one invoice of an order, as **Add note** / **Edit note** on an
+invoice line of the **Documents** tab of the order page does. It is the note
+the customer reads on the invoice PDF, not the order's private note the shop
+keeps to itself; an empty note clears it. `somcp_get_order` now shows the note
+of each invoice, so the change can be read back.
+
 **Order product line edited.** The new tool `somcp_update_order_product`
 changes the unit price, the quantity or the invoice of one product line of an
 order not delivered, as the **Edit** action of a line in the **Products** block

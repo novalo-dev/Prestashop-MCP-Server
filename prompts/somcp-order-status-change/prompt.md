@@ -30,6 +30,7 @@ of it can be undone by calling again.
 - `somcp_generate_order_invoice`
 - `somcp_add_order_discount`
 - `somcp_delete_order_discount`
+- `somcp_create_order`
 
 ## Know which shop you are in
 
@@ -466,3 +467,21 @@ first call landed.
 - "Mark order XKBKNABJK as delivered"
 - "Annule la commande de Dupont"
 - "Ces trois commandes sont parties ce matin"
+
+## A new order
+
+When the merchant asks for an order to be placed for a customer - a phone
+order, a quote accepted by email - use `somcp_create_order`. It creates a real
+order and sends the emails a new order sends for its status.
+
+- Find the customer with `somcp_search_customers` and the address with
+  `somcp_get_customer`, the products with `somcp_search_products` and, for a
+  product with combinations, the combination with `somcp_get_product`. The
+  status comes from `somcp_list_order_statuses`.
+- Before the call, show the merchant the lines, the carrier, the total and the
+  status, and wait for their yes.
+- A carrier or a payment module the shop does not offer is refused with the
+  choices: offer them to the merchant rather than picking one.
+- Never repeat the call on a lost answer: a second call creates a second
+  order. Look for it with `somcp_search_orders` (this customer, today), then
+  `somcp_get_order`.

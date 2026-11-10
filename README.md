@@ -318,6 +318,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_set_order_carrier` | ✎ Change the carrier of an order | Orders › edit |
 | `somcp_set_order_currency` | ✎ Change the currency of an order | Orders › edit |
 | `somcp_resend_order_status_email` | ✎ Resend the email of an order status | Orders › edit |
+| `somcp_create_order` | ✎ Create an order | Orders › add |
 | `somcp_create_return_status` | ✎ Create a return status | Statuses › add |
 | `somcp_update_return_status` | ✎ Change a return status | Statuses › edit |
 | `somcp_delete_return_status` | ✎ Delete a return status | Statuses › delete |

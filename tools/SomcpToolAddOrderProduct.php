@@ -262,14 +262,16 @@ class SomcpToolAddOrderProduct
     }
 
     /**
-     * Whether the product is associated with the shop.
+     * Whether the product is associated with the shop. Shared with
+     * somcp_create_order, so a product is in the shop by the same test
+     * wherever an order gets a line.
      *
      * @param int $idProduct
      * @param int $idShop
      *
      * @return bool
      */
-    private static function inShop(int $idProduct, int $idShop): bool
+    public static function inShop(int $idProduct, int $idShop): bool
     {
         return (bool) Db::getInstance()->getValue(
             'SELECT 1 FROM `' . _DB_PREFIX_ . 'product_shop` WHERE `id_product` = ' . (int) $idProduct

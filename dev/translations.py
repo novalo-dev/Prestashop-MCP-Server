@@ -1158,6 +1158,10 @@ T = {
  "Définir la note d'une facture",
  "Establecer la nota de una factura",
  "Die Notiz einer Rechnung festlegen"),
+"Create an order": (
+ "Créer une commande",
+ "Crear un pedido",
+ "Eine Bestellung anlegen"),
 "Change the currency of an order": (
  "Changer la devise d'une commande",
  "Cambiar la moneda de un pedido",

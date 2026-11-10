@@ -293,14 +293,28 @@ class SomcpToolSetOrderAddress
      */
     private static function customerAddresses(Order $order): array
     {
-        $customer = new Customer((int) $order->id_customer);
+        return self::addressesOf((int) $order->id_customer, (int) $order->id_lang);
+    }
+
+    /**
+     * A customer's addresses in the shape customerAddresses() lists them,
+     * shared with somcp_create_order so both refusals list the same choices.
+     *
+     * @param int $idCustomer
+     * @param int $idLang
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function addressesOf(int $idCustomer, int $idLang): array
+    {
+        $customer = new Customer($idCustomer);
         if (!Validate::isLoadedObject($customer)) {
             return [];
         }
 
         $listed = [];
         // deleted addresses are already filtered out by getAddresses().
-        foreach ($customer->getAddresses((int) $order->id_lang) as $row) {
+        foreach ($customer->getAddresses($idLang) as $row) {
             $listed[] = [
                 'id_address' => (int) $row['id_address'],
                 'alias' => (string) ($row['alias'] ?? ''),

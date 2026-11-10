@@ -1481,6 +1481,76 @@ carrier URL with the number in place of the `@`, as the back office adds it.
 Not replayable: every call emails the customer and the order records nothing;
 the description tells the assistant to call it once.
 
+#### `somcp_create_order`
+**State**: written
+**Nature**: `acts(ADD, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - creates one order for one existing customer, as **Orders > Orders >
+Add new order** then **Create order** do: the cart lines, the **Delivery** and
+**Invoice** addresses, the **Delivery option**, the **Shipping** options, the
+**Currency** and **Language**, the **Order message**, the **Payment** and the
+**Order status**. One call builds a new cart and validates it.
+
+**Do not use for** - adding a product to an existing order (→
+`somcp_add_order_product`), changing its status (→ `somcp_set_order_status`),
+recording a payment on it (→ `somcp_add_order_payment`), creating a customer
+(→ `somcp_create_customer`). Vouchers and a hand-set line price are not in
+this tool yet (#175, #176).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_customer` | integer | yes | **Customer**, from `somcp_search_customers`; a customer of the token's shop, not deleted |
+| `products` | array, 1 or more | yes | **Cart**: each line `id_product` (from `somcp_search_products`), `id_product_attribute` (from `combinations[].id_product_attribute` of `somcp_get_product`, required when the product has combinations) and `quantity` (from 1, at least the minimal quantity); the same product and combination twice is refused |
+| `id_address_delivery` | integer | yes | **Addresses > Delivery**, from `addresses[].id_address` of `somcp_get_customer`; an address of this customer |
+| `id_address_invoice` | integer | no | **Addresses > Invoice**, same; the delivery address when left out |
+| `id_carrier` | integer | yes unless every product is virtual | **Shipping > Delivery option**: one of the carriers the cart is offered for this address and these products; refused otherwise, with those offered (`id_carrier`, `name`, `shipping_tax_included`) |
+| `free_shipping` | boolean | no, default false | **Free shipping**: the cart rule the screen creates (`CartRule::BO_ORDER_CODE_PREFIX` + cart id) |
+| `recycled_packaging` | boolean | no, default false | **Recycled packaging** |
+| `gift` | boolean | no, default false | **Gift** |
+| `gift_message` | string | no | **Gift message**, only with `gift: true`; plain text |
+| `currency` | string | no | **Currency**: ISO code of an active currency; the shop default when left out |
+| `language` | string | no | **Language**: ISO code of one of the shop's active languages, refused otherwise; the shop default when left out. The order emails go out in it |
+| `message` | string | no | **Order message**; plain text |
+| `payment_module` | string | yes | **Payment**: technical name of an installed, active payment module; refused otherwise, with the choices as `name` and `display_name` |
+| `status_id` | integer | yes | **Order status**, from `somcp_list_order_statuses`; a deleted status is refused |
+
+**Returns** - `created: true`, `id_order`, `reference`, `id_cart`, `status`
+(`status_id`, `name`), `payment` (the payment name the order records),
+`totals` in the shape of `totals` of `somcp_get_order`, and `currency`.
+
+**Errors** - under "Nothing was recorded.", every problem at once, each named
+with its field (`products[1].quantity: ...`): a field the tool does not take;
+the customer; each line (product of the shop, available for order, required
+customization fields, combination, minimal quantity, stock when the product
+cannot be ordered out of stock); the addresses (with the customer's addresses
+listed) and their country; the currency; the language; the messages; the
+payment module; the status. Then, once the cart exists: a quantity the cart
+refuses, and the carrier. A call refused at that point deletes the cart and the
+free shipping cart rule it made.
+
+**Notes** - a new cart every call, never the customer's last empty cart as the
+screen takes: it may be open on the storefront. The screen's handlers need the
+Symfony container, so the tool runs their sequence with the legacy calls they
+wrap (`Cart::updateQty()`, `Cart::setDeliveryOption()`, `CartRule`, `Message`,
+`PaymentModule::validateOrder()`), the context set to the cart and restored
+afterwards. The employee of the token goes into the `Manual order -- Employee:`
+message, as the button does. In catalog mode the order is recorded through the
+core's back office payment, as the handler does. `validateOrder()` sends the
+emails a new order sends for that status. Multistore: the customer, addresses
+and products are checked against the token's shop. Prices are the ones the cart
+computes for this customer, currency and address.
+
+**Differences between 8.0.1 and 9.0.0** - none for the tool: same blocks and
+handler sequence; the page is titled **Create order** on 8.0.1 and **New
+order** on 9.0.0, and the **Payment** and **Order status** choices depend on the
+shop.
+
+Not replayable: a second call creates a second order. On a lost answer, look
+for the order with `somcp_search_orders` (this customer, today), then
+`somcp_get_order`.
+
 #### `somcp_list_return_statuses`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminStatuses')` · **Scope**: `mcp.orders.read`

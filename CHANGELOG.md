@@ -33,6 +33,17 @@ latest version of the protocol follows the change once its copy of the list
 expires; the others, ChatGPT among them today, once you refresh their tools
 in their own settings. The built-in assistant is not concerned.
 
+**Orders created from the assistant.** The new tool `somcp_create_order`
+creates an order for an existing customer, as **Add new order** then **Create
+order** do in the back office: the products and combinations, the delivery and
+invoice addresses, the carrier, free shipping, recycled packaging and gift, the
+currency and language, the order message, the payment and the order status.
+Every mistake comes back in one answer before anything is written, and a call
+refused once the cart is built leaves no cart behind. It sends the emails a
+new order sends for the status chosen, so the assistant shows you the lines,
+the carrier, the total and the status first. Vouchers and changing the price
+of a line are not part of it yet. It needs the **add** right on **Orders**.
+
 ### Fixed
 
 **Test the connection can no longer be switched off.** The Connection group of

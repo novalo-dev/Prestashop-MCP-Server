@@ -162,6 +162,17 @@ answer says so.
 
 ### Changed
 
+**Attributes and features read in a language the shop has.** The tools that read
+attribute groups, attribute values, features and feature values
+(`somcp_list_attributes`, `somcp_get_attribute_group`,
+`somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`,
+`somcp_get_feature_value`) now read in the shop's default language when no
+language is given, rather than in a language picked from the assistant's
+browser settings, and say in their answer which language the texts are in. A
+language the shop does not have is refused with the list of the ones it has,
+instead of quietly answering in another language that the assistant could then
+write back under the wrong one.
+
 **One name for the order status in every order and customer tool.**
 `somcp_get_order`, `somcp_set_order_status` and the latest orders of
 `somcp_get_customer` now give the status as `status_id`, the name

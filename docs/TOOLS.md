@@ -2646,7 +2646,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | no | one group only |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `attribute_groups`, per group: `id_attribute_group`, `name`, `group_type` (`select`, `radio` or `color`), `position` (0 for the first, the **Position** column), `values_count` (the **Values** column), and its `values`: `id_attribute`, `name`, `position`, `color` (`#RRGGBB`, `null` outside a group of type `color`). The fields keep the names of `somcp_get_attribute_group` and `somcp_get_attribute_value`. Plus `count`, the number of groups. An `id_attribute_group` that is not a group of this shop is an error, not an empty list.
 
@@ -2668,7 +2668,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | yes | from `somcp_list_attributes` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A group that is not one of this shop is an error.
 
@@ -2741,7 +2741,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute` | integer | yes | from `somcp_list_attributes` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (URL of the current texture, `null` when there is none), and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. A value that is not one of this shop is an error.
 
@@ -2818,7 +2818,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | no | one feature only |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `features`, per feature: `id_feature`, `name`, `position` (0 for the first, as `somcp_get_feature` returns it), `values_count` (the **Values** column: its predefined values), and its `values`: `id_feature_value`, `value`, and on PrestaShop 9 `position`. Plus `count`, the number of features. An `id_feature` that is not a feature of this shop is an error, not an empty list.
 
@@ -2840,7 +2840,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | yes | from `somcp_list_features` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_feature`, `name`, `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
 
@@ -2911,7 +2911,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). A value that is not one of this shop is an error.
 

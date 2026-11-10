@@ -1057,6 +1057,60 @@ sequence.
 Not replayable: a second call adds the quantity again or is refused as a
 duplicate. A lost answer is checked with `somcp_get_order` (`products`).
 
+#### `somcp_update_order_product`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes the unit price, the quantity or the invoice of one product
+line of an order that has not been delivered, as the **Edit** action of a line
+in the **Products** block of the order page does, and recomputes the order
+totals. A field left out keeps its current value; the values are absolute, not
+a delta.
+
+**Do not use for** - adding a product (→ `somcp_add_order_product`), removing a
+line (→ `somcp_delete_order_product`), refunding or cancelling a quantity the
+customer will not receive (→ `somcp_issue_partial_refund`,
+`somcp_cancel_order_products`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_order` | - | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | - | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_order_detail` | the line | integer | yes | from `products[].id_order_detail` of `somcp_get_order`; must belong to the order |
+| `quantity` | **Quantity** | integer | no | from 1; left out, unchanged |
+| `unit_price_tax_excluded` | **tax excl.** | number | no | left out, unchanged |
+| `unit_price_tax_included` | **tax incl.** | number | no | given alone, the price tax excluded is worked out with the line's tax rate; both given, they must agree with it to the currency's precision |
+| `id_order_invoice` | **Invoice** | integer | no | moves the line to another invoice of the order, from `documents.invoices[].id_order_invoice` of `somcp_get_order`; left out, unchanged |
+
+At least one of `quantity`, a price and `id_order_invoice`; a call that changes
+nothing writes nothing and answers `changed: false` with a `reason`. Prices are
+in the order's currency, as on the screen.
+
+**Returns** - `changed`, `order` (`id_order`, `reference`), `changes` (per
+changed field its `old` and `new` value, under the parameter names), `line`
+(the edited line exactly as `somcp_get_order` returns one of `products[]`),
+`totals` (exactly as `somcp_get_order` returns them) and `currency`.
+
+**Errors** - every problem at once, nothing recorded when one check fails, each
+as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the order
+not found or a reference shared by several orders; `id_order_detail` missing or
+not a line of the order; `quantity` 0 (pointing to `somcp_delete_order_product`)
+or below; prices not numbers, below 0, or not agreeing with the tax rate;
+`id_order_invoice` not an invoice of the order; no field to change given. Then
+the core's refusals, each in plain English: a delivered order, a product no
+longer in the catalogue, not enough stock with orders denied out of stock, the
+same product already in the target invoice.
+
+**Differences between 8.0.1 and 9.0.0** - none in the form or the handler
+sequence; the internals of `OrderProductQuantityUpdater` differ, which is why
+they are called and never copied.
+
+Not replayable in general: the values are absolute, so the same call again
+changes nothing. A lost answer is checked with `somcp_get_order` (`products`)
+before anything else.
+
 #### `somcp_add_order_discount`
 **State**: written
 **Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`

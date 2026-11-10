@@ -1142,6 +1142,10 @@ T = {
  "Ajouter un produit à une commande",
  "Añadir un producto a un pedido",
  "Ein Produkt zu einer Bestellung hinzufügen"),
+"Edit a product line of an order": (
+ "Modifier une ligne de produit d'une commande",
+ "Editar una línea de producto de un pedido",
+ "Eine Produktzeile einer Bestellung bearbeiten"),
 "Generate the invoice of an order": (
  "Générer la facture d'une commande",
  "Generar la factura de un pedido",

@@ -18,6 +18,13 @@ are:
 
 ### Added
 
+**Order product line edited.** The new tool `somcp_update_order_product`
+changes the unit price, the quantity or the invoice of one product line of an
+order not delivered, as the **Edit** action of a line in the **Products** block
+of the order page does, and recomputes the totals. Only the fields given are
+changed; a quantity of 0 is refused and points to removing the line, and the
+assistant is told to say the new total before the change.
+
 **Order address changed.** The new tool `somcp_set_order_address` points the
 delivery or the invoice address of an order to another address of the same
 customer, as **Select another address** of the order page does. PrestaShop

@@ -1437,6 +1437,11 @@
       <source>Add a product to an order</source>
       <target>Add a product to an order</target>
     </trans-unit>
+    <!-- Edit a product line of an order -->
+    <trans-unit id="a94df992a983c1f438b1443ee9d4e7bb" resname="Edit a product line of an order">
+      <source>Edit a product line of an order</source>
+      <target>Edit a product line of an order</target>
+    </trans-unit>
     <!-- Generate the invoice of an order -->
     <trans-unit id="a2638d1f963c3036182adfc638058aa1" resname="Generate the invoice of an order">
       <source>Generate the invoice of an order</source>

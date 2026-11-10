@@ -24,6 +24,7 @@ of it can be undone by calling again.
 - `somcp_return_order_products`
 - `somcp_cancel_order_products`
 - `somcp_add_order_product`
+- `somcp_update_order_product`
 - `somcp_generate_order_invoice`
 - `somcp_add_order_discount`
 - `somcp_delete_order_discount`
@@ -201,6 +202,20 @@ say the new total before adding it, and wait for the merchant's go-ahead.
   names one.
 - Never repeat the call on a lost answer: check `products` with
   `somcp_get_order`.
+
+## A product line edited
+
+The unit price, the quantity or the invoice of a line of an order not
+delivered is changed with `somcp_update_order_product`. Changing a price or a
+quantity changes what the customer owes: say the new total first, and wait for
+the merchant's go-ahead.
+
+- The line comes from `products[].id_order_detail` of `somcp_get_order`. Give
+  only the fields to change; the others keep their value.
+- A quantity of 0 is refused: to take the line off, remove it on the order
+  page; to add one, `somcp_add_order_product`.
+- The values are absolute, not a delta. Never repeat the call on a lost
+  answer: check `products` with `somcp_get_order`.
 
 ## Products taken off an unpaid order
 

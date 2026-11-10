@@ -180,7 +180,10 @@
                                         <span class="somcp-group-count" data-somcp-counted="chat"></span>
                                     </td>
                                 {else}
-                                    <td class="somcp-tool-on" colspan="2"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
+                                    {* One cell per column, as the rows under it, so every word of
+                                       the group sits under the heading it answers. *}
+                                    <td class="somcp-tool-on"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
+                                    <td class="somcp-tool-on"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
                                 {/if}
                             </tr>
                             {foreach from=$group.items item=tool}
@@ -197,7 +200,8 @@
                                         {else}{l s='This module' d='Modules.Somcp.Admin'}{/if}
                                     </td>
                                     {if $tool.fixed === 'always'}
-                                        <td class="somcp-tool-on" colspan="2"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
+                                        <td class="somcp-tool-on"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
+                                        <td class="somcp-tool-on"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
                                     {elseif $tool.fixed === 'compact'}
                                         {* Decided by the compact setting under the list, which says
                                            so here instead of a switch that would compete with it. *}

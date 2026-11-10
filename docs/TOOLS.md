@@ -996,6 +996,65 @@ read and checked as by `somcp_issue_standard_refund`.
 Not replayable: a lost answer is checked with `somcp_get_order`
 (`products[].quantity`, `order.status`).
 
+#### `somcp_add_order_product`
+**State**: written
+**Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`
+
+**Does** - adds one product, or one combination of a product, to one order
+that has not been shipped, as **Add a product** in the **Products** block of
+the order page does, and recomputes the order totals.
+
+**Do not use for** - changing the quantity or price of a line already in the
+order (→ `somcp_update_order_product`), removing one
+(→ `somcp_delete_order_product`), creating an order (→ `somcp_create_order`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_order` | - | integer | one of the two | identifier, from `somcp_search_orders` |
+| `reference` | - | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `id_product` | **Search for a product** | integer | yes | from `somcp_search_products` |
+| `id_product_attribute` | combination select | integer | when the product has combinations | from `combinations[].id_product_attribute` of `somcp_get_product`; refused when it is not of the product |
+| `quantity` | **Quantity** | integer | yes | from 1 |
+| `unit_price_tax_excluded` | **tax excl.** | number | no | left out with the other price, the product's price for the order's customer, currency and delivery address |
+| `unit_price_tax_included` | **tax incl.** | number | no | given alone, the price tax excluded is worked out with the line's tax rate; both given, they must agree with it to the currency's precision |
+| `id_order_invoice` | **Invoice** | integer | no | an invoice of the order, from `documents.invoices[].id_order_invoice` of `somcp_get_order`; left out on an invoiced order, a new invoice is made |
+| `free_shipping` | **Free shipping** | boolean | no | only with a new invoice |
+
+Prices are in the order's currency, as on the screen.
+
+**Returns** - `added`, `order` (`id_order`, `reference`), `line` (the new
+line exactly as `somcp_get_order` returns one of `products[]`), `invoice`
+(`id_order_invoice` when the line went to one, `null` otherwise), `totals`
+(exactly as `somcp_get_order` returns them) and `currency`.
+
+**Errors** - every problem at once, nothing recorded when one check fails,
+each as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the
+order not found or a reference shared by several orders; `id_product` unknown
+in the shop; `id_product_attribute` missing, unknown or not of the product;
+`quantity` below 1; prices not numbers, below 0, or not agreeing with the tax
+rate; `id_order_invoice` not an invoice of the order; `free_shipping` without
+a new invoice; a shipped order; a product already in the order or in the
+invoice (that line is changed instead). The core's refusals (not enough
+stock with orders denied out of stock, minimum quantity) are put in the same
+shape.
+
+**Notes** - the core's `AddProductToOrderHandler` does the work, built with
+`new` with `OrderAmountUpdater`, `OrderProductQuantityUpdater` and
+`OrderDetailUpdater` (from `ContextStateManager`, `OrderProductRemover` and the
+configuration), whose constructors are the same on 8.0.1 and 9.0.0: the cart,
+the invoice and its free shipping cart rule, the order line, the prices given,
+the totals and `actionOrderEdited`, the token's employee on the context. Their
+internals differ between the versions, which is why they are called and never
+copied.
+
+**Differences between 8.0.1 and 9.0.0** - none in the form or the handler
+sequence.
+
+Not replayable: a second call adds the quantity again or is refused as a
+duplicate. A lost answer is checked with `somcp_get_order` (`products`).
+
 #### `somcp_add_order_discount`
 **State**: written
 **Nature**: `acts(EDIT, 'AdminOrders')` · **Scope**: `mcp.orders.write`

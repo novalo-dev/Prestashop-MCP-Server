@@ -1138,6 +1138,10 @@ T = {
  "Annuler des produits d'une commande",
  "Cancelar productos de un pedido",
  "Produkte einer Bestellung stornieren"),
+"Add a product to an order": (
+ "Ajouter un produit à une commande",
+ "Añadir un producto a un pedido",
+ "Ein Produkt zu einer Bestellung hinzufügen"),
 "Generate the invoice of an order": (
  "Générer la facture d'une commande",
  "Generar la factura de un pedido",

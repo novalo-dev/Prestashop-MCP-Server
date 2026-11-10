@@ -270,6 +270,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_issue_standard_refund` | ✎ Issue a standard refund on an order | Orders › edit |
 | `somcp_return_order_products` | ✎ Return products of an order | Orders › edit |
 | `somcp_cancel_order_products` | ✎ Cancel products of an order | Orders › edit |
+| `somcp_add_order_product` | ✎ Add a product to an order | Orders › edit |
 | `somcp_generate_order_invoice` | ✎ Generate the invoice of an order | Orders › edit |
 | `somcp_add_order_discount` | ✎ Add a discount to an order | Orders › edit |
 | `somcp_delete_order_discount` | ✎ Remove a discount from an order | Orders › edit |

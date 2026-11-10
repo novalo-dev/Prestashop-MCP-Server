@@ -23,6 +23,7 @@ of it can be undone by calling again.
 - `somcp_issue_standard_refund`
 - `somcp_return_order_products`
 - `somcp_cancel_order_products`
+- `somcp_add_order_product`
 - `somcp_generate_order_invoice`
 - `somcp_add_order_discount`
 - `somcp_delete_order_discount`
@@ -185,6 +186,21 @@ the call.
   `somcp_issue_standard_refund`.
 - Never repeat the call on a lost answer: check `quantity_refunded` and
   `documents.credit_slips` with `somcp_get_order`.
+
+## A product added to an order
+
+A product added to an order that is not shipped yet goes through
+`somcp_add_order_product`. Adding a product changes what the customer owes:
+say the new total before adding it, and wait for the merchant's go-ahead.
+
+- The product comes from `somcp_search_products`, the combination from
+  `somcp_get_product`; a product already in the order is refused: its line
+  is changed instead, never added twice.
+- Left out, the prices are those of the product for this customer; on an
+  invoiced order, the line goes to a new invoice unless `id_order_invoice`
+  names one.
+- Never repeat the call on a lost answer: check `products` with
+  `somcp_get_order`.
 
 ## Products taken off an unpaid order
 

@@ -67,6 +67,14 @@ the stock follow, and when no product is left the order goes to Canceled and
 the customer is emailed. A paid or delivered order, or a shop with merchandise
 returns off, is refused with the tool to use instead.
 
+**Products added to an order.** The new tool `somcp_add_order_product` adds a
+product, or one of its combinations, to an order that is not shipped yet, as
+**Add a product** in the Products block of the order page does: the order total
+is recomputed, and on an invoiced order the line goes to the invoice you name
+or to a new one, with free shipping when asked. Left out, the price is the
+product's price for that customer. A shipped order, a product already in the
+order or a quantity the stock cannot cover is refused with the reason.
+
 **Returned products.** The new tool `somcp_return_order_products` records the
 products a customer sent back on a delivered order and refunds them, as the
 **Return products** button of the order page does: the chosen quantities are

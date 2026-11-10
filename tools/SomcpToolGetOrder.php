@@ -317,7 +317,7 @@ class SomcpToolGetOrder
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function products(Order $order, int $idLang, int $idShop): array
+    public static function products(Order $order, int $idLang, int $idShop): array
     {
         $lines = [];
         // getProducts() already adds what the Products table of the order page
@@ -539,7 +539,7 @@ class SomcpToolGetOrder
      *
      * @return array<string, float>
      */
-    private static function totals(Order $order): array
+    public static function totals(Order $order): array
     {
         return [
             'products_tax_excluded' => (float) $order->total_products,

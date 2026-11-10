@@ -16,6 +16,30 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Compact mode.** More than a hundred tools weigh on every request a connected
+assistant makes, and some cap the count - VS Code stops at 128. In compact
+mode, inspired by the MCP servers of Cloudflare and Azure, connected
+assistants receive four tools instead of the whole list: `somcp_ping`,
+`somcp_search_tools` to find the tool they need and read its parameters, then
+`somcp_run_read_tool` or `somcp_run_write_tool` to run it - the second one
+flagged so the assistant asks you before a change. The same permissions, the
+same switches and the same checks apply to every call, and a guide (prompt)
+now starts by telling the assistant which runner each of its tools goes
+through. Turn it on or off in **Tools and prompts › Settings › Compact list of
+tools**: on for a new shop, off for a shop that updates. Assistants already
+connected follow the change once their copy of the list expires, without
+reconnecting. The built-in assistant is not concerned.
+
+### Fixed
+
+**Test the connection can no longer be switched off.** The Connection group of
+**Tools and prompts** said **Always on**, yet `somcp_ping` under it kept two
+switches that did switch it off, and a connected assistant could no longer
+check which shop and account it had reached. Its row now says **Always on**
+like its group, and the tool stays on even where it had been switched off.
+
 ### Security
 
 **The built-in assistant runs on Neuron AI 4.1.22.** When an AI service

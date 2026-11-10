@@ -84,6 +84,7 @@ class Somcp extends Module
         'SomcpToolRegistry',
         'SomcpPrompt',
         'SomcpPromptRegistry',
+        'SomcpCompact',
         'SomcpContract',
         'SomcpDiagnostic',
         'SomcpUpdate',
@@ -334,6 +335,9 @@ class Somcp extends Module
 
         $this->declareToolHook();
         SomcpConfig::seed();
+        // A new shop has no assistant used to the full list yet, so it starts
+        // in compact mode; the default stays off for the shops that update.
+        Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, '1', false, 0, 0);
         SomcpBackOffice::rememberAdminDir();
 
         return true;
@@ -901,7 +905,10 @@ class Somcp extends Module
             'somcp_issuer' => SomcpConfig::issuer(),
             'somcp_multistore' => Shop::isFeatureActive(),
             'somcp_tools' => $this->scopeGroups($tools),
-            'somcp_tools_count' => count($tools),
+            // The shop's tools: the three of compact mode only reach them.
+            'somcp_tools_count' => count(array_filter($tools, static function (array $row): bool {
+                return $row['fixed'] !== 'compact';
+            })),
             'somcp_prompts' => $this->scopeGroups($prompts),
             'somcp_prompts_count' => count($prompts),
             'somcp_inheritable' => SomcpConfig::inheritableContext(),
@@ -1148,6 +1155,7 @@ class Somcp extends Module
             SomcpConfig::CIMD_ENABLED,
             SomcpConfig::DCR_ENABLED,
             SomcpConfig::LOG_ENABLED,
+            SomcpConfig::TOOLS_COMPACT,
         ];
         // The rules that tie two settings together hold before anything is
         // written, as in the built-in assistant's settings tool.
@@ -1231,8 +1239,10 @@ class Somcp extends Module
             }
         }
 
-        foreach (array_keys($registry->all()) as $name) {
-            if (!isset($ticked[$name])) {
+        foreach ($registry->all() as $name => $tool) {
+            // A tool that stays on is never written off, whatever a hand-made
+            // post says: the page shows no switch for it.
+            if (!isset($ticked[$name]) && !SomcpToolRegistry::alwaysOn($tool)) {
                 $off[] = $name;
             }
         }
@@ -1352,6 +1362,28 @@ class Somcp extends Module
                 // on the group's row, and saving must not mix the two.
                 'on' => SomcpToolRegistry::isSwitchedOn($name),
                 'chat' => SomcpToolRegistry::isSwitchedOn($name, true),
+                // No switch on a row that cannot be switched: one that moved
+                // and did nothing would say the opposite of its group.
+                'fixed' => SomcpToolRegistry::alwaysOn($tool) ? 'always' : '',
+            ];
+        }
+
+        // The tools of compact mode, under Connection beside somcp_ping. The
+        // compact setting below the list decides whether connected assistants
+        // get them, so they carry no switch of their own: two places deciding
+        // the same thing would end up disagreeing.
+        foreach (SomcpCompact::tools() as $tool) {
+            $described = $tool->describe();
+            $list[] = [
+                'name' => $tool->getName(),
+                'title' => $described['title'],
+                'description' => $described['description'],
+                'module' => '',
+                'group' => SomcpScope::ACCESS,
+                'writes' => SomcpToolRegistry::writes($tool),
+                'on' => SomcpCompact::enabled(),
+                'chat' => false,
+                'fixed' => 'compact',
             ];
         }
 

@@ -239,6 +239,75 @@ $expect('body that is not JSON', $http('POST', $mcpUrl, $bearer($valid['access_t
 $expect('batch of calls', $http('POST', $mcpUrl, $bearer($valid['access_token']), '[' . $ping . ',' . $ping . ']'), 400);
 
 // ---------------------------------------------------------------------------
+$section('Compact mode');
+// The runners must refuse what a direct call refuses, and the search must show
+// no more than the full list would: each is checked on what comes back, not
+// only on the HTTP status, which is 200 for a tool error.
+$compactWas = (string) Configuration::get(SomcpConfig::TOOLS_COMPACT);
+Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, '1');
+$see = static function (string $what, bool $held, array $response) use (&$failures, &$checks): void {
+    ++$checks;
+    printf("  %s  %s\n", $held ? 'ok   ' : 'FAIL ', $what);
+    if (!$held) {
+        $failures[] = $what . ': ' . substr($response['body'], 0, 300);
+    }
+};
+$said = static function (array $response): string {
+    return (string) ($response['json']['result']['content'][0]['text'] ?? '');
+};
+$failed = static function (array $response): bool {
+    return ($response['json']['result']['isError'] ?? false) === true;
+};
+$run = static function (string $runner, string $tool, array $arguments = []) use ($rpc): string {
+    return $rpc('tools/call', ['name' => $runner, 'arguments' => ['name' => $tool, 'arguments' => (object) $arguments]]);
+};
+
+$listed = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('tools/list'));
+$names = array_column((array) ($listed['json']['result']['tools'] ?? []), 'name');
+sort($names);
+$see('the list carries somcp_ping and the three tools of compact mode', $names === [
+    'somcp_ping', SomcpCompact::READ_TOOL, SomcpCompact::WRITE_TOOL, SomcpCompact::SEARCH_TOOL,
+], $listed);
+
+$searched = $http('POST', $mcpUrl, $bearer($reader['access_token']), $rpc('tools/call', [
+    'name' => SomcpCompact::SEARCH_TOOL,
+    'arguments' => ['names' => ['somcp_create_category', 'somcp_list_categories']],
+]));
+$answer = json_decode($said($searched), true);
+$see('a search hides a tool the connection may not use', is_array($answer)
+    && in_array('somcp_create_category', (array) ($answer['unknown'] ?? []), true)
+    && !in_array('somcp_create_category', array_column((array) ($answer['tools'] ?? []), 'name'), true), $searched);
+
+$wrongRunner = $http('POST', $mcpUrl, $bearer($valid['access_token']), $run(SomcpCompact::READ_TOOL, 'somcp_create_category', ['name' => 'Created by an attack']));
+$see('the read runner refuses a tool that changes the shop', $failed($wrongRunner)
+    && strpos($said($wrongRunner), SomcpCompact::WRITE_TOOL) !== false, $wrongRunner);
+$expect('read-only token running a change through the write runner', $http('POST', $mcpUrl, $bearer($reader['access_token']), $run(
+    SomcpCompact::WRITE_TOOL,
+    'somcp_create_category',
+    ['name' => 'Created by an attack']
+)), 403);
+$guessed = $http('POST', $mcpUrl, $bearer($valid['access_token']), $run(SomcpCompact::READ_TOOL, 'somcp_made_up_tool'));
+$see('a made-up name is refused and pointed to the search', $failed($guessed)
+    && strpos($said($guessed), SomcpCompact::SEARCH_TOOL) !== false, $guessed);
+$looped = $http('POST', $mcpUrl, $bearer($valid['access_token']), $run(SomcpCompact::READ_TOOL, SomcpCompact::WRITE_TOOL));
+$see('a runner refuses to run a runner', $failed($looped), $looped);
+$read = $http('POST', $mcpUrl, $bearer($valid['access_token']), $run(SomcpCompact::READ_TOOL, 'somcp_list_order_statuses'));
+$see('the read runner runs a read tool', $read['status'] === 200 && !$failed($read) && $said($read) !== '', $read);
+
+$guide = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('prompts/get', ['name' => 'somcp-order-lookup']));
+$see('a guide starts by saying how to run its tools', strpos(
+    (string) ($guide['json']['result']['messages'][0]['content']['text'] ?? ''),
+    '## How to call the tools of this guide'
+) === 0, $guide);
+
+Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, '0');
+$full = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('tools/list'));
+$fullNames = array_column((array) ($full['json']['result']['tools'] ?? []), 'name');
+$see('compact mode off lists the tools themselves', count($fullNames) > 4
+    && !in_array(SomcpCompact::SEARCH_TOOL, $fullNames, true), $full);
+Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, $compactWas);
+
+// ---------------------------------------------------------------------------
 $section('Token endpoint');
 $replayed = $code();
 $issued = $redeem($replayed, $clientA, $verifier);

@@ -1662,6 +1662,41 @@
       <source>Tools %from% to %to% of %total%</source>
       <target>Outils %from% à %to% sur %total%</target>
     </trans-unit>
+    <!-- Compact list of tools -->
+    <trans-unit id="7ff90bbf0d925a6213a210e9e6c40a2e" resname="Compact list of tools">
+      <source>Compact list of tools</source>
+      <target>Liste compacte des outils</target>
+    </trans-unit>
+    <!-- Connected assistants receive four tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. Assistants already connected follow the change after the delay above, without reconnecting. The built-in assistant is not affected. -->
+    <trans-unit id="9adebeb41306a5dfe9557324de49488a" resname="Connected assistants receive four tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. Assistants already connected follow the change after the delay above, without reconnecting. The built-in assistant is not affected.">
+      <source>Connected assistants receive four tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. Assistants already connected follow the change after the delay above, without reconnecting. The built-in assistant is not affected.</source>
+      <target>Les assistants connectés reçoivent quatre outils au lieu de la liste complète : ils cherchent l'outil dont ils ont besoin, puis le lancent. Plus léger pour les assistants que trop d'outils gênent ; ils font un ou deux appels de plus avant d'agir. Les mêmes droits et les mêmes interrupteurs s'appliquent. Les assistants déjà connectés suivent le changement après le délai ci-dessus, sans se reconnecter. L'assistant intégré n'est pas concerné.</target>
+    </trans-unit>
+    <!-- Compact mode on -->
+    <trans-unit id="44a7fa8ca50864d82d0bd2acf1a27883" resname="Compact mode on">
+      <source>Compact mode on</source>
+      <target>Mode compact activé</target>
+    </trans-unit>
+    <!-- Compact mode off -->
+    <trans-unit id="9fd7acc8d5645786ae312f0326a70c5b" resname="Compact mode off">
+      <source>Compact mode off</source>
+      <target>Mode compact désactivé</target>
+    </trans-unit>
+    <!-- Search the shop tools -->
+    <trans-unit id="e0f9a2702f57166c88a5664a07f41562" resname="Search the shop tools">
+      <source>Search the shop tools</source>
+      <target>Chercher les outils de la boutique</target>
+    </trans-unit>
+    <!-- Run a read tool -->
+    <trans-unit id="9ab6f4eec943d62cd8f91f70528fe706" resname="Run a read tool">
+      <source>Run a read tool</source>
+      <target>Lancer un outil de lecture</target>
+    </trans-unit>
+    <!-- Run a tool that changes the shop -->
+    <trans-unit id="cafd8fa4863facfa0e0bd3a2f588aca8" resname="Run a tool that changes the shop">
+      <source>Run a tool that changes the shop</source>
+      <target>Lancer un outil qui modifie la boutique</target>
+    </trans-unit>
     <!-- How long an assistant keeps the list of tools -->
     <trans-unit id="85bda97a11e0fe0736c39b07f2ed5bb9" resname="How long an assistant keeps the list of tools">
       <source>How long an assistant keeps the list of tools</source>

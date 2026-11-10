@@ -33,6 +33,18 @@ In the back office the module is called **O'So MCP Server**.
 
 ---
 
+## News
+
+**Compact mode comes to O'So MCP Server.** Inspired by the MCP servers of
+[Cloudflare](https://blog.cloudflare.com/code-mode-mcp/) and
+[Azure](https://learn.microsoft.com/azure/developer/azure-mcp-server/concepts),
+which put thousands of operations within an assistant's reach without listing
+them all: connected assistants receive four tools instead of more than a
+hundred, search the one they need, then run it - with the same permissions and
+the same checks. [Compact mode](#compact-mode).
+
+---
+
 ## What you can ask
 
 > "Which orders are still waiting for shipment since Monday?"
@@ -140,6 +152,30 @@ shop's address. These can:
 
 Where to paste the address in each of them:
 [Connect an assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant).
+
+### Compact mode
+
+More than a hundred tools weigh on every request an assistant makes, and some
+clients cap the count: VS Code stops at 128. In compact mode, connected
+assistants receive four tools instead of the whole list:
+
+| Tool | What it does |
+|---|---|
+| `somcp_ping` | ● Test the connection |
+| `somcp_search_tools` | ● Search the shop tools, and give their parameters |
+| `somcp_run_read_tool` | ● Run a tool that only reads |
+| `somcp_run_write_tool` | ✎ Run a tool that changes the shop, flagged so assistants ask you first |
+
+Nothing else changes: the same permissions, the same switches, the same checks
+on every call. A tool the search does not offer cannot be run either. The guides
+(prompts) tell the assistant which runner each of their tools goes through.
+
+Turn it on or off in **Tools and prompts › Settings › Compact list of tools**:
+on by default for a new shop, off for a shop that updates. Assistants already
+connected follow the change once their copy of the list expires (**How long an
+assistant keeps the list of tools**, five minutes by default), without
+reconnecting. The built-in assistant is not concerned: it already searches its
+tools itself.
 
 ---
 

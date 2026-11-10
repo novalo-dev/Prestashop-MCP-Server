@@ -415,6 +415,89 @@ class SomcpToolRegistry
     }
 
     /**
+     * The tools a caller may use that match some keywords, best match first.
+     *
+     * One search for the built-in assistant, which loads what it finds into
+     * its conversation, and for somcp_search_tools, which hands the schemas
+     * over to an assistant connected in compact mode: a tool one of them finds
+     * and the other misses would make the same request work in one place only.
+     * Each reads its own switches, as the two lists of the settings page do.
+     *
+     * A tool counts one point per keyword found in its name, title or
+     * description. No keyword lists every tool the caller may use, in the
+     * registry's order.
+     *
+     * @param string $query keywords in English, any separator
+     * @param string $grantedScopes
+     * @param int $idEmployee
+     * @param bool $chat true for the built-in assistant's switches
+     *
+     * @return array<int, SomcpTool>
+     */
+    public function search(string $query, string $grantedScopes, int $idEmployee, bool $chat = false): array
+    {
+        $words = array_values(array_filter(preg_split('/[^a-z0-9_]+/', strtolower($query)) ?: []));
+        $found = [];
+        foreach ($this->tools as $tool) {
+            if (!self::isEnabled($tool->getName(), $chat) || !$tool->isAvailableTo($grantedScopes, $idEmployee)) {
+                continue;
+            }
+            $described = $tool->describe();
+            $haystack = strtolower($tool->getName() . ' ' . $described['title'] . ' ' . $described['description']);
+            $score = 0;
+            foreach ($words as $word) {
+                $score += strpos($haystack, $word) !== false ? 1 : 0;
+            }
+            if ($words !== [] && $score === 0) {
+                continue;
+            }
+            $found[] = [$score, count($found), $tool];
+        }
+        // Ties keep the registry's order, so the same query lists the same
+        // tools in the same order from one call to the next.
+        usort($found, static function (array $a, array $b): int {
+            return $b[0] <=> $a[0] ?: $a[1] <=> $b[1];
+        });
+
+        return array_column($found, 2);
+    }
+
+    /**
+     * Whether a tool changes the shop, read from its own annotation.
+     *
+     * Only a tool that says it reads only counts as a read: one that says
+     * nothing is treated as a change, so that a forgotten annotation asks
+     * for confirmation rather than skipping it.
+     *
+     * @param SomcpTool $tool
+     *
+     * @return bool
+     */
+    public static function writes(SomcpTool $tool): bool
+    {
+        return ($tool->describe()['annotations']['readOnlyHint'] ?? false) !== true;
+    }
+
+    /**
+     * Whether a tool stays on whatever the switches say: the module's own
+     * tools of the Connection group, which only open a session.
+     *
+     * somcp_ping is how an assistant learns which shop and account it reached;
+     * switched off, a connection that works looks broken. A tool of another
+     * module carries its folder in its name and stays switchable, even when it
+     * asks for no scope of its own.
+     *
+     * @param SomcpTool $tool
+     *
+     * @return bool
+     */
+    public static function alwaysOn(SomcpTool $tool): bool
+    {
+        return strpos($tool->getName(), '-') === false
+            && SomcpScope::groupOf($tool->getRequiredScopes()) === SomcpScope::ACCESS;
+    }
+
+    /**
      * Runs a tool and turns anything it throws into a tool error.
      *
      * Shared by the MCP endpoint and the assistant built into the back office,
@@ -492,6 +575,13 @@ class SomcpToolRegistry
      */
     public static function isSwitchedOn(string $name, bool $chat = false): bool
     {
+        // Ahead of the stored list: a shop that switched one of these off
+        // before it became fixed would otherwise keep it off until the next save.
+        $tool = self::getInstance()->get($name);
+        if ($tool !== null && self::alwaysOn($tool)) {
+            return true;
+        }
+
         return !in_array($name, self::disabled($chat), true);
     }
 

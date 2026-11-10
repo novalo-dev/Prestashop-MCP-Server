@@ -198,8 +198,21 @@ cache lifetime (a setting, five minutes by default) and `cacheScope: private`.
   Search, load and call all go through the same
   `SomcpToolRegistry::isEnabled()` and `isAvailableTo()` as the Tools and
   prompts tab, so the finder never offers a tool the employee could not call,
-  and a write still asks for approval. MCP
-  clients are unchanged: `tools/list` stays the full list for the token.
+  and a write still asks for approval. The keyword search itself is
+  `SomcpToolRegistry::search()`, shared with compact mode below.
+- Compact mode (`SomcpCompact`, setting `SOMCP_TOOLS_COMPACT`) does the same
+  for MCP clients without keeping anything between calls, since the current
+  revision has no session. `tools/list` carries `somcp_ping` and three tools:
+  `somcp_search_tools` returns the tools the token may use with their schemas,
+  and `somcp_run_read_tool` / `somcp_run_write_tool` name the tool to run. The
+  endpoint unwraps a runner's call into the call of the tool it names before
+  any check, so that tool meets the switch, scope and permission checks of a
+  direct call, and a question it asks is sealed under its own name. Each
+  runner refuses the tools of the other kind (`SomcpToolRegistry::writes()`),
+  because a client reads the runner's flags to decide whether to ask the
+  merchant first. `prompts/get` puts a block in front of a guide saying which
+  runner each of its tools goes through. The four tools are answered whatever
+  the mode, so a client holding the other list until it expires still works.
 - `SomcpContract` is the translation layer for other modules: they return
   arrays from the hooks and from their handlers, and it turns those into tools,
   prompts and results. See [EXTENDING.md](EXTENDING.md).

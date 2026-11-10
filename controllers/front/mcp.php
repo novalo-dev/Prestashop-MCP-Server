@@ -382,6 +382,13 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
 
             return SomcpJsonRpc::error($id, SomcpJsonRpc::INTERNAL_ERROR, 'Prompt unavailable');
         }
+        // In compact mode the tools a guide names are not in the assistant's
+        // list. Added here rather than to the file, which the built-in
+        // assistant reads too, and put first so it is read before the steps.
+        $block = SomcpCompact::enabled() ? SomcpCompact::promptBlock($prompt) : '';
+        if ($block !== '' && isset($result['messages'][0]['content']['text'])) {
+            $result['messages'][0]['content']['text'] = $block . $result['messages'][0]['content']['text'];
+        }
 
         if ($modern) {
             $result['resultType'] = 'complete';
@@ -423,7 +430,11 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
             'supportedVersions' => SomcpProtocol::supportedVersions(),
             'capabilities' => self::capabilities(),
             'instructions' => 'Tools exposed by the PrestaShop shop "'
-                . (string) Configuration::get('PS_SHOP_NAME') . '" through O\'So MCP Server.',
+                . (string) Configuration::get('PS_SHOP_NAME') . '" through O\'So MCP Server.'
+                . (SomcpCompact::enabled()
+                    ? ' The tools are listed in compact form: find them with ' . SomcpCompact::SEARCH_TOOL
+                        . ', then run them with ' . SomcpCompact::READ_TOOL . ' or ' . SomcpCompact::WRITE_TOOL . '.'
+                    : ''),
             '_meta' => [SomcpProtocol::META_SERVER_INFO => $this->serverInfo()],
         ];
 
@@ -446,10 +457,11 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
      */
     private function toolsListResult(array $tokenRow, bool $modern): array
     {
-        $result = ['tools' => SomcpToolRegistry::getInstance()->describeFor(
+        $tools = SomcpToolRegistry::getInstance()->describeFor(
             (string) $tokenRow['scopes'],
             (int) $tokenRow['id_employee']
-        )];
+        );
+        $result = ['tools' => SomcpCompact::enabled() ? SomcpCompact::listFrom($tools) : $tools];
 
         if ($modern) {
             $result['resultType'] = 'complete';
@@ -477,13 +489,38 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
     {
         $name = (string) ($params['name'] ?? '');
         $arguments = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
+        $idEmployee = (int) $tokenRow['id_employee'];
+
+        // The tools of compact mode are answered whatever the mode: an
+        // assistant keeps the list it read for minutes, and one that read the
+        // compact list before the merchant turned the mode off must not see
+        // its calls fail until its copy expires.
+        if ($name === SomcpCompact::SEARCH_TOOL) {
+            return $this->finish(SomcpCompact::search($arguments, [
+                'scopes' => (string) $tokenRow['scopes'],
+                'id_employee' => $idEmployee,
+            ]), $modern);
+        }
+        // A runner's call becomes the call of the tool it names, here, before
+        // anything else: that tool then meets every check below, and a
+        // question it asks is sealed under its own name and arguments, which
+        // the runner's replay unwraps to again.
+        $wrapped = SomcpCompact::unwrap($name, $arguments);
+        if ($wrapped !== null) {
+            if ($wrapped['error'] !== '') {
+                return $this->finish(SomcpTool::text($wrapped['error'], true), $modern);
+            }
+            $name = $wrapped['name'];
+            $arguments = $wrapped['arguments'];
+        }
 
         $tool = SomcpToolRegistry::getInstance()->get($name);
         if ($tool === null) {
-            return $this->finish(SomcpTool::text('Unknown tool: ' . Tools::substr($name, 0, 60), true), $modern);
+            return $this->finish(SomcpTool::text(
+                $wrapped !== null ? SomcpCompact::unknown($name) : 'Unknown tool: ' . Tools::substr($name, 0, 60),
+                true
+            ), $modern);
         }
-
-        $idEmployee = (int) $tokenRow['id_employee'];
 
         if (!SomcpToolRegistry::isEnabled($name)) {
             // Checked again even though the tool was left out of the listing,
@@ -502,6 +539,16 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
                 SomcpTool::text('This tool is switched off for this shop.', true),
                 $modern
             );
+        }
+
+        if ($wrapped !== null) {
+            // Each runner carries the flags a client reads to decide whether
+            // to ask the merchant first. A change slipped through the reading
+            // runner would skip that question.
+            $wrong = SomcpCompact::wrongRunner($tool, $wrapped['writes']);
+            if ($wrong !== '') {
+                return $this->finish(SomcpTool::text($wrong, true), $modern);
+            }
         }
 
         if (!SomcpScope::covers((string) $tokenRow['scopes'], $tool->getRequiredScopes())) {
@@ -588,7 +635,7 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
             );
         }
 
-        return $this->finish($result, $modern);
+        return $this->finish($wrapped !== null ? SomcpCompact::withSchema($result, $tool) : $result, $modern);
     }
 
     /**

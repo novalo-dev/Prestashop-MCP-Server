@@ -1322,6 +1322,34 @@ T = {
  "Outils %from% à %to% sur %total%",
  "Herramientas %from% a %to% de %total%",
  "Werkzeuge %from% bis %to% von %total%"),
+"Compact list of tools": (
+ "Liste compacte des outils",
+ "Lista compacta de herramientas",
+ "Kompakte Werkzeugliste"),
+"Connected assistants receive four tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. Assistants already connected follow the change after the delay above, without reconnecting. The built-in assistant is not affected.": (
+ "Les assistants connectés reçoivent quatre outils au lieu de la liste complète : ils cherchent l'outil dont ils ont besoin, puis le lancent. Plus léger pour les assistants que trop d'outils gênent ; ils font un ou deux appels de plus avant d'agir. Les mêmes droits et les mêmes interrupteurs s'appliquent. Les assistants déjà connectés suivent le changement après le délai ci-dessus, sans se reconnecter. L'assistant intégré n'est pas concerné.",
+ "Los asistentes conectados reciben cuatro herramientas en lugar de la lista completa: buscan la herramienta que necesitan y luego la ejecutan. Más ligero para los asistentes a los que molestan muchas herramientas; hacen una o dos llamadas más antes de actuar. Se aplican los mismos permisos e interruptores. Los asistentes ya conectados siguen el cambio tras el plazo indicado arriba, sin volver a conectarse. El asistente integrado no se ve afectado.",
+ "Verbundene Assistenten erhalten vier Werkzeuge statt der ganzen Liste: Sie suchen das Werkzeug, das sie brauchen, und führen es dann aus. Leichter für Assistenten, die mit vielen Werkzeugen nicht zurechtkommen; sie brauchen vor dem Handeln ein oder zwei Aufrufe mehr. Es gelten dieselben Berechtigungen und Schalter. Bereits verbundene Assistenten übernehmen die Änderung nach der oben eingestellten Frist, ohne neue Verbindung. Der integrierte Assistent ist nicht betroffen."),
+"Compact mode on": (
+ "Mode compact activé",
+ "Modo compacto activado",
+ "Kompaktmodus an"),
+"Compact mode off": (
+ "Mode compact désactivé",
+ "Modo compacto desactivado",
+ "Kompaktmodus aus"),
+"Search the shop tools": (
+ "Chercher les outils de la boutique",
+ "Buscar las herramientas de la tienda",
+ "Werkzeuge des Shops suchen"),
+"Run a read tool": (
+ "Lancer un outil de lecture",
+ "Ejecutar una herramienta de lectura",
+ "Ein Lesewerkzeug ausführen"),
+"Run a tool that changes the shop": (
+ "Lancer un outil qui modifie la boutique",
+ "Ejecutar una herramienta que modifica la tienda",
+ "Ein Werkzeug ausführen, das den Shop ändert"),
 "How long an assistant keeps the list of tools": (
  "Durée pendant laquelle un assistant garde la liste des outils",
  "Tiempo durante el cual un asistente conserva la lista de herramientas",

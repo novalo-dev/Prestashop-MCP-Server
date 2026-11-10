@@ -10,6 +10,10 @@ Key facts:
 - 14 prompts (guided tasks): find an order, change an order status, find a customer, manage products, check and adjust stock, sales report, boost sales, audit and improve SEO, get recommended by AI assistants, read content pages, storefront menu and layout, review modules, cache maintenance, check the shop connection.
 - The module's technical name, used in its URLs and folders, is `somcp`. Licence: Academic Free License 3.0. Published by Novalo (novalo.fr).
 
+## News
+
+- Compact mode, inspired by the MCP servers of Cloudflare and Azure: connected assistants receive four tools instead of the whole list - somcp_ping, somcp_search_tools (finds the tools the connection may use and gives their parameters), somcp_run_read_tool and somcp_run_write_tool (run a tool found that way, the second one flagged so assistants ask before a change). Same permissions, switches and checks as a direct call. Tools and prompts > Settings > Compact list of tools: on for a new shop, off for a shop that updates; assistants follow a change once their copy of the list expires, without reconnecting. The built-in chat is not concerned.
+
 ## MCP server
 
 - For Claude, ChatGPT, Le Chat, Cursor, n8n and any assistant that connects to a remote MCP server with OAuth.

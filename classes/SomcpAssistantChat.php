@@ -2142,37 +2142,24 @@ class SomcpAssistantChat
                 . ($refused !== [] ? ' Not available here: ' . implode(', ', $refused) . '.' : '')];
         }
 
-        $words = array_values(array_filter(preg_split('/[^a-z0-9_]+/', strtolower((string) ($arguments['query'] ?? ''))) ?: []));
-        $scopes = $this->scopes();
-        $idEmployee = (int) $this->employee->id;
-        $found = [];
-        foreach (SomcpToolRegistry::getInstance()->all() as $tool) {
-            if (!SomcpToolRegistry::isEnabled($tool->getName(), true) || !$tool->isAvailableTo($scopes, $idEmployee)) {
-                continue;
-            }
-            $described = $tool->describe();
-            $haystack = strtolower($tool->getName() . ' ' . $described['title'] . ' ' . $described['description']);
-            $score = 0;
-            foreach ($words as $word) {
-                $score += substr_count($haystack, $word) > 0 ? 1 : 0;
-            }
-            if ($words !== [] && $score === 0) {
-                continue;
-            }
-            // The full list gives names and titles only: with every tool on
-            // it, a sentence each cost some 2,500 tokens.
-            $first = (string) preg_replace('/(?<=\.)\s.*$/s', '', (string) $described['description']);
-            $found[] = [$score, '- ' . $tool->getName() . ' (' . $described['title'] . ')'
-                . ($words !== [] ? ': ' . Tools::substr($first, 0, 160) : '')
-                . (($described['annotations']['readOnlyHint'] ?? false) === true ? '' : ' [changes the shop]')];
-        }
-        usort($found, static function (array $a, array $b): int {
-            return $b[0] <=> $a[0];
-        });
+        $query = (string) ($arguments['query'] ?? '');
+        $found = SomcpToolRegistry::getInstance()->search($query, $this->scopes(), (int) $this->employee->id, true);
         if ($found === []) {
             return ['result' => 'No tool matches. Try other keywords, or none for the full list.'];
         }
-        $lines = array_column(array_slice($found, 0, $words !== [] ? self::MAX_FOUND : count($found)), 1);
+        // The same test as the search's own split: a query of punctuation
+        // alone lists every tool, briefly.
+        $keywords = preg_match('/[a-z0-9_]/', strtolower($query)) === 1;
+        $lines = [];
+        foreach (array_slice($found, 0, $keywords ? self::MAX_FOUND : count($found)) as $tool) {
+            $described = $tool->describe();
+            // The full list gives names and titles only: with every tool on
+            // it, a sentence each cost some 2,500 tokens.
+            $first = (string) preg_replace('/(?<=\.)\s.*$/s', '', (string) $described['description']);
+            $lines[] = '- ' . $tool->getName() . ' (' . $described['title'] . ')'
+                . ($keywords ? ': ' . Tools::substr($first, 0, 160) : '')
+                . (SomcpToolRegistry::writes($tool) ? ' [changes the shop]' : '');
+        }
 
         return ['result' => implode("\n", $lines) . "\nLoad the ones you need with load."];
     }

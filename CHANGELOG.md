@@ -14,6 +14,16 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+### Security
+
+**The built-in assistant runs on Neuron AI 4.1.22.** When an AI service
+answered with a redirect written in a shortened form (`http:/` followed by
+another site), the engine of the built-in assistant took it for the same
+service and followed it, with your API key. It now treats it as another site
+and does not send the key there. Nothing changes in how you use the assistant.
+
 ## 1.4.0 - 2026-11-10
 
 ### Added

@@ -28,9 +28,10 @@ flagged so the assistant asks you before a change. The same permissions, the
 same switches and the same checks apply to every call, and a guide (prompt)
 now starts by telling the assistant which runner each of its tools goes
 through. Turn it on or off in **Tools and prompts › Settings › Compact list of
-tools**: on for a new shop, off for a shop that updates. Assistants already
-connected follow the change once their copy of the list expires, without
-reconnecting. The built-in assistant is not concerned.
+tools**: on for a new shop, off for a shop that updates. An assistant on the
+latest version of the protocol follows the change once its copy of the list
+expires; the others, ChatGPT among them today, once you refresh their tools
+in their own settings. The built-in assistant is not concerned.
 
 ### Fixed
 
@@ -39,6 +40,12 @@ reconnecting. The built-in assistant is not concerned.
 switches that did switch it off, and a connected assistant could no longer
 check which shop and account it had reached. Its row now says **Always on**
 like its group, and the tool stays on even where it had been switched off.
+
+**The help of How long an assistant keeps the list of tools tells the
+truth.** It said every assistant reads the list again once this delay has run
+out. Only the assistants on the latest version of the protocol do; the
+others, ChatGPT among them today, keep their list until you refresh their
+tools in their own settings, and the help now says so.
 
 ### Security
 

@@ -171,11 +171,12 @@ on every call. A tool the search does not offer cannot be run either. The guides
 (prompts) tell the assistant which runner each of their tools goes through.
 
 Turn it on or off in **Tools and prompts › Settings › Compact list of tools**:
-on by default for a new shop, off for a shop that updates. Assistants already
-connected follow the change once their copy of the list expires (**How long an
-assistant keeps the list of tools**, five minutes by default), without
-reconnecting. The built-in assistant is not concerned: it already searches its
-tools itself.
+on by default for a new shop, off for a shop that updates. The shop cannot
+tell a connected assistant that its list changed. One on the latest version of
+the protocol reads it again once its copy expires (**How long an assistant
+keeps the list of tools**, five minutes by default); the others, ChatGPT among
+them today, keep theirs until you refresh their tools in their own settings.
+The built-in assistant is not concerned: it already searches its tools itself.
 
 ---
 

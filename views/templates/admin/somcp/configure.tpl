@@ -352,7 +352,7 @@
                         {include file='./_inherit.tpl' field='SOMCP_TOOLS_TTL'}
                         <input type="number" min="10" max="3600" name="SOMCP_TOOLS_TTL" class="form-control fixed-width-xl"
                                value="{$somcp_settings.SOMCP_TOOLS_TTL|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it - so the assistant re-reads only when this has run out. A tool switched on or off appears or disappears after that delay, not before. Lower it while you are adding tools, raise it back afterwards. 300 by default.' d='Modules.Somcp.Admin'}</p>
+                        <p class="help-block">{l s='In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it. Assistants on the latest version of the protocol read the list again once this has run out; the others, ChatGPT among them today, keep it until you refresh their tools in their own settings. Lower it while you are adding tools, raise it back afterwards. 300 by default.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 
@@ -367,7 +367,7 @@
                             <label for="SOMCP_TOOLS_COMPACT_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='Connected assistants receive four tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. Assistants already connected follow the change after the delay above, without reconnecting. The built-in assistant is not affected.' d='Modules.Somcp.Admin'}</p>
+                        <p class="help-block">{l s='Connected assistants receive four tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 

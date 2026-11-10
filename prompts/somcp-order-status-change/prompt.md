@@ -13,6 +13,7 @@ of it can be undone by calling again.
 - `somcp_list_carriers`
 - `somcp_create_return_status`
 - `somcp_update_return_status`
+- `somcp_search_orders`
 - `somcp_get_order`
 - `somcp_set_order_status`
 - `somcp_set_order_tracking`
@@ -41,7 +42,11 @@ an email sent to someone else's customer.
 ## Workflow
 
 1. Identify **one** order. A reference or an identifier. If the merchant named
-   several, handle them one at a time - see below.
+   several, handle them one at a time - see below. When the merchant gives a
+   reference, find the order first with `somcp_search_orders`: a split cart
+   gives several orders one reference, and a reference shared by several is
+   refused. Then confirm with the merchant which one, and call with
+   `id_order`.
 2. Call `somcp_list_order_statuses`. Always, even if you called it a moment
    ago in this conversation: the merchant may have changed a status since.
    Not `somcp_list_return_statuses`: those are the steps of a merchandise

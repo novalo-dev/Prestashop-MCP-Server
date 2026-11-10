@@ -266,6 +266,16 @@ retried blindly. The rules on who fills each field, on the length of texts and
 on languages left out now sit in the catalogue prompt, where the assistant
 reads them when you pick it.
 
+### Fixed
+
+**A deleted order status can no longer be set.** Deleting a status on **Shop
+Parameters > Order Settings > Statuses** keeps it for the orders already on it,
+and the order page no longer offers it - but the assistant could still move an
+order to it. It is now refused like a status the shop does not have, and
+nothing changes. The order status guide also tells the assistant to look up an
+order given by its reference first, since a cart split across carriers gives
+several orders the same reference.
+
 ### Security
 
 **Redirects send the same headers as the rest of the module.** The redirects

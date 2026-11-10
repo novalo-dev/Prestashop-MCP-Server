@@ -465,6 +465,14 @@ on 8.0.0 and 9.1.5 rather than reinvented: refuse a redundant status, set
 `id_employee`, `changeIdOrderState()` with the payments carried over when there
 is no invoice yet, then `addWithemail()`.
 
+Two inputs the **Update status** button can never send are refused, with
+nothing changed: a reference shared by several orders (a split cart), answered
+with the list of its orders through the lookup every order tool shares
+(`SomcpToolGetOrder::find()`), and a status deleted on **Shop Parameters >
+Order Settings > Statuses** (`order_state.deleted` = 1, which the order page
+leaves out through `OrderState::getOrderStates()`), refused as an unknown
+status.
+
 Refusing a status the order already has is not politeness, it is the guard
 against the likeliest harm this tool can do - a retried call mailing the
 customer twice. The core refuses it as well.

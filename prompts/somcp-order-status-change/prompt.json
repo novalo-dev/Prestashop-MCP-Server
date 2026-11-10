@@ -14,6 +14,7 @@
     "somcp_create_return_status",
     "somcp_update_return_status",
     "somcp_delete_return_status",
+    "somcp_search_orders",
     "somcp_get_order",
     "somcp_set_order_status",
     "somcp_set_order_tracking",

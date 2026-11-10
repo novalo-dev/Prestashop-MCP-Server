@@ -75,7 +75,8 @@ class SomcpToolSetOrderStatus
                     ],
                     'status_id' => [
                         'type' => 'integer',
-                        'description' => 'Identifier of the status to set, taken from somcp_list_order_statuses.',
+                        'description' => 'Identifier of the status to set, taken from somcp_list_order_statuses. '
+                            . 'A deleted status is refused.',
                     ],
                 ],
                 'required' => ['status_id'],
@@ -107,7 +108,11 @@ class SomcpToolSetOrderStatus
 
         $idLang = (int) $order->id_lang;
         $target = new OrderState(SomcpTool::id($arguments, 'status_id'), $idLang);
-        if (!Validate::isLoadedObject($target)) {
+        // A deleted status still loads: Delete on the Statuses page only flags
+        // it, since orders may still stand on it. The order page never offers
+        // one (OrderState::getOrderStates() filters them out), so neither does
+        // this tool.
+        if (!Validate::isLoadedObject($target) || (bool) $target->deleted) {
             return SomcpTool::text(
                 'No such status in this shop. Call somcp_list_order_statuses to get the identifiers.',
                 true

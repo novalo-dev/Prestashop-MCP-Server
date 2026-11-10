@@ -635,7 +635,7 @@ class SomcpToolGetOrder
      *
      * @return array<string, array<int, array<string, mixed>>>
      */
-    private static function documents(Order $order, int $idLang): array
+    public static function documents(Order $order, int $idLang): array
     {
         $invoices = [];
         foreach ($order->getInvoicesCollection() as $invoice) {
@@ -660,10 +660,14 @@ class SomcpToolGetOrder
             ];
         }
 
+        // Numbered as the Documents tab numbers them: the shop's credit slip
+        // prefix in the order's language, then the identifier on six digits.
+        $slipPrefix = (string) Configuration::get('PS_CREDIT_SLIP_PREFIX', $idLang, null, (int) $order->id_shop);
         $slips = [];
         foreach (OrderSlip::getOrdersSlip((int) $order->id_customer, (int) $order->id) as $slip) {
             $slips[] = [
                 'id_order_slip' => (int) $slip['id_order_slip'],
+                'number' => sprintf('%s%06d', $slipPrefix, (int) $slip['id_order_slip']),
                 'date' => (string) $slip['date_add'],
                 'total_tax_excluded' => (float) $slip['total_products_tax_excl'],
                 'total_tax_included' => (float) $slip['total_products_tax_incl'],

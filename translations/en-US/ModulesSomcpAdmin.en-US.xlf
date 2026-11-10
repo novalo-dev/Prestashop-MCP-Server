@@ -1462,6 +1462,11 @@
       <source>Create an order</source>
       <target>Create an order</target>
     </trans-unit>
+    <!-- Get a document of an order -->
+    <trans-unit id="75827080656372afa8f1608d133e90c2" resname="Get a document of an order">
+      <source>Get a document of an order</source>
+      <target>Get a document of an order</target>
+    </trans-unit>
     <!-- Change the currency of an order -->
     <trans-unit id="ecbed0631c39413916a9f89ad36e1e3f" resname="Change the currency of an order">
       <source>Change the currency of an order</source>

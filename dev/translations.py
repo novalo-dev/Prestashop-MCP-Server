@@ -1162,6 +1162,10 @@ T = {
  "Créer une commande",
  "Crear un pedido",
  "Eine Bestellung anlegen"),
+"Get a document of an order": (
+ "Obtenir un document d'une commande",
+ "Obtener un documento de un pedido",
+ "Ein Dokument einer Bestellung abrufen"),
 "Change the currency of an order": (
  "Changer la devise d'une commande",
  "Cambiar la moneda de un pedido",

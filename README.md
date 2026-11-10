@@ -312,6 +312,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_delete_order_product` | ✎ Remove a product line from an order | Orders › edit |
 | `somcp_generate_order_invoice` | ✎ Generate the invoice of an order | Orders › edit |
 | `somcp_set_invoice_note` | ✎ Set the note on an invoice | Orders › edit |
+| `somcp_get_order_document` | ● Get a document of an order | Orders › view |
 | `somcp_add_order_discount` | ✎ Add a discount to an order | Orders › edit |
 | `somcp_delete_order_discount` | ✎ Remove a discount from an order | Orders › edit |
 | `somcp_set_order_address` | ✎ Change an address of an order | Orders › edit |

@@ -265,6 +265,12 @@ belongs to (`AdminOrders`), and builds the file on demand with the core `PDF`
 class, so nothing is written to disk. Links expire after fifteen minutes, like a
 deposit.
 
+Like the deposit page's, the download link is the one place a tool answer holds
+the back office address, administration folder included: it is opened in the
+merchant's own browser, where the folder is already known. `somcp_get_order_document`
+is the tool that hands it out; no other answer, front page or redirect names the
+folder.
+
 ---
 
 ## Data

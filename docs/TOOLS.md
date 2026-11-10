@@ -420,7 +420,8 @@ customer has none. The count joins the same tables as the list, so
   `null` and empty on 8);
 - `documents`: `invoices` (with `id_order_invoice` and `note`), `delivery_slips`
   (`id_order_invoice`, `number` with the shop's prefix, `date`,
-  `total_tax_included`) and `credit_slips`;
+  `total_tax_included`) and `credit_slips` (`id_order_slip`, `number` with the
+  shop's credit slip prefix in the order's language, `date`, totals);
 - `messages`, each with `from` (`employee` or `customer`) and `from_name`.
 
 **Notes** - takes no search filter on purpose: given "Dupont's March orders" it
@@ -1748,6 +1749,54 @@ or longer than the limit.
 - The length limit is read from `OrderInvoice::$definition['fields']['note']['size']`: present on 9.0.0 (`LIMIT_MEDIUMTEXT_UTF8_MB4`, 4194303), absent on 8.0.1, where no limit is checked. The constant is never named in the code.
 - `somcp_get_order` returns the note of each invoice under `documents.invoices[].note`, so the change can be read back.
 - Not replayable: a lost answer is checked with `somcp_get_order` (`documents.invoices[].note`).
+
+#### `somcp_get_order_document`
+**State**: written
+**Nature**: `acts(VIEW, 'AdminOrders')` · **Scope**: `mcp.orders.read`
+
+**Does** - gives the merchant one PDF of an order - an invoice, a delivery slip
+or a credit slip - as **View invoice**, **View delivery slip** and the document
+lines of the **Documents** tab of the order page open it. The tool never sends
+the file: it returns a signed link to the module's download page, which the
+merchant opens in their own signed-in back office.
+
+**Do not use for** - generating an invoice that does not exist (→
+`somcp_generate_order_invoice`), emailing a document (a status that attaches
+it, → `somcp_set_order_status`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_order` | integer | one of the two | identifier, from `somcp_search_orders` or `somcp_get_order` |
+| `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
+| `document` | enum | yes | `invoice`, `delivery_slip`, `credit_slip` |
+| `id_order_invoice` | integer | no | which invoice or delivery slip, from `documents.invoices` or `documents.delivery_slips` of `somcp_get_order`; may be left out when the order has only one |
+| `id_order_slip` | integer | no | which credit slip, from `documents.credit_slips` of `somcp_get_order`; may be left out when the order has only one |
+
+**Returns** - `order` (`id_order`, `reference`), `document`, `id_order_invoice`
+(invoice and delivery slip) or `id_order_slip` (credit slip) with the value
+`somcp_get_order` gives, `number` and `date` as `somcp_get_order` gives them,
+`url` and `expires_at`.
+
+**Errors** - under "Nothing was read.", every problem at once, each named with
+its field: a field the tool does not take; `document` missing or unknown;
+`id_order_slip` with an invoice or a delivery slip, `id_order_invoice` with a
+credit slip; the order not found or a reference shared by several orders. Then:
+a kind the order does not have (`Order 12 has no delivery slip. Its documents:
+invoice #FA000003 (id_order_invoice 3). Read them with somcp_get_order.`), a
+document of another order or kind, and several documents of the kind with none
+chosen (`Give id_order_invoice to choose one.`).
+
+**Notes** - the link comes from `SomcpDownload::link()` for the token's employee
+and shop: the download page serves the PDF only to that employee, signed in to
+the back office with the **view** right on **Orders**, and the link expires
+after 15 minutes. Like the deposit page's, its address holds the back office
+folder, since it is opened in the merchant's own browser. The PDF is built on
+demand from the shop's templates; nothing is stored.
+
+**Differences between 8.0.1 and 9.0.0** - none for the tool: the order lookup,
+the document objects and the download page are the same.
 
 ### Carts
 

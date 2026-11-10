@@ -44,6 +44,15 @@ new order sends for the status chosen, so the assistant shows you the lines,
 the carrier, the total and the status first. Vouchers and changing the price
 of a line are not part of it yet. It needs the **add** right on **Orders**.
 
+**Invoices, delivery slips and credit slips handed over.** The new tool
+`somcp_get_order_document` gives you a link to the PDF of an invoice, a
+delivery slip or a credit slip of an order, the same document **View
+invoice**, **View delivery slip** and the **Documents** tab open. The file
+never goes through the assistant: the link opens it in your own signed-in back
+office, for you only, and expires after 15 minutes. It needs the **view** right
+on **Orders**. `somcp_get_order` now also gives the number of each credit slip,
+as the **Documents** tab shows it.
+
 ### Fixed
 
 **Products and shop pages read in the shop's default language.**

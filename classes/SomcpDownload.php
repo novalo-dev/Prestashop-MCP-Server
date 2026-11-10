@@ -101,8 +101,8 @@ class SomcpDownload
      * @param int $idShop the shop in context
      *
      * @return array{object:ObjectModel, template:string}|string the object and the PDF
-     *                                                            template constant, or a
-     *                                                            reason: expired, signature, gone
+     *                                                           template constant, or a
+     *                                                           reason: expired, signature, gone
      */
     public static function check(array $query, int $idEmployee, int $idShop)
     {

@@ -104,8 +104,11 @@ class AdminSomcpDownloadController extends ModuleAdminController
 
         // A refusal is a short back office page, never a PDF and never a stack
         // trace, inside the ordinary back office chrome the employee is already
-        // signed in to.
-        $this->content = '<div class="alert alert-warning">' . htmlspecialchars($refusal, ENT_QUOTES, 'UTF-8') . '</div>';
+        // signed in to. The markup lives in a template, as the Addons rules ask.
+        $this->context->smarty->assign('somcp_refusal', $refusal);
+        $this->content = $this->context->smarty->fetch(
+            _PS_MODULE_DIR_ . 'somcp/views/templates/admin/somcp/download.tpl'
+        );
         parent::initContent();
     }
 

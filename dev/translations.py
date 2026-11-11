@@ -1078,6 +1078,10 @@ T = {
  "Supprimer une catégorie",
  "Eliminar una categoría",
  "Eine Kategorie löschen"),
+"Delete an attribute group": (
+ "Supprimer un groupe d'attributs",
+ "Eliminar un grupo de atributos",
+ "Eine Attributgruppe löschen"),
 "Get the stock of a product": (
  "Lire le stock d'un produit",
  "Leer el stock de un producto",

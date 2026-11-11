@@ -3116,6 +3116,35 @@ The name and every contact field are one string each, the same in every language
 - The faceted search fields are compared with the module's rows and, when one changes, the group's rows are written again as `somcp_create_attribute_group` writes them, the other languages keeping their text; the module's `actionAttributeGroupSave` hook leaves them alone when the request carries no form. A rename alone still drops the module's filter block cache, as its form does on every save.
 - Every problem is reported at once, before anything is written. Replayable: the same values again write nothing and say `changed: false`.
 
+#### `somcp_delete_attribute_group`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one attribute group (Size, Color...) with all its values, as the **Delete** action of **Catalog > Attributes & Features > Attributes** does.
+
+**Do not use for** - changing a group (→ `somcp_update_attribute_group`), deleting one product (→ `somcp_delete_product`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_attribute_group` | integer | yes | from `somcp_list_attributes` or `somcp_get_attribute_group`; a string of digits accepted, as the other attribute group tools |
+| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+
+**Returns** - `deleted: true`, `id_attribute_group`, `name` (read before the delete with `SomcpToolGetAttributeGroup::group()`, in `language`), `language`, `values_deleted` (the `values_count` it had), `combinations_deleted` (combinations whose every value was in this group), `combinations_changed` (combinations that only lost one value), `products` (the distinct products of those combinations, each as `id_product` and `name`), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a condition on one of its values, left in place by the core), `still_in_shops` (how many other shops still hold the group). All counted before the delete, in the shop of the token.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute_group` missing or not a whole number above 0; a group not in this shop (`id_attribute_group: no attribute group of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeGroup::existingGroup()`). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same group is refused the same way, never answered as a success.
+
+**Notes**
+- Irreversible. Through `AttributeGroup::delete()`, never with SQL of its own: the values are removed from every combination, the combinations left without any value are deleted through `Combination::delete()` with their stock and images, the values are deleted, the other groups are reordered and `actionAttributeGroupDelete` fires. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
+- Before the call, the assistant reads `somcp_get_attribute_group` (`values_count`) and tells the merchant how many values and which products are concerned, then confirms by name.
+- The core does not touch the catalogue price rules: a condition `{"type": "attribute", "id_attribute": N}` on one of its values stays and then matches nothing. `catalog_price_rules` names them, and the assistant tells the merchant to change or remove those rules.
+- `cleanDeadCombinations()` scans every combination of the shop: a combination already without any value before the call goes with it. `combinations_deleted` is counted from the group's own values before the call, so the answer only names what this delete caused.
+- Multistore: `id_shop_list` set to the shop of the token, never the all-shops context. The core deletes the values only when the group has no shop rows to keep (`hasMultishopEntries()`, true for any row once multistore is on); otherwise `ObjectModel::delete()` only takes the group out of this shop, `values_deleted`, `combinations_deleted` and `combinations_changed` are 0, `products` and `catalog_price_rules` are empty and `still_in_shops` says where it remains.
+- One group per call (**Delete selected** is several calls). Not replayable: a lost answer is checked with `somcp_get_attribute_group`, which then answers "not found".
+
+**Differences between 8.0.1 and 9.0.0** - none in the core method or the list actions.
+
 #### `somcp_get_attribute_value`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.read`
@@ -5189,7 +5218,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_get_category`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_get_attribute_value`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_create_feature`, `somcp_update_feature`, `somcp_get_feature_value`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_get_category`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_get_attribute_value`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_create_feature`, `somcp_update_feature`, `somcp_get_feature_value`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

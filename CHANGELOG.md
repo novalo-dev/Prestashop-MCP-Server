@@ -18,6 +18,17 @@ are:
 
 ### Added
 
+**Attribute groups the assistant can delete.** The new tool
+`somcp_delete_attribute_group` deletes an attribute group such as Size or Color
+with all its values, as the **Delete** action of **Catalog > Attributes &
+Features > Attributes** does. As in the back office, the combinations built
+only on that attribute are deleted with their stock and images, and the others
+lose that one value. The answer says how many values and combinations went,
+which products were concerned, and which catalogue price rules still have a
+condition on one of the deleted values, so you can change or remove them. On
+a multistore installation the group only leaves the current store. It needs
+the **delete** right on **Attributes**.
+
 **The category dashboard figures.** The new tool `somcp_get_category_kpis`
 returns the four numbers shown above the category list in **Catalog >
 Categories**: how many categories are disabled, how many hold no product, the

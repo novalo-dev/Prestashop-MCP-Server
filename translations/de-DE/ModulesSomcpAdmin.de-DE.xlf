@@ -1357,6 +1357,11 @@
       <source>Delete a category</source>
       <target>Eine Kategorie löschen</target>
     </trans-unit>
+    <!-- Delete an attribute group -->
+    <trans-unit id="d478cb40b60737d31e2bbeaf42d81fef" resname="Delete an attribute group">
+      <source>Delete an attribute group</source>
+      <target>Eine Attributgruppe löschen</target>
+    </trans-unit>
     <!-- Get the stock of a product -->
     <trans-unit id="5ce4c0ce8e0b1778f0a99f54abdd5230" resname="Get the stock of a product">
       <source>Get the stock of a product</source>

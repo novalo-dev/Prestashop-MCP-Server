@@ -383,6 +383,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_attribute_group` | ● Get an attribute group | Attributes › view |
 | `somcp_create_attribute_group` | ✎ Create an attribute group | Attributes › add |
 | `somcp_update_attribute_group` | ✎ Change an attribute group | Attributes › edit |
+| `somcp_delete_attribute_group` | ✎ Delete an attribute group | Attributes › delete |
 | `somcp_get_attribute_value` | ● Get an attribute value | Attributes › view |
 | `somcp_create_attribute_value` | ✎ Create an attribute value | Attributes › add |
 | `somcp_update_attribute_value` | ✎ Change an attribute value | Attributes › edit |

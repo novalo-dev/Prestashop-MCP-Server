@@ -47,6 +47,7 @@
     "somcp_set_supplier_active",
     "somcp_create_attribute_group",
     "somcp_update_attribute_group",
+    "somcp_delete_attribute_group",
     "somcp_create_attribute_value",
     "somcp_update_attribute_value",
     "somcp_create_feature",

@@ -47,6 +47,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_set_supplier_active`
 - `somcp_create_attribute_group`
 - `somcp_update_attribute_group`
+- `somcp_delete_attribute_group`
 - `somcp_create_attribute_value`
 - `somcp_update_attribute_value`
 - `somcp_create_feature`
@@ -553,6 +554,26 @@ When it succeeds, show the merchant each change with its old and new value,
 and the `note` when there is one. `changed: false` means the group already held
 those values. On a lost answer, read the group again with
 `somcp_get_attribute_group` before calling twice.
+
+## Deleting an attribute group
+
+`somcp_delete_attribute_group` deletes one attribute group for good, with all
+its values. Before calling it:
+
+1. Take the group from `somcp_list_attributes`, never guessed, and read it with
+   `somcp_get_attribute_group`: tell the merchant how many values go with it
+   (`values_count`) and which products offer it.
+2. Say plainly what goes with it: every combination built only on this group
+   is deleted with its stock and images, and the others lose that one value.
+3. Delete only once the merchant confirms by the group's name.
+
+Show the merchant what the answer counts: `values_deleted`,
+`combinations_deleted`, `combinations_changed` and the `products` concerned.
+When `catalog_price_rules` is not empty, those rules still have a condition on
+a deleted value and match nothing any more: tell the merchant to change or
+remove them. On multistore, `still_in_shops` says how many other stores keep
+the group. On a lost answer, read it with `somcp_get_attribute_group`, which
+then answers "not found", rather than calling twice.
 
 ## Adding an attribute value
 

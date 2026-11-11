@@ -84,6 +84,14 @@ right on **Categories**.
 
 ### Changed
 
+**A customer read gives back its groups the way its tools take them.**
+`somcp_get_customer` now returns `group_ids` and `id_default_group` inside the
+customer, beside the fields `somcp_update_customer` and `somcp_create_customer`
+already take, so an account read there can be handed straight back to a change
+without reshaping the groups first. The named groups stay, for the merchant.
+Handing the `groups` list back to a change no longer fails without a hint: it
+is answered with where the groups go.
+
 **SEO of CMS pages and shop pages written like the rest of the catalogue.**
 `somcp_update_cms_seo` and `somcp_update_meta_page` now take the languages to
 fill and their texts as the product, category and brand tools do: a

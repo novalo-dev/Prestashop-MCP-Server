@@ -9,6 +9,7 @@
     {"why": "neither an identifier nor an email", "arguments": {}, "expect": "error", "contains": ["Give id_customer or email"]},
     {"why": "the first customer by identifier, whoever the demo data made it", "arguments": {"id_customer": 1}, "expect": "any", "contains": []},
     {"why": "the status of the latest orders under the name the order tools use", "arguments": {"email": "pub@prestashop.com"}, "expect": "ok", "contains": ["\"status_id\""]},
-    {"why": "an identifier that is not a whole number is not read as another customer", "arguments": {"id_customer": "1.5"}, "expect": "error", "contains": ["Give id_customer or email"]}
+    {"why": "an identifier that is not a whole number is not read as another customer", "arguments": {"id_customer": "1.5"}, "expect": "error", "contains": ["Give id_customer or email"]},
+    {"why": "the groups also given as the ids somcp_update_customer and somcp_create_customer take", "arguments": {"email": "pub@prestashop.com"}, "expect": "ok", "contains": ["\"group_ids\"", "\"id_default_group\""]}
   ]
 }

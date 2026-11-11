@@ -224,6 +224,11 @@ class SomcpToolGetCustomer
             'customer_language' => (string) Language::getIsoById((int) $customer->id_lang),
             'newsletter' => (bool) $customer->newsletter,
             'newsletter_date_add' => SomcpToolSearchCustomers::isoDate($customer->newsletter_date_add),
+            // The groups under the exact names somcp_update_customer and
+            // somcp_create_customer take, so the answer round-trips as read;
+            // the groups list below keeps their names for the merchant.
+            'group_ids' => array_map('intval', $customer->getGroups()),
+            'id_default_group' => (int) $customer->id_default_group,
             'partner_offers' => (bool) $customer->optin,
             'date_upd' => SomcpToolSearchCustomers::isoDate($customer->date_upd),
             'active' => (bool) $customer->active,

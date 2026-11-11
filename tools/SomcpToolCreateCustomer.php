@@ -54,8 +54,8 @@ class SomcpToolCreateCustomer
      *                         out or another tool writes it. Named, so the assistant learns why.
      */
     private const COMPUTED = [
-        'id_customer', 'social_title', 'age', 'date_add', 'last_visit', 'customer_language', 'newsletter_date_add',
-        'date_upd', 'private_note', 'currency', 'risk',
+        'groups', 'id_customer', 'social_title', 'age', 'date_add', 'last_visit', 'customer_language',
+        'newsletter_date_add', 'date_upd', 'private_note', 'currency', 'risk',
     ];
 
     /** @var array<string, string> The B2B fields, by argument name, with the Customer property each one fills. */
@@ -237,9 +237,11 @@ class SomcpToolCreateCustomer
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;
             if (!in_array($key, self::ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::COMPUTED, true)
-                    ? ': worked out by the shop or written by another tool, so it is not taken here'
-                    : ': not a field of this tool');
+                $errors[] = $key . ($key === 'groups'
+                    ? ': the groups somcp_get_customer returns are written with group_ids and id_default_group, not here'
+                    : (in_array($key, self::COMPUTED, true)
+                        ? ': worked out by the shop or written by another tool, so it is not taken here'
+                        : ': not a field of this tool'));
             }
         }
 

@@ -18,6 +18,9 @@
     {"why": "a boolean given as a string", "arguments": {"id_customer": 1, "active": "false"}, "expect": "error", "contains": ["active: true or false"]},
     {"why": "a private note with a script", "arguments": {"id_customer": 1, "private_note": "<script>alert(1)</script>"}, "expect": "error", "contains": ["private_note: a text, without HTML tags or scripts"]},
     {"why": "the guest flag, a computed field and a field this tool does not know", "arguments": {"id_customer": 1, "is_guest": true, "date_add": "2020-01-01", "password": "secret"}, "expect": "error", "contains": ["is_guest: worked out by the shop or changed elsewhere", "date_add: worked out by the shop", "password: not a field of this tool"]},
-    {"why": "a customer that does not exist", "arguments": {"id_customer": 999999, "firstname": "Somcp"}, "expect": "error", "contains": ["No customer 999999 in this shop. Find one with somcp_search_customers."]}
+    {"why": "a customer that does not exist", "arguments": {"id_customer": 999999, "firstname": "Somcp"}, "expect": "error", "contains": ["No customer 999999 in this shop. Find one with somcp_search_customers."]},
+    {"why": "the groups set to a known state before the round-trip", "arguments": {"id_customer": 1, "group_ids": [1, 2, 3], "id_default_group": 3}, "expect": "any", "contains": []},
+    {"why": "group_ids and id_default_group given back as read change nothing", "arguments": {"id_customer": 1, "group_ids": [1, 2, 3], "id_default_group": 3}, "expect": "ok", "contains": ["\"changed\": false", "Nothing was written"]},
+    {"why": "the groups list somcp_get_customer returns, given back, is refused and names group_ids", "arguments": {"id_customer": 1, "groups": [{"id_group": 3}]}, "expect": "error", "contains": ["groups: the groups somcp_get_customer returns are written with group_ids and id_default_group, not here"]}
   ]
 }

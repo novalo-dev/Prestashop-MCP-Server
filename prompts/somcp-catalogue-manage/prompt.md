@@ -56,6 +56,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_delete_feature`
 - `somcp_create_feature_value`
 - `somcp_update_feature_value`
+- `somcp_delete_feature_value`
 
 ## Know which shop you are in
 
@@ -732,6 +733,27 @@ calling it:
 When it succeeds, show the merchant each change with its old and new value.
 `changed: false` means the value already held those values. On a lost answer,
 read the value again with `somcp_get_feature_value` before calling twice.
+
+## Deleting a feature value
+
+`somcp_delete_feature_value` deletes one predefined value of a feature for
+good. Before calling it:
+
+1. Take the value from `somcp_list_features`, never guessed, and read it with
+   `somcp_get_feature_value`: tell the merchant how many products lose it
+   (`products_count`).
+2. Say plainly that every product that has the value loses it. A value typed
+   on one product only is changed with `somcp_update_product`; to delete the
+   whole feature, use `somcp_delete_feature`.
+3. Delete only once the merchant confirms by the value's text.
+
+Show the merchant `products_count` from the answer. When `catalog_price_rules`
+is not empty, those rules still have a condition on the deleted value and
+match nothing any more: tell the merchant to change or remove them. A value of
+a feature shared with other stores is refused: it is deleted from the back
+office, in the all-stores context. On a lost answer, read it with
+`somcp_get_feature_value`, which then answers "not found", rather than calling
+twice.
 
 ## Do not use when
 

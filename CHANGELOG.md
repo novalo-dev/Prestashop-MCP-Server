@@ -18,6 +18,19 @@ are:
 
 ### Added
 
+**Feature values the assistant can delete.** The new tool
+`somcp_delete_feature_value` deletes one value of a feature, such as Cotton
+under Composition, as the **Delete** action on the values of a feature in
+**Catalog > Attributes & Features > Features** does. As in the back office,
+every product that had the value loses it. The answer says how many products
+lost it and which catalogue price rules still have a condition on it, so you
+can change or remove them. A value typed on one product only is refused: it is
+changed on that product. On a multistore installation, a value of a feature
+shared with other stores is refused, because deleting it would remove it from
+their products too. It needs the **delete** right on **Features**.
+`somcp_get_feature_value` now also says how many products have the value, so
+the assistant can tell you before you confirm a delete.
+
 **Features the assistant can delete.** The new tool `somcp_delete_feature`
 deletes a feature such as Composition with all its values, as the **Delete**
 action of **Catalog > Attributes & Features > Features** does. As in the back

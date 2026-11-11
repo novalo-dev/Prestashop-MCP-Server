@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "a demo value, Polyester under Composition", "arguments": {"id_feature_value": 1}, "expect": "ok", "contains": ["\"id_feature_value\": 1", "\"id_feature\": 1", "\"feature_name\": \"Composition\"", "\"value\": \"Polyester\"", "\"url_name\"", "\"meta_title\""]},
+    {"why": "a demo value, Polyester under Composition", "arguments": {"id_feature_value": 1}, "expect": "ok", "contains": ["\"id_feature_value\": 1", "\"id_feature\": 1", "\"feature_name\": \"Composition\"", "\"value\": \"Polyester\"", "\"url_name\"", "\"meta_title\"", "\"products_count\": "]},
     {"why": "a value of the other demo feature, in a language given by ISO code", "arguments": {"id_feature_value": 7, "language": "en"}, "expect": "ok", "contains": ["\"id_feature_value\": 7", "\"id_feature\": 2", "\"feature_name\": \"Property\"", "\"value\": \"Long sleeves\"", "\"language\": \"en\""]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_feature_value": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
     {"why": "the identifier as a numeric string", "arguments": {"id_feature_value": "7"}, "expect": "ok", "contains": ["\"id_feature_value\": 7"]},

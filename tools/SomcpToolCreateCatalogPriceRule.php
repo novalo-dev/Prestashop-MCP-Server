@@ -435,4 +435,43 @@ class SomcpToolCreateCatalogPriceRule extends SomcpToolCreateProduct
 
         return SomcpTool::json($answer);
     }
+
+    /**
+     * The catalogue price rules of a shop with a condition of this type on
+     * one of these identifiers.
+     *
+     * Shared by the delete tools: the core deletes a category, a value or a
+     * brand without touching the conditions that name it, which then match
+     * nothing. Read here, where the conditions are written, so every delete
+     * names the rules it leaves behind the same way.
+     *
+     * @param string $type one of the keys of CONDITION_SOURCES, never a caller's value
+     * @param array<int, int> $values the identifiers the condition holds, as written by this tool
+     * @param int $idShop
+     *
+     * @return array<int, int> the id_specific_price_rule, in order
+     */
+    public static function rulesOn(string $type, array $values, int $idShop): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $values), static function (int $id): bool {
+            return $id > 0;
+        }));
+        if (!isset(self::CONDITION_SOURCES[$type]) || $ids === []) {
+            return [];
+        }
+        $rows = Db::getInstance()->executeS(
+            'SELECT DISTINCT g.`id_specific_price_rule` FROM `' . _DB_PREFIX_ . 'specific_price_rule_condition` c'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule_condition_group` g'
+            . ' ON g.`id_specific_price_rule_condition_group` = c.`id_specific_price_rule_condition_group`'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule` r ON r.`id_specific_price_rule` = g.`id_specific_price_rule`'
+            . ' AND r.`id_shop` = ' . (int) $idShop
+            . ' WHERE c.`type` = \'' . pSQL($type) . '\''
+            . ' AND CAST(c.`value` AS UNSIGNED) IN (' . implode(', ', $ids) . ')'
+            . ' ORDER BY g.`id_specific_price_rule`'
+        ) ?: [];
+
+        return array_map(static function (array $row): int {
+            return (int) $row['id_specific_price_rule'];
+        }, $rows);
+    }
 }

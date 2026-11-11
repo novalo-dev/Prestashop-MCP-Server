@@ -55,7 +55,8 @@
     "somcp_update_feature",
     "somcp_delete_feature",
     "somcp_create_feature_value",
-    "somcp_update_feature_value"
+    "somcp_update_feature_value",
+    "somcp_delete_feature_value"
   ],
   "controller": "AdminProducts",
   "action": "view",

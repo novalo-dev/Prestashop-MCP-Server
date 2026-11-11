@@ -3388,7 +3388,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
-**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). A value that is not one of this shop is an error.
+**Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). `products_count`: the distinct products of this shop that have the value (`feature_product` joined to `product_shop`), counted with `SomcpToolGetFeatureValue::productsCount()`, the function `somcp_delete_feature_value` reports its `products_count` with: the merchant hears it before confirming a delete. A value that is not one of this shop is an error.
 
 **Notes**
 - Read through `FeatureValue` and `Feature`. `feature_value` has no shop table: a value belongs to the shops of its feature, so its feature must be in `feature_shop` for the shop of the token, the test `somcp_get_feature` makes.
@@ -3446,6 +3446,34 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 - Custom values (`custom` = 1) are refused with their own message, and a value of another shop's feature like one that does not exist, the tests `somcp_get_feature_value` makes.
 - Every problem is reported at once, before anything is written.
 - Replayable: the same values again say `changed: false`. On a lost answer, read `somcp_get_feature_value` before calling again.
+
+#### `somcp_delete_feature_value`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminFeatures')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one predefined value of a feature (Composition: Cotton), as the **Delete** action on the values of a feature in **Catalog > Attributes & Features > Features** does.
+
+**Do not use for** - a custom value typed on one product (→ `somcp_update_product`), the whole feature (→ `somcp_delete_feature`), changing a value (→ `somcp_update_feature_value`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_feature_value` | integer | yes | from `values[]` of `somcp_list_features`; a string of digits accepted, as the other feature tools |
+| `language` | string | no | ISO code for `feature_name` and `value` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+
+**Returns** - `deleted: true`, `id_feature_value`, `id_feature`, `feature_name` and `value` (read before the delete with `SomcpToolGetFeatureValue::featureValue()`, the names `somcp_get_feature_value` answers with), `language`, `products_count` (how many distinct products of this shop had the value, counted with `SomcpToolGetFeatureValue::productsCount()` as `products_count` of `somcp_get_feature_value`), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a **Feature** condition on the value, left in place by the core, read with `SomcpToolCreateCatalogPriceRule::rulesOn()`). All counted before the delete.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature_value` missing or not a whole number above 0; a value not in this shop (`id_feature_value: no value of a feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeatureValue::loadedValue()`); a custom value (`custom` = 1, sent to `somcp_get_product` and `somcp_update_product`); a value of a feature shared with other shops (see Notes). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same value is refused the same way, never answered as a success.
+
+**Notes**
+- Irreversible. Through `FeatureValue::delete()`, never with SQL of its own: the value is removed from every product (`feature_product`), its row and texts are deleted and `actionFeatureValueDelete` fires, which `ps_facetedsearch` listens to for its own row of the value. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
+- Before the call, the assistant reads `somcp_get_feature_value` (`products_count`) and tells the merchant how many products lose the value, then confirms by name.
+- The core does not touch the catalogue price rules: a condition `{"type": "feature", "id_feature_value": N}` on the value stays and then matches nothing. `catalog_price_rules` names them, and the assistant tells the merchant to change or remove those rules.
+- Multistore: `feature_value` has no shop table, so a value belongs to every shop of its feature and `FeatureValue::delete()` removes it and its product links in all of them. A value whose feature `feature_shop` holds for another shop than the token's is refused (`id_feature_value: the feature of this value is shared with other shops - deleting it here would remove it from their products too`), on the test of `somcp_delete_feature` (`SomcpToolDeleteFeature::otherShops()`). This is the one difference from the back office.
+- One value per call (**Delete selected** is several calls). Not replayable: a lost answer is checked with `somcp_get_feature_value`, which then answers "not found".
+
+**Differences between 8.0.1 and 9.0.0** - on 9.0.0 only, the core renumbers the positions of the other values of the feature (`cleanPositions()`); 8.0.1 has no position for values. The rest of `FeatureValue::delete()` and the list actions are the same.
 
 #### `somcp_list_attachments`
 **State**: written
@@ -5276,7 +5304,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_get_category`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_get_attribute_value`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_create_feature`, `somcp_update_feature`, `somcp_get_feature_value`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_get_category`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_get_attribute_value`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_create_feature`, `somcp_update_feature`, `somcp_get_feature_value`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

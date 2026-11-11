@@ -52,7 +52,8 @@ class SomcpToolGetFeatureValue
             'Returns what the value form of Catalog > Attributes & Features > Features shows for one predefined '
                 . 'value (Cotton under Composition...): its text, its feature with that feature\'s name, the faceted '
                 . 'search fields (null without the faceted search module) and, from PrestaShop 9 on, its position (0 '
-                . 'for the first). id_feature_value comes from somcp_list_features: never guess one. A value typed on '
+                . 'for the first), and products_count, the products that have it. id_feature_value comes from '
+                . 'somcp_list_features: never guess one. A value typed on '
                 . 'one product only is refused: read it with somcp_get_product. For the feature itself use '
                 . 'somcp_get_feature.',
             [
@@ -112,7 +113,31 @@ class SomcpToolGetFeatureValue
             );
         }
 
-        return SomcpTool::json(['language' => $iso] + self::featureValue($idFeatureValue, $idLang));
+        return SomcpTool::json(['language' => $iso] + self::featureValue($idFeatureValue, $idLang)
+            + ['products_count' => self::productsCount($idFeatureValue, $idShop)]);
+    }
+
+    /**
+     * The distinct products of the shop that have this value.
+     *
+     * Shared with somcp_delete_feature_value, so the count the merchant hears
+     * before confirming a delete is the one the delete reports.
+     *
+     * @param int $idFeatureValue
+     * @param int $idShop
+     *
+     * @return int
+     */
+    public static function productsCount(int $idFeatureValue, int $idShop): int
+    {
+        // feature_product has no shop column: the product's shop row says
+        // whether this shop sells it.
+        return (int) Db::getInstance()->getValue(
+            'SELECT COUNT(DISTINCT fp.`id_product`) FROM `' . _DB_PREFIX_ . 'feature_product` fp'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = fp.`id_product`'
+            . ' AND ps.`id_shop` = ' . (int) $idShop
+            . ' WHERE fp.`id_feature_value` = ' . (int) $idFeatureValue
+        );
     }
 
     /**

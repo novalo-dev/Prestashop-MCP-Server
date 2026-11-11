@@ -1362,6 +1362,11 @@
       <source>Delete a feature</source>
       <target>Supprimer une caractéristique</target>
     </trans-unit>
+    <!-- Delete a feature value -->
+    <trans-unit id="7ca2e10bddbeaaa9b21cd03a5139da10" resname="Delete a feature value">
+      <source>Delete a feature value</source>
+      <target>Supprimer une valeur de caractéristique</target>
+    </trans-unit>
     <!-- Delete an attribute group -->
     <trans-unit id="d478cb40b60737d31e2bbeaf42d81fef" resname="Delete an attribute group">
       <source>Delete an attribute group</source>

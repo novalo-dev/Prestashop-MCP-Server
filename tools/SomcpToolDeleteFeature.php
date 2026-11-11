@@ -197,12 +197,15 @@ class SomcpToolDeleteFeature
     /**
      * The number of other shops that hold the feature.
      *
+     * Public so the value delete refuses a value of a shared feature on the
+     * same test: the core removes a value from every shop of its feature.
+     *
      * @param int $idFeature
      * @param int $idShop
      *
      * @return int
      */
-    private static function otherShops(int $idFeature, int $idShop): int
+    public static function otherShops(int $idFeature, int $idShop): int
     {
         return (int) Db::getInstance()->getValue(
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'feature_shop` WHERE `id_feature` = ' . (int) $idFeature

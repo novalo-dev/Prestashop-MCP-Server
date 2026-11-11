@@ -401,6 +401,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_feature_value` | ● Get a feature value | Features › view |
 | `somcp_create_feature_value` | ✎ Create a feature value | Features › add |
 | `somcp_update_feature_value` | ✎ Change a feature value | Features › edit |
+| `somcp_delete_feature_value` | ✎ Delete a feature value | Features › delete |
 
 ### 📎 Catalog - Files and taxes
 

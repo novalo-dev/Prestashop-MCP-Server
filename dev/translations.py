@@ -1082,6 +1082,10 @@ T = {
  "Supprimer une caractéristique",
  "Eliminar una característica",
  "Ein Merkmal löschen"),
+"Delete a feature value": (
+ "Supprimer une valeur de caractéristique",
+ "Eliminar un valor de característica",
+ "Einen Merkmalswert löschen"),
 "Delete an attribute group": (
  "Supprimer un groupe d'attributs",
  "Eliminar un grupo de atributos",

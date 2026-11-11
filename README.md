@@ -324,6 +324,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_return_status` | ✎ Change a return status | Statuses › edit |
 | `somcp_delete_return_status` | ✎ Delete a return status | Statuses › delete |
 | `somcp_create_order_status` | ✎ Create an order status | Statuses › add |
+| `somcp_update_order_status` | ✎ Edit an order status | Statuses › edit |
 | `somcp_delete_order_status` | ✎ Delete an order status | Statuses › delete |
 
 ### 📦 Catalog - Products

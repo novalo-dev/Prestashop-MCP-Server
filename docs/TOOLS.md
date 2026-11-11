@@ -1945,6 +1945,68 @@ status email can send, and refuses the module emails 9.0.0 lists. The empty
 9.0.0 form fills in `#ffffff` for the colour where 8.0.1 leaves it empty; the
 tool stores an empty colour on both when none is given.
 
+#### `somcp_update_order_status`
+**State**: written · [issue #142](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/142)
+**Nature**: `acts(EDIT, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes one order status: any field of its **Edit** form on
+**Shop Parameters > Order Settings > Statuses**, under the names and rules of
+`somcp_create_order_status`. Only what is given changes.
+
+**Do not use for** - giving an order a status (→ `somcp_set_order_status`),
+creating one (→ `somcp_create_order_status`), deleting one
+(→ `somcp_delete_order_status`), or a return status
+(→ `somcp_update_return_status`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `status_id` | integer | yes | from `somcp_list_order_statuses`, never guessed |
+| `languages` | array of strings | no | ISO codes of the languages whose texts are given; all the shop's active languages by default; a language left out keeps its texts |
+| `name` | object by ISO code | no | the name of the status, one text per language being filled |
+| `color` | string | no | a hex code `#RRGGBB` |
+| `icon` | object | no | a GIF replacing the current icon: `url` or `upload_ref`, one of the two; not with `remove_icon` |
+| `remove_icon` | boolean | no | `true` deletes `img/os/<id>.gif`; not with `icon` |
+| `counts_as_valid`, `invoice`, `hidden_from_customer`, `sends_email`, `attaches_invoice_pdf`, `attaches_delivery_slip_pdf`, `shipped`, `paid`, `in_transit` | boolean | no | the nine boxes of the form, as in `somcp_create_order_status` |
+| `email_template` | object by ISO code | no | the mail template per language; only when `sends_email` is or becomes true |
+
+The former names `somcp_create_order_status` still accepts (`logable`,
+`hidden`, `send_email`, `pdf_invoice`, `pdf_delivery`, `template`) are
+accepted here too.
+
+**Returns** - `changed`, `status_id`, `changes` (each field with `old` and
+`new`), `icon` when one was given or removed (`stored: true`, `removed:
+true` or `refused: <reason>`), then `status`, the status as
+`somcp_list_order_statuses` lists it, built by its row function. A call that
+would change nothing writes nothing and answers `changed: false` with
+`reason` and `status`.
+
+**Notes** - the **Edit** form of a status, read in full on 8.0.1 and 9.0.0,
+the same form as **Add new order status**. Every status can be edited,
+including the 14 of PrestaShop and those of modules: `unremovable` only
+forbids deleting them. 8.0.1 edits the row in place, so the identifier does
+not change. The tool extends `somcp_create_order_status` and calls its
+checks: the name rules (`Validate::isGenericName()`, 64 characters at most)
+and the name another status already has in that language, refused on both
+versions as at creation - the status's own name is no clash; the colour; the
+icon, a GIF stored as `img/os/<id>.gif`; the templates, an email the status
+can send in its language. A template given while `sends_email` stays off is
+refused; turning `sends_email` off empties the templates in every language,
+as 8.0.1 blanks them. A deleted status (`deleted` = 1) is refused like an
+unknown one, by the same test as `somcp_delete_order_status`. A given icon
+is always written, after the fields: a refused icon leaves the current one
+and says so. `module_name`, `unremovable` and `deleted` are never written.
+Written through `OrderState::update()`. Every problem is reported at once,
+before anything is written. Not replayable: a lost answer is checked with
+`somcp_list_order_statuses`.
+
+**Differences between 8.0.1 and 9.0.0** - as for creation. 8.0.1 refuses a
+name another status already has ("This name already exists."), the 9.0.0
+handler does not: the tool refuses it on both. Changing **Set the order as
+paid.** or **Set the order as shipped.** on a status already used changes no
+past order on either version.
+
 #### `somcp_delete_order_status`
 **State**: written
 **Nature**: `acts(DELETE, 'AdminStatuses')` · **Scope**: `mcp.orders.write`

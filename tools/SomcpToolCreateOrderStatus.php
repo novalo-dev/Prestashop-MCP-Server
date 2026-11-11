@@ -314,25 +314,11 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         }
 
         if (array_key_exists('color', $arguments)) {
-            $color = trim((string) (self::string($arguments['color']) ?? ''));
-            // Validate::isColor() also lets a bare word through, which the
-            // colour picker of the form never stores: only the hex code is.
-            // The same check somcp_create_attribute_value makes on a swatch.
-            if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color) || !Validate::isColor($color)) {
-                $errors[] = 'color: a hex code such as #E84C3D';
-            } else {
-                $plan['color'] = $color;
-            }
+            $plan['color'] = self::orderStatusColor($arguments['color'], $errors) ?? '';
         }
 
         if (array_key_exists('icon', $arguments)) {
-            $icon = $arguments['icon'];
-            if (!is_array($icon) || ($icon !== [] && array_is_list($icon))) {
-                $errors[] = 'icon: an object with url or upload_ref';
-            } else {
-                self::onlyAccepted($icon, 'file', 'icon', $errors);
-                $plan['icon'] = self::imageSource($icon, 'icon', $errors, 'icon');
-            }
+            $plan['icon'] = self::orderStatusIcon($arguments['icon'], $errors);
         }
 
         foreach (self::ORDER_STATUS_BOXES as $argument => $column) {
@@ -382,6 +368,53 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
     }
 
     /**
+     * The colour given in the call, or null with the reason when it is not one the form stores.
+     *
+     * Shared with somcp_update_order_status, so the two tools take the same colours.
+     *
+     * @param mixed $value
+     * @param array<int, string> $errors
+     *
+     * @return string|null
+     */
+    protected static function orderStatusColor($value, array &$errors): ?string
+    {
+        $color = trim((string) (self::string($value) ?? ''));
+        // Validate::isColor() also lets a bare word through, which the
+        // colour picker of the form never stores: only the hex code is.
+        // The same check somcp_create_attribute_value makes on a swatch.
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color) || !Validate::isColor($color)) {
+            $errors[] = 'color: a hex code such as #E84C3D';
+
+            return null;
+        }
+
+        return $color;
+    }
+
+    /**
+     * The icon given in the call, parsed only: it is fetched by storeIcon() once the status has its identifier.
+     *
+     * Shared with somcp_update_order_status, so the two tools take an icon the same way.
+     *
+     * @param mixed $icon
+     * @param array<int, string> $errors
+     *
+     * @return array{url: string, upload_ref: string}|null
+     */
+    protected static function orderStatusIcon($icon, array &$errors): ?array
+    {
+        if (!is_array($icon) || ($icon !== [] && array_is_list($icon))) {
+            $errors[] = 'icon: an object with url or upload_ref';
+
+            return null;
+        }
+        self::onlyAccepted($icon, 'file', 'icon', $errors);
+
+        return self::imageSource($icon, 'icon', $errors, 'icon');
+    }
+
+    /**
      * The names given in the call, checked with the running version's rules, then against the shop's own.
      *
      * A name another order status already has in that language is refused: on the
@@ -392,10 +425,11 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
      * @param OrderState $probe
      * @param array<int, string> $errors
+     * @param int $idSelf the status being changed, whose own name is no clash; 0 when creating
      *
      * @return array<int, string>
      */
-    protected static function orderStatusNames(array $names, array $languages, OrderState $probe, array &$errors): array
+    protected static function orderStatusNames(array $names, array $languages, OrderState $probe, array &$errors, int $idSelf = 0): array
     {
         // The check is only as good as the list it reads, and the list
         // getOrderStates() hands over is the one it read first in this
@@ -407,6 +441,9 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         foreach (array_keys($languages['filled']) as $idLang) {
             $taken[$idLang] = [];
             foreach (OrderState::getOrderStates($idLang) as $state) {
+                if ((int) $state['id_order_state'] === $idSelf) {
+                    continue;
+                }
                 $taken[$idLang][Tools::strtolower(trim((string) $state['name']))] = (int) $state['id_order_state'];
             }
         }

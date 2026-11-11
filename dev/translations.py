@@ -850,6 +850,10 @@ T = {
  "Créer un statut de commande",
  "Crear un estado de pedido",
  "Einen Bestellstatus anlegen"),
+"Edit an order status": (
+ "Modifier un statut de commande",
+ "Editar un estado de pedido",
+ "Einen Bestellstatus bearbeiten"),
 "Delete an order status": (
  "Supprimer un statut de commande",
  "Eliminar un estado de pedido",

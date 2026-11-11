@@ -9,6 +9,7 @@ of it can be undone by calling again.
 - `somcp_ping`
 - `somcp_list_order_statuses`
 - `somcp_create_order_status`
+- `somcp_update_order_status`
 - `somcp_delete_order_status`
 - `somcp_list_return_statuses`
 - `somcp_list_carriers`
@@ -289,12 +290,33 @@ email template when they ask for them.
 - The icon is written once the status exists. An answer whose `icon` says
   `refused` means the status was created without one: never call again for
   it, a second call would be refused on the name.
-- An existing order status is changed in the back office, never by
-  creating a second one next to it.
+- An existing order status is changed with `somcp_update_order_status`,
+  never by creating a second one next to it.
 - Creating one changes no order: nothing is emailed and nothing moves
   until an order is actually set to it.
 - Not to be retried: if the answer is lost, read
   `somcp_list_order_statuses` and look for the name before anything else.
+
+## Changing an order status
+
+When the merchant wants an existing order status renamed, recoloured, or
+set to send or stop sending an email, change it with
+`somcp_update_order_status`, `status_id` from `somcp_list_order_statuses`.
+
+- Only what is given changes. A status read with
+  `somcp_list_order_statuses` can be given back as it is: the answer then
+  says `changed: false` and nothing is written.
+- Changing what a status sets off (the email, the invoice, paid, shipped)
+  changes it for every order that reaches it from now on, never for the
+  orders already past it: say so to the merchant before the call.
+- An email template is only taken with `sends_email` on; turning
+  `sends_email` off empties the templates, as the back office does.
+- A name another order status already has in the same language is
+  refused, as at creation.
+- The statuses of PrestaShop and of modules can be changed too; only
+  deleting them is refused.
+- Not to be retried: if the answer is lost, read
+  `somcp_list_order_statuses` before anything else.
 
 ## Deleting an order status
 

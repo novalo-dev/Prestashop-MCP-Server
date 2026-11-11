@@ -1072,6 +1072,11 @@
       <source>Create an order status</source>
       <target>Créer un statut de commande</target>
     </trans-unit>
+    <!-- Edit an order status -->
+    <trans-unit id="66087fd62e68a48cd09fa23c9711870f" resname="Edit an order status">
+      <source>Edit an order status</source>
+      <target>Modifier un statut de commande</target>
+    </trans-unit>
     <!-- Delete an order status -->
     <trans-unit id="c9f8a8873d6c247939d2f67cc1b6c62c" resname="Delete an order status">
       <source>Delete an order status</source>

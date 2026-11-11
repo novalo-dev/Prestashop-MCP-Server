@@ -176,13 +176,14 @@ class SomcpToolDeleteOrderStatus
     /**
      * The order status as a live, not-yet-deleted row, every language loaded,
      * or null when the identifier names none: an unknown one, or one already
-     * soft-deleted that the back office no longer lists.
+     * soft-deleted that the back office no longer lists. Shared with
+     * somcp_update_order_status, which refuses the same statuses.
      *
      * @param int $idOrderState
      *
      * @return OrderState|null
      */
-    private static function locate(int $idOrderState): ?OrderState
+    public static function locate(int $idOrderState): ?OrderState
     {
         if ($idOrderState <= 0) {
             return null;

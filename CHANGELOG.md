@@ -53,6 +53,15 @@ office, for you only, and expires after 15 minutes. It needs the **view** right
 on **Orders**. `somcp_get_order` now also gives the number of each credit slip,
 as the **Documents** tab shows it.
 
+**Order statuses the assistant can change.** The new tool
+`somcp_update_order_status` changes an existing order status, as its **Edit**
+form of **Shop Parameters > Order Settings > Statuses** does: its name in each
+language, its colour and icon, the boxes that say what reaching it sets off,
+and its email templates. Only what you ask for changes, and a call that would
+change nothing writes nothing. A name another status already has is refused,
+as at creation. The orders already past the status are not affected. It needs
+the **edit** right on **Statuses**.
+
 **Order statuses the assistant can delete.** The new tool
 `somcp_delete_order_status` removes an order status you created, as the
 **Delete** action of **Shop Parameters > Order Settings > Statuses** does. The

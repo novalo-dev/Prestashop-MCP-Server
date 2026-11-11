@@ -142,10 +142,7 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
         $errors = [];
         $plan = self::planValue($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idEmployee): array {
@@ -166,14 +163,7 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
      */
     private static function planValue(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::VALUE_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::VALUE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::VALUE_ARGUMENTS, self::VALUE_COMPUTED));
 
         $idFeature = 0;
         if (!array_key_exists('id_feature', $arguments)) {
@@ -183,7 +173,9 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
             // A feature of another shop is answered like one that does not
             // exist, the test somcp_get_feature makes.
             if (SomcpToolGetFeature::existingFeature($idFeature, $idShop) === null) {
-                $errors[] = 'id_feature: no feature of this shop has this identifier - find it with somcp_list_features';
+                $errors[] = $idFeature > 0
+                    ? SomcpTool::notFound('id_feature', 'feature', $idFeature, 'somcp_list_features')
+                    : SomcpTool::notAnIdentifier('id_feature');
                 $idFeature = 0;
             }
         }

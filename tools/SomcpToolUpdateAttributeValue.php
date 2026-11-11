@@ -137,21 +137,18 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
 
         // The same test of the shop as somcp_get_attribute_value, so a value
         // this tool refuses is never one that tool describes.
-        $attribute = SomcpToolGetAttributeValue::existingValue(self::integer($arguments['id_attribute'] ?? null) ?? 0, $idShop);
+        $idAttribute = self::integer($arguments['id_attribute'] ?? null) ?? 0;
+        $attribute = SomcpToolGetAttributeValue::existingValue($idAttribute, $idShop);
         if ($attribute === null) {
-            return SomcpTool::text(
-                'No attribute value of this shop has this identifier. Nothing was changed. Find it with somcp_list_attributes.',
-                true
-            );
+            return SomcpTool::refused('changed', [$idAttribute > 0
+                ? SomcpTool::notFound('id_attribute', 'attribute value', $idAttribute, 'somcp_list_attributes')
+                : SomcpTool::notAnIdentifier('id_attribute')]);
         }
 
         $errors = [];
         $plan = self::planUpdate($arguments, $attribute, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -182,14 +179,7 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
      */
     private static function planUpdate(array $arguments, ProductAttribute $attribute, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::VALUE_ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::VALUE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, array_merge(self::VALUE_ARGUMENTS, self::OWN_ARGUMENTS), self::VALUE_COMPUTED));
 
         // The group the value ends up in: the names are compared with its
         // values, and its type decides whether a colour or texture is shown.
@@ -199,9 +189,12 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         if (array_key_exists('id_attribute_group', $arguments)) {
             // A group of another shop is answered like one that does not
             // exist, the test somcp_get_attribute_group makes.
-            $group = SomcpToolGetAttributeGroup::existingGroup(self::integer($arguments['id_attribute_group']) ?? 0, $idShop);
+            $idGiven = self::integer($arguments['id_attribute_group']) ?? 0;
+            $group = SomcpToolGetAttributeGroup::existingGroup($idGiven, $idShop);
             if ($group === null) {
-                $errors[] = 'id_attribute_group: no attribute group of this shop has this identifier - find it with somcp_list_attributes';
+                $errors[] = $idGiven > 0
+                    ? SomcpTool::notFound('id_attribute_group', 'attribute group', $idGiven, 'somcp_list_attributes')
+                    : SomcpTool::notAnIdentifier('id_attribute_group');
             }
             $idGroup = $group === null ? 0 : (int) $group->id;
         }

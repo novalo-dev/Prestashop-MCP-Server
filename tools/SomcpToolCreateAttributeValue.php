@@ -155,10 +155,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         $errors = [];
         $plan = self::planValue($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -179,14 +176,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
      */
     private static function planValue(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::VALUE_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::VALUE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::VALUE_ARGUMENTS, self::VALUE_COMPUTED));
 
         $group = null;
         if (!array_key_exists('id_attribute_group', $arguments)) {
@@ -194,9 +184,12 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         } else {
             // A group of another shop is answered like one that does not
             // exist, the test somcp_get_attribute_group makes.
-            $group = SomcpToolGetAttributeGroup::existingGroup(self::integer($arguments['id_attribute_group']) ?? 0, $idShop);
+            $idGiven = self::integer($arguments['id_attribute_group']) ?? 0;
+            $group = SomcpToolGetAttributeGroup::existingGroup($idGiven, $idShop);
             if ($group === null) {
-                $errors[] = 'id_attribute_group: no attribute group of this shop has this identifier - find it with somcp_list_attributes';
+                $errors[] = $idGiven > 0
+                    ? SomcpTool::notFound('id_attribute_group', 'attribute group', $idGiven, 'somcp_list_attributes')
+                    : SomcpTool::notAnIdentifier('id_attribute_group');
             }
         }
 

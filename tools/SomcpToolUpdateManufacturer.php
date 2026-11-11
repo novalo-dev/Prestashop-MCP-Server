@@ -122,18 +122,18 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
 
         // The same test of the shop as somcp_get_manufacturer, so a brand this
         // tool refuses is never one that tool describes.
-        $manufacturer = SomcpToolGetManufacturer::existingManufacturer(self::integer($arguments['id_manufacturer'] ?? null) ?? 0, $idShop);
+        $idManufacturer = self::integer($arguments['id_manufacturer'] ?? null) ?? 0;
+        $manufacturer = SomcpToolGetManufacturer::existingManufacturer($idManufacturer, $idShop);
         if ($manufacturer === null) {
-            return SomcpTool::text('No brand of this shop has this identifier. Nothing was changed. Find it with somcp_list_manufacturers.', true);
+            return SomcpTool::refused('changed', [$idManufacturer > 0
+                ? SomcpTool::notFound('id_manufacturer', 'brand', $idManufacturer, 'somcp_list_manufacturers')
+                : SomcpTool::notAnIdentifier('id_manufacturer')]);
         }
 
         $errors = [];
         $plan = self::planUpdate($arguments, $manufacturer, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -164,14 +164,7 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
      */
     private static function planUpdate(array $arguments, Manufacturer $manufacturer, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::MANUFACTURER_ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::MANUFACTURER_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, array_merge(self::MANUFACTURER_ARGUMENTS, self::OWN_ARGUMENTS), self::MANUFACTURER_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {

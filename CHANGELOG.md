@@ -150,7 +150,11 @@ concerned. A misspelt field is reported as such instead of being read as a
 missing category, and an unknown category or customer group is always worded
 the same way, with the tool that lists them, so the assistant corrects the
 call instead of trying other identifiers. `somcp_delete_attribute_group`
-answers the same way.
+answers the same way, and so do now the tools that create and change
+attribute groups, attribute values, features, feature values, brands, brand
+addresses and suppliers: an unknown attribute group, attribute value, feature,
+feature value, brand, brand address or supplier is named with the identifier
+given and the tool that lists them.
 
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the

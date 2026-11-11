@@ -152,10 +152,7 @@ class SomcpToolCreateAttributeGroup extends SomcpToolCreateFeature
         $errors = [];
         $plan = self::planGroup($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -176,14 +173,7 @@ class SomcpToolCreateAttributeGroup extends SomcpToolCreateFeature
      */
     private static function planGroup(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::GROUP_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::GROUP_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::GROUP_ARGUMENTS, self::GROUP_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -283,7 +273,7 @@ class SomcpToolCreateAttributeGroup extends SomcpToolCreateFeature
         }
         $type = is_string($arguments['group_type']) ? Tools::strtolower(trim($arguments['group_type'])) : '';
         if (!in_array($type, self::GROUP_TYPES, true)) {
-            $errors[] = 'group_type: one of ' . implode(', ', self::GROUP_TYPES);
+            $errors[] = SomcpTool::oneOf('group_type', self::GROUP_TYPES);
 
             return;
         }

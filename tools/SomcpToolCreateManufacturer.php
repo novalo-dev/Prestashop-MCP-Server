@@ -151,10 +151,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
         $errors = [];
         $plan = self::planManufacturer($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -175,14 +172,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      */
     private static function planManufacturer(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::MANUFACTURER_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::MANUFACTURER_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::MANUFACTURER_ARGUMENTS, self::MANUFACTURER_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {

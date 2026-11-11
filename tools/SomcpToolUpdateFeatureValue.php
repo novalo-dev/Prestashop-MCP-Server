@@ -121,9 +121,12 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
 
         // The same tests as somcp_get_feature_value, so a value this tool
         // refuses is never one that tool describes.
-        $featureValue = SomcpToolGetFeatureValue::loadedValue(self::integer($arguments['id_feature_value'] ?? null) ?? 0, $idShop);
+        $idFeatureValue = self::integer($arguments['id_feature_value'] ?? null) ?? 0;
+        $featureValue = SomcpToolGetFeatureValue::loadedValue($idFeatureValue, $idShop);
         if ($featureValue === null) {
-            return SomcpTool::text('No feature value of this shop has this identifier. Nothing was changed. Find it with somcp_list_features.', true);
+            return SomcpTool::refused('changed', [$idFeatureValue > 0
+                ? SomcpTool::notFound('id_feature_value', 'feature value', $idFeatureValue, 'somcp_list_features')
+                : SomcpTool::notAnIdentifier('id_feature_value')]);
         }
         if (SomcpToolGetFeatureValue::isCustom($featureValue)) {
             return SomcpTool::text(
@@ -136,10 +139,7 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
         $errors = [];
         $plan = self::planUpdate($arguments, $featureValue, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -170,14 +170,7 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
      */
     private static function planUpdate(array $arguments, FeatureValue $featureValue, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::VALUE_ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::VALUE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, array_merge(self::VALUE_ARGUMENTS, self::OWN_ARGUMENTS), self::VALUE_COMPUTED));
 
         // The feature the value ends up in: the texts are compared with the
         // values of that one, the one the storefront filter will group them in.
@@ -187,7 +180,9 @@ class SomcpToolUpdateFeatureValue extends SomcpToolCreateFeatureValue
             // A feature of another shop is answered like one that does not
             // exist, the test somcp_get_feature makes.
             if (SomcpToolGetFeature::existingFeature($idFeature, $idShop) === null) {
-                $errors[] = 'id_feature: no feature of this shop has this identifier - find it with somcp_list_features';
+                $errors[] = $idFeature > 0
+                    ? SomcpTool::notFound('id_feature', 'feature', $idFeature, 'somcp_list_features')
+                    : SomcpTool::notAnIdentifier('id_feature');
                 $idFeature = 0;
             }
         }

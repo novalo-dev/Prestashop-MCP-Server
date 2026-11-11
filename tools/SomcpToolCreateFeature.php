@@ -145,10 +145,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
         $errors = [];
         $plan = self::planFeature($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -169,14 +166,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
      */
     private static function planFeature(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::FEATURE_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::FEATURE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::FEATURE_ARGUMENTS, self::FEATURE_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {

@@ -134,18 +134,18 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
 
         // The same test of the shop as somcp_get_supplier, so a supplier this
         // tool refuses is never one that tool describes.
-        $supplier = SomcpToolGetSupplier::existingSupplier(self::integer($arguments['id_supplier'] ?? null) ?? 0, $idShop);
+        $idSupplier = self::integer($arguments['id_supplier'] ?? null) ?? 0;
+        $supplier = SomcpToolGetSupplier::existingSupplier($idSupplier, $idShop);
         if ($supplier === null) {
-            return SomcpTool::text('No supplier of this shop has this identifier. Nothing was changed. Find it with somcp_list_suppliers.', true);
+            return SomcpTool::refused('changed', [$idSupplier > 0
+                ? SomcpTool::notFound('id_supplier', 'supplier', $idSupplier, 'somcp_list_suppliers')
+                : SomcpTool::notAnIdentifier('id_supplier')]);
         }
 
         $errors = [];
         $plan = self::planUpdate($arguments, $supplier, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -176,14 +176,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
      */
     private static function planUpdate(array $arguments, Supplier $supplier, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::SUPPLIER_ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::SUPPLIER_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, array_merge(self::SUPPLIER_ARGUMENTS, self::OWN_ARGUMENTS), self::SUPPLIER_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {

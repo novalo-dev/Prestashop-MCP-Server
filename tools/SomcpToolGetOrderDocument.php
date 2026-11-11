@@ -48,10 +48,10 @@ class SomcpToolGetOrderDocument
     private const KEYS = ['id_order', 'reference', 'document', 'id_order_invoice', 'id_order_slip'];
 
     /**
-     * @var array<string, array{list:string, identifier:string, label:string}> Per kind: where
+     * @var array<string, array{list:string, identifier:string, label:string}> per kind: where
      *                                                                         somcp_get_order lists it, the
      *                                                                         identifier that names it, and
-     *                                                                         how a refusal says it.
+     *                                                                         how a refusal says it
      */
     private const DOCUMENTS = [
         'invoice' => ['list' => 'invoices', 'identifier' => 'id_order_invoice', 'label' => 'invoice'],

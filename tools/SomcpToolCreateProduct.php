@@ -622,10 +622,7 @@ class SomcpToolCreateProduct
         $errors = [];
         $plan = self::prepare($arguments, $shop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $context, $shop, $idEmployee): array {
@@ -755,11 +752,10 @@ class SomcpToolCreateProduct
             }
             $groups[$group] = self::group($arguments, $group, $errors);
         }
-        foreach (array_keys($arguments) as $key) {
-            if (!isset($groups[$key]) && !in_array($key, ['languages', 'related_products', 'features', 'attachments', 'images', 'combinations'], true)) {
-                $errors[] = $key . ': not a field of this tool';
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields(
+            $arguments,
+            array_merge(array_keys($groups), ['languages', 'related_products', 'features', 'attachments', 'images', 'combinations'])
+        ));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -954,7 +950,7 @@ class SomcpToolCreateProduct
         if (array_key_exists('product_type', $group)) {
             $given = self::string($group['product_type']);
             if ($given === null || !in_array($given, $types, true)) {
-                $errors[] = 'basics.product_type: one of ' . implode(', ', $types);
+                $errors[] = SomcpTool::oneOf('basics.product_type', $types);
 
                 return;
             }
@@ -1003,7 +999,7 @@ class SomcpToolCreateProduct
         foreach ($categories as $idCategory) {
             $category = new Category($idCategory);
             if (!Validate::isLoadedObject($category) || $idCategory === $root || !$category->isAssociatedToShop((int) $shop->id)) {
-                $errors[] = 'categories: no category ' . $idCategory . ' in this shop. Take identifiers from somcp_list_categories.';
+                $errors[] = SomcpTool::notFound('categories', 'category', $idCategory, 'somcp_list_categories');
             }
         }
 
@@ -1030,7 +1026,7 @@ class SomcpToolCreateProduct
             return;
         }
         if ($id > 0 && !Validate::isLoadedObject(new Manufacturer($id))) {
-            $errors[] = 'brand.id_manufacturer: no brand ' . $id . '. Take identifiers from somcp_list_manufacturers.';
+            $errors[] = SomcpTool::notFound('brand.id_manufacturer', 'brand', $id, 'somcp_list_manufacturers');
 
             return;
         }
@@ -1060,7 +1056,7 @@ class SomcpToolCreateProduct
         }
         foreach ($ids as $id) {
             if (!isset($found[$id])) {
-                $errors[] = 'related_products: no product ' . $id . ' in this shop. Find them with somcp_search_products.';
+                $errors[] = SomcpTool::notFound('related_products', 'product', $id, 'somcp_search_products');
             }
         }
 
@@ -1115,8 +1111,12 @@ class SomcpToolCreateProduct
             $path = 'features[' . $i . ']';
             self::onlyAccepted($item, 'feature', $path, $errors);
             $idFeature = self::integer($item['id_feature'] ?? null);
-            if ($idFeature === null || !Validate::isLoadedObject(new Feature($idFeature))) {
-                $errors[] = $path . '.id_feature: no such feature. Take identifiers from somcp_list_features.';
+            if ($idFeature === null || $idFeature <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_feature');
+                continue;
+            }
+            if (!Validate::isLoadedObject(new Feature($idFeature))) {
+                $errors[] = SomcpTool::notFound($path . '.id_feature', 'feature', $idFeature, 'somcp_list_features');
                 continue;
             }
 
@@ -1139,9 +1139,13 @@ class SomcpToolCreateProduct
             $featureValue = new FeatureValue((int) $idValue);
             // A custom value belongs to the product it was typed on: sharing it
             // would change that product's page too.
-            if ($idValue === null || !Validate::isLoadedObject($featureValue)
+            if ($idValue === null || $idValue <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_feature_value');
+                continue;
+            }
+            if (!Validate::isLoadedObject($featureValue)
                 || (int) $featureValue->id_feature !== $idFeature || (bool) $featureValue->custom) {
-                $errors[] = $path . '.id_feature_value: not a value of feature ' . $idFeature . '. Take it from somcp_list_features.';
+                $errors[] = SomcpTool::notFound($path . '.id_feature_value', 'value of feature ' . $idFeature, $idValue, 'somcp_list_features');
                 continue;
             }
             if (isset($seen[$idFeature . '-' . $idValue])) {
@@ -1169,7 +1173,7 @@ class SomcpToolCreateProduct
         $ids = array_values(array_unique(self::ids($value, 'id_attachment', 'attachments', $errors)));
         foreach ($ids as $id) {
             if (!Validate::isLoadedObject(new Attachment($id))) {
-                $errors[] = 'attachments: no document ' . $id . '. Take identifiers from somcp_list_attachments.';
+                $errors[] = SomcpTool::notFound('attachments', 'document', $id, 'somcp_list_attachments');
             }
         }
 
@@ -1191,7 +1195,7 @@ class SomcpToolCreateProduct
             // The values are the running version's: PrestaShop 9 added three.
             $values = (array) (Product::$definition['fields']['condition']['values'] ?? []);
             if ($condition === null || $probe->validateField('condition', $condition) !== true) {
-                $errors[] = 'condition.condition: one of ' . implode(', ', $values) . ' on this version';
+                $errors[] = SomcpTool::oneOf('condition.condition', $values);
             } else {
                 $plan['fields']['condition'] = $condition;
             }
@@ -1384,10 +1388,14 @@ class SomcpToolCreateProduct
                 $errors[] = $path . '.quantity: a whole number, 1 or more';
                 continue;
             }
-            if ($id === null || $id <= 0 || !Db::getInstance()->getValue(
+            if ($id === null || $id <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_product');
+                continue;
+            }
+            if (!Db::getInstance()->getValue(
                 'SELECT 1 FROM `' . _DB_PREFIX_ . 'product_shop` WHERE `id_product` = ' . (int) $id . ' AND `id_shop` = ' . (int) $idShop
             )) {
-                $errors[] = $path . '.id_product: no such product in this shop. Take identifiers from somcp_search_products.';
+                $errors[] = SomcpTool::notFound($path . '.id_product', 'product', $id, 'somcp_search_products');
                 continue;
             }
             // The back office offers neither the pack itself nor another
@@ -1396,11 +1404,18 @@ class SomcpToolCreateProduct
                 $errors[] = $path . '.id_product: a pack cannot hold a pack, nor itself';
                 continue;
             }
-            if ($idAttribute === null || $idAttribute < 0 || ($idAttribute > 0 && !Db::getInstance()->getValue(
+            if ($idAttribute === null || $idAttribute < 0) {
+                $errors[] = $path . '.id_product_attribute: a combination identifier, or 0 for none';
+                continue;
+            }
+            if ($idAttribute > 0 && !Db::getInstance()->getValue(
                 'SELECT 1 FROM `' . _DB_PREFIX_ . 'product_attribute` WHERE `id_product_attribute` = ' . (int) $idAttribute
                     . ' AND `id_product` = ' . (int) $id
-            ))) {
-                $errors[] = $path . '.id_product_attribute: not a combination of this product. Take it from somcp_get_product, 0 for none.';
+            )) {
+                // A combination belongs to its product, not to the shop: the
+                // product read with somcp_get_product lists the ones it has.
+                $errors[] = $path . '.id_product_attribute: no combination of this product has the identifier '
+                    . $idAttribute . ' - find it with somcp_get_product';
                 continue;
             }
             // The pack table holds one row per product and combination.
@@ -1534,7 +1549,7 @@ class SomcpToolCreateProduct
             foreach (array_unique(self::ids($group['carriers'], 'id_carrier', 'shipping.carriers', $errors)) as $idCarrier) {
                 $carrier = new Carrier($idCarrier);
                 if (!Validate::isLoadedObject($carrier) || $carrier->deleted || !$carrier->isAssociatedToShop($idShop)) {
-                    $errors[] = 'shipping.carriers: no carrier ' . $idCarrier . ' in this shop. Take identifiers from somcp_list_carriers.';
+                    $errors[] = SomcpTool::notFound('shipping.carriers', 'carrier', $idCarrier, 'somcp_list_carriers');
                     continue;
                 }
                 // A product is tied to the carrier's reference, which survives
@@ -1595,8 +1610,13 @@ class SomcpToolCreateProduct
         }
         $id = self::integer($group['id_tax_rules_group']);
         $rule = new TaxRulesGroup((int) $id);
-        if ($id === null || $id < 0 || ($id > 0 && (!Validate::isLoadedObject($rule) || $rule->deleted))) {
-            $errors[] = 'pricing.id_tax_rules_group: no such tax rule. Take identifiers from somcp_list_tax_rules, 0 for no tax.';
+        if ($id === null || $id < 0) {
+            $errors[] = 'pricing.id_tax_rules_group: a tax rule identifier, or 0 for no tax';
+
+            return;
+        }
+        if ($id > 0 && (!Validate::isLoadedObject($rule) || $rule->deleted)) {
+            $errors[] = SomcpTool::notFound('pricing.id_tax_rules_group', 'tax rule', $id, 'somcp_list_tax_rules');
 
             return;
         }
@@ -1697,7 +1717,7 @@ class SomcpToolCreateProduct
         foreach ($attributes as $idAttribute) {
             $attribute = new ProductAttribute($idAttribute);
             if (!Validate::isLoadedObject($attribute)) {
-                $errors[] = $path . '.attributes: no attribute value ' . $idAttribute . '. Take identifiers from somcp_list_attributes.';
+                $errors[] = SomcpTool::notFound($path . '.attributes', 'attribute value', $idAttribute, 'somcp_list_attributes');
                 continue;
             }
             if (isset($groups[(int) $attribute->id_attribute_group])) {
@@ -1903,15 +1923,19 @@ class SomcpToolCreateProduct
         }
         if (isset($item['id_group'])) {
             $idGroup = self::integer($item['id_group']);
-            if ($idGroup === null || $idGroup < 0 || ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup)))) {
-                $errors[] = $at . 'id_group: no such customer group. Take one from somcp_list_customer_groups, 0 for all.';
+            if ($idGroup === null || $idGroup < 0) {
+                $errors[] = $at . 'id_group: a customer group identifier, or 0 for all';
+            } elseif ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup))) {
+                $errors[] = SomcpTool::notFound($at . 'id_group', 'customer group', $idGroup, 'somcp_list_customer_groups');
             }
             $rule['id_group'] = (int) $idGroup;
         }
         if (isset($item['id_customer'])) {
             $idCustomer = self::integer($item['id_customer']);
-            if ($idCustomer === null || $idCustomer < 0 || ($idCustomer > 0 && !Customer::customerIdExistsStatic($idCustomer))) {
-                $errors[] = $at . 'id_customer: no such customer, 0 for all';
+            if ($idCustomer === null || $idCustomer < 0) {
+                $errors[] = $at . 'id_customer: a customer identifier, or 0 for all';
+            } elseif ($idCustomer > 0 && !Customer::customerIdExistsStatic($idCustomer)) {
+                $errors[] = SomcpTool::notFound($at . 'id_customer', 'customer', $idCustomer, 'somcp_search_customers');
             }
             $rule['id_customer'] = (int) $idCustomer;
         }
@@ -2026,8 +2050,12 @@ class SomcpToolCreateProduct
             $path = 'suppliers.suppliers[' . $i . ']';
             self::onlyAccepted($item, 'supplier', $path, $errors);
             $idSupplier = self::integer($item['id_supplier'] ?? null);
-            if ($idSupplier === null || !self::supplierExists($idSupplier, $known)) {
-                $errors[] = $path . '.id_supplier: no such supplier. Take identifiers from somcp_list_suppliers.';
+            if ($idSupplier === null || $idSupplier <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_supplier');
+                continue;
+            }
+            if (!self::supplierExists($idSupplier, $known)) {
+                $errors[] = SomcpTool::notFound($path . '.id_supplier', 'supplier', $idSupplier, 'somcp_list_suppliers');
                 continue;
             }
             $combination = self::position($item, 'combination', $combinations, $path, $errors);
@@ -2050,8 +2078,11 @@ class SomcpToolCreateProduct
         $default = null;
         if (array_key_exists('id_supplier_default', $group)) {
             $default = self::integer($group['id_supplier_default']);
-            if ($default === null || $default <= 0 || !self::supplierExists($default, $known)) {
-                $errors[] = 'suppliers.id_supplier_default: no such supplier. Take identifiers from somcp_list_suppliers.';
+            if ($default === null || $default <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier('suppliers.id_supplier_default');
+                $default = null;
+            } elseif (!self::supplierExists($default, $known)) {
+                $errors[] = SomcpTool::notFound('suppliers.id_supplier_default', 'supplier', $default, 'somcp_list_suppliers');
                 $default = null;
             }
         }
@@ -2505,7 +2536,7 @@ class SomcpToolCreateProduct
         $types = array_values(PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\RedirectType::AVAILABLE_REDIRECT_TYPES);
         $type = self::string($value);
         if ($type === null || !in_array($type, $types, true)) {
-            $errors[] = 'seo.redirect_type: one of ' . implode(', ', $types) . ' on this version';
+            $errors[] = SomcpTool::oneOf('seo.redirect_type', $types);
 
             return null;
         }
@@ -3506,15 +3537,15 @@ class SomcpToolCreateProduct
      */
     protected static function onlyAccepted(array $item, string $kind, string $path, array &$errors): void
     {
-        foreach (array_keys($item) as $key) {
-            $key = (string) $key;
-            if (in_array($key, self::ACCEPTED[$kind], true)) {
-                continue;
+        // COMPUTED names its fields by kind, so only those of this kind are
+        // handed on, without the prefix the shared check does not know.
+        $computed = [];
+        foreach (self::COMPUTED as $field) {
+            if (strpos($field, $kind . '.') === 0) {
+                $computed[] = substr($field, strlen($kind) + 1);
             }
-            $errors[] = $path . '.' . $key . (in_array($kind . '.' . $key, self::COMPUTED, true)
-                ? ': worked out by the shop or read from another object, so it is not written here'
-                : ': not a field of this tool');
         }
+        array_push($errors, ...SomcpTool::unknownFields($item, self::ACCEPTED[$kind], $computed, $path . '.'));
     }
 
     /**

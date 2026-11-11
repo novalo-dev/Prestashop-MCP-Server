@@ -167,7 +167,14 @@ answers the same way, and so do now the tools that create and change
 attribute groups, attribute values, features, feature values, brands, brand
 addresses and suppliers: an unknown attribute group, attribute value, feature,
 feature value, brand, brand address or supplier is named with the identifier
-given and the tool that lists them.
+given and the tool that lists them. `somcp_create_product` and
+`somcp_update_product` answer the same way: every category, brand, feature,
+document, carrier, tax rule, attribute value, customer group, customer,
+supplier or related product they do not find is named with its identifier and
+the tool that lists it, a combination, specific price or image the product
+does not have points to `somcp_get_product`, a misspelt field reads as such
+even inside a group, and a product that does not exist is refused in the same
+answer as any other mistake.
 
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the

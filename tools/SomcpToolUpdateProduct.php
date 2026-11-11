@@ -273,18 +273,18 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $idShop = (int) $shop->id;
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $product = self::existingProduct(self::integer($arguments['id_product'] ?? null) ?? 0, $idShop);
+        $idProduct = self::integer($arguments['id_product'] ?? null) ?? 0;
+        $product = self::existingProduct($idProduct, $idShop);
         if ($product === null) {
-            return SomcpTool::text('No product of this shop has this identifier. Nothing was changed. Find it with somcp_search_products.', true);
+            return SomcpTool::refused('changed', [$idProduct > 0
+                ? SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products')
+                : SomcpTool::notAnIdentifier('id_product')]);
         }
 
         $errors = [];
         $plan = self::planUpdate($arguments, $product, $shop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -430,11 +430,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $groups[$group] = self::group($arguments, $group, $errors);
         }
         $lists = ['id_product', 'languages', 'related_products', 'features', 'attachments', 'images', 'combinations', 'remove_pack_items', 'remove_virtual_file'];
-        foreach (array_keys($arguments) as $key) {
-            if (!isset($groups[$key]) && !in_array($key, $lists, true) && !isset(self::REMOVALS[$key])) {
-                $errors[] = $key . ': not a field of this tool';
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, array_merge(array_keys($groups), $lists, array_keys(self::REMOVALS))));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -663,7 +659,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         if (array_key_exists('product_type', $group)) {
             $given = self::string($group['product_type']);
             if ($given === null || !in_array($given, $types, true)) {
-                $errors[] = 'basics.product_type: one of ' . implode(', ', $types);
+                $errors[] = SomcpTool::oneOf('basics.product_type', $types);
 
                 return;
             }
@@ -802,7 +798,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         foreach (array_diff($categories, $current) as $idCategory) {
             $category = new Category($idCategory);
             if (!Validate::isLoadedObject($category) || $idCategory === $root || !$category->isAssociatedToShop((int) $shop->id)) {
-                $errors[] = 'categories: no category ' . $idCategory . ' in this shop. Take identifiers from somcp_list_categories.';
+                $errors[] = SomcpTool::notFound('categories', 'category', $idCategory, 'somcp_list_categories');
             }
         }
         if (!in_array($default, $current, true) && $default === $root) {
@@ -1027,7 +1023,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                 unset($item['id_product_attribute']);
                 self::onlyAccepted($item, 'combination', $path, $errors);
                 if (!isset($existing[$id])) {
-                    $errors[] = $path . '.id_product_attribute: not a combination of this product in this shop';
+                    $errors[] = $id > 0
+                        ? $path . '.id_product_attribute: no combination of this product has the identifier ' . $id
+                            . ' - find it with somcp_get_product'
+                        : SomcpTool::notAnIdentifier($path . '.id_product_attribute');
                     continue;
                 }
                 if (in_array($id, $remove, true) || isset($named[$id])) {
@@ -1214,7 +1213,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             unset($item['id_specific_price']);
             self::onlyAccepted($item, 'rule', $path, $errors);
             if (!in_array($id, $owned, true)) {
-                $errors[] = $path . '.id_specific_price: not a specific price of this product in this shop';
+                $errors[] = $id > 0
+                    ? $path . '.id_specific_price: no specific price of this product has the identifier ' . $id
+                        . ' - find it with somcp_get_product'
+                    : SomcpTool::notAnIdentifier($path . '.id_specific_price');
                 continue;
             }
             if (in_array($id, $remove, true) || isset($named[$id])) {
@@ -1382,8 +1384,12 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $path = 'suppliers.suppliers[' . $i . ']';
             self::onlyAccepted($item, 'supplier', $path, $errors);
             $idSupplier = self::integer($item['id_supplier'] ?? null);
-            if ($idSupplier === null || !self::supplierExists($idSupplier, $known)) {
-                $errors[] = $path . '.id_supplier: no such supplier. Take identifiers from somcp_list_suppliers.';
+            if ($idSupplier === null || $idSupplier <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_supplier');
+                continue;
+            }
+            if (!self::supplierExists($idSupplier, $known)) {
+                $errors[] = SomcpTool::notFound($path . '.id_supplier', 'supplier', $idSupplier, 'somcp_list_suppliers');
                 continue;
             }
             if (in_array($idSupplier, $remove, true)) {
@@ -1615,7 +1621,9 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $ids = array_values(array_unique(self::ids($arguments[$list], self::REMOVALS[$list], $list, $errors)));
         foreach ($ids as $id) {
             if (!in_array($id, $owned, true)) {
-                $errors[] = $list . ': ' . $id . ' is not a ' . $what . ' in this shop';
+                // What the product holds, not the shop: the product read with
+                // somcp_get_product lists them.
+                $errors[] = $list . ': no ' . $what . ' has the identifier ' . $id . ' - find it with somcp_get_product';
             }
         }
 

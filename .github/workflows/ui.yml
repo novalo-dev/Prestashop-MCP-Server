@@ -26,7 +26,10 @@ concurrency:
 jobs:
   sanity:
     name: UI sanity (PS ${{ matrix.prestashop }}, PHP ${{ matrix.php }}, ${{ matrix.browser }}, ${{ matrix.db }})
-    runs-on: ubuntu-latest
+    # Pinned: on the Ubuntu 26.04 image ubuntu-latest moved to, apt and the
+    # shop install fail to resolve the archive and package hosts, which turns
+    # every run red for a reason unrelated to the module.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

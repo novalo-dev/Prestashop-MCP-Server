@@ -43,7 +43,10 @@ jobs:
     # that declare PHP 8.0 at most, so Composer refuses any package needing
     # 8.1 there whatever the platform says. PrestaShop 8 installs from the zip.
     name: PrestaShop ${{ matrix.prestashop }} on PHP ${{ matrix.php }}
-    runs-on: ubuntu-latest
+    # Pinned: on the Ubuntu 26.04 image ubuntu-latest moved to, apt and the
+    # shop install fail to resolve the archive and package hosts, which turns
+    # every run red for a reason unrelated to the module.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

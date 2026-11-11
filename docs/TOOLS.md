@@ -18,8 +18,22 @@ These hold for every tool. Do not repeat them in a tool's entry.
 shop identifier: the boundary comes from the token, never from what the client
 asks for.
 
-**Language.** Read in the shop's default language, unless a `language` parameter
-gives an ISO code.
+**Language.** One rule for every tool, through one shared function.
+- Reading: a `language` parameter takes the ISO code of one of the shop's active
+  languages, compared without case. Left out, the shop's default language
+  (`PS_LANG_DEFAULT` of the token's shop), never the language of the client's
+  browser or of the employee. Any other value is refused before anything is
+  read, by `SomcpTool::readLanguage()` and `SomcpTool::languageRefused()`, with
+  the text that names the shop's languages. Every answer holding a translated
+  text carries `language`, the ISO code it was read in. The SEO audits, which
+  read every language when `language` is left out, use the same refusal with
+  its other ending.
+- Writing: `languages` lists the ISO codes being filled, among the shop's
+  active languages, all of them by default; each text is an object keyed by
+  those codes and given in each of them, a plain string being accepted when one
+  language is filled (`SomcpToolCreateProduct::languages()` and `texts()`, for
+  every write tool). A name given back in a write answer is in the shop's
+  default language, with `language` beside it.
 
 **Dates.** ISO 8601 in and out. Relative periods are worked out by the
 assistant, which already knows the shop's time zone.
@@ -1834,7 +1848,7 @@ invoice, whether it emails the customer and what that email carries.
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code, shop default otherwise |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - per status: `status_id`, `name`, `roles`, `paid`, `shipped`,
 `in_transit`, `sends_email`, `invoice`, `counts_as_valid`, `hidden_from_customer`,
@@ -2021,7 +2035,7 @@ past order on either version.
 |---|---|---|---|
 | `status_id` | integer | yes | from `somcp_list_order_statuses`, never guessed |
 
-**Returns** - `deleted`, `status_id`, `name` (the name in the shop's default language, read before the deletion) and `orders_with_it`, how many orders of the shop still have it as their current status.
+**Returns** - `deleted`, `status_id`, `name` (the name in the shop's default language, read before the deletion), `language` (the ISO code of that name) and `orders_with_it`, how many orders of the shop still have it as their current status.
 
 **Notes**
 - The deletion is soft on both versions, unlike a return status: the row stays, `deleted` is set to 1 through `OrderState::update()` (as the 9.0.0 `DeleteOrderStateHandler` does), so the orders that had it keep their history and their current status, and `somcp_get_order` still shows its name in `history[]`. The icon file is kept.
@@ -3901,7 +3915,7 @@ Same labels, configuration key, prefixes, tables and columns on 8.0.1 (`ps_mainm
 | `url` | object keyed by ISO code | new custom link | **Link**, same rule as `label`; an absolute `http` / `https` address or a path starting with `/`, checked with `Validate::isUrl()`; 128 characters at most |
 | `new_window` | boolean | no | **New window**, new custom link only; `false` by default, as the form |
 | `position` | integer | no | **Change position**: 1 for the first entry; at the end when left out; above the number of entries plus one is refused |
-| `language` | string | no | ISO code for the labels of the answer; the shop default when left out |
+| `language` | string | no | ISO code of one of the shop's active languages for the labels of the answer, refused otherwise; the shop default when left out |
 
 **Returns** - `added`: the new entry in the shape of `entries[]` of `somcp_list_menu_links` (`position`, `item`, `type`, the identifier, `label`, `url`, `new_window`); `created_link`: `true` when a custom link was created, its `id_link` in `added`; `entries`: the whole menu read back after the save; `language`.
 
@@ -3928,7 +3942,7 @@ Same panels, labels, configuration key, tables and submit code on 8.0.1 (`ps_mai
 | `label` | object keyed by ISO code | no | **Label**; a plain string accepted when one language is filled; given, required and not empty in every language filled; 128 characters at most |
 | `url` | object keyed by ISO code | no | **Link**, same rule as `label`; an absolute `http` / `https` address or a path starting with `/`, checked with `Validate::isUrl()`; 128 characters at most |
 | `new_window` | boolean | no | **New window** |
-| `language` | string | no | ISO code for the labels of the answer; the shop default when left out |
+| `language` | string | no | ISO code of one of the shop's active languages for the labels of the answer, refused otherwise; the shop default when left out |
 
 At least one of `label`, `url`, `new_window` is required.
 
@@ -4189,6 +4203,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_cms` | integer | yes | from `somcp_list_cms_pages`, any page of the shop; `somcp_audit_cms_seo` finds the pages to fix |
+| `languages` | array | no | ISO codes being filled, among the shop's active languages, all of them by default; each text below is then given in each of them |
 | `meta_title` | object | no | per ISO code; the form's **Meta title** (`head_seo_title`); 70 characters at most, an empty text removes it |
 | `meta_description` | object | no | per ISO code; 512 characters at most, a warning over 160 |
 | `link_rewrite` | object | no | per ISO code; `Tools::str2url()` then `Validate::isLinkRewrite()`, 128 characters at most, never empty |
@@ -4198,7 +4213,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 **Notes**
 - The names follow the CMS page form of Design > Pages, not the columns: the form's **Title** is the column `meta_title`, the page's h1 and its default title tag, and its **Meta title** is `head_seo_title`, which overrides the title tag when filled (`EditCmsPageHandler` on PrestaShop 8 and 9). This tool writes the second under the name `meta_title`; the page title stays with the content. `somcp_get_cms_page` and `somcp_audit_cms_seo` return `title`, `meta_title` and `seo_title` with the same meaning as this tool.
-- Written through the `CMS` object, after `validateFields()` and `validateFieldsLang()` as the back office handler does, so hooks fire, with `id_shop_list` set to the shop of the token: `cms_lang` of the other shops keeps its texts. `indexation` lives in `cms`, so it is the same in every shop. A page not associated with the shop (`cms_shop`) is answered like one that does not exist. Only the languages given change; an ISO code that is not an active language of the shop is refused, and so is any other field.
+- Written through the `CMS` object, after `validateFields()` and `validateFieldsLang()` as the back office handler does, so hooks fire, with `id_shop_list` set to the shop of the token: `cms_lang` of the other shops keeps its texts. `indexation` lives in `cms`, so it is the same in every shop. A page not associated with the shop (`cms_shop`) is answered like one that does not exist. The texts are taken as the catalogue write tools take them (`languages`, then each text keyed by ISO code, with the same errors); a text equal to what the page holds is left out, and any other field is refused.
 - The page to change is read before with `somcp_get_cms_page`, and an answer lost after the call is checked there too: the audit only returns the pages that fail one of its checks.
 - Every value is checked and compared before anything is written, and every problem reported at once. A call that changes nothing writes nothing and answers `changed: false`.
 - `seo_warnings`, for each language changed: a title search engines read over 60 characters, a `meta_description` over 160 (the lengths of `somcp_audit_product_seo`), and a new `link_rewrite` on a displayed page, whose old URL breaks; the assistant tells the merchant before the call.
@@ -4238,6 +4253,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_meta` | integer | yes | from `somcp_list_meta_pages` |
+| `languages` | array | no | ISO codes being filled, among the shop's active languages, all of them by default; each text below is then given in each of them |
 | `title` | object | no | per ISO code; the form's **Page title**; 70 characters at most, an empty text removes it |
 | `description` | object | no | per ISO code; the form's **Meta description**; 255 characters at most (the column), a warning over 160 |
 | `keywords` | object | no | per ISO code; the form's **Meta keywords**, PrestaShop 8 only (refused on 9, which has no such field); 255 characters at most, an empty text removes them |
@@ -4247,7 +4263,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 
 **Notes**
 - The text fields have the names `somcp_list_meta_pages` returns, but the list gives them flat in one language, with `page`, `url` and `configurable`, which this tool does not take: to write, give each field as one object keyed by ISO code.
-- Written through the `Meta` object, after `validateFields()` and `validateFieldsLang()`, with `id_shop_list` set to the shop of the token: `meta_lang` is per shop, and the other shops keep their texts. Only the languages given change; an ISO code that is not an active language of the shop is refused, and so is any other field.
+- Written through the `Meta` object, after `validateFields()` and `validateFieldsLang()`, with `id_shop_list` set to the shop of the token: `meta_lang` is per shop, and the other shops keep their texts. The texts are taken as the catalogue write tools take them (`languages`, then each text keyed by ISO code, with the same errors); a text equal to what the page holds is left out, and any other field is refused.
 - The pages whose `configurable` is false (the product, category and CMS templates, some module pages) are refused: their texts come from each product, category or page, and the back office does not list them.
 - The home page (`index`) has no `url_rewrite`: a new one is refused, the value it holds given back unchanged is not. `EditMetaHandler` only checks the shape of a friendly URL; the tool also refuses one already used by another page of the shop in the same language, since both addresses would lead to one page.
 - Every value is checked and compared before anything is written, and every problem reported at once. A call that changes nothing writes nothing and answers `changed: false`.

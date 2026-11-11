@@ -75,7 +75,7 @@ class SomcpToolUpdateCmsSeo
             'somcp_update_cms_seo',
             Somcp::t('Change the SEO of a CMS page'),
             'Changes the Meta title, meta description, Friendly URL and Indexation of one CMS page, like '
-                . 'its form in Design > Pages; only the languages given change. Not the Title or the content. '
+                . 'its form in Design > Pages, in the languages filled. Not the Title or the content. '
                 . 'Any page, from somcp_list_cms_pages; somcp_audit_cms_seo finds those to fix. Read the page '
                 . 'with somcp_get_cms_page first and show the merchant the new values; warn that a '
                 . 'new friendly URL breaks the old address of a displayed page. Nothing is written until the '
@@ -87,6 +87,12 @@ class SomcpToolUpdateCmsSeo
                     'id_cms' => [
                         'type' => 'integer',
                         'description' => 'The CMS page to change, from somcp_list_cms_pages.',
+                    ],
+                    'languages' => [
+                        'type' => 'array',
+                        'description' => 'ISO codes of the languages to fill, among the active languages of the shop. '
+                            . 'All of them by default. Every text must then be given in each of them.',
+                        'items' => ['type' => 'string'],
                     ],
                     'meta_title' => [
                         'type' => 'object',
@@ -213,37 +219,24 @@ class SomcpToolUpdateCmsSeo
 
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;
-            if ($key !== 'id_cms' && $key !== 'indexation' && !in_array($key, self::TEXTS, true)) {
+            if ($key !== 'id_cms' && $key !== 'languages' && $key !== 'indexation' && !in_array($key, self::TEXTS, true)) {
                 $errors[] = $key . ': not a field of this tool';
             }
         }
 
-        $active = [];
-        foreach (Language::getLanguages(true, $idShop) as $row) {
-            $active[Tools::strtolower((string) $row['iso_code'])] = (int) $row['id_lang'];
+        // The rule of the catalogue write tools (#149): the languages being
+        // filled, all active ones by default, and each text keyed by them, so
+        // a text read from one tool is given back to this one the same way.
+        $languages = SomcpToolCreateProduct::languages($arguments, $idShop, $errors);
+        if ($languages === null) {
+            return $plan;
         }
 
         foreach (self::TEXTS as $field) {
-            if (!array_key_exists($field, $arguments)) {
-                continue;
-            }
-            $value = $arguments[$field];
-            if (!is_array($value) || $value === [] || array_is_list($value)) {
-                $errors[] = $field . ': an object keyed by ISO code, for example {"' . (string) array_key_first($active) . '": "..."}';
-                continue;
-            }
-            foreach ($value as $iso => $text) {
-                $iso = Tools::strtolower(trim((string) $iso));
+            $texts = SomcpToolCreateProduct::texts($arguments, $field, $field, $languages, $errors);
+            foreach ($texts ?? [] as $idLang => $text) {
+                $iso = $languages['filled'][$idLang];
                 $where = $field . ' (' . $iso . ')';
-                if (!isset($active[$iso])) {
-                    $errors[] = $where . ': not an active language of this shop, which has ' . implode(', ', array_keys($active));
-                    continue;
-                }
-                if (!is_string($text)) {
-                    $errors[] = $where . ': a text';
-                    continue;
-                }
-                $idLang = $active[$iso];
                 $new = self::checked($field, trim($text), $idLang, $cms, $where, $errors);
                 if ($new === null) {
                     continue;

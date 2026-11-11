@@ -221,7 +221,7 @@ public function somcpCountCustomers(array $args, array $context): array
 |---|---|
 | `id_shop` | The shop this call is for, decided by somcp from the token. **Never take a shop id from `$args`.** |
 | `id_employee` | The employee the assistant acts for. |
-| `id_lang` | That employee's language, or the shop's default. |
+| `id_lang` | That employee's language, or the shop's default. The built-in tools do not read texts in it: they follow the **Language** rule of the shared conventions in `docs/TOOLS.md`, so the same call answers in the same language whoever makes it. |
 | `files` | Only when coming back from a file deposit, see below. |
 
 Return one of:

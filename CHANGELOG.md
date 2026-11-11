@@ -82,6 +82,20 @@ lists the subcategories deleted and every product moved, turned offline or
 deleted. The root category and Home cannot be deleted. It needs the **delete**
 right on **Categories**.
 
+### Changed
+
+**SEO of CMS pages and shop pages written like the rest of the catalogue.**
+`somcp_update_cms_seo` and `somcp_update_meta_page` now take the languages to
+fill and their texts as the product, category and brand tools do: a
+`languages` list, all the shop's languages by default, and each text given in
+each of them, a plain text being accepted when only one language is filled.
+Their errors are now the same as those tools', so an assistant that has
+written a product writes a page the same way. `somcp_delete_order_status`
+names the deleted status in the default language of the shop it is
+connected to, rather than in the default language of the whole
+installation, and says which language that is; `somcp_ping` marks that same
+language as the default.
+
 ### Fixed
 
 **Products and shop pages read in the shop's default language.**

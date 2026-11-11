@@ -72,9 +72,8 @@ class SomcpToolUpdateMetaPage
         return new SomcpTool(
             'somcp_update_meta_page',
             Somcp::t('Change the SEO of a shop page'),
-            'Changes the Page title, Meta description and Rewritten URL of one of the shop\'s own pages, per '
-                . 'ISO code, as the page form of Shop Parameters > Traffic & SEO does; languages not given keep '
-                . 'their text. Meta keywords exist on PrestaShop 8 only. Take id_meta from somcp_list_meta_pages, '
+            'Changes the Page title, Meta description and Rewritten URL of one of the shop\'s own pages, in '
+                . 'the languages filled, as the page form of Shop Parameters > Traffic & SEO does. Meta keywords exist on PrestaShop 8 only. Take id_meta from somcp_list_meta_pages, '
                 . 'never guess one, and show the merchant the new values first: a new Rewritten URL breaks the old '
                 . 'address. Pages whose configurable is false are refused; for a CMS page, use '
                 . 'somcp_update_cms_seo. One page per call. Not to be retried: if the answer is lost, read the page '
@@ -85,6 +84,12 @@ class SomcpToolUpdateMetaPage
                     'id_meta' => [
                         'type' => 'integer',
                         'description' => 'The page to change, from somcp_list_meta_pages.',
+                    ],
+                    'languages' => [
+                        'type' => 'array',
+                        'description' => 'ISO codes of the languages to fill, among the active languages of the shop. '
+                            . 'All of them by default. Every text must then be given in each of them.',
+                        'items' => ['type' => 'string'],
                     ],
                     'title' => [
                         'type' => 'object',
@@ -215,7 +220,7 @@ class SomcpToolUpdateMetaPage
 
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;
-            if ($key !== 'id_meta' && !in_array($key, self::TEXTS, true)) {
+            if ($key !== 'id_meta' && $key !== 'languages' && !in_array($key, self::TEXTS, true)) {
                 $errors[] = $key . ': not a field of this tool';
             }
         }
@@ -225,33 +230,20 @@ class SomcpToolUpdateMetaPage
             unset($arguments['keywords']);
         }
 
-        $active = [];
-        foreach (Language::getLanguages(true, $idShop) as $row) {
-            $active[Tools::strtolower((string) $row['iso_code'])] = (int) $row['id_lang'];
+        // The rule of the catalogue write tools (#149): the languages being
+        // filled, all active ones by default, and each text keyed by them, so
+        // a text read from one tool is given back to this one the same way.
+        $languages = SomcpToolCreateProduct::languages($arguments, $idShop, $errors);
+        if ($languages === null) {
+            return $plan;
         }
         $idLangDefault = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
 
         foreach (self::TEXTS as $field) {
-            if (!array_key_exists($field, $arguments)) {
-                continue;
-            }
-            $value = $arguments[$field];
-            if (!is_array($value) || $value === [] || array_is_list($value)) {
-                $errors[] = $field . ': an object keyed by ISO code, for example {"' . (string) array_key_first($active) . '": "..."}';
-                continue;
-            }
-            foreach ($value as $iso => $text) {
-                $iso = Tools::strtolower(trim((string) $iso));
+            $texts = SomcpToolCreateProduct::texts($arguments, $field, $field, $languages, $errors);
+            foreach ($texts ?? [] as $idLang => $text) {
+                $iso = $languages['filled'][$idLang];
                 $where = $field . ' (' . $iso . ')';
-                if (!isset($active[$iso])) {
-                    $errors[] = $where . ': not an active language of this shop, which has ' . implode(', ', array_keys($active));
-                    continue;
-                }
-                if (!is_string($text)) {
-                    $errors[] = $where . ': a text';
-                    continue;
-                }
-                $idLang = $active[$iso];
                 $previous = SomcpToolUpdateCmsSeo::textOf(self::stored($meta, $field), $idLang);
                 if ($field === 'url_rewrite' && (string) $meta->page === self::HOME) {
                     // The dispatcher serves the home page at the root of the

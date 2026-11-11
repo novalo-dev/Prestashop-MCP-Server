@@ -827,13 +827,19 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * The languages a write fills, from its languages argument.
+     *
+     * Public, with texts(), because every write tool takes translated texts
+     * by this rule (#149), the SEO tools of CMS and shop pages included, so a
+     * text is keyed, defaulted and refused the same way whatever it changes.
+     *
      * @param array<string, mixed> $arguments
      * @param int $idShop
      * @param array<int, string> $errors
      *
      * @return array{filled: array<int, string>, all: array<int, int>, fallback: int}|null
      */
-    protected static function languages(array $arguments, int $idShop, array &$errors): ?array
+    public static function languages(array $arguments, int $idShop, array &$errors): ?array
     {
         $active = [];
         foreach (Language::getLanguages(true, $idShop) as $row) {
@@ -3583,7 +3589,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, string>|null by language identifier, null when not given
      */
-    protected static function texts(array $group, string $field, string $path, array $languages, array &$errors, bool $required = false): ?array
+    public static function texts(array $group, string $field, string $path, array $languages, array &$errors, bool $required = false): ?array
     {
         $value = $group[$field] ?? null;
         $isos = implode(', ', $languages['filled']);

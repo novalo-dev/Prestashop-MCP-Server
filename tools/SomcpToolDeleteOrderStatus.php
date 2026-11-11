@@ -104,7 +104,7 @@ class SomcpToolDeleteOrderStatus
         $idOrderState = (int) $status->id;
         // Read before deleting, in the shop default language: the merchant
         // needs the name to know which status went.
-        $name = self::defaultName($status);
+        [$name, $nameLanguage] = self::defaultName($status);
 
         // The 14 of PrestaShop and the ones modules add are unremovable, and
         // neither back office offers Delete on them; this is what the list
@@ -169,6 +169,8 @@ class SomcpToolDeleteOrderStatus
             'deleted' => true,
             'status_id' => $idOrderState,
             'name' => $name,
+            // The language of the name, as the write tools key texts.
+            'language' => $nameLanguage,
             'orders_with_it' => $ordersWithIt,
         ]);
     }
@@ -198,31 +200,34 @@ class SomcpToolDeleteOrderStatus
     }
 
     /**
-     * The name of the status in the shop default language, the one the answer
-     * speaks; a text from another language is taken when the default one has
-     * none, rather than answering with an empty name.
+     * The name of the status in the default language of the token's shop, the
+     * one the answer speaks, as [name, iso]; a text from another language is
+     * taken when the default one has none, rather than answering with an
+     * empty name, and the iso then says which.
      *
      * @param OrderState $status loaded in every language
      *
-     * @return string
+     * @return array{0: string, 1: string}
      */
-    private static function defaultName(OrderState $status): string
+    private static function defaultName(OrderState $status): array
     {
+        // The default of the token's shop, not the global one: on a
+        // multistore the two differ (#149).
+        [$idLang, $iso] = SomcpTool::readLanguage([], Somcp::currentShopId()) ?? [0, ''];
         if (!is_array($status->name)) {
-            return trim((string) $status->name);
+            return [trim((string) $status->name), $iso];
         }
 
-        $idLang = (int) Configuration::get('PS_LANG_DEFAULT');
         if ((string) ($status->name[$idLang] ?? '') !== '') {
-            return trim((string) $status->name[$idLang]);
+            return [trim((string) $status->name[$idLang]), $iso];
         }
-        foreach ($status->name as $name) {
+        foreach ($status->name as $idOther => $name) {
             if ((string) $name !== '') {
-                return trim((string) $name);
+                return [trim((string) $name), (string) Language::getIsoById((int) $idOther)];
             }
         }
 
-        return '';
+        return ['', $iso];
     }
 
     /**

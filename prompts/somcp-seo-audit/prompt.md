@@ -61,7 +61,8 @@ installation has its own titles, descriptions and URLs.
 5. **Propose, then write what was approved.** For each fix, show the merchant
    the new title or description, in each language of the shop, and wait for
    their approval. The audit never changes anything. A CMS page is changed with
-   `somcp_update_cms_seo`, one page per call, only in the languages approved;
+   `somcp_update_cms_seo`, one page per call, with the languages approved in
+   `languages` and each text given in each of them;
    its `meta_title` is the page's Meta title, which replaces the page title in
    search results, while the `meta_title` of `somcp_audit_cms_seo` is the page
    title itself. Changing a friendly URL of a displayed page makes the old

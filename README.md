@@ -397,6 +397,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_feature` | ● Get a feature | Features › view |
 | `somcp_create_feature` | ✎ Create a feature | Features › add |
 | `somcp_update_feature` | ✎ Change a feature | Features › edit |
+| `somcp_delete_feature` | ✎ Delete a feature | Features › delete |
 | `somcp_get_feature_value` | ● Get a feature value | Features › view |
 | `somcp_create_feature_value` | ✎ Create a feature value | Features › add |
 | `somcp_update_feature_value` | ✎ Change a feature value | Features › edit |

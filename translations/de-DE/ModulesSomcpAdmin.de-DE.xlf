@@ -1357,6 +1357,11 @@
       <source>Delete a category</source>
       <target>Eine Kategorie löschen</target>
     </trans-unit>
+    <!-- Delete a feature -->
+    <trans-unit id="49995bb3b44ed1568b5b17c445ea18b1" resname="Delete a feature">
+      <source>Delete a feature</source>
+      <target>Ein Merkmal löschen</target>
+    </trans-unit>
     <!-- Delete an attribute group -->
     <trans-unit id="d478cb40b60737d31e2bbeaf42d81fef" resname="Delete an attribute group">
       <source>Delete an attribute group</source>

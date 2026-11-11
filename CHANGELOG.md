@@ -18,6 +18,22 @@ are:
 
 ### Added
 
+**Features the assistant can delete.** The new tool `somcp_delete_feature`
+deletes a feature such as Composition with all its values, as the **Delete**
+action of **Catalog > Attributes & Features > Features** does. As in the back
+office, every product that showed the feature loses it. The answer says how
+many values went, how many products lost the feature, and which catalogue
+price rules still have a condition on one of the deleted values, so you can
+change or remove them. On a multistore installation, a feature shared with
+other stores is refused, because deleting it would empty it in all of them:
+delete it from the back office for all stores. It needs the **delete** right on
+**Features**.
+
+**How many products show a feature.** `somcp_get_feature` now also gives
+`products_count`, the number of products of the store that show the feature,
+so the assistant can tell you what a deletion would take away before asking
+you to confirm.
+
 **Attribute groups the assistant can delete.** The new tool
 `somcp_delete_attribute_group` deletes an attribute group such as Size or Color
 with all its values, as the **Delete** action of **Catalog > Attributes &

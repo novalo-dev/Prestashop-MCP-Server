@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "a demo feature, Composition", "arguments": {"id_feature": 1}, "expect": "ok", "contains": ["\"id_feature\": 1", "Composition", "\"position\"", "\"values_count\"", "\"url_name\"", "\"meta_title\"", "\"indexable\""]},
+    {"why": "a demo feature, Composition", "arguments": {"id_feature": 1}, "expect": "ok", "contains": ["\"id_feature\": 1", "Composition", "\"position\"", "\"values_count\"", "\"products_count\": ", "\"url_name\"", "\"meta_title\"", "\"indexable\""]},
     {"why": "the other demo feature, in a language given by ISO code", "arguments": {"id_feature": 2, "language": "en"}, "expect": "ok", "contains": ["\"id_feature\": 2", "Property", "\"language\": \"en\""]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_feature": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
     {"why": "the identifier as a numeric string", "arguments": {"id_feature": "2"}, "expect": "ok", "contains": ["\"id_feature\": 2"]},

@@ -405,7 +405,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
 
         // Read back rather than echoed from the arguments: what the assistant
         // shows the merchant is what the shop stored.
-        $result['feature'] = SomcpToolGetFeature::feature($idFeature, (int) $plan['languages']['fallback']);
+        $result['feature'] = SomcpToolGetFeature::feature($idFeature, (int) $plan['languages']['fallback'], $idShop);
 
         return SomcpTool::json($result);
     }

@@ -1078,6 +1078,10 @@ T = {
  "Supprimer une catégorie",
  "Eliminar una categoría",
  "Eine Kategorie löschen"),
+"Delete a feature": (
+ "Supprimer une caractéristique",
+ "Eliminar una característica",
+ "Ein Merkmal löschen"),
 "Delete an attribute group": (
  "Supprimer un groupe d'attributs",
  "Eliminar un grupo de atributos",

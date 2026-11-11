@@ -3288,11 +3288,12 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `id_feature` | integer | yes | from `somcp_list_features` |
 | `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
-**Returns** - `id_feature`, `name`, `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
+**Returns** - `id_feature`, `name`, `position`, `values_count`, `products_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
 
 **Notes**
 - Columns of `feature` and `feature_lang`, read through `Feature`; the feature must be in `feature_shop` for the shop of the token, since the constructor takes no shop. `position` is the raw column, 0 for the first.
 - `values_count` counts the predefined values only (`custom` = 0 or NULL), the ones `somcp_list_features` lists: a custom value belongs to one product.
+- `products_count` counts the distinct products of this shop that show the feature, with a predefined or a custom value (`feature_product` joined to `product_shop`), through `SomcpToolGetFeature::productsCount()`, the function `somcp_delete_feature` counts its `products` with: the merchant hears it before confirming a delete.
 - The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_feature` and `layered_indexable_feature_lang_value`, the tables its form reads; a feature the form was never saved for has no row there, and gives `''` and `false`, as the form shows it.
 
 #### `somcp_create_feature`
@@ -3343,6 +3344,34 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - Faceted search fields left out keep what the feature holds, `indexable` included: unlike the creation, it is not turned off when missing. When one of them changes, the rows are written again as the module's form writes them, every language of the shop with its stored text unless a new one was given. A feature whose form was never saved with the module reads as empty texts and not indexable, as `somcp_get_feature` shows it. The module's filter block cache is dropped after any change, a rename included, as its form does.
 - Every problem is reported at once, before anything is written.
 - Replayable: the same values again say `changed: false`. On a lost answer, read `somcp_get_feature` before calling again.
+
+#### `somcp_delete_feature`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminFeatures')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one feature (Composition, Material...) with all its values, as the **Delete** action of **Catalog > Attributes & Features > Features** does.
+
+**Do not use for** - changing a feature (→ `somcp_update_feature`), deleting one product (→ `somcp_delete_product`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_feature` | integer | yes | from `somcp_list_features` or `somcp_get_feature`; a string of digits accepted, as the other feature tools |
+| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+
+**Returns** - `deleted: true`, `id_feature`, `name` (read before the delete with `SomcpToolGetFeature::feature()`, in `language`), `language`, `values_deleted` (all its values, custom ones included), `products` (how many distinct products of this shop showed it, counted with `SomcpToolGetFeature::productsCount()` as `products_count` of `somcp_get_feature`), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a condition on one of its values, left in place by the core). All counted before the delete.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature` missing or not a whole number above 0; a feature not in this shop (`id_feature: no feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeature::existingFeature()`); a feature shared with other shops (see Notes). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same feature is refused the same way, never answered as a success.
+
+**Notes**
+- Irreversible. Through `Feature::delete()`, never with SQL of its own: its values and their texts are deleted, it is removed from every product, `actionFeatureDelete` fires and the positions are reordered. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
+- Before the call, the assistant reads `somcp_get_feature` (`products_count`) and tells the merchant how many products lose the feature, then confirms by name.
+- The core does not touch the catalogue price rules: a condition `{"type": "feature", "id_feature_value": N}` on one of its values stays and then matches nothing. `catalog_price_rules` names them, and the assistant tells the merchant to change or remove those rules.
+- Multistore: unlike `AttributeGroup::delete()`, `Feature::delete()` has no multistore guard and empties the feature in every shop. The tool therefore refuses a feature that `feature_shop` holds for another shop than the token's (`id_feature: shared with <n> other shop(s); deleting it here would remove its values from all of them - delete it from the back office in the all-shops context`), and never switches to the all-shops context itself. A feature of this shop only is deleted with `id_shop_list` set to it. This is the one difference from the back office.
+- One feature per call (**Delete selected** is several calls). Not replayable: a lost answer is checked with `somcp_get_feature`, which then answers "not found".
+
+**Differences between 8.0.1 and 9.0.0** - none in the core method or the list actions.
 
 #### `somcp_get_feature_value`
 **State**: written

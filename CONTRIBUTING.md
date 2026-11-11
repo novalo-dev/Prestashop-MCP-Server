@@ -11,7 +11,7 @@
 
 Thanks for looking. somcp is built for PrestaShop developers by PrestaShop
 developers, and the most useful contributions are the ones listed in
-[ROADMAP.md](ROADMAP.md): more of PrestaShop as tools, tests, clients,
+[ROADMAP.md](ROADMAP.md): the shop from A to Z, tests, clients,
 languages.
 
 Before anything large, open an issue or comment on an existing one, so we agree

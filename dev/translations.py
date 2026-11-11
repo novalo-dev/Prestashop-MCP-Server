@@ -1058,6 +1058,10 @@ T = {
  "Lire une catégorie",
  "Leer una categoría",
  "Eine Kategorie abrufen"),
+"Category KPIs": (
+ "Indicateurs des catégories",
+ "Indicadores de categorías",
+ "Kategorie-Kennzahlen"),
 "Create a category": (
  "Créer une catégorie",
  "Crear una categoría",

@@ -2500,6 +2500,30 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read by the same method `somcp_create_category` and `somcp_update_category` answer with, and checked by the same test of the shop as `somcp_update_category`, so the three tools name every field alike and agree on what exists.
 - A language the shop does not have falls back on the shop default.
 
+#### `somcp_get_category_kpis`
+**State**: written
+**Nature**: `acts(VIEW, 'AdminCategories')` · **Scope**: `mcp.catalog.read`
+
+**Does** - returns the four figures shown above the category list in Catalog > Categories: Disabled Categories, Empty Categories, Top Category (last month) and Average number of products per category, computed as the back office computes them, for the shop of the token.
+
+**Do not use for** - the list of categories (→ `somcp_list_categories`), or one category and its product count (→ `somcp_get_category`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `language` | string | no | ISO code the top category name is read in, refused when the shop does not have it; the shop default when left out; given back as `language` |
+
+**Returns** - `disabled_categories` (integer), `empty_categories` (integer, Home counted when it holds no product directly), `top_category` (`id_category`, `name`, `sales_tax_excl`, `currency` the ISO code of the shop default currency, `date_from`, `date_to` as `YYYY-MM-DD`; `null` when nothing sold in the period), `products_per_category` (integer, rounded) and `language` (the ISO code the name was read in).
+
+**Notes**
+- The four queries of `controllers/admin/AdminStatsController.php` (`getDisabledCategories` line 163, `getEmptyCategories` line 315, `getBestCategory` line 357, `getTotalProducts` / `getTotalCategories` lines 195 and 174), at the same lines on 8.0.1 and 9.0.0, run at each call; the back office KPI cache (`ConfigurationKPI`) is never read or written.
+- Two differences from the screen, so a multistore shop stays correct: the top category is restricted to `orders.id_shop` of the token (the back office query is not), and each sold line is divided by its own order's `conversion_rate` before summing (the back office divides a product's whole sum by one order's rate). On a single-currency shop the figures match the screen.
+- The top category counts every invoiced order line of the period whatever the order's current status, as the back office counts it. The back office query names a category even when nothing sold; this answers `top_category: null` when the best sum is null or zero.
+- An unknown argument or a `language` the shop does not have is refused in the envelope of #169 with `Nothing was read.`; nothing is written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - none.
+
 #### `somcp_create_category`
 **State**: written
 **Nature**: `acts(ADD, 'AdminCategories')` · **Scope**: `mcp.catalog.write`

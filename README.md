@@ -344,6 +344,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 |---|---|---|
 | `somcp_list_categories` | ● List categories | Categories › view |
 | `somcp_get_category` | ● Get a category | Categories › view |
+| `somcp_get_category_kpis` | ● Category KPIs above the list | Categories › view |
 | `somcp_create_category` | ✎ Create a category | Categories › add |
 | `somcp_update_category` | ✎ Change a category | Categories › edit |
 | `somcp_set_category_active` | ✎ Show or hide a category | Categories › edit |

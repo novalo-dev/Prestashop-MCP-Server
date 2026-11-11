@@ -11,6 +11,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_product`
 - `somcp_list_categories`
 - `somcp_get_category`
+- `somcp_get_category_kpis`
 - `somcp_list_manufacturers`
 - `somcp_get_manufacturer`
 - `somcp_list_manufacturer_addresses`

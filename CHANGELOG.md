@@ -18,6 +18,14 @@ are:
 
 ### Added
 
+**The category dashboard figures.** The new tool `somcp_get_category_kpis`
+returns the four numbers shown above the category list in **Catalog >
+Categories**: how many categories are disabled, how many hold no product, the
+best selling category of the last month and the average number of products per
+category, counted as the back office counts them. The assistant reads them in
+one call instead of going through every category one by one. It needs the
+**view** right on **Categories**.
+
 **Compact mode.** More than a hundred tools weigh on every request a connected
 assistant makes, and some cap the count - VS Code stops at 128. In compact
 mode, inspired by the MCP servers of Cloudflare and Azure, connected

@@ -1332,6 +1332,11 @@
       <source>Get a category</source>
       <target>Get a category</target>
     </trans-unit>
+    <!-- Category KPIs -->
+    <trans-unit id="62bcbaca277d2c8face0b81c8aef4047" resname="Category KPIs">
+      <source>Category KPIs</source>
+      <target>Category KPIs</target>
+    </trans-unit>
     <!-- Create a category -->
     <trans-unit id="cff15d43797962a1e28c0515ab556743" resname="Create a category">
       <source>Create a category</source>

@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "the four figures of the demo shop; no demo order has an invoice date in the last month, so top_category is null", "arguments": {}, "expect": "ok", "contains": ["\"disabled_categories\"", "\"empty_categories\"", "\"top_category\": null", "\"products_per_category\"", "\"language\""]},
+    {"why": "the top category name read in a language of the shop asked by its ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have is refused, nothing read", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read", "language: not a language of this shop"]},
+    {"why": "an unknown argument is refused, not ignored", "arguments": {"foo": 1}, "expect": "error", "contains": ["foo: not a field of this tool"]}
+  ]
+}

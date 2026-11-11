@@ -197,6 +197,11 @@ jobs:
               --email=demo@example.com --password=Somcp-shop-test-1 2>&1 | tee ../install.log \
               && exit 0
             echo "Install attempt $attempt failed"
+            # The failed attempt may have compiled the Symfony container
+            # before the native modules were installed; reused by the next
+            # attempt, it lacks their services and the module install then
+            # fails on one of them.
+            rm -rf var/cache/*
             sleep 15
           done
           echo "::error title=Install failed::$(tail -n 40 ../install.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"

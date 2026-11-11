@@ -82,6 +82,16 @@ lists the subcategories deleted and every product moved, turned offline or
 deleted. The root category and Home cannot be deleted. It needs the **delete**
 right on **Categories**.
 
+**Stock movements the assistant can read.** The new tool
+`somcp_list_stock_movements` lists the movements of the **Movements** tab of
+**Catalog > Stock**, newest first: the product and its combination, the
+reference, the type of movement, the quantity added or removed, the date, the
+employee who made it and the order behind it when there is one. It takes the
+filters of that tab - a product, a word of the name, reference or supplier, a
+movement type, an employee, a period, a category, a supplier and the product
+status - so a question such as "who changed the stock of this product
+yesterday" now has an answer. It needs the **view** right on **Stock**.
+
 ### Changed
 
 **A customer read gives back its groups the way its tools take them.**

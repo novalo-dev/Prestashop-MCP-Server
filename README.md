@@ -411,6 +411,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 |---|---|---|
 | `somcp_get_stock` | ● Get the stock of a product | Stock › view |
 | `somcp_list_low_stock` | ● List low stock | Stock › view |
+| `somcp_list_stock_movements` | ● List stock movements | Stock › view |
 | `somcp_set_stock_quantity` | ✎ Set the stock of a product | Stock › edit |
 
 ### 👥 Customers

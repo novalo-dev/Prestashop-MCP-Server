@@ -1086,6 +1086,10 @@ T = {
  "Lister les stocks bas",
  "Listar el stock bajo",
  "Niedrigen Bestand auflisten"),
+"List stock movements": (
+ "Lister les mouvements de stock",
+ "Listar los movimientos de stock",
+ "Lagerbewegungen auflisten"),
 "Search customers": (
  "Rechercher des clients",
  "Buscar clientes",

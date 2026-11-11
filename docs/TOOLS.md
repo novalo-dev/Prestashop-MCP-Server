@@ -3451,6 +3451,39 @@ The quantities the storefront sells against, per product and combination.
 - Read in the shop of the token, restricted as stock sharing decides, as in `somcp_get_stock`. A product still being created, or not in this shop, is not found.
 - A delta is not replayable: a lost answer retried would move the stock twice, which the description says, naming `somcp_get_stock` to check.
 
+#### `somcp_list_stock_movements`
+**State**: written
+**Nature**: `acts(VIEW, 'AdminStockManagement')` · **Scope**: `mcp.stock.read`
+
+**Does** - lists the stock movements of this shop, newest first, as the **Movements** tab of **Catalog > Stock**, with the filters of that tab: who changed a quantity, when, by how much and why.
+
+**Do not use for** - the current quantities (→ `somcp_get_stock`), what runs low (→ `somcp_list_low_stock`), or changing a quantity (→ `somcp_set_stock_quantity`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_product` | integer | no | movements of one product (from `somcp_search_products`) |
+| `id_product_attribute` | integer | no | of one combination of `id_product` (from `somcp_get_stock`); refused without `id_product` |
+| `search` | string | no | part of the product name, reference or supplier name, as the tab's search box |
+| `id_stock_mvt_reason` | integer | no | one movement type, as **Filter by movement type**, from `types` of a previous answer |
+| `id_employee` | integer | no | movements made by one employee, as **Filter by employee**, from `employees` of a previous answer |
+| `date_from` / `date_to` | string | no | days `YYYY-MM-DD`, as **From** / **To** of **Filter by period**, both included (`date_to` up to 23:59:59); a value that is not a day is refused |
+| `id_category` | integer | no | products filed under one category (from `somcp_list_categories`) |
+| `id_supplier` | integer | no | products of one default supplier (from `somcp_list_suppliers`) |
+| `active` | boolean | no | `true` enabled products only, `false` disabled only; all when left out, as **Filter by status** "All" |
+| `language` | string | no | ISO code of one of the shop's active languages, for the product, attribute and type names; refused otherwise; the shop default language when left out |
+| `limit` / `offset` | integer | no | 20 by default, 100 at most |
+
+**Returns** - `movements`, newest first, each with `id_stock_mvt`, `id_product`, `id_product_attribute`, `name`, `attributes` (as `somcp_get_stock` gives them), `reference` (the combination's own when it has one, the product's otherwise), `id_stock_mvt_reason`, `type`, `quantity` (signed: `-2` for two sold), `date` (ISO 8601), `id_employee`, `employee` ("First Last", empty for a movement made by an order) and `id_order` (`null` when none). Plus `returned`, `total_count`, `offset`, `types` (every movement type of the shop: `id_stock_mvt_reason`, `type`, `sign`), `employees` (every employee who made a movement of this shop: `id_employee`, `employee`) and `language`.
+
+**Notes**
+- Read like the core's `StockMovementRepository`: `stock_mvt` joined to `stock_available` on `id_stock`, restricted to the shop through `StockAvailable::addSqlShopRestriction()` as `somcp_get_stock` does, so shared stock shows the movements of the group, as the tab does. A movement of a product deleted since is left out (inner join on `product_shop`).
+- `stock_mvt_reason` differs between installations (12 rows on 8.0.1, 5 on 9.0.0), so an identifier means nothing across shops: `types` is always read from the shop, with its `sign`. It lists every type not deleted, not only the ones used, so a filter can be given before a first movement; `employees` follows the tab and lists only the employees found in the movements.
+- The employee name is the one saved on the movement, as the tab shows it.
+- Errors in the shape of #169, all reported in one answer: unknown arguments; an unknown `id_product`, `id_category` or `id_supplier`, naming the tool to find it with; a combination that is not one of `id_product`; an `id_stock_mvt_reason` not among `types`; a non-boolean `active`; a day that is not one.
+- A read: nothing written, nothing to retry.
+
 ### Customers
 
 Customer accounts and what belongs to them: groups, addresses, a summary of their orders.
@@ -5146,7 +5179,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `threshold` (quantity at or under which a product counts as low).
 
-**Tools** - `somcp_ping`, `somcp_list_low_stock`, `somcp_get_stock`, `somcp_search_products`, `somcp_set_stock_quantity`, `somcp_list_categories`, `somcp_list_suppliers`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_low_stock`, `somcp_get_stock`, `somcp_list_stock_movements`, `somcp_search_products`, `somcp_set_stock_quantity`, `somcp_list_categories`, `somcp_list_suppliers`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - start from `somcp_list_low_stock` or a named product; a quantity is per combination when the product has some; a `delta` moves stock and is never retried: on a lost answer, read `somcp_get_stock` first.
 

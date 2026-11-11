@@ -1,0 +1,32 @@
+{
+  "calls": [
+    {"why": "every movement of the shop, with the types and employees the filters take", "arguments": {}, "expect": "ok", "contains": ["\"movements\"", "\"returned\"", "\"total_count\"", "\"offset\": 0", "\"types\"", "\"id_stock_mvt_reason\"", "\"sign\"", "\"employees\"", "\"language\": \"en\""]},
+    {"why": "the names in a language given by its ISO code", "arguments": {"language": "EN"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read", "language: not a language of this shop"]},
+    {"why": "the movements of one product", "arguments": {"id_product": 7}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "the movements of one combination of the demo tee, whose identifier depends on how the demo data was numbered", "arguments": {"id_product": 1, "id_product_attribute": 1}, "expect": "any"},
+    {"why": "a combination without its product", "arguments": {"id_product_attribute": 1}, "expect": "error", "contains": ["id_product_attribute: give id_product too"]},
+    {"why": "a combination that is not the product's", "arguments": {"id_product": 1, "id_product_attribute": 999999}, "expect": "error", "contains": ["id_product_attribute: no combination of this product has the identifier 999999"]},
+    {"why": "a product that does not exist", "arguments": {"id_product": 999999}, "expect": "error", "contains": ["id_product: no product of this shop has the identifier 999999 - find it with somcp_search_products"]},
+    {"why": "a category that does not exist", "arguments": {"id_category": 999999}, "expect": "error", "contains": ["id_category: no category of this shop has the identifier 999999 - find it with somcp_list_categories"]},
+    {"why": "a supplier that does not exist", "arguments": {"id_supplier": 999999}, "expect": "error", "contains": ["id_supplier: no supplier of this shop has the identifier 999999 - find it with somcp_list_suppliers"]},
+    {"why": "the products of one category", "arguments": {"id_category": 2}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "the products of one default supplier, which depends on the demo suppliers", "arguments": {"id_supplier": 1}, "expect": "any"},
+    {"why": "a movement type the shop does not have", "arguments": {"id_stock_mvt_reason": 999999}, "expect": "error", "contains": ["id_stock_mvt_reason: not one of the movement types of this shop"]},
+    {"why": "the first movement type, whose row depends on the version the shop was installed with", "arguments": {"id_stock_mvt_reason": 1}, "expect": "any"},
+    {"why": "the movements of one employee", "arguments": {"id_employee": 1}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "a period, both days included", "arguments": {"date_from": "2020-01-01", "date_to": "2099-12-31"}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "a period before any movement lists nothing", "arguments": {"date_from": "2000-01-01", "date_to": "2000-01-31"}, "expect": "ok", "contains": ["\"movements\": []", "\"total_count\": 0"]},
+    {"why": "a day that is not a date", "arguments": {"date_from": "2026-02-30"}, "expect": "error", "contains": ["date_from: a date, YYYY-MM-DD"]},
+    {"why": "a period that ends before it starts", "arguments": {"date_from": "2026-02-10", "date_to": "2026-02-01"}, "expect": "error", "contains": ["date_to: a date not before date_from"]},
+    {"why": "enabled products only", "arguments": {"active": true}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "disabled products only", "arguments": {"active": false}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "a status that is not true or false", "arguments": {"active": "yes"}, "expect": "error", "contains": ["active: true or false"]},
+    {"why": "a search that matches nothing", "arguments": {"search": "no-such-product-zz"}, "expect": "ok", "contains": ["\"movements\": []", "\"total_count\": 0"]},
+    {"why": "a page of 100", "arguments": {"limit": 100}, "expect": "ok", "contains": ["\"movements\""]},
+    {"why": "a limit over the cap", "arguments": {"limit": 500}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "the next page", "arguments": {"limit": 5, "offset": 5}, "expect": "ok", "contains": ["\"offset\": 5"]},
+    {"why": "an argument the tool does not take", "arguments": {"id_shop": 2}, "expect": "error", "contains": ["id_shop: not a field of this tool"]},
+    {"why": "every filter together", "arguments": {"id_product": 7, "search": "mug", "id_employee": 1, "date_from": "2020-01-01", "date_to": "2099-12-31", "id_category": 2, "active": true, "language": "en", "limit": 2, "offset": 0}, "expect": "ok", "contains": ["\"offset\": 0"]}
+  ]
+}

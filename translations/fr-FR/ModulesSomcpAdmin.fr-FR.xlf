@@ -1367,6 +1367,11 @@
       <source>List low stock</source>
       <target>Lister les stocks bas</target>
     </trans-unit>
+    <!-- List stock movements -->
+    <trans-unit id="d8bb629718e080207a2881df202766b2" resname="List stock movements">
+      <source>List stock movements</source>
+      <target>Lister les mouvements de stock</target>
+    </trans-unit>
     <!-- Search customers -->
     <trans-unit id="8c21c47c1d902c8a2a72183ab53387d3" resname="Search customers">
       <source>Search customers</source>

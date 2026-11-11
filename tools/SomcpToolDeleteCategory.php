@@ -167,6 +167,10 @@ class SomcpToolDeleteCategory
         // and the links to the deleted categories are gone.
         $described = SomcpToolCreateCategory::category($idCategory, $idLang, $idShop);
         $subcategories = [];
+        // getAllChildren() yields a PrestaShopCollection PHPStan sees only as
+        // ObjectModel, while every row is a Category with its name loaded for
+        // $idLang; the annotation tells the analyser what the run time already is.
+        /** @var Category $child */
         foreach ($category->getAllChildren($idLang) as $child) {
             $subcategories[] = [
                 'id_category' => (int) $child->id,

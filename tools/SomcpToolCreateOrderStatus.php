@@ -55,33 +55,48 @@ require_once __DIR__ . '/SomcpToolCreateFeature.php';
 
 class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
 {
-    /** @var array<int, string> Every argument this tool takes. */
+    /** @var array<int, string> Every argument this tool takes, under the names somcp_list_order_statuses returns. */
     protected const ORDER_STATUS_ARGUMENTS = [
-        'languages', 'name', 'color', 'icon', 'logable', 'invoice', 'hidden', 'send_email',
-        'pdf_invoice', 'pdf_delivery', 'shipped', 'paid', 'in_transit', 'template',
+        'languages', 'name', 'color', 'icon', 'counts_as_valid', 'invoice', 'hidden_from_customer', 'sends_email',
+        'attaches_invoice_pdf', 'attaches_delivery_slip_pdf', 'shipped', 'paid', 'in_transit', 'email_template',
+    ];
+
+    /**
+     * @var array<string, string> The column names this tool took before it took the list's names, and the name
+     *                            each one now goes by. Still accepted, so a call written for the former names
+     *                            keeps working; never both at once.
+     */
+    protected const ORDER_STATUS_FORMER_NAMES = [
+        'logable' => 'counts_as_valid',
+        'hidden' => 'hidden_from_customer',
+        'send_email' => 'sends_email',
+        'pdf_invoice' => 'attaches_invoice_pdf',
+        'pdf_delivery' => 'attaches_delivery_slip_pdf',
+        'template' => 'email_template',
     ];
 
     /**
      * @var array<int, string> What somcp_list_order_statuses returns and this tool refuses, because the shop
      *                         works it out. Named, so the assistant learns why rather than meeting an "unknown field".
      */
-    protected const ORDER_STATUS_COMPUTED = ['id', 'id_order_state', 'roles', 'built_in', 'payment_module'];
+    protected const ORDER_STATUS_COMPUTED = ['id', 'id_order_state', 'status_id', 'roles', 'built_in', 'payment_module'];
 
     /** @var int The size of the name column (OrderState::$definition). */
     protected const ORDER_STATUS_NAME_MAX = 64;
 
     /**
      * @var array<string, string> The form's boxes: the argument the assistant gives, and the column it fills.
-     *                            in_transit is the 9.0.0 name of the box 8.0.1 labels "Show delivery PDF";
-     *                            the column kept the older name, delivery.
+     *                            The arguments are the names somcp_list_order_statuses returns, so a status
+     *                            read there can be given back. in_transit is the 9.0.0 name of the box 8.0.1
+     *                            labels "Show delivery PDF"; the column kept the older name, delivery.
      */
     protected const ORDER_STATUS_BOXES = [
-        'logable' => 'logable',
+        'counts_as_valid' => 'logable',
         'invoice' => 'invoice',
-        'hidden' => 'hidden',
-        'send_email' => 'send_email',
-        'pdf_invoice' => 'pdf_invoice',
-        'pdf_delivery' => 'pdf_delivery',
+        'hidden_from_customer' => 'hidden',
+        'sends_email' => 'send_email',
+        'attaches_invoice_pdf' => 'pdf_invoice',
+        'attaches_delivery_slip_pdf' => 'pdf_delivery',
         'shipped' => 'shipped',
         'paid' => 'paid',
         'in_transit' => 'delivery',
@@ -149,34 +164,84 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
                 ],
                 'icon' => [
                     'type' => 'object',
-                    'description' => 'Merchant. The icon of the status: a GIF file, 16x16 as the form '
-                        . 'suggests. Give url or upload_ref, not both.',
+                    'description' => 'Merchant. A GIF, 16x16. Give url or upload_ref, not both. Written once the '
+                        . 'status exists: an icon refused in the answer means the status was created without one - '
+                        . 'do not call again.',
                     'properties' => [
                         'url' => ['type' => 'string', 'description' => 'Public https address of the icon. Give url or upload_ref, not both.'],
                         'upload_ref' => ['type' => 'string', 'description' => 'Reference of an icon already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],
                     ],
                     'additionalProperties' => false,
                 ],
-                'logable' => $box('Consider the associated order as validated.'),
+                'counts_as_valid' => $box('Consider the associated order as validated.'),
                 'invoice' => $box('Allow a customer to download and view PDF versions of their invoices.'),
-                'hidden' => $box('Hide this status in all customer orders.'),
-                'send_email' => $box('Send an email to the customer when their order status has changed.'),
-                'pdf_invoice' => $box('Attach invoice PDF to the email the status sends.'),
-                'pdf_delivery' => $box('Attach delivery slip PDF to the email the status sends.'),
+                'hidden_from_customer' => $box('Hide this status in all customer orders.'),
+                'sends_email' => $box('Send an email to the customer when their order status has changed.'),
+                'attaches_invoice_pdf' => $box('Attach invoice PDF to the email the status sends.'),
+                'attaches_delivery_slip_pdf' => $box('Attach delivery slip PDF to the email the status sends.'),
                 'shipped' => $box('Set the order as shipped.'),
                 'paid' => $box('Set the order as paid.'),
                 'in_transit' => $box('Set the order as in transit - the box the 8.0.1 form labels "Show delivery PDF".'),
-                'template' => [
+                'email_template' => [
                     'type' => 'object',
-                    'description' => 'Merchant. The mail template sent, one per language being filled, keyed by '
-                        . 'ISO code, among those the form lists for it. Only with send_email: without it, stored '
-                        . 'empty, as the form does.',
+                    'description' => 'Merchant. The email sent, by ISO code: one of the shop\'s own emails (mails/ '
+                        . 'or the theme\'s), never a module\'s. Only with sends_email: without it, stored empty.',
                     'additionalProperties' => ['type' => 'string'],
                 ],
-            ],
+            ] + self::formerNameProperties(),
             'required' => ['name'],
             'additionalProperties' => false,
         ];
+    }
+
+    /**
+     * The former names, still declared so a client that checks arguments against the schema lets them through.
+     *
+     * @return array<string, mixed>
+     */
+    protected static function formerNameProperties(): array
+    {
+        $properties = [];
+        foreach (self::ORDER_STATUS_FORMER_NAMES as $former => $name) {
+            $properties[$former] = [
+                'type' => $name === 'email_template' ? 'object' : 'boolean',
+                'description' => 'Former name of ' . $name . ', still accepted. Give ' . $name . ' instead.',
+            ];
+            if ($name === 'email_template') {
+                $properties[$former]['additionalProperties'] = ['type' => 'string'];
+            }
+        }
+
+        return $properties;
+    }
+
+    /**
+     * The arguments with each former name moved to the name it now goes by.
+     *
+     * Done before anything else reads them, so every check and every message
+     * speaks the list's names. Both names at once are refused rather than one
+     * silently winning over the other.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<int, string> $errors
+     *
+     * @return array<string, mixed>
+     */
+    protected static function currentNames(array $arguments, array &$errors): array
+    {
+        foreach (self::ORDER_STATUS_FORMER_NAMES as $former => $name) {
+            if (!array_key_exists($former, $arguments)) {
+                continue;
+            }
+            if (array_key_exists($name, $arguments)) {
+                $errors[] = $former . ': the former name of ' . $name . ' - give ' . $name . ' only';
+            } else {
+                $arguments[$name] = $arguments[$former];
+            }
+            unset($arguments[$former]);
+        }
+
+        return $arguments;
     }
 
     /**
@@ -217,8 +282,9 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      *
      * @return array<string, mixed>|null
      */
-    private static function planOrderStatus(array $arguments, int $idShop, array &$errors): ?array
+    protected static function planOrderStatus(array $arguments, int $idShop, array &$errors): ?array
     {
+        $arguments = self::currentNames($arguments, $errors);
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;
             if (!in_array($key, self::ORDER_STATUS_ARGUMENTS, true)) {
@@ -282,7 +348,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
             }
         }
 
-        $templates = self::texts($arguments, 'template', 'template', $languages, $errors);
+        $templates = self::texts($arguments, 'email_template', 'email_template', $languages, $errors);
         if ($templates !== null) {
             $plan['texts']['template'] = self::orderStatusTemplates(
                 $templates,
@@ -355,7 +421,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
                 // OrderState::$name is checked with isGenericName.
                 $errors[] = $where . ': a character PrestaShop refuses in an order status name (< > = { }) - ' . self::reason($check);
             } elseif (isset($taken[$idLang][Tools::strtolower($name)])) {
-                $errors[] = $where . ': an order status already has this name, id_order_state '
+                $errors[] = $where . ': an order status already has this name, status_id '
                     . $taken[$idLang][Tools::strtolower($name)] . ' - the merchant could not tell the two apart';
             }
         }
@@ -393,8 +459,10 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      * A template only means something with the email box on: the 8.0.1 form
      * blanks the templates when it is off, and so does this tool - they are
      * stored empty whatever was given, and checked only when they would be
-     * stored. A checked one must be one of the mail templates of its own
-     * language, the list the form offers from mails/<iso>/.
+     * stored. A checked one must be an email the status can actually send in
+     * its own language (mailTemplates()); the emails of modules the 9.0.0
+     * form also lists are refused with the reason, since a status set to one
+     * would send the customer nothing.
      *
      * @param array<int, string> $templates by language identifier
      * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
@@ -412,12 +480,16 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
             if (!$sendEmail || $template === '') {
                 continue;
             }
-            $where = 'template (' . $languages['filled'][$idLang] . ')';
+            $iso = $languages['filled'][$idLang];
+            $where = 'email_template (' . $iso . ')';
             if (($check = $probe->validateField('template', $template, $idLang)) !== true) {
                 $errors[] = $where . ': ' . self::reason($check);
-            } elseif (!in_array($template, self::mailTemplates($languages['filled'][$idLang]), true)) {
-                $errors[] = $where . ': "' . $template . '" is not one of the mail templates of '
-                    . $languages['filled'][$idLang] . ', as the form lists them';
+            } elseif (!in_array($template, self::mailTemplates($iso), true)) {
+                $errors[] = $where . ': ' . (self::isModuleMail($template, $iso)
+                    ? $template . ' is an email of a module - an order status can only send the shop\'s own '
+                        . 'emails (mails/ or the theme\'s), so customers would get nothing'
+                    : '"' . $template . '" is not one of the mail templates of ' . $iso
+                        . ' - the shop\'s own emails, in mails/ or the theme\'s');
             }
         }
 
@@ -425,26 +497,73 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
     }
 
     /**
-     * The mail templates of one language: the .html files of mails/<iso>/.
+     * The mail templates of one language: the emails a status can send in it.
      *
-     * That folder is the list the form offers (34 templates on 8.0.1, 41 on
-     * 9.0.0, and modules add their own there), read the same way on both
-     * versions instead of through a class only one of them has.
+     * OrderHistory::sendEmail() sends the status email with no module, and
+     * Mail::getTemplateBasePath() then looks for <iso>/<template>.html or .txt
+     * in the theme's mails/, the parent theme's, then the shop's mails/ - the
+     * same three folders on 8.0.1 and 9.0.0. A template found in none of them
+     * is logged as missing and no email leaves, so these folders are the list,
+     * not the one either form offers: 8.0.1 forgets the parent theme, 9.0.0
+     * adds the layouts of modules.
      *
      * @param string $iso
      *
      * @return array<int, string>
      */
-    private static function mailTemplates(string $iso): array
+    protected static function mailTemplates(string $iso): array
     {
-        $names = [];
-        $files = glob(_PS_MAIL_DIR_ . $iso . '/*.html');
-        foreach ($files === false ? [] : $files as $file) {
-            $names[] = basename($file, '.html');
+        $bases = [];
+        // The theme read the way somcp_get_theme reads it; a shop whose theme
+        // folder is gone still has the shop's own emails.
+        $theme = SomcpToolGetTheme::shopTheme();
+        if ($theme !== null) {
+            $bases[] = _PS_ROOT_DIR_ . '/themes/' . $theme->getName() . '/mails/';
+            $parent = (string) $theme->get('parent');
+            if ($parent !== '') {
+                $bases[] = _PS_ROOT_DIR_ . '/themes/' . $parent . '/mails/';
+            }
         }
+        $bases[] = _PS_MAIL_DIR_;
+
+        $names = [];
+        foreach ($bases as $base) {
+            // Two globs rather than GLOB_BRACE, which some C libraries lack.
+            foreach (['html', 'txt'] as $extension) {
+                $files = glob($base . $iso . '/*.' . $extension);
+                foreach ($files === false ? [] : $files as $file) {
+                    $names[basename($file, '.' . $extension)] = true;
+                }
+            }
+        }
+        $names = array_map('strval', array_keys($names));
         sort($names);
 
         return $names;
+    }
+
+    /**
+     * Whether a template the status email cannot send is the email of a module.
+     *
+     * Only to say why it is refused: the 9.0.0 form lists these next to the
+     * shop's own, and the merchant picked one there. The name has already
+     * passed Validate::isTplName(), so it holds no glob character.
+     *
+     * @param string $template
+     * @param string $iso
+     *
+     * @return bool
+     */
+    protected static function isModuleMail(string $template, string $iso): bool
+    {
+        foreach (['html', 'txt'] as $extension) {
+            $files = glob(_PS_MODULE_DIR_ . '*/mails/' . $iso . '/' . $template . '.' . $extension);
+            if (is_array($files) && $files !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -562,7 +681,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      *
      * @return array<string, mixed> the source, with stored: true or refused: the reason
      */
-    private static function storeIcon(int $idOrderState, array $source): array
+    protected static function storeIcon(int $idOrderState, array $source): array
     {
         $report = self::imageOrigin($source);
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
@@ -610,66 +729,47 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
     }
 
     /**
-     * One status as somcp_list_order_statuses lists it, read the way it reads.
+     * One status as somcp_list_order_statuses lists it, built by the list's own row function.
      *
-     * The field names are those of the completed list tool (#131): in_transit
-     * for the delivery column, and icon as the public address of its file.
+     * Called rather than copied, so the answer of a write can never drift
+     * from the list it is checked against (#168), and the update tool answers
+     * through it too.
      *
      * @param int $idOrderState
      * @param int $idLang
      *
      * @return array<string, mixed>
      */
-    private static function status(int $idOrderState, int $idLang): array
+    protected static function status(int $idOrderState, int $idLang): array
     {
         $roles = SomcpToolListOrderStatuses::roles();
         foreach (OrderState::getOrderStates($idLang) as $state) {
             if ((int) $state['id_order_state'] === $idOrderState) {
-                return [
-                    'id' => $idOrderState,
-                    'name' => (string) $state['name'],
-                    'roles' => $roles[$idOrderState] ?? [],
-                    'paid' => (bool) $state['paid'],
-                    'shipped' => (bool) $state['shipped'],
-                    'in_transit' => (bool) $state['delivery'],
-                    'sends_email' => (bool) $state['send_email'],
-                    'invoice' => (bool) $state['invoice'],
-                    'counts_as_valid' => (bool) $state['logable'],
-                    'hidden_from_customer' => (bool) $state['hidden'],
-                    'attaches_invoice_pdf' => (bool) $state['pdf_invoice'],
-                    'attaches_delivery_slip_pdf' => (bool) $state['pdf_delivery'],
-                    'built_in' => (bool) $state['unremovable'],
-                    'email_template' => (string) $state['template'],
-                    'payment_module' => (string) $state['module_name'],
-                    'color' => (string) $state['color'],
-                    'icon' => SomcpToolListOrderStatuses::iconUrl($idOrderState),
-                ];
+                return SomcpToolListOrderStatuses::row($state, $roles);
             }
         }
 
         // The row was written a moment ago; not finding it means the read
-        // above raced something. Answer from the object rather than failing
-        // a creation that did go through.
+        // above raced something. Answer from the object, in the shape of a
+        // getOrderStates() row, rather than failing a creation that did go through.
         $stored = new OrderState($idOrderState, $idLang);
 
-        return [
-            'id' => $idOrderState,
+        return SomcpToolListOrderStatuses::row([
+            'id_order_state' => $idOrderState,
             'name' => (string) $stored->name,
-            'roles' => $roles[$idOrderState] ?? [],
-            'paid' => (bool) $stored->paid,
-            'shipped' => (bool) $stored->shipped,
-            'in_transit' => (bool) $stored->delivery,
-            'sends_email' => (bool) $stored->send_email,
-            'invoice' => (bool) $stored->invoice,
-            'counts_as_valid' => (bool) $stored->logable,
-            'hidden_from_customer' => (bool) $stored->hidden,
-            'attaches_invoice_pdf' => (bool) $stored->pdf_invoice,
-            'attaches_delivery_slip_pdf' => (bool) $stored->pdf_delivery,
-            'built_in' => (bool) $stored->unremovable,
-            'email_template' => (string) $stored->template,
-            'payment_module' => (string) $stored->module_name,
+            'paid' => $stored->paid,
+            'shipped' => $stored->shipped,
+            'delivery' => $stored->delivery,
+            'send_email' => $stored->send_email,
+            'invoice' => $stored->invoice,
+            'logable' => $stored->logable,
+            'hidden' => $stored->hidden,
+            'pdf_invoice' => $stored->pdf_invoice,
+            'pdf_delivery' => $stored->pdf_delivery,
+            'unremovable' => $stored->unremovable,
+            'template' => (string) $stored->template,
+            'module_name' => (string) $stored->module_name,
             'color' => (string) $stored->color,
-            'icon' => SomcpToolListOrderStatuses::iconUrl($idOrderState),
-        ];
+        ], $roles);
     }
 }

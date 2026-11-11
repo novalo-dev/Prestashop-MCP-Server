@@ -284,6 +284,13 @@ email template when they ask for them.
   end at an existing one under another name.
 - A name another order status already has in the same language is
   refused: two statuses with one label could not be told apart.
+- A language of the shop left out of `languages` takes the default
+  language's text: say so when only some languages are filled.
+- The icon is written once the status exists. An answer whose `icon` says
+  `refused` means the status was created without one: never call again for
+  it, a second call would be refused on the name.
+- An existing order status is changed in the back office, never by
+  creating a second one next to it.
 - Creating one changes no order: nothing is emailed and nothing moves
   until an order is actually set to it.
 - Not to be retried: if the answer is lost, read

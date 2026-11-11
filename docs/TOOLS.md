@@ -1882,22 +1882,28 @@ status.
 | `languages` | array of strings | no | ISO codes of the languages to fill; all the shop's active languages by default |
 | `name` | object by ISO code | yes | the name of the status, one text per language being filled; a language of the shop left out takes the default language's text |
 | `color` | string | no | the colour the status is highlighted in, a hex code `#RRGGBB` |
-| `icon` | object | no | the icon, a GIF: `url` (a public https address the shop downloads) or `upload_ref` (a file already on the shop), one of the two |
-| `logable` | boolean | no | considers the associated order as validated; off by default |
+| `icon` | object | no | the icon, a GIF: `url` (a public https address the shop downloads) or `upload_ref` (a file already on the shop), one of the two; a refused icon leaves the status created without one |
+| `counts_as_valid` | boolean | no | **Consider the associated order as validated.**; off by default |
 | `invoice` | boolean | no | lets the customer download and view PDF versions of their invoices; off by default |
-| `hidden` | boolean | no | hides the status in all customer orders; off by default |
-| `send_email` | boolean | no | emails the customer when their order reaches this status; off by default |
-| `pdf_invoice` | boolean | no | attaches the invoice PDF to that email; off by default |
-| `pdf_delivery` | boolean | no | attaches the delivery slip PDF to that email; off by default |
+| `hidden_from_customer` | boolean | no | **Hide this status in all customer orders.**; off by default |
+| `sends_email` | boolean | no | emails the customer when their order reaches this status; off by default |
+| `attaches_invoice_pdf` | boolean | no | attaches the invoice PDF to that email; off by default |
+| `attaches_delivery_slip_pdf` | boolean | no | attaches the delivery slip PDF to that email; off by default |
 | `shipped` | boolean | no | sets the order as shipped; off by default |
 | `paid` | boolean | no | sets the order as paid; off by default |
 | `in_transit` | boolean | no | sets the order as in transit - the box 8.0.1 labels **Show delivery PDF**; off by default |
-| `template` | object by ISO code | no | the mail template of the status email, one per language being filled; only stored with `send_email` |
+| `email_template` | object by ISO code | no | the mail template of the status email, one per language being filled; only stored with `sends_email` |
 
-**Returns** - `created`, `id_order_state`, `status` (the status as
-`somcp_list_order_statuses` lists it, `icon` included) and, when an icon was
-given, `icon`: its `url` or `upload_ref`, with `stored: true` or
-`refused: <reason>`.
+The boxes and the template take the names `somcp_list_order_statuses`
+returns, so a status read there can be given back. The former names
+(`logable`, `hidden`, `send_email`, `pdf_invoice`, `pdf_delivery`,
+`template`) are still accepted; a former name next to its current one is
+refused.
+
+**Returns** - `created`, `id_order_state`, `status` (the status built by the
+row function of `somcp_list_order_statuses`, `status_id` and `icon`
+included) and, when an icon was given, `icon`: its `url` or `upload_ref`,
+with `stored: true` or `refused: <reason>`.
 
 **Notes** - the **Add new order status** form of **Shop Parameters > Order
 Settings > Statuses**, read in full on 8.0.1 and 9.0.0. The name follows the
@@ -1908,9 +1914,14 @@ statuses can never wear one label and be mistaken by the merchant or by
 `somcp_set_order_status` called with a name: 8.0.1 refuses it
 (`OrderState::existsLocalizedNameInDatabase()`), the 9.0.0 handler does not
 call the check, and the tool refuses it on both. The colour is checked as
-`somcp_create_attribute_value` checks a swatch. A template must be one of the
-mail templates of its language (`mails/<iso>/`, the list the form offers);
-with `send_email` off the templates are stored empty, as 8.0.1 blanks them.
+`somcp_create_attribute_value` checks a swatch. A template must be an email
+the status can send in its language: `OrderHistory::sendEmail()` sends it
+with no module, and `Mail::getTemplateBasePath()` looks for
+`<iso>/<template>.html` or `.txt` in the theme's `mails/`, the parent theme's,
+then the shop's `mails/`, the same on both versions - the tool reads those
+three folders. The emails of modules are refused with the reason: a status
+set to one would send the customer nothing. With `sends_email` off the
+templates are stored empty, as 8.0.1 blanks them.
 The icon is a GIF only, as the form says, fetched as the product images are -
 `url` downloaded by the shop with its guards, `upload_ref` redeemed from the
 shop's deposits - and stored as `img/os/<id>.gif` as it arrived, as the 9.0.0
@@ -1922,6 +1933,14 @@ the table has no shop column. Every problem is reported at once, before
 anything is written. Not replayable: a lost answer is checked with
 `somcp_list_order_statuses`, and a second call would be refused on the name
 anyway.
+
+**Differences between 8.0.1 and 9.0.0** - the **Template** list of the form:
+8.0.1 lists `mails/<iso>/` and the theme's folder, 9.0.0 the layouts of the
+mail theme, the emails of modules included (41 against 34 files in
+`mails/en/`). The tool accepts the same templates on both, the ones the
+status email can send, and refuses the module emails 9.0.0 lists. The empty
+9.0.0 form fills in `#ffffff` for the colour where 8.0.1 leaves it empty; the
+tool stores an empty colour on both when none is given.
 
 #### `somcp_delete_order_status`
 **State**: written

@@ -78,6 +78,19 @@ switches that did switch it off, and a connected assistant could no longer
 check which shop and account it had reached. Its row now says **Always on**
 like its group, and the tool stays on even where it had been switched off.
 
+**Order statuses created with an email the shop can send, read back as the
+list shows them.** `somcp_create_order_status` only accepted the email
+templates of the shop's `mails/` folder, and refused those of your theme. It
+now accepts every email an order status can send - the theme's, its parent
+theme's and the shop's own - and refuses the emails of modules that
+PrestaShop 9 lists in the form, saying why: a status set to one would send
+your customers nothing. Its boxes and its template now take the names
+`somcp_list_order_statuses` shows (`counts_as_valid`, `hidden_from_customer`,
+`sends_email`, `attaches_invoice_pdf`, `attaches_delivery_slip_pdf`,
+`email_template`), so a status read in the list can be given back; the former
+names still work. Its answer is now built exactly as the list builds a row,
+`status_id` included.
+
 **The help of How long an assistant keeps the list of tools tells the
 truth.** It said every assistant reads the list again once this delay has run
 out. Only the assistants on the latest version of the protocol do; the

@@ -1347,6 +1347,11 @@
       <source>Show or hide a category</source>
       <target>Mostrar u ocultar una categoría</target>
     </trans-unit>
+    <!-- Delete a category -->
+    <trans-unit id="e355230d90581acc2cceaa97773621eb" resname="Delete a category">
+      <source>Delete a category</source>
+      <target>Eliminar una categoría</target>
+    </trans-unit>
     <!-- Get the stock of a product -->
     <trans-unit id="5ce4c0ce8e0b1778f0a99f54abdd5230" resname="Get the stock of a product">
       <source>Get the stock of a product</source>

@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "a category made by the somcp_create_category scenario, under Home and with no product", "arguments": {"id_category": 15, "products": "associate_only"}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_category\": 15", "\"name\": \"Somcp category with a stale upload_ref\"", "\"id_parent\": 2", "\"deleted_subcategories\": []", "\"products_moved\": []", "\"products_deleted\": []", "\"still_in_shops\": 0"]},
+    {"why": "deleted again, nothing changes", "arguments": {"id_category": 15, "products": "associate_only"}, "expect": "error", "contains": ["No category of this shop", "Nothing was deleted"]},
+    {"why": "another one, with the identifier as a string and the products deleted", "arguments": {"id_category": "14", "products": "remove_associated"}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_category\": 14", "\"products_deleted\": []"]},
+    {"why": "Home cannot be deleted", "arguments": {"id_category": 2, "products": "associate_and_disable"}, "expect": "error", "contains": ["root category or the Home of a shop", "Nothing was deleted"]},
+    {"why": "the root category cannot be deleted", "arguments": {"id_category": 1, "products": "associate_and_disable"}, "expect": "error", "contains": ["Nothing was deleted"]},
+    {"why": "no choice for the products", "arguments": {"id_category": 9}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- products: one of associate_and_disable, associate_only, remove_associated"]},
+    {"why": "a choice the dialog does not offer", "arguments": {"id_category": 9, "products": "keep"}, "expect": "error", "contains": ["- products: one of associate_and_disable"]},
+    {"why": "an argument this tool does not know", "arguments": {"id_category": 9, "products": "associate_only", "colour": "red"}, "expect": "error", "contains": ["- colour: not a field of this tool"]},
+    {"why": "an identifier given as a list is not read as category 1", "arguments": {"id_category": [9], "products": "associate_only"}, "expect": "error", "contains": ["No category of this shop"]},
+    {"why": "a category that does not exist", "arguments": {"id_category": 999999, "products": "associate_only"}, "expect": "error", "contains": ["No category of this shop"]}
+  ]
+}

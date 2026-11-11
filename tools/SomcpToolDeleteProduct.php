@@ -98,21 +98,7 @@ class SomcpToolDeleteProduct
         $name = self::defaultName($product);
         $reference = (string) $product->reference;
 
-        // The shop of the token only, whatever the context would otherwise
-        // list: Product::delete() and ObjectModel::delete() both take
-        // id_shop_list over the context when it is set.
-        $product->id_shop_list = [$idShop];
-
-        try {
-            $done = (bool) $product->delete();
-        } catch (Throwable $e) {
-            $done = false;
-        }
-
-        // Product::delete() also answers false when a clean-up step after the
-        // removal fails, so whether the product is still here is asked of
-        // the shop rather than inferred from that answer.
-        $gone = !self::inShop($idProduct, $idShop);
+        [$done, $gone] = self::removeFromShop($product, $idShop);
 
         if (!$done || !$gone) {
             SomcpLogger::log(
@@ -176,6 +162,37 @@ class SomcpToolDeleteProduct
         }
 
         return $product;
+    }
+
+    /**
+     * Deletes the product from the shop of the token, as [deleted, gone].
+     *
+     * Public because somcp_delete_category deletes the products it is asked
+     * to remove the same way, so the two tools never leave a product behind
+     * differently.
+     *
+     * @param Product $product
+     * @param int $idShop
+     *
+     * @return array{0: bool, 1: bool}
+     */
+    public static function removeFromShop(Product $product, int $idShop): array
+    {
+        // The shop of the token only, whatever the context would otherwise
+        // list: Product::delete() and ObjectModel::delete() both take
+        // id_shop_list over the context when it is set.
+        $product->id_shop_list = [$idShop];
+
+        try {
+            $done = (bool) $product->delete();
+        } catch (Throwable $e) {
+            $done = false;
+        }
+
+        // Product::delete() also answers false when a clean-up step after the
+        // removal fails, so whether the product is still here is asked of
+        // the shop rather than inferred from that answer.
+        return [$done, !self::inShop((int) $product->id, $idShop)];
     }
 
     /**

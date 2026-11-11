@@ -70,6 +70,18 @@ and the choices when you change an order. The statuses of PrestaShop and of
 your modules cannot be deleted, as in the back office. It needs the **delete**
 right on **Statuses**.
 
+**Categories the assistant can delete.** The new tool `somcp_delete_category`
+deletes a category with all its subcategories, as the **Delete** action of
+**Catalog > Categories** does, and asks you, as the back office does, what
+becomes of the products left without a category: moved to the parent category
+and turned offline, moved only, or deleted as well. Unlike the back office,
+only the products of the deleted categories are touched, never a product that
+already had no category, and a product whose default category was deleted
+gets the parent category as its new default on PrestaShop 8 too. The answer
+lists the subcategories deleted and every product moved, turned offline or
+deleted. The root category and Home cannot be deleted. It needs the **delete**
+right on **Categories**.
+
 ### Fixed
 
 **Products and shop pages read in the shop's default language.**

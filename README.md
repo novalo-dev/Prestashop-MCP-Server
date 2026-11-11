@@ -347,6 +347,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_category` | ✎ Create a category | Categories › add |
 | `somcp_update_category` | ✎ Change a category | Categories › edit |
 | `somcp_set_category_active` | ✎ Show or hide a category | Categories › edit |
+| `somcp_delete_category` | ✎ Delete a category | Categories › delete |
 
 ### 🏷️ Catalog - Brands
 

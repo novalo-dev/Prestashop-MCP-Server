@@ -1070,6 +1070,10 @@ T = {
  "Afficher ou masquer une catégorie",
  "Mostrar u ocultar una categoría",
  "Eine Kategorie ein- oder ausblenden"),
+"Delete a category": (
+ "Supprimer une catégorie",
+ "Eliminar una categoría",
+ "Eine Kategorie löschen"),
 "Get the stock of a product": (
  "Lire le stock d'un produit",
  "Leer el stock de un producto",

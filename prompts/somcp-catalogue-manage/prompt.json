@@ -34,6 +34,7 @@
     "somcp_create_category",
     "somcp_update_category",
     "somcp_set_category_active",
+    "somcp_delete_category",
     "somcp_create_manufacturer",
     "somcp_update_manufacturer",
     "somcp_set_manufacturer_active",

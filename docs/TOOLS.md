@@ -2549,7 +2549,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 **Does** - shows or hides one category on the storefront: the **Displayed** toggle of the back office category list, and nothing else.
 
-**Do not use for** - any other change (→ `somcp_update_category`). Deleting a category is not offered: it is done in the back office.
+**Do not use for** - any other change (→ `somcp_update_category`), or deleting the category (→ `somcp_delete_category`).
 
 **Parameters**
 
@@ -2567,6 +2567,43 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Multistore: PrestaShop keeps Displayed in `category`, not per shop, so the change shows in every shop sharing the category, as the back office toggle does. The description says so. Positions are only touched in the shop of the token (`id_shop_list`).
 - `active` must be a boolean: a string such as `"false"` is refused rather than read as true. Only a whole number is an identifier.
 - Not replayable: the read tool to check is `somcp_get_category`.
+
+
+#### `somcp_delete_category`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminCategories')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one category with all its subcategories, as the **Delete** action of **Catalog > Categories** does, and settles the products left without a category the way the merchant chose in the dialog "What do you want to do with the products associated with this category?".
+
+**Do not use for** - hiding a category (→ `somcp_set_category_active`), moving it (→ `somcp_update_category` with `id_parent`), deleting one product (→ `somcp_delete_product`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_category` | integer | yes | from `somcp_list_categories`, never guessed |
+| `products` | string | yes | `associate_and_disable`, `associate_only` or `remove_associated` |
+
+| On screen (8.0.1 and 9.0.0) | `products` |
+|---|---|
+| **If they have no other category, I want to associate them with the parent category and turn them offline. (Recommended)** | `associate_and_disable` |
+| **If they have no other category, I want to associate them with the parent category.** | `associate_only` |
+| **If they have no other category, I want to delete them as well.** | `remove_associated` |
+
+`products` is required although the screen checks the first choice: the deletion cannot be undone, so the merchant's choice is given, never assumed.
+
+**Returns** - `deleted: true`, `id_category`, `name`, `id_parent`, `parent_name` (read before the deletion, in the default language of the token's shop), `deleted_subcategories` (`id_category` and `name` of each), the products the call touched, each as `id_product` and `name`: `products_moved` (to the parent), `products_disabled`, `products_deleted`, `products_default_category_changed`, and `still_in_shops`, how many other shops still have the category. `products_not_settled` lists the products that could not be moved, switched off or deleted, when there are any.
+
+**Notes**
+- Irreversible. The description makes the assistant read the category with `somcp_get_category` (`children_count`, `products_count`), tell the merchant how many subcategories go with it and what the chosen mode does to products, then confirm by name.
+- Through `Category::delete()`, so every subcategory goes with it, with its images, group access, product links, cart rule restrictions and group reductions, and `actionCategoryDelete` fires.
+- Only the products of the deleted categories are touched. The core handlers act on every product of the shop that has no category after the deletion, including ones that had none before; the tool reads the products linked to the category and its subcategories (`category_product`, and those whose default category is one of them) before the deletion, and acts on those only.
+- A product left in no category is moved to the parent of the deleted category, which becomes its default (Home when the parent is not in this shop), and switched off with `associate_and_disable`; with `remove_associated` it is deleted the way `somcp_delete_product` deletes one (shop of the token, gone checked after).
+- A product that keeps other categories but whose default category was deleted gets the parent as its new default, and is added to it, as 9.0.0 does; 8.0.1 leaves it pointing at a category that no longer exists, the tool does the same as 9.0.0 on both.
+- Root and Home are refused, by the check `somcp_update_category` uses; a category of another shop, or an identifier that does not exist, is refused like one that does not exist, so a second call never reads as a success.
+- Multistore: `id_shop_list` set to the shop of the token. `Category::delete()` only removes the shared rows when no other shop still has the category; `still_in_shops` says when other shops still have it.
+- Unknown arguments are refused, in the envelope `Nothing was deleted. Correct these and call again:`.
+- Not replayable: the read tool to check is `somcp_list_categories`.
 
 #### `somcp_list_manufacturers`
 **State**: written
@@ -5079,7 +5116,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_get_category`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_get_attribute_value`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_create_feature`, `somcp_update_feature`, `somcp_get_feature_value`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_get_category`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_get_attribute_value`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_create_feature`, `somcp_update_feature`, `somcp_get_feature_value`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

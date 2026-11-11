@@ -34,6 +34,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_category`
 - `somcp_update_category`
 - `somcp_set_category_active`
+- `somcp_delete_category`
 - `somcp_create_manufacturer`
 - `somcp_update_manufacturer`
 - `somcp_set_manufacturer_active`
@@ -348,6 +349,27 @@ multistore installation the change shows in every shop sharing the category.
 `changed: false` means it was already in that state; the root category and Home
 cannot be hidden. On a lost answer, read it with `somcp_get_category` before
 calling twice.
+
+## Deleting a category
+
+`somcp_delete_category` deletes one category for good, with all its
+subcategories. Before calling it:
+
+1. Read the category with `somcp_get_category` and tell the merchant how many
+   subcategories go with it (`children_count`) and how many products it holds
+   (`products_count`).
+2. Ask what becomes of the products left in no category, as the back office
+   asks: moved to the parent and switched off (`associate_and_disable`, the
+   one it recommends), moved only (`associate_only`), or deleted as well
+   (`remove_associated`). Say plainly that the last one deletes products.
+3. Offer to hide it with `somcp_set_category_active` instead, which can be
+   undone, and delete only once the merchant confirms by the category's name.
+
+Products that keep another category stay in it. Show the merchant the lists
+the answer gives: the subcategories deleted, the products moved, switched off
+or deleted, and those whose default category changed. The root category and
+Home cannot be deleted. On a lost answer, look with `somcp_list_categories`
+before calling twice.
 
 ## Creating a brand
 

@@ -193,10 +193,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         $errors = [];
         $plan = self::plan($arguments, $shop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $shop, $idEmployee): array {
@@ -218,14 +215,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     private static function plan(array $arguments, Shop $shop, array &$errors): ?array
     {
         $idShop = (int) $shop->id;
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::CATEGORY_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::ARGUMENTS, self::CATEGORY_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -393,7 +383,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             . ' AND `id_shop` = ' . (int) $shop->id
         );
         if (!$exists) {
-            $errors[] = 'id_parent: no category ' . $idParent . ' in this shop; take one from somcp_list_categories';
+            $errors[] = SomcpTool::notFound('id_parent', 'category', $idParent, 'somcp_list_categories');
         }
 
         return $idParent;
@@ -424,7 +414,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         $groups = [];
         foreach (array_unique(self::ids($value, 'id_group', 'groups', $errors)) as $idGroup) {
             if (!in_array($idGroup, $known, true)) {
-                $errors[] = 'groups: no customer group ' . $idGroup . ' in this shop; take one from somcp_list_customer_groups';
+                $errors[] = SomcpTool::notFound('groups', 'customer group', $idGroup, 'somcp_list_customer_groups');
                 continue;
             }
             $groups[] = $idGroup;
@@ -605,7 +595,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         $type = $typeGiven ? self::string($arguments['redirect_type']) : $currentType;
         if ($typeGiven) {
             if ($type === null || !in_array($type, $types, true)) {
-                $errors[] = 'redirect_type: one of ' . implode(', ', $types);
+                $errors[] = SomcpTool::oneOf('redirect_type', $types);
 
                 return;
             }
@@ -632,7 +622,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             . ' AND `id_shop` = ' . (int) $idShop
         );
         if (!$exists || $target === (int) Configuration::get('PS_ROOT_CATEGORY')) {
-            $errors[] = 'id_type_redirected: no category ' . $target . ' in this shop to redirect to';
+            $errors[] = SomcpTool::notFound('id_type_redirected', 'category', $target, 'somcp_list_categories');
 
             return;
         }

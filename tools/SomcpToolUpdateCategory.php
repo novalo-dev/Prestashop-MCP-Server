@@ -147,9 +147,12 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $idShop = (int) $shop->id;
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $category = self::existingCategory(self::integer($arguments['id_category'] ?? null) ?? 0, $idShop);
+        $idCategory = self::integer($arguments['id_category'] ?? null) ?? 0;
+        $category = self::existingCategory($idCategory, $idShop);
         if ($category === null) {
-            return SomcpTool::text('No category of this shop has this identifier. Nothing was changed. Find it with somcp_list_categories.', true);
+            return SomcpTool::refused('changed', [$idCategory > 0
+                ? SomcpTool::notFound('id_category', 'category', $idCategory, 'somcp_list_categories')
+                : SomcpTool::notAnIdentifier('id_category')]);
         }
         // The Home of this shop has a form of its own in the back office and is
         // changed with its fields; the root, and the Home of another shop, are
@@ -166,10 +169,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $errors = [];
         $plan = self::planUpdate($arguments, $category, $shop, $isHome, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -251,14 +251,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
     {
         $idShop = (int) $shop->id;
         $idCategory = (int) $category->id;
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::CATEGORY_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields(
+            $arguments,
+            array_merge(self::ARGUMENTS, self::OWN_ARGUMENTS),
+            self::CATEGORY_COMPUTED
+        ));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {

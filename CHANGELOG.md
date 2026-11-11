@@ -113,6 +113,16 @@ yesterday" now has an answer. It needs the **view** right on **Stock**.
 
 ### Changed
 
+**Clearer refusals from the category tools.** When the assistant gets a call
+to `somcp_get_category`, `somcp_create_category`, `somcp_update_category`,
+`somcp_set_category_active` or `somcp_delete_category` wrong, the answer now
+lists every problem in the same form, one line per field, and names the field
+concerned. A misspelt field is reported as such instead of being read as a
+missing category, and an unknown category or customer group is always worded
+the same way, with the tool that lists them, so the assistant corrects the
+call instead of trying other identifiers. `somcp_delete_attribute_group`
+answers the same way.
+
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the
 customer, beside the fields `somcp_update_customer` and `somcp_create_customer`

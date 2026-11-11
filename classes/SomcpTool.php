@@ -521,6 +521,120 @@ class SomcpTool
     }
 
     /**
+     * The answer to a call refused before anything was read or written.
+     *
+     * One envelope for every tool: the first line says what did not happen,
+     * then one line per problem, so the assistant fixes every problem in one
+     * go and recognises a refusal by its words, whatever tool it called.
+     *
+     * @param string $nothing what did not happen: created, changed, deleted, sent, recorded or read
+     * @param array<int, string> $problems lines as "<path>: <problem>"
+     *
+     * @return array<string, mixed>
+     */
+    public static function refused(string $nothing, array $problems): array
+    {
+        return self::text(
+            'Nothing was ' . $nothing . ". Correct these and call again:\n- "
+                . implode("\n- ", array_values(array_unique($problems))),
+            true
+        );
+    }
+
+    /**
+     * The lines for the arguments a tool does not take.
+     *
+     * Shared so a misspelt field reads the same in every tool: told the
+     * identifier is wrong, the assistant would try other identifiers rather
+     * than fix the name of the field. A field the matching get returns but
+     * the shop works out gets its own wording, so it is dropped, not renamed.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<int, string> $accepted
+     * @param array<int, string> $computed
+     * @param string $path prefix of a nested object, for example "brand."
+     *
+     * @return array<int, string>
+     */
+    public static function unknownFields(array $arguments, array $accepted, array $computed = [], string $path = ''): array
+    {
+        $problems = [];
+        foreach (array_keys($arguments) as $key) {
+            $key = (string) $key;
+            if (in_array($key, $accepted, true)) {
+                continue;
+            }
+            $problems[] = $path . $key . (in_array($key, $computed, true)
+                ? ': worked out by the shop, so it is not written here'
+                : ': not a field of this tool');
+        }
+
+        return $problems;
+    }
+
+    /**
+     * The line for an identifier the shop does not have.
+     *
+     * One wording so the assistant applies one recovery: find it with the
+     * tool named, never guess another one.
+     *
+     * @param string $path
+     * @param string $thing the word of the back office, for example brand
+     * @param int|string $value
+     * @param string $tool the tool that lists the identifiers
+     *
+     * @return string
+     */
+    public static function notFound(string $path, string $thing, $value, string $tool): string
+    {
+        return $path . ': no ' . $thing . ' of this shop has the identifier ' . $value . ' - find it with ' . $tool;
+    }
+
+    /**
+     * The line for an identifier that is not a whole number above 0.
+     *
+     * Kept apart from notFound(): a list or a word is a mistake in the call,
+     * not an object missing from the shop, and searching would not fix it.
+     *
+     * @param string $path
+     *
+     * @return string
+     */
+    public static function notAnIdentifier(string $path): string
+    {
+        return $path . ': a whole number above 0';
+    }
+
+    /**
+     * The line for a field the running PrestaShop does not have.
+     *
+     * The version is the one the merchant runs, so the answer can be read
+     * back to them as it is.
+     *
+     * @param string $path
+     * @param string $thing
+     *
+     * @return string
+     */
+    public static function notOnThisVersion(string $path, string $thing): string
+    {
+        return $path . ': not on PrestaShop ' . _PS_VERSION_ . ', which has no ' . $thing . '; leave the field out';
+    }
+
+    /**
+     * The line for a value outside a fixed list.
+     *
+     * @param string $path
+     * @param array<int, string> $values the same list as the schema enum
+     *
+     * @return string
+     */
+    public static function oneOf(string $path, array $values): string
+    {
+        return $path . ': one of ' . implode(', ', $values);
+    }
+
+    /**
      * A calendar day given as YYYY-MM-DD, or null when the value is not one.
      *
      * Shared by the tools that take a period, so a date accepted by one is

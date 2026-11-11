@@ -105,31 +105,22 @@ class SomcpToolDeleteAttributeGroup
         $idShop = (int) Somcp::currentShop()->id;
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $errors = [];
-        foreach (array_keys($arguments) as $key) {
-            if (!in_array($key, self::FIELDS, true)) {
-                $errors[] = $key . ': not a field of this tool';
-            }
-        }
+        $errors = SomcpTool::unknownFields($arguments, self::FIELDS);
         $idGroup = SomcpTool::id($arguments, 'id_attribute_group');
         $group = null;
         if ($idGroup === 0) {
             // A cast would read a list as 1 and delete a group nobody named.
-            $errors[] = 'id_attribute_group: a whole number above 0';
+            $errors[] = SomcpTool::notAnIdentifier('id_attribute_group');
         } else {
             // Refused, not ignored: a second call for a group already deleted
             // must not read as a success.
             $group = SomcpToolGetAttributeGroup::existingGroup($idGroup, $idShop);
             if ($group === null) {
-                $errors[] = 'id_attribute_group: no attribute group of this shop has the identifier ' . $idGroup
-                    . ' - find it with somcp_list_attributes';
+                $errors[] = SomcpTool::notFound('id_attribute_group', 'attribute group', $idGroup, 'somcp_list_attributes');
             }
         }
         if ($errors !== [] || $group === null) {
-            return SomcpTool::text(
-                "Nothing was deleted. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('deleted', $errors);
         }
 
         $language = SomcpTool::readLanguage($arguments, $idShop);

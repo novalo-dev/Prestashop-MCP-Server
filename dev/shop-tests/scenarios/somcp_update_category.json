@@ -19,9 +19,9 @@
     {"why": "Home is never moved", "arguments": {"id_category": 2, "id_parent": 3, "position": 0}, "expect": "error", "contains": ["id_parent: Home stays at the top", "position: Home stays at the top"]},
     {"why": "Home redirected while hidden, refused on PrestaShop 9 like every redirection field on 8", "arguments": {"id_category": 2, "redirect_type": "301", "id_type_redirected": 3}, "expect": "error", "contains": ["Nothing was changed"]},
     {"why": "the root category is not changed here", "arguments": {"id_category": 1, "active": false}, "expect": "any"},
-    {"why": "a category that does not exist", "arguments": {"id_category": 999999, "active": false}, "expect": "error", "contains": ["No category of this shop"]},
+    {"why": "a category that does not exist", "arguments": {"id_category": 999999, "active": false}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_category: no category of this shop has the identifier 999999 - find it with somcp_list_categories"]},
     {"why": "an empty name, a computed field, an unknown one and active as a string", "arguments": {"id_category": 7, "languages": ["en"], "name": {"en": " "}, "level": 3, "colour": "red", "active": "false"}, "expect": "error", "contains": ["name: missing in en", "level: worked out by the shop", "colour: not a field of this tool", "active: true or false"]},
     {"why": "a removal next to the field that already replaces it, and an empty list of groups", "arguments": {"id_category": 7, "cover_image": {"url": "https://example.com/cover.jpg"}, "remove_cover_image": true, "groups": []}, "expect": "error", "contains": ["remove_cover_image: not with cover_image", "groups: at least one group"]},
-    {"why": "a parent and a customer group that do not exist", "arguments": {"id_category": 7, "id_parent": 999999, "groups": [999999]}, "expect": "error", "contains": ["no category 999999", "no customer group 999999"]}
+    {"why": "a parent and a customer group that do not exist", "arguments": {"id_category": 7, "id_parent": 999999, "groups": [999999]}, "expect": "error", "contains": ["- id_parent: no category of this shop has the identifier 999999 - find it with somcp_list_categories", "- groups: no customer group of this shop has the identifier 999999 - find it with somcp_list_customer_groups"]}
   ]
 }

@@ -104,33 +104,27 @@ class SomcpToolDeleteCategory
         $idShop = (int) $shop->id;
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $errors = [];
-        foreach (array_keys($arguments) as $key) {
-            if (!in_array($key, ['id_category', 'products'], true)) {
-                $errors[] = $key . ': not a field of this tool';
-            }
-        }
+        $errors = SomcpTool::unknownFields($arguments, ['id_category', 'products']);
         // Required although the dialog checks the first choice: the deletion
         // cannot be undone, so the merchant's choice is given, never assumed.
         $mode = $arguments['products'] ?? null;
         if (!is_string($mode) || !in_array($mode, self::MODES, true)) {
-            $errors[] = 'products: one of ' . implode(', ', self::MODES);
+            $errors[] = SomcpTool::oneOf('products', self::MODES);
         }
-        if ($errors !== []) {
-            return SomcpTool::text(
-                "Nothing was deleted. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
-        }
-
         // Refused, not ignored: a second call for a category already deleted
         // must not read as a success, nor fall on another category.
-        $category = SomcpToolUpdateCategory::existingCategory(SomcpTool::id($arguments, 'id_category'), $idShop);
-        if ($category === null) {
-            return SomcpTool::text(
-                'No category of this shop has this identifier. Nothing was deleted. Find it with somcp_list_categories.',
-                true
-            );
+        $idCategory = SomcpTool::id($arguments, 'id_category');
+        $category = null;
+        if ($idCategory === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_category');
+        } else {
+            $category = SomcpToolUpdateCategory::existingCategory($idCategory, $idShop);
+            if ($category === null) {
+                $errors[] = SomcpTool::notFound('id_category', 'category', $idCategory, 'somcp_list_categories');
+            }
+        }
+        if ($errors !== [] || $category === null) {
+            return SomcpTool::refused('deleted', $errors);
         }
         // Without its root or its Home the shop has no tree to hang anything
         // on, and the back office offers no Delete on them.

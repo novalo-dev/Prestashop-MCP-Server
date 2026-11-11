@@ -387,6 +387,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_attribute_value` | ● Get an attribute value | Attributes › view |
 | `somcp_create_attribute_value` | ✎ Create an attribute value | Attributes › add |
 | `somcp_update_attribute_value` | ✎ Change an attribute value | Attributes › edit |
+| `somcp_delete_attribute_value` | ✎ Delete an attribute value | Attributes › delete |
 
 ### 📋 Catalog - Features
 

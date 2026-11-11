@@ -3160,12 +3160,13 @@ The name and every contact field are one string each, the same in every language
 | `id_attribute` | integer | yes | from `somcp_list_attributes` |
 | `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
-**Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (URL of the current texture, `null` when there is none), and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. A value that is not one of this shop is an error.
+**Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (URL of the current texture, `null` when there is none), when `ps_facetedsearch` is installed and enabled `url_name` and `meta_title`, then `combinations_count` (the combinations of this shop that hold the value, deleted with it by `somcp_delete_attribute_value`) and `products` (the distinct products of those combinations, each as `id_product` and `name`, in `language`). A value that is not one of this shop is an error.
 
 **Notes**
 - Columns of `attribute` and `attribute_lang`, read through `ProductAttribute`; the value must be in `attribute_shop` for the shop of the token, the set `somcp_list_attributes` lists, since the constructor would load it whatever its shop. `position` is the raw column, 0 for the first of its group. `group_name` is the name the back office lists, not the public one.
 - `color` and `texture` are `null` unless the group is of type `color`: only that type draws them on the product page, and a value whose group changed type keeps them stored but unused. The texture is the file PrestaShop keeps in `img/co/` (`_PS_COL_IMG_DIR_`) under the value's identifier, given as its public URL.
 - The faceted search fields are `null` without the module. With it, they are read from `layered_indexable_attribute_lang_value`, the table its form reads; a value the form was never saved for has no row there, and gives `''`, as the form shows it.
+- `combinations_count` and `products` are counted in the shop of the token by `SomcpToolGetAttributeValue::whatGoes()`, the one function `somcp_delete_attribute_value` counts with, so the merchant sees before confirming exactly what the delete reports. A value in no combination gives `0` and `[]`.
 
 #### `somcp_create_attribute_value`
 **State**: written
@@ -3221,6 +3222,34 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - A texture given is always downloaded and written over the current one, as at creation, so giving it again is a change; one that cannot be used leaves the current texture in place and says why in `texture`, and is an error when it was the only change. `remove_texture` deletes `img/co/<id_attribute>.jpg`; on a value without a texture it changes nothing.
 - `ps_facetedsearch` deletes the value's rows of `layered_indexable_attribute_lang_value` in its `actionAttributeSave` hook and writes back only what its form's request carries, so after `update()` the tool writes the rows again: the ones given merged with the ones kept, as `somcp_create_attribute_value` writes them. A call that changes only these fields does not go through `update()`. The module's filter block cache is dropped, as its form does on every save.
 - Every problem is reported at once, before anything is written. Replayable, except for a texture: the same values again write nothing and say `changed: false`.
+
+#### `somcp_delete_attribute_value`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminAttributesGroups')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one value of an attribute (M under Size, Red under Color...), as the **Delete** action of one value on **Catalog > Attributes & Features > Attributes** does.
+
+**Do not use for** - deleting a whole group (→ `somcp_delete_attribute_group`), changing a value (→ `somcp_update_attribute_value`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `id_attribute` | integer | yes | from `somcp_list_attributes` or `somcp_get_attribute_value`; a string of digits accepted, as the other attribute value tools |
+| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+
+**Returns** - `deleted: true`, `id_attribute`, `id_attribute_group`, `name` (read before the delete, in `language`), `language`, `combinations_deleted` (the combinations that held the value, each as `id_product` and `id_product_attribute`, as they were before the call), `default_changed` (the `id_product` of the products that got a new default combination), `cart_rules` (the `id_cart_rule` whose product restrictions held this value), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a condition on it, left in place by the core), `still_in_shops` (how many other shops still hold the value). All counted before the delete, in the shop of the token, through the function shared with `somcp_get_attribute_value`.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute` missing or not a whole number above 0; a value not in this shop (`id_attribute: no attribute value of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeValue::existingValue()`). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same value is refused the same way, never answered as a success.
+
+**Notes**
+- Irreversible. Through `ProductAttribute::delete()`, never with SQL of its own: every combination that uses the value is deleted through `Combination::delete()` with its stock and images, a product that loses its default combination gets the first one left, the cart rule restrictions on the value are cleaned, the other values of the group are reordered and `actionAttributeDelete` fires. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
+- Before the call, the assistant reads `somcp_get_attribute_value` (`combinations_count` and `products`) and tells the merchant what goes and which products are concerned, then confirms by name.
+- The core does not touch the catalogue price rules: a condition `{"type": "attribute", "id_attribute": N}` on the value stays and then matches nothing. `catalog_price_rules` names them, and the assistant tells the merchant to change or remove those rules.
+- Multistore: `id_shop_list` set to the shop of the token, never the all-shops context. The core removes the value only when it has no shop rows to keep (`hasMultishopEntries()`, true for any row once multistore is on); otherwise `ObjectModel::delete()` only takes the value out of this shop, `combinations_deleted`, `default_changed` and `cart_rules` are empty, `catalog_price_rules` is empty and `still_in_shops` says where it remains.
+- One value per call (**Delete selected** is several calls). Not replayable: a lost answer is checked with `somcp_get_attribute_value`, which then answers "not found".
+
+**Differences between 8.0.1 and 9.0.0** - none in the core method or the list actions.
 
 #### `somcp_list_features`
 **State**: written

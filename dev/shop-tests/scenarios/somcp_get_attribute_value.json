@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "a demo value, S under Size, a drop-down list whose values show no colour", "arguments": {"id_attribute": 1, "language": "en"}, "expect": "ok", "contains": ["\"id_attribute\": 1", "\"id_attribute_group\": 1", "\"group_name\": \"Size\"", "\"name\": \"S\"", "\"position\"", "\"color\": null", "\"texture\": null", "\"url_name\"", "\"meta_title\"", "\"language\": \"en\""]},
+    {"why": "a demo value, S under Size, a drop-down list whose values show no colour", "arguments": {"id_attribute": 1, "language": "en"}, "expect": "ok", "contains": ["\"id_attribute\": 1", "\"id_attribute_group\": 1", "\"group_name\": \"Size\"", "\"name\": \"S\"", "\"position\"", "\"color\": null", "\"texture\": null", "\"url_name\"", "\"meta_title\"", "\"combinations_count\"", "\"products\"", "\"language\": \"en\""]},
     {"why": "a demo value of the colour group, Red, with its colour and no texture", "arguments": {"id_attribute": 10, "language": "en"}, "expect": "ok", "contains": ["\"id_attribute\": 10", "\"id_attribute_group\": 2", "\"name\": \"Red\"", "\"color\": \"#E84C3D\"", "\"texture\": null"]},
     {"why": "in the shop default language", "arguments": {"id_attribute": 1}, "expect": "ok", "contains": ["\"id_attribute\": 1"]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_attribute": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},

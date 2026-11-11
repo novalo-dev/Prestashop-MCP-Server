@@ -1362,6 +1362,11 @@
       <source>Delete an attribute group</source>
       <target>Eliminar un grupo de atributos</target>
     </trans-unit>
+    <!-- Delete an attribute value -->
+    <trans-unit id="2149ee35e41d39ad4e7fba18ccb75e28" resname="Delete an attribute value">
+      <source>Delete an attribute value</source>
+      <target>Eliminar un valor de atributo</target>
+    </trans-unit>
     <!-- Get the stock of a product -->
     <trans-unit id="5ce4c0ce8e0b1778f0a99f54abdd5230" resname="Get the stock of a product">
       <source>Get the stock of a product</source>

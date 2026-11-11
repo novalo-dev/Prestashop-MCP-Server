@@ -29,6 +29,19 @@ condition on one of the deleted values, so you can change or remove them. On
 a multistore installation the group only leaves the current store. It needs
 the **delete** right on **Attributes**.
 
+**Attribute values the assistant can delete.** The new tool
+`somcp_delete_attribute_value` deletes one value such as a size or a colour, as
+the **Delete** action of that value on **Catalog > Attributes & Features >
+Attributes** does. As in the back office, the combinations that use the value
+go with their stock and images, a product that loses its default combination
+gets a new one, and the cart rules that restricted on the value are cleaned.
+The answer lists the combinations and products that went, the cart rules that
+changed, and the catalogue price rules that still have a condition on the
+value, so you can change or remove them. Before deleting, `somcp_get_attribute_value`
+now shows **combinations_count** and the **products** that would go, so you can
+confirm with the merchant first. On a multistore installation the value only
+leaves the current store. It needs the **delete** right on **Attributes**.
+
 **The category dashboard figures.** The new tool `somcp_get_category_kpis`
 returns the four numbers shown above the category list in **Catalog >
 Categories**: how many categories are disabled, how many hold no product, the

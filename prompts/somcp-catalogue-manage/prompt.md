@@ -50,6 +50,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_delete_attribute_group`
 - `somcp_create_attribute_value`
 - `somcp_update_attribute_value`
+- `somcp_delete_attribute_value`
 - `somcp_create_feature`
 - `somcp_update_feature`
 - `somcp_create_feature_value`
@@ -617,6 +618,27 @@ and the `note` when there is one. If `texture` says `refused`, the value keeps
 its current texture: tell the merchant why. `changed: false` means the value
 already held those values. On a lost answer, read the value again with
 `somcp_get_attribute_value` before calling twice.
+
+## Deleting an attribute value
+
+`somcp_delete_attribute_value` deletes one value of an attribute for good.
+Before calling it:
+
+1. Take the value from `somcp_list_attributes`, never guessed, and read it with
+   `somcp_get_attribute_value`: `combinations_count` and `products` say how
+   many combinations go with the value and which products offer them.
+2. Say plainly what goes with it: every combination that uses the value is
+   deleted with its stock and images, and a product that loses its default
+   combination gets a new one.
+3. Delete only once the merchant confirms by the value's name.
+
+Show the merchant what the answer counts: the `combinations_deleted`, the
+`default_changed` products, and the `cart_rules` that were cleaned. When
+`catalog_price_rules` is not empty, those rules still have a condition on the
+deleted value and match nothing any more: tell the merchant to change or remove
+them. On multistore, `still_in_shops` says how many other stores keep the
+value. On a lost answer, read it with `somcp_get_attribute_value`, which then
+answers "not found", rather than calling twice.
 
 ## Creating a feature
 

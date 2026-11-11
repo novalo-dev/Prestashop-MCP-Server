@@ -106,7 +106,20 @@ class SomcpToolGetAttributeValue
             );
         }
 
-        return SomcpTool::json(['language' => $iso] + self::attributeValue($idAttribute, $idLang));
+        // What a delete would take with the value, so the merchant sees it
+        // before confirming somcp_delete_attribute_value and never learns it
+        // only from the delete's own answer. Counted by the same function the
+        // delete counts with, so the two tools never disagree.
+        $goes = self::whatGoes($idAttribute, $idShop, $idLang);
+
+        return SomcpTool::json(
+            ['language' => $iso]
+            + self::attributeValue($idAttribute, $idLang)
+            + [
+                'combinations_count' => count($goes['combinations']),
+                'products' => $goes['products'],
+            ]
+        );
     }
 
     /**
@@ -214,5 +227,136 @@ class SomcpToolGetAttributeValue
         $link = Somcp::legacyContext()->link ?? new Link();
 
         return (string) $link->getMediaLink(_THEME_COL_DIR_ . $idAttribute . '.jpg');
+    }
+
+    /**
+     * What a delete of one attribute value takes with it, in the shop of the
+     * token, exactly as ProductAttribute::delete() would: the combinations
+     * that use the value (all deleted, since the core removes a combination
+     * when one of its values goes), the products that lose their default
+     * combination and get a new one, the cart rules whose product
+     * restrictions hold the value and get cleaned, and the catalogue price
+     * rules the core leaves behind with a condition on it.
+     *
+     * Shared by somcp_get_attribute_value, which shows combinations_count and
+     * products before the delete, and somcp_delete_attribute_value, which
+     * reports every list in its answer. One function so the two never
+     * disagree on what goes.
+     *
+     * @param int $idAttribute
+     * @param int $idShop
+     * @param int $idLang
+     *
+     * @return array{combinations: array<int, array<string, int>>, default_changed: array<int, int>, cart_rules: array<int, int>, rules: array<int, int>, products: array<int, array<string, mixed>>}
+     */
+    public static function whatGoes(int $idAttribute, int $idShop, int $idLang): array
+    {
+        $db = Db::getInstance();
+
+        // The combinations of this shop that carry the value, with whether
+        // each is the default of its product. default_on lives on the shop
+        // row, so a product can have a different default per shop.
+        $rows = $db->executeS(
+            'SELECT pa.`id_product_attribute`, pa.`id_product`, pas.`default_on`'
+            . ' FROM `' . _DB_PREFIX_ . 'product_attribute` pa'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_attribute_shop` pas ON pas.`id_product_attribute` = pa.`id_product_attribute`'
+            . ' AND pas.`id_shop` = ' . (int) $idShop
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_attribute_combination` pac ON pac.`id_product_attribute` = pa.`id_product_attribute`'
+            . ' AND pac.`id_attribute` = ' . (int) $idAttribute
+            . ' ORDER BY pa.`id_product`, pa.`id_product_attribute`'
+        ) ?: [];
+
+        $combinations = [];
+        $productIds = [];
+        $deletedPerProduct = [];
+        $defaultProduct = [];
+        foreach ($rows as $row) {
+            $idProduct = (int) $row['id_product'];
+            $combinations[] = [
+                'id_product' => $idProduct,
+                'id_product_attribute' => (int) $row['id_product_attribute'],
+            ];
+            $productIds[$idProduct] = true;
+            $deletedPerProduct[$idProduct] = ($deletedPerProduct[$idProduct] ?? 0) + 1;
+            if ((int) $row['default_on'] === 1) {
+                $defaultProduct[$idProduct] = true;
+            }
+        }
+
+        // A product gets a new default only when its default combination went
+        // and others are left: the total of its combinations in this shop
+        // decides whether any remain.
+        $defaultChanged = [];
+        if ($defaultProduct !== []) {
+            $totals = $db->executeS(
+                'SELECT pa.`id_product`, COUNT(*) AS `total`'
+                . ' FROM `' . _DB_PREFIX_ . 'product_attribute` pa'
+                . ' INNER JOIN `' . _DB_PREFIX_ . 'product_attribute_shop` pas ON pas.`id_product_attribute` = pa.`id_product_attribute`'
+                . ' AND pas.`id_shop` = ' . (int) $idShop
+                . ' WHERE pa.`id_product` IN (' . implode(',', array_map('intval', array_keys($defaultProduct))) . ')'
+                . ' GROUP BY pa.`id_product`'
+            ) ?: [];
+            foreach ($totals as $total) {
+                $idProduct = (int) $total['id_product'];
+                if ((int) $total['total'] > ($deletedPerProduct[$idProduct] ?? 0)) {
+                    $defaultChanged[] = $idProduct;
+                }
+            }
+            sort($defaultChanged);
+        }
+
+        $products = [];
+        if ($productIds !== []) {
+            $names = $db->executeS(
+                'SELECT `id_product`, `name` FROM `' . _DB_PREFIX_ . 'product_lang`'
+                . ' WHERE `id_shop` = ' . (int) $idShop . ' AND `id_lang` = ' . (int) $idLang
+                . ' AND `id_product` IN (' . implode(',', array_map('intval', array_keys($productIds))) . ')'
+            ) ?: [];
+            $byId = [];
+            foreach ($names as $name) {
+                $byId[(int) $name['id_product']] = trim((string) $name['name']);
+            }
+            $ids = array_keys($productIds);
+            sort($ids);
+            foreach ($ids as $idProduct) {
+                $products[] = ['id_product' => $idProduct, 'name' => $byId[$idProduct] ?? ''];
+            }
+        }
+
+        // The cart rules whose product restrictions hold this value: the core
+        // cleans them with cleanProductRuleIntegrity('attributes', ...).
+        $cartRules = $db->executeS(
+            'SELECT DISTINCT g.`id_cart_rule` FROM `' . _DB_PREFIX_ . 'cart_rule_product_rule_value` v'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'cart_rule_product_rule` r ON r.`id_product_rule` = v.`id_product_rule`'
+            . ' AND r.`type` = \'attributes\''
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'cart_rule_product_rule_group` g'
+            . ' ON g.`id_product_rule_group` = r.`id_product_rule_group`'
+            . ' WHERE v.`id_item` = ' . (int) $idAttribute
+            . ' ORDER BY g.`id_cart_rule`'
+        ) ?: [];
+
+        // The value of an attribute condition is the id_attribute, as
+        // somcp_create_catalog_price_rule writes it; the core leaves these.
+        $rules = $db->executeS(
+            'SELECT DISTINCT g.`id_specific_price_rule` FROM `' . _DB_PREFIX_ . 'specific_price_rule_condition` c'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule_condition_group` g'
+            . ' ON g.`id_specific_price_rule_condition_group` = c.`id_specific_price_rule_condition_group`'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule` r ON r.`id_specific_price_rule` = g.`id_specific_price_rule`'
+            . ' AND r.`id_shop` = ' . (int) $idShop
+            . ' WHERE c.`type` = \'attribute\' AND CAST(c.`value` AS UNSIGNED) = ' . (int) $idAttribute
+            . ' ORDER BY g.`id_specific_price_rule`'
+        ) ?: [];
+
+        return [
+            'combinations' => $combinations,
+            'default_changed' => $defaultChanged,
+            'cart_rules' => array_map(static function (array $row): int {
+                return (int) $row['id_cart_rule'];
+            }, $cartRules),
+            'rules' => array_map(static function (array $row): int {
+                return (int) $row['id_specific_price_rule'];
+            }, $rules),
+            'products' => $products,
+        ];
     }
 }

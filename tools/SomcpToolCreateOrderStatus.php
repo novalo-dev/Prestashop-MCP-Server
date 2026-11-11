@@ -379,7 +379,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      *
      * @param array<int, int> $idLangs
      */
-    private static function forgetOrderStatusLists(array $idLangs): void
+    public static function forgetOrderStatusLists(array $idLangs): void
     {
         foreach ($idLangs as $idLang) {
             Cache::clean('OrderState::getOrderStates_' . (int) $idLang);

@@ -850,6 +850,10 @@ T = {
  "Créer un statut de commande",
  "Crear un estado de pedido",
  "Einen Bestellstatus anlegen"),
+"Delete an order status": (
+ "Supprimer un statut de commande",
+ "Eliminar un estado de pedido",
+ "Einen Bestellstatus löschen"),
 "List customer groups": (
  "Lister les groupes de clients",
  "Listar los grupos de clientes",

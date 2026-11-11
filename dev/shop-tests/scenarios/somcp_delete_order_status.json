@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "a built-in status of PrestaShop is refused: no back office offers Delete on an unremovable one", "arguments": {"status_id": 1}, "expect": "error", "contains": ["is a built-in status", "Nothing was deleted"]},
+    {"why": "the identifier read as a string of digits, still a built-in status", "arguments": {"status_id": "2"}, "expect": "error", "contains": ["is a built-in status", "Nothing was deleted"]},
+    {"why": "an identifier that is not a number", "arguments": {"status_id": "2 OR 1=1"}, "expect": "error", "contains": ["No order status of this shop has this identifier", "Nothing was deleted"]},
+    {"why": "an identifier given as a list", "arguments": {"status_id": [1]}, "expect": "error", "contains": ["No order status of this shop has this identifier"]},
+    {"why": "no identifier", "arguments": {}, "expect": "error", "contains": ["No order status of this shop has this identifier"]},
+    {"why": "an order status the merchant never created", "arguments": {"status_id": 999999}, "expect": "error", "contains": ["No order status of this shop has this identifier", "Nothing was deleted"]}
+  ]
+}

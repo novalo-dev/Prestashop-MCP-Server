@@ -1923,6 +1923,30 @@ anything is written. Not replayable: a lost answer is checked with
 `somcp_list_order_statuses`, and a second call would be refused on the name
 anyway.
 
+#### `somcp_delete_order_status`
+**State**: written
+**Nature**: `acts(DELETE, 'AdminStatuses')` · **Scope**: `mcp.orders.write`
+
+**Does** - deletes one order status the merchant created, as the **Delete** action of the order status list of **Shop Parameters > Order Settings > Statuses** does.
+
+**Do not use for** - the statuses of a return (→ `somcp_delete_return_status`): a return status is not an order status, and its identifiers are never order status identifiers.
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `status_id` | integer | yes | from `somcp_list_order_statuses`, never guessed |
+
+**Returns** - `deleted`, `status_id`, `name` (the name in the shop's default language, read before the deletion) and `orders_with_it`, how many orders of the shop still have it as their current status.
+
+**Notes**
+- The deletion is soft on both versions, unlike a return status: the row stays, `deleted` is set to 1 through `OrderState::update()` (as the 9.0.0 `DeleteOrderStateHandler` does), so the orders that had it keep their history and their current status, and `somcp_get_order` still shows its name in `history[]`. The icon file is kept.
+- Once deleted it leaves `OrderState::getOrderStates()`, so it disappears from the list and from the choices of `somcp_set_order_status`.
+- The 14 statuses of PrestaShop and the ones modules add are `unremovable`, and neither back office offers **Delete** on them (the rows `somcp_list_order_statuses` reports with `built_in: true`); the tool refuses them itself, with the status name, before the question of use.
+- Permission `delete` on `AdminStatuses`: the right the back office checks on its delete action for an order status; edit alone does not allow it.
+- Only a whole number is an identifier (`SomcpTool::id()`). An unknown identifier, or one already deleted, is refused pointing to `somcp_list_order_statuses`, never read as a success. Whether the status is gone is read back rather than inferred from `update()`.
+- Not replayable: the read tool to check is `somcp_list_order_statuses`.
+
 #### `somcp_list_carriers`
 **State**: written · [issue #20](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/20)
 **Nature**: `acts(VIEW, 'AdminCarriers')` · **Scope**: `mcp.orders.read`

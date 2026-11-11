@@ -9,6 +9,7 @@ of it can be undone by calling again.
 - `somcp_ping`
 - `somcp_list_order_statuses`
 - `somcp_create_order_status`
+- `somcp_delete_order_status`
 - `somcp_list_return_statuses`
 - `somcp_list_carriers`
 - `somcp_create_return_status`
@@ -287,6 +288,22 @@ email template when they ask for them.
   until an order is actually set to it.
 - Not to be retried: if the answer is lost, read
   `somcp_list_order_statuses` and look for the name before anything else.
+
+## Deleting an order status
+
+When the merchant wants an order status gone, delete it with
+`somcp_delete_order_status` - only after the merchant has confirmed it by
+name: read `somcp_list_order_statuses`, name the exact status, and let them
+say yes to that one before calling.
+
+- The orders that have it keep it: deleting a status takes it off the list
+  and off the choices of `somcp_set_order_status`, but every order already
+  on it keeps it in its history. `orders_with_it` says how many that is.
+- The statuses of PrestaShop and of modules (`built_in: true`) cannot be
+  deleted, and are refused by name. Report a refusal as it comes back; do
+  not work around it.
+- If an answer is lost, read `somcp_list_order_statuses`: a status that is
+  no longer listed is deleted. Do not call again.
 
 ## A new return status
 

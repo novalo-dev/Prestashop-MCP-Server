@@ -53,6 +53,14 @@ office, for you only, and expires after 15 minutes. It needs the **view** right
 on **Orders**. `somcp_get_order` now also gives the number of each credit slip,
 as the **Documents** tab shows it.
 
+**Order statuses the assistant can delete.** The new tool
+`somcp_delete_order_status` removes an order status you created, as the
+**Delete** action of **Shop Parameters > Order Settings > Statuses** does. The
+orders already on it keep it in their history; the status just leaves the list
+and the choices when you change an order. The statuses of PrestaShop and of
+your modules cannot be deleted, as in the back office. It needs the **delete**
+right on **Statuses**.
+
 ### Fixed
 
 **Products and shop pages read in the shop's default language.**

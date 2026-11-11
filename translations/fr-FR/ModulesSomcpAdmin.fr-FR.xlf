@@ -1072,6 +1072,11 @@
       <source>Create an order status</source>
       <target>Créer un statut de commande</target>
     </trans-unit>
+    <!-- Delete an order status -->
+    <trans-unit id="c9f8a8873d6c247939d2f67cc1b6c62c" resname="Delete an order status">
+      <source>Delete an order status</source>
+      <target>Supprimer un statut de commande</target>
+    </trans-unit>
     <!-- List customer groups -->
     <trans-unit id="dacac58a1f9ceee1476795b40c5b8ea8" resname="List customer groups">
       <source>List customer groups</source>

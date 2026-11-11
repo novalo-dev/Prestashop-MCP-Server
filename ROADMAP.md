@@ -45,12 +45,16 @@ one object per call.
 
 ## Tests
 
-Every push runs the CI: the PrestaShop coding standard, PHPStan, Semgrep and
-Psalm, the catalogue, tool and multistore checks, and an end-to-end run of the
-shop tests (`dev/shop-tests/`) that installs the module and exercises the tools,
-OAuth and permissions across PrestaShop 8 and 9. Still wanted is a formal
-PHPUnit unit suite over the same ground: OAuth flows, permission checks, the
-multistore boundary, and the contract with other modules first.
+Every push runs the CI: the PrestaShop coding standard, PHPStan, Semgrep,
+Psalm and Gitleaks, the catalogue, tool and multistore checks, an end-to-end
+run of the shop tests (`dev/shop-tests/`) on every published PrestaShop 8 and
+9 with each PHP version it supports - every tool called from its scenario, its
+permissions checked, the module's public addresses attacked, a ZAP scan, and
+an uninstall that must leave nothing behind - and a real browser
+(`dev/ui-tests/`) through the module's back office pages and the page that
+connects an assistant. Still wanted is a formal PHPUnit unit suite over the
+same ground: OAuth flows, permission checks, the multistore boundary, and the
+contract with other modules first.
 
 ## Clients
 

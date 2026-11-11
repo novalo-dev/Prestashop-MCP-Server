@@ -1,13 +1,14 @@
 {
   "calls": [
     {
-      "why": "lists the return statuses of the demo shop",
+      "why": "lists the return statuses of the demo shop, in the shop default language, said by its ISO code",
       "arguments": {},
       "expect": "ok",
       "contains": [
         "\"statuses\"",
         "\"id_order_return_state\": 1",
-        "\"removable\": false"
+        "\"removable\": false",
+        "\"language\": \"en\""
       ]
     },
     {
@@ -27,7 +28,8 @@
       },
       "expect": "error",
       "contains": [
-        "not one of the shop's"
+        "This language is not one of the shop's, which has",
+        "or leave language out for the shop default"
       ]
     }
   ]

@@ -113,7 +113,8 @@ class SomcpToolSetStockQuantity
 
         $product = SomcpToolGetProduct::locate(
             self::identifier($arguments['id_product'] ?? null),
-            (int) Configuration::get('PS_LANG_DEFAULT'),
+            // The default language of the token's shop, not the global one (#149).
+            (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop),
             $idShop
         );
         if ($product === null) {

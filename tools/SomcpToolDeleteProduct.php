@@ -147,6 +147,8 @@ class SomcpToolDeleteProduct
             'deleted' => true,
             'id_product' => $idProduct,
             'name' => $name,
+            // The language of the name, as the write tools key texts.
+            'language' => self::nameLanguage()[1],
             'reference' => $reference,
             'still_in_shops' => $stillInShops,
         ]);
@@ -212,7 +214,18 @@ class SomcpToolDeleteProduct
     }
 
     /**
-     * The name of the product in the shop default language.
+     * The default language of the token's shop, as [id_lang, iso], read the
+     * way every read tool reads it when no language is given.
+     *
+     * @return array{0: int, 1: string}
+     */
+    private static function nameLanguage(): array
+    {
+        return SomcpTool::readLanguage([], Somcp::currentShopId()) ?? [0, ''];
+    }
+
+    /**
+     * The name of the product in the default language of the token's shop.
      *
      * @param Product $product
      *
@@ -224,7 +237,9 @@ class SomcpToolDeleteProduct
         // Loaded with every language, the name is an array keyed by language;
         // an override or a hook may still leave a single string.
         if (is_array($name)) {
-            $name = $name[(int) Configuration::get('PS_LANG_DEFAULT')] ?? '';
+            // The default language of the token's shop, not the global one:
+            // on a multistore the two differ (#149).
+            $name = $name[self::nameLanguage()[0]] ?? '';
         }
 
         return trim((string) $name);

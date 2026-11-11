@@ -152,14 +152,9 @@ class SomcpToolSearchCustomers
     public static function handle(array $arguments, array $context): array
     {
         $idShop = (int) Somcp::currentShop()->id;
-        $language = self::language($arguments, $idShop);
+        $language = SomcpTool::readLanguage($arguments, $idShop);
         if ($language === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s, which has '
-                    . implode(', ', SomcpToolAuditProductSeo::languages([], $idShop) ?? [])
-                    . '. Give the ISO code of one of them, or leave language out for the shop default.',
-                true
-            );
+            return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $iso] = $language;
 
@@ -340,34 +335,6 @@ class SomcpToolSearchCustomers
             default:
                 return 'c.`date_add` ' . $direction . ', c.`id_customer` ' . $direction;
         }
-    }
-
-    /**
-     * The language to read the social titles and group names in, as
-     * [id_lang, iso], or null for a code the shop does not have.
-     *
-     * Left out, it is the shop default rather than the context language, which
-     * on an MCP call follows the client's browser header. Public so the other
-     * customer tools read their names in the same language for the same input.
-     *
-     * @param array<string, mixed> $arguments
-     * @param int $idShop
-     *
-     * @return array{0: int, 1: string}|null
-     */
-    public static function language(array $arguments, int $idShop): ?array
-    {
-        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
-            $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
-
-            return [$idLang, (string) Language::getIsoById($idLang)];
-        }
-        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
-        if ($languages === null) {
-            return null;
-        }
-
-        return [(int) array_key_first($languages), (string) reset($languages)];
     }
 
     /**

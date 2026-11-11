@@ -122,6 +122,12 @@ class SomcpToolSearchOrders
                         'enum' => ['date_desc', 'date_asc', 'total_desc', 'total_asc'],
                         'description' => 'Order of the results. Most recent first by default.',
                     ],
+                    'language' => [
+                        'type' => 'string',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr, '
+                            . 'for the country and status names; a code the shop does not have is refused. '
+                            . 'The shop default language when left out.',
+                    ],
                     'limit' => [
                         'type' => 'integer',
                         'description' => 'How many orders to return, 20 by default and 100 at most.',
@@ -148,7 +154,13 @@ class SomcpToolSearchOrders
     public static function handle(array $arguments, array $context): array
     {
         $idShop = Somcp::currentShopId();
-        $idLang = (int) Somcp::legacyContext()->language->id;
+        // The shop default rather than the context language, which on an MCP
+        // call follows the client's browser header (#149).
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $languageIso] = $language;
         $idCountry = 0;
         if (isset($arguments['delivery_country']) && trim((string) $arguments['delivery_country']) !== '') {
             $iso = trim((string) $arguments['delivery_country']);
@@ -233,6 +245,8 @@ class SomcpToolSearchOrders
             // one page that it has seen everything.
             'total_count' => $total,
             'offset' => $offset,
+            // The language of the country and status names.
+            'language' => $languageIso,
         ]);
     }
 

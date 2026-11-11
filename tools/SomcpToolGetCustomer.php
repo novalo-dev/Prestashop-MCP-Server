@@ -91,14 +91,9 @@ class SomcpToolGetCustomer
     public static function handle(array $arguments, array $context): array
     {
         $idShop = (int) Somcp::currentShop()->id;
-        $language = SomcpToolSearchCustomers::language($arguments, $idShop);
+        $language = SomcpTool::readLanguage($arguments, $idShop);
         if ($language === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s, which has '
-                    . implode(', ', SomcpToolAuditProductSeo::languages([], $idShop) ?? [])
-                    . '. Give the ISO code of one of them, or leave language out for the shop default.',
-                true
-            );
+            return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $iso] = $language;
 

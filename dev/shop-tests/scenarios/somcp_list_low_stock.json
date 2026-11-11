@@ -1,6 +1,8 @@
 {
   "calls": [
-    {"why": "each line against its own alert level, active products only", "arguments": {}, "expect": "ok", "contains": ["\"lines\"", "\"total_count\"", "\"offset\": 0"]},
+    {"why": "each line against its own alert level, active products only", "arguments": {}, "expect": "ok", "contains": ["\"lines\"", "\"total_count\"", "\"offset\": 0", "\"language\": \"en\""]},
+    {"why": "the names in a language given by its ISO code", "arguments": {"threshold": 1000000, "language": "EN"}, "expect": "ok", "contains": ["\"returned\": 20", "\"language\": \"en\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's, which has", "or leave language out for the shop default"]},
     {"why": "a threshold above every demo quantity fills a full first page", "arguments": {"threshold": 1000000}, "expect": "ok", "contains": ["\"id_product_attribute\"", "\"reference\"", "\"threshold\": 1000000", "\"returned\": 20"]},
     {"why": "a threshold under every quantity lists nothing", "arguments": {"threshold": -1000000}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
     {"why": "inactive products included", "arguments": {"threshold": 1000000, "active": false}, "expect": "ok", "contains": ["\"total_count\""]},

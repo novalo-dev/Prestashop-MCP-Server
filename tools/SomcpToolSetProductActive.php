@@ -219,7 +219,8 @@ class SomcpToolSetProductActive
     }
 
     /**
-     * The name of the product in the shop default language.
+     * The name of the product in the default language of the token's shop,
+     * not the global one: on a multistore the two differ (#149).
      *
      * @param Product $product
      *
@@ -231,7 +232,7 @@ class SomcpToolSetProductActive
         // Loaded with every language, the name is an array keyed by language;
         // an override or a hook may still leave a single string.
         if (is_array($name)) {
-            $name = $name[(int) Configuration::get('PS_LANG_DEFAULT')] ?? '';
+            $name = $name[(int) Configuration::get('PS_LANG_DEFAULT', null, null, Somcp::currentShopId())] ?? '';
         }
 
         return trim((string) $name);

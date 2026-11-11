@@ -98,7 +98,9 @@ class SomcpToolGetOrder
                 'date_add' => (string) $order->date_add,
                 'valid' => (bool) $order->valid,
                 'currency' => (string) $currency->iso_code,
-                'language_id' => $idLang,
+                // The order's own language, the customer's, as the ISO code the
+                // write tools key texts by rather than an identifier no tool lists.
+                'language' => (string) Language::getIsoById($idLang),
                 'payment_method' => (string) $order->payment,
                 'status' => self::status($order, $idLang),
                 // The Order note of the Status tab, written by the shop.

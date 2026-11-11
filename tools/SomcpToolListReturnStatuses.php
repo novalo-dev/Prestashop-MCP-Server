@@ -66,9 +66,9 @@ class SomcpToolListReturnStatuses
                 'properties' => [
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the names in, '
-                            . 'for example fr. The shop default is used otherwise. A '
-                            . 'language the shop does not have is refused.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr, '
+                            . 'for the names; a code the shop does not have is refused. The shop default '
+                            . 'language when left out.',
                     ],
                 ],
                 'additionalProperties' => false,
@@ -89,14 +89,12 @@ class SomcpToolListReturnStatuses
      */
     public static function handle(array $arguments, array $context): array
     {
-        $idLang = self::language($arguments);
-        if ($idLang === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
-                    . 'language out for the shop default.',
-                true
-            );
+        $idShop = Somcp::currentShopId();
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
         }
+        [$idLang, $iso] = $language;
 
         $statuses = [];
         foreach (OrderReturnState::getOrderReturnStates($idLang) as $state) {
@@ -112,35 +110,9 @@ class SomcpToolListReturnStatuses
         return SomcpTool::json([
             'statuses' => $statuses,
             'count' => count($statuses),
-            'language_id' => $idLang,
+            // The ISO code, which the write tools key their texts by, rather
+            // than a language identifier no tool lists.
+            'language' => $iso,
         ]);
-    }
-
-    /**
-     * The language to read the names in, or null when the one asked for is
-     * not one of the shop's.
-     *
-     * The same rule as the SEO audits and somcp_list_meta_pages: a language
-     * the shop does not have is refused rather than silently read in
-     * another one, because the names are the answer here - reading them in
-     * the wrong language without saying so would hand back labels nobody
-     * asked for under the language that was requested.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return int|null
-     */
-    private static function language(array $arguments): ?int
-    {
-        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
-            return (int) Somcp::legacyContext()->language->id;
-        }
-
-        $languages = SomcpToolAuditProductSeo::languages($arguments, Somcp::currentShopId());
-        if ($languages === null) {
-            return null;
-        }
-
-        return (int) array_key_first($languages);
     }
 }

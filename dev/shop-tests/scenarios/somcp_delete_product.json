@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "a demo notebook no other scenario reads", "arguments": {"id_product": 17}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_product\": 17", "\"still_in_shops\": 0"]},
+    {"why": "a demo notebook no other scenario reads", "arguments": {"id_product": 17}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_product\": 17", "\"still_in_shops\": 0", "\"language\": \"en\""]},
     {"why": "deleted again, nothing changes", "arguments": {"id_product": 17}, "expect": "error", "contains": ["No product", "Nothing was deleted"]},
     {"why": "another demo notebook, with the identifier as a string", "arguments": {"id_product": "16"}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_product\": 16"]},
     {"why": "an identifier that is not a number", "arguments": {"id_product": "16 OR 1=1"}, "expect": "error", "contains": ["No product"]},

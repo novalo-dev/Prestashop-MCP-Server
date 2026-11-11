@@ -72,6 +72,21 @@ refused with the list of the ones it has, as the SEO audits now do too. A
 product or a category created with texts in some languages only fills the
 others from the default language of the shop being written to.
 
+**Orders, customers, stock and return statuses read in the shop's default
+language.** `somcp_search_orders` and `somcp_list_low_stock` now take a
+`language`, and with none given read country, status and product names in the
+shop's default language rather than in a language picked from the assistant's
+browser settings - a product name searched in the wrong language found
+nothing. `somcp_list_return_statuses` does the same, refuses a language the
+shop does not have with the list of the ones it has, like the customer tools,
+and says which language its names are in by its code rather than by a number
+no tool lists; so do `somcp_get_order` and `somcp_list_customer_groups`. The
+name in the answer of `somcp_delete_return_status` and `somcp_delete_product`
+is now in the default language of the shop being worked on, with its code, and
+on a multistore the product tools and the free shipping voucher of
+`somcp_create_order` use that shop's default language rather than the global
+one.
+
 **Test the connection can no longer be switched off.** The Connection group of
 **Tools and prompts** said **Always on**, yet `somcp_ping` under it kept two
 switches that did switch it off, and a connected assistant could no longer

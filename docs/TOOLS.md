@@ -353,13 +353,14 @@ or carts that were never paid for (→ Carts).
 | `company` | string | no | customer's company, whole or partial |
 | `only_valid` | boolean | no | paid orders only |
 | `sort` | enum | no | `date_desc` (default), `date_asc`, `total_desc`, `total_asc` |
+| `language` | string | no | ISO code of one of the shop's active languages, for the country and status names, refused otherwise; the shop default when left out; given back as `language` in the answer |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
 **Returns** - per order: `id_order`, `reference`, `date`, `customer_name`,
 `new_client`, `company`, `phone`, `delivery_country` (name in the language
 read), `delivery_country_iso`, `total_paid_tax_incl`, `currency`,
 `payment_method`, `status`, `status_id`, `status_color`. Plus `returned`,
-`total_count` and `offset`.
+`total_count`, `offset` and `language`.
 
 **Notes** - read through a query, not through Order objects: a page would
 otherwise load twenty orders with their customers and addresses. The phone is
@@ -394,8 +395,9 @@ customer has none. The count joins the same tables as the list, so
 `products`, `discounts`, `shipping`, `totals`, `payments`, `history`,
 `documents`, `messages`. Among them, what the order page shows:
 
-- `order`: `status` (`status_id`, the identifier `somcp_set_order_status`
-  takes, `name`, `paid`, `shipped`), `note` (Order note / Order private note),
+- `order`: `language` (the ISO code of the order's language, the customer's,
+  which the names of the order are read in), `status` (`status_id`, the
+  identifier `somcp_set_order_status` takes, `name`, `paid`, `shipped`), `note` (Order note / Order private note),
   `id_cart`, `gift`, `gift_message`, `recycled_packaging`;
 - `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
   `total_spent` with `total_spent_currency`, `private_note` (read only);
@@ -1568,10 +1570,11 @@ identifiers.
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code of the language to read the names in; one the shop does not have is refused, as `somcp_list_meta_pages` refuses it |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - per status: `id_order_return_state`, `name`, `color`, `removable`
-(false for the five built-in statuses, 1 to 5). Plus `count` and `language_id`.
+(false for the five built-in statuses, 1 to 5). Plus `count` and `language`
+(the ISO code the names are in).
 
 **Notes** - read with `OrderReturnState::getOrderReturnStates($idLang)`. The
 five statuses every shop starts with cannot be deleted, on PrestaShop 8 or 9:
@@ -1652,7 +1655,7 @@ lost answer is checked with `somcp_list_return_statuses`.
 |---|---|---|---|
 | `id_order_return_state` | integer | yes | from `somcp_list_return_statuses`, never guessed |
 
-**Returns** - `deleted`, `id_order_return_state` and `name`, the name in the shop's default language.
+**Returns** - `deleted`, `id_order_return_state`, `name`, the name in the default language of the token's shop, and `language`, its ISO code.
 
 **Notes**
 - Irreversible: the description tells the assistant to read the status with `somcp_list_return_statuses` and have the merchant confirm it by name before the call.
@@ -2050,8 +2053,8 @@ one customer's groups (→ `somcp_get_customer`).
 | `default_for` | **Default groups options** | list of `visitors`, `guests`, `customers` (one group can hold several); empty when none |
 
 Plus `count`, `customer_groups_enabled` (**Customer groups** of
-**Performance**: when false the shop ignores groups for prices), `language`
-and `language_id`. Groups of the token's shop only (`group_shop`), sorted by
+**Performance**: when false the shop ignores groups for prices) and
+`language`. Groups of the token's shop only (`group_shop`), sorted by
 **ID** as the list.
 
 **Notes**
@@ -2365,7 +2368,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 |---|---|---|---|
 | `id_product` | integer | yes |  |
 
-**Returns** - `deleted`, `id_product`, `name`, `reference`, and `still_in_shops`: how many other shops still carry the product (0 when it is gone for good).
+**Returns** - `deleted`, `id_product`, `name` (in the default language of the token's shop, given as `language`), `reference`, and `still_in_shops`: how many other shops still carry the product (0 when it is gone for good).
 
 **Notes**
 - Irreversible. The description tells the assistant to ask the merchant first, naming the product by its **name and reference** (read with `somcp_get_product`), and to offer switching it off instead.
@@ -3296,15 +3299,16 @@ The quantities the storefront sells against, per product and combination.
 | `id_category` | integer | no | products associated with this category, its default one or not, from `somcp_list_categories` (**Filter by categories**) |
 | `id_supplier` | integer | no | products whose default supplier this is (`product.id_supplier`), from `somcp_list_suppliers` (**Filter by supplier**) |
 | `search` | string | no | part of the product name, of the product or combination reference, or of the supplier name (**Search products**) |
+| `language` | string | no | ISO code of one of the shop's active languages, for the product names and the search, refused otherwise; the shop default when left out; given back as `language` in the answer |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per line: `id_product`, `id_product_attribute`, `reference`, `name`, `quantity`, `threshold`, `supplier` (the name of the default supplier, the **Supplier** column, `null` when none). Plus `returned`, `total_count` and `offset`.
+**Returns** - per line: `id_product`, `id_product_attribute`, `reference`, `name`, `quantity`, `threshold`, `supplier` (the name of the default supplier, the **Supplier** column, `null` when none). Plus `returned`, `total_count`, `offset` and `language`.
 
 **Notes**
 - One line per thing that can be sold: a product without combinations (`id_product_attribute` 0), or each combination of a product that has some, listed from `product_attribute_shop`. A product with combinations has no line of its own: its quantity is only their total, which can look fine while one size is gone.
 - `quantity` is read from `stock_available`, restricted to the shop or its group by `StockAvailable::addSqlShopRestriction()`, as in `somcp_get_stock`. A combination without a stock row counts as zero.
 - Without `threshold`, a line is compared with its own low stock level (`low_stock_threshold`) - the combination's, or the product's for a product without combinations - and with 0 when none is set. `threshold` on each line is the level used.
-- `reference` is the combination's own on a combination line; `name` is the product's, in the shop default language. Attributes and the physical and reserved quantities are read with `somcp_get_stock`.
+- `reference` is the combination's own on a combination line; `name` is the product's, in the language read (the shop default when none is given). Attributes and the physical and reserved quantities are read with `somcp_get_stock`.
 - Lowest quantity first. A product still being created, or not in this shop, is left out.
 - The filters are those of the **Stock** tab of **Catalog > Stock**, the same on PrestaShop 8 and 9. `search` matches each line on its own: a combination is found by its own reference, without its other combinations. `total_count` counts with every filter applied.
 

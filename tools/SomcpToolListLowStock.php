@@ -84,6 +84,12 @@ class SomcpToolListLowStock
                         'description' => 'Part of the product name, of the product or combination '
                             . 'reference, or of the supplier name.',
                     ],
+                    'language' => [
+                        'type' => 'string',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr, '
+                            . 'for the product names and the search; a code the shop does not have is refused. '
+                            . 'The shop default language when left out.',
+                    ],
                     'limit' => [
                         'type' => 'integer',
                         'description' => 'How many lines to return, 20 by default and 100 at most.',
@@ -112,7 +118,14 @@ class SomcpToolListLowStock
     public static function handle(array $arguments, array $context): array
     {
         $shop = Somcp::currentShop();
-        $idLang = (int) Somcp::legacyContext()->language->id;
+        // The shop default rather than the context language, which on an MCP
+        // call follows the client's browser header: a name searched in one
+        // language would find nothing in another (#149).
+        $language = SomcpTool::readLanguage($arguments, (int) $shop->id);
+        if ($language === null) {
+            return SomcpTool::languageRefused((int) $shop->id);
+        }
+        [$idLang, $iso] = $language;
 
         $threshold = isset($arguments['threshold']) && is_numeric($arguments['threshold'])
             ? (int) $arguments['threshold']
@@ -177,6 +190,8 @@ class SomcpToolListLowStock
             // one page that it has seen everything.
             'total_count' => $total,
             'offset' => $offset,
+            // The language of the names, keyed as the write tools key texts.
+            'language' => $iso,
         ]);
     }
 

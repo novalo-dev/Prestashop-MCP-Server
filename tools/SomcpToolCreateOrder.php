@@ -778,7 +778,9 @@ class SomcpToolCreateOrder
         $rule = new CartRule();
         $rule->code = CartRule::BO_ORDER_CODE_PREFIX . (int) $cart->id;
         $rule->name = [
-            (int) Configuration::get('PS_LANG_DEFAULT') => Somcp::legacyContext()->getTranslator()->trans('Free Shipping', [], 'Admin.Orderscustomers.Feature'),
+            // The default language of the cart's shop, not the global one:
+            // on a multistore the two differ, as line 198 already knows (#149).
+            (int) Configuration::get('PS_LANG_DEFAULT', null, null, (int) $cart->id_shop) => Somcp::legacyContext()->getTranslator()->trans('Free Shipping', [], 'Admin.Orderscustomers.Feature'),
         ];
         $rule->id_customer = (int) $cart->id_customer;
         $rule->free_shipping = true;

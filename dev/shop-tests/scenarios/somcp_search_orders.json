@@ -1,6 +1,8 @@
 {
   "calls": [
-    {"why": "every order, newest first", "arguments": {}, "expect": "ok", "contains": ["total_paid_tax_incl", "new_client", "delivery_country_iso", "status_color", "company"]},
+    {"why": "every order, newest first", "arguments": {}, "expect": "ok", "contains": ["total_paid_tax_incl", "new_client", "delivery_country_iso", "status_color", "company", "\"language\": \"en\""]},
+    {"why": "the country and status names in a language given by its ISO code", "arguments": {"id_order": 1, "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's, which has", "or leave language out for the shop default"]},
     {"why": "one order by identifier", "arguments": {"id_order": 1}, "expect": "ok"},
     {"why": "filters, sort and paging together", "arguments": {"date_from": "2000-01-01", "total_min": 0, "only_valid": false, "limit": 2, "offset": 1}, "expect": "ok"},
     {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "any"},

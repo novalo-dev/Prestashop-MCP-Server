@@ -141,18 +141,13 @@ class SomcpToolListStockMovements
         $idShop = (int) $shop->id;
 
         // Every mistake is reported in one answer, so the call is corrected
-        // in one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        // in one go, through the shared envelope and wordings of #169.
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- language: not a language of this shop, which has '
+            $problems[] = 'language: not a language of this shop, which has '
                 . implode(', ', SomcpTool::activeLanguages($idShop));
         }
         $idLang = $language !== null ? $language[0] : 0;
@@ -171,49 +166,49 @@ class SomcpToolListStockMovements
         ];
 
         if ($filters['id_product'] > 0 && !SomcpToolAddOrderProduct::inShop($filters['id_product'], $idShop)) {
-            $problems[] = '- id_product: no product of this shop has the identifier ' . $filters['id_product']
+            $problems[] = 'id_product: no product of this shop has the identifier ' . $filters['id_product']
                 . ' - find it with somcp_search_products';
         } elseif ($filters['id_product_attribute'] > 0) {
             if ($filters['id_product'] <= 0) {
-                $problems[] = '- id_product_attribute: give id_product too, the product of this combination';
+                $problems[] = 'id_product_attribute: give id_product too, the product of this combination';
             } elseif (!SomcpToolGetProduct::combinationBelongs(
                 new Product($filters['id_product'], false, null, $idShop),
                 $filters['id_product_attribute'],
                 $idShop
             )) {
-                $problems[] = '- id_product_attribute: no combination of this product has the identifier '
+                $problems[] = 'id_product_attribute: no combination of this product has the identifier '
                     . $filters['id_product_attribute'] . ' - read them with somcp_get_stock';
             }
         }
         if ($filters['id_category'] > 0 && !self::exists('category_shop', 'id_category', $filters['id_category'], $idShop)) {
-            $problems[] = '- id_category: no category of this shop has the identifier ' . $filters['id_category']
+            $problems[] = 'id_category: no category of this shop has the identifier ' . $filters['id_category']
                 . ' - find it with somcp_list_categories';
         }
         if ($filters['id_supplier'] > 0 && !self::exists('supplier_shop', 'id_supplier', $filters['id_supplier'], $idShop)) {
-            $problems[] = '- id_supplier: no supplier of this shop has the identifier ' . $filters['id_supplier']
+            $problems[] = 'id_supplier: no supplier of this shop has the identifier ' . $filters['id_supplier']
                 . ' - find it with somcp_list_suppliers';
         }
 
         $types = self::types($idLang);
         if ($filters['id_stock_mvt_reason'] > 0
             && !in_array($filters['id_stock_mvt_reason'], array_column($types, 'id_stock_mvt_reason'), true)) {
-            $problems[] = '- id_stock_mvt_reason: not one of the movement types of this shop, listed in types';
+            $problems[] = 'id_stock_mvt_reason: not one of the movement types of this shop, listed in types';
         }
 
         if ($filters['date_from'] !== null && $filters['date_to'] !== null && $filters['date_to'] < $filters['date_from']) {
-            $problems[] = '- date_to: a date not before date_from';
+            $problems[] = 'date_to: a date not before date_from';
         }
 
         if (array_key_exists('search', $arguments) && $arguments['search'] !== null) {
             if (!is_string($arguments['search'])) {
-                $problems[] = '- search: a text';
+                $problems[] = 'search: a text';
             } else {
                 $filters['search'] = trim($arguments['search']);
             }
         }
         if (array_key_exists('active', $arguments) && $arguments['active'] !== null) {
             if (!is_bool($arguments['active'])) {
-                $problems[] = '- active: true or false';
+                $problems[] = 'active: true or false';
             } else {
                 $filters['active'] = $arguments['active'];
             }
@@ -222,7 +217,7 @@ class SomcpToolListStockMovements
         $limit = self::DEFAULT_LIMIT;
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
             if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT) {
-                $problems[] = '- limit: a whole number from 1 to ' . self::MAX_LIMIT;
+                $problems[] = 'limit: a whole number from 1 to ' . self::MAX_LIMIT;
             } else {
                 $limit = (int) $arguments['limit'];
             }
@@ -230,17 +225,14 @@ class SomcpToolListStockMovements
         $offset = 0;
         if (array_key_exists('offset', $arguments) && $arguments['offset'] !== null) {
             if (!is_int($arguments['offset']) || $arguments['offset'] < 0) {
-                $problems[] = '- offset: a whole number, 0 at least';
+                $problems[] = 'offset: a whole number, 0 at least';
             } else {
                 $offset = (int) $arguments['offset'];
             }
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
@@ -501,7 +493,7 @@ class SomcpToolListStockMovements
         }
         $id = SomcpTool::id($arguments, $field);
         if ($id <= 0) {
-            $problems[] = '- ' . $field . ': a positive identifier';
+            $problems[] = $field . ': a positive identifier';
         }
 
         return $id;
@@ -524,7 +516,7 @@ class SomcpToolListStockMovements
         }
         $day = SomcpTool::day($arguments[$field]);
         if ($day === null) {
-            $problems[] = '- ' . $field . ': a date, YYYY-MM-DD';
+            $problems[] = $field . ': a date, YYYY-MM-DD';
         }
 
         return $day;

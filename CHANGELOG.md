@@ -198,7 +198,9 @@ combination together in one answer. The lists `somcp_list_categories`,
 instead of answering the whole list as if it had been applied, refuse an
 Enabled filter that is not true or false instead of ignoring it, and word an
 unknown attribute group or feature as the matching read tool does, with the
-identifier given.
+identifier given. `somcp_list_stock_movements` and `somcp_get_category_kpis`,
+written more recently, name a misspelt field or filter and read nothing the
+same way, so every catalogue and stock refusal reads alike.
 
 **Refusals of the order writes read like the others.** The refund, return
 and cancel tools, the tools that add, change or delete an order line or a

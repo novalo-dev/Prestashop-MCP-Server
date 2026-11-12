@@ -90,9 +90,22 @@ class SomcpToolListFeatures
         // A feature asked for by identifier must be one of this shop: an
         // identifier that matches nothing is said, not answered with an empty
         // list the assistant would read as "this feature has no values".
+        // Every problem of the call in one answer, a misspelt field included:
+        // ignored, it would answer every feature for the one asked for.
+        $errors = SomcpTool::unknownFields($arguments, ['id_feature', 'language']);
         $idFeature = null;
         if (isset($arguments['id_feature'])) {
-            $idFeature = is_scalar($arguments['id_feature']) ? (int) $arguments['id_feature'] : 0;
+            // A cast would read an array as 1 and answer about a feature
+            // nobody asked for: only a whole number is an identifier.
+            $idFeature = SomcpTool::id($arguments, 'id_feature');
+            if ($idFeature === 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_feature');
+            } elseif (SomcpToolGetFeature::existingFeature($idFeature, $idShop) === null) {
+                $errors[] = SomcpTool::notFound('id_feature', 'feature', $idFeature, 'somcp_list_features');
+            }
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
         // Queries rather than Feature::getFeatures() and
@@ -131,13 +144,6 @@ class SomcpToolListFeatures
                 'values_count' => 0,
                 'values' => [],
             ];
-        }
-
-        if ($idFeature !== null && $features === []) {
-            return SomcpTool::text(
-                'No feature of this shop has this identifier. List them all with somcp_list_features, without id_feature.',
-                true
-            );
         }
 
         if ($features !== []) {

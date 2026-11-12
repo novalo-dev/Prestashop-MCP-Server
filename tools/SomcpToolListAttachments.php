@@ -92,6 +92,12 @@ class SomcpToolListAttachments
         }
         [$idLang, $iso] = $language;
 
+        // A misspelt filter, ignored, would widen the list without a word.
+        $errors = SomcpTool::unknownFields($arguments, ['name', 'file_name', 'language']);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $query = new DbQuery();
         $query->select('a.`id_attachment`, al.`name`, al.`description`, a.`file_name`, a.`file_size`, a.`mime`');
         $query->from('attachment', 'a');

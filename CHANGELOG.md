@@ -192,7 +192,13 @@ is read, switched, deleted or moved, an unknown product is worded with the
 identifier given and `somcp_search_products`, a combination the product does
 not have points to `somcp_get_product` or `somcp_get_stock`, and a stock change
 reports a quantity that is not a whole number, a missing product and a wrong
-combination together in one answer.
+combination together in one answer. The lists `somcp_list_categories`,
+`somcp_list_attachments`, `somcp_list_attributes`, `somcp_list_features`,
+`somcp_list_manufacturers` and `somcp_list_suppliers` name a misspelt filter
+instead of answering the whole list as if it had been applied, refuse an
+Enabled filter that is not true or false instead of ignoring it, and word an
+unknown attribute group or feature as the matching read tool does, with the
+identifier given.
 
 **Refusals of the order writes read like the others.** The refund, return
 and cancel tools, the tools that add, change or delete an order line or a

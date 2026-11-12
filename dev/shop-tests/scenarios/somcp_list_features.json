@@ -4,7 +4,11 @@
     {"why": "one feature only", "arguments": {"id_feature": 1}, "expect": "ok", "contains": ["\"count\": 1", "\"id_feature\": 1", "Composition", "Polyester"]},
     {"why": "in a language given by ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"id_feature\": 1", "Composition", "\"language\": \"en\""]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
-    {"why": "a feature that does not exist", "arguments": {"id_feature": 999999}, "expect": "error"},
-    {"why": "no identifier", "arguments": {"id_feature": 0}, "expect": "error"}
+    {"why": "a feature that does not exist", "arguments": {"id_feature": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_feature: no feature of this shop has the identifier 999999 - find it with somcp_list_features"]},
+    {"why": "the feature identifier as a numeric string", "arguments": {"id_feature": "1"}, "expect": "ok", "contains": ["\"count\": 1", "\"id_feature\": 1"]},
+    {"why": "no identifier", "arguments": {"id_feature": 0}, "expect": "error", "contains": ["- id_feature: a whole number above 0"]},
+    {"why": "a feature identifier that is not a number is not read as feature 1", "arguments": {"id_feature": [1]}, "expect": "error", "contains": ["- id_feature: a whole number above 0"]},
+    {"why": "a misspelt field is named, not ignored into the list of every feature", "arguments": {"id_featrue": 1}, "expect": "error", "contains": ["Nothing was read", "- id_featrue: not a field of this tool"]},
+    {"why": "every problem of the call in one answer", "arguments": {"id_feature": 999999, "feature": 1}, "expect": "error", "contains": ["- feature: not a field of this tool", "- id_feature: no feature of this shop has the identifier 999999"]}
   ]
 }

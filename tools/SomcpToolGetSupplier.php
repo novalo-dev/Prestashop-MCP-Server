@@ -97,13 +97,15 @@ class SomcpToolGetSupplier
 
         // A cast would read an array as 1 and answer about a supplier nobody
         // asked for: only a whole number is an identifier.
-        $value = $arguments['id_supplier'] ?? null;
-        $idSupplier = is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
-
-        if (self::existingSupplier($idSupplier, $idShop) === null) {
-            return SomcpTool::text('No supplier of this shop has this identifier. Find it with somcp_list_suppliers.', true);
+        $idSupplier = SomcpTool::id($arguments, 'id_supplier');
+        $errors = SomcpTool::unknownFields($arguments, ['id_supplier', 'language']);
+        if ($idSupplier === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_supplier');
+        } elseif (self::existingSupplier($idSupplier, $idShop) === null) {
+            $errors[] = SomcpTool::notFound('id_supplier', 'supplier', $idSupplier, 'somcp_list_suppliers');
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
         return SomcpTool::json(['language' => $iso] + self::supplier($idSupplier, $idLang, $idShop));

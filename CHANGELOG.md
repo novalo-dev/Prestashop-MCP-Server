@@ -179,6 +179,13 @@ answer as any other mistake. The read tools `somcp_get_attribute_group`,
 now answer this way too: a misspelt field is named instead of being read as a
 missing record, and an unknown attribute group, attribute value, feature or
 feature value is worded with the identifier given and the tool that lists it.
+The brand and supplier tools `somcp_get_manufacturer`, `somcp_get_supplier`,
+`somcp_get_manufacturer_address`, `somcp_list_manufacturer_addresses`,
+`somcp_set_manufacturer_active`, `somcp_set_supplier_active` and
+`somcp_delete_manufacturer_address` follow the same rule: a misspelt field or
+filter is named and nothing is read, changed or deleted, rather than being
+ignored or read as a missing brand, and an unknown country code and an unknown
+brand are reported together in one answer.
 
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the

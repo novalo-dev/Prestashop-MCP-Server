@@ -5,8 +5,9 @@
     {"why": "disabled again, nothing changes", "arguments": {"id_manufacturer": 1, "active": false}, "expect": "ok", "contains": ["\"changed\": false", "already disabled"]},
     {"why": "enabled again, with the identifier as a string", "arguments": {"id_manufacturer": "1", "active": true}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": true"]},
     {"why": "enabled again, nothing changes", "arguments": {"id_manufacturer": 1, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "already enabled"]},
-    {"why": "a state given as a string is refused", "arguments": {"id_manufacturer": 1, "active": "false"}, "expect": "error", "contains": ["true or false"]},
-    {"why": "an identifier given as a list is not read as brand 1", "arguments": {"id_manufacturer": [1], "active": false}, "expect": "error", "contains": ["No brand of this shop"]},
-    {"why": "a brand that does not exist", "arguments": {"id_manufacturer": 999999, "active": false}, "expect": "error", "contains": ["No brand of this shop", "Nothing was changed"]}
+    {"why": "a state given as a string is refused", "arguments": {"id_manufacturer": 1, "active": "false"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- active: true or false"]},
+    {"why": "an identifier given as a list is not read as brand 1", "arguments": {"id_manufacturer": [1], "active": false}, "expect": "error", "contains": ["- id_manufacturer: a whole number above 0"]},
+    {"why": "a brand that does not exist", "arguments": {"id_manufacturer": 999999, "active": false}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_manufacturer: no brand of this shop has the identifier 999999 - find it with somcp_list_manufacturers"]},
+    {"why": "a misspelt field is named and nothing is changed", "arguments": {"id_manufacturer": 1, "activ": false}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- activ: not a field of this tool", "- active: true or false"]}
   ]
 }

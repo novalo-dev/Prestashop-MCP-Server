@@ -83,7 +83,8 @@ once, in a few seconds, with your GitHub account.
   `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`, `mcp.catalog.write`,
   `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`, `mcp.customers.write`,
   `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`, `mcp.content.read`,
-  `mcp.modules.read`, `mcp.modules.write`, `mcp.appearance.read`,
+  `mcp.modules.read`, `mcp.modules.write`, `mcp.modules.upload`,
+  `mcp.appearance.read`,
   `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`,
   `mcp.sales.read`, `mcp.sales.write`. Other
   modules

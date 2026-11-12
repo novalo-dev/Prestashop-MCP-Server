@@ -4069,6 +4069,42 @@ The modules present on the shop, their state and version.
 
 **Differences between 8.0.1 and 9.0.0** - the install event is dispatched even after a failed install on 8.0.1, only after a success on 9.0.0: the state is read back in both cases rather than assumed. 9.0.0 also refreshes the translation catalogues before installing and can install from a remote zip; neither changes the tool.
 
+#### `somcp_upload_module`
+**State**: written · [issue #171](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/171)
+**Nature**: `acts(ADD, 'AdminModulesSf')` · **Scope**: `mcp.modules.upload`
+
+**Does** - puts a module archive (`.zip`) the employee deposited on the shop into the `modules` folder and installs it right after - the **Upload a module** button of **Modules > Module Manager** - and answers as `somcp_install_module` does.
+
+**Do not use for** - a module already on disk (→ `somcp_install_module`); upgrading a module from a newer archive; a module from a link or the marketplace.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `upload_ref` | **Upload a module** | string | yes | a `.zip` already on the shop: attached to the chat, or deposited on the page `SomcpUpload::request()` opens (kind `archive`), the same `upload_ref` as the product images |
+
+No `url`: a link read anywhere would become code running on the shop. No `name`: it comes from the archive.
+
+**Returns** - the answer of `somcp_install_module` (the fields of `somcp_get_module` read back after the install), plus `uploaded: true` and `file_name`, the name the archive was deposited under.
+
+**Errors** - in the shared envelope, `SomcpTool::refused('installed', ...)`: every problem at once under "Nothing was installed.", each named with its field, nothing extracted:
+- an unknown argument, through `SomcpTool::unknownFields()`; `url` is refused with the reason: an archive comes by `upload_ref` only;
+- `upload_ref` missing, empty or not a string;
+- a deposit unknown, expired or already used, or larger than 64 MB: the wording of the product tools;
+- not a `.zip` (a tarball included): "only a .zip archive is accepted";
+- not one top folder `<name>/` holding `<name>/<name>.php`, `<name>` other than letters, digits, `-` and `_`, an entry with an absolute path, `..` or a backslash, a symbolic link entry;
+- unpacked size above 10 times the archive or 256 MB;
+- a folder `modules/<name>` already there, in any case: "a module named <name> is already on the shop; nothing was replaced";
+- the install itself failing: the answer of `somcp_install_module` ("The module was not installed", the module's own messages and the state read back), after the folder was removed again.
+
+**Notes**
+- The archive is not handed to the core's `ZipSourceHandler`, which extracts every entry over any folder already there and turns the install of a module already installed into an upgrade: it is checked, extracted into a folder of its own under `var/somcp/`, moved to `modules/<name>` in one rename, then installed through the function of `somcp_install_module`, with no source. The work folder is removed whatever happens.
+- Its own scope, `mcp.modules.upload`, apart from `mcp.modules.write`: the merchant consents to code from outside the shop running with the shop's rights.
+- Not replayable: the deposit is used up by the call; on a lost answer, read `somcp_get_module` instead of retrying.
+- Multistore: the folder is shared by every shop, the install is for the shops of the token's context, as `somcp_install_module`.
+
+**Differences between 8.0.1 and 9.0.0** - the core's archive handling is identical on both, and 9.0.0's `RemoteZipSourceHandler` is not used; the install differs as described in `somcp_install_module`.
+
 #### `somcp_set_module_active`
 **State**: written · [issue #28](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/28)
 **Nature**: `acts(EDIT, 'AdminModulesSf')` · **Scope**: `mcp.modules.write`
@@ -5445,7 +5481,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `module` (name of a module).
 
-**Tools** - `somcp_ping`, `somcp_list_modules`, `somcp_get_module`, `somcp_install_module`, `somcp_set_module_active`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_modules`, `somcp_get_module`, `somcp_install_module`, `somcp_upload_module`, `somcp_set_module_active`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read before acting; name the module and what it does before installing or switching it; one module per call; a payment or carrier module switched off stops orders or deliveries, say so before doing it.
 

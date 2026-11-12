@@ -3302,20 +3302,22 @@ class SomcpToolCreateProduct
     }
 
     /**
-     * Writes the file behind an upload_ref where the image is put together.
+     * Writes the file behind an upload_ref where the tool puts it together.
      *
      * Redeemed for the employee the write runs as, on this shop: a reference
      * belonging to someone else, expired or already used finds nothing. The
      * built-in assistant hands over a copy, so its conversation keeps the
-     * file.
+     * file. Public so every tool taking an upload_ref words its problems the
+     * same way, somcp_upload_module included.
      *
      * @param string $reference
      * @param string $target
      * @param int $maxBytes the largest file accepted
+     * @param string|null $fileName receives the name the file was deposited under
      *
      * @return string empty on success, the reason otherwise
      */
-    protected static function fromDeposit(string $reference, string $target, int $maxBytes = self::IMAGE_MAX_BYTES): string
+    public static function fromDeposit(string $reference, string $target, int $maxBytes = self::IMAGE_MAX_BYTES, ?string &$fileName = null): string
     {
         $employee = Somcp::legacyContext()->employee;
         $idEmployee = $employee instanceof Employee ? (int) $employee->id : 0;
@@ -3323,6 +3325,7 @@ class SomcpToolCreateProduct
         if ($files === []) {
             return 'no file of this account matches this upload_ref, or it expired or was already used';
         }
+        $fileName = $files[0]['name'];
         if (strlen($files[0]['contents']) > $maxBytes) {
             return self::tooLarge($maxBytes);
         }
@@ -3335,7 +3338,7 @@ class SomcpToolCreateProduct
      *
      * @return string
      */
-    protected static function tooLarge(int $maxBytes): string
+    public static function tooLarge(int $maxBytes): string
     {
         return 'the file is larger than ' . rtrim(rtrim(number_format($maxBytes / 1048576, 1, '.', ''), '0'), '.') . ' MB';
     }

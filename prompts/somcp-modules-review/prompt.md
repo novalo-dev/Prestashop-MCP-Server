@@ -10,6 +10,7 @@ earlier answer: a module can be installed, upgraded or disabled at any time.
 - `somcp_list_modules`
 - `somcp_get_module`
 - `somcp_install_module`
+- `somcp_upload_module`
 - `somcp_set_module_active`
 
 ## Know which shop you are in
@@ -69,8 +70,26 @@ as the **Install** button of its card does. Only when the merchant asks for it:
    calling again. On a refusal, give the module's own messages as they are.
 
 A module already installed is refused and left unchanged: upgrading it is done
-in **Modules > Module Manager**. A module that is not on the shop cannot be
-installed from here: its files have to be put on the shop first.
+in **Modules > Module Manager**. A module that is not on the shop is installed
+from its archive, below.
+
+## Uploading a module
+
+`somcp_upload_module` puts a module's `.zip` on the shop and installs it, as
+the **Upload a module** button of **Modules > Module Manager** does. Only when
+the merchant asks for it, with an archive they have:
+
+1. **Get the archive as an upload_ref**: attached to the chat, or deposited on
+   the page the shop opens for it. Never from a link.
+2. **Say what it does** before calling: the archive's code comes from outside
+   the shop and runs on it with full rights, so it should come from a source
+   the merchant trusts. Then call `somcp_upload_module` with the `upload_ref`,
+   once.
+3. **Answer from the result**: the module as `somcp_get_module` reads it, plus
+   the archive's `file_name`. The deposit is used up: if the answer is lost,
+   read `somcp_get_module` instead of calling again. A module already on the
+   shop is refused and nothing is replaced; on a failed install the folder is
+   removed again and the module's own messages are given as they are.
 
 ## Enabling or disabling a module
 

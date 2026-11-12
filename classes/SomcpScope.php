@@ -77,6 +77,9 @@ class SomcpScope
     /** @var string Changing the modules: installing a module already on the shop. */
     public const MODULES_WRITE = 'mcp.modules.write';
 
+    /** @var string Uploading a module archive and installing it: code from outside the shop, apart from MODULES_WRITE. */
+    public const MODULES_UPLOAD = 'mcp.modules.upload';
+
     /** @var string Reading how the storefront looks: its main menu. */
     public const APPEARANCE_READ = 'mcp.appearance.read';
 
@@ -102,7 +105,7 @@ class SomcpScope
      */
     public static function core(): array
     {
-        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ, self::SYSTEM_WRITE, self::SALES_READ, self::SALES_WRITE];
+        return [self::ACCESS, self::ORDERS_READ, self::ORDERS_WRITE, self::CATALOG_READ, self::CATALOG_WRITE, self::STOCK_READ, self::STOCK_WRITE, self::CUSTOMERS_READ, self::CUSTOMERS_WRITE, self::SEO_READ, self::SEO_WRITE, self::STATS_READ, self::CONTENT_READ, self::MODULES_READ, self::MODULES_WRITE, self::MODULES_UPLOAD, self::APPEARANCE_READ, self::APPEARANCE_WRITE, self::SYSTEM_READ, self::SYSTEM_WRITE, self::SALES_READ, self::SALES_WRITE];
     }
 
     /**
@@ -294,6 +297,8 @@ class SomcpScope
                 return $module->l10n('Modules - read');
             case self::MODULES_WRITE:
                 return $module->l10n('Modules - changes');
+            case self::MODULES_UPLOAD:
+                return $module->l10n('Modules - upload');
             case self::APPEARANCE_READ:
                 return $module->l10n('Design - read');
             case self::APPEARANCE_WRITE:
@@ -414,6 +419,8 @@ class SomcpScope
                 return $module->l10n('Read the modules of this shop: their version, author and whether they are installed and enabled');
             case self::MODULES_WRITE:
                 return $module->l10n('Install, enable and disable the modules already present on this shop, which runs their own code');
+            case self::MODULES_UPLOAD:
+                return $module->l10n('Upload and install a module archive: its code comes from outside the shop and runs on it with full rights');
             case self::APPEARANCE_READ:
                 return $module->l10n('Read how the storefront looks: the entries and links of its main menu, its theme, logos and page layouts');
             case self::APPEARANCE_WRITE:

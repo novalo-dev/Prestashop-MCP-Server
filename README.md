@@ -450,6 +450,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_modules` | ● List modules | Module Manager › view |
 | `somcp_get_module` | ● Get a module | Module Manager › view |
 | `somcp_install_module` | ✎ Install a module | Module Manager › add |
+| `somcp_upload_module` | ✎ Upload a module | Module Manager › add |
 | `somcp_set_module_active` | ✎ Enable or disable a module | Module Manager › edit |
 
 ### 🖌️ Appearance

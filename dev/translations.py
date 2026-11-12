@@ -762,6 +762,10 @@ T = {
  "Modules - modifications",
  "Módulos - cambios",
  "Module - Änderungen"),
+"Modules - upload": (
+ "Modules - envoi",
+ "Módulos - subida",
+ "Module - Hochladen"),
 "Design - read": (
  "Apparence - lecture",
  "Diseño - lectura",
@@ -1470,6 +1474,14 @@ T = {
  "Installer, activer et désactiver les modules déjà présents sur cette boutique, ce qui exécute leur propre code",
  "Instalar, activar y desactivar los módulos ya presentes en esta tienda, lo que ejecuta su propio código",
  "Die bereits in diesem Shop vorhandenen Module installieren, aktivieren und deaktivieren, wobei ihr eigener Code ausgeführt wird"),
+"Upload a module": (
+ "Installer un module depuis une archive",
+ "Subir un módulo",
+ "Ein Modul hochladen"),
+"Upload and install a module archive: its code comes from outside the shop and runs on it with full rights": (
+ "Envoyer et installer l'archive d'un module : son code vient de l'extérieur de la boutique et s'y exécute avec tous les droits",
+ "Subir e instalar el archivo de un módulo: su código viene de fuera de la tienda y se ejecuta en ella con todos los derechos",
+ "Ein Modularchiv hochladen und installieren: sein Code kommt von außerhalb des Shops und läuft darin mit allen Rechten"),
 "Enable or disable a module": (
  "Activer ou désactiver un module",
  "Activar o desactivar un módulo",

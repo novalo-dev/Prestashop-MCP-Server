@@ -18,6 +18,20 @@ are:
 
 ### Added
 
+**Modules the assistant can upload.** The new tool `somcp_upload_module`
+takes a module's .zip archive you attached to the chat or deposited on the
+shop, puts it in the modules folder and installs it, as the **Upload a
+module** button of **Modules > Module Manager** does. The archive is checked
+before anything is written: one folder holding the module's main file, nothing
+outside it, no link, and a reasonable unpacked size. A module already on the
+shop is refused and never replaced or upgraded, and a module whose install
+fails is removed again, leaving nothing behind. Because the archive's code
+comes from outside the shop and runs on it with full rights, the assistant
+needs a permission of its own for this, **Modules - upload**, which the
+consent screen asks for apart from installing the modules already there. It
+also needs the **add** right on the **Module Manager**. A link is never
+accepted: the archive comes from the shop.
+
 **Feature values the assistant can delete.** The new tool
 `somcp_delete_feature_value` deletes one value of a feature, such as Cotton
 under Composition, as the **Delete** action on the values of a feature in

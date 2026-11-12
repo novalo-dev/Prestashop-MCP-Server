@@ -962,6 +962,11 @@
       <source>Modules - changes</source>
       <target>Modules - modifications</target>
     </trans-unit>
+    <!-- Modules - upload -->
+    <trans-unit id="61e416fe1c3b2094d363ced12804266d" resname="Modules - upload">
+      <source>Modules - upload</source>
+      <target>Modules - envoi</target>
+    </trans-unit>
     <!-- Design - read -->
     <trans-unit id="a3e00de8ea70084cc12ba457d9fd1ea9" resname="Design - read">
       <source>Design - read</source>
@@ -1846,6 +1851,16 @@
     <trans-unit id="a590ed8bc24989c527459f63ced69897" resname="Install, enable and disable the modules already present on this shop, which runs their own code">
       <source>Install, enable and disable the modules already present on this shop, which runs their own code</source>
       <target>Installer, activer et désactiver les modules déjà présents sur cette boutique, ce qui exécute leur propre code</target>
+    </trans-unit>
+    <!-- Upload a module -->
+    <trans-unit id="76ab1ee2aacc1b9bbc0a70bf6cca7004" resname="Upload a module">
+      <source>Upload a module</source>
+      <target>Installer un module depuis une archive</target>
+    </trans-unit>
+    <!-- Upload and install a module archive: its code comes from outside the shop and runs on it with full rights -->
+    <trans-unit id="8689bb78d4720f1d8e00aeec7d7258b4" resname="Upload and install a module archive: its code comes from outside the shop and runs on it with full rights">
+      <source>Upload and install a module archive: its code comes from outside the shop and runs on it with full rights</source>
+      <target>Envoyer et installer l'archive d'un module : son code vient de l'extérieur de la boutique et s'y exécute avec tous les droits</target>
     </trans-unit>
     <!-- Enable or disable a module -->
     <trans-unit id="e709837fc9fc8dadcf277286474ed7f4" resname="Enable or disable a module">

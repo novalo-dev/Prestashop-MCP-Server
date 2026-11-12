@@ -45,6 +45,25 @@ said in the field name. Never a bare `total`.
 list returns `total_count`, so an assistant knows there is more instead of
 concluding from one page.
 
+**Errors.** A call refused before anything is read or written answers one
+error text, built by `SomcpTool::refused()`: a first line saying what did not
+happen (`Nothing was read.`, `created`, `changed`, `deleted`, `sent`,
+`recorded`), then `Correct these and call again:` and one line per problem,
+`- <path>: <problem>`, every problem found at once. `<path>` is the argument as
+the schema spells it, dotted when nested (`seo.meta_keywords`,
+`combinations[2].available_now`). Four kinds of problem, four wordings, each
+from one shared function: an unknown identifier, `no <thing> of this shop has
+the identifier <n> - find it with <tool>` (`notFound()`); a field the tool does
+not take, `not a field of this tool`, or one the shop works out, `worked out by
+the shop, so it is not written here` (`unknownFields()`, read tools included);
+a field the running PrestaShop does not have, `not on PrestaShop <version>,
+which has no <thing>; leave the field out` (`notOnThisVersion()`), where the
+`null` a get tool returns for that field on that version is skipped, so its
+answer can be given back to the update; an invalid value, `one of <a, b, c>`
+(`oneOf()`), `true or false`, `a whole number`. An invalid value is never
+replaced by a default nor ignored: the default applies only to an argument left
+out.
+
 **Personal data.** A list stays plain. A detail gives everything, because it was
 asked for one named object. What leaves goes to the assistant's vendor: that is
 the line to hold.
@@ -2214,6 +2233,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - Prices are rounded to the precision of the shop default currency, which is the currency they are stored in. With both `reference` and `ean13` given, a combination is listed in `matched_combinations` when it matches either one.
 - `category_default` and `cover_image` are read for the page only, one query each (`category_lang` and `image_shop` of the shop of the token), never one per product. The image URL is built by `SomcpProductImage::url()`, the code `somcp_get_product` uses, which follows the image name PrestaShop 8 and 9 each expect.
 - A `language` the shop does not have is refused, like the other read tools, rather than read in the default language.
+- A field the tool does not take, a `sort` outside the list, an `active` that is not true or false, an `id_product` or `id_category` that is not a whole number above 0, a price bound that is not a number or a quantity bound that is not a whole number is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
 
 #### `somcp_get_product`
 **State**: written
@@ -3563,6 +3583,7 @@ The quantities the storefront sells against, per product and combination.
 - `reference` is the combination's own on a combination line; `name` is the product's, in the language read (the shop default when none is given). Attributes and the physical and reserved quantities are read with `somcp_get_stock`.
 - Lowest quantity first. A product still being created, or not in this shop, is left out.
 - The filters are those of the **Stock** tab of **Catalog > Stock**, the same on PrestaShop 8 and 9. `search` matches each line on its own: a combination is found by its own reference, without its other combinations. `total_count` counts with every filter applied.
+- A field the tool does not take, a `threshold` that is not a whole number, an `active` that is not true or false, or an `id_category` or `id_supplier` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read, rather than dropped while the whole stock is listed.
 
 #### `somcp_set_stock_quantity`
 **State**: written

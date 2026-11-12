@@ -528,7 +528,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             }
             if ($flag === 'remove_menu_thumbnails'
                 && !class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
-                $errors[] = 'remove_menu_thumbnails: this PrestaShop version no longer has menu thumbnails; leave the field out';
+                $errors[] = SomcpTool::notOnThisVersion('remove_menu_thumbnails', 'menu thumbnails');
                 continue;
             }
             $plan[$flag === 'remove_cover_image' ? 'remove_cover' : 'remove_thumbnails'] = true;

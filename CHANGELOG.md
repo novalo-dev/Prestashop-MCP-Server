@@ -200,7 +200,19 @@ Enabled filter that is not true or false instead of ignoring it, and word an
 unknown attribute group or feature as the matching read tool does, with the
 identifier given. `somcp_list_stock_movements` and `somcp_get_category_kpis`,
 written more recently, name a misspelt field or filter and read nothing the
-same way, so every catalogue and stock refusal reads alike.
+same way, so every catalogue and stock refusal reads alike. A product or
+category read on one PrestaShop version and given back unchanged to its update
+is no longer refused over a field that version does not have: the empty
+meta keywords of PrestaShop 9, its empty menu thumbnails, the empty
+redirection of a hidden category on PrestaShop 8 and the empty labels per
+combination on PrestaShop 8.0 are skipped, and a value typed in one of them is
+refused naming the version you run. `somcp_search_products` now refuses an
+order it does not know, such as "price", with the list of the ones it has,
+instead of answering the newest products first, and refuses a misspelt
+filter, an Enabled filter that is not true or false and a price, quantity,
+product or category that is not a number instead of ignoring them;
+`somcp_list_low_stock` does the same for its filters instead of listing the
+whole stock.
 
 **Refusals of the order writes read like the others.** The refund, return
 and cancel tools, the tools that add, change or delete an order line or a

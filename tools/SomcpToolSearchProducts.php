@@ -43,6 +43,9 @@ class SomcpToolSearchProducts
     /** @var int Most a single call will return, whatever it asks for. */
     private const MAX_LIMIT = 100;
 
+    /** @var array<int, string> The orders sort() knows, read by the schema and the check of the call alike. */
+    private const SORTS = ['date_add_desc', 'name_asc', 'price_asc', 'price_desc', 'quantity_asc', 'quantity_desc'];
+
     /**
      * @return SomcpTool
      */
@@ -123,7 +126,7 @@ class SomcpToolSearchProducts
                     ],
                     'sort' => [
                         'type' => 'string',
-                        'enum' => ['date_add_desc', 'name_asc', 'price_asc', 'price_desc', 'quantity_asc', 'quantity_desc'],
+                        'enum' => self::SORTS,
                         'description' => 'Order of the results. Most recently created first by default.',
                     ],
                     'language' => [
@@ -156,6 +159,14 @@ class SomcpToolSearchProducts
      */
     public static function handle(array $arguments, array $context): array
     {
+        // A misspelt filter, or a value of the wrong kind, would widen the
+        // list or change its order without a word, and the assistant would
+        // describe the products as the ones asked for: refused instead.
+        $errors = self::problems($arguments);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
         // Names are searched in this language too: a name searched in the
@@ -280,8 +291,8 @@ class SomcpToolSearchProducts
         // either: it has no name yet and nobody can sell it.
         $query->where('p.`state` = ' . (int) Product::STATE_SAVED);
 
-        if (!empty($arguments['id_product'])) {
-            $query->where('p.`id_product` = ' . (int) $arguments['id_product']);
+        if (SomcpTool::id($arguments, 'id_product') > 0) {
+            $query->where('p.`id_product` = ' . SomcpTool::id($arguments, 'id_product'));
         }
         if (self::text($arguments, 'name') !== '') {
             $query->where("pl.`name` LIKE '%" . pSQL(self::text($arguments, 'name')) . "%'");
@@ -304,12 +315,12 @@ class SomcpToolSearchProducts
                 $query->where('p.`' . $field . "` LIKE '%" . pSQL(self::text($arguments, $field)) . "%'");
             }
         }
-        if (!empty($arguments['id_category'])) {
+        if (SomcpTool::id($arguments, 'id_category') > 0) {
             // Any category the product is filed under, not only its default
             // one: that is what the category filter of the back office does.
             $query->where(
                 'EXISTS (SELECT 1 FROM `' . _DB_PREFIX_ . 'category_product` cp'
-                . ' WHERE cp.`id_product` = p.`id_product` AND cp.`id_category` = ' . (int) $arguments['id_category'] . ')'
+                . ' WHERE cp.`id_product` = p.`id_product` AND cp.`id_category` = ' . SomcpTool::id($arguments, 'id_category') . ')'
             );
         }
         $bounds = [
@@ -329,7 +340,7 @@ class SomcpToolSearchProducts
         if (isset($arguments['quantity_max']) && is_numeric($arguments['quantity_max'])) {
             $query->where('IFNULL(sa.`quantity`, 0) <= ' . (int) $arguments['quantity_max']);
         }
-        if (isset($arguments['active']) && is_bool($arguments['active'])) {
+        if (isset($arguments['active'])) {
             $query->where('ps.`active` = ' . (int) $arguments['active']);
         }
 
@@ -548,6 +559,49 @@ class SomcpToolSearchProducts
             default:
                 return 'p.`date_add` DESC, p.`id_product` DESC';
         }
+    }
+
+    /**
+     * Every problem of the call, before anything is read.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return array<int, string>
+     */
+    private static function problems(array $arguments): array
+    {
+        $errors = SomcpTool::unknownFields($arguments, [
+            'id_product', 'name', 'reference', 'id_category', 'price_tax_excl_min', 'price_tax_excl_max',
+            'price_tax_incl_min', 'price_tax_incl_max', 'quantity_min', 'quantity_max', 'active', 'ean13',
+            'mpn', 'upc', 'isbn', 'sort', 'language', 'limit', 'offset',
+        ]);
+        foreach (['id_product', 'id_category'] as $key) {
+            if (array_key_exists($key, $arguments) && SomcpTool::id($arguments, $key) === 0) {
+                $errors[] = SomcpTool::notAnIdentifier($key);
+            }
+        }
+        foreach (['price_tax_excl_min', 'price_tax_excl_max', 'price_tax_incl_min', 'price_tax_incl_max'] as $key) {
+            if (array_key_exists($key, $arguments) && !is_numeric($arguments[$key])) {
+                $errors[] = $key . ': a number';
+            }
+        }
+        foreach (['quantity_min', 'quantity_max'] as $key) {
+            // A string of digits too, as some clients send numbers.
+            $value = $arguments[$key] ?? null;
+            if (array_key_exists($key, $arguments) && !is_int($value) && !(is_string($value) && preg_match('/^-?\d+$/', trim($value)))) {
+                $errors[] = $key . ': a whole number';
+            }
+        }
+        if (array_key_exists('active', $arguments) && !is_bool($arguments['active'])) {
+            $errors[] = 'active: true or false';
+        }
+        // An order outside the list used to fall back to the newest first,
+        // and the assistant told the merchant they were the cheapest.
+        if (array_key_exists('sort', $arguments) && !in_array($arguments['sort'], self::SORTS, true)) {
+            $errors[] = SomcpTool::oneOf('sort', self::SORTS);
+        }
+
+        return $errors;
     }
 
     /**

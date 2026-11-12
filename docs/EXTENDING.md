@@ -230,7 +230,7 @@ Return one of:
 |---|---|
 | `['json' => $data]` | Structured data, encoded by somcp. |
 | `['text' => '...']` | Plain text. |
-| `['text' => '...', 'error' => true]` | A business failure (order not found, account not linked). The assistant reports it instead of retrying. |
+| `['text' => '...', 'error' => true]` | A business failure (order not found, account not linked). The assistant reports it instead of retrying. Word a refused call as the built-in tools do, which build theirs with `SomcpTool::refused()`: see **Errors** in the shared conventions of `docs/TOOLS.md`. |
 | `['upload' => [...]]` | Ask the merchant for files. |
 
 Anything else is treated as a failure: it is logged as `tool_result_refused`

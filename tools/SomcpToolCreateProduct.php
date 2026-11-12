@@ -1828,10 +1828,13 @@ class SomcpToolCreateProduct
                 continue;
             }
             // PrestaShop 8.0 has no labels per combination: the table came
-            // with 8.1. Dropping them silently would lose what the merchant
-            // typed, so the call says so instead.
+            // with 8.1. Dropping a label silently would lose what the merchant
+            // typed, so the call says so instead; the null somcp_get_product
+            // returns there is skipped, so its answer can be given back.
             if (!isset(Combination::$definition['fields']['available_now'])) {
-                $errors[] = $path . '.' . $field . ': this PrestaShop version has no labels per combination (they came with 8.1)';
+                if ($item[$field] !== null) {
+                    $errors[] = SomcpTool::notOnThisVersion($path . '.' . $field, 'labels per combination');
+                }
                 continue;
             }
             $texts = self::texts($item, $field, $path . '.' . $field, $languages, $errors);
@@ -2429,9 +2432,13 @@ class SomcpToolCreateProduct
 
         if (array_key_exists('meta_keywords', $group)) {
             if (!isset(Product::$definition['fields']['meta_keywords'])) {
-                // PrestaShop 9 dropped the column. Accepting the field and
-                // storing nothing would tell the merchant something false.
-                $errors[] = 'seo.meta_keywords: this PrestaShop version no longer has meta keywords; leave the field out';
+                // PrestaShop 9 dropped the column. The null somcp_get_product
+                // returns there is skipped, so its answer can be given back; a
+                // value is refused, since storing nothing would tell the
+                // merchant something false.
+                if ($group['meta_keywords'] !== null) {
+                    $errors[] = SomcpTool::notOnThisVersion('seo.meta_keywords', 'meta keywords');
+                }
             } else {
                 $texts = self::texts($group, 'meta_keywords', 'seo.meta_keywords', $languages, $errors);
                 foreach ($texts ?? [] as $idLang => $text) {

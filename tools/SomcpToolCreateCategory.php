@@ -495,9 +495,13 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             return;
         }
         if (!isset($probe::$definition['fields']['meta_keywords'])) {
-            // PrestaShop 9 dropped the column. Accepting the field and storing
-            // nothing would tell the merchant something false.
-            $errors[] = 'meta_keywords: this PrestaShop version no longer has meta keywords; leave the field out';
+            // PrestaShop 9 dropped the column. The null the get tools return
+            // there is skipped, so their answer can be given back to the
+            // update; a value is refused, since storing nothing would tell the
+            // merchant something false.
+            if ($arguments['meta_keywords'] !== null) {
+                $errors[] = SomcpTool::notOnThisVersion('meta_keywords', 'meta keywords');
+            }
 
             return;
         }
@@ -581,9 +585,13 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         }
         if (!isset(Category::$definition['fields']['redirect_type'])) {
             // PrestaShop 8 has no such field on a category: the page answers
-            // 404 while hidden, whatever is sent.
-            $errors[] = ($typeGiven ? 'redirect_type' : 'id_type_redirected')
-                . ': this PrestaShop version has no redirection for a hidden category; leave the field out';
+            // 404 while hidden, whatever is sent. The null somcp_get_category
+            // returns there is skipped, so its answer can be given back.
+            foreach (['redirect_type', 'id_type_redirected'] as $field) {
+                if (array_key_exists($field, $arguments) && $arguments[$field] !== null) {
+                    $errors[] = SomcpTool::notOnThisVersion($field, 'redirection for a hidden category');
+                }
+            }
 
             return;
         }
@@ -655,8 +663,12 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         }
         // PrestaShop 9 removed menu thumbnails from the category form along
         // with the uploader that wrote them; MenuThumbnailId went with them.
+        // The null somcp_get_category returns there is skipped, so its answer
+        // can be given back to the update.
         if (!class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
-            $errors[] = 'menu_thumbnails: this PrestaShop version no longer has menu thumbnails; leave the field out';
+            if ($arguments['menu_thumbnails'] !== null) {
+                $errors[] = SomcpTool::notOnThisVersion('menu_thumbnails', 'menu thumbnails');
+            }
 
             return $images;
         }

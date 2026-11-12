@@ -8,6 +8,11 @@
     {"why": "in a language given by ISO code", "arguments": {"language": "en", "limit": 5}, "expect": "ok", "contains": ["\"category_default\""]},
     {"why": "a language the shop does not have, refused with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's, which has", "leave language out for the shop default"]},
     {"why": "no language: the shop default, named in the answer", "arguments": {"limit": 1}, "expect": "ok", "contains": ["\"language\": \"en\""]},
-    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "any"}
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "any"},
+    {"why": "a misspelt filter is named and nothing is read", "arguments": {"id_categroy": 3}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "id_categroy: not a field of this tool"]},
+    {"why": "an order outside the list is refused with the list, never replaced by the newest first", "arguments": {"sort": "price"}, "expect": "error", "contains": ["sort: one of date_add_desc, name_asc, price_asc, price_desc, quantity_asc, quantity_desc"]},
+    {"why": "an Active filter, a category and a stock bound of the wrong kind, reported together", "arguments": {"active": "yes", "id_category": "abc", "quantity_min": "many"}, "expect": "error", "contains": ["active: true or false", "id_category: a whole number above 0", "quantity_min: a whole number"]},
+    {"why": "a price bound that is not a number", "arguments": {"price_tax_incl_max": "cheap"}, "expect": "error", "contains": ["price_tax_incl_max: a number"]},
+    {"why": "identifiers and bounds sent as strings of digits, as some clients do", "arguments": {"id_category": "2", "quantity_min": "0", "limit": 2}, "expect": "ok", "contains": ["\"total_count\""]}
   ]
 }

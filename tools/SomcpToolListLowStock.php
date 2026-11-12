@@ -117,6 +117,28 @@ class SomcpToolListLowStock
      */
     public static function handle(array $arguments, array $context): array
     {
+        // A misspelt filter, or a value of the wrong kind, used to be dropped
+        // and the whole stock answered as if it had been applied: refused.
+        $errors = SomcpTool::unknownFields($arguments, [
+            'threshold', 'active', 'id_category', 'id_supplier', 'search', 'language', 'limit', 'offset',
+        ]);
+        $threshold = $arguments['threshold'] ?? null;
+        if (array_key_exists('threshold', $arguments)
+            && !is_int($threshold) && !(is_string($threshold) && preg_match('/^-?\d+$/', trim($threshold)))) {
+            $errors[] = 'threshold: a whole number';
+        }
+        if (array_key_exists('active', $arguments) && !is_bool($arguments['active'])) {
+            $errors[] = 'active: true or false';
+        }
+        foreach (['id_category', 'id_supplier'] as $key) {
+            if (array_key_exists($key, $arguments) && SomcpTool::id($arguments, $key) === 0) {
+                $errors[] = SomcpTool::notAnIdentifier($key);
+            }
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $shop = Somcp::currentShop();
         // The shop default rather than the context language, which on an MCP
         // call follows the client's browser header: a name searched in one
@@ -127,17 +149,11 @@ class SomcpToolListLowStock
         }
         [$idLang, $iso] = $language;
 
-        $threshold = isset($arguments['threshold']) && is_numeric($arguments['threshold'])
-            ? (int) $arguments['threshold']
-            : null;
+        $threshold = isset($arguments['threshold']) ? (int) $arguments['threshold'] : null;
         $activeOnly = !(isset($arguments['active']) && $arguments['active'] === false);
         $filters = [
-            'id_category' => isset($arguments['id_category']) && is_numeric($arguments['id_category'])
-                ? (int) $arguments['id_category']
-                : 0,
-            'id_supplier' => isset($arguments['id_supplier']) && is_numeric($arguments['id_supplier'])
-                ? (int) $arguments['id_supplier']
-                : 0,
+            'id_category' => SomcpTool::id($arguments, 'id_category'),
+            'id_supplier' => SomcpTool::id($arguments, 'id_supplier'),
             'search' => isset($arguments['search']) && is_scalar($arguments['search'])
                 ? trim((string) $arguments['search'])
                 : '',

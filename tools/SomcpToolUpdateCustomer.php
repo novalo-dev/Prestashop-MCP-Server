@@ -184,13 +184,17 @@ class SomcpToolUpdateCustomer
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
         // The same test as somcp_get_customer: a customer of another shop, or
-        // deleted with their data kept, is unknown here as it is there.
-        // A numeric string is taken too, as somcp_get_customer takes it.
-        $given = $arguments['id_customer'] ?? null;
-        $id = is_int($given) || (is_string($given) && ctype_digit($given)) ? (int) $given : 0;
+        // deleted with their data kept, is unknown here as it is there, and
+        // is reported with the misspelt fields of the same call.
+        $id = SomcpTool::id($arguments, 'id_customer');
         $customer = new Customer($id);
         if ($id <= 0 || !Validate::isLoadedObject($customer) || (int) $customer->id_shop !== $idShop || (int) $customer->deleted === 1) {
-            return SomcpTool::text('No customer ' . $id . ' in this shop. Find one with somcp_search_customers.', true);
+            $errors = self::fieldProblems($arguments);
+            $errors[] = $id > 0
+                ? SomcpTool::notFound('id_customer', 'customer', $id, 'somcp_search_customers')
+                : SomcpTool::notAnIdentifier('id_customer');
+
+            return SomcpTool::refused('changed', $errors);
         }
 
         $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
@@ -205,10 +209,7 @@ class SomcpToolUpdateCustomer
         $errors = [];
         $groupIds = self::plan($arguments, $customer, $groupsBefore, $idShop, $errors);
         if ($errors !== []) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         $changes = self::changes($arguments, $before, $customer, $groupsBefore, $groupIds, $defaultBefore);
@@ -226,6 +227,26 @@ class SomcpToolUpdateCustomer
     }
 
     /**
+     * The lines for the arguments this tool does not take.
+     *
+     * The groups somcp_get_customer returns keep their own line, so the
+     * assistant learns which fields write them instead of dropping them.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return array<int, string>
+     */
+    private static function fieldProblems(array $arguments): array
+    {
+        $errors = SomcpTool::unknownFields(array_diff_key($arguments, ['groups' => true]), self::ARGUMENTS, self::COMPUTED);
+        if (array_key_exists('groups', $arguments)) {
+            $errors[] = 'groups: the groups somcp_get_customer returns are written with group_ids and id_default_group, not here';
+        }
+
+        return $errors;
+    }
+
+    /**
      * Fills the loaded account with the arguments, and lists everything wrong with them.
      *
      * Nothing is written here, so a refused call leaves the shop as it was.
@@ -240,16 +261,7 @@ class SomcpToolUpdateCustomer
      */
     private static function plan(array $arguments, Customer $customer, array $groupsBefore, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::ARGUMENTS, true)) {
-                $errors[] = $key . ($key === 'groups'
-                    ? ': the groups somcp_get_customer returns are written with group_ids and id_default_group, not here'
-                    : (in_array($key, self::COMPUTED, true)
-                        ? ': worked out by the shop or changed elsewhere in the back office, so it is not taken here'
-                        : ': not a field of this tool'));
-            }
-        }
+        $errors = array_merge($errors, self::fieldProblems($arguments));
 
         $emailGiven = false;
         foreach (['firstname', 'lastname', 'email'] as $field) {
@@ -363,8 +375,12 @@ class SomcpToolUpdateCustomer
             }
             $groupIds = [];
             foreach ($given as $id) {
-                if (!is_int($id) || !isset($shopGroups[$id])) {
-                    $errors[] = 'group_ids: ' . (is_scalar($id) ? (string) $id : 'this value') . ' is not a group of this shop';
+                if (!is_int($id) || $id <= 0) {
+                    $errors[] = SomcpTool::notAnIdentifier('group_ids');
+                    continue;
+                }
+                if (!isset($shopGroups[$id])) {
+                    $errors[] = SomcpTool::notFound('group_ids', 'customer group', $id, 'somcp_list_customer_groups');
                     continue;
                 }
                 $groupIds[] = $id;
@@ -375,8 +391,13 @@ class SomcpToolUpdateCustomer
 
         $idDefault = (int) $customer->id_default_group;
         if (array_key_exists('id_default_group', $arguments)) {
-            if (!is_int($arguments['id_default_group']) || !isset($shopGroups[$arguments['id_default_group']])) {
-                $errors[] = 'id_default_group: not a group of this shop';
+            if (!is_int($arguments['id_default_group']) || $arguments['id_default_group'] <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_default_group');
+
+                return $groupIds;
+            }
+            if (!isset($shopGroups[$arguments['id_default_group']])) {
+                $errors[] = SomcpTool::notFound('id_default_group', 'customer group', $arguments['id_default_group'], 'somcp_list_customer_groups');
 
                 return $groupIds;
             }

@@ -18,6 +18,9 @@
     {"why": "the names in the shop language given by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
     {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's"]},
     {"why": "the next page", "arguments": {"limit": 1, "offset": 1}, "expect": "ok", "contains": ["\"offset\": 1"]},
-    {"why": "a limit over the cap is brought back to 100", "arguments": {"limit": 500}, "expect": "ok", "contains": ["\"customers\""]}
+    {"why": "a limit over the cap is brought back to 100", "arguments": {"limit": 500}, "expect": "ok", "contains": ["\"customers\""]},
+    {"why": "a misspelt filter is named and nothing is read", "arguments": {"emial": "pub@prestashop.com"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "emial: not a field of this tool"]},
+    {"why": "an order outside the list and a direction other than desc or asc, refused with the lists", "arguments": {"sort": "name", "order": "up"}, "expect": "error", "contains": ["sort: one of date_add, last_visit, sales, lastname, id_customer", "order: one of desc, asc"]},
+    {"why": "a date, a flag and a group of the wrong kind, reported together instead of ignored", "arguments": {"date_from": "last week", "active": "yes", "id_default_group": "abc"}, "expect": "error", "contains": ["date_from: a date, YYYY-MM-DD", "active: true or false", "id_default_group: a whole number above 0"]}
   ]
 }

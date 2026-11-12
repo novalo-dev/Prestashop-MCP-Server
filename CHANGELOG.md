@@ -245,7 +245,14 @@ is answered with where the groups go.
 now names a misspelt field instead of reading it as a missing customer, and
 words an unknown `id_customer` or `email` the same way as every other read
 tool, with the tool that lists customers, so the assistant looks it up the
-same way it does elsewhere.
+same way it does elsewhere. `somcp_update_customer` and
+`somcp_create_customer` follow: an unknown customer is reported together with
+any misspelt field of the same call, and a group the shop does not have is
+named with `somcp_list_customer_groups`, where the assistant finds the right
+one. `somcp_search_customers` now refuses a misspelt filter, an order or
+direction it does not know, a date that is not YYYY-MM-DD and a yes/no filter
+that is not true or false, instead of ignoring them and answering the whole
+list newest first.
 
 **SEO of CMS pages and shop pages written like the rest of the catalogue.**
 `somcp_update_cms_seo` and `somcp_update_meta_page` now take the languages to

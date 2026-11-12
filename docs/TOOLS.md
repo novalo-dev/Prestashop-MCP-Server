@@ -3682,6 +3682,7 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 - Shop: the customers of the token's shop (`c.id_shop`), as the grid, even in a multistore with **Share customers** on.
 - `sales_tax_incl` sums `total_paid_tax_incl / conversion_rate` of the customer's valid orders in this shop, `0` when none (the grid shows "--"). PrestaShop 8.0 sums `total_paid_real` on its **Sales** column instead, so the figure can differ from the 8.0 screen for an order not fully paid; 9.0 sums the same total as the tool.
 - `last_visit` is the latest `connections.date_add` of a visitor tied to the customer, as the **Last visit** column.
+- A field the tool does not take, a `sort` or `order` outside its list, a yes/no filter that is not true or false, a date that is not YYYY-MM-DD, or an `id_default_group` or `id_gender` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
 - A read: nothing written, nothing to retry.
 
 #### `somcp_get_customer`
@@ -3762,7 +3763,7 @@ Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
 
 **Returns** - `created: true`, `id_customer`, `password` (what the customer does to get one), and `customer`: the account read back with the header block of `somcp_get_customer` (`SomcpToolGetCustomer::account()`, shared, not a copy), so the answer shows what the shop stored.
 
-**Errors** - every refused field listed in one answer, nothing written: `Nothing was created. Correct these and call again:` then one line per field.
+**Errors** - every refused field listed in one answer, nothing written: `Nothing was created. Correct these and call again:` then one line per field, in the wordings of the shared conventions (**Errors**). A group the shop does not have, in `group_ids` or `id_default_group`: `no customer group of this shop has the identifier <id> - find it with somcp_list_customer_groups`.
 
 **Notes**
 - **Password**: no password goes through the assistant. The tool hashes a random one, as `AddCustomerHandler` hashes the typed one, and the customer sets theirs with **Forgot your password?** on the shop.
@@ -3812,7 +3813,7 @@ Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
 
 **Returns** - `changed: true`, `id_customer`, `changes` (each field written with `old` and `new`), and `customer`: the account read back with the header block of `somcp_get_customer` (`SomcpToolGetCustomer::account()`, shared, not a copy). When every value given is already stored: `changed: false` and `reason`, nothing written.
 
-**Errors** - every refused field listed in one answer, nothing written: `Nothing was changed. Correct these and call again:` then one line per field. Unknown customer, of another shop, or deleted with "keep the data": `No customer <id> in this shop. Find one with somcp_search_customers.`
+**Errors** - every refused field listed in one answer, nothing written: `Nothing was changed. Correct these and call again:` then one line per field, in the wordings of the shared conventions (**Errors**). Unknown customer, of another shop, or deleted with "keep the data": `id_customer: no customer of this shop has the identifier <id> - find it with somcp_search_customers`, with the misspelt fields of the same call. A group the shop does not have, in `group_ids` or `id_default_group`: `no customer group of this shop has the identifier <id> - find it with somcp_list_customer_groups`.
 
 **Notes**
 - **Same rules as the creation**: names, email, social title, birthday, B2B fields and required fields are checked by the functions of `somcp_create_customer`, called rather than copied.

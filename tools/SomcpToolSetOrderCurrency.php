@@ -164,7 +164,7 @@ class SomcpToolSetOrderCurrency
         }
 
         if ($problems !== [] || !$order instanceof Order || $idCurrency <= 0) {
-            return self::refused($problems);
+            return SomcpTool::refused('changed', $problems);
         }
 
         $oldCurrency = new Currency((int) $order->id_currency);
@@ -178,13 +178,13 @@ class SomcpToolSetOrderCurrency
         }
 
         if ((bool) $order->valid) {
-            return self::refused([
+            return SomcpTool::refused('changed', [
                 'id_order: You cannot change the currency. The order is validated: its amounts are final.',
             ]);
         }
 
         if (!Validate::isLoadedObject($oldCurrency)) {
-            return self::refused(['id_order: the current currency of this order no longer exists in the shop']);
+            return SomcpTool::refused('changed', ['id_order: the current currency of this order no longer exists in the shop']);
         }
 
         try {
@@ -198,7 +198,7 @@ class SomcpToolSetOrderCurrency
                 $idEmployee
             );
 
-            return self::refused([
+            return SomcpTool::refused('changed', [
                 'currency: the currency could not be changed completely - read the order with somcp_get_order',
             ]);
         }
@@ -317,18 +317,5 @@ class SomcpToolSetOrderCurrency
             'totals_before' => $before,
             'totals_after' => $after,
         ]);
-    }
-
-    /**
-     * Every mistake in one answer, each as `<path>: <problem>`, in the shared
-     * refusal shape.
-     *
-     * @param string[] $problems
-     *
-     * @return array<string, mixed>
-     */
-    private static function refused(array $problems): array
-    {
-        return SomcpTool::text("Nothing was changed.\n- " . implode("\n- ", $problems), true);
     }
 }

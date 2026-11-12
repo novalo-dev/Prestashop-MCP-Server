@@ -187,6 +187,17 @@ filter is named and nothing is read, changed or deleted, rather than being
 ignored or read as a missing brand, and an unknown country code and an unknown
 brand are reported together in one answer.
 
+**Refusals of the order writes read like the others.** The refund, return
+and cancel tools, the tools that add, change or delete an order line or a
+discount, `somcp_create_order`, `somcp_generate_order_invoice`,
+`somcp_set_invoice_note`, `somcp_set_order_address`, `somcp_set_order_carrier`,
+`somcp_set_order_currency` and `somcp_resend_order_status_email` now refuse a
+call under the same first line as the catalogue tools - "Nothing was
+recorded", "changed", "deleted", "generated" or "sent", then "Correct these and
+call again:" - so the assistant reads every refusal the same way and fixes
+every problem listed before it calls again. Nothing else in these answers
+changes.
+
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the
 customer, beside the fields `somcp_update_customer` and `somcp_create_customer`

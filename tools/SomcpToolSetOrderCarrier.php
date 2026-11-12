@@ -148,7 +148,7 @@ class SomcpToolSetOrderCarrier
                 ? 'reference: '
                 : 'id_order: ') . $order;
 
-            return self::refused($problems);
+            return SomcpTool::refused('changed', $problems);
         }
 
         $idLang = (int) $order->id_lang;
@@ -183,7 +183,7 @@ class SomcpToolSetOrderCarrier
         }
 
         if ($problems !== [] || $shipment === null || $cart === null) {
-            return self::refused($problems);
+            return SomcpTool::refused('changed', $problems);
         }
 
         $previousCarrierId = (int) $shipment['id_carrier'];
@@ -205,7 +205,7 @@ class SomcpToolSetOrderCarrier
         // accept a carrier that does not deliver this zone or these groups.
         $allowed = self::allowedCarriers($cart);
         if (!isset($allowed[$idCarrier])) {
-            return self::refused([
+            return SomcpTool::refused('changed', [
                 'id_carrier: not a carrier this order can use - find one with somcp_list_carriers',
                 'carriers this order can use: ' . self::encode(array_values($allowed)),
             ]);
@@ -213,7 +213,7 @@ class SomcpToolSetOrderCarrier
 
         $orderCarrier = new OrderCarrier((int) $shipment['id_order_carrier']);
         if (!Validate::isLoadedObject($orderCarrier) || (int) $orderCarrier->id_order !== (int) $order->id) {
-            return self::refused(['id_order_carrier: the shipment could not be read']);
+            return SomcpTool::refused('changed', ['id_order_carrier: the shipment could not be read']);
         }
 
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($order, $cart, $orderCarrier, $idCarrier, $shipment, $idEmployee): array {
@@ -424,20 +424,5 @@ class SomcpToolSetOrderCarrier
             'id_order' => (int) $order->id,
             'reference' => (string) $order->reference,
         ];
-    }
-
-    /**
-     * The order tools' refusal: every problem at once, nothing changed.
-     *
-     * Kept here, in the wording issue #127 asks for, until SomcpTool::refused()
-     * of #169 and #170 unifies the order tools on one helper.
-     *
-     * @param string[] $problems
-     *
-     * @return array<string, mixed>
-     */
-    private static function refused(array $problems): array
-    {
-        return SomcpTool::text("Nothing was changed.\n- " . implode("\n- ", $problems), true);
     }
 }

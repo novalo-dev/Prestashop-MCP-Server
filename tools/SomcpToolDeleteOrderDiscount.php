@@ -137,7 +137,7 @@ class SomcpToolDeleteOrderDiscount
                 ? 'reference: '
                 : 'id_order: ') . $order;
 
-            return self::refused($problems);
+            return SomcpTool::refused('deleted', $problems);
         }
 
         // The row must be one of this order's: the handler checks it too, but
@@ -153,7 +153,7 @@ class SomcpToolDeleteOrderDiscount
         }
 
         if ($problems !== [] || !$orderCartRule instanceof OrderCartRule) {
-            return self::refused($problems);
+            return SomcpTool::refused('deleted', $problems);
         }
 
         if ((bool) $orderCartRule->deleted) {
@@ -208,7 +208,7 @@ class SomcpToolDeleteOrderDiscount
                 $idEmployee
             );
 
-            return self::refused([
+            return SomcpTool::refused('deleted', [
                 'id_order_cart_rule: the discount could not be removed.',
             ]);
         }
@@ -293,17 +293,5 @@ class SomcpToolDeleteOrderDiscount
         }
 
         return false;
-    }
-
-    /**
-     * Every problem at once, under the sentence that says nothing changed.
-     *
-     * @param array<int, string> $problems
-     *
-     * @return array<string, mixed>
-     */
-    private static function refused(array $problems): array
-    {
-        return SomcpTool::text("Nothing was deleted.\n- " . implode("\n- ", $problems), true);
     }
 }

@@ -1,9 +1,9 @@
 {
   "calls": [
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "currency": "EUR"}, "expect": "error", "contains": ["Nothing was changed.", "id_order: No order of this shop has this identifier"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "currency": "EUR"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "id_order: No order of this shop has this identifier"]},
     {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "currency": "EUR"}, "expect": "error", "contains": ["reference: No order of this shop has this reference"]},
     {"why": "neither an identifier nor a reference", "arguments": {"currency": "EUR"}, "expect": "error", "contains": ["Give id_order or reference"]},
-    {"why": "no currency given, the active ones listed", "arguments": {"id_order": 1}, "expect": "error", "contains": ["Nothing was changed.", "currency: give the ISO code of the new currency", "the active currencies of the shop: "]},
+    {"why": "no currency given, the active ones listed", "arguments": {"id_order": 1}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "currency: give the ISO code of the new currency", "the active currencies of the shop: "]},
     {"why": "a currency the shop does not have, the active ones listed", "arguments": {"id_order": 1, "currency": "XYZ"}, "expect": "error", "contains": ["currency: not a currency of this shop", "the active currencies of the shop: "]},
     {"why": "a currency that is not an ISO code", "arguments": {"id_order": 1, "currency": 12}, "expect": "error", "contains": ["currency: not a currency of this shop"]},
     {"why": "a field the tool does not take", "arguments": {"id_order": 1, "currency": "EUR", "rate": 1.1}, "expect": "error", "contains": ["rate: unknown field"]},

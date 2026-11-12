@@ -167,7 +167,7 @@ class SomcpToolSetOrderAddress
                 ? 'reference: '
                 : 'id_order: ') . $order;
 
-            return self::refused($problems);
+            return SomcpTool::refused('changed', $problems);
         }
 
         // The address must be one of this customer's, not deleted: what the
@@ -187,7 +187,7 @@ class SomcpToolSetOrderAddress
         }
 
         if ($problems !== []) {
-            return self::refused($problems);
+            return SomcpTool::refused('changed', $problems);
         }
 
         $type = (string) $type;
@@ -254,7 +254,7 @@ class SomcpToolSetOrderAddress
                 $idEmployee
             );
 
-            return self::refused(['id_address: the address could not be changed. Nothing was changed.']);
+            return SomcpTool::refused('changed', ['id_address: the address could not be changed. Nothing was changed.']);
         }
 
         $order = new Order((int) $order->id);
@@ -339,20 +339,5 @@ class SomcpToolSetOrderAddress
             'id_order' => (int) $order->id,
             'reference' => (string) $order->reference,
         ];
-    }
-
-    /**
-     * The order tools' refusal: every problem at once, nothing changed.
-     *
-     * Kept here, in the wording issue #126 asks for, until SomcpTool::refused()
-     * of #169 and #170 unifies the order tools on one helper.
-     *
-     * @param string[] $problems
-     *
-     * @return array<string, mixed>
-     */
-    private static function refused(array $problems): array
-    {
-        return SomcpTool::text("Nothing was changed.\n- " . implode("\n- ", $problems), true);
     }
 }

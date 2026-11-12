@@ -1,14 +1,14 @@
 {
   "calls": [
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "id_product": 8, "quantity": 1}, "expect": "error", "contains": ["Nothing was recorded.", "id_order: No order of this shop has this identifier"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "id_product": 8, "quantity": 1}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order: No order of this shop has this identifier"]},
     {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "id_product": 8, "quantity": 1}, "expect": "error", "contains": ["reference: No order of this shop has this reference"]},
     {"why": "neither an identifier nor a reference", "arguments": {"id_product": 8, "quantity": 1}, "expect": "error", "contains": ["Give id_order or reference"]},
-    {"why": "a product the shop does not have", "arguments": {"id_order": 1, "id_product": 999999, "quantity": 1}, "expect": "error", "contains": ["Nothing was recorded.", "id_product: no product of this shop has the identifier 999999", "somcp_search_products"]},
+    {"why": "a product the shop does not have", "arguments": {"id_order": 1, "id_product": 999999, "quantity": 1}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_product: no product of this shop has the identifier 999999", "somcp_search_products"]},
     {"why": "a quantity of 0", "arguments": {"id_order": 1, "id_product": 8, "quantity": 0}, "expect": "error", "contains": ["quantity: must be a whole number, at least 1"]},
     {"why": "a product with combinations given without one", "arguments": {"id_order": 1, "id_product": 1, "quantity": 1}, "expect": "error", "contains": ["id_product_attribute: this product has combinations", "somcp_get_product"]},
     {"why": "a combination that is not of the product", "arguments": {"id_order": 1, "id_product": 1, "id_product_attribute": 999999, "quantity": 1}, "expect": "error", "contains": ["id_product_attribute: no combination of this product has the identifier 999999"]},
     {"why": "a negative price", "arguments": {"id_order": 1, "id_product": 8, "quantity": 1, "unit_price_tax_excluded": -1}, "expect": "error", "contains": ["unit_price_tax_excluded: must be a number, 0 or more"]},
-    {"why": "an invoice that is not this order's", "arguments": {"id_order": 1, "id_product": 8, "quantity": 1, "id_order_invoice": 999999}, "expect": "error", "contains": ["Nothing was recorded.", "id_order_invoice: not an invoice of this order"]},
+    {"why": "an invoice that is not this order's", "arguments": {"id_order": 1, "id_product": 8, "quantity": 1, "id_order_invoice": 999999}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order_invoice: not an invoice of this order"]},
     {"why": "a field the tool does not take", "arguments": {"id_order": 1, "id_product": 8, "quantity": 1, "restock": true}, "expect": "error", "contains": ["restock: unknown field"]},
     {"why": "every problem is given at once", "arguments": {"id_order": 1, "id_product": 999999, "quantity": 0, "restock": true}, "expect": "error", "contains": ["restock: unknown field", "quantity: must be a whole number", "id_product: no product of this shop"]},
     {"why": "a product without combinations added to a demo order: added where the order is not shipped, refused where it is - depends on the demo data", "arguments": {"id_order": 2, "id_product": 8, "quantity": 1}, "expect": "any"},

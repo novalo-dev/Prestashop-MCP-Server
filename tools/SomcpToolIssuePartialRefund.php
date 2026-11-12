@@ -683,7 +683,10 @@ class SomcpToolIssuePartialRefund
     }
 
     /**
-     * The error shape of the order tools: every problem at once.
+     * The refusal of the refund family and of the order writes built on it.
+     *
+     * Kept as the one entry point those tools call, so they all answer in the
+     * shared envelope of SomcpTool::refused() with the same verb.
      *
      * @param string[] $problems
      *
@@ -691,7 +694,7 @@ class SomcpToolIssuePartialRefund
      */
     public static function refused(array $problems): array
     {
-        return SomcpTool::text("Nothing was recorded.\n- " . implode("\n- ", $problems), true);
+        return SomcpTool::refused('recorded', $problems);
     }
 
     /**

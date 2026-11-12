@@ -129,7 +129,7 @@ class SomcpToolSetInvoiceNote
             $problems[] = (array_key_exists('reference', $arguments) && SomcpTool::id($arguments, 'id_order') <= 0
                 ? 'reference' : 'id_order') . ': ' . $order;
 
-            return self::refused($problems);
+            return SomcpTool::refused('changed', $problems);
         }
 
         // The invoice must exist and belong to this order: the core's own check
@@ -150,7 +150,7 @@ class SomcpToolSetInvoiceNote
         }
 
         if ($problems !== [] || $invoice === null || $note === null) {
-            return self::refused($problems);
+            return SomcpTool::refused('changed', $problems);
         }
 
         $previous = (string) $invoice->note;
@@ -183,7 +183,7 @@ class SomcpToolSetInvoiceNote
                 $idEmployee
             );
 
-            return self::refused([
+            return SomcpTool::refused('changed', [
                 'id_order_invoice: the note could not be saved - check the invoice with somcp_get_order',
             ]);
         }
@@ -216,19 +216,6 @@ class SomcpToolSetInvoiceNote
         $definition = OrderInvoice::$definition;
 
         return isset($definition['fields']['note']['size']) ? (int) $definition['fields']['note']['size'] : 0;
-    }
-
-    /**
-     * Every mistake in one answer, each as `<path>: <problem>`, in the shared
-     * refusal shape.
-     *
-     * @param string[] $problems
-     *
-     * @return array<string, mixed>
-     */
-    private static function refused(array $problems): array
-    {
-        return SomcpTool::text("Nothing was changed.\n- " . implode("\n- ", $problems), true);
     }
 
     /**

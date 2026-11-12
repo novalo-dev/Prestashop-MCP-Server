@@ -773,7 +773,7 @@ line: `id_order_detail`, `product_name`, `quantity`, `amount_tax_excluded`,
 found afterwards.
 
 **Errors** - every problem at once, nothing recorded when one check fails,
-each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+each as `<path>: <problem>` under "Nothing was recorded. Correct these and call again:": unknown fields of a
 line; the order not found or a reference shared by several orders; a line that
 is not one of this order's; a quantity below 1 or above what is left; an amount
 missing, not above 0, above the line's maximum, or in the wrong tax mode;
@@ -847,7 +847,7 @@ At least one of `credit_slip` and `voucher` must be true, as on screen.
 recorded but the slip or the voucher cannot be found afterwards.
 
 **Errors** - every problem at once, nothing recorded when one check fails,
-each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+each as `<path>: <problem>` under "Nothing was recorded. Correct these and call again:": unknown fields of a
 line; no lines; the order not found or a reference shared by several orders; a
 line that is not one of this order's; a quantity below 1 or above what is
 left; `credit_slip` and `voucher` both false; `voucher_refund_type` on an order
@@ -925,7 +925,7 @@ when the refund was recorded but the slip or the voucher cannot be found
 afterwards.
 
 **Errors** - every problem at once, nothing recorded when one check fails,
-each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+each as `<path>: <problem>` under "Nothing was recorded. Correct these and call again:": unknown fields of a
 line; no lines; `restock` missing; the order not found or a reference shared
 by several orders; a line that is not one of this order's; a quantity below 1
 or above what is left; `credit_slip` and `voucher` both false;
@@ -989,7 +989,7 @@ left and the status changed), `status` after the call (`id`, `name`), and
 `warning` when the order was cancelled but the customer email failed.
 
 **Errors** - every problem at once, nothing recorded when one check fails,
-each as `<path>: <problem>` under "Nothing was recorded.": unknown fields of a
+each as `<path>: <problem>` under "Nothing was recorded. Correct these and call again:": unknown fields of a
 line; no lines; the order not found or a reference shared by several orders; a
 line that is not one of this order's (naming `somcp_get_order`); a quantity
 below 1 or above what is left (giving that quantity); merchandise returns off
@@ -1055,7 +1055,7 @@ line exactly as `somcp_get_order` returns one of `products[]`), `invoice`
 (exactly as `somcp_get_order` returns them) and `currency`.
 
 **Errors** - every problem at once, nothing recorded when one check fails,
-each as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the
+each as `<path>: <problem>` under "Nothing was recorded. Correct these and call again:": unknown fields; the
 order not found or a reference shared by several orders; `id_product` unknown
 in the shop; `id_product_attribute` missing, unknown or not of the product;
 `quantity` below 1; prices not numbers, below 0, or not agreeing with the tax
@@ -1120,7 +1120,7 @@ changed field its `old` and `new` value, under the parameter names), `line`
 `totals` (exactly as `somcp_get_order` returns them) and `currency`.
 
 **Errors** - every problem at once, nothing recorded when one check fails, each
-as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the order
+as `<path>: <problem>` under "Nothing was recorded. Correct these and call again:": unknown fields; the order
 not found or a reference shared by several orders; `id_order_detail` missing or
 not a line of the order; `quantity` 0 (pointing to `somcp_delete_order_product`)
 or below; prices not numbers, below 0, or not agreeing with the tax rate;
@@ -1169,7 +1169,7 @@ it was before the removal, exactly as `somcp_get_order` returns one of
 them) and `currency`.
 
 **Errors** - every problem at once, nothing recorded when one check fails, each
-as `<path>: <problem>` under "Nothing was recorded.": unknown fields; the order
+as `<path>: <problem>` under "Nothing was recorded. Correct these and call again:": unknown fields; the order
 not found or a reference shared by several orders; `id_order_detail` missing or
 not a line of the order (`id_order_detail: no line of this order has the
 identifier <n> - find it with somcp_get_order`). Then, each with its reason: the
@@ -1225,7 +1225,7 @@ in both answers, and its `id_order_cart_rule` is what
 `somcp_delete_order_discount` takes.
 
 **Errors** - every problem at once, nothing recorded when one check fails, each
-under "Nothing was recorded.": `name` missing, empty, too long or not clean;
+under "Nothing was recorded. Correct these and call again:": `name` missing, empty, too long or not clean;
 `type` not one of the three; `value` missing for `percent` /
 `amount_tax_included`, given for `free_shipping`, at or below 0, above 100 for a
 percent, or above the total for an amount (giving that total); the order not
@@ -1279,7 +1279,7 @@ its line lost one unit), and the order totals after the change
 removed is `deleted: false` with a `reason`, and nothing happens.
 
 **Errors** - every problem at once, nothing deleted when one check fails, each
-under "Nothing was deleted.": a field the tool does not take; the order not
+under "Nothing was deleted. Correct these and call again:": a field the tool does not take; the order not
 found or a reference shared by several orders; `id_order_cart_rule` missing or
 not a whole number; `id_order_cart_rule: no discount of this order has the
 identifier <n> - find it with somcp_get_order` when the row does not exist or
@@ -1331,7 +1331,7 @@ customer tools), or changing the carrier of the order.
 a `reason`, and nothing happens.
 
 **Errors** - every problem at once, nothing changed when one check fails, each
-under "Nothing was changed.": a field the tool does not take; the order not
+under "Nothing was changed. Correct these and call again:": a field the tool does not take; the order not
 found or a reference shared by several orders; `address_type: one of delivery,
 invoice`; `id_address` missing or not a whole number; `id_address: no address
 of this customer has the identifier <n> - find it with somcp_get_customer` for
@@ -1382,7 +1382,7 @@ the same function, then the order totals after the change
 `carrier` and `shipment`, and nothing happens.
 
 **Errors** - every problem at once, nothing changed when one check fails, each
-under "Nothing was changed.": a field the tool does not take; the order not
+under "Nothing was changed. Correct these and call again:": a field the tool does not take; the order not
 found or a reference shared by several orders; `id_carrier` missing or not a
 whole number; `id_order_carrier: required, this order has <n> shipments` or
 `id_order_carrier: not a shipment of this order`, followed by the shipments
@@ -1431,7 +1431,7 @@ tool yet).
 as `somcp_get_order` returns `totals` (built by the same function).
 
 **Errors** - every problem at once, nothing changed when one check fails, each
-under "Nothing was changed.": a field the tool does not take; the order not
+under "Nothing was changed. Correct these and call again:": a field the tool does not take; the order not
 found or a reference shared by several orders (the text of
 `SomcpToolGetOrder::find()`); `currency` missing, unknown or inactive, followed
 by the shop's active currencies; a validated order, with the core's sentence
@@ -1480,7 +1480,7 @@ template). A send that fails is `sent: false` with a `warning` and nothing
 changed.
 
 **Errors** - every problem at once, nothing sent when one check fails, each
-under "Nothing was sent.": a field the tool does not take; the order not found
+under "Nothing was sent. Correct these and call again:": a field the tool does not take; the order not found
 or a reference shared by several orders; `id_order_history` missing or not a
 whole number; `id_order_history: not a status line of this order - find it in
 history of somcp_get_order`; `id_order_history: the status <name> sends no
@@ -1537,7 +1537,7 @@ this tool yet (#175, #176).
 (`status_id`, `name`), `payment` (the payment name the order records),
 `totals` in the shape of `totals` of `somcp_get_order`, and `currency`.
 
-**Errors** - under "Nothing was recorded.", every problem at once, each named
+**Errors** - under "Nothing was recorded. Correct these and call again:", every problem at once, each named
 with its field (`products[1].quantity: ...`): a field the tool does not take;
 the customer; each line (product of the shop, available for order, required
 customization fields, combination, minimal quantity, stock when the product
@@ -1716,7 +1716,7 @@ attaches the invoice).
 happens.
 
 **Errors** - every problem at once, nothing generated when one check fails,
-each as `<path>: <problem>` under "Nothing was generated.": unknown fields;
+each as `<path>: <problem>` under "Nothing was generated. Correct these and call again:": unknown fields;
 neither `id_order` nor `reference`, the order not found, or a reference shared
 by several orders; invoices off (naming **Orders > Invoices**, **Invoice
 options > Enable invoices**). An exception of the core is put in the same
@@ -1756,7 +1756,7 @@ or generating the invoice (→ `somcp_generate_order_invoice`).
 and answers `changed: false`.
 
 **Errors** - every problem at once, nothing changed when one check fails, each
-as `<path>: <problem>` under "Nothing was generated.": unknown fields; neither
+as `<path>: <problem>` under "Nothing was generated. Correct these and call again:": unknown fields; neither
 `id_order` nor `reference`, or the order not found; `id_order_invoice` missing
 or not an invoice of this order; `note` missing, holding HTML (`isCleanHtml`),
 or longer than the limit.

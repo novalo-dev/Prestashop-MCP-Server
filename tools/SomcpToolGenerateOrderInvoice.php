@@ -102,7 +102,7 @@ class SomcpToolGenerateOrderInvoice
             $problems[] = (array_key_exists('reference', $arguments) && (int) ($arguments['id_order'] ?? 0) <= 0
                 ? 'reference' : 'id_order') . ': ' . $order;
 
-            return self::refused($problems);
+            return SomcpTool::refused('generated', $problems);
         }
 
         // An order that already has one is answered with it rather than
@@ -124,7 +124,7 @@ class SomcpToolGenerateOrderInvoice
         }
 
         if ($problems !== []) {
-            return self::refused($problems);
+            return SomcpTool::refused('generated', $problems);
         }
 
         try {
@@ -138,7 +138,7 @@ class SomcpToolGenerateOrderInvoice
                 $idEmployee
             );
 
-            return self::refused(['id_order: the invoice could not be generated - check the order with '
+            return SomcpTool::refused('generated', ['id_order: the invoice could not be generated - check the order with '
                 . 'somcp_get_order before trying again']);
         }
 
@@ -166,18 +166,6 @@ class SomcpToolGenerateOrderInvoice
             'order' => self::order($order),
             'invoice' => $invoice,
         ]);
-    }
-
-    /**
-     * The refusal of the other order writes, worded for what this one makes.
-     *
-     * @param string[] $problems
-     *
-     * @return array<string, mixed>
-     */
-    private static function refused(array $problems): array
-    {
-        return SomcpTool::text("Nothing was generated.\n- " . implode("\n- ", $problems), true);
     }
 
     /**

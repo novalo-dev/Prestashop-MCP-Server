@@ -166,8 +166,7 @@ class SomcpToolListStockMovements
         ];
 
         if ($filters['id_product'] > 0 && !SomcpToolAddOrderProduct::inShop($filters['id_product'], $idShop)) {
-            $problems[] = 'id_product: no product of this shop has the identifier ' . $filters['id_product']
-                . ' - find it with somcp_search_products';
+            $problems[] = SomcpTool::notFound('id_product', 'product', $filters['id_product'], 'somcp_search_products');
         } elseif ($filters['id_product_attribute'] > 0) {
             if ($filters['id_product'] <= 0) {
                 $problems[] = 'id_product_attribute: give id_product too, the product of this combination';
@@ -177,16 +176,14 @@ class SomcpToolListStockMovements
                 $idShop
             )) {
                 $problems[] = 'id_product_attribute: no combination of this product has the identifier '
-                    . $filters['id_product_attribute'] . ' - read them with somcp_get_stock';
+                    . $filters['id_product_attribute'] . ' - find it with somcp_get_stock';
             }
         }
         if ($filters['id_category'] > 0 && !self::exists('category_shop', 'id_category', $filters['id_category'], $idShop)) {
-            $problems[] = 'id_category: no category of this shop has the identifier ' . $filters['id_category']
-                . ' - find it with somcp_list_categories';
+            $problems[] = SomcpTool::notFound('id_category', 'category', $filters['id_category'], 'somcp_list_categories');
         }
         if ($filters['id_supplier'] > 0 && !self::exists('supplier_shop', 'id_supplier', $filters['id_supplier'], $idShop)) {
-            $problems[] = 'id_supplier: no supplier of this shop has the identifier ' . $filters['id_supplier']
-                . ' - find it with somcp_list_suppliers';
+            $problems[] = SomcpTool::notFound('id_supplier', 'supplier', $filters['id_supplier'], 'somcp_list_suppliers');
         }
 
         $types = self::types($idLang);

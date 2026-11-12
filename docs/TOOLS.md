@@ -409,6 +409,13 @@ column. The company is returned whatever `PS_B2B_ENABLE` says, empty when the
 customer has none. The count joins the same tables as the list, so
 `total_count` follows every filter.
 
+A field the tool does not take, a `sort` outside its list, a `new_client` that
+is not true or false, a `total_min` or `total_max` that is not a number, a
+`date_from` or `date_to` that is not `YYYY-MM-DD`, or a `status_id` that is not
+a whole number above 0 or matches no order status is refused in one answer,
+`Nothing was read`, before anything is read: never ignored, never replaced by
+the default order.
+
 #### `somcp_get_order`
 **State**: written
 **Nature**: `acts(VIEW, 'AdminOrders')` · **Scope**: `mcp.orders.read`

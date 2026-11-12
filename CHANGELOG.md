@@ -248,6 +248,15 @@ date is corrected in one call, not two. A misspelt field is named instead of
 ignored, an unknown status, invoice or shipment points to the tool that lists
 them, and nothing is recorded, changed or emailed while a problem remains.
 
+**`somcp_search_orders` refuses a filter it cannot use.** A misspelt field, a
+sort it does not know such as "amount", a date that is not YYYY-MM-DD, a
+`total_min` or `total_max` that is not a number, a `new_client` that is not true
+or false, or a `status_id` that is not a whole number above 0 or matches no
+order status is now listed in one answer and nothing is read, instead of being
+dropped or read in the default date order and reported as the orders asked for.
+An unknown status points to `somcp_list_order_statuses`, the way every order
+tool words it.
+
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the
 customer, beside the fields `somcp_update_customer` and `somcp_create_customer`

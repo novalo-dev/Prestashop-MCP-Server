@@ -43,6 +43,9 @@ class SomcpToolSearchOrders
     /** @var int Most a single call will return, whatever it asks for. */
     private const MAX_LIMIT = 100;
 
+    /** @var array<int, string> Sort keys offered, read by the schema and the check of the call alike. */
+    private const SORTS = ['date_desc', 'date_asc', 'total_desc', 'total_asc'];
+
     /**
      * @return SomcpTool
      */
@@ -119,7 +122,7 @@ class SomcpToolSearchOrders
                     ],
                     'sort' => [
                         'type' => 'string',
-                        'enum' => ['date_desc', 'date_asc', 'total_desc', 'total_asc'],
+                        'enum' => self::SORTS,
                         'description' => 'Order of the results. Most recent first by default.',
                     ],
                     'language' => [
@@ -153,6 +156,14 @@ class SomcpToolSearchOrders
      */
     public static function handle(array $arguments, array $context): array
     {
+        // A misspelt filter, or a value of the wrong kind, used to be dropped
+        // or the whole list returned in date order, and the assistant reported
+        // it as the orders asked for: refused instead, every problem at once.
+        $errors = self::problems($arguments);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $idShop = Somcp::currentShopId();
         // The shop default rather than the context language, which on an MCP
         // call follows the client's browser header (#149).
@@ -248,6 +259,54 @@ class SomcpToolSearchOrders
             // The language of the country and status names.
             'language' => $languageIso,
         ]);
+    }
+
+    /**
+     * Every problem of the call, before anything is read.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return array<int, string>
+     */
+    private static function problems(array $arguments): array
+    {
+        $errors = SomcpTool::unknownFields($arguments, [
+            'id_order', 'reference', 'customer_name', 'customer_email', 'date_from', 'date_to',
+            'status_id', 'total_min', 'total_max', 'payment_method', 'new_client', 'delivery_country',
+            'company', 'only_valid', 'sort', 'language', 'limit', 'offset',
+        ]);
+        foreach (['date_from', 'date_to'] as $key) {
+            if (array_key_exists($key, $arguments) && SomcpTool::day($arguments[$key]) === null) {
+                $errors[] = $key . ': a date, YYYY-MM-DD';
+            }
+        }
+        if (array_key_exists('status_id', $arguments)) {
+            $idStatus = SomcpTool::id($arguments, 'status_id');
+            if ($idStatus === 0) {
+                $errors[] = SomcpTool::notAnIdentifier('status_id');
+            } else {
+                // A deleted status still loads: Delete on the Statuses page only
+                // flags it, and the order grid never filters on one, so neither
+                // does this tool.
+                $state = new OrderState($idStatus);
+                if (!Validate::isLoadedObject($state) || (bool) $state->deleted) {
+                    $errors[] = SomcpTool::notFound('status_id', 'order status', $idStatus, 'somcp_list_order_statuses');
+                }
+            }
+        }
+        foreach (['total_min', 'total_max'] as $key) {
+            if (array_key_exists($key, $arguments) && !is_numeric($arguments[$key])) {
+                $errors[] = $key . ': a number';
+            }
+        }
+        if (array_key_exists('new_client', $arguments) && !is_bool($arguments['new_client'])) {
+            $errors[] = 'new_client: true or false';
+        }
+        if (array_key_exists('sort', $arguments) && !in_array($arguments['sort'], self::SORTS, true)) {
+            $errors[] = SomcpTool::oneOf('sort', self::SORTS);
+        }
+
+        return $errors;
     }
 
     /**

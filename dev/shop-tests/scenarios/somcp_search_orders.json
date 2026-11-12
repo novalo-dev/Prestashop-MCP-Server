@@ -11,6 +11,11 @@
     {"why": "orders delivered to one country", "arguments": {"delivery_country": "US"}, "expect": "ok", "contains": ["total_count"]},
     {"why": "a country code that does not exist", "arguments": {"delivery_country": "ZZ"}, "expect": "error"},
     {"why": "orders of a company, cheapest first", "arguments": {"company": "a", "sort": "total_asc"}, "expect": "ok", "contains": ["total_count"]},
-    {"why": "amount range on the tax included total", "arguments": {"total_min": 1, "total_max": 100000, "sort": "total_desc"}, "expect": "ok"}
+    {"why": "amount range on the tax included total", "arguments": {"total_min": 1, "total_max": 100000, "sort": "total_desc"}, "expect": "ok"},
+    {"why": "a misspelt filter is named and nothing is read", "arguments": {"referense": "XKBKNABJ"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "referense: not a field of this tool"]},
+    {"why": "a sort outside the list, refused with the list instead of the default order", "arguments": {"sort": "amount"}, "expect": "error", "contains": ["sort: one of date_desc, date_asc, total_desc, total_asc"]},
+    {"why": "a date in the merchant's format is refused, not read as the whole history", "arguments": {"date_from": "01/10/2026"}, "expect": "error", "contains": ["date_from: a date, YYYY-MM-DD"]},
+    {"why": "a status identifier the shop does not have, pointed to the list", "arguments": {"status_id": 999999}, "expect": "error", "contains": ["status_id: no order status of this shop has the identifier 999999 - find it with somcp_list_order_statuses"]},
+    {"why": "an amount and a flag of the wrong kind, reported together instead of ignored", "arguments": {"total_min": "cheap", "new_client": "yes"}, "expect": "error", "contains": ["total_min: a number", "new_client: true or false"]}
   ]
 }

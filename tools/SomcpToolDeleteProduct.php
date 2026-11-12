@@ -84,12 +84,19 @@ class SomcpToolDeleteProduct
 
         // Refused, not ignored: a second call for a product already deleted
         // must not read as a success, nor fall on another product.
-        $product = self::locate(self::identifier($arguments['id_product'] ?? null), $idShop);
-        if ($product === null) {
-            return SomcpTool::text(
-                'No product of this shop has this identifier. Nothing was deleted. Find it with somcp_search_products.',
-                true
-            );
+        $errors = SomcpTool::unknownFields($arguments, ['id_product']);
+        $idProduct = SomcpTool::id($arguments, 'id_product');
+        $product = null;
+        if ($idProduct === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_product');
+        } else {
+            $product = self::locate($idProduct, $idShop);
+            if ($product === null) {
+                $errors[] = SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products');
+            }
+        }
+        if ($errors !== [] || $product === null) {
+            return SomcpTool::refused('deleted', $errors);
         }
 
         $idProduct = (int) $product->id;
@@ -260,24 +267,5 @@ class SomcpToolDeleteProduct
         }
 
         return trim((string) $name);
-    }
-
-    /**
-     * A product identifier as a client may send it: an integer, or digits in a string.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && ctype_digit($value)) {
-            return (int) $value;
-        }
-
-        return 0;
     }
 }

@@ -110,16 +110,36 @@ class SomcpToolGetProduct
         }
         [$idLang, $iso] = $language;
 
-        $product = self::locate((int) ($arguments['id_product'] ?? 0), $idLang, $idShop);
-        if ($product === null) {
-            return SomcpTool::text('No product of this shop has this identifier. Find it with somcp_search_products.', true);
+        // A cast would read an array as 1 and answer about a product nobody
+        // asked for: only a whole number is an identifier.
+        $errors = SomcpTool::unknownFields($arguments, ['id_product', 'id_product_attribute', 'language']);
+        $idProduct = SomcpTool::id($arguments, 'id_product');
+        $product = null;
+        if ($idProduct === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_product');
+        } else {
+            $product = self::locate($idProduct, $idLang, $idShop);
+            if ($product === null) {
+                $errors[] = SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products');
+            }
         }
 
-        $idCombination = (int) ($arguments['id_product_attribute'] ?? 0);
-        if ($idCombination > 0 && !self::combinationBelongs($product, $idCombination, $idShop)) {
+        // 0 stands for no combination: the tools that read a product through
+        // this one pass it when they were given none.
+        $rawCombination = $arguments['id_product_attribute'] ?? 0;
+        $idCombination = SomcpTool::id($arguments, 'id_product_attribute');
+        if ($idCombination === 0 && $rawCombination !== 0 && $rawCombination !== '0') {
+            $errors[] = SomcpTool::notAnIdentifier('id_product_attribute');
+        } elseif ($idCombination > 0 && $product !== null && !self::combinationBelongs($product, $idCombination, $idShop)) {
             // Answering with the whole product instead would let the assistant
             // describe a combination it never read.
-            return SomcpTool::text('This combination does not belong to this product in this shop.', true);
+            // A combination belongs to its product, not to the shop, as
+            // somcp_create_product words it.
+            $errors[] = 'id_product_attribute: no combination of this product has the identifier '
+                . $idCombination . ' - find it with somcp_get_product';
+        }
+        if ($errors !== [] || $product === null) {
+            return SomcpTool::refused('read', $errors);
         }
 
         $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));

@@ -6,7 +6,9 @@
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_product": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
     {"why": "a virtual product, without combinations", "arguments": {"id_product": 12}, "expect": "ok", "contains": ["\"combinations\": []", "\"low_stock_alert\"", "\"active\""]},
     {"why": "a pack", "arguments": {"id_product": 15}, "expect": "ok"},
-    {"why": "a product that does not exist", "arguments": {"id_product": 999999}, "expect": "error"},
-    {"why": "no identifier", "arguments": {"id_product": 0}, "expect": "error"}
+    {"why": "a product that does not exist", "arguments": {"id_product": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_product: no product of this shop has the identifier 999999 - find it with somcp_search_products"]},
+    {"why": "no identifier", "arguments": {"id_product": 0}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_product: a whole number above 0"]},
+    {"why": "an identifier given as a list is not read as product 1", "arguments": {"id_product": [1]}, "expect": "error", "contains": ["- id_product: a whole number above 0"]},
+    {"why": "a misspelt field is named and nothing is read", "arguments": {"id_prodcut": 1}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_prodcut: not a field of this tool", "- id_product: a whole number above 0"]}
   ]
 }

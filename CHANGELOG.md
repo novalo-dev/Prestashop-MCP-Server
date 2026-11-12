@@ -185,7 +185,14 @@ The brand and supplier tools `somcp_get_manufacturer`, `somcp_get_supplier`,
 `somcp_delete_manufacturer_address` follow the same rule: a misspelt field or
 filter is named and nothing is read, changed or deleted, rather than being
 ignored or read as a missing brand, and an unknown country code and an unknown
-brand are reported together in one answer.
+brand are reported together in one answer. `somcp_get_product`,
+`somcp_set_product_active`, `somcp_delete_product`, `somcp_get_stock` and
+`somcp_set_stock_quantity` do the same: a misspelt field is named and nothing
+is read, switched, deleted or moved, an unknown product is worded with the
+identifier given and `somcp_search_products`, a combination the product does
+not have points to `somcp_get_product` or `somcp_get_stock`, and a stock change
+reports a quantity that is not a whole number, a missing product and a wrong
+combination together in one answer.
 
 **Refusals of the order writes read like the others.** The refund, return
 and cancel tools, the tools that add, change or delete an order line or a

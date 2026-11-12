@@ -9,8 +9,8 @@
     {"why": "no field to change given", "arguments": {"id_order": 1, "id_order_detail": 1}, "expect": "error", "contains": ["give at least one of quantity"]},
     {"why": "a negative price", "arguments": {"id_order": 1, "id_order_detail": 1, "unit_price_tax_excluded": -1}, "expect": "error", "contains": ["unit_price_tax_excluded: must be a number, 0 or more"]},
     {"why": "an invoice that is not this order's", "arguments": {"id_order": 1, "id_order_detail": 1, "id_order_invoice": 999999}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order_invoice: not an invoice of this order"]},
-    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "id_order_detail": 1, "quantity": 2, "restock": true}, "expect": "error", "contains": ["restock: unknown field"]},
-    {"why": "every problem is given at once", "arguments": {"id_order": 1, "id_order_detail": 999999, "quantity": 0, "restock": true}, "expect": "error", "contains": ["restock: unknown field", "quantity: 0 removes the line", "id_order_detail: no line of this order"]},
+    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "id_order_detail": 1, "quantity": 2, "restock": true}, "expect": "error", "contains": ["restock: not a field of this tool"]},
+    {"why": "every problem is given at once", "arguments": {"id_order": 1, "id_order_detail": 999999, "quantity": 0, "restock": true}, "expect": "error", "contains": ["restock: not a field of this tool", "quantity: 0 removes the line", "id_order_detail: no line of this order"]},
     {"why": "a quantity changed on a demo order line: edited where the order is not delivered, refused where it is, unchanged if it already holds it - depends on the demo data", "arguments": {"id_order": 1, "id_order_detail": 1, "quantity": 2}, "expect": "any"},
     {"why": "the same values again: changed false, or the same refusal - either way no crash", "arguments": {"id_order": 1, "id_order_detail": 1, "quantity": 2}, "expect": "any"}
   ]

@@ -140,9 +140,7 @@ class SomcpToolSetOrderCurrency
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
 
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': unknown field';
-        }
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         $order = SomcpToolGetOrder::find($arguments);
         $idShop = $order instanceof Order ? (int) $order->id_shop : Somcp::currentShopId();

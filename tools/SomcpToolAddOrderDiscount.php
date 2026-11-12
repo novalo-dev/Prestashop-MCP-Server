@@ -136,9 +136,7 @@ class SomcpToolAddOrderDiscount
 
         $problems = [];
 
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': unknown field';
-        }
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         // The discount name: one plain text in the shop's default language, as
         // the screen stores it. The length limit is read from CartRule's

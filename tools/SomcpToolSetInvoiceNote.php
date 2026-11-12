@@ -102,9 +102,7 @@ class SomcpToolSetInvoiceNote
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
 
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': unknown field';
-        }
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         // The note's shape and content do not depend on the order, so they are
         // checked up front and come back together with the rest.

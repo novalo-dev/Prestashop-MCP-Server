@@ -138,9 +138,7 @@ class SomcpToolAddOrderProduct
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
 
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': unknown field';
-        }
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         $quantity = $arguments['quantity'] ?? null;
         if (!is_int($quantity) || $quantity < 1) {

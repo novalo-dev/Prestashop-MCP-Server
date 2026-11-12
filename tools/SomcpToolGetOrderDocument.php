@@ -123,9 +123,7 @@ class SomcpToolGetOrderDocument
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
 
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': unknown field';
-        }
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         $kind = isset($arguments['document']) && is_string($arguments['document']) ? $arguments['document'] : '';
         if (!isset(self::DOCUMENTS[$kind])) {

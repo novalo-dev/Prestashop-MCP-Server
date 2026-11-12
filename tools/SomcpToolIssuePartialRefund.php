@@ -475,9 +475,7 @@ class SomcpToolIssuePartialRefund
                 $problems[] = $path . ': must be an object with id_order_detail, quantity and an amount';
                 continue;
             }
-            foreach (array_diff(array_keys($entry), self::LINE_KEYS) as $unknown) {
-                $problems[] = $path . '.' . $unknown . ': unknown field';
-            }
+            array_push($problems, ...SomcpTool::unknownFields($entry, self::LINE_KEYS, [], $path . '.'));
 
             $idDetail = self::integer($entry['id_order_detail'] ?? null);
             if ($idDetail === null || $idDetail <= 0) {

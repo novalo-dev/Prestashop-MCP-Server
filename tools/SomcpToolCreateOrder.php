@@ -188,9 +188,7 @@ class SomcpToolCreateOrder
         $idShop = Somcp::currentShopId();
         $problems = [];
 
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': unknown field';
-        }
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         $customer = self::customer($arguments, $idShop, $problems);
         $lines = self::lines($arguments, $idShop, $problems);
@@ -333,9 +331,7 @@ class SomcpToolCreateOrder
                 $problems[] = $path . ': give an object with id_product and quantity';
                 continue;
             }
-            foreach (array_diff(array_keys($item), self::LINE_KEYS) as $unknown) {
-                $problems[] = $path . '.' . $unknown . ': unknown field';
-            }
+            array_push($problems, ...SomcpTool::unknownFields($item, self::LINE_KEYS, [], $path . '.'));
 
             $quantity = $item['quantity'] ?? null;
             if (!is_int($quantity) || $quantity < 1) {

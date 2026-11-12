@@ -6,8 +6,8 @@
     {"why": "no currency given, the active ones listed", "arguments": {"id_order": 1}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "currency: give the ISO code of the new currency", "the active currencies of the shop: "]},
     {"why": "a currency the shop does not have, the active ones listed", "arguments": {"id_order": 1, "currency": "XYZ"}, "expect": "error", "contains": ["currency: not a currency of this shop", "the active currencies of the shop: "]},
     {"why": "a currency that is not an ISO code", "arguments": {"id_order": 1, "currency": 12}, "expect": "error", "contains": ["currency: not a currency of this shop"]},
-    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "currency": "EUR", "rate": 1.1}, "expect": "error", "contains": ["rate: unknown field"]},
-    {"why": "every problem is given at once", "arguments": {"id_order": 999999, "currency": "XYZ", "rate": 1.1}, "expect": "error", "contains": ["rate: unknown field", "id_order: No order of this shop has this identifier", "currency: not a currency of this shop"]},
+    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "currency": "EUR", "rate": 1.1}, "expect": "error", "contains": ["rate: not a field of this tool"]},
+    {"why": "every problem is given at once", "arguments": {"id_order": 999999, "currency": "XYZ", "rate": 1.1}, "expect": "error", "contains": ["rate: not a field of this tool", "id_order: No order of this shop has this identifier", "currency: not a currency of this shop"]},
     {"why": "the shop's own currency on a demo order: changed false when the order has it, refused when the order is validated, converted on a shop with a second currency - the demo data decides, so only the absence of a crash is checked", "arguments": {"id_order": 5, "currency": "EUR"}, "expect": "any"}
   ]
 }

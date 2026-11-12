@@ -113,9 +113,7 @@ class SomcpToolDeleteOrderDiscount
 
         $problems = [];
 
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': unknown field';
-        }
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         $idOrderCartRule = 0;
         if (!array_key_exists('id_order_cart_rule', $arguments)) {

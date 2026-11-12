@@ -257,6 +257,18 @@ dropped or read in the default date order and reported as the orders asked for.
 An unknown status points to `somcp_list_order_statuses`, the way every order
 tool words it.
 
+**A misspelt field reads the same in every order and invoice tool.**
+`somcp_create_order`, `somcp_add_order_product`, `somcp_update_order_product`,
+`somcp_delete_order_product`, `somcp_add_order_discount`,
+`somcp_delete_order_discount`, `somcp_set_order_currency`,
+`somcp_issue_partial_refund`, `somcp_issue_standard_refund`,
+`somcp_return_order_products`, `somcp_cancel_order_products`,
+`somcp_generate_order_invoice`, `somcp_set_invoice_note` and
+`somcp_get_order_document` now name a field they do not take, on the call or on
+one of its lines, with "not a field of this tool", the wording every other tool
+already gives, instead of a wording of their own. The misspelt name is fixed in
+one call rather than read as a wrong value.
+
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the
 customer, beside the fields `somcp_update_customer` and `somcp_create_customer`

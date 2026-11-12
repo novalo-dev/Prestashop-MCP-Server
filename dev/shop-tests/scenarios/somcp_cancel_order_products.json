@@ -10,7 +10,7 @@
     {"why": "a quantity of 0 is refused rather than skipped", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 0}]}, "expect": "error", "contains": ["lines[0].quantity: must be a whole number, at least 1"]},
     {"why": "a quantity far above what the line holds", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 1, "quantity": 999999}]}, "expect": "error", "contains": ["lines[0].quantity:", "left to cancel on this line"]},
     {"why": "a line given twice", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 1, "quantity": 1}, {"id_order_detail": 1, "quantity": 1}]}, "expect": "error", "contains": ["lines[1].id_order_detail: line 1 is already given in lines[0]"]},
-    {"why": "an unknown field of a line", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 1, "quantity": 1, "restock": true}]}, "expect": "error", "contains": ["lines[0].restock: unknown field"]},
+    {"why": "an unknown field of a line", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 1, "quantity": 1, "restock": true}]}, "expect": "error", "contains": ["lines[0].restock: not a field of this tool"]},
     {"why": "every problem is given at once", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 0}]}, "expect": "error", "contains": ["lines[0].quantity", "lines[0].id_order_detail", "merchandise returns are disabled"]}
   ]
 }

@@ -7,7 +7,7 @@
     {"why": "no invoice given", "arguments": {"id_order": 1, "note": "Fragile parcel"}, "expect": "error", "contains": ["id_order_invoice: give the invoice", "somcp_get_order"]},
     {"why": "an invoice the order does not have (the demo data has none)", "arguments": {"id_order": 1, "id_order_invoice": 999999, "note": "Fragile parcel"}, "expect": "error", "contains": ["id_order_invoice: no invoice of this order has the identifier 999999", "somcp_get_order"]},
     {"why": "a note holding a script", "arguments": {"id_order": 1, "id_order_invoice": 999999, "note": "<script>alert(1)</script>"}, "expect": "error", "contains": ["note: the note holds HTML or a character PrestaShop refuses in it"]},
-    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "id_order_invoice": 999999, "note": "Fragile parcel", "send_email": true}, "expect": "error", "contains": ["send_email: unknown field"]},
-    {"why": "every problem is given at once", "arguments": {"id_order": 1, "id_order_invoice": 999999, "note": "<script>x</script>", "send_email": true}, "expect": "error", "contains": ["send_email: unknown field", "note: the note holds HTML", "id_order_invoice: no invoice of this order has the identifier 999999"]}
+    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "id_order_invoice": 999999, "note": "Fragile parcel", "send_email": true}, "expect": "error", "contains": ["send_email: not a field of this tool"]},
+    {"why": "every problem is given at once", "arguments": {"id_order": 1, "id_order_invoice": 999999, "note": "<script>x</script>", "send_email": true}, "expect": "error", "contains": ["send_email: not a field of this tool", "note: the note holds HTML", "id_order_invoice: no invoice of this order has the identifier 999999"]}
   ]
 }

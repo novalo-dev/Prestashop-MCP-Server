@@ -6,8 +6,8 @@
     {"why": "no line given", "arguments": {"id_order": 1}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order_detail: give the line"]},
     {"why": "a line that does not exist", "arguments": {"id_order": 1, "id_order_detail": 999999}, "expect": "error", "contains": ["id_order_detail: no line of this order has the identifier 999999", "somcp_get_order"]},
     {"why": "a line of another demo order", "arguments": {"id_order": 1, "id_order_detail": 3}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order_detail: no line of this order has the identifier 3 - find it with somcp_get_order"]},
-    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "id_order_detail": 1, "restock": true}, "expect": "error", "contains": ["restock: unknown field"]},
-    {"why": "every problem is given at once", "arguments": {"id_order": 1, "id_order_detail": 999999, "restock": true}, "expect": "error", "contains": ["restock: unknown field", "id_order_detail: no line of this order"]},
+    {"why": "a field the tool does not take", "arguments": {"id_order": 1, "id_order_detail": 1, "restock": true}, "expect": "error", "contains": ["restock: not a field of this tool"]},
+    {"why": "every problem is given at once", "arguments": {"id_order": 1, "id_order_detail": 999999, "restock": true}, "expect": "error", "contains": ["restock: not a field of this tool", "id_order_detail: no line of this order"]},
     {"why": "the last line of a one-line demo order", "arguments": {"id_order": 3, "id_order_detail": 5}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "this is the last line of the order", "somcp_set_order_status"]}
   ]
 }

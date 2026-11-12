@@ -209,7 +209,15 @@ call under the same first line as the catalogue tools - "Nothing was
 recorded", "changed", "deleted", "generated" or "sent", then "Correct these and
 call again:" - so the assistant reads every refusal the same way and fixes
 every problem listed before it calls again. Nothing else in these answers
-changes.
+changes. The order and return status tools and the carrier and tax rule lists
+follow the same rule: `somcp_list_order_statuses`, `somcp_list_return_statuses`,
+`somcp_list_carriers` and `somcp_list_tax_rules` name a misspelt filter instead
+of answering the whole list, and refuse an Enabled or Free shipping filter that
+is not true or false instead of ignoring it; `somcp_update_order_status`,
+`somcp_delete_order_status`, `somcp_update_return_status` and
+`somcp_delete_return_status` word an unknown status with the identifier given
+and the list that holds it, and say when the identifier is not a number at
+all; the two deletions also name a misspelt field, and delete nothing.
 
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the

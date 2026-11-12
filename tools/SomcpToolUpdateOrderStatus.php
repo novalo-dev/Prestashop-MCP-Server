@@ -138,16 +138,14 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
         $state = SomcpToolDeleteOrderStatus::locate($idOrderState);
 
         $errors = [];
-        if ($state === null) {
-            $errors[] = 'status_id: no order status of this shop has the identifier ' . $idOrderState
-                . ' - find it with somcp_list_order_statuses';
+        if ($idOrderState === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('status_id');
+        } elseif ($state === null) {
+            $errors[] = SomcpTool::notFound('status_id', 'order status', $idOrderState, 'somcp_list_order_statuses');
         }
         $plan = self::planUpdate($arguments, $state, $idShop, $errors);
         if ($errors !== [] || $plan === null || $state === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === [] && $plan['icon'] === null) {

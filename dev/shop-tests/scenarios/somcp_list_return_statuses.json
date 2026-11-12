@@ -31,6 +31,17 @@
         "This language is not one of the shop's, which has",
         "or leave language out for the shop default"
       ]
+    },
+    {
+      "why": "a misspelt field is named, not ignored",
+      "arguments": {
+        "langauge": "en"
+      },
+      "expect": "error",
+      "contains": [
+        "Nothing was read. Correct these and call again:",
+        "- langauge: not a field of this tool"
+      ]
     }
   ]
 }

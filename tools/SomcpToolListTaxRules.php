@@ -84,8 +84,18 @@ class SomcpToolListTaxRules
     {
         $idShop = (int) Somcp::currentShop()->id;
 
+        // A misspelt filter, or an active that is not a boolean, would answer
+        // another list than the one asked for without a word: refused.
+        $errors = SomcpTool::unknownFields($arguments, ['active', 'name']);
+        if (array_key_exists('active', $arguments) && !is_bool($arguments['active'])) {
+            $errors[] = 'active: true or false';
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $onlyActive = true;
-        if (isset($arguments['active']) && is_bool($arguments['active'])) {
+        if (isset($arguments['active'])) {
             $onlyActive = $arguments['active'];
         }
 

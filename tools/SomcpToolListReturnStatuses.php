@@ -96,6 +96,12 @@ class SomcpToolListReturnStatuses
         }
         [$idLang, $iso] = $language;
 
+        // A misspelt field is named rather than ignored, as every list does.
+        $errors = SomcpTool::unknownFields($arguments, ['language']);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $statuses = [];
         foreach (OrderReturnState::getOrderReturnStates($idLang) as $state) {
             $id = (int) $state['id_order_return_state'];

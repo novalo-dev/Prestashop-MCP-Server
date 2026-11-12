@@ -92,13 +92,17 @@ class SomcpToolDeleteOrderStatus
         // Refused, not ignored: a second call for a status already deleted
         // must not read as a success. A deleted status is no longer listed,
         // so it is answered like one that was never there.
-        $status = self::locate(SomcpTool::id($arguments, 'status_id'));
-        if ($status === null) {
-            return SomcpTool::text(
-                'No order status of this shop has this identifier. Nothing was deleted. Find it with '
-                    . 'somcp_list_order_statuses.',
-                true
-            );
+        $idAsked = SomcpTool::id($arguments, 'status_id');
+        $status = self::locate($idAsked);
+        // Every problem of the call in one answer, a misspelt field included.
+        $errors = SomcpTool::unknownFields($arguments, ['status_id']);
+        if ($idAsked === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('status_id');
+        } elseif ($status === null) {
+            $errors[] = SomcpTool::notFound('status_id', 'order status', $idAsked, 'somcp_list_order_statuses');
+        }
+        if ($errors !== [] || $status === null) {
+            return SomcpTool::refused('deleted', $errors);
         }
 
         $idOrderState = (int) $status->id;

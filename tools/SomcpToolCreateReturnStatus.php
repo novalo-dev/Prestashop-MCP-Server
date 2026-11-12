@@ -134,10 +134,7 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
         $errors = [];
         $plan = self::planReturnStatus($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idEmployee): array {

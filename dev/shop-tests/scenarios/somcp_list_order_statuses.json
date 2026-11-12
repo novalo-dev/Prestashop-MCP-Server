@@ -3,6 +3,7 @@
     {"why": "lists the statuses of the demo shop, with the renamed keys and the icon", "arguments": {}, "expect": "ok", "contains": ["\"status_id\"", "\"in_transit\"", "\"icon\"", "\"roles\"", "\"language\""]},
     {"why": "names read in a language of the shop asked by its ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
     {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["language: not a language of this shop"]},
-    {"why": "an unknown argument is refused, not ignored", "arguments": {"foo": 1}, "expect": "error", "contains": ["foo: not a field of this tool"]}
+    {"why": "an unknown argument is refused, not ignored", "arguments": {"foo": 1}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- foo: not a field of this tool"]},
+    {"why": "every problem of the call in one answer", "arguments": {"foo": 1, "language": "zz"}, "expect": "error", "contains": ["- foo: not a field of this tool", "- language: not a language of this shop"]}
   ]
 }

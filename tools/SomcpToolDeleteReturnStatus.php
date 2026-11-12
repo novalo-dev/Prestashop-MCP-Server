@@ -98,12 +98,15 @@ class SomcpToolDeleteReturnStatus
         // Refused, not ignored: a second call for a status already deleted
         // must not read as a success.
         $status = SomcpToolCreateReturnStatus::existingStatus($idReturnState);
-        if ($status === null) {
-            return SomcpTool::text(
-                'No return status has this identifier. Nothing was deleted. Find it with '
-                    . 'somcp_list_return_statuses.',
-                true
-            );
+        // Every problem of the call in one answer, a misspelt field included.
+        $errors = SomcpTool::unknownFields($arguments, ['id_order_return_state']);
+        if ($idReturnState === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_order_return_state');
+        } elseif ($status === null) {
+            $errors[] = SomcpTool::notFound('id_order_return_state', 'return status', $idReturnState, 'somcp_list_return_statuses');
+        }
+        if ($errors !== [] || $status === null) {
+            return SomcpTool::refused('deleted', $errors);
         }
 
         // Read before deleting: afterwards there is nothing left to read it

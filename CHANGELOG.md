@@ -233,6 +233,12 @@ is not true or false instead of ignoring it; `somcp_update_order_status`,
 and the list that holds it, and say when the identifier is not a number at
 all; the two deletions also name a misspelt field, and delete nothing.
 
+**Clearer refusals from `somcp_set_order_note`.** A wrong call to
+`somcp_set_order_note` now lists every problem in one answer, in the same form
+as the other tools, names a misspelt field instead of ignoring it, and reports
+a note and a missing order together rather than one at a time, so the private
+note of an order is corrected in a single call.
+
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the
 customer, beside the fields `somcp_update_customer` and `somcp_create_customer`

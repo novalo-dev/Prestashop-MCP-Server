@@ -94,16 +94,15 @@ class SomcpToolGetAttributeValue
 
         // A cast would read an array as 1 and answer about a value nobody
         // asked for: only a whole number is an identifier.
-        $value = $arguments['id_attribute'] ?? null;
-        $idAttribute = is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
-
-        if (self::existingValue($idAttribute, $idShop) === null) {
-            return SomcpTool::text(
-                'No attribute value of this shop has this identifier. Find it with somcp_list_attributes.',
-                true
-            );
+        $idAttribute = SomcpTool::id($arguments, 'id_attribute');
+        $errors = SomcpTool::unknownFields($arguments, ['id_attribute', 'language']);
+        if ($idAttribute === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_attribute');
+        } elseif (self::existingValue($idAttribute, $idShop) === null) {
+            $errors[] = SomcpTool::notFound('id_attribute', 'attribute value', $idAttribute, 'somcp_list_attributes');
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
         // What a delete would take with the value, so the merchant sees it

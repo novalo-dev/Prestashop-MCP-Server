@@ -174,7 +174,11 @@ supplier or related product they do not find is named with its identifier and
 the tool that lists it, a combination, specific price or image the product
 does not have points to `somcp_get_product`, a misspelt field reads as such
 even inside a group, and a product that does not exist is refused in the same
-answer as any other mistake.
+answer as any other mistake. The read tools `somcp_get_attribute_group`,
+`somcp_get_attribute_value`, `somcp_get_feature` and `somcp_get_feature_value`
+now answer this way too: a misspelt field is named instead of being read as a
+missing record, and an unknown attribute group, attribute value, feature or
+feature value is worded with the identifier given and the tool that lists it.
 
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the

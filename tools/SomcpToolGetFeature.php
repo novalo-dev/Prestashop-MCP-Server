@@ -95,13 +95,15 @@ class SomcpToolGetFeature
 
         // A cast would read an array as 1 and answer about a feature nobody
         // asked for: only a whole number is an identifier.
-        $value = $arguments['id_feature'] ?? null;
-        $idFeature = is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
-
-        if (self::existingFeature($idFeature, $idShop) === null) {
-            return SomcpTool::text('No feature of this shop has this identifier. Find it with somcp_list_features.', true);
+        $idFeature = SomcpTool::id($arguments, 'id_feature');
+        $errors = SomcpTool::unknownFields($arguments, ['id_feature', 'language']);
+        if ($idFeature === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_feature');
+        } elseif (self::existingFeature($idFeature, $idShop) === null) {
+            $errors[] = SomcpTool::notFound('id_feature', 'feature', $idFeature, 'somcp_list_features');
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
         return SomcpTool::json(['language' => $iso] + self::feature($idFeature, $idLang, $idShop));

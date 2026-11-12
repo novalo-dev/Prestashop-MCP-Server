@@ -5,8 +5,9 @@
     {"why": "in the shop default language", "arguments": {"id_attribute_group": 1}, "expect": "ok", "contains": ["\"id_attribute_group\": 1"]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_attribute_group": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
     {"why": "the identifier as a numeric string", "arguments": {"id_attribute_group": "2"}, "expect": "ok", "contains": ["\"id_attribute_group\": 2"]},
-    {"why": "a group that does not exist", "arguments": {"id_attribute_group": 999999}, "expect": "error", "contains": ["No attribute group of this shop"]},
-    {"why": "no identifier", "arguments": {"id_attribute_group": 0}, "expect": "error", "contains": ["No attribute group of this shop"]},
-    {"why": "an identifier that is not a number", "arguments": {"id_attribute_group": [1]}, "expect": "error", "contains": ["No attribute group of this shop"]}
+    {"why": "a group that does not exist", "arguments": {"id_attribute_group": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_attribute_group: no attribute group of this shop has the identifier 999999 - find it with somcp_list_attributes"]},
+    {"why": "no identifier", "arguments": {"id_attribute_group": 0}, "expect": "error", "contains": ["- id_attribute_group: a whole number above 0"]},
+    {"why": "an identifier that is not a number", "arguments": {"id_attribute_group": [1]}, "expect": "error", "contains": ["- id_attribute_group: a whole number above 0"]},
+    {"why": "a misspelt field is named, not read as a missing group", "arguments": {"id_attribut_group": 1}, "expect": "error", "contains": ["Nothing was read", "- id_attribut_group: not a field of this tool", "- id_attribute_group: a whole number above 0"]}
   ]
 }

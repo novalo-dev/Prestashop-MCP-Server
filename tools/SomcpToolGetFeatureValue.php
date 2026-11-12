@@ -97,14 +97,19 @@ class SomcpToolGetFeatureValue
 
         // A cast would read an array as 1 and answer about a value nobody
         // asked for: only a whole number is an identifier.
-        $value = $arguments['id_feature_value'] ?? null;
-        $idFeatureValue = is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
-
-        $featureValue = self::loadedValue($idFeatureValue, $idShop);
-        if ($featureValue === null) {
-            return SomcpTool::text('No feature value of this shop has this identifier. Find it with somcp_list_features.', true);
+        $idFeatureValue = SomcpTool::id($arguments, 'id_feature_value');
+        $errors = SomcpTool::unknownFields($arguments, ['id_feature_value', 'language']);
+        $featureValue = null;
+        if ($idFeatureValue === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_feature_value');
+        } else {
+            $featureValue = self::loadedValue($idFeatureValue, $idShop);
+            if ($featureValue === null) {
+                $errors[] = SomcpTool::notFound('id_feature_value', 'feature value', $idFeatureValue, 'somcp_list_features');
+            }
+        }
+        if ($errors !== [] || $featureValue === null) {
+            return SomcpTool::refused('read', $errors);
         }
         if (self::isCustom($featureValue)) {
             return SomcpTool::text(

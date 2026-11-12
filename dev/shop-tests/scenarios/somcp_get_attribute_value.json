@@ -5,8 +5,9 @@
     {"why": "in the shop default language", "arguments": {"id_attribute": 1}, "expect": "ok", "contains": ["\"id_attribute\": 1"]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_attribute": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
     {"why": "the identifier as a numeric string", "arguments": {"id_attribute": "10"}, "expect": "ok", "contains": ["\"id_attribute\": 10"]},
-    {"why": "a value that does not exist", "arguments": {"id_attribute": 999999}, "expect": "error", "contains": ["No attribute value of this shop"]},
-    {"why": "no identifier", "arguments": {"id_attribute": 0}, "expect": "error", "contains": ["No attribute value of this shop"]},
-    {"why": "an identifier that is not a number", "arguments": {"id_attribute": [1]}, "expect": "error", "contains": ["No attribute value of this shop"]}
+    {"why": "a value that does not exist", "arguments": {"id_attribute": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_attribute: no attribute value of this shop has the identifier 999999 - find it with somcp_list_attributes"]},
+    {"why": "no identifier", "arguments": {"id_attribute": 0}, "expect": "error", "contains": ["- id_attribute: a whole number above 0"]},
+    {"why": "an identifier that is not a number", "arguments": {"id_attribute": [1]}, "expect": "error", "contains": ["- id_attribute: a whole number above 0"]},
+    {"why": "a misspelt field is named, not read as a missing value", "arguments": {"id_attribut": 1}, "expect": "error", "contains": ["Nothing was read", "- id_attribut: not a field of this tool", "- id_attribute: a whole number above 0"]}
   ]
 }

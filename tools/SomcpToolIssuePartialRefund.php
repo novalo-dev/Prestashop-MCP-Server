@@ -223,8 +223,7 @@ class SomcpToolIssuePartialRefund
 
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            $problems[] = (array_key_exists('reference', $arguments) && (int) ($arguments['id_order'] ?? 0) <= 0
-                ? 'reference' : 'id_order') . ': ' . $order;
+            $problems[] = $order;
 
             return self::refused($problems);
         }

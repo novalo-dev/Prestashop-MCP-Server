@@ -18,11 +18,11 @@
     {"why": "a day that does not exist is not shifted", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "payment_date": "2026-02-31"}, "expect": "error", "contains": ["payment_date: a date, ISO 8601"]},
     {"why": "a wrong amount and a wrong date reported together, nothing recorded", "arguments": {"id_order": 4, "amount": -5, "payment_method": "Bank wire", "payment_date": "01/10/2026"}, "expect": "error", "contains": ["amount: a number above 0", "payment_date: a date, ISO 8601"]},
     {"why": "a misspelt field is named, not ignored", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "transaction": "CHQ-1"}, "expect": "error", "contains": ["transaction: not a field of this tool"]},
-    {"why": "a wrong amount and a missing order reported together", "arguments": {"id_order": 999999, "amount": 0, "payment_method": "Bank wire"}, "expect": "error", "contains": ["amount: a number above 0", "No order of this shop has this identifier"]},
+    {"why": "a wrong amount and a missing order reported together", "arguments": {"id_order": 999999, "amount": 0, "payment_method": "Bank wire"}, "expect": "error", "contains": ["amount: a number above 0", "no order of this shop has the identifier"]},
     {"why": "a transaction ID longer than the field", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "transaction_id": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"}, "expect": "error", "contains": ["transaction_id: 254 characters at most"]},
     {"why": "a transaction ID that is not a string", "arguments": {"id_order": 4, "amount": 1, "payment_method": "Bank wire", "transaction_id": 42}, "expect": "error", "contains": ["transaction_id: a string"]},
     {"why": "an order that does not exist", "arguments": {"id_order": 999999, "amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["No order of this shop"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["Give id_order or reference", "somcp_search_orders"]},
-    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["No order of this shop has this reference"]}
+    {"why": "neither an identifier nor a reference", "arguments": {"amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["give id_order or reference", "somcp_search_orders"]},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "amount": 1, "payment_method": "Bank wire"}, "expect": "error", "contains": ["no order of this shop has the reference"]}
   ]
 }

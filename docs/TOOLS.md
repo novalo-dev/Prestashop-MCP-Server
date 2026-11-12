@@ -466,6 +466,15 @@ the default order.
   shop's credit slip prefix in the order's language, `date`, totals);
 - `messages`, each with `from` (`employee` or `customer`) and `from_name`.
 
+**Errors** - every problem at once, nothing read, each under "Nothing was read.
+Correct these and call again:": a field the tool does not take; `id_order: give
+id_order or reference - find the order with somcp_search_orders` when both are
+missing; `id_order: no order of this shop has the identifier <n> - find it with
+somcp_search_orders`, or the same line on `reference`, when the order is not
+found; a reference shared by several orders is refused with their identifiers.
+This lookup is shared by every order and billing tool, so the same wording
+answers a wrong order wherever it is read.
+
 **Notes** - takes no search filter on purpose: given "Dupont's March orders" it
 would have to pick one of twelve. Finding is one tool, reading is another. Read
 through core objects, which one order can afford.

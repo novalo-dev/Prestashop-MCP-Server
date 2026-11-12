@@ -145,8 +145,7 @@ class SomcpToolSetOrderCurrency
         $order = SomcpToolGetOrder::find($arguments);
         $idShop = $order instanceof Order ? (int) $order->id_shop : Somcp::currentShopId();
         if (!$order instanceof Order) {
-            $problems[] = (array_key_exists('reference', $arguments) && SomcpTool::id($arguments, 'id_order') <= 0
-                ? 'reference' : 'id_order') . ': ' . $order;
+            $problems[] = $order;
         }
 
         $idCurrency = 0;

@@ -1,8 +1,8 @@
 {
   "calls": [
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "document": "invoice"}, "expect": "error", "contains": ["Nothing was read.", "id_order: No order of this shop has this identifier"]},
-    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "document": "invoice"}, "expect": "error", "contains": ["reference: No order of this shop has this reference"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"document": "invoice"}, "expect": "error", "contains": ["Give id_order or reference"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "document": "invoice"}, "expect": "error", "contains": ["Nothing was read.", "id_order: no order of this shop has the identifier"]},
+    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "document": "invoice"}, "expect": "error", "contains": ["reference: no order of this shop has the reference"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"document": "invoice"}, "expect": "error", "contains": ["give id_order or reference"]},
     {"why": "a kind of document the tool does not know", "arguments": {"id_order": 1, "document": "quote"}, "expect": "error", "contains": ["document: one of invoice, delivery_slip, credit_slip"]},
     {"why": "a credit slip named by an invoice identifier", "arguments": {"id_order": 1, "document": "credit_slip", "id_order_invoice": 1}, "expect": "error", "contains": ["id_order_invoice: not taken with document credit_slip, which is named by id_order_slip"]},
     {"why": "an invoice named by a credit slip identifier", "arguments": {"id_order": 1, "document": "invoice", "id_order_slip": 1}, "expect": "error", "contains": ["id_order_slip: not taken with document invoice, which is named by id_order_invoice"]},

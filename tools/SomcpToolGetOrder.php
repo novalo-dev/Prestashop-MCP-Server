@@ -79,12 +79,22 @@ class SomcpToolGetOrder
      */
     public static function handle(array $arguments, array $context): array
     {
+        // Every problem in one answer, named by its field, as the other order
+        // tools answer: a misspelt field and a wrong order are fixed in one go,
+        // and the assistant recognises the refusal by the same words it reads
+        // everywhere else.
+        $problems = SomcpTool::unknownFields($arguments, ['id_order', 'reference']);
+
         // Refused like the writes on a reference shared by several orders:
         // answering one of them would describe one parcel as the whole
         // purchase, and the list it gets instead is what it needs to read each.
         $order = self::find($arguments);
         if (!$order instanceof Order) {
-            return SomcpTool::text($order, true);
+            $problems[] = $order;
+        }
+
+        if ($problems !== [] || !$order instanceof Order) {
+            return SomcpTool::refused('read', $problems);
         }
 
         $idLang = (int) $order->id_lang;
@@ -136,21 +146,25 @@ class SomcpToolGetOrder
      *
      * @param array<string, mixed> $arguments
      *
-     * @return Order|string The order, or the error to send back as is
+     * @return Order|string The order, or the refusal line to drop into the
+     *                      envelope as is: already worded on its field
+     *                      (id_order or reference), so the 21 tools that share
+     *                      this lookup push it without wording it themselves
      */
     public static function find(array $arguments)
     {
         $byReference = SomcpTool::id($arguments, 'id_order') <= 0;
         if ($byReference && (!isset($arguments['reference']) || !is_string($arguments['reference'])
             || trim($arguments['reference']) === '')) {
-            return 'Give id_order or reference. Find the order with somcp_search_orders.';
+            return 'id_order: give id_order or reference - find the order with somcp_search_orders';
         }
 
         $orders = self::candidates($arguments);
         if ($orders === []) {
             return $byReference
-                ? 'No order of this shop has this reference. Find it with somcp_search_orders.'
-                : 'No order of this shop has this identifier. Find it with somcp_search_orders.';
+                ? 'reference: no order of this shop has the reference ' . trim((string) $arguments['reference'])
+                    . ' - find it with somcp_search_orders'
+                : SomcpTool::notFound('id_order', 'order', SomcpTool::id($arguments, 'id_order'), 'somcp_search_orders');
         }
         if (count($orders) === 1) {
             return $orders[0];
@@ -165,8 +179,8 @@ class SomcpToolGetOrder
                 . (Validate::isLoadedObject($carrier) ? (string) $carrier->name : '') . ')';
         }
 
-        return 'This reference belongs to ' . count($orders) . ' orders: ' . implode(', ', $listed)
-            . '. Give id_order to choose one of them.';
+        return 'reference: this reference belongs to ' . count($orders) . ' orders: ' . implode(', ', $listed)
+            . ' - give id_order to choose one of them';
     }
 
     /**

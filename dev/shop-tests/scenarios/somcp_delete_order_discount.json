@@ -1,8 +1,8 @@
 {
   "calls": [
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "id_order_cart_rule": 1}, "expect": "error", "contains": ["Nothing was deleted.", "id_order: No order of this shop has this identifier"]},
-    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "id_order_cart_rule": 1}, "expect": "error", "contains": ["reference: No order of this shop has this reference"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"id_order_cart_rule": 1}, "expect": "error", "contains": ["Give id_order or reference"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "id_order_cart_rule": 1}, "expect": "error", "contains": ["Nothing was deleted.", "id_order: no order of this shop has the identifier"]},
+    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "id_order_cart_rule": 1}, "expect": "error", "contains": ["reference: no order of this shop has the reference"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"id_order_cart_rule": 1}, "expect": "error", "contains": ["give id_order or reference"]},
     {"why": "no discount named", "arguments": {"id_order": 1}, "expect": "error", "contains": ["Nothing was deleted.", "id_order_cart_rule: give the discount to remove"]},
     {"why": "a discount identifier that is not a whole number", "arguments": {"id_order": 1, "id_order_cart_rule": "first"}, "expect": "error", "contains": ["id_order_cart_rule: a whole number"]},
     {"why": "a discount this order does not have", "arguments": {"id_order": 1, "id_order_cart_rule": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "id_order_cart_rule: no discount of this order has the identifier 999999"]},

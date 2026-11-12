@@ -1,8 +1,8 @@
 {
   "calls": [
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "name": "Loyalty", "type": "percent", "value": 10}, "expect": "error", "contains": ["Nothing was recorded.", "id_order: No order of this shop has this identifier"]},
-    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "name": "Loyalty", "type": "percent", "value": 10}, "expect": "error", "contains": ["reference: No order of this shop has this reference"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"name": "Loyalty", "type": "percent", "value": 10}, "expect": "error", "contains": ["Give id_order or reference"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "name": "Loyalty", "type": "percent", "value": 10}, "expect": "error", "contains": ["Nothing was recorded.", "id_order: no order of this shop has the identifier"]},
+    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "name": "Loyalty", "type": "percent", "value": 10}, "expect": "error", "contains": ["reference: no order of this shop has the reference"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"name": "Loyalty", "type": "percent", "value": 10}, "expect": "error", "contains": ["give id_order or reference"]},
     {"why": "no name", "arguments": {"id_order": 1, "type": "percent", "value": 10}, "expect": "error", "contains": ["Nothing was recorded.", "name: give the discount name"]},
     {"why": "a type that is not one of the three", "arguments": {"id_order": 1, "name": "Loyalty", "type": "half", "value": 10}, "expect": "error", "contains": ["type: one of percent, amount_tax_included, free_shipping"]},
     {"why": "a percent above 100", "arguments": {"id_order": 1, "name": "Loyalty", "type": "percent", "value": 120}, "expect": "error", "contains": ["Nothing was recorded.", "value: a percentage is 100 at most"]},

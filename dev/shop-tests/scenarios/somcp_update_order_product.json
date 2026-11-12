@@ -1,8 +1,8 @@
 {
   "calls": [
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "id_order_detail": 1, "quantity": 2}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order: No order of this shop has this identifier"]},
-    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "id_order_detail": 1, "quantity": 2}, "expect": "error", "contains": ["reference: No order of this shop has this reference"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"id_order_detail": 1, "quantity": 2}, "expect": "error", "contains": ["Give id_order or reference"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "id_order_detail": 1, "quantity": 2}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order: no order of this shop has the identifier"]},
+    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "id_order_detail": 1, "quantity": 2}, "expect": "error", "contains": ["reference: no order of this shop has the reference"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"id_order_detail": 1, "quantity": 2}, "expect": "error", "contains": ["give id_order or reference"]},
     {"why": "a line that is not of the order", "arguments": {"id_order": 1, "id_order_detail": 999999, "quantity": 2}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order_detail: no line of this order has the identifier 999999", "somcp_get_order"]},
     {"why": "a line of another demo order", "arguments": {"id_order": 1, "id_order_detail": 3, "quantity": 2}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order_detail: no line of this order has the identifier 3 - find it with somcp_get_order"]},
     {"why": "a quantity of 0 points to the delete tool", "arguments": {"id_order": 1, "id_order_detail": 1, "quantity": 0}, "expect": "error", "contains": ["quantity: 0 removes the line", "somcp_delete_order_product"]},

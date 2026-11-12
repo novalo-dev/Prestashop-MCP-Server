@@ -13,7 +13,7 @@
     {"why": "a misspelt field is named, not ignored, and nothing is sent", "arguments": {"id_order": 1, "message": "Hello", "display_to_customer": false, "private": true}, "expect": "error", "contains": ["private: not a field of this tool"]},
     {"why": "an empty message and a missing choice reported together", "arguments": {"id_order": 1, "message": ""}, "expect": "error", "contains": ["message: empty", "display_to_customer: true or false"]},
     {"why": "an order that does not exist", "arguments": {"id_order": 999999, "message": "Hello", "display_to_customer": false}, "expect": "error", "contains": ["No order of this shop"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"message": "Hello", "display_to_customer": false}, "expect": "error", "contains": ["Give id_order or reference", "somcp_search_orders"]},
-    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "message": "Hello", "display_to_customer": false}, "expect": "error", "contains": ["No order of this shop has this reference"]}
+    {"why": "neither an identifier nor a reference", "arguments": {"message": "Hello", "display_to_customer": false}, "expect": "error", "contains": ["give id_order or reference", "somcp_search_orders"]},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "message": "Hello", "display_to_customer": false}, "expect": "error", "contains": ["no order of this shop has the reference"]}
   ]
 }

@@ -124,8 +124,7 @@ class SomcpToolSetInvoiceNote
 
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            $problems[] = (array_key_exists('reference', $arguments) && SomcpTool::id($arguments, 'id_order') <= 0
-                ? 'reference' : 'id_order') . ': ' . $order;
+            $problems[] = $order;
 
             return SomcpTool::refused('changed', $problems);
         }

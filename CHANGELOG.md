@@ -269,6 +269,17 @@ one of its lines, with "not a field of this tool", the wording every other tool
 already gives, instead of a wording of their own. The misspelt name is fixed in
 one call rather than read as a wrong value.
 
+**An unknown order reads the same in every order and billing tool.** When an
+order cannot be found, every order and billing tool now words it the same way,
+named by the field that was wrong: `id_order: no order of this shop has the
+identifier <n> - find it with somcp_search_orders`, the same line on
+`reference`, or `id_order: give id_order or reference - find the order with
+somcp_search_orders` when both are missing. A reference held by several orders
+is still refused with their identifiers. `somcp_get_order` now reports a
+misspelt field as such and lists it beside a wrong order in one answer, instead
+of reading an unknown order on its own line, so the assistant recovers the same
+way wherever it reads an order.
+
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the
 customer, beside the fields `somcp_update_customer` and `somcp_create_customer`

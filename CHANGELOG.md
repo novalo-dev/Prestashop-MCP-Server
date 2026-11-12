@@ -229,6 +229,12 @@ without reshaping the groups first. The named groups stay, for the merchant.
 Handing the `groups` list back to a change no longer fails without a hint: it
 is answered with where the groups go.
 
+**A customer that cannot be found reads like the rest.** `somcp_get_customer`
+now names a misspelt field instead of reading it as a missing customer, and
+words an unknown `id_customer` or `email` the same way as every other read
+tool, with the tool that lists customers, so the assistant looks it up the
+same way it does elsewhere.
+
 **SEO of CMS pages and shop pages written like the rest of the catalogue.**
 `somcp_update_cms_seo` and `somcp_update_meta_page` now take the languages to
 fill and their texts as the product, category and brand tools do: a

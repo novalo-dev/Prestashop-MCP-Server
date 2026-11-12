@@ -496,6 +496,13 @@ orders in one call, which it refuses by design.
 order already has that status: `changed: false` with a `reason`, and nothing
 happens.
 
+**Errors** - every problem at once, nothing changed and no email sent when one
+check fails, each under "Nothing was changed. Correct these and call again:": a
+field the tool does not take; the order not found or a reference shared by
+several orders; `status_id: a whole number above 0`, or `status_id: no order
+status of this shop has the identifier <n> - find it with
+somcp_list_order_statuses` for a status the shop does not have or deleted.
+
 **Notes** - the sequence is the core's own, read from `UpdateOrderStatusHandler`
 on 8.0.0 and 9.1.5 rather than reinvented: refuse a redundant status, set
 `id_employee`, `changeIdOrderState()` with the payments carried over when there
@@ -548,6 +555,15 @@ of a shipment, which this tool never does.
 for the number, empty when the carrier has none), `customer_notified`,
 `warning` when the number was saved but the email failed. When the shipment
 already has that number: `changed: false` with a `reason`, and nothing happens.
+
+**Errors** - every problem at once, nothing changed and no email sent when one
+check fails, each under "Nothing was changed. Correct these and call again:": a
+field the tool does not take; `tracking_number` not a string, longer than 64
+characters or holding a character PrestaShop refuses; the order not found or a
+reference shared by several orders; an order with no shipment;
+`id_order_carrier` left out on an order with several shipments, not a whole
+number, or `id_order_carrier: no shipment of this order has the identifier
+<n> - find it with somcp_get_order`, followed by the shipments.
 
 **Notes** - the number lives on `order_carrier.tracking_number` (`varchar(64)`
 on 8 and 9), one row per shipment, read the way `somcp_get_order` reads them.
@@ -607,6 +623,13 @@ order itself - that is the order note (→ `somcp_set_order_note`).
 `id_customer_thread`, `id_customer_message`, `display_to_customer`,
 `email_sent`, `warning` when the message was saved but the email failed -
 reported apart, so the assistant does not add it twice.
+
+**Errors** - every problem at once, nothing sent when one check fails, each
+under "Nothing was sent. Correct these and call again:": a field the tool does
+not take; `display_to_customer: true or false`; `message` not a string, empty,
+longer than 1200 characters or holding a script or an event attribute; the
+order not found or a reference shared by several orders; an order whose
+customer was deleted.
 
 **Notes** - the block holds a select **Choose your order message** (the
 predefined messages of **Customer Service > Order Messages**), the checkbox
@@ -715,6 +738,16 @@ matches `id_employee` of `payments[]` in `somcp_get_order`), `total_paid_real`
 after the payment, `total_tax_included` of the order, `order_currency`,
 `remaining` (what is still due, never below zero), and `warning` when the
 payment row was added but the order or its invoice could not be fully updated.
+
+**Errors** - every problem at once, nothing recorded when one check fails, each
+under "Nothing was recorded. Correct these and call again:": a field the tool
+does not take; `amount: a number above 0`; `payment_method` missing, too long or
+holding < > = { }; `transaction_id` not a string or too long; `payment_date: a
+date, ISO 8601`; the order not found or a reference shared by several orders;
+then, once the order is found, a currency the shop does not have and, on an
+invoiced order, `id_order_invoice` left out or `id_order_invoice: no invoice of
+this order has the identifier <n> - find it with somcp_get_order`, followed by
+the invoices.
 
 **Notes** - the block holds a table (Date, Payment method, Transaction ID,
 Amount, Invoice, and **Employee** on 9.0.0 only) and a line to add one: date,

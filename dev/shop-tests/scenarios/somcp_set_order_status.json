@@ -5,8 +5,10 @@
     {"why": "the status it already has changes nothing", "arguments": {"id_order": 2, "status_id": 6}, "expect": "ok", "contains": ["\"changed\": false"]},
     {"why": "an order that does not exist", "arguments": {"id_order": 999999, "status_id": 6}, "expect": "error"},
     {"why": "the status already set is answered under status_id", "arguments": {"id_order": 2, "status_id": 6}, "expect": "ok", "contains": ["\"status_id\": 6"]},
-    {"why": "a status the shop does not have", "arguments": {"id_order": 2, "status_id": 999999}, "expect": "error", "contains": ["No such status in this shop", "somcp_list_order_statuses"]},
-    {"why": "a status given in an array is not read as one", "arguments": {"id_order": 2, "status_id": [6]}, "expect": "error", "contains": ["No such status in this shop"]},
+    {"why": "a status the shop does not have", "arguments": {"id_order": 2, "status_id": 999999}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "status_id: no order status of this shop has the identifier 999999 - find it with somcp_list_order_statuses"]},
+    {"why": "a status given in an array is not read as one", "arguments": {"id_order": 2, "status_id": [6]}, "expect": "error", "contains": ["status_id: a whole number above 0"]},
+    {"why": "a misspelt field is named, not ignored", "arguments": {"id_order": 2, "status_id": 6, "statut": 6}, "expect": "error", "contains": ["statut: not a field of this tool"]},
+    {"why": "a wrong order and a wrong status reported together", "arguments": {"id_order": 999999, "status_id": 999999}, "expect": "error", "contains": ["No order of this shop has this identifier", "status_id: no order status of this shop"]},
     {"why": "neither an identifier nor a reference", "arguments": {"status_id": 6}, "expect": "error", "contains": ["Give id_order or reference", "somcp_search_orders"]},
     {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "status_id": 6}, "expect": "error", "contains": ["No order of this shop has this reference"]}
   ]

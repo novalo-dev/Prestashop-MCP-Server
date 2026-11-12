@@ -239,6 +239,15 @@ as the other tools, names a misspelt field instead of ignoring it, and reports
 a note and a missing order together rather than one at a time, so the private
 note of an order is corrected in a single call.
 
+**Clearer refusals from the order payment, message, tracking and status
+tools.** A wrong call to `somcp_add_order_payment`, `somcp_add_order_message`,
+`somcp_set_order_tracking` or `somcp_set_order_status` now lists every problem
+in one answer, each named by its field, in the same form as the other tools,
+instead of stopping at the first one: a payment with a wrong amount and a wrong
+date is corrected in one call, not two. A misspelt field is named instead of
+ignored, an unknown status, invoice or shipment points to the tool that lists
+them, and nothing is recorded, changed or emailed while a problem remains.
+
 **A customer read gives back its groups the way its tools take them.**
 `somcp_get_customer` now returns `group_ids` and `id_default_group` inside the
 customer, beside the fields `somcp_update_customer` and `somcp_create_customer`

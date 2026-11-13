@@ -1116,8 +1116,8 @@ class SomcpAssistantChat
      * @param callable $move function(Agent $agent, array $assistant): ?AgentState
      * @param bool $quiet true for a step the chat asks for by itself: finding
      *                    the conversation busy is then no error to show
-     * @param array{text:string, files:array<int, string>}|null $asked the message this move answers,
-     *                                                                 kept on the conversation while it runs
+     * @param array{text:string, files:array<int, string>, images:array<int, array{name:string, src:string}>}|null $asked the message this move answers,
+     *                                                                                                                    kept on the conversation while it runs
      *
      * @return array<string, mixed>
      */
@@ -1190,7 +1190,7 @@ class SomcpAssistantChat
      *
      * @param array<string, mixed> $thread
      *
-     * @return array{pending: array{text:string, files:array<int, string>}|null}|null
+     * @return array{pending: array{text:string, files:array<int, string>, images:array<int, array{name:string, src:string}>}|null}|null
      */
     private function running(array $thread): ?array
     {

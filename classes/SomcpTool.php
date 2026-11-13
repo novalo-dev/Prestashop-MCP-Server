@@ -786,4 +786,74 @@ class SomcpTool
     {
         return $name === '0' ? (string) Configuration::get('PS_SHOP_NAME') : $name;
     }
+
+    /** @var int Past this many a title is cut in a search result; advice, not a limit. */
+    public const META_TITLE_RECOMMENDED = 70;
+
+    /**
+     * The recommended meta description length the back office shows: 160 on 9.0.0
+     * (SeoSettings::RECOMMENDED_DESCRIPTION_LENGTH), the same figure by hand on
+     * 8.0.1, where the constant does not exist.
+     *
+     * @return int
+     */
+    public static function metaDescriptionRecommended(): int
+    {
+        $constant = 'PrestaShop\\PrestaShop\\Core\\Domain\\Category\\SeoSettings::RECOMMENDED_DESCRIPTION_LENGTH';
+        if (defined($constant)) {
+            return (int) constant($constant);
+        }
+
+        return 160;
+    }
+
+    /**
+     * The one rule every tool uses for a meta title or description: refused past
+     * the column size the shop stores (read from the object definition by the
+     * caller, so a text a get returns is always short enough for its update),
+     * advised past the recommended length a search result keeps. Returns false
+     * when the text was refused, so the caller skips the character check it would
+     * otherwise run on a value already rejected.
+     *
+     * @param string $where  the field and language, for the message
+     * @param int    $length the visible length already counted by the caller
+     * @param int    $max    the column size from the object definition
+     * @param int    $recommended the length past which a search result cuts the text
+     * @param array<int, string> $errors
+     * @param array<int, string> $advice collected advice lines
+     *
+     * @return bool whether the text is within the column size
+     */
+    public static function seoTextLength(string $where, int $length, int $max, int $recommended, array &$errors, array &$advice): bool
+    {
+        if ($length > $max) {
+            $errors[] = $where . ': ' . $max . ' characters at most, ' . $length . ' given';
+
+            return false;
+        }
+        if ($length > $recommended) {
+            $advice[] = $where . ' is ' . $length . ' characters: past ' . $recommended . ', a search result cuts it';
+        }
+
+        return true;
+    }
+
+    /**
+     * Adds the shared meta length advice collected while planning to a tool's own
+     * SEO warnings, so a title or description written past the recommended length
+     * reads the same way in every tool, next to the tool's other warnings.
+     *
+     * @param array<string, array<int, string>> $warnings the tool's own per language warnings
+     * @param array<string, mixed> $plan
+     *
+     * @return array<string, array<int, string>>
+     */
+    public static function withMetaLengthAdvice(array $warnings, array $plan): array
+    {
+        foreach (($plan['metaAdvice'] ?? []) as $iso => $lines) {
+            $warnings[$iso] = array_merge($warnings[$iso] ?? [], $lines);
+        }
+
+        return $warnings;
+    }
 }

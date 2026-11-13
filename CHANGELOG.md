@@ -169,6 +169,17 @@ yesterday" now has an answer. It needs the **view** right on **Stock**.
 
 ### Changed
 
+**The same meta title and description lengths as the back office, for the
+category and brand tools.** `somcp_create_category`, `somcp_update_category`,
+`somcp_create_manufacturer`, `somcp_update_manufacturer`,
+`somcp_create_supplier` and `somcp_update_supplier` now refuse a Meta title or
+Meta description only when it is longer than the shop stores (255 and 512
+characters), exactly as the back office does, instead of the shorter limits
+they used before. A title read by `somcp_get_category` can now be given back to
+`somcp_update_category` unchanged. Past the length a search result keeps (70
+characters for a title, 160 for a description), the answer still advises, in
+`seo_warnings`, without refusing. The other SEO tools follow in a later change.
+
 **Clearer refusals from the category tools.** When the assistant gets a call
 to `somcp_get_category`, `somcp_create_category`, `somcp_update_category`,
 `somcp_set_category_active` or `somcp_delete_category` wrong, the answer now

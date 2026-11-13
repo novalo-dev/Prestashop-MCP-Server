@@ -709,7 +709,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $images = self::applyImages($category, $plan);
 
         $stored = new Category($idCategory, null, $idShop);
-        $warnings = self::updateWarnings($stored, $plan, $idShop);
+        $warnings = SomcpTool::withMetaLengthAdvice(self::updateWarnings($stored, $plan, $idShop), $plan);
 
         SomcpLogger::log(
             'category_updated',

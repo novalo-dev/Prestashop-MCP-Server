@@ -138,8 +138,8 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
                     . 'states, refused when it has none.'),
                 'dni' => $plain('Merchant. National identification number, 16 characters at most: required when '
                     . 'the country asks for one.'),
-                'meta_title' => $text('Assistant. 255 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
-                'meta_description' => $text('Assistant. 512 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_title' => $text('Assistant. 255 at most; over 70 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_description' => $text('Assistant. 512 at most; over 160 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_keywords' => $text('Assistant. PrestaShop 8, refused on 9. Up to 5 keywords, comma separated, '
                     . 'without < > = { }.'),
                 'logo' => self::imageSchema('Merchant. The logo.', 'the logo'),
@@ -466,7 +466,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         return SomcpTool::json([
             'created' => true,
             'id_supplier' => $idSupplier,
-            'seo_warnings' => self::manufacturerWarnings($plan, 'supplier') ?: new stdClass(),
+            'seo_warnings' => SomcpTool::withMetaLengthAdvice(self::manufacturerWarnings($plan, 'supplier'), $plan) ?: new stdClass(),
             'logo' => $logo,
             // Read back rather than echoed from the arguments: what the
             // assistant shows the merchant is what the shop stored.

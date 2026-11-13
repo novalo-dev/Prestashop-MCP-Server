@@ -70,12 +70,6 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     /** @var int The size of the name and friendly URL columns. */
     private const NAME_MAX = 128;
 
-    /** @var int Stricter than PrestaShop's 255, so search engines show the title whole. */
-    private const CATEGORY_META_TITLE_MAX = 70;
-
-    /** @var int Stricter than PrestaShop's 512, so search results do not cut it. */
-    private const CATEGORY_META_DESCRIPTION_MAX = 150;
-
     /** @var int Keywords past this many are noise to a search engine. */
     private const META_KEYWORDS_MAX = 5;
 
@@ -152,8 +146,8 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 ],
                 'link_rewrite' => $text('Assistant. The friendly URL, 128 characters at most; made from the '
                     . 'name when left out.'),
-                'meta_title' => $text('Assistant. 70 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
-                'meta_description' => $text('Assistant. 150 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_title' => $text('Assistant. 255 at most; over 70 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_description' => $text('Assistant. 512 at most; over 160 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_keywords' => $text('Assistant. PrestaShop 8 only, refused on 9. '
                     . '5 keywords at most, comma separated, without < > = { }.'),
                 'redirect_type' => [
@@ -436,19 +430,23 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      */
     protected static function categoryMeta(array $arguments, array $languages, Category $probe, array &$plan, array &$errors): void
     {
-        $limits = ['meta_title' => self::CATEGORY_META_TITLE_MAX, 'meta_description' => self::CATEGORY_META_DESCRIPTION_MAX];
+        // The fields to check; the size refused is the column's, read from the
+        // definition in metaWithin, not these fallbacks.
+        $limits = ['meta_title' => 255, 'meta_description' => 512];
         self::metaWithin($arguments, $limits, $languages, $probe, $plan, $errors);
         self::metaKeywords($arguments, $languages, $probe, $plan, $errors);
     }
 
     /**
-     * Meta texts given in the call, each refused past its limit.
+     * Meta texts given in the call, refused past the column size and advised past
+     * the recommended length, through SomcpTool::seoTextLength.
      *
-     * Shared with the brand tools: the limits differ from one object to the
-     * other, the way they are counted and checked must not.
+     * Shared with the brand and supplier tools: which fields exist differs from
+     * one object to the other, the way they are sized, counted and checked must
+     * not.
      *
      * @param array<string, mixed> $arguments
-     * @param array<string, int> $limits characters at most, by field
+     * @param array<string, int> $limits the fields to check, by name; the size refused is the column's
      * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
      * @param ObjectModel $probe the object whose rules the texts are checked against
      * @param array<string, mixed> $plan
@@ -458,18 +456,29 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      */
     protected static function metaWithin(array $arguments, array $limits, array $languages, ObjectModel $probe, array &$plan, array &$errors): void
     {
-        foreach ($limits as $field => $max) {
+        foreach ($limits as $field => $fallback) {
+            // The column size the shop stores, read from the object definition so
+            // a future PrestaShop that changes it is followed, and so a text a get
+            // returns is always short enough for its update. Refused past it rather
+            // than cut: a title cut by the tool is a title nobody wrote.
+            $max = isset($probe::$definition['fields'][$field]['size'])
+                ? (int) $probe::$definition['fields'][$field]['size']
+                : (int) $fallback;
+            $recommended = $field === 'meta_title'
+                ? SomcpTool::META_TITLE_RECOMMENDED
+                : SomcpTool::metaDescriptionRecommended();
             $texts = self::texts($arguments, $field, $field, $languages, $errors);
             foreach ($texts ?? [] as $idLang => $text) {
                 $text = trim($text);
                 $texts[$idLang] = $text;
                 $where = $field . ' (' . $languages['filled'][$idLang] . ')';
-                // Refused rather than cut: a title cut by the tool is a title
-                // nobody wrote, and the merchant would not know it changed.
-                if (self::visibleLength($text) > $max) {
-                    $errors[] = $where . ': ' . $max . ' characters at most, ' . self::visibleLength($text) . ' given';
-                } elseif (($check = $probe->validateField($field, $text, $idLang)) !== true) {
+                $advice = [];
+                if (SomcpTool::seoTextLength($where, self::visibleLength($text), $max, $recommended, $errors, $advice)
+                    && ($check = $probe->validateField($field, $text, $idLang)) !== true) {
                     $errors[] = $where . ': a character PrestaShop refuses there (< > { }, and = before PrestaShop 9.1) - ' . self::reason($check);
+                }
+                foreach ($advice as $line) {
+                    $plan['metaAdvice'][$languages['filled'][$idLang]][] = $line;
                 }
             }
             if ($texts !== null) {
@@ -755,7 +764,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
 
         $idCategory = (int) $category->id;
         $images = self::storeImages($idCategory, $plan['images']);
-        $warnings = self::categoryWarnings($idCategory, $plan, $idShop);
+        $warnings = SomcpTool::withMetaLengthAdvice(self::categoryWarnings($idCategory, $plan, $idShop), $plan);
 
         SomcpLogger::log(
             'category_created',

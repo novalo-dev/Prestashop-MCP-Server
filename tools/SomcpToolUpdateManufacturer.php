@@ -354,7 +354,7 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
             $idEmployee
         );
 
-        $warnings = self::updateWarnings($idManufacturer, $plan);
+        $warnings = SomcpTool::withMetaLengthAdvice(self::updateWarnings($idManufacturer, $plan), $plan);
 
         return SomcpTool::json([
             'changed' => true,

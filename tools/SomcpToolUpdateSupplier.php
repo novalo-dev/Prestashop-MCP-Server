@@ -516,7 +516,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
             $idEmployee
         );
 
-        $warnings = self::updateWarnings($idSupplier, $plan);
+        $warnings = SomcpTool::withMetaLengthAdvice(self::updateWarnings($idSupplier, $plan), $plan);
 
         return SomcpTool::json([
             'changed' => true,

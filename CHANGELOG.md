@@ -176,6 +176,16 @@ your shop shows them (for example **Main category** on PrestaShop 8 and
 **Default category** on PrestaShop 9), from one shared table, so a field never
 comes back under two different names.
 
+**A category's images and customer groups read and given back no longer count as a change.**
+When the assistant reads a category with `somcp_get_category`, changes one field
+and gives the whole answer back to `somcp_update_category`, the cover image and
+menu thumbnails it read are now left untouched: they are not downloaded again,
+not refused, and the answer no longer lists an image change that did not happen.
+The customer groups it read are taken as they are, as they already were by the
+shop, and an assistant that checks its own call before sending it no longer
+stops at them. A real new image, or removing one with `remove_cover_image` or
+`remove_menu_thumbnails`, works as before.
+
 **A brand or supplier logo read and given back no longer counts as a change.**
 When the assistant reads a brand or supplier with `somcp_get_manufacturer` or
 `somcp_get_supplier`, changes one field and gives the whole answer back to

@@ -48,7 +48,12 @@ there is none, is neither downloaded, written nor listed in `changes`
 (`SomcpToolCreateProduct::sameImage()`, the file names compared since a media
 server host can sit in front). Removing an image stays the `remove_*` field's
 job; another address or an `upload_ref` is a new image. So far the brand and
-supplier logos (`somcp_update_manufacturer`, `somcp_update_supplier`).
+supplier logos (`somcp_update_manufacturer`, `somcp_update_supplier`) and the
+category cover image and menu thumbnails (`somcp_update_category`, where the
+thumbnails, replaced as one list, are left alone when the whole list is the one
+read, in its order). A list of objects read back is taken where the write takes
+their identifiers, and the schema says so: the `groups` of `somcp_get_category`
+go back to the category writes as they are.
 
 **Paging.** `limit` defaults to 20 and caps at 100, `offset` for the rest. Every
 list returns `total_count`, so an assistant knows there is more instead of
@@ -2641,7 +2646,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `active` (Displayed) | merchant | true by default |
 | `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office |
 | `additional_description` (additional information) | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office |
-| `groups` (group access) | merchant, from the shop | ids from `somcp_list_customer_groups`; every group when left out, as in the back office; an empty list is refused rather than read as every group |
+| `groups` (group access) | merchant, from the shop | ids from `somcp_list_customer_groups`, or the `{"id_group", "name"}` objects `somcp_get_category` returns (the schema takes both, the name is ignored); every group when left out, as in the back office; an empty list is refused rather than read as every group |
 | `link_rewrite` | assistant | generated from the name when left out; `Tools::str2url()` then `Validate::isLinkRewrite()`; 128 characters at most |
 | `meta_title` | assistant | 255 characters at most; past 70, a search result cuts it |
 | `meta_description` | assistant | 512 characters at most; past 160, a search result cuts it |
@@ -2668,7 +2673,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 **Do not use for** - creating one (→ `somcp_create_category`), or only switching it on or off (→ `somcp_set_category_active`).
 
-**Parameters** - `id_category` (required), `languages`, then the fields of `somcp_create_category`, all optional, and `position` (integer: the place among the categories of the same parent, from 0 as `somcp_get_category` returns it; the back office list shows it plus 1). A text given replaces the languages given and keeps the others; `groups` given replaces the whole set; `cover_image` given replaces the cover; `menu_thumbnails` given replaces the existing ones, and `remove_cover_image` / `remove_menu_thumbnails` (booleans, `remove_menu_thumbnails` on PrestaShop 8 only) remove explicitly, never next to the field that already replaces them.
+**Parameters** - `id_category` (required), `languages`, then the fields of `somcp_create_category`, all optional, and `position` (integer: the place among the categories of the same parent, from 0 as `somcp_get_category` returns it; the back office list shows it plus 1). A text given replaces the languages given and keeps the others; `groups` given replaces the whole set; `cover_image` given replaces the cover; `menu_thumbnails` given replaces the existing ones, and `remove_cover_image` / `remove_menu_thumbnails` (booleans, `remove_menu_thumbnails` on PrestaShop 8 only) remove explicitly, never next to the field that already replaces them. The cover and menu thumbnails `somcp_get_category` returns, given back unchanged (the shop's own addresses as strings or `{"url"}`, `null` for no cover), are no change: nothing is downloaded, written or listed in `changes` (see **Images given back**).
 
 **Returns** - `changed`, `id_category`, `changes` (per field its `field`, `old` and `new` value; a text names its language; `position` gives the old and new place), `seo_warnings` for the languages whose texts changed, `images` (per image: `for`, and `stored`, `removed` or the reason it was `refused`), and `category`, as `somcp_get_category` returns it. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 

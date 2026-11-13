@@ -141,8 +141,9 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 'groups' => [
                     'type' => 'array',
                     'description' => 'Merchant, from the shop: the customer groups that can see the category, '
-                        . 'their id_group from somcp_list_customer_groups. Every group when left out, as in the back office.',
-                    'items' => ['type' => 'integer'],
+                        . 'by id_group from somcp_list_customer_groups or as somcp_get_category returns them. Every '
+                        . 'group when left out.',
+                    'items' => self::groupItemSchema(),
                 ],
                 'link_rewrite' => $text('Assistant. The friendly URL, 128 characters at most; made from the '
                     . 'name when left out.'),
@@ -381,6 +382,33 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         }
 
         return $idParent;
+    }
+
+    /**
+     * One item of groups: an id_group, or a group as somcp_get_category
+     * returns it.
+     *
+     * customerGroups() reads both through ids(), so the schema says so too: a
+     * client that checks the arguments against the schema would otherwise
+     * refuse the groups a get returned before they reach the tool.
+     *
+     * @return array<string, mixed>
+     */
+    protected static function groupItemSchema(): array
+    {
+        return [
+            'anyOf' => [
+                ['type' => 'integer'],
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'id_group' => ['type' => 'integer'],
+                        'name' => ['type' => 'string', 'description' => 'Ignored: the group is taken by its id_group.'],
+                    ],
+                    'required' => ['id_group'],
+                ],
+            ],
+        ];
     }
 
     /**
@@ -892,6 +920,41 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     }
 
     /**
+     * The addresses somcp_get_category returns for the cover image and the
+     * menu thumbnails of a category.
+     *
+     * One reading for the get and the update, so an image the update is given
+     * back is compared with exactly what the get answered.
+     *
+     * @param int $idCategory
+     *
+     * @return array{cover_image: string|null, menu_thumbnails: array<int, string>|null}
+     */
+    protected static function storedImages(int $idCategory): array
+    {
+        $link = Somcp::legacyContext()->link ?? new Link();
+
+        $cover = null;
+        if (is_file(_PS_CAT_IMG_DIR_ . $idCategory . '.jpg')) {
+            $cover = (string) $link->getMediaLink(_THEME_CAT_DIR_ . $idCategory . '.jpg');
+        }
+        // Null rather than an empty list where the version has no menu
+        // thumbnails at all, as meta_keywords on PrestaShop 9.
+        $thumbnails = null;
+        if (class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
+            $thumbnails = [];
+            for ($slot = 0; $slot < self::MENU_THUMBNAILS_MAX; ++$slot) {
+                $file = $idCategory . '-' . $slot . '_thumb.jpg';
+                if (is_file(_PS_CAT_IMG_DIR_ . $file)) {
+                    $thumbnails[] = (string) $link->getMediaLink(_THEME_CAT_DIR_ . $file);
+                }
+            }
+        }
+
+        return ['cover_image' => $cover, 'menu_thumbnails' => $thumbnails];
+    }
+
+    /**
      * The category with the fields somcp_get_category returns.
      *
      * Public because somcp_get_category answers with it: the read tool and the
@@ -919,22 +982,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             $groups[] = ['id_group' => (int) $idGroup, 'name' => $names[(int) $idGroup] ?? ''];
         }
 
-        $cover = null;
-        if (is_file(_PS_CAT_IMG_DIR_ . $idCategory . '.jpg')) {
-            $cover = (string) $link->getMediaLink(_THEME_CAT_DIR_ . $idCategory . '.jpg');
-        }
-        // Null rather than an empty list where the version has no menu
-        // thumbnails at all, as meta_keywords on PrestaShop 9.
-        $thumbnails = null;
-        if (class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
-            $thumbnails = [];
-            for ($slot = 0; $slot < self::MENU_THUMBNAILS_MAX; ++$slot) {
-                $file = $idCategory . '-' . $slot . '_thumb.jpg';
-                if (is_file(_PS_CAT_IMG_DIR_ . $file)) {
-                    $thumbnails[] = (string) $link->getMediaLink(_THEME_CAT_DIR_ . $file);
-                }
-            }
-        }
+        $stored = self::storedImages($idCategory);
 
         // Fields one version has and the other does not are read from the
         // object's properties: the core declares them only where its definition
@@ -962,8 +1010,8 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             'meta_title' => self::textOf($category->meta_title, $idLang),
             'meta_description' => self::textOf($category->meta_description, $idLang),
             'meta_keywords' => isset(Category::$definition['fields']['meta_keywords']) ? self::textOf($properties['meta_keywords'] ?? '', $idLang) : null,
-            'cover_image' => $cover,
-            'menu_thumbnails' => $thumbnails,
+            'cover_image' => $stored['cover_image'],
+            'menu_thumbnails' => $stored['menu_thumbnails'],
             'products_count' => (int) $db->getValue(
                 'SELECT COUNT(DISTINCT cp.`id_product`) FROM `' . _DB_PREFIX_ . 'category_product` cp'
                 . ' INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = cp.`id_product` AND ps.`id_shop` = ' . (int) $idShop

@@ -132,12 +132,9 @@ class SomcpToolAuditCategorySeo
             return SomcpTool::languageRefused($idShop, true);
         }
 
-        $checks = self::checks($arguments);
+        $checks = SomcpToolAuditProductSeo::checksArgument($arguments, self::CHECKS);
         if ($checks === null) {
-            return SomcpTool::text(
-                'checks must be a list of these names: ' . implode(', ', self::CHECKS) . '.',
-                true
-            );
+            return SomcpToolAuditProductSeo::checksRefused(self::CHECKS);
         }
 
         $activeOnly = !(array_key_exists('active', $arguments) && $arguments['active'] === false);
@@ -250,31 +247,6 @@ class SomcpToolAuditCategorySeo
         }
 
         return $issues;
-    }
-
-    /**
-     * The checks asked for, all of them by default, or null for a bad list.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return array<int, string>|null
-     */
-    private static function checks(array $arguments): ?array
-    {
-        if (!array_key_exists('checks', $arguments) || $arguments['checks'] === null) {
-            return self::CHECKS;
-        }
-        if (!is_array($arguments['checks']) || $arguments['checks'] === []) {
-            return null;
-        }
-        foreach ($arguments['checks'] as $check) {
-            if (!is_string($check) || !in_array($check, self::CHECKS, true)) {
-                return null;
-            }
-        }
-
-        // Kept in the order of the list, so every answer reads the same way.
-        return array_values(array_intersect(self::CHECKS, $arguments['checks']));
     }
 
     /**

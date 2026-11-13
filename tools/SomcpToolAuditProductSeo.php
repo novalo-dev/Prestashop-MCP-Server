@@ -141,12 +141,9 @@ class SomcpToolAuditProductSeo
             return SomcpTool::languageRefused($idShop, true);
         }
 
-        $checks = self::checks($arguments);
+        $checks = self::checksArgument($arguments, self::CHECKS);
         if ($checks === null) {
-            return SomcpTool::text(
-                'checks must be a list of these names: ' . implode(', ', self::CHECKS) . '.',
-                true
-            );
+            return self::checksRefused(self::CHECKS);
         }
 
         $activeOnly = !(array_key_exists('active', $arguments) && $arguments['active'] === false);
@@ -471,25 +468,41 @@ class SomcpToolAuditProductSeo
     /**
      * The checks asked for, all of them by default, or null for a bad list.
      *
+     * Shared by every SEO audit that takes a checks argument, so they read
+     * it, order it and refuse it the same way.
+     *
      * @param array<string, mixed> $arguments
+     * @param array<int, string> $allowed every check of the audit, in the order they are reported
      *
      * @return array<int, string>|null
      */
-    private static function checks(array $arguments): ?array
+    public static function checksArgument(array $arguments, array $allowed): ?array
     {
         if (!array_key_exists('checks', $arguments) || $arguments['checks'] === null) {
-            return self::CHECKS;
+            return $allowed;
         }
         if (!is_array($arguments['checks']) || $arguments['checks'] === []) {
             return null;
         }
         foreach ($arguments['checks'] as $check) {
-            if (!is_string($check) || !in_array($check, self::CHECKS, true)) {
+            if (!is_string($check) || !in_array($check, $allowed, true)) {
                 return null;
             }
         }
 
         // Kept in the order of the list, so every answer reads the same way.
-        return array_values(array_intersect(self::CHECKS, $arguments['checks']));
+        return array_values(array_intersect($allowed, $arguments['checks']));
+    }
+
+    /**
+     * The refusal of a checks argument checksArgument() could not read.
+     *
+     * @param array<int, string> $allowed
+     *
+     * @return array<string, mixed>
+     */
+    public static function checksRefused(array $allowed): array
+    {
+        return SomcpTool::text('checks must be a list of these names: ' . implode(', ', $allowed) . '.', true);
     }
 }

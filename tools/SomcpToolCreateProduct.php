@@ -2262,7 +2262,7 @@ class SomcpToolCreateProduct
      * here. The addresses are compared on the file name, since getMediaLink()
      * can put a media server host in front of the shop's own file.
      *
-     * @param mixed       $given   the field exactly as the assistant sent it
+     * @param mixed $given the field exactly as the assistant sent it
      * @param string|null $current the address the get returns for the stored file, or null when there is none
      */
     protected static function sameImage($given, ?string $current): bool

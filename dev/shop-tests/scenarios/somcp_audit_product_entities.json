@@ -1,7 +1,7 @@
 {
   "calls": [
     {"why": "the whole demo catalogue scored, worst first, with the missing fields named", "arguments": {}, "expect": "ok", "contains": ["\"products\"", "\"total_count\"", "\"average_score\"", "\"missing\"", "\"score\"", "\"language\""]},
-    {"why": "a missing field wears the product page label of the shop's version - Weight, the same on 8 and 9, which the demo products leave at zero", "arguments": {}, "expect": "ok", "contains": ["\"on_screen\": \"Weight\""]},
+    {"why": "a missing field wears the product page label from the table both product audits share - Brand, the same on 8 and 9, which the demo pack leaves empty", "arguments": {}, "expect": "ok", "contains": ["\"field\": \"id_manufacturer\"", "\"on_screen\": \"Brand\""]},
     {"why": "one language by its ISO code, one product returned", "arguments": {"language": "en", "limit": 1}, "expect": "ok", "contains": ["\"returned\": 1", "\"language\": \"en\""]},
     {"why": "the ISO code in capitals is the same language", "arguments": {"language": "EN", "limit": 1}, "expect": "ok", "contains": ["\"language\": \"en\""]},
     {"why": "only products scoring at or under a threshold", "arguments": {"max_score": 50, "limit": 5}, "expect": "ok", "contains": ["\"average_score\"", "\"total_count\""]},

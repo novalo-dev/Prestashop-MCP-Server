@@ -46,14 +46,8 @@ class SomcpToolAuditProductSeo
     /** @var int Products read per query while scanning the catalogue. */
     private const BATCH = 200;
 
-    /** @var int Beyond this, search engines cut the title in their results. Shared by every SEO audit. */
-    public const TITLE_MAX = 60;
-
     /** @var int Under this, a description gives search engines little to show. Shared by every SEO audit. */
     public const DESCRIPTION_MIN = 70;
-
-    /** @var int Beyond this, search engines cut the description in their results. Shared by every SEO audit. */
-    public const DESCRIPTION_MAX = 160;
 
     /** @var int Under this many words, a page has little text to rank on. Shared by every SEO audit. */
     public const WORDS_MIN = 150;
@@ -109,7 +103,7 @@ class SomcpToolAuditProductSeo
                             'type' => 'string',
                             'enum' => self::CHECKS,
                         ],
-                        'description' => 'Only these checks, all when left out. Meta title over 60 characters, meta '
+                        'description' => 'Only these checks, all when left out. Meta title over 70 characters, meta '
                             . 'description under 70 or over 160, description_short under 150 words; '
                             . 'inactive_without_redirect needs active false.',
                     ],
@@ -253,11 +247,13 @@ class SomcpToolAuditProductSeo
 
         $found = [
             'meta_title_missing' => $title === '' ? '' : null,
-            'meta_title_too_long' => Tools::strlen($title) > self::TITLE_MAX ? $title : null,
+            // The lengths the writes advise past (SomcpTool), so a text written
+            // without a warning is never flagged here.
+            'meta_title_too_long' => Tools::strlen($title) > SomcpTool::META_TITLE_RECOMMENDED ? $title : null,
             'meta_title_duplicate' => $duplicateTitle ? $title : null,
             'meta_description_missing' => $description === '' ? '' : null,
             'meta_description_short' => $description !== '' && Tools::strlen($description) < self::DESCRIPTION_MIN ? $description : null,
-            'meta_description_long' => Tools::strlen($description) > self::DESCRIPTION_MAX ? $description : null,
+            'meta_description_long' => Tools::strlen($description) > SomcpTool::metaDescriptionRecommended() ? $description : null,
             'link_rewrite_duplicate' => $duplicateUrl ? (string) $row['link_rewrite'] : null,
             // The value is the number of words, the thing to raise.
             'description_short' => $words < self::WORDS_MIN ? $words : null,

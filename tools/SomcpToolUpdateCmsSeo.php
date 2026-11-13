@@ -97,7 +97,7 @@ class SomcpToolUpdateCmsSeo
                     'meta_title' => [
                         'type' => 'object',
                         'description' => 'Assistant, approved by the merchant. The Meta title of the page form, per '
-                            . 'ISO code: 70 characters at most, without < > = { }; an empty text removes it. Over 60 '
+                            . 'ISO code: 70 characters at most, without < > = { }; an empty text removes it. Over 70 '
                             . 'characters, search results cut it.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
@@ -403,13 +403,13 @@ class SomcpToolUpdateCmsSeo
         foreach ($plan['isos'] as $idLang => $iso) {
             // The title search engines read, as Meta::getCmsMetas() builds it.
             $seoTitle = self::seoTitle($stored, $idLang);
-            if (Tools::strlen($seoTitle) > SomcpToolAuditProductSeo::TITLE_MAX) {
-                $warnings[$iso][] = 'the title shown in search results is over ' . SomcpToolAuditProductSeo::TITLE_MAX
+            if (Tools::strlen($seoTitle) > SomcpTool::META_TITLE_RECOMMENDED) {
+                $warnings[$iso][] = 'the title shown in search results is over ' . SomcpTool::META_TITLE_RECOMMENDED
                     . ' characters and will be cut';
             }
             $description = self::textOf($stored->meta_description, $idLang);
-            if (Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX) {
-                $warnings[$iso][] = 'meta_description is over ' . SomcpToolAuditProductSeo::DESCRIPTION_MAX
+            if (Tools::strlen($description) > SomcpTool::metaDescriptionRecommended()) {
+                $warnings[$iso][] = 'meta_description is over ' . SomcpTool::metaDescriptionRecommended()
                     . ' characters: search results cut it';
             }
             if (isset($plan['moved'][$idLang]) && (bool) $stored->active) {

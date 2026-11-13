@@ -95,7 +95,7 @@ class SomcpToolAuditCategorySeo
                             'type' => 'string',
                             'enum' => self::CHECKS,
                         ],
-                        'description' => 'Only these checks, all of them when left out. Meta title over 60 characters, meta '
+                        'description' => 'Only these checks, all of them when left out. Meta title over 70 characters, meta '
                             . 'description under 70 or over 160; empty_category and no_cover_image are per category.',
                     ],
                     'limit' => [
@@ -224,12 +224,12 @@ class SomcpToolAuditCategorySeo
 
         $found = [
             'meta_title_missing' => $title === '' ? '' : null,
-            'meta_title_too_long' => Tools::strlen($title) > SomcpToolAuditProductSeo::TITLE_MAX ? $title : null,
+            'meta_title_too_long' => Tools::strlen($title) > SomcpTool::META_TITLE_RECOMMENDED ? $title : null,
             'meta_title_duplicate' => $duplicateTitle ? $title : null,
             'meta_description_missing' => $description === '' ? '' : null,
             // Same lower bound as the product audit, from its shared constant.
             'meta_description_short' => $description !== '' && Tools::strlen($description) < SomcpToolAuditProductSeo::DESCRIPTION_MIN ? $description : null,
-            'meta_description_long' => Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX ? $description : null,
+            'meta_description_long' => Tools::strlen($description) > SomcpTool::metaDescriptionRecommended() ? $description : null,
             // Counted as words, tags removed: a description holding only
             // markup shows the visitor nothing either.
             'description_missing' => SomcpToolAuditProductSeo::words((string) $row['description']) === 0 ? '' : null,

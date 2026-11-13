@@ -94,7 +94,7 @@ installation has its own titles, descriptions and URLs.
 
 ## Reading the checks
 
-- `meta_title_too_long` (over 60 characters) and `meta_description_long` (over
+- `meta_title_too_long` (over 70 characters) and `meta_description_long` (over
   160) are cut in search results; `meta_description_short` (under 70) gives
   little to show.
 - `meta_title_duplicate` and `link_rewrite_duplicate` mean another product of

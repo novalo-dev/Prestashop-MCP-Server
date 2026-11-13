@@ -61,7 +61,7 @@ class SomcpToolAuditBrandSeo
             Somcp::t('Audit the SEO of brands'),
             'Lists the brands whose search engine fields or descriptions have a problem, one entry per brand '
                 . 'and language, each issue with its check and the value at fault: meta_title_missing, '
-                . 'meta_title_too_long (over 60 characters), meta_description_missing, meta_description_short '
+                . 'meta_title_too_long (over 70 characters), meta_description_missing, meta_description_short '
                 . '(under 70 characters), meta_description_long (over 160), description_missing, no_logo, '
                 . 'inactive_with_products (a disabled brand '
                 . 'still on products of the shop, value is their number). Every brand is listed with active; counts '
@@ -152,10 +152,10 @@ class SomcpToolAuditBrandSeo
             'meta_title_missing' => $title === '' ? '' : null,
             // The limits of the other SEO audits, from their shared constants,
             // so a brand is never judged by other numbers than a product.
-            'meta_title_too_long' => Tools::strlen($title) > SomcpToolAuditProductSeo::TITLE_MAX ? $title : null,
+            'meta_title_too_long' => Tools::strlen($title) > SomcpTool::META_TITLE_RECOMMENDED ? $title : null,
             'meta_description_missing' => $description === '' ? '' : null,
             'meta_description_short' => $description !== '' && Tools::strlen($description) < SomcpToolAuditProductSeo::DESCRIPTION_MIN ? $description : null,
-            'meta_description_long' => Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX ? $description : null,
+            'meta_description_long' => Tools::strlen($description) > SomcpTool::metaDescriptionRecommended() ? $description : null,
             // Counted as words, tags removed: a description holding only
             // markup shows the visitor nothing either.
             'description_missing' => SomcpToolAuditProductSeo::words((string) $row['description']) === 0 ? '' : null,

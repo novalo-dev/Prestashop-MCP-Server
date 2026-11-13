@@ -180,6 +180,15 @@ they used before. A title read by `somcp_get_category` can now be given back to
 characters for a title, 160 for a description), the answer still advises, in
 `seo_warnings`, without refusing. The other SEO tools follow in a later change.
 
+**The SEO audits flag a meta title at the same length the writes advise.**
+`somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`,
+`somcp_audit_brand_seo` and `somcp_audit_page` used to flag a meta title past 60
+characters, while the tools that write it only advised past 70: a 65-character
+title written without a warning was then reported as too long. Every audit now
+flags a title past 70 characters and a description past 160, the lengths the
+back office recommends, and `somcp_update_cms_seo` and `somcp_update_meta_page`
+advise at those same lengths.
+
 **Clearer refusals from the category tools.** When the assistant gets a call
 to `somcp_get_category`, `somcp_create_category`, `somcp_update_category`,
 `somcp_set_category_active` or `somcp_delete_category` wrong, the answer now

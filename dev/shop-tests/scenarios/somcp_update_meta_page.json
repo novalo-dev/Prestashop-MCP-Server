@@ -18,6 +18,7 @@
     {"why": "a language the shop does not have", "arguments": {"id_meta": 3, "languages": ["en"], "title": {"zz": "x"}}, "expect": "error", "contains": ["\"zz\" is not among the languages being filled (en)"]},
     {"why": "a text given as a list, without its language", "arguments": {"id_meta": 3, "languages": ["en"], "title": ["x"]}, "expect": "error", "contains": ["keyed by ISO code"]},
     {"why": "a field this tool does not write", "arguments": {"id_meta": 3, "page": "contact"}, "expect": "error", "contains": ["page: not a field of this tool"]},
-    {"why": "characters PrestaShop refuses in a description", "arguments": {"id_meta": 3, "languages": ["en"], "description": {"en": "<script>x</script>"}}, "expect": "error", "contains": ["Nothing was changed"]}
+    {"why": "characters PrestaShop refuses in a description", "arguments": {"id_meta": 3, "languages": ["en"], "description": {"en": "<script>x</script>"}}, "expect": "error", "contains": ["Nothing was changed"]},
+    {"why": "a 65-character title is under the length search results keep: no warning, as the audits do not flag it", "arguments": {"id_meta": 3, "languages": ["en"], "title": {"en": "Contact the shop team by form, by phone or by mail, all week long"}}, "expect": "ok", "contains": ["\"changed\": true", "\"seo_warnings\": {}"]}
   ]
 }

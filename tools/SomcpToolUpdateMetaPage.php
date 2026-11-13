@@ -94,7 +94,7 @@ class SomcpToolUpdateMetaPage
                     'title' => [
                         'type' => 'object',
                         'description' => 'Assistant, approved by the merchant. The Page title, per ISO code: 70 '
-                            . 'characters at most, without < > = { }; an empty text removes it. Over 60 characters, '
+                            . 'characters at most, without < > = { }; an empty text removes it. Over 70 characters, '
                             . 'search results cut it.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
@@ -431,13 +431,13 @@ class SomcpToolUpdateMetaPage
         $warnings = [];
         foreach ($plan['isos'] as $idLang => $iso) {
             $title = SomcpToolUpdateCmsSeo::textOf($stored->title, $idLang);
-            if (Tools::strlen($title) > SomcpToolAuditProductSeo::TITLE_MAX) {
-                $warnings[$iso][] = 'title is over ' . SomcpToolAuditProductSeo::TITLE_MAX
+            if (Tools::strlen($title) > SomcpTool::META_TITLE_RECOMMENDED) {
+                $warnings[$iso][] = 'title is over ' . SomcpTool::META_TITLE_RECOMMENDED
                     . ' characters: search results cut it';
             }
             $description = SomcpToolUpdateCmsSeo::textOf($stored->description, $idLang);
-            if (Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX) {
-                $warnings[$iso][] = 'description is over ' . SomcpToolAuditProductSeo::DESCRIPTION_MAX
+            if (Tools::strlen($description) > SomcpTool::metaDescriptionRecommended()) {
+                $warnings[$iso][] = 'description is over ' . SomcpTool::metaDescriptionRecommended()
                     . ' characters: search results cut it';
             }
             if (isset($plan['moved'][$idLang])) {

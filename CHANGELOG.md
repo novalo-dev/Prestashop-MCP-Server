@@ -169,6 +169,14 @@ yesterday" now has an answer. It needs the **view** right on **Stock**.
 
 ### Changed
 
+**A brand or supplier logo read and given back no longer counts as a change.**
+When the assistant reads a brand or supplier with `somcp_get_manufacturer` or
+`somcp_get_supplier`, changes one field and gives the whole answer back to
+`somcp_update_manufacturer` or `somcp_update_supplier`, the logo address it read
+(or the empty logo) is now left untouched: the file is not downloaded again and
+the answer no longer lists a logo change that did not happen. A real new logo,
+or removing one with `remove_logo`, works as before.
+
 **Vouchers on the orders the assistant creates.** `somcp_create_order` now
 takes the vouchers to apply, as the **Vouchers** block of **Orders > Orders >
 Add new order** does. Each voucher is checked on the cart once the products,

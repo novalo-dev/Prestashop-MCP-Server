@@ -151,15 +151,7 @@ class SomcpToolGetSupplier
     public static function supplier(int $idSupplier, int $idLang, int $idShop): array
     {
         $supplier = new Supplier($idSupplier, $idLang);
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        // Not Link::getSupplierImageLink(), which falls back on the "no
-        // picture" image of the language: a supplier without a logo must say
-        // so, not hand over a placeholder as if it were its logo.
-        $logo = null;
-        if (is_file(_PS_SUPP_IMG_DIR_ . $idSupplier . '.jpg')) {
-            $logo = (string) $link->getMediaLink(_THEME_SUP_DIR_ . $idSupplier . '.jpg');
-        }
+        $logo = self::logoUrl($idSupplier);
 
         // meta_keywords is gone from PrestaShop 9: read from the object's
         // properties, since a property access is an unknown property to static
@@ -180,6 +172,29 @@ class SomcpToolGetSupplier
             'logo' => $logo,
             'products_count' => self::productsCount($idSupplier, $idShop),
         ];
+    }
+
+    /**
+     * The public address of a supplier's logo, or null when it has none.
+     *
+     * Shared with somcp_update_supplier, so the address the page hands out is
+     * the same one the update recognises when it is given back unchanged. Not
+     * Link::getSupplierImageLink(), which falls back on the "no picture" image
+     * of the language: a supplier without a logo must say so, not hand over a
+     * placeholder as if it were its logo.
+     *
+     * @param int $idSupplier
+     *
+     * @return string|null
+     */
+    public static function logoUrl(int $idSupplier): ?string
+    {
+        if (!is_file(_PS_SUPP_IMG_DIR_ . $idSupplier . '.jpg')) {
+            return null;
+        }
+        $link = Somcp::legacyContext()->link ?? new Link();
+
+        return (string) $link->getMediaLink(_THEME_SUP_DIR_ . $idSupplier . '.jpg');
     }
 
     /**

@@ -2251,6 +2251,48 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * Whether an image field given back to an update carries the value its get
+     * returned for the stored file, so writing it would change nothing.
+     *
+     * A get hands an image back as the public address of the shop's own file,
+     * or as null when there is none. Given back to the matching update under
+     * the same name, that value is not a new image: null when there is no file,
+     * or the file's own address as a bare string or as {"url": ...}. An
+     * upload_ref, or any other address, is a real image and is not matched
+     * here. The addresses are compared on the file name, since getMediaLink()
+     * can put a media server host in front of the shop's own file.
+     *
+     * @param mixed       $given   the field exactly as the assistant sent it
+     * @param string|null $current the address the get returns for the stored file, or null when there is none
+     */
+    protected static function sameImage($given, ?string $current): bool
+    {
+        if ($given === null) {
+            return $current === null;
+        }
+        if ($current === null) {
+            return false;
+        }
+
+        $url = null;
+        if (is_string($given)) {
+            $url = $given;
+        } elseif (is_array($given) && !array_is_list($given)
+            && array_key_exists('url', $given) && !array_key_exists(SomcpUpload::ARG_REF, $given)
+            && is_string($given['url'])) {
+            $url = $given['url'];
+        }
+        if ($url === null) {
+            return false;
+        }
+
+        $givenFile = basename((string) (parse_url(trim($url), PHP_URL_PATH) ?: ''));
+        $currentFile = basename((string) (parse_url($current, PHP_URL_PATH) ?: ''));
+
+        return $givenFile !== '' && $givenFile === $currentFile;
+    }
+
+    /**
      * The schema of one image field, worded as the images of the product tools.
      *
      * One builder for every tool, so an image is asked for in the same words

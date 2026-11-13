@@ -193,9 +193,19 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
             'supplier' => [],
             'address' => [],
             'id_address' => (int) Address::getAddressIdBySupplierId((int) $supplier->id),
-            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
+            'logo' => null,
             'remove_logo' => false,
         ];
+
+        if (array_key_exists('logo', $arguments)) {
+            // A logo given back as somcp_get_supplier returned it - the shop's
+            // own file address, or null when there is none - is not a new logo
+            // and leaves plan['logo'] null, so nothing is downloaded or
+            // written. Any other address or an upload_ref is a real logo.
+            if (!SomcpToolCreateProduct::sameImage($arguments['logo'], SomcpToolGetSupplier::logoUrl((int) $supplier->id))) {
+                $plan['logo'] = self::imageArgument($arguments, 'logo', $errors, 'logo');
+            }
+        }
 
         $name = self::manufacturerName($arguments, $probe, $errors, false, 'supplier');
         if ($name !== null) {

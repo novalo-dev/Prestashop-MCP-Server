@@ -147,15 +147,7 @@ class SomcpToolGetManufacturer
     public static function manufacturer(int $idManufacturer, int $idLang, int $idShop): array
     {
         $manufacturer = new Manufacturer($idManufacturer, $idLang);
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        // Not Link::getManufacturerImageLink(), which falls back on the
-        // "no picture" image of the language: a brand without a logo must say
-        // so, not hand over a placeholder as if it were its logo.
-        $logo = null;
-        if (is_file(_PS_MANU_IMG_DIR_ . $idManufacturer . '.jpg')) {
-            $logo = (string) $link->getMediaLink(_THEME_MANU_DIR_ . $idManufacturer . '.jpg');
-        }
+        $logo = self::logoUrl($idManufacturer);
 
         // meta_keywords is gone from PrestaShop 9: read from the object's
         // properties, since a property access is an unknown property to static
@@ -174,6 +166,29 @@ class SomcpToolGetManufacturer
             'logo' => $logo,
             'products_count' => self::productsCount($idManufacturer, $idShop),
         ];
+    }
+
+    /**
+     * The public address of a brand's logo, or null when it has none.
+     *
+     * Shared with somcp_update_manufacturer, so the address the page hands out
+     * is the same one the update recognises when it is given back unchanged.
+     * Not Link::getManufacturerImageLink(), which falls back on the "no
+     * picture" image of the language: a brand without a logo must say so, not
+     * hand over a placeholder as if it were its logo.
+     *
+     * @param int $idManufacturer
+     *
+     * @return string|null
+     */
+    public static function logoUrl(int $idManufacturer): ?string
+    {
+        if (!is_file(_PS_MANU_IMG_DIR_ . $idManufacturer . '.jpg')) {
+            return null;
+        }
+        $link = Somcp::legacyContext()->link ?? new Link();
+
+        return (string) $link->getMediaLink(_THEME_MANU_DIR_ . $idManufacturer . '.jpg');
     }
 
     /**

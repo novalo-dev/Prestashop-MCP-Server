@@ -41,6 +41,15 @@ assistant, which already knows the shop's time zone.
 **Amounts.** Always with their currency code, and always with tax or without
 said in the field name. Never a bare `total`.
 
+**Images given back.** What a get returns for an image is given back to the
+matching update under the same name and, when it is unchanged, changes nothing:
+the address of the shop's own file (a string, or `{"url": ...}`), or `null` when
+there is none, is neither downloaded, written nor listed in `changes`
+(`SomcpToolCreateProduct::sameImage()`, the file names compared since a media
+server host can sit in front). Removing an image stays the `remove_*` field's
+job; another address or an `upload_ref` is a new image. So far the brand and
+supplier logos (`somcp_update_manufacturer`, `somcp_update_supplier`).
+
 **Paging.** `limit` defaults to 20 and caps at 100, `offset` for the rest. Every
 list returns `total_count`, so an assistant knows there is more instead of
 concluding from one page.

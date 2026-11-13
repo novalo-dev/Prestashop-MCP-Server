@@ -527,6 +527,11 @@ order and sends the emails a new order sends for its status.
   `somcp_list_cart_rules`, given as `cart_rules`.
 - Before the call, show the merchant the lines, the carrier, the vouchers with
   the total, and the status, and wait for their yes.
+- A price the merchant sets for a line goes in `unit_price_tax_excluded` of
+  that line, tax excluded as the **Price** field of the **Cart** block. Before
+  the call, show it beside the price the shop would charge (`price_tax_excl` of
+  `somcp_get_product`), so the merchant sees what they change. Lines left
+  without one keep the shop's price.
 - A voucher that does not apply to this cart is refused with the shop's
   reason, and nothing is created: tell the merchant that reason rather than
   dropping the voucher on your own.

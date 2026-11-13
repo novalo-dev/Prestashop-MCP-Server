@@ -1580,15 +1580,17 @@ Add new order** then **Create order** do: the cart lines, the **Delivery** and
 `somcp_add_order_product`), changing its status (→ `somcp_set_order_status`),
 recording a payment on it (→ `somcp_add_order_payment`), creating a customer
 (→ `somcp_create_customer`), creating a voucher (→ `somcp_create_cart_rule`),
-a discount on an order already placed (→ `somcp_add_order_discount`). A
-hand-set line price is not in this tool yet (#176).
+a discount on an order already placed (→ `somcp_add_order_discount`), a price
+for a customer or group on every order (→ `specific_prices` of
+`somcp_update_product`), changing the price of a line of an existing order (→
+`somcp_update_order_product`).
 
 **Parameters**
 
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_customer` | integer | yes | **Customer**, from `somcp_search_customers`; a customer of the token's shop, not deleted |
-| `products` | array, 1 or more | yes | **Cart**: each line `id_product` (from `somcp_search_products`), `id_product_attribute` (from `combinations[].id_product_attribute` of `somcp_get_product`, required when the product has combinations) and `quantity` (from 1, at least the minimal quantity); the same product and combination twice is refused |
+| `products` | array, 1 or more | yes | **Cart**: each line `id_product` (from `somcp_search_products`), `id_product_attribute` (from `combinations[].id_product_attribute` of `somcp_get_product`, required when the product has combinations) `quantity` (from 1, at least the minimal quantity) and `unit_price_tax_excluded` (**Price**, from 0, tax excluded as the screen says, in the cart's currency; left out, the price the shop computes; the name of `products[].unit_price_tax_excluded` of `somcp_get_order`, so a price read there is given back as is); the same product and combination twice is refused |
 | `id_address_delivery` | integer | yes | **Addresses > Delivery**, from `addresses[].id_address` of `somcp_get_customer`; an address of this customer |
 | `id_address_invoice` | integer | no | **Addresses > Invoice**, same; the delivery address when left out |
 | `id_carrier` | integer | yes unless every product is virtual | **Shipping > Delivery option**: one of the carriers the cart is offered for this address and these products; refused otherwise, with those offered (`id_carrier`, `name`, `shipping_tax_included`) |
@@ -1605,7 +1607,10 @@ hand-set line price is not in this tool yet (#176).
 
 **Returns** - `created: true`, `id_order`, `reference`, `id_cart`, `status`
 (`status_id`, `name`), `payment` (the payment name the order records),
-`totals` in the shape of `totals` of `somcp_get_order` (the vouchers in
+`products`, the lines as the order records them in the keys of `products[]` of
+`somcp_get_order` (`unit_price_tax_excluded`, `unit_price_tax_included`,
+`total_tax_excluded` ...), `totals` in the shape of `totals` of
+`somcp_get_order` (the vouchers in
 `discounts_tax_included` and `discounts_tax_excluded`), `discounts`, each
 voucher applied in the keys of `discounts[]` of `somcp_get_order` (the free
 shipping cart rule included), and `currency`.
@@ -1614,26 +1619,35 @@ shipping cart rule included), and `currency`.
 with its field (`products[1].quantity: ...`): a field the tool does not take;
 the customer; each line (product of the shop, available for order, required
 customization fields, combination, minimal quantity, stock when the product
-cannot be ordered out of stock); the addresses (with the customer's addresses
+cannot be ordered out of stock, `unit_price_tax_excluded` not a number of 0 or
+more); the addresses (with the customer's addresses
 listed) and their country; the currency; the language; the messages; the
 payment module; the status; `cart_rules` not a list, an entry that is not an
 identifier, a voucher the shop does not have, the same voucher twice. Then,
-once the cart exists: a quantity the cart refuses, the carrier, and each
+once the cart exists: a quantity the cart refuses, a line price the shop
+refuses, the carrier, and each
 voucher that does not apply, `cart_rules[<n>]: <the shop's reason>` in the
-order's language. A call refused at that point deletes the cart and the free
-shipping cart rule it made.
+order's language. A call refused at that point deletes the cart, the prices
+set for its lines and the free shipping cart rule it made.
 
 **Notes** - a new cart every call, never the customer's last empty cart as the
 screen takes: it may be open on the storefront. The screen's handlers need the
 Symfony container, so the tool runs their sequence with the legacy calls they
 wrap (`Cart::updateQty()`, `Cart::setDeliveryOption()`, `CartRule`, `Message`,
+the `SpecificPrice` of `UpdateProductPriceInCartHandler` for a line given a
+price,
 `PaymentModule::validateOrder()`), the context set to the cart and restored
 afterwards. The employee of the token goes into the `Manual order -- Employee:`
 message, as the button does. In catalog mode the order is recorded through the
 core's back office payment, as the handler does. `validateOrder()` sends the
 emails a new order sends for that status. Multistore: the customer, addresses
 and products are checked against the token's shop. Prices are the ones the cart
-computes for this customer, currency and address.
+computes for this customer, currency and address, except a line given
+`unit_price_tax_excluded`: as the **Price** field of the **Cart** block, it is
+a specific price tied to the cart (`id_cart`) and its customer, for every shop,
+currency, country and group, written after the line is on the cart and before
+the carrier and the vouchers are weighed. A price above the shop's price is
+allowed, as on the screen.
 
 **Differences between 8.0.1 and 9.0.0** - none for the tool: same blocks and
 handler sequence; the page is titled **Create order** on 8.0.1 and **New

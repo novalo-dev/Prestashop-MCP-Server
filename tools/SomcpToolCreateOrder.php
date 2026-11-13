@@ -28,7 +28,8 @@ use PrestaShop\PrestaShop\Adapter\LegacyContext;
  *
  * The screen's handlers are built by the Symfony container, which a front
  * controller does not have, so the tool runs the same sequence with the
- * legacy calls they wrap: a new Cart, Cart::updateQty(), the delivery option,
+ * legacy calls they wrap: a new Cart, Cart::updateQty(), the specific price of
+ * UpdateProductPriceInCartHandler for a line given a price, the delivery option,
  * the free shipping cart rule of UpdateCartDeliverySettingsHandler, a Message
  * on the cart, then PaymentModule::validateOrder() as
  * AddOrderFromBackOfficeHandler calls it, with the context set to the cart and
@@ -37,7 +38,8 @@ use PrestaShop\PrestaShop\Adapter\LegacyContext;
  * Every mistake in the arguments is answered before anything is written. What
  * can only be known once the cart exists - the quantities the cart accepts,
  * the carriers it is offered - is checked next, and a refusal at that point
- * deletes the cart and its free shipping rule, so nothing is left behind.
+ * deletes the cart, the prices set for its lines and its free shipping rule,
+ * so nothing is left behind.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -63,7 +65,7 @@ class SomcpToolCreateOrder
     ];
 
     /** @var string[] The keys of one cart line. */
-    private const LINE_KEYS = ['id_product', 'id_product_attribute', 'quantity'];
+    private const LINE_KEYS = ['id_product', 'id_product_attribute', 'quantity', 'unit_price_tax_excluded'];
 
     /**
      * @return SomcpTool
@@ -75,7 +77,7 @@ class SomcpToolCreateOrder
             Somcp::t('Create an order'),
             'Creates one order for an existing customer, like Add new order then Create order: lines, '
                 . 'addresses, carrier, Shipping options, currency, language, message, Payment and Order status, '
-                . 'at the prices the cart computes. It sends the new-order emails of that status: show the '
+                . 'at the prices the cart computes or a price given per line. It sends the new-order emails of that status: show the '
                 . 'lines, carrier, total and status and wait for a yes. Not replayable: on a lost answer look '
                 . 'with somcp_search_orders (this customer, today), then somcp_get_order. For an existing order: '
                 . 'somcp_add_order_product, somcp_set_order_status. A new customer: somcp_create_customer.',
@@ -106,6 +108,12 @@ class SomcpToolCreateOrder
                                     'type' => 'integer',
                                     'minimum' => 1,
                                     'description' => 'At least the minimal quantity of the product.',
+                                ],
+                                'unit_price_tax_excluded' => [
+                                    'type' => 'number',
+                                    'minimum' => 0,
+                                    'description' => 'Price of the line, tax excl., in the order currency, as the '
+                                        . 'Price of the Cart block. Left out: the price the shop computes.',
                                 ],
                             ],
                             'required' => ['id_product', 'quantity'],
@@ -321,7 +329,7 @@ class SomcpToolCreateOrder
      * @param int $idShop
      * @param string[] $problems
      *
-     * @return array<int, array{id_product:int, id_product_attribute:int, quantity:int}>
+     * @return array<int, array{id_product:int, id_product_attribute:int, quantity:int, unit_price_tax_excluded:float|null}>
      */
     private static function lines(array $arguments, int $idShop, array &$problems): array
     {
@@ -347,6 +355,19 @@ class SomcpToolCreateOrder
             if (!is_int($quantity) || $quantity < 1) {
                 $problems[] = $path . '.quantity: must be a whole number, at least 1';
                 $quantity = 0;
+            }
+
+            // The same check and wording as somcp_update_order_product, whose
+            // field this is: a price read on one order is given back as is.
+            $price = null;
+            if (array_key_exists('unit_price_tax_excluded', $item)) {
+                $price = $item['unit_price_tax_excluded'];
+                if ((!is_int($price) && !is_float($price)) || $price < 0) {
+                    $problems[] = $path . '.unit_price_tax_excluded: must be a number, 0 or more';
+                    $price = null;
+                } else {
+                    $price = (float) $price;
+                }
             }
 
             $idProduct = SomcpTool::id($item, 'id_product');
@@ -410,7 +431,12 @@ class SomcpToolCreateOrder
                 }
             }
 
-            $lines[] = ['id_product' => $idProduct, 'id_product_attribute' => $idCombination, 'quantity' => (int) $quantity];
+            $lines[] = [
+                'id_product' => $idProduct,
+                'id_product_attribute' => $idCombination,
+                'quantity' => (int) $quantity,
+                'unit_price_tax_excluded' => $price,
+            ];
         }
 
         return $lines;
@@ -629,6 +655,9 @@ class SomcpToolCreateOrder
                         . ($result === -1 ? ', below the minimal quantity' : ' - not enough in stock');
                 }
             }
+            if ($problems === []) {
+                self::linePrices($cart, $plan['lines'], $problems);
+            }
 
             if ($problems === []) {
                 self::carrier($cart, (int) $plan['id_carrier'], $problems);
@@ -713,6 +742,9 @@ class SomcpToolCreateOrder
                 'name' => Validate::isLoadedObject($state) ? (string) $state->name : '',
             ],
             'payment' => (string) $order->payment,
+            // The lines as the order records them, in the keys of
+            // somcp_get_order, so a price set by hand can be shown as kept.
+            'products' => SomcpToolGetOrder::products($order, (int) $order->id_lang, (int) $order->id_shop),
             // Named as totals of somcp_get_order, so the two read the same.
             'totals' => SomcpToolGetOrder::totals($order),
             // Read as somcp_get_order reads them, so a voucher has the same
@@ -799,6 +831,53 @@ class SomcpToolCreateOrder
             }
             if ($valid === false || !$cart->addCartRule((int) $rule->id)) {
                 $problems[] = 'cart_rules[' . $i . ']: the cart refused this voucher';
+            }
+        }
+    }
+
+    /**
+     * Writes the price given for a line as UpdateProductPriceInCartHandler
+     * writes the Price of the Cart block: a specific price tied to this cart
+     * and its customer, for every shop, currency, country and group, so the
+     * cart and then the order price the line at it. Written before the
+     * carrier and the vouchers are weighed, which read the line prices.
+     *
+     * @param Cart $cart
+     * @param array<int, array<string, mixed>> $lines
+     * @param string[] $problems
+     *
+     * @return void
+     */
+    private static function linePrices(Cart $cart, array $lines, array &$problems): void
+    {
+        foreach ($lines as $i => $line) {
+            if ($line['unit_price_tax_excluded'] === null) {
+                continue;
+            }
+            SpecificPrice::deleteByIdCart((int) $cart->id, (int) $line['id_product'], (int) $line['id_product_attribute']);
+            $price = new SpecificPrice();
+            $price->id_cart = (int) $cart->id;
+            $price->id_shop = 0;
+            $price->id_shop_group = 0;
+            $price->id_currency = 0;
+            $price->id_country = 0;
+            $price->id_group = 0;
+            $price->id_customer = (int) $cart->id_customer;
+            $price->id_product = (int) $line['id_product'];
+            $price->id_product_attribute = (int) $line['id_product_attribute'];
+            $price->price = (float) $line['unit_price_tax_excluded'];
+            $price->from_quantity = 1;
+            $price->reduction = 0;
+            $price->reduction_type = 'amount';
+            $price->from = '0000-00-00 00:00:00';
+            $price->to = '0000-00-00 00:00:00';
+            try {
+                $added = $price->add();
+            } catch (Throwable $e) {
+                $added = false;
+            }
+            if (!$added) {
+                $problems[] = 'products[' . $i . '].unit_price_tax_excluded: the shop refused this price';
             }
         }
     }
@@ -907,6 +986,11 @@ class SomcpToolCreateOrder
             }
             if ($rule instanceof CartRule && Validate::isLoadedObject($rule)) {
                 $rule->delete();
+            }
+            // Cart::delete() leaves the prices set for the cart's lines behind;
+            // they go with it, unless an order stands on the cart after all.
+            if ((int) Order::getIdByCartId((int) $cart->id) === 0) {
+                SpecificPrice::deleteByIdCart((int) $cart->id);
             }
             // Cart::delete() keeps a cart an order stands on, so this never
             // removes the cart of an order that was created after all.

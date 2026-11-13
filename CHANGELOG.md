@@ -116,8 +116,8 @@ currency and language, the order message, the payment and the order status.
 Every mistake comes back in one answer before anything is written, and a call
 refused once the cart is built leaves no cart behind. It sends the emails a
 new order sends for the status chosen, so the assistant shows you the lines,
-the carrier, the total and the status first. Vouchers and changing the price
-of a line are not part of it yet. It needs the **add** right on **Orders**.
+the carrier, the total and the status first. It needs the **add** right on
+**Orders**.
 
 **Invoices, delivery slips and credit slips handed over.** The new tool
 `somcp_get_order_document` gives you a link to the PDF of an invoice, a
@@ -177,6 +177,15 @@ for example below its minimum amount or restricted to another customer, is
 refused with the shop's own reason, and nothing is created. The answer lists
 the vouchers applied, as `somcp_get_order` does, and `somcp_get_order` now also
 gives the voucher behind each discount of an order.
+
+**Your own price for a line of the orders the assistant creates.**
+`somcp_create_order` now takes a unit price tax excluded for each line, as the
+**Price** field of the **Cart** block of **Add new order** does: the order
+records the line at that price, while the lines left without one keep the price
+the shop computes for the customer. The price stays tied to that order's cart
+only, as on the screen, and a refused call leaves no price behind. The answer
+now lists the lines as the order records them, with the same names as
+`somcp_get_order`, so the assistant can show you the price it set.
 
 **The same meta title and description lengths as the back office, for the
 category and brand tools.** `somcp_create_category`, `somcp_update_category`,

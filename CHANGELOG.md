@@ -169,6 +169,15 @@ yesterday" now has an answer. It needs the **view** right on **Stock**.
 
 ### Changed
 
+**Vouchers on the orders the assistant creates.** `somcp_create_order` now
+takes the vouchers to apply, as the **Vouchers** block of **Orders > Orders >
+Add new order** does. Each voucher is checked on the cart once the products,
+addresses and carrier are set, as the screen checks it: one that does not apply,
+for example below its minimum amount or restricted to another customer, is
+refused with the shop's own reason, and nothing is created. The answer lists
+the vouchers applied, as `somcp_get_order` does, and `somcp_get_order` now also
+gives the voucher behind each discount of an order.
+
 **The same meta title and description lengths as the back office, for the
 category and brand tools.** `somcp_create_category`, `somcp_update_category`,
 `somcp_create_manufacturer`, `somcp_update_manufacturer`,

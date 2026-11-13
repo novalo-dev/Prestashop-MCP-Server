@@ -59,7 +59,7 @@ class SomcpToolCreateOrder
     private const KEYS = [
         'id_customer', 'products', 'id_address_delivery', 'id_address_invoice', 'id_carrier', 'free_shipping',
         'recycled_packaging', 'gift', 'gift_message', 'currency', 'language', 'message', 'payment_module',
-        'status_id',
+        'status_id', 'cart_rules',
     ];
 
     /** @var string[] The keys of one cart line. */
@@ -164,6 +164,13 @@ class SomcpToolCreateOrder
                         'type' => 'integer',
                         'description' => 'Order status, from somcp_list_order_statuses.',
                     ],
+                    'cart_rules' => [
+                        'type' => 'array',
+                        'description' => 'Vouchers: id_cart_rule of each, from somcp_list_cart_rules. Checked on '
+                            . 'the built cart as the screen does; one that does not apply is refused with the '
+                            . 'shop\'s reason.',
+                        'items' => ['type' => 'integer'],
+                    ],
                 ],
                 'required' => ['id_customer', 'products', 'id_address_delivery', 'payment_module', 'status_id'],
                 'additionalProperties' => false,
@@ -248,6 +255,8 @@ class SomcpToolCreateOrder
             }
         }
 
+        $cartRules = self::cartRules($arguments, $problems);
+
         if ($problems !== [] || !$customer instanceof Customer || $payment === null || $idDelivery <= 0
             || $idInvoice <= 0 || $idCurrency <= 0) {
             return SomcpToolIssuePartialRefund::refused($problems);
@@ -267,6 +276,7 @@ class SomcpToolCreateOrder
             'payment' => $payment,
             'id_status' => $idStatus,
             'id_shop' => $idShop,
+            'cart_rules' => $cartRules,
         ];
 
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($plan, $idEmployee): array {
@@ -623,6 +633,9 @@ class SomcpToolCreateOrder
             if ($problems === []) {
                 self::carrier($cart, (int) $plan['id_carrier'], $problems);
             }
+            if ($problems === []) {
+                self::applyCartRules($cart, $plan['cart_rules'], $problems);
+            }
 
             if ($problems !== []) {
                 self::discard($cart, null, null);
@@ -702,8 +715,92 @@ class SomcpToolCreateOrder
             'payment' => (string) $order->payment,
             // Named as totals of somcp_get_order, so the two read the same.
             'totals' => SomcpToolGetOrder::totals($order),
+            // Read as somcp_get_order reads them, so a voucher has the same
+            // keys in both answers and in somcp_add_order_discount.
+            'discounts' => SomcpToolGetOrder::discounts($order),
             'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',
         ]);
+    }
+
+    /**
+     * The vouchers given, checked as far as the call alone allows: the reasons
+     * a voucher does not apply to this cart come once the cart is built.
+     *
+     * @param array<string, mixed> $arguments
+     * @param string[] $problems
+     *
+     * @return int[] id_cart_rule by position in the call
+     */
+    private static function cartRules(array $arguments, array &$problems): array
+    {
+        if (!array_key_exists('cart_rules', $arguments)) {
+            return [];
+        }
+        $given = $arguments['cart_rules'];
+        if (!is_array($given) || ($given !== [] && array_keys($given) !== range(0, count($given) - 1))) {
+            $problems[] = 'cart_rules: a list of id_cart_rule, from somcp_list_cart_rules';
+
+            return [];
+        }
+        $ids = [];
+        $seen = [];
+        foreach ($given as $i => $value) {
+            $path = 'cart_rules[' . $i . ']';
+            $id = SomcpTool::id(['id' => $value], 'id');
+            if ($id <= 0) {
+                $problems[] = SomcpTool::notAnIdentifier($path);
+                continue;
+            }
+            if (in_array($id, $seen, true)) {
+                // The screen offers a voucher already on the cart no second time.
+                $problems[] = $path . ': voucher ' . $id . ' is already in the list';
+                continue;
+            }
+            $seen[] = $id;
+            if (!Validate::isLoadedObject(new CartRule($id))) {
+                $problems[] = SomcpTool::notFound($path, 'voucher', $id, 'somcp_list_cart_rules');
+                continue;
+            }
+            $ids[$i] = $id;
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Puts the vouchers on the cart as AddCartRuleToCartHandler does: checked
+     * with checkValidity() in the cart's context, then added, one after the
+     * other so a voucher that cannot be combined with an earlier one is
+     * refused with the shop's own reason. Every voucher is checked before the
+     * caller answers, so all the reasons come at once.
+     *
+     * @param Cart $cart
+     * @param int[] $cartRules id_cart_rule by position in the call
+     * @param string[] $problems
+     *
+     * @return void
+     */
+    private static function applyCartRules(Cart $cart, array $cartRules, array &$problems): void
+    {
+        foreach ($cartRules as $i => $idCartRule) {
+            $rule = new CartRule((int) $idCartRule, (int) $cart->id_lang);
+            $previous = $cart->getCartRules();
+            // With display_error, checkValidity() gives the translated reason
+            // as a string when the voucher does not apply, as the screen shows.
+            $valid = $rule->checkValidity(Somcp::legacyContext(), false, true);
+            foreach ($previous as $previousRule) {
+                // As the handler does: the amounts cached for the vouchers
+                // already on the cart change once another is weighed.
+                Cache::clean('getContextualValue_' . $previousRule['id_discount'] . '_*');
+            }
+            if (is_string($valid) && $valid !== '') {
+                $problems[] = 'cart_rules[' . $i . ']: ' . strip_tags($valid);
+                continue;
+            }
+            if ($valid === false || !$cart->addCartRule((int) $rule->id)) {
+                $problems[] = 'cart_rules[' . $i . ']: the cart refused this voucher';
+            }
+        }
     }
 
     /**

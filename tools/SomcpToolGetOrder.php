@@ -452,17 +452,22 @@ class SomcpToolGetOrder
     }
 
     /**
+     * The vouchers on an order, shared with somcp_create_order so a voucher
+     * reads with the same keys in both, and as somcp_add_order_discount gives it.
+     *
      * @param Order $order
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function discounts(Order $order): array
+    public static function discounts(Order $order): array
     {
         $discounts = [];
         foreach ($order->getCartRules() as $rule) {
             $discounts[] = [
                 // What removing a discount from the order points to.
                 'id_order_cart_rule' => (int) $rule['id_order_cart_rule'],
+                // The voucher itself, as somcp_list_cart_rules names it.
+                'id_cart_rule' => (int) $rule['id_cart_rule'],
                 'id_order_invoice' => (int) $rule['id_order_invoice'],
                 'name' => (string) $rule['name'],
                 'value_tax_included' => (float) $rule['value'],

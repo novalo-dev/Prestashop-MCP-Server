@@ -450,8 +450,8 @@ the default order.
   file, `name`, `value`), `pack_items` (`id_product`, `id_product_attribute`,
   `name`, `reference`, `quantity`, `quantity_in_stock_now`; empty when the
   product is not a pack);
-- `discounts`, each with `id_order_cart_rule`, `id_order_invoice` and
-  `free_shipping`;
+- `discounts`, each with `id_order_cart_rule`, `id_cart_rule` (the voucher, as
+  `somcp_list_cart_rules` names it), `id_order_invoice` and `free_shipping`;
 - `history`, each step with `id_order_history`;
 - `shipping.shipments`, one per shipment: `id_order_carrier`, `date`,
   `id_carrier`, `carrier`, `weight`, `shipping_cost_tax_excluded`,
@@ -1579,8 +1579,9 @@ Add new order** then **Create order** do: the cart lines, the **Delivery** and
 **Do not use for** - adding a product to an existing order (→
 `somcp_add_order_product`), changing its status (→ `somcp_set_order_status`),
 recording a payment on it (→ `somcp_add_order_payment`), creating a customer
-(→ `somcp_create_customer`). Vouchers and a hand-set line price are not in
-this tool yet (#175, #176).
+(→ `somcp_create_customer`), creating a voucher (→ `somcp_create_cart_rule`),
+a discount on an order already placed (→ `somcp_add_order_discount`). A
+hand-set line price is not in this tool yet (#176).
 
 **Parameters**
 
@@ -1600,10 +1601,14 @@ this tool yet (#175, #176).
 | `message` | string | no | **Order message**; plain text |
 | `payment_module` | string | yes | **Payment**: technical name of an installed, active payment module; refused otherwise, with the choices as `name` and `display_name` |
 | `status_id` | integer | yes | **Order status**, from `somcp_list_order_statuses`; a deleted status is refused |
+| `cart_rules` | array of integers | no | **Vouchers**: `id_cart_rule` of each voucher, from `somcp_list_cart_rules` or `somcp_get_cart_rule`; each checked with `CartRule::checkValidity()` once the products, addresses and carrier are on the cart, as the screen checks it then, and refused with the shop's reason when it does not apply; the same voucher twice refused |
 
 **Returns** - `created: true`, `id_order`, `reference`, `id_cart`, `status`
 (`status_id`, `name`), `payment` (the payment name the order records),
-`totals` in the shape of `totals` of `somcp_get_order`, and `currency`.
+`totals` in the shape of `totals` of `somcp_get_order` (the vouchers in
+`discounts_tax_included` and `discounts_tax_excluded`), `discounts`, each
+voucher applied in the keys of `discounts[]` of `somcp_get_order` (the free
+shipping cart rule included), and `currency`.
 
 **Errors** - under "Nothing was recorded. Correct these and call again:", every problem at once, each named
 with its field (`products[1].quantity: ...`): a field the tool does not take;
@@ -1611,9 +1616,12 @@ the customer; each line (product of the shop, available for order, required
 customization fields, combination, minimal quantity, stock when the product
 cannot be ordered out of stock); the addresses (with the customer's addresses
 listed) and their country; the currency; the language; the messages; the
-payment module; the status. Then, once the cart exists: a quantity the cart
-refuses, and the carrier. A call refused at that point deletes the cart and the
-free shipping cart rule it made.
+payment module; the status; `cart_rules` not a list, an entry that is not an
+identifier, a voucher the shop does not have, the same voucher twice. Then,
+once the cart exists: a quantity the cart refuses, the carrier, and each
+voucher that does not apply, `cart_rules[<n>]: <the shop's reason>` in the
+order's language. A call refused at that point deletes the cart and the free
+shipping cart rule it made.
 
 **Notes** - a new cart every call, never the customer's last empty cart as the
 screen takes: it may be open on the storefront. The screen's handlers need the

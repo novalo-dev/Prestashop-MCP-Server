@@ -523,9 +523,13 @@ order and sends the emails a new order sends for its status.
 - Find the customer with `somcp_search_customers` and the address with
   `somcp_get_customer`, the products with `somcp_search_products` and, for a
   product with combinations, the combination with `somcp_get_product`. The
-  status comes from `somcp_list_order_statuses`.
-- Before the call, show the merchant the lines, the carrier, the total and the
-  status, and wait for their yes.
+  status comes from `somcp_list_order_statuses`, and a voucher from
+  `somcp_list_cart_rules`, given as `cart_rules`.
+- Before the call, show the merchant the lines, the carrier, the vouchers with
+  the total, and the status, and wait for their yes.
+- A voucher that does not apply to this cart is refused with the shop's
+  reason, and nothing is created: tell the merchant that reason rather than
+  dropping the voucher on your own.
 - A carrier or a payment module the shop does not offer is refused with the
   choices: offer them to the merchant rather than picking one.
 - Never repeat the call on a lost answer: a second call creates a second

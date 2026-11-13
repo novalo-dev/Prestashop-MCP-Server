@@ -750,13 +750,21 @@ class SomcpAssistantChat
                 . "\n\nLoad the tools this guide names with " . self::FIND_TOOL . ' when you need them, before calling them.');
         }
         $names = [];
-        foreach ($files as $file) {
-            $names[] = Tools::substr(basename(str_replace('\\', '/', (string) $file['name'])), 0, 120);
+        $photos = [];
+        foreach ($blocks as $block) {
+            if ($block instanceof TextContent && strpos($block->content, self::FILE_MARKER) === 0) {
+                $shown = self::attachedFile($block->content);
+                if (isset($shown['src'])) {
+                    $photos[] = $shown;
+                } else {
+                    $names[] = $shown['name'];
+                }
+            }
         }
 
         return $this->advance($thread, static function (Agent $agent) use ($content): AgentState {
             return $agent->chat(new UserMessage($content));
-        }, false, ['text' => $text === '(files attached)' ? '' : Tools::substr($text, 0, 20000), 'files' => $names]);
+        }, false, ['text' => $text === '(files attached)' ? '' : Tools::substr($text, 0, 20000), 'files' => $names, 'images' => $photos]);
     }
 
     /**
@@ -1021,7 +1029,7 @@ class SomcpAssistantChat
         if ($asked !== null) {
             $last = end($messages);
             if (!is_array($last) || $last['role'] !== 'user' || $last['text'] !== $asked['text']) {
-                $messages[] = ['role' => 'user', 'text' => $asked['text'], 'files' => $asked['files']];
+                $messages[] = ['role' => 'user', 'text' => $asked['text'], 'files' => $asked['files'], 'images' => $asked['images']];
             }
         }
         try {
@@ -1201,6 +1209,9 @@ class SomcpAssistantChat
         return ['pending' => [
             'text' => (string) $pending['text'],
             'files' => array_values(array_map('strval', (array) ($pending['files'] ?? []))),
+            'images' => array_values(array_filter((array) ($pending['images'] ?? []), static function ($image): bool {
+                return is_array($image) && is_string($image['name'] ?? null) && is_string($image['src'] ?? null);
+            })),
         ]];
     }
 
@@ -2563,16 +2574,22 @@ class SomcpAssistantChat
             if (strpos($first, self::SUMMARY_MARKER) === 0) {
                 return ['role' => 'summary', 'text' => trim(substr($first, strlen(self::SUMMARY_MARKER)))];
             }
-            // The employee's words, and the files by name: the content of an
-            // attached file is for the model, the chat shows that it went.
+            // The employee's words, the photos as photos and the other files
+            // by name: an image is drawn from its deposit through the signed
+            // link the providers read it from, a PDF or a text file is for the
+            // model and the chat only shows that it went.
             $text = '';
             $files = [];
+            $images = [];
             $skipNext = false;
             foreach ($message->getContentBlocks() as $block) {
                 if ($block instanceof TextContent && strpos($block->content, self::FILE_MARKER) === 0) {
-                    $named = rtrim(Tools::substr($block->content, Tools::strlen(self::FILE_MARKER)), ']');
-                    $cut = strpos($named, ', ' . SomcpUpload::ARG_REF . ':');
-                    $files[] = $cut === false ? $named : substr($named, 0, $cut);
+                    $shown = self::attachedFile($block->content);
+                    if (isset($shown['src'])) {
+                        $images[] = $shown;
+                    } else {
+                        $files[] = $shown['name'];
+                    }
                     $skipNext = true;
                     continue;
                 }
@@ -2585,7 +2602,7 @@ class SomcpAssistantChat
                 }
             }
 
-            return ['role' => 'user', 'text' => $text, 'files' => $files];
+            return ['role' => 'user', 'text' => $text, 'files' => $files, 'images' => $images];
         }
         if ($message instanceof AssistantMessage) {
             if (trim((string) $message->getContent()) === self::INTERRUPTED_ANSWER) {
@@ -2612,6 +2629,29 @@ class SomcpAssistantChat
         }
 
         return null;
+    }
+
+    /**
+     * An attached file as the chat draws it, from the block that names it to
+     * the model: a photo with the signed link it is read from, anything else
+     * by its name. The reference itself never reaches the page.
+     *
+     * @param string $marker the text block, "[File: name, upload_ref: reference]"
+     *
+     * @return array{name:string, src?:string}
+     */
+    private static function attachedFile(string $marker): array
+    {
+        $named = rtrim(Tools::substr($marker, Tools::strlen(self::FILE_MARKER)), ']');
+        $cut = strpos($named, ', ' . SomcpUpload::ARG_REF . ':');
+        $name = $cut === false ? $named : substr($named, 0, $cut);
+        $reference = $cut === false ? '' : trim(substr($named, $cut + strlen(', ' . SomcpUpload::ARG_REF . ':')));
+        $extension = Tools::strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+        if ((self::ATTACHABLE[$extension] ?? '') !== 'image' || !preg_match('/^[A-Za-z0-9_-]+$/', $reference)) {
+            return ['name' => $name];
+        }
+
+        return ['name' => $name, 'src' => self::fileUrl($reference)];
     }
 
     /**

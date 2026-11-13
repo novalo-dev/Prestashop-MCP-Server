@@ -874,10 +874,7 @@
             node.appendChild(drawImage(image));
         });
         (message.files || []).forEach(function (name) {
-            var file = el('div', 'somcp-msg-file');
-            file.appendChild(icon('clip', 14));
-            file.appendChild(el('span', '', name));
-            node.appendChild(file);
+            node.appendChild(drawFile(name));
         });
         if (message.reasoning) {
             var both = document.createDocumentFragment();
@@ -941,12 +938,22 @@
         }
     }
 
-    // An image a provider generated: inline bytes in the message, or a signed
-    // link of the shop. Anything else is not drawn: the address is set as an
-    // attribute, never written into HTML.
+    // A file drawn by its name, with the clip: what the chat shows for a file
+    // that is not a photo, and for a photo whose link has expired.
+    function drawFile(name) {
+        var file = el('div', 'somcp-msg-file');
+        file.appendChild(icon('clip', 14));
+        file.appendChild(el('span', '', name));
+        return file;
+    }
+
+    // A photo: one a provider generated, inline bytes or a signed link of the
+    // shop, or one the employee attached, a signed link of the shop or, just
+    // after sending, the file chosen in this browser. Anything else is not
+    // drawn: the address is set as an attribute, never written into HTML.
     function drawImage(image) {
         var src = String(image.src || '');
-        var inline = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(src);
+        var inline = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(src) || /^blob:/.test(src);
         if (!inline && !/^https?:\/\//.test(src)) {
             return document.createDocumentFragment();
         }
@@ -954,15 +961,22 @@
         picture.src = src;
         picture.alt = image.name || '';
         picture.loading = 'lazy';
-        if (inline) {
-            return picture;
+        var shown = picture;
+        if (!inline) {
+            shown = el('a');
+            shown.href = src;
+            shown.target = '_blank';
+            shown.rel = 'noopener noreferrer';
+            shown.appendChild(picture);
         }
-        var link = el('a');
-        link.href = src;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.appendChild(picture);
-        return link;
+        // A link outlives nothing: an expired one gives the name back rather
+        // than a broken picture.
+        picture.addEventListener('error', function () {
+            if (shown.parentNode) {
+                shown.parentNode.replaceChild(drawFile(image.name || ''), shown);
+            }
+        });
+        return shown;
     }
 
     // A field name of a tool, as a label: id_order_state reads "Order state (ID)".
@@ -1734,7 +1748,17 @@
         input.value = '';
         grow();
         state.view = state.view || { thread_id: '', id_assistant: picker.id, model: picker.model, messages: [], status: 'idle', actions: [], tokens: 0, token_cap: 0, spent: 0 };
-        state.view.messages.push({ role: 'user', text: message, files: files.map(function (file) { return file.name; }) });
+        // A photo shows at once from the file chosen, before the shop answers
+        // with its own link; anything else by its name.
+        var isPhoto = function (file) {
+            return /^image\/(png|jpeg|webp|gif)$/.test(file.type) && typeof URL !== 'undefined' && URL.createObjectURL;
+        };
+        state.view.messages.push({
+            role: 'user',
+            text: message,
+            files: files.filter(function (file) { return !isPhoto(file); }).map(function (file) { return file.name; }),
+            images: files.filter(isPhoto).map(function (file) { return { name: file.name, src: URL.createObjectURL(file) }; })
+        });
         var data = switchData(choice({ text: message, files: files }));
         if (prompt) {
             data.prompt = prompt.name;

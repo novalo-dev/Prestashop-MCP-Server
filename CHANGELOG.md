@@ -191,6 +191,12 @@ yesterday" now has an answer. It needs the **view** right on **Stock**.
 
 ### Changed
 
+**Photos you attach show in the chat.** A photo you attach in the built-in
+assistant now shows as a picture in your message, as soon as you send it and
+when you open the conversation again, instead of its file name only. A PDF or
+a text file still shows by its name, and so does a photo whose link has
+expired.
+
 **The product audits name each missing field as your PrestaShop version does.**
 `somcp_audit_product_entities` and `somcp_audit_product_schema` now label the
 weight, the default category and the condition exactly as the product page of

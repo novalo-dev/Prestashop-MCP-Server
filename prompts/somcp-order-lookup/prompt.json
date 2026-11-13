@@ -10,6 +10,7 @@
     "somcp_search_orders",
     "somcp_get_order",
     "somcp_get_order_document",
+    "somcp_download_file",
     "somcp_list_order_statuses"
   ],
   "controller": "AdminOrders",

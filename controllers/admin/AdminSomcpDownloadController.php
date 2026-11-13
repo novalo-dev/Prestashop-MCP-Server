@@ -145,7 +145,7 @@ class AdminSomcpDownloadController extends ModuleAdminController
 
         // The view right of the screen the document belongs to, read the way
         // the core AdminPdf controller reads it on 8.0.1 and 9.0.0.
-        if (!self::mayView($employee)) {
+        if (!SomcpDownload::mayView($idEmployee)) {
             return $this->refuse('download_refused', 'no permission', $this->module->l10n('You do not have permission to view this.'), $idEmployee);
         }
 
@@ -159,28 +159,7 @@ class AdminSomcpDownloadController extends ModuleAdminController
     }
 
     /**
-     * Whether the employee may view the Orders screen the documents hang off.
-     *
-     * @param Employee $employee
-     *
-     * @return bool
-     */
-    private static function mayView(Employee $employee): bool
-    {
-        $access = Profile::getProfileAccess(
-            (int) $employee->id_profile,
-            (int) Tab::getIdFromClassName(SomcpDownload::SCREEN)
-        );
-
-        return is_array($access) && isset($access['view']) && $access['view'] === '1';
-    }
-
-    /**
-     * Builds the PDF with the core PDF class and stops the script.
-     *
-     * The same calls on both versions: the document is named by its invoice or
-     * slip identifier, so it never meets the 9.0.0 redirect that the id_order
-     * entry points take.
+     * Builds the PDF as somcp_download_file does, streams it and stops the script.
      *
      * @param ObjectModel $object the OrderInvoice or OrderSlip
      * @param string $kind
@@ -188,24 +167,12 @@ class AdminSomcpDownloadController extends ModuleAdminController
      */
     private function render(ObjectModel $object, string $kind, string $template): void
     {
-        // AdminPdf creates this before rendering; TCPDF writes its working
-        // files here and fails silently without it.
-        $cache = _PS_CACHE_DIR_ . 'tcpdf/';
-        if (!is_dir($cache)) {
-            @mkdir($cache, 0775, true);
-        }
-
-        // The theme may add invoice lines through this hook, as AdminPdf runs
-        // it before rendering an invoice.
-        if ($kind === 'invoice') {
-            Hook::exec('actionPDFInvoiceRender', ['order_invoice_list' => [$object]]);
-        }
+        $pdf = SomcpDownload::pdf($object, $kind, $template);
 
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
 
-        $pdf = new PDF($object, $template, $this->context->smarty);
         $pdf->render();
         exit;
     }

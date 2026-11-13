@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "no reference", "arguments": {}, "expect": "error", "contains": ["Nothing was read.", "download_ref: the reference another tool gave"]},
+    {"why": "a reference that is not one", "arguments": {"download_ref": "not-a-reference"}, "expect": "error", "contains": ["download_ref: not a reference made for this account on this shop"]},
+    {"why": "a kind of file that does not exist", "arguments": {"download_ref": "orders.1.4102444800.0000000000000000000000000000000000000000000000000000000000000000"}, "expect": "error", "contains": ["download_ref: not a reference made for this account on this shop"]},
+    {"why": "a forged signature", "arguments": {"download_ref": "invoice.1.4102444800.0000000000000000000000000000000000000000000000000000000000000000"}, "expect": "error", "contains": ["download_ref: not a reference made for this account on this shop"]},
+    {"why": "an expired reference", "arguments": {"download_ref": "invoice.1.1.0000000000000000000000000000000000000000000000000000000000000000"}, "expect": "error", "contains": ["download_ref: expired; ask the tool that gave it for a new one"]},
+    {"why": "a field the tool does not take", "arguments": {"download_ref": "x", "format": "pdf"}, "expect": "error", "contains": ["format: not a field of this tool"]}
+  ]
+}

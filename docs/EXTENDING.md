@@ -255,19 +255,22 @@ in. somcp lets a file into the shop through two doors only.
 1. **A deposit**, read through `upload_ref`. The file is checked against its
    extension by its bytes, belongs to the employee the assistant acts for, and
    is used once. Your tool asks for it with `upload` and `accepts_files`, below;
-   in the built-in assistant, a file the employee attached is already a deposit
-   and comes with its `upload_ref`.
+   the assistant then sends the file itself to the deposit's direct address
+   when it can make an HTTP request, or shows the merchant the deposit page.
+   In the built-in assistant, a file the employee attached is already a
+   deposit and comes with its `upload_ref`.
 2. **A public https address the shop downloads itself**, as the product tools
    do for images. Download it with somcp's guard on (no private address, no
    redirect, size capped), never with a bare `file_get_contents()`.
 
-Out of the shop, a file goes as a link your module serves: signed, expiring,
-answering 404 to anything else. Never as bytes in a tool result.
+Out of the shop, a file of your module goes as a link your module serves:
+signed, expiring, answering 404 to anything else. Never as bytes in your tool
+result. somcp's own files go out through `somcp_download_file`.
 
 | | Assistant connected over MCP | Built-in assistant |
 |---|---|---|
 | Shop to assistant | links in the tool result | links in the tool result; files the employee attaches go through somcp |
-| Assistant to shop | deposit page, or a public address | `upload_ref` of an attached file, or a public address |
+| Assistant to shop | the deposit's direct address, its page, or a public address | `upload_ref` of an attached file, or a public address |
 
 ## Asking the merchant for files
 
@@ -304,10 +307,10 @@ public function somcpAttach(array $args, array $context): array
 | `files` | no | How many. Default 1, capped at 20 and at what PHP accepts. |
 | `bytes` | no | Size per file. Default 8 MiB, capped at 64 MiB and at what PHP accepts. |
 
-somcp handles the rest: the page, checking that the person depositing is the
-employee the call was made for, checking each file's bytes against its
-extension, expiry, cleanup, and handing the address to the assistant as text
-when the client cannot open it. Your handler is called again with the same
+somcp handles the rest: the page and the direct address an assistant posts to,
+checking that the person depositing is the employee the call was made for,
+checking each file's bytes against its extension, expiry, cleanup, and handing
+the directions to the assistant as text when the client cannot open an address. Your handler is called again with the same
 `$args` and the files in `$context['files']`.
 
 Two cases are handled without calling you. If the assistant comes back while

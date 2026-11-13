@@ -91,7 +91,8 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
             [self::class, 'handle'],
             // Adding a supplier is what the suppliers page asks for in Team,
             // Permissions; editing one is a different right.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminSuppliers')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminSuppliers'),
+            files: ['logo' => SomcpUpload::images()]
         );
     }
 
@@ -142,7 +143,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
                 'meta_description' => $text('Assistant. 512 at most; over 160 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_keywords' => $text('Assistant. PrestaShop 8, refused on 9. Up to 5 keywords, comma separated, '
                     . 'without < > = { }.'),
-                'logo' => self::imageSchema('Merchant. The logo.', 'the logo'),
+                'logo' => SomcpUpload::schema('Merchant. The logo.', 'the logo'),
                 'active' => [
                     'type' => 'boolean',
                     'description' => 'Merchant. Enabled on the storefront; true by default.',
@@ -204,7 +205,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
             ],
             'texts' => [],
             'address' => self::supplierAddress($arguments, $idShop, $errors),
-            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
+            'logo' => SomcpUpload::argument($arguments, 'logo', $errors, 'logo'),
         ];
 
         if (array_key_exists('active', $arguments)) {

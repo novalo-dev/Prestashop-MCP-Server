@@ -66,17 +66,6 @@ class SomcpToolCreateProduct
     protected const SUMMARY_MIN = 100;
     protected const SUMMARY_MAX = 200;
 
-    /** @var int 10 MB per downloaded image. */
-    protected const IMAGE_MAX_BYTES = 10485760;
-
-    /** @var array<int, string> What a downloaded image may be, by the type getimagesize() reads in its bytes. */
-    protected const IMAGE_TYPES = [
-        IMAGETYPE_JPEG => 'image/jpeg',
-        IMAGETYPE_PNG => 'image/png',
-        IMAGETYPE_GIF => 'image/gif',
-        IMAGETYPE_WEBP => 'image/webp',
-    ];
-
     /** @var array<int, string> The criteria a merchant can order; id_customer always comes first and is not one of them. */
     protected const PRIORITIES = ['id_shop', 'id_currency', 'id_country', 'id_group'];
 
@@ -165,7 +154,8 @@ class SomcpToolCreateProduct
             // Adding a product is what the products page asks for in Team,
             // Permissions; editing is a different right, used by
             // somcp_update_product.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminProducts')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminProducts'),
+            files: ['images' => SomcpUpload::images(), 'virtual_file.file' => SomcpUpload::rule(SomcpUpload::accepted(), [self::class, 'virtualFileBytes'])]
         );
     }
 
@@ -371,8 +361,8 @@ class SomcpToolCreateProduct
                         'file' => [
                             'type' => 'object',
                             'description' => 'Merchant. Required. url: a public https address the shop downloads '
-                                . '(no redirect); upload_ref: a file already on the shop. One of the two, never file '
-                                . 'content; within the shop\'s maximum attachment size.',
+                                . '(no redirect); upload_ref: from somcp_upload_file or the chat. One of the two; within '
+                                . 'the shop\'s maximum attachment size.',
                             'properties' => [
                                 'url' => ['type' => 'string'],
                                 'upload_ref' => ['type' => 'string'],
@@ -548,7 +538,7 @@ class SomcpToolCreateProduct
                         'type' => 'object',
                         'properties' => [
                             'url' => ['type' => 'string', 'description' => 'Public https address of the image. Give url or upload_ref, not both.'],
-                            'upload_ref' => ['type' => 'string', 'description' => 'Reference of an image already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],
+                            'upload_ref' => ['type' => 'string', 'description' => 'Reference of an image on the shop, from somcp_upload_file or the chat, exactly as given. Give url or upload_ref, not both.'],
                             'legend' => $text('Alternative text of the image.'),
                             'cover' => ['type' => 'boolean', 'description' => 'The main image; the first one otherwise.'],
                             'position' => ['type' => 'integer', 'description' => 'Order of the images, from 1; the order given otherwise.'],
@@ -1452,7 +1442,7 @@ class SomcpToolCreateProduct
             $errors[] = 'virtual_file.file: an object with url or upload_ref';
         } else {
             self::onlyAccepted($group['file'], 'file', 'virtual_file.file', $errors);
-            $plan['source'] = self::imageSource($group['file'], 'virtual_file.file', $errors, 'file');
+            $plan['source'] = SomcpUpload::source($group['file'], 'virtual_file.file', $errors, 'file');
         }
 
         if (array_key_exists('display_filename', $group)) {
@@ -2165,7 +2155,7 @@ class SomcpToolCreateProduct
         foreach (self::items($value, 'images', $errors) as $i => $item) {
             $path = 'images[' . $i . ']';
             self::onlyAccepted($item, 'image', $path, $errors);
-            $source = self::imageSource($item, $path, $errors);
+            $source = SomcpUpload::source($item, $path, $errors);
             if ($source === null) {
                 continue;
             }
@@ -2192,150 +2182,6 @@ class SomcpToolCreateProduct
         });
 
         return $images;
-    }
-
-    /**
-     * Where one image comes from: a public address the shop downloads, or
-     * the reference of a file already on the shop. One of the two, never
-     * both, and never the bytes themselves - the two doors somcp lets a file
-     * in through.
-     *
-     * @param array<string, mixed> $item
-     * @param string $path
-     * @param array<int, string> $errors
-     * @param string $what what the file is, for the message
-     *
-     * @return array{url: string, upload_ref: string}|null
-     */
-    protected static function imageSource(array $item, string $path, array &$errors, string $what = 'image'): ?array
-    {
-        $url = trim((string) (self::string($item['url'] ?? null) ?? ''));
-        $reference = trim((string) (self::string($item[SomcpUpload::ARG_REF] ?? null) ?? ''));
-        if ($url !== '' && $reference !== '') {
-            $errors[] = $path . ': url or upload_ref, not both';
-
-            return null;
-        }
-        if ($url === '' && $reference === '') {
-            $errors[] = $path . ': the public https address of the ' . $what . ' (url), or the upload_ref of a file on the shop';
-
-            return null;
-        }
-
-        return ['url' => $url, 'upload_ref' => $reference];
-    }
-
-    /**
-     * One image field of a tool that is not a product: absent, or an object
-     * read by imageSource().
-     *
-     * Anything other than an object - a bare address, a bare reference - is
-     * refused with the message imageSource() gives for an empty one, which
-     * names both forms the field accepts.
-     *
-     * @param array<string, mixed> $arguments
-     * @param string $field
-     * @param array<int, string> $errors
-     * @param string $what what the file is, for the message
-     *
-     * @return array{url: string, upload_ref: string}|null null when not given or refused
-     */
-    protected static function imageArgument(array $arguments, string $field, array &$errors, string $what): ?array
-    {
-        if (!array_key_exists($field, $arguments)) {
-            return null;
-        }
-        $value = $arguments[$field];
-
-        return self::imageSource(is_array($value) && !array_is_list($value) ? $value : [], $field, $errors, $what);
-    }
-
-    /**
-     * Whether an image field given back to an update carries the value its get
-     * returned for the stored file, so writing it would change nothing.
-     *
-     * A get hands an image back as the public address of the shop's own file,
-     * or as null when there is none. Given back to the matching update under
-     * the same name, that value is not a new image: null when there is no file,
-     * or the file's own address as a bare string or as {"url": ...}. An
-     * upload_ref, or any other address, is a real image and is not matched
-     * here. The addresses are compared on their host and path, the scheme left
-     * aside since the get can answer in http while the assistant writes https.
-     * A file name alone would take a new photo that happens to share the stored
-     * file's name (3.jpg) for the stored one; the whole address is safe to
-     * compare because getMediaLink() picks the media server from the file
-     * path, so the same file always gets the same host.
-     *
-     * @param mixed $given the field exactly as the assistant sent it
-     * @param string|null $current the address the get returns for the stored file, or null when there is none
-     */
-    protected static function sameImage($given, ?string $current): bool
-    {
-        if ($given === null) {
-            return $current === null;
-        }
-        if ($current === null) {
-            return false;
-        }
-
-        $url = null;
-        if (is_string($given)) {
-            $url = $given;
-        } elseif (is_array($given) && !array_is_list($given)
-            && array_key_exists('url', $given) && !array_key_exists(SomcpUpload::ARG_REF, $given)
-            && is_string($given['url'])) {
-            $url = $given['url'];
-        }
-        if ($url === null) {
-            return false;
-        }
-
-        $url = trim($url);
-        $givenHost = SomcpHttp::authority($url);
-        $currentHost = SomcpHttp::authority($current);
-        if ($givenHost === null || $givenHost !== $currentHost) {
-            return false;
-        }
-        $givenPath = (string) (parse_url($url, PHP_URL_PATH) ?: '');
-
-        return $givenPath !== '' && $givenPath === (string) (parse_url($current, PHP_URL_PATH) ?: '');
-    }
-
-    /**
-     * The schema of one image field, worded as the images of the product tools.
-     *
-     * One builder for every tool, so an image is asked for in the same words
-     * wherever it goes.
-     *
-     * @param string $description who fills it and what it is, first
-     * @param string $of the image named in the property descriptions, e.g. "the logo"
-     *
-     * @return array<string, mixed>
-     */
-    protected static function imageSchema(string $description, string $of): array
-    {
-        return [
-            'type' => 'object',
-            'description' => $description . ' Its url (public https, no redirect, 10 MB at most) or the upload_ref '
-                . 'of a file already on the shop. JPEG, PNG, GIF or WebP; never file content.',
-            'properties' => [
-                'url' => ['type' => 'string', 'description' => 'Public https address of ' . $of . '. Give url or upload_ref, not both.'],
-                'upload_ref' => ['type' => 'string', 'description' => 'Reference of ' . $of . ' already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],
-            ],
-            'additionalProperties' => false,
-        ];
-    }
-
-    /**
-     * How an image is named in the answer: its address, or its reference.
-     *
-     * @param array<string, mixed> $image
-     *
-     * @return array<string, string>
-     */
-    protected static function imageOrigin(array $image): array
-    {
-        return ($image['upload_ref'] ?? '') !== '' ? ['upload_ref' => (string) $image['upload_ref']] : ['url' => (string) $image['url']];
     }
 
     /**
@@ -2970,11 +2816,11 @@ class SomcpToolCreateProduct
             }
             if ($idImage <= 0) {
                 --$position;
-                $report[] = self::imageOrigin($image) + ['refused' => $refusal];
+                $report[] = SomcpUpload::origin($image) + ['refused' => $refusal];
                 continue;
             }
 
-            $report[] = self::imageOrigin($image) + ['id_image' => $idImage];
+            $report[] = SomcpUpload::origin($image) + ['id_image' => $idImage];
             $created[] = $idImage;
             foreach ($image['combinations'] as $index) {
                 $illustrates[$combinationIds[$index]][] = $idImage;
@@ -3027,7 +2873,7 @@ class SomcpToolCreateProduct
         }
 
         try {
-            $refusal = self::fetchImage(['url' => (string) ($plan['url'] ?? ''), 'upload_ref' => (string) ($plan['upload_ref'] ?? '')], $file);
+            $refusal = SomcpUpload::fetchImage(['url' => (string) ($plan['url'] ?? ''), 'upload_ref' => (string) ($plan['upload_ref'] ?? '')], $file);
             if ($refusal !== '') {
                 return 0;
             }
@@ -3066,28 +2912,6 @@ class SomcpToolCreateProduct
         } finally {
             @unlink($file);
         }
-    }
-
-    /**
-     * The bytes of one image, from its address or its upload_ref, checked.
-     *
-     * Every tool that takes an image gets it through here, whatever object it
-     * ends up on: a guard added to the download, the deposit or the image
-     * check then reaches all of them at once, instead of the one tool that
-     * happened to be edited.
-     *
-     * @param array{url: string, upload_ref: string} $source as imageSource() reads it
-     * @param string $target where the file is written
-     *
-     * @return string empty on success, the reason otherwise
-     */
-    protected static function fetchImage(array $source, string $target): string
-    {
-        $refusal = $source['upload_ref'] !== ''
-            ? self::fromDeposit($source['upload_ref'], $target)
-            : self::download($source['url'], $target);
-
-        return $refusal === '' ? self::checkImage($target) : $refusal;
     }
 
     /**
@@ -3130,7 +2954,7 @@ class SomcpToolCreateProduct
      */
     protected static function writeVirtualFile(int $idProduct, array $plan): array
     {
-        $origin = self::imageOrigin($plan['source']);
+        $origin = SomcpUpload::origin($plan['source']);
         $filename = '';
 
         try {
@@ -3173,13 +2997,20 @@ class SomcpToolCreateProduct
     protected static function receiveFile(array $source, string &$filename): string
     {
         $filename = ProductDownload::getNewFilename();
-        $target = _PS_DOWNLOAD_DIR_ . $filename;
-        // The limit the back office puts on a virtual product's file, in MB.
-        $maxBytes = (int) Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1048576 ?: self::IMAGE_MAX_BYTES;
 
-        return $source['upload_ref'] !== ''
-            ? self::fromDeposit((string) $source['upload_ref'], $target, $maxBytes)
-            : self::download((string) $source['url'], $target, $maxBytes);
+        return SomcpUpload::receive($source, _PS_DOWNLOAD_DIR_ . $filename, self::virtualFileBytes());
+    }
+
+    /**
+     * The largest file a virtual product may have: the limit the back office
+     * puts on it, in MB, so a deposit opened for it refuses what the product
+     * would.
+     *
+     * @return int
+     */
+    public static function virtualFileBytes(): int
+    {
+        return (int) Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1048576 ?: SomcpUpload::IMAGE_MAX_BYTES;
     }
 
     /**
@@ -3249,249 +3080,6 @@ class SomcpToolCreateProduct
                 call_user_func_array(['ImageManager', 'resize'], $arguments);
             }
         }
-    }
-
-    /**
-     * Fetches a merchant's image without letting the address reach inside.
-     *
-     * This is a request the shop makes on the strength of a URL typed in a
-     * conversation, so it is held to what such a request needs: https only,
-     * an address that resolves to the public internet - checked after
-     * resolution, then pinned so a second lookup cannot answer differently -
-     * no redirect, no proxy, and a size cap enforced while reading.
-     *
-     * @param string $url
-     * @param string $target
-     * @param int $maxBytes the largest file accepted
-     *
-     * @return string empty on success, the reason otherwise
-     */
-    protected static function download(string $url, string $target, int $maxBytes = self::IMAGE_MAX_BYTES): string
-    {
-        $parts = parse_url($url);
-        if (!is_array($parts) || Tools::strtolower((string) ($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) {
-            return 'only public https addresses are accepted';
-        }
-        if (isset($parts['user']) || isset($parts['pass'])) {
-            return 'an address carrying credentials is refused';
-        }
-        if ((int) ($parts['port'] ?? 443) !== 443) {
-            return 'only the standard https port is accepted';
-        }
-        if (!function_exists('curl_init')) {
-            return 'this shop has no cURL to download with';
-        }
-
-        $host = Tools::strtolower(trim((string) $parts['host'], '[]'));
-        $addresses = self::resolve($host);
-        if ($addresses === []) {
-            return 'the host does not resolve';
-        }
-        foreach ($addresses as $address) {
-            if (!self::isPublic($address)) {
-                return 'the host resolves to a private, local or reserved address';
-            }
-        }
-
-        $handle = fopen($target, 'wb');
-        if ($handle === false) {
-            return 'the shop has no room to receive it';
-        }
-        $size = 0;
-        $tooLarge = false;
-        $pinned = strpos($addresses[0], ':') !== false ? '[' . $addresses[0] . ']' : $addresses[0];
-
-        $curl = curl_init();
-        if ($curl === false) {
-            fclose($handle);
-
-            return 'this shop could not start a download';
-        }
-        curl_setopt_array($curl, [
-            CURLOPT_URL => $url,
-            CURLOPT_RESOLVE => [$host . ':443:' . $pinned],
-            CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
-            CURLOPT_FOLLOWLOCATION => false,
-            // A proxy would resolve the host itself, out of reach of the check above.
-            CURLOPT_PROXY => '',
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_TIMEOUT => 20,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_USERAGENT => 'PrestaShop somcp',
-            CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use ($handle, &$size, &$tooLarge, $maxBytes): int {
-                $size += strlen($chunk);
-                if ($size > $maxBytes) {
-                    $tooLarge = true;
-
-                    return 0;
-                }
-
-                return (int) fwrite($handle, $chunk);
-            },
-        ]);
-        $done = curl_exec($curl);
-        $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
-        unset($curl);
-        fclose($handle);
-
-        if ($tooLarge) {
-            return self::tooLarge($maxBytes);
-        }
-        if ($done === false) {
-            return 'the download failed';
-        }
-        if ($status >= 300 && $status < 400) {
-            return 'the address redirects elsewhere, and redirections are not followed; give the final address';
-        }
-        if ($status !== 200) {
-            return 'the address answered HTTP ' . $status;
-        }
-
-        return '';
-    }
-
-    /**
-     * Writes the file behind an upload_ref where the tool puts it together.
-     *
-     * Redeemed for the employee the write runs as, on this shop: a reference
-     * belonging to someone else, expired or already used finds nothing. The
-     * built-in assistant hands over a copy, so its conversation keeps the
-     * file. Public so every tool taking an upload_ref words its problems the
-     * same way, somcp_upload_module included.
-     *
-     * @param string $reference
-     * @param string $target
-     * @param int $maxBytes the largest file accepted
-     * @param string|null $fileName receives the name the file was deposited under
-     *
-     * @return string empty on success, the reason otherwise
-     */
-    public static function fromDeposit(string $reference, string $target, int $maxBytes = self::IMAGE_MAX_BYTES, ?string &$fileName = null): string
-    {
-        $employee = Somcp::legacyContext()->employee;
-        $idEmployee = $employee instanceof Employee ? (int) $employee->id : 0;
-        $files = SomcpUpload::redeem($reference, $idEmployee);
-        if ($files === []) {
-            return 'no file of this account matches this upload_ref, or it expired or was already used';
-        }
-        $fileName = $files[0]['name'];
-        if (strlen($files[0]['contents']) > $maxBytes) {
-            return self::tooLarge($maxBytes);
-        }
-
-        return @file_put_contents($target, $files[0]['contents']) === false ? 'the shop has no room to receive it' : '';
-    }
-
-    /**
-     * @param int $maxBytes
-     *
-     * @return string
-     */
-    public static function tooLarge(int $maxBytes): string
-    {
-        return 'the file is larger than ' . rtrim(rtrim(number_format($maxBytes / 1048576, 1, '.', ''), '0'), '.') . ' MB';
-    }
-
-    /**
-     * @param string $file
-     *
-     * @return string empty when the file is an image the shop can use
-     */
-    protected static function checkImage(string $file): string
-    {
-        $info = @getimagesize($file);
-        $type = is_array($info) ? (int) $info[2] : 0;
-        if (!isset(self::IMAGE_TYPES[$type])) {
-            return 'it is not a JPEG, PNG, GIF or WebP image';
-        }
-        if (!ImageManager::isRealImage($file, self::IMAGE_TYPES[$type], array_values(self::IMAGE_TYPES))) {
-            return 'its content is not the image it claims to be';
-        }
-        if (!ImageManager::checkImageMemoryLimit($file)) {
-            return 'it is too large for the shop to resize';
-        }
-
-        return '';
-    }
-
-    /**
-     * @param string $host
-     *
-     * @return array<int, string>
-     */
-    protected static function resolve(string $host): array
-    {
-        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
-            return [$host];
-        }
-
-        // A name that does not resolve makes these functions warn; that is an
-        // answer here, not an incident worth a line in the PHP log.
-        set_error_handler(static function (): bool {
-            return true;
-        });
-        try {
-            $addresses = gethostbynamel($host) ?: [];
-            if (function_exists('dns_get_record')) {
-                foreach (dns_get_record($host, DNS_AAAA) ?: [] as $record) {
-                    if (isset($record['ipv6'])) {
-                        $addresses[] = (string) $record['ipv6'];
-                    }
-                }
-            }
-        } finally {
-            restore_error_handler();
-        }
-
-        return array_values(array_unique($addresses));
-    }
-
-    /**
-     * Whether an address is on the public internet.
-     *
-     * PHP's own flags cover the private and reserved ranges; the list below
-     * adds what they leave out and what can still lead inside - shared address
-     * space, benchmarking, documentation, multicast, and IPv6 forms that carry
-     * an IPv4 address.
-     *
-     * @param string $address
-     *
-     * @return bool
-     */
-    protected static function isPublic(string $address): bool
-    {
-        $packed = @inet_pton($address);
-        if ($packed === false) {
-            return false;
-        }
-        // ::ffff:a.b.c.d and the NAT64 prefix both end in an IPv4 address,
-        // which is the one actually reached.
-        if (strlen($packed) === 16
-            && (strncmp($packed, str_repeat("\0", 10) . "\xff\xff", 12) === 0 || strncmp($packed, "\x00\x64\xff\x9b" . str_repeat("\0", 8), 12) === 0)) {
-            return self::isPublic((string) inet_ntop(substr($packed, 12)));
-        }
-        if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-            return false;
-        }
-
-        $blocked = strlen($packed) === 4
-            ? ['0.0.0.0/8', '100.64.0.0/10', '192.0.0.0/24', '192.0.2.0/24', '198.18.0.0/15', '198.51.100.0/24', '203.0.113.0/24', '224.0.0.0/3']
-            : ['::/8', '100::/64', '2001:db8::/32', 'fc00::/7', 'fe80::/10', 'ff00::/8'];
-        foreach ($blocked as $range) {
-            [$network, $bits] = explode('/', $range);
-            $base = (string) inet_pton($network);
-            $bytes = intdiv((int) $bits, 8);
-            $rest = (int) $bits % 8;
-            if (strncmp($packed, $base, $bytes) !== 0) {
-                continue;
-            }
-            if ($rest === 0 || ((ord($packed[$bytes]) ^ ord($base[$bytes])) & (0xFF << (8 - $rest)) & 0xFF) === 0) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**

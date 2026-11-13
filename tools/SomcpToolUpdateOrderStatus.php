@@ -70,7 +70,8 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
             [self::class, 'handle'],
             // Changing an order status is the edit right of the statuses page
             // in Team, Permissions, as the form's save checks it.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminStatuses')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminStatuses'),
+            files: ['icon' => SomcpUpload::rule(['gif'], SomcpUpload::IMAGE_MAX_BYTES)]
         );
     }
 
@@ -93,7 +94,7 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
         $properties['name']['description'] = 'Merchant. Shown wherever an order is followed, 64 characters at '
             . 'most, without < > = { }. One per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.'
             . $kept;
-        $properties['icon'] = self::imageSchema('Merchant. A new 16x16 GIF; not with remove_icon.', 'the icon');
+        $properties['icon'] = SomcpUpload::schema('Merchant. A new 16x16 GIF; not with remove_icon.', 'the icon');
         $properties['email_template']['description'] = 'Merchant. The email sent, by ISO code: one of the shop\'s '
             . 'own emails, never a module\'s. Only when sends_email is or becomes true; turning it off empties them.'
             . $kept;

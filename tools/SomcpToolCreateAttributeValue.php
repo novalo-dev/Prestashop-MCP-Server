@@ -86,7 +86,8 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             [self::class, 'handle'],
             // Values are added under their group, on the back office
             // attributes page, with the right to add there.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminAttributesGroups')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminAttributesGroups'),
+            files: ['texture' => SomcpUpload::images()]
         );
     }
 
@@ -134,7 +135,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
                 // of every other image, a photo attached in the chat included.
                 // null stays allowed: somcp_get_attribute_value returns it when
                 // there is no texture, and that answer is given back to the update.
-                'texture' => ['type' => ['object', 'null']] + self::imageSchema(
+                'texture' => ['type' => ['object', 'null']] + SomcpUpload::schema(
                     'Merchant. Color groups only: the swatch image.',
                     'the texture'
                 ),
@@ -388,7 +389,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         // and fetched once the value exists, since the file is named after the
         // value's identifier.
         if (array_key_exists('texture', $arguments) && $arguments['texture'] !== null) {
-            $plan['texture'] = self::imageArgument($arguments, 'texture', $errors, 'texture');
+            $plan['texture'] = SomcpUpload::argument($arguments, 'texture', $errors, 'texture');
         }
     }
 
@@ -500,25 +501,25 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
      *
      * The attributes page uploads it as img/co/<id>.jpg, re-encoded as JPEG,
      * with no thumbnails: the product page and somcp_get_attribute_value both
-     * look for that file and nothing else. The bytes come from fetchImage(),
+     * look for that file and nothing else. The bytes come from SomcpUpload::fetchImage(),
      * as every image does, so an address and an upload_ref pass the same
      * guards here as on a product.
      *
      * @param int $idAttribute
-     * @param array{url: string, upload_ref: string} $source as imageArgument() reads it
+     * @param array{url: string, upload_ref: string} $source as SomcpUpload::argument() reads it
      *
      * @return array<string, mixed> the url or upload_ref, with stored: true or the reason it was refused
      */
     protected static function storeTexture(int $idAttribute, array $source): array
     {
-        $origin = self::imageOrigin($source);
+        $origin = SomcpUpload::origin($source);
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($file === false) {
             return $origin + ['refused' => 'the shop has no room to receive it'];
         }
 
         try {
-            $refusal = self::fetchImage($source, $file);
+            $refusal = SomcpUpload::fetchImage($source, $file);
             if ($refusal === '') {
                 $refusal = ImageManager::resize($file, _PS_COL_IMG_DIR_ . $idAttribute . '.jpg')
                     ? ''

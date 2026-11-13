@@ -307,8 +307,20 @@ any extension is the oldest hole there is.
 
 Which of two paths is taken depends on the client, not on the tool. One that
 declared it can open an address gets the multi-round question. One that did not
-is handed the address and a reference as plain text; the merchant deposits,
-says so, and the assistant calls the same tool again with `upload_ref`.
+is handed directions as plain text, in order: post the file itself to the
+deposit's direct address when it can make an HTTP request, tell the person
+which domain to allow when its own environment blocks that, or show the
+merchant the deposit page. Then it calls the same tool again with
+`upload_ref`.
+
+**Files for the tools of the module.** A tool of the module that takes a file
+declares its fields and what each accepts (`files:` of its `SomcpTool`), and
+takes an object with `url` or `upload_ref` there. `somcp_upload_file` opens a
+deposit for one of those fields, with its rules, and answers with the
+`upload_ref`; the file gets in by an address the shop downloads, by the direct
+address, or by the deposit page, all judged by the same check. A file leaves
+the shop the other way: the tool that finds it answers with a `download_ref`,
+and `somcp_download_file` hands the file over.
 
 Declaring is not the same as doing. In production a client declared that it
 could open an address, took the question, never showed the page and replayed
@@ -1881,11 +1893,11 @@ or longer than the limit.
 **State**: written
 **Nature**: `acts(VIEW, 'AdminOrders')` · **Scope**: `mcp.orders.read`
 
-**Does** - gives the merchant one PDF of an order - an invoice, a delivery slip
-or a credit slip - as **View invoice**, **View delivery slip** and the document
-lines of the **Documents** tab of the order page open it. The tool never sends
-the file: it returns a signed link to the module's download page, which the
-merchant opens in their own signed-in back office.
+**Does** - finds one PDF of an order - an invoice, a delivery slip or a credit
+slip - as **View invoice**, **View delivery slip** and the document lines of the
+**Documents** tab of the order page open it, and answers with its
+`download_ref`. The tool builds no file and no link: `somcp_download_file`
+turns the reference into the file, or a page for the merchant.
 
 **Do not use for** - generating an invoice that does not exist (→
 `somcp_generate_order_invoice`), emailing a document (a status that attaches
@@ -1904,7 +1916,7 @@ it, → `somcp_set_order_status`).
 **Returns** - `order` (`id_order`, `reference`), `document`, `id_order_invoice`
 (invoice and delivery slip) or `id_order_slip` (credit slip) with the value
 `somcp_get_order` gives, `number` and `date` as `somcp_get_order` gives them,
-`url` and `expires_at`.
+`download_ref`, `expires_at` and `then` (`somcp_download_file`).
 
 **Errors** - under "Nothing was read.", every problem at once, each named with
 its field: a field the tool does not take; `document` missing or unknown;
@@ -1915,15 +1927,12 @@ invoice #FA000003 (id_order_invoice 3). Read them with somcp_get_order.`), a
 document of another order or kind, and several documents of the kind with none
 chosen (`Give id_order_invoice to choose one.`).
 
-**Notes** - the link comes from `SomcpDownload::link()` for the token's employee
-and shop: the download page serves the PDF only to that employee, signed in to
-the back office with the **view** right on **Orders**, and the link expires
-after 15 minutes. Like the deposit page's, its address holds the back office
-folder, since it is opened in the merchant's own browser. The PDF is built on
-demand from the shop's templates; nothing is stored.
+**Notes** - the reference comes from `SomcpDownload::reference()`, signed for
+the token's employee and shop, and expires after 15 minutes. Nothing is built
+until `somcp_download_file` is called with it.
 
-**Differences between 8.0.1 and 9.0.0** - none for the tool: the order lookup,
-the document objects and the download page are the same.
+**Differences between 8.0.1 and 9.0.0** - none for the tool: the order lookup
+and the document objects are the same.
 
 ### Carts
 
@@ -2258,7 +2267,7 @@ Plus `count`, `customer_groups_enabled` (**Customer groups** of
 
 ### Diagnostics
 
-Tools that describe the connection itself and touch no shop data.
+Tools that describe the connection itself, and the two that carry files in and out of the shop for the other tools.
 
 #### `somcp_ping`
 **State**: tested
@@ -2278,6 +2287,97 @@ connection cannot reach.
 
 **Notes** - outside the permission system by design: it is how an assistant with
 no rights anywhere can still say which account it is connected as.
+
+#### `somcp_upload_file`
+**State**: written
+**Nature**: no permission of its own; the tool named must be available to the connection · **Scope**: `mcp.access`
+
+**Does** - puts a file on the shop for another tool and answers with the
+`upload_ref` that tool takes. The assistant names the tool (`for`) and its file
+field; the shop opens a deposit with that field's own formats and size, as the
+tool declares them (`files:` of its `SomcpTool`). With `url`, the shop
+downloads the file at once. Without, the answer says how the file gets in, in
+order: the assistant posts it itself to the deposit's direct address
+(`send_to`) when it can make an HTTP request; if its own environment blocks the
+request, it tells the person once which domain to allow in their assistant's
+network settings; otherwise it shows the merchant the deposit page
+(`deposit_page`).
+
+**Do not use for** - a file attached in the built-in chat, which already has its
+`upload_ref`; a tool that takes a public address, when one is at hand (give it
+as `url` to that tool directly); a module tool asking for files itself (it
+hands out its own deposit).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `for` | string | yes | the tool the file is for, e.g. `somcp_create_product` |
+| `field` | string | no | its argument that takes the file, e.g. `images`, `virtual_file.file`, `logo`; may be left out when the tool has only one |
+| `url` | string | no | a public `https` address (no redirect) the shop downloads now; refused for `somcp_upload_module` |
+
+**Returns** - with `url`: `deposited` true, `upload_ref`, `for`, `field`,
+`then`. Without: `deposited` false, `upload_ref`, `for`, `field`, `accepted`
+(extensions), `max_bytes`, `expires_at`, `send_to` (`url`, `method` POST,
+`encoding` multipart/form-data, `field` `file`), `deposit_page` (null when the
+back office address is not known yet) and `how`, the directions in order. The
+direct address answers `{"received": true, "file": ...}`, or `received` false
+with the reason it refused the file.
+
+**Errors** - under "Nothing was deposited.", every problem at once: a field the
+tool does not take; `for` missing, naming a tool that does not exist, is
+switched off or is out of this connection's reach (one message for all three),
+or a tool that takes no file; `field` not one of the tool's file fields (the
+list is given); `url` empty, or given for a field that takes none. A `url` the
+shop cannot use (not public `https`, a redirect, too large, the wrong format or
+content) is refused with its reason and the other two ways, the deposit staying
+open.
+
+**Notes** - one file per deposit, used once, tied to the token's employee and
+shop, open 15 minutes. The three ways in end in the same check
+(`SomcpUpload::admit()`): count, size, the extension against the field's list,
+the bytes against the extension. The direct address is a front address signed
+for this deposit only; anything wrong there gets an empty 404. The tool asks
+for no back office right of its own: the deposit is of use only to the tool
+named, whose scopes and rights are checked before anything is opened, and again
+when it is called.
+
+#### `somcp_download_file`
+**State**: written
+**Nature**: no permission of its own; the right of the file asked for is checked · **Scope**: `mcp.access`
+
+**Does** - gives the file behind a `download_ref` (from
+`somcp_get_order_document` today): inside the answer, as an embedded resource,
+when it is 4 MiB or less, with the page that serves the same file to the
+merchant signed in to the back office.
+
+**Do not use for** - finding a document (→ `somcp_get_order_document`).
+
+**Parameters**
+
+| Name | Type | Required | Role |
+|---|---|---|---|
+| `download_ref` | string | yes | the reference exactly as the other tool gave it |
+
+**Returns** - a text block with `file` (its name), `mime_type`, `bytes`,
+`page` (null when the back office address is not known yet), `inside` and
+`then`; with `inside` true, a second block of type `resource` holding the PDF
+(`blob`, base64). With `inside` false, the merchant is given the page.
+
+**Errors** - under "Nothing was read.": a field the tool does not take;
+`download_ref` missing; expired (ask the tool that gave it again); not a
+reference made for this account on this shop (typed wrong, another account,
+another shop - one message for all); the account without the **view** right on
+**Orders**, or the connection without the scope that reads orders; the document
+deleted since.
+
+**Notes** - the reference is checked by `SomcpDownload::check()`, the same
+check as the download page's. The PDF is built on demand from the shop's
+templates with the core `PDF` class; nothing is stored. The built-in assistant
+reads the text block only, so it hands the merchant the page.
+
+**Differences between 8.0.1 and 9.0.0** - none: the document objects, the
+`PDF` class and the download page are the same.
 
 ### Catalogue
 
@@ -2453,7 +2553,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - The answer carries `seo_warnings`, per language: no `meta_title` or no `meta_description` (the storefront then falls back on the name), `meta_description` over 160 characters (cut in search results), a `link_rewrite` or a `meta_title` already used by another product in that language. Warnings never block the creation.
 
 **Images**
-- Files do not travel through the conversation: an image is given by a public `https` URL the shop downloads, or by the `upload_ref` of a file already on the shop (attached or deposited by the merchant, or generated in the built-in assistant), redeemed for the employee the call runs as. One of the two per image, never both, never file content.
+- Files do not travel through the conversation: an image is given by a public `https` URL the shop downloads, or by the `upload_ref` of a file already on the shop (attached in the built-in assistant, or from `somcp_upload_file` with `for` set to this tool and `field` to `images`), redeemed for the employee the call runs as. One of the two per image, never both, never file content.
 - That download is a new network request from the shop, so it is guarded: `https` on the standard port only, no credentials in the address, the host must resolve to a public address (no localhost, no private, link-local, shared, documentation or multicast range, IPv4 hidden in IPv6 included, checked after resolution and then pinned for the connection), no proxy, redirects not followed, 10 MB at most counted while reading, and the content must be a JPEG, PNG, GIF or WebP that `ImageManager` accepts. A refused image is reported in the answer and does not stop the creation.
 - Thumbnails generated through `ImageManager` for every image type, as the back office does, in JPEG and in each extra format switched on in the settings (PrestaShop 8.1 and later), with the fitment of each type on PrestaShop 9.
 
@@ -4123,7 +4223,7 @@ The modules present on the shop, their state and version.
 
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
-| `upload_ref` | **Upload a module** | string | yes | a `.zip` already on the shop: attached to the chat, or deposited on the page `SomcpUpload::request()` opens (kind `archive`), the same `upload_ref` as the product images |
+| `upload_ref` | **Upload a module** | string | yes | a `.zip` already on the shop: attached to the chat, or from `somcp_upload_file` with `for` set to `somcp_upload_module` (kind `archive`, never by `url`), the same `upload_ref` as the product images |
 
 No `url`: a link read anywhere would become code running on the shop. No `name`: it comes from the archive.
 
@@ -5453,7 +5553,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_get_category`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_get_attribute_value`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_create_feature`, `somcp_update_feature`, `somcp_get_feature_value`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_get_category`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_get_attribute_value`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_create_feature`, `somcp_update_feature`, `somcp_get_feature_value`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_list_customer_groups`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 
@@ -5523,7 +5623,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `module` (name of a module).
 
-**Tools** - `somcp_ping`, `somcp_list_modules`, `somcp_get_module`, `somcp_install_module`, `somcp_upload_module`, `somcp_set_module_active`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_modules`, `somcp_get_module`, `somcp_install_module`, `somcp_upload_module`, `somcp_upload_file`, `somcp_set_module_active`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read before acting; name the module and what it does before installing or switching it; one module per call; a payment or carrier module switched off stops orders or deliveries, say so before doing it.
 

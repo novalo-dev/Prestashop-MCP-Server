@@ -1122,6 +1122,16 @@
       <source>Test the connection</source>
       <target>Tester la connexion</target>
     </trans-unit>
+    <!-- Put a file on the shop -->
+    <trans-unit id="c76f8e0a99fcbafa330454eb80a93567" resname="Put a file on the shop">
+      <source>Put a file on the shop</source>
+      <target>Déposer un fichier sur la boutique</target>
+    </trans-unit>
+    <!-- Get a file from the shop -->
+    <trans-unit id="699ff2711a7411a002a982b3c02225c4" resname="Get a file from the shop">
+      <source>Get a file from the shop</source>
+      <target>Récupérer un fichier de la boutique</target>
+    </trans-unit>
     <!-- Search orders -->
     <trans-unit id="3b5c949e5a7f93592ece65422e0496df" resname="Search orders">
       <source>Search orders</source>

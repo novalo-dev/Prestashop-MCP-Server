@@ -57,8 +57,8 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
             'somcp_upload_module',
             Somcp::t('Upload a module'),
             'Puts a module .zip deposited on the shop into the modules folder and installs it, like Upload a '
-                . 'module in Modules > Module Manager. upload_ref: a .zip attached to the chat or deposited on the '
-                . 'shop; never a url. One folder <name>/ with <name>/<name>.php; a module of that name already on '
+                . 'module in Modules > Module Manager. upload_ref: a .zip from somcp_upload_file or attached to the '
+                . 'chat; never a url. One folder <name>/ with <name>/<name>.php; a module of that name already on '
                 . 'the shop is refused, nothing replaced or upgraded. Answers as somcp_install_module, plus '
                 . 'uploaded and file_name. The deposit is used up: not to be retried on a lost answer, check with '
                 . 'somcp_get_module. A module already on disk goes to somcp_install_module.',
@@ -67,8 +67,8 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
                 'properties' => [
                     'upload_ref' => [
                         'type' => 'string',
-                        'description' => 'Reference of the .zip already on the shop: attached to the chat, or '
-                            . 'deposited on the page opened for it. Used once.',
+                        'description' => 'Reference of the .zip on the shop, from somcp_upload_file or attached to '
+                            . 'the chat. Used once.',
                     ],
                 ],
                 'required' => ['upload_ref'],
@@ -78,7 +78,8 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
             [self::class, 'handle'],
             // The Upload a module button asks for the add right on the Module
             // Manager, whose tab is AdminModulesSf, as the Install button does.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminModulesSf')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminModulesSf'),
+            files: [SomcpUpload::ARG_REF => SomcpUpload::rule('archive', self::MAX_BYTES, false)]
         );
     }
 
@@ -134,7 +135,7 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
         try {
             $archive = $work . 'archive.zip';
             $fileName = null;
-            $problem = SomcpToolCreateProduct::fromDeposit($reference, $archive, self::MAX_BYTES, $fileName);
+            $problem = SomcpUpload::fromDeposit($reference, $archive, self::MAX_BYTES, $fileName);
             if ($problem !== '') {
                 return SomcpTool::refused('installed', ['upload_ref: ' . $problem]);
             }

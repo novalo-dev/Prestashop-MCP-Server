@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "no tool named", "arguments": {}, "expect": "error", "contains": ["Nothing was deposited.", "for: the name of the tool the file is for"]},
+    {"why": "a tool that does not exist", "arguments": {"for": "somcp_no_such_tool"}, "expect": "error", "contains": ["for: no tool of that name is available to this connection"]},
+    {"why": "a tool this connection may not call: the token here holds only the scope of this tool, so no deposit is opened for it", "arguments": {"for": "somcp_create_product", "field": "images"}, "expect": "error", "contains": ["for: no tool of that name is available to this connection"]},
+    {"why": "a tool that takes no file", "arguments": {"for": "somcp_ping"}, "expect": "error", "contains": ["for: somcp_ping takes no file"]},
+    {"why": "an empty url, with every problem at once", "arguments": {"for": "somcp_no_such_tool", "url": " ", "size": 3}, "expect": "error", "contains": ["size: not a field of this tool", "for: no tool of that name", "url: the public https address of the file, or left out"]},
+    {"why": "a field that is not a string, without a usable tool", "arguments": {"for": "", "field": 3}, "expect": "error", "contains": ["for: the name of the tool", "field: a string"]}
+  ]
+}

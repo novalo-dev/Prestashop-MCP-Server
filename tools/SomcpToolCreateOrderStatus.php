@@ -122,7 +122,8 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
             [self::class, 'handle'],
             // Adding an order status is what the statuses page asks for in
             // Team, Permissions; the same page as the return statuses.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminStatuses')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminStatuses'),
+            files: ['icon' => SomcpUpload::rule(['gif'], SomcpUpload::IMAGE_MAX_BYTES)]
         );
     }
 
@@ -162,7 +163,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
                         . '#RRGGBB, for example #E84C3D. Optional, as in the form: left out, the status is '
                         . 'stored without one.',
                 ],
-                'icon' => self::imageSchema('Merchant. A 16x16 GIF; one refused leaves no icon.', 'the icon'),
+                'icon' => SomcpUpload::schema('Merchant. A 16x16 GIF; one refused leaves no icon.', 'the icon'),
                 'counts_as_valid' => $box('Consider the associated order as validated.'),
                 'invoice' => $box('Allow a customer to download and view PDF versions of their invoices.'),
                 'hidden_from_customer' => $box('Hide this status in all customer orders.'),
@@ -380,7 +381,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
     /**
      * The icon given in the call, parsed only: it is fetched by storeIcon() once the status has its identifier.
      *
-     * Read by imageArgument(), as every image is, so a bare address or an
+     * Read by SomcpUpload::argument(), as every image is, so a bare address or an
      * empty object is refused in the same words as anywhere else. A field
      * beside url and upload_ref is refused on top, as the product images do.
      * Shared with somcp_update_order_status, so the two tools take an icon the same way.
@@ -397,7 +398,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
             self::onlyAccepted($icon, 'file', 'icon', $errors);
         }
 
-        return self::imageArgument($arguments, 'icon', $errors, 'icon');
+        return SomcpUpload::argument($arguments, 'icon', $errors, 'icon');
     }
 
     /**
@@ -693,7 +694,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      * Fetches the icon and writes it where the back office writes it: img/os/<id>.gif, as it arrived.
      *
      * The 9.0.0 uploader moves the file there without converting it, so the
-     * bytes are checked rather than resized: fetchImage() brings them in with
+     * bytes are checked rather than resized: SomcpUpload::fetchImage() brings them in with
      * the guards every image passes, then the GIF rule of this form is added,
      * since the form takes a .gif and stores it under that name.
      *
@@ -704,7 +705,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      */
     protected static function storeIcon(int $idOrderState, array $source): array
     {
-        $report = self::imageOrigin($source);
+        $report = SomcpUpload::origin($source);
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($file === false) {
             $report['refused'] = 'the shop has no room to receive it';
@@ -713,7 +714,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         }
 
         try {
-            $refusal = self::fetchImage($source, $file);
+            $refusal = SomcpUpload::fetchImage($source, $file);
             if ($refusal === '') {
                 $info = @getimagesize($file);
                 if (!is_array($info) || (int) $info[2] !== IMAGETYPE_GIF) {

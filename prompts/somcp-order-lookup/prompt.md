@@ -9,6 +9,7 @@ order nobody has identified means picking one of twelve and being wrong.
 - `somcp_search_orders`
 - `somcp_get_order`
 - `somcp_get_order_document`
+- `somcp_download_file`
 - `somcp_list_order_statuses`
 
 ## Know which shop you are in
@@ -77,8 +78,12 @@ When the merchant asks for an invoice, a delivery slip or a credit slip, call
 `somcp_get_order` first when it has several of that kind: `documents` lists
 them with their `id_order_invoice` or `id_order_slip`.
 
-- Give the `url` to the merchant as it is. It opens in their own signed-in
-  back office only, and expires after 15 minutes: ask again after that.
+- It answers with a `download_ref`. Pass it to `somcp_download_file`: the PDF
+  comes back inside its answer when it is small enough, with a `page` that
+  opens it in the merchant's own signed-in back office only. Give that page to
+  the merchant as it is when they want the file themselves, or when the file
+  did not come back. The reference expires after 15 minutes: ask again after
+  that.
 - An order without that document is refused with the ones it has. An invoice
   that does not exist yet is made with `somcp_generate_order_invoice`, in the
   guide for changing an order.

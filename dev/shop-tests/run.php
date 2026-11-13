@@ -42,7 +42,8 @@ declare(strict_types=1);
  *
  * Then the permissions: every tool must be refused to an employee whose
  * profile holds no right, to an account that does not exist and to a token
- * without its scope, and only somcp_ping may ask for no right at all.
+ * without its scope, and only somcp_ping and the two file tools, which check
+ * the rights of what they reach, may ask for no right of their own.
  *
  * Usage: php dev/shop-tests/run.php <prestashop root>
  * Exit code 0 when every call behaved, 1 otherwise.
@@ -217,8 +218,11 @@ if ($nobody === 0) {
         $required = $tool->getRequiredPermissions();
         $checks += 5;
 
-        // Only the connection check is meant to ask for no back-office right.
-        if ($required === [] && $name !== 'somcp_ping') {
+        // Only three tools are meant to ask for no back-office right: the
+        // connection check, which reads no shop data, and the two file tools,
+        // whose handlers check the rights of what they reach - the tool a
+        // deposit is for, the document a reference points at.
+        if ($required === [] && !in_array($name, ['somcp_ping', 'somcp_upload_file', 'somcp_download_file'], true)) {
             $failures[] = "$name: asks for no back-office permission - declare it with SomcpTool::acts()";
         }
         if (!$tool->isAvailableTo($scopes, (int) $employee->id)) {

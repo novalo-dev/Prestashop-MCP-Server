@@ -143,7 +143,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             [self::class, 'handle'],
             // Changing a product is the edit right of the products page in
             // Team, Permissions; creating one is a different right.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminProducts')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminProducts'),
+            files: ['images' => SomcpUpload::images(), 'virtual_file.file' => SomcpUpload::rule(SomcpUpload::accepted(), [self::class, 'virtualFileBytes'])]
         );
     }
 
@@ -1524,7 +1525,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                     $errors[] = $path . ': id_image to change an image of the product, or url or upload_ref to add one';
                     continue;
                 }
-                $source = self::imageSource($item, $path, $errors);
+                $source = SomcpUpload::source($item, $path, $errors);
                 if ($source === null) {
                     continue;
                 }
@@ -1617,7 +1618,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
      * The get builds the address from the product's friendly URL in the
      * language it read, which the update is not told, so the address of each
      * language is tried. The comparison is the shared one of the other image
-     * fields given back (sameImage()).
+     * fields given back (SomcpUpload::same()).
      *
      * @param mixed $url the url exactly as the assistant sent it
      * @param Product $product loaded in every language
@@ -1632,7 +1633,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         }
         $link = Somcp::legacyContext()->link ?? new Link();
         foreach (array_unique(array_map('strval', (array) $product->link_rewrite)) as $rewrite) {
-            if (self::sameImage($url, SomcpProductImage::url($link, (int) $product->id, $rewrite, $idImage, 'large'))) {
+            if (SomcpUpload::same($url, SomcpProductImage::url($link, (int) $product->id, $rewrite, $idImage, 'large'))) {
                 return true;
             }
         }
@@ -1948,7 +1949,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         // A file given always counts: an address or a reference cannot be
         // compared with the stored file.
         if ($file['source'] !== null) {
-            self::record($plan, 'virtual_file.file', null, self::imageOrigin($file['source']));
+            self::record($plan, 'virtual_file.file', null, SomcpUpload::origin($file['source']));
         } elseif ($file['fields'] === []) {
             return;
         }
@@ -1997,7 +1998,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             return self::writeVirtualFile($idProduct, $file);
         }
 
-        $origin = $file['source'] === null ? [] : self::imageOrigin($file['source']);
+        $origin = $file['source'] === null ? [] : SomcpUpload::origin($file['source']);
         $download = new ProductDownload((int) $file['id']);
         $previous = basename((string) $download->filename);
         $filename = '';
@@ -2290,10 +2291,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             }
             if ($id <= 0) {
                 --$position;
-                $report[] = self::imageOrigin($added) + ['refused' => $refusal];
+                $report[] = SomcpUpload::origin($added) + ['refused' => $refusal];
                 continue;
             }
-            $report[] = self::imageOrigin($added) + ['id_image' => $id];
+            $report[] = SomcpUpload::origin($added) + ['id_image' => $id];
             $order[] = $id;
             $byItem[$added['index']] = ['id' => $id] + $added;
         }

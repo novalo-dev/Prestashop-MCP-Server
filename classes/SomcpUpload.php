@@ -66,6 +66,20 @@ class SomcpUpload
     /** @var int The most files one invitation may hold, whatever a tool asks. */
     public const MAX_FILES = 20;
 
+    /** @var int 10 MB per image a tool downloads or takes from a deposit. */
+    public const IMAGE_MAX_BYTES = 10485760;
+
+    /** @var array<int, string> What an image may be, by the type getimagesize() reads in its bytes. */
+    public const IMAGE_TYPES = [
+        IMAGETYPE_JPEG => 'image/jpeg',
+        IMAGETYPE_PNG => 'image/png',
+        IMAGETYPE_GIF => 'image/gif',
+        IMAGETYPE_WEBP => 'image/webp',
+    ];
+
+    /** @var array<int, string> The extensions of IMAGE_TYPES, what an image field of a tool takes. */
+    public const IMAGES = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
     /** @var int Bytes kept aside in every POST for the multipart envelope: 64 KiB. */
     private const ENVELOPE = 65536;
 
@@ -86,6 +100,20 @@ class SomcpUpload
      *             assistant, the only ones a signed link may serve
      */
     public const CHAT_MODULE = 'somcp-assistant';
+
+    /**
+     * @var string Front controller an assistant sends the file of an invitation to, by itself.
+     *
+     * The page of the back office needs the merchant: a person signed in, a
+     * click, a file chosen. An assistant that can make an HTTP request - a code
+     * tool, a terminal, an HTTP client - has the file already and needs none
+     * of that, so it gets an address of its own, outside the administration
+     * folder, that takes one invitation's files and nothing else.
+     */
+    public const DIRECT_CONTROLLER = 'deposit';
+
+    /** @var string Multipart field the file is sent in, to the direct address. */
+    public const DIRECT_FIELD = 'file';
 
     /**
      * @var string Folder the files live in, relative to the shop root.
@@ -338,9 +366,8 @@ class SomcpUpload
      *
      * Addressed to the assistant rather than to the merchant: it is the one
      * reading this, and what it does next decides whether the files ever
-     * arrive. So it says what to show, what to wait for, and exactly how to
-     * come back - an assistant told only that something went wrong will
-     * apologise and stop.
+     * arrive. So it says what to send or show, and exactly how to come back -
+     * an assistant told only that something went wrong will apologise and stop.
      *
      * Not marked as an error. A client that sees isError often abandons the
      * task, and nothing has failed here: the invitation is open and waiting.
@@ -353,22 +380,661 @@ class SomcpUpload
      */
     private static function askByHand(string $url, string $reference, array $invitation): array
     {
+        return SomcpTool::text(self::directions(
+            $url,
+            $reference,
+            $invitation,
+            'Once the ' . ((int) ($invitation['max_files'] ?? 1) > 1 ? 'files are' : 'file is') . ' deposited,'
+                . ' by you or by the merchant, call this same tool again with the same arguments plus '
+                . self::ARG_REF . ' set to: ' . $reference . "\n\n"
+                . 'Do not report this as a failure.'
+        ));
+    }
+
+    /**
+     * How the files of an invitation reach the shop, in the order to try.
+     *
+     * One text for every way a deposit is asked for - a tool of this module,
+     * a tool of another module through the contract, the request tool - so an
+     * assistant meets the same steps wherever the file is needed. The
+     * assistant sends the file itself when it can; the merchant is asked only
+     * when it cannot. It cannot know in advance whether its own network lets it
+     * reach the shop, so it is told what a refusal looks like and what the
+     * person can change for next time, in words that fit any assistant.
+     *
+     * @param string $url the deposit page of the back office, for the merchant; empty when it cannot be built yet
+     * @param string $reference
+     * @param array<string, mixed> $invitation the row from find()
+     * @param string $then what to do once the files are in
+     *
+     * @return string
+     */
+    public static function directions(string $url, string $reference, array $invitation, string $then): string
+    {
         $files = max(1, (int) ($invitation['max_files'] ?? 1));
         $megabytes = (int) round(((int) ($invitation['max_bytes'] ?? self::DEFAULT_BYTES)) / 1048576);
+        $one = $files === 1;
+        $direct = self::directUrl($reference, $invitation);
+        $host = (string) parse_url($direct, PHP_URL_HOST);
 
-        return SomcpTool::text(
-            ($files === 1 ? 'A file is' : 'Up to ' . $files . ' files are')
-            . ' needed, and they cannot travel through this conversation.'
-            . ' Show the merchant this address and ask them to open it and deposit'
-            . ($files === 1 ? ' the file' : ' them') . ':' . "\n\n"
-            . $url . "\n\n"
-            . 'Accepted: ' . str_replace(' ', ', ', (string) ($invitation['extensions'] ?? ''))
-            . '. Up to ' . $megabytes . ' MB each.'
-            . ' The address stops working in ' . (int) round(self::TTL / 60) . ' minutes.' . "\n\n"
-            . 'Wait for the merchant to say the files have been sent, then call this same tool again'
-            . ' with the same arguments plus ' . self::ARG_REF . ' set to: ' . $reference . "\n\n"
-            . 'Do not report this as a failure, and do not try to send the files any other way.'
+        return ($one ? 'A file is' : 'Up to ' . $files . ' files are') . ' needed, and '
+            . ($one ? 'it cannot' : 'they cannot') . ' travel inside this conversation.'
+            . ' Accepted: ' . str_replace(' ', ', ', (string) ($invitation['extensions'] ?? ''))
+            . '. Up to ' . $megabytes . ' MB each. Both addresses below stop working in '
+            . (int) round(max(60, ((int) strtotime((string) ($invitation['expires_at'] ?? ''))) - time()) / 60) . ' minutes.' . "\n\n"
+            . '1. If you can make an HTTP request yourself (a code tool, a terminal, an HTTP or fetch tool),'
+            . ' send ' . ($one ? 'the file' : 'each file') . ' now, without asking the merchant: POST it to' . "\n\n"
+            . $direct . "\n\n"
+            . 'as multipart/form-data, in the field "' . self::DIRECT_FIELD . '", under its real name with its'
+            . ' extension (for example curl -F "' . self::DIRECT_FIELD . '=@photo.jpg" followed by the address).'
+            . ' The shop answers {"received": true} when it keeps the file, or the reason it refused it.' . "\n\n"
+            . '2. If that request never reaches the shop - refused by your own environment, a blocked domain or'
+            . ' no network - tell the person once that allowing ' . $host . ' in the network or allowed domains'
+            . ' settings of their assistant would let you deposit files yourself next time, then go to step 3.'
+            . ' If you know you cannot make HTTP requests at all, go straight to step 3.' . "\n\n"
+            . ($url === ''
+                // The page's address is built from the administration folder,
+                // which the module only learns by running in the back office.
+                ? '3. The deposit page of the back office cannot be offered yet: ask the merchant to open the'
+                    . ' module settings once, then ask for a new deposit.' . "\n\n"
+                : '3. Show the merchant this address and ask them to open it and deposit '
+                    . ($one ? 'the file' : 'the files') . ':' . "\n\n"
+                    . $url . "\n\n"
+                    . 'Wait for them to say ' . ($one ? 'it has' : 'they have') . ' been sent.' . "\n\n")
+            . $then;
+    }
+
+    /**
+     * The address an assistant sends the files of an invitation to, by itself.
+     *
+     * It carries the hash of the reference, never the reference: the address
+     * may end up in the logs of whatever made the request, and the reference
+     * is what redeems the file for a tool. It lasts as long as the invitation,
+     * and is signed with the key of the chat's file links, under a label of its
+     * own, so a link to read a file can never be used to deposit one.
+     *
+     * @param string $reference
+     * @param array<string, mixed> $invitation the row from find()
+     *
+     * @return string
+     */
+    public static function directUrl(string $reference, array $invitation): string
+    {
+        $hash = SomcpRandom::hash($reference);
+        $expires = (int) strtotime((string) ($invitation['expires_at'] ?? ''));
+
+        return Somcp::legacyContext()->link->getModuleLink('somcp', self::DIRECT_CONTROLLER, [
+            'u' => $hash,
+            'e' => $expires,
+            's' => self::directSignature($hash, $expires),
+        ], true);
+    }
+
+    /**
+     * The open invitation a direct address points at, or null.
+     *
+     * Every way to fail answers null, so the door can answer every failure the
+     * same way and nothing is learnt by trying. Never an invitation of the
+     * built-in assistant: those hold a file attached in the chat, already in.
+     *
+     * @param string $hash
+     * @param int $expires
+     * @param string $signature
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function directInvitation(string $hash, int $expires, string $signature): ?array
+    {
+        if ($expires <= time() || !preg_match('/^[a-f0-9]{64}$/', $hash) || !preg_match('/^[a-f0-9]{64}$/', $signature)
+            || !hash_equals(self::directSignature($hash, $expires), $signature)) {
+            return null;
+        }
+
+        $row = Db::getInstance()->getRow(
+            'SELECT * FROM `' . _DB_PREFIX_ . "somcp_upload`
+             WHERE `reference_hash` = '" . pSQL($hash) . "'
+               AND `module` <> '" . pSQL(self::CHAT_MODULE) . "'
+               AND `expires_at` > '" . pSQL(date('Y-m-d H:i:s')) . "'"
         );
+
+        return is_array($row) && $row !== [] ? $row : null;
+    }
+
+    /**
+     * @param string $hash
+     * @param int $expires
+     *
+     * @return string
+     */
+    private static function directSignature(string $hash, int $expires): string
+    {
+        return SomcpAssistantChat::signature('deposit|' . $hash, $expires);
+    }
+
+    /**
+     * Why accept() refused a file, worded for an assistant.
+     *
+     * @param string $problem a code accept() returns
+     * @param array<string, mixed> $invitation
+     *
+     * @return string
+     */
+    public static function refusal(string $problem, array $invitation): string
+    {
+        switch ($problem) {
+            case 'too_many':
+                return 'this deposit already holds the ' . (int) $invitation['max_files'] . ' file(s) it was opened for';
+            case 'too_large':
+                return 'the file is larger than ' . (int) round(((int) $invitation['max_bytes']) / 1048576) . ' MB';
+            case 'wrong_type':
+                return 'only ' . str_replace(' ', ', ', (string) $invitation['extensions'])
+                    . ' are accepted, and the content must match the extension';
+            case 'no_file':
+                return 'no file in the multipart field "' . self::DIRECT_FIELD . '"';
+            default:
+                return 'the shop could not store it';
+        }
+    }
+
+    /**
+     * What a file field of a tool takes, as SomcpTool declares it.
+     *
+     * @param string|array<int, string> $accept a shorthand from KINDS, or extensions from ACCEPTED
+     * @param int|callable(): int $bytes the largest file the tool takes, or what gives it when it is a
+     *                                   setting of the shop: a tool is defined before the shop is read,
+     *                                   so a setting is read only when a deposit is opened
+     * @param bool $byUrl false when the field must never be filled from an
+     *                    address - a module archive, where a link read anywhere
+     *                    would become code running on the shop
+     *
+     * @return array{accept: string|array<int, string>, bytes: int|callable(): int, url: bool}
+     */
+    public static function rule($accept, $bytes, bool $byUrl = true): array
+    {
+        return ['accept' => $accept, 'bytes' => $bytes, 'url' => $byUrl];
+    }
+
+    /**
+     * What an image field takes, the same for every tool.
+     *
+     * @return array{accept: string|array<int, string>, bytes: int|callable(): int, url: bool}
+     */
+    public static function images(): array
+    {
+        return self::rule(self::IMAGES, self::IMAGE_MAX_BYTES);
+    }
+
+    /**
+     * Opens a deposit for one file field of a tool, with that field's rules.
+     *
+     * What somcp_upload_file does for an assistant: the tool named decides the
+     * formats and the size, as a module decides them through the contract, so
+     * an assistant cannot widen what a tool takes by asking for something else.
+     * One file per deposit: every field that takes a file takes one upload_ref
+     * per file.
+     *
+     * @param int $idEmployee
+     * @param SomcpTool $tool the tool the file is for
+     * @param string $field one of the fields it declares
+     *
+     * @return string the reference, or an empty string when refused
+     */
+    public static function inviteFor(int $idEmployee, SomcpTool $tool, string $field): string
+    {
+        $rule = $tool->getFiles()[$field] ?? null;
+        if ($rule === null) {
+            return '';
+        }
+
+        return self::invite(
+            $idEmployee,
+            $tool->getName() . ' ' . $field,
+            $rule['accept'],
+            '',
+            ['files' => 1, 'bytes' => is_callable($rule['bytes']) ? (int) call_user_func($rule['bytes']) : (int) $rule['bytes']]
+        );
+    }
+
+    /**
+     * The schema of one image field, in the same words for every tool.
+     *
+     * Image fields used to be described tool by tool, and the descriptions
+     * drifted: one said 10 MB, another said nothing. Built here, a field says
+     * the same thing wherever it goes, including the tool that deposits a file
+     * for it when the assistant has no address to give.
+     *
+     * @param string $description who fills it and what it is, first
+     * @param string $of the image named in the property descriptions, e.g. "the logo"
+     *
+     * @return array<string, mixed>
+     */
+    public static function schema(string $description, string $of): array
+    {
+        return [
+            'type' => 'object',
+            'description' => $description . ' Its url (public https, no redirect, 10 MB at most) or an upload_ref '
+                . '(somcp_upload_file). JPEG, PNG, GIF or WebP; never file content.',
+            'properties' => [
+                'url' => ['type' => 'string', 'description' => 'Public https address of ' . $of . '. Give url or upload_ref, not both.'],
+                'upload_ref' => ['type' => 'string', 'description' => 'Reference of ' . $of . ' on the shop, from somcp_upload_file or the chat, exactly as given. Give url or upload_ref, not both.'],
+            ],
+            'additionalProperties' => false,
+        ];
+    }
+
+    /**
+     * Where one file comes from: a public address the shop downloads, or
+     * the reference of a file already on the shop. One of the two, never
+     * both, and never the bytes themselves - the two doors somcp lets a file
+     * in through, whatever tool it is for.
+     *
+     * @param array<string, mixed> $item
+     * @param string $path
+     * @param array<int, string> $errors
+     * @param string $what what the file is, for the message
+     *
+     * @return array{url: string, upload_ref: string}|null
+     */
+    public static function source(array $item, string $path, array &$errors, string $what = 'image'): ?array
+    {
+        $url = trim(self::scalar($item['url'] ?? null));
+        $reference = trim(self::scalar($item[self::ARG_REF] ?? null));
+        if ($url !== '' && $reference !== '') {
+            $errors[] = $path . ': url or upload_ref, not both';
+
+            return null;
+        }
+        if ($url === '' && $reference === '') {
+            $errors[] = $path . ': the public https address of the ' . $what . ' (url), or the upload_ref of a file on the shop';
+
+            return null;
+        }
+
+        return ['url' => $url, 'upload_ref' => $reference];
+    }
+
+    /**
+     * One file field of a tool: absent, or an object read by source().
+     *
+     * Anything other than an object - a bare address, a bare reference - is
+     * refused with the message source() gives for an empty one, which
+     * names both forms the field accepts.
+     *
+     * @param array<string, mixed> $arguments
+     * @param string $field
+     * @param array<int, string> $errors
+     * @param string $what what the file is, for the message
+     *
+     * @return array{url: string, upload_ref: string}|null null when not given or refused
+     */
+    public static function argument(array $arguments, string $field, array &$errors, string $what): ?array
+    {
+        if (!array_key_exists($field, $arguments)) {
+            return null;
+        }
+        $value = $arguments[$field];
+
+        return self::source(is_array($value) && !array_is_list($value) ? $value : [], $field, $errors, $what);
+    }
+
+    /**
+     * How a file is named in the answer: its address, or its reference.
+     *
+     * @param array<string, mixed> $image
+     *
+     * @return array<string, string>
+     */
+    public static function origin(array $image): array
+    {
+        return ($image['upload_ref'] ?? '') !== '' ? ['upload_ref' => (string) $image['upload_ref']] : ['url' => (string) $image['url']];
+    }
+
+    /**
+     * Whether an image field given back to an update carries the value its get
+     * returned for the stored file, so writing it would change nothing.
+     *
+     * A get hands an image back as the public address of the shop's own file,
+     * or as null when there is none. Given back to the matching update under
+     * the same name, that value is not a new image: null when there is no file,
+     * or the file's own address as a bare string or as {"url": ...}. An
+     * upload_ref, or any other address, is a real image and is not matched
+     * here. The addresses are compared on their host and path, the scheme left
+     * aside since the get can answer in http while the assistant writes https.
+     * A file name alone would take a new photo that happens to share the stored
+     * file's name (3.jpg) for the stored one; the whole address is safe to
+     * compare because getMediaLink() picks the media server from the file
+     * path, so the same file always gets the same host.
+     *
+     * @param mixed $given the field exactly as the assistant sent it
+     * @param string|null $current the address the get returns for the stored file, or null when there is none
+     */
+    public static function same($given, ?string $current): bool
+    {
+        if ($given === null) {
+            return $current === null;
+        }
+        if ($current === null) {
+            return false;
+        }
+
+        $url = null;
+        if (is_string($given)) {
+            $url = $given;
+        } elseif (is_array($given) && !array_is_list($given)
+            && array_key_exists('url', $given) && !array_key_exists(self::ARG_REF, $given)
+            && is_string($given['url'])) {
+            $url = $given['url'];
+        }
+        if ($url === null) {
+            return false;
+        }
+
+        $url = trim($url);
+        $givenHost = SomcpHttp::authority($url);
+        $currentHost = SomcpHttp::authority($current);
+        if ($givenHost === null || $givenHost !== $currentHost) {
+            return false;
+        }
+        $givenPath = (string) (parse_url($url, PHP_URL_PATH) ?: '');
+
+        return $givenPath !== '' && $givenPath === (string) (parse_url($current, PHP_URL_PATH) ?: '');
+    }
+
+    /**
+     * The bytes of one image, from its address or its upload_ref, checked.
+     *
+     * Every tool that takes an image gets it through here, whatever object it
+     * ends up on: a guard added to the download, the deposit or the image
+     * check then reaches all of them at once, instead of the one tool that
+     * happened to be edited.
+     *
+     * @param array{url: string, upload_ref: string} $source as source() reads it
+     * @param string $target where the file is written
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    public static function fetchImage(array $source, string $target): string
+    {
+        $refusal = $source['upload_ref'] !== ''
+            ? self::fromDeposit($source['upload_ref'], $target)
+            : self::fromUrl($source['url'], $target);
+
+        return $refusal === '' ? self::checkImage($target) : $refusal;
+    }
+
+    /**
+     * The bytes of any file, from its address or its upload_ref, unchecked.
+     *
+     * For a tool whose file is not an image, which checks the content its own
+     * way afterwards: an archive is opened, a download is stored as it is.
+     *
+     * @param array{url: string, upload_ref: string} $source as source() reads it
+     * @param string $target where the file is written
+     * @param int $maxBytes the largest file the tool takes
+     * @param string|null $fileName receives the name of a deposited file
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    public static function receive(array $source, string $target, int $maxBytes, ?string &$fileName = null): string
+    {
+        return $source['upload_ref'] !== ''
+            ? self::fromDeposit($source['upload_ref'], $target, $maxBytes, $fileName)
+            : self::fromUrl($source['url'], $target, $maxBytes);
+    }
+
+    /**
+     * A field value as text, as the tools read their own strings.
+     *
+     * @param mixed $value
+     *
+     * @return string empty for anything that is not a string or a number
+     */
+    private static function scalar($value): string
+    {
+        return is_string($value) || is_int($value) || is_float($value) ? (string) $value : '';
+    }
+
+    /**
+     * @param string $file
+     *
+     * @return string empty when the file is an image the shop can use
+     */
+    public static function checkImage(string $file): string
+    {
+        $info = @getimagesize($file);
+        $type = is_array($info) ? (int) $info[2] : 0;
+        if (!isset(self::IMAGE_TYPES[$type])) {
+            return 'it is not a JPEG, PNG, GIF or WebP image';
+        }
+        if (!ImageManager::isRealImage($file, self::IMAGE_TYPES[$type], array_values(self::IMAGE_TYPES))) {
+            return 'its content is not the image it claims to be';
+        }
+        if (!ImageManager::checkImageMemoryLimit($file)) {
+            return 'it is too large for the shop to resize';
+        }
+
+        return '';
+    }
+
+    /**
+     * Writes the file behind an upload_ref where the tool puts it together.
+     *
+     * Redeemed for the employee the write runs as, on this shop: a reference
+     * belonging to someone else, expired or already used finds nothing. The
+     * built-in assistant hands over a copy, so its conversation keeps the
+     * file. Public so every tool taking an upload_ref words its problems the
+     * same way, somcp_upload_module included.
+     *
+     * @param string $reference
+     * @param string $target
+     * @param int $maxBytes the largest file accepted
+     * @param string|null $fileName receives the name the file was deposited under
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    public static function fromDeposit(string $reference, string $target, int $maxBytes = self::IMAGE_MAX_BYTES, ?string &$fileName = null): string
+    {
+        $employee = Somcp::legacyContext()->employee;
+        $idEmployee = $employee instanceof Employee ? (int) $employee->id : 0;
+        $files = self::redeem($reference, $idEmployee);
+        if ($files === []) {
+            return 'no file of this account matches this upload_ref, or it expired or was already used';
+        }
+        $fileName = $files[0]['name'];
+        if (strlen($files[0]['contents']) > $maxBytes) {
+            return self::tooLarge($maxBytes);
+        }
+
+        return @file_put_contents($target, $files[0]['contents']) === false ? 'the shop has no room to receive it' : '';
+    }
+
+    /**
+     * Fetches a merchant's file without letting the address reach inside.
+     *
+     * This is a request the shop makes on the strength of a URL typed in a
+     * conversation, so it is held to what such a request needs: https only,
+     * an address that resolves to the public internet - checked after
+     * resolution, then pinned so a second lookup cannot answer differently -
+     * no redirect, no proxy, and a size cap enforced while reading.
+     *
+     * @param string $url
+     * @param string $target
+     * @param int $maxBytes the largest file accepted
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    public static function fromUrl(string $url, string $target, int $maxBytes = self::IMAGE_MAX_BYTES): string
+    {
+        $parts = parse_url($url);
+        if (!is_array($parts) || Tools::strtolower((string) ($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) {
+            return 'only public https addresses are accepted';
+        }
+        if (isset($parts['user']) || isset($parts['pass'])) {
+            return 'an address carrying credentials is refused';
+        }
+        if ((int) ($parts['port'] ?? 443) !== 443) {
+            return 'only the standard https port is accepted';
+        }
+        if (!function_exists('curl_init')) {
+            return 'this shop has no cURL to download with';
+        }
+
+        $host = Tools::strtolower(trim((string) $parts['host'], '[]'));
+        $addresses = self::addresses($host);
+        if ($addresses === []) {
+            return 'the host does not resolve';
+        }
+        foreach ($addresses as $address) {
+            if (!self::isPublic($address)) {
+                return 'the host resolves to a private, local or reserved address';
+            }
+        }
+
+        $handle = fopen($target, 'wb');
+        if ($handle === false) {
+            return 'the shop has no room to receive it';
+        }
+        $size = 0;
+        $tooLarge = false;
+        $pinned = strpos($addresses[0], ':') !== false ? '[' . $addresses[0] . ']' : $addresses[0];
+
+        $curl = curl_init();
+        if ($curl === false) {
+            fclose($handle);
+
+            return 'this shop could not start a download';
+        }
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RESOLVE => [$host . ':443:' . $pinned],
+            CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+            CURLOPT_FOLLOWLOCATION => false,
+            // A proxy would resolve the host itself, out of reach of the check above.
+            CURLOPT_PROXY => '',
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_USERAGENT => 'PrestaShop somcp',
+            CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use ($handle, &$size, &$tooLarge, $maxBytes): int {
+                $size += strlen($chunk);
+                if ($size > $maxBytes) {
+                    $tooLarge = true;
+
+                    return 0;
+                }
+
+                return (int) fwrite($handle, $chunk);
+            },
+        ]);
+        $done = curl_exec($curl);
+        $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        unset($curl);
+        fclose($handle);
+
+        if ($tooLarge) {
+            return self::tooLarge($maxBytes);
+        }
+        if ($done === false) {
+            return 'the download failed';
+        }
+        if ($status >= 300 && $status < 400) {
+            return 'the address redirects elsewhere, and redirections are not followed; give the final address';
+        }
+        if ($status !== 200) {
+            return 'the address answered HTTP ' . $status;
+        }
+
+        return '';
+    }
+
+    /**
+     * @param string $host
+     *
+     * @return array<int, string>
+     */
+    private static function addresses(string $host): array
+    {
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return [$host];
+        }
+
+        // A name that does not resolve makes these functions warn; that is an
+        // answer here, not an incident worth a line in the PHP log.
+        set_error_handler(static function (): bool {
+            return true;
+        });
+        try {
+            $addresses = gethostbynamel($host) ?: [];
+            if (function_exists('dns_get_record')) {
+                foreach (dns_get_record($host, DNS_AAAA) ?: [] as $record) {
+                    if (isset($record['ipv6'])) {
+                        $addresses[] = (string) $record['ipv6'];
+                    }
+                }
+            }
+        } finally {
+            restore_error_handler();
+        }
+
+        return array_values(array_unique($addresses));
+    }
+
+    /**
+     * Whether an address is on the public internet.
+     *
+     * PHP's own flags cover the private and reserved ranges; the list below
+     * adds what they leave out and what can still lead inside - shared address
+     * space, benchmarking, documentation, multicast, and IPv6 forms that carry
+     * an IPv4 address.
+     *
+     * @param string $address
+     *
+     * @return bool
+     */
+    private static function isPublic(string $address): bool
+    {
+        $packed = @inet_pton($address);
+        if ($packed === false) {
+            return false;
+        }
+        // ::ffff:a.b.c.d and the NAT64 prefix both end in an IPv4 address,
+        // which is the one actually reached.
+        if (strlen($packed) === 16
+            && (strncmp($packed, str_repeat("\0", 10) . "\xff\xff", 12) === 0 || strncmp($packed, "\x00\x64\xff\x9b" . str_repeat("\0", 8), 12) === 0)) {
+            return self::isPublic((string) inet_ntop(substr($packed, 12)));
+        }
+        if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        $blocked = strlen($packed) === 4
+            ? ['0.0.0.0/8', '100.64.0.0/10', '192.0.0.0/24', '192.0.2.0/24', '198.18.0.0/15', '198.51.100.0/24', '203.0.113.0/24', '224.0.0.0/3']
+            : ['::/8', '100::/64', '2001:db8::/32', 'fc00::/7', 'fe80::/10', 'ff00::/8'];
+        foreach ($blocked as $range) {
+            [$network, $bits] = explode('/', $range);
+            $base = (string) inet_pton($network);
+            $bytes = intdiv((int) $bits, 8);
+            $rest = (int) $bits % 8;
+            if (strncmp($packed, $base, $bytes) !== 0) {
+                continue;
+            }
+            if ($rest === 0 || ((ord($packed[$bytes]) ^ ord($base[$bytes])) & (0xFF << (8 - $rest)) & 0xFF) === 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param int $maxBytes
+     *
+     * @return string
+     */
+    public static function tooLarge(int $maxBytes): string
+    {
+        return 'the file is larger than ' . rtrim(rtrim(number_format($maxBytes / 1048576, 1, '.', ''), '0'), '.') . ' MB';
     }
 
     /**
@@ -619,11 +1285,12 @@ class SomcpUpload
     }
 
     /**
-     * Accepts one file the merchant chose.
+     * Accepts one file posted to the page or to the direct address.
      *
-     * Called from the back office, where the employee is the one signed in -
-     * never from a token. The row already says which employee may deposit, and
-     * the caller has checked that it is this one.
+     * Called from the back office, where the employee is the one signed in and
+     * the caller has checked that the row is theirs, or from the direct
+     * address, where the signed link names the row and nothing else. Never
+     * from a token.
      *
      * @param array<string, mixed> $invitation the row from find()
      * @param array<string, mixed> $file one entry of $_FILES
@@ -632,14 +1299,8 @@ class SomcpUpload
      */
     public static function accept(array $invitation, array $file): string
     {
-        $idUpload = (int) $invitation['id_upload'];
-
-        if (count(self::deposited($idUpload)) >= (int) $invitation['max_files']) {
-            return 'too_many';
-        }
-
         if ((int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            return 'no_file';
+            return count(self::deposited((int) $invitation['id_upload'])) >= (int) $invitation['max_files'] ? 'too_many' : 'no_file';
         }
 
         $tmp = (string) ($file['tmp_name'] ?? '');
@@ -647,19 +1308,47 @@ class SomcpUpload
             return 'no_file';
         }
 
-        $size = (int) ($file['size'] ?? 0);
+        return self::admit($invitation, (string) ($file['name'] ?? ''), $tmp, true);
+    }
+
+    /**
+     * Keeps a file against an invitation, whichever way it arrived.
+     *
+     * The one place a file is let in: the page of the back office, the
+     * address an assistant posts to and the address the shop downloads all
+     * end here, so the count, the size, the type and the content are checked
+     * the same way for each. A door with checks of its own would be the one
+     * that forgets one.
+     *
+     * @param array<string, mixed> $invitation the row from find()
+     * @param string $name the name the file was sent under
+     * @param string $path where it is now
+     * @param bool $uploaded true for a file PHP received in this request, moved
+     *                       with move_uploaded_file(); false for one the shop
+     *                       downloaded itself, which is renamed
+     *
+     * @return string empty when kept, otherwise too_many, too_large, wrong_type or no_store
+     */
+    private static function admit(array $invitation, string $name, string $path, bool $uploaded): string
+    {
+        $idUpload = (int) $invitation['id_upload'];
+
+        if (count(self::deposited($idUpload)) >= (int) $invitation['max_files']) {
+            return 'too_many';
+        }
+
+        $size = (int) @filesize($path);
         if ($size <= 0 || $size > (int) $invitation['max_bytes']) {
             return 'too_large';
         }
 
-        $name = (string) ($file['name'] ?? '');
         $extension = Tools::strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
         $allowed = explode(' ', (string) $invitation['extensions']);
         if (!in_array($extension, $allowed, true) || !isset(self::ACCEPTED[$extension])) {
             return 'wrong_type';
         }
 
-        if (!self::looksLike($tmp, $extension)) {
+        if (!self::looksLike($path, $extension)) {
             return 'wrong_type';
         }
 
@@ -671,7 +1360,8 @@ class SomcpUpload
         // The name on disk is ours, not the uploader's: a file name is
         // attacker-controlled text and has no business reaching a filesystem.
         $storedAs = SomcpRandom::token(16) . '.' . $extension;
-        if (!@move_uploaded_file($tmp, $directory . $storedAs)) {
+        $moved = $uploaded ? @move_uploaded_file($path, $directory . $storedAs) : @rename($path, $directory . $storedAs);
+        if (!$moved) {
             return 'no_store';
         }
         @chmod($directory . $storedAs, 0640);
@@ -693,6 +1383,44 @@ class SomcpUpload
         );
 
         return '';
+    }
+
+    /**
+     * Downloads a file from a public address into an invitation.
+     *
+     * The third way in, for an assistant that has an address rather than the
+     * bytes: the shop fetches it with the guards of fromUrl(), then admit()
+     * judges it exactly as a file posted to the page. The name is taken from
+     * the end of the address, since its extension is what admit() checks
+     * against the content.
+     *
+     * @param array<string, mixed> $invitation the row from find()
+     * @param string $url
+     *
+     * @return string empty when kept, the reason otherwise, worded for an assistant
+     */
+    public static function depositUrl(array $invitation, string $url): string
+    {
+        $name = basename(rawurldecode((string) parse_url($url, PHP_URL_PATH)));
+        $directory = self::directory();
+        if ($directory === '') {
+            return self::refusal('no_store', $invitation);
+        }
+
+        $temporary = $directory . SomcpRandom::token(16) . '.part';
+        try {
+            $refusal = self::fromUrl($url, $temporary, (int) $invitation['max_bytes']);
+            if ($refusal !== '') {
+                return $refusal;
+            }
+            $problem = self::admit($invitation, $name, $temporary, false);
+
+            return $problem === '' ? '' : self::refusal($problem, $invitation);
+        } finally {
+            if (is_file($temporary)) {
+                @unlink($temporary);
+            }
+        }
     }
 
     /**

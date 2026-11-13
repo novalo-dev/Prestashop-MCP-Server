@@ -73,7 +73,8 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             [self::class, 'handle'],
             // Changing a category is the edit right of the categories page in
             // Team, Permissions; creating one is a different right.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminCategories')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminCategories'),
+            files: ['cover_image' => SomcpUpload::images(), 'menu_thumbnails' => SomcpUpload::images()]
         );
     }
 
@@ -107,7 +108,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $properties['id_type_redirected']['description'] = 'Assistant. PrestaShop 9 only: the category a 301 or 302 '
             . 'redirects to, from somcp_list_categories; 0 for the closest parent.' . $kept;
         $properties['cover_image']['description'] = 'Merchant. A new cover image, replacing the current one: url '
-            . '(public https, no redirect, 10 MB at most) or upload_ref of a file on the shop. JPEG, PNG, GIF or WebP. '
+            . '(public https, no redirect, 10 MB at most) or upload_ref (somcp_upload_file). JPEG, PNG, GIF or WebP. '
             . 'As read: no change.';
         $properties['menu_thumbnails']['description'] = 'Merchant. PrestaShop 8 only, refused on 9: up to 3 images '
             . 'replacing the current menu thumbnails, each by url or upload_ref like the cover. As somcp_get_category '
@@ -526,7 +527,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $stored = self::storedImages($idCategory);
 
         if (array_key_exists('cover_image', $arguments)
-            && self::sameImage($arguments['cover_image'], $stored['cover_image'])) {
+            && SomcpUpload::same($arguments['cover_image'], $stored['cover_image'])) {
             unset($arguments['cover_image']);
         }
 
@@ -539,7 +540,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             && count($given) === count($stored['menu_thumbnails'])) {
             $same = true;
             foreach ($given as $i => $thumbnail) {
-                if (!self::sameImage($thumbnail, $stored['menu_thumbnails'][$i])) {
+                if (!SomcpUpload::same($thumbnail, $stored['menu_thumbnails'][$i])) {
                     $same = false;
                     break;
                 }
@@ -664,7 +665,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             return $image['for'] === 'cover_image';
         }));
         if ($covers !== []) {
-            self::record($plan, 'cover_image', $before['cover_image'], self::imageOrigin($covers[0]));
+            self::record($plan, 'cover_image', $before['cover_image'], SomcpUpload::origin($covers[0]));
         } elseif ($plan['remove_cover']) {
             if ($before['cover_image'] === null) {
                 $plan['remove_cover'] = false;
@@ -673,7 +674,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             }
         }
         $thumbnails = array_values(array_map(static function (array $image): array {
-            return self::imageOrigin($image);
+            return SomcpUpload::origin($image);
         }, array_filter($plan['images'], static function (array $image): bool {
             return $image['for'] === 'menu_thumbnails';
         })));

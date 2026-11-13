@@ -76,7 +76,8 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
             [self::class, 'handle'],
             // Changing a supplier is the edit right of the suppliers page in
             // Team, Permissions; creating one is a different right.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminSuppliers')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminSuppliers'),
+            files: ['logo' => SomcpUpload::images()]
         );
     }
 
@@ -107,7 +108,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
         $properties['active']['description'] = 'Merchant. Enabled on the storefront.' . $kept;
         $properties['country']['description'] = 'Merchant. ISO code of the country, for example FR, among the '
             . 'countries of this shop. A new country takes the state given with it, none otherwise.' . $kept;
-        $properties['logo'] = self::imageSchema('Merchant. A new logo, which replaces the current one.', 'the logo');
+        $properties['logo'] = SomcpUpload::schema('Merchant. A new logo, which replaces the current one.', 'the logo');
         $properties['remove_logo'] = [
             'type' => 'boolean',
             'description' => 'Merchant. true removes the logo. Not with logo, which already replaces it.',
@@ -202,8 +203,8 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
             // own file address, or null when there is none - is not a new logo
             // and leaves plan['logo'] null, so nothing is downloaded or
             // written. Any other address or an upload_ref is a real logo.
-            if (!SomcpToolCreateProduct::sameImage($arguments['logo'], SomcpToolGetSupplier::logoUrl((int) $supplier->id))) {
-                $plan['logo'] = self::imageArgument($arguments, 'logo', $errors, 'logo');
+            if (!SomcpUpload::same($arguments['logo'], SomcpToolGetSupplier::logoUrl((int) $supplier->id))) {
+                $plan['logo'] = SomcpUpload::argument($arguments, 'logo', $errors, 'logo');
             }
         }
 
@@ -382,7 +383,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
         // An address cannot be compared with a stored file, so a logo given
         // always counts as a change; a removal counts only when there is one.
         if ($plan['logo'] !== null) {
-            self::record($plan, 'logo', $before['logo'], self::imageOrigin($plan['logo']));
+            self::record($plan, 'logo', $before['logo'], SomcpUpload::origin($plan['logo']));
         } elseif ($before['logo'] === null) {
             $plan['remove_logo'] = false;
         } else {

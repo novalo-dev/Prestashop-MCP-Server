@@ -11,6 +11,7 @@ earlier answer: a module can be installed, upgraded or disabled at any time.
 - `somcp_get_module`
 - `somcp_install_module`
 - `somcp_upload_module`
+- `somcp_upload_file`
 - `somcp_set_module_active`
 
 ## Know which shop you are in
@@ -79,8 +80,10 @@ from its archive, below.
 the **Upload a module** button of **Modules > Module Manager** does. Only when
 the merchant asks for it, with an archive they have:
 
-1. **Get the archive as an upload_ref**: attached to the chat, or deposited on
-   the page the shop opens for it. Never from a link.
+1. **Get the archive as an upload_ref**: attached to the chat, or from
+   `somcp_upload_file` with `for` set to `somcp_upload_module` - send the
+   `.zip` yourself to the address it gives when you can make an HTTP request,
+   or show the merchant its deposit page. Never from a link: it takes none.
 2. **Say what it does** before calling: the archive's code comes from outside
    the shop and runs on it with full rights, so it should come from a source
    the merchant trusts. Then call `somcp_upload_module` with the `upload_ref`,

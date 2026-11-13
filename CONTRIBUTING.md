@@ -238,7 +238,9 @@ in the pull request before adding any `nosemgrep` or `@psalm-suppress`.
 
 The shop test also checks permissions: every tool is refused to an employee
 whose profile has no right, to an account that does not exist and to a token
-without its scope. Only `somcp_ping` may skip `SomcpTool::acts()`.
+without its scope. Only `somcp_ping`, which reads no shop data, and
+`somcp_upload_file` and `somcp_download_file`, which check the rights of what
+they reach in their handler, may skip `SomcpTool::acts()`.
 
 The **Integration** workflow installs every published PrestaShop 8 and 9, with each PHP version
 that release accepts, runs PHPStan against that release on that PHP, and
@@ -314,12 +316,19 @@ PrestaShop 9 class once took the whole PrestaShop 8 back office down.
   bytes in an argument - no base64, no data URL. A file comes in either as a
   **deposit**, read through `upload_ref` (`SomcpUpload`: bytes checked against
   the extension, tied to one employee, single use), or as a **public https
-  address the shop downloads itself** through `SomcpHttp::fetch()` with its
-  address guard on. It works the same for an assistant connected over MCP and
-  for the built-in assistant, where a file the employee attached is already a
-  deposit. Going the other way, a tool hands a file out as a link of its own,
-  signed and expiring, never as bytes. See
-  [Files: the two doors](docs/EXTENDING.md#files-the-two-doors).
+  address the shop downloads itself** (`SomcpUpload::fromUrl()`, address guard
+  on). A tool that takes a file declares its fields with `files:` in its
+  `SomcpTool` (`SomcpUpload::rule()`, `SomcpUpload::images()`), describes each
+  with `SomcpUpload::schema()` and reads it with `SomcpUpload::source()`; it
+  never opens a deposit or downloads anything itself, and `somcp_upload_file`
+  then opens deposits for it with those rules. It works the same for an
+  assistant connected over MCP and for the built-in assistant, where a file the
+  employee attached is already a deposit. Going the other way, a tool that
+  finds a file answers with a `download_ref` from `SomcpDownload`, and
+  `somcp_download_file` hands the file over; a module's tool hands a file out
+  as a link of its own, signed and expiring, never as bytes. See
+  [Files: the two doors](docs/EXTENDING.md#files-the-two-doors) and
+  [Files in and out](docs/ARCHITECTURE.md#files-in-and-out).
 - **Data goes through the PrestaShop core**, never the Webservice REST API. The
   module runs inside the shop, so a tool reads and writes with the core classes
   the back office uses (`ObjectModel`, `OrderHistory`, the services) - hooks
@@ -360,7 +369,12 @@ any tool whose `acts()` is not a `view`.
    one in the entry, through `SomcpTool::acts()`. Reads first; a write changes
    one object per call, refuses a call that would change nothing, says in its
    description that it is not to be retried and which tool to read instead,
-   and goes through PrestaShop's own objects so every hook fires.
+   and goes through PrestaShop's own objects so every hook fires. A tool that
+   takes a file declares the field in `files:` (`SomcpUpload::rule()` or
+   `SomcpUpload::images()`), describes it with `SomcpUpload::schema()` and
+   reads it with `SomcpUpload::source()`; one that finds a file answers with a
+   `download_ref` from `SomcpDownload`. See [Files in and
+   out](docs/ARCHITECTURE.md#files-in-and-out).
 4. **Add the scope** if the entry names one `SomcpScope` does not declare yet
    (the first tool of a section does): a constant, its place in `core()`, and
    its label in `describe()`, which the merchant reads on the consent screen.

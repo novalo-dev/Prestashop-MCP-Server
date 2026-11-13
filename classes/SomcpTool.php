@@ -66,6 +66,17 @@ class SomcpTool
      */
     private $meta;
 
+    /**
+     * @var array<string, array{accept: string|array<int, string>, bytes: int|callable(): int, url: bool}> The files the tool takes, by field.
+     *
+     * Declared next to the schema rather than guessed from it, because the
+     * shop has to know what a field takes before the assistant calls the
+     * tool: somcp_upload_file opens a deposit with exactly these rules, so a
+     * file refused at the door never reaches the tool. Built with
+     * SomcpUpload::rule() or SomcpUpload::images().
+     */
+    private $files;
+
     /** @var string Why the declared schema cannot be served, empty when it can. */
     private $schemaProblem;
 
@@ -89,6 +100,10 @@ class SomcpTool
      *                                   slash, e.g. 'openai/fileParams'. Clients that do
      *                                   not know a key ignore it. Left empty, nothing is
      *                                   sent - which is the case for every tool here.
+     * @param array<string, array{accept: string|array<int, string>, bytes: int|callable(): int, url: bool}> $files
+     *                                                                                                              the fields that take a file - their path in the
+     *                                                                                                              arguments, e.g. virtual_file.file - and what each
+     *                                                                                                              accepts, built with SomcpUpload::rule()
      */
     public function __construct(
         string $name,
@@ -99,6 +114,7 @@ class SomcpTool
         callable $handler,
         array $acts = [],
         array $meta = [],
+        array $files = [],
     ) {
         $this->name = $name;
         $this->title = $title;
@@ -110,6 +126,7 @@ class SomcpTool
         $this->requiredPermissions = is_array($acts['permissions'] ?? null) ? $acts['permissions'] : [];
         $this->annotations = is_array($acts['annotations'] ?? null) ? $acts['annotations'] : [];
         $this->meta = self::acceptableMeta($meta);
+        $this->files = $files;
     }
 
     /**
@@ -273,6 +290,16 @@ class SomcpTool
         }
 
         return $node;
+    }
+
+    /**
+     * The fields of this tool that take a file, and what each accepts.
+     *
+     * @return array<string, array{accept: string|array<int, string>, bytes: int|callable(): int, url: bool}>
+     */
+    public function getFiles(): array
+    {
+        return $this->files;
     }
 
     /**

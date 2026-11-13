@@ -22,12 +22,13 @@ declare(strict_types=1);
  * delivery slip and the document lines of the Documents tab of the order page
  * open it: an invoice, a delivery slip or a credit slip.
  *
- * The file never travels in the conversation: the tool hands out a signed
- * link to the module's download page (SomcpDownload), which serves the PDF
- * only to the employee of the token, signed in to the back office, with the
- * view right on the orders screen, for fifteen minutes. The link holds the
- * back office address, as the deposit page's does: the merchant's own browser
- * is the one that opens it.
+ * The tool finds the document and hands out a download_ref; it builds no
+ * file and no link itself. somcp_download_file turns the reference into the
+ * PDF, inside its answer, or into a link to the module's download page for
+ * the merchant - one place (SomcpDownload) for every file that leaves the
+ * shop, so the checks on who may have it are written once. The reference is
+ * signed for the employee of the token on this shop and lasts fifteen
+ * minutes.
  *
  * Documents are named by id_order_invoice or id_order_slip, the identifiers
  * somcp_get_order lists them with, and the tool checks they are documents of
@@ -67,11 +68,11 @@ class SomcpToolGetOrderDocument
         return new SomcpTool(
             'somcp_get_order_document',
             Somcp::t('Get a document of an order'),
-            'Gives a link to one PDF of an order - invoice, delivery slip or credit slip - as View invoice, View '
-                . 'delivery slip and the Documents tab of the order page open it. Give the link to the merchant as '
-                . 'it is: it opens in their own signed-in back office only, and expires after 15 minutes (ask '
-                . 'again after that). The documents and their identifiers are in documents of somcp_get_order. '
-                . 'Not for making an invoice that does not exist: somcp_generate_order_invoice.',
+            'Finds one PDF of an order - invoice, delivery slip or credit slip - as View invoice, View delivery '
+                . 'slip and the Documents tab of the order page open it, and gives its download_ref: pass it to '
+                . 'somcp_download_file to get the file itself, or a page for the merchant. The reference expires '
+                . 'after 15 minutes (ask again after that). The documents and their identifiers are in documents '
+                . 'of somcp_get_order. Not for making an invoice that does not exist: somcp_generate_order_invoice.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -187,19 +188,10 @@ class SomcpToolGetOrderDocument
         }
 
         $idDocument = (int) $chosen[$identifier];
-        $link = SomcpDownload::link($kind, $idDocument, $idEmployee, (int) $order->id_shop);
-        if ($link['url'] === '') {
-            // The address is built from the administration folder, which the
-            // module only learns by running in the back office once.
-            return SomcpTool::text(
-                'The shop cannot build the address of its own back office yet. Open the module settings once, '
-                    . 'then try again.',
-                true
-            );
-        }
+        $reference = SomcpDownload::reference($kind, $idDocument, $idEmployee, (int) $order->id_shop);
 
         SomcpLogger::log(
-            'order_document_link',
+            'order_document_found',
             SomcpLogger::OUTCOME_SUCCESS,
             'order ' . $idOrder . ', ' . $kind . ' ' . $idDocument,
             '',
@@ -216,8 +208,9 @@ class SomcpToolGetOrderDocument
             $identifier => $idDocument,
             'number' => (string) ($chosen['number'] ?? ''),
             'date' => (string) ($chosen['date'] ?? ''),
-            'url' => $link['url'],
-            'expires_at' => $link['expires_at'],
+            SomcpDownload::ARG_REF => $reference[SomcpDownload::ARG_REF],
+            'expires_at' => $reference['expires_at'],
+            'then' => 'somcp_download_file with this download_ref',
         ]);
     }
 

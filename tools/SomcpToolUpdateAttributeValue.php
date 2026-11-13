@@ -73,7 +73,8 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
             [self::class, 'handle'],
             // Values are managed under their group, and changing one is the
             // edit right of the attributes page in Team, Permissions.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminAttributesGroups')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminAttributesGroups'),
+            files: ['texture' => SomcpUpload::images()]
         );
     }
 
@@ -236,7 +237,7 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         // Any other address, or an upload_ref, is a real texture.
         $given = $arguments;
         if (array_key_exists('texture', $given)) {
-            if (self::sameImage($given['texture'], SomcpToolGetAttributeValue::textureUrl((int) $attribute->id))) {
+            if (SomcpUpload::same($given['texture'], SomcpToolGetAttributeValue::textureUrl((int) $attribute->id))) {
                 unset($given['texture']);
             } elseif ($given['texture'] === null && $colorGroup === true) {
                 // Read as "no texture", null would leave the stored one in
@@ -438,7 +439,7 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         // cannot be compared with the stored file without fetching it.
         $oldTexture = SomcpToolGetAttributeValue::textureUrl($idAttribute);
         if ($plan['texture'] !== null) {
-            self::record($plan, 'texture', $oldTexture, self::imageOrigin($plan['texture']));
+            self::record($plan, 'texture', $oldTexture, SomcpUpload::origin($plan['texture']));
         } elseif ($plan['remove_texture'] && $oldTexture !== null) {
             self::record($plan, 'texture', $oldTexture, null);
         } else {

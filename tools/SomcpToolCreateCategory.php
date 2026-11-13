@@ -97,7 +97,8 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             [self::class, 'handle'],
             // Adding a category is what the categories page asks for in Team,
             // Permissions; editing one is a different right.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminCategories')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminCategories'),
+            files: ['cover_image' => SomcpUpload::images(), 'menu_thumbnails' => SomcpUpload::images()]
         );
     }
 
@@ -161,12 +162,12 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                     'description' => 'Assistant. PrestaShop 9 only: the category a 301 or 302 redirects to, from '
                         . 'somcp_list_categories; 0 or left out for the closest parent.',
                 ],
-                'cover_image' => self::imageSchema('Merchant. The cover image.', 'the cover image'),
+                'cover_image' => SomcpUpload::schema('Merchant. The cover image.', 'the cover image'),
                 'menu_thumbnails' => [
                     'type' => 'array',
                     'description' => 'Merchant. PrestaShop 8 only, refused on 9, which dropped them: up to 3 images '
                         . 'the main menu shows, each given like the cover image.',
-                    'items' => self::imageSchema('Merchant. One menu thumbnail.', 'a menu thumbnail'),
+                    'items' => SomcpUpload::schema('Merchant. One menu thumbnail.', 'a menu thumbnail'),
                 ],
             ],
             'required' => ['name'],
@@ -675,7 +676,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      * only: the bytes are fetched once the category exists.
      *
      * The same object and the same errors as every other image field, through
-     * the shared imageSource(): a photo attached in the chat reaches the tool
+     * the shared SomcpUpload::source(): a photo attached in the chat reaches the tool
      * as an upload_ref, so the category cover and thumbnails accept it too.
      *
      * @param array<string, mixed> $arguments
@@ -686,7 +687,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     protected static function categoryImages(array $arguments, array &$errors): array
     {
         $images = [];
-        $cover = self::imageArgument($arguments, 'cover_image', $errors, 'cover image');
+        $cover = SomcpUpload::argument($arguments, 'cover_image', $errors, 'cover image');
         if ($cover !== null) {
             $images[] = $cover + ['for' => 'cover_image'];
         }
@@ -717,7 +718,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             return $images;
         }
         foreach ($items as $i => $item) {
-            $source = self::imageSource(
+            $source = SomcpUpload::source(
                 is_array($item) && !array_is_list($item) ? $item : [],
                 'menu_thumbnails[' . $i . ']',
                 $errors,
@@ -831,14 +832,14 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         foreach ($images as $image) {
             $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
             if ($file === false) {
-                $report[] = self::imageOrigin($image) + ['for' => $image['for'], 'refused' => 'the shop has no room to receive it'];
+                $report[] = SomcpUpload::origin($image) + ['for' => $image['for'], 'refused' => 'the shop has no room to receive it'];
                 continue;
             }
 
             try {
                 // url or upload_ref, then the image check: the same path every
                 // tool takes, so a guard added there reaches the category too.
-                $refusal = self::fetchImage(['url' => $image['url'], 'upload_ref' => $image['upload_ref']], $file);
+                $refusal = SomcpUpload::fetchImage(['url' => $image['url'], 'upload_ref' => $image['upload_ref']], $file);
                 if ($refusal === '') {
                     if ($image['for'] === 'cover_image') {
                         // CategoryCoverImageUploader: the original as
@@ -865,7 +866,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 @unlink($file);
             }
 
-            $report[] = self::imageOrigin($image) + ['for' => $image['for']]
+            $report[] = SomcpUpload::origin($image) + ['for' => $image['for']]
                 + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
         }
 

@@ -890,6 +890,14 @@ T = {
  "Tester la connexion",
  "Probar la conexión",
  "Die Verbindung testen"),
+"Put a file on the shop": (
+ "Déposer un fichier sur la boutique",
+ "Dejar un archivo en la tienda",
+ "Eine Datei im Shop ablegen"),
+"Get a file from the shop": (
+ "Récupérer un fichier de la boutique",
+ "Obtener un archivo de la tienda",
+ "Eine Datei aus dem Shop abrufen"),
 "Search orders": (
  "Rechercher des commandes",
  "Buscar pedidos",

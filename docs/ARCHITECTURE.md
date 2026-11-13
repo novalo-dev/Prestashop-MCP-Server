@@ -23,6 +23,7 @@ domain.
 | `/.well-known/oauth-authorization-server/module/somcp` | `controllers/front/wellknown.php` | Authorization server metadata (RFC 8414). |
 | `/module/somcp/authorize` | `controllers/front/authorize.php` | Authorization endpoint. |
 | `/module/somcp/oauth?a=token`, `a=register`, `a=revoke` | `controllers/front/oauth.php` | Token, dynamic registration, revocation. |
+| `/module/somcp/deposit?u=…&e=…&s=…` | `controllers/front/deposit.php` | Where an assistant posts a file for a deposit itself, by a signed link from `somcp_upload_file`. |
 
 RFC 8414 anchors the authorization server document at the **domain root**. somcp
 puts it there through the `moduleRoutes` hook, which needs friendly URLs, and a
@@ -239,37 +240,80 @@ can answer.
 
 ---
 
-## Files from the merchant
+## Files in and out
 
-`SomcpUpload` opens a deposit: a page of the merchant's own back office
-(`AdminSomcpUploadController`) that only the employee the call was made for can
-use. Files are checked against their actual bytes, not only their extension,
-and stored under `var/somcp/uploads/`, outside the module folder. A reference
-works once.
+One class each way: `SomcpUpload` for what comes in, `SomcpDownload` for what
+goes out. No tool reads a file, opens a deposit or builds a link on its own;
+it calls one of the two, so a check added there reaches every tool at once.
 
-The address reaches the merchant one of two ways: as a URL question for a
-client that declared it can open one, or as text the assistant shows. Because a
-client can declare the first and not do it, a call that comes back to a deposit
-that is still empty gets the address again as text.
+### In
 
-A private file goes out the same way, through `SomcpDownload` and
-`AdminSomcpDownloadController`, the outgoing counterpart of the deposit page. A
-tool that produces a private file never returns the bytes: it hands out a
-signed link to that back office page. The link names the file by its kind and
-its identifier, never by a path, and carries only `kind`, `id`, `e` (expiry)
-and `s` (signature); the employee and shop it was signed for are not in the
-address but folded into the signature, which reuses the key that signs the chat
-file links. The page requires the back office session of that same employee, so
-a leaked link is useless, checks the **view** right of the screen the document
-belongs to (`AdminOrders`), and builds the file on demand with the core `PDF`
-class, so nothing is written to disk. Links expire after fifteen minutes, like a
-deposit.
+A tool that takes a file says so next to its schema: `SomcpTool`'s `files`
+argument names each field that takes one (`images`, `virtual_file.file`,
+`logo`...) and what it accepts, built with `SomcpUpload::rule()` or
+`SomcpUpload::images()`. The field itself is an object with `url` or
+`upload_ref`, described by `SomcpUpload::schema()` and read by
+`SomcpUpload::source()`, `argument()` and `fetchImage()` or `receive()`.
 
-Like the deposit page's, the download link is the one place a tool answer holds
-the back office address, administration folder included: it is opened in the
-merchant's own browser, where the folder is already known. `somcp_get_order_document`
-is the tool that hands it out; no other answer, front page or redirect names the
-folder.
+An `upload_ref` comes from a deposit. `somcp_upload_file` opens one for a tool
+and a field, with that field's rules - an assistant cannot widen what a tool
+takes by asking for something else - and the file gets in by one of three
+ways, all judged by the same check (`SomcpUpload::admit()`: count, size, the
+extension against the field's list, the bytes against the extension):
+
+1. **an address**: the shop downloads a public `https` address itself
+   (`SomcpUpload::fromUrl()`: public addresses only, checked after resolution
+   and pinned, no redirect, no proxy, size capped while reading). Refused for
+   a module archive, where a link read anywhere would become code running on
+   the shop;
+2. **the direct address**: an assistant that can make an HTTP request posts
+   the file itself, multipart, to `controllers/front/deposit.php`. The link
+   carries the hash of the reference, never the reference, the deposit's
+   expiry and a signature with the key of the chat's file links under a label
+   of its own, so a link to read a file can never deposit one. Anything wrong
+   gets the same empty 404;
+3. **the deposit page**: a page of the merchant's own back office
+   (`AdminSomcpUploadController`) that only the employee the deposit was opened
+   for can use.
+
+The answer gives the three in that order, and says what the person can allow
+in their assistant's network settings when the assistant's own environment
+blocks the second: nothing on the shop's side can know that in advance.
+Files are stored under `var/somcp/uploads/`, outside the module folder, and a
+reference works once.
+
+A module tool asks for files through the contract (`SomcpContract::upload()`,
+`SomcpUpload::request()`) with its own rules, decided at call time. The
+address reaches the merchant one of two ways: as a URL question for a client
+that declared it can open one, or as text the assistant reads - the same
+directions as above, the direct address included, so a module gets the
+assistant's own deposit without changing anything. Because a client can
+declare the first and not do it, a call that comes back to a deposit that is
+still empty gets the directions again as text.
+
+### Out
+
+A tool that finds a private file - `somcp_get_order_document` for invoices,
+delivery slips and credit slips - answers with a `download_ref` and nothing
+else. The reference names the file by its kind and its identifier, never by a
+path, and carries its expiry and a signature; the employee and shop it was
+made for are not in it but folded into the signature, which reuses the key
+that signs the chat file links. It lasts fifteen minutes, like a deposit.
+
+`somcp_download_file` turns a reference into the file. It checks the scope that
+reads orders and the **view** right of the screen the document belongs to
+(`AdminOrders`), builds the file on demand with the core `PDF` class, so
+nothing is written to disk, and hands it over inside its answer, as an embedded
+resource, up to 4 MiB. With it, and in its place for a larger file, comes the
+link to `AdminSomcpDownloadController`, which serves the same file to the
+merchant: it requires the back office session of that same employee, so a
+leaked link is useless, and checks the same right.
+
+The deposit page and the download page are the one place a tool answer holds
+the back office address, administration folder included: they are opened in the
+merchant's own browser, where the folder is already known. The direct address
+of a deposit is a front address and names no folder; no other answer, front
+page or redirect names it.
 
 ---
 

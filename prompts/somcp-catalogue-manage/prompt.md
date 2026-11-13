@@ -7,6 +7,7 @@ word, a reference prefix or a barcode fragment.
 ## Tools
 
 - `somcp_ping`
+- `somcp_upload_file`
 - `somcp_search_products`
 - `somcp_get_product`
 - `somcp_list_categories`
@@ -98,6 +99,20 @@ virtual product is created with its file (`virtual_file`), given by `url` or
 Before taking a product out of a pack (`remove_pack_items`) or deleting the
 file of a virtual product (`remove_virtual_file`), name it to the merchant:
 customers who bought the file can no longer download it.
+
+## Images and files
+
+A file never travels in the conversation: an image, a logo or the file of a
+virtual product is given by `url` or by `upload_ref`.
+
+1. **A public `https` address**: give it as `url`. The shop downloads it.
+2. **A file you have but no address for** (one you made, or one the merchant
+   gave you): call `somcp_upload_file` with `for` (the tool) and `field` (its
+   argument, e.g. `images`). Send the file yourself to the address it gives
+   when you can make an HTTP request; otherwise show the merchant its deposit
+   page. Then give the `upload_ref` to the tool, once. If your own environment
+   blocks the request, tell the merchant once what the answer says to allow.
+3. **A file attached in the built-in chat** already has its `upload_ref`.
 
 ## Identifiers are never guessed
 
@@ -311,8 +326,8 @@ the merchant says otherwise. Before calling it:
    count the visible text, spaces included, HTML tags not counted. A language
    of the shop left out of `languages` takes the default language's text.
 3. An image is given by `url` (a public `https` address the shop downloads) or
-   by `upload_ref` (a file already on the shop - one attached in the chat,
-   deposited by the merchant, or generated here); one of the two, never both.
+   by `upload_ref` (a file already on the shop - one attached in the chat, or
+   one from `somcp_upload_file`); one of the two, never both.
 
 When it succeeds, show the merchant the category as returned, the
 `seo_warnings`, and any image in `images` that was refused, with its reason. On

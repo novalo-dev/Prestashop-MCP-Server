@@ -74,7 +74,8 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
             [self::class, 'handle'],
             // Changing a brand is the edit right of the brands page in Team,
             // Permissions; creating one is a different right.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminManufacturers')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminManufacturers'),
+            files: ['logo' => SomcpUpload::images()]
         );
     }
 
@@ -95,7 +96,7 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
         $properties['name']['description'] = 'Merchant. One text for every language: a brand name is not '
             . 'translated. 64 characters at most, never empty, without < > { } (nor ; = # before PrestaShop 9.1).' . $kept;
         $properties['active']['description'] = 'Merchant. Enabled on the storefront.' . $kept;
-        $properties['logo'] = self::imageSchema('Merchant. A new logo, which replaces the current one.', 'the logo');
+        $properties['logo'] = SomcpUpload::schema('Merchant. A new logo, which replaces the current one.', 'the logo');
         $properties['remove_logo'] = [
             'type' => 'boolean',
             'description' => 'Merchant. true removes the logo. Not with logo, which already replaces it.',
@@ -188,8 +189,8 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
             // shop's own file address, or null when there is none - is not a
             // new logo and leaves plan['logo'] null, so nothing is downloaded
             // or written. Any other address or an upload_ref is a real logo.
-            if (!SomcpToolCreateProduct::sameImage($arguments['logo'], SomcpToolGetManufacturer::logoUrl((int) $manufacturer->id))) {
-                $plan['logo'] = self::imageArgument($arguments, 'logo', $errors, 'logo');
+            if (!SomcpUpload::same($arguments['logo'], SomcpToolGetManufacturer::logoUrl((int) $manufacturer->id))) {
+                $plan['logo'] = SomcpUpload::argument($arguments, 'logo', $errors, 'logo');
             }
         }
 
@@ -294,7 +295,7 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
         // An address cannot be compared with a stored file, so a logo given
         // always counts as a change; a removal counts only when there is one.
         if ($plan['logo'] !== null) {
-            self::record($plan, 'logo', $before['logo'], self::imageOrigin($plan['logo']));
+            self::record($plan, 'logo', $before['logo'], SomcpUpload::origin($plan['logo']));
         } elseif ($before['logo'] === null) {
             $plan['remove_logo'] = false;
         } else {

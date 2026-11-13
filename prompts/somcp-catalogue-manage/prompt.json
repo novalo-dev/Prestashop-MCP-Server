@@ -7,6 +7,7 @@
   ],
   "tools": [
     "somcp_ping",
+    "somcp_upload_file",
     "somcp_search_products",
     "somcp_get_product",
     "somcp_list_categories",

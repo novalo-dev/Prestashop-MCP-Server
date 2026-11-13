@@ -87,7 +87,8 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
             [self::class, 'handle'],
             // Adding a brand is what the brands page asks for in Team,
             // Permissions; editing one is a different right.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminManufacturers')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminManufacturers'),
+            files: ['logo' => SomcpUpload::images()]
         );
     }
 
@@ -126,7 +127,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
                 'meta_description' => $text('Assistant. 512 at most; over 160 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_keywords' => $text('Assistant. PrestaShop 8, refused on 9. Up to 5 keywords, comma separated, '
                     . 'without < > = { }.'),
-                'logo' => self::imageSchema('Merchant. The logo.', 'the logo'),
+                'logo' => SomcpUpload::schema('Merchant. The logo.', 'the logo'),
                 'active' => [
                     'type' => 'boolean',
                     'description' => 'Merchant. Enabled on the storefront; true by default.',
@@ -187,7 +188,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
                 'active' => true,
             ],
             'texts' => [],
-            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
+            'logo' => SomcpUpload::argument($arguments, 'logo', $errors, 'logo'),
         ];
 
         if (array_key_exists('active', $arguments)) {
@@ -351,7 +352,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      * supplier uploaders write theirs.
      *
      * Those two uploaders differ only by folder, image types and cached copy,
-     * so one path serves both, and the file itself comes from fetchImage(),
+     * so one path serves both, and the file itself comes from SomcpUpload::fetchImage(),
      * as every other image does: a second copy would be a second place to
      * forget one of its checks.
      *
@@ -365,14 +366,14 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      */
     protected static function storeLogoIn(int $id, array $source, string $directory, string $for, string $miniPrefix): array
     {
-        $origin = self::imageOrigin($source);
+        $origin = SomcpUpload::origin($source);
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($file === false) {
             return $origin + ['refused' => 'the shop has no room to receive it'];
         }
 
         try {
-            $refusal = self::fetchImage($source, $file);
+            $refusal = SomcpUpload::fetchImage($source, $file);
             if ($refusal === '') {
                 // ManufacturerImageUploader and SupplierImageUploader: the
                 // original as <id>.jpg, then one file per image type.

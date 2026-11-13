@@ -37,7 +37,8 @@ Include what you can of:
 - The MCP endpoint: authentication, scope and back office permission checks,
   the shop boundary on multistore installs, the sealed state used between the
   two halves of a call.
-- File deposits: type checking, storage, access.
+- File deposits: type checking, storage, access, the direct address an
+  assistant posts a file to, and the files `somcp_download_file` hands over.
 - Anything that leaks a token, a code or a secret, including into the logs.
 - The contract other modules use (`SomcpContract`), where it could let a module
   or a request reach more than it declared.

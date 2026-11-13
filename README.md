@@ -153,6 +153,19 @@ shop's address. These can:
 Where to paste the address in each of them:
 [Connect an assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant).
 
+### Files
+
+A product photo, a brand logo, a module archive, an invoice: files do not
+travel inside a conversation, so two tools carry them for all the others.
+`somcp_upload_file` puts a file on the shop for the tool that needs it - from a
+web address, sent by the assistant itself when it can make web requests, or
+dropped by you on a page of your back office when it cannot.
+`somcp_download_file` hands the assistant a file of the shop, with a link for
+you. An assistant that runs code in a sandbox often limits which sites it may
+reach: allowing your shop's domain in the assistant's
+network or allowed-domains settings lets it send files without asking you. It
+says so when it is blocked.
+
 ### Compact mode
 
 More than a hundred tools weigh on every request an assistant makes, and some
@@ -288,6 +301,8 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | Tool | What it does | Needs, in Team › Permissions |
 |---|---|---|
 | `somcp_ping` | ● Test the connection | nothing |
+| `somcp_upload_file` | ● Put a file on the shop | the right of the tool the file is for |
+| `somcp_download_file` | ● Get a file from the shop | the right of the file: Orders › view for a document of an order |
 
 ### 🧾 Orders
 
@@ -516,7 +531,10 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_catalog_price_rule` | ✎ Create a catalogue price rule | Catalog Price Rules › add |
 
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
-language and currency it is connected to.
+language and currency it is connected to. `somcp_upload_file` and
+`somcp_download_file` carry files for the other tools, so they ask for the
+right of what they reach: a file is put on the shop only for a tool the
+assistant may use, and handed over only to an account that may view it.
 
 **More than 10 prompts** ship with the module, such as finding an order,
 changing an order status, checking stock, auditing SEO or getting recommended by

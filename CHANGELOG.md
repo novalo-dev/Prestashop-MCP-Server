@@ -18,6 +18,27 @@ are:
 
 ### Added
 
+**Files go to and from any assistant.** Two new tools carry files for all the
+others, whatever assistant you connect:
+
+- `somcp_upload_file` puts a file on the shop for the tool that needs it - a
+  product photo, a brand logo, the file of a virtual product, a module archive.
+  The assistant downloads it from an address when it has one; otherwise it
+  sends the file to the shop itself when it can, and only when it cannot does
+  it give you the deposit page to drop it on. If the assistant's own settings
+  block it from reaching your shop, it tells you once which address to allow
+  there, so it can do it alone next time. Each tool keeps its own rules -
+  formats and size - wherever the file comes from, and a module archive is
+  never taken from a link.
+- `somcp_download_file` gives the assistant a file of the shop - an invoice, a
+  delivery slip, a credit slip - inside its answer, so it can read it or hand
+  it on, with the link for you to open it in your back office.
+
+Before, an assistant connected from outside could only give the shop a web
+address: a file it had made, or one you gave it, had no way in. Modules asking for files
+through O'So MCP Server get the same: the assistant now sends the file itself
+when it can, without any change on their side.
+
 **Modules the assistant can upload.** The new tool `somcp_upload_module`
 takes a module's .zip archive you attached to the chat or deposited on the
 shop, puts it in the modules folder and installs it, as the **Upload a
@@ -120,12 +141,12 @@ the carrier, the total and the status first. It needs the **add** right on
 **Orders**.
 
 **Invoices, delivery slips and credit slips handed over.** The new tool
-`somcp_get_order_document` gives you a link to the PDF of an invoice, a
-delivery slip or a credit slip of an order, the same document **View
-invoice**, **View delivery slip** and the **Documents** tab open. The file
-never goes through the assistant: the link opens it in your own signed-in back
-office, for you only, and expires after 15 minutes. It needs the **view** right
-on **Orders**. `somcp_get_order` now also gives the number of each credit slip,
+`somcp_get_order_document` finds the PDF of an invoice, a delivery slip or a
+credit slip of an order, the same document **View invoice**, **View delivery
+slip** and the **Documents** tab open, and the assistant then gets the file
+itself with `somcp_download_file` (below), with a link that opens it in your
+own signed-in back office, for you only, for 15 minutes. It needs the **view**
+right on **Orders**. `somcp_get_order` now also gives the number of each credit slip,
 as the **Documents** tab shows it.
 
 **Order statuses the assistant can change.** The new tool

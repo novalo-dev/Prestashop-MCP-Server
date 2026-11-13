@@ -19,20 +19,23 @@ declare(strict_types=1);
 
 /*
  * SomcpDownload - the one way a private file leaves the shop through an
- * assistant, the outgoing counterpart of the deposit page (SomcpUpload).
+ * assistant, the outgoing counterpart of SomcpUpload.
  *
  * A tool that produces a private file - an invoice, a delivery slip or a
- * credit slip today - never puts the bytes in the conversation: it hands out a
- * signed link to a hidden back office page. The link names the file by its
- * kind and its identifier, never by a path, and carries only kind, id, e
- * (expiry) and s (signature). Who the link was made for and which shop it
- * belongs to are not in the address: they are folded into the signature, so a
- * link recomputed for the wrong employee or the wrong shop simply fails.
+ * credit slip today - builds nothing itself: it answers with a download_ref,
+ * and somcp_download_file turns that reference into the file. The reference
+ * names the file by its kind and its identifier, never by a path, and carries
+ * its expiry and a signature. Who it was made for and which shop it belongs
+ * to are not in it: they are folded into the signature, so a reference
+ * presented by another account or on another shop simply fails.
  *
- * The page behind also requires the back office session of that same employee,
- * so a leaked link alone is useless, and it checks the view right of the screen
- * the document belongs to. Nothing is stored: the PDF is built on demand from
- * the core PDF class and the shop's templates when the link is opened.
+ * The file reaches the assistant inside the answer of somcp_download_file
+ * when it is small enough to travel there. Otherwise, and for the merchant,
+ * the same reference becomes a link to a hidden back office page, which also
+ * requires the back office session of that same employee, so a leaked link
+ * alone is useless. Both ways check the view right of the screen the document
+ * belongs to. Nothing is stored: the PDF is built on demand from the core PDF
+ * class and the shop's templates.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -60,6 +63,119 @@ class SomcpDownload
 
     /** @var string The controller whose view right opening any of these documents requires. */
     public const SCREEN = 'AdminOrders';
+
+    /** @var string The scope a token needs to download any of these documents, the one that reads orders. */
+    public const SCOPE = SomcpScope::ORDERS_READ;
+
+    /**
+     * @var int The largest file handed over inside a tool answer: 4 MiB.
+     *
+     * Encoded in base64 it grows by a third, and every client sets its own
+     * limit on an answer. Past this, the merchant gets the page instead of the
+     * assistant getting nothing.
+     */
+    public const INLINE_MAX = 4194304;
+
+    /** @var string Argument that carries a reference to somcp_download_file. */
+    public const ARG_REF = 'download_ref';
+
+    /**
+     * A reference to one document, for one employee on one shop.
+     *
+     * kind.id.expiry.signature: readable enough for an assistant to copy
+     * without mistakes, and meaningless to anyone else.
+     *
+     * @param string $kind one of KINDS
+     * @param int $id the document identifier (id_order_invoice or id_order_slip)
+     * @param int $idEmployee the account the reference is handed to
+     * @param int $idShop the shop the document belongs to
+     *
+     * @return array{download_ref:string, expires_at:string}
+     */
+    public static function reference(string $kind, int $id, int $idEmployee, int $idShop): array
+    {
+        $expires = time() + self::TTL;
+
+        return [
+            self::ARG_REF => implode('.', [$kind, (string) $id, (string) $expires, self::signature($kind, $id, $idEmployee, $idShop, $expires)]),
+            'expires_at' => date('Y-m-d H:i:s', $expires),
+        ];
+    }
+
+    /**
+     * The document a reference points at, read back into a link's query.
+     *
+     * @param string $reference
+     *
+     * @return array{kind:string, id:int, e:int, s:string}
+     */
+    public static function query(string $reference): array
+    {
+        $parts = explode('.', trim($reference));
+
+        return [
+            'kind' => count($parts) === 4 ? $parts[0] : '',
+            'id' => count($parts) === 4 ? (int) $parts[1] : 0,
+            'e' => count($parts) === 4 ? (int) $parts[2] : 0,
+            's' => count($parts) === 4 ? $parts[3] : '',
+        ];
+    }
+
+    /**
+     * Whether an employee may view the screen the documents hang off.
+     *
+     * Read the way the core AdminPdf controller reads it on 8.0.1 and 9.0.0,
+     * for the page and for somcp_download_file alike.
+     *
+     * @param int $idEmployee
+     *
+     * @return bool
+     */
+    public static function mayView(int $idEmployee): bool
+    {
+        $employee = new Employee($idEmployee);
+        if (!Validate::isLoadedObject($employee) || !$employee->active) {
+            return false;
+        }
+
+        $access = Profile::getProfileAccess(
+            (int) $employee->id_profile,
+            (int) Tab::getIdFromClassName(self::SCREEN)
+        );
+
+        return is_array($access) && isset($access['view']) && $access['view'] === '1';
+    }
+
+    /**
+     * The PDF of a document, ready to render, as the back office builds it.
+     *
+     * The same calls on both versions: the document is named by its invoice or
+     * slip identifier, so it never meets the 9.0.0 redirect that the id_order
+     * entry points take. render() streams it, render(false) returns its bytes.
+     *
+     * @param ObjectModel $object the OrderInvoice or OrderSlip
+     * @param string $kind
+     * @param string $template a PDF::TEMPLATE_* value
+     *
+     * @return PDF
+     */
+    public static function pdf(ObjectModel $object, string $kind, string $template): PDF
+    {
+        // AdminPdf creates this before rendering; TCPDF writes its working
+        // files here and fails silently without it.
+        $cache = _PS_CACHE_DIR_ . 'tcpdf/';
+        if (!is_dir($cache)) {
+            @mkdir($cache, 0775, true);
+        }
+
+        // The theme may add invoice lines through this hook, as AdminPdf runs
+        // it before rendering an invoice.
+        if ($kind === 'invoice') {
+            Hook::exec('actionPDFInvoiceRender', ['order_invoice_list' => [$object]]);
+        }
+
+        return new PDF($object, $template, Somcp::legacyContext()->smarty);
+    }
 
     /**
      * A signed link to one document, for one employee on one shop.

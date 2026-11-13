@@ -51,8 +51,10 @@ job; another address or an `upload_ref` is a new image. So far the brand and
 supplier logos (`somcp_update_manufacturer`, `somcp_update_supplier`), the
 category cover image and menu thumbnails (`somcp_update_category`, where the
 thumbnails, replaced as one list, are left alone when the whole list is the one
-read, in its order) and the product images (`somcp_update_product`, where the
-`url` read beside an `id_image` is ignored). A list of objects read back is taken where the write takes
+read, in its order), the product images (`somcp_update_product`, where the
+`url` read beside an `id_image` is ignored) and the attribute value texture
+(`somcp_update_attribute_value`, where a `null` given back for a value that has
+a texture is refused: `remove_texture` removes it). A list of objects read back is taken where the write takes
 their identifiers, and the schema says so: the `groups` of `somcp_get_category`
 go back to the category writes as they are.
 
@@ -3294,17 +3296,17 @@ The name and every contact field are one string each, the same in every language
 | `url_name` (URL) | assistant | faceted search, as for the group |
 | `meta_title` (title tag) | assistant | faceted search, as for the group |
 | `color` | merchant | groups of type `color` only, refused otherwise (`null`, as `somcp_get_attribute_value` returns it there, is skipped); a hex code `#RRGGBB`, `Validate::isColor()` (which alone would also let a bare word through) |
-| `texture` | merchant | groups of type `color` only, refused otherwise (`null`, as `somcp_get_attribute_value` returns it there, is skipped); a public `https` URL, downloaded with the guards of `somcp_create_product` once the value exists |
+| `texture` | merchant | groups of type `color` only, refused otherwise (`null`, as `somcp_get_attribute_value` returns it there, is skipped); an object, `url` (a public https address the shop downloads) or `upload_ref` (a file already on the shop, such as a photo attached in the chat), one of the two, fetched with the guards of `somcp_create_product` once the value exists; a bare address is refused |
 
 The faceted search fields follow the rule given under `somcp_create_attribute_group`. A value has no `indexable` of its own: that switch belongs to its group, and is refused here.
 
-**Returns** - `created`, `id_attribute`, `texture` (`null` when none was given, otherwise its `url` with `stored: true` or the reason it was `refused`), and `attribute_value`, the value as `somcp_get_attribute_value` returns it. `faceted_search` appears only when the faceted search rows could not be written; the value is kept then.
+**Returns** - `created`, `id_attribute`, `texture` (`null` when none was given, otherwise its `url` or `upload_ref` with `stored: true` or the reason it was `refused`), and `attribute_value`, the value as `somcp_get_attribute_value` returns it. `faceted_search` appears only when the faceted search rows could not be written; the value is kept then.
 
 **Notes**
 - The group must be in `attribute_group_shop` for the shop of the token, the same test as `somcp_get_attribute_group`.
 - Written through `ProductAttribute::add()` in the shop of the token (`id_shop_list`), as the core's `AddAttributeHandler` does, so `actionAttributeSave` fires; `add()` places the value last in its group. If the add fails after the row went in, the value is deleted again.
 - A name the group already holds in a language is refused, compared without case among the values of the group in `attribute_shop` for the shop of the token, as the back office refuses it.
-- The texture is written where the back office writes it, `img/co/<id_attribute>.jpg` (`_PS_COL_IMG_DIR_`), re-encoded as JPEG, without thumbnails. Only its shape is checked before the write; a texture that cannot be downloaded or is not an image leaves the value created and says why in `texture`.
+- The texture is written where the back office writes it, `img/co/<id_attribute>.jpg` (`_PS_COL_IMG_DIR_`), re-encoded as JPEG, without thumbnails. Only its shape is checked before the write; a texture that cannot be fetched or is not an image leaves the value created and says why in `texture`.
 - `ps_facetedsearch` reads its fields from the request in its `actionAttributeSave` hook, so on `add()` it finds none and writes no row. With the module installed and enabled, the tool then writes one row of `layered_indexable_attribute_lang_value` per language whose URL word or title tag is filled (a language left out taking the default one's text) - the module writes none for a language where both are empty - and drops the module's filter block cache.
 - Every problem is reported at once, before anything is written.
 - Not replayable: the read tool to check is `somcp_list_attributes`.
@@ -3319,7 +3321,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 
 **Parameters** - `id_attribute` (required, from `somcp_list_attributes`), `languages`, then the fields of `somcp_create_attribute_value`, all optional, checked by the same code; `id_attribute_group` moves the value to another group; `remove_texture` (a boolean, groups of type `color` only, not with `texture`) removes the texture; `position` (merchant) is the place among the values of the group, from 0 as `somcp_get_attribute_value` gives it (the back office list shows it plus 1), refused outside 0 to the number of values minus 1 - with `id_attribute_group`, the place in the group it moves to, where it counts as one more. A text given replaces the languages given and keeps the others; given, `name` is never empty. `color`, `texture` and `remove_texture` follow the type of the group the value ends up in; left out, `position` keeps the value's place.
 
-**Returns** - `changed`; when something changed, `changes` (per field and language, its `old` and `new` value) and `attribute_value`, the value as `somcp_get_attribute_value` returns it. `texture` appears when one was given (its `url` with `stored: true` or the reason it was `refused`), `note` when the value leaves a group of type `color` with a colour or texture, `faceted_search` only when the faceted search rows could not be written while the rest was.
+**Returns** - `changed`; when something changed, `changes` (per field and language, its `old` and `new` value) and `attribute_value`, the value as `somcp_get_attribute_value` returns it. `texture` appears when one was given (its `url` or `upload_ref` with `stored: true` or the reason it was `refused`), `note` when the value leaves a group of type `color` with a colour or texture, `faceted_search` only when the faceted search rows could not be written while the rest was.
 
 **Notes**
 - A value that is not in `attribute_shop` for the shop of the token is refused, the same test as `somcp_get_attribute_value`; a group to move to must be in `attribute_group_shop`, the test of `somcp_get_attribute_group`.
@@ -3328,7 +3330,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 - A move is refused while a combination uses the value: a combination holds one value per group, and the core would leave it with a value of a group its product was not built on. A moved value is placed last in its new group, and the positions of the group it leaves are closed up. Its colour and texture stay stored; a group not of type `color` does not show them, and the answer says so in `note`.
 - A name the group already holds in a language is refused, as at creation; on a move, the names kept from the value are compared with the new group too.
 - `position` is written last with `ProductAttribute::updatePosition()`, where the drag and drop of the values list ends, so the other values of the group shift as there; `changes` records the old and new place. With `id_attribute_group`, the value is moved first, placed last in its new group, then put at `position` there. The core finds the group to reorder from the list's request (`id_attribute_group`), so the move goes through the shared `SomcpCatalog::movePosition()`, as `somcp_update_attribute_group` does.
-- A texture given is always downloaded and written over the current one, as at creation, so giving it again is a change; one that cannot be used leaves the current texture in place and says why in `texture`, and is an error when it was the only change. `remove_texture` deletes `img/co/<id_attribute>.jpg`; on a value without a texture it changes nothing.
+- A texture given is always fetched and written over the current one, as at creation, so giving it again is a change - except the one `somcp_get_attribute_value` returned, its own address or `null` when there is none, which changes nothing; one that cannot be used leaves the current texture in place and says why in `texture`, and is an error when it was the only change. `remove_texture` deletes `img/co/<id_attribute>.jpg`; on a value without a texture it changes nothing.
 - `ps_facetedsearch` deletes the value's rows of `layered_indexable_attribute_lang_value` in its `actionAttributeSave` hook and writes back only what its form's request carries, so after `update()` the tool writes the rows again: the ones given merged with the ones kept, as `somcp_create_attribute_value` writes them. A call that changes only these fields does not go through `update()`. The module's filter block cache is dropped, as its form does on every save.
 - Every problem is reported at once, before anything is written. Replayable, except for a texture: the same values again write nothing and say `changed: false`.
 

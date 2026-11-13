@@ -162,17 +162,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
                         . '#RRGGBB, for example #E84C3D. Optional, as in the form: left out, the status is '
                         . 'stored without one.',
                 ],
-                'icon' => [
-                    'type' => 'object',
-                    'description' => 'Merchant. A GIF, 16x16. Give url or upload_ref, not both. Written once the '
-                        . 'status exists: an icon refused in the answer means the status was created without one - '
-                        . 'do not call again.',
-                    'properties' => [
-                        'url' => ['type' => 'string', 'description' => 'Public https address of the icon. Give url or upload_ref, not both.'],
-                        'upload_ref' => ['type' => 'string', 'description' => 'Reference of an icon already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],
-                    ],
-                    'additionalProperties' => false,
-                ],
+                'icon' => self::imageSchema('Merchant. A 16x16 GIF; one refused leaves no icon.', 'the icon'),
                 'counts_as_valid' => $box('Consider the associated order as validated.'),
                 'invoice' => $box('Allow a customer to download and view PDF versions of their invoices.'),
                 'hidden_from_customer' => $box('Hide this status in all customer orders.'),
@@ -314,9 +304,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
             $plan['color'] = self::orderStatusColor($arguments['color'], $errors) ?? '';
         }
 
-        if (array_key_exists('icon', $arguments)) {
-            $plan['icon'] = self::orderStatusIcon($arguments['icon'], $errors);
-        }
+        $plan['icon'] = self::orderStatusIcon($arguments, $errors);
 
         foreach (self::ORDER_STATUS_BOXES as $argument => $column) {
             $plan['boxes'][$column] = false;
@@ -392,23 +380,24 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
     /**
      * The icon given in the call, parsed only: it is fetched by storeIcon() once the status has its identifier.
      *
+     * Read by imageArgument(), as every image is, so a bare address or an
+     * empty object is refused in the same words as anywhere else. A field
+     * beside url and upload_ref is refused on top, as the product images do.
      * Shared with somcp_update_order_status, so the two tools take an icon the same way.
      *
-     * @param mixed $icon
+     * @param array<string, mixed> $arguments
      * @param array<int, string> $errors
      *
-     * @return array{url: string, upload_ref: string}|null
+     * @return array{url: string, upload_ref: string}|null null when not given or refused
      */
-    protected static function orderStatusIcon($icon, array &$errors): ?array
+    protected static function orderStatusIcon(array $arguments, array &$errors): ?array
     {
-        if (!is_array($icon) || ($icon !== [] && array_is_list($icon))) {
-            $errors[] = 'icon: an object with url or upload_ref';
-
-            return null;
+        $icon = $arguments['icon'] ?? null;
+        if (is_array($icon) && !array_is_list($icon)) {
+            self::onlyAccepted($icon, 'file', 'icon', $errors);
         }
-        self::onlyAccepted($icon, 'file', 'icon', $errors);
 
-        return self::imageSource($icon, 'icon', $errors, 'icon');
+        return self::imageArgument($arguments, 'icon', $errors, 'icon');
     }
 
     /**
@@ -704,11 +693,9 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      * Fetches the icon and writes it where the back office writes it: img/os/<id>.gif, as it arrived.
      *
      * The 9.0.0 uploader moves the file there without converting it, so the
-     * bytes are checked rather than resized: a GIF, a real image, small
-     * enough. #130 will extract the "get the bytes" part of addImage() into
-     * one shared function; until it lands, this is the same three calls that
-     * method makes today - fromDeposit() or download(), then checkImage() -
-     * with the GIF rule of this form added.
+     * bytes are checked rather than resized: fetchImage() brings them in with
+     * the guards every image passes, then the GIF rule of this form is added,
+     * since the form takes a .gif and stores it under that name.
      *
      * @param int $idOrderState
      * @param array{url: string, upload_ref: string} $source
@@ -726,9 +713,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         }
 
         try {
-            $refusal = $source['upload_ref'] !== ''
-                ? self::fromDeposit($source['upload_ref'], $file)
-                : self::download($source['url'], $file);
+            $refusal = self::fetchImage($source, $file);
             if ($refusal === '') {
                 $info = @getimagesize($file);
                 if (!is_array($info) || (int) $info[2] !== IMAGETYPE_GIF) {
@@ -736,8 +721,6 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
                     // it arrived: another format kept under it would be a lie
                     // the browser may not even render.
                     $refusal = 'it is not a GIF image';
-                } else {
-                    $refusal = self::checkImage($file);
                 }
             }
             if ($refusal !== '') {

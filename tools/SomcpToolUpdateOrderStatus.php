@@ -93,9 +93,7 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
         $properties['name']['description'] = 'Merchant. Shown wherever an order is followed, 64 characters at '
             . 'most, without < > = { }. One per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.'
             . $kept;
-        $properties['icon']['description'] = 'Merchant. A GIF, 16x16, replacing the current one. Give url or '
-            . 'upload_ref, not both. Not with remove_icon. Always written when given; an icon refused in the answer '
-            . 'leaves the current one in place.';
+        $properties['icon'] = self::imageSchema('Merchant. A new 16x16 GIF; not with remove_icon.', 'the icon');
         $properties['email_template']['description'] = 'Merchant. The email sent, by ISO code: one of the shop\'s '
             . 'own emails, never a module\'s. Only when sends_email is or becomes true; turning it off empties them.'
             . $kept;
@@ -215,9 +213,7 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
             $color = self::orderStatusColor($arguments['color'], $errors);
         }
 
-        if (array_key_exists('icon', $arguments)) {
-            $plan['icon'] = self::orderStatusIcon($arguments['icon'], $errors);
-        }
+        $plan['icon'] = self::orderStatusIcon($arguments, $errors);
         if (array_key_exists('remove_icon', $arguments)) {
             if (!is_bool($arguments['remove_icon'])) {
                 $errors[] = 'remove_icon: true or false';

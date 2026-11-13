@@ -202,6 +202,18 @@ colour group, and the faceted search fields (URL word, title tag, indexable)
 when the faceted search module is not installed and enabled. Filling one of
 these fields in where it does not apply is still refused, as before.
 
+**A colour texture can be a photo attached in the chat.** The texture of
+`somcp_create_attribute_value` and `somcp_update_attribute_value` used to be
+only a web address. It is now given the way product images and logos are:
+either its public https address (`url`) or the reference of a file already on
+the shop (`upload_ref`), such as a photo attached in the built-in assistant,
+with the same download and image checks. A texture sent as a bare address, as
+before, is now refused with a message that says which form to use. A texture
+read with `somcp_get_attribute_value` and given back unchanged is no longer
+downloaded again nor counted as a change. The icon of an order status is now
+fetched by the same shared code as every other image, with its GIF check on
+top.
+
 **A brand or supplier logo read and given back no longer counts as a change.**
 When the assistant reads a brand or supplier with `somcp_get_manufacturer` or
 `somcp_get_supplier`, changes one field and gives the whole answer back to

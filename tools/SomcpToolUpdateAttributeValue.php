@@ -24,7 +24,7 @@ declare(strict_types=1);
  * It extends the creation tool rather than copying it: a field accepted at
  * creation is accepted here under the same name and checked by the same code,
  * so the two tools cannot come to disagree on what a valid name, colour, URL
- * word or texture address is, or on when two values of one group clash, and
+ * word or texture is, or on when two values of one group clash, and
  * the texture and the faceted search rows are written by the same methods.
  *
  * Only what is given changes. Each value is compared with what the shop holds
@@ -100,7 +100,13 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         foreach (['url_name', 'meta_title', 'color'] as $field) {
             $properties[$field]['description'] .= $kept;
         }
-        $properties['texture']['description'] .= ' Replaces the current texture.' . $kept;
+        // Rewritten rather than added to: the shared image text leaves no
+        // room under the description budget for more than this.
+        $properties['texture']['description'] = str_replace(
+            'Merchant. Color groups only: the swatch image.',
+            'Merchant. Color groups only: replaces the swatch image.',
+            (string) $properties['texture']['description']
+        );
 
         $schema['properties'] = [
             'id_attribute' => [
@@ -210,7 +216,7 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
             'texts' => [],
             // Empty until given: the value keeps its colour and texture otherwise.
             'color' => '',
-            'texture' => '',
+            'texture' => null,
             'remove_texture' => false,
             'faceted' => self::facetedSearchActive(),
             'changes' => [],
@@ -224,7 +230,22 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         ];
 
         self::valueNames($arguments, $languages, $idGroup, $idShop, $plan, $errors, false, (int) $attribute->id);
-        self::colorFields($arguments, $colorGroup, $plan, $errors);
+        // The texture as somcp_get_attribute_value returned it - the address
+        // of the stored file, or null when there is none - is not a new one:
+        // it is left out, so nothing is fetched again or listed in changes.
+        // Any other address, or an upload_ref, is a real texture.
+        $given = $arguments;
+        if (array_key_exists('texture', $given)) {
+            if (self::sameImage($given['texture'], SomcpToolGetAttributeValue::textureUrl((int) $attribute->id))) {
+                unset($given['texture']);
+            } elseif ($given['texture'] === null && $colorGroup === true) {
+                // Read as "no texture", null would leave the stored one in
+                // place without a word: removing it is remove_texture's job.
+                $errors[] = 'texture: null is not a texture, and this value has one; remove_texture: true removes it';
+                unset($given['texture']);
+            }
+        }
+        self::colorFields($given, $colorGroup, $plan, $errors);
         self::removeTexture($arguments, $colorGroup, $plan, $errors);
         // A value has no Indexable of its own: that switch belongs to the
         // group. It is already reported as not a field of this tool, so it is
@@ -412,11 +433,12 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
             self::record($plan, 'color', $oldColor, $plan['color']);
         }
 
-        // A texture given is always a change: what the address serves today
-        // cannot be compared with the file the shop holds without fetching it.
+        // A texture given is always a change: the one given back as read was
+        // left out by planUpdate(), and what another address serves today
+        // cannot be compared with the stored file without fetching it.
         $oldTexture = SomcpToolGetAttributeValue::textureUrl($idAttribute);
-        if ($plan['texture'] !== '') {
-            self::record($plan, 'texture', $oldTexture, $plan['texture']);
+        if ($plan['texture'] !== null) {
+            self::record($plan, 'texture', $oldTexture, self::imageOrigin($plan['texture']));
         } elseif ($plan['remove_texture'] && $oldTexture !== null) {
             self::record($plan, 'texture', $oldTexture, null);
         } else {
@@ -605,11 +627,11 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         $changes = $plan['changes'];
         $result = ['changed' => true, 'id_attribute' => $idAttribute];
 
-        if ($plan['texture'] !== '') {
+        if ($plan['texture'] !== null) {
             // Written over the current file only once the new one has been
-            // downloaded and read as an image, so a refused texture leaves
-            // the current one in place.
-            $result['texture'] = self::storeTexture($idAttribute, (string) $plan['texture']);
+            // fetched and read as an image, so a refused texture leaves the
+            // current one in place.
+            $result['texture'] = self::storeTexture($idAttribute, $plan['texture']);
             if (!isset($result['texture']['stored'])) {
                 $changes = array_values(array_filter($changes, static function (array $change): bool {
                     return $change['field'] !== 'texture';

@@ -130,11 +130,14 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
                     'description' => 'Merchant. Groups of type color only: the colour of the swatch, as a hex code '
                         . 'such as #E84C3D.',
                 ],
-                'texture' => [
-                    'type' => ['string', 'null'],
-                    'description' => 'Merchant. Groups of type color only: the public https address of an image '
-                        . '(JPEG, PNG, GIF or WebP, 10 MB at most) shown instead of the colour.',
-                ],
+                // The shared image schema, so a texture is asked for in the words
+                // of every other image, a photo attached in the chat included.
+                // null stays allowed: somcp_get_attribute_value returns it when
+                // there is no texture, and that answer is given back to the update.
+                'texture' => ['type' => ['object', 'null']] + self::imageSchema(
+                    'Merchant. Color groups only: the swatch image.',
+                    'the texture'
+                ),
             ],
             'required' => ['id_attribute_group', 'name'],
             'additionalProperties' => false,
@@ -203,7 +206,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             'languages' => $languages,
             'texts' => [],
             'color' => '',
-            'texture' => '',
+            'texture' => null,
             'faceted' => self::facetedSearchActive(),
             'indexable' => false,
         ];
@@ -380,17 +383,12 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             }
         }
 
-        if (array_key_exists('texture', $arguments)) {
-            // Checked for shape only: it is fetched once the value exists,
-            // with the guards of the image download, since the file is named
-            // after the value's identifier.
-            $url = trim((string) (self::string($arguments['texture']) ?? ''));
-            $parts = $url === '' ? false : parse_url($url);
-            if (!is_array($parts) || Tools::strtolower((string) ($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) {
-                $errors[] = 'texture: the public https address of an image';
-            } else {
-                $plan['texture'] = $url;
-            }
+        // null is what somcp_get_attribute_value returns when there is no
+        // texture: nothing to fetch. Anything else is read as every image is,
+        // and fetched once the value exists, since the file is named after the
+        // value's identifier.
+        if (array_key_exists('texture', $arguments) && $arguments['texture'] !== null) {
+            $plan['texture'] = self::imageArgument($arguments, 'texture', $errors, 'texture');
         }
     }
 
@@ -468,7 +466,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         $result = [
             'created' => true,
             'id_attribute' => $idAttribute,
-            'texture' => $plan['texture'] === '' ? null : self::storeTexture($idAttribute, (string) $plan['texture']),
+            'texture' => $plan['texture'] === null ? null : self::storeTexture($idAttribute, $plan['texture']),
         ];
 
         // The module's hook has just run on add() and, finding no form in
@@ -498,29 +496,29 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
     }
 
     /**
-     * Downloads a texture and writes it where the back office writes it.
+     * Fetches a texture and writes it where the back office writes it.
      *
      * The attributes page uploads it as img/co/<id>.jpg, re-encoded as JPEG,
      * with no thumbnails: the product page and somcp_get_attribute_value both
-     * look for that file and nothing else.
+     * look for that file and nothing else. The bytes come from fetchImage(),
+     * as every image does, so an address and an upload_ref pass the same
+     * guards here as on a product.
      *
      * @param int $idAttribute
-     * @param string $url
+     * @param array{url: string, upload_ref: string} $source as imageArgument() reads it
      *
-     * @return array<string, mixed> the address, and stored or the reason it was refused
+     * @return array<string, mixed> the url or upload_ref, with stored: true or the reason it was refused
      */
-    protected static function storeTexture(int $idAttribute, string $url): array
+    protected static function storeTexture(int $idAttribute, array $source): array
     {
+        $origin = self::imageOrigin($source);
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($file === false) {
-            return ['url' => $url, 'refused' => 'the shop has no room to receive it'];
+            return $origin + ['refused' => 'the shop has no room to receive it'];
         }
 
         try {
-            $refusal = self::download($url, $file);
-            if ($refusal === '') {
-                $refusal = self::checkImage($file);
-            }
+            $refusal = self::fetchImage($source, $file);
             if ($refusal === '') {
                 $refusal = ImageManager::resize($file, _PS_COL_IMG_DIR_ . $idAttribute . '.jpg')
                     ? ''
@@ -532,7 +530,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             @unlink($file);
         }
 
-        return ['url' => $url] + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
+        return $origin + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
     }
 
     /**

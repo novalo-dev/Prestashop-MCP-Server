@@ -587,8 +587,9 @@ attribute group. Before calling it:
    the value there: a name the group already holds is refused.
 2. Ask the merchant for the name, in every language being filled. For a group
    of type `color` only, ask for the colour as a hex code and, when they want
-   a pattern rather than a plain colour, the public https address of the
-   texture image; on any other group, leave both out. When the shop has the
+   a pattern rather than a plain colour, the texture image: its public https
+   address (`url`) or a photo already on the shop, such as one attached in the
+   chat (`upload_ref`); on any other group, leave both out. When the shop has the
    faceted search module, write the URL word and the title tag yourself and
    show them first; without it, leave them out: they are refused.
 3. The value comes last in its group. One value per call.
@@ -609,8 +610,8 @@ calling it:
    value: tell the merchant so and call once they agree. Colour, texture and
    `remove_texture` only go with a group of type `color`.
 3. Moving the value to another group (`id_attribute_group`) is refused while a
-   combination uses it. A texture given is downloaded again and replaces the
-   current one.
+   combination uses it. A new texture, by `url` or `upload_ref`, replaces the
+   current one; the texture given back as read changes nothing.
 4. To reorder the values of a group, give `position`, the new place from 0 as
    `somcp_get_attribute_value` gives it: the other values shift, as with the
    drag and drop of the back office list.

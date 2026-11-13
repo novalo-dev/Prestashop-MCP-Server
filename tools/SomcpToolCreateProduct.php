@@ -2259,8 +2259,12 @@ class SomcpToolCreateProduct
      * the same name, that value is not a new image: null when there is no file,
      * or the file's own address as a bare string or as {"url": ...}. An
      * upload_ref, or any other address, is a real image and is not matched
-     * here. The addresses are compared on the file name, since getMediaLink()
-     * can put a media server host in front of the shop's own file.
+     * here. The addresses are compared on their host and path, the scheme left
+     * aside since the get can answer in http while the assistant writes https.
+     * A file name alone would take a new photo that happens to share the stored
+     * file's name (3.jpg) for the stored one; the whole address is safe to
+     * compare because getMediaLink() picks the media server from the file
+     * path, so the same file always gets the same host.
      *
      * @param mixed $given the field exactly as the assistant sent it
      * @param string|null $current the address the get returns for the stored file, or null when there is none
@@ -2286,10 +2290,15 @@ class SomcpToolCreateProduct
             return false;
         }
 
-        $givenFile = basename((string) (parse_url(trim($url), PHP_URL_PATH) ?: ''));
-        $currentFile = basename((string) (parse_url($current, PHP_URL_PATH) ?: ''));
+        $url = trim($url);
+        $givenHost = SomcpHttp::authority($url);
+        $currentHost = SomcpHttp::authority($current);
+        if ($givenHost === null || $givenHost !== $currentHost) {
+            return false;
+        }
+        $givenPath = (string) (parse_url($url, PHP_URL_PATH) ?: '');
 
-        return $givenFile !== '' && $givenFile === $currentFile;
+        return $givenPath !== '' && $givenPath === (string) (parse_url($current, PHP_URL_PATH) ?: '');
     }
 
     /**

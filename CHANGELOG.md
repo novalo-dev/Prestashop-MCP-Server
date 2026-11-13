@@ -413,6 +413,14 @@ language as the default.
 
 ### Fixed
 
+**A new image named like the current one is no longer taken for it.**
+When the assistant gave `somcp_update_category`, `somcp_update_manufacturer` or
+`somcp_update_supplier` a new cover or logo whose file happened to have the same
+name as the current one (for example a photo published as `3.jpg` for category
+3), the new image was silently dropped and the answer said nothing had changed.
+Only the exact address the shop gave for its own image is now left untouched;
+any other address is downloaded and stored as a new image.
+
 **Products and shop pages read in the shop's default language.**
 `somcp_get_product`, `somcp_search_products` and `somcp_list_meta_pages` now
 read in the shop's default language when no language is given, rather than in

@@ -45,8 +45,8 @@ said in the field name. Never a bare `total`.
 matching update under the same name and, when it is unchanged, changes nothing:
 the address of the shop's own file (a string, or `{"url": ...}`), or `null` when
 there is none, is neither downloaded, written nor listed in `changes`
-(`SomcpToolCreateProduct::sameImage()`, the file names compared since a media
-server host can sit in front). Removing an image stays the `remove_*` field's
+(`SomcpToolCreateProduct::sameImage()`, the address compared without its
+scheme, as the get builds it: same host, same path). Removing an image stays the `remove_*` field's
 job; another address or an `upload_ref` is a new image. So far the brand and
 supplier logos (`somcp_update_manufacturer`, `somcp_update_supplier`) and the
 category cover image and menu thumbnails (`somcp_update_category`, where the

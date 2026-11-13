@@ -73,7 +73,10 @@ the shop, so it is not written here` (`unknownFields()`, read tools included);
 a field the running PrestaShop does not have, `not on PrestaShop <version>,
 which has no <thing>; leave the field out` (`notOnThisVersion()`), where the
 `null` a get tool returns for that field on that version is skipped, so its
-answer can be given back to the update; an invalid value, `one of <a, b, c>`
+answer can be given back to the update - and so is the `null` it returns for a
+field the object or the shop does not use (`color` and `texture` outside a
+group of type color, the faceted search fields without that module), a value
+there being refused as before; an invalid value, `one of <a, b, c>`
 (`oneOf()`), `true or false`, `a whole number`. An invalid value is never
 replaced by a default nor ignored: the default applies only to an argument left
 out.
@@ -3189,7 +3192,7 @@ The name and every contact field are one string each, the same in every language
 | `meta_title` (title tag) | assistant | faceted search; 128 characters at most; `Validate::isGenericName()`, since the module strips tags from it |
 | `indexable` | merchant | faceted search; false when left out, as in the form; a boolean, a string such as `"false"` is refused |
 
-**Faceted search fields.** `url_name`, `meta_title` and `indexable` are not PrestaShop's: they belong to the module `ps_facetedsearch`, which adds them to the back office form and stores them in its own tables. The module saves them from the form's POST data in its `actionAttributeGroupSave` / `actionAttributeSave` hooks, so a call that goes through the core class alone would silently drop them. The tool writes the same rows the module writes, in `layered_indexable_attribute_group`, `layered_indexable_attribute_group_lang_value` and `layered_indexable_attribute_lang_value`. When the module is not installed and enabled, these fields are refused with a clear message and the rest is written.
+**Faceted search fields.** `url_name`, `meta_title` and `indexable` are not PrestaShop's: they belong to the module `ps_facetedsearch`, which adds them to the back office form and stores them in its own tables. The module saves them from the form's POST data in its `actionAttributeGroupSave` / `actionAttributeSave` hooks, so a call that goes through the core class alone would silently drop them. The tool writes the same rows the module writes, in `layered_indexable_attribute_group`, `layered_indexable_attribute_group_lang_value` and `layered_indexable_attribute_lang_value`. When the module is not installed and enabled, these fields are refused with a clear message and the rest is written; the `null` the get tools return for them then is skipped, so their answer can be given back.
 
 **Returns** - `created`, `id_attribute_group`, and `attribute_group`, the group as `somcp_get_attribute_group` returns it. `faceted_search` appears only when the faceted search rows could not be written; the group is kept then.
 
@@ -3289,8 +3292,8 @@ The name and every contact field are one string each, the same in every language
 | `name` (value) | merchant | required; 128 characters at most; `Validate::isGenericName()` (no `< > = { }`); on PrestaShop 9 also no `;` or `#`, which its Symfony value form refuses as a catalogue name (`TypedRegex::TYPE_CATALOG_NAME`) - a value saved with them could not be saved again from that form |
 | `url_name` (URL) | assistant | faceted search, as for the group |
 | `meta_title` (title tag) | assistant | faceted search, as for the group |
-| `color` | merchant | groups of type `color` only, refused otherwise; a hex code `#RRGGBB`, `Validate::isColor()` (which alone would also let a bare word through) |
-| `texture` | merchant | groups of type `color` only, refused otherwise; a public `https` URL, downloaded with the guards of `somcp_create_product` once the value exists |
+| `color` | merchant | groups of type `color` only, refused otherwise (`null`, as `somcp_get_attribute_value` returns it there, is skipped); a hex code `#RRGGBB`, `Validate::isColor()` (which alone would also let a bare word through) |
+| `texture` | merchant | groups of type `color` only, refused otherwise (`null`, as `somcp_get_attribute_value` returns it there, is skipped); a public `https` URL, downloaded with the guards of `somcp_create_product` once the value exists |
 
 The faceted search fields follow the rule given under `somcp_create_attribute_group`. A value has no `indexable` of its own: that switch belongs to its group, and is refused here.
 
@@ -3418,7 +3421,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | `meta_title` (title tag) | assistant | faceted search; 128 characters at most; `Validate::isGenericName()`, since the module strips tags from it |
 | `indexable` | merchant | faceted search; false when left out, as in the form; a boolean, a string such as `"false"` is refused |
 
-**Faceted search fields.** `url_name`, `meta_title` and `indexable` belong to `ps_facetedsearch`, exactly as for attributes: the module saves them from the back office form only, so the tool writes its rows itself, in `layered_indexable_feature`, `layered_indexable_feature_lang_value` and `layered_indexable_feature_value_lang_value`, and refuses these fields with a clear message when the module is not installed and enabled.
+**Faceted search fields.** `url_name`, `meta_title` and `indexable` belong to `ps_facetedsearch`, exactly as for attributes: the module saves them from the back office form only, so the tool writes its rows itself, in `layered_indexable_feature`, `layered_indexable_feature_lang_value` and `layered_indexable_feature_value_lang_value`, and refuses these fields with a clear message when the module is not installed and enabled - except the `null` the get tools return for them then, which is skipped.
 
 **Returns** - `created`, `id_feature`, and `feature`, the feature as `somcp_get_feature` returns it. `faceted_search` appears only when the faceted search rows could not be written; the feature is kept then.
 

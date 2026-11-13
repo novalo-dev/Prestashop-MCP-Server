@@ -103,7 +103,7 @@ class SomcpToolCreateAttributeGroup extends SomcpToolCreateFeature
             ];
         };
 
-        return [
+        return self::facetedNullable([
             'type' => 'object',
             'properties' => [
                 'languages' => [
@@ -135,7 +135,7 @@ class SomcpToolCreateAttributeGroup extends SomcpToolCreateFeature
             ],
             'required' => ['name', 'public_name', 'group_type'],
             'additionalProperties' => false,
-        ];
+        ]);
     }
 
     /**

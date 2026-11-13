@@ -186,6 +186,15 @@ shop, and an assistant that checks its own call before sending it no longer
 stops at them. A real new image, or removing one with `remove_cover_image` or
 `remove_menu_thumbnails`, works as before.
 
+**Empty attribute and feature fields read and given back are no longer refused.**
+When the assistant reads an attribute value, an attribute group, a feature or a
+feature value, changes one field and gives the whole answer back to its update,
+the fields that came back empty because they do not apply are now skipped
+instead of refused: the colour and texture of a value whose group is not a
+colour group, and the faceted search fields (URL word, title tag, indexable)
+when the faceted search module is not installed and enabled. Filling one of
+these fields in where it does not apply is still refused, as before.
+
 **A brand or supplier logo read and given back no longer counts as a change.**
 When the assistant reads a brand or supplier with `somcp_get_manufacturer` or
 `somcp_get_supplier`, changes one field and gives the whole answer back to

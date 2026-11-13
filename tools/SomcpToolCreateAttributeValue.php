@@ -105,7 +105,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             ];
         };
 
-        return [
+        return self::facetedNullable([
             'type' => 'object',
             'properties' => [
                 'id_attribute_group' => [
@@ -126,19 +126,19 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
                 'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages, 128 characters '
                     . 'at most.'),
                 'color' => [
-                    'type' => 'string',
+                    'type' => ['string', 'null'],
                     'description' => 'Merchant. Groups of type color only: the colour of the swatch, as a hex code '
                         . 'such as #E84C3D.',
                 ],
                 'texture' => [
-                    'type' => 'string',
+                    'type' => ['string', 'null'],
                     'description' => 'Merchant. Groups of type color only: the public https address of an image '
                         . '(JPEG, PNG, GIF or WebP, 10 MB at most) shown instead of the colour.',
                 ],
             ],
             'required' => ['id_attribute_group', 'name'],
             'additionalProperties' => false,
-        ];
+        ]);
     }
 
     /**
@@ -336,7 +336,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
     }
 
     /**
-     * The colour and the texture, accepted for a group of type color only.
+     * The colour and the texture, accepted for a group of type color only (null skipped elsewhere).
      *
      * Only that type draws them on the product page: stored on another, they
      * would be values the merchant set and no customer ever sees.
@@ -355,8 +355,16 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             return;
         }
         if (!$colorGroup) {
-            $errors[] = implode(', ', $given) . ': only a group of type color shows a colour or a texture, and this '
-                . 'one is a drop-down list or radio buttons; leave ' . (count($given) > 1 ? 'them' : 'it') . ' out';
+            // somcp_get_attribute_value returns both as null outside a group
+            // of type color: that null is skipped, so its answer can be given
+            // back to the update. A value is still refused.
+            $given = array_values(array_filter($given, static function (string $field) use ($arguments): bool {
+                return $arguments[$field] !== null;
+            }));
+            if ($given !== []) {
+                $errors[] = implode(', ', $given) . ': only a group of type color shows a colour or a texture, and this '
+                    . 'one is a drop-down list or radio buttons; leave ' . (count($given) > 1 ? 'them' : 'it') . ' out';
+            }
 
             return;
         }

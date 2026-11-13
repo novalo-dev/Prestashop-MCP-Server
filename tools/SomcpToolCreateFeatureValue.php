@@ -102,7 +102,7 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
             ];
         };
 
-        return [
+        return self::facetedNullable([
             'type' => 'object',
             'properties' => [
                 'id_feature' => [
@@ -125,7 +125,7 @@ class SomcpToolCreateFeatureValue extends SomcpToolCreateFeature
             ],
             'required' => ['id_feature', 'value'],
             'additionalProperties' => false,
-        ];
+        ]);
     }
 
     /**

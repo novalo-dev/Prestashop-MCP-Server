@@ -169,6 +169,13 @@ yesterday" now has an answer. It needs the **view** right on **Stock**.
 
 ### Changed
 
+**The product audits name each missing field as your PrestaShop version does.**
+`somcp_audit_product_entities` and `somcp_audit_product_schema` now label the
+weight, the default category and the condition exactly as the product page of
+your shop shows them (for example **Main category** on PrestaShop 8 and
+**Default category** on PrestaShop 9), from one shared table, so a field never
+comes back under two different names.
+
 **A brand or supplier logo read and given back no longer counts as a change.**
 When the assistant reads a brand or supplier with `somcp_get_manufacturer` or
 `somcp_get_supplier`, changes one field and gives the whole answer back to

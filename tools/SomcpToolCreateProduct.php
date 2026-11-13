@@ -66,7 +66,6 @@ class SomcpToolCreateProduct
     protected const SUMMARY_MIN = 100;
     protected const SUMMARY_MAX = 200;
 
-
     /** @var int 10 MB per downloaded image. */
     protected const IMAGE_MAX_BYTES = 10485760;
 

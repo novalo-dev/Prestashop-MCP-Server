@@ -898,12 +898,9 @@ class SomcpUpload
         $tooLarge = false;
         $pinned = strpos($addresses[0], ':') !== false ? '[' . $addresses[0] . ']' : $addresses[0];
 
+        // Never false on PHP 8 without a URL argument, which is why
+        // SomcpHttp does not test it either.
         $curl = curl_init();
-        if ($curl === false) {
-            fclose($handle);
-
-            return 'this shop could not start a download';
-        }
         curl_setopt_array($curl, [
             CURLOPT_URL => $url,
             CURLOPT_RESOLVE => [$host . ':443:' . $pinned],

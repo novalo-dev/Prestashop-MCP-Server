@@ -815,10 +815,10 @@ class SomcpTool
      * when the text was refused, so the caller skips the character check it would
      * otherwise run on a value already rejected.
      *
-     * @param string $where  the field and language, for the message
-     * @param int    $length the visible length already counted by the caller
-     * @param int    $max    the column size from the object definition
-     * @param int    $recommended the length past which a search result cuts the text
+     * @param string $where the field and language, for the message
+     * @param int $length the visible length already counted by the caller
+     * @param int $max the column size from the object definition
+     * @param int $recommended the length past which a search result cuts the text
      * @param array<int, string> $errors
      * @param array<int, string> $advice collected advice lines
      *

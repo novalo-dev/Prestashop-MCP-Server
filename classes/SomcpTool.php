@@ -808,6 +808,25 @@ class SomcpTool
     }
 
     /**
+     * The size of a column as the object definition declares it, the number the
+     * back office refuses past, so a text a get returns is always short enough
+     * for its update and a future PrestaShop that resizes it is followed. The
+     * fallback only serves a definition that declares no size.
+     *
+     * @param ObjectModel $probe
+     * @param string $field
+     * @param int $fallback
+     *
+     * @return int
+     */
+    public static function columnSize(ObjectModel $probe, string $field, int $fallback): int
+    {
+        return isset($probe::$definition['fields'][$field]['size'])
+            ? (int) $probe::$definition['fields'][$field]['size']
+            : $fallback;
+    }
+
+    /**
      * The one rule every tool uses for a meta title or description: refused past
      * the column size the shop stores (read from the object definition by the
      * caller, so a text a get returns is always short enough for its update),

@@ -49,12 +49,6 @@ class SomcpToolUpdateMetaPage
     /** @var array<int, string> The translatable fields this tool writes, named as somcp_list_meta_pages returns them. */
     private const TEXTS = ['title', 'description', 'keywords', 'url_rewrite'];
 
-    /** The longest title accepted: search results cut well before. */
-    private const TITLE_MAX = 70;
-
-    /** The column's own size. */
-    private const DESCRIPTION_MAX = 255;
-
     /** The column's own size, the smaller of the two: varchar(254) on PrestaShop 8, 255 on 9. */
     private const URL_REWRITE_MAX = 254;
 
@@ -93,15 +87,14 @@ class SomcpToolUpdateMetaPage
                     ],
                     'title' => [
                         'type' => 'object',
-                        'description' => 'Assistant, approved by the merchant. The Page title, per ISO code: 70 '
-                            . 'characters at most, without < > = { }; an empty text removes it. Over 70 characters, '
-                            . 'search results cut it.',
+                        'description' => 'Assistant, approved by the merchant. The Page title, per ISO code: 128 '
+                            . 'at most; over 70 cut in search. Without < > = { }; an empty text removes it.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                     'description' => [
                         'type' => 'object',
                         'description' => 'Assistant, approved by the merchant. The Meta description, per ISO code: '
-                            . '255 characters at most, without < > = { }; search results show about 160.',
+                            . '255 at most; over 160 cut in search. Without < > = { }.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                     'keywords' => [
@@ -328,14 +321,17 @@ class SomcpToolUpdateMetaPage
 
                 return null;
             }
-        } elseif ($field === 'title' && Tools::strlen($text) > self::TITLE_MAX) {
-            $errors[] = $where . ': ' . self::TITLE_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
-
-            return null;
-        } elseif ($field === 'description' && Tools::strlen($text) > self::DESCRIPTION_MAX) {
-            $errors[] = $where . ': ' . self::DESCRIPTION_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
-
-            return null;
+        } elseif ($field === 'title' || $field === 'description') {
+            // Refused only past the column the SEO & URLs form stores (128 and
+            // 255), through the rule every SEO write shares; the advice it
+            // collects is dropped here because warnings() advises on the text
+            // actually stored.
+            $max = SomcpTool::columnSize($meta, $field, $field === 'title' ? 128 : 255);
+            $recommended = $field === 'title' ? SomcpTool::META_TITLE_RECOMMENDED : SomcpTool::metaDescriptionRecommended();
+            $advice = [];
+            if (!SomcpTool::seoTextLength($where, Tools::strlen($text), $max, $recommended, $errors, $advice)) {
+                return null;
+            }
         } elseif ($field === 'keywords' && Tools::strlen($text) > self::KEYWORDS_MAX) {
             $errors[] = $where . ': ' . self::KEYWORDS_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
 

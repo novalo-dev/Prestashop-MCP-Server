@@ -30,6 +30,7 @@
     {"why": "the pack cannot become standard while it has contents, nor take a file", "arguments": {"id_product": 6, "basics": {"product_type": "standard"}, "virtual_file": {"nb_downloadable": 2}}, "expect": "error", "contains": ["remove_pack_items", "virtual_file: a virtual product only"]},
     {"why": "the pack emptied", "arguments": {"id_product": 6, "remove_pack_items": [{"id_product": 1, "id_product_attribute": 1}]}, "expect": "ok", "contains": ["pack.items"]},
     {"why": "the emptied pack becomes a standard product", "arguments": {"id_product": 6, "basics": {"product_type": "standard"}}, "expect": "ok", "contains": ["basics.product_type"]},
-    {"why": "no file to remove, and download limits without a file on a product that has none", "arguments": {"id_product": 8, "remove_virtual_file": true}, "expect": "error", "contains": ["remove_virtual_file: the product has no file"]}
-  ]
+    {"why": "no file to remove, and download limits without a file on a product that has none", "arguments": {"id_product": 8, "remove_virtual_file": true}, "expect": "error", "contains": ["remove_virtual_file: the product has no file"]},
+    {"why": "a 119-character meta title is saved, with the advice that search results cut it", "arguments": {"id_product": 6, "languages": ["en"], "seo": {"meta_title": {"en": "Delivery and returns: how the shop ships each order, what it costs and how to send back a product that does not fit you"}}}, "expect": "ok", "contains": ["meta_title over 70 characters: search results cut it"]}
+]
 }

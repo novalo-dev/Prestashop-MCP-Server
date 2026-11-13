@@ -14,11 +14,12 @@
     {"why": "an empty friendly URL in the shop default language", "arguments": {"id_meta": 3, "languages": ["en"], "url_rewrite": {"en": ""}}, "expect": "error", "contains": ["required in the shop default language"]},
     {"why": "meta keywords, written on PrestaShop 8 and refused on 9 which has no such field", "arguments": {"id_meta": 3, "languages": ["en"], "keywords": {"en": "contact, form"}}, "expect": "any"},
     {"why": "a page that does not exist", "arguments": {"id_meta": 999999, "languages": ["en"], "title": {"en": "x"}}, "expect": "error", "contains": ["No page of this shop"]},
-    {"why": "a title over 70 characters", "arguments": {"id_meta": 3, "languages": ["en"], "title": {"en": "A page title that goes on and on well beyond what any search result shows"}}, "expect": "error", "contains": ["70 characters at most"]},
+    {"why": "a title longer than the column the back office stores", "arguments": {"id_meta": 3, "languages": ["en"], "title": {"en": "AAAAAAAAAA bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}}, "expect": "error", "contains": ["128 characters at most, 129 given"]},
     {"why": "a language the shop does not have", "arguments": {"id_meta": 3, "languages": ["en"], "title": {"zz": "x"}}, "expect": "error", "contains": ["\"zz\" is not among the languages being filled (en)"]},
     {"why": "a text given as a list, without its language", "arguments": {"id_meta": 3, "languages": ["en"], "title": ["x"]}, "expect": "error", "contains": ["keyed by ISO code"]},
     {"why": "a field this tool does not write", "arguments": {"id_meta": 3, "page": "contact"}, "expect": "error", "contains": ["page: not a field of this tool"]},
     {"why": "characters PrestaShop refuses in a description", "arguments": {"id_meta": 3, "languages": ["en"], "description": {"en": "<script>x</script>"}}, "expect": "error", "contains": ["Nothing was changed"]},
-    {"why": "a 65-character title is under the length search results keep: no warning, as the audits do not flag it", "arguments": {"id_meta": 3, "languages": ["en"], "title": {"en": "Contact the shop team by form, by phone or by mail, all week long"}}, "expect": "ok", "contains": ["\"changed\": true", "\"seo_warnings\": {}"]}
-  ]
+    {"why": "a 65-character title is under the length search results keep: no warning, as the audits do not flag it", "arguments": {"id_meta": 3, "languages": ["en"], "title": {"en": "Contact the shop team by form, by phone or by mail, all week long"}}, "expect": "ok", "contains": ["\"changed\": true", "\"seo_warnings\": {}"]},
+    {"why": "a 119-character title is saved, with the advice that search results cut it", "arguments": {"id_meta": 3, "languages": ["en"], "title": {"en": "Delivery and returns: how the shop ships each order, what it costs and how to send back a product that does not fit you"}}, "expect": "ok", "contains": ["\"changed\": true", "title is over 70 characters"]}
+]
 }

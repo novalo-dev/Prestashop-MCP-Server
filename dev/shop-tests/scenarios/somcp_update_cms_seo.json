@@ -9,11 +9,12 @@
     {"why": "a new friendly URL on a displayed page warns that the old address stops working", "arguments": {"id_cms": 1, "languages": ["en"], "link_rewrite": {"en": "Delivery Terms"}}, "expect": "ok", "contains": ["\"new\": \"delivery-terms\"", "old address"]},
     {"why": "the friendly URL put back", "arguments": {"id_cms": 1, "languages": ["en"], "link_rewrite": {"en": "delivery"}}, "expect": "ok", "contains": ["\"changed\": true", "\"new\": \"delivery\""]},
     {"why": "a page that does not exist", "arguments": {"id_cms": 999999, "languages": ["en"], "meta_description": {"en": "x"}}, "expect": "error", "contains": ["No CMS page of this shop", "somcp_list_cms_pages"]},
-    {"why": "a meta title over 70 characters", "arguments": {"id_cms": 1, "languages": ["en"], "meta_title": {"en": "A meta title that goes on and on well beyond what any search result shows"}}, "expect": "error", "contains": ["70 characters at most"]},
+    {"why": "a meta title longer than the column the back office stores", "arguments": {"id_cms": 1, "languages": ["en"], "meta_title": {"en": "AAAAAAAAAA bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}}, "expect": "error", "contains": ["255 characters at most, 256 given"]},
     {"why": "a language the shop does not have", "arguments": {"id_cms": 1, "languages": ["en"], "meta_description": {"zz": "x"}}, "expect": "error", "contains": ["\"zz\" is not among the languages being filled (en)"]},
     {"why": "a text given as a list, without its language", "arguments": {"id_cms": 1, "languages": ["en"], "meta_description": ["x"]}, "expect": "error", "contains": ["keyed by ISO code"]},
     {"why": "indexation given as a word", "arguments": {"id_cms": 1, "indexation": "yes"}, "expect": "error", "contains": ["indexation: true or false"]},
     {"why": "a field of the page this tool does not write", "arguments": {"id_cms": 1, "content": {"en": "x"}}, "expect": "error", "contains": ["content: not a field of this tool"]},
-    {"why": "characters PrestaShop refuses in a meta description", "arguments": {"id_cms": 1, "languages": ["en"], "meta_description": {"en": "<script>x</script>"}}, "expect": "error", "contains": ["Nothing was changed"]}
-  ]
+    {"why": "characters PrestaShop refuses in a meta description", "arguments": {"id_cms": 1, "languages": ["en"], "meta_description": {"en": "<script>x</script>"}}, "expect": "error", "contains": ["Nothing was changed"]},
+    {"why": "a 119-character meta title is saved, with the advice that search results cut it", "arguments": {"id_cms": 1, "languages": ["en"], "meta_title": {"en": "Delivery and returns: how the shop ships each order, what it costs and how to send back a product that does not fit you"}}, "expect": "ok", "contains": ["\"changed\": true", "the title shown in search results is over 70 characters"]}
+]
 }

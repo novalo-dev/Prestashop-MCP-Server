@@ -66,14 +66,6 @@ class SomcpToolCreateProduct
     protected const SUMMARY_MIN = 100;
     protected const SUMMARY_MAX = 200;
 
-    /** @var int Long enough for search engines to show the title whole. */
-    protected const META_TITLE_MAX = 55;
-
-    /** @var int The limit of Product::$definition. */
-    protected const META_DESCRIPTION_MAX = 512;
-
-    /** @var int What search results show before cutting. */
-    protected const META_DESCRIPTION_SHOWN = 160;
 
     /** @var int 10 MB per downloaded image. */
     protected const IMAGE_MAX_BYTES = 10485760;
@@ -487,8 +479,8 @@ class SomcpToolCreateProduct
                 'seo' => [
                     'type' => 'object',
                     'properties' => [
-                        'meta_title' => $text('Assistant. 55 characters at most.'),
-                        'meta_description' => $text('Assistant. 512 characters at most; past 160, search results cut it.'),
+                        'meta_title' => $text('Assistant. 255 at most; over 70 cut in search.'),
+                        'meta_description' => $text('Assistant. 512 at most; over 160 cut in search.'),
                         'link_rewrite' => $text('Assistant. The friendly URL; generated from the name when left out.'),
                         'redirect_type' => [
                             'type' => 'string',
@@ -2410,18 +2402,26 @@ class SomcpToolCreateProduct
      */
     protected static function metaTexts(array $group, array $languages, Product $probe, array &$plan, array &$errors): void
     {
-        $limits = ['meta_title' => self::META_TITLE_MAX, 'meta_description' => self::META_DESCRIPTION_MAX];
-        foreach ($limits as $field => $max) {
+        // The fallbacks only serve a definition without a size; the size refused
+        // is the column's, the one the back office refuses past.
+        $limits = ['meta_title' => 255, 'meta_description' => 512];
+        foreach ($limits as $field => $fallback) {
+            $max = SomcpTool::columnSize($probe, $field, $fallback);
+            $recommended = $field === 'meta_title' ? SomcpTool::META_TITLE_RECOMMENDED : SomcpTool::metaDescriptionRecommended();
             $texts = self::texts($group, $field, 'seo.' . $field, $languages, $errors);
             foreach ($texts ?? [] as $idLang => $text) {
                 $text = trim($text);
                 $texts[$idLang] = $text;
                 $where = 'seo.' . $field . ' (' . $languages['filled'][$idLang] . ')';
                 // Refused rather than cut: a title cut by the tool is a title
-                // nobody wrote, and the merchant would not know it changed.
-                if (self::visibleLength($text) > $max) {
-                    $errors[] = $where . ': ' . $max . ' characters at most, ' . self::visibleLength($text) . ' given';
-                } elseif (($check = $probe->validateField($field, $text, $idLang)) !== true) {
+                // nobody wrote, and the merchant would not know it changed. The
+                // advice is dropped here: seoWarnings() gives it once the text
+                // is stored, next to the product's other SEO warnings.
+                $advice = [];
+                if (!SomcpTool::seoTextLength($where, self::visibleLength($text), $max, $recommended, $errors, $advice)) {
+                    continue;
+                }
+                if (($check = $probe->validateField($field, $text, $idLang)) !== true) {
                     $errors[] = $where . ': ' . self::reason($check);
                 }
             }
@@ -3462,11 +3462,14 @@ class SomcpToolCreateProduct
             $description = (string) ($plan['texts']['meta_description'][$idLang] ?? '');
             if ($title === '') {
                 $list[] = 'no meta_title: the storefront uses the product name';
+            } elseif (self::visibleLength($title) > SomcpTool::META_TITLE_RECOMMENDED) {
+                // Advice, not a limit: the lengths the SEO audits flag past.
+                $list[] = 'meta_title over ' . SomcpTool::META_TITLE_RECOMMENDED . ' characters: search results cut it';
             }
             if ($description === '') {
                 $list[] = 'no meta_description: search engines pick a passage of the page';
-            } elseif (self::visibleLength($description) > self::META_DESCRIPTION_SHOWN) {
-                $list[] = 'meta_description over ' . self::META_DESCRIPTION_SHOWN . ' characters: search results cut it';
+            } elseif (self::visibleLength($description) > SomcpTool::metaDescriptionRecommended()) {
+                $list[] = 'meta_description over ' . SomcpTool::metaDescriptionRecommended() . ' characters: search results cut it';
             }
             foreach (['link_rewrite' => (string) ($plan['texts']['link_rewrite'][$idLang] ?? ''), 'meta_title' => $title] as $field => $value) {
                 if ($value === '') {

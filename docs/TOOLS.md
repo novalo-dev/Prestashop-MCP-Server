@@ -2406,7 +2406,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - Fields: `meta_title`, `meta_description`, `link_rewrite`, `redirect_type`, `id_type_redirected`, `meta_keywords` where the column exists (PrestaShop 8; on 9 the field is refused with a clear message, not dropped silently), and `tags`.
 - `tags` is the product's tags (the Étiquettes field), a comma separated list per language, written with `Tag::addTags()` to the shop's own tag field - a different field from `meta_keywords`, and kept on every PrestaShop version. Each tag is 32 characters at most and may not hold `< > = # { }`; a longer or refused one fails the call rather than being cut. The shop creates the tags it does not have yet and links them.
 - `link_rewrite` left out: generated from the name in each language with `Tools::str2url()`. Given: passed through `Tools::str2url()`, then refused if `Validate::isLinkRewrite()` fails. Never empty in any language.
-- `meta_title` 55 characters at most (stricter than PrestaShop's 255, so search engines show it whole) and `meta_description` 512 at most, the limit of `Product::$definition`: longer is refused, never cut.
+- `meta_title` 255 characters at most and `meta_description` 512 at most, the sizes of `Product::$definition` that the back office refuses past: longer is refused, never cut. Past 70 characters for the title and 160 for the description, a search result cuts it: `seo_warnings` says so, without refusing (`SomcpTool::seoTextLength()`, the rule every SEO write shares).
 - `redirect_type` is what an inactive product does: the values of `RedirectType` in the running version (PrestaShop 9 adds `default`, `200-displayed`, `404-displayed`, `410-displayed`). A `301-product` or `302-product` needs an existing `id_type_redirected` product, a category redirect an existing category. Left out: the shop default.
 - The answer carries `seo_warnings`, per language: no `meta_title` or no `meta_description` (the storefront then falls back on the name), `meta_description` over 160 characters (cut in search results), a `link_rewrite` or a `meta_title` already used by another product in that language. Warnings never block the creation.
 
@@ -4483,7 +4483,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 |---|---|---|---|
 | `id_cms` | integer | yes | from `somcp_list_cms_pages`, any page of the shop; `somcp_audit_cms_seo` finds the pages to fix |
 | `languages` | array | no | ISO codes being filled, among the shop's active languages, all of them by default; each text below is then given in each of them |
-| `meta_title` | object | no | per ISO code; the form's **Meta title** (`head_seo_title`); 70 characters at most, an empty text removes it |
+| `meta_title` | object | no | per ISO code; the form's **Meta title** (`head_seo_title`); 255 characters at most (the column); past 70, a search result cuts it, said in `seo_warnings`; an empty text removes it |
 | `meta_description` | object | no | per ISO code; 512 characters at most, a warning over 160 |
 | `link_rewrite` | object | no | per ISO code; `Tools::str2url()` then `Validate::isLinkRewrite()`, 128 characters at most, never empty |
 | `indexation` | boolean | no | whether search engines may index the page (**Indexation by search engines**) |
@@ -4533,7 +4533,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 |---|---|---|---|
 | `id_meta` | integer | yes | from `somcp_list_meta_pages` |
 | `languages` | array | no | ISO codes being filled, among the shop's active languages, all of them by default; each text below is then given in each of them |
-| `title` | object | no | per ISO code; the form's **Page title**; 70 characters at most, an empty text removes it |
+| `title` | object | no | per ISO code; the form's **Page title**; 128 characters at most (the column); past 70, a search result cuts it, said in `seo_warnings`; an empty text removes it |
 | `description` | object | no | per ISO code; the form's **Meta description**; 255 characters at most (the column), a warning over 160 |
 | `keywords` | object | no | per ISO code; the form's **Meta keywords**, PrestaShop 8 only (refused on 9, which has no such field); 255 characters at most, an empty text removes them |
 | `url_rewrite` | object | no | per ISO code; the form's **Rewritten URL**; checked as typed with `Validate::isLinkRewrite()` (which follows `PS_ALLOW_ACCENTED_CHARS_URL`), never rewritten; 254 characters at most (`varchar(254)` on PrestaShop 8); required in the shop default language, may be empty in the others; refused if another page of the shop already uses it in that language |

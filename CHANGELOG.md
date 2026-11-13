@@ -178,7 +178,7 @@ characters), exactly as the back office does, instead of the shorter limits
 they used before. A title read by `somcp_get_category` can now be given back to
 `somcp_update_category` unchanged. Past the length a search result keeps (70
 characters for a title, 160 for a description), the answer still advises, in
-`seo_warnings`, without refusing. The other SEO tools follow in a later change.
+`seo_warnings`, without refusing.
 
 **The SEO audits flag a meta title at the same length the writes advise.**
 `somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`,
@@ -188,6 +188,18 @@ title written without a warning was then reported as too long. Every audit now
 flags a title past 70 characters and a description past 160, the lengths the
 back office recommends, and `somcp_update_cms_seo` and `somcp_update_meta_page`
 advise at those same lengths.
+
+**The same meta title and description lengths as the back office, for
+products, CMS pages and SEO & URLs pages.** `somcp_create_product` and
+`somcp_update_product` used to refuse a Meta title past 55 characters,
+`somcp_update_cms_seo` a Meta title past 70 and `somcp_update_meta_page` a Page
+title past 70, while the back office stores up to 255 for a product or a CMS
+page and 128 for a page of **Shop Parameters > Traffic & SEO > SEO & URLs**. A
+title read by `somcp_get_product` can now be given back to
+`somcp_update_product` unchanged. All four now refuse a title or a description
+only when it is longer than the shop stores, as the back office does, and
+advise in `seo_warnings` past 70 characters for a title and 160 for a
+description.
 
 **Clearer refusals from the category tools.** When the assistant gets a call
 to `somcp_get_category`, `somcp_create_category`, `somcp_update_category`,

@@ -457,13 +457,9 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     protected static function metaWithin(array $arguments, array $limits, array $languages, ObjectModel $probe, array &$plan, array &$errors): void
     {
         foreach ($limits as $field => $fallback) {
-            // The column size the shop stores, read from the object definition so
-            // a future PrestaShop that changes it is followed, and so a text a get
-            // returns is always short enough for its update. Refused past it rather
-            // than cut: a title cut by the tool is a title nobody wrote.
-            $max = isset($probe::$definition['fields'][$field]['size'])
-                ? (int) $probe::$definition['fields'][$field]['size']
-                : (int) $fallback;
+            // Refused past the column size rather than cut: a title cut by the
+            // tool is a title nobody wrote.
+            $max = SomcpTool::columnSize($probe, $field, (int) $fallback);
             $recommended = $field === 'meta_title'
                 ? SomcpTool::META_TITLE_RECOMMENDED
                 : SomcpTool::metaDescriptionRecommended();

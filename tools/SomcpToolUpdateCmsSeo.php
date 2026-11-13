@@ -57,12 +57,6 @@ class SomcpToolUpdateCmsSeo
         'link_rewrite' => 'link_rewrite',
     ];
 
-    /** The longest meta title accepted: search results cut well before. */
-    private const META_TITLE_MAX = 70;
-
-    /** The column's own size. */
-    private const META_DESCRIPTION_MAX = 512;
-
     /** The column's own size. */
     private const LINK_REWRITE_MAX = 128;
 
@@ -97,14 +91,13 @@ class SomcpToolUpdateCmsSeo
                     'meta_title' => [
                         'type' => 'object',
                         'description' => 'Assistant, approved by the merchant. The Meta title of the page form, per '
-                            . 'ISO code: 70 characters at most, without < > = { }; an empty text removes it. Over 70 '
-                            . 'characters, search results cut it.',
+                            . 'ISO code: 255 at most; over 70 cut in search. Without < > = { }; an empty text removes it.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                     'meta_description' => [
                         'type' => 'object',
-                        'description' => 'Assistant, approved by the merchant. Per ISO code: 512 characters at '
-                            . 'most, without < > = { }; search results show about 160.',
+                        'description' => 'Assistant, approved by the merchant. Per ISO code: 512 at most; over '
+                            . '160 cut in search. Without < > = { }.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                     'link_rewrite' => [
@@ -300,14 +293,17 @@ class SomcpToolUpdateCmsSeo
 
                 return null;
             }
-        } elseif ($field === 'meta_title' && Tools::strlen($text) > self::META_TITLE_MAX) {
-            $errors[] = $where . ': ' . self::META_TITLE_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
-
-            return null;
-        } elseif ($field === 'meta_description' && Tools::strlen($text) > self::META_DESCRIPTION_MAX) {
-            $errors[] = $where . ': ' . self::META_DESCRIPTION_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
-
-            return null;
+        } elseif ($field === 'meta_title' || $field === 'meta_description') {
+            // Refused only past the column the back office stores, through the
+            // rule every SEO write shares; the advice it collects is dropped here
+            // because warnings() advises on the text actually stored, the page
+            // title included when no meta title is set.
+            $max = SomcpTool::columnSize($cms, self::COLUMNS[$field], $field === 'meta_title' ? 255 : 512);
+            $recommended = $field === 'meta_title' ? SomcpTool::META_TITLE_RECOMMENDED : SomcpTool::metaDescriptionRecommended();
+            $advice = [];
+            if (!SomcpTool::seoTextLength($where, Tools::strlen($text), $max, $recommended, $errors, $advice)) {
+                return null;
+            }
         }
 
         // The page's own rule for the column, the one update() would apply.

@@ -176,6 +176,13 @@ your shop shows them (for example **Main category** on PrestaShop 8 and
 **Default category** on PrestaShop 9), from one shared table, so a field never
 comes back under two different names.
 
+**A product's images read and given back are no longer refused.**
+When the assistant reads a product with `somcp_get_product`, changes one field
+and gives the whole answer back to `somcp_update_product`, the address each
+image came with is now ignored next to its `id_image`, instead of refusing the
+image as if it were being replaced. Any other address next to an `id_image` is
+still refused: an existing image cannot be swapped for another one.
+
 **A category's images and customer groups read and given back no longer count as a change.**
 When the assistant reads a category with `somcp_get_category`, changes one field
 and gives the whole answer back to `somcp_update_category`, the cover image and

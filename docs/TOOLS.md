@@ -48,10 +48,11 @@ there is none, is neither downloaded, written nor listed in `changes`
 (`SomcpToolCreateProduct::sameImage()`, the address compared without its
 scheme, as the get builds it: same host, same path). Removing an image stays the `remove_*` field's
 job; another address or an `upload_ref` is a new image. So far the brand and
-supplier logos (`somcp_update_manufacturer`, `somcp_update_supplier`) and the
+supplier logos (`somcp_update_manufacturer`, `somcp_update_supplier`), the
 category cover image and menu thumbnails (`somcp_update_category`, where the
 thumbnails, replaced as one list, are left alone when the whole list is the one
-read, in its order). A list of objects read back is taken where the write takes
+read, in its order) and the product images (`somcp_update_product`, where the
+`url` read beside an `id_image` is ignored). A list of objects read back is taken where the write takes
 their identifiers, and the schema says so: the `groups` of `somcp_get_category`
 go back to the category writes as they are.
 
@@ -2484,7 +2485,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | a translatable text | replaced in the languages filled, the others kept | kept in every language |
 | a set chosen as a whole in the back office: `categories`, `related_products`, `features`, `attachments`, `carriers`, `customization` fields | the set given replaces the old one entirely | kept |
 | `combinations` | an item with `id_product_attribute` changes that combination, field by field; an item without one creates a combination | kept |
-| `images` | an item with `id_image` changes its legend, cover, position or combinations; an item with `url` or `upload_ref` adds an image | kept |
+| `images` | an item with `id_image` changes its legend, cover, position or combinations, and may carry the `url` `somcp_get_product` returns for that image, which is ignored (any other `url` or an `upload_ref` beside an `id_image` is refused); an item with `url` or `upload_ref` adds an image | kept |
 | `specific_prices` | an item with `id_specific_price` changes it, field by field; an item without one adds it | kept |
 | `suppliers` | per supplier and combination, the values given replace the old ones | kept |
 | `pack.items` | the list given replaces the pack's contents entirely, compared with the `pack` table first so the same list writes nothing; refused on a product that is not a pack | kept |

@@ -216,7 +216,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $properties['images']['items']['properties'] = [
             'id_image' => ['type' => 'integer', 'description' => 'An image of this product, from somcp_get_product.'],
         ] + $properties['images']['items']['properties'];
-        $properties['images']['items']['properties']['url']['description'] = 'Public https address of an image to add. Give url or upload_ref, not both.';
+        $properties['images']['items']['properties']['url']['description'] = 'Public https address of an image to add. Give url or upload_ref, not both. '
+            . 'Beside an id_image, only the url somcp_get_product returns for that image, which is ignored.';
 
         $properties['combinations']['description'] = 'Merchant and assistant. With id_product_attribute, the values '
             . 'given replace that combination\'s, its attributes unchanged. Without, one is added: attributes '
@@ -1532,6 +1533,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                 continue;
             }
 
+            // somcp_get_product hands each image back with its url: given back
+            // beside its id_image, that address names the same image and is
+            // ignored, so a product read and given back whole changes nothing.
+            if (array_key_exists('url', $item) && !array_key_exists(SomcpUpload::ARG_REF, $item)
+                && self::ownImageUrl($item['url'], $product, $id)) {
+                unset($item['url']);
+            }
             if (array_key_exists('url', $item) || array_key_exists(SomcpUpload::ARG_REF, $item)) {
                 $errors[] = $path . ': id_image, or url or upload_ref, not both - an image cannot be replaced by another';
                 continue;
@@ -1600,6 +1608,36 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         }
 
         $plan['images'] = ['remove' => $remove, 'edits' => $edits, 'added' => $added];
+    }
+
+    /**
+     * Whether an address given beside an id_image is the one somcp_get_product
+     * returns for that image.
+     *
+     * The get builds the address from the product's friendly URL in the
+     * language it read, which the update is not told, so the address of each
+     * language is tried. The comparison is the shared one of the other image
+     * fields given back (sameImage()).
+     *
+     * @param mixed $url the url exactly as the assistant sent it
+     * @param Product $product loaded in every language
+     * @param int $idImage
+     *
+     * @return bool
+     */
+    private static function ownImageUrl($url, Product $product, int $idImage): bool
+    {
+        if (!is_string($url) || $idImage <= 0) {
+            return false;
+        }
+        $link = Somcp::legacyContext()->link ?? new Link();
+        foreach (array_unique(array_map('strval', (array) $product->link_rewrite)) as $rewrite) {
+            if (self::sameImage($url, SomcpProductImage::url($link, (int) $product->id, $rewrite, $idImage, 'large'))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

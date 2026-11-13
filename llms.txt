@@ -20,7 +20,7 @@ Key facts:
 - MCP address of a shop: `https://<shop>/module/somcp/mcp`, shown in the module under Shop Parameters > MCP server > Configuration.
 - Authorization: OAuth 2.1 with PKCE (S256) and dynamic client registration. The employee signs in on a page of the shop, types a code e-mailed to them, then approves. That page answers "page not found" unless Access and security > Consent page is on.
 - The assistant acts with exactly the back office rights of the employee who connected it, on the shops that employee is attached to.
-- Files: somcp_upload_file puts a file on the shop for another tool (downloaded from an address, sent by the assistant itself to a signed address, or dropped by the merchant on a back office page) and returns its upload_ref; somcp_download_file returns a file of the shop, such as an invoice PDF, inside its answer. Allowing the shop's domain in the assistant's network settings lets a sandboxed assistant send files itself.
+- Files: somcp_upload_file puts a file on the shop for another tool (downloaded from an address, sent by the assistant itself to a signed address, or dropped by the merchant on a back office page) and returns its upload_ref; somcp_download_file returns a file of the shop, such as an invoice PDF, inside its answer, at a signed address the assistant fetches itself, or on a back office page for the merchant. Allowing the shop's domain in the assistant's network settings lets a sandboxed assistant send files itself.
 
 ## Built-in chat
 

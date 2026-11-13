@@ -24,6 +24,7 @@ domain.
 | `/module/somcp/authorize` | `controllers/front/authorize.php` | Authorization endpoint. |
 | `/module/somcp/oauth?a=token`, `a=register`, `a=revoke` | `controllers/front/oauth.php` | Token, dynamic registration, revocation. |
 | `/module/somcp/deposit?u=…&e=…&s=…` | `controllers/front/deposit.php` | Where an assistant posts a file for a deposit itself, by a signed link from `somcp_upload_file`. |
+| `/module/somcp/file?f=…&e=…&s=…` | `controllers/front/file.php` | Where a file of the chat, or one `somcp_download_file` hands out, is read, by a signed link. |
 
 RFC 8414 anchors the authorization server document at the **domain root**. somcp
 puts it there through the `moduleRoutes` hook, which needs friendly URLs, and a
@@ -302,12 +303,14 @@ that signs the chat file links. It lasts fifteen minutes, like a deposit.
 
 `somcp_download_file` turns a reference into the file. It checks the scope that
 reads orders and the **view** right of the screen the document belongs to
-(`AdminOrders`), builds the file on demand with the core `PDF` class, so
-nothing is written to disk, and hands it over inside its answer, as an embedded
-resource, up to 4 MiB. With it, and in its place for a larger file, comes the
-link to `AdminSomcpDownloadController`, which serves the same file to the
-merchant: it requires the back office session of that same employee, so a
-leaked link is useless, and checks the same right.
+(`AdminOrders`) and builds the file on demand with the core `PDF` class. The
+file then leaves by three ways, as files come in by three: inside the answer,
+as an embedded resource, up to 4 MiB; at a signed address the assistant fetches
+itself - `SomcpUpload::share()` keeps it as a deposit for 15 minutes, through
+the same `admit()` check, and `controllers/front/file.php` serves it by the
+link the chat's files use; and on `AdminSomcpDownloadController`, which serves
+the same file to the merchant: it requires the back office session of that
+same employee, so a leaked link is useless, and checks the same right.
 
 The deposit page and the download page are the one place a tool answer holds
 the back office address, administration folder included: they are opened in the

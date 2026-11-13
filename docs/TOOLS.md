@@ -2347,9 +2347,11 @@ when it is called.
 **Nature**: no permission of its own; the right of the file asked for is checked · **Scope**: `mcp.access`
 
 **Does** - gives the file behind a `download_ref` (from
-`somcp_get_order_document` today): inside the answer, as an embedded resource,
-when it is 4 MiB or less, with the page that serves the same file to the
-merchant signed in to the back office.
+`somcp_get_order_document` today) by the same three ways every file leaves the
+shop: inside the answer, as an embedded resource, when it is 4 MiB or less; at
+a signed address the assistant fetches itself (`url`, a GET, 15 minutes), the
+door the chat's files use; and on the page that serves it to the merchant
+signed in to the back office.
 
 **Do not use for** - finding a document (→ `somcp_get_order_document`).
 
@@ -2359,10 +2361,12 @@ merchant signed in to the back office.
 |---|---|---|---|
 | `download_ref` | string | yes | the reference exactly as the other tool gave it |
 
-**Returns** - a text block with `file` (its name), `mime_type`, `bytes`,
-`page` (null when the back office address is not known yet), `inside` and
-`then`; with `inside` true, a second block of type `resource` holding the PDF
-(`blob`, base64). With `inside` false, the merchant is given the page.
+**Returns** - a text block with `file` (its name), `mime_type`, `bytes`, `url`
+and `expires_at` (null when the shop could not keep the file), `page` (null
+when the back office address is not known yet), `inside` and `then`; with
+`inside` true, a second block of type `resource` holding the PDF (`blob`,
+base64). With `inside` false, the assistant fetches `url` itself, or gives the
+merchant the page.
 
 **Errors** - under "Nothing was read.": a field the tool does not take;
 `download_ref` missing; expired (ask the tool that gave it again); not a
@@ -2373,8 +2377,13 @@ deleted since.
 
 **Notes** - the reference is checked by `SomcpDownload::check()`, the same
 check as the download page's. The PDF is built on demand from the shop's
-templates with the core `PDF` class; nothing is stored. The built-in assistant
-reads the text block only, so it hands the merchant the page.
+templates with the core `PDF` class, then kept as a deposit by
+`SomcpUpload::share()` for 15 minutes - the same store, the same check of the
+bytes and the same signed link (`controllers/front/file.php`) as any other
+file - and purged with the deposits. The link carries the hash of the deposit's
+reference and a signature, never the reference; anything wrong gets an empty
+404. The built-in assistant reads the text block only, so it hands the merchant
+the page.
 
 **Differences between 8.0.1 and 9.0.0** - none: the document objects, the
 `PDF` class and the download page are the same.

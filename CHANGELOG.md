@@ -31,8 +31,9 @@ others, whatever assistant you connect:
   formats and size - wherever the file comes from, and a module archive is
   never taken from a link.
 - `somcp_download_file` gives the assistant a file of the shop - an invoice, a
-  delivery slip, a credit slip - inside its answer, so it can read it or hand
-  it on, with the link for you to open it in your back office.
+  delivery slip, a credit slip - the same three ways: inside its answer, at an
+  address it fetches itself for 15 minutes, or through the link for you to
+  open it in your back office.
 
 Before, an assistant connected from outside could only give the shop a web
 address: a file it had made, or one you gave it, had no way in. Modules asking for files

@@ -974,6 +974,15 @@ if ($idInvoice > 0) {
     ]));
     $blob = (string) base64_decode((string) ($given['json']['result']['content'][1]['resource']['blob'] ?? ''));
     $see('the invoice comes back inside the answer, as a PDF', !$failed($given) && strncmp($blob, '%PDF', 4) === 0, $given);
+    // The address it gives is read like every shared file: rebuilt on the
+    // address the test serves, as the deposit door is.
+    $about = json_decode((string) ($given['json']['result']['content'][0]['text'] ?? ''), true);
+    $read = [];
+    parse_str((string) parse_url((string) ($about['url'] ?? ''), PHP_URL_QUERY), $read);
+    $fetched = $http('GET', $endpoint('file', http_build_query(array_intersect_key($read, ['f' => 1, 'e' => 1, 's' => 1]))));
+    $see('the invoice is read from its address too, as the same PDF', $fetched['status'] === 200 && $fetched['body'] === $blob, $fetched);
+    $expect('the address of the invoice with a forged signature', $http('GET', $endpoint('file', http_build_query(['f' => $read['f'] ?? '', 'e' => $read['e'] ?? 0, 's' => hash('sha256', 'forged')]))), 404);
+    $expect('the address of the invoice used to deposit', $post($endpoint('deposit', http_build_query(['u' => $read['f'] ?? '', 'e' => $read['e'] ?? 0, 's' => $read['s'] ?? ''])), 'x.pdf', $blob), 404);
     $narrow = $http('POST', $mcpUrl, $bearer($pair($readOnly)['access_token']), $rpc('tools/call', [
         'name' => 'somcp_download_file',
         'arguments' => ['download_ref' => $own['download_ref']],

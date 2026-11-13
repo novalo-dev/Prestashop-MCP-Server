@@ -79,11 +79,11 @@ When the merchant asks for an invoice, a delivery slip or a credit slip, call
 them with their `id_order_invoice` or `id_order_slip`.
 
 - It answers with a `download_ref`. Pass it to `somcp_download_file`: the PDF
-  comes back inside its answer when it is small enough, with a `page` that
-  opens it in the merchant's own signed-in back office only. Give that page to
-  the merchant as it is when they want the file themselves, or when the file
-  did not come back. The reference expires after 15 minutes: ask again after
-  that.
+  comes back inside its answer when it is small enough, at a `url` you can
+  fetch yourself, and with a `page` that opens it in the merchant's own
+  signed-in back office only. Give that page to the merchant as it is when
+  they want the file themselves, or when you could not get it. The reference
+  expires after 15 minutes: ask again after that.
 - An order without that document is refused with the ones it has. An invoice
   that does not exist yet is made with `somcp_generate_order_invoice`, in the
   guide for changing an order.

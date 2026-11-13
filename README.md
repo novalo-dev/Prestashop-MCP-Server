@@ -160,7 +160,8 @@ travel inside a conversation, so two tools carry them for all the others.
 `somcp_upload_file` puts a file on the shop for the tool that needs it - from a
 web address, sent by the assistant itself when it can make web requests, or
 dropped by you on a page of your back office when it cannot.
-`somcp_download_file` hands the assistant a file of the shop, with a link for
+`somcp_download_file` hands the assistant a file of the shop the same three
+ways: in its answer, at an address it fetches itself, or through a link for
 you. An assistant that runs code in a sandbox often limits which sites it may
 reach: allowing your shop's domain in the assistant's
 network or allowed-domains settings lets it send files without asking you. It

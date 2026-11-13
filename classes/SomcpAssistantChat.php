@@ -859,14 +859,7 @@ class SomcpAssistantChat
      */
     private static function fileUrl(string $reference): string
     {
-        $hash = SomcpRandom::hash($reference);
-        $expires = time() + self::FILE_TTL;
-
-        return Somcp::legacyContext()->link->getModuleLink('somcp', 'file', [
-            'f' => $hash,
-            'e' => $expires,
-            's' => self::signature($hash, $expires),
-        ], true);
+        return SomcpUpload::readUrl($reference, time() + self::FILE_TTL);
     }
 
     /**

@@ -27,7 +27,9 @@ declare(strict_types=1);
  * A link that fails any of the three gets the same empty 404 as a file that
  * does not exist, so nothing can be learnt by trying.
  *
- * Only deposits made by the chat can be served, and only until they expire.
+ * Only deposits made by the chat and files somcp_download_file hands out can
+ * be served, and only until they expire: the same link takes a file out of
+ * the shop for an assistant connected from outside, which fetches it itself.
  */
 
 if (!defined('_PS_VERSION_')) {

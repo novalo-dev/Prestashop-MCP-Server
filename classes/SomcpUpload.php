@@ -102,6 +102,12 @@ class SomcpUpload
     public const CHAT_MODULE = 'somcp-assistant';
 
     /**
+     * @var string marks the files the shop hands out through somcp_download_file,
+     *             which a signed link may serve as it serves the chat's
+     */
+    public const SHARE_MODULE = 'somcp-share';
+
+    /**
      * @var string Front controller an assistant sends the file of an invitation to, by itself.
      *
      * The page of the back office needs the merchant: a person signed in, a
@@ -493,7 +499,7 @@ class SomcpUpload
         $row = Db::getInstance()->getRow(
             'SELECT * FROM `' . _DB_PREFIX_ . "somcp_upload`
              WHERE `reference_hash` = '" . pSQL($hash) . "'
-               AND `module` <> '" . pSQL(self::CHAT_MODULE) . "'
+               AND `module` NOT IN ('" . pSQL(self::CHAT_MODULE) . "', '" . pSQL(self::SHARE_MODULE) . "')
                AND `expires_at` > '" . pSQL(date('Y-m-d H:i:s')) . "'"
         );
 
@@ -1322,11 +1328,12 @@ class SomcpUpload
      * @param string $path where it is now
      * @param bool $uploaded true for a file PHP received in this request, moved
      *                       with move_uploaded_file(); false for one the shop
-     *                       downloaded itself, which is renamed
+     *                       wrote or downloaded itself, which is renamed
+     * @param string $extension the format, when the name does not carry it
      *
      * @return string empty when kept, otherwise too_many, too_large, wrong_type or no_store
      */
-    private static function admit(array $invitation, string $name, string $path, bool $uploaded): string
+    private static function admit(array $invitation, string $name, string $path, bool $uploaded, string $extension = ''): string
     {
         $idUpload = (int) $invitation['id_upload'];
 
@@ -1339,7 +1346,7 @@ class SomcpUpload
             return 'too_large';
         }
 
-        $extension = Tools::strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+        $extension = Tools::strtolower($extension !== '' ? $extension : (string) pathinfo($name, PATHINFO_EXTENSION));
         $allowed = explode(' ', (string) $invitation['extensions']);
         if (!in_array($extension, $allowed, true) || !isset(self::ACCEPTED[$extension])) {
             return 'wrong_type';
@@ -1519,7 +1526,7 @@ class SomcpUpload
         $row = Db::getInstance()->getRow(
             'SELECT * FROM `' . _DB_PREFIX_ . "somcp_upload`
              WHERE `reference_hash` = '" . pSQL($referenceHash) . "'
-               AND `module` = '" . pSQL(self::CHAT_MODULE) . "'
+               AND `module` IN ('" . pSQL(self::CHAT_MODULE) . "', '" . pSQL(self::SHARE_MODULE) . "')
                AND `expires_at` > '" . pSQL(date('Y-m-d H:i:s')) . "'"
         );
         $file = is_array($row) && $row !== [] ? (self::deposited((int) $row['id_upload'])[0] ?? null) : null;
@@ -1537,12 +1544,62 @@ class SomcpUpload
     }
 
     /**
-     * Keeps a file the shop received itself - an image a provider generated
-     * for the built-in assistant - as a deposit of an employee.
+     * Hands a file of the shop out by the same door the chat's files use.
      *
-     * Same store, same formats, same check of the bytes against the
-     * extension as a file a merchant deposits: a provider's answer is not
-     * trusted more than an upload.
+     * The file is kept as a deposit and served by controllers/front/file.php
+     * through a signed link, for as long as a deposit lives: the same store,
+     * the same check and the same link as every other file, so a file going
+     * out takes no road of its own.
+     *
+     * @param int $idEmployee the account it is handed to
+     * @param string $name the file name, with its extension
+     * @param string $bytes
+     *
+     * @return array{url:string, expires_at:string}|null null when the shop could not keep it
+     */
+    public static function share(int $idEmployee, string $name, string $bytes): ?array
+    {
+        $extension = Tools::strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+        $reference = self::keep($idEmployee, $name, $bytes, $extension, self::SHARE_MODULE, self::TTL);
+        if ($reference === '') {
+            return null;
+        }
+        $expires = time() + self::TTL;
+
+        return ['url' => self::readUrl($reference, $expires), 'expires_at' => date('Y-m-d H:i:s', $expires)];
+    }
+
+    /**
+     * The signed link a deposit of the chat or a shared file is read from.
+     *
+     * It carries the hash of the reference, never the reference that redeems
+     * it: a link is read by whoever fetches it and may end up in their logs,
+     * and the hash only lets the file be looked at.
+     *
+     * @param string $reference
+     * @param int $expires
+     *
+     * @return string
+     */
+    public static function readUrl(string $reference, int $expires): string
+    {
+        $hash = SomcpRandom::hash($reference);
+
+        return Somcp::legacyContext()->link->getModuleLink('somcp', 'file', [
+            'f' => $hash,
+            'e' => $expires,
+            's' => SomcpAssistantChat::signature($hash, $expires),
+        ], true);
+    }
+
+    /**
+     * Keeps a file the shop holds itself - an image a provider generated for
+     * the built-in assistant, a document somcp_download_file hands out - as a
+     * deposit of an employee.
+     *
+     * Through admit(), as every file a merchant or an assistant deposits: a
+     * provider's answer is not trusted more than an upload, and a file going
+     * out is stored and served the way one coming in is.
      *
      * @param int $idEmployee
      * @param string $name shown to the merchant and to the model
@@ -1567,22 +1624,20 @@ class SomcpUpload
             return '';
         }
 
-        $storedAs = SomcpRandom::token(16) . '.' . $extension;
-        if (@file_put_contents($directory . $storedAs, $bytes) === false || !self::looksLike($directory . $storedAs, $extension)) {
-            @unlink($directory . $storedAs);
+        // The limits of a PHP upload do not apply to bytes the shop holds
+        // already; MAX_BYTES, checked above, does.
+        $invitation['max_bytes'] = strlen($bytes);
+        $temporary = $directory . SomcpRandom::token(16) . '.part';
+        $kept = @file_put_contents($temporary, $bytes) !== false
+            && self::admit($invitation, $name, $temporary, false, $extension) === '';
+        if (is_file($temporary)) {
+            @unlink($temporary);
+        }
+        if (!$kept) {
             self::forget((int) $invitation['id_upload']);
 
             return '';
         }
-        @chmod($directory . $storedAs, 0640);
-
-        Db::getInstance()->insert('somcp_upload_file', [
-            'id_upload' => (int) $invitation['id_upload'],
-            'file_name' => pSQL(Tools::substr($name, 0, 255)),
-            'mime_type' => pSQL(self::ACCEPTED[$extension]['mime']),
-            'stored_as' => pSQL($storedAs),
-            'file_size' => strlen($bytes),
-        ]);
 
         return $reference;
     }

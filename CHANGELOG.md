@@ -18,12 +18,11 @@ are:
 
 ## 2.0.0 - 2026-11-14
 
-A major version: files now travel only through the two file tools, so an
-assistant or an integration that read a photo, a logo or an attachment from an
-address in a tool's answer now gets a reference to pass to
-`somcp_download_file` instead. Compact mode lists six tools, and a module using
-the contract hands its files over through O'So MCP Server rather than through
-links of its own. Your settings, connections and conversations are kept.
+A major version, for compact mode: connected assistants can now receive six
+tools instead of the whole list, search the one they need and run it, with the
+same permissions and the same checks. It is on for a new shop and stays off
+for a shop that updates, until you turn it on in **Tools and prompts >
+Settings**. Your settings, connections and conversations are kept.
 
 ### Added
 

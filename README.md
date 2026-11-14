@@ -8,6 +8,8 @@
 [![UI tests](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/ui.yml/badge.svg?branch=develop)](https://github.com/novalo-dev/Prestashop-MCP-Server/actions/workflows/ui.yml)
 
 [![Release](https://img.shields.io/github/v/release/novalo-dev/Prestashop-MCP-Server?style=flat&label=release&color=007EC6)](https://github.com/novalo-dev/Prestashop-MCP-Server/releases/latest)
+[![Packagist](https://img.shields.io/packagist/v/novalo/prestashop-mcp-server?style=flat&label=packagist&color=007EC6)](https://packagist.org/packages/novalo/prestashop-mcp-server)
+[![MCP Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.modelcontextprotocol.io%2Fv0%2Fservers%2Fio.github.novalo-dev%252Fprestashop-mcp-server%2Fversions%2Flatest&query=%24.server.version&label=MCP%20Registry&color=007EC6)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.novalo-dev/prestashop-mcp-server)
 [![PrestaShop](.github/badges/prestashop.svg)](https://prestashop.com)
 [![PHP](.github/badges/php.svg)](https://php.net)
 [![MCP](.github/badges/mcp.svg)](https://modelcontextprotocol.io)

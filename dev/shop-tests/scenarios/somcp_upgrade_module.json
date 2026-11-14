@@ -1,9 +1,12 @@
 {
   "calls": [
     {"why": "an upload_ref no deposit carries is refused with the wording of the product tools, nothing replaced", "arguments": {"upload_ref": "no-such-deposit"}, "expect": "error", "contains": ["Nothing was upgraded", "upload_ref: no file of this account matches this upload_ref"]},
-    {"why": "a missing upload_ref is refused, naming the field", "arguments": {}, "expect": "error", "contains": ["Nothing was upgraded", "upload_ref:"]},
+    {"why": "neither an archive nor a name is refused, naming both ways", "arguments": {}, "expect": "error", "contains": ["Nothing was upgraded", "upload_ref:", "or name"]},
     {"why": "an empty upload_ref is refused, naming the field", "arguments": {"upload_ref": " "}, "expect": "error", "contains": ["upload_ref:"]},
-    {"why": "a link is never taken: an archive comes by upload_ref only, and every problem is listed at once", "arguments": {"url": "https://example.com/module.zip"}, "expect": "error", "contains": ["url: not taken", "by upload_ref only", "upload_ref:"]},
-    {"why": "a misspelt field is named with the shared line", "arguments": {"upload_ref": "no-such-deposit", "name": "mymodule"}, "expect": "error", "contains": ["name: not a field of this tool"]}
+    {"why": "an archive and a name at once are refused: one way only", "arguments": {"upload_ref": "no-such-deposit", "name": "somcp"}, "expect": "error", "contains": ["upload_ref, name: one of them"]},
+    {"why": "a name no module of the shop has is refused", "arguments": {"name": "somcpnosuchmodule"}, "expect": "error", "contains": ["name: no module of this shop has this name"]},
+    {"why": "a module whose files are the installed version has nothing to upgrade, and nothing is changed", "arguments": {"name": "somcp"}, "expect": "error", "contains": ["nothing to upgrade"]},
+    {"why": "a link is never taken: an archive comes by upload_ref only", "arguments": {"url": "https://example.com/module.zip"}, "expect": "error", "contains": ["url: not taken", "by upload_ref only"]},
+    {"why": "a misspelt field is named with the shared line", "arguments": {"upload_ref": "no-such-deposit", "module": "mymodule"}, "expect": "error", "contains": ["module: not a field of this tool"]}
   ]
 }

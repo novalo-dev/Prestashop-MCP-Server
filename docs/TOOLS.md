@@ -4294,7 +4294,7 @@ The modules present on the shop, their state and version.
 - a module already installed: refused and nothing changed ("already installed, version ...; upgrade it with somcp_upgrade_module and a newer archive"), since `ModuleManager::install()` would upgrade it;
 - the core refuses (no **add** right on the Module Manager), or the module's `install()` returns `false`: "The module was not installed", with the module's own messages (`getErrors()`) and the state read back, so nothing is claimed as installed.
 
-**Notes** - disk only: no archive, no `url`, no `upload_ref`; `install()` gets no source. Through the core's `ModuleManager`, reached by `ModuleManagerBuilder::getInstance()->build()`, the core's own entry point from legacy code on 8 and 9 (the Symfony container's service when there is one), with the token's employee on the context for the length of the call, so the module's install checks, hooks and tabs are set up as from the back office. What the module prints while installing is dropped. On a multistore installation the core installs for the shops of the current context. Not replayable: on a lost answer, read `somcp_get_module` instead of retrying.
+**Notes** - disk only: no archive, no `url`, no `upload_ref`; `install()` gets no source. Through the core's `ModuleManager` of the back office's container (`SomcpModules::throughCore()`): the MCP endpoint is no back office request, so the back office's kernel is booted for the call and its container made the one every module reaches, then the previous one put back. Before that, `ps_distributionapiclient`, shipped with PrestaShop, threw on `actionBeforeInstallModule` for want of a back office service, and nothing could be installed from an assistant. With the token's employee on the context for the length of the call, the module's install checks (name, `ps_versions_compliancy`, `dependencies`, override conflicts, in `Module::install()`), hooks and tabs are set up as from the back office. Every shop is in maintenance during the install and put back as it was once the module is installed; a failed install leaves it in maintenance and says so. What the module prints while installing is dropped. On a multistore installation the core installs for the shops of the current context. Not replayable: on a lost answer, read `somcp_get_module` instead of retrying.
 
 **Differences between 8.0.1 and 9.0.0** - the install event is dispatched even after a failed install on 8.0.1, only after a success on 9.0.0: the state is read back in both cases rather than assumed. 9.0.0 also refreshes the translation catalogues before installing and can install from a remote zip; neither changes the tool.
 
@@ -4330,7 +4330,7 @@ No `url`: a link read anywhere would become code running on the shop. No `name`:
 - The archive is not handed to the core's `ZipSourceHandler`, which extracts every entry over any folder already there and turns the install of a module already installed into an upgrade: it is checked, extracted into a folder of its own under `var/somcp/`, moved to `modules/<name>` in one rename, then installed through the function of `somcp_install_module`, with no source. The work folder is removed whatever happens.
 - Its own scope, `mcp.modules.upload`, apart from `mcp.modules.write`: the merchant consents to code from outside the shop running with the shop's rights.
 - Not replayable: the deposit is used up by the call; on a lost answer, read `somcp_get_module` instead of retrying.
-- Multistore: the folder is shared by every shop, the install is for the shops of the token's context, as `somcp_install_module`.
+- Multistore: the folder is shared by every shop, the install is for the shops of the token's context, as `somcp_install_module`, whose maintenance it shares: every shop is closed during the install.
 
 **Differences between 8.0.1 and 9.0.0** - the core's archive handling is identical on both, and 9.0.0's `RemoteZipSourceHandler` is not used; the install differs as described in `somcp_install_module`.
 
@@ -4338,32 +4338,37 @@ No `url`: a link read anywhere would become code running on the shop. No `name`:
 **State**: written · [issue #255](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/255)
 **Nature**: `acts(ADD, 'AdminModulesSf')` · **Scope**: `mcp.modules.upload`
 
-**Does** - upgrades one installed module from a newer archive (`.zip`) the employee deposited on the shop: its files replaced, then its `upgrade/` scripts run, as uploading a newer archive of an installed module does in **Modules > Module Manager**; answers with the module as `somcp_get_module` reads it afterwards.
+**Does** - upgrades one installed module, as **Upgrade** in **Modules > Module Manager** does: from a newer archive (`.zip`) the employee deposited on the shop, its files replaced first, or from newer files already in its folder (put there by FTP or a deployment); then its `upgrade/` scripts run. Answers with the module as `somcp_get_module` reads it afterwards.
 
-**Do not use for** - a new module (→ `somcp_upload_module`); a module on disk but not installed (→ `somcp_install_module`); newer files already on disk with no archive; downgrading; enabling or disabling (→ `somcp_set_module_active`); a module from a link or the marketplace.
+**Do not use for** - a new module (→ `somcp_upload_module`); a module on disk but not installed (→ `somcp_install_module`); downgrading; enabling or disabling (→ `somcp_set_module_active`); a module from a link or the marketplace.
 
 **Parameters**
 
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
-| `upload_ref` | **Upload a module** | string | yes | a `.zip` already on the shop: attached to the chat, or from `somcp_upload_file` with `for` set to `somcp_upgrade_module` (kind `archive`, never by `url`) |
+| `upload_ref` | **Upload a module** | string | one of the two | a `.zip` already on the shop: attached to the chat, or from `somcp_upload_file` with `for` set to `somcp_upgrade_module` (kind `archive`, never by `url`) |
+| `name` | **Upgrade** on the module's card | string | one of the two | the technical name of a module whose files on disk are newer than its installed version (`needs_upgrade` in `somcp_get_module`) |
 
-**Then** - the archive passes the checks of `somcp_upload_module` (`SomcpToolUploadModule::check()`, shared), except that `modules/<name>` must exist under that exact name. The module must be installed on the token's shop, and the version the archive declares, read without running it (`<version>` of `config.xml`, else `$this->version` of `<name>.php`), must be higher than the installed one. The current folder is moved aside into the work folder and the new one moved in, each in one rename. The new files are then checked as the back office checks a module before installing it, since the core's `ModuleManager::upgrade()` checks none of it: the module loads and answers with the archive's version, `Module::checkCompliancy()` (its `ps_versions_compliancy`), and each of its `dependencies` installed. Any of these failing puts the previous folder back. Then `ModuleManager::upgrade($name)` through `SomcpModules::throughCore()`, which runs `Module::initUpgradeModule()`, the module's `upgrade/upgrade-X.Y.Z.php` scripts and `upgradeModuleVersion()`.
+**Then** - with `upload_ref`: the archive passes the checks of `somcp_upload_module` (`SomcpToolUploadModule::check()`, shared), except that `modules/<name>` must exist under that exact name; the module must be installed on the token's shop, and the version the archive declares, read without running it (`<version>` of `config.xml`, else `$this->version` of `<name>.php`), must be higher than the installed one. The current folder is moved aside into the work folder and the new one moved in, each in one rename. With `name`: the module must be installed and its files newer than the installed version.
+
+Then the new files are checked as the back office checks a module before installing it, since the core's `ModuleManager::upgrade()` checks none of it: the module loads and answers with the expected version, `Module::checkCompliancy()` (its `ps_versions_compliancy`), and each of its `dependencies` installed. With an archive, any of these failing puts the previous folder back. Then `ModuleManager::upgrade($name, $source)`, through `SomcpModules::throughCore()` in the back office's container, which runs `Module::initUpgradeModule()`, the module's `upgrade/upgrade-X.Y.Z.php` scripts and `upgradeModuleVersion()`. `$source` is the archive when there is one: without it, `ps_distributionapiclient` downloads the module from PrestaShop's servers on `actionBeforeUpgradeModule`, over the files the merchant sent. With `name` there is no source, as with the back office's **Upgrade** button: a module PrestaShop distributes itself may then be downloaded in its latest version, as there.
+
+**Maintenance** - every shop goes in maintenance (`PS_SHOP_ENABLE` 0) from just before the files change until the upgrade went through, then each shop is put back as it was (one already in maintenance stays so). A refusal that changed nothing puts it back too. A failed upgrade leaves the shop in maintenance and says so: the merchant reopens it in **Shop Parameters > General > Maintenance** once they have checked it. The module's endpoints still answer during maintenance.
 
 **Returns** - `upgraded: true`, `version_before`, `version_after`, then the fields of `somcp_get_module` read back.
 
 **Errors** - in the shared envelope, `SomcpTool::refused('upgraded', ...)`: every problem at once under "Nothing was upgraded.":
-- the refusals of `somcp_upload_module` for the arguments and the archive;
-- no folder `modules/<name>`: a new module goes to `somcp_upload_module`; on disk but not installed: `somcp_install_module`;
+- both `upload_ref` and `name`, or neither; the refusals of `somcp_upload_module` for the archive;
+- no folder `modules/<name>` (→ `somcp_upload_module`); on disk but not installed (→ `somcp_install_module`); `name` of no module; files on disk at the installed version ("nothing to upgrade");
 - no version in the archive; a version not higher than the installed one;
-- the new files not loading as a module, answering with another version (the module already loaded in this request), made for other PrestaShop versions, or needing a module that is not installed: the current files are kept;
-- the upgrade itself failing: "The module was not upgraded", the core's message and the state read back. The new files stay, and what the scripts already changed in the database stays changed, as in the back office.
+- the new files not loading as a module, answering with another version (the module already loaded in this request), made for other PrestaShop versions, or needing a module that is not installed;
+- the upgrade itself failing: "The module was not upgraded", the core's message and the state read back. The new files stay, and what the scripts already changed in the database stays changed, as in the back office; the shop stays in maintenance.
 
 **Notes**
 - Loading the new files runs the module's main file, as the Module Manager does for every module it lists.
 - Same scope as `somcp_upload_module`, `mcp.modules.upload`: code from outside the shop runs with the shop's rights.
-- Not replayable: the deposit is used up; on a lost answer, read `somcp_get_module` instead of retrying. The assistant asks the merchant first: a payment or carrier module can stop orders while its scripts run.
-- Multistore: the files are shared by every shop; the upgrade runs once.
+- Not replayable: the deposit is used up; on a lost answer, read `somcp_get_module` instead of retrying. The assistant asks the merchant first.
+- Multistore: the files are shared by every shop; the upgrade runs once, and every shop is in maintenance meanwhile.
 - The core's access check asks the same right: `AdminModuleDataProvider::isAllowedAccess('upgrade')` wants `add` on `AdminModulesSf`.
 
 **Differences between 8.0.1 and 9.0.0** - `ModuleManager::upgrade()` is the same on both (8.0.1 line 164, 9.0.0 line 195); 9.0.0 also disables the module's hooks while it runs.

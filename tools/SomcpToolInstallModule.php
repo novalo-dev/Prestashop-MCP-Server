@@ -126,6 +126,7 @@ class SomcpToolInstallModule
      */
     protected static function install(string $folder, int $idShop, ?callable $onFailure = null, array $extra = []): array
     {
+        $maintenance = SomcpModules::maintenanceOn();
         $run = SomcpModules::throughCore($folder, static function ($manager) use ($folder): bool {
             return (bool) $manager->install($folder);
         });
@@ -136,6 +137,8 @@ class SomcpToolInstallModule
         // event even after a failure, so nothing is assumed either way.
         $module = SomcpModules::read($folder, $idShop) ?? ['name' => $folder, 'installed' => false];
         if ($installed && $module['installed']) {
+            SomcpModules::maintenanceOff($maintenance);
+
             return SomcpTool::json($module + $extra);
         }
 
@@ -146,8 +149,21 @@ class SomcpToolInstallModule
 
         return SomcpTool::text(
             'The module was not installed' . ($errors !== [] ? ': ' . implode(' ', $errors) : '.')
-                . ' State read back: ' . json_encode($module, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                . ' State read back: ' . json_encode($module, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+                . "\n\n" . self::stillInMaintenance(),
             true
         );
+    }
+
+    /**
+     * What the merchant is told when a module action failed after the shop
+     * was put in maintenance: it stays so until they have looked.
+     *
+     * @return string
+     */
+    protected static function stillInMaintenance(): string
+    {
+        return 'The shop was put in maintenance for this and stays in maintenance: tell the merchant, who reopens'
+            . ' it in Shop Parameters > General > Maintenance once they have checked the shop.';
     }
 }

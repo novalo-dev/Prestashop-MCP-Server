@@ -18,14 +18,23 @@ are:
 
 ### Added
 
-**Upgrade a module from its archive.** The assistant can now upgrade a module
-already installed with the archive of a newer version, as uploading it in
-**Modules > Module Manager** does (`somcp_upgrade_module`). It first checks, as
-PrestaShop does before installing a module, that the archive is the same
-module in a higher version, made for your PrestaShop version, with the modules
-it needs already installed; otherwise nothing is replaced. The previous files
-are put back if anything fails before the upgrade starts. Uploading a module
-still takes only modules that are not on the shop yet.
+**Upgrade a module.** The assistant can now upgrade a module already
+installed, as **Upgrade** in **Modules > Module Manager** does
+(`somcp_upgrade_module`): from the archive of a newer version you give it, or
+from newer files already in the module's folder, put there by FTP for
+example. It first checks, as PrestaShop does before installing a module, that
+the new version is higher, made for your PrestaShop version, with the modules
+it needs already installed; otherwise nothing is changed. With an archive, the
+previous files are put back if anything fails before the upgrade starts.
+Uploading a module still takes only modules that are not on the shop yet.
+
+**Your shop is in maintenance while a module is installed or upgraded.** The
+assistant closes the shop just before a module's files or scripts change it,
+and reopens it once everything went through, so customers never meet a module
+half installed. A shop you had already closed stays closed. If the install or
+the upgrade fails, the shop stays in maintenance and the assistant tells you:
+reopen it in **Shop Parameters > General > Maintenance** once you have checked
+it.
 
 ### Changed
 
@@ -37,6 +46,12 @@ error.
 3.6.0, with corrected apostrophes in its English and French texts.
 
 ### Fixed
+
+**Installing a module from the assistant works.** Installing or uploading a
+module from an assistant failed on every shop with the PrestaShop module that
+fetches modules from PrestaShop's servers, installed by default: it needs
+something only the back office provides, and stopped the install. The
+assistant now installs modules the way the back office does.
 
 **The file of a virtual product shows in the back office.** A virtual product
 the assistant created with its file, still offline, showed **Add downloadable

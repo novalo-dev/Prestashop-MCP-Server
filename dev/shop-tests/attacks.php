@@ -1158,6 +1158,35 @@ try {
         && ($upgradedSaid['version_before'] ?? '') === '1.0.0' && ($upgradedSaid['version_after'] ?? '') === '1.1.0'
         && $installedVersion() === '1.1.0'
         && (string) $db->getValue('SELECT `value` FROM `' . _DB_PREFIX_ . "configuration` WHERE `name` = '" . pSQL($upgradeKey) . "'") === '1.1.0', $upgraded);
+    // The shop went in maintenance for the upgrade, and is open again now
+    // that it went through.
+    $closed = (int) $db->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . "configuration` WHERE `name` = 'PS_SHOP_ENABLE' AND `value` = '0'");
+    $see('the shop is open again once the upgrade went through', $closed === 0, ['body' => (string) $closed]);
+
+    // Newer files put in the module's folder by hand, as an FTP upload does:
+    // the Upgrade button, with the module's name and no archive.
+    $onFtp = (string) tempnam(sys_get_temp_dir(), 'somcp-ftp');
+    file_put_contents($onFtp, somcpTestModuleArchive($upgradeName, '1.2.0', [
+        'upgrade/upgrade-1.2.0.php' => somcpTestUpgradeScript('1.2.0', $upgradeKey),
+    ]));
+    $ftp = new ZipArchive();
+    $ftp->open($onFtp);
+    $ftp->extractTo(_PS_MODULE_DIR_);
+    $ftp->close();
+    @unlink($onFtp);
+    $fromDisk = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_upgrade_module',
+        'arguments' => ['name' => $upgradeName],
+    ]));
+    $see('newer files already in the folder are upgraded by the module\'s name', !$failed($fromDisk)
+        && $installedVersion() === '1.2.0'
+        && (string) $db->getValue('SELECT `value` FROM `' . _DB_PREFIX_ . "configuration` WHERE `name` = '" . pSQL($upgradeKey) . "'") === '1.2.0', $fromDisk);
+    $nothing = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_upgrade_module',
+        'arguments' => ['name' => $upgradeName],
+    ]));
+    $see('a module whose files are the installed version has nothing to upgrade', $failed($nothing)
+        && strpos($said($nothing), 'nothing to upgrade') !== false, $nothing);
 } finally {
     $left = Module::getInstanceByName($upgradeName);
     if ($left instanceof Module && Module::isInstalled($upgradeName)) {

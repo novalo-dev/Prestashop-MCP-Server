@@ -17,20 +17,25 @@
 declare(strict_types=1);
 
 /*
- * somcp_upgrade_module - a newer .zip of an installed module, deposited on
- * the shop: its files replaced, then its upgrade scripts run, as uploading a
- * newer archive of an installed module does in Modules > Module Manager.
+ * somcp_upgrade_module - the Upgrade of a module in Modules > Module Manager,
+ * from a newer .zip deposited on the shop, or from newer files already in its
+ * folder.
  *
- * The other half of somcp_upload_module, which takes new modules only: the
- * archive passes the same checks (SomcpToolUploadModule::check()) and is
- * placed the same way, the current folder moved aside first and put back if
- * anything fails before the upgrade starts.
+ * With an archive, the other half of somcp_upload_module, which takes new
+ * modules only: the archive passes the same checks
+ * (SomcpToolUploadModule::check()) and is placed the same way, the current
+ * folder moved aside first and put back if anything fails before the upgrade
+ * starts. The archive is also handed to the core as the upgrade's source:
+ * without one, ps_distributionapiclient downloads the module from
+ * PrestaShop's servers on actionBeforeUpgradeModule, over the files the
+ * merchant sent.
  *
  * The core's ModuleManager::upgrade() runs the scripts and nothing else: it
  * checks neither the PrestaShop versions the module declares nor its
  * dependencies, which Module::install() checks for a new module. They are
  * checked here, on the new files, before the upgrade, as the back office
- * checks a module before installing it.
+ * checks a module before installing it. The shop is in maintenance from
+ * before the files change until the upgrade went through.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -52,22 +57,26 @@ class SomcpToolUpgradeModule extends SomcpToolUploadModule
         return new SomcpTool(
             'somcp_upgrade_module',
             Somcp::t('Upgrade a module'),
-            'Upgrades an installed module from a newer .zip deposited on the shop: its files replaced, then its '
-                . 'upgrade scripts run, like uploading a newer archive in Modules > Module Manager. upload_ref: a '
-                . '.zip from somcp_upload_file or attached to the chat; never a url. Refused unless the module is '
-                . 'installed, the archive is the same module, of a higher version, compatible with this PrestaShop, '
-                . 'with its dependencies installed. Ask the merchant first. Not to be retried on a lost answer: '
-                . 'check with somcp_get_module. A new module goes to somcp_upload_module.',
+            'Upgrades an installed module, like Upgrade in Modules > Module Manager: from a newer .zip deposited on '
+                . 'the shop (upload_ref, from somcp_upload_file or the chat; never a url), or from newer files '
+                . 'already in its folder (name, when somcp_get_module says needs_upgrade). Refused unless the new '
+                . 'version is higher, made for this PrestaShop, with its dependencies installed. The shop is in '
+                . 'maintenance meanwhile. Ask the merchant first. Not to be retried on a lost answer: check with '
+                . 'somcp_get_module. A new module goes to somcp_upload_module.',
             [
                 'type' => 'object',
                 'properties' => [
                     'upload_ref' => [
                         'type' => 'string',
-                        'description' => 'Reference of the .zip on the shop, from somcp_upload_file or attached to '
-                            . 'the chat. Used once.',
+                        'description' => 'Reference of the newer .zip on the shop, from somcp_upload_file or attached '
+                            . 'to the chat. Used once. Give upload_ref or name, not both.',
+                    ],
+                    'name' => [
+                        'type' => 'string',
+                        'description' => 'Technical name of a module whose newer files are already in its folder '
+                            . '(needs_upgrade in somcp_get_module). Give upload_ref or name, not both.',
                     ],
                 ],
-                'required' => ['upload_ref'],
                 'additionalProperties' => false,
             ],
             [SomcpScope::MODULES_UPLOAD],
@@ -88,14 +97,22 @@ class SomcpToolUpgradeModule extends SomcpToolUploadModule
     public static function handle(array $arguments, array $context): array
     {
         $problems = [];
-        foreach (SomcpTool::unknownFields($arguments, [SomcpUpload::ARG_REF]) as $line) {
+        foreach (SomcpTool::unknownFields($arguments, [SomcpUpload::ARG_REF, 'name']) as $line) {
             $problems[] = strpos($line, 'url:') === 0
                 ? 'url: not taken - a module archive comes by upload_ref only, deposited on the shop'
                 : $line;
         }
         $reference = $arguments[SomcpUpload::ARG_REF] ?? null;
-        if (!is_string($reference) || trim($reference) === '') {
-            $problems[] = 'upload_ref: a string, the reference of the .zip deposited on the shop';
+        $name = $arguments['name'] ?? null;
+        if ($reference !== null && $name !== null) {
+            $problems[] = 'upload_ref, name: one of them - an archive, or the files already in the module\'s folder';
+        } elseif ($name !== null) {
+            if (!is_string($name) || trim($name) === '') {
+                $problems[] = 'name: a string, the technical name of the module';
+            }
+        } elseif (!is_string($reference) || trim($reference) === '') {
+            $problems[] = 'upload_ref: a string, the reference of the .zip deposited on the shop; or name, for newer'
+                . ' files already in the module\'s folder';
         }
         if ($problems !== []) {
             return SomcpTool::refused('upgraded', $problems);
@@ -104,10 +121,11 @@ class SomcpToolUpgradeModule extends SomcpToolUploadModule
         // The shop comes from the token, never from the caller.
         $idShop = (int) Somcp::currentShop()->id;
         $idEmployee = (int) ($context['id_employee'] ?? 0);
-        $reference = trim((string) $reference);
 
-        return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($reference, $idShop): array {
-            return self::upgrade($reference, $idShop);
+        return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($reference, $name, $idShop): array {
+            return is_string($name)
+                ? self::fromDisk(trim($name), $idShop)
+                : self::fromArchive(trim((string) $reference), $idShop);
         });
     }
 
@@ -119,7 +137,7 @@ class SomcpToolUpgradeModule extends SomcpToolUploadModule
      *
      * @return array<string, mixed>
      */
-    private static function upgrade(string $reference, int $idShop): array
+    private static function fromArchive(string $reference, int $idShop): array
     {
         $work = self::workFolder();
         if ($work === '') {
@@ -156,42 +174,109 @@ class SomcpToolUpgradeModule extends SomcpToolUploadModule
                     . ', not higher than the installed ' . $installed . '; nothing was replaced']);
             }
 
+            // From here the shop's files change: customers see the maintenance
+            // page rather than a module half replaced.
+            $maintenance = SomcpModules::maintenanceOn();
             $placed = self::place($archive, $work, $name, true);
             if ($placed !== '') {
+                SomcpModules::maintenanceOff($maintenance);
+
                 return SomcpTool::refused('upgraded', ['upload_ref: ' . $placed]);
             }
 
             $unfit = self::unfit($name, $version);
             if ($unfit !== []) {
                 self::restore($work, $name);
+                SomcpModules::maintenanceOff($maintenance);
 
                 return SomcpTool::refused('upgraded', array_map(static function (string $reason): string {
                     return 'upload_ref: ' . $reason;
-                }, $unfit + [count($unfit) => 'the current files are kept']));
+                }, array_merge($unfit, ['the current files are kept'])));
             }
 
-            $run = SomcpModules::throughCore($name, static function ($manager) use ($name): bool {
-                return (bool) $manager->upgrade($name);
-            });
-            $after = SomcpModules::read($name, $idShop) ?? ['name' => $name, 'installed' => false];
-            if ($run['done'] && (string) ($after['version_installed'] ?? '') === $version) {
-                return SomcpTool::json(['upgraded' => true, 'version_before' => $installed, 'version_after' => $version] + $after);
-            }
-
-            // The scripts ran, or some of them: what they changed in the
-            // database cannot be told apart from here, so the new files stay,
-            // as the back office leaves them.
-            return SomcpTool::text(
-                'The module was not upgraded' . ($run['errors'] !== [] ? ': ' . implode(' ', $run['errors']) : '.')
-                    . ' Its new files are in place, and whatever its upgrade scripts already changed in the database'
-                    . ' stays changed. State read back: '
-                    . json_encode($after, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-                true
-            );
+            return self::run($name, $idShop, $installed, $version, $archive, $maintenance);
         } finally {
             Tools::deleteDirectory($work);
             @rmdir(rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::WORK_DIR);
         }
+    }
+
+    /**
+     * The Upgrade button of a module whose newer files are already in its
+     * folder, put there by FTP or by a deployment.
+     *
+     * @param string $name
+     * @param int $idShop
+     *
+     * @return array<string, mixed>
+     */
+    private static function fromDisk(string $name, int $idShop): array
+    {
+        $before = SomcpModules::read($name, $idShop);
+        if ($before === null) {
+            return SomcpTool::refused('upgraded', ['name: no module of this shop has this name; find it with somcp_list_modules']);
+        }
+        if (!$before['installed']) {
+            return SomcpTool::refused('upgraded', ['name: ' . $before['name'] . ' is not installed; it is installed with'
+                . ' somcp_install_module, not upgraded']);
+        }
+        if (!$before['needs_upgrade']) {
+            return SomcpTool::refused('upgraded', ['name: the files of ' . $before['name'] . ' are version '
+                . $before['version'] . ', the one installed; nothing to upgrade. A newer version comes as an archive,'
+                . ' with upload_ref']);
+        }
+
+        // The name the core knows the folder by, not the caller's spelling.
+        $name = (string) $before['name'];
+        $version = (string) $before['version'];
+        $unfit = self::unfit($name, $version);
+        if ($unfit !== []) {
+            return SomcpTool::refused('upgraded', array_map(static function (string $reason): string {
+                return 'name: ' . $reason;
+            }, array_merge($unfit, ['nothing was changed'])));
+        }
+
+        return self::run($name, $idShop, (string) $before['version_installed'], $version, null, SomcpModules::maintenanceOn());
+    }
+
+    /**
+     * The core's upgrade, then the answer read back.
+     *
+     * The maintenance ends only when the shop records the new version: a
+     * failure leaves it on, for the merchant to look before reopening.
+     *
+     * @param string $name
+     * @param int $idShop
+     * @param string $installed the version before
+     * @param string $version the version expected after
+     * @param string|null $archive the archive, handed to the core as the source; null for files already on disk
+     * @param array<int, string> $maintenance what SomcpModules::maintenanceOn() returned
+     *
+     * @return array<string, mixed>
+     */
+    private static function run(string $name, int $idShop, string $installed, string $version, ?string $archive, array $maintenance): array
+    {
+        $run = SomcpModules::throughCore($name, static function ($manager) use ($name, $archive): bool {
+            return (bool) $manager->upgrade($name, $archive);
+        });
+        $after = SomcpModules::read($name, $idShop) ?? ['name' => $name, 'installed' => false];
+        if ($run['done'] && (string) ($after['version_installed'] ?? '') === $version) {
+            SomcpModules::maintenanceOff($maintenance);
+
+            return SomcpTool::json(['upgraded' => true, 'version_before' => $installed, 'version_after' => $version] + $after);
+        }
+
+        // The scripts ran, or some of them: what they changed in the
+        // database cannot be told apart from here, so the new files stay,
+        // as the back office leaves them.
+        return SomcpTool::text(
+            'The module was not upgraded' . ($run['errors'] !== [] ? ': ' . implode(' ', $run['errors']) : '.')
+                . ' Its new files are in place, and whatever its upgrade scripts already changed in the database'
+                . ' stays changed. State read back: '
+                . json_encode($after, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+                . "\n\n" . self::stillInMaintenance(),
+            true
+        );
     }
 
     /**

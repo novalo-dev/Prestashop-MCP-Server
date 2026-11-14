@@ -191,6 +191,15 @@ yesterday" now has an answer. It needs the **view** right on **Stock**.
 
 ### Changed
 
+**Compact mode finds the right tool more often.** In compact mode the
+assistant can now say what it looks for in separate words - the action, the
+object and the request - and the search weighs the name, title, description and
+parameters of each tool, with plurals and near spellings found. The built-in
+assistant's tool finder uses the same search. The tools, their names and the
+checks on every call are unchanged. The search comes from Novalo's open-source
+library novalo/mcp-tool-discovery, which the module now installs with its other
+dependencies.
+
 **Photos you attach show in the chat.** A photo you attach in the built-in
 assistant now shows as a picture in your message, as soon as you send it and
 when you open the conversation again, instead of its file name only. A PDF or

@@ -227,7 +227,9 @@ jobs:
               || { echo "::error title=composer require failed::$(tail -n 40 composer.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
             [ -f shop/modules/somcp/somcp.php ] \
               || { echo "::error title=Wrong folder::composer did not install the module in modules/somcp"; exit 1; }
-            [ ! -e shop/vendor/novalo ] \
+            # vendor/novalo holds the search library the module requires; the
+            # module itself must not be there.
+            [ ! -e shop/vendor/novalo/prestashop-mcp-server ] \
               || { echo "::error title=Wrong folder::composer put the module in vendor/ instead of modules/somcp"; exit 1; }
           else
             # The module as a merchant receives it: git archive leaves out what

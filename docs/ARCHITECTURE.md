@@ -201,20 +201,33 @@ cache lifetime (a setting, five minutes by default) and `cacheScope: private`.
   `SomcpToolRegistry::isEnabled()` and `isAvailableTo()` as the Tools and
   prompts tab, so the finder never offers a tool the employee could not call,
   and a write still asks for approval. The keyword search itself is
-  `SomcpToolRegistry::search()`, shared with compact mode below.
+  `SomcpToolRegistry::search()`, which ranks with the search of
+  [novalo/mcp-tool-discovery](https://github.com/novalo-dev/mcp-tool-discovery)
+  (`SomcpCompact::rank()`), the one compact mode uses below.
 - Compact mode (`SomcpCompact`, setting `SOMCP_TOOLS_COMPACT`) does the same
   for MCP clients without keeping anything between calls, since the current
-  revision has no session. `tools/list` carries `somcp_ping` and three tools:
-  `somcp_search_tools` returns the tools the token may use with their schemas,
-  and `somcp_run_read_tool` / `somcp_run_write_tool` name the tool to run. The
-  endpoint unwraps a runner's call into the call of the tool it names before
-  any check, so that tool meets the switch, scope and permission checks of a
-  direct call, and a question it asks is sealed under its own name. Each
-  runner refuses the tools of the other kind (`SomcpToolRegistry::writes()`),
-  because a client reads the runner's flags to decide whether to ask the
-  merchant first. `prompts/get` puts a block in front of a guide saying which
-  runner each of its tools goes through. The four tools are answered whatever
-  the mode, so a client holding the other list until it expires still works.
+  revision has no session. It is the compact mode of the library
+  [novalo/mcp-tool-discovery](https://github.com/novalo-dev/mcp-tool-discovery),
+  pinned in `composer.json` and loaded by `Somcp::dependencies()`.
+  `tools/list` carries `somcp_ping` and three tools: `somcp_search_tools`
+  returns the tools the token may use with their schemas, found by the
+  library's search over the fields the assistant fills in (action, object,
+  description, or free keywords), and `somcp_run_read_tool` /
+  `somcp_run_write_tool` name the tool to run. Each runner refuses the tools of
+  the other kind, because a client reads the runner's flags to decide whether
+  to ask the merchant first. What a caller sees is decided by the shop's gate,
+  `Novalo\Somcp\Discovery\ShopGate`: what the full list would carry for the
+  token - switched on, covered by the scopes, allowed by the back office
+  permissions. Before the library is reached, the endpoint checks the tool a
+  runner names as a direct call is checked, so the refusals with a reason of
+  their own are the same - the message of a tool switched off, the 403 that
+  names a missing scope, the permission refused, each logged. The gate runs a
+  tool through the endpoint's own path, and a question the tool asks is sealed
+  under the tool's own name, which the runner's replay brings back to.
+  `prompts/get` puts a block in front of a guide saying which runner each of
+  its tools goes through. The four tools are answered whatever the mode, so a
+  client holding the other list until it expires still works.
+  `dev/package/contract.php` checks the part of the library the module calls.
 - `SomcpContract` is the translation layer for other modules: they return
   arrays from the hooks and from their handlers, and it turns those into tools,
   prompts and results. See [EXTENDING.md](EXTENDING.md).

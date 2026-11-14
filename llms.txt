@@ -12,7 +12,7 @@ Key facts:
 
 ## News
 
-- Compact mode, inspired by the MCP servers of Cloudflare and Azure: connected assistants receive four tools instead of the whole list - somcp_ping, somcp_search_tools (finds the tools the connection may use and gives their parameters), somcp_run_read_tool and somcp_run_write_tool (run a tool found that way, the second one flagged so assistants ask before a change). Same permissions, switches and checks as a direct call. Tools and prompts > Settings > Compact list of tools: on for a new shop, off for a shop that updates; an assistant on the latest protocol version follows a change once its copy of the list expires; the others (ChatGPT today) need their tools refreshed in their own settings. The built-in chat is not concerned.
+- Compact mode, inspired by the MCP servers of Cloudflare and Azure: connected assistants receive four tools instead of the whole list - somcp_ping, somcp_search_tools (finds the tools the connection may use and gives their parameters), somcp_run_read_tool and somcp_run_write_tool (run a tool found that way, the second one flagged so assistants ask before a change). Same permissions, switches and checks as a direct call. The search and the runners are those of the open-source library novalo/mcp-tool-discovery (search by action, object and description fields). Tools and prompts > Settings > Compact list of tools: on for a new shop, off for a shop that updates; an assistant on the latest protocol version follows a change once its copy of the list expires; the others (ChatGPT today) need their tools refreshed in their own settings. The built-in chat is not concerned.
 
 ## MCP server
 

@@ -423,9 +423,11 @@ class SomcpToolRegistry
      * and the other misses would make the same request work in one place only.
      * Each reads its own switches, as the two lists of the settings page do.
      *
-     * A tool counts one point per keyword found in its name, title or
-     * description. No keyword lists every tool the caller may use, in the
-     * registry's order.
+     * The ranking is the search of novalo/mcp-tool-discovery, the one compact
+     * mode uses: each tool's name, title, description and parameters are
+     * weighed, with near spellings and plurals found, and the tools far behind
+     * the best match are left out. No keyword lists every tool the caller may
+     * use, in the registry's order.
      *
      * @param string $query keywords in English, any separator
      * @param string $grantedScopes
@@ -436,30 +438,17 @@ class SomcpToolRegistry
      */
     public function search(string $query, string $grantedScopes, int $idEmployee, bool $chat = false): array
     {
-        $words = array_values(array_filter(preg_split('/[^a-z0-9_]+/', strtolower($query)) ?: []));
-        $found = [];
+        $usable = [];
         foreach ($this->tools as $tool) {
-            if (!self::isEnabled($tool->getName(), $chat) || !$tool->isAvailableTo($grantedScopes, $idEmployee)) {
-                continue;
+            if (self::isEnabled($tool->getName(), $chat) && $tool->isAvailableTo($grantedScopes, $idEmployee)) {
+                $usable[] = $tool;
             }
-            $described = $tool->describe();
-            $haystack = strtolower($tool->getName() . ' ' . $described['title'] . ' ' . $described['description']);
-            $score = 0;
-            foreach ($words as $word) {
-                $score += strpos($haystack, $word) !== false ? 1 : 0;
-            }
-            if ($words !== [] && $score === 0) {
-                continue;
-            }
-            $found[] = [$score, count($found), $tool];
         }
-        // Ties keep the registry's order, so the same query lists the same
-        // tools in the same order from one call to the next.
-        usort($found, static function (array $a, array $b): int {
-            return $b[0] <=> $a[0] ?: $a[1] <=> $b[1];
-        });
+        if (preg_match('/[a-z0-9_]/', strtolower($query)) !== 1) {
+            return $usable;
+        }
 
-        return array_column($found, 2);
+        return SomcpCompact::rank($query, $usable);
     }
 
     /**

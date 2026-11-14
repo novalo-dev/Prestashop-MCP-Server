@@ -181,7 +181,11 @@ assistants receive four tools instead of the whole list:
 | `somcp_run_write_tool` | ✎ Run a tool that changes the shop, flagged so assistants ask you first |
 
 Nothing else changes: the same permissions, the same switches, the same checks
-on every call. A tool the search does not offer cannot be run either. The guides
+on every call. A tool the search does not offer cannot be run either. The
+search and the runners come from Novalo's open-source library
+[novalo/mcp-tool-discovery](https://github.com/novalo-dev/mcp-tool-discovery):
+the assistant says the action, the object and the request in separate words,
+and the right tool comes first far more often than with one sentence. The guides
 (prompts) tell the assistant which runner each of their tools goes through.
 
 Turn it on or off in **Tools and prompts › Settings › Compact list of tools**:

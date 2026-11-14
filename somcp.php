@@ -134,9 +134,9 @@ class Somcp extends Module
     /**
      * Loads the module classes.
      *
-     * There is no autoloader and no Composer dependency, following the same
-     * choice as the other Novalo modules: one require per file, called from the
-     * entry points that need them.
+     * The classes of classes/ have no autoloader, following the same choice as
+     * the other Novalo modules: one require per file, called from the entry
+     * points that need them. What Composer brings is loaded by dependencies().
      */
     public static function bootClasses(): void
     {
@@ -144,6 +144,29 @@ class Somcp extends Module
             if (!class_exists($class, false)) {
                 require_once _PS_MODULE_DIR_ . 'somcp/classes/' . $class . '.php';
             }
+        }
+    }
+
+    /**
+     * Loads the module's Composer dependencies when nothing has yet.
+     *
+     * PrestaShop registers a module's autoloader through its Symfony kernel,
+     * which a legacy front controller of PrestaShop 8 never boots: there, the
+     * classes of vendor/ and of src/ were simply not found. One place for
+     * every entry point that needs them - the sign-in page's limits and
+     * anti-robot check, the tool search and compact mode. A shop that
+     * installed the module with Composer has them in its own vendor/ already.
+     */
+    public static function dependencies(): void
+    {
+        if (class_exists('RateLimit\\Rate') && class_exists('AltchaOrg\\Altcha\\Altcha')
+            && class_exists('Novalo\\McpToolDiscovery\\Discovery')
+            && class_exists('Novalo\\Somcp\\Security\\DbRateLimiter')) {
+            return;
+        }
+        $autoload = _PS_MODULE_DIR_ . 'somcp/vendor/autoload.php';
+        if (is_file($autoload)) {
+            require_once $autoload;
         }
     }
 
@@ -1373,15 +1396,14 @@ class Somcp extends Module
         // compact setting below the list decides whether connected assistants
         // get them, so they carry no switch of their own: two places deciding
         // the same thing would end up disagreeing.
-        foreach (SomcpCompact::tools() as $tool) {
-            $described = $tool->describe();
+        foreach (SomcpCompact::describeOwn() as $tool) {
             $list[] = [
-                'name' => $tool->getName(),
-                'title' => $described['title'],
-                'description' => $described['description'],
+                'name' => $tool['name'],
+                'title' => $tool['title'],
+                'description' => $tool['description'],
                 'module' => '',
                 'group' => SomcpScope::ACCESS,
-                'writes' => SomcpToolRegistry::writes($tool),
+                'writes' => $tool['writes'],
                 'on' => SomcpCompact::enabled(),
                 'chat' => false,
                 'fixed' => 'compact',

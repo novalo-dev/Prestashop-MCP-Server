@@ -16,6 +16,7 @@
 ![Multistore](.github/badges/multistore.svg)
 [![License](.github/badges/license.svg)](LICENSE.txt)
 [![Docs](.github/badges/docs.svg)](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
+[![O'So MCP Server for PrestaShop MCP server - quality and maintenance score on Glama](https://glama.ai/mcp/servers/novalo-dev/Prestashop-MCP-Server/badges/score.svg)](https://glama.ai/mcp/servers/novalo-dev/Prestashop-MCP-Server)
 
 **Talk to your PrestaShop shop from Claude, ChatGPT or the assistant built into your back office.**
 

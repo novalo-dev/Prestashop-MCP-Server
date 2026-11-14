@@ -184,6 +184,16 @@ jobs:
           tools: none
       - name: Every tool documented, scoped and in a prompt
         run: php .github/scripts/check-tools.php .
+      # The entry the MCP Registry workflow publishes, held to the registry's
+      # own schema here, so a bad edit fails a pull request and not a release.
+      - name: server.json valid for the MCP Registry
+        run: |
+          pip install --quiet jsonschema==4.23.0
+          SCHEMA=$(jq -r '."$schema"' server.json)
+          curl -fsSL "$SCHEMA" -o /tmp/server.schema.json
+          python3 -c 'import json, jsonschema; jsonschema.validate(json.load(open("server.json")), json.load(open("/tmp/server.schema.json")))'
+          [ "$(jq -r .name server.json)" = io.github.novalo-dev/prestashop-mcp-server ] \
+            || { echo "::error::server.json must keep the name the registry knows the module under"; exit 1; }
       - name: Every source file with the module's licence header
         # Reported, never fixed here: a bot commit would be unsigned, and a
         # pull request from a fork cannot be written to. The message gives

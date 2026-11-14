@@ -12,7 +12,7 @@ before starting something large, so two people do not build the same thing.
 
 ## The shop from A to Z
 
-The module has 139 tools today, listed in the [README](README.md#tools) and
+The module's tools are listed in the [README](README.md#tools) and
 described in [docs/TOOLS.md](docs/TOOLS.md): orders, catalogue, stock,
 customers, discounts, statistics, content, modules, appearance, system, SEO,
 AEO and sales. The last ones still to write are tracked as issues labelled

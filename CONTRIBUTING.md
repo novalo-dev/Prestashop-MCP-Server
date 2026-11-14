@@ -201,7 +201,8 @@ dev/package/build.sh /tmp/pack && php dev/package/addons-check.php /tmp/pack/som
 php .github/scripts/check-translations.php .
 
 # Every tool in the README, its entry, its scope, the CHANGELOG and a prompt,
-# and linked only to tools that exist
+# linked only to tools that exist, and the counts of llms.txt up to date
+# (add --write to put the counts in; the README badges count by themselves)
 php .github/scripts/check-tools.php .
 
 # Every table shop-scoped, no merchant setting stored globally

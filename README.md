@@ -11,6 +11,8 @@
 [![PrestaShop](.github/badges/prestashop.svg)](https://prestashop.com)
 [![PHP](.github/badges/php.svg)](https://php.net)
 [![MCP](.github/badges/mcp.svg)](https://modelcontextprotocol.io)
+[![Tools](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fbadges%2Ftools.json)](#tools)
+[![Prompts](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fbadges%2Fprompts.json)](docs/TOOLS.md#prompts)
 ![Multistore](.github/badges/multistore.svg)
 [![License](.github/badges/license.svg)](LICENSE.txt)
 [![Docs](.github/badges/docs.svg)](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
@@ -39,9 +41,9 @@ In the back office the module is called **O'So MCP Server**.
 [Cloudflare](https://blog.cloudflare.com/code-mode-mcp/) and
 [Azure](https://learn.microsoft.com/azure/developer/azure-mcp-server/concepts),
 which put thousands of operations within an assistant's reach without listing
-them all: connected assistants receive six tools instead of more than a
-hundred, search the one they need, then run it - with the same permissions and
-the same checks. [Compact mode](#compact-mode).
+them all: connected assistants receive six tools instead of the whole list,
+search the one they need, then run it - with the same permissions and the same
+checks. [Compact mode](#compact-mode).
 
 ---
 
@@ -59,9 +61,9 @@ the same checks. [Compact mode](#compact-mode).
 
 > "Who is the customer behind order #1042, and what else did they buy?"
 
-More than 90 tools cover orders, catalogue, stock, customers, statistics, SEO,
-content pages, modules and appearance, and more than 10 ready-made prompts guide
-the assistant through the usual jobs. [See them all](#tools).
+The tools cover orders, catalogue, stock, customers, statistics, SEO, content
+pages, modules and appearance, and ready-made prompts guide the assistant
+through the usual jobs. [See them all](#tools).
 
 ---
 
@@ -172,7 +174,7 @@ says so when it is blocked.
 
 ### Compact mode
 
-More than a hundred tools weigh on every request an assistant makes, and some
+A long list of tools weighs on every request an assistant makes, and some
 clients cap the count: VS Code stops at 128. In compact mode, connected
 assistants receive six tools instead of the whole list:
 
@@ -547,7 +549,7 @@ right of what they reach: a file is put on the shop only for a tool the
 assistant may use, and handed over only to an account that may use the tool
 that found it.
 
-**More than 10 prompts** ship with the module, such as finding an order,
+**Prompts** ship with the module, such as finding an order,
 changing an order status, checking stock, auditing SEO or getting recommended by
 AI assistants; each one is described in [docs/TOOLS.md](docs/TOOLS.md). The
 built-in assistant offers them too, each with its icon: those of

@@ -282,8 +282,8 @@ class SomcpToolListUnsoldProducts
                 // 0 is how PrestaShop stores a cost price nobody entered.
                 'wholesale_price' => $wholesale > 0 ? $wholesale : null,
                 'stock_value_tax_excl' => $wholesale > 0 ? round($quantity * $wholesale, $precision) : null,
-                'date_add' => SomcpToolSearchCustomers::isoDate($row['date_add']),
-                'last_sold' => SomcpToolSearchCustomers::isoDate($row['last_sold'] ?? null),
+                'date_add' => SomcpTool::isoDate($row['date_add']),
+                'last_sold' => SomcpTool::isoDate($row['last_sold'] ?? null),
             ];
         }
 

@@ -45,6 +45,16 @@ error.
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA
 3.6.0, with corrected apostrophes in its English and French texts.
 
+**Order dates say their time zone.** The assistant now reads every date of an
+order - when it was placed, its payments, shipments, status changes, invoices,
+delivery and credit slips, messages - with the time zone of your shop, as it
+already did for customers, so it no longer gets an hour wrong for a customer
+elsewhere or sees a gap between two tools that is not there. A date not set
+yet is given as empty instead of `0000-00-00`. A file the assistant hands
+over, an order document or a photo, says when its link stops working in your
+time zone too. Searching orders gives the order date as `date_add` beside
+`date`, which is kept for the tools already built on it.
+
 ### Fixed
 
 **Installing a module from the assistant works.** Installing or uploading a

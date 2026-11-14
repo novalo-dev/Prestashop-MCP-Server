@@ -132,7 +132,7 @@ class SomcpToolListCustomerGroups
                 'price_display_method' => (int) $row['price_display_method'] === 1 ? 'tax_excluded' : 'tax_included',
                 'show_prices' => (bool) $row['show_prices'],
                 'members_count' => $members[$idGroup] ?? 0,
-                'date_add' => SomcpToolSearchCustomers::isoDate($row['date_add']),
+                'date_add' => SomcpTool::isoDate($row['date_add']),
                 'default_for' => $defaultFor,
             ];
         }

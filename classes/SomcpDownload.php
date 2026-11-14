@@ -177,7 +177,7 @@ class SomcpDownload
 
         return [
             self::ARG_REF => implode('.', [$kind, $id, (string) $expires, self::signature($kind, $id, $idEmployee, $idShop, $expires)]),
-            'expires_at' => date('Y-m-d H:i:s', $expires),
+            'expires_at' => date('c', $expires),
         ];
     }
 
@@ -307,7 +307,7 @@ class SomcpDownload
 
         return [
             'url' => SomcpBackOffice::downloadUrl($query, $idEmployee),
-            'expires_at' => date('Y-m-d H:i:s', $expires),
+            'expires_at' => date('c', $expires),
         ];
     }
 
@@ -440,7 +440,7 @@ class SomcpDownload
                 'inside' => false,
                 // Read with a GET, no sign-in, until expires_at.
                 'url' => $shared['url'] ?? null,
-                'expires_at' => $shared['expires_at'] ?? null,
+                'expires_at' => SomcpTool::isoDate($shared['expires_at'] ?? null),
                 'page' => $page,
                 'then' => $chat
                     ? 'Give the merchant ' . ($page !== null ? 'the page, which opens the file in their own signed-in back office only.' : 'url, which opens the file until expires_at.')

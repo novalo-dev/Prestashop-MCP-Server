@@ -690,6 +690,30 @@ class SomcpTool
     }
 
     /**
+     * A database date as ISO 8601 with the shop's offset, or null when the
+     * column is empty.
+     *
+     * The database keeps the shop's local time with no zone, and PrestaShop
+     * sets PHP's default time zone to the shop's, so date('c') states which
+     * zone the hour is in. Every tool gives its dates here, so the same date
+     * read by two tools compares equal, and 0000-00-00 is never taken for a
+     * real day.
+     *
+     * @param mixed $value
+     *
+     * @return string|null
+     */
+    public static function isoDate($value): ?string
+    {
+        if (!is_string($value) || $value === '' || strpos($value, '0000-00-00') === 0) {
+            return null;
+        }
+        $time = strtotime($value);
+
+        return $time === false ? null : date('c', $time);
+    }
+
+    /**
      * One identifier from the arguments, or 0 when it is absent or not one.
      *
      * A cast would read an array or true as 1 and "abc" as 0, so a malformed

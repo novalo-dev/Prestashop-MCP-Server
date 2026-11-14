@@ -105,7 +105,7 @@ class SomcpToolGetOrder
             'order' => [
                 'id_order' => (int) $order->id,
                 'reference' => (string) $order->reference,
-                'date_add' => (string) $order->date_add,
+                'date_add' => SomcpTool::isoDate($order->date_add),
                 'valid' => (bool) $order->valid,
                 'currency' => (string) $currency->iso_code,
                 // The order's own language, the customer's, as the ISO code the
@@ -273,7 +273,7 @@ class SomcpToolGetOrder
             'company' => (string) $customer->company,
             'is_guest' => (bool) $customer->is_guest,
             'newsletter' => (bool) $customer->newsletter,
-            'date_add' => (string) $customer->date_add,
+            'date_add' => SomcpTool::isoDate($customer->date_add),
             'valid_orders_count' => (int) ($stats['nb_orders'] ?? 0),
             'total_spent' => (float) Tools::convertPrice((float) ($stats['total_orders'] ?? 0), (int) $order->id_currency),
             'total_spent_currency' => $currency,
@@ -537,7 +537,7 @@ class SomcpToolGetOrder
 
             $shipments[] = [
                 'id_order_carrier' => (int) $orderCarrier->id,
-                'date' => (string) $orderCarrier->date_add,
+                'date' => SomcpTool::isoDate($orderCarrier->date_add),
                 // The identifier somcp_set_order_carrier takes, so a read tells
                 // whether the carrier asked for is already the one in place.
                 'id_carrier' => (int) $orderCarrier->id_carrier,
@@ -607,7 +607,7 @@ class SomcpToolGetOrder
             // No card number, holder or expiry: the order page does not show
             // them, and they have no business leaving the shop.
             $payments[] = [
-                'date' => (string) $payment->date_add,
+                'date' => SomcpTool::isoDate($payment->date_add),
                 'amount' => (float) $payment->amount,
                 'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',
                 'payment_method' => (string) $payment->payment_method,
@@ -640,7 +640,7 @@ class SomcpToolGetOrder
                 // The Resend email action of each line of the Status tab
                 // points to it.
                 'id_order_history' => (int) $step['id_order_history'],
-                'date' => (string) $step['date_add'],
+                'date' => SomcpTool::isoDate($step['date_add']),
                 'status' => (string) $step['ostate_name'],
                 'status_id' => (int) $step['id_order_state'],
                 'employee' => trim((string) ($step['employee_firstname'] ?? '') . ' ' . (string) ($step['employee_lastname'] ?? '')),
@@ -672,7 +672,7 @@ class SomcpToolGetOrder
                 // So a billing tool can point to this invoice later.
                 'id_order_invoice' => (int) $invoice->id,
                 'number' => (string) $invoice->getInvoiceNumberFormatted((int) $order->id_lang),
-                'date' => (string) $invoice->date_add,
+                'date' => SomcpTool::isoDate($invoice->date_add),
                 'total_tax_excluded' => (float) $invoice->total_paid_tax_excl,
                 'total_tax_included' => (float) $invoice->total_paid_tax_incl,
                 // The note printed on the invoice PDF, so somcp_set_invoice_note
@@ -689,7 +689,7 @@ class SomcpToolGetOrder
             $slips[] = [
                 'id_order_slip' => (int) $slip['id_order_slip'],
                 'number' => sprintf('%s%06d', $slipPrefix, (int) $slip['id_order_slip']),
-                'date' => (string) $slip['date_add'],
+                'date' => SomcpTool::isoDate($slip['date_add']),
                 'total_tax_excluded' => (float) $slip['total_products_tax_excl'],
                 'total_tax_included' => (float) $slip['total_products_tax_incl'],
             ];
@@ -708,7 +708,7 @@ class SomcpToolGetOrder
             $deliverySlips[] = [
                 'id_order_invoice' => (int) $deliverySlip->id,
                 'number' => sprintf('%s%06d', $prefix, (int) $deliverySlip->delivery_number),
-                'date' => (string) $deliverySlip->delivery_date,
+                'date' => SomcpTool::isoDate($deliverySlip->delivery_date),
                 'total_tax_included' => (float) $deliverySlip->total_paid_tax_incl,
             ];
         }
@@ -729,7 +729,7 @@ class SomcpToolGetOrder
             // answered from what the customer asked.
             $byEmployee = (int) $message['id_employee'] > 0;
             $messages[] = [
-                'date' => (string) $message['date_add'],
+                'date' => SomcpTool::isoDate($message['date_add']),
                 'private' => (bool) $message['private'],
                 'from' => $byEmployee ? 'employee' : 'customer',
                 'from_name' => $byEmployee

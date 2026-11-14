@@ -35,8 +35,12 @@ asks for.
   every write tool). A name given back in a write answer is in the shop's
   default language, with `language` beside it.
 
-**Dates.** ISO 8601 in and out. Relative periods are worked out by the
-assistant, which already knows the shop's time zone.
+**Dates.** ISO 8601 in and out. A date and time a tool returns carries the
+shop's offset (`2026-11-05T08:00:00+01:00`) and is `null` when the field is
+empty, never `0000-00-00`; every tool gives them through `SomcpTool::isoDate()`.
+A day taken as a filter is `YYYY-MM-DD`, read by `SomcpTool::day()`. Relative
+periods are worked out by the assistant, which already knows the shop's time
+zone.
 
 **Amounts.** Always with their currency code, and always with tax or without
 said in the field name. Never a bare `total`.
@@ -448,7 +452,9 @@ or carts that were never paid for (→ Carts).
 | `language` | string | no | ISO code of one of the shop's active languages, for the country and status names, refused otherwise; the shop default when left out; given back as `language` in the answer |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - per order: `id_order`, `reference`, `date`, `customer_name`,
+**Returns** - per order: `id_order`, `reference`, `date_add` (ISO 8601 with
+the shop's offset, the name `somcp_get_order` uses) and `date` (the same value,
+the name kept for the clients built on it), `customer_name`,
 `new_client`, `company`, `phone`, `delivery_country` (name in the language
 read), `delivery_country_iso`, `total_paid_tax_incl`, `currency`,
 `payment_method`, `status`, `status_id`, `status_color`. Plus `returned`,
@@ -492,7 +498,10 @@ the default order.
 
 **Returns** - `order`, `customer`, `addresses` (delivery and invoice),
 `products`, `discounts`, `shipping`, `totals`, `payments`, `history`,
-`documents`, `messages`. Among them, what the order page shows:
+`documents`, `messages`. Every date (`order.date_add`, `customer.date_add`,
+the `date` of a shipment, payment, history step, invoice, delivery slip, credit
+slip or message) is ISO 8601 with the shop's offset, `null` when empty. Among
+them, what the order page shows:
 
 - `order`: `language` (the ISO code of the order's language, the customer's,
   which the names of the order are read in), `status` (`status_id`, the
@@ -806,8 +815,8 @@ order paid (→ `somcp_set_order_status`).
 | `id_order_invoice` | integer | when the order has an invoice | from `somcp_get_order` (`documents.invoices`), never guessed |
 
 **Returns** - `added`, `order` (`id_order` and `reference`), `id_order_payment`,
-`amount`, `currency`, `payment_method`, `transaction_id`, `payment_date` (in the
-shop's time), `id_employee` (who recorded it, as the **Employee** column of
+`amount`, `currency`, `payment_method`, `transaction_id`, `payment_date` (ISO
+8601 with the shop's offset, as it was recorded in the shop's time), `id_employee` (who recorded it, as the **Employee** column of
 9.0.0; `null` on 8.0.1, which has neither the column nor the argument, and
 matches `id_employee` of `payments[]` in `somcp_get_order`), `total_paid_real`
 after the payment, `total_tax_included` of the order, `order_currency`,
@@ -1502,7 +1511,8 @@ address (→ `somcp_set_order_address`).
 `previous_carrier` and `carrier` (`id_carrier`, `name`, as
 `somcp_list_carriers` names them), `previous_shipment` and `shipment`, each in
 the shape of one entry of `shipping.shipments` of `somcp_get_order` built by
-the same function, then the order totals after the change
+the same function (its `date` ISO 8601 with the shop's offset), then the order
+totals after the change
 (`shipping_tax_excluded`, `shipping_tax_included`, `total_tax_excluded`,
 `total_tax_included`) as `totals` of `somcp_get_order` names them, and
 `currency`. The carrier already in place is `changed: false` with a `reason`,
@@ -1859,7 +1869,8 @@ attaches the invoice).
 
 **Returns** - `generated`, `order` (`id_order` and `reference`), `invoice`
 (`id_order_invoice`, `number` formatted with the prefix for the order's shop as
-`payments[].invoice_number` of `somcp_get_order`, `date`, `total_tax_excluded`,
+`payments[].invoice_number` of `somcp_get_order`, `date` in ISO 8601 with the
+shop's offset, `total_tax_excluded`,
 `total_tax_included`, `currency`). When the order already has an invoice:
 `generated: false` with a `reason` and the existing invoice, and nothing
 happens.
@@ -1943,7 +1954,8 @@ it, → `somcp_set_order_status`).
 **Returns** - `order` (`id_order`, `reference`), `document`, `id_order_invoice`
 (invoice and delivery slip) or `id_order_slip` (credit slip) with the value
 `somcp_get_order` gives, `number` and `date` as `somcp_get_order` gives them,
-`download_ref`, `expires_at` and `then` (`somcp_download_file`).
+`download_ref`, `expires_at` (when the reference stops working, ISO 8601 with
+the shop's offset) and `then` (`somcp_download_file`).
 
 **Errors** - under "Nothing was read.", every problem at once, each named with
 its field: a field the tool does not take; `document` missing or unknown;

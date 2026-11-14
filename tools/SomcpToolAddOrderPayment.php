@@ -299,7 +299,7 @@ class SomcpToolAddOrderPayment
             'currency' => (string) $currency->iso_code,
             'payment_method' => $method,
             'transaction_id' => $transaction,
-            'payment_date' => $date,
+            'payment_date' => SomcpTool::isoDate($date),
             // Who recorded it, as the Employee column of the Payment block on
             // PrestaShop 9; null on 8.0.1, which has neither the column nor the
             // argument. Matches id_employee of payments[] in somcp_get_order.

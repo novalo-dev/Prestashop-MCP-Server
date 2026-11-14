@@ -99,9 +99,9 @@ class SomcpToolCreateProduct
             'reduction', 'reduction_type', 'reduction_tax', 'from', 'to',
         ],
         'supplier' => ['id_supplier', 'combination', 'product_supplier_reference', 'product_supplier_price_te', 'currency'],
-        'image' => ['url', 'upload_ref', 'legend', 'cover', 'position', 'combinations'],
+        'image' => ['url', 'upload_ref', 'download_ref', 'legend', 'cover', 'position', 'combinations'],
         'pack_item' => ['id_product', 'id_product_attribute', 'quantity'],
-        'file' => ['url', 'upload_ref'],
+        'file' => ['url', 'upload_ref', 'download_ref'],
         'combination' => [
             'attributes', 'default_on', 'reference', 'mpn', 'upc', 'ean13', 'isbn', 'quantity', 'location',
             'available_date', 'available_now', 'available_later', 'price_impact_tax_excl',

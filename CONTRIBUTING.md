@@ -372,8 +372,13 @@ any tool whose `acts()` is not a `view`.
    and goes through PrestaShop's own objects so every hook fires. A tool that
    takes a file declares the field in `files:` (`SomcpUpload::rule()` or
    `SomcpUpload::images()`), describes it with `SomcpUpload::schema()` and
-   reads it with `SomcpUpload::source()`; one that finds a file answers with a
-   `download_ref` from `SomcpDownload`. See [Files in and
+   reads it with `SomcpUpload::source()`; one that finds a file answers with
+   `SomcpDownload::offer()`, a `download_ref` for `somcp_download_file`, and
+   never with an address it builds itself - no exception, a photo or a logo
+   included (the Tools and prompts check refuses it). A new kind of file is an
+   entry of `SomcpDownload::KINDS` naming the tool that reads it, and a new way
+   for an assistant to send a file is an entry of `SomcpUpload::ENTRIES`,
+   never a tool of its own. See [Files in and
    out](docs/ARCHITECTURE.md#files-in-and-out).
 4. **Add the scope** if the entry names one `SomcpScope` does not declare yet
    (the first tool of a section does): a constant, its place in `core()`, and

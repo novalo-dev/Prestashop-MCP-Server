@@ -247,6 +247,33 @@ foreach ($shipped as $tool => $file) {
     }
 }
 
+// No tool hands out the address of a file itself: a file leaves the shop
+// through a download_ref (SomcpDownload::offer()) and somcp_download_file,
+// the one place that decides who may have it and how it travels. A tool that
+// built its own link would decide that alone. Only the download tool shares a
+// file at a signed address.
+$fileAddresses = [
+    '->getMediaLink(' => 'builds the address of a file of the shop',
+    '->getImageLink(' => 'builds the address of a product image',
+    '->getCatImageLink(' => 'builds the address of a category image',
+    '->getManufacturerImageLink(' => 'builds the address of a brand logo',
+    '->getSupplierImageLink(' => 'builds the address of a supplier logo',
+    "getPageLink('attachment'" => 'builds the address of an attachment',
+    'SomcpUpload::share(' => 'shares a file at an address of its own',
+    'SomcpUpload::readUrl(' => 'shares a file at an address of its own',
+];
+foreach (glob($root . '/tools/Somcp*.php') ?: [] as $file) {
+    if (basename($file) === 'SomcpToolDownloadFile.php') {
+        continue;
+    }
+    $source = (string) file_get_contents($file);
+    foreach ($fileAddresses as $call => $what) {
+        if (strpos($source, $call) !== false) {
+            $errors[] = 'tools/' . basename($file) . ": $what ($call); answer with SomcpDownload::offer() instead, see Files in and out in docs/ARCHITECTURE.md";
+        }
+    }
+}
+
 foreach (array_keys($listed) as $tool) {
     if (!isset($shipped[$tool]) && !isset($chatOnly[$tool])) {
         $errors[] = "README.md: lists $tool, which the module does not ship";

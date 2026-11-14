@@ -199,11 +199,11 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
         ];
 
         if (array_key_exists('logo', $arguments)) {
-            // A logo given back as somcp_get_supplier returned it - the shop's
-            // own file address, or null when there is none - is not a new logo
-            // and leaves plan['logo'] null, so nothing is downloaded or
-            // written. Any other address or an upload_ref is a real logo.
-            if (!SomcpUpload::same($arguments['logo'], SomcpToolGetSupplier::logoUrl((int) $supplier->id))) {
+            // A logo given back as somcp_get_supplier returned it - its
+            // download_ref, or null when there is none - is not a new logo and
+            // leaves plan['logo'] null, so nothing is downloaded or written.
+            // An address or an upload_ref is a real logo.
+            if (!SomcpUpload::same($arguments['logo'], 'supplier_logo', (string) $supplier->id)) {
                 $plan['logo'] = SomcpUpload::argument($arguments, 'logo', $errors, 'logo');
             }
         }

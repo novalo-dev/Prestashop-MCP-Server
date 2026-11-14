@@ -265,9 +265,13 @@ $run = static function (string $runner, string $tool, array $arguments = []) use
 $listed = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('tools/list'));
 $names = array_column((array) ($listed['json']['result']['tools'] ?? []), 'name');
 sort($names);
-$see('the list carries somcp_ping and the three tools of compact mode', $names === [
-    'somcp_ping', SomcpCompact::READ_TOOL, SomcpCompact::WRITE_TOOL, SomcpCompact::SEARCH_TOOL,
+$see('the list carries the pinned tools and the three tools of compact mode', $names === [
+    'somcp_download_file', 'somcp_ping', SomcpCompact::READ_TOOL, SomcpCompact::WRITE_TOOL, SomcpCompact::SEARCH_TOOL, 'somcp_upload_file',
 ], $listed);
+$upload = array_values(array_filter((array) ($listed['json']['result']['tools'] ?? []), static function ($tool): bool {
+    return is_array($tool) && ($tool['name'] ?? '') === 'somcp_upload_file';
+}))[0] ?? [];
+$see('the upload tool tells a client it takes a file of the conversation', ($upload['_meta']['openai/fileParams'] ?? null) === ['file'], $listed);
 
 $searched = $http('POST', $mcpUrl, $bearer($reader['access_token']), $rpc('tools/call', [
     'name' => SomcpCompact::SEARCH_TOOL,
@@ -987,8 +991,54 @@ if ($idInvoice > 0) {
         'name' => 'somcp_download_file',
         'arguments' => ['download_ref' => $own['download_ref']],
     ]));
-    $see('no invoice for a connection without the scope that reads orders', $failed($narrow) && strpos($said($narrow), 'may not view the documents of orders') !== false, $narrow);
+    $see('no invoice for a connection without the scope that reads orders', $failed($narrow) && strpos($said($narrow), 'may not read somcp_get_order_document') !== false, $narrow);
 }
+
+// Every way an assistant brings a file in ends in the same check: the bytes
+// as a data URI, and a file its client passes from the conversation.
+$entered = static function (array $arguments) use ($http, $mcpUrl, $bearer, $fileToken, $rpc): array {
+    return $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_upload_file',
+        'arguments' => ['for' => 'somcp_create_manufacturer', 'field' => 'logo'] + $arguments,
+    ]));
+};
+$byData = $entered(['data' => 'data:image/png;base64,' . base64_encode($png)]);
+$see('an image sent as a data URI is deposited', !$failed($byData) && strpos($said($byData), '"deposited": true') !== false, $byData);
+$scriptData = $entered(['data' => 'data:image/png;base64,' . base64_encode('<?php echo 1;')]);
+$see('a script sent as a data URI named as an image is refused', $failed($scriptData) && strpos($said($scriptData), 'Nothing was deposited') !== false, $scriptData);
+$typeData = $entered(['data' => 'data:application/x-php;base64,' . base64_encode('<?php echo 1;')]);
+$see('a data URI of a type the shop never stores is refused', $failed($typeData) && strpos($said($typeData), 'Nothing was deposited') !== false, $typeData);
+$privateFile = $entered(['file' => ['download_url' => 'https://127.0.0.1/logo.png', 'file_id' => 'file_1', 'file_name' => 'logo.png']]);
+$see('a client file at a private address is refused like any address', $failed($privateFile) && strpos($said($privateFile), 'private, local or reserved address') !== false, $privateFile);
+$archiveByFile = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['for' => 'somcp_upload_module', 'file' => ['download_url' => 'https://example.com/module.zip', 'file_id' => 'file_2']],
+]));
+$see('a module archive is never fetched from a client address either', $failed($archiveByFile) && strpos($said($archiveByFile), 'never fetched from an address') !== false, $archiveByFile);
+
+// A file found by a read tool leaves through the same door as a document,
+// an image as an image.
+$idImage = (int) $db->getValue('SELECT `id_image` FROM `' . _DB_PREFIX_ . 'image_shop` WHERE `id_shop` = ' . Somcp::currentShopId() . ' ORDER BY `id_image` ASC');
+if ($idImage > 0 && SomcpDownload::exists('product_image', (string) $idImage)) {
+    $photo = SomcpDownload::reference('product_image', $idImage, $idEmployee, Somcp::currentShopId());
+    $shown = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_download_file',
+        'arguments' => ['download_ref' => $photo['download_ref']],
+    ]));
+    $see('a product photo comes back as an image', !$failed($shown) && ($shown['json']['result']['content'][1]['type'] ?? '') === 'image', $shown);
+    $otherPhoto = SomcpDownload::reference('product_image', $idImage, $idEmployee + 1000, Somcp::currentShopId());
+    $stolenPhoto = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_download_file',
+        'arguments' => ['download_ref' => $otherPhoto['download_ref']],
+    ]));
+    $see('no photo for a download_ref made for another account', $failed($stolenPhoto) && strpos($said($stolenPhoto), 'not a reference made for this account') !== false, $stolenPhoto);
+}
+$traversal = SomcpDownload::reference('shop_logo', '..', $idEmployee, Somcp::currentShopId());
+$climbed = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_download_file',
+    'arguments' => ['download_ref' => $traversal['download_ref']],
+]));
+$see('a reference naming a path is not a file', $failed($climbed), $climbed);
 
 // ---------------------------------------------------------------------------
 if (isset($argv[3])) {

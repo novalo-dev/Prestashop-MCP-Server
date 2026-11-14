@@ -367,7 +367,7 @@
                             <label for="SOMCP_TOOLS_COMPACT_off">{l s='No' d='Modules.Somcp.Admin'}</label>
                             <a class="slide-button btn"></a>
                         </span>
-                        <p class="help-block">{l s='Connected assistants receive four tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.' d='Modules.Somcp.Admin'}</p>
+                        <p class="help-block">{l s='Connected assistants receive six tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 

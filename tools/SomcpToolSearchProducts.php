@@ -202,7 +202,6 @@ class SomcpToolSearchProducts
             return (int) $row['id_category_default'];
         }, $rows), $idLang, $idShop);
         $covers = self::covers($rows, $idShop);
-        $link = Somcp::legacyContext()->link ?? new Link();
 
         $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));
         $precision = Validate::isLoadedObject($currency) ? (int) $currency->precision : 2;
@@ -223,11 +222,10 @@ class SomcpToolSearchProducts
                 'active' => (bool) $row['active'],
                 'id_category_default' => (int) $row['id_category_default'],
                 'category_default' => $categories[(int) $row['id_category_default']] ?? '',
-                // The thumbnail of the Image column, so the assistant can show
-                // which product it means without reading each one.
-                'cover_image' => isset($covers[$id])
-                    ? SomcpProductImage::url($link, $id, (string) $row['link_rewrite'], $covers[$id], 'small')
-                    : null,
+                // The cover of the Image column, so the assistant can show
+                // which product it means without reading each one, through
+                // somcp_download_file as every file.
+                'cover_image' => isset($covers[$id]) ? SomcpDownload::offer('product_image', $covers[$id], $idShop) : null,
                 'ean13' => (string) $row['ean13'],
             ];
             if (isset($matched[$id])) {

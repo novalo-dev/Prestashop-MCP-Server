@@ -65,7 +65,8 @@ class SomcpToolGetProduct
                 . 'basics, categories, brand, references, features, attachments, stock, pack, virtual file, '
                 . 'shipping, pricing and tax, specific prices, SEO, options, suppliers, images and every '
                 . 'combination. Prices are the product\'s own: promotions are apart in specific_prices, never '
-                . 'mistaken for the price. id_product from somcp_search_products: never guess one. To find '
+                . 'mistaken for the price. The images and the virtual file come as download_ref, for '
+                . 'somcp_download_file. id_product from somcp_search_products: never guess one. To find '
                 . 'products from a name, a reference or an EAN13 use somcp_search_products.',
             [
                 'type' => 'object',
@@ -541,7 +542,7 @@ class SomcpToolGetProduct
     private static function virtualFile(Product $product): ?array
     {
         $query = new DbQuery();
-        $query->select('pd.`display_filename`, pd.`nb_downloadable`, pd.`date_expiration`, pd.`nb_days_accessible`, pd.`active`');
+        $query->select('pd.`id_product_download`, pd.`display_filename`, pd.`nb_downloadable`, pd.`date_expiration`, pd.`nb_days_accessible`, pd.`active`');
         $query->from('product_download', 'pd');
         $query->where('pd.`id_product` = ' . (int) $product->id);
         // The back office shows the latest file, active or not.
@@ -554,6 +555,9 @@ class SomcpToolGetProduct
         $expiration = self::date((string) ($row['date_expiration'] ?? ''));
 
         return [
+            // As virtual_file.file of the update takes it: given back, the
+            // update keeps the stored file.
+            'file' => SomcpDownload::offer('product_file', (int) $row['id_product_download'], Somcp::currentShopId()),
             'display_filename' => (string) $row['display_filename'],
             'nb_downloadable' => (int) $row['nb_downloadable'],
             'date_expiration' => $expiration === null ? null : date('c', (int) strtotime($expiration)),
@@ -774,8 +778,6 @@ class SomcpToolGetProduct
      */
     private static function images(Product $product, int $idLang, int $idShop): array
     {
-        $link = Somcp::legacyContext()->link ?? new Link();
-
         $images = [];
         foreach (Image::getImages($idLang, (int) $product->id, 0, $idShop) ?: [] as $row) {
             $idImage = (int) $row['id_image'];
@@ -784,7 +786,9 @@ class SomcpToolGetProduct
                 'position' => (int) $row['position'],
                 'cover' => (bool) $row['cover'],
                 'legend' => (string) $row['legend'],
-                'url' => SomcpProductImage::url($link, (int) $product->id, (string) $product->link_rewrite, $idImage, 'large'),
+                // The file through somcp_download_file, never an address of
+                // its own; given back beside its id_image, the update ignores it.
+                SomcpDownload::ARG_REF => SomcpDownload::offer('product_image', $idImage, $idShop)[SomcpDownload::ARG_REF] ?? null,
             ];
         }
 

@@ -174,7 +174,7 @@ class SomcpToolListCarriers
                 // From 0, as the other tools give a position; the list shows
                 // it from 1.
                 'position' => (int) $row['position'],
-                'logo' => self::logoUrl($id),
+                'logo' => SomcpDownload::offer('carrier_logo', $id, $idShop),
                 'tracking_url' => (string) $row['url'],
                 // Such a carrier's costs are computed by its module, not by
                 // the ranges of the carrier form.
@@ -189,25 +189,5 @@ class SomcpToolListCarriers
             'count' => count($carriers),
             'language' => $iso,
         ]);
-    }
-
-    /**
-     * Public URL of the carrier logo.
-     *
-     * The logo is not a column: the back office stores the uploaded file under
-     * the carrier identifier, and only that file tells whether there is one.
-     *
-     * @param int $idCarrier
-     *
-     * @return string|null null when the carrier has no logo
-     */
-    private static function logoUrl(int $idCarrier): ?string
-    {
-        if (!is_file(_PS_SHIP_IMG_DIR_ . $idCarrier . '.jpg')) {
-            return null;
-        }
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        return (string) $link->getMediaLink(_THEME_SHIP_DIR_ . $idCarrier . '.jpg');
     }
 }

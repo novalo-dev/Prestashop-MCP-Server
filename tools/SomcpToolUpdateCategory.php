@@ -507,10 +507,10 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
      * returned them.
      *
      * An assistant reads a category, changes one field and gives the whole
-     * answer back: the cover image address (or null when there is none) and
-     * the menu thumbnail addresses it read are not new images, and must not be
-     * refused nor downloaded and written again. They are dropped here, before
-     * categoryImages() reads the images, so they plan nothing. Any other
+     * answer back: the download_ref of the cover image (or null when there is
+     * none) and those of the menu thumbnails it read are not new images, and
+     * must not be refused nor downloaded and written again. They are dropped
+     * here, before categoryImages() reads the images, so they plan nothing. An
      * address or an upload_ref is a real image and stays; removing one stays
      * the remove_* fields' job.
      *
@@ -524,10 +524,8 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         if (!array_key_exists('cover_image', $arguments) && !array_key_exists('menu_thumbnails', $arguments)) {
             return $arguments;
         }
-        $stored = self::storedImages($idCategory);
-
         if (array_key_exists('cover_image', $arguments)
-            && SomcpUpload::same($arguments['cover_image'], $stored['cover_image'])) {
+            && SomcpUpload::same($arguments['cover_image'], 'category_image', (string) $idCategory)) {
             unset($arguments['cover_image']);
         }
 
@@ -536,11 +534,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         // On a version without them, the null the get returns is already
         // skipped by categoryImages().
         $given = $arguments['menu_thumbnails'] ?? null;
-        if ($stored['menu_thumbnails'] !== null && is_array($given) && array_is_list($given)
-            && count($given) === count($stored['menu_thumbnails'])) {
+        $slots = self::thumbnailSlots($idCategory);
+        if ($slots !== null && is_array($given) && array_is_list($given) && count($given) === count($slots)) {
             $same = true;
             foreach ($given as $i => $thumbnail) {
-                if (!SomcpUpload::same($thumbnail, $stored['menu_thumbnails'][$i])) {
+                if (!SomcpUpload::same($thumbnail, 'category_thumbnail', $idCategory . '-' . $slots[$i])) {
                     $same = false;
                     break;
                 }
@@ -659,8 +657,8 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         }
         $before = self::category((int) $category->id, (int) $languages['fallback'], $idShop);
         // The images given back as read were dropped by withoutImagesAsRead();
-        // any other address cannot be compared with a stored file, so it
-        // counts as a change. A removal counts only when there is one.
+        // an address cannot be compared with a stored file, so it counts as a
+        // change. A removal counts only when there is one.
         $covers = array_values(array_filter($plan['images'], static function (array $image): bool {
             return $image['for'] === 'cover_image';
         }));

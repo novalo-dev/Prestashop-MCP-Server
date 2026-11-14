@@ -44,9 +44,8 @@ class SomcpToolListAttachments
             Somcp::t('List files'),
             'Lists the files of Catalog > Files (manuals, data sheets) that a product can carry, with the '
                 . 'columns of that list, filtered by part of the name or of the file name. Take id_attachment from '
-                . 'here before creating or changing a product: never guess one. The file itself is never sent: '
-                . 'download_url is the public storefront link, which works without being signed in, so give it to '
-                . 'the merchant only, never paste it anywhere public. For the files of one product use '
+                . 'here before creating or changing a product: never guess one. Each file comes as a download_ref '
+                . 'for somcp_download_file. For the files of one product use '
                 . 'somcp_get_product. It cannot add a file.',
             [
                 'type' => 'object',
@@ -144,8 +143,6 @@ class SomcpToolListAttachments
             }
         }
 
-        $link = Somcp::legacyContext()->link ?? new Link();
-
         $attachments = [];
         foreach ($rows as $row) {
             $id = (int) $row['id_attachment'];
@@ -159,16 +156,9 @@ class SomcpToolListAttachments
                 'file_size' => (int) $row['file_size'],
                 'products_count' => $counts[$id] ?? 0,
                 'mime' => (string) $row['mime'],
-                // The storefront's own download link, served by the core
-                // attachment controller: the file stays in the shop.
-                'download_url' => (string) $link->getPageLink(
-                    'attachment',
-                    true,
-                    $idLang,
-                    ['id_attachment' => $id],
-                    false,
-                    $idShop
-                ),
+                // The file through somcp_download_file, as every file of the
+                // shop: no address of its own.
+                'file' => SomcpDownload::offer('attachment', $id, $idShop),
             ];
         }
 

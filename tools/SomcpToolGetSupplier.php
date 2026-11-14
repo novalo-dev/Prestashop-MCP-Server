@@ -52,8 +52,8 @@ class SomcpToolGetSupplier
             Somcp::t('Get a supplier'),
             'Returns what the supplier form of Catalog > Brands & Suppliers > Suppliers shows for one '
                 . 'supplier: name, Enabled, description, the contact details of its address with country and '
-                . 'state as ISO codes, the meta texts (keywords null on PrestaShop 9), the logo address (null '
-                . 'without one) and the number of products of this shop it supplies. id_supplier comes from '
+                . 'state as ISO codes, the meta texts (keywords null on PrestaShop 9), the logo (a download_ref for '
+                . 'somcp_download_file, null without one) and the number of products of this shop it supplies. id_supplier comes from '
                 . 'somcp_list_suppliers: never guess one. For the list use somcp_list_suppliers; '
                 . 'somcp_search_products has no supplier filter.',
             [
@@ -151,7 +151,7 @@ class SomcpToolGetSupplier
     public static function supplier(int $idSupplier, int $idLang, int $idShop): array
     {
         $supplier = new Supplier($idSupplier, $idLang);
-        $logo = self::logoUrl($idSupplier);
+        $logo = SomcpDownload::offer('supplier_logo', $idSupplier, $idShop);
 
         // meta_keywords is gone from PrestaShop 9: read from the object's
         // properties, since a property access is an unknown property to static
@@ -172,29 +172,6 @@ class SomcpToolGetSupplier
             'logo' => $logo,
             'products_count' => self::productsCount($idSupplier, $idShop),
         ];
-    }
-
-    /**
-     * The public address of a supplier's logo, or null when it has none.
-     *
-     * Shared with somcp_update_supplier, so the address the page hands out is
-     * the same one the update recognises when it is given back unchanged. Not
-     * Link::getSupplierImageLink(), which falls back on the "no picture" image
-     * of the language: a supplier without a logo must say so, not hand over a
-     * placeholder as if it were its logo.
-     *
-     * @param int $idSupplier
-     *
-     * @return string|null
-     */
-    public static function logoUrl(int $idSupplier): ?string
-    {
-        if (!is_file(_PS_SUPP_IMG_DIR_ . $idSupplier . '.jpg')) {
-            return null;
-        }
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        return (string) $link->getMediaLink(_THEME_SUP_DIR_ . $idSupplier . '.jpg');
     }
 
     /**

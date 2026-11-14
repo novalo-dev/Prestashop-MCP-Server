@@ -185,11 +185,11 @@ class SomcpToolUpdateManufacturer extends SomcpToolCreateManufacturer
         ];
 
         if (array_key_exists('logo', $arguments)) {
-            // A logo given back as somcp_get_manufacturer returned it - the
-            // shop's own file address, or null when there is none - is not a
-            // new logo and leaves plan['logo'] null, so nothing is downloaded
-            // or written. Any other address or an upload_ref is a real logo.
-            if (!SomcpUpload::same($arguments['logo'], SomcpToolGetManufacturer::logoUrl((int) $manufacturer->id))) {
+            // A logo given back as somcp_get_manufacturer returned it - its
+            // download_ref, or null when there is none - is not a new logo and
+            // leaves plan['logo'] null, so nothing is downloaded or written.
+            // An address or an upload_ref is a real logo.
+            if (!SomcpUpload::same($arguments['logo'], 'manufacturer_logo', (string) $manufacturer->id)) {
                 $plan['logo'] = SomcpUpload::argument($arguments, 'logo', $errors, 'logo');
             }
         }

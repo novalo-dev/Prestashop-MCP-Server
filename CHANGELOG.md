@@ -18,22 +18,27 @@ are:
 
 ### Added
 
-**Files go to and from any assistant.** Two new tools carry files for all the
-others, whatever assistant you connect:
+**Files go to and from any assistant.** Every file now goes through two new
+tools, whatever assistant you connect, and no other tool hands out a file or
+its address on its own:
 
 - `somcp_upload_file` puts a file on the shop for the tool that needs it - a
   product photo, a brand logo, the file of a virtual product, a module archive.
-  The assistant downloads it from an address when it has one; otherwise it
-  sends the file to the shop itself when it can, and only when it cannot does
-  it give you the deposit page to drop it on. If the assistant's own settings
-  block it from reaching your shop, it tells you once which address to allow
-  there, so it can do it alone next time. Each tool keeps its own rules -
-  formats and size - wherever the file comes from, and a module archive is
-  never taken from a link.
-- `somcp_download_file` gives the assistant a file of the shop - an invoice, a
-  delivery slip, a credit slip - the same three ways: inside its answer, at an
-  address it fetches itself for 15 minutes, or through the link for you to
-  open it in your back office.
+  A photo you attach in your ChatGPT conversation reaches the shop directly,
+  without a web address and without the deposit page; an assistant that holds
+  the file itself sends it in the call; one that has a web address gives it.
+  Otherwise the assistant sends the file to the shop itself when it can, and
+  only when it cannot does it give you the deposit page to drop it on. If the
+  assistant's own settings block it from reaching your shop, it tells you once
+  which address to allow there, so it can do it alone next time. Each tool
+  keeps its own rules - formats and size - whichever way the file comes, and a
+  module archive is never taken from a link.
+- `somcp_download_file` gives the assistant any file of the shop another tool
+  found - a product photo, a logo, an attachment, an invoice, a delivery slip,
+  a credit slip - the same three ways: inside its answer (a photo as a picture
+  the assistant can see), at an address it fetches itself for 15 minutes, or
+  through the link for you to open it in your back office. It is handed over
+  only to an account that may use the tool that found it.
 
 Before, an assistant connected from outside could only give the shop a web
 address: a file it had made, or one you gave it, had no way in. Modules asking for files
@@ -118,8 +123,9 @@ one call instead of going through every category one by one. It needs the
 **Compact mode.** More than a hundred tools weigh on every request a connected
 assistant makes, and some cap the count - VS Code stops at 128. In compact
 mode, inspired by the MCP servers of Cloudflare and Azure, connected
-assistants receive four tools instead of the whole list: `somcp_ping`,
-`somcp_search_tools` to find the tool they need and read its parameters, then
+assistants receive six tools instead of the whole list: `somcp_ping`, the two
+file tools `somcp_upload_file` and `somcp_download_file`, `somcp_search_tools`
+to find the tool they need and read its parameters, then
 `somcp_run_read_tool` or `somcp_run_write_tool` to run it - the second one
 flagged so the assistant asks you before a change. The same permissions, the
 same switches and the same checks apply to every call, and a guide (prompt)
@@ -190,6 +196,17 @@ status - so a question such as "who changed the stock of this product
 yesterday" now has an answer. It needs the **view** right on **Stock**.
 
 ### Changed
+
+**Photos, logos and files come through `somcp_download_file`.** The tools
+that read a product, a category, a brand, a supplier, an attribute value, the
+order statuses, the carriers, the theme or the files of **Catalog > Files** no
+longer give a web address for their pictures and files: each one now comes as
+a reference the assistant passes to `somcp_download_file`, which checks your
+rights again and hands the file over - a photo as a picture it can show and
+look at. The storefront link of a file of **Catalog > Files**, which opened
+for anyone who had it, is no longer handed out. Giving a read answer back to
+the matching update still changes nothing: the reference of the current photo,
+logo or texture keeps it as it is.
 
 **Compact mode finds the right tool more often.** In compact mode the
 assistant can now say what it looks for in separate words - the action, the

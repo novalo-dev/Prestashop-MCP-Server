@@ -214,7 +214,13 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
             $color = self::orderStatusColor($arguments['color'], $errors);
         }
 
-        $plan['icon'] = self::orderStatusIcon($arguments, $errors);
+        // The icon as somcp_list_order_statuses gave it - its download_ref,
+        // or null when there is none - is the stored one: nothing to fetch.
+        $given = $arguments;
+        if (array_key_exists('icon', $given) && SomcpUpload::same($given['icon'], 'order_state_icon', (string) $idSelf)) {
+            unset($given['icon']);
+        }
+        $plan['icon'] = self::orderStatusIcon($given, $errors);
         if (array_key_exists('remove_icon', $arguments)) {
             if (!is_bool($arguments['remove_icon'])) {
                 $errors[] = 'remove_icon: true or false';

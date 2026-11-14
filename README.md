@@ -39,7 +39,7 @@ In the back office the module is called **O'So MCP Server**.
 [Cloudflare](https://blog.cloudflare.com/code-mode-mcp/) and
 [Azure](https://learn.microsoft.com/azure/developer/azure-mcp-server/concepts),
 which put thousands of operations within an assistant's reach without listing
-them all: connected assistants receive four tools instead of more than a
+them all: connected assistants receive six tools instead of more than a
 hundred, search the one they need, then run it - with the same permissions and
 the same checks. [Compact mode](#compact-mode).
 
@@ -155,14 +155,16 @@ Where to paste the address in each of them:
 
 ### Files
 
-A product photo, a brand logo, a module archive, an invoice: files do not
-travel inside a conversation, so two tools carry them for all the others.
-`somcp_upload_file` puts a file on the shop for the tool that needs it - from a
-web address, sent by the assistant itself when it can make web requests, or
-dropped by you on a page of your back office when it cannot.
-`somcp_download_file` hands the assistant a file of the shop the same three
-ways: in its answer, at an address it fetches itself, or through a link for
-you. An assistant that runs code in a sandbox often limits which sites it may
+A product photo, a brand logo, a module archive, an invoice: every file goes
+through two tools, and no other tool hands out a file or its address on its
+own. `somcp_upload_file` puts a file on the shop for the tool that needs it -
+the file you attached in the assistant's conversation when its client passes
+it (ChatGPT does), the file itself sent in the call, a web address, sent by the
+assistant to the shop when it can make web requests, or dropped by you on a
+page of your back office when nothing else works. `somcp_download_file` hands
+the assistant any file of the shop another tool found - a photo, a logo, an
+attachment, an invoice: in its answer (a photo as a picture), at an address it
+fetches itself, or through a link for you. An assistant that runs code in a sandbox often limits which sites it may
 reach: allowing your shop's domain in the assistant's
 network or allowed-domains settings lets it send files without asking you. It
 says so when it is blocked.
@@ -171,11 +173,13 @@ says so when it is blocked.
 
 More than a hundred tools weigh on every request an assistant makes, and some
 clients cap the count: VS Code stops at 128. In compact mode, connected
-assistants receive four tools instead of the whole list:
+assistants receive six tools instead of the whole list:
 
 | Tool | What it does |
 |---|---|
 | `somcp_ping` | ● Test the connection |
+| `somcp_upload_file` | ● Put a file on the shop, kept in the list so the assistant's client can pass it a file |
+| `somcp_download_file` | ● Get a file from the shop |
 | `somcp_search_tools` | ● Search the shop tools, and give their parameters |
 | `somcp_run_read_tool` | ● Run a tool that only reads |
 | `somcp_run_write_tool` | ✎ Run a tool that changes the shop, flagged so assistants ask you first |
@@ -307,7 +311,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 |---|---|---|
 | `somcp_ping` | ● Test the connection | nothing |
 | `somcp_upload_file` | ● Put a file on the shop | the right of the tool the file is for |
-| `somcp_download_file` | ● Get a file from the shop | the right of the file: Orders › view for a document of an order |
+| `somcp_download_file` | ● Get a file from the shop | the right of the tool that reads the file: Orders › view for a document of an order, Products › view for a product photo |
 
 ### 🧾 Orders
 
@@ -539,7 +543,8 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 language and currency it is connected to. `somcp_upload_file` and
 `somcp_download_file` carry files for the other tools, so they ask for the
 right of what they reach: a file is put on the shop only for a tool the
-assistant may use, and handed over only to an account that may view it.
+assistant may use, and handed over only to an account that may use the tool
+that found it.
 
 **More than 10 prompts** ship with the module, such as finding an order,
 changing an order status, checking stock, auditing SEO or getting recommended by

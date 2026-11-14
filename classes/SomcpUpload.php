@@ -623,6 +623,7 @@ class SomcpUpload
             'properties' => [
                 'url' => ['type' => 'string', 'description' => 'Public https address of ' . $of . '. Give url or upload_ref, not both.'],
                 'upload_ref' => ['type' => 'string', 'description' => 'Reference of ' . $of . ' on the shop, from somcp_upload_file or the chat, exactly as given. Give url or upload_ref, not both.'],
+                SomcpDownload::ARG_REF => ['type' => 'string', 'description' => 'The download_ref the matching get gave for ' . $of . ': given back alone, it keeps the file as it is.'],
             ],
             'additionalProperties' => false,
         ];
@@ -645,6 +646,14 @@ class SomcpUpload
     {
         $url = trim(self::scalar($item['url'] ?? null));
         $reference = trim(self::scalar($item[self::ARG_REF] ?? null));
+        if (array_key_exists(SomcpDownload::ARG_REF, $item)) {
+            // Reached only when the reference did not name the file already
+            // stored here (same()): a download_ref keeps a file, it never
+            // brings one in.
+            $errors[] = $path . ': a download_ref only keeps the file the get gave it for; to put another file, its url or an upload_ref';
+
+            return null;
+        }
         if ($url !== '' && $reference !== '') {
             $errors[] = $path . ': url or upload_ref, not both';
 
@@ -696,54 +705,37 @@ class SomcpUpload
     }
 
     /**
-     * Whether an image field given back to an update carries the value its get
+     * Whether a file field given back to an update carries the value its get
      * returned for the stored file, so writing it would change nothing.
      *
-     * A get hands an image back as the public address of the shop's own file,
-     * or as null when there is none. Given back to the matching update under
-     * the same name, that value is not a new image: null when there is no file,
-     * or the file's own address as a bare string or as {"url": ...}. An
-     * upload_ref, or any other address, is a real image and is not matched
-     * here. The addresses are compared on their host and path, the scheme left
-     * aside since the get can answer in http while the assistant writes https.
-     * A file name alone would take a new photo that happens to share the stored
-     * file's name (3.jpg) for the stored one; the whole address is safe to
-     * compare because getMediaLink() picks the media server from the file
-     * path, so the same file always gets the same host.
+     * A get hands a file back as a download_ref (SomcpDownload::offer()), or
+     * as null when there is none. Given back to the matching update under the
+     * same name, that value is not a new file: null when there is no file, or
+     * {"download_ref": ...} naming this very file, bare or in its object. An
+     * url, an upload_ref or a reference to another file is a real change and
+     * is not matched here.
      *
      * @param mixed $given the field exactly as the assistant sent it
-     * @param string|null $current the address the get returns for the stored file, or null when there is none
+     * @param string $kind the kind of the stored file, one of SomcpDownload::KINDS
+     * @param string $id its identifier
      */
-    public static function same($given, ?string $current): bool
+    public static function same($given, string $kind, string $id): bool
     {
+        $exists = SomcpDownload::exists($kind, $id);
         if ($given === null) {
-            return $current === null;
-        }
-        if ($current === null) {
-            return false;
+            return !$exists;
         }
 
-        $url = null;
+        $reference = null;
         if (is_string($given)) {
-            $url = $given;
+            $reference = $given;
         } elseif (is_array($given) && !array_is_list($given)
-            && array_key_exists('url', $given) && !array_key_exists(self::ARG_REF, $given)
-            && is_string($given['url'])) {
-            $url = $given['url'];
-        }
-        if ($url === null) {
-            return false;
+            && is_string($given[SomcpDownload::ARG_REF] ?? null)
+            && !array_key_exists('url', $given) && !array_key_exists(self::ARG_REF, $given)) {
+            $reference = $given[SomcpDownload::ARG_REF];
         }
 
-        $url = trim($url);
-        $givenHost = SomcpHttp::authority($url);
-        $currentHost = SomcpHttp::authority($current);
-        if ($givenHost === null || $givenHost !== $currentHost) {
-            return false;
-        }
-        $givenPath = (string) (parse_url($url, PHP_URL_PATH) ?: '');
-
-        return $givenPath !== '' && $givenPath === (string) (parse_url($current, PHP_URL_PATH) ?: '');
+        return $exists && $reference !== null && SomcpDownload::names($reference, $kind, $id);
     }
 
     /**
@@ -1400,12 +1392,16 @@ class SomcpUpload
      *
      * @param array<string, mixed> $invitation the row from find()
      * @param string $url
+     * @param string $name the file name when the client gives it apart from
+     *                     an address that does not carry one
      *
      * @return string empty when kept, the reason otherwise, worded for an assistant
      */
-    public static function depositUrl(array $invitation, string $url): string
+    public static function depositUrl(array $invitation, string $url, string $name = ''): string
     {
-        $name = basename(rawurldecode((string) parse_url($url, PHP_URL_PATH)));
+        if ($name === '') {
+            $name = basename(rawurldecode((string) parse_url($url, PHP_URL_PATH)));
+        }
         $directory = self::directory();
         if ($directory === '') {
             return self::refusal('no_store', $invitation);
@@ -1425,6 +1421,202 @@ class SomcpUpload
                 @unlink($temporary);
             }
         }
+    }
+
+    /**
+     * @var array<string, array{address:bool, method:string}> The ways an assistant hands a file to somcp_upload_file, by argument.
+     *
+     * The protocol has no settled way yet for a client to pass a file the
+     * person attached in the conversation: each client has its own, or none,
+     * and a proposal of the protocol's own is still an experiment. Each way
+     * is an entry here - its argument, its schema (entrySchema()), what it
+     * declares to the client (entryMeta()) and how it turns what it is given
+     * into a file - and every entry ends in admit(), the one check a file
+     * passes whatever the door. A client that adds a way of its own is one
+     * more entry, never a tool or a road of its own. A client ignores the
+     * argument and the _meta key of a way it does not know.
+     *
+     * address is true when the file is fetched from an address: refused for a
+     * field whose file must come by deposit only (rule()).
+     */
+    public const ENTRIES = [
+        // An address of the file anywhere on the web, which the shop downloads.
+        'url' => ['address' => true, 'method' => 'enterUrl'],
+        // The bytes themselves, as an RFC 2397 data URI: the form the file
+        // input proposals of the protocol take (x-mcp-file), for a client that
+        // passes a file it holds, or an assistant that has the bytes in hand.
+        'data' => ['address' => false, 'method' => 'enterData'],
+        // ChatGPT's file parameters (_meta openai/fileParams): it puts the file
+        // attached in the conversation here, as an object with a temporary
+        // download_url, and the shop downloads it.
+        'file' => ['address' => true, 'method' => 'enterClientFile'],
+    ];
+
+    /**
+     * The arguments of somcp_upload_file that bring a file, one per entry.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function entrySchema(): array
+    {
+        return [
+            'url' => [
+                'type' => 'string',
+                'description' => 'Public https address of the file (no redirect), downloaded by the shop now.',
+            ],
+            'data' => [
+                'type' => 'string',
+                'format' => 'uri',
+                'description' => 'The file itself as a data URI, data:<media type>;base64,<content>, for a file you '
+                    . 'hold (small files: the whole call travels in one request).',
+                'x-mcp-file' => (object) [],
+            ],
+            'file' => [
+                'type' => 'object',
+                'description' => 'A file the person attached in your conversation, as your client passes it.',
+                'properties' => [
+                    'download_url' => ['type' => 'string', 'description' => 'Where the shop downloads the file.'],
+                    'file_id' => ['type' => 'string', 'description' => 'The identifier of the file in your client.'],
+                    'mime_type' => ['type' => 'string', 'description' => 'Its media type.'],
+                    'file_name' => ['type' => 'string', 'description' => 'Its name, with its extension.'],
+                ],
+                'required' => ['download_url', 'file_id'],
+            ],
+        ];
+    }
+
+    /**
+     * What somcp_upload_file declares to the clients that have a way of their
+     * own to pass a file, in its _meta.
+     *
+     * @return array<string, mixed>
+     */
+    public static function entryMeta(): array
+    {
+        return ['openai/fileParams' => ['file']];
+    }
+
+    /**
+     * Puts a file into an invitation through one entry.
+     *
+     * @param array<string, mixed> $invitation the row from find()
+     * @param string $entry one of ENTRIES
+     * @param mixed $value the argument as the assistant sent it
+     *
+     * @return string empty when kept, the reason otherwise, worded for an assistant
+     */
+    public static function enter(array $invitation, string $entry, $value): string
+    {
+        if (!isset(self::ENTRIES[$entry])) {
+            return 'not a way the shop takes a file';
+        }
+        $method = self::ENTRIES[$entry]['method'];
+
+        return (string) call_user_func([self::class, $method], $invitation, $value);
+    }
+
+    /**
+     * @param array<string, mixed> $invitation
+     * @param mixed $value
+     *
+     * @return string
+     */
+    private static function enterUrl(array $invitation, $value): string
+    {
+        $url = is_string($value) ? trim($value) : '';
+
+        return $url === '' ? 'the public https address of the file' : self::depositUrl($invitation, $url);
+    }
+
+    /**
+     * @param array<string, mixed> $invitation
+     * @param mixed $value
+     *
+     * @return string
+     */
+    private static function enterClientFile(array $invitation, $value): string
+    {
+        $url = is_array($value) && is_string($value['download_url'] ?? null) ? trim($value['download_url']) : '';
+        if ($url === '') {
+            return 'an object with the download_url your client gives for the file';
+        }
+
+        // The name decides the format admit() checks the bytes against, and a
+        // client's temporary address rarely ends with one.
+        $name = is_string($value['file_name'] ?? null) ? basename(trim($value['file_name'])) : '';
+        if ((string) pathinfo($name, PATHINFO_EXTENSION) === '') {
+            $extension = self::extensionOf(is_string($value['mime_type'] ?? null) ? $value['mime_type'] : '');
+            $name = $extension === '' ? $name : ($name !== '' ? $name : 'file') . '.' . $extension;
+        }
+
+        return self::depositUrl($invitation, $url, $name);
+    }
+
+    /**
+     * @param array<string, mixed> $invitation
+     * @param mixed $value
+     *
+     * @return string
+     */
+    private static function enterData(array $invitation, $value): string
+    {
+        $data = is_string($value) ? trim($value) : '';
+        if (preg_match('/^data:([A-Za-z0-9.+\/-]*)((?:;[^,;]*)*);base64,/', $data, $match) !== 1) {
+            return 'a data URI, data:<media type>;base64,<content>';
+        }
+
+        $encoded = (string) substr($data, strlen($match[0]));
+        // Measured before decoding, so an oversized value costs no memory.
+        if ((int) floor(strlen($encoded) * 3 / 4) > (int) $invitation['max_bytes'] + 2) {
+            return self::refusal('too_large', $invitation);
+        }
+        $bytes = base64_decode($encoded, true);
+        if (!is_string($bytes) || $bytes === '') {
+            return 'a data URI whose content is valid base64';
+        }
+
+        $extension = self::extensionOf($match[1]);
+        if ($extension === '') {
+            return self::refusal('wrong_type', $invitation);
+        }
+
+        $directory = self::directory();
+        if ($directory === '') {
+            return self::refusal('no_store', $invitation);
+        }
+        $temporary = $directory . SomcpRandom::token(16) . '.part';
+        try {
+            if (@file_put_contents($temporary, $bytes) === false) {
+                return self::refusal('no_store', $invitation);
+            }
+            $problem = self::admit($invitation, 'file.' . $extension, $temporary, false, $extension);
+
+            return $problem === '' ? '' : self::refusal($problem, $invitation);
+        } finally {
+            if (is_file($temporary)) {
+                @unlink($temporary);
+            }
+        }
+    }
+
+    /**
+     * The extension the shop stores a media type under, empty when it takes
+     * none of that type.
+     *
+     * @param string $mime
+     *
+     * @return string
+     */
+    private static function extensionOf(string $mime): string
+    {
+        $mime = Tools::strtolower(trim($mime));
+        foreach (self::ACCEPTED as $extension => $accepted) {
+            if ($accepted['mime'] === $mime) {
+                return $extension;
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -1814,6 +2006,27 @@ class SomcpUpload
     public static function accepted(): array
     {
         return array_keys(self::ACCEPTED);
+    }
+
+    /**
+     * The media type of an extension, for a file the shop hands out.
+     *
+     * From the same table the shop checks what comes in against, so a file
+     * goes out under the type it would have been let in under. A favicon is
+     * the one file the shop keeps that it never takes in.
+     *
+     * @param string $extension
+     *
+     * @return string
+     */
+    public static function mimeOf(string $extension): string
+    {
+        $extension = Tools::strtolower($extension);
+        if (isset(self::ACCEPTED[$extension])) {
+            return self::ACCEPTED[$extension]['mime'];
+        }
+
+        return $extension === 'ico' ? 'image/x-icon' : 'application/octet-stream';
     }
 
     /**

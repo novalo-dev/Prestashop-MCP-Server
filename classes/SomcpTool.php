@@ -99,7 +99,7 @@ class SomcpTool
      *                                   protocol requires: a vendor prefix ending in a
      *                                   slash, e.g. 'openai/fileParams'. Clients that do
      *                                   not know a key ignore it. Left empty, nothing is
-     *                                   sent - which is the case for every tool here.
+     *                                   sent.
      * @param array<string, array{accept: string|array<int, string>, bytes: int|callable(): int, url: bool}> $files
      *                                                                                                              the fields that take a file - their path in the
      *                                                                                                              arguments, e.g. virtual_file.file - and what each
@@ -156,8 +156,10 @@ class SomcpTool
         foreach ($meta as $key => $value) {
             $key = (string) $key;
             $slash = strrpos($key, '/');
-            $prefix = $slash === false ? '' : Tools::substr($key, 0, $slash);
-            $name = $slash === false ? $key : Tools::substr($key, $slash + 1);
+            // Byte offsets, from strrpos: a key that is not plain ASCII fails
+            // the patterns below whichever way it is cut.
+            $prefix = $slash === false ? '' : substr($key, 0, $slash);
+            $name = $slash === false ? $key : substr($key, $slash + 1);
 
             $labels = $prefix === '' ? [] : explode('.', $prefix);
             $wellFormed = $name !== ''
@@ -468,7 +470,13 @@ class SomcpTool
      */
     public function call(array $arguments, array $context): array
     {
-        return call_user_func($this->handler, $arguments, $context);
+        // The account the files this call finds are handed to: set here, the
+        // one place every call of every tool goes through, so a tool asks
+        // SomcpDownload::offer() for a file without carrying the caller down
+        // to every helper that describes one.
+        return SomcpDownload::asCaller((int) ($context['id_employee'] ?? 0), function () use ($arguments, $context): array {
+            return call_user_func($this->handler, $arguments, $context);
+        });
     }
 
     /** @var string Marks a result that is a question rather than an answer. */

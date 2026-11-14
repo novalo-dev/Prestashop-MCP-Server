@@ -921,38 +921,56 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     }
 
     /**
-     * The addresses somcp_get_category returns for the cover image and the
-     * menu thumbnails of a category.
+     * The cover image and the menu thumbnails of a category, as
+     * somcp_get_category returns them: a download_ref each, for
+     * somcp_download_file.
      *
      * One reading for the get and the update, so an image the update is given
      * back is compared with exactly what the get answered.
      *
      * @param int $idCategory
+     * @param int $idShop
      *
-     * @return array{cover_image: string|null, menu_thumbnails: array<int, string>|null}
+     * @return array{cover_image: array{download_ref:string}|null, menu_thumbnails: array<int, array{download_ref:string}|null>|null}
      */
-    protected static function storedImages(int $idCategory): array
+    protected static function storedImages(int $idCategory, int $idShop): array
     {
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        $cover = null;
-        if (is_file(_PS_CAT_IMG_DIR_ . $idCategory . '.jpg')) {
-            $cover = (string) $link->getMediaLink(_THEME_CAT_DIR_ . $idCategory . '.jpg');
-        }
+        $cover = SomcpDownload::offer('category_image', $idCategory, $idShop);
         // Null rather than an empty list where the version has no menu
         // thumbnails at all, as meta_keywords on PrestaShop 9.
         $thumbnails = null;
-        if (class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
+        $slots = self::thumbnailSlots($idCategory);
+        if ($slots !== null) {
             $thumbnails = [];
-            for ($slot = 0; $slot < self::MENU_THUMBNAILS_MAX; ++$slot) {
-                $file = $idCategory . '-' . $slot . '_thumb.jpg';
-                if (is_file(_PS_CAT_IMG_DIR_ . $file)) {
-                    $thumbnails[] = (string) $link->getMediaLink(_THEME_CAT_DIR_ . $file);
-                }
+            foreach ($slots as $slot) {
+                $thumbnails[] = SomcpDownload::offer('category_thumbnail', $idCategory . '-' . $slot, $idShop);
             }
         }
 
         return ['cover_image' => $cover, 'menu_thumbnails' => $thumbnails];
+    }
+
+    /**
+     * The slots of the menu thumbnails a category has, in their order, or
+     * null where the version has none.
+     *
+     * @param int $idCategory
+     *
+     * @return array<int, int>|null
+     */
+    protected static function thumbnailSlots(int $idCategory): ?array
+    {
+        if (!class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
+            return null;
+        }
+        $slots = [];
+        for ($slot = 0; $slot < self::MENU_THUMBNAILS_MAX; ++$slot) {
+            if (SomcpDownload::exists('category_thumbnail', $idCategory . '-' . $slot)) {
+                $slots[] = $slot;
+            }
+        }
+
+        return $slots;
     }
 
     /**
@@ -983,7 +1001,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             $groups[] = ['id_group' => (int) $idGroup, 'name' => $names[(int) $idGroup] ?? ''];
         }
 
-        $stored = self::storedImages($idCategory);
+        $stored = self::storedImages($idCategory, $idShop);
 
         // Fields one version has and the other does not are read from the
         // object's properties: the core declares them only where its definition

@@ -231,13 +231,13 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         ];
 
         self::valueNames($arguments, $languages, $idGroup, $idShop, $plan, $errors, false, (int) $attribute->id);
-        // The texture as somcp_get_attribute_value returned it - the address
-        // of the stored file, or null when there is none - is not a new one:
-        // it is left out, so nothing is fetched again or listed in changes.
-        // Any other address, or an upload_ref, is a real texture.
+        // The texture as somcp_get_attribute_value returned it - its
+        // download_ref, or null when there is none - is not a new one: it is
+        // left out, so nothing is fetched again or listed in changes. An
+        // address or an upload_ref is a real texture.
         $given = $arguments;
         if (array_key_exists('texture', $given)) {
-            if (SomcpUpload::same($given['texture'], SomcpToolGetAttributeValue::textureUrl((int) $attribute->id))) {
+            if (SomcpUpload::same($given['texture'], 'attribute_texture', (string) $attribute->id)) {
                 unset($given['texture']);
             } elseif ($given['texture'] === null && $colorGroup === true) {
                 // Read as "no texture", null would leave the stored one in
@@ -423,7 +423,7 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
             // The colour and texture stay stored, as when a group changes
             // type: only a group of type color draws them.
             $plan['colours_unused'] = $groupType !== 'color'
-                && ((string) $attribute->color !== '' || SomcpToolGetAttributeValue::textureUrl($idAttribute) !== null)
+                && ((string) $attribute->color !== '' || SomcpDownload::exists('attribute_texture', (string) $idAttribute))
                 && (string) (new AttributeGroup($idCurrent))->group_type === 'color';
         }
 
@@ -437,7 +437,7 @@ class SomcpToolUpdateAttributeValue extends SomcpToolCreateAttributeValue
         // A texture given is always a change: the one given back as read was
         // left out by planUpdate(), and what another address serves today
         // cannot be compared with the stored file without fetching it.
-        $oldTexture = SomcpToolGetAttributeValue::textureUrl($idAttribute);
+        $oldTexture = SomcpDownload::offer('attribute_texture', $idAttribute, $idShop);
         if ($plan['texture'] !== null) {
             self::record($plan, 'texture', $oldTexture, SomcpUpload::origin($plan['texture']));
         } elseif ($plan['remove_texture'] && $oldTexture !== null) {

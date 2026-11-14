@@ -20,20 +20,19 @@ declare(strict_types=1);
  * somcp_upload_file - puts a file on the shop for another tool, and answers
  * with the upload_ref that tool takes.
  *
- * A file cannot travel inside a conversation, and before this tool only the
- * built-in assistant and the modules using the contract could open a deposit:
- * an assistant connected from outside had no way to obtain an upload_ref.
- * Here it names the tool and the field the file is for, and the shop opens a
- * deposit with that field's own rules (SomcpTool::getFiles()), so asking
- * through this tool can never widen what a tool takes.
+ * A file cannot travel inside a conversation the way text does, and before
+ * this tool only the built-in assistant and the modules using the contract
+ * could open a deposit. Here the assistant names the tool and the field the
+ * file is for, and the shop opens a deposit with that field's own rules
+ * (SomcpTool::getFiles()), so asking through this tool can never widen what a
+ * tool takes.
  *
- * The file then gets in by one of three ways, all judged by the same check in
- * SomcpUpload, in the order an assistant should try them: the shop downloads
- * a public address the assistant gives; the assistant posts the bytes itself
- * to a signed address; the merchant deposits the file on the page of the back
- * office. The answer says all three, and what to tell the person when the
- * assistant's own environment blocks the second, since nothing on the shop's
- * side can know that in advance.
+ * The file then gets in by one of the ways of SomcpUpload::ENTRIES - an
+ * address the shop downloads, the bytes as a data URI, a file the client
+ * passes from its own conversation - or, when the call brings none, by the
+ * two ways the answer gives: the assistant posts the bytes itself to a signed
+ * address, or the merchant deposits the file on the page of the back office.
+ * Every one of them ends in the same check (SomcpUpload::admit()).
  *
  * It asks for no back office right of its own: what it opens is useless
  * without the tool it is for, and that tool's scopes and rights are checked
@@ -46,8 +45,8 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpToolUploadFile
 {
-    /** @var string[] The arguments the tool takes, so a misspelt one is refused by name. */
-    private const KEYS = ['for', 'field', 'url'];
+    /** @var string[] The arguments the tool takes besides its entries, so a misspelt one is refused by name. */
+    private const KEYS = ['for', 'field'];
 
     /**
      * @return SomcpTool
@@ -58,10 +57,11 @@ class SomcpToolUploadFile
             'somcp_upload_file',
             Somcp::t('Put a file on the shop'),
             'Puts a file on the shop for another tool and answers with its upload_ref, used once. Name the tool '
-                . '(for) and its field; the shop applies that field\'s formats and size. With url, the shop '
-                . 'downloads the file at once. Without, the answer says how to send it: POST it yourself to the '
-                . 'address given, or show the merchant the deposit page. Then pass upload_ref to the tool. A file '
-                . 'attached in the built-in chat already has one.',
+                . '(for) and its field; the shop applies that field\'s formats and size. Bring the file in this call '
+                . 'when you can, with one of: file (a file the person attached in your conversation, when your client '
+                . 'passes it), data (the bytes as a data URI) or url (a public address). Without any, the answer says '
+                . 'how to send it: POST it to the address given, or show the merchant the deposit page. Then pass '
+                . 'upload_ref to the tool. A file the merchant attached in this module\'s back office chat already has one.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -75,12 +75,7 @@ class SomcpToolUploadFile
                         'description' => 'Its argument that takes the file, e.g. images or virtual_file.file; '
                             . 'may be left out when the tool has only one.',
                     ],
-                    'url' => [
-                        'type' => 'string',
-                        'description' => 'Public https address of the file (no redirect), downloaded by the shop '
-                            . 'now. Left out, the answer says how to send it.',
-                    ],
-                ],
+                ] + SomcpUpload::entrySchema(),
                 'required' => ['for'],
                 'additionalProperties' => false,
             ],
@@ -90,7 +85,7 @@ class SomcpToolUploadFile
             // only of use to the tool named, whose scopes and rights the
             // handler checks before opening anything. It changes no shop data,
             // so it asks no confirmation; but each call opens a new deposit,
-            // and with url the shop reaches outside, which the hints say.
+            // and with an address the shop reaches outside, which the hints say.
             [
                 'permissions' => [],
                 'annotations' => [
@@ -99,7 +94,8 @@ class SomcpToolUploadFile
                     'idempotentHint' => false,
                     'openWorldHint' => true,
                 ],
-            ]
+            ],
+            SomcpUpload::entryMeta()
         );
     }
 
@@ -112,7 +108,7 @@ class SomcpToolUploadFile
     public static function handle(array $arguments, array $context): array
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
-        $problems = SomcpTool::unknownFields($arguments, self::KEYS);
+        $problems = SomcpTool::unknownFields($arguments, array_merge(self::KEYS, array_keys(SomcpUpload::ENTRIES)));
 
         $for = is_string($arguments['for'] ?? null) ? trim($arguments['for']) : '';
         $tool = $for === '' ? null : SomcpToolRegistry::getInstance()->get($for);
@@ -147,15 +143,17 @@ class SomcpToolUploadFile
             $problems[] = 'field: a string, the argument of the tool that takes the file';
         }
 
-        $url = null;
-        if (array_key_exists('url', $arguments)) {
-            $url = is_string($arguments['url']) ? trim($arguments['url']) : '';
-            if ($url === '') {
-                $problems[] = 'url: the public https address of the file, or left out';
-            } elseif ($rule !== null && !$rule['url']) {
-                $problems[] = 'url: not taken for ' . $for . ' ' . $field . ', whose file comes by deposit only;'
-                    . ' leave url out and send the file as the answer says';
-            }
+        // One entry at most: two ways of bringing a file in one call would
+        // leave the shop to choose which file was meant.
+        $given = array_values(array_intersect(array_keys(SomcpUpload::ENTRIES), array_keys($arguments)));
+        $entry = $given[0] ?? null;
+        if (count($given) > 1) {
+            $problems[] = implode(', ', $given) . ': one of them, not several';
+        } elseif ($entry !== null && ($arguments[$entry] === null || $arguments[$entry] === [] || (is_string($arguments[$entry]) && trim($arguments[$entry]) === ''))) {
+            $problems[] = $entry . ': ' . ($entry === 'url' ? 'the public https address of the file' : 'the file') . ', or left out';
+        } elseif ($entry !== null && $rule !== null && SomcpUpload::ENTRIES[$entry]['address'] && !$rule['url']) {
+            $problems[] = $entry . ': not taken for ' . $for . ' ' . $field . ', whose file is never fetched from an'
+                . ' address; send the bytes with data, or as the answer says';
         }
 
         if ($problems !== [] || $tool === null || $rule === null) {
@@ -174,13 +172,13 @@ class SomcpToolUploadFile
 
         $then = 'Then call ' . $for . ' with upload_ref ' . $reference . ' in ' . $field . '. It is used once.';
 
-        if ($url !== null) {
-            $refusal = SomcpUpload::depositUrl($invitation, $url);
+        if ($entry !== null) {
+            $refusal = SomcpUpload::enter($invitation, $entry, $arguments[$entry]);
             if ($refusal !== '') {
                 // The deposit stays open: the same file can still be sent by
-                // the other two ways, and the answer says them.
+                // the other ways, and the answer says them.
                 return SomcpTool::text(
-                    'url: ' . $refusal . ". Nothing was deposited from that address.\n\n"
+                    $entry . ': ' . $refusal . ". Nothing was deposited.\n\n"
                         . SomcpUpload::directions(SomcpBackOffice::uploadUrl($reference, $idEmployee), $reference, $invitation, $then),
                     true
                 );

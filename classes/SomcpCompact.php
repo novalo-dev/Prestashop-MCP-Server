@@ -23,14 +23,15 @@ declare(strict_types=1);
  *
  * Each tool an assistant is offered costs it room on every request, and some
  * clients cap the count (128 in VS Code). In compact mode tools/list carries
- * somcp_ping and three tools: the assistant searches the tool it needs, reads
- * its parameters, then runs it through one tool for reads and one for changes.
+ * the tools of PINNED and three tools: the assistant searches the tool it
+ * needs, reads its parameters, then runs it through one tool for reads and one
+ * for changes.
  *
  * The mode itself is the compact mode of novalo/mcp-tool-discovery: its three
  * tools, its search over the fields the assistant fills in, the rule that each
  * runner refuses the other kind of tool. This class only says what is the
  * shop's: the names under the somcp_ prefix, the titles in the merchant's
- * language, the groups of the settings page, somcp_ping kept in the list, and
+ * language, the groups of the settings page, the tools kept in the list, and
  * the gate (Novalo\Somcp\Discovery\ShopGate) that decides what a caller sees.
  * The endpoint keeps every refusal with a reason of its own, as for a direct
  * call.
@@ -65,6 +66,17 @@ class SomcpCompact
     public const SEARCH_TOOL = 'somcp_search_tools';
     public const READ_TOOL = 'somcp_run_read_tool';
     public const WRITE_TOOL = 'somcp_run_write_tool';
+
+    /**
+     * @var array<int, string> The tools listed as themselves in compact mode.
+     *
+     * somcp_ping, to check the connection before anything else. The two file
+     * tools, because what a client does with a file is read from the tool in
+     * its list - the _meta of its own file parameters, an x-mcp-file field -
+     * and a tool reached through a runner is never in that list: ChatGPT, for
+     * one, only passes a file attached in the conversation to a tool it lists.
+     */
+    private const PINNED = ['somcp_ping', 'somcp_upload_file', 'somcp_download_file'];
 
     /** @var int Tools a search describes in full, schemas included, at most. */
     private const MAX_DESCRIBED = 10;
@@ -126,8 +138,8 @@ class SomcpCompact
     }
 
     /**
-     * The tools/list of compact mode for one caller: somcp_ping when it may
-     * see it, then the three tools.
+     * The tools/list of compact mode for one caller: the pinned tools it may
+     * see, then the three tools.
      *
      * @param ShopGate $gate the caller
      *
@@ -258,7 +270,7 @@ class SomcpCompact
 
         return new CompactMode(
             self::PREFIX,
-            ['somcp_ping'],
+            self::PINNED,
             [
                 'search' => Somcp::t('Search the shop tools'),
                 'read' => Somcp::t('Run a read tool'),

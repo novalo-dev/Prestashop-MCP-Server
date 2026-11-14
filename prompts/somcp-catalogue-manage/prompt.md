@@ -78,8 +78,9 @@ one that answered. The currency of the prices comes from there too.
    merchant was most likely holding that variant: say which one.
 3. Read `total_count`, not the length of the list. Twenty results out of four
    hundred is not "twenty products". Each line already holds the name of the
-   default category (`category_default`) and the small cover image
-   (`cover_image`, null without one): do not read each product to learn them.
+   default category (`category_default`) and the cover image (`cover_image`,
+   a `download_ref` for `somcp_download_file`, null without one): do not read
+   each product to learn them.
 4. When the merchant asks for several matches, show them the list and let them
    pick. Never choose one for them.
 5. To answer about one product - its description, carriers, images, suppliers,
@@ -180,8 +181,8 @@ to one product and is read with `somcp_get_product`.
 Files - a manual, a data sheet - come from `somcp_list_attachments`: take the
 `id_attachment` from there. Files cannot be added through the conversation;
 when the one the merchant wants is not listed, they upload it in the back
-office first. Its `download_url` opens without being signed in: give it to the
-merchant, never put it anywhere public.
+office first. To open one, pass its `download_ref` to `somcp_download_file`,
+as for every file of the shop.
 
 Carriers come from `somcp_list_carriers`: give its `id_carrier` in
 `shipping.carriers`, never a guessed one. A disabled carrier is listed too;

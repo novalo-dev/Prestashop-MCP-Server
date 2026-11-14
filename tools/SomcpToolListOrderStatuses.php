@@ -159,29 +159,10 @@ class SomcpToolListOrderStatuses
             'email_template' => (string) $state['template'],
             'payment_module' => (string) $state['module_name'],
             'color' => (string) $state['color'],
-            // The public URL of the status icon, never the bytes; null when the
-            // status has none.
-            'icon' => self::iconUrl($id),
+            // The status icon as a download_ref for somcp_download_file,
+            // never an address of its own; null when the status has none.
+            'icon' => SomcpDownload::offer('order_state_icon', $id, Somcp::currentShopId()),
         ];
-    }
-
-    /**
-     * The public URL of a status icon (img/os/<id>.gif), or null when the file
-     * is not there. Shared with the write tools so an icon reads the same
-     * whichever tool answers.
-     *
-     * @param int $idOrderState
-     *
-     * @return string|null
-     */
-    public static function iconUrl(int $idOrderState): ?string
-    {
-        if (!is_file(_PS_IMG_DIR_ . 'os/' . $idOrderState . '.gif')) {
-            return null;
-        }
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        return (string) $link->getMediaLink('img/os/' . $idOrderState . '.gif');
     }
 
     /**

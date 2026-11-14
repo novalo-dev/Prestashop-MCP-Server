@@ -52,7 +52,7 @@ class SomcpToolGetCategory
             'somcp_get_category',
             Somcp::t('Get a category'),
             'Returns what the form of Catalog > Categories > Edit shows for one category: names, Displayed, '
-                . 'parent, position, descriptions, customer groups, friendly and full URL, meta fields, images, '
+                . 'parent, position, descriptions, customer groups, friendly and full URL, meta fields, images (download_ref for somcp_download_file), '
                 . 'product and subcategory counts, and what the page does while hidden; a field this PrestaShop '
                 . 'version lacks is null. Same names as somcp_create_category and somcp_update_category, so a value '
                 . 'read here can be given back. id_category from somcp_list_categories: never guess one. Read only. '

@@ -16,6 +16,15 @@ are:
 
 ## Unreleased
 
+## 2.0.0 - 2026-11-14
+
+A major version: files now travel only through the two file tools, so an
+assistant or an integration that read a photo, a logo or an attachment from an
+address in a tool's answer now gets a reference to pass to
+`somcp_download_file` instead. Compact mode lists six tools, and a module using
+the contract hands its files over through O'So MCP Server rather than through
+links of its own. Your settings, connections and conversations are kept.
+
 ### Added
 
 **Files go to and from any assistant.** Every file now goes through two new

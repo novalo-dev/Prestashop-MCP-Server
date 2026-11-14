@@ -356,8 +356,8 @@ class SomcpToolListCatalogPriceRules
             // Amounts of a rule without a currency of its own are in the shop
             // default currency, as somcp_get_product reports them.
             'amounts_currency' => $idCurrency > 0 ? (string) Currency::getIsoCodeById($idCurrency) : $defaultCurrency,
-            'from' => self::date((string) $row['from']),
-            'to' => self::date((string) $row['to']),
+            'from' => SomcpTool::isoDate($row['from']),
+            'to' => SomcpTool::isoDate($row['to']),
             'condition_groups' => self::conditionGroups((int) $row['id_specific_price_rule'], $idLang),
             'current' => self::holdsNow((string) $row['from'], (string) $row['to']),
         ];
@@ -482,23 +482,6 @@ class SomcpToolListCatalogPriceRules
     }
 
     /**
-     * A stored datetime as it is kept, or null when the column is the zero date
-     * PrestaShop stores for "no date" - the shape somcp_get_product returns.
-     *
-     * @param string $value
-     *
-     * @return string|null
-     */
-    private static function date(string $value): ?string
-    {
-        if ($value === '' || strpos($value, '0000-00-00') === 0) {
-            return null;
-        }
-
-        return $value;
-    }
-
-    /**
      * Whether a period holds the shop's current time, an empty bound being open
      * on its side. The value behind the current output field and the current
      * filter, read the same way.
@@ -510,9 +493,11 @@ class SomcpToolListCatalogPriceRules
      */
     private static function holdsNow(string $from, string $to): bool
     {
+        // Compared on the stored values, both in the shop's time; isoDate()
+        // only says whether a bound is set.
         $now = date('Y-m-d H:i:s');
-        $afterStart = self::date($from) === null || $from <= $now;
-        $beforeEnd = self::date($to) === null || $to >= $now;
+        $afterStart = SomcpTool::isoDate($from) === null || $from <= $now;
+        $beforeEnd = SomcpTool::isoDate($to) === null || $to >= $now;
 
         return $afterStart && $beforeEnd;
     }

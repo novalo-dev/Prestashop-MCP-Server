@@ -714,6 +714,47 @@ class SomcpTool
     }
 
     /**
+     * An ISO 8601 date and time as the shop stores it, Y-m-d H:i:s in the
+     * shop's time zone, or null when the value is not one.
+     *
+     * The answers give dates with the shop's offset, and an assistant may
+     * pass one in UTC: the offset typed is applied, then the time converted
+     * to the zone PrestaShop set as PHP's default, so 08:00Z is not stored as
+     * 08:00 Paris. A day alone is midnight. Only ISO 8601 is taken: PHP would
+     * otherwise read "tomorrow" and store a date nobody typed.
+     *
+     * @param mixed $value
+     *
+     * @return string|null
+     */
+    public static function dateTime($value): ?string
+    {
+        if (!is_string($value)
+            || !preg_match('/^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/', trim($value))) {
+            return null;
+        }
+        $text = trim($value);
+
+        try {
+            $date = new DateTime($text);
+        } catch (Throwable $e) {
+            return null;
+        }
+        // 2026-02-31 is read as March 3rd: refused rather than shifted. The
+        // offset typed is kept until the conversion below, so the day read
+        // back is the day typed.
+        if ($date->format('Y-m-d') !== substr($text, 0, 10)) {
+            return null;
+        }
+        if (strlen($text) === 10) {
+            return $date->format('Y-m-d') . ' 00:00:00';
+        }
+        $date->setTimezone(new DateTimeZone(date_default_timezone_get()));
+
+        return $date->format('Y-m-d H:i:s');
+    }
+
+    /**
      * One identifier from the arguments, or 0 when it is absent or not one.
      *
      * A cast would read an array or true as 1 and "abc" as 0, so a malformed

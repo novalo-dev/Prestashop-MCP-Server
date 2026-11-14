@@ -55,6 +55,13 @@ over, an order document or a photo, says when its link stops working in your
 time zone too. Searching orders gives the order date as `date_add` beside
 `date`, which is kept for the tools already built on it.
 
+**Promotion dates say their time zone too.** The start and end of a specific
+price and of a catalog price rule are read with your shop's time zone. A start
+or end the assistant gives in another time zone, in UTC for example, is saved
+at the right hour in yours instead of an hour off, and an end set before the
+start is caught even when the two were written in different time zones. The
+dates of a voucher are saved the same way.
+
 ### Fixed
 
 **Installing a module from the assistant works.** Installing or uploading a

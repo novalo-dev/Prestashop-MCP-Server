@@ -130,7 +130,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                     'type' => ['integer', 'null'],
                     'description' => 'Limit to a single customer, from somcp_search_customers. Null: everyone.',
                 ],
-                'date_from' => ['type' => 'string', 'description' => 'Valid from, ISO 8601 or YYYY-MM-DD HH:MM:SS, shop time. Now by default.'],
+                'date_from' => ['type' => 'string', 'description' => 'Valid from, ISO 8601, converted to the shop\'s time zone; without an offset, the shop\'s time. Now by default.'],
                 'date_to' => ['type' => 'string', 'description' => 'Valid to, same format. One month after now by default.'],
                 'minimum_amount' => [
                     'type' => ['object', 'null'],

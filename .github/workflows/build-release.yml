@@ -276,7 +276,7 @@ jobs:
               echo "::error::$f missing from the archive"; exit 1
             fi
           done
-          if unzip -l "$NAME" | grep -qE 'somcp/(\.github/|dev/|docs/|\.git|README\.md|CONTRIBUTING\.md|CLA\.md|server\.json)'; then
+          if unzip -l "$NAME" | grep -qE 'somcp/(\.github/|dev/|docs/|\.git|README\.md|CONTRIBUTING\.md|CLA\.md|server\.json|glama\.json)'; then
             echo "| Archive contents | **repository plumbing leaked in** |" >> "$GITHUB_STEP_SUMMARY"
             echo "::error::repository plumbing leaked into the archive"; exit 1
           fi

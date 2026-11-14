@@ -7,6 +7,8 @@
     {"why": "an empty url, with every problem at once", "arguments": {"for": "somcp_no_such_tool", "url": " ", "size": 3}, "expect": "error", "contains": ["size: not a field of this tool", "for: no tool of that name", "url: the public https address of the file, or left out"]},
     {"why": "a field that is not a string, without a usable tool", "arguments": {"for": "", "field": 3}, "expect": "error", "contains": ["for: the name of the tool", "field: a string"]},
     {"why": "two ways of bringing the file in one call", "arguments": {"for": "somcp_no_such_tool", "url": "https://example.com/a.jpg", "data": "data:image/png;base64,AAAA"}, "expect": "error", "contains": ["url, data: one of them, not several"]},
-    {"why": "an empty file object from the client", "arguments": {"for": "somcp_no_such_tool", "file": {}}, "expect": "error", "contains": ["file: the file, or left out"]}
+    {"why": "an empty file object from the client", "arguments": {"for": "somcp_no_such_tool", "file": {}}, "expect": "error", "contains": ["file: the file, or left out"]},
+    {"why": "a deposit reference that matches nothing", "arguments": {"upload_ref": "somcp-no-such-deposit", "data": "data:image/png;base64,AAAA"}, "expect": "error", "contains": ["upload_ref: no open deposit of this account matches it"]},
+    {"why": "a deposit reference with no file to put in it", "arguments": {"upload_ref": "somcp-no-such-deposit"}, "expect": "error", "contains": ["file, data or url: the file to put in the deposit"]}
   ]
 }

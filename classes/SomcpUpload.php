@@ -428,6 +428,13 @@ class SomcpUpload
             . ' Accepted: ' . str_replace(' ', ', ', (string) ($invitation['extensions'] ?? ''))
             . '. Up to ' . $megabytes . ' MB each. Both addresses below stop working in '
             . (int) round(max(60, ((int) strtotime((string) ($invitation['expires_at'] ?? ''))) - time()) / 60) . ' minutes.' . "\n\n"
+            // First, since it needs neither the network nor the merchant:
+            // the way a file the person attached in the conversation reaches
+            // the shop, through the entries of somcp_upload_file.
+            . '0. If you hold ' . ($one ? 'the file' : 'a file') . ' - one the person attached in this conversation,'
+            . ' or its bytes - call somcp_upload_file with ' . self::ARG_REF . ' set to ' . $reference . ' and the file'
+            . ' in file (as your client passes an attached file), data (a data URI)'
+            . (self::byAddress($invitation) ? ' or url (a public address)' : '') . ', once per file.' . "\n\n"
             . '1. If you can make an HTTP request yourself (a code tool, a terminal, an HTTP or fetch tool),'
             . ' send ' . ($one ? 'the file' : 'each file') . ' now, without asking the merchant: POST it to' . "\n\n"
             . $direct . "\n\n"
@@ -1262,6 +1269,45 @@ class SomcpUpload
     }
 
     /**
+     * An open deposit an assistant may fill through somcp_upload_file.
+     *
+     * Of this employee and this shop, still able to take a file, and never a
+     * deposit of the built-in assistant or a shared file, which hold a file
+     * already in.
+     *
+     * @param string $reference
+     * @param int $idEmployee
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function open(string $reference, int $idEmployee): ?array
+    {
+        $row = self::find($reference, $idEmployee);
+        if ($row === null || (int) $row['id_shop'] !== Somcp::currentShopId()
+            || in_array((string) $row['module'], [self::CHAT_MODULE, self::SHARE_MODULE], true)
+            || count(self::deposited((int) $row['id_upload'])) >= (int) $row['max_files']) {
+            return null;
+        }
+
+        return $row;
+    }
+
+    /**
+     * Whether a deposit may be filled from an address.
+     *
+     * Not when it takes an archive: whatever opened it, a link read anywhere
+     * would become code running on the shop, as rule() says of a field.
+     *
+     * @param array<string, mixed> $invitation
+     *
+     * @return bool
+     */
+    public static function byAddress(array $invitation): bool
+    {
+        return !in_array('zip', explode(' ', (string) $invitation['extensions']), true);
+    }
+
+    /**
      * The files already deposited against one invitation.
      *
      * @param int $idUpload
@@ -2006,6 +2052,31 @@ class SomcpUpload
     public static function accepted(): array
     {
         return array_keys(self::ACCEPTED);
+    }
+
+    /**
+     * typeOf() for bytes the shop holds in memory, such as a file a module
+     * hands over: written to the store for the check, then removed.
+     *
+     * @param string $bytes
+     * @param string $name
+     *
+     * @return string
+     */
+    public static function typeOfBytes(string $bytes, string $name): string
+    {
+        $directory = self::directory();
+        if ($directory === '') {
+            return 'application/octet-stream';
+        }
+        $temporary = $directory . SomcpRandom::token(16) . '.part';
+        try {
+            return @file_put_contents($temporary, $bytes) === false ? 'application/octet-stream' : self::typeOf($temporary, $name);
+        } finally {
+            if (is_file($temporary)) {
+                @unlink($temporary);
+            }
+        }
     }
 
     /**

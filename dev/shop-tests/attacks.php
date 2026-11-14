@@ -1025,6 +1025,41 @@ $archiveByFile = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', 
 ]));
 $see('a module archive is never fetched from a client address either', $failed($archiveByFile) && strpos($said($archiveByFile), 'never fetched from an address') !== false, $archiveByFile);
 
+// A deposit a tool already opened - here as a module through the contract
+// opens one - is filled by the assistant through the same entries.
+$opened = SomcpUpload::invite($idEmployee, 'Photos for a test module', 'image', 'somcptestmodule', ['files' => 1]);
+$filled = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $opened, 'data' => 'data:image/png;base64,' . base64_encode($png)],
+]));
+$see('an open deposit is filled with the file the assistant holds', !$failed($filled) && strpos($said($filled), '"deposited": true') !== false, $filled);
+$overfilled = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $opened, 'data' => 'data:image/png;base64,' . base64_encode($png)],
+]));
+$see('a deposit already holding its file takes no more', $failed($overfilled) && strpos($said($overfilled), 'no open deposit of this account matches it') !== false, $overfilled);
+$othersDeposit = SomcpUpload::invite($idEmployee, 'Attached in the built-in assistant', 'image', SomcpUpload::CHAT_MODULE, ['files' => 1]);
+$intoChat = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $othersDeposit, 'data' => 'data:image/png;base64,' . base64_encode($png)],
+]));
+$see('a deposit of the built-in assistant is never filled from outside', $failed($intoChat), $intoChat);
+$archive = SomcpUpload::invite($idEmployee, 'A module archive', 'archive', 'somcptestmodule', ['files' => 1]);
+$archiveByUrl = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $archive, 'url' => 'https://example.com/module.zip'],
+]));
+$see('a deposit taking an archive is never filled from an address', $failed($archiveByUrl) && strpos($said($archiveByUrl), 'never fetched from an address') !== false, $archiveByUrl);
+
+// A module hands a file over by returning it: the same answer as
+// somcp_download_file, under the type its bytes show.
+$handed = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
+$see('a file a module returns comes attached as an image, with no link', ($handed['content'][1]['type'] ?? '') === 'image'
+    && strpos((string) ($handed['content'][0]['text'] ?? ''), '"url"') === false, ['body' => json_encode($handed)]);
+$lying = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => '<html></html>']], ['id_employee' => $idEmployee], 'somcptestmodule');
+$see('a file a module names as an image but is not goes out under no type', strpos((string) ($lying['content'][0]['text'] ?? ''), 'application/octet-stream') !== false
+    && ($lying['content'][1]['type'] ?? '') === 'resource', ['body' => json_encode($lying)]);
+
 // A file found by a read tool leaves through the same door as a document,
 // an image as an image.
 $idImage = (int) $db->getValue('SELECT `id_image` FROM `' . _DB_PREFIX_ . 'image_shop` WHERE `id_shop` = ' . Somcp::currentShopId() . ' ORDER BY `id_image` ASC');

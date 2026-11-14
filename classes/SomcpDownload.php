@@ -388,6 +388,100 @@ class SomcpDownload
     }
 
     /**
+     * The answer that hands a file to the assistant: what somcp_download_file
+     * answers, and what a tool of another module answers when it returns a
+     * file through the contract. One answer, so a file reaches an assistant
+     * the same way whoever found it.
+     *
+     * Attached, the file is all the answer gives: an address beside it is what
+     * an assistant hands the merchant instead of reading the file. The
+     * addresses are only for a file that cannot travel here, and for the
+     * built-in chat, which passes the model the text of an answer and nothing
+     * else.
+     *
+     * @param array{bytes:string, name:string, mime:string} $file the type read from the bytes
+     * @param array<string, mixed> $context of the tool call
+     * @param string $kind one of KINDS, for the back office page; empty for a
+     *                     file no page of the shop serves
+     * @param string $id
+     *
+     * @return array<string, mixed> a CallToolResult
+     */
+    public static function handOver(array $file, array $context, string $kind = '', string $id = ''): array
+    {
+        $idEmployee = (int) ($context['id_employee'] ?? 0);
+        $chat = ($context['chat'] ?? false) === true;
+        $bytes = $file['bytes'];
+        $about = ['file' => $file['name'], 'mime_type' => $file['mime'], 'bytes' => strlen($bytes)];
+        $label = $kind !== '' ? $kind . ' ' . $id : $file['name'];
+
+        if (strlen($bytes) > self::INLINE_MAX || $chat) {
+            $page = null;
+            if ($kind !== '') {
+                $link = self::link($kind, $id, $idEmployee, Somcp::currentShopId());
+                $page = $link['url'] === '' ? null : $link['url'];
+            }
+            // The built-in assistant cannot fetch an address itself: it gets
+            // the page, or the shared address to give the merchant when no
+            // page serves the file.
+            $shared = $chat && $page !== null ? null : SomcpUpload::share($idEmployee, $file['name'], $bytes);
+            if ($page === null && $shared === null) {
+                return SomcpTool::text(
+                    'The file cannot be handed over here: it is too large to attach, and the shop could not offer'
+                        . ' it at an address.',
+                    true
+                );
+            }
+
+            SomcpLogger::log('download_page', SomcpLogger::OUTCOME_SUCCESS, Tools::substr($label, 0, 120), '', $idEmployee);
+
+            return SomcpTool::json($about + [
+                'inside' => false,
+                // Read with a GET, no sign-in, until expires_at.
+                'url' => $shared['url'] ?? null,
+                'expires_at' => $shared['expires_at'] ?? null,
+                'page' => $page,
+                'then' => $chat
+                    ? 'Give the merchant ' . ($page !== null ? 'the page, which opens the file in their own signed-in back office only.' : 'url, which opens the file until expires_at.')
+                    : 'The file is too large to hand over here. Fetch it yourself from url when you can make an HTTP'
+                        . ' request; give the merchant ' . ($page !== null ? 'the page' : 'url') . ' only when you cannot.',
+            ]);
+        }
+
+        SomcpLogger::log('download_given', SomcpLogger::OUTCOME_SUCCESS, Tools::substr($label, 0, 120), '', $idEmployee);
+
+        $result = SomcpTool::json($about + [
+            'inside' => true,
+            'then' => $file['mime'] === 'application/octet-stream'
+                // Its bytes do not match the type its name gives
+                // (SomcpUpload::typeOf()): handed over all the same, never
+                // under a type it is not.
+                ? 'The file is attached to this answer, but its content is not the type its name gives: tell the'
+                    . ' person so, and do not read it as that type.'
+                : 'The file is attached to this answer: read it, or show it to the person. Do not give them a link'
+                    . ' instead.',
+        ]);
+        // An image goes as an image, which a client shows and a model that
+        // reads pictures sees; anything else as a resource, read like an
+        // attachment. The protocol has both, and an image sent as a resource
+        // is shown by most clients as a file to save, not a picture.
+        if (strpos($file['mime'], 'image/') === 0 && $file['mime'] !== 'image/x-icon') {
+            $result['content'][] = ['type' => 'image', 'data' => base64_encode($bytes), 'mimeType' => $file['mime']];
+        } else {
+            $result['content'][] = [
+                'type' => 'resource',
+                'resource' => [
+                    'uri' => 'somcp://download/' . ($kind !== '' ? $kind . '/' . $id . '/' : 'file/') . rawurlencode($file['name']),
+                    'mimeType' => $file['mime'],
+                    'blob' => base64_encode($bytes),
+                ],
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * Whether there is a file behind a kind and an identifier, for a tool
      * deciding between a reference and null.
      *

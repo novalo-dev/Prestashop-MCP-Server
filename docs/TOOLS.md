@@ -2344,16 +2344,21 @@ asking for files itself (it hands out its own deposit).
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `for` | string | yes | the tool the file is for, e.g. `somcp_create_product` |
+| `for` | string | yes, unless `upload_ref` | the tool the file is for, e.g. `somcp_create_product` |
 | `field` | string | no | its argument that takes the file, e.g. `images`, `virtual_file.file`, `logo`; may be left out when the tool has only one |
+| `upload_ref` | string | no | instead of `for` and `field`: a deposit a tool already opened and asked the assistant to fill - a tool of this module, or of another through the contract (`upload`) - filled with `file`, `data` or `url` under that deposit's own rules |
 | `file` | object | no | a file of the assistant's conversation: `download_url` and `file_id` (required), `mime_type`, `file_name`; the shop downloads `download_url` with the guards of `url`; refused for `somcp_upload_module` |
 | `data` | string | no | the file as `data:<media type>;base64,<content>`; the media type decides the format checked |
 | `url` | string | no | a public `https` address (no redirect) the shop downloads now; refused for `somcp_upload_module` |
 
-At most one of `file`, `data` and `url`.
+At most one of `file`, `data` and `url`, and one of them with `upload_ref`. The
+directions any deposit hands out start with this way, before posting the file
+or asking the merchant, so a module asking for files through the contract gets
+it without a change.
 
 **Returns** - with an entry: `deposited` true, `upload_ref`, `for`, `field`,
-`then`. Without: `deposited` false, `upload_ref`, `for`, `field`, `accepted`
+`then`; with `upload_ref`: `deposited` true, `upload_ref` and `then`, to call
+the tool that opened the deposit again. Without: `deposited` false, `upload_ref`, `for`, `field`, `accepted`
 (extensions), `max_bytes`, `expires_at`, `send_to` (`url`, `method` POST,
 `encoding` multipart/form-data, `field` `file`), `deposit_page` (null when the
 back office address is not known yet) and `how`, the directions in order. The
@@ -2365,7 +2370,9 @@ tool does not take; `for` missing, naming a tool that does not exist, is
 switched off or is out of this connection's reach (one message for all three),
 or a tool that takes no file; `field` not one of the tool's file fields (the
 list is given); more than one entry; an entry empty; `url` or `file` for a
-field that is never fetched from an address. A file the shop cannot use (not
+field, or a deposit, that is never fetched from an address (an archive); an
+`upload_ref` that names no open deposit of this account (typed wrong, expired,
+already full, or a file of the built-in assistant - one message for all). A file the shop cannot use (not
 public `https`, a redirect, too large, the wrong format or content, a data URI
 that is not base64) is refused with its reason and the other ways, the deposit
 staying open.

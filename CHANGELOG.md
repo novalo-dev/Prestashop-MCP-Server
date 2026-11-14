@@ -46,8 +46,10 @@ its address on its own:
 
 Before, an assistant connected from outside could only give the shop a web
 address: a file it had made, or one you gave it, had no way in. Modules asking for files
-through O'So MCP Server get the same: the assistant now sends the file itself
-when it can, without any change on their side.
+through O'So MCP Server get the same: the assistant now puts the file in itself
+when it can - a photo attached in your ChatGPT conversation included - without
+any change on their side. And a module can now hand a file to the assistant
+the same way, attached to the answer, instead of a link of its own.
 
 **Modules the assistant can upload.** The new tool `somcp_upload_module`
 takes a module's .zip archive you attached to the chat or deposited on the

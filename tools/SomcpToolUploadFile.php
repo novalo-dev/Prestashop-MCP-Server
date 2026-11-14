@@ -46,7 +46,7 @@ if (!defined('_PS_VERSION_')) {
 class SomcpToolUploadFile
 {
     /** @var string[] The arguments the tool takes besides its entries, so a misspelt one is refused by name. */
-    private const KEYS = ['for', 'field'];
+    private const KEYS = ['for', 'field', SomcpUpload::ARG_REF];
 
     /**
      * @return SomcpTool
@@ -57,11 +57,11 @@ class SomcpToolUploadFile
             'somcp_upload_file',
             Somcp::t('Put a file on the shop'),
             'Puts a file on the shop for another tool and answers with its upload_ref, used once. Name the tool '
-                . '(for) and its field; the shop applies that field\'s formats and size. Bring the file in this call '
-                . 'when you can, with one of: file (a file the person attached in your conversation, when your client '
-                . 'passes it), data (the bytes as a data URI) or url (a public address). Without any, the answer says '
-                . 'how to send it: POST it to the address given, or show the merchant the deposit page. Then pass '
-                . 'upload_ref to the tool. A file the merchant attached in this module\'s back office chat already has one.',
+                . '(for) and its field, or give the upload_ref of a deposit a tool already asked you to fill; the shop '
+                . 'applies its formats and size. Bring the file in this call when you can, with one of: file (a file '
+                . 'the person attached in your conversation, when your client passes it), data (the bytes as a data '
+                . 'URI) or url (a public address). Without any, the answer says how to send it. Then pass upload_ref '
+                . 'to the tool. A file the merchant attached in this module\'s back office chat already has one.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -75,8 +75,12 @@ class SomcpToolUploadFile
                         'description' => 'Its argument that takes the file, e.g. images or virtual_file.file; '
                             . 'may be left out when the tool has only one.',
                     ],
+                    SomcpUpload::ARG_REF => [
+                        'type' => 'string',
+                        'description' => 'Instead of for: the upload_ref of a deposit a tool opened and asked you to '
+                            . 'fill, with the file in file, data or url.',
+                    ],
                 ] + SomcpUpload::entrySchema(),
-                'required' => ['for'],
                 'additionalProperties' => false,
             ],
             [SomcpScope::ACCESS],
@@ -108,6 +112,9 @@ class SomcpToolUploadFile
     public static function handle(array $arguments, array $context): array
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
+        if (array_key_exists(SomcpUpload::ARG_REF, $arguments)) {
+            return self::fill($arguments, $idEmployee);
+        }
         $problems = SomcpTool::unknownFields($arguments, array_merge(self::KEYS, array_keys(SomcpUpload::ENTRIES)));
 
         $for = is_string($arguments['for'] ?? null) ? trim($arguments['for']) : '';
@@ -211,6 +218,58 @@ class SomcpToolUploadFile
             ],
             'deposit_page' => $page === '' ? null : $page,
             'how' => SomcpUpload::directions($page, $reference, $invitation, $then),
+        ]);
+    }
+
+    /**
+     * Fills a deposit already open, from the file the call brings.
+     *
+     * A tool - of this module, or of another through the contract - that
+     * asks for a file opens a deposit with its own rules and hands out its
+     * reference. An assistant holding the file brings it here through the same
+     * entries as a new deposit, instead of the merchant dropping it by hand:
+     * the deposit's own formats and size apply, and admit() judges the file.
+     *
+     * @param array<string, mixed> $arguments
+     * @param int $idEmployee
+     *
+     * @return array<string, mixed>
+     */
+    private static function fill(array $arguments, int $idEmployee): array
+    {
+        $problems = SomcpTool::unknownFields($arguments, array_merge([SomcpUpload::ARG_REF], array_keys(SomcpUpload::ENTRIES)));
+        $reference = is_string($arguments[SomcpUpload::ARG_REF]) ? trim($arguments[SomcpUpload::ARG_REF]) : '';
+        $invitation = $reference === '' ? null : SomcpUpload::open($reference, $idEmployee);
+        if ($invitation === null) {
+            // One answer for a reference typed wrong, expired, of another
+            // account or already holding its file: trying one teaches nothing.
+            $problems[] = 'upload_ref: no open deposit of this account matches it; leave it out and name the tool with for';
+        }
+
+        $given = array_values(array_intersect(array_keys(SomcpUpload::ENTRIES), array_keys($arguments)));
+        $entry = $given[0] ?? null;
+        if ($entry === null) {
+            $problems[] = 'file, data or url: the file to put in the deposit';
+        } elseif (count($given) > 1) {
+            $problems[] = implode(', ', $given) . ': one of them, not several';
+        } elseif ($invitation !== null && SomcpUpload::ENTRIES[$entry]['address'] && !SomcpUpload::byAddress($invitation)) {
+            $problems[] = $entry . ': this deposit takes an archive, which is never fetched from an address; send the'
+                . ' bytes with data';
+        }
+
+        if ($problems !== [] || $invitation === null || $entry === null) {
+            return SomcpTool::refused('deposited', $problems);
+        }
+
+        $refusal = SomcpUpload::enter($invitation, $entry, $arguments[$entry]);
+        if ($refusal !== '') {
+            return SomcpTool::text($entry . ': ' . $refusal . '. Nothing was deposited; the deposit is still open.', true);
+        }
+
+        return SomcpTool::json([
+            'deposited' => true,
+            SomcpUpload::ARG_REF => $reference,
+            'then' => 'Call the tool that opened this deposit again, as it asked, with upload_ref ' . $reference . '.',
         ]);
     }
 }

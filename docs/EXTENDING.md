@@ -231,7 +231,8 @@ Return one of:
 | `['json' => $data]` | Structured data, encoded by somcp. |
 | `['text' => '...']` | Plain text. |
 | `['text' => '...', 'error' => true]` | A business failure (order not found, account not linked). The assistant reports it instead of retrying. Word a refused call as the built-in tools do, which build theirs with `SomcpTool::refused()`: see **Errors** in the shared conventions of `docs/TOOLS.md`. |
-| `['upload' => [...]]` | Ask the merchant for files. |
+| `['upload' => [...]]` | Ask for files: see **Asking the merchant for files**. |
+| `['file' => ['name' => ..., 'contents' => ...]]` | Hand a file to the assistant: see **Files: the two doors**. |
 
 Anything else is treated as a failure: it is logged as `tool_result_refused`
 and the assistant gets a generic error. An exception thrown by your handler is
@@ -248,35 +249,51 @@ on its own.
 
 ## Files: the two doors
 
-A tool never receives file bytes in an argument: a model writing base64 token
-by token corrupts files, costs a fortune, and turns every argument into a way
-in. somcp lets a file into the shop through two doors only.
+Every file goes through somcp, in and out, and no tool serves a file or its
+address on its own: somcp decides once who may have a file and how it
+travels, for its own tools and for yours.
 
-1. **A deposit**, read through `upload_ref`. The file is checked against its
-   extension by its bytes, belongs to the employee the assistant acts for, and
-   is used once. Your tool asks for it with `upload` and `accepts_files`, below;
-   the assistant then sends the file itself to the deposit's direct address
-   when it can make an HTTP request, or shows the merchant the deposit page.
-   In the built-in assistant, a file the employee attached is already a
-   deposit and comes with its `upload_ref`.
-2. **A public https address the shop downloads itself**, as the product tools
-   do for images. Download it with somcp's guard on (no private address, no
-   redirect, size capped), never with a bare `file_get_contents()`.
+**In.** A tool never receives file bytes in an argument of its own: a model
+writing base64 token by token corrupts files, costs a fortune, and turns every
+argument into a way in. A file reaches your tool as a deposit, read through
+`upload_ref`: checked against its extension by its bytes, belonging to the
+employee the assistant acts for, used once. Your tool asks for it with
+`upload` and `accepts_files`, below. The assistant then fills the deposit the
+first way it can: with `somcp_upload_file` and the deposit's `upload_ref` - a
+file the person attached in its conversation (ChatGPT passes those), the bytes
+as a data URI, or a public address -, by posting the file to the deposit's
+direct address, or by showing the merchant the deposit page. In the built-in
+assistant, a file the employee attached is already a deposit and comes with
+its `upload_ref`. Your module changes nothing when somcp learns a new way in.
 
-Out of the shop, a file of your module goes as a link your module serves:
-signed, expiring, answering 404 to anything else. Never as bytes in your tool
-result. somcp's own files go out through `somcp_download_file`.
+**Out.** Return the file itself, never a link your module serves:
+
+```php
+return ['file' => ['name' => 'delivery-proof.jpg', 'contents' => $bytes]];
+```
+
+somcp answers as `somcp_download_file` does: attached to the answer, an image
+as an image the assistant can see, with no link beside it, so the assistant
+reads the file or shows it rather than handing the merchant an address. Its
+type is read from its bytes against the extension of `name`; a file whose
+content does not match goes out as `application/octet-stream`, and the
+assistant is told not to read it as what its name says. Past 4 MiB, or in the
+built-in assistant, which reads text only, somcp gives a signed address valid
+15 minutes instead. Your tool keeps its own permission and scopes: the file is
+handed only to a call that may run it.
 
 | | Assistant connected over MCP | Built-in assistant |
 |---|---|---|
-| Shop to assistant | links in the tool result | links in the tool result; files the employee attaches go through somcp |
-| Assistant to shop | the deposit's direct address, its page, or a public address | `upload_ref` of an attached file, or a public address |
+| Shop to assistant | the file attached to the answer; a signed address past 4 MiB | a signed address for the merchant |
+| Assistant to shop | `somcp_upload_file` into the deposit, its direct address, or its page | `upload_ref` of an attached file, or the deposit page |
 
 ## Asking the merchant for files
 
-Files do not travel through the conversation: the assistant would have to write
-them out byte by byte. Instead somcp opens a deposit page in the merchant's own
-back office, and your handler is called again with the files.
+Your tool does not take file bytes in its arguments. Instead somcp opens a
+deposit with your rules: the assistant fills it itself when it holds the file
+(through `somcp_upload_file`, or the deposit's direct address), the merchant
+on a page of their own back office otherwise, and your handler is called again
+with the files.
 
 Declare the tool with `'accepts_files' => true`, then:
 

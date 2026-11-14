@@ -297,7 +297,10 @@ own, and a client ignores the argument of a way it does not know:
   and pinned, no redirect, no proxy, size capped while reading).
 
 `file` and `url` are refused for a module archive, where a link read anywhere
-would become code running on the shop. A client reads its own way of passing a
+would become code running on the shop. The same entries also fill a deposit
+already open, named by its `upload_ref` (`SomcpUpload::open()`): one a tool of
+the module or of another module asked for, so the directions of every deposit
+start with them, before the direct address and the page. A client reads its own way of passing a
 file from the tools it lists, so compact mode keeps `somcp_upload_file` (and
 `somcp_download_file`) in the list rather than behind a runner.
 
@@ -363,6 +366,11 @@ chat also gets since it passes its model text only. The page serves the same
 file to the merchant: it requires the back office session of that same
 employee, so a leaked link is useless, checks the same right, and shows only a PDF or a raster image, any
 other file being saved rather than opened in the back office.
+
+A tool of another module hands a file over by returning `file` with its name
+and bytes: `SomcpContract` passes it to `SomcpDownload::handOver()`, the answer
+of `somcp_download_file`, with its type read from the bytes
+(`SomcpUpload::typeOfBytes()`). No module serves a link of its own.
 
 A get gives a file back to its update as it read it: the `download_ref` naming
 the stored file changes nothing (`SomcpUpload::same()`), so a whole answer read

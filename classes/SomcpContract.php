@@ -415,7 +415,10 @@ class SomcpContract
      */
     private static function file($file, array $context, string $module): array
     {
-        $name = is_array($file) && is_string($file['name'] ?? null) ? basename(str_replace('\\', '/', trim($file['name']))) : '';
+        // Kept whole: handOver() turns every character a file name should not
+        // carry, slashes included, into a hyphen, where cutting at the last
+        // slash would drop half of a name like #FA000104/2026.pdf.
+        $name = is_array($file) && is_string($file['name'] ?? null) ? trim($file['name']) : '';
         $contents = is_array($file) && is_string($file['contents'] ?? null) ? $file['contents'] : '';
         if ($name === '' || $contents === '') {
             return self::broken($module, 'file needs a name and its contents');

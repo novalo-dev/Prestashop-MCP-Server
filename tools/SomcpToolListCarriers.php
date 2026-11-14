@@ -104,6 +104,19 @@ class SomcpToolListCarriers
         }
         [$idLang, $iso] = $language;
 
+        // A misspelt filter, or an Enabled or Free shipping that is not a
+        // boolean, would widen the list without a word, and the assistant
+        // would offer a carrier the merchant had ruled out: all are refused.
+        $errors = SomcpTool::unknownFields($arguments, ['active', 'is_free', 'name', 'language']);
+        foreach (['active', 'is_free'] as $flag) {
+            if (array_key_exists($flag, $arguments) && !is_bool($arguments[$flag])) {
+                $errors[] = $flag . ': true or false';
+            }
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         // A query rather than Carrier::getCarriers(), which reads the shop
         // from the global context and, asked for every carrier, still drops
         // the disabled ones: here the shop comes from the token, and a
@@ -128,10 +141,10 @@ class SomcpToolListCarriers
         // An edited carrier leaves its previous row behind, flagged, for the
         // orders placed with it; the back office list does not show those.
         $query->where('c.`deleted` = 0');
-        if (isset($arguments['active']) && is_bool($arguments['active'])) {
+        if (isset($arguments['active'])) {
             $query->where('c.`active` = ' . ($arguments['active'] ? 1 : 0));
         }
-        if (isset($arguments['is_free']) && is_bool($arguments['is_free'])) {
+        if (isset($arguments['is_free'])) {
             $query->where('c.`is_free` = ' . ($arguments['is_free'] ? 1 : 0));
         }
         // The order of the back office list, so a carrier sits where the
@@ -161,7 +174,7 @@ class SomcpToolListCarriers
                 // From 0, as the other tools give a position; the list shows
                 // it from 1.
                 'position' => (int) $row['position'],
-                'logo' => self::logoUrl($id),
+                'logo' => SomcpDownload::offer('carrier_logo', $id, $idShop),
                 'tracking_url' => (string) $row['url'],
                 // Such a carrier's costs are computed by its module, not by
                 // the ranges of the carrier form.
@@ -176,25 +189,5 @@ class SomcpToolListCarriers
             'count' => count($carriers),
             'language' => $iso,
         ]);
-    }
-
-    /**
-     * Public URL of the carrier logo.
-     *
-     * The logo is not a column: the back office stores the uploaded file under
-     * the carrier identifier, and only that file tells whether there is one.
-     *
-     * @param int $idCarrier
-     *
-     * @return string|null null when the carrier has no logo
-     */
-    private static function logoUrl(int $idCarrier): ?string
-    {
-        if (!is_file(_PS_SHIP_IMG_DIR_ . $idCarrier . '.jpg')) {
-            return null;
-        }
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        return (string) $link->getMediaLink(_THEME_SHIP_DIR_ . $idCarrier . '.jpg');
     }
 }

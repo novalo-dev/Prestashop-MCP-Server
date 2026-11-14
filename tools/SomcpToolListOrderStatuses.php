@@ -86,26 +86,18 @@ class SomcpToolListOrderStatuses
         $idShop = Somcp::currentShopId();
 
         // Every mistake is reported in one answer, so the call is corrected in
-        // one go (the shape of #170).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if ($field !== 'language') {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        // one go, in the envelope every tool answers with.
+        $problems = SomcpTool::unknownFields($arguments, ['language']);
 
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- language: not a language of this shop, which has '
+            $problems[] = 'language: not a language of this shop, which has '
                 . implode(', ', SomcpTool::activeLanguages($idShop));
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
@@ -167,29 +159,10 @@ class SomcpToolListOrderStatuses
             'email_template' => (string) $state['template'],
             'payment_module' => (string) $state['module_name'],
             'color' => (string) $state['color'],
-            // The public URL of the status icon, never the bytes; null when the
-            // status has none.
-            'icon' => self::iconUrl($id),
+            // The status icon as a download_ref for somcp_download_file,
+            // never an address of its own; null when the status has none.
+            'icon' => SomcpDownload::offer('order_state_icon', $id, Somcp::currentShopId()),
         ];
-    }
-
-    /**
-     * The public URL of a status icon (img/os/<id>.gif), or null when the file
-     * is not there. Shared with the write tools so an icon reads the same
-     * whichever tool answers.
-     *
-     * @param int $idOrderState
-     *
-     * @return string|null
-     */
-    public static function iconUrl(int $idOrderState): ?string
-    {
-        if (!is_file(_PS_IMG_DIR_ . 'os/' . $idOrderState . '.gif')) {
-            return null;
-        }
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        return (string) $link->getMediaLink('img/os/' . $idOrderState . '.gif');
     }
 
     /**

@@ -73,7 +73,8 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             [self::class, 'handle'],
             // Changing a category is the edit right of the categories page in
             // Team, Permissions; creating one is a different right.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminCategories')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminCategories'),
+            files: ['cover_image' => SomcpUpload::images(), 'menu_thumbnails' => SomcpUpload::images()]
         );
     }
 
@@ -106,11 +107,12 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             . 'while it is not displayed - 301 or 302 (redirect), 404 or 410.' . $kept;
         $properties['id_type_redirected']['description'] = 'Assistant. PrestaShop 9 only: the category a 301 or 302 '
             . 'redirects to, from somcp_list_categories; 0 for the closest parent.' . $kept;
-        $properties['cover_image']['description'] = 'Merchant. A new cover image, replacing the current one. Its url '
-            . '(public https, no redirect, 10 MB at most) or the upload_ref of a file already on the shop. JPEG, PNG, '
-            . 'GIF or WebP; never file content.';
-        $properties['menu_thumbnails']['description'] = 'Merchant. PrestaShop 8 only, refused on 9, which dropped '
-            . 'them: up to 3 images that replace the current menu thumbnails, each given by url or upload_ref like the cover.';
+        $properties['cover_image']['description'] = 'Merchant. A new cover image, replacing the current one: url '
+            . '(public https, no redirect, 10 MB at most) or upload_ref (somcp_upload_file). JPEG, PNG, GIF or WebP. '
+            . 'As read: no change.';
+        $properties['menu_thumbnails']['description'] = 'Merchant. PrestaShop 8 only, refused on 9: up to 3 images '
+            . 'replacing the current menu thumbnails, each by url or upload_ref like the cover. As somcp_get_category '
+            . 'returns them: no change.';
         $properties['position'] = [
             'type' => 'integer',
             'description' => 'Merchant. Place among the categories of its parent, from 0 as in somcp_get_category (the '
@@ -147,9 +149,12 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $idShop = (int) $shop->id;
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $category = self::existingCategory(self::integer($arguments['id_category'] ?? null) ?? 0, $idShop);
+        $idCategory = self::integer($arguments['id_category'] ?? null) ?? 0;
+        $category = self::existingCategory($idCategory, $idShop);
         if ($category === null) {
-            return SomcpTool::text('No category of this shop has this identifier. Nothing was changed. Find it with somcp_list_categories.', true);
+            return SomcpTool::refused('changed', [$idCategory > 0
+                ? SomcpTool::notFound('id_category', 'category', $idCategory, 'somcp_list_categories')
+                : SomcpTool::notAnIdentifier('id_category')]);
         }
         // The Home of this shop has a form of its own in the back office and is
         // changed with its fields; the root, and the Home of another shop, are
@@ -166,10 +171,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $errors = [];
         $plan = self::planUpdate($arguments, $category, $shop, $isHome, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -251,14 +253,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
     {
         $idShop = (int) $shop->id;
         $idCategory = (int) $category->id;
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::CATEGORY_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields(
+            $arguments,
+            array_merge(self::ARGUMENTS, self::OWN_ARGUMENTS),
+            self::CATEGORY_COMPUTED
+        ));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -276,7 +275,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             'category' => [],
             'groups' => null,
             'position' => null,
-            'images' => self::categoryImages($arguments, $errors),
+            'images' => self::categoryImages(self::withoutImagesAsRead($arguments, $idCategory), $errors),
             'remove_cover' => false,
             'remove_thumbnails' => false,
             'replace_thumbnails' => false,
@@ -504,6 +503,55 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
     }
 
     /**
+     * The arguments without the images given back as somcp_get_category
+     * returned them.
+     *
+     * An assistant reads a category, changes one field and gives the whole
+     * answer back: the download_ref of the cover image (or null when there is
+     * none) and those of the menu thumbnails it read are not new images, and
+     * must not be refused nor downloaded and written again. They are dropped
+     * here, before categoryImages() reads the images, so they plan nothing. An
+     * address or an upload_ref is a real image and stays; removing one stays
+     * the remove_* fields' job.
+     *
+     * @param array<string, mixed> $arguments
+     * @param int $idCategory
+     *
+     * @return array<string, mixed>
+     */
+    private static function withoutImagesAsRead(array $arguments, int $idCategory): array
+    {
+        if (!array_key_exists('cover_image', $arguments) && !array_key_exists('menu_thumbnails', $arguments)) {
+            return $arguments;
+        }
+        if (array_key_exists('cover_image', $arguments)
+            && SomcpUpload::same($arguments['cover_image'], 'category_image', (string) $idCategory)) {
+            unset($arguments['cover_image']);
+        }
+
+        // The thumbnails are one list on the form, replaced as a whole, so they
+        // are left alone only when the whole list is the one read, in its order.
+        // On a version without them, the null the get returns is already
+        // skipped by categoryImages().
+        $given = $arguments['menu_thumbnails'] ?? null;
+        $slots = self::thumbnailSlots($idCategory);
+        if ($slots !== null && is_array($given) && array_is_list($given) && count($given) === count($slots)) {
+            $same = true;
+            foreach ($given as $i => $thumbnail) {
+                if (!SomcpUpload::same($thumbnail, 'category_thumbnail', $idCategory . '-' . $slots[$i])) {
+                    $same = false;
+                    break;
+                }
+            }
+            if ($same) {
+                unset($arguments['menu_thumbnails']);
+            }
+        }
+
+        return $arguments;
+    }
+
+    /**
      * The explicit removals of images, each a boolean, never next to the field that already replaces them.
      *
      * @param array<string, mixed> $arguments
@@ -531,7 +579,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             }
             if ($flag === 'remove_menu_thumbnails'
                 && !class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
-                $errors[] = 'remove_menu_thumbnails: this PrestaShop version no longer has menu thumbnails; leave the field out';
+                $errors[] = SomcpTool::notOnThisVersion('remove_menu_thumbnails', 'menu thumbnails');
                 continue;
             }
             $plan[$flag === 'remove_cover_image' ? 'remove_cover' : 'remove_thumbnails'] = true;
@@ -608,13 +656,14 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             return;
         }
         $before = self::category((int) $category->id, (int) $languages['fallback'], $idShop);
-        // An address cannot be compared with a stored file, so an image given
-        // always counts as a change; a removal counts only when there is one.
+        // The images given back as read were dropped by withoutImagesAsRead();
+        // an address cannot be compared with a stored file, so it counts as a
+        // change. A removal counts only when there is one.
         $covers = array_values(array_filter($plan['images'], static function (array $image): bool {
             return $image['for'] === 'cover_image';
         }));
         if ($covers !== []) {
-            self::record($plan, 'cover_image', $before['cover_image'], self::imageOrigin($covers[0]));
+            self::record($plan, 'cover_image', $before['cover_image'], SomcpUpload::origin($covers[0]));
         } elseif ($plan['remove_cover']) {
             if ($before['cover_image'] === null) {
                 $plan['remove_cover'] = false;
@@ -623,7 +672,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             }
         }
         $thumbnails = array_values(array_map(static function (array $image): array {
-            return self::imageOrigin($image);
+            return SomcpUpload::origin($image);
         }, array_filter($plan['images'], static function (array $image): bool {
             return $image['for'] === 'menu_thumbnails';
         })));
@@ -712,7 +761,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $images = self::applyImages($category, $plan);
 
         $stored = new Category($idCategory, null, $idShop);
-        $warnings = self::updateWarnings($stored, $plan, $idShop);
+        $warnings = SomcpTool::withMetaLengthAdvice(self::updateWarnings($stored, $plan, $idShop), $plan);
 
         SomcpLogger::log(
             'category_updated',

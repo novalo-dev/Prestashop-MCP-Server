@@ -20,7 +20,7 @@ subtitle: Connect Claude, ChatGPT and other AI assistants to your PrestaShop sho
 
 ### Step 1 - Upload the module
 
-**Modules > Module Manager > Upload a module** ①, then drop `OSo-MCP-Server-1.4.0.zip` ②.
+**Modules > Module Manager > Upload a module** ①, then drop `OSo-MCP-Server-X.Y.Z.zip` ②.
 
 ### Step 2 - Open the settings
 
@@ -76,6 +76,26 @@ Leave the other settings as they are.
 | Group ① | **Tools and prompts > Available tools > Orders - read** | Opens the tools of the group |
 | Connected assistants ② | **Tools and prompts > Available tools > Connected assistants** | On or off for Claude, ChatGPT... |
 | Built-in assistant ③ | **Tools and prompts > Available tools > Built-in assistant** | On or off for the back office chat |
+
+### Compact mode {#compact}
+
+![Tools and prompts > Settings > Compact list of tools](images/06-compact.png)
+
+| Item | Path | What it does |
+|---|---|---|
+| Compact list of tools | **Tools and prompts > Settings > Compact list of tools** | **Yes**: connected assistants get six tools and search the others when they need them. **No**: they get the whole list |
+
+After a change, refresh the tools of the connection in ChatGPT's settings. The built-in assistant is not affected.
+
+## Files {#files}
+
+| Direction | What happens |
+|---|---|
+| To the shop | The assistant sends the file itself: a photo you attached in ChatGPT, a file it made, or a web address. When it cannot, it gives you a page of your back office to drop the file on |
+| From the shop | An invoice, a product photo or a file comes attached to the assistant's answer: it reads it or shows it to you. No link to click |
+
+> [!TIP]
+> An assistant that runs code may be blocked from reaching your shop. Allow your shop's domain in its network or allowed domains settings: it then sends files without asking you.
 
 ## Employee rights {#rights}
 

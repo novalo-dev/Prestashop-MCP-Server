@@ -4,9 +4,9 @@
     {"why": "the addresses of one brand, Studio Design", "arguments": {"id_manufacturer": 1}, "expect": "ok", "contains": ["\"id_manufacturer\": 1", "Studio Design", "New York", "10154", "\"country\": \"US\"", "\"count\""]},
     {"why": "the brand identifier as a numeric string", "arguments": {"id_manufacturer": "1"}, "expect": "ok", "contains": ["\"id_manufacturer\": 1"]},
     {"why": "a brand without address gives an empty list", "arguments": {"id_manufacturer": 2}, "expect": "ok", "contains": ["\"addresses\"", "\"count\""]},
-    {"why": "a brand that does not exist", "arguments": {"id_manufacturer": 999999}, "expect": "error", "contains": ["No brand of this shop"]},
-    {"why": "a brand identifier of zero", "arguments": {"id_manufacturer": 0}, "expect": "error", "contains": ["No brand of this shop"]},
-    {"why": "a brand identifier that is not a number", "arguments": {"id_manufacturer": [1]}, "expect": "error", "contains": ["No brand of this shop"]},
+    {"why": "a brand that does not exist", "arguments": {"id_manufacturer": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_manufacturer: no brand of this shop has the identifier 999999 - find it with somcp_list_manufacturers"]},
+    {"why": "a brand identifier of zero", "arguments": {"id_manufacturer": 0}, "expect": "error", "contains": ["- id_manufacturer: a whole number above 0"]},
+    {"why": "a brand identifier that is not a number", "arguments": {"id_manufacturer": [1]}, "expect": "error", "contains": ["- id_manufacturer: a whole number above 0"]},
     {"why": "the country name is given beside its ISO code, in the shop default language", "arguments": {"id_manufacturer": 1}, "expect": "ok", "contains": ["\"country\": \"US\"", "\"country_name\": \"United States\"", "\"language\": \"en\""]},
     {"why": "the country name in a language the shop has", "arguments": {"id_manufacturer": 1, "language": "en"}, "expect": "ok", "contains": ["\"country_name\": \"United States\"", "\"language\": \"en\""]},
     {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's"]},
@@ -18,6 +18,8 @@
     {"why": "a first name no brand address has gives an empty list", "arguments": {"firstname": "no-such-name-anywhere"}, "expect": "ok", "contains": ["\"count\": 0"]},
     {"why": "one country by its ISO code", "arguments": {"country": "US"}, "expect": "ok", "contains": ["Studio Design", "\"country\": \"US\""]},
     {"why": "a country with no brand address gives an empty list - not FR, US or ES, which the address scenarios run before this one give Studio Design", "arguments": {"country": "DE", "id_manufacturer": 1}, "expect": "ok", "contains": ["\"addresses\": []", "\"count\": 0"]},
-    {"why": "a country code no country has", "arguments": {"country": "ZZ"}, "expect": "error", "contains": ["No country has this ISO code"]}
+    {"why": "a country code no country has", "arguments": {"country": "ZZ"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- country: no country has the ISO code ZZ - give a code such as FR"]},
+    {"why": "a misspelt filter is named, not ignored into a wider list", "arguments": {"citty": "Paris"}, "expect": "error", "contains": ["Nothing was read", "- citty: not a field of this tool"]},
+    {"why": "every problem of the call in one answer", "arguments": {"country": "ZZ", "id_manufacturer": 999999}, "expect": "error", "contains": ["- country: no country has the ISO code ZZ", "- id_manufacturer: no brand of this shop has the identifier 999999"]}
   ]
 }

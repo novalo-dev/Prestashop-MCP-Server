@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "a feature made by the somcp_create_feature scenario, with no value and on no product", "arguments": {"id_feature": 4}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_feature\": 4", "\"name\": \"Somcp plain feature\"", "\"values_deleted\": 0", "\"products\": 0", "\"catalog_price_rules\": []"]},
+    {"why": "deleted again, nothing changes", "arguments": {"id_feature": 4}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_feature: no feature of this shop has the identifier 4 - find it with somcp_list_features"]},
+    {"why": "another one, with the identifier as a string and the name in English", "arguments": {"id_feature": "3", "language": "en"}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_feature\": 3", "\"name\": \"Somcp test feature\"", "\"language\": \"en\"", "\"values_deleted\": 0", "\"products\": 0"]},
+    {"why": "a feature that does not exist", "arguments": {"id_feature": 999999}, "expect": "error", "contains": ["Nothing was deleted", "no feature of this shop has the identifier 999999"]},
+    {"why": "no identifier", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted", "- id_feature: a whole number above 0"]},
+    {"why": "an identifier given as a list is not read as feature 1", "arguments": {"id_feature": [1]}, "expect": "error", "contains": ["- id_feature: a whole number above 0"]},
+    {"why": "an argument this tool does not know", "arguments": {"id_feature": 1, "colour": "red"}, "expect": "error", "contains": ["Nothing was deleted", "- colour: not a field of this tool"]},
+    {"why": "a language the shop does not have, on a demo feature that must stay", "arguments": {"id_feature": 1, "language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]}
+  ]
+}

@@ -113,30 +113,30 @@ class SomcpToolSetOrderTracking
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        if (!array_key_exists('tracking_number', $arguments) || !is_string($arguments['tracking_number'])) {
-            return SomcpTool::text(
-                'Nothing was changed: tracking_number must be a string, "" to clear the number.',
-                true
-            );
-        }
-        // Spaces around a pasted number are not part of it, and kept they
-        // would make the same number look new and email the customer again.
-        $tracking = trim($arguments['tracking_number']);
+        // Every problem in one answer, each named by its field, as the other
+        // tools answer: a wrong number and a wrong order are fixed in one
+        // call, and a misspelt field is named rather than ignored.
+        $problems = SomcpTool::unknownFields(
+            $arguments,
+            ['id_order', 'reference', 'tracking_number', 'id_order_carrier']
+        );
 
-        if (Tools::strlen($tracking) > self::MAX_LENGTH) {
-            return SomcpTool::text(
-                'Nothing was changed: a tracking number holds ' . self::MAX_LENGTH . ' characters at most.',
-                true
-            );
-        }
-        // The core's only check, the one the back office applies: carriers
-        // have no format of their own in PrestaShop.
-        if ($tracking !== '' && !Validate::isTrackingNumber($tracking)) {
-            return SomcpTool::text(
-                'Nothing was changed: the tracking number holds a character PrestaShop refuses. Allowed: letters, '
-                    . 'digits, spaces and ~ : # , % & _ = ( ) [ ] . ? + - @ /.',
-                true
-            );
+        $tracking = '';
+        if (!array_key_exists('tracking_number', $arguments) || !is_string($arguments['tracking_number'])) {
+            $problems[] = 'tracking_number: a string, "" to clear the number';
+        } else {
+            // Spaces around a pasted number are not part of it, and kept they
+            // would make the same number look new and email the customer again.
+            $tracking = trim($arguments['tracking_number']);
+
+            if (Tools::strlen($tracking) > self::MAX_LENGTH) {
+                $problems[] = 'tracking_number: ' . self::MAX_LENGTH . ' characters at most';
+            } elseif ($tracking !== '' && !Validate::isTrackingNumber($tracking)) {
+                // The core's only check, the one the back office applies:
+                // carriers have no format of their own in PrestaShop.
+                $problems[] = 'tracking_number: a character PrestaShop refuses; allowed are letters, digits, '
+                    . 'spaces and ~ : # , % & _ = ( ) [ ] . ? + - @ /';
+            }
         }
 
         // find() rather than the newest order of a reference: the number emails the customer, so a
@@ -144,33 +144,40 @@ class SomcpToolSetOrderTracking
         // list instead of landing on the newest of them.
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            return SomcpTool::text($order . ' Nothing was changed.', true);
+            $problems[] = $order;
+
+            return SomcpTool::refused('changed', $problems);
         }
 
         $idLang = (int) $order->id_lang;
         $shipments = SomcpToolGetOrder::shipments($order, $idLang);
+        $shipment = null;
         if ($shipments === []) {
-            return SomcpTool::text(
-                'This order has no shipment, so it has no tracking number to set. Nothing was changed.',
-                true
-            );
+            $problems[] = 'id_order: this order has no shipment, so it has no tracking number to set';
+        } else {
+            $shipment = self::pick($shipments, $arguments);
+            if ($shipment === null) {
+                $listed = json_encode(self::summaries($shipments), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                if (!array_key_exists('id_order_carrier', $arguments)) {
+                    $problems[] = 'id_order_carrier: this order has several shipments, say which one; its shipments: '
+                        . $listed;
+                } elseif (SomcpTool::id($arguments, 'id_order_carrier') === 0) {
+                    $problems[] = SomcpTool::notAnIdentifier('id_order_carrier');
+                } else {
+                    $problems[] = 'id_order_carrier: no shipment of this order has the identifier '
+                        . SomcpTool::id($arguments, 'id_order_carrier') . ' - find it with somcp_get_order; its shipments: '
+                        . $listed;
+                }
+            }
         }
 
-        $shipment = self::pick($shipments, $arguments);
-        if ($shipment === null) {
-            return SomcpTool::text(
-                (array_key_exists('id_order_carrier', $arguments)
-                    ? 'This id_order_carrier is not a shipment of this order.'
-                    : 'This order has several shipments: say which one with id_order_carrier.')
-                    . ' Nothing was changed. Its shipments: '
-                    . json_encode(self::summaries($shipments), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-                true
-            );
+        if ($problems !== [] || $shipment === null) {
+            return SomcpTool::refused('changed', $problems);
         }
 
         $orderCarrier = new OrderCarrier((int) $shipment['id_order_carrier']);
         if (!Validate::isLoadedObject($orderCarrier) || (int) $orderCarrier->id_order !== (int) $order->id) {
-            return SomcpTool::text('The shipment could not be read. Nothing was changed.', true);
+            return SomcpTool::refused('changed', ['id_order_carrier: the shipment could not be read']);
         }
 
         $previous = (string) $orderCarrier->tracking_number;

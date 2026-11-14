@@ -43,6 +43,9 @@ class SomcpToolSearchProducts
     /** @var int Most a single call will return, whatever it asks for. */
     private const MAX_LIMIT = 100;
 
+    /** @var array<int, string> The orders sort() knows, read by the schema and the check of the call alike. */
+    private const SORTS = ['date_add_desc', 'name_asc', 'price_asc', 'price_desc', 'quantity_asc', 'quantity_desc'];
+
     /**
      * @return SomcpTool
      */
@@ -123,14 +126,13 @@ class SomcpToolSearchProducts
                     ],
                     'sort' => [
                         'type' => 'string',
-                        'enum' => ['date_add_desc', 'name_asc', 'price_asc', 'price_desc', 'quantity_asc', 'quantity_desc'],
+                        'enum' => self::SORTS,
                         'description' => 'Order of the results. Most recently created first by default.',
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read and search the names in, '
-                            . 'for example fr: one of the shop\'s active languages, refused otherwise. '
-                            . 'The shop default is used when left out.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                     'limit' => [
                         'type' => 'integer',
@@ -157,16 +159,23 @@ class SomcpToolSearchProducts
      */
     public static function handle(array $arguments, array $context): array
     {
+        // A misspelt filter, or a value of the wrong kind, would widen the
+        // list or change its order without a word, and the assistant would
+        // describe the products as the ones asked for: refused instead.
+        $errors = self::problems($arguments);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
-        $idLang = self::language($arguments, $idShop);
-        if ($idLang === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
-                    . 'language out for the shop default.',
-                true
-            );
+        // Names are searched in this language too: a name searched in the
+        // wrong one finds nothing, and the product would look missing.
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
         }
+        [$idLang, $iso] = $language;
         $prices = self::priceExpressions($idShop);
 
         $count = self::query($arguments, $shop, $idLang, $prices);
@@ -193,7 +202,6 @@ class SomcpToolSearchProducts
             return (int) $row['id_category_default'];
         }, $rows), $idLang, $idShop);
         $covers = self::covers($rows, $idShop);
-        $link = Somcp::legacyContext()->link ?? new Link();
 
         $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));
         $precision = Validate::isLoadedObject($currency) ? (int) $currency->precision : 2;
@@ -214,11 +222,10 @@ class SomcpToolSearchProducts
                 'active' => (bool) $row['active'],
                 'id_category_default' => (int) $row['id_category_default'],
                 'category_default' => $categories[(int) $row['id_category_default']] ?? '',
-                // The thumbnail of the Image column, so the assistant can show
-                // which product it means without reading each one.
-                'cover_image' => isset($covers[$id])
-                    ? SomcpProductImage::url($link, $id, (string) $row['link_rewrite'], $covers[$id], 'small')
-                    : null,
+                // The cover of the Image column, so the assistant can show
+                // which product it means without reading each one, through
+                // somcp_download_file as every file.
+                'cover_image' => isset($covers[$id]) ? SomcpDownload::offer('product_image', $covers[$id], $idShop) : null,
                 'ean13' => (string) $row['ean13'],
             ];
             if (isset($matched[$id])) {
@@ -231,6 +238,7 @@ class SomcpToolSearchProducts
         }
 
         return SomcpTool::json([
+            'language' => $iso,
             'products' => $products,
             'returned' => count($products),
             // So the assistant knows there is more instead of concluding from
@@ -281,8 +289,8 @@ class SomcpToolSearchProducts
         // either: it has no name yet and nobody can sell it.
         $query->where('p.`state` = ' . (int) Product::STATE_SAVED);
 
-        if (!empty($arguments['id_product'])) {
-            $query->where('p.`id_product` = ' . (int) $arguments['id_product']);
+        if (SomcpTool::id($arguments, 'id_product') > 0) {
+            $query->where('p.`id_product` = ' . SomcpTool::id($arguments, 'id_product'));
         }
         if (self::text($arguments, 'name') !== '') {
             $query->where("pl.`name` LIKE '%" . pSQL(self::text($arguments, 'name')) . "%'");
@@ -305,12 +313,12 @@ class SomcpToolSearchProducts
                 $query->where('p.`' . $field . "` LIKE '%" . pSQL(self::text($arguments, $field)) . "%'");
             }
         }
-        if (!empty($arguments['id_category'])) {
+        if (SomcpTool::id($arguments, 'id_category') > 0) {
             // Any category the product is filed under, not only its default
             // one: that is what the category filter of the back office does.
             $query->where(
                 'EXISTS (SELECT 1 FROM `' . _DB_PREFIX_ . 'category_product` cp'
-                . ' WHERE cp.`id_product` = p.`id_product` AND cp.`id_category` = ' . (int) $arguments['id_category'] . ')'
+                . ' WHERE cp.`id_product` = p.`id_product` AND cp.`id_category` = ' . SomcpTool::id($arguments, 'id_category') . ')'
             );
         }
         $bounds = [
@@ -330,7 +338,7 @@ class SomcpToolSearchProducts
         if (isset($arguments['quantity_max']) && is_numeric($arguments['quantity_max'])) {
             $query->where('IFNULL(sa.`quantity`, 0) <= ' . (int) $arguments['quantity_max']);
         }
-        if (isset($arguments['active']) && is_bool($arguments['active'])) {
+        if (isset($arguments['active'])) {
             $query->where('ps.`active` = ' . (int) $arguments['active']);
         }
 
@@ -552,6 +560,49 @@ class SomcpToolSearchProducts
     }
 
     /**
+     * Every problem of the call, before anything is read.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return array<int, string>
+     */
+    private static function problems(array $arguments): array
+    {
+        $errors = SomcpTool::unknownFields($arguments, [
+            'id_product', 'name', 'reference', 'id_category', 'price_tax_excl_min', 'price_tax_excl_max',
+            'price_tax_incl_min', 'price_tax_incl_max', 'quantity_min', 'quantity_max', 'active', 'ean13',
+            'mpn', 'upc', 'isbn', 'sort', 'language', 'limit', 'offset',
+        ]);
+        foreach (['id_product', 'id_category'] as $key) {
+            if (array_key_exists($key, $arguments) && SomcpTool::id($arguments, $key) === 0) {
+                $errors[] = SomcpTool::notAnIdentifier($key);
+            }
+        }
+        foreach (['price_tax_excl_min', 'price_tax_excl_max', 'price_tax_incl_min', 'price_tax_incl_max'] as $key) {
+            if (array_key_exists($key, $arguments) && !is_numeric($arguments[$key])) {
+                $errors[] = $key . ': a number';
+            }
+        }
+        foreach (['quantity_min', 'quantity_max'] as $key) {
+            // A string of digits too, as some clients send numbers.
+            $value = $arguments[$key] ?? null;
+            if (array_key_exists($key, $arguments) && !is_int($value) && !(is_string($value) && preg_match('/^-?\d+$/', trim($value)))) {
+                $errors[] = $key . ': a whole number';
+            }
+        }
+        if (array_key_exists('active', $arguments) && !is_bool($arguments['active'])) {
+            $errors[] = 'active: true or false';
+        }
+        // An order outside the list used to fall back to the newest first,
+        // and the assistant told the merchant they were the cheapest.
+        if (array_key_exists('sort', $arguments) && !in_array($arguments['sort'], self::SORTS, true)) {
+            $errors[] = SomcpTool::oneOf('sort', self::SORTS);
+        }
+
+        return $errors;
+    }
+
+    /**
      * @param array<string, mixed> $arguments
      *
      * @return int
@@ -561,28 +612,5 @@ class SomcpToolSearchProducts
         $limit = (int) ($arguments['limit'] ?? self::DEFAULT_LIMIT);
 
         return max(1, min(self::MAX_LIMIT, $limit));
-    }
-
-    /**
-     * The language to read and search the names in, or null when the caller
-     * named one the shop does not have.
-     *
-     * Refused rather than read in the default language, as the other read
-     * tools do: names searched in the wrong language find nothing, and the
-     * assistant would conclude the product does not exist.
-     *
-     * @param array<string, mixed> $arguments
-     * @param int $idShop
-     *
-     * @return int|null
-     */
-    private static function language(array $arguments, int $idShop): ?int
-    {
-        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
-            return (int) Somcp::legacyContext()->language->id;
-        }
-        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
-
-        return $languages === null ? null : (int) array_key_first($languages);
     }
 }

@@ -125,18 +125,18 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
 
         // The same test of the shop as somcp_get_feature, so a feature this
         // tool refuses is never one that tool describes.
-        $feature = SomcpToolGetFeature::existingFeature(self::integer($arguments['id_feature'] ?? null) ?? 0, $idShop);
+        $idFeature = self::integer($arguments['id_feature'] ?? null) ?? 0;
+        $feature = SomcpToolGetFeature::existingFeature($idFeature, $idShop);
         if ($feature === null) {
-            return SomcpTool::text('No feature of this shop has this identifier. Nothing was changed. Find it with somcp_list_features.', true);
+            return SomcpTool::refused('changed', [$idFeature > 0
+                ? SomcpTool::notFound('id_feature', 'feature', $idFeature, 'somcp_list_features')
+                : SomcpTool::notAnIdentifier('id_feature')]);
         }
 
         $errors = [];
         $plan = self::planUpdate($arguments, $feature, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -167,14 +167,7 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
      */
     private static function planUpdate(array $arguments, Feature $feature, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::FEATURE_ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::FEATURE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, array_merge(self::FEATURE_ARGUMENTS, self::OWN_ARGUMENTS), self::FEATURE_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -454,7 +447,7 @@ class SomcpToolUpdateFeature extends SomcpToolCreateFeature
 
         // Read back rather than echoed from the arguments: what the assistant
         // shows the merchant is what the shop stored.
-        $result['feature'] = SomcpToolGetFeature::feature($idFeature, (int) $plan['languages']['fallback']);
+        $result['feature'] = SomcpToolGetFeature::feature($idFeature, (int) $plan['languages']['fallback'], $idShop);
 
         return SomcpTool::json($result);
     }

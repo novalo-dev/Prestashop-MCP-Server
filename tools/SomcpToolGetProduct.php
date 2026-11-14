@@ -65,7 +65,8 @@ class SomcpToolGetProduct
                 . 'basics, categories, brand, references, features, attachments, stock, pack, virtual file, '
                 . 'shipping, pricing and tax, specific prices, SEO, options, suppliers, images and every '
                 . 'combination. Prices are the product\'s own: promotions are apart in specific_prices, never '
-                . 'mistaken for the price. id_product from somcp_search_products: never guess one. To find '
+                . 'mistaken for the price. The images and the virtual file come as download_ref, for '
+                . 'somcp_download_file. id_product from somcp_search_products: never guess one. To find '
                 . 'products from a name, a reference or an EAN13 use somcp_search_products.',
             [
                 'type' => 'object',
@@ -81,9 +82,8 @@ class SomcpToolGetProduct
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the texts in, for example fr: '
-                            . 'one of the shop\'s active languages, refused otherwise. The shop default is '
-                            . 'used when left out.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                 ],
                 'required' => ['id_product'],
@@ -105,25 +105,42 @@ class SomcpToolGetProduct
     {
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
-        $idLang = self::language($arguments, $idShop);
-        if ($idLang === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
-                    . 'language out for the shop default.',
-                true
-            );
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $iso] = $language;
+
+        // A cast would read an array as 1 and answer about a product nobody
+        // asked for: only a whole number is an identifier.
+        $errors = SomcpTool::unknownFields($arguments, ['id_product', 'id_product_attribute', 'language']);
+        $idProduct = SomcpTool::id($arguments, 'id_product');
+        $product = null;
+        if ($idProduct === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_product');
+        } else {
+            $product = self::locate($idProduct, $idLang, $idShop);
+            if ($product === null) {
+                $errors[] = SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products');
+            }
         }
 
-        $product = self::locate((int) ($arguments['id_product'] ?? 0), $idLang, $idShop);
-        if ($product === null) {
-            return SomcpTool::text('No product of this shop has this identifier. Find it with somcp_search_products.', true);
-        }
-
-        $idCombination = (int) ($arguments['id_product_attribute'] ?? 0);
-        if ($idCombination > 0 && !self::combinationBelongs($product, $idCombination, $idShop)) {
+        // 0 stands for no combination: the tools that read a product through
+        // this one pass it when they were given none.
+        $rawCombination = $arguments['id_product_attribute'] ?? 0;
+        $idCombination = SomcpTool::id($arguments, 'id_product_attribute');
+        if ($idCombination === 0 && $rawCombination !== 0 && $rawCombination !== '0') {
+            $errors[] = SomcpTool::notAnIdentifier('id_product_attribute');
+        } elseif ($idCombination > 0 && $product !== null && !self::combinationBelongs($product, $idCombination, $idShop)) {
             // Answering with the whole product instead would let the assistant
             // describe a combination it never read.
-            return SomcpTool::text('This combination does not belong to this product in this shop.', true);
+            // A combination belongs to its product, not to the shop, as
+            // somcp_create_product words it.
+            $errors[] = 'id_product_attribute: no combination of this product has the identifier '
+                . $idCombination . ' - find it with somcp_get_product';
+        }
+        if ($errors !== [] || $product === null) {
+            return SomcpTool::refused('read', $errors);
         }
 
         $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));
@@ -138,6 +155,7 @@ class SomcpToolGetProduct
         $isPack = (string) $product->getProductType() === 'pack';
 
         return SomcpTool::json([
+            'language' => $iso,
             'basics' => [
                 'id_product' => (int) $product->id,
                 'product_type' => (string) $product->getProductType(),
@@ -524,7 +542,7 @@ class SomcpToolGetProduct
     private static function virtualFile(Product $product): ?array
     {
         $query = new DbQuery();
-        $query->select('pd.`display_filename`, pd.`nb_downloadable`, pd.`date_expiration`, pd.`nb_days_accessible`, pd.`active`');
+        $query->select('pd.`id_product_download`, pd.`display_filename`, pd.`nb_downloadable`, pd.`date_expiration`, pd.`nb_days_accessible`, pd.`active`');
         $query->from('product_download', 'pd');
         $query->where('pd.`id_product` = ' . (int) $product->id);
         // The back office shows the latest file, active or not.
@@ -537,6 +555,9 @@ class SomcpToolGetProduct
         $expiration = self::date((string) ($row['date_expiration'] ?? ''));
 
         return [
+            // As virtual_file.file of the update takes it: given back, the
+            // update keeps the stored file.
+            'file' => SomcpDownload::offer('product_file', (int) $row['id_product_download'], Somcp::currentShopId()),
             'display_filename' => (string) $row['display_filename'],
             'nb_downloadable' => (int) $row['nb_downloadable'],
             'date_expiration' => $expiration === null ? null : date('c', (int) strtotime($expiration)),
@@ -757,8 +778,6 @@ class SomcpToolGetProduct
      */
     private static function images(Product $product, int $idLang, int $idShop): array
     {
-        $link = Somcp::legacyContext()->link ?? new Link();
-
         $images = [];
         foreach (Image::getImages($idLang, (int) $product->id, 0, $idShop) ?: [] as $row) {
             $idImage = (int) $row['id_image'];
@@ -767,7 +786,9 @@ class SomcpToolGetProduct
                 'position' => (int) $row['position'],
                 'cover' => (bool) $row['cover'],
                 'legend' => (string) $row['legend'],
-                'url' => SomcpProductImage::url($link, (int) $product->id, (string) $product->link_rewrite, $idImage, 'large'),
+                // The file through somcp_download_file, never an address of
+                // its own; given back beside its id_image, the update ignores it.
+                SomcpDownload::ARG_REF => SomcpDownload::offer('product_image', $idImage, $idShop)[SomcpDownload::ARG_REF] ?? null,
             ];
         }
 
@@ -997,28 +1018,5 @@ class SomcpToolGetProduct
         }
 
         return self::$schema[$key];
-    }
-
-    /**
-     * The language to read the texts in, or null when the caller named one
-     * the shop does not have.
-     *
-     * Refused rather than read in the default language, as the other read
-     * tools do: texts in another language than asked would be taken back by
-     * the write tools into the wrong one.
-     *
-     * @param array<string, mixed> $arguments
-     * @param int $idShop
-     *
-     * @return int|null
-     */
-    private static function language(array $arguments, int $idShop): ?int
-    {
-        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
-            return (int) Somcp::legacyContext()->language->id;
-        }
-        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
-
-        return $languages === null ? null : (int) array_key_first($languages);
     }
 }

@@ -34,11 +34,26 @@ declare(strict_types=1);
  * hedging the link, and every write must name a read that shows its outcome.
  * Their texts stay within the description budget, but for a listed few.
  *
- * Usage: php .github/scripts/check-tools.php [module root]
+ * llms.txt states how many tools and prompts the module ships, for the
+ * assistants that read it; the numbers are counted here, so they can never
+ * go stale: --write puts the counts in, and the check fails on a stale one.
+ * --badges <folder> writes the tools and prompts badges of the README there,
+ * as shields.io endpoint files, for the Badges workflow to publish.
+ *
+ * Usage: php .github/scripts/check-tools.php [module root] [--write] [--badges <folder>]
  * Exit code 0 when everything is in order, 1 otherwise.
  */
 
-$root = rtrim($argv[1] ?? getcwd(), '/');
+$arguments = array_slice($argv, 1);
+$write = in_array('--write', $arguments, true);
+$badges = '';
+$at = array_search('--badges', $arguments, true);
+if ($at !== false) {
+    $badges = rtrim((string) ($arguments[$at + 1] ?? ''), '/');
+    array_splice($arguments, $at, 2);
+}
+$arguments = array_values(array_diff($arguments, ['--write']));
+$root = rtrim($arguments[0] ?? getcwd(), '/');
 $errors = [];
 
 // 1. The tools the module ships: the name each file in tools/ declares.
@@ -247,6 +262,33 @@ foreach ($shipped as $tool => $file) {
     }
 }
 
+// No tool hands out the address of a file itself: a file leaves the shop
+// through a download_ref (SomcpDownload::offer()) and somcp_download_file,
+// the one place that decides who may have it and how it travels. A tool that
+// built its own link would decide that alone. Only the download tool shares a
+// file at a signed address.
+$fileAddresses = [
+    '->getMediaLink(' => 'builds the address of a file of the shop',
+    '->getImageLink(' => 'builds the address of a product image',
+    '->getCatImageLink(' => 'builds the address of a category image',
+    '->getManufacturerImageLink(' => 'builds the address of a brand logo',
+    '->getSupplierImageLink(' => 'builds the address of a supplier logo',
+    "getPageLink('attachment'" => 'builds the address of an attachment',
+    'SomcpUpload::share(' => 'shares a file at an address of its own',
+    'SomcpUpload::readUrl(' => 'shares a file at an address of its own',
+];
+foreach (glob($root . '/tools/Somcp*.php') ?: [] as $file) {
+    if (basename($file) === 'SomcpToolDownloadFile.php') {
+        continue;
+    }
+    $source = (string) file_get_contents($file);
+    foreach ($fileAddresses as $call => $what) {
+        if (strpos($source, $call) !== false) {
+            $errors[] = 'tools/' . basename($file) . ": $what ($call); answer with SomcpDownload::offer() instead, see Files in and out in docs/ARCHITECTURE.md";
+        }
+    }
+}
+
 foreach (array_keys($listed) as $tool) {
     if (!isset($shipped[$tool]) && !isset($chatOnly[$tool])) {
         $errors[] = "README.md: lists $tool, which the module does not ship";
@@ -258,6 +300,41 @@ foreach ($entries as $tool => $entry) {
     }
 }
 
+// The counts, as llms.txt states them and the badges show them.
+$counts = [
+    'shop tools' => count($shipped),
+    'prompts' => count(glob($root . '/prompts/*/prompt.json') ?: []),
+    'tools of the chat only' => count($chatOnly),
+];
+$llmsFile = $root . '/llms.txt';
+$llms = (string) @file_get_contents($llmsFile);
+$updated = $llms;
+foreach ($counts as $what => $count) {
+    $pattern = '/^- (\d+) ' . preg_quote($what, '/') . '\b/m';
+    if (preg_match($pattern, $updated, $m) !== 1) {
+        $errors[] = "llms.txt: no line starting \"- <number> $what\"";
+    } elseif ((int) $m[1] !== $count) {
+        $updated = (string) preg_replace($pattern, '- ' . $count . ' ' . $what, $updated, 1);
+        if (!$write) {
+            $errors[] = "llms.txt: says {$m[1]} $what, the module has $count; run php .github/scripts/check-tools.php . --write";
+        }
+    }
+}
+if ($write && $updated !== $llms) {
+    file_put_contents($llmsFile, $updated);
+}
+if ($badges !== '') {
+    @mkdir($badges, 0775, true);
+    foreach (['tools' => $counts['shop tools'], 'prompts' => $counts['prompts']] as $label => $count) {
+        file_put_contents($badges . '/' . $label . '.json', json_encode([
+            'schemaVersion' => 1,
+            'label' => $label,
+            'message' => (string) $count,
+            'color' => '1F6FEB',
+        ]) . "\n");
+    }
+}
+
 if ($errors !== []) {
     fwrite(STDERR, implode("\n", $errors) . "\n");
     fwrite(STDERR, sprintf("\n%d problem(s). See \"Writing a tool, from A to Z\" in CONTRIBUTING.md.\n", count($errors)));
@@ -265,8 +342,9 @@ if ($errors !== []) {
 }
 
 printf(
-    "Tools OK: %d shipped, each in README.md, docs/TOOLS.md, SomcpScope, CHANGELOG.md and a prompt, linked to existing tools only; %d more specified.\n",
+    "Tools OK: %d shipped, each in README.md, docs/TOOLS.md, SomcpScope, CHANGELOG.md and a prompt, linked to existing tools only; %d more specified; %d prompts; counts in llms.txt up to date.\n",
     count($shipped),
-    count($entries) - count($shipped)
+    count($entries) - count($shipped),
+    $counts['prompts']
 );
 exit(0);

@@ -91,7 +91,8 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
             [self::class, 'handle'],
             // Adding a supplier is what the suppliers page asks for in Team,
             // Permissions; editing one is a different right.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminSuppliers')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminSuppliers'),
+            files: ['logo' => SomcpUpload::images()]
         );
     }
 
@@ -138,11 +139,11 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
                     . 'states, refused when it has none.'),
                 'dni' => $plain('Merchant. National identification number, 16 characters at most: required when '
                     . 'the country asks for one.'),
-                'meta_title' => $text('Assistant. 255 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
-                'meta_description' => $text('Assistant. 512 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_title' => $text('Assistant. 255 at most; over 70 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_description' => $text('Assistant. 512 at most; over 160 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_keywords' => $text('Assistant. PrestaShop 8, refused on 9. Up to 5 keywords, comma separated, '
                     . 'without < > = { }.'),
-                'logo' => self::imageSchema('Merchant. The logo.', 'the logo'),
+                'logo' => SomcpUpload::schema('Merchant. The logo.', 'the logo'),
                 'active' => [
                     'type' => 'boolean',
                     'description' => 'Merchant. Enabled on the storefront; true by default.',
@@ -167,10 +168,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         $errors = [];
         $plan = self::planSupplier($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -191,14 +189,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
      */
     private static function planSupplier(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::SUPPLIER_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::SUPPLIER_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::SUPPLIER_ARGUMENTS, self::SUPPLIER_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -214,7 +205,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
             ],
             'texts' => [],
             'address' => self::supplierAddress($arguments, $idShop, $errors),
-            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
+            'logo' => SomcpUpload::argument($arguments, 'logo', $errors, 'logo'),
         ];
 
         if (array_key_exists('active', $arguments)) {
@@ -476,7 +467,7 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         return SomcpTool::json([
             'created' => true,
             'id_supplier' => $idSupplier,
-            'seo_warnings' => self::manufacturerWarnings($plan, 'supplier') ?: new stdClass(),
+            'seo_warnings' => SomcpTool::withMetaLengthAdvice(self::manufacturerWarnings($plan, 'supplier'), $plan) ?: new stdClass(),
             'logo' => $logo,
             // Read back rather than echoed from the arguments: what the
             // assistant shows the merchant is what the shop stored.

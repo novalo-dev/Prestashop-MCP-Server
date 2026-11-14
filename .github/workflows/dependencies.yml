@@ -2,7 +2,7 @@ name: Dependencies
 
 # Every three days, and on demand: is a newer version out of something the
 # module ships or follows - Neuron AI, the other pinned libraries, the ALTCHA
-# widget, the MCP specification, PrestaShop itself - and does anything the
+# widget, the MCP specification, the official PHP SDK, PrestaShop itself - and does anything the
 # module ships have a known vulnerability? Each opens an issue - one per
 # version, never a duplicate - with what to read before moving. Nothing is
 # upgraded here: a version moves in a commit, checked by the CI.
@@ -154,6 +154,30 @@ jobs:
           2. Check what touches the transport (\`controllers/front/mcp.php\`), the protocol (\`classes/SomcpProtocol.php\`, \`classes/SomcpJsonRpc.php\`) and the authorization (\`classes/SomcpOAuthServer.php\`, \`classes/SomcpMetadata.php\`).
           3. Add the revision to what the module negotiates only once it follows it." \
             || gh issue create --title "$TITLE" --body "MCP specification $THEIRS is out; the module speaks up to $OURS."
+
+      # The official PHP SDK (mcp/sdk) could replace the module's own protocol
+      # layer, but only once it is stable: #199 waits for its 1.0 under the
+      # waiting-release label. This step only says when that day comes.
+      - name: Official MCP SDK
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STABLE=$(curl -fsSL https://repo.packagist.org/p2/mcp/sdk.json \
+            | php -r '$d = json_decode(stream_get_contents(STDIN), true); foreach ($d["packages"]["mcp/sdk"] ?? [] as $p) { if (preg_match("/^v?[1-9]\d*\.\d+\.\d+$/", $p["version"])) { echo ltrim($p["version"], "v"); break; } }')
+          echo "| mcp/sdk | first stable: ${STABLE:-none yet} |" >> "$GITHUB_STEP_SUMMARY"
+          [ -n "$STABLE" ] || exit 0
+          TITLE="Official PHP MCP SDK $STABLE is out (#199 waits for it)"
+          # One issue for the first stable release: later ones change nothing
+          # for #199, which is then back in the drafts.
+          gh issue list --state all --search "\"Official PHP MCP SDK\" in:title" --json number --jq '.[0].number' | grep -q . && exit 0
+          gh issue create --title "$TITLE" --label dependencies --body "The official PHP SDK of the Model Context Protocol, \`mcp/sdk\`, has a stable release: **$STABLE**.
+
+          #199 waits for it under the \`waiting-release\` label: it lists what the SDK would and would not replace, and the questions to answer now that the API is stable.
+
+          1. Read the release notes: https://github.com/modelcontextprotocol/php-sdk/releases
+          2. Put #199 back in the drafts, to be decided." \
+            || gh issue create --title "$TITLE" --body "mcp/sdk $STABLE is out; #199 waits for it."
 
       # The Integration matrix lists PrestaShop releases by hand. A stable 8.x
       # or 9.x release missing from it is a release the module was never run on.

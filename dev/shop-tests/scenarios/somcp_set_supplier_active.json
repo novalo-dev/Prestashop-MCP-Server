@@ -5,8 +5,9 @@
     {"why": "disabled again, nothing changes", "arguments": {"id_supplier": 1, "active": false}, "expect": "ok", "contains": ["\"changed\": false", "already disabled"]},
     {"why": "enabled again, with the identifier as a string", "arguments": {"id_supplier": "1", "active": true}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": true"]},
     {"why": "enabled again, nothing changes", "arguments": {"id_supplier": 1, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "already enabled"]},
-    {"why": "a state given as a string is refused", "arguments": {"id_supplier": 1, "active": "false"}, "expect": "error", "contains": ["true or false"]},
-    {"why": "an identifier given as a list is not read as supplier 1", "arguments": {"id_supplier": [1], "active": false}, "expect": "error", "contains": ["No supplier of this shop"]},
-    {"why": "a supplier that does not exist", "arguments": {"id_supplier": 999999, "active": false}, "expect": "error", "contains": ["No supplier of this shop", "Nothing was changed"]}
+    {"why": "a state given as a string is refused", "arguments": {"id_supplier": 1, "active": "false"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- active: true or false"]},
+    {"why": "an identifier given as a list is not read as supplier 1", "arguments": {"id_supplier": [1], "active": false}, "expect": "error", "contains": ["- id_supplier: a whole number above 0"]},
+    {"why": "a supplier that does not exist", "arguments": {"id_supplier": 999999, "active": false}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_supplier: no supplier of this shop has the identifier 999999 - find it with somcp_list_suppliers"]},
+    {"why": "a misspelt field is named and nothing is changed", "arguments": {"id_supplier": 1, "activ": false}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- activ: not a field of this tool", "- active: true or false"]}
   ]
 }

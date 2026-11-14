@@ -14,6 +14,565 @@ are:
 - **Security** - changes that affect the security of the shop or of the OAuth flow.
 - **Removed** - features or options that were taken out.
 
+## Unreleased
+
+## 2.0.0 - 2026-11-14
+
+A major version, for compact mode: connected assistants can now receive six
+tools instead of the whole list, search the one they need and run it, with the
+same permissions and the same checks. It is on for a new shop and stays off
+for a shop that updates, until you turn it on in **Tools and prompts >
+Settings**. Your settings, connections and conversations are kept.
+
+### Added
+
+**Files go to and from any assistant.** Every file now goes through two new
+tools, whatever assistant you connect, and no other tool hands out a file or
+its address on its own:
+
+- `somcp_upload_file` puts a file on the shop for the tool that needs it - a
+  product photo, a brand logo, the file of a virtual product, a module archive.
+  A photo you attach in your ChatGPT conversation reaches the shop directly,
+  without a web address and without the deposit page; an assistant that holds
+  the file itself sends it in the call; one that has a web address gives it.
+  Otherwise the assistant sends the file to the shop itself when it can, and
+  only when it cannot does it give you the deposit page to drop it on. If the
+  assistant's own settings block it from reaching your shop, it tells you once
+  which address to allow there, so it can do it alone next time. Each tool
+  keeps its own rules - formats and size - whichever way the file comes, and a
+  module archive is never taken from a link.
+- `somcp_download_file` gives the assistant any file of the shop another tool
+  found - a product photo, a logo, an attachment, an invoice, a delivery slip,
+  a credit slip - attached to its answer, a photo as a picture the assistant
+  can see: it reads the file or shows it to you instead of handing you a link.
+  Only a file too large to attach comes as an address it fetches itself for
+  15 minutes, or a link for you to open it in your back office, as in the
+  built-in assistant. It is handed over only to an account that may use the
+  tool that found it, and under the type its content shows: a file of
+  **Catalog > Files** whose content is not what its name says is never passed
+  off as a picture or a document. Its name keeps plain letters and digits
+  only, so an invoice numbered #FA000104/2026 arrives as FA000104-2026.pdf,
+  which the assistant can show you.
+
+Before, an assistant connected from outside could only give the shop a web
+address: a file it had made, or one you gave it, had no way in. Modules asking for files
+through O'So MCP Server get the same: the assistant now puts the file in itself
+when it can - a photo attached in your ChatGPT conversation included - without
+any change on their side. And a module can now hand a file to the assistant
+the same way, attached to the answer, instead of a link of its own.
+
+**Modules the assistant can upload.** The new tool `somcp_upload_module`
+takes a module's .zip archive you attached to the chat or deposited on the
+shop, puts it in the modules folder and installs it, as the **Upload a
+module** button of **Modules > Module Manager** does. The archive is checked
+before anything is written: one folder holding the module's main file, nothing
+outside it, no link, and a reasonable unpacked size. A module already on the
+shop is refused and never replaced or upgraded, and a module whose install
+fails is removed again, leaving nothing behind. Because the archive's code
+comes from outside the shop and runs on it with full rights, the assistant
+needs a permission of its own for this, **Modules - upload**, which the
+consent screen asks for apart from installing the modules already there. It
+also needs the **add** right on the **Module Manager**. A link is never
+accepted: the archive comes from the shop.
+
+**Feature values the assistant can delete.** The new tool
+`somcp_delete_feature_value` deletes one value of a feature, such as Cotton
+under Composition, as the **Delete** action on the values of a feature in
+**Catalog > Attributes & Features > Features** does. As in the back office,
+every product that had the value loses it. The answer says how many products
+lost it and which catalogue price rules still have a condition on it, so you
+can change or remove them. A value typed on one product only is refused: it is
+changed on that product. On a multistore installation, a value of a feature
+shared with other stores is refused, because deleting it would remove it from
+their products too. It needs the **delete** right on **Features**.
+`somcp_get_feature_value` now also says how many products have the value, so
+the assistant can tell you before you confirm a delete.
+
+**Features the assistant can delete.** The new tool `somcp_delete_feature`
+deletes a feature such as Composition with all its values, as the **Delete**
+action of **Catalog > Attributes & Features > Features** does. As in the back
+office, every product that showed the feature loses it. The answer says how
+many values went, how many products lost the feature, and which catalogue
+price rules still have a condition on one of the deleted values, so you can
+change or remove them. On a multistore installation, a feature shared with
+other stores is refused, because deleting it would empty it in all of them:
+delete it from the back office for all stores. It needs the **delete** right on
+**Features**.
+
+**How many products show a feature.** `somcp_get_feature` now also gives
+`products_count`, the number of products of the store that show the feature,
+so the assistant can tell you what a deletion would take away before asking
+you to confirm.
+
+**Attribute groups the assistant can delete.** The new tool
+`somcp_delete_attribute_group` deletes an attribute group such as Size or Color
+with all its values, as the **Delete** action of **Catalog > Attributes &
+Features > Attributes** does. As in the back office, the combinations built
+only on that attribute are deleted with their stock and images, and the others
+lose that one value. The answer says how many values and combinations went,
+which products were concerned, and which catalogue price rules still have a
+condition on one of the deleted values, so you can change or remove them. On
+a multistore installation the group only leaves the current store. It needs
+the **delete** right on **Attributes**.
+
+**Attribute values the assistant can delete.** The new tool
+`somcp_delete_attribute_value` deletes one value such as a size or a colour, as
+the **Delete** action of that value on **Catalog > Attributes & Features >
+Attributes** does. As in the back office, the combinations that use the value
+go with their stock and images, a product that loses its default combination
+gets a new one, and the cart rules that restricted on the value are cleaned.
+The answer lists the combinations and products that went, the cart rules that
+changed, and the catalogue price rules that still have a condition on the
+value, so you can change or remove them. Before deleting, `somcp_get_attribute_value`
+now shows **combinations_count** and the **products** that would go, so you can
+confirm with the merchant first. On a multistore installation the value only
+leaves the current store. It needs the **delete** right on **Attributes**.
+
+**The category dashboard figures.** The new tool `somcp_get_category_kpis`
+returns the four numbers shown above the category list in **Catalog >
+Categories**: how many categories are disabled, how many hold no product, the
+best selling category of the last month and the average number of products per
+category, counted as the back office counts them. The assistant reads them in
+one call instead of going through every category one by one. It needs the
+**view** right on **Categories**.
+
+**Compact mode.** More than a hundred tools weigh on every request a connected
+assistant makes, and some cap the count - VS Code stops at 128. In compact
+mode, inspired by the MCP servers of Cloudflare and Azure, connected
+assistants receive six tools instead of the whole list: `somcp_ping`, the two
+file tools `somcp_upload_file` and `somcp_download_file`, `somcp_search_tools`
+to find the tool they need and read its parameters, then
+`somcp_run_read_tool` or `somcp_run_write_tool` to run it - the second one
+flagged so the assistant asks you before a change. The same permissions, the
+same switches and the same checks apply to every call, and a guide (prompt)
+now starts by telling the assistant which runner each of its tools goes
+through. Turn it on or off in **Tools and prompts › Settings › Compact list of
+tools**: on for a new shop, off for a shop that updates. An assistant on the
+latest version of the protocol follows the change once its copy of the list
+expires; the others, ChatGPT among them today, once you refresh their tools
+in their own settings. The built-in assistant is not concerned.
+
+**Orders created from the assistant.** The new tool `somcp_create_order`
+creates an order for an existing customer, as **Add new order** then **Create
+order** do in the back office: the products and combinations, the delivery and
+invoice addresses, the carrier, free shipping, recycled packaging and gift, the
+currency and language, the order message, the payment and the order status.
+Every mistake comes back in one answer before anything is written, and a call
+refused once the cart is built leaves no cart behind. It sends the emails a
+new order sends for the status chosen, so the assistant shows you the lines,
+the carrier, the total and the status first. It needs the **add** right on
+**Orders**.
+
+**Invoices, delivery slips and credit slips handed over.** The new tool
+`somcp_get_order_document` finds the PDF of an invoice, a delivery slip or a
+credit slip of an order, the same document **View invoice**, **View delivery
+slip** and the **Documents** tab open, and the assistant then gets the file
+itself with `somcp_download_file` (below), with a link that opens it in your
+own signed-in back office, for you only, for 15 minutes. It needs the **view**
+right on **Orders**. `somcp_get_order` now also gives the number of each credit slip,
+as the **Documents** tab shows it.
+
+**Order statuses the assistant can change.** The new tool
+`somcp_update_order_status` changes an existing order status, as its **Edit**
+form of **Shop Parameters > Order Settings > Statuses** does: its name in each
+language, its colour and icon, the boxes that say what reaching it sets off,
+and its email templates. Only what you ask for changes, and a call that would
+change nothing writes nothing. A name another status already has is refused,
+as at creation. The orders already past the status are not affected. It needs
+the **edit** right on **Statuses**.
+
+**Order statuses the assistant can delete.** The new tool
+`somcp_delete_order_status` removes an order status you created, as the
+**Delete** action of **Shop Parameters > Order Settings > Statuses** does. The
+orders already on it keep it in their history; the status just leaves the list
+and the choices when you change an order. The statuses of PrestaShop and of
+your modules cannot be deleted, as in the back office. It needs the **delete**
+right on **Statuses**.
+
+**Categories the assistant can delete.** The new tool `somcp_delete_category`
+deletes a category with all its subcategories, as the **Delete** action of
+**Catalog > Categories** does, and asks you, as the back office does, what
+becomes of the products left without a category: moved to the parent category
+and turned offline, moved only, or deleted as well. Unlike the back office,
+only the products of the deleted categories are touched, never a product that
+already had no category, and a product whose default category was deleted
+gets the parent category as its new default on PrestaShop 8 too. The answer
+lists the subcategories deleted and every product moved, turned offline or
+deleted. The root category and Home cannot be deleted. It needs the **delete**
+right on **Categories**.
+
+**Stock movements the assistant can read.** The new tool
+`somcp_list_stock_movements` lists the movements of the **Movements** tab of
+**Catalog > Stock**, newest first: the product and its combination, the
+reference, the type of movement, the quantity added or removed, the date, the
+employee who made it and the order behind it when there is one. It takes the
+filters of that tab - a product, a word of the name, reference or supplier, a
+movement type, an employee, a period, a category, a supplier and the product
+status - so a question such as "who changed the stock of this product
+yesterday" now has an answer. It needs the **view** right on **Stock**.
+
+### Changed
+
+**A guide no longer shares its name with a tool.** In French, Spanish and
+German, the guide **Change an order status** read exactly like the tool that
+changes the status of one order, and both show in **Tools and prompts**. The
+guide is now named **Changer le statut des commandes**, **Cambiar el estado de
+los pedidos** and **Den Status von Bestellungen ändern**.
+
+**Photos, logos and files come through `somcp_download_file`.** The tools
+that read a product, a category, a brand, a supplier, an attribute value, the
+order statuses, the carriers, the theme or the files of **Catalog > Files** no
+longer give a web address for their pictures and files: each one now comes as
+a reference the assistant passes to `somcp_download_file`, which checks your
+rights again and hands the file over - a photo as a picture it can show and
+look at. The storefront link of a file of **Catalog > Files**, which opened
+for anyone who had it, is no longer handed out. Giving a read answer back to
+the matching update still changes nothing: the reference of the current photo,
+logo or texture keeps it as it is.
+
+**Compact mode finds the right tool more often.** In compact mode the
+assistant can now say what it looks for in separate words - the action, the
+object and the request - and the search weighs the name, title, description and
+parameters of each tool, with plurals and near spellings found. The built-in
+assistant's tool finder uses the same search. The tools, their names and the
+checks on every call are unchanged. The search comes from Novalo's open-source
+library novalo/mcp-tool-discovery, which the module now installs with its other
+dependencies.
+
+**Photos you attach show in the chat.** A photo you attach in the built-in
+assistant now shows as a picture in your message, as soon as you send it and
+when you open the conversation again, instead of its file name only. A PDF or
+a text file still shows by its name, and so does a photo whose link has
+expired.
+
+**The product audits name each missing field as your PrestaShop version does.**
+`somcp_audit_product_entities` and `somcp_audit_product_schema` now label the
+weight, the default category and the condition exactly as the product page of
+your shop shows them (for example **Main category** on PrestaShop 8 and
+**Default category** on PrestaShop 9), from one shared table, so a field never
+comes back under two different names.
+
+**A product's images read and given back are no longer refused.**
+When the assistant reads a product with `somcp_get_product`, changes one field
+and gives the whole answer back to `somcp_update_product`, the address each
+image came with is now ignored next to its `id_image`, instead of refusing the
+image as if it were being replaced. Any other address next to an `id_image` is
+still refused: an existing image cannot be swapped for another one.
+
+**A category's images and customer groups read and given back no longer count as a change.**
+When the assistant reads a category with `somcp_get_category`, changes one field
+and gives the whole answer back to `somcp_update_category`, the cover image and
+menu thumbnails it read are now left untouched: they are not downloaded again,
+not refused, and the answer no longer lists an image change that did not happen.
+The customer groups it read are taken as they are, as they already were by the
+shop, and an assistant that checks its own call before sending it no longer
+stops at them. A real new image, or removing one with `remove_cover_image` or
+`remove_menu_thumbnails`, works as before.
+
+**Empty attribute and feature fields read and given back are no longer refused.**
+When the assistant reads an attribute value, an attribute group, a feature or a
+feature value, changes one field and gives the whole answer back to its update,
+the fields that came back empty because they do not apply are now skipped
+instead of refused: the colour and texture of a value whose group is not a
+colour group, and the faceted search fields (URL word, title tag, indexable)
+when the faceted search module is not installed and enabled. Filling one of
+these fields in where it does not apply is still refused, as before.
+
+**A colour texture can be a photo attached in the chat.** The texture of
+`somcp_create_attribute_value` and `somcp_update_attribute_value` used to be
+only a web address. It is now given the way product images and logos are:
+either its public https address (`url`) or the reference of a file already on
+the shop (`upload_ref`), such as a photo attached in the built-in assistant,
+with the same download and image checks. A texture sent as a bare address, as
+before, is now refused with a message that says which form to use. A texture
+read with `somcp_get_attribute_value` and given back unchanged is no longer
+downloaded again nor counted as a change. The icon of an order status is now
+fetched by the same shared code as every other image, with its GIF check on
+top.
+
+**A brand or supplier logo read and given back no longer counts as a change.**
+When the assistant reads a brand or supplier with `somcp_get_manufacturer` or
+`somcp_get_supplier`, changes one field and gives the whole answer back to
+`somcp_update_manufacturer` or `somcp_update_supplier`, the logo address it read
+(or the empty logo) is now left untouched: the file is not downloaded again and
+the answer no longer lists a logo change that did not happen. A real new logo,
+or removing one with `remove_logo`, works as before.
+
+**Vouchers on the orders the assistant creates.** `somcp_create_order` now
+takes the vouchers to apply, as the **Vouchers** block of **Orders > Orders >
+Add new order** does. Each voucher is checked on the cart once the products,
+addresses and carrier are set, as the screen checks it: one that does not apply,
+for example below its minimum amount or restricted to another customer, is
+refused with the shop's own reason, and nothing is created. The answer lists
+the vouchers applied, as `somcp_get_order` does, and `somcp_get_order` now also
+gives the voucher behind each discount of an order.
+
+**Your own price for a line of the orders the assistant creates.**
+`somcp_create_order` now takes a unit price tax excluded for each line, as the
+**Price** field of the **Cart** block of **Add new order** does: the order
+records the line at that price, while the lines left without one keep the price
+the shop computes for the customer. The price stays tied to that order's cart
+only, as on the screen, and a refused call leaves no price behind. The answer
+now lists the lines as the order records them, with the same names as
+`somcp_get_order`, so the assistant can show you the price it set.
+
+**The same meta title and description lengths as the back office, for the
+category and brand tools.** `somcp_create_category`, `somcp_update_category`,
+`somcp_create_manufacturer`, `somcp_update_manufacturer`,
+`somcp_create_supplier` and `somcp_update_supplier` now refuse a Meta title or
+Meta description only when it is longer than the shop stores (255 and 512
+characters), exactly as the back office does, instead of the shorter limits
+they used before. A title read by `somcp_get_category` can now be given back to
+`somcp_update_category` unchanged. Past the length a search result keeps (70
+characters for a title, 160 for a description), the answer still advises, in
+`seo_warnings`, without refusing.
+
+**The SEO audits flag a meta title at the same length the writes advise.**
+`somcp_audit_product_seo`, `somcp_audit_category_seo`, `somcp_audit_cms_seo`,
+`somcp_audit_brand_seo` and `somcp_audit_page` used to flag a meta title past 60
+characters, while the tools that write it only advised past 70: a 65-character
+title written without a warning was then reported as too long. Every audit now
+flags a title past 70 characters and a description past 160, the lengths the
+back office recommends, and `somcp_update_cms_seo` and `somcp_update_meta_page`
+advise at those same lengths.
+
+**The same meta title and description lengths as the back office, for
+products, CMS pages and SEO & URLs pages.** `somcp_create_product` and
+`somcp_update_product` used to refuse a Meta title past 55 characters,
+`somcp_update_cms_seo` a Meta title past 70 and `somcp_update_meta_page` a Page
+title past 70, while the back office stores up to 255 for a product or a CMS
+page and 128 for a page of **Shop Parameters > Traffic & SEO > SEO & URLs**. A
+title read by `somcp_get_product` can now be given back to
+`somcp_update_product` unchanged. All four now refuse a title or a description
+only when it is longer than the shop stores, as the back office does, and
+advise in `seo_warnings` past 70 characters for a title and 160 for a
+description.
+
+**Clearer refusals from the category tools.** When the assistant gets a call
+to `somcp_get_category`, `somcp_create_category`, `somcp_update_category`,
+`somcp_set_category_active` or `somcp_delete_category` wrong, the answer now
+lists every problem in the same form, one line per field, and names the field
+concerned. A misspelt field is reported as such instead of being read as a
+missing category, and an unknown category or customer group is always worded
+the same way, with the tool that lists them, so the assistant corrects the
+call instead of trying other identifiers. `somcp_delete_attribute_group`
+answers the same way, and so do now the tools that create and change
+attribute groups, attribute values, features, feature values, brands, brand
+addresses and suppliers: an unknown attribute group, attribute value, feature,
+feature value, brand, brand address or supplier is named with the identifier
+given and the tool that lists them. `somcp_create_product` and
+`somcp_update_product` answer the same way: every category, brand, feature,
+document, carrier, tax rule, attribute value, customer group, customer,
+supplier or related product they do not find is named with its identifier and
+the tool that lists it, a combination, specific price or image the product
+does not have points to `somcp_get_product`, a misspelt field reads as such
+even inside a group, and a product that does not exist is refused in the same
+answer as any other mistake. The read tools `somcp_get_attribute_group`,
+`somcp_get_attribute_value`, `somcp_get_feature` and `somcp_get_feature_value`
+now answer this way too: a misspelt field is named instead of being read as a
+missing record, and an unknown attribute group, attribute value, feature or
+feature value is worded with the identifier given and the tool that lists it.
+The brand and supplier tools `somcp_get_manufacturer`, `somcp_get_supplier`,
+`somcp_get_manufacturer_address`, `somcp_list_manufacturer_addresses`,
+`somcp_set_manufacturer_active`, `somcp_set_supplier_active` and
+`somcp_delete_manufacturer_address` follow the same rule: a misspelt field or
+filter is named and nothing is read, changed or deleted, rather than being
+ignored or read as a missing brand, and an unknown country code and an unknown
+brand are reported together in one answer. `somcp_get_product`,
+`somcp_set_product_active`, `somcp_delete_product`, `somcp_get_stock` and
+`somcp_set_stock_quantity` do the same: a misspelt field is named and nothing
+is read, switched, deleted or moved, an unknown product is worded with the
+identifier given and `somcp_search_products`, a combination the product does
+not have points to `somcp_get_product` or `somcp_get_stock`, and a stock change
+reports a quantity that is not a whole number, a missing product and a wrong
+combination together in one answer. The lists `somcp_list_categories`,
+`somcp_list_attachments`, `somcp_list_attributes`, `somcp_list_features`,
+`somcp_list_manufacturers` and `somcp_list_suppliers` name a misspelt filter
+instead of answering the whole list as if it had been applied, refuse an
+Enabled filter that is not true or false instead of ignoring it, and word an
+unknown attribute group or feature as the matching read tool does, with the
+identifier given. `somcp_list_stock_movements` and `somcp_get_category_kpis`,
+written more recently, name a misspelt field or filter and read nothing the
+same way, so every catalogue and stock refusal reads alike. A product or
+category read on one PrestaShop version and given back unchanged to its update
+is no longer refused over a field that version does not have: the empty
+meta keywords of PrestaShop 9, its empty menu thumbnails, the empty
+redirection of a hidden category on PrestaShop 8 and the empty labels per
+combination on PrestaShop 8.0 are skipped, and a value typed in one of them is
+refused naming the version you run. `somcp_search_products` now refuses an
+order it does not know, such as "price", with the list of the ones it has,
+instead of answering the newest products first, and refuses a misspelt
+filter, an Enabled filter that is not true or false and a price, quantity,
+product or category that is not a number instead of ignoring them;
+`somcp_list_low_stock` does the same for its filters instead of listing the
+whole stock.
+
+**Refusals of the order writes read like the others.** The refund, return
+and cancel tools, the tools that add, change or delete an order line or a
+discount, `somcp_create_order`, `somcp_generate_order_invoice`,
+`somcp_set_invoice_note`, `somcp_set_order_address`, `somcp_set_order_carrier`,
+`somcp_set_order_currency` and `somcp_resend_order_status_email` now refuse a
+call under the same first line as the catalogue tools - "Nothing was
+recorded", "changed", "deleted", "generated" or "sent", then "Correct these and
+call again:" - so the assistant reads every refusal the same way and fixes
+every problem listed before it calls again. Nothing else in these answers
+changes. The order and return status tools and the carrier and tax rule lists
+follow the same rule: `somcp_list_order_statuses`, `somcp_list_return_statuses`,
+`somcp_list_carriers` and `somcp_list_tax_rules` name a misspelt filter instead
+of answering the whole list, and refuse an Enabled or Free shipping filter that
+is not true or false instead of ignoring it; `somcp_update_order_status`,
+`somcp_delete_order_status`, `somcp_update_return_status` and
+`somcp_delete_return_status` word an unknown status with the identifier given
+and the list that holds it, and say when the identifier is not a number at
+all; the two deletions also name a misspelt field, and delete nothing.
+
+**Clearer refusals from `somcp_set_order_note`.** A wrong call to
+`somcp_set_order_note` now lists every problem in one answer, in the same form
+as the other tools, names a misspelt field instead of ignoring it, and reports
+a note and a missing order together rather than one at a time, so the private
+note of an order is corrected in a single call.
+
+**Clearer refusals from the order payment, message, tracking and status
+tools.** A wrong call to `somcp_add_order_payment`, `somcp_add_order_message`,
+`somcp_set_order_tracking` or `somcp_set_order_status` now lists every problem
+in one answer, each named by its field, in the same form as the other tools,
+instead of stopping at the first one: a payment with a wrong amount and a wrong
+date is corrected in one call, not two. A misspelt field is named instead of
+ignored, an unknown status, invoice or shipment points to the tool that lists
+them, and nothing is recorded, changed or emailed while a problem remains.
+
+**`somcp_search_orders` refuses a filter it cannot use.** A misspelt field, a
+sort it does not know such as "amount", a date that is not YYYY-MM-DD, a
+`total_min` or `total_max` that is not a number, a `new_client` that is not true
+or false, or a `status_id` that is not a whole number above 0 or matches no
+order status is now listed in one answer and nothing is read, instead of being
+dropped or read in the default date order and reported as the orders asked for.
+An unknown status points to `somcp_list_order_statuses`, the way every order
+tool words it.
+
+**A misspelt field reads the same in every order and invoice tool.**
+`somcp_create_order`, `somcp_add_order_product`, `somcp_update_order_product`,
+`somcp_delete_order_product`, `somcp_add_order_discount`,
+`somcp_delete_order_discount`, `somcp_set_order_currency`,
+`somcp_issue_partial_refund`, `somcp_issue_standard_refund`,
+`somcp_return_order_products`, `somcp_cancel_order_products`,
+`somcp_generate_order_invoice`, `somcp_set_invoice_note` and
+`somcp_get_order_document` now name a field they do not take, on the call or on
+one of its lines, with "not a field of this tool", the wording every other tool
+already gives, instead of a wording of their own. The misspelt name is fixed in
+one call rather than read as a wrong value.
+
+**An unknown order reads the same in every order and billing tool.** When an
+order cannot be found, every order and billing tool now words it the same way,
+named by the field that was wrong: `id_order: no order of this shop has the
+identifier <n> - find it with somcp_search_orders`, the same line on
+`reference`, or `id_order: give id_order or reference - find the order with
+somcp_search_orders` when both are missing. A reference held by several orders
+is still refused with their identifiers. `somcp_get_order` now reports a
+misspelt field as such and lists it beside a wrong order in one answer, instead
+of reading an unknown order on its own line, so the assistant recovers the same
+way wherever it reads an order.
+
+**A customer read gives back its groups the way its tools take them.**
+`somcp_get_customer` now returns `group_ids` and `id_default_group` inside the
+customer, beside the fields `somcp_update_customer` and `somcp_create_customer`
+already take, so an account read there can be handed straight back to a change
+without reshaping the groups first. The named groups stay, for the merchant.
+Handing the `groups` list back to a change no longer fails without a hint: it
+is answered with where the groups go.
+
+**A customer that cannot be found reads like the rest.** `somcp_get_customer`
+now names a misspelt field instead of reading it as a missing customer, and
+words an unknown `id_customer` or `email` the same way as every other read
+tool, with the tool that lists customers, so the assistant looks it up the
+same way it does elsewhere. `somcp_update_customer` and
+`somcp_create_customer` follow: an unknown customer is reported together with
+any misspelt field of the same call, and a group the shop does not have is
+named with `somcp_list_customer_groups`, where the assistant finds the right
+one. `somcp_search_customers` now refuses a misspelt filter, an order or
+direction it does not know, a date that is not YYYY-MM-DD and a yes/no filter
+that is not true or false, instead of ignoring them and answering the whole
+list newest first.
+
+**SEO of CMS pages and shop pages written like the rest of the catalogue.**
+`somcp_update_cms_seo` and `somcp_update_meta_page` now take the languages to
+fill and their texts as the product, category and brand tools do: a
+`languages` list, all the shop's languages by default, and each text given in
+each of them, a plain text being accepted when only one language is filled.
+Their errors are now the same as those tools', so an assistant that has
+written a product writes a page the same way. `somcp_delete_order_status`
+names the deleted status in the default language of the shop it is
+connected to, rather than in the default language of the whole
+installation, and says which language that is; `somcp_ping` marks that same
+language as the default.
+
+### Fixed
+
+**A new image named like the current one is no longer taken for it.**
+When the assistant gave `somcp_update_category`, `somcp_update_manufacturer` or
+`somcp_update_supplier` a new cover or logo whose file happened to have the same
+name as the current one (for example a photo published as `3.jpg` for category
+3), the new image was silently dropped and the answer said nothing had changed.
+Only the exact address the shop gave for its own image is now left untouched;
+any other address is downloaded and stored as a new image.
+
+**Products and shop pages read in the shop's default language.**
+`somcp_get_product`, `somcp_search_products` and `somcp_list_meta_pages` now
+read in the shop's default language when no language is given, rather than in
+a language picked from the assistant's browser settings, and say in their
+answer which language the texts are in. A language the shop does not have is
+refused with the list of the ones it has, as the SEO audits now do too. A
+product or a category created with texts in some languages only fills the
+others from the default language of the shop being written to.
+
+**Orders, customers, stock and return statuses read in the shop's default
+language.** `somcp_search_orders` and `somcp_list_low_stock` now take a
+`language`, and with none given read country, status and product names in the
+shop's default language rather than in a language picked from the assistant's
+browser settings - a product name searched in the wrong language found
+nothing. `somcp_list_return_statuses` does the same, refuses a language the
+shop does not have with the list of the ones it has, like the customer tools,
+and says which language its names are in by its code rather than by a number
+no tool lists; so do `somcp_get_order` and `somcp_list_customer_groups`. The
+name in the answer of `somcp_delete_return_status` and `somcp_delete_product`
+is now in the default language of the shop being worked on, with its code, and
+on a multistore the product tools and the free shipping voucher of
+`somcp_create_order` use that shop's default language rather than the global
+one.
+
+**Test the connection can no longer be switched off.** The Connection group of
+**Tools and prompts** said **Always on**, yet `somcp_ping` under it kept two
+switches that did switch it off, and a connected assistant could no longer
+check which shop and account it had reached. Its row now says **Always on**
+like its group, and the tool stays on even where it had been switched off.
+
+**Order statuses created with an email the shop can send, read back as the
+list shows them.** `somcp_create_order_status` only accepted the email
+templates of the shop's `mails/` folder, and refused those of your theme. It
+now accepts every email an order status can send - the theme's, its parent
+theme's and the shop's own - and refuses the emails of modules that
+PrestaShop 9 lists in the form, saying why: a status set to one would send
+your customers nothing. Its boxes and its template now take the names
+`somcp_list_order_statuses` shows (`counts_as_valid`, `hidden_from_customer`,
+`sends_email`, `attaches_invoice_pdf`, `attaches_delivery_slip_pdf`,
+`email_template`), so a status read in the list can be given back; the former
+names still work. Its answer is now built exactly as the list builds a row,
+`status_id` included.
+
+**The help of How long an assistant keeps the list of tools tells the
+truth.** It said every assistant reads the list again once this delay has run
+out. Only the assistants on the latest version of the protocol do; the
+others, ChatGPT among them today, keep their list until you refresh their
+tools in their own settings, and the help now says so.
+
+### Security
+
+**The built-in assistant runs on Neuron AI 4.1.22.** When an AI service
+answered with a redirect written in a shortened form (`http:/` followed by
+another site), the engine of the built-in assistant took it for the same
+service and followed it, with your API key. It now treats it as another site
+and does not send the key there. Nothing changes in how you use the assistant.
+
 ## 1.4.0 - 2026-11-10
 
 ### Added

@@ -7,6 +7,8 @@
     {"why": "finds a carrier by part of its name, whatever the case", "arguments": {"name": "MY CARR"}, "expect": "ok", "contains": ["\"name\": \"My carrier\""]},
     {"why": "the delay read in a language the shop has, said by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
     {"why": "a name no carrier carries gives an empty list", "arguments": {"name": "no such carrier"}, "expect": "ok", "contains": ["\"carriers\": []", "\"count\": 0"]},
-    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]},
+    {"why": "an Enabled or Free shipping that is not a boolean is refused, not ignored into the whole list", "arguments": {"active": "yes", "is_free": 1}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- active: true or false", "- is_free: true or false"]},
+    {"why": "a misspelt filter is named, not ignored into a wider list", "arguments": {"free": true}, "expect": "error", "contains": ["- free: not a field of this tool"]}
   ]
 }

@@ -1,6 +1,8 @@
 {
   "calls": [
-    {"why": "each line against its own alert level, active products only", "arguments": {}, "expect": "ok", "contains": ["\"lines\"", "\"total_count\"", "\"offset\": 0"]},
+    {"why": "each line against its own alert level, active products only", "arguments": {}, "expect": "ok", "contains": ["\"lines\"", "\"total_count\"", "\"offset\": 0", "\"language\": \"en\""]},
+    {"why": "the names in a language given by its ISO code", "arguments": {"threshold": 1000000, "language": "EN"}, "expect": "ok", "contains": ["\"returned\": 20", "\"language\": \"en\""]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's, which has", "or leave language out for the shop default"]},
     {"why": "a threshold above every demo quantity fills a full first page", "arguments": {"threshold": 1000000}, "expect": "ok", "contains": ["\"id_product_attribute\"", "\"reference\"", "\"threshold\": 1000000", "\"returned\": 20"]},
     {"why": "a threshold under every quantity lists nothing", "arguments": {"threshold": -1000000}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
     {"why": "inactive products included", "arguments": {"threshold": 1000000, "active": false}, "expect": "ok", "contains": ["\"total_count\""]},
@@ -13,6 +15,8 @@
     {"why": "a supplier that does not exist lists nothing", "arguments": {"threshold": 1000000, "id_supplier": 999999}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
     {"why": "a search on the name", "arguments": {"threshold": 1000000, "search": "mug"}, "expect": "ok", "contains": ["\"total_count\""]},
     {"why": "a search that matches nothing", "arguments": {"threshold": 1000000, "search": "no-such-product-zz"}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
-    {"why": "every filter together, past the first page", "arguments": {"threshold": 1000000, "active": false, "id_category": 2, "id_supplier": 1, "search": "a", "limit": 2, "offset": 2}, "expect": "ok", "contains": ["\"offset\": 2"]}
+    {"why": "every filter together, past the first page", "arguments": {"threshold": 1000000, "active": false, "id_category": 2, "id_supplier": 1, "search": "a", "limit": 2, "offset": 2}, "expect": "ok", "contains": ["\"offset\": 2"]},
+    {"why": "a misspelt filter is named and nothing is read", "arguments": {"treshold": 5}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "treshold: not a field of this tool"]},
+    {"why": "a threshold, an Active filter and a supplier of the wrong kind, reported together", "arguments": {"threshold": "low", "active": "no", "id_supplier": "abc"}, "expect": "error", "contains": ["threshold: a whole number", "active: true or false", "id_supplier: a whole number above 0"]}
   ]
 }

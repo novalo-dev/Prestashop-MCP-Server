@@ -962,6 +962,11 @@
       <source>Modules - changes</source>
       <target>Modules - changes</target>
     </trans-unit>
+    <!-- Modules - upload -->
+    <trans-unit id="61e416fe1c3b2094d363ced12804266d" resname="Modules - upload">
+      <source>Modules - upload</source>
+      <target>Modules - upload</target>
+    </trans-unit>
     <!-- Design - read -->
     <trans-unit id="a3e00de8ea70084cc12ba457d9fd1ea9" resname="Design - read">
       <source>Design - read</source>
@@ -1072,6 +1077,16 @@
       <source>Create an order status</source>
       <target>Create an order status</target>
     </trans-unit>
+    <!-- Edit an order status -->
+    <trans-unit id="66087fd62e68a48cd09fa23c9711870f" resname="Edit an order status">
+      <source>Edit an order status</source>
+      <target>Edit an order status</target>
+    </trans-unit>
+    <!-- Delete an order status -->
+    <trans-unit id="c9f8a8873d6c247939d2f67cc1b6c62c" resname="Delete an order status">
+      <source>Delete an order status</source>
+      <target>Delete an order status</target>
+    </trans-unit>
     <!-- List customer groups -->
     <trans-unit id="dacac58a1f9ceee1476795b40c5b8ea8" resname="List customer groups">
       <source>List customer groups</source>
@@ -1106,6 +1121,16 @@
     <trans-unit id="660fc9e01f52fb7f8a715e51167c4f8d" resname="Test the connection">
       <source>Test the connection</source>
       <target>Test the connection</target>
+    </trans-unit>
+    <!-- Put a file on the shop -->
+    <trans-unit id="c76f8e0a99fcbafa330454eb80a93567" resname="Put a file on the shop">
+      <source>Put a file on the shop</source>
+      <target>Put a file on the shop</target>
+    </trans-unit>
+    <!-- Get a file from the shop -->
+    <trans-unit id="699ff2711a7411a002a982b3c02225c4" resname="Get a file from the shop">
+      <source>Get a file from the shop</source>
+      <target>Get a file from the shop</target>
     </trans-unit>
     <!-- Search orders -->
     <trans-unit id="3b5c949e5a7f93592ece65422e0496df" resname="Search orders">
@@ -1322,6 +1347,11 @@
       <source>Get a category</source>
       <target>Get a category</target>
     </trans-unit>
+    <!-- Category KPIs -->
+    <trans-unit id="62bcbaca277d2c8face0b81c8aef4047" resname="Category KPIs">
+      <source>Category KPIs</source>
+      <target>Category KPIs</target>
+    </trans-unit>
     <!-- Create a category -->
     <trans-unit id="cff15d43797962a1e28c0515ab556743" resname="Create a category">
       <source>Create a category</source>
@@ -1337,6 +1367,31 @@
       <source>Show or hide a category</source>
       <target>Show or hide a category</target>
     </trans-unit>
+    <!-- Delete a category -->
+    <trans-unit id="e355230d90581acc2cceaa97773621eb" resname="Delete a category">
+      <source>Delete a category</source>
+      <target>Delete a category</target>
+    </trans-unit>
+    <!-- Delete a feature -->
+    <trans-unit id="49995bb3b44ed1568b5b17c445ea18b1" resname="Delete a feature">
+      <source>Delete a feature</source>
+      <target>Delete a feature</target>
+    </trans-unit>
+    <!-- Delete a feature value -->
+    <trans-unit id="7ca2e10bddbeaaa9b21cd03a5139da10" resname="Delete a feature value">
+      <source>Delete a feature value</source>
+      <target>Delete a feature value</target>
+    </trans-unit>
+    <!-- Delete an attribute group -->
+    <trans-unit id="d478cb40b60737d31e2bbeaf42d81fef" resname="Delete an attribute group">
+      <source>Delete an attribute group</source>
+      <target>Delete an attribute group</target>
+    </trans-unit>
+    <!-- Delete an attribute value -->
+    <trans-unit id="2149ee35e41d39ad4e7fba18ccb75e28" resname="Delete an attribute value">
+      <source>Delete an attribute value</source>
+      <target>Delete an attribute value</target>
+    </trans-unit>
     <!-- Get the stock of a product -->
     <trans-unit id="5ce4c0ce8e0b1778f0a99f54abdd5230" resname="Get the stock of a product">
       <source>Get the stock of a product</source>
@@ -1351,6 +1406,11 @@
     <trans-unit id="dc73d6f241e06132c512404f453a5adc" resname="List low stock">
       <source>List low stock</source>
       <target>List low stock</target>
+    </trans-unit>
+    <!-- List stock movements -->
+    <trans-unit id="d8bb629718e080207a2881df202766b2" resname="List stock movements">
+      <source>List stock movements</source>
+      <target>List stock movements</target>
     </trans-unit>
     <!-- Search customers -->
     <trans-unit id="8c21c47c1d902c8a2a72183ab53387d3" resname="Search customers">
@@ -1456,6 +1516,16 @@
     <trans-unit id="c6b7feb4235b01023ef8b570c6d31fcd" resname="Set the note on an invoice">
       <source>Set the note on an invoice</source>
       <target>Set the note on an invoice</target>
+    </trans-unit>
+    <!-- Create an order -->
+    <trans-unit id="1989be897a7420598896ef8051cbfd49" resname="Create an order">
+      <source>Create an order</source>
+      <target>Create an order</target>
+    </trans-unit>
+    <!-- Get a document of an order -->
+    <trans-unit id="75827080656372afa8f1608d133e90c2" resname="Get a document of an order">
+      <source>Get a document of an order</source>
+      <target>Get a document of an order</target>
     </trans-unit>
     <!-- Change the currency of an order -->
     <trans-unit id="ecbed0631c39413916a9f89ad36e1e3f" resname="Change the currency of an order">
@@ -1662,15 +1732,50 @@
       <source>Tools %from% to %to% of %total%</source>
       <target>Tools %from% to %to% of %total%</target>
     </trans-unit>
+    <!-- Compact list of tools -->
+    <trans-unit id="7ff90bbf0d925a6213a210e9e6c40a2e" resname="Compact list of tools">
+      <source>Compact list of tools</source>
+      <target>Compact list of tools</target>
+    </trans-unit>
+    <!-- Connected assistants receive six tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected. -->
+    <trans-unit id="a050e5818615e6737453b15756eb9914" resname="Connected assistants receive six tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.">
+      <source>Connected assistants receive six tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.</source>
+      <target>Connected assistants receive six tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.</target>
+    </trans-unit>
+    <!-- Compact mode on -->
+    <trans-unit id="44a7fa8ca50864d82d0bd2acf1a27883" resname="Compact mode on">
+      <source>Compact mode on</source>
+      <target>Compact mode on</target>
+    </trans-unit>
+    <!-- Compact mode off -->
+    <trans-unit id="9fd7acc8d5645786ae312f0326a70c5b" resname="Compact mode off">
+      <source>Compact mode off</source>
+      <target>Compact mode off</target>
+    </trans-unit>
+    <!-- Search the shop tools -->
+    <trans-unit id="e0f9a2702f57166c88a5664a07f41562" resname="Search the shop tools">
+      <source>Search the shop tools</source>
+      <target>Search the shop tools</target>
+    </trans-unit>
+    <!-- Run a read tool -->
+    <trans-unit id="9ab6f4eec943d62cd8f91f70528fe706" resname="Run a read tool">
+      <source>Run a read tool</source>
+      <target>Run a read tool</target>
+    </trans-unit>
+    <!-- Run a tool that changes the shop -->
+    <trans-unit id="cafd8fa4863facfa0e0bd3a2f588aca8" resname="Run a tool that changes the shop">
+      <source>Run a tool that changes the shop</source>
+      <target>Run a tool that changes the shop</target>
+    </trans-unit>
     <!-- How long an assistant keeps the list of tools -->
     <trans-unit id="85bda97a11e0fe0736c39b07f2ed5bb9" resname="How long an assistant keeps the list of tools">
       <source>How long an assistant keeps the list of tools</source>
       <target>How long an assistant keeps the list of tools</target>
     </trans-unit>
-    <!-- In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it - so the assistant re-reads only when this has run out. A tool switched on or off appears or disappears after that delay, not before. Lower it while you are adding tools, raise it back afterwards. 300 by default. -->
-    <trans-unit id="eddbb6c47b8fdbf90b57757a88577722" resname="In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it - so the assistant re-reads only when this has run out. A tool switched on or off appears or disappears after that delay, not before. Lower it while you are adding tools, raise it back afterwards. 300 by default.">
-      <source>In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it - so the assistant re-reads only when this has run out. A tool switched on or off appears or disappears after that delay, not before. Lower it while you are adding tools, raise it back afterwards. 300 by default.</source>
-      <target>In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it - so the assistant re-reads only when this has run out. A tool switched on or off appears or disappears after that delay, not before. Lower it while you are adding tools, raise it back afterwards. 300 by default.</target>
+    <!-- In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it. Assistants on the latest version of the protocol read the list again once this has run out; the others, ChatGPT among them today, keep it until you refresh their tools in their own settings. Lower it while you are adding tools, raise it back afterwards. 300 by default. -->
+    <trans-unit id="f09c85f91003c3def670caf3bbad0e8f" resname="In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it. Assistants on the latest version of the protocol read the list again once this has run out; the others, ChatGPT among them today, keep it until you refresh their tools in their own settings. Lower it while you are adding tools, raise it back afterwards. 300 by default.">
+      <source>In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it. Assistants on the latest version of the protocol read the list again once this has run out; the others, ChatGPT among them today, keep it until you refresh their tools in their own settings. Lower it while you are adding tools, raise it back afterwards. 300 by default.</source>
+      <target>In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it. Assistants on the latest version of the protocol read the list again once this has run out; the others, ChatGPT among them today, keep it until you refresh their tools in their own settings. Lower it while you are adding tools, raise it back afterwards. 300 by default.</target>
     </trans-unit>
     <!-- Available prompts -->
     <trans-unit id="ca66b1a0069ab1314bc0bf61bdff07b1" resname="Available prompts">
@@ -1756,6 +1861,16 @@
     <trans-unit id="a590ed8bc24989c527459f63ced69897" resname="Install, enable and disable the modules already present on this shop, which runs their own code">
       <source>Install, enable and disable the modules already present on this shop, which runs their own code</source>
       <target>Install, enable and disable the modules already present on this shop, which runs their own code</target>
+    </trans-unit>
+    <!-- Upload a module -->
+    <trans-unit id="76ab1ee2aacc1b9bbc0a70bf6cca7004" resname="Upload a module">
+      <source>Upload a module</source>
+      <target>Upload a module</target>
+    </trans-unit>
+    <!-- Upload and install a module archive: its code comes from outside the shop and runs on it with full rights -->
+    <trans-unit id="8689bb78d4720f1d8e00aeec7d7258b4" resname="Upload and install a module archive: its code comes from outside the shop and runs on it with full rights">
+      <source>Upload and install a module archive: its code comes from outside the shop and runs on it with full rights</source>
+      <target>Upload and install a module archive: its code comes from outside the shop and runs on it with full rights</target>
     </trans-unit>
     <!-- Enable or disable a module -->
     <trans-unit id="e709837fc9fc8dadcf277286474ed7f4" resname="Enable or disable a module">

@@ -76,14 +76,15 @@ class Somcp extends Module
         'SomcpRequestState',
         'SomcpElicitation',
         'SomcpUpload',
+        'SomcpDownload',
         'SomcpTool',
         'SomcpStats',
-        'SomcpProductImage',
         'SomcpCatalog',
         'SomcpModules',
         'SomcpToolRegistry',
         'SomcpPrompt',
         'SomcpPromptRegistry',
+        'SomcpCompact',
         'SomcpContract',
         'SomcpDiagnostic',
         'SomcpUpdate',
@@ -108,7 +109,7 @@ class Somcp extends Module
     {
         $this->name = 'somcp';
         $this->tab = 'administration';
-        $this->version = '1.4.0';
+        $this->version = '2.0.0';
         $this->author = 'Novalo';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -132,9 +133,9 @@ class Somcp extends Module
     /**
      * Loads the module classes.
      *
-     * There is no autoloader and no Composer dependency, following the same
-     * choice as the other Novalo modules: one require per file, called from the
-     * entry points that need them.
+     * The classes of classes/ have no autoloader, following the same choice as
+     * the other Novalo modules: one require per file, called from the entry
+     * points that need them. What Composer brings is loaded by dependencies().
      */
     public static function bootClasses(): void
     {
@@ -142,6 +143,29 @@ class Somcp extends Module
             if (!class_exists($class, false)) {
                 require_once _PS_MODULE_DIR_ . 'somcp/classes/' . $class . '.php';
             }
+        }
+    }
+
+    /**
+     * Loads the module's Composer dependencies when nothing has yet.
+     *
+     * PrestaShop registers a module's autoloader through its Symfony kernel,
+     * which a legacy front controller of PrestaShop 8 never boots: there, the
+     * classes of vendor/ and of src/ were simply not found. One place for
+     * every entry point that needs them - the sign-in page's limits and
+     * anti-robot check, the tool search and compact mode. A shop that
+     * installed the module with Composer has them in its own vendor/ already.
+     */
+    public static function dependencies(): void
+    {
+        if (class_exists('RateLimit\\Rate') && class_exists('AltchaOrg\\Altcha\\Altcha')
+            && class_exists('Novalo\\McpToolDiscovery\\Discovery')
+            && class_exists('Novalo\\Somcp\\Security\\DbRateLimiter')) {
+            return;
+        }
+        $autoload = _PS_MODULE_DIR_ . 'somcp/vendor/autoload.php';
+        if (is_file($autoload)) {
+            require_once $autoload;
         }
     }
 
@@ -334,6 +358,9 @@ class Somcp extends Module
 
         $this->declareToolHook();
         SomcpConfig::seed();
+        // A new shop has no assistant used to the full list yet, so it starts
+        // in compact mode; the default stays off for the shops that update.
+        Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, '1', false, 0, 0);
         SomcpBackOffice::rememberAdminDir();
 
         return true;
@@ -901,7 +928,10 @@ class Somcp extends Module
             'somcp_issuer' => SomcpConfig::issuer(),
             'somcp_multistore' => Shop::isFeatureActive(),
             'somcp_tools' => $this->scopeGroups($tools),
-            'somcp_tools_count' => count($tools),
+            // The shop's tools: the three of compact mode only reach them.
+            'somcp_tools_count' => count(array_filter($tools, static function (array $row): bool {
+                return $row['fixed'] !== 'compact';
+            })),
             'somcp_prompts' => $this->scopeGroups($prompts),
             'somcp_prompts_count' => count($prompts),
             'somcp_inheritable' => SomcpConfig::inheritableContext(),
@@ -1148,6 +1178,7 @@ class Somcp extends Module
             SomcpConfig::CIMD_ENABLED,
             SomcpConfig::DCR_ENABLED,
             SomcpConfig::LOG_ENABLED,
+            SomcpConfig::TOOLS_COMPACT,
         ];
         // The rules that tie two settings together hold before anything is
         // written, as in the built-in assistant's settings tool.
@@ -1231,8 +1262,10 @@ class Somcp extends Module
             }
         }
 
-        foreach (array_keys($registry->all()) as $name) {
-            if (!isset($ticked[$name])) {
+        foreach ($registry->all() as $name => $tool) {
+            // A tool that stays on is never written off, whatever a hand-made
+            // post says: the page shows no switch for it.
+            if (!isset($ticked[$name]) && !SomcpToolRegistry::alwaysOn($tool)) {
                 $off[] = $name;
             }
         }
@@ -1352,6 +1385,27 @@ class Somcp extends Module
                 // on the group's row, and saving must not mix the two.
                 'on' => SomcpToolRegistry::isSwitchedOn($name),
                 'chat' => SomcpToolRegistry::isSwitchedOn($name, true),
+                // No switch on a row that cannot be switched: one that moved
+                // and did nothing would say the opposite of its group.
+                'fixed' => SomcpToolRegistry::alwaysOn($tool) ? 'always' : '',
+            ];
+        }
+
+        // The tools of compact mode, under Connection beside somcp_ping. The
+        // compact setting below the list decides whether connected assistants
+        // get them, so they carry no switch of their own: two places deciding
+        // the same thing would end up disagreeing.
+        foreach (SomcpCompact::describeOwn() as $tool) {
+            $list[] = [
+                'name' => $tool['name'],
+                'title' => $tool['title'],
+                'description' => $tool['description'],
+                'module' => '',
+                'group' => SomcpScope::ACCESS,
+                'writes' => $tool['writes'],
+                'on' => SomcpCompact::enabled(),
+                'chat' => false,
+                'fixed' => 'compact',
             ];
         }
 

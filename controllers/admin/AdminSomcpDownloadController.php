@@ -26,12 +26,13 @@ declare(strict_types=1);
  * on. A leaked link is useless without that session: the signature is bound to
  * the employee it was made for, so it only verifies for the one signed in.
  *
- * Nothing is rendered before every check passes: the link is sound and unexpired,
+ * Nothing is sent before every check passes: the link is sound and unexpired,
  * the signed-in employee is the one it was made for and on the shop it belongs
- * to (both enforced by the signature), the employee has view on the Orders
- * screen the document hangs off, and the document still exists on that shop.
- * The PDF is then built on demand from the core PDF class, so no customer data
- * is written to disk.
+ * to (both enforced by the signature), the employee holds the back office
+ * rights of the tool that reads that kind of file (SomcpDownload::mayHave()),
+ * and the file still exists on that shop. A document of an order is then
+ * built on demand from the core PDF class, so no customer data is written to
+ * disk; any other file is read where the shop keeps it.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -78,8 +79,8 @@ class AdminSomcpDownloadController extends ModuleAdminController
      *
      * The tab is hidden and has no permissions of its own, so the usual check
      * would refuse everyone but the super administrator. What may be downloaded
-     * is bounded by the signed link and, below, by the view right on the Orders
-     * screen - not by a permission on this hidden tab.
+     * is bounded by the signed link and, below, by the rights of the tool that
+     * reads that kind of file - not by a permission on this hidden tab.
      *
      * @param bool $disable
      *
@@ -129,84 +130,64 @@ class AdminSomcpDownloadController extends ModuleAdminController
 
         $query = [
             'kind' => (string) Tools::getValue('kind'),
-            'id' => (int) Tools::getValue('id'),
+            'id' => (string) Tools::getValue('id'),
             'e' => (int) Tools::getValue('e'),
             's' => (string) Tools::getValue('s'),
         ];
 
-        $resolved = SomcpDownload::check($query, $idEmployee, $idShop);
+        $sound = SomcpDownload::check($query, $idEmployee, $idShop);
 
-        if ($resolved === 'expired') {
+        if ($sound === 'expired') {
             return $this->refuse('download_refused', 'expired', $this->module->l10n('This link has expired. Ask the assistant for the document again.'), $idEmployee);
         }
-        if ($resolved === 'signature') {
+        if ($sound !== '') {
             return $this->refuse('download_refused', 'signature', $this->module->l10n('This link was made for another employee.'), $idEmployee);
         }
 
-        // The view right of the screen the document belongs to, read the way
-        // the core AdminPdf controller reads it on 8.0.1 and 9.0.0.
-        if (!self::mayView($employee)) {
+        if (!SomcpDownload::mayHave($query['kind'], null, $idEmployee)) {
             return $this->refuse('download_refused', 'no permission', $this->module->l10n('You do not have permission to view this.'), $idEmployee);
         }
 
-        if ($resolved === 'gone') {
+        $file = SomcpDownload::file($query['kind'], $query['id'], $idShop);
+        if (!is_array($file)) {
             return $this->refuse('download_refused', 'gone', $this->module->l10n('This document no longer exists.'), $idEmployee);
         }
 
-        $this->render($resolved['object'], (string) Tools::getValue('kind'), $resolved['template']);
+        $this->send($file);
 
         return '';
     }
 
     /**
-     * Whether the employee may view the Orders screen the documents hang off.
+     * Sends a file, as the core sends a PDF, and stops the script.
      *
-     * @param Employee $employee
+     * The name is reduced to plain characters by SomcpDownload::cleanName(),
+     * as everywhere a file goes out: an attachment's name was typed by
+     * whoever uploaded it.
      *
-     * @return bool
+     * @param array{bytes:string, name:string, mime:string} $file
      */
-    private static function mayView(Employee $employee): bool
+    private function send(array $file): void
     {
-        $access = Profile::getProfileAccess(
-            (int) $employee->id_profile,
-            (int) Tab::getIdFromClassName(SomcpDownload::SCREEN)
-        );
-
-        return is_array($access) && isset($access['view']) && $access['view'] === '1';
-    }
-
-    /**
-     * Builds the PDF with the core PDF class and stops the script.
-     *
-     * The same calls on both versions: the document is named by its invoice or
-     * slip identifier, so it never meets the 9.0.0 redirect that the id_order
-     * entry points take.
-     *
-     * @param ObjectModel $object the OrderInvoice or OrderSlip
-     * @param string $kind
-     * @param string $template a PDF::TEMPLATE_* value
-     */
-    private function render(ObjectModel $object, string $kind, string $template): void
-    {
-        // AdminPdf creates this before rendering; TCPDF writes its working
-        // files here and fails silently without it.
-        $cache = _PS_CACHE_DIR_ . 'tcpdf/';
-        if (!is_dir($cache)) {
-            @mkdir($cache, 0775, true);
-        }
-
-        // The theme may add invoice lines through this hook, as AdminPdf runs
-        // it before rendering an invoice.
-        if ($kind === 'invoice') {
-            Hook::exec('actionPDFInvoiceRender', ['order_invoice_list' => [$object]]);
-        }
-
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
 
-        $pdf = new PDF($object, $template, $this->context->smarty);
-        $pdf->render();
+        // Shown in the page only for the types a browser cannot run: an
+        // attachment may be an HTML or SVG file, which opened inline here would
+        // run inside the back office. Anything else is saved, never shown.
+        $shown = in_array($file['mime'], ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'], true);
+        $name = SomcpDownload::cleanName($file['name']);
+        header('Content-Type: ' . ($shown ? $file['mime'] : 'application/octet-stream'));
+        header('Content-Length: ' . strlen($file['bytes']));
+        header('Content-Disposition: ' . ($shown ? 'inline' : 'attachment') . '; filename="' . $name . '"');
+        header('X-Content-Type-Options: nosniff');
+        // Not on a PDF: Chrome's viewer refuses to open one under a sandbox.
+        if ($file['mime'] !== 'application/pdf') {
+            header("Content-Security-Policy: default-src 'none'; sandbox");
+        }
+        header('Cache-Control: private, no-store');
+        echo $file['bytes'];
         exit;
     }
 

@@ -42,7 +42,8 @@ declare(strict_types=1);
  *
  * Then the permissions: every tool must be refused to an employee whose
  * profile holds no right, to an account that does not exist and to a token
- * without its scope, and only somcp_ping may ask for no right at all.
+ * without its scope, and only somcp_ping and the two file tools, which check
+ * the rights of what they reach, may ask for no right of their own.
  *
  * Usage: php dev/shop-tests/run.php <prestashop root>
  * Exit code 0 when every call behaved, 1 otherwise.
@@ -217,8 +218,11 @@ if ($nobody === 0) {
         $required = $tool->getRequiredPermissions();
         $checks += 5;
 
-        // Only the connection check is meant to ask for no back-office right.
-        if ($required === [] && $name !== 'somcp_ping') {
+        // Only three tools are meant to ask for no back-office right: the
+        // connection check, which reads no shop data, and the two file tools,
+        // whose handlers check the rights of what they reach - the tool a
+        // deposit is for, the document a reference points at.
+        if ($required === [] && !in_array($name, ['somcp_ping', 'somcp_upload_file', 'somcp_download_file'], true)) {
             $failures[] = "$name: asks for no back-office permission - declare it with SomcpTool::acts()";
         }
         if (!$tool->isAvailableTo($scopes, (int) $employee->id)) {
@@ -702,25 +706,32 @@ if (!class_exists('NeuronAI\\Testing\\FakeAIProvider')) {
             $failures[] = 'assistant: the approved module setting was not written';
         }
         ++$assistantChecks;
-        if (SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'off', (int) $context->shop->id) !== ''
-            || SomcpToolRegistry::isEnabled('somcp_ping')
-            || SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'on', (int) $context->shop->id) !== ''
-            || !SomcpToolRegistry::isEnabled('somcp_ping')) {
+        if (SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_list_order_statuses', 'off', (int) $context->shop->id) !== ''
+            || SomcpToolRegistry::isEnabled('somcp_list_order_statuses')
+            || SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_list_order_statuses', 'on', (int) $context->shop->id) !== ''
+            || !SomcpToolRegistry::isEnabled('somcp_list_order_statuses')) {
             $failures[] = 'assistant: a tool could not be switched off and on again from the chat';
+        }
+        // Test the connection has no switch on the page, and the chat may not
+        // switch off what the page does not offer.
+        ++$assistantChecks;
+        if (SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'off', (int) $context->shop->id) === ''
+            || !SomcpToolRegistry::isEnabled('somcp_ping')) {
+            $failures[] = 'assistant: somcp_ping could be switched off from the chat';
         }
         // The two columns of the Tools and prompts tab are two lists: off for
         // the built-in assistant leaves the tool to the connected assistants,
         // and the other way round.
         ++$assistantChecks;
         $idShop = (int) $context->shop->id;
-        $builtinOff = SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_TOOL_PREFIX . 'somcp_ping', 'off', $idShop) === ''
-            && SomcpToolRegistry::isEnabled('somcp_ping')
-            && !SomcpToolRegistry::isEnabled('somcp_ping', true);
-        $mcpOff = SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_TOOL_PREFIX . 'somcp_ping', 'on', $idShop) === ''
-            && SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'off', $idShop) === ''
-            && !SomcpToolRegistry::isEnabled('somcp_ping')
-            && SomcpToolRegistry::isEnabled('somcp_ping', true);
-        SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_ping', 'on', $idShop);
+        $builtinOff = SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_TOOL_PREFIX . 'somcp_list_order_statuses', 'off', $idShop) === ''
+            && SomcpToolRegistry::isEnabled('somcp_list_order_statuses')
+            && !SomcpToolRegistry::isEnabled('somcp_list_order_statuses', true);
+        $mcpOff = SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_TOOL_PREFIX . 'somcp_list_order_statuses', 'on', $idShop) === ''
+            && SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_list_order_statuses', 'off', $idShop) === ''
+            && !SomcpToolRegistry::isEnabled('somcp_list_order_statuses')
+            && SomcpToolRegistry::isEnabled('somcp_list_order_statuses', true);
+        SomcpModuleSettings::write(SomcpModuleSettings::TOOL_PREFIX . 'somcp_list_order_statuses', 'on', $idShop);
         $promptOff = SomcpModuleSettings::write(SomcpModuleSettings::BUILTIN_PROMPT_PREFIX . 'somcp-connection-check', 'off', $idShop) === ''
             && SomcpPromptRegistry::isEnabled('somcp-connection-check')
             && !SomcpPromptRegistry::isEnabled('somcp-connection-check', true);

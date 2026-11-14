@@ -82,6 +82,17 @@ class SomcpToolListManufacturers
     {
         $idShop = (int) Somcp::currentShop()->id;
 
+        // A misspelt filter, or an Enabled that is not a boolean, would widen
+        // the list without a word, and the assistant would describe every
+        // brand as one of those asked for: both are refused instead.
+        $errors = SomcpTool::unknownFields($arguments, ['active', 'name']);
+        if (array_key_exists('active', $arguments) && !is_bool($arguments['active'])) {
+            $errors[] = 'active: true or false';
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         // A query rather than Manufacturer::getManufacturers(), which reads the
         // shop from the global context and needs a name in the language asked
         // for: here the shop comes from the token, and a brand with no
@@ -94,7 +105,7 @@ class SomcpToolListManufacturers
         $query->from('manufacturer', 'm');
         $query->innerJoin('manufacturer_shop', 'ms', 'ms.`id_manufacturer` = m.`id_manufacturer` AND ms.`id_shop` = ' . $idShop);
         // The same two filters as the list: Enabled (All / Yes / No) and Name.
-        if (isset($arguments['active']) && is_bool($arguments['active'])) {
+        if (isset($arguments['active'])) {
             $query->where('m.`active` = ' . (int) $arguments['active']);
         }
         $name = isset($arguments['name']) && is_scalar($arguments['name']) ? trim((string) $arguments['name']) : '';

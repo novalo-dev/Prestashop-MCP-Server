@@ -7,6 +7,7 @@
     {"why": "a language that is not a string is refused", "arguments": {"language": 5}, "expect": "error", "contains": ["This language is not one of the shop's"]},
     {"why": "filtered by part of the name", "arguments": {"name": "manual"}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]},
     {"why": "filtered by part of the file name", "arguments": {"file_name": ".pdf"}, "expect": "ok", "contains": ["\"attachments\"", "\"count\""]},
-    {"why": "a name no file carries lists nothing", "arguments": {"name": "no-file-is-named-like-this"}, "expect": "ok", "contains": ["\"attachments\": []", "\"count\": 0"]}
+    {"why": "a name no file carries lists nothing", "arguments": {"name": "no-file-is-named-like-this"}, "expect": "ok", "contains": ["\"attachments\": []", "\"count\": 0"]},
+    {"why": "a misspelt filter is named, not ignored into a wider list", "arguments": {"filename": ".pdf"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- filename: not a field of this tool"]}
   ]
 }

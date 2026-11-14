@@ -68,11 +68,10 @@ class SomcpToolAuditCmsSeo
             Somcp::t('Audit the SEO of CMS pages'),
             'Lists the CMS pages of this shop, displayed or not, whose search engine fields fail a check: one '
                 . 'entry per page and language with the failed checks and the value at fault, and counts per check. '
-                . 'title (page title), meta_title (Meta title) and seo_title (what search engines read, the one '
-                . 'checked) are named as in somcp_get_cms_page. Checks: meta_title_too_long (over 60 characters), '
-                . 'meta_title_duplicate, meta_description_missing, meta_description_short (under 70), '
-                . 'meta_description_long (over 160), content_short (under 150 words), not_indexable. Read only. To '
-                . 'fix them use somcp_update_cms_seo.',
+                . 'title, meta_title and seo_title are named as in somcp_get_cms_page; seo_title is the one checked. '
+                . 'Checks: meta_title_too_long (over 70 characters), meta_title_duplicate, meta_description_missing, '
+                . 'meta_description_short (under 70), meta_description_long (over 160), content_short (under 150 '
+                . 'words), link_rewrite_duplicate, not_indexable. Read only. To fix them use somcp_update_cms_seo.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -104,11 +103,7 @@ class SomcpToolAuditCmsSeo
 
         $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
         if ($languages === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
-                    . 'language out for all of them.',
-                true
-            );
+            return SomcpTool::languageRefused($idShop, true);
         }
 
         $idLangs = array_keys($languages);
@@ -172,12 +167,12 @@ class SomcpToolAuditCmsSeo
         $words = SomcpToolAuditProductSeo::words((string) $row['content']);
 
         $found = [
-            'meta_title_too_long' => Tools::strlen($title) > SomcpToolAuditProductSeo::TITLE_MAX ? $title : null,
+            'meta_title_too_long' => Tools::strlen($title) > SomcpTool::META_TITLE_RECOMMENDED ? $title : null,
             'meta_title_duplicate' => $duplicateTitle ? $title : null,
             'meta_description_missing' => $description === '' ? '' : null,
             // Same lower bound as the product audit, from its shared constant.
             'meta_description_short' => $description !== '' && Tools::strlen($description) < SomcpToolAuditProductSeo::DESCRIPTION_MIN ? $description : null,
-            'meta_description_long' => Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX ? $description : null,
+            'meta_description_long' => Tools::strlen($description) > SomcpTool::metaDescriptionRecommended() ? $description : null,
             // The value is the number of words, the thing to raise.
             'content_short' => $words < SomcpToolAuditProductSeo::WORDS_MIN ? $words : null,
             'link_rewrite_duplicate' => $duplicateUrl ? (string) $row['link_rewrite'] : null,

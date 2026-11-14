@@ -382,6 +382,13 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
 
             return SomcpJsonRpc::error($id, SomcpJsonRpc::INTERNAL_ERROR, 'Prompt unavailable');
         }
+        // In compact mode the tools a guide names are not in the assistant's
+        // list. Added here rather than to the file, which the built-in
+        // assistant reads too, and put first so it is read before the steps.
+        $block = SomcpCompact::enabled() ? SomcpCompact::promptBlock($prompt) : '';
+        if ($block !== '' && isset($result['messages'][0]['content']['text'])) {
+            $result['messages'][0]['content']['text'] = $block . $result['messages'][0]['content']['text'];
+        }
 
         if ($modern) {
             $result['resultType'] = 'complete';
@@ -423,7 +430,8 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
             'supportedVersions' => SomcpProtocol::supportedVersions(),
             'capabilities' => self::capabilities(),
             'instructions' => 'Tools exposed by the PrestaShop shop "'
-                . (string) Configuration::get('PS_SHOP_NAME') . '" through O\'So MCP Server.',
+                . (string) Configuration::get('PS_SHOP_NAME') . '" through O\'So MCP Server.'
+                . (SomcpCompact::enabled() ? SomcpCompact::instructions() : ''),
             '_meta' => [SomcpProtocol::META_SERVER_INFO => $this->serverInfo()],
         ];
 
@@ -446,10 +454,10 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
      */
     private function toolsListResult(array $tokenRow, bool $modern): array
     {
-        $result = ['tools' => SomcpToolRegistry::getInstance()->describeFor(
-            (string) $tokenRow['scopes'],
-            (int) $tokenRow['id_employee']
-        )];
+        $result = ['tools' => SomcpCompact::enabled()
+            ? SomcpCompact::listFor($this->gate([], $tokenRow, $modern))
+            : SomcpToolRegistry::getInstance()->describeFor((string) $tokenRow['scopes'], (int) $tokenRow['id_employee']),
+        ];
 
         if ($modern) {
             $result['resultType'] = 'complete';
@@ -478,18 +486,139 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
         $name = (string) ($params['name'] ?? '');
         $arguments = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
 
+        if (SomcpCompact::owns($name)) {
+            return $this->compactCallResult($name, $arguments, $params, $tokenRow, $modern);
+        }
+
         $tool = SomcpToolRegistry::getInstance()->get($name);
         if ($tool === null) {
             return $this->finish(SomcpTool::text('Unknown tool: ' . Tools::substr($name, 0, 60), true), $modern);
         }
 
+        $refused = $this->refusal($tool, $tokenRow, $modern);
+        if ($refused !== null) {
+            return $refused;
+        }
+
+        $result = $this->runTool($tool, $arguments, $params, $tokenRow, $modern);
+        if (SomcpTool::isInputRequired($result)) {
+            return $this->askResult(
+                $result,
+                $name,
+                $arguments,
+                (int) $tokenRow['id_employee'],
+                $modern,
+                $modern ? SomcpProtocol::clientCapabilities($params) : []
+            );
+        }
+
+        return $this->finish($result, $modern);
+    }
+
+    /**
+     * A call to one of the three tools of compact mode, answered by the
+     * library's compact mode through the shop's gate.
+     *
+     * Answered whatever the mode, as the library does: an assistant keeps the
+     * list it read for minutes, and one that read the compact list before the
+     * merchant turned the mode off must not see its calls fail until its copy
+     * expires.
+     *
+     * The tool a runner names meets here, first, the checks a direct call
+     * meets that have a reason of their own to give - switched off, a scope
+     * the token lacks (the 403 that tells the assistant which scope to ask
+     * for), a back office permission the account lacks - and each is logged.
+     * The library then sees only the tools that pass them, and refuses the
+     * rest as unknown. A question the tool asks is sent sealed under the tool's
+     * own name and arguments, which the runner's replay brings back to.
+     *
+     * @param string $name one of SomcpCompact::names()
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $params
+     * @param array<string, mixed> $tokenRow
+     * @param bool $modern
+     *
+     * @return array<string, mixed>
+     */
+    private function compactCallResult(string $name, array $arguments, array $params, array $tokenRow, bool $modern): array
+    {
+        $runs = SomcpCompact::runs($name, $arguments);
+        if ($runs !== '' && !SomcpCompact::owns($runs)) {
+            $tool = SomcpToolRegistry::getInstance()->get($runs);
+            if ($tool === null) {
+                return $this->finish(SomcpTool::text(SomcpCompact::unknown($runs), true), $modern);
+            }
+            $refused = $this->refusal($tool, $tokenRow, $modern);
+            if ($refused !== null) {
+                return $refused;
+            }
+        }
+
+        $gate = $this->gate($params, $tokenRow, $modern);
+        $result = SomcpCompact::call($name, $arguments, $gate);
+
+        $asked = $gate->asked();
+        if ($asked !== null) {
+            return $this->askResult(
+                $asked['result'],
+                $asked['name'],
+                $asked['arguments'],
+                (int) $tokenRow['id_employee'],
+                $modern,
+                $modern ? SomcpProtocol::clientCapabilities($params) : []
+            );
+        }
+
+        return $this->finish($result, $modern);
+    }
+
+    /**
+     * The caller of this request, as novalo/mcp-tool-discovery asks for it.
+     *
+     * @param array<string, mixed> $params the call's parameters, for the state a tool resumes from
+     * @param array<string, mixed> $tokenRow
+     * @param bool $modern
+     *
+     * @return Novalo\Somcp\Discovery\ShopGate
+     */
+    private function gate(array $params, array $tokenRow, bool $modern): Novalo\Somcp\Discovery\ShopGate
+    {
+        Somcp::dependencies();
+
+        return new Novalo\Somcp\Discovery\ShopGate(
+            (string) $tokenRow['scopes'],
+            (int) $tokenRow['id_employee'],
+            function (string $name, array $arguments) use ($params, $tokenRow, $modern): array {
+                $tool = SomcpToolRegistry::getInstance()->get($name);
+
+                // The gate only runs a tool it has just found visible.
+                return $tool === null
+                    ? SomcpTool::text('Unknown tool: ' . Tools::substr($name, 0, 60), true)
+                    : $this->runTool($tool, $arguments, $params, $tokenRow, $modern);
+            }
+        );
+    }
+
+    /**
+     * Why this token may not run this tool now, as the answer to send, or null.
+     *
+     * Checked at every call even though the list left these tools out: an
+     * assistant keeps that list for minutes, so a tool switched off or a
+     * permission taken away this morning would otherwise stay callable until
+     * its copy expires.
+     *
+     * @param SomcpTool $tool
+     * @param array<string, mixed> $tokenRow
+     * @param bool $modern
+     *
+     * @return array<string, mixed>|null
+     */
+    private function refusal(SomcpTool $tool, array $tokenRow, bool $modern): ?array
+    {
+        $name = $tool->getName();
         $idEmployee = (int) $tokenRow['id_employee'];
 
         if (!SomcpToolRegistry::isEnabled($name)) {
-            // Checked again even though the tool was left out of the listing,
-            // for the same reason the permission is: an assistant keeps that
-            // listing for minutes, and a tool switched off this morning would
-            // otherwise stay callable until the cache expires.
             SomcpLogger::log(
                 'tool_disabled',
                 SomcpLogger::OUTCOME_FAILURE,
@@ -524,10 +653,6 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
         }
 
         if (!SomcpPermission::employeeHolds($idEmployee, $tool->getRequiredPermissions())) {
-            // Checked again even though the tool was filtered out of the
-            // listing: an assistant caches that listing for minutes, so a
-            // permission taken away this morning would otherwise leave a window
-            // in which the call still goes through.
             SomcpLogger::log(
                 'permission_refused',
                 SomcpLogger::OUTCOME_FAILURE,
@@ -545,7 +670,27 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
             );
         }
 
-        $result = SomcpToolRegistry::run($tool, $arguments, [
+        return null;
+    }
+
+    /**
+     * Runs a tool for this token, whether it was called by its name or through
+     * a runner of compact mode.
+     *
+     * @param SomcpTool $tool
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $params
+     * @param array<string, mixed> $tokenRow
+     * @param bool $modern
+     *
+     * @return array<string, mixed> the tool's own answer
+     */
+    private function runTool(SomcpTool $tool, array $arguments, array $params, array $tokenRow, bool $modern): array
+    {
+        $name = $tool->getName();
+        $idEmployee = (int) $tokenRow['id_employee'];
+
+        return SomcpToolRegistry::run($tool, $arguments, [
             // The shop this call is answered for, decided here and never
             // read from the assistant. Handed down so a module asks the
             // context instead of calling into this one to find out.
@@ -576,19 +721,6 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
             // arguments.
             'arguments' => $arguments,
         ]);
-
-        if (SomcpTool::isInputRequired($result)) {
-            return $this->askResult(
-                $result,
-                $name,
-                $arguments,
-                $idEmployee,
-                $modern,
-                $modern ? SomcpProtocol::clientCapabilities($params) : []
-            );
-        }
-
-        return $this->finish($result, $modern);
     }
 
     /**

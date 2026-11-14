@@ -142,7 +142,6 @@ class SomcpToolListCustomerGroups
             'count' => count($groups),
             'customer_groups_enabled' => (bool) Configuration::get('PS_GROUP_FEATURE_ACTIVE', null, $idShopGroup, $idShop),
             'language' => $iso,
-            'language_id' => $idLang,
         ]);
     }
 

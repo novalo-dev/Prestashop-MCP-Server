@@ -11,11 +11,11 @@
     {"why": "a country with states and no state", "arguments": {"id_address": 4, "postcode": "10154", "city": "New York", "country": "US"}, "expect": "error", "contains": ["Nothing was changed", "state: required, US has states"]},
     {"why": "back to the United States with its state", "arguments": {"id_address": 4, "postcode": "10154", "city": "New York", "country": "US", "state": "NY"}, "expect": "ok", "contains": ["\"changed\": true", "\"country\": \"US\"", "\"state\": \"NY\""]},
     {"why": "a required field emptied, a refused character and a phone in words", "arguments": {"id_address": 4, "lastname": " ", "other": "<b>VIP</b>", "phone": "call me"}, "expect": "error", "contains": ["Nothing was changed", "lastname: required, 255 characters at most", "other: without < > { }", "phone: digits"]},
-    {"why": "a brand that does not exist", "arguments": {"id_address": 4, "id_manufacturer": 999999}, "expect": "error", "contains": ["id_manufacturer: no brand of this shop"]},
+    {"why": "a brand that does not exist", "arguments": {"id_address": 4, "id_manufacturer": 999999}, "expect": "error", "contains": ["- id_manufacturer: no brand of this shop has the identifier 999999 - find it with somcp_list_manufacturers"]},
     {"why": "a computed field and a field this tool does not know", "arguments": {"id_address": 4, "manufacturer_name": "Studio", "fax": "0123"}, "expect": "error", "contains": ["manufacturer_name: worked out by the shop", "fax: not a field of this tool"]},
-    {"why": "a customer address is refused", "arguments": {"id_address": 1, "city": "Paris"}, "expect": "error", "contains": ["No brand address of this shop", "Nothing was changed"]},
-    {"why": "a supplier address is refused", "arguments": {"id_address": 3, "city": "Paris"}, "expect": "error", "contains": ["No brand address of this shop"]},
-    {"why": "an address that does not exist", "arguments": {"id_address": 999999, "city": "Paris"}, "expect": "error", "contains": ["No brand address of this shop"]},
-    {"why": "an address identifier that is not a number", "arguments": {"id_address": [4], "city": "Paris"}, "expect": "error", "contains": ["No brand address of this shop"]}
+    {"why": "a customer address is refused", "arguments": {"id_address": 1, "city": "Paris"}, "expect": "error", "contains": ["- id_address: no brand address of this shop has the identifier 1 - find it with somcp_list_manufacturer_addresses", "Nothing was changed"]},
+    {"why": "a supplier address is refused", "arguments": {"id_address": 3, "city": "Paris"}, "expect": "error", "contains": ["- id_address: no brand address of this shop has the identifier 3 - find it with somcp_list_manufacturer_addresses"]},
+    {"why": "an address that does not exist", "arguments": {"id_address": 999999, "city": "Paris"}, "expect": "error", "contains": ["- id_address: no brand address of this shop has the identifier 999999 - find it with somcp_list_manufacturer_addresses"]},
+    {"why": "an address identifier that is not a number", "arguments": {"id_address": [4], "city": "Paris"}, "expect": "error", "contains": ["- id_address: a whole number above 0"]}
   ]
 }

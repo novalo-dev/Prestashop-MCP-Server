@@ -85,17 +85,19 @@ class SomcpToolGetManufacturerAddress
 
         // A cast would read an array as 1 and answer about an address nobody
         // asked for: only a whole number is an identifier.
-        $value = $arguments['id_address'] ?? null;
-        $idAddress = is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
-
-        $address = self::existingAddress($idAddress, $idShop);
-        if ($address === null) {
-            return SomcpTool::text(
-                'No brand address of this shop has this identifier. Find it with somcp_list_manufacturer_addresses.',
-                true
-            );
+        $idAddress = SomcpTool::id($arguments, 'id_address');
+        $errors = SomcpTool::unknownFields($arguments, ['id_address']);
+        $address = null;
+        if ($idAddress === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_address');
+        } else {
+            $address = self::existingAddress($idAddress, $idShop);
+            if ($address === null) {
+                $errors[] = SomcpTool::notFound('id_address', 'brand address', $idAddress, 'somcp_list_manufacturer_addresses');
+            }
+        }
+        if ($errors !== [] || $address === null) {
+            return SomcpTool::refused('read', $errors);
         }
 
         return SomcpTool::json(self::address($address));

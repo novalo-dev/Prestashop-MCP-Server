@@ -6,7 +6,11 @@
     {"why": "the values of the colour group of the demo shop carry their colour", "arguments": {"id_attribute_group": 2}, "expect": "ok", "contains": ["\"group_type\": \"color\"", "\"color\": \"#"]},
     {"why": "in a language given by ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"id_attribute_group\": 1", "\"language\": \"en\""]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
-    {"why": "a group that does not exist", "arguments": {"id_attribute_group": 999999}, "expect": "error"},
-    {"why": "no identifier", "arguments": {"id_attribute_group": 0}, "expect": "error"}
+    {"why": "a group that does not exist", "arguments": {"id_attribute_group": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_attribute_group: no attribute group of this shop has the identifier 999999 - find it with somcp_list_attributes"]},
+    {"why": "the group identifier as a numeric string", "arguments": {"id_attribute_group": "1"}, "expect": "ok", "contains": ["\"count\": 1", "\"id_attribute_group\": 1"]},
+    {"why": "no identifier", "arguments": {"id_attribute_group": 0}, "expect": "error", "contains": ["- id_attribute_group: a whole number above 0"]},
+    {"why": "a group identifier that is not a number is not read as group 1", "arguments": {"id_attribute_group": [1]}, "expect": "error", "contains": ["- id_attribute_group: a whole number above 0"]},
+    {"why": "a misspelt field is named, not ignored into the list of every group", "arguments": {"id_atribute_group": 1}, "expect": "error", "contains": ["Nothing was read", "- id_atribute_group: not a field of this tool"]},
+    {"why": "every problem of the call in one answer", "arguments": {"id_attribute_group": 999999, "group": 1}, "expect": "error", "contains": ["- group: not a field of this tool", "- id_attribute_group: no attribute group of this shop has the identifier 999999"]}
   ]
 }

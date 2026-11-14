@@ -143,7 +143,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             [self::class, 'handle'],
             // Changing a product is the edit right of the products page in
             // Team, Permissions; creating one is a different right.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminProducts')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminProducts'),
+            files: ['images' => SomcpUpload::images(), 'virtual_file.file' => SomcpUpload::rule(SomcpUpload::accepted(), [self::class, 'virtualFileBytes'])]
         );
     }
 
@@ -178,6 +179,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $properties['pack']['properties']['items']['description'] .= ' Given, it replaces the pack\'s contents; '
             . 'to take some out alone, use remove_pack_items.';
         unset($properties['virtual_file']['required']);
+        $properties['virtual_file']['properties']['file']['properties'][SomcpDownload::ARG_REF] = [
+            'type' => 'string',
+            'description' => 'The download_ref somcp_get_product gave for the stored file: given back, it keeps it.',
+        ];
         $properties['virtual_file']['description'] = 'A virtual product only: the file customers download. Only '
             . 'the fields given change. A file given replaces the current one; file and display_filename are '
             . 'required when the product has no file yet.';
@@ -216,7 +221,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $properties['images']['items']['properties'] = [
             'id_image' => ['type' => 'integer', 'description' => 'An image of this product, from somcp_get_product.'],
         ] + $properties['images']['items']['properties'];
-        $properties['images']['items']['properties']['url']['description'] = 'Public https address of an image to add. Give url or upload_ref, not both.';
+        $properties['images']['items']['properties'][SomcpDownload::ARG_REF] = [
+            'type' => 'string',
+            'description' => 'Beside an id_image, the download_ref somcp_get_product gave for that image, which is ignored.',
+        ];
 
         $properties['combinations']['description'] = 'Merchant and assistant. With id_product_attribute, the values '
             . 'given replace that combination\'s, its attributes unchanged. Without, one is added: attributes '
@@ -273,18 +281,18 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $idShop = (int) $shop->id;
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $product = self::existingProduct(self::integer($arguments['id_product'] ?? null) ?? 0, $idShop);
+        $idProduct = self::integer($arguments['id_product'] ?? null) ?? 0;
+        $product = self::existingProduct($idProduct, $idShop);
         if ($product === null) {
-            return SomcpTool::text('No product of this shop has this identifier. Nothing was changed. Find it with somcp_search_products.', true);
+            return SomcpTool::refused('changed', [$idProduct > 0
+                ? SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products')
+                : SomcpTool::notAnIdentifier('id_product')]);
         }
 
         $errors = [];
         $plan = self::planUpdate($arguments, $product, $shop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -430,11 +438,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $groups[$group] = self::group($arguments, $group, $errors);
         }
         $lists = ['id_product', 'languages', 'related_products', 'features', 'attachments', 'images', 'combinations', 'remove_pack_items', 'remove_virtual_file'];
-        foreach (array_keys($arguments) as $key) {
-            if (!isset($groups[$key]) && !in_array($key, $lists, true) && !isset(self::REMOVALS[$key])) {
-                $errors[] = $key . ': not a field of this tool';
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, array_merge(array_keys($groups), $lists, array_keys(self::REMOVALS))));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -663,7 +667,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         if (array_key_exists('product_type', $group)) {
             $given = self::string($group['product_type']);
             if ($given === null || !in_array($given, $types, true)) {
-                $errors[] = 'basics.product_type: one of ' . implode(', ', $types);
+                $errors[] = SomcpTool::oneOf('basics.product_type', $types);
 
                 return;
             }
@@ -802,7 +806,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         foreach (array_diff($categories, $current) as $idCategory) {
             $category = new Category($idCategory);
             if (!Validate::isLoadedObject($category) || $idCategory === $root || !$category->isAssociatedToShop((int) $shop->id)) {
-                $errors[] = 'categories: no category ' . $idCategory . ' in this shop. Take identifiers from somcp_list_categories.';
+                $errors[] = SomcpTool::notFound('categories', 'category', $idCategory, 'somcp_list_categories');
             }
         }
         if (!in_array($default, $current, true) && $default === $root) {
@@ -1027,7 +1031,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                 unset($item['id_product_attribute']);
                 self::onlyAccepted($item, 'combination', $path, $errors);
                 if (!isset($existing[$id])) {
-                    $errors[] = $path . '.id_product_attribute: not a combination of this product in this shop';
+                    $errors[] = $id > 0
+                        ? $path . '.id_product_attribute: no combination of this product has the identifier ' . $id
+                            . ' - find it with somcp_get_product'
+                        : SomcpTool::notAnIdentifier($path . '.id_product_attribute');
                     continue;
                 }
                 if (in_array($id, $remove, true) || isset($named[$id])) {
@@ -1214,7 +1221,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             unset($item['id_specific_price']);
             self::onlyAccepted($item, 'rule', $path, $errors);
             if (!in_array($id, $owned, true)) {
-                $errors[] = $path . '.id_specific_price: not a specific price of this product in this shop';
+                $errors[] = $id > 0
+                    ? $path . '.id_specific_price: no specific price of this product has the identifier ' . $id
+                        . ' - find it with somcp_get_product'
+                    : SomcpTool::notAnIdentifier($path . '.id_specific_price');
                 continue;
             }
             if (in_array($id, $remove, true) || isset($named[$id])) {
@@ -1382,8 +1392,12 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $path = 'suppliers.suppliers[' . $i . ']';
             self::onlyAccepted($item, 'supplier', $path, $errors);
             $idSupplier = self::integer($item['id_supplier'] ?? null);
-            if ($idSupplier === null || !self::supplierExists($idSupplier, $known)) {
-                $errors[] = $path . '.id_supplier: no such supplier. Take identifiers from somcp_list_suppliers.';
+            if ($idSupplier === null || $idSupplier <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_supplier');
+                continue;
+            }
+            if (!self::supplierExists($idSupplier, $known)) {
+                $errors[] = SomcpTool::notFound($path . '.id_supplier', 'supplier', $idSupplier, 'somcp_list_suppliers');
                 continue;
             }
             if (in_array($idSupplier, $remove, true)) {
@@ -1517,7 +1531,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                     $errors[] = $path . ': id_image to change an image of the product, or url or upload_ref to add one';
                     continue;
                 }
-                $source = self::imageSource($item, $path, $errors);
+                $source = SomcpUpload::source($item, $path, $errors);
                 if ($source === null) {
                     continue;
                 }
@@ -1526,6 +1540,17 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                 continue;
             }
 
+            // somcp_get_product hands each image back with its download_ref:
+            // given back beside its id_image, it names the same image and is
+            // ignored, so a product read and given back whole changes nothing.
+            if (is_string($item[SomcpDownload::ARG_REF] ?? null)
+                && SomcpDownload::names($item[SomcpDownload::ARG_REF], 'product_image', (string) $id)) {
+                unset($item[SomcpDownload::ARG_REF]);
+            }
+            if (array_key_exists(SomcpDownload::ARG_REF, $item)) {
+                $errors[] = $path . '.download_ref: beside an id_image, only the one somcp_get_product gave for that image';
+                continue;
+            }
             if (array_key_exists('url', $item) || array_key_exists(SomcpUpload::ARG_REF, $item)) {
                 $errors[] = $path . ': id_image, or url or upload_ref, not both - an image cannot be replaced by another';
                 continue;
@@ -1615,7 +1640,9 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $ids = array_values(array_unique(self::ids($arguments[$list], self::REMOVALS[$list], $list, $errors)));
         foreach ($ids as $id) {
             if (!in_array($id, $owned, true)) {
-                $errors[] = $list . ': ' . $id . ' is not a ' . $what . ' in this shop';
+                // What the product holds, not the shop: the product read with
+                // somcp_get_product lists them.
+                $errors[] = $list . ': no ' . $what . ' has the identifier ' . $id . ' - find it with somcp_get_product';
             }
         }
 
@@ -1886,6 +1913,11 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             return;
         }
 
+        // The file as somcp_get_product gave it - its download_ref - is the
+        // stored one: left out, so nothing is fetched or written for it.
+        if (array_key_exists('file', $group) && $idDownload > 0 && SomcpUpload::same($group['file'], 'product_file', (string) $idDownload)) {
+            unset($group['file']);
+        }
         $file = self::virtualFilePlan($group, $isVirtual, $errors, $idDownload <= 0);
         if ($file === null) {
             return;
@@ -1902,7 +1934,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         // A file given always counts: an address or a reference cannot be
         // compared with the stored file.
         if ($file['source'] !== null) {
-            self::record($plan, 'virtual_file.file', null, self::imageOrigin($file['source']));
+            self::record($plan, 'virtual_file.file', null, SomcpUpload::origin($file['source']));
         } elseif ($file['fields'] === []) {
             return;
         }
@@ -1951,7 +1983,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             return self::writeVirtualFile($idProduct, $file);
         }
 
-        $origin = $file['source'] === null ? [] : self::imageOrigin($file['source']);
+        $origin = $file['source'] === null ? [] : SomcpUpload::origin($file['source']);
         $download = new ProductDownload((int) $file['id']);
         $previous = basename((string) $download->filename);
         $filename = '';
@@ -2244,10 +2276,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             }
             if ($id <= 0) {
                 --$position;
-                $report[] = self::imageOrigin($added) + ['refused' => $refusal];
+                $report[] = SomcpUpload::origin($added) + ['refused' => $refusal];
                 continue;
             }
-            $report[] = self::imageOrigin($added) + ['id_image' => $id];
+            $report[] = SomcpUpload::origin($added) + ['id_image' => $id];
             $order[] = $id;
             $byItem[$added['index']] = ['id' => $id] + $added;
         }

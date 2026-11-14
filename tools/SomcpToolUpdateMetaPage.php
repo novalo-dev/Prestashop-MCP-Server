@@ -49,12 +49,6 @@ class SomcpToolUpdateMetaPage
     /** @var array<int, string> The translatable fields this tool writes, named as somcp_list_meta_pages returns them. */
     private const TEXTS = ['title', 'description', 'keywords', 'url_rewrite'];
 
-    /** The longest title accepted: search results cut well before. */
-    private const TITLE_MAX = 70;
-
-    /** The column's own size. */
-    private const DESCRIPTION_MAX = 255;
-
     /** The column's own size, the smaller of the two: varchar(254) on PrestaShop 8, 255 on 9. */
     private const URL_REWRITE_MAX = 254;
 
@@ -72,9 +66,8 @@ class SomcpToolUpdateMetaPage
         return new SomcpTool(
             'somcp_update_meta_page',
             Somcp::t('Change the SEO of a shop page'),
-            'Changes the Page title, Meta description and Rewritten URL of one of the shop\'s own pages, per '
-                . 'ISO code, as the page form of Shop Parameters > Traffic & SEO does; languages not given keep '
-                . 'their text. Meta keywords exist on PrestaShop 8 only. Take id_meta from somcp_list_meta_pages, '
+            'Changes the Page title, Meta description and Rewritten URL of one of the shop\'s own pages, in '
+                . 'the languages filled, as the page form of Shop Parameters > Traffic & SEO does. Meta keywords exist on PrestaShop 8 only. Take id_meta from somcp_list_meta_pages, '
                 . 'never guess one, and show the merchant the new values first: a new Rewritten URL breaks the old '
                 . 'address. Pages whose configurable is false are refused; for a CMS page, use '
                 . 'somcp_update_cms_seo. One page per call. Not to be retried: if the answer is lost, read the page '
@@ -86,17 +79,22 @@ class SomcpToolUpdateMetaPage
                         'type' => 'integer',
                         'description' => 'The page to change, from somcp_list_meta_pages.',
                     ],
+                    'languages' => [
+                        'type' => 'array',
+                        'description' => 'ISO codes of the languages to fill, among the active languages of the shop. '
+                            . 'All of them by default. Every text must then be given in each of them.',
+                        'items' => ['type' => 'string'],
+                    ],
                     'title' => [
                         'type' => 'object',
-                        'description' => 'Assistant, approved by the merchant. The Page title, per ISO code: 70 '
-                            . 'characters at most, without < > = { }; an empty text removes it. Over 60 characters, '
-                            . 'search results cut it.',
+                        'description' => 'Assistant, approved by the merchant. The Page title, per ISO code: 128 '
+                            . 'at most; over 70 cut in search. Without < > = { }; an empty text removes it.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                     'description' => [
                         'type' => 'object',
                         'description' => 'Assistant, approved by the merchant. The Meta description, per ISO code: '
-                            . '255 characters at most, without < > = { }; search results show about 160.',
+                            . '255 at most; over 160 cut in search. Without < > = { }.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                     'keywords' => [
@@ -215,7 +213,7 @@ class SomcpToolUpdateMetaPage
 
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;
-            if ($key !== 'id_meta' && !in_array($key, self::TEXTS, true)) {
+            if ($key !== 'id_meta' && $key !== 'languages' && !in_array($key, self::TEXTS, true)) {
                 $errors[] = $key . ': not a field of this tool';
             }
         }
@@ -225,33 +223,20 @@ class SomcpToolUpdateMetaPage
             unset($arguments['keywords']);
         }
 
-        $active = [];
-        foreach (Language::getLanguages(true, $idShop) as $row) {
-            $active[Tools::strtolower((string) $row['iso_code'])] = (int) $row['id_lang'];
+        // The rule of the catalogue write tools (#149): the languages being
+        // filled, all active ones by default, and each text keyed by them, so
+        // a text read from one tool is given back to this one the same way.
+        $languages = SomcpToolCreateProduct::languages($arguments, $idShop, $errors);
+        if ($languages === null) {
+            return $plan;
         }
         $idLangDefault = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
 
         foreach (self::TEXTS as $field) {
-            if (!array_key_exists($field, $arguments)) {
-                continue;
-            }
-            $value = $arguments[$field];
-            if (!is_array($value) || $value === [] || array_is_list($value)) {
-                $errors[] = $field . ': an object keyed by ISO code, for example {"' . (string) array_key_first($active) . '": "..."}';
-                continue;
-            }
-            foreach ($value as $iso => $text) {
-                $iso = Tools::strtolower(trim((string) $iso));
+            $texts = SomcpToolCreateProduct::texts($arguments, $field, $field, $languages, $errors);
+            foreach ($texts ?? [] as $idLang => $text) {
+                $iso = $languages['filled'][$idLang];
                 $where = $field . ' (' . $iso . ')';
-                if (!isset($active[$iso])) {
-                    $errors[] = $where . ': not an active language of this shop, which has ' . implode(', ', array_keys($active));
-                    continue;
-                }
-                if (!is_string($text)) {
-                    $errors[] = $where . ': a text';
-                    continue;
-                }
-                $idLang = $active[$iso];
                 $previous = SomcpToolUpdateCmsSeo::textOf(self::stored($meta, $field), $idLang);
                 if ($field === 'url_rewrite' && (string) $meta->page === self::HOME) {
                     // The dispatcher serves the home page at the root of the
@@ -336,14 +321,17 @@ class SomcpToolUpdateMetaPage
 
                 return null;
             }
-        } elseif ($field === 'title' && Tools::strlen($text) > self::TITLE_MAX) {
-            $errors[] = $where . ': ' . self::TITLE_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
-
-            return null;
-        } elseif ($field === 'description' && Tools::strlen($text) > self::DESCRIPTION_MAX) {
-            $errors[] = $where . ': ' . self::DESCRIPTION_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
-
-            return null;
+        } elseif ($field === 'title' || $field === 'description') {
+            // Refused only past the column the SEO & URLs form stores (128 and
+            // 255), through the rule every SEO write shares; the advice it
+            // collects is dropped here because warnings() advises on the text
+            // actually stored.
+            $max = SomcpTool::columnSize($meta, $field, $field === 'title' ? 128 : 255);
+            $recommended = $field === 'title' ? SomcpTool::META_TITLE_RECOMMENDED : SomcpTool::metaDescriptionRecommended();
+            $advice = [];
+            if (!SomcpTool::seoTextLength($where, Tools::strlen($text), $max, $recommended, $errors, $advice)) {
+                return null;
+            }
         } elseif ($field === 'keywords' && Tools::strlen($text) > self::KEYWORDS_MAX) {
             $errors[] = $where . ': ' . self::KEYWORDS_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
 
@@ -439,13 +427,13 @@ class SomcpToolUpdateMetaPage
         $warnings = [];
         foreach ($plan['isos'] as $idLang => $iso) {
             $title = SomcpToolUpdateCmsSeo::textOf($stored->title, $idLang);
-            if (Tools::strlen($title) > SomcpToolAuditProductSeo::TITLE_MAX) {
-                $warnings[$iso][] = 'title is over ' . SomcpToolAuditProductSeo::TITLE_MAX
+            if (Tools::strlen($title) > SomcpTool::META_TITLE_RECOMMENDED) {
+                $warnings[$iso][] = 'title is over ' . SomcpTool::META_TITLE_RECOMMENDED
                     . ' characters: search results cut it';
             }
             $description = SomcpToolUpdateCmsSeo::textOf($stored->description, $idLang);
-            if (Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX) {
-                $warnings[$iso][] = 'description is over ' . SomcpToolAuditProductSeo::DESCRIPTION_MAX
+            if (Tools::strlen($description) > SomcpTool::metaDescriptionRecommended()) {
+                $warnings[$iso][] = 'description is over ' . SomcpTool::metaDescriptionRecommended()
                     . ' characters: search results cut it';
             }
             if (isset($plan['moved'][$idLang])) {

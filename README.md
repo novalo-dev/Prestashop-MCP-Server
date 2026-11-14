@@ -11,6 +11,8 @@
 [![PrestaShop](.github/badges/prestashop.svg)](https://prestashop.com)
 [![PHP](.github/badges/php.svg)](https://php.net)
 [![MCP](.github/badges/mcp.svg)](https://modelcontextprotocol.io)
+[![Tools](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fbadges%2Ftools.json)](#tools)
+[![Prompts](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnovalo-dev%2FPrestashop-MCP-Server%2Fbadges%2Fprompts.json)](docs/TOOLS.md#prompts)
 ![Multistore](.github/badges/multistore.svg)
 [![License](.github/badges/license.svg)](LICENSE.txt)
 [![Docs](.github/badges/docs.svg)](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki)
@@ -33,6 +35,18 @@ In the back office the module is called **O'So MCP Server**.
 
 ---
 
+## News
+
+**Compact mode comes to O'So MCP Server.** Inspired by the MCP servers of
+[Cloudflare](https://blog.cloudflare.com/code-mode-mcp/) and
+[Azure](https://learn.microsoft.com/azure/developer/azure-mcp-server/concepts),
+which put thousands of operations within an assistant's reach without listing
+them all: connected assistants receive six tools instead of the whole list,
+search the one they need, then run it - with the same permissions and the same
+checks. [Compact mode](#compact-mode).
+
+---
+
 ## What you can ask
 
 > "Which orders are still waiting for shipment since Monday?"
@@ -47,9 +61,9 @@ In the back office the module is called **O'So MCP Server**.
 
 > "Who is the customer behind order #1042, and what else did they buy?"
 
-More than 90 tools cover orders, catalogue, stock, customers, statistics, SEO,
-content pages, modules and appearance, and more than 10 ready-made prompts guide
-the assistant through the usual jobs. [See them all](#tools).
+The tools cover orders, catalogue, stock, customers, statistics, SEO, content
+pages, modules and appearance, and ready-made prompts guide the assistant
+through the usual jobs. [See them all](#tools).
 
 ---
 
@@ -140,6 +154,54 @@ shop's address. These can:
 
 Where to paste the address in each of them:
 [Connect an assistant](https://github.com/novalo-dev/Prestashop-MCP-Server/wiki/Connect-an-assistant).
+
+### Files
+
+A product photo, a brand logo, a module archive, an invoice: every file goes
+through two tools, and no other tool hands out a file or its address on its
+own. `somcp_upload_file` puts a file on the shop for the tool that needs it -
+the file you attached in the assistant's conversation when its client passes
+it (ChatGPT does), the file itself sent in the call, a web address, sent by the
+assistant to the shop when it can make web requests, or dropped by you on a
+page of your back office when nothing else works. `somcp_download_file` hands
+the assistant any file of the shop another tool found - a photo, a logo, an
+attachment, an invoice: attached to its answer (a photo as a picture), so the
+assistant reads it instead of handing you a link. Only a file too large for
+that comes as an address it fetches itself, or a link for you. An assistant that runs code in a sandbox often limits which sites it may
+reach: allowing your shop's domain in the assistant's
+network or allowed-domains settings lets it send files without asking you. It
+says so when it is blocked.
+
+### Compact mode
+
+A long list of tools weighs on every request an assistant makes, and some
+clients cap the count: VS Code stops at 128. In compact mode, connected
+assistants receive six tools instead of the whole list:
+
+| Tool | What it does |
+|---|---|
+| `somcp_ping` | ● Test the connection |
+| `somcp_upload_file` | ● Put a file on the shop, kept in the list so the assistant's client can pass it a file |
+| `somcp_download_file` | ● Get a file from the shop |
+| `somcp_search_tools` | ● Search the shop tools, and give their parameters |
+| `somcp_run_read_tool` | ● Run a tool that only reads |
+| `somcp_run_write_tool` | ✎ Run a tool that changes the shop, flagged so assistants ask you first |
+
+Nothing else changes: the same permissions, the same switches, the same checks
+on every call. A tool the search does not offer cannot be run either. The
+search and the runners come from Novalo's open-source library
+[novalo/mcp-tool-discovery](https://github.com/novalo-dev/mcp-tool-discovery):
+the assistant says the action, the object and the request in separate words,
+and the right tool comes first far more often than with one sentence. The guides
+(prompts) tell the assistant which runner each of their tools goes through.
+
+Turn it on or off in **Tools and prompts › Settings › Compact list of tools**:
+on by default for a new shop, off for a shop that updates. The shop cannot
+tell a connected assistant that its list changed. One on the latest version of
+the protocol reads it again once its copy expires (**How long an assistant
+keeps the list of tools**, five minutes by default); the others, ChatGPT among
+them today, keep theirs until you refresh their tools in their own settings.
+The built-in assistant is not concerned: it already searches its tools itself.
 
 ---
 
@@ -251,6 +313,8 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | Tool | What it does | Needs, in Team › Permissions |
 |---|---|---|
 | `somcp_ping` | ● Test the connection | nothing |
+| `somcp_upload_file` | ● Put a file on the shop | the right of the tool the file is for |
+| `somcp_download_file` | ● Get a file from the shop | the right of the tool that reads the file: Orders › view for a document of an order, Products › view for a product photo |
 
 ### 🧾 Orders
 
@@ -275,16 +339,20 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_delete_order_product` | ✎ Remove a product line from an order | Orders › edit |
 | `somcp_generate_order_invoice` | ✎ Generate the invoice of an order | Orders › edit |
 | `somcp_set_invoice_note` | ✎ Set the note on an invoice | Orders › edit |
+| `somcp_get_order_document` | ● Get a document of an order | Orders › view |
 | `somcp_add_order_discount` | ✎ Add a discount to an order | Orders › edit |
 | `somcp_delete_order_discount` | ✎ Remove a discount from an order | Orders › edit |
 | `somcp_set_order_address` | ✎ Change an address of an order | Orders › edit |
 | `somcp_set_order_carrier` | ✎ Change the carrier of an order | Orders › edit |
 | `somcp_set_order_currency` | ✎ Change the currency of an order | Orders › edit |
 | `somcp_resend_order_status_email` | ✎ Resend the email of an order status | Orders › edit |
+| `somcp_create_order` | ✎ Create an order | Orders › add |
 | `somcp_create_return_status` | ✎ Create a return status | Statuses › add |
 | `somcp_update_return_status` | ✎ Change a return status | Statuses › edit |
 | `somcp_delete_return_status` | ✎ Delete a return status | Statuses › delete |
 | `somcp_create_order_status` | ✎ Create an order status | Statuses › add |
+| `somcp_update_order_status` | ✎ Edit an order status | Statuses › edit |
+| `somcp_delete_order_status` | ✎ Delete an order status | Statuses › delete |
 
 ### 📦 Catalog - Products
 
@@ -303,9 +371,11 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 |---|---|---|
 | `somcp_list_categories` | ● List categories | Categories › view |
 | `somcp_get_category` | ● Get a category | Categories › view |
+| `somcp_get_category_kpis` | ● Category KPIs above the list | Categories › view |
 | `somcp_create_category` | ✎ Create a category | Categories › add |
 | `somcp_update_category` | ✎ Change a category | Categories › edit |
 | `somcp_set_category_active` | ✎ Show or hide a category | Categories › edit |
+| `somcp_delete_category` | ✎ Delete a category | Categories › delete |
 
 ### 🏷️ Catalog - Brands
 
@@ -340,9 +410,11 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_attribute_group` | ● Get an attribute group | Attributes › view |
 | `somcp_create_attribute_group` | ✎ Create an attribute group | Attributes › add |
 | `somcp_update_attribute_group` | ✎ Change an attribute group | Attributes › edit |
+| `somcp_delete_attribute_group` | ✎ Delete an attribute group | Attributes › delete |
 | `somcp_get_attribute_value` | ● Get an attribute value | Attributes › view |
 | `somcp_create_attribute_value` | ✎ Create an attribute value | Attributes › add |
 | `somcp_update_attribute_value` | ✎ Change an attribute value | Attributes › edit |
+| `somcp_delete_attribute_value` | ✎ Delete an attribute value | Attributes › delete |
 
 ### 📋 Catalog - Features
 
@@ -352,9 +424,11 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_feature` | ● Get a feature | Features › view |
 | `somcp_create_feature` | ✎ Create a feature | Features › add |
 | `somcp_update_feature` | ✎ Change a feature | Features › edit |
+| `somcp_delete_feature` | ✎ Delete a feature | Features › delete |
 | `somcp_get_feature_value` | ● Get a feature value | Features › view |
 | `somcp_create_feature_value` | ✎ Create a feature value | Features › add |
 | `somcp_update_feature_value` | ✎ Change a feature value | Features › edit |
+| `somcp_delete_feature_value` | ✎ Delete a feature value | Features › delete |
 
 ### 📎 Catalog - Files and taxes
 
@@ -369,6 +443,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 |---|---|---|
 | `somcp_get_stock` | ● Get the stock of a product | Stock › view |
 | `somcp_list_low_stock` | ● List low stock | Stock › view |
+| `somcp_list_stock_movements` | ● List stock movements | Stock › view |
 | `somcp_set_stock_quantity` | ✎ Set the stock of a product | Stock › edit |
 
 ### 👥 Customers
@@ -402,6 +477,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_modules` | ● List modules | Module Manager › view |
 | `somcp_get_module` | ● Get a module | Module Manager › view |
 | `somcp_install_module` | ✎ Install a module | Module Manager › add |
+| `somcp_upload_module` | ✎ Upload a module | Module Manager › add |
 | `somcp_set_module_active` | ✎ Enable or disable a module | Module Manager › edit |
 
 ### 🖌️ Appearance
@@ -467,9 +543,13 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_create_catalog_price_rule` | ✎ Create a catalogue price rule | Catalog Price Rules › add |
 
 `somcp_ping` needs no right: it only tells the assistant which shop, account,
-language and currency it is connected to.
+language and currency it is connected to. `somcp_upload_file` and
+`somcp_download_file` carry files for the other tools, so they ask for the
+right of what they reach: a file is put on the shop only for a tool the
+assistant may use, and handed over only to an account that may use the tool
+that found it.
 
-**More than 10 prompts** ship with the module, such as finding an order,
+**Prompts** ship with the module, such as finding an order,
 changing an order status, checking stock, auditing SEO or getting recommended by
 AI assistants; each one is described in [docs/TOOLS.md](docs/TOOLS.md). The
 built-in assistant offers them too, each with its icon: those of

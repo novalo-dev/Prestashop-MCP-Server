@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "Brown (17), a Color value in no combination and read by no other scenario", "arguments": {"id_attribute": 17}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_attribute\": 17", "\"id_attribute_group\": 2", "\"combinations_deleted\": []", "\"default_changed\": []", "\"cart_rules\": []", "\"catalog_price_rules\": []", "\"still_in_shops\": 0"]},
+    {"why": "deleted again, nothing changes", "arguments": {"id_attribute": 17}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_attribute: no attribute value of this shop has the identifier 17 - find it with somcp_list_attributes"]},
+    {"why": "a value that does not exist", "arguments": {"id_attribute": 999999}, "expect": "error", "contains": ["Nothing was deleted", "no attribute value of this shop has the identifier 999999"]},
+    {"why": "zero is not a whole number above 0, given as a string", "arguments": {"id_attribute": "0"}, "expect": "error", "contains": ["- id_attribute: a whole number above 0"]},
+    {"why": "no identifier", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted", "- id_attribute: a whole number above 0"]},
+    {"why": "an identifier given as a list is not read as value 1", "arguments": {"id_attribute": [1]}, "expect": "error", "contains": ["- id_attribute: a whole number above 0"]},
+    {"why": "an argument this tool does not know, on a demo value that must stay", "arguments": {"id_attribute": 1, "colour": "red"}, "expect": "error", "contains": ["Nothing was deleted", "- colour: not a field of this tool"]},
+    {"why": "a language the shop does not have, on a demo value that must stay", "arguments": {"id_attribute": 1, "language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]}
+  ]
+}

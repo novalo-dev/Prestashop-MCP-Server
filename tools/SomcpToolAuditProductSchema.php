@@ -280,13 +280,13 @@ class SomcpToolAuditProductSchema
         $add = static function (string $field, $printedValue, $inShop) use (&$mismatches): void {
             $mismatches[] = [
                 'field' => $field,
-                'on_screen' => self::label($field),
+                'on_screen' => self::fieldLabel($field),
                 'printed' => $printedValue,
                 'in_shop' => $inShop,
             ];
         };
         $absent = static function (string $field, string $property) use (&$missing): void {
-            $missing[] = ['field' => $field, 'on_screen' => self::label($field), 'property' => $property];
+            $missing[] = ['field' => $field, 'on_screen' => self::fieldLabel($field), 'property' => $property];
         };
 
         $name = trim((string) ($shopData['basics']['name'] ?? ''));
@@ -466,27 +466,42 @@ class SomcpToolAuditProductSchema
     }
 
     /**
-     * The label of a field on the product page of the back office, in the
-     * words of the shop's version.
+     * The label a somcp_get_product field wears on the product page of the
+     * back office, in the words of the shop's version.
+     *
+     * One table for both product audits, so an assistant never gets two names
+     * for one box: this tool and somcp_audit_product_entities feed the same
+     * prompt and name the same fields. Keyed by the somcp_get_product field
+     * name; id_manufacturer and manufacturer_name both name the Brand box.
      *
      * @param string $field
      *
      * @return string
      */
-    private static function label(string $field): string
+    public static function fieldLabel(string $field): string
     {
         $nine = version_compare(_PS_VERSION_, '9.0.0', '>=');
         $labels = [
             'name' => 'Product name',
+            'id_manufacturer' => 'Brand',
             'manufacturer_name' => 'Brand',
             'reference' => 'Reference',
             'mpn' => 'MPN',
             'ean13' => $nine ? 'GTIN (EAN, JA, ITF or UCC code)' : 'EAN-13 or JAN barcode',
             'upc' => 'UPC barcode',
             'isbn' => 'ISBN',
-            'condition' => 'Condition',
-            'images' => 'Images',
+            'features' => 'Features',
             'description' => 'Description',
+            'description_short' => 'Summary',
+            'images' => 'Images',
+            // On the Shipping tab, Weight under Package dimension, on both.
+            'weight' => 'Weight',
+            // The condition box has no label of its own on 9.0.0: it sits under
+            // the switch that names it.
+            'condition' => $nine ? 'Display condition on product page' : 'Condition',
+            // The Categories block heads the default category differently.
+            'id_category_default' => $nine ? 'Default category' : 'Main category',
+            'meta_description' => 'Meta description',
             'price' => 'Retail price (tax incl.)',
             'currency' => 'Default currency',
             'quantity' => 'Quantity',

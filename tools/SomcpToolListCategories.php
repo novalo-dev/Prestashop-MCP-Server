@@ -82,6 +82,13 @@ class SomcpToolListCategories
         }
         [$idLang, $iso] = $language;
 
+        // A misspelt field is named rather than ignored: the assistant would
+        // otherwise take the whole list for the answer to a filter it meant.
+        $errors = SomcpTool::unknownFields($arguments, ['language']);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         // A query rather than Category::getSimpleCategories(), which reads the
         // shop from the global context: here it comes from the token and is
         // passed explicitly. Same tables, same exclusion of the root.

@@ -26,15 +26,18 @@ concurrency:
 jobs:
   sanity:
     name: UI sanity (PS ${{ matrix.prestashop }}, PHP ${{ matrix.php }}, ${{ matrix.browser }}, ${{ matrix.db }})
-    runs-on: ubuntu-latest
+    # Pinned: on the Ubuntu 26.04 image ubuntu-latest moved to, apt and the
+    # shop install fail to resolve the archive and package hosts, which turns
+    # every run red for a reason unrelated to the module.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         include:
           - { prestashop: '8.0.0', php: '8.1', browser: chromium, db: mysql, db_image: 'mysql:8.0' }
-          - { prestashop: '9.2.0', php: '8.5', browser: chromium, db: mysql, db_image: 'mysql:8.0' }
-          - { prestashop: '9.2.0', php: '8.5', browser: firefox, db: mysql, db_image: 'mysql:8.0' }
-          - { prestashop: '9.2.0', php: '8.5', browser: chromium, db: mariadb, db_image: 'mariadb:11.4' }
+          - { prestashop: '9.2.1', php: '8.5', browser: chromium, db: mysql, db_image: 'mysql:8.0' }
+          - { prestashop: '9.2.1', php: '8.5', browser: firefox, db: mysql, db_image: 'mysql:8.0' }
+          - { prestashop: '9.2.1', php: '8.5', browser: chromium, db: mariadb, db_image: 'mariadb:11.4' }
     env:
       ADMIN_MAIL: demo@example.com
       ADMIN_PASSWD: Somcp-ui-test-1

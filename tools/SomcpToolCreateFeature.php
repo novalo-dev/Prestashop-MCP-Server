@@ -105,7 +105,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
             ];
         };
 
-        return [
+        return self::facetedNullable([
             'type' => 'object',
             'properties' => [
                 'languages' => [
@@ -128,7 +128,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
             ],
             'required' => ['name'],
             'additionalProperties' => false,
-        ];
+        ]);
     }
 
     /**
@@ -145,10 +145,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
         $errors = [];
         $plan = self::planFeature($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -169,14 +166,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
      */
     private static function planFeature(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::FEATURE_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::FEATURE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::FEATURE_ARGUMENTS, self::FEATURE_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -257,7 +247,32 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
     }
 
     /**
-     * The faceted search fields given in the call, refused when the module is not there.
+     * Lets the faceted search fields of a schema take the null the get tools return without the module.
+     *
+     * A client that checks arguments against the schema would otherwise
+     * refuse the answer of a get before the call: the null is declared here,
+     * and facetedFields() skips it.
+     *
+     * @param array<string, mixed> $schema
+     *
+     * @return array<string, mixed>
+     */
+    protected static function facetedNullable(array $schema): array
+    {
+        foreach (self::FACETED_FIELDS as $field) {
+            if (!isset($schema['properties'][$field])) {
+                continue;
+            }
+            // The type alone says it: the descriptions are at their budget,
+            // and the rule is written once in the shared conventions.
+            $schema['properties'][$field]['type'] = [$schema['properties'][$field]['type'], 'null'];
+        }
+
+        return $schema;
+    }
+
+    /**
+     * The faceted search fields given in the call, refused when the module is not there unless null.
      *
      * The URL word is checked the way the module's own form checks it - the
      * text must already be what Tools::str2url() makes of it - and stored the
@@ -277,8 +292,16 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
             return;
         }
         if (!$plan['faceted']) {
-            $errors[] = implode(', ', $given) . ': fields of the faceted search module (ps_facetedsearch), which is '
-                . 'not installed and enabled in this shop; leave them out';
+            // The get tools return these fields as null without the module:
+            // that null is skipped, so their answer can be given back to the
+            // update. A value is still refused, since nothing would store it.
+            $given = array_values(array_filter($given, static function (string $field) use ($arguments): bool {
+                return $arguments[$field] !== null;
+            }));
+            if ($given !== []) {
+                $errors[] = implode(', ', $given) . ': fields of the faceted search module (ps_facetedsearch), which is '
+                    . 'not installed and enabled in this shop; leave them out';
+            }
 
             return;
         }
@@ -405,7 +428,7 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
 
         // Read back rather than echoed from the arguments: what the assistant
         // shows the merchant is what the shop stored.
-        $result['feature'] = SomcpToolGetFeature::feature($idFeature, (int) $plan['languages']['fallback']);
+        $result['feature'] = SomcpToolGetFeature::feature($idFeature, (int) $plan['languages']['fallback'], $idShop);
 
         return SomcpTool::json($result);
     }

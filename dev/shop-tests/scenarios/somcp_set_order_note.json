@@ -7,11 +7,12 @@
     {"why": "the note replaced, the order found by its reference, on several lines", "arguments": {"reference": "UOYEVOLI", "note": "Shop test: called on Monday.\nParcel checked."}, "expect": "ok", "contains": ["\"changed\": true", "\"previous_note\": \"Shop test: call the customer before delivery.\"", "\"reference\": \"UOYEVOLI\""]},
     {"why": "an empty note clears it", "arguments": {"id_order": 3, "note": ""}, "expect": "ok", "contains": ["\"changed\": true", "\"note\": \"\""]},
     {"why": "cleared again, nothing changes", "arguments": {"id_order": 3, "note": ""}, "expect": "ok", "contains": ["\"changed\": false", "has no note already"]},
-    {"why": "a note that is not a string", "arguments": {"id_order": 3, "note": 12345}, "expect": "error", "contains": ["note must be a string"]},
-    {"why": "a note given as a list", "arguments": {"id_order": 3, "note": ["a", "b"]}, "expect": "error", "contains": ["note must be a string"]},
-    {"why": "the note left out is not read as clearing it", "arguments": {"id_order": 3}, "expect": "error", "contains": ["note must be a string"]},
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "note": "Hello"}, "expect": "error", "contains": ["No order of this shop"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"note": "Hello"}, "expect": "error", "contains": ["Give id_order or reference", "somcp_search_orders"]},
-    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "note": "Hello"}, "expect": "error", "contains": ["No order of this shop has this reference"]}
+    {"why": "a note that is not a string", "arguments": {"id_order": 3, "note": 12345}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "note: a string"]},
+    {"why": "a note given as a list", "arguments": {"id_order": 3, "note": ["a", "b"]}, "expect": "error", "contains": ["note: a string"]},
+    {"why": "the note left out is not read as clearing it", "arguments": {"id_order": 3}, "expect": "error", "contains": ["note: a string"]},
+    {"why": "a misspelt field is named, not ignored", "arguments": {"id_order": 3, "note": "x", "notte": "y"}, "expect": "error", "contains": ["notte: not a field of this tool"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "note": "Hello"}, "expect": "error", "contains": ["id_order: no order of this shop has the identifier"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"note": "Hello"}, "expect": "error", "contains": ["give id_order or reference", "somcp_search_orders"]},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ", "note": "Hello"}, "expect": "error", "contains": ["no order of this shop has the reference"]}
   ]
 }

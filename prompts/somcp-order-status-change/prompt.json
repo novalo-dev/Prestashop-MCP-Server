@@ -9,6 +9,8 @@
     "somcp_ping",
     "somcp_list_order_statuses",
     "somcp_create_order_status",
+    "somcp_update_order_status",
+    "somcp_delete_order_status",
     "somcp_list_return_statuses",
     "somcp_list_carriers",
     "somcp_create_return_status",
@@ -35,7 +37,8 @@
     "somcp_set_order_address",
     "somcp_set_order_carrier",
     "somcp_set_order_currency",
-    "somcp_resend_order_status_email"
+    "somcp_resend_order_status_email",
+    "somcp_create_order"
   ],
   "controller": "AdminOrders",
   "action": "edit",

@@ -261,22 +261,11 @@ class SomcpGuard
     }
 
     /**
-     * Loads the module's Composer dependencies when nothing has yet.
-     *
-     * PrestaShop registers a module's autoloader through its Symfony kernel,
-     * which a legacy front controller of PrestaShop 8 never boots: there, the
-     * classes of vendor/ and of src/ were simply not found.
+     * The limits and the anti-robot check live in vendor/ and src/.
      */
     private static function dependencies(): void
     {
-        if (class_exists('RateLimit\\Rate') && class_exists('AltchaOrg\\Altcha\\Altcha')
-            && class_exists('Novalo\\Somcp\\Security\\DbRateLimiter')) {
-            return;
-        }
-        $autoload = _PS_MODULE_DIR_ . 'somcp/vendor/autoload.php';
-        if (is_file($autoload)) {
-            require_once $autoload;
-        }
+        Somcp::dependencies();
     }
 
     /**

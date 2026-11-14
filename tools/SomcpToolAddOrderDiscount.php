@@ -136,9 +136,7 @@ class SomcpToolAddOrderDiscount
 
         $problems = [];
 
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': unknown field';
-        }
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         // The discount name: one plain text in the shop's default language, as
         // the screen stores it. The length limit is read from CartRule's
@@ -194,9 +192,7 @@ class SomcpToolAddOrderDiscount
         // reference is refused with the list rather than landing on one of them.
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            $problems[] = (array_key_exists('reference', $arguments) && (int) ($arguments['id_order'] ?? 0) <= 0
-                ? 'reference: '
-                : 'id_order: ') . $order;
+            $problems[] = $order;
 
             return SomcpToolIssuePartialRefund::refused($problems);
         }

@@ -125,7 +125,9 @@ class SomcpToolPing
      */
     private static function languages(Shop $shop): string
     {
-        $idDefault = (int) Configuration::get('PS_LANG_DEFAULT');
+        // The default of this shop, the one every tool reads in when no
+        // language is given (#149), not the default of the whole installation.
+        $idDefault = (int) Configuration::get('PS_LANG_DEFAULT', null, null, (int) $shop->id);
         $codes = [];
 
         foreach (Language::getLanguages(true, (int) $shop->id) as $language) {

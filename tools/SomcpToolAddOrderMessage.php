@@ -106,39 +106,39 @@ class SomcpToolAddOrderMessage
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
+        // Every problem in one answer, each named by its field, as the other
+        // tools answer: a wrong message and a wrong order are fixed in one
+        // call, and a misspelt field is named rather than ignored.
+        $problems = SomcpTool::unknownFields(
+            $arguments,
+            ['id_order', 'reference', 'message', 'display_to_customer']
+        );
+
         // A strict boolean: "false" as a string would read as true and email a
         // message the merchant meant to keep private.
+        $display = false;
         if (!array_key_exists('display_to_customer', $arguments) || !is_bool($arguments['display_to_customer'])) {
-            return SomcpTool::text(
-                'Nothing was sent: display_to_customer must be true (the customer sees it and is emailed) or false '
-                    . '(private to the shop). Ask the merchant which.',
-                true
-            );
+            $problems[] = 'display_to_customer: true or false - true shows it to the customer and emails them, '
+                . 'false keeps it private to the shop; ask the merchant which';
+        } else {
+            $display = $arguments['display_to_customer'];
         }
-        $display = $arguments['display_to_customer'];
 
+        $message = '';
         if (!array_key_exists('message', $arguments) || !is_string($arguments['message'])) {
-            return SomcpTool::text('Nothing was sent: message must be a string.', true);
-        }
-        $message = trim($arguments['message']);
-
-        if ($message === '') {
-            return SomcpTool::text('Nothing was sent: the message is empty.', true);
-        }
-        if (Tools::strlen($message) > self::MAX_LENGTH) {
-            return SomcpTool::text(
-                'Nothing was sent: a message holds ' . self::MAX_LENGTH . ' characters at most.',
-                true
-            );
-        }
-        // The check behind the core's CleanHtml constraint, so the shop refuses
-        // here exactly what it refuses on the order page.
-        if (!Validate::isCleanHtml($message)) {
-            return SomcpTool::text(
-                'Nothing was sent: the message holds a script or an event attribute, which PrestaShop refuses. '
-                    . 'Send plain text.',
-                true
-            );
+            $problems[] = 'message: a string';
+        } else {
+            $message = trim($arguments['message']);
+            if ($message === '') {
+                $problems[] = 'message: empty';
+            } elseif (Tools::strlen($message) > self::MAX_LENGTH) {
+                $problems[] = 'message: ' . self::MAX_LENGTH . ' characters at most';
+            } elseif (!Validate::isCleanHtml($message)) {
+                // The check behind the core's CleanHtml constraint, so the shop
+                // refuses here exactly what it refuses on the order page.
+                $problems[] = 'message: holds a script or an event attribute, which PrestaShop refuses; send '
+                    . 'plain text';
+            }
         }
 
         // find() rather than the newest order of a reference: a split cart
@@ -146,17 +146,20 @@ class SomcpToolAddOrderMessage
         // would act on a parcel nobody chose.
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            return SomcpTool::text($order . ' Nothing was sent.', true);
+            $problems[] = $order;
+
+            return SomcpTool::refused('sent', $problems);
         }
 
         // Refused as the core refuses it: the thread is keyed on the customer's
         // email, and without a customer there is nobody to write to.
         $customer = new Customer((int) $order->id_customer);
         if (!Validate::isLoadedObject($customer)) {
-            return SomcpTool::text(
-                'The customer of this order no longer exists, so no message can be added. Nothing was sent.',
-                true
-            );
+            $problems[] = 'id_order: the customer of this order no longer exists, so no message can be added';
+        }
+
+        if ($problems !== []) {
+            return SomcpTool::refused('sent', $problems);
         }
 
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($order, $customer, $message, $display, $idEmployee): array {

@@ -1,13 +1,14 @@
 {
   "calls": [
-    {"why": "a demo value, Polyester under Composition", "arguments": {"id_feature_value": 1}, "expect": "ok", "contains": ["\"id_feature_value\": 1", "\"id_feature\": 1", "\"feature_name\": \"Composition\"", "\"value\": \"Polyester\"", "\"url_name\"", "\"meta_title\""]},
+    {"why": "a demo value, Polyester under Composition", "arguments": {"id_feature_value": 1}, "expect": "ok", "contains": ["\"id_feature_value\": 1", "\"id_feature\": 1", "\"feature_name\": \"Composition\"", "\"value\": \"Polyester\"", "\"url_name\"", "\"meta_title\"", "\"products_count\": "]},
     {"why": "a value of the other demo feature, in a language given by ISO code", "arguments": {"id_feature_value": 7, "language": "en"}, "expect": "ok", "contains": ["\"id_feature_value\": 7", "\"id_feature\": 2", "\"feature_name\": \"Property\"", "\"value\": \"Long sleeves\"", "\"language\": \"en\""]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_feature_value": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
     {"why": "the identifier as a numeric string", "arguments": {"id_feature_value": "7"}, "expect": "ok", "contains": ["\"id_feature_value\": 7"]},
     {"why": "the first value the somcp_create_feature_value scenario added, after the ten demo values", "arguments": {"id_feature_value": 11}, "expect": "ok", "contains": ["\"id_feature_value\": 11", "\"feature_name\": \"Composition\"", "\"value\": \"Somcp linen\""]},
     {"why": "the custom value Hand printed, typed on one product by the somcp_create_product scenario after the two values somcp_create_feature_value added", "arguments": {"id_feature_value": 13}, "expect": "error", "contains": ["custom value", "somcp_get_product"]},
-    {"why": "a value that does not exist", "arguments": {"id_feature_value": 999999}, "expect": "error", "contains": ["No feature value of this shop"]},
-    {"why": "no identifier", "arguments": {"id_feature_value": 0}, "expect": "error", "contains": ["No feature value of this shop"]},
-    {"why": "an identifier that is not a number", "arguments": {"id_feature_value": [1]}, "expect": "error", "contains": ["No feature value of this shop"]}
+    {"why": "a value that does not exist", "arguments": {"id_feature_value": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_feature_value: no feature value of this shop has the identifier 999999 - find it with somcp_list_features"]},
+    {"why": "no identifier", "arguments": {"id_feature_value": 0}, "expect": "error", "contains": ["- id_feature_value: a whole number above 0"]},
+    {"why": "an identifier that is not a number", "arguments": {"id_feature_value": [1]}, "expect": "error", "contains": ["- id_feature_value: a whole number above 0"]},
+    {"why": "a misspelt field is named, not read as a missing value", "arguments": {"id_feature_vlaue": 1}, "expect": "error", "contains": ["Nothing was read", "- id_feature_vlaue: not a field of this tool", "- id_feature_value: a whole number above 0"]}
   ]
 }

@@ -84,12 +84,19 @@ class SomcpToolDeleteProduct
 
         // Refused, not ignored: a second call for a product already deleted
         // must not read as a success, nor fall on another product.
-        $product = self::locate(self::identifier($arguments['id_product'] ?? null), $idShop);
-        if ($product === null) {
-            return SomcpTool::text(
-                'No product of this shop has this identifier. Nothing was deleted. Find it with somcp_search_products.',
-                true
-            );
+        $errors = SomcpTool::unknownFields($arguments, ['id_product']);
+        $idProduct = SomcpTool::id($arguments, 'id_product');
+        $product = null;
+        if ($idProduct === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_product');
+        } else {
+            $product = self::locate($idProduct, $idShop);
+            if ($product === null) {
+                $errors[] = SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products');
+            }
+        }
+        if ($errors !== [] || $product === null) {
+            return SomcpTool::refused('deleted', $errors);
         }
 
         $idProduct = (int) $product->id;
@@ -98,21 +105,7 @@ class SomcpToolDeleteProduct
         $name = self::defaultName($product);
         $reference = (string) $product->reference;
 
-        // The shop of the token only, whatever the context would otherwise
-        // list: Product::delete() and ObjectModel::delete() both take
-        // id_shop_list over the context when it is set.
-        $product->id_shop_list = [$idShop];
-
-        try {
-            $done = (bool) $product->delete();
-        } catch (Throwable $e) {
-            $done = false;
-        }
-
-        // Product::delete() also answers false when a clean-up step after the
-        // removal fails, so whether the product is still here is asked of
-        // the shop rather than inferred from that answer.
-        $gone = !self::inShop($idProduct, $idShop);
+        [$done, $gone] = self::removeFromShop($product, $idShop);
 
         if (!$done || !$gone) {
             SomcpLogger::log(
@@ -147,6 +140,8 @@ class SomcpToolDeleteProduct
             'deleted' => true,
             'id_product' => $idProduct,
             'name' => $name,
+            // The language of the name, as the write tools key texts.
+            'language' => self::nameLanguage()[1],
             'reference' => $reference,
             'still_in_shops' => $stillInShops,
         ]);
@@ -174,6 +169,37 @@ class SomcpToolDeleteProduct
         }
 
         return $product;
+    }
+
+    /**
+     * Deletes the product from the shop of the token, as [deleted, gone].
+     *
+     * Public because somcp_delete_category deletes the products it is asked
+     * to remove the same way, so the two tools never leave a product behind
+     * differently.
+     *
+     * @param Product $product
+     * @param int $idShop
+     *
+     * @return array{0: bool, 1: bool}
+     */
+    public static function removeFromShop(Product $product, int $idShop): array
+    {
+        // The shop of the token only, whatever the context would otherwise
+        // list: Product::delete() and ObjectModel::delete() both take
+        // id_shop_list over the context when it is set.
+        $product->id_shop_list = [$idShop];
+
+        try {
+            $done = (bool) $product->delete();
+        } catch (Throwable $e) {
+            $done = false;
+        }
+
+        // Product::delete() also answers false when a clean-up step after the
+        // removal fails, so whether the product is still here is asked of
+        // the shop rather than inferred from that answer.
+        return [$done, !self::inShop((int) $product->id, $idShop)];
     }
 
     /**
@@ -212,7 +238,18 @@ class SomcpToolDeleteProduct
     }
 
     /**
-     * The name of the product in the shop default language.
+     * The default language of the token's shop, as [id_lang, iso], read the
+     * way every read tool reads it when no language is given.
+     *
+     * @return array{0: int, 1: string}
+     */
+    private static function nameLanguage(): array
+    {
+        return SomcpTool::readLanguage([], Somcp::currentShopId()) ?? [0, ''];
+    }
+
+    /**
+     * The name of the product in the default language of the token's shop.
      *
      * @param Product $product
      *
@@ -224,28 +261,11 @@ class SomcpToolDeleteProduct
         // Loaded with every language, the name is an array keyed by language;
         // an override or a hook may still leave a single string.
         if (is_array($name)) {
-            $name = $name[(int) Configuration::get('PS_LANG_DEFAULT')] ?? '';
+            // The default language of the token's shop, not the global one:
+            // on a multistore the two differ (#149).
+            $name = $name[self::nameLanguage()[0]] ?? '';
         }
 
         return trim((string) $name);
-    }
-
-    /**
-     * A product identifier as a client may send it: an integer, or digits in a string.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && ctype_digit($value)) {
-            return (int) $value;
-        }
-
-        return 0;
     }
 }

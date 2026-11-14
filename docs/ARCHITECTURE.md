@@ -23,6 +23,8 @@ domain.
 | `/.well-known/oauth-authorization-server/module/somcp` | `controllers/front/wellknown.php` | Authorization server metadata (RFC 8414). |
 | `/module/somcp/authorize` | `controllers/front/authorize.php` | Authorization endpoint. |
 | `/module/somcp/oauth?a=token`, `a=register`, `a=revoke` | `controllers/front/oauth.php` | Token, dynamic registration, revocation. |
+| `/module/somcp/deposit?u=…&e=…&s=…` | `controllers/front/deposit.php` | Where an assistant posts a file for a deposit itself, by a signed link from `somcp_upload_file`. |
+| `/module/somcp/file?f=…&e=…&s=…` | `controllers/front/file.php` | Where a file of the chat, or one `somcp_download_file` hands out, is read, by a signed link. |
 
 RFC 8414 anchors the authorization server document at the **domain root**. somcp
 puts it there through the `moduleRoutes` hook, which needs friendly URLs, and a
@@ -78,7 +80,7 @@ The pieces, in `classes/`:
   `mcp.access`, `mcp.orders.read`, `mcp.orders.write`, `mcp.catalog.read`,
   `mcp.catalog.write`, `mcp.stock.read`, `mcp.stock.write`, `mcp.customers.read`,
   `mcp.customers.write`, `mcp.seo.read`, `mcp.seo.write`, `mcp.stats.read`,
-  `mcp.content.read`, `mcp.modules.read`, `mcp.modules.write`,
+  `mcp.content.read`, `mcp.modules.read`, `mcp.modules.write`, `mcp.modules.upload`,
   `mcp.appearance.read`, `mcp.appearance.write`, `mcp.system.read`, `mcp.system.write`,
   `mcp.sales.read`, `mcp.sales.write`.
 
@@ -198,8 +200,37 @@ cache lifetime (a setting, five minutes by default) and `cacheScope: private`.
   Search, load and call all go through the same
   `SomcpToolRegistry::isEnabled()` and `isAvailableTo()` as the Tools and
   prompts tab, so the finder never offers a tool the employee could not call,
-  and a write still asks for approval. MCP
-  clients are unchanged: `tools/list` stays the full list for the token.
+  and a write still asks for approval. The keyword search itself is
+  `SomcpToolRegistry::search()`, which ranks with the search of
+  [novalo/mcp-tool-discovery](https://github.com/novalo-dev/mcp-tool-discovery)
+  (`SomcpCompact::rank()`), the one compact mode uses below.
+- Compact mode (`SomcpCompact`, setting `SOMCP_TOOLS_COMPACT`) does the same
+  for MCP clients without keeping anything between calls, since the current
+  revision has no session. It is the compact mode of the library
+  [novalo/mcp-tool-discovery](https://github.com/novalo-dev/mcp-tool-discovery),
+  pinned in `composer.json` and loaded by `Somcp::dependencies()`.
+  `tools/list` carries the pinned tools - `somcp_ping`, and the two file tools,
+  whose `_meta` and file fields a client reads only from the tools it lists -
+  and three tools: `somcp_search_tools`
+  returns the tools the token may use with their schemas, found by the
+  library's search over the fields the assistant fills in (action, object,
+  description, or free keywords), and `somcp_run_read_tool` /
+  `somcp_run_write_tool` name the tool to run. Each runner refuses the tools of
+  the other kind, because a client reads the runner's flags to decide whether
+  to ask the merchant first. What a caller sees is decided by the shop's gate,
+  `Novalo\Somcp\Discovery\ShopGate`: what the full list would carry for the
+  token - switched on, covered by the scopes, allowed by the back office
+  permissions. Before the library is reached, the endpoint checks the tool a
+  runner names as a direct call is checked, so the refusals with a reason of
+  their own are the same - the message of a tool switched off, the 403 that
+  names a missing scope, the permission refused, each logged. The gate runs a
+  tool through the endpoint's own path, and a question the tool asks is sealed
+  under the tool's own name, which the runner's replay brings back to.
+  `prompts/get` puts a block in front of a guide saying which runner each of
+  its tools goes through, and which pinned tools it calls directly; the
+  server's instructions say the same of the whole server. The three tools are answered whatever the mode, so a
+  client holding the other list until it expires still works.
+  `dev/package/contract.php` checks the part of the library the module calls.
 - `SomcpContract` is the translation layer for other modules: they return
   arrays from the hooks and from their handlers, and it turns those into tools,
   prompts and results. See [EXTENDING.md](EXTENDING.md).
@@ -226,31 +257,130 @@ can answer.
 
 ---
 
-## Files from the merchant
+## Files in and out
 
-`SomcpUpload` opens a deposit: a page of the merchant's own back office
-(`AdminSomcpUploadController`) that only the employee the call was made for can
-use. Files are checked against their actual bytes, not only their extension,
-and stored under `var/somcp/uploads/`, outside the module folder. A reference
-works once.
+One class each way: `SomcpUpload` for what comes in, `SomcpDownload` for what
+goes out. No tool reads a file, opens a deposit or builds a link on its own;
+it calls one of the two, so a check added there reaches every tool at once.
 
-The address reaches the merchant one of two ways: as a URL question for a
-client that declared it can open one, or as text the assistant shows. Because a
-client can declare the first and not do it, a call that comes back to a deposit
-that is still empty gets the address again as text.
+### In
 
-A private file goes out the same way, through `SomcpDownload` and
-`AdminSomcpDownloadController`, the outgoing counterpart of the deposit page. A
-tool that produces a private file never returns the bytes: it hands out a
-signed link to that back office page. The link names the file by its kind and
-its identifier, never by a path, and carries only `kind`, `id`, `e` (expiry)
-and `s` (signature); the employee and shop it was signed for are not in the
-address but folded into the signature, which reuses the key that signs the chat
-file links. The page requires the back office session of that same employee, so
-a leaked link is useless, checks the **view** right of the screen the document
-belongs to (`AdminOrders`), and builds the file on demand with the core `PDF`
-class, so nothing is written to disk. Links expire after fifteen minutes, like a
-deposit.
+A tool that takes a file says so next to its schema: `SomcpTool`'s `files`
+argument names each field that takes one (`images`, `virtual_file.file`,
+`logo`...) and what it accepts, built with `SomcpUpload::rule()` or
+`SomcpUpload::images()`. The field itself is an object with `url` or
+`upload_ref`, described by `SomcpUpload::schema()` and read by
+`SomcpUpload::source()`, `argument()` and `fetchImage()` or `receive()`.
+
+An `upload_ref` comes from a deposit. `somcp_upload_file` opens one for a tool
+and a field, with that field's rules - an assistant cannot widen what a tool
+takes by asking for something else - and the file gets in by one of the ways
+below, all judged by the same check (`SomcpUpload::admit()`: count, size, the
+extension against the field's list, the bytes against the extension).
+
+In the same call, through an entry of `SomcpUpload::ENTRIES`. The protocol has
+no settled way yet for a client to pass a file the person attached in its
+conversation: each client has its own or none. Each way is one entry - its
+argument of `somcp_upload_file` (`entrySchema()`), what it declares to clients
+(`entryMeta()`) and how it turns what it is given into a file - so a client
+that brings a way of its own is one more entry, never a tool or a road of its
+own, and a client ignores the argument of a way it does not know:
+
+- **`file`**: ChatGPT's file parameters. The tool declares `_meta
+  {"openai/fileParams": ["file"]}`, and ChatGPT puts the file attached in its
+  conversation there, as an object with a temporary `download_url`, which the
+  shop downloads like an address;
+- **`data`**: the bytes as a data URI, marked `x-mcp-file` as the file input
+  proposals of the protocol do. Its size is measured before it is decoded;
+- **`url`**: the shop downloads a public `https` address itself
+  (`SomcpUpload::fromUrl()`: public addresses only, checked after resolution
+  and pinned, no redirect, no proxy, size capped while reading).
+
+`file` and `url` are refused for a module archive, where a link read anywhere
+would become code running on the shop. The same entries also fill a deposit
+already open, named by its `upload_ref` (`SomcpUpload::open()`): one a tool of
+the module or of another module asked for, so the directions of every deposit
+start with them, before the direct address and the page. A client reads its own way of passing a
+file from the tools it lists, so compact mode keeps `somcp_upload_file` (and
+`somcp_download_file`) in the list rather than behind a runner.
+
+After the call, when it brought no file:
+
+1. **the direct address**: an assistant that can make an HTTP request posts
+   the file itself, multipart, to `controllers/front/deposit.php`. The link
+   carries the hash of the reference, never the reference, the deposit's
+   expiry and a signature with the key of the chat's file links under a label
+   of its own, so a link to read a file can never deposit one. Anything wrong
+   gets the same empty 404;
+2. **the deposit page**: a page of the merchant's own back office
+   (`AdminSomcpUploadController`) that only the employee the deposit was opened
+   for can use.
+
+The answer gives the two in that order, and says what the person can allow
+in their assistant's network settings when the assistant's own environment
+blocks the first: nothing on the shop's side can know that in advance.
+Files are stored under `var/somcp/uploads/`, outside the module folder, and a
+reference works once.
+
+A module tool asks for files through the contract (`SomcpContract::upload()`,
+`SomcpUpload::request()`) with its own rules, decided at call time. The
+address reaches the merchant one of two ways: as a URL question for a client
+that declared it can open one, or as text the assistant reads - the same
+directions as above, the direct address included, so a module gets the
+assistant's own deposit without changing anything. Because a client can
+declare the first and not do it, a call that comes back to a deposit that is
+still empty gets the directions again as text.
+
+### Out
+
+No tool builds the address of a file. A tool that finds one - a document of an
+order, a product photo, the file of a virtual product, a category image, a
+logo, a texture, an order status icon, an attachment - answers with a
+`download_ref` from `SomcpDownload::offer()`, or `null` when there is no file.
+The reference names the file by its kind and its identifier, never by a path,
+and carries its expiry and a signature; the employee and shop it was made for
+are not in it but folded into the signature, which reuses the key that signs
+the chat file links. It lasts fifteen minutes, like a deposit. The employee is
+the one of the tool call running, set by `SomcpTool::call()` - the one place
+every call goes through - so a helper that describes a file needs nothing
+passed down to it. The Tools and prompts check refuses a file of `tools/` that
+calls a link builder of files (`getMediaLink()`, `getImageLink()`...).
+
+`SomcpDownload::KINDS` lists the kinds, each with the tool that reads it: who
+may have a file is who may run that tool, its scopes and back office rights
+read from its own declaration (`mayHave()`). `somcp_download_file` checks the
+reference, then that right, and only then looks the file up
+(`SomcpDownload::file()`): a document is built on demand with the core `PDF`
+class, any other file is read where the core keeps it (`stored()`), on the
+shop of the token, and goes out under the type its bytes show
+(`SomcpUpload::typeOf()`, the check of every file coming in), never the one
+stored beside it. Up to 4 MiB the file is attached to the answer, an image as
+an `image` block, any other file as an embedded resource, and nothing else
+comes with it: an address beside it is what an assistant would hand the
+merchant instead of reading the file. Only a file too large to attach leaves
+another way: at a signed address the assistant fetches itself -
+`SomcpUpload::share()` keeps it as a deposit for 15 minutes, through the same
+`admit()` check, and `controllers/front/file.php` serves it by the link the
+chat's files use - and on `AdminSomcpDownloadController`, which the built-in
+chat also gets since it passes its model text only. The page serves the same
+file to the merchant: it requires the back office session of that same
+employee, so a leaked link is useless, checks the same right, and shows only a PDF or a raster image, any
+other file being saved rather than opened in the back office.
+
+A tool of another module hands a file over by returning `file` with its name
+and bytes: `SomcpContract` passes it to `SomcpDownload::handOver()`, the answer
+of `somcp_download_file`, with its type read from the bytes
+(`SomcpUpload::typeOfBytes()`). No module serves a link of its own.
+
+A get gives a file back to its update as it read it: the `download_ref` naming
+the stored file changes nothing (`SomcpUpload::same()`), so a whole answer read
+and given back writes nothing.
+
+The deposit page and the download page are the one place a tool answer holds
+the back office address, administration folder included: they are opened in the
+merchant's own browser, where the folder is already known. The direct address
+of a deposit is a front address and names no folder; no other answer, front
+page or redirect names it.
 
 ---
 

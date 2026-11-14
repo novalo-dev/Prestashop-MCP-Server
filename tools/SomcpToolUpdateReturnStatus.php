@@ -119,18 +119,22 @@ class SomcpToolUpdateReturnStatus extends SomcpToolCreateReturnStatus
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $status = self::existingStatus(self::integer($arguments['id_order_return_state'] ?? null) ?? 0);
+        $idReturnState = self::integer($arguments['id_order_return_state'] ?? null) ?? 0;
+        $status = self::existingStatus($idReturnState);
         if ($status === null) {
-            return SomcpTool::text('No return status has this identifier. Nothing was changed. Find it with somcp_list_return_statuses.', true);
+            // Worded as every tool words it, so the assistant fetches the
+            // identifier rather than guess another one.
+            $problem = $idReturnState > 0
+                ? SomcpTool::notFound('id_order_return_state', 'return status', $idReturnState, 'somcp_list_return_statuses')
+                : SomcpTool::notAnIdentifier('id_order_return_state');
+
+            return SomcpTool::refused('changed', [$problem]);
         }
 
         $errors = [];
         $plan = self::planUpdate($arguments, $status, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {

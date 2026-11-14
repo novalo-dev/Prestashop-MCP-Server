@@ -1,8 +1,8 @@
 {
   "calls": [
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "address_type": "delivery", "id_address": 1}, "expect": "error", "contains": ["No order of this shop", "Nothing was changed"]},
-    {"why": "a reference no order of the shop has", "arguments": {"reference": "SOMCPNONE", "address_type": "invoice", "id_address": 1}, "expect": "error", "contains": ["No order of this shop has this reference", "somcp_search_orders", "Nothing was changed"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"address_type": "delivery", "id_address": 1}, "expect": "error", "contains": ["Give id_order or reference", "Nothing was changed"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "address_type": "delivery", "id_address": 1}, "expect": "error", "contains": ["id_order: no order of this shop has the identifier", "Nothing was changed"]},
+    {"why": "a reference no order of the shop has", "arguments": {"reference": "SOMCPNONE", "address_type": "invoice", "id_address": 1}, "expect": "error", "contains": ["no order of this shop has the reference", "somcp_search_orders", "Nothing was changed"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"address_type": "delivery", "id_address": 1}, "expect": "error", "contains": ["give id_order or reference", "Nothing was changed"]},
     {"why": "a field the tool does not take", "arguments": {"id_order": 1, "address_type": "delivery", "id_address": 1, "note": "x"}, "expect": "error", "contains": ["note: not a field of this tool", "Nothing was changed"]},
     {"why": "a type the tool does not offer", "arguments": {"id_order": 1, "address_type": "billing", "id_address": 1}, "expect": "error", "contains": ["address_type: one of delivery, invoice", "Nothing was changed"]},
     {"why": "an identifier that is not a whole number is not read as 1", "arguments": {"id_order": 1, "address_type": "delivery", "id_address": [1]}, "expect": "error", "contains": ["id_address: give the address identifier, a whole number", "Nothing was changed"]},

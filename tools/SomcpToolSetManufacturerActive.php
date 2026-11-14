@@ -97,17 +97,24 @@ class SomcpToolSetManufacturerActive
 
         // A boolean only: a string such as "false" cast to bool is true, and
         // would enable a brand the merchant asked to disable.
+        $errors = SomcpTool::unknownFields($arguments, ['id_manufacturer', 'active']);
         if (!array_key_exists('active', $arguments) || !is_bool($arguments['active'])) {
-            return SomcpTool::text('Nothing was changed: active must be true or false.', true);
+            $errors[] = 'active: true or false';
         }
-        $active = $arguments['active'];
+        $active = ($arguments['active'] ?? null) === true;
 
-        $manufacturer = SomcpToolGetManufacturer::existingManufacturer(self::identifier($arguments['id_manufacturer'] ?? null), $idShop);
-        if ($manufacturer === null) {
-            return SomcpTool::text(
-                'No brand of this shop has this identifier. Nothing was changed. Find it with somcp_list_manufacturers.',
-                true
-            );
+        $id = SomcpTool::id($arguments, 'id_manufacturer');
+        $manufacturer = null;
+        if ($id === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_manufacturer');
+        } else {
+            $manufacturer = SomcpToolGetManufacturer::existingManufacturer($id, $idShop);
+            if ($manufacturer === null) {
+                $errors[] = SomcpTool::notFound('id_manufacturer', 'brand', $id, 'somcp_list_manufacturers');
+            }
+        }
+        if ($errors !== [] || $manufacturer === null) {
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ((bool) $manufacturer->active === $active) {
@@ -181,26 +188,5 @@ class SomcpToolSetManufacturerActive
             'id_manufacturer' => (int) $manufacturer->id,
             'active' => $active,
         ]);
-    }
-
-    /**
-     * A brand identifier as a client may send it: an integer, or digits in a string.
-     *
-     * A cast would read an array as 1 and act on a brand nobody named.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            return (int) trim($value);
-        }
-
-        return 0;
     }
 }

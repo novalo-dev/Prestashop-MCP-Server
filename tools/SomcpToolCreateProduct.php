@@ -66,26 +66,6 @@ class SomcpToolCreateProduct
     protected const SUMMARY_MIN = 100;
     protected const SUMMARY_MAX = 200;
 
-    /** @var int Long enough for search engines to show the title whole. */
-    protected const META_TITLE_MAX = 55;
-
-    /** @var int The limit of Product::$definition. */
-    protected const META_DESCRIPTION_MAX = 512;
-
-    /** @var int What search results show before cutting. */
-    protected const META_DESCRIPTION_SHOWN = 160;
-
-    /** @var int 10 MB per downloaded image. */
-    protected const IMAGE_MAX_BYTES = 10485760;
-
-    /** @var array<int, string> What a downloaded image may be, by the type getimagesize() reads in its bytes. */
-    protected const IMAGE_TYPES = [
-        IMAGETYPE_JPEG => 'image/jpeg',
-        IMAGETYPE_PNG => 'image/png',
-        IMAGETYPE_GIF => 'image/gif',
-        IMAGETYPE_WEBP => 'image/webp',
-    ];
-
     /** @var array<int, string> The criteria a merchant can order; id_customer always comes first and is not one of them. */
     protected const PRIORITIES = ['id_shop', 'id_currency', 'id_country', 'id_group'];
 
@@ -119,9 +99,9 @@ class SomcpToolCreateProduct
             'reduction', 'reduction_type', 'reduction_tax', 'from', 'to',
         ],
         'supplier' => ['id_supplier', 'combination', 'product_supplier_reference', 'product_supplier_price_te', 'currency'],
-        'image' => ['url', 'upload_ref', 'legend', 'cover', 'position', 'combinations'],
+        'image' => ['url', 'upload_ref', 'download_ref', 'legend', 'cover', 'position', 'combinations'],
         'pack_item' => ['id_product', 'id_product_attribute', 'quantity'],
-        'file' => ['url', 'upload_ref'],
+        'file' => ['url', 'upload_ref', 'download_ref'],
         'combination' => [
             'attributes', 'default_on', 'reference', 'mpn', 'upc', 'ean13', 'isbn', 'quantity', 'location',
             'available_date', 'available_now', 'available_later', 'price_impact_tax_excl',
@@ -174,7 +154,8 @@ class SomcpToolCreateProduct
             // Adding a product is what the products page asks for in Team,
             // Permissions; editing is a different right, used by
             // somcp_update_product.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminProducts')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminProducts'),
+            files: ['images' => SomcpUpload::images(), 'virtual_file.file' => SomcpUpload::rule(SomcpUpload::accepted(), [self::class, 'virtualFileBytes'])]
         );
     }
 
@@ -380,8 +361,8 @@ class SomcpToolCreateProduct
                         'file' => [
                             'type' => 'object',
                             'description' => 'Merchant. Required. url: a public https address the shop downloads '
-                                . '(no redirect); upload_ref: a file already on the shop. One of the two, never file '
-                                . 'content; within the shop\'s maximum attachment size.',
+                                . '(no redirect); upload_ref: from somcp_upload_file or the chat. One of the two; within '
+                                . 'the shop\'s maximum attachment size.',
                             'properties' => [
                                 'url' => ['type' => 'string'],
                                 'upload_ref' => ['type' => 'string'],
@@ -487,8 +468,8 @@ class SomcpToolCreateProduct
                 'seo' => [
                     'type' => 'object',
                     'properties' => [
-                        'meta_title' => $text('Assistant. 55 characters at most.'),
-                        'meta_description' => $text('Assistant. 512 characters at most; past 160, search results cut it.'),
+                        'meta_title' => $text('Assistant. 255 at most; over 70 cut in search.'),
+                        'meta_description' => $text('Assistant. 512 at most; over 160 cut in search.'),
                         'link_rewrite' => $text('Assistant. The friendly URL; generated from the name when left out.'),
                         'redirect_type' => [
                             'type' => 'string',
@@ -557,7 +538,7 @@ class SomcpToolCreateProduct
                         'type' => 'object',
                         'properties' => [
                             'url' => ['type' => 'string', 'description' => 'Public https address of the image. Give url or upload_ref, not both.'],
-                            'upload_ref' => ['type' => 'string', 'description' => 'Reference of an image already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],
+                            'upload_ref' => ['type' => 'string', 'description' => 'Reference of an image on the shop, from somcp_upload_file or the chat, exactly as given. Give url or upload_ref, not both.'],
                             'legend' => $text('Alternative text of the image.'),
                             'cover' => ['type' => 'boolean', 'description' => 'The main image; the first one otherwise.'],
                             'position' => ['type' => 'integer', 'description' => 'Order of the images, from 1; the order given otherwise.'],
@@ -622,10 +603,7 @@ class SomcpToolCreateProduct
         $errors = [];
         $plan = self::prepare($arguments, $shop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $context, $shop, $idEmployee): array {
@@ -755,11 +733,10 @@ class SomcpToolCreateProduct
             }
             $groups[$group] = self::group($arguments, $group, $errors);
         }
-        foreach (array_keys($arguments) as $key) {
-            if (!isset($groups[$key]) && !in_array($key, ['languages', 'related_products', 'features', 'attachments', 'images', 'combinations'], true)) {
-                $errors[] = $key . ': not a field of this tool';
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields(
+            $arguments,
+            array_merge(array_keys($groups), ['languages', 'related_products', 'features', 'attachments', 'images', 'combinations'])
+        ));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -827,13 +804,19 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * The languages a write fills, from its languages argument.
+     *
+     * Public, with texts(), because every write tool takes translated texts
+     * by this rule (#149), the SEO tools of CMS and shop pages included, so a
+     * text is keyed, defaulted and refused the same way whatever it changes.
+     *
      * @param array<string, mixed> $arguments
      * @param int $idShop
      * @param array<int, string> $errors
      *
      * @return array{filled: array<int, string>, all: array<int, int>, fallback: int}|null
      */
-    protected static function languages(array $arguments, int $idShop, array &$errors): ?array
+    public static function languages(array $arguments, int $idShop, array &$errors): ?array
     {
         $active = [];
         foreach (Language::getLanguages(true, $idShop) as $row) {
@@ -865,7 +848,9 @@ class SomcpToolCreateProduct
 
         // A language left out takes the text of the default one, as the back
         // office does - or of the first one filled, when the default is not.
-        $default = (int) Configuration::get('PS_LANG_DEFAULT');
+        // The default of the token's shop, which may differ from the global
+        // one in a multistore.
+        $default = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
         $fallback = isset($filled[$default]) ? $default : (int) array_key_first($filled);
 
         return [
@@ -946,7 +931,7 @@ class SomcpToolCreateProduct
         if (array_key_exists('product_type', $group)) {
             $given = self::string($group['product_type']);
             if ($given === null || !in_array($given, $types, true)) {
-                $errors[] = 'basics.product_type: one of ' . implode(', ', $types);
+                $errors[] = SomcpTool::oneOf('basics.product_type', $types);
 
                 return;
             }
@@ -995,7 +980,7 @@ class SomcpToolCreateProduct
         foreach ($categories as $idCategory) {
             $category = new Category($idCategory);
             if (!Validate::isLoadedObject($category) || $idCategory === $root || !$category->isAssociatedToShop((int) $shop->id)) {
-                $errors[] = 'categories: no category ' . $idCategory . ' in this shop. Take identifiers from somcp_list_categories.';
+                $errors[] = SomcpTool::notFound('categories', 'category', $idCategory, 'somcp_list_categories');
             }
         }
 
@@ -1022,7 +1007,7 @@ class SomcpToolCreateProduct
             return;
         }
         if ($id > 0 && !Validate::isLoadedObject(new Manufacturer($id))) {
-            $errors[] = 'brand.id_manufacturer: no brand ' . $id . '. Take identifiers from somcp_list_manufacturers.';
+            $errors[] = SomcpTool::notFound('brand.id_manufacturer', 'brand', $id, 'somcp_list_manufacturers');
 
             return;
         }
@@ -1052,7 +1037,7 @@ class SomcpToolCreateProduct
         }
         foreach ($ids as $id) {
             if (!isset($found[$id])) {
-                $errors[] = 'related_products: no product ' . $id . ' in this shop. Find them with somcp_search_products.';
+                $errors[] = SomcpTool::notFound('related_products', 'product', $id, 'somcp_search_products');
             }
         }
 
@@ -1107,8 +1092,12 @@ class SomcpToolCreateProduct
             $path = 'features[' . $i . ']';
             self::onlyAccepted($item, 'feature', $path, $errors);
             $idFeature = self::integer($item['id_feature'] ?? null);
-            if ($idFeature === null || !Validate::isLoadedObject(new Feature($idFeature))) {
-                $errors[] = $path . '.id_feature: no such feature. Take identifiers from somcp_list_features.';
+            if ($idFeature === null || $idFeature <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_feature');
+                continue;
+            }
+            if (!Validate::isLoadedObject(new Feature($idFeature))) {
+                $errors[] = SomcpTool::notFound($path . '.id_feature', 'feature', $idFeature, 'somcp_list_features');
                 continue;
             }
 
@@ -1131,9 +1120,13 @@ class SomcpToolCreateProduct
             $featureValue = new FeatureValue((int) $idValue);
             // A custom value belongs to the product it was typed on: sharing it
             // would change that product's page too.
-            if ($idValue === null || !Validate::isLoadedObject($featureValue)
+            if ($idValue === null || $idValue <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_feature_value');
+                continue;
+            }
+            if (!Validate::isLoadedObject($featureValue)
                 || (int) $featureValue->id_feature !== $idFeature || (bool) $featureValue->custom) {
-                $errors[] = $path . '.id_feature_value: not a value of feature ' . $idFeature . '. Take it from somcp_list_features.';
+                $errors[] = SomcpTool::notFound($path . '.id_feature_value', 'value of feature ' . $idFeature, $idValue, 'somcp_list_features');
                 continue;
             }
             if (isset($seen[$idFeature . '-' . $idValue])) {
@@ -1161,7 +1154,7 @@ class SomcpToolCreateProduct
         $ids = array_values(array_unique(self::ids($value, 'id_attachment', 'attachments', $errors)));
         foreach ($ids as $id) {
             if (!Validate::isLoadedObject(new Attachment($id))) {
-                $errors[] = 'attachments: no document ' . $id . '. Take identifiers from somcp_list_attachments.';
+                $errors[] = SomcpTool::notFound('attachments', 'document', $id, 'somcp_list_attachments');
             }
         }
 
@@ -1183,7 +1176,7 @@ class SomcpToolCreateProduct
             // The values are the running version's: PrestaShop 9 added three.
             $values = (array) (Product::$definition['fields']['condition']['values'] ?? []);
             if ($condition === null || $probe->validateField('condition', $condition) !== true) {
-                $errors[] = 'condition.condition: one of ' . implode(', ', $values) . ' on this version';
+                $errors[] = SomcpTool::oneOf('condition.condition', $values);
             } else {
                 $plan['fields']['condition'] = $condition;
             }
@@ -1376,10 +1369,14 @@ class SomcpToolCreateProduct
                 $errors[] = $path . '.quantity: a whole number, 1 or more';
                 continue;
             }
-            if ($id === null || $id <= 0 || !Db::getInstance()->getValue(
+            if ($id === null || $id <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_product');
+                continue;
+            }
+            if (!Db::getInstance()->getValue(
                 'SELECT 1 FROM `' . _DB_PREFIX_ . 'product_shop` WHERE `id_product` = ' . (int) $id . ' AND `id_shop` = ' . (int) $idShop
             )) {
-                $errors[] = $path . '.id_product: no such product in this shop. Take identifiers from somcp_search_products.';
+                $errors[] = SomcpTool::notFound($path . '.id_product', 'product', $id, 'somcp_search_products');
                 continue;
             }
             // The back office offers neither the pack itself nor another
@@ -1388,11 +1385,18 @@ class SomcpToolCreateProduct
                 $errors[] = $path . '.id_product: a pack cannot hold a pack, nor itself';
                 continue;
             }
-            if ($idAttribute === null || $idAttribute < 0 || ($idAttribute > 0 && !Db::getInstance()->getValue(
+            if ($idAttribute === null || $idAttribute < 0) {
+                $errors[] = $path . '.id_product_attribute: a combination identifier, or 0 for none';
+                continue;
+            }
+            if ($idAttribute > 0 && !Db::getInstance()->getValue(
                 'SELECT 1 FROM `' . _DB_PREFIX_ . 'product_attribute` WHERE `id_product_attribute` = ' . (int) $idAttribute
                     . ' AND `id_product` = ' . (int) $id
-            ))) {
-                $errors[] = $path . '.id_product_attribute: not a combination of this product. Take it from somcp_get_product, 0 for none.';
+            )) {
+                // A combination belongs to its product, not to the shop: the
+                // product read with somcp_get_product lists the ones it has.
+                $errors[] = $path . '.id_product_attribute: no combination of this product has the identifier '
+                    . $idAttribute . ' - find it with somcp_get_product';
                 continue;
             }
             // The pack table holds one row per product and combination.
@@ -1438,7 +1442,7 @@ class SomcpToolCreateProduct
             $errors[] = 'virtual_file.file: an object with url or upload_ref';
         } else {
             self::onlyAccepted($group['file'], 'file', 'virtual_file.file', $errors);
-            $plan['source'] = self::imageSource($group['file'], 'virtual_file.file', $errors, 'file');
+            $plan['source'] = SomcpUpload::source($group['file'], 'virtual_file.file', $errors, 'file');
         }
 
         if (array_key_exists('display_filename', $group)) {
@@ -1526,7 +1530,7 @@ class SomcpToolCreateProduct
             foreach (array_unique(self::ids($group['carriers'], 'id_carrier', 'shipping.carriers', $errors)) as $idCarrier) {
                 $carrier = new Carrier($idCarrier);
                 if (!Validate::isLoadedObject($carrier) || $carrier->deleted || !$carrier->isAssociatedToShop($idShop)) {
-                    $errors[] = 'shipping.carriers: no carrier ' . $idCarrier . ' in this shop. Take identifiers from somcp_list_carriers.';
+                    $errors[] = SomcpTool::notFound('shipping.carriers', 'carrier', $idCarrier, 'somcp_list_carriers');
                     continue;
                 }
                 // A product is tied to the carrier's reference, which survives
@@ -1587,8 +1591,13 @@ class SomcpToolCreateProduct
         }
         $id = self::integer($group['id_tax_rules_group']);
         $rule = new TaxRulesGroup((int) $id);
-        if ($id === null || $id < 0 || ($id > 0 && (!Validate::isLoadedObject($rule) || $rule->deleted))) {
-            $errors[] = 'pricing.id_tax_rules_group: no such tax rule. Take identifiers from somcp_list_tax_rules, 0 for no tax.';
+        if ($id === null || $id < 0) {
+            $errors[] = 'pricing.id_tax_rules_group: a tax rule identifier, or 0 for no tax';
+
+            return;
+        }
+        if ($id > 0 && (!Validate::isLoadedObject($rule) || $rule->deleted)) {
+            $errors[] = SomcpTool::notFound('pricing.id_tax_rules_group', 'tax rule', $id, 'somcp_list_tax_rules');
 
             return;
         }
@@ -1689,7 +1698,7 @@ class SomcpToolCreateProduct
         foreach ($attributes as $idAttribute) {
             $attribute = new ProductAttribute($idAttribute);
             if (!Validate::isLoadedObject($attribute)) {
-                $errors[] = $path . '.attributes: no attribute value ' . $idAttribute . '. Take identifiers from somcp_list_attributes.';
+                $errors[] = SomcpTool::notFound($path . '.attributes', 'attribute value', $idAttribute, 'somcp_list_attributes');
                 continue;
             }
             if (isset($groups[(int) $attribute->id_attribute_group])) {
@@ -1800,10 +1809,13 @@ class SomcpToolCreateProduct
                 continue;
             }
             // PrestaShop 8.0 has no labels per combination: the table came
-            // with 8.1. Dropping them silently would lose what the merchant
-            // typed, so the call says so instead.
+            // with 8.1. Dropping a label silently would lose what the merchant
+            // typed, so the call says so instead; the null somcp_get_product
+            // returns there is skipped, so its answer can be given back.
             if (!isset(Combination::$definition['fields']['available_now'])) {
-                $errors[] = $path . '.' . $field . ': this PrestaShop version has no labels per combination (they came with 8.1)';
+                if ($item[$field] !== null) {
+                    $errors[] = SomcpTool::notOnThisVersion($path . '.' . $field, 'labels per combination');
+                }
                 continue;
             }
             $texts = self::texts($item, $field, $path . '.' . $field, $languages, $errors);
@@ -1895,15 +1907,19 @@ class SomcpToolCreateProduct
         }
         if (isset($item['id_group'])) {
             $idGroup = self::integer($item['id_group']);
-            if ($idGroup === null || $idGroup < 0 || ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup)))) {
-                $errors[] = $at . 'id_group: no such customer group. Take one from somcp_list_customer_groups, 0 for all.';
+            if ($idGroup === null || $idGroup < 0) {
+                $errors[] = $at . 'id_group: a customer group identifier, or 0 for all';
+            } elseif ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup))) {
+                $errors[] = SomcpTool::notFound($at . 'id_group', 'customer group', $idGroup, 'somcp_list_customer_groups');
             }
             $rule['id_group'] = (int) $idGroup;
         }
         if (isset($item['id_customer'])) {
             $idCustomer = self::integer($item['id_customer']);
-            if ($idCustomer === null || $idCustomer < 0 || ($idCustomer > 0 && !Customer::customerIdExistsStatic($idCustomer))) {
-                $errors[] = $at . 'id_customer: no such customer, 0 for all';
+            if ($idCustomer === null || $idCustomer < 0) {
+                $errors[] = $at . 'id_customer: a customer identifier, or 0 for all';
+            } elseif ($idCustomer > 0 && !Customer::customerIdExistsStatic($idCustomer)) {
+                $errors[] = SomcpTool::notFound($at . 'id_customer', 'customer', $idCustomer, 'somcp_search_customers');
             }
             $rule['id_customer'] = (int) $idCustomer;
         }
@@ -2018,8 +2034,12 @@ class SomcpToolCreateProduct
             $path = 'suppliers.suppliers[' . $i . ']';
             self::onlyAccepted($item, 'supplier', $path, $errors);
             $idSupplier = self::integer($item['id_supplier'] ?? null);
-            if ($idSupplier === null || !self::supplierExists($idSupplier, $known)) {
-                $errors[] = $path . '.id_supplier: no such supplier. Take identifiers from somcp_list_suppliers.';
+            if ($idSupplier === null || $idSupplier <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_supplier');
+                continue;
+            }
+            if (!self::supplierExists($idSupplier, $known)) {
+                $errors[] = SomcpTool::notFound($path . '.id_supplier', 'supplier', $idSupplier, 'somcp_list_suppliers');
                 continue;
             }
             $combination = self::position($item, 'combination', $combinations, $path, $errors);
@@ -2042,8 +2062,11 @@ class SomcpToolCreateProduct
         $default = null;
         if (array_key_exists('id_supplier_default', $group)) {
             $default = self::integer($group['id_supplier_default']);
-            if ($default === null || $default <= 0 || !self::supplierExists($default, $known)) {
-                $errors[] = 'suppliers.id_supplier_default: no such supplier. Take identifiers from somcp_list_suppliers.';
+            if ($default === null || $default <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier('suppliers.id_supplier_default');
+                $default = null;
+            } elseif (!self::supplierExists($default, $known)) {
+                $errors[] = SomcpTool::notFound('suppliers.id_supplier_default', 'supplier', $default, 'somcp_list_suppliers');
                 $default = null;
             }
         }
@@ -2132,7 +2155,7 @@ class SomcpToolCreateProduct
         foreach (self::items($value, 'images', $errors) as $i => $item) {
             $path = 'images[' . $i . ']';
             self::onlyAccepted($item, 'image', $path, $errors);
-            $source = self::imageSource($item, $path, $errors);
+            $source = SomcpUpload::source($item, $path, $errors);
             if ($source === null) {
                 continue;
             }
@@ -2159,99 +2182,6 @@ class SomcpToolCreateProduct
         });
 
         return $images;
-    }
-
-    /**
-     * Where one image comes from: a public address the shop downloads, or
-     * the reference of a file already on the shop. One of the two, never
-     * both, and never the bytes themselves - the two doors somcp lets a file
-     * in through.
-     *
-     * @param array<string, mixed> $item
-     * @param string $path
-     * @param array<int, string> $errors
-     * @param string $what what the file is, for the message
-     *
-     * @return array{url: string, upload_ref: string}|null
-     */
-    protected static function imageSource(array $item, string $path, array &$errors, string $what = 'image'): ?array
-    {
-        $url = trim((string) (self::string($item['url'] ?? null) ?? ''));
-        $reference = trim((string) (self::string($item[SomcpUpload::ARG_REF] ?? null) ?? ''));
-        if ($url !== '' && $reference !== '') {
-            $errors[] = $path . ': url or upload_ref, not both';
-
-            return null;
-        }
-        if ($url === '' && $reference === '') {
-            $errors[] = $path . ': the public https address of the ' . $what . ' (url), or the upload_ref of a file on the shop';
-
-            return null;
-        }
-
-        return ['url' => $url, 'upload_ref' => $reference];
-    }
-
-    /**
-     * One image field of a tool that is not a product: absent, or an object
-     * read by imageSource().
-     *
-     * Anything other than an object - a bare address, a bare reference - is
-     * refused with the message imageSource() gives for an empty one, which
-     * names both forms the field accepts.
-     *
-     * @param array<string, mixed> $arguments
-     * @param string $field
-     * @param array<int, string> $errors
-     * @param string $what what the file is, for the message
-     *
-     * @return array{url: string, upload_ref: string}|null null when not given or refused
-     */
-    protected static function imageArgument(array $arguments, string $field, array &$errors, string $what): ?array
-    {
-        if (!array_key_exists($field, $arguments)) {
-            return null;
-        }
-        $value = $arguments[$field];
-
-        return self::imageSource(is_array($value) && !array_is_list($value) ? $value : [], $field, $errors, $what);
-    }
-
-    /**
-     * The schema of one image field, worded as the images of the product tools.
-     *
-     * One builder for every tool, so an image is asked for in the same words
-     * wherever it goes.
-     *
-     * @param string $description who fills it and what it is, first
-     * @param string $of the image named in the property descriptions, e.g. "the logo"
-     *
-     * @return array<string, mixed>
-     */
-    protected static function imageSchema(string $description, string $of): array
-    {
-        return [
-            'type' => 'object',
-            'description' => $description . ' Its url (public https, no redirect, 10 MB at most) or the upload_ref '
-                . 'of a file already on the shop. JPEG, PNG, GIF or WebP; never file content.',
-            'properties' => [
-                'url' => ['type' => 'string', 'description' => 'Public https address of ' . $of . '. Give url or upload_ref, not both.'],
-                'upload_ref' => ['type' => 'string', 'description' => 'Reference of ' . $of . ' already on the shop, exactly as given in the conversation. Give url or upload_ref, not both.'],
-            ],
-            'additionalProperties' => false,
-        ];
-    }
-
-    /**
-     * How an image is named in the answer: its address, or its reference.
-     *
-     * @param array<string, mixed> $image
-     *
-     * @return array<string, string>
-     */
-    protected static function imageOrigin(array $image): array
-    {
-        return ($image['upload_ref'] ?? '') !== '' ? ['upload_ref' => (string) $image['upload_ref']] : ['url' => (string) $image['url']];
     }
 
     /**
@@ -2368,18 +2298,26 @@ class SomcpToolCreateProduct
      */
     protected static function metaTexts(array $group, array $languages, Product $probe, array &$plan, array &$errors): void
     {
-        $limits = ['meta_title' => self::META_TITLE_MAX, 'meta_description' => self::META_DESCRIPTION_MAX];
-        foreach ($limits as $field => $max) {
+        // The fallbacks only serve a definition without a size; the size refused
+        // is the column's, the one the back office refuses past.
+        $limits = ['meta_title' => 255, 'meta_description' => 512];
+        foreach ($limits as $field => $fallback) {
+            $max = SomcpTool::columnSize($probe, $field, $fallback);
+            $recommended = $field === 'meta_title' ? SomcpTool::META_TITLE_RECOMMENDED : SomcpTool::metaDescriptionRecommended();
             $texts = self::texts($group, $field, 'seo.' . $field, $languages, $errors);
             foreach ($texts ?? [] as $idLang => $text) {
                 $text = trim($text);
                 $texts[$idLang] = $text;
                 $where = 'seo.' . $field . ' (' . $languages['filled'][$idLang] . ')';
                 // Refused rather than cut: a title cut by the tool is a title
-                // nobody wrote, and the merchant would not know it changed.
-                if (self::visibleLength($text) > $max) {
-                    $errors[] = $where . ': ' . $max . ' characters at most, ' . self::visibleLength($text) . ' given';
-                } elseif (($check = $probe->validateField($field, $text, $idLang)) !== true) {
+                // nobody wrote, and the merchant would not know it changed. The
+                // advice is dropped here: seoWarnings() gives it once the text
+                // is stored, next to the product's other SEO warnings.
+                $advice = [];
+                if (!SomcpTool::seoTextLength($where, self::visibleLength($text), $max, $recommended, $errors, $advice)) {
+                    continue;
+                }
+                if (($check = $probe->validateField($field, $text, $idLang)) !== true) {
                     $errors[] = $where . ': ' . self::reason($check);
                 }
             }
@@ -2390,9 +2328,13 @@ class SomcpToolCreateProduct
 
         if (array_key_exists('meta_keywords', $group)) {
             if (!isset(Product::$definition['fields']['meta_keywords'])) {
-                // PrestaShop 9 dropped the column. Accepting the field and
-                // storing nothing would tell the merchant something false.
-                $errors[] = 'seo.meta_keywords: this PrestaShop version no longer has meta keywords; leave the field out';
+                // PrestaShop 9 dropped the column. The null somcp_get_product
+                // returns there is skipped, so its answer can be given back; a
+                // value is refused, since storing nothing would tell the
+                // merchant something false.
+                if ($group['meta_keywords'] !== null) {
+                    $errors[] = SomcpTool::notOnThisVersion('seo.meta_keywords', 'meta keywords');
+                }
             } else {
                 $texts = self::texts($group, 'meta_keywords', 'seo.meta_keywords', $languages, $errors);
                 foreach ($texts ?? [] as $idLang => $text) {
@@ -2497,7 +2439,7 @@ class SomcpToolCreateProduct
         $types = array_values(PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\RedirectType::AVAILABLE_REDIRECT_TYPES);
         $type = self::string($value);
         if ($type === null || !in_array($type, $types, true)) {
-            $errors[] = 'seo.redirect_type: one of ' . implode(', ', $types) . ' on this version';
+            $errors[] = SomcpTool::oneOf('seo.redirect_type', $types);
 
             return null;
         }
@@ -2874,11 +2816,11 @@ class SomcpToolCreateProduct
             }
             if ($idImage <= 0) {
                 --$position;
-                $report[] = self::imageOrigin($image) + ['refused' => $refusal];
+                $report[] = SomcpUpload::origin($image) + ['refused' => $refusal];
                 continue;
             }
 
-            $report[] = self::imageOrigin($image) + ['id_image' => $idImage];
+            $report[] = SomcpUpload::origin($image) + ['id_image' => $idImage];
             $created[] = $idImage;
             foreach ($image['combinations'] as $index) {
                 $illustrates[$combinationIds[$index]][] = $idImage;
@@ -2931,7 +2873,7 @@ class SomcpToolCreateProduct
         }
 
         try {
-            $refusal = self::fetchImage(['url' => (string) ($plan['url'] ?? ''), 'upload_ref' => (string) ($plan['upload_ref'] ?? '')], $file);
+            $refusal = SomcpUpload::fetchImage(['url' => (string) ($plan['url'] ?? ''), 'upload_ref' => (string) ($plan['upload_ref'] ?? '')], $file);
             if ($refusal !== '') {
                 return 0;
             }
@@ -2970,28 +2912,6 @@ class SomcpToolCreateProduct
         } finally {
             @unlink($file);
         }
-    }
-
-    /**
-     * The bytes of one image, from its address or its upload_ref, checked.
-     *
-     * Every tool that takes an image gets it through here, whatever object it
-     * ends up on: a guard added to the download, the deposit or the image
-     * check then reaches all of them at once, instead of the one tool that
-     * happened to be edited.
-     *
-     * @param array{url: string, upload_ref: string} $source as imageSource() reads it
-     * @param string $target where the file is written
-     *
-     * @return string empty on success, the reason otherwise
-     */
-    protected static function fetchImage(array $source, string $target): string
-    {
-        $refusal = $source['upload_ref'] !== ''
-            ? self::fromDeposit($source['upload_ref'], $target)
-            : self::download($source['url'], $target);
-
-        return $refusal === '' ? self::checkImage($target) : $refusal;
     }
 
     /**
@@ -3034,7 +2954,7 @@ class SomcpToolCreateProduct
      */
     protected static function writeVirtualFile(int $idProduct, array $plan): array
     {
-        $origin = self::imageOrigin($plan['source']);
+        $origin = SomcpUpload::origin($plan['source']);
         $filename = '';
 
         try {
@@ -3077,13 +2997,20 @@ class SomcpToolCreateProduct
     protected static function receiveFile(array $source, string &$filename): string
     {
         $filename = ProductDownload::getNewFilename();
-        $target = _PS_DOWNLOAD_DIR_ . $filename;
-        // The limit the back office puts on a virtual product's file, in MB.
-        $maxBytes = (int) Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1048576 ?: self::IMAGE_MAX_BYTES;
 
-        return $source['upload_ref'] !== ''
-            ? self::fromDeposit((string) $source['upload_ref'], $target, $maxBytes)
-            : self::download((string) $source['url'], $target, $maxBytes);
+        return SomcpUpload::receive($source, _PS_DOWNLOAD_DIR_ . $filename, self::virtualFileBytes());
+    }
+
+    /**
+     * The largest file a virtual product may have: the limit the back office
+     * puts on it, in MB, so a deposit opened for it refuses what the product
+     * would.
+     *
+     * @return int
+     */
+    public static function virtualFileBytes(): int
+    {
+        return (int) Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1048576 ?: SomcpUpload::IMAGE_MAX_BYTES;
     }
 
     /**
@@ -3156,246 +3083,6 @@ class SomcpToolCreateProduct
     }
 
     /**
-     * Fetches a merchant's image without letting the address reach inside.
-     *
-     * This is a request the shop makes on the strength of a URL typed in a
-     * conversation, so it is held to what such a request needs: https only,
-     * an address that resolves to the public internet - checked after
-     * resolution, then pinned so a second lookup cannot answer differently -
-     * no redirect, no proxy, and a size cap enforced while reading.
-     *
-     * @param string $url
-     * @param string $target
-     * @param int $maxBytes the largest file accepted
-     *
-     * @return string empty on success, the reason otherwise
-     */
-    protected static function download(string $url, string $target, int $maxBytes = self::IMAGE_MAX_BYTES): string
-    {
-        $parts = parse_url($url);
-        if (!is_array($parts) || Tools::strtolower((string) ($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) {
-            return 'only public https addresses are accepted';
-        }
-        if (isset($parts['user']) || isset($parts['pass'])) {
-            return 'an address carrying credentials is refused';
-        }
-        if ((int) ($parts['port'] ?? 443) !== 443) {
-            return 'only the standard https port is accepted';
-        }
-        if (!function_exists('curl_init')) {
-            return 'this shop has no cURL to download with';
-        }
-
-        $host = Tools::strtolower(trim((string) $parts['host'], '[]'));
-        $addresses = self::resolve($host);
-        if ($addresses === []) {
-            return 'the host does not resolve';
-        }
-        foreach ($addresses as $address) {
-            if (!self::isPublic($address)) {
-                return 'the host resolves to a private, local or reserved address';
-            }
-        }
-
-        $handle = fopen($target, 'wb');
-        if ($handle === false) {
-            return 'the shop has no room to receive it';
-        }
-        $size = 0;
-        $tooLarge = false;
-        $pinned = strpos($addresses[0], ':') !== false ? '[' . $addresses[0] . ']' : $addresses[0];
-
-        $curl = curl_init();
-        if ($curl === false) {
-            fclose($handle);
-
-            return 'this shop could not start a download';
-        }
-        curl_setopt_array($curl, [
-            CURLOPT_URL => $url,
-            CURLOPT_RESOLVE => [$host . ':443:' . $pinned],
-            CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
-            CURLOPT_FOLLOWLOCATION => false,
-            // A proxy would resolve the host itself, out of reach of the check above.
-            CURLOPT_PROXY => '',
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_TIMEOUT => 20,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_USERAGENT => 'PrestaShop somcp',
-            CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use ($handle, &$size, &$tooLarge, $maxBytes): int {
-                $size += strlen($chunk);
-                if ($size > $maxBytes) {
-                    $tooLarge = true;
-
-                    return 0;
-                }
-
-                return (int) fwrite($handle, $chunk);
-            },
-        ]);
-        $done = curl_exec($curl);
-        $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
-        unset($curl);
-        fclose($handle);
-
-        if ($tooLarge) {
-            return self::tooLarge($maxBytes);
-        }
-        if ($done === false) {
-            return 'the download failed';
-        }
-        if ($status >= 300 && $status < 400) {
-            return 'the address redirects elsewhere, and redirections are not followed; give the final address';
-        }
-        if ($status !== 200) {
-            return 'the address answered HTTP ' . $status;
-        }
-
-        return '';
-    }
-
-    /**
-     * Writes the file behind an upload_ref where the image is put together.
-     *
-     * Redeemed for the employee the write runs as, on this shop: a reference
-     * belonging to someone else, expired or already used finds nothing. The
-     * built-in assistant hands over a copy, so its conversation keeps the
-     * file.
-     *
-     * @param string $reference
-     * @param string $target
-     * @param int $maxBytes the largest file accepted
-     *
-     * @return string empty on success, the reason otherwise
-     */
-    protected static function fromDeposit(string $reference, string $target, int $maxBytes = self::IMAGE_MAX_BYTES): string
-    {
-        $employee = Somcp::legacyContext()->employee;
-        $idEmployee = $employee instanceof Employee ? (int) $employee->id : 0;
-        $files = SomcpUpload::redeem($reference, $idEmployee);
-        if ($files === []) {
-            return 'no file of this account matches this upload_ref, or it expired or was already used';
-        }
-        if (strlen($files[0]['contents']) > $maxBytes) {
-            return self::tooLarge($maxBytes);
-        }
-
-        return @file_put_contents($target, $files[0]['contents']) === false ? 'the shop has no room to receive it' : '';
-    }
-
-    /**
-     * @param int $maxBytes
-     *
-     * @return string
-     */
-    protected static function tooLarge(int $maxBytes): string
-    {
-        return 'the file is larger than ' . rtrim(rtrim(number_format($maxBytes / 1048576, 1, '.', ''), '0'), '.') . ' MB';
-    }
-
-    /**
-     * @param string $file
-     *
-     * @return string empty when the file is an image the shop can use
-     */
-    protected static function checkImage(string $file): string
-    {
-        $info = @getimagesize($file);
-        $type = is_array($info) ? (int) $info[2] : 0;
-        if (!isset(self::IMAGE_TYPES[$type])) {
-            return 'it is not a JPEG, PNG, GIF or WebP image';
-        }
-        if (!ImageManager::isRealImage($file, self::IMAGE_TYPES[$type], array_values(self::IMAGE_TYPES))) {
-            return 'its content is not the image it claims to be';
-        }
-        if (!ImageManager::checkImageMemoryLimit($file)) {
-            return 'it is too large for the shop to resize';
-        }
-
-        return '';
-    }
-
-    /**
-     * @param string $host
-     *
-     * @return array<int, string>
-     */
-    protected static function resolve(string $host): array
-    {
-        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
-            return [$host];
-        }
-
-        // A name that does not resolve makes these functions warn; that is an
-        // answer here, not an incident worth a line in the PHP log.
-        set_error_handler(static function (): bool {
-            return true;
-        });
-        try {
-            $addresses = gethostbynamel($host) ?: [];
-            if (function_exists('dns_get_record')) {
-                foreach (dns_get_record($host, DNS_AAAA) ?: [] as $record) {
-                    if (isset($record['ipv6'])) {
-                        $addresses[] = (string) $record['ipv6'];
-                    }
-                }
-            }
-        } finally {
-            restore_error_handler();
-        }
-
-        return array_values(array_unique($addresses));
-    }
-
-    /**
-     * Whether an address is on the public internet.
-     *
-     * PHP's own flags cover the private and reserved ranges; the list below
-     * adds what they leave out and what can still lead inside - shared address
-     * space, benchmarking, documentation, multicast, and IPv6 forms that carry
-     * an IPv4 address.
-     *
-     * @param string $address
-     *
-     * @return bool
-     */
-    protected static function isPublic(string $address): bool
-    {
-        $packed = @inet_pton($address);
-        if ($packed === false) {
-            return false;
-        }
-        // ::ffff:a.b.c.d and the NAT64 prefix both end in an IPv4 address,
-        // which is the one actually reached.
-        if (strlen($packed) === 16
-            && (strncmp($packed, str_repeat("\0", 10) . "\xff\xff", 12) === 0 || strncmp($packed, "\x00\x64\xff\x9b" . str_repeat("\0", 8), 12) === 0)) {
-            return self::isPublic((string) inet_ntop(substr($packed, 12)));
-        }
-        if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-            return false;
-        }
-
-        $blocked = strlen($packed) === 4
-            ? ['0.0.0.0/8', '100.64.0.0/10', '192.0.0.0/24', '192.0.2.0/24', '198.18.0.0/15', '198.51.100.0/24', '203.0.113.0/24', '224.0.0.0/3']
-            : ['::/8', '100::/64', '2001:db8::/32', 'fc00::/7', 'fe80::/10', 'ff00::/8'];
-        foreach ($blocked as $range) {
-            [$network, $bits] = explode('/', $range);
-            $base = (string) inet_pton($network);
-            $bytes = intdiv((int) $bits, 8);
-            $rest = (int) $bits % 8;
-            if (strncmp($packed, $base, $bytes) !== 0) {
-                continue;
-            }
-            if ($rest === 0 || ((ord($packed[$bytes]) ^ ord($base[$bytes])) & (0xFF << (8 - $rest)) & 0xFF) === 0) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * What the merchant should know about the SEO of each language filled.
      *
      * @param Product $product
@@ -3413,11 +3100,14 @@ class SomcpToolCreateProduct
             $description = (string) ($plan['texts']['meta_description'][$idLang] ?? '');
             if ($title === '') {
                 $list[] = 'no meta_title: the storefront uses the product name';
+            } elseif (self::visibleLength($title) > SomcpTool::META_TITLE_RECOMMENDED) {
+                // Advice, not a limit: the lengths the SEO audits flag past.
+                $list[] = 'meta_title over ' . SomcpTool::META_TITLE_RECOMMENDED . ' characters: search results cut it';
             }
             if ($description === '') {
                 $list[] = 'no meta_description: search engines pick a passage of the page';
-            } elseif (self::visibleLength($description) > self::META_DESCRIPTION_SHOWN) {
-                $list[] = 'meta_description over ' . self::META_DESCRIPTION_SHOWN . ' characters: search results cut it';
+            } elseif (self::visibleLength($description) > SomcpTool::metaDescriptionRecommended()) {
+                $list[] = 'meta_description over ' . SomcpTool::metaDescriptionRecommended() . ' characters: search results cut it';
             }
             foreach (['link_rewrite' => (string) ($plan['texts']['link_rewrite'][$idLang] ?? ''), 'meta_title' => $title] as $field => $value) {
                 if ($value === '') {
@@ -3498,15 +3188,15 @@ class SomcpToolCreateProduct
      */
     protected static function onlyAccepted(array $item, string $kind, string $path, array &$errors): void
     {
-        foreach (array_keys($item) as $key) {
-            $key = (string) $key;
-            if (in_array($key, self::ACCEPTED[$kind], true)) {
-                continue;
+        // COMPUTED names its fields by kind, so only those of this kind are
+        // handed on, without the prefix the shared check does not know.
+        $computed = [];
+        foreach (self::COMPUTED as $field) {
+            if (strpos($field, $kind . '.') === 0) {
+                $computed[] = substr($field, strlen($kind) + 1);
             }
-            $errors[] = $path . '.' . $key . (in_array($kind . '.' . $key, self::COMPUTED, true)
-                ? ': worked out by the shop or read from another object, so it is not written here'
-                : ': not a field of this tool');
         }
+        array_push($errors, ...SomcpTool::unknownFields($item, self::ACCEPTED[$kind], $computed, $path . '.'));
     }
 
     /**
@@ -3581,7 +3271,7 @@ class SomcpToolCreateProduct
      *
      * @return array<int, string>|null by language identifier, null when not given
      */
-    protected static function texts(array $group, string $field, string $path, array $languages, array &$errors, bool $required = false): ?array
+    public static function texts(array $group, string $field, string $path, array $languages, array &$errors, bool $required = false): ?array
     {
         $value = $group[$field] ?? null;
         $isos = implode(', ', $languages['filled']);

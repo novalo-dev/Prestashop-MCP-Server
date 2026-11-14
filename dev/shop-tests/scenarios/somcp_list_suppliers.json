@@ -5,6 +5,9 @@
     {"why": "a name no supplier holds", "arguments": {"name": "zzz-no-such-supplier"}, "expect": "ok", "contains": ["\"suppliers\": []", "\"count\": 0"]},
     {"why": "enabled suppliers only, as Enabled: Yes", "arguments": {"active": true}, "expect": "ok", "contains": ["\"suppliers\"", "\"active\": true"]},
     {"why": "disabled suppliers only, as Enabled: No - none or a few, depending on what other scenarios left", "arguments": {"active": false}, "expect": "ok", "contains": ["\"suppliers\"", "\"count\""]},
-    {"why": "both filters together", "arguments": {"active": true, "name": "Accessories"}, "expect": "ok", "contains": ["Accessories supplier"]}
+    {"why": "both filters together", "arguments": {"active": true, "name": "Accessories"}, "expect": "ok", "contains": ["Accessories supplier"]},
+    {"why": "an Enabled that is not a boolean is refused, not ignored into the whole list", "arguments": {"active": "yes"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- active: true or false"]},
+    {"why": "a misspelt filter is named, not ignored into a wider list", "arguments": {"nmae": "studio"}, "expect": "error", "contains": ["- nmae: not a field of this tool"]},
+    {"why": "every problem of the call in one answer", "arguments": {"active": 1, "enabled": true}, "expect": "error", "contains": ["- enabled: not a field of this tool", "- active: true or false"]}
   ]
 }

@@ -27,6 +27,8 @@ parameters:
         # The limits and the anti-robot check of the authorization page.
         - vendor/nikolaposa/rate-limit/src
         - vendor/altcha-org/altcha/src
+        # Compact mode and the tool search.
+        - vendor/novalo/mcp-tool-discovery/src
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         # StockAvailable::dependsOnStock() exists on 8 and was removed on 9.

@@ -98,17 +98,24 @@ class SomcpToolSetSupplierActive
 
         // A boolean only: a string such as "false" cast to bool is true, and
         // would enable a supplier the merchant asked to disable.
+        $errors = SomcpTool::unknownFields($arguments, ['id_supplier', 'active']);
         if (!array_key_exists('active', $arguments) || !is_bool($arguments['active'])) {
-            return SomcpTool::text('Nothing was changed: active must be true or false.', true);
+            $errors[] = 'active: true or false';
         }
-        $active = $arguments['active'];
+        $active = ($arguments['active'] ?? null) === true;
 
-        $supplier = SomcpToolGetSupplier::existingSupplier(self::identifier($arguments['id_supplier'] ?? null), $idShop);
-        if ($supplier === null) {
-            return SomcpTool::text(
-                'No supplier of this shop has this identifier. Nothing was changed. Find it with somcp_list_suppliers.',
-                true
-            );
+        $id = SomcpTool::id($arguments, 'id_supplier');
+        $supplier = null;
+        if ($id === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_supplier');
+        } else {
+            $supplier = SomcpToolGetSupplier::existingSupplier($id, $idShop);
+            if ($supplier === null) {
+                $errors[] = SomcpTool::notFound('id_supplier', 'supplier', $id, 'somcp_list_suppliers');
+            }
+        }
+        if ($errors !== [] || $supplier === null) {
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ((bool) $supplier->active === $active) {
@@ -183,26 +190,5 @@ class SomcpToolSetSupplierActive
             'id_supplier' => (int) $supplier->id,
             'active' => $active,
         ]);
-    }
-
-    /**
-     * A supplier identifier as a client may send it: an integer, or digits in a string.
-     *
-     * A cast would read an array as 1 and act on a supplier nobody named.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            return (int) trim($value);
-        }
-
-        return 0;
     }
 }

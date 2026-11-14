@@ -7,7 +7,8 @@
     {"why": "a state given as a string is refused", "arguments": {"id_category": 5, "active": "false"}, "expect": "error", "contains": ["true or false"]},
     {"why": "Home cannot be hidden", "arguments": {"id_category": 2, "active": false}, "expect": "error", "contains": ["root category or the Home of a shop"]},
     {"why": "the root category cannot be hidden", "arguments": {"id_category": 1, "active": false}, "expect": "error", "contains": ["Nothing was changed"]},
-    {"why": "an identifier given as a list is not read as category 1", "arguments": {"id_category": [5], "active": false}, "expect": "error", "contains": ["No category of this shop"]},
-    {"why": "a category that does not exist", "arguments": {"id_category": 999999, "active": false}, "expect": "error", "contains": ["No category of this shop"]}
+    {"why": "an identifier given as a list is not read as category 1", "arguments": {"id_category": [5], "active": false}, "expect": "error", "contains": ["Nothing was changed", "- id_category: a whole number above 0"]},
+    {"why": "a category that does not exist", "arguments": {"id_category": 999999, "active": false}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_category: no category of this shop has the identifier 999999 - find it with somcp_list_categories"]},
+    {"why": "an argument this tool does not know", "arguments": {"id_category": 5, "active": false, "colour": "red"}, "expect": "error", "contains": ["Nothing was changed", "- colour: not a field of this tool"]}
   ]
 }

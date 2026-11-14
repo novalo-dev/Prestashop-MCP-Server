@@ -98,17 +98,20 @@ class SomcpToolDeleteReturnStatus
         // Refused, not ignored: a second call for a status already deleted
         // must not read as a success.
         $status = SomcpToolCreateReturnStatus::existingStatus($idReturnState);
-        if ($status === null) {
-            return SomcpTool::text(
-                'No return status has this identifier. Nothing was deleted. Find it with '
-                    . 'somcp_list_return_statuses.',
-                true
-            );
+        // Every problem of the call in one answer, a misspelt field included.
+        $errors = SomcpTool::unknownFields($arguments, ['id_order_return_state']);
+        if ($idReturnState === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_order_return_state');
+        } elseif ($status === null) {
+            $errors[] = SomcpTool::notFound('id_order_return_state', 'return status', $idReturnState, 'somcp_list_return_statuses');
+        }
+        if ($errors !== [] || $status === null) {
+            return SomcpTool::refused('deleted', $errors);
         }
 
         // Read before deleting: afterwards there is nothing left to read it
         // from, and the merchant needs the name to know which status went.
-        $name = self::statusName($status);
+        [$name, $nameLanguage] = self::statusName($status);
 
         // Neither back office offers Delete on the five statuses every shop
         // starts with, and neither handler checks it: the tool refuses them
@@ -178,34 +181,41 @@ class SomcpToolDeleteReturnStatus
             'deleted' => true,
             'id_order_return_state' => $idReturnState,
             'name' => $name,
+            'language' => $nameLanguage,
         ]);
     }
 
     /**
-     * The name of the status in the shop's default language, the one the
-     * answer speaks: a text from another language is taken when the default
-     * one has none, rather than answering with an empty name.
+     * The name of the status in the default language of the token's shop,
+     * with the ISO code it is in: a text from another language is taken when
+     * the default one has none, rather than answering with an empty name.
+     * The shop default rather than the context language, which on an MCP
+     * call follows the client's browser header (#149).
      *
      * @param OrderReturnState $status loaded in every language
      *
-     * @return string
+     * @return array{0: string, 1: string}
      */
-    private static function statusName(OrderReturnState $status): string
+    private static function statusName(OrderReturnState $status): array
     {
+        $idShop = Somcp::currentShopId();
+        $languages = SomcpTool::activeLanguages($idShop);
+        $default = SomcpTool::readLanguage([], $idShop);
+        $idLang = $default === null ? 0 : $default[0];
+        $iso = $default === null ? '' : $default[1];
         if (!is_array($status->name)) {
-            return (string) $status->name;
+            return [(string) $status->name, $iso];
         }
 
-        $idLang = (int) Somcp::legacyContext()->language->id;
         if ((string) ($status->name[$idLang] ?? '') !== '') {
-            return (string) $status->name[$idLang];
+            return [(string) $status->name[$idLang], $iso];
         }
-        foreach ($status->name as $name) {
+        foreach ($status->name as $idOther => $name) {
             if ((string) $name !== '') {
-                return (string) $name;
+                return [(string) $name, $languages[(int) $idOther] ?? ''];
             }
         }
 
-        return '';
+        return ['', $iso];
     }
 }

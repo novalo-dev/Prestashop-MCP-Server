@@ -138,9 +138,7 @@ class SomcpToolAddOrderProduct
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
 
-        foreach (array_diff(array_keys($arguments), self::KEYS) as $unknown) {
-            $problems[] = $unknown . ': unknown field';
-        }
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         $quantity = $arguments['quantity'] ?? null;
         if (!is_int($quantity) || $quantity < 1) {
@@ -194,8 +192,7 @@ class SomcpToolAddOrderProduct
 
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            $problems[] = (array_key_exists('reference', $arguments) && SomcpTool::id($arguments, 'id_order') <= 0
-                ? 'reference' : 'id_order') . ': ' . $order;
+            $problems[] = $order;
 
             return SomcpToolIssuePartialRefund::refused($problems);
         }
@@ -262,14 +259,16 @@ class SomcpToolAddOrderProduct
     }
 
     /**
-     * Whether the product is associated with the shop.
+     * Whether the product is associated with the shop. Shared with
+     * somcp_create_order, so a product is in the shop by the same test
+     * wherever an order gets a line.
      *
      * @param int $idProduct
      * @param int $idShop
      *
      * @return bool
      */
-    private static function inShop(int $idProduct, int $idShop): bool
+    public static function inShop(int $idProduct, int $idShop): bool
     {
         return (bool) Db::getInstance()->getValue(
             'SELECT 1 FROM `' . _DB_PREFIX_ . 'product_shop` WHERE `id_product` = ' . (int) $idProduct

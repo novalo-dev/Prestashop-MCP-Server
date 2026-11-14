@@ -1,0 +1,10 @@
+{
+  "calls": [
+    {"why": "an upload_ref no deposit carries is refused with the wording of the product tools, nothing extracted", "arguments": {"upload_ref": "no-such-deposit"}, "expect": "error", "contains": ["Nothing was installed", "upload_ref: no file of this account matches this upload_ref"]},
+    {"why": "a missing upload_ref is refused, naming the field", "arguments": {}, "expect": "error", "contains": ["Nothing was installed", "upload_ref:"]},
+    {"why": "an empty upload_ref is refused, naming the field", "arguments": {"upload_ref": " "}, "expect": "error", "contains": ["upload_ref:"]},
+    {"why": "a non-string upload_ref is refused, naming the field", "arguments": {"upload_ref": 12}, "expect": "error", "contains": ["upload_ref:"]},
+    {"why": "a link is never taken: an archive comes by upload_ref only, and every problem is listed at once", "arguments": {"url": "https://example.com/module.zip"}, "expect": "error", "contains": ["url: not taken", "by upload_ref only", "upload_ref:"]},
+    {"why": "a misspelt field is named with the shared line", "arguments": {"upload_ref": "no-such-deposit", "name": "mymodule"}, "expect": "error", "contains": ["name: not a field of this tool"]}
+  ]
+}

@@ -98,17 +98,24 @@ class SomcpToolSetCategoryActive
 
         // A boolean only: a string such as "false" cast to bool is true, and
         // would show a category the merchant asked to hide.
+        $errors = SomcpTool::unknownFields($arguments, ['id_category', 'active']);
         if (!array_key_exists('active', $arguments) || !is_bool($arguments['active'])) {
-            return SomcpTool::text('Nothing was changed: active must be true or false.', true);
+            $errors[] = 'active: true or false';
         }
-        $active = $arguments['active'];
+        $active = ($arguments['active'] ?? null) === true;
 
-        $category = SomcpToolUpdateCategory::existingCategory(self::identifier($arguments['id_category'] ?? null), $idShop);
-        if ($category === null) {
-            return SomcpTool::text(
-                'No category of this shop has this identifier. Nothing was changed. Find it with somcp_list_categories.',
-                true
-            );
+        $idCategory = self::identifier($arguments['id_category'] ?? null);
+        $category = null;
+        if ($idCategory <= 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_category');
+        } else {
+            $category = SomcpToolUpdateCategory::existingCategory($idCategory, $idShop);
+            if ($category === null) {
+                $errors[] = SomcpTool::notFound('id_category', 'category', $idCategory, 'somcp_list_categories');
+            }
+        }
+        if ($errors !== [] || $category === null) {
+            return SomcpTool::refused('changed', $errors);
         }
         // A hidden Home leaves the whole storefront tree unreachable, and the
         // back office offers no toggle for the root either.

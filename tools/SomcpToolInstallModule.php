@@ -114,12 +114,17 @@ class SomcpToolInstallModule
     /**
      * Installs through the core and answers with the state read back.
      *
+     * Protected so somcp_upload_module installs the folder it extracted the
+     * same way, with the same refusals and the same answer, instead of a copy.
+     *
      * @param string $folder
      * @param int $idShop
+     * @param callable|null $onFailure run after a failed install, before the state is read back
+     * @param array<string, mixed> $extra fields added to a successful answer
      *
      * @return array<string, mixed>
      */
-    private static function install(string $folder, int $idShop): array
+    protected static function install(string $folder, int $idShop, ?callable $onFailure = null, array $extra = []): array
     {
         $run = SomcpModules::throughCore($folder, static function ($manager) use ($folder): bool {
             return (bool) $manager->install($folder);
@@ -131,7 +136,12 @@ class SomcpToolInstallModule
         // event even after a failure, so nothing is assumed either way.
         $module = SomcpModules::read($folder, $idShop) ?? ['name' => $folder, 'installed' => false];
         if ($installed && $module['installed']) {
-            return SomcpTool::json($module);
+            return SomcpTool::json($module + $extra);
+        }
+
+        if ($onFailure !== null) {
+            $onFailure();
+            $module = SomcpModules::read($folder, $idShop) ?? ['name' => $folder, 'installed' => false];
         }
 
         return SomcpTool::text(

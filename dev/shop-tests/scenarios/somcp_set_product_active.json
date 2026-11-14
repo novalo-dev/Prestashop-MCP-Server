@@ -4,7 +4,9 @@
     {"why": "taken offline again, nothing changes", "arguments": {"id_product": 3, "active": false}, "expect": "ok", "contains": ["\"changed\": false", "already offline"]},
     {"why": "put back online, with the identifier as a string", "arguments": {"id_product": "3", "active": true}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": true"]},
     {"why": "put online again, nothing changes", "arguments": {"id_product": 3, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "already online"]},
-    {"why": "a status given as a string is refused", "arguments": {"id_product": 3, "active": "false"}, "expect": "error", "contains": ["true or false"]},
-    {"why": "a product that does not exist", "arguments": {"id_product": 999999, "active": false}, "expect": "error", "contains": ["No product"]}
+    {"why": "a status given as a string is refused", "arguments": {"id_product": 3, "active": "false"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- active: true or false"]},
+    {"why": "a product that does not exist", "arguments": {"id_product": 999999, "active": false}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_product: no product of this shop has the identifier 999999 - find it with somcp_search_products"]},
+    {"why": "an identifier given as a list is not read as product 3", "arguments": {"id_product": [3], "active": false}, "expect": "error", "contains": ["- id_product: a whole number above 0"]},
+    {"why": "a misspelt field is named and nothing is changed", "arguments": {"id_product": 3, "activ": false}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- activ: not a field of this tool", "- active: true or false"]}
   ]
 }

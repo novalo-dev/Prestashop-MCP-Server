@@ -166,13 +166,14 @@ if (signedIn) {
     });
 
     // The switch of the built-in assistant column, saved and read back, then
-    // put back as it was so the shop ends the run as it started.
+    // put back as it was so the shop ends the run as it started. Not
+    // somcp_ping: it stays on and has no switch.
     await check('switch a tool for the built-in assistant and save', async () => {
-        const name = 'somcp_tool_chat[somcp_ping]';
+        const name = 'somcp_tool_chat[somcp_list_order_statuses]';
         const toggle = () => page.locator(`input[name="${name}"]`);
         const save = () => page.locator('#somcp-pane-tools button[name="submitSomcpSettings"]').first();
         await openPane(PAGES.tools);
-        await page.locator('#somcp-pane-tools [data-somcp-search]').first().fill('somcp_ping');
+        await page.locator('#somcp-pane-tools [data-somcp-search]').first().fill('somcp_list_order_statuses');
         const was = await toggle().isChecked();
         await toggle().setChecked(!was);
         await Promise.all([page.waitForLoadState('load'), save().click()]);
@@ -180,7 +181,7 @@ if (signedIn) {
         if ((await toggle().isChecked()) === was) {
             throw new Error('the switch did not keep its new position after saving');
         }
-        await page.locator('#somcp-pane-tools [data-somcp-search]').first().fill('somcp_ping');
+        await page.locator('#somcp-pane-tools [data-somcp-search]').first().fill('somcp_list_order_statuses');
         await toggle().setChecked(was);
         await Promise.all([page.waitForLoadState('load'), save().click()]);
         if ((await toggle().isChecked()) !== was) {

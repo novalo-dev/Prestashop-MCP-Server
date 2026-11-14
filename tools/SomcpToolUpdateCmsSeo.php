@@ -57,12 +57,6 @@ class SomcpToolUpdateCmsSeo
         'link_rewrite' => 'link_rewrite',
     ];
 
-    /** The longest meta title accepted: search results cut well before. */
-    private const META_TITLE_MAX = 70;
-
-    /** The column's own size. */
-    private const META_DESCRIPTION_MAX = 512;
-
     /** The column's own size. */
     private const LINK_REWRITE_MAX = 128;
 
@@ -75,7 +69,7 @@ class SomcpToolUpdateCmsSeo
             'somcp_update_cms_seo',
             Somcp::t('Change the SEO of a CMS page'),
             'Changes the Meta title, meta description, Friendly URL and Indexation of one CMS page, like '
-                . 'its form in Design > Pages; only the languages given change. Not the Title or the content. '
+                . 'its form in Design > Pages, in the languages filled. Not the Title or the content. '
                 . 'Any page, from somcp_list_cms_pages; somcp_audit_cms_seo finds those to fix. Read the page '
                 . 'with somcp_get_cms_page first and show the merchant the new values; warn that a '
                 . 'new friendly URL breaks the old address of a displayed page. Nothing is written until the '
@@ -88,17 +82,22 @@ class SomcpToolUpdateCmsSeo
                         'type' => 'integer',
                         'description' => 'The CMS page to change, from somcp_list_cms_pages.',
                     ],
+                    'languages' => [
+                        'type' => 'array',
+                        'description' => 'ISO codes of the languages to fill, among the active languages of the shop. '
+                            . 'All of them by default. Every text must then be given in each of them.',
+                        'items' => ['type' => 'string'],
+                    ],
                     'meta_title' => [
                         'type' => 'object',
                         'description' => 'Assistant, approved by the merchant. The Meta title of the page form, per '
-                            . 'ISO code: 70 characters at most, without < > = { }; an empty text removes it. Over 60 '
-                            . 'characters, search results cut it.',
+                            . 'ISO code: 255 at most; over 70 cut in search. Without < > = { }; an empty text removes it.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                     'meta_description' => [
                         'type' => 'object',
-                        'description' => 'Assistant, approved by the merchant. Per ISO code: 512 characters at '
-                            . 'most, without < > = { }; search results show about 160.',
+                        'description' => 'Assistant, approved by the merchant. Per ISO code: 512 at most; over '
+                            . '160 cut in search. Without < > = { }.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
                     'link_rewrite' => [
@@ -213,37 +212,24 @@ class SomcpToolUpdateCmsSeo
 
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;
-            if ($key !== 'id_cms' && $key !== 'indexation' && !in_array($key, self::TEXTS, true)) {
+            if ($key !== 'id_cms' && $key !== 'languages' && $key !== 'indexation' && !in_array($key, self::TEXTS, true)) {
                 $errors[] = $key . ': not a field of this tool';
             }
         }
 
-        $active = [];
-        foreach (Language::getLanguages(true, $idShop) as $row) {
-            $active[Tools::strtolower((string) $row['iso_code'])] = (int) $row['id_lang'];
+        // The rule of the catalogue write tools (#149): the languages being
+        // filled, all active ones by default, and each text keyed by them, so
+        // a text read from one tool is given back to this one the same way.
+        $languages = SomcpToolCreateProduct::languages($arguments, $idShop, $errors);
+        if ($languages === null) {
+            return $plan;
         }
 
         foreach (self::TEXTS as $field) {
-            if (!array_key_exists($field, $arguments)) {
-                continue;
-            }
-            $value = $arguments[$field];
-            if (!is_array($value) || $value === [] || array_is_list($value)) {
-                $errors[] = $field . ': an object keyed by ISO code, for example {"' . (string) array_key_first($active) . '": "..."}';
-                continue;
-            }
-            foreach ($value as $iso => $text) {
-                $iso = Tools::strtolower(trim((string) $iso));
+            $texts = SomcpToolCreateProduct::texts($arguments, $field, $field, $languages, $errors);
+            foreach ($texts ?? [] as $idLang => $text) {
+                $iso = $languages['filled'][$idLang];
                 $where = $field . ' (' . $iso . ')';
-                if (!isset($active[$iso])) {
-                    $errors[] = $where . ': not an active language of this shop, which has ' . implode(', ', array_keys($active));
-                    continue;
-                }
-                if (!is_string($text)) {
-                    $errors[] = $where . ': a text';
-                    continue;
-                }
-                $idLang = $active[$iso];
                 $new = self::checked($field, trim($text), $idLang, $cms, $where, $errors);
                 if ($new === null) {
                     continue;
@@ -307,14 +293,17 @@ class SomcpToolUpdateCmsSeo
 
                 return null;
             }
-        } elseif ($field === 'meta_title' && Tools::strlen($text) > self::META_TITLE_MAX) {
-            $errors[] = $where . ': ' . self::META_TITLE_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
-
-            return null;
-        } elseif ($field === 'meta_description' && Tools::strlen($text) > self::META_DESCRIPTION_MAX) {
-            $errors[] = $where . ': ' . self::META_DESCRIPTION_MAX . ' characters at most, ' . Tools::strlen($text) . ' given';
-
-            return null;
+        } elseif ($field === 'meta_title' || $field === 'meta_description') {
+            // Refused only past the column the back office stores, through the
+            // rule every SEO write shares; the advice it collects is dropped here
+            // because warnings() advises on the text actually stored, the page
+            // title included when no meta title is set.
+            $max = SomcpTool::columnSize($cms, self::COLUMNS[$field], $field === 'meta_title' ? 255 : 512);
+            $recommended = $field === 'meta_title' ? SomcpTool::META_TITLE_RECOMMENDED : SomcpTool::metaDescriptionRecommended();
+            $advice = [];
+            if (!SomcpTool::seoTextLength($where, Tools::strlen($text), $max, $recommended, $errors, $advice)) {
+                return null;
+            }
         }
 
         // The page's own rule for the column, the one update() would apply.
@@ -410,13 +399,13 @@ class SomcpToolUpdateCmsSeo
         foreach ($plan['isos'] as $idLang => $iso) {
             // The title search engines read, as Meta::getCmsMetas() builds it.
             $seoTitle = self::seoTitle($stored, $idLang);
-            if (Tools::strlen($seoTitle) > SomcpToolAuditProductSeo::TITLE_MAX) {
-                $warnings[$iso][] = 'the title shown in search results is over ' . SomcpToolAuditProductSeo::TITLE_MAX
+            if (Tools::strlen($seoTitle) > SomcpTool::META_TITLE_RECOMMENDED) {
+                $warnings[$iso][] = 'the title shown in search results is over ' . SomcpTool::META_TITLE_RECOMMENDED
                     . ' characters and will be cut';
             }
             $description = self::textOf($stored->meta_description, $idLang);
-            if (Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX) {
-                $warnings[$iso][] = 'meta_description is over ' . SomcpToolAuditProductSeo::DESCRIPTION_MAX
+            if (Tools::strlen($description) > SomcpTool::metaDescriptionRecommended()) {
+                $warnings[$iso][] = 'meta_description is over ' . SomcpTool::metaDescriptionRecommended()
                     . ' characters: search results cut it';
             }
             if (isset($plan['moved'][$idLang]) && (bool) $stored->active) {

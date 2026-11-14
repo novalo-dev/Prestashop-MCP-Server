@@ -1,0 +1,61 @@
+name: Badges
+
+# Counts the tools and the prompts the module ships and publishes them as
+# badge files on the badges branch, which the README reads: the numbers follow
+# the code instead of a sentence someone has to remember to update. The count
+# is the one of the Tools and prompts check, which also holds llms.txt to it.
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: badges
+  cancel-in-progress: false
+
+jobs:
+  count:
+    name: Count the tools and prompts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Count
+        run: php .github/scripts/check-tools.php . --badges build/badges
+      - uses: actions/upload-artifact@v4
+        with:
+          name: badges
+          path: build/badges/
+
+  publish:
+    name: Publish the badges
+    needs: count
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    permissions:
+      # Only this job writes, and only to the badges branch: never main, never
+      # develop.
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: badges
+          path: badges
+      - name: Push to the badges branch
+        env:
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd badges
+          git init -q -b badges
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -q -m "Badges for ${GITHUB_SHA::7}"
+          git push -q --force "https://x-access-token:${TOKEN}@github.com/${REPO}.git" badges

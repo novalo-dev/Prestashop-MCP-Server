@@ -90,9 +90,21 @@ class SomcpToolGetStock
         }
         [$idLang, $iso] = $language;
 
-        $product = SomcpToolGetProduct::locate((int) ($arguments['id_product'] ?? 0), $idLang, $idShop);
-        if ($product === null) {
-            return SomcpTool::text('No product of this shop has this identifier. Find it with somcp_search_products.', true);
+        // A cast would read an array as 1 and answer about a product nobody
+        // asked for: only a whole number is an identifier.
+        $errors = SomcpTool::unknownFields($arguments, ['id_product', 'language']);
+        $idProduct = SomcpTool::id($arguments, 'id_product');
+        $product = null;
+        if ($idProduct === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_product');
+        } else {
+            $product = SomcpToolGetProduct::locate($idProduct, $idLang, $idShop);
+            if ($product === null) {
+                $errors[] = SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products');
+            }
+        }
+        if ($errors !== [] || $product === null) {
+            return SomcpTool::refused('read', $errors);
         }
 
         $stock = SomcpToolGetProduct::stockRows($product, $shop);

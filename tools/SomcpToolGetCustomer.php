@@ -91,20 +91,22 @@ class SomcpToolGetCustomer
     public static function handle(array $arguments, array $context): array
     {
         $idShop = (int) Somcp::currentShop()->id;
-        $language = SomcpToolSearchCustomers::language($arguments, $idShop);
+        $language = SomcpTool::readLanguage($arguments, $idShop);
         if ($language === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s, which has '
-                    . implode(', ', SomcpToolAuditProductSeo::languages([], $idShop) ?? [])
-                    . '. Give the ISO code of one of them, or leave language out for the shop default.',
-                true
-            );
+            return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $iso] = $language;
 
+        // A misspelt field is named, not read as a missing customer, and the
+        // not-found line is worded like every other tool, through the shared
+        // envelope of #169 and #170.
+        $errors = SomcpTool::unknownFields($arguments, ['id_customer', 'email', 'language']);
         $found = self::locate($arguments, $idShop);
         if (is_string($found)) {
-            return SomcpTool::text($found, true);
+            $errors[] = $found;
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
         $customer = $found;
 
@@ -144,7 +146,7 @@ class SomcpToolGetCustomer
         if ($id > 0) {
             $customer = new Customer($id);
             if (!Validate::isLoadedObject($customer) || (int) $customer->id_shop !== $idShop || (int) $customer->deleted === 1) {
-                return 'No customer ' . $id . ' in this shop. Find one with somcp_search_customers.';
+                return SomcpTool::notFound('id_customer', 'customer', $id, 'somcp_search_customers');
             }
 
             return $customer;
@@ -152,7 +154,7 @@ class SomcpToolGetCustomer
 
         $email = isset($arguments['email']) && is_string($arguments['email']) ? trim($arguments['email']) : '';
         if ($email === '') {
-            return 'Give id_customer or email. Find a customer with somcp_search_customers.';
+            return 'Give id_customer or email - find a customer with somcp_search_customers';
         }
 
         $query = new DbQuery();
@@ -165,13 +167,13 @@ class SomcpToolGetCustomer
         $ids = array_map('intval', array_column(Db::getInstance()->executeS($query) ?: [], 'id_customer'));
 
         if ($ids === []) {
-            return 'No customer with this email in this shop. Find one with somcp_search_customers.';
+            return 'email: no customer of this shop has this email - find one with somcp_search_customers';
         }
         // A guest and a registered account can share an email: picking one
         // here could show the merchant the wrong person.
         if (count($ids) > 1) {
-            return 'Several customers of this shop have this email: id_customer ' . implode(', ', $ids)
-                . '. Ask again with the id_customer of the one meant.';
+            return 'email: several customers of this shop have this email: id_customer ' . implode(', ', $ids)
+                . ' - ask again with the id_customer of the one meant';
         }
 
         return new Customer($ids[0]);
@@ -229,6 +231,11 @@ class SomcpToolGetCustomer
             'customer_language' => (string) Language::getIsoById((int) $customer->id_lang),
             'newsletter' => (bool) $customer->newsletter,
             'newsletter_date_add' => SomcpToolSearchCustomers::isoDate($customer->newsletter_date_add),
+            // The groups under the exact names somcp_update_customer and
+            // somcp_create_customer take, so the answer round-trips as read;
+            // the groups list below keeps their names for the merchant.
+            'group_ids' => array_map('intval', $customer->getGroups()),
+            'id_default_group' => (int) $customer->id_default_group,
             'partner_offers' => (bool) $customer->optin,
             'date_upd' => SomcpToolSearchCustomers::isoDate($customer->date_upd),
             'active' => (bool) $customer->active,

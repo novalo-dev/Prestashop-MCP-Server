@@ -87,7 +87,8 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
             [self::class, 'handle'],
             // Adding a brand is what the brands page asks for in Team,
             // Permissions; editing one is a different right.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminManufacturers')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminManufacturers'),
+            files: ['logo' => SomcpUpload::images()]
         );
     }
 
@@ -122,11 +123,11 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
                 ],
                 'short_description' => $text('Assistant. Shown at the top of the brand page, HTML allowed.'),
                 'description' => $text('Assistant. The full presentation of the brand, HTML allowed.'),
-                'meta_title' => $text('Assistant. 255 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
-                'meta_description' => $text('Assistant. 512 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_title' => $text('Assistant. 255 at most; over 70 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_description' => $text('Assistant. 512 at most; over 160 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_keywords' => $text('Assistant. PrestaShop 8, refused on 9. Up to 5 keywords, comma separated, '
                     . 'without < > = { }.'),
-                'logo' => self::imageSchema('Merchant. The logo.', 'the logo'),
+                'logo' => SomcpUpload::schema('Merchant. The logo.', 'the logo'),
                 'active' => [
                     'type' => 'boolean',
                     'description' => 'Merchant. Enabled on the storefront; true by default.',
@@ -151,10 +152,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
         $errors = [];
         $plan = self::planManufacturer($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -175,14 +173,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      */
     private static function planManufacturer(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::MANUFACTURER_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::MANUFACTURER_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::MANUFACTURER_ARGUMENTS, self::MANUFACTURER_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -197,7 +188,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
                 'active' => true,
             ],
             'texts' => [],
-            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
+            'logo' => SomcpUpload::argument($arguments, 'logo', $errors, 'logo'),
         ];
 
         if (array_key_exists('active', $arguments)) {
@@ -335,7 +326,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
         return SomcpTool::json([
             'created' => true,
             'id_manufacturer' => $idManufacturer,
-            'seo_warnings' => self::manufacturerWarnings($plan) ?: new stdClass(),
+            'seo_warnings' => SomcpTool::withMetaLengthAdvice(self::manufacturerWarnings($plan), $plan) ?: new stdClass(),
             'logo' => $logo,
             // Read back rather than echoed from the arguments: what the
             // assistant shows the merchant is what the shop stored.
@@ -361,7 +352,7 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      * supplier uploaders write theirs.
      *
      * Those two uploaders differ only by folder, image types and cached copy,
-     * so one path serves both, and the file itself comes from fetchImage(),
+     * so one path serves both, and the file itself comes from SomcpUpload::fetchImage(),
      * as every other image does: a second copy would be a second place to
      * forget one of its checks.
      *
@@ -375,14 +366,14 @@ class SomcpToolCreateManufacturer extends SomcpToolCreateCategory
      */
     protected static function storeLogoIn(int $id, array $source, string $directory, string $for, string $miniPrefix): array
     {
-        $origin = self::imageOrigin($source);
+        $origin = SomcpUpload::origin($source);
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($file === false) {
             return $origin + ['refused' => 'the shop has no room to receive it'];
         }
 
         try {
-            $refusal = self::fetchImage($source, $file);
+            $refusal = SomcpUpload::fetchImage($source, $file);
             if ($refusal === '') {
                 // ManufacturerImageUploader and SupplierImageUploader: the
                 // original as <id>.jpg, then one file per image type.

@@ -117,6 +117,13 @@ class SomcpToolListManufacturerAddresses
         }
         $idLang = $language[0];
 
+        // Every problem of the call in one answer, a misspelt filter included:
+        // ignored, it would widen the list without a word.
+        $errors = SomcpTool::unknownFields(
+            $arguments,
+            ['id_manufacturer', 'lastname', 'firstname', 'postcode', 'city', 'country', 'language']
+        );
+
         // The Country filter of the list picks one country: an unknown code
         // is said, rather than answered with an empty list the assistant would
         // read as "no brand address in this country".
@@ -127,7 +134,7 @@ class SomcpToolListManufacturerAddresses
             // rather than answering false, so the code is checked first.
             $idCountry = Validate::isLanguageIsoCode($countryIso) ? (int) Country::getByIso($countryIso) : 0;
             if ($idCountry <= 0) {
-                return SomcpTool::text('No country has this ISO code: give country as a code such as FR.', true);
+                $errors[] = 'country: no country has the ISO code ' . $countryIso . ' - give a code such as FR';
             }
         }
 
@@ -136,13 +143,15 @@ class SomcpToolListManufacturerAddresses
         // assistant would read as "this brand has no address".
         $idManufacturer = null;
         if (array_key_exists('id_manufacturer', $arguments) && $arguments['id_manufacturer'] !== null) {
-            $idManufacturer = self::identifier($arguments['id_manufacturer']);
-            if (SomcpToolGetManufacturer::existingManufacturer($idManufacturer, $idShop) === null) {
-                return SomcpTool::text(
-                    'No brand of this shop has this identifier. Find it with somcp_list_manufacturers, or list every brand address without id_manufacturer.',
-                    true
-                );
+            $idManufacturer = SomcpTool::id($arguments, 'id_manufacturer');
+            if ($idManufacturer === 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_manufacturer');
+            } elseif (SomcpToolGetManufacturer::existingManufacturer($idManufacturer, $idShop) === null) {
+                $errors[] = SomcpTool::notFound('id_manufacturer', 'brand', $idManufacturer, 'somcp_list_manufacturers');
             }
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
         // A query rather than Address objects: the list only needs the columns
@@ -197,25 +206,5 @@ class SomcpToolListManufacturerAddresses
             'count' => count($addresses),
             'language' => $language[1],
         ]);
-    }
-
-    /**
-     * A cast would read an array as 1 and answer about a brand nobody asked
-     * for: only a whole number is an identifier.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            return (int) trim($value);
-        }
-
-        return 0;
     }
 }

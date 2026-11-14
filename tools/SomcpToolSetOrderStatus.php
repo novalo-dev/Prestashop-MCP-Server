@@ -98,25 +98,36 @@ class SomcpToolSetOrderStatus
      */
     public static function handle(array $arguments, array $context): array
     {
+        // Every problem in one answer, each named by its field, as the other
+        // tools answer: a misspelt field, a wrong status and a wrong order are
+        // fixed in one call, and a misspelt status_id is never read as none.
+        $problems = SomcpTool::unknownFields($arguments, ['id_order', 'reference', 'status_id']);
+
         // The lookup every order tool shares: a reference held by several
         // orders (a split cart) is refused with their identifiers, since the
         // status change can email the customer about a parcel nobody chose.
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            return SomcpTool::text($order . ' Nothing was changed.', true);
+            $problems[] = $order;
         }
 
-        $idLang = (int) $order->id_lang;
-        $target = new OrderState(SomcpTool::id($arguments, 'status_id'), $idLang);
+        // The language of the order when there is one, since the status name
+        // given back is the one its customer reads in the email.
+        $idLang = $order instanceof Order ? (int) $order->id_lang : (int) Configuration::get('PS_LANG_DEFAULT');
+        $idStatus = SomcpTool::id($arguments, 'status_id');
+        $target = new OrderState($idStatus, $idLang);
         // A deleted status still loads: Delete on the Statuses page only flags
         // it, since orders may still stand on it. The order page never offers
         // one (OrderState::getOrderStates() filters them out), so neither does
         // this tool.
-        if (!Validate::isLoadedObject($target) || (bool) $target->deleted) {
-            return SomcpTool::text(
-                'No such status in this shop. Call somcp_list_order_statuses to get the identifiers.',
-                true
-            );
+        if ($idStatus === 0) {
+            $problems[] = SomcpTool::notAnIdentifier('status_id');
+        } elseif (!Validate::isLoadedObject($target) || (bool) $target->deleted) {
+            $problems[] = SomcpTool::notFound('status_id', 'order status', $idStatus, 'somcp_list_order_statuses');
+        }
+
+        if ($problems !== [] || !$order instanceof Order) {
+            return SomcpTool::refused('changed', $problems);
         }
 
         $current = $order->getCurrentOrderState();

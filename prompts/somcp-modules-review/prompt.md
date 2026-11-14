@@ -81,9 +81,11 @@ the **Upload a module** button of **Modules > Module Manager** does. Only when
 the merchant asks for it, with an archive they have:
 
 1. **Get the archive as an upload_ref**: attached to the chat, or from
-   `somcp_upload_file` with `for` set to `somcp_upload_module` - send the
-   `.zip` yourself to the address it gives when you can make an HTTP request,
-   or show the merchant its deposit page. Never from a link: it takes none.
+   `somcp_upload_file` with `for` set to `somcp_upload_module`, then its answer
+   in order, each step only if the one before failed: post the `.zip` yourself
+   to the address it gives; hand it over with that `upload_ref` (`file`, or
+   `data`); then call it with the `upload_ref` alone for the merchant's deposit
+   page. Never from a link: it takes none.
 2. **Say what it does** before calling: the archive's code comes from outside
    the shop and runs on it with full rights, so it should come from a source
    the merchant trusts. Then call `somcp_upload_module` with the `upload_ref`,

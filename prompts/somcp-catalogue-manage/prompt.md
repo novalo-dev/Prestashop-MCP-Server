@@ -109,10 +109,13 @@ virtual product is given by `url` or by `upload_ref`.
 1. **A public `https` address**: give it as `url`. The shop downloads it.
 2. **A file you have but no address for** (one you made, or one the merchant
    gave you): call `somcp_upload_file` with `for` (the tool) and `field` (its
-   argument, e.g. `images`). Send the file yourself to the address it gives
-   when you can make an HTTP request; otherwise show the merchant its deposit
-   page. Then give the `upload_ref` to the tool, once. If your own environment
-   blocks the request, tell the merchant once what the answer says to allow.
+   argument, e.g. `images`), then follow its answer in order, each step only
+   if the one before failed: post the file yourself to the address it gives
+   (if your own environment blocks it, tell the merchant once what the answer
+   says to allow); hand it over with `somcp_upload_file` and that `upload_ref`
+   (`file`, or `data` with its `name`); and only then call it with the
+   `upload_ref` alone, which gives you the merchant's deposit page. Then give
+   the `upload_ref` to the tool, once.
 3. **A file attached in the built-in chat** already has its `upload_ref`.
 
 ## Identifiers are never guessed

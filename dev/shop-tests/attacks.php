@@ -303,11 +303,16 @@ $see('a guide starts by saying how to run its tools', strpos(
     (string) ($guide['json']['result']['messages'][0]['content']['text'] ?? ''),
     '## How to call the tools of this guide'
 ) === 0, $guide);
+$catalogue = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('prompts/get', ['name' => 'somcp-catalogue-manage']));
+$see('a guide that sends files says the file tools are called directly', strpos(
+    (string) ($catalogue['json']['result']['messages'][0]['content']['text'] ?? ''),
+    'directly, as they are in your list: somcp_ping, somcp_upload_file, somcp_download_file'
+) !== false, $catalogue);
 
 Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, '0');
 $full = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('tools/list'));
 $fullNames = array_column((array) ($full['json']['result']['tools'] ?? []), 'name');
-$see('compact mode off lists the tools themselves', count($fullNames) > 4
+$see('compact mode off lists the tools themselves', count($fullNames) > 6
     && !in_array(SomcpCompact::SEARCH_TOOL, $fullNames, true), $full);
 Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, $compactWas);
 
@@ -978,13 +983,17 @@ if ($idInvoice > 0) {
     ]));
     $blob = (string) base64_decode((string) ($given['json']['result']['content'][1]['resource']['blob'] ?? ''));
     $see('the invoice comes back inside the answer, as a PDF', !$failed($given) && strncmp($blob, '%PDF', 4) === 0, $given);
-    // The address it gives is read like every shared file: rebuilt on the
-    // address the test serves, as the deposit door is.
     $about = json_decode((string) ($given['json']['result']['content'][0]['text'] ?? ''), true);
+    $see('an attached invoice comes with no link to hand out instead', is_array($about)
+        && !array_key_exists('url', $about) && !array_key_exists('page', $about), $given);
+    // A file too large to attach goes out at a shared address: the same door,
+    // opened here on the invoice and rebuilt on the address the test serves,
+    // as the deposit door is.
+    $shared = SomcpUpload::share($idEmployee, 'invoice.pdf', $blob);
     $read = [];
-    parse_str((string) parse_url((string) ($about['url'] ?? ''), PHP_URL_QUERY), $read);
+    parse_str((string) parse_url((string) ($shared['url'] ?? ''), PHP_URL_QUERY), $read);
     $fetched = $http('GET', $endpoint('file', http_build_query(array_intersect_key($read, ['f' => 1, 'e' => 1, 's' => 1]))));
-    $see('the invoice is read from its address too, as the same PDF', $fetched['status'] === 200 && $fetched['body'] === $blob, $fetched);
+    $see('the invoice is read from a shared address too, as the same PDF', $fetched['status'] === 200 && $fetched['body'] === $blob, $fetched);
     $expect('the address of the invoice with a forged signature', $http('GET', $endpoint('file', http_build_query(['f' => $read['f'] ?? '', 'e' => $read['e'] ?? 0, 's' => hash('sha256', 'forged')]))), 404);
     $expect('the address of the invoice used to deposit', $post($endpoint('deposit', http_build_query(['u' => $read['f'] ?? '', 'e' => $read['e'] ?? 0, 's' => $read['s'] ?? ''])), 'x.pdf', $blob), 404);
     $narrow = $http('POST', $mcpUrl, $bearer($pair($readOnly)['access_token']), $rpc('tools/call', [

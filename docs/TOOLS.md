@@ -2389,12 +2389,15 @@ photo or the file of a virtual product (`somcp_get_product`,
 `somcp_search_products`), a category image (`somcp_get_category`), a brand or
 supplier logo, an attribute texture, an order status icon, a carrier logo, a
 logo of the shop (`somcp_get_theme`), an attachment (`somcp_list_attachments`)
-- by the same three ways every file leaves the shop: inside the answer when it
-is 4 MiB or less, an image as an `image` block the client shows and the model
-sees, any other file as an embedded `resource`; at a signed address the
-assistant fetches itself (`url`, a GET, 15 minutes), the door the chat's files
-use; and on the page that serves it to the merchant signed in to the back
-office. In compact mode the tool stays in the list.
+- attached to the answer when it is 4 MiB or less, an image as an `image`
+block the client shows and the model sees, any other file as an embedded
+`resource`, and nothing else: no address is given beside it, so the assistant
+reads or shows the file rather than handing the merchant a link. Only a file
+too large to attach comes as a signed address the assistant fetches itself
+(`url`, a GET, 15 minutes), the door the chat's files use, and the page that
+serves it to the merchant signed in to the back office. The built-in chat,
+which passes its model the text of an answer only, gets the page. In compact
+mode the tool stays in the list.
 
 **Do not use for** - finding a file (→ the tool that reads it).
 
@@ -2404,12 +2407,13 @@ office. In compact mode the tool stays in the list.
 |---|---|---|---|
 | `download_ref` | string | yes | the reference exactly as the other tool gave it |
 
-**Returns** - a text block with `file` (its name), `mime_type`, `bytes`, `url`
-and `expires_at` (null when the shop could not keep the file), `page` (null
-when the back office address is not known yet), `inside` and `then`; with
-`inside` true, a second block: `image` (`data`, base64, `mimeType`) for an
-image, `resource` (`blob`, base64) for any other file. With `inside` false, the
-assistant fetches `url` itself, or gives the merchant the page.
+**Returns** - a text block with `file` (its name), `mime_type`, `bytes`,
+`inside` and `then`. With `inside` true, a second block: `image` (`data`,
+base64, `mimeType`) for an image, `resource` (`blob`, base64) for any other
+file. With `inside` false, also `url` and `expires_at` (null when the shop
+could not keep the file, and in the built-in chat) and `page` (null when the
+back office address is not known yet): the assistant fetches `url` itself, or
+gives the merchant the page.
 
 **Errors** - under "Nothing was read.": a field the tool does not take;
 `download_ref` missing; expired (ask the tool that gave it again); not a
@@ -2424,15 +2428,13 @@ up, so whether it exists is told to no one who may not have it. A document is
 built on demand from the shop's templates with the core `PDF` class; any other
 file is read where the shop keeps it (`SomcpDownload::stored()`), and must
 belong to the shop of the token (its `_shop` table) where the object has one.
-The file is then kept as a deposit by `SomcpUpload::share()` for 15 minutes -
-the same store, the same check of the bytes and the same signed link
-(`controllers/front/file.php`) as any other file - and purged with the
-deposits. The link carries the hash of the deposit's reference and a
+A file too large to attach is then kept as a deposit by `SomcpUpload::share()`
+for 15 minutes - the same store, the same check of the bytes and the same
+signed link (`controllers/front/file.php`) as any other file - and purged with
+the deposits. The link carries the hash of the deposit's reference and a
 signature, never the reference; anything wrong gets an empty 404. The back
 office page shows a PDF or a JPEG, PNG, GIF or WebP image, and has the browser
-save anything else, so an attachment is never run inside the back office. The
-built-in assistant reads the text block only, so it hands the merchant the
-page.
+save anything else, so an attachment is never run inside the back office.
 
 **Differences between 8.0.1 and 9.0.0** - none: the document objects, the
 `PDF` class, the folders of the files and the download page are the same.

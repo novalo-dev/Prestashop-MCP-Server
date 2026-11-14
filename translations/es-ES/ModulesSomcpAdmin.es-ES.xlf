@@ -1815,7 +1815,7 @@
     <!-- Change an order status -->
     <trans-unit id="12da55f293fda51d7c5d24939c60f7c0" resname="Change an order status">
       <source>Change an order status</source>
-      <target>Cambiar el estado de un pedido</target>
+      <target>Cambiar el estado de los pedidos</target>
     </trans-unit>
     <!-- Manage products -->
     <trans-unit id="93b46287befd343af1d5eaeb7d18655d" resname="Manage products">

@@ -224,8 +224,29 @@ class SomcpCompact
     public static function promptBlock(SomcpPrompt $prompt): string
     {
         Somcp::dependencies();
+        $block = self::mode()->guideHeader($prompt->getTools(), self::shopTools());
 
-        return self::mode()->guideHeader($prompt->getTools(), self::shopTools());
+        // The library leaves the pinned tools out, since they are in the
+        // assistant's list; said here, so a guide that sends a file is not
+        // read as asking for it through a runner.
+        $direct = array_values(array_intersect(self::PINNED, $prompt->getTools()));
+        if ($block !== '' && $direct !== []) {
+            $block = rtrim($block, "\n") . "\n- directly, as they are in your list: " . implode(', ', $direct) . "\n\n";
+        }
+
+        return $block;
+    }
+
+    /**
+     * The sentence the server's instructions carry in compact mode.
+     *
+     * @return string
+     */
+    public static function instructions(): string
+    {
+        return ' The tools are listed in compact form: ' . implode(', ', self::PINNED) . ' are called directly;'
+            . ' find the others with ' . self::SEARCH_TOOL . ', then run them with ' . self::READ_TOOL . ' or '
+            . self::WRITE_TOOL . '.';
     }
 
     /**

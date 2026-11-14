@@ -227,7 +227,8 @@ cache lifetime (a setting, five minutes by default) and `cacheScope: private`.
   tool through the endpoint's own path, and a question the tool asks is sealed
   under the tool's own name, which the runner's replay brings back to.
   `prompts/get` puts a block in front of a guide saying which runner each of
-  its tools goes through. The three tools are answered whatever the mode, so a
+  its tools goes through, and which pinned tools it calls directly; the
+  server's instructions say the same of the whole server. The three tools are answered whatever the mode, so a
   client holding the other list until it expires still works.
   `dev/package/contract.php` checks the part of the library the module calls.
 - `SomcpContract` is the translation layer for other modules: they return
@@ -348,14 +349,17 @@ read from its own declaration (`mayHave()`). `somcp_download_file` checks the
 reference, then that right, and only then looks the file up
 (`SomcpDownload::file()`): a document is built on demand with the core `PDF`
 class, any other file is read where the core keeps it (`stored()`), on the
-shop of the token. The file then leaves by three ways: inside the answer up to
-4 MiB, an image as an `image` block, any other file as an embedded resource;
-at a signed address the assistant fetches itself - `SomcpUpload::share()`
-keeps it as a deposit for 15 minutes, through the same `admit()` check, and
-`controllers/front/file.php` serves it by the link the chat's files use; and on
-`AdminSomcpDownloadController`, which serves the same file to the merchant: it
-requires the back office session of that same employee, so a leaked link is
-useless, checks the same right, and shows only a PDF or a raster image, any
+shop of the token. Up to 4 MiB the file is attached to the answer, an image as
+an `image` block, any other file as an embedded resource, and nothing else
+comes with it: an address beside it is what an assistant would hand the
+merchant instead of reading the file. Only a file too large to attach leaves
+another way: at a signed address the assistant fetches itself -
+`SomcpUpload::share()` keeps it as a deposit for 15 minutes, through the same
+`admit()` check, and `controllers/front/file.php` serves it by the link the
+chat's files use - and on `AdminSomcpDownloadController`, which the built-in
+chat also gets since it passes its model text only. The page serves the same
+file to the merchant: it requires the back office session of that same
+employee, so a leaked link is useless, checks the same right, and shows only a PDF or a raster image, any
 other file being saved rather than opened in the back office.
 
 A get gives a file back to its update as it read it: the `download_ref` naming

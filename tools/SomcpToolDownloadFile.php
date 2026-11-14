@@ -26,12 +26,13 @@ declare(strict_types=1);
  * place that turns a reference into the file, so who may have it is decided
  * once (SomcpDownload).
  *
- * Every file leaves by the same three ways, in the order an assistant uses
- * them: inside the answer when it is small enough to travel there - an image
- * as an image the client shows and the model sees, any other file as an
- * embedded resource; at a signed address the assistant fetches itself
- * (SomcpUpload::share(), the door the chat's files use); and on the back
- * office page that serves it to the merchant, signed in.
+ * A file small enough to travel inside the answer comes attached to it and
+ * nothing else - an image as an image the client shows and the model sees,
+ * any other file as an embedded resource. Only a file too large for that
+ * comes as a signed address the assistant fetches itself
+ * (SomcpUpload::share(), the door the chat's files use) and the back office
+ * page that serves it to the merchant, signed in. The built-in chat, which
+ * passes the model the text of an answer only, gets the page.
  *
  * It asks for no back office right of its own, because what it may hand over
  * depends on the file: the scopes and rights of the tool that reads that kind
@@ -56,11 +57,11 @@ class SomcpToolDownloadFile
         return new SomcpTool(
             'somcp_download_file',
             Somcp::t('Get a file from the shop'),
-            'Gives the file behind a download_ref - a document, photo, logo or attachment another tool found: '
-                . 'inside this answer when it is small enough (an image as an image), at an address to fetch it from '
-                . 'yourself (GET, 15 minutes), and the page that serves it to the merchant signed in to the back '
-                . 'office. The reference is made for this account and expires after 15 minutes; ask the tool that '
-                . 'gave it again after that.',
+            'Gives the file behind a download_ref - a document, photo, logo or attachment another tool found - '
+                . 'attached to this answer (an image as an image): read it or show it, never a link instead. Only a '
+                . 'file too large to attach comes as an address to fetch yourself (GET, 15 minutes) and a back office '
+                . 'page for the merchant. The reference is made for this account and expires after 15 minutes; ask '
+                . 'the tool that gave it again after that.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -126,26 +127,23 @@ class SomcpToolDownloadFile
             return SomcpTool::refused('read', ['download_ref: this file no longer exists']);
         }
 
-        $link = SomcpDownload::link($kind, $id, $idEmployee, $idShop);
-        $page = $link['url'] === '' ? null : $link['url'];
         $bytes = $file['bytes'];
-        $shared = SomcpUpload::share($idEmployee, $file['name'], $bytes);
+        $about = ['file' => $file['name'], 'mime_type' => $file['mime'], 'bytes' => strlen($bytes)];
 
-        $about = [
-            'file' => $file['name'],
-            'mime_type' => $file['mime'],
-            'bytes' => strlen($bytes),
-            // Read with a GET, no sign-in, until expires_at: the address the
-            // assistant fetches the file from itself.
-            'url' => $shared['url'] ?? null,
-            'expires_at' => $shared['expires_at'] ?? null,
-            'page' => $page,
-        ];
-
-        if (strlen($bytes) > SomcpDownload::INLINE_MAX) {
+        // Attached, the file is all the answer gives: an address beside it is
+        // what an assistant hands the merchant instead of reading the file,
+        // which is the very thing this tool exists to avoid. The addresses are
+        // only for a file that cannot travel here, and for the built-in chat,
+        // which passes the model the text of an answer and nothing else.
+        if (strlen($bytes) > SomcpDownload::INLINE_MAX || ($context['chat'] ?? false) === true) {
+            $link = SomcpDownload::link($kind, $id, $idEmployee, $idShop);
+            $page = $link['url'] === '' ? null : $link['url'];
+            // The built-in assistant cannot fetch an address itself: it gets
+            // the page alone.
+            $shared = ($context['chat'] ?? false) === true ? null : SomcpUpload::share($idEmployee, $file['name'], $bytes);
             if ($page === null && $shared === null) {
                 return SomcpTool::text(
-                    'The file is too large to hand over here, and the shop cannot build the address of its own'
+                    'The file cannot be handed over here, and the shop cannot build the address of its own'
                         . ' back office yet: ask the merchant to open the module settings once, then try again.',
                     true
                 );
@@ -155,9 +153,14 @@ class SomcpToolDownloadFile
 
             return SomcpTool::json($about + [
                 'inside' => false,
-                'then' => 'The file is too large to hand over here. Fetch it yourself from url when you can make an HTTP'
-                    . ' request; otherwise give the merchant the page, which opens in their own signed-in back'
-                    . ' office only.',
+                // Read with a GET, no sign-in, until expires_at.
+                'url' => $shared['url'] ?? null,
+                'expires_at' => $shared['expires_at'] ?? null,
+                'page' => $page,
+                'then' => $shared === null
+                    ? 'Give the merchant the page, which opens the file in their own signed-in back office only.'
+                    : 'The file is too large to hand over here. Fetch it yourself from url when you can make an HTTP'
+                        . ' request; give the merchant the page only when you cannot.',
             ]);
         }
 
@@ -165,8 +168,8 @@ class SomcpToolDownloadFile
 
         $result = SomcpTool::json($about + [
             'inside' => true,
-            'then' => 'The file is attached to this answer, and can be fetched from url until expires_at. The page'
-                . ' opens it for the merchant, signed in to the back office.',
+            'then' => 'The file is attached to this answer: read it, or show it to the person. Do not give them a link'
+                . ' instead; call again only if they ask for one to open in their back office.',
         ]);
         // An image goes as an image, which a client shows and a model that
         // reads pictures sees; anything else as a resource, read like an

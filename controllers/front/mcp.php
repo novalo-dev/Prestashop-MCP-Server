@@ -431,10 +431,7 @@ class SomcpMcpModuleFrontController extends ModuleFrontController
             'capabilities' => self::capabilities(),
             'instructions' => 'Tools exposed by the PrestaShop shop "'
                 . (string) Configuration::get('PS_SHOP_NAME') . '" through O\'So MCP Server.'
-                . (SomcpCompact::enabled()
-                    ? ' The tools are listed in compact form: find them with ' . SomcpCompact::SEARCH_TOOL
-                        . ', then run them with ' . SomcpCompact::READ_TOOL . ' or ' . SomcpCompact::WRITE_TOOL . '.'
-                    : ''),
+                . (SomcpCompact::enabled() ? SomcpCompact::instructions() : ''),
             '_meta' => [SomcpProtocol::META_SERVER_INFO => $this->serverInfo()],
         ];
 

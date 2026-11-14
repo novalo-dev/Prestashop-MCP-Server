@@ -1443,9 +1443,9 @@ T = {
  "Buscar un pedido",
  "Eine Bestellung finden"),
 "Change an order status": (
- "Changer le statut d'une commande",
- "Cambiar el estado de un pedido",
- "Den Status einer Bestellung ändern"),
+ "Changer le statut des commandes",
+ "Cambiar el estado de los pedidos",
+ "Den Status von Bestellungen ändern"),
 "Manage products": (
  "Gérer les produits",
  "Gestionar los productos",

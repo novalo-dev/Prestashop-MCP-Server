@@ -1485,6 +1485,9 @@ class SomcpAssistantChat
             // told so through the empty list, as an older MCP client would.
             'capabilities' => [],
             'arguments' => $arguments,
+            // The chat hands a tool's text to the model and nothing else: a
+            // tool that would attach a file gives the merchant a link instead.
+            'chat' => true,
         ]);
 
         if (SomcpTool::isInputRequired($result)) {

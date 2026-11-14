@@ -35,10 +35,12 @@ its address on its own:
   module archive is never taken from a link.
 - `somcp_download_file` gives the assistant any file of the shop another tool
   found - a product photo, a logo, an attachment, an invoice, a delivery slip,
-  a credit slip - the same three ways: inside its answer (a photo as a picture
-  the assistant can see), at an address it fetches itself for 15 minutes, or
-  through the link for you to open it in your back office. It is handed over
-  only to an account that may use the tool that found it.
+  a credit slip - attached to its answer, a photo as a picture the assistant
+  can see: it reads the file or shows it to you instead of handing you a link.
+  Only a file too large to attach comes as an address it fetches itself for
+  15 minutes, or a link for you to open it in your back office, as in the
+  built-in assistant. It is handed over only to an account that may use the
+  tool that found it.
 
 Before, an assistant connected from outside could only give the shop a web
 address: a file it had made, or one you gave it, had no way in. Modules asking for files
@@ -196,6 +198,12 @@ status - so a question such as "who changed the stock of this product
 yesterday" now has an answer. It needs the **view** right on **Stock**.
 
 ### Changed
+
+**A guide no longer shares its name with a tool.** In French, Spanish and
+German, the guide **Change an order status** read exactly like the tool that
+changes the status of one order, and both show in **Tools and prompts**. The
+guide is now named **Changer le statut des commandes**, **Cambiar el estado de
+los pedidos** and **Den Status von Bestellungen ändern**.
 
 **Photos, logos and files come through `somcp_download_file`.** The tools
 that read a product, a category, a brand, a supplier, an attribute value, the

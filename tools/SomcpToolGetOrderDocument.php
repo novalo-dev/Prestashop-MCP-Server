@@ -70,7 +70,7 @@ class SomcpToolGetOrderDocument
             Somcp::t('Get a document of an order'),
             'Finds one PDF of an order - invoice, delivery slip or credit slip - as View invoice, View delivery '
                 . 'slip and the Documents tab of the order page open it, and gives its download_ref: pass it to '
-                . 'somcp_download_file to get the file itself, or a page for the merchant. The reference expires '
+                . 'somcp_download_file to get the file itself, attached to its answer. The reference expires '
                 . 'after 15 minutes (ask again after that). The documents and their identifiers are in documents '
                 . 'of somcp_get_order. Not for making an invoice that does not exist: somcp_generate_order_invoice.',
             [

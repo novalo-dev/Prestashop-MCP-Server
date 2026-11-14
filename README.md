@@ -163,8 +163,9 @@ it (ChatGPT does), the file itself sent in the call, a web address, sent by the
 assistant to the shop when it can make web requests, or dropped by you on a
 page of your back office when nothing else works. `somcp_download_file` hands
 the assistant any file of the shop another tool found - a photo, a logo, an
-attachment, an invoice: in its answer (a photo as a picture), at an address it
-fetches itself, or through a link for you. An assistant that runs code in a sandbox often limits which sites it may
+attachment, an invoice: attached to its answer (a photo as a picture), so the
+assistant reads it instead of handing you a link. Only a file too large for
+that comes as an address it fetches itself, or a link for you. An assistant that runs code in a sandbox often limits which sites it may
 reach: allowing your shop's domain in the assistant's
 network or allowed-domains settings lets it send files without asking you. It
 says so when it is blocked.

@@ -2011,6 +2011,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         if ($filename !== '' && $previous !== '' && $previous !== $filename) {
             self::dropDownload($previous);
         }
+        self::showVirtualFiles();
 
         return $origin + ['changed' => true];
     }

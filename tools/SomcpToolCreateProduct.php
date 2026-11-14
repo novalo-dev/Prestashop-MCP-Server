@@ -2982,8 +2982,31 @@ class SomcpToolCreateProduct
 
             return $origin + ['refused' => $refusal];
         }
+        self::showVirtualFiles();
 
         return $origin + ['added' => true];
+    }
+
+    /**
+     * Turns on the setting without which the shop never looks a product's
+     * file up.
+     *
+     * ProductDownload::getIdFromIdProduct() answers nothing while
+     * PS_VIRTUAL_PROD_FEATURE_ACTIVE is off - the back office then shows
+     * Add downloadable file at No - and the core turns it on only when an
+     * active virtual product is saved. A file written to a product still
+     * offline, on a shop that never sold one, was stored but hidden. Like the
+     * other feature settings of the core it only spares queries: a customer
+     * still downloads a file only with the key of a paid order of their own
+     * (GetFileController), whatever it says.
+     *
+     * @return void
+     */
+    protected static function showVirtualFiles(): void
+    {
+        if (!Configuration::get('PS_VIRTUAL_PROD_FEATURE_ACTIVE')) {
+            Configuration::updateGlobalValue('PS_VIRTUAL_PROD_FEATURE_ACTIVE', '1');
+        }
     }
 
     /**

@@ -1062,6 +1062,36 @@ $lying = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' 
 $see('a file a module names as an image but is not goes out under no type', strpos((string) ($lying['content'][0]['text'] ?? ''), 'application/octet-stream') !== false
     && ($lying['content'][1]['type'] ?? '') === 'resource', ['body' => json_encode($lying)]);
 
+// The file of a virtual product created offline, on a shop where no virtual
+// product was ever saved active: stored, and found by the shop as the back
+// office looks for it.
+Configuration::updateGlobalValue('PS_VIRTUAL_PROD_FEATURE_ACTIVE', '0');
+$ebook = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['for' => 'somcp_create_product', 'field' => 'virtual_file.file', 'data' => 'data:application/pdf;base64,' . base64_encode("%PDF-1.4\n%%EOF\n")],
+]));
+$ebookRef = (string) (json_decode($said($ebook), true)['upload_ref'] ?? '');
+$virtual = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_create_product',
+    'arguments' => [
+        'languages' => ['en'],
+        'basics' => ['product_type' => 'virtual', 'name' => ['en' => 'Somcp offline ebook']],
+        'pricing' => ['price_tax_excl' => 5],
+        'virtual_file' => ['file' => ['upload_ref' => $ebookRef], 'display_filename' => 'ebook.pdf'],
+    ],
+]));
+$idVirtual = (int) (json_decode($said($virtual), true)['id_product'] ?? 0);
+$see('the file of an offline virtual product is found as the back office looks for it', $idVirtual > 0
+    && (int) ProductDownload::getIdFromIdProduct($idVirtual) > 0, $virtual);
+if ($idVirtual > 0) {
+    foreach ([ProductDownload::getIdFromIdProduct($idVirtual, false)] as $idDownload) {
+        if ((int) $idDownload > 0) {
+            (new ProductDownload((int) $idDownload))->delete(true);
+        }
+    }
+    (new Product($idVirtual))->delete();
+}
+
 // A file found by a read tool leaves through the same door as a document,
 // an image as an image.
 $idImage = (int) $db->getValue('SELECT `id_image` FROM `' . _DB_PREFIX_ . 'image_shop` WHERE `id_shop` = ' . Somcp::currentShopId() . ' ORDER BY `id_image` ASC');

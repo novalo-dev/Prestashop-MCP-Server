@@ -16,6 +16,16 @@ are:
 
 ## Unreleased
 
+### Fixed
+
+**The file of a virtual product shows in the back office.** A virtual product
+the assistant created with its file, still offline, showed **Add downloadable
+file** at **No** in the back office, on a shop that had never sold a virtual
+product: the file was stored, but PrestaShop only starts looking for such
+files once a virtual product is saved online. The assistant now tells
+PrestaShop to look for them as soon as it stores one. A customer still
+downloads a file only from a paid order of their own.
+
 ## 2.0.0 - 2026-11-14
 
 A major version, for compact mode: connected assistants can now receive six

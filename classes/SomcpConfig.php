@@ -78,7 +78,8 @@ class SomcpConfig
 
     /**
      * @var string '1' when connected assistants get the tools in compact form:
-     *             somcp_ping and three tools to search and run the others.
+     *             somcp_ping, the two file tools, and three tools to search and
+     *             run the others.
      *
      * Read by the endpoint on every request, so a change reaches an assistant
      * when its copy of the list expires (TOOLS_TTL), with no reconnection. The

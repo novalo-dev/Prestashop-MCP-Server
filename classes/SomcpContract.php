@@ -424,10 +424,7 @@ class SomcpContract
             return self::broken($module, 'file needs a name and its contents');
         }
 
-        return SomcpDownload::handOver(
-            ['bytes' => $contents, 'name' => Tools::substr($name, 0, 255), 'mime' => SomcpUpload::typeOfBytes($contents, $name)],
-            $context
-        );
+        return SomcpDownload::handOver(['bytes' => $contents] + SomcpUpload::identifyBytes($contents, Tools::substr($name, 0, 255)), $context);
     }
 
     /**

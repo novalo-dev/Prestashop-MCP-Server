@@ -1094,6 +1094,12 @@ $see('a file a module returns comes attached as an image, with no link', ($hande
     && strpos((string) ($handed['content'][0]['text'] ?? ''), '"url"') === false, ['body' => json_encode($handed)]);
 $named = SomcpContract::translate(['file' => ['name' => '#FA000104/2026 été.png', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
 $see('a file goes out under a name of plain characters only', strpos((string) ($named['content'][0]['text'] ?? ''), '"file": "FA000104-2026-t.png"') !== false, ['body' => json_encode($named)]);
+// PrestaShop writes PNG into files it names .jpg when the image quality
+// setting asks for PNG: an image named as another image goes out as what it is.
+$misnamed = SomcpContract::translate(['file' => ['name' => '52.jpg', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
+$see('a PNG named .jpg goes out as a PNG image, renamed to match', ($misnamed['content'][1]['type'] ?? '') === 'image'
+    && ($misnamed['content'][1]['mimeType'] ?? '') === 'image/png'
+    && strpos((string) ($misnamed['content'][0]['text'] ?? ''), '"file": "52.png"') !== false, ['body' => json_encode($misnamed)]);
 $lying = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => '<html></html>']], ['id_employee' => $idEmployee], 'somcptestmodule');
 $see('a file a module names as an image but is not goes out under no type', strpos((string) ($lying['content'][0]['text'] ?? ''), 'application/octet-stream') !== false
     && ($lying['content'][1]['type'] ?? '') === 'resource', ['body' => json_encode($lying)]);

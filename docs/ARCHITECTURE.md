@@ -370,7 +370,7 @@ other file being saved rather than opened in the back office.
 A tool of another module hands a file over by returning `file` with its name
 and bytes: `SomcpContract` passes it to `SomcpDownload::handOver()`, the answer
 of `somcp_download_file`, with its type read from the bytes
-(`SomcpUpload::typeOfBytes()`). No module serves a link of its own.
+(`SomcpUpload::identifyBytes()`). No module serves a link of its own.
 
 A get gives a file back to its update as it read it: the `download_ref` naming
 the stored file changes nothing (`SomcpUpload::same()`), so a whole answer read

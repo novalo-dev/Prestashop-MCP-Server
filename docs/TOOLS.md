@@ -2440,11 +2440,14 @@ up, so whether it exists is told to no one who may not have it. A document is
 built on demand from the shop's templates with the core `PDF` class; any other
 file is read where the shop keeps it (`SomcpDownload::stored()`), and must
 belong to the shop of the token (its `_shop` table) where the object has one.
-Its `mime_type` is read from its bytes (`SomcpUpload::typeOf()`, the check of
-every file coming in), never taken from what was stored with it: an attachment
-whose content is not what its name says goes out as
+Its `mime_type` is read from its bytes (`SomcpUpload::identify()`, the check
+of every file coming in), never taken from what was stored with it: an
+attachment whose content is not what its name says goes out as
 `application/octet-stream`, and `then` tells the assistant not to read it as
-that type. Its name keeps plain letters, digits, `.` and `_` only, everything
+that type. The one exception is an image named as another image format the
+shop takes (JPEG, PNG, GIF, WebP): it goes out under the format of its bytes,
+its extension changed to match, since PrestaShop itself writes PNG into files
+it names `.jpg` when the image quality setting asks for PNG. Its name keeps plain letters, digits, `.` and `_` only, everything
 else becoming `-` (`SomcpDownload::cleanName()`): an invoice named
 `#FA000104/2026.pdf` goes out as `FA000104-2026.pdf`, which a client can show.
 A file too large to attach is then kept as a deposit by `SomcpUpload::share()`

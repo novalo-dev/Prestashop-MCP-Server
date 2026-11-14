@@ -36,6 +36,13 @@ is not the one it meant. A file it sends as raw content keeps the name it
 gives. And the directions it gets no longer start by saying the file cannot
 come through the conversation, which sent it to the upload page first.
 
+**PNG photos reach the assistant as images.** With the image quality setting
+on PNG, PrestaShop keeps product photos, logos and category images as PNG in
+files named .jpg. The assistant was handed them as files of unknown type and
+told not to read them, so it could not show or describe the photo. They now
+go out as the PNG images they are. A file that is not an image at all still
+goes out under no type.
+
 ## 2.0.0 - 2026-11-14
 
 A major version, for compact mode: connected assistants can now receive six

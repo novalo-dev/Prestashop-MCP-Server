@@ -2092,28 +2092,79 @@ class SomcpUpload
     }
 
     /**
-     * typeOf() for bytes the shop holds in memory, such as a file a module
+     * identify() for bytes the shop holds in memory, such as a file a module
      * hands over: written to the store for the check, then removed.
      *
      * @param string $bytes
      * @param string $name
      *
-     * @return string
+     * @return array{name: string, mime: string}
      */
-    public static function typeOfBytes(string $bytes, string $name): string
+    public static function identifyBytes(string $bytes, string $name): array
     {
         $directory = self::directory();
         if ($directory === '') {
-            return 'application/octet-stream';
+            return ['name' => $name, 'mime' => 'application/octet-stream'];
         }
         $temporary = $directory . SomcpRandom::token(16) . '.part';
         try {
-            return @file_put_contents($temporary, $bytes) === false ? 'application/octet-stream' : self::typeOf($temporary, $name);
+            return @file_put_contents($temporary, $bytes) === false
+                ? ['name' => $name, 'mime' => 'application/octet-stream']
+                : self::identify($temporary, $name);
         } finally {
             if (is_file($temporary)) {
                 @unlink($temporary);
             }
         }
+    }
+
+    /**
+     * The name and media type a file the shop hands out goes under.
+     *
+     * An image named as another image is renamed after its bytes first:
+     * PrestaShop itself writes PNG into files it names .jpg when the image
+     * quality setting asks for PNG (ImageManager::resize()), so every such
+     * product photo, logo or category image went out as
+     * application/octet-stream, and the assistant was told not to read it.
+     * Only between the image formats the shop takes, each checked by
+     * getimagesize(): anything else whose bytes do not match its name still
+     * goes out under no type.
+     *
+     * @param string $path where the file is
+     * @param string $name its name, whose extension says what it claims to be
+     *
+     * @return array{name: string, mime: string}
+     */
+    public static function identify(string $path, string $name): array
+    {
+        $name = self::imageNamed($path, $name);
+
+        return ['name' => $name, 'mime' => self::typeOf($path, $name)];
+    }
+
+    /**
+     * @param string $path
+     * @param string $name
+     *
+     * @return string the name, its extension changed to the image format the bytes are when it names another
+     */
+    private static function imageNamed(string $path, string $name): string
+    {
+        $extension = (string) pathinfo($name, PATHINFO_EXTENSION);
+        if (!in_array(Tools::strtolower($extension), self::IMAGES, true)) {
+            return $name;
+        }
+        $image = @getimagesize($path);
+        if (!is_array($image) || in_array((int) $image[2], self::imageTypesOf(Tools::strtolower($extension)), true)) {
+            return $name;
+        }
+        foreach (['jpg', 'png', 'gif', 'webp'] as $real) {
+            if (in_array((int) $image[2], self::imageTypesOf($real), true)) {
+                return substr($name, 0, -strlen($extension)) . $real;
+            }
+        }
+
+        return $name;
     }
 
     /**

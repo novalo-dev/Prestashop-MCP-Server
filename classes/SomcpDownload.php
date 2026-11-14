@@ -384,7 +384,7 @@ class SomcpDownload
         // The type from the bytes, never from what was stored beside the
         // file; read here rather than in stored(), which every tool listing a
         // file calls only to know there is one.
-        return ['bytes' => $bytes, 'name' => $stored['name'], 'mime' => SomcpUpload::typeOf($stored['path'], $stored['name'])];
+        return ['bytes' => $bytes] + SomcpUpload::identify($stored['path'], $stored['name']);
     }
 
     /**

@@ -11,6 +11,7 @@ earlier answer: a module can be installed, upgraded or disabled at any time.
 - `somcp_get_module`
 - `somcp_install_module`
 - `somcp_upload_module`
+- `somcp_upgrade_module`
 - `somcp_upload_file`
 - `somcp_set_module_active`
 
@@ -95,6 +96,27 @@ the merchant asks for it, with an archive they have:
    read `somcp_get_module` instead of calling again. A module already on the
    shop is refused and nothing is replaced; on a failed install the folder is
    removed again and the module's own messages are given as they are.
+
+## Upgrading a module
+
+`somcp_upgrade_module` replaces the files of an installed module with a newer
+`.zip` and runs its upgrade scripts. Only when the merchant asks for it, with
+the archive of a newer version:
+
+1. **Read the module first** with `somcp_get_module`: it must be installed, and
+   the merchant should know the version they move from.
+2. **Get the archive as an upload_ref**, as for an upload, with `for` set to
+   `somcp_upgrade_module`.
+3. **Say what it does** before calling: the new code runs on the shop with full
+   rights, and a payment or carrier module can stop orders while its scripts
+   run, so a quiet moment is better. Then call `somcp_upgrade_module`, once.
+4. **Answer from the result**: `version_before`, `version_after` and the module
+   read back. A refusal changed nothing: the archive is not a higher version,
+   not made for this PrestaShop, or needs another module first, and the shop
+   says which. A failed upgrade keeps the new files, and what its scripts
+   already changed stays: give the module's own messages as they are, and send
+   the merchant to the module's author. If the answer is lost, read
+   `somcp_get_module` instead of calling again.
 
 ## Enabling or disabling a module
 

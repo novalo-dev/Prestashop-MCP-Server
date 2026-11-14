@@ -16,6 +16,17 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Upgrade a module from its archive.** The assistant can now upgrade a module
+already installed with the archive of a newer version, as uploading it in
+**Modules > Module Manager** does (`somcp_upgrade_module`). It first checks, as
+PrestaShop does before installing a module, that the archive is the same
+module in a higher version, made for your PrestaShop version, with the modules
+it needs already installed; otherwise nothing is replaced. The previous files
+are put back if anything fails before the upgrade starts. Uploading a module
+still takes only modules that are not on the shop yet.
+
 ### Changed
 
 **The built-in assistant runs on Neuron AI 4.1.25.** A conversation answered

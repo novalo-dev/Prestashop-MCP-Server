@@ -34,19 +34,23 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+// Loaded here, so this class can be declared from a tool that sorts before
+// Install in tools/ (somcp_upgrade_module extends it).
+require_once __DIR__ . '/SomcpToolInstallModule.php';
+
 class SomcpToolUploadModule extends SomcpToolInstallModule
 {
     /** @var int Above this, an archive is refused before being opened: the ceiling of any deposit. */
-    private const MAX_BYTES = SomcpUpload::MAX_BYTES;
+    protected const MAX_BYTES = SomcpUpload::MAX_BYTES;
 
     /** @var int Unpacked size never above this, whatever the archive: a small zip can unpack to fill a disk. */
-    private const MAX_UNPACKED = 268435456;
+    protected const MAX_UNPACKED = 268435456;
 
     /** @var int Unpacked size never above this many times the archive, for the same reason. */
-    private const MAX_RATIO = 10;
+    protected const MAX_RATIO = 10;
 
     /** @var string Where the archive is checked and unpacked, out of reach of the web and of modules/. */
-    private const WORK_DIR = 'var/somcp/';
+    protected const WORK_DIR = 'var/somcp/';
 
     /**
      * @return SomcpTool
@@ -59,7 +63,7 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
             'Puts a module .zip deposited on the shop into the modules folder and installs it, like Upload a '
                 . 'module in Modules > Module Manager. upload_ref: a .zip from somcp_upload_file or attached to the '
                 . 'chat; never a url. One folder <name>/ with <name>/<name>.php; a module of that name already on '
-                . 'the shop is refused, nothing replaced or upgraded. Answers as somcp_install_module, plus '
+                . 'the shop is refused, nothing replaced (somcp_upgrade_module upgrades). Answers as somcp_install_module, plus '
                 . 'uploaded and file_name. The deposit is used up: not to be retried on a lost answer, check with '
                 . 'somcp_get_module. A module already on disk goes to somcp_install_module.',
             [
@@ -173,10 +177,11 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
      * @param string $archive
      * @param string $fileName
      * @param string $name receives the module's folder name when the archive is valid
+     * @param bool $replacing true for an upgrade, which needs the module on disk under that very name
      *
      * @return array<int, string>
      */
-    private static function check(string $archive, string $fileName, string &$name): array
+    protected static function check(string $archive, string $fileName, string &$name, bool $replacing = false): array
     {
         $extension = Tools::strtolower((string) pathinfo($fileName, PATHINFO_EXTENSION));
         if ($extension !== 'zip' || (string) @file_get_contents($archive, false, null, 0, 4) !== "PK\x03\x04") {
@@ -247,8 +252,14 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
             $problems[] = 'upload_ref: the archive unpacks to more than ' . self::MAX_RATIO
                 . ' times its size or 256 MB';
         }
-        if ($problems === [] && self::onDisk($top)) {
+        if ($problems === [] && !$replacing && self::onDisk($top)) {
             $problems[] = 'upload_ref: a module named ' . $top . ' is already on the shop; nothing was replaced';
+        }
+        // An upgrade replaces the folder of that exact name: a folder that
+        // differs only by case would be a second module on a case-sensitive
+        // disk, and the same one on another.
+        if ($problems === [] && $replacing && !is_dir(self::modulesDir() . $top)) {
+            $problems[] = 'upload_ref: no module named ' . $top . ' is on the shop; a new module is added with somcp_upload_module';
         }
         if ($problems === []) {
             $name = $top;
@@ -260,13 +271,18 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
     /**
      * Unpacks into the work folder, then moves the module into modules/ in one rename.
      *
+     * An upgrade moves the module's current folder aside into the work
+     * folder first, and puts it back if the new one cannot be moved in: the
+     * shop never stays without the module's files.
+     *
      * @param string $archive
      * @param string $work
      * @param string $name
+     * @param bool $replacing true for an upgrade
      *
      * @return string empty on success, the reason otherwise
      */
-    private static function place(string $archive, string $work, string $name): string
+    protected static function place(string $archive, string $work, string $name, bool $replacing = false): string
     {
         $zip = new ZipArchive();
         if ($zip->open($archive) !== true) {
@@ -277,6 +293,20 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
         $zip->close();
         if (!$done || !is_file($unpacked . $name . '/' . $name . '.php')) {
             return 'the shop could not unpack the archive';
+        }
+
+        if ($replacing) {
+            $aside = $work . 'previous/';
+            if (!@mkdir($aside, 0750) || !@rename(self::modulesDir() . $name, $aside . $name)) {
+                return 'the shop could not move the current files of ' . $name . ' aside; nothing was replaced';
+            }
+            if (!@rename($unpacked . $name, self::modulesDir() . $name)) {
+                @rename($aside . $name, self::modulesDir() . $name);
+
+                return 'the shop could not write inside its modules folder; the current files are kept';
+            }
+
+            return '';
         }
 
         // Checked again just before the move: another call may have placed
@@ -296,7 +326,7 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
      *
      * @return bool whether a folder of this name, in any case, is in modules/
      */
-    private static function onDisk(string $name): bool
+    protected static function onDisk(string $name): bool
     {
         $key = Tools::strtolower($name);
         foreach (scandir(self::modulesDir()) ?: [] as $folder) {
@@ -311,7 +341,7 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
     /**
      * @return string
      */
-    private static function modulesDir(): string
+    protected static function modulesDir(): string
     {
         return rtrim((string) _PS_MODULE_DIR_, '/\\') . '/';
     }
@@ -325,7 +355,7 @@ class SomcpToolUploadModule extends SomcpToolInstallModule
      *
      * @return string empty when the shop cannot write there
      */
-    private static function workFolder(): string
+    protected static function workFolder(): string
     {
         $base = rtrim((string) _PS_ROOT_DIR_, '/\\') . '/' . self::WORK_DIR;
         if (!is_dir($base) && !@mkdir($base, 0750, true) && !is_dir($base)) {

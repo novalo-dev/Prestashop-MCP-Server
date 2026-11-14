@@ -59,6 +59,7 @@ $scenarioDir = __DIR__ . '/scenarios';
 $moduleDir = $psRoot . '/modules/somcp/';
 
 require __DIR__ . '/boot.php';
+require __DIR__ . '/module-archive.php';
 
 // A back-office request runs inside the Symfony kernel, and the core reaches
 // for its container from legacy code - an order changing status does, through
@@ -196,6 +197,58 @@ foreach (array_keys($shipped) as $name) {
         }
 
         printf("  %-6s %s\n", $outcome, $label);
+    }
+}
+
+// A module archive deposited, then installed, as a merchant does it (#252):
+// the scenario of somcp_upload_module only covers its refusals. The archive
+// goes in the way any assistant puts a file on the shop, a deposit opened for
+// the tool and filled with a data URI, and the module is removed afterwards.
+$uploadName = 'somcpuploadtest';
+$upload = $registry->get('somcp_upload_module');
+if ($upload !== null) {
+    ++$calls;
+    $reference = SomcpUpload::inviteFor((int) $employee->id, $upload, SomcpUpload::ARG_REF);
+    $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+    $entered = $invitation === null ? 'no deposit could be opened' : SomcpUpload::enter(
+        $invitation,
+        'data',
+        'data:application/zip;base64,' . base64_encode(somcpTestModuleArchive($uploadName, '1.0.0')),
+        $uploadName . '.zip'
+    );
+    if ($entered !== '') {
+        $failures[] = 'somcp_upload_module (an archive installed): the archive was not deposited - ' . $entered;
+    } else {
+        try {
+            $result = $upload->call([SomcpUpload::ARG_REF => $reference], [
+                'id_shop' => (int) $context->shop->id,
+                'id_employee' => (int) $employee->id,
+                'id_lang' => (int) $context->language->id,
+                'id_client' => 0,
+                'scopes' => implode(' ', $upload->getRequiredScopes()),
+                'responses' => [],
+                'resumed' => [],
+                'capabilities' => [],
+                'arguments' => [SomcpUpload::ARG_REF => $reference],
+            ]);
+            $installed = (string) Db::getInstance()->getValue(
+                'SELECT `version` FROM `' . _DB_PREFIX_ . "module` WHERE `name` = '" . pSQL($uploadName) . "'"
+            );
+            if (!empty($result['isError']) || $installed !== '1.0.0') {
+                $failures[] = 'somcp_upload_module (an archive installed): expected ' . $uploadName . ' 1.0.0 installed, got "'
+                    . $installed . '" - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_upload_module (an archive deposited, then installed)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_upload_module (an archive installed): ' . get_class($e) . ' - ' . $e->getMessage();
+        } finally {
+            $left = Module::getInstanceByName($uploadName);
+            if ($left instanceof Module && Module::isInstalled($uploadName)) {
+                $left->uninstall();
+            }
+            Tools::deleteDirectory(_PS_MODULE_DIR_ . $uploadName);
+        }
     }
 }
 

@@ -45,8 +45,8 @@ class SomcpToolInstallModule
             'Installs one module whose folder is in the shop\'s modules folder and not installed yet, like the '
                 . 'Install button of its card in Modules > Module Manager, with its own install checks, hooks and '
                 . 'tabs. name comes from somcp_list_modules, status uninstalled: never guess one. Answers with '
-                . 'the module as somcp_get_module reads it. An installed module is refused: it is upgraded in the '
-                . 'Module Manager. On multistore, installed for the shops of the current context. Not to be '
+                . 'the module as somcp_get_module reads it. An installed module is refused: upgrade it with '
+                . 'somcp_upgrade_module. On multistore, installed for the shops of the current context. Not to be '
                 . 'retried on a lost answer: check with somcp_get_module. It does not upload, upgrade, uninstall, '
                 . 'reset, enable or disable a module.',
             [
@@ -93,7 +93,7 @@ class SomcpToolInstallModule
             // refused here so an install never turns into an upgrade.
             return SomcpTool::text(
                 'This module is already installed, version ' . (string) $before['version_installed']
-                . '. Nothing was changed; use the Module Manager to upgrade it.',
+                . '. Nothing was changed; upgrade it with somcp_upgrade_module and a newer archive.',
                 true
             );
         }

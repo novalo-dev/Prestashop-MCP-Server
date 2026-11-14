@@ -4291,7 +4291,7 @@ The modules present on the shop, their state and version.
 **Errors** - same shape as `somcp_get_module`:
 - a missing, empty or non-string `name`: a refusal that names the field;
 - a `name` neither on disk nor installed, or installed with its folder gone: "No module of this shop has this name", naming `somcp_list_modules`;
-- a module already installed: refused and nothing changed ("already installed, version ...; use the Module Manager to upgrade it"), since `ModuleManager::install()` would upgrade it;
+- a module already installed: refused and nothing changed ("already installed, version ...; upgrade it with somcp_upgrade_module and a newer archive"), since `ModuleManager::install()` would upgrade it;
 - the core refuses (no **add** right on the Module Manager), or the module's `install()` returns `false`: "The module was not installed", with the module's own messages (`getErrors()`) and the state read back, so nothing is claimed as installed.
 
 **Notes** - disk only: no archive, no `url`, no `upload_ref`; `install()` gets no source. Through the core's `ModuleManager`, reached by `ModuleManagerBuilder::getInstance()->build()`, the core's own entry point from legacy code on 8 and 9 (the Symfony container's service when there is one), with the token's employee on the context for the length of the call, so the module's install checks, hooks and tabs are set up as from the back office. What the module prints while installing is dropped. On a multistore installation the core installs for the shops of the current context. Not replayable: on a lost answer, read `somcp_get_module` instead of retrying.
@@ -4304,7 +4304,7 @@ The modules present on the shop, their state and version.
 
 **Does** - puts a module archive (`.zip`) the employee deposited on the shop into the `modules` folder and installs it right after - the **Upload a module** button of **Modules > Module Manager** - and answers as `somcp_install_module` does.
 
-**Do not use for** - a module already on disk (→ `somcp_install_module`); upgrading a module from a newer archive; a module from a link or the marketplace.
+**Do not use for** - a module already on disk (→ `somcp_install_module`); upgrading a module from a newer archive (→ `somcp_upgrade_module`); a module from a link or the marketplace.
 
 **Parameters**
 
@@ -4334,13 +4334,47 @@ No `url`: a link read anywhere would become code running on the shop. No `name`:
 
 **Differences between 8.0.1 and 9.0.0** - the core's archive handling is identical on both, and 9.0.0's `RemoteZipSourceHandler` is not used; the install differs as described in `somcp_install_module`.
 
+#### `somcp_upgrade_module`
+**State**: written · [issue #255](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/255)
+**Nature**: `acts(ADD, 'AdminModulesSf')` · **Scope**: `mcp.modules.upload`
+
+**Does** - upgrades one installed module from a newer archive (`.zip`) the employee deposited on the shop: its files replaced, then its `upgrade/` scripts run, as uploading a newer archive of an installed module does in **Modules > Module Manager**; answers with the module as `somcp_get_module` reads it afterwards.
+
+**Do not use for** - a new module (→ `somcp_upload_module`); a module on disk but not installed (→ `somcp_install_module`); newer files already on disk with no archive; downgrading; enabling or disabling (→ `somcp_set_module_active`); a module from a link or the marketplace.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `upload_ref` | **Upload a module** | string | yes | a `.zip` already on the shop: attached to the chat, or from `somcp_upload_file` with `for` set to `somcp_upgrade_module` (kind `archive`, never by `url`) |
+
+**Then** - the archive passes the checks of `somcp_upload_module` (`SomcpToolUploadModule::check()`, shared), except that `modules/<name>` must exist under that exact name. The module must be installed on the token's shop, and the version the archive declares, read without running it (`<version>` of `config.xml`, else `$this->version` of `<name>.php`), must be higher than the installed one. The current folder is moved aside into the work folder and the new one moved in, each in one rename. The new files are then checked as the back office checks a module before installing it, since the core's `ModuleManager::upgrade()` checks none of it: the module loads and answers with the archive's version, `Module::checkCompliancy()` (its `ps_versions_compliancy`), and each of its `dependencies` installed. Any of these failing puts the previous folder back. Then `ModuleManager::upgrade($name)` through `SomcpModules::throughCore()`, which runs `Module::initUpgradeModule()`, the module's `upgrade/upgrade-X.Y.Z.php` scripts and `upgradeModuleVersion()`.
+
+**Returns** - `upgraded: true`, `version_before`, `version_after`, then the fields of `somcp_get_module` read back.
+
+**Errors** - in the shared envelope, `SomcpTool::refused('upgraded', ...)`: every problem at once under "Nothing was upgraded.":
+- the refusals of `somcp_upload_module` for the arguments and the archive;
+- no folder `modules/<name>`: a new module goes to `somcp_upload_module`; on disk but not installed: `somcp_install_module`;
+- no version in the archive; a version not higher than the installed one;
+- the new files not loading as a module, answering with another version (the module already loaded in this request), made for other PrestaShop versions, or needing a module that is not installed: the current files are kept;
+- the upgrade itself failing: "The module was not upgraded", the core's message and the state read back. The new files stay, and what the scripts already changed in the database stays changed, as in the back office.
+
+**Notes**
+- Loading the new files runs the module's main file, as the Module Manager does for every module it lists.
+- Same scope as `somcp_upload_module`, `mcp.modules.upload`: code from outside the shop runs with the shop's rights.
+- Not replayable: the deposit is used up; on a lost answer, read `somcp_get_module` instead of retrying. The assistant asks the merchant first: a payment or carrier module can stop orders while its scripts run.
+- Multistore: the files are shared by every shop; the upgrade runs once.
+- The core's access check asks the same right: `AdminModuleDataProvider::isAllowedAccess('upgrade')` wants `add` on `AdminModulesSf`.
+
+**Differences between 8.0.1 and 9.0.0** - `ModuleManager::upgrade()` is the same on both (8.0.1 line 164, 9.0.0 line 195); 9.0.0 also disables the module's hooks while it runs.
+
 #### `somcp_set_module_active`
 **State**: written · [issue #28](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/28)
 **Nature**: `acts(EDIT, 'AdminModulesSf')` · **Scope**: `mcp.modules.write`
 
 **Does** - enables or disables one installed module on the token's shop - the **Enable** / **Disable** actions of its card under **Modules > Module Manager** - and, on PrestaShop 8 only, **Enable Mobile** / **Disable Mobile**; answers with the module as `somcp_get_module` reads it afterwards.
 
-**Do not use for** - installing (→ `somcp_install_module`), uploading (→ `somcp_upload_module`), upgrading, resetting, uninstalling or deleting a module; the module's own settings behind **Configure**.
+**Do not use for** - installing (→ `somcp_install_module`), uploading (→ `somcp_upload_module`), upgrading (→ `somcp_upgrade_module`), resetting, uninstalling or deleting a module; the module's own settings behind **Configure**.
 
 **Parameters**
 
@@ -5710,7 +5744,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `module` (name of a module).
 
-**Tools** - `somcp_ping`, `somcp_list_modules`, `somcp_get_module`, `somcp_install_module`, `somcp_upload_module`, `somcp_upload_file`, `somcp_set_module_active`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_list_modules`, `somcp_get_module`, `somcp_install_module`, `somcp_upload_module`, `somcp_upgrade_module`, `somcp_upload_file`, `somcp_set_module_active`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - read before acting; name the module and what it does before installing or switching it; one module per call; a payment or carrier module switched off stops orders or deliveries, say so before doing it.
 

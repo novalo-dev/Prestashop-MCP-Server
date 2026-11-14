@@ -43,6 +43,7 @@ if ($psRoot === false || !is_file($psRoot . '/config/config.inc.php') || $shopUr
 }
 
 require __DIR__ . '/boot.php';
+require __DIR__ . '/module-archive.php';
 
 if (!Module::isInstalled('somcp') || !Module::getInstanceByName('somcp') instanceof Somcp) {
     fwrite(STDERR, "The somcp module is not installed in this shop.\n");
@@ -1110,6 +1111,62 @@ $badFile = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
 ]));
 $see('a file refused for a deposit comes back with the merchant\'s page', $failed($badFile)
     && (strpos($said($badFile), 'show the merchant this address') !== false || strpos($said($badFile), 'cannot be offered yet') !== false), $badFile);
+
+// A module upgraded from its archive, through the endpoint as an assistant
+// does it (#255): each call is a request of its own, as at a merchant's, so
+// the module's class is never already loaded when it is upgraded. A 1.0.0 is
+// uploaded, then archives the back office would turn away are refused with
+// the current files kept, then a 1.1.0 runs its upgrade script.
+$upgradeName = 'somcpupgradetest';
+$upgradeKey = 'SOMCP_TEST_UPGRADED';
+$moduleCall = static function (string $tool, string $zip) use ($http, $mcpUrl, $bearer, $fileToken, $rpc, $said, $upgradeName): array {
+    $deposit = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_upload_file',
+        'arguments' => ['for' => $tool, 'data' => 'data:application/zip;base64,' . base64_encode($zip), 'name' => $upgradeName . '.zip'],
+    ]));
+    $reference = (string) (json_decode($said($deposit), true)['upload_ref'] ?? '');
+
+    return $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => $tool,
+        'arguments' => ['upload_ref' => $reference],
+    ]));
+};
+$installedVersion = static function () use ($db, $upgradeName): string {
+    return (string) $db->getValue('SELECT `version` FROM `' . _DB_PREFIX_ . "module` WHERE `name` = '" . pSQL($upgradeName) . "'");
+};
+$onDisk = static function () use ($upgradeName): string {
+    return (string) @file_get_contents(_PS_MODULE_DIR_ . $upgradeName . '/' . $upgradeName . '.php');
+};
+try {
+    $first = $moduleCall('somcp_upload_module', somcpTestModuleArchive($upgradeName, '1.0.0'));
+    $see('a module archive is uploaded and installed', !$failed($first) && $installedVersion() === '1.0.0', $first);
+    $same = $moduleCall('somcp_upgrade_module', somcpTestModuleArchive($upgradeName, '1.0.0'));
+    $see('an archive of the installed version is no upgrade', $failed($same)
+        && strpos($said($same), 'not higher than the installed 1.0.0') !== false && $installedVersion() === '1.0.0', $same);
+    $tooNew = $moduleCall('somcp_upgrade_module', somcpTestModuleArchive($upgradeName, '1.1.0', [], '99.0.0'));
+    $see('an archive made for another PrestaShop is refused, the current files kept', $failed($tooNew)
+        && strpos($said($tooNew), 'is not made for PrestaShop') !== false && strpos($onDisk(), "'1.0.0'") !== false
+        && $installedVersion() === '1.0.0', $tooNew);
+    $other = $moduleCall('somcp_upgrade_module', somcpTestModuleArchive('somcpnotonshop', '2.0.0'));
+    $see('an archive of a module not on the shop is sent to somcp_upload_module', $failed($other)
+        && strpos($said($other), 'somcp_upload_module') !== false && !is_dir(_PS_MODULE_DIR_ . 'somcpnotonshop'), $other);
+    $upgraded = $moduleCall('somcp_upgrade_module', somcpTestModuleArchive($upgradeName, '1.1.0', [
+        'upgrade/upgrade-1.1.0.php' => somcpTestUpgradeScript('1.1.0', $upgradeKey),
+    ]));
+    $upgradedSaid = json_decode($said($upgraded), true);
+    $see('a newer archive upgrades the module and runs its upgrade script', !$failed($upgraded)
+        && ($upgradedSaid['version_before'] ?? '') === '1.0.0' && ($upgradedSaid['version_after'] ?? '') === '1.1.0'
+        && $installedVersion() === '1.1.0'
+        && (string) $db->getValue('SELECT `value` FROM `' . _DB_PREFIX_ . "configuration` WHERE `name` = '" . pSQL($upgradeKey) . "'") === '1.1.0', $upgraded);
+} finally {
+    $left = Module::getInstanceByName($upgradeName);
+    if ($left instanceof Module && Module::isInstalled($upgradeName)) {
+        $left->uninstall();
+    }
+    Tools::deleteDirectory(_PS_MODULE_DIR_ . $upgradeName);
+    Tools::deleteDirectory(_PS_MODULE_DIR_ . 'somcpnotonshop');
+    $db->delete('configuration', "`name` = '" . pSQL($upgradeKey) . "'");
+}
 
 // A module hands a file over by returning it: the same answer as
 // somcp_download_file, under the type its bytes show.

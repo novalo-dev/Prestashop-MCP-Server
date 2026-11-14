@@ -258,7 +258,7 @@ class SomcpUpload
         if (!SomcpElicitation::supported($capabilities, SomcpElicitation::MODE_URL)) {
             $invitation = self::find($reference, $idEmployee);
 
-            return self::askByHand($url, $reference, $invitation ?? []);
+            return self::askByHand($url, $reference, $invitation ?? [], false);
         }
 
         return SomcpTool::needsInput(
@@ -335,7 +335,9 @@ class SomcpUpload
             );
         }
 
-        return self::askByHand($url, $reference, $invitation);
+        // Back to a deposit still empty: whatever the assistant tried did not
+        // bring the file, so the merchant's page is part of the answer now.
+        return self::askByHand($url, $reference, $invitation, true);
     }
 
     /**
@@ -381,10 +383,11 @@ class SomcpUpload
      * @param string $url
      * @param string $reference
      * @param array<string, mixed> $invitation
+     * @param bool $failed whether the assistant already failed to bring the files (directions())
      *
      * @return array<string, mixed>
      */
-    private static function askByHand(string $url, string $reference, array $invitation): array
+    private static function askByHand(string $url, string $reference, array $invitation, bool $failed): array
     {
         return SomcpTool::text(self::directions(
             $url,
@@ -393,7 +396,8 @@ class SomcpUpload
             'Once the ' . ((int) ($invitation['max_files'] ?? 1) > 1 ? 'files are' : 'file is') . ' deposited,'
                 . ' by you or by the merchant, call this same tool again with the same arguments plus '
                 . self::ARG_REF . ' set to: ' . $reference . "\n\n"
-                . 'Do not report this as a failure.'
+                . 'Do not report this as a failure.',
+            $failed
         ));
     }
 
@@ -402,62 +406,74 @@ class SomcpUpload
      *
      * One text for every way a deposit is asked for - a tool of this module,
      * a tool of another module through the contract, the request tool - so an
-     * assistant meets the same steps wherever the file is needed. The
-     * assistant sends the file itself when it can; the merchant is asked only
-     * when it cannot. It cannot know in advance whether its own network lets it
-     * reach the shop, so it is told what a refusal looks like and what the
-     * person can change for next time, in words that fit any assistant.
+     * assistant meets the same steps wherever the file is needed, in the order
+     * that asks least of the merchant: the assistant posts the file itself,
+     * then hands it over through somcp_upload_file, and only then is the
+     * merchant asked. Given the page at once, an assistant went straight to it
+     * and the merchant deposited by hand a file the assistant held.
+     *
+     * The page is therefore given only after a failure somcp sees: a file
+     * somcp_upload_file refused, a call to it with no file, which is how an
+     * assistant says it has none, or a call back to a deposit still empty. A
+     * direct post that fails never reaches the shop, so the step after it
+     * has to be in the first answer already.
      *
      * @param string $url the deposit page of the back office, for the merchant; empty when it cannot be built yet
      * @param string $reference
      * @param array<string, mixed> $invitation the row from find()
      * @param string $then what to do once the files are in
+     * @param bool $failed whether the assistant already failed to bring the file, which earns the page
      *
      * @return string
      */
-    public static function directions(string $url, string $reference, array $invitation, string $then): string
+    public static function directions(string $url, string $reference, array $invitation, string $then, bool $failed = false): string
     {
         $files = max(1, (int) ($invitation['max_files'] ?? 1));
         $megabytes = (int) round(((int) ($invitation['max_bytes'] ?? self::DEFAULT_BYTES)) / 1048576);
         $one = $files === 1;
         $direct = self::directUrl($reference, $invitation);
         $host = (string) parse_url($direct, PHP_URL_HOST);
+        $file = $one ? 'the file' : 'the files';
+
+        if (!$failed) {
+            $last = '3. Only if 1 and 2 both failed, or you do not have ' . $file . ': call somcp_upload_file with'
+                . ' ' . self::ARG_REF . ' set to ' . $reference . ' and nothing else. The shop then gives you its'
+                . ' page, for the merchant to deposit ' . $file . ' on.' . "\n\n";
+        } elseif ($url === '') {
+            // The page's address is built from the administration folder,
+            // which the module only learns by running in the back office.
+            $last = '3. The deposit page of the back office cannot be offered yet: ask the merchant to open the'
+                . ' module settings once, then ask for a new deposit.' . "\n\n";
+        } else {
+            $last = '3. If 1 and 2 failed, or you do not have ' . $file . ', show the merchant this address and ask'
+                . ' them to open it and deposit ' . $file . ':' . "\n\n" . $url . "\n\n"
+                . 'Wait for them to say ' . ($one ? 'it has' : 'they have') . ' been sent.' . "\n\n";
+        }
 
         // No word here may say the file cannot come through the conversation:
-        // step 0 is exactly that, and an assistant told otherwise skipped it
-        // for the address it could not reach, then for the merchant's page.
-        return ($one ? 'A file is' : 'Up to ' . $files . ' files are') . ' needed. Bring '
-            . ($one ? 'it' : 'them') . ' to the shop the first way below that works, starting with 0.'
+        // step 2 is exactly that, and an assistant told otherwise skipped it.
+        return ($one ? 'A file is' : 'Up to ' . $files . ' files are') . ' needed. Try the ways below in order,'
+            . ' each only if the one before failed.'
             . ' Accepted: ' . str_replace(' ', ', ', (string) ($invitation['extensions'] ?? ''))
-            . '. Up to ' . $megabytes . ' MB each. Both addresses below stop working in '
+            . '. Up to ' . $megabytes . ' MB each. This deposit closes in '
             . (int) round(max(60, ((int) strtotime((string) ($invitation['expires_at'] ?? ''))) - time()) / 60) . ' minutes.' . "\n\n"
-            // First, since it needs neither the network nor the merchant:
-            // the way a file the person attached in the conversation reaches
-            // the shop, through the entries of somcp_upload_file.
-            . '0. Start here. If you hold ' . ($one ? 'the file' : 'a file') . ' - one the person attached in this conversation,'
-            . ' or its bytes - call somcp_upload_file with ' . self::ARG_REF . ' set to ' . $reference . ' and the file'
-            . ' in file (as your client passes an attached file), data (a data URI, with its name in name)'
-            . (self::byAddress($invitation) ? ' or url (a public address)' : '') . ', once per file: each call adds'
-            . ' a file, it never replaces one.' . "\n\n"
+            // First, since the bytes travel as they are, at any size the
+            // deposit takes, with nothing for the model to copy.
             . '1. If you can make an HTTP request yourself (a code tool, a terminal, an HTTP or fetch tool),'
             . ' send ' . ($one ? 'the file' : 'each file') . ' now, without asking the merchant: POST it to' . "\n\n"
             . $direct . "\n\n"
             . 'as multipart/form-data, in the field "' . self::DIRECT_FIELD . '", under its real name with its'
             . ' extension (for example curl -F "' . self::DIRECT_FIELD . '=@photo.jpg" followed by the address).'
-            . ' The shop answers {"received": true} when it keeps the file, or the reason it refused it.' . "\n\n"
-            . '2. If that request never reaches the shop - refused by your own environment, a blocked domain or'
-            . ' no network - tell the person once that allowing ' . $host . ' in the network or allowed domains'
-            . ' settings of their assistant would let you deposit files yourself next time, then go to step 3.'
-            . ' If you know you cannot make HTTP requests at all, go straight to step 3.' . "\n\n"
-            . ($url === ''
-                // The page's address is built from the administration folder,
-                // which the module only learns by running in the back office.
-                ? '3. The deposit page of the back office cannot be offered yet: ask the merchant to open the'
-                    . ' module settings once, then ask for a new deposit.' . "\n\n"
-                : '3. Show the merchant this address and ask them to open it and deposit '
-                    . ($one ? 'the file' : 'the files') . ':' . "\n\n"
-                    . $url . "\n\n"
-                    . 'Wait for them to say ' . ($one ? 'it has' : 'they have') . ' been sent.' . "\n\n")
+            . ' The shop answers {"received": true} when it keeps the file, or the reason it refused it. If the'
+            . ' request never reaches the shop - refused by your own environment, a blocked domain or no network -'
+            . ' tell the person once that allowing ' . $host . ' in the network or allowed domains settings of their'
+            . ' assistant would let you deposit files yourself next time, then go to 2.' . "\n\n"
+            . '2. If you hold ' . ($one ? 'the file' : 'a file') . ' - one the person attached in this conversation,'
+            . ' or its bytes - call somcp_upload_file with ' . self::ARG_REF . ' set to ' . $reference . ' and the file'
+            . ' in file (as your client passes an attached file), data (a data URI, with its name in name)'
+            . (self::byAddress($invitation) ? ' or url (a public address)' : '') . ', once per file: each call adds'
+            . ' a file, it never replaces one.' . "\n\n"
+            . $last
             . $then;
     }
 

@@ -78,7 +78,7 @@ class SomcpToolUploadFile
                     SomcpUpload::ARG_REF => [
                         'type' => 'string',
                         'description' => 'Instead of for: the upload_ref of a deposit a tool opened and asked you to '
-                            . 'fill, with the file in file, data or url.',
+                            . 'fill, with the file in file, data or url; alone, for the merchant\'s page when you cannot.',
                     ],
                     'name' => [
                         'type' => 'string',
@@ -194,7 +194,7 @@ class SomcpToolUploadFile
                 // the other ways, and the answer says them.
                 return SomcpTool::text(
                     $entry . ': ' . $refusal . ". Nothing was deposited.\n\n"
-                        . SomcpUpload::directions(SomcpBackOffice::uploadUrl($reference, $idEmployee), $reference, $invitation, $then),
+                        . SomcpUpload::directions(SomcpBackOffice::uploadUrl($reference, $idEmployee), $reference, $invitation, $then, true),
                     true
                 );
             }
@@ -207,8 +207,8 @@ class SomcpToolUploadFile
             ] + self::held($invitation, $then));
         }
 
-        $page = SomcpBackOffice::uploadUrl($reference, $idEmployee);
-
+        // No deposit_page here: the merchant's page comes only once the
+        // assistant has failed to bring the file itself (directions()).
         return SomcpTool::json([
             'deposited' => false,
             SomcpUpload::ARG_REF => $reference,
@@ -223,8 +223,7 @@ class SomcpToolUploadFile
                 'encoding' => 'multipart/form-data',
                 'field' => SomcpUpload::DIRECT_FIELD,
             ],
-            'deposit_page' => $page === '' ? null : $page,
-            'how' => SomcpUpload::directions($page, $reference, $invitation, $then),
+            'how' => SomcpUpload::directions('', $reference, $invitation, $then),
         ]);
     }
 
@@ -258,6 +257,12 @@ class SomcpToolUploadFile
 
         $given = array_values(array_intersect(array_keys(SomcpUpload::ENTRIES), array_keys($arguments)));
         $entry = $given[0] ?? null;
+        $back = 'Call the tool that opened this deposit again, as it asked, with upload_ref ' . $reference . '.';
+        if ($entry === null && $invitation !== null && $problems === []) {
+            // No file: the assistant could neither post it nor hand it over,
+            // or does not have it. The merchant's page is the way left.
+            return SomcpTool::text(SomcpUpload::directions(SomcpBackOffice::uploadUrl($reference, $idEmployee), $reference, $invitation, $back, true));
+        }
         if ($entry === null) {
             $problems[] = 'file, data or url: the file to put in the deposit';
         } elseif (count($given) > 1) {
@@ -273,13 +278,17 @@ class SomcpToolUploadFile
 
         $refusal = SomcpUpload::enter($invitation, $entry, $arguments[$entry], self::name($arguments));
         if ($refusal !== '') {
-            return SomcpTool::text($entry . ': ' . $refusal . '. Nothing was deposited; the deposit is still open.', true);
+            return SomcpTool::text(
+                $entry . ': ' . $refusal . ". Nothing was deposited; the deposit is still open.\n\n"
+                    . SomcpUpload::directions(SomcpBackOffice::uploadUrl($reference, $idEmployee), $reference, $invitation, $back, true),
+                true
+            );
         }
 
         return SomcpTool::json([
             'deposited' => true,
             SomcpUpload::ARG_REF => $reference,
-        ] + self::held($invitation, 'Call the tool that opened this deposit again, as it asked, with upload_ref ' . $reference . '.'));
+        ] + self::held($invitation, $back));
     }
 
     /**

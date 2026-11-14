@@ -333,11 +333,12 @@ any extension is the oldest hole there is.
 
 Which of two paths is taken depends on the client, not on the tool. One that
 declared it can open an address gets the multi-round question. One that did not
-is handed directions as plain text, in order: post the file itself to the
-deposit's direct address when it can make an HTTP request, tell the person
-which domain to allow when its own environment blocks that, or show the
-merchant the deposit page. Then it calls the same tool again with
-`upload_ref`.
+is handed directions as plain text, each step only if the one before failed:
+post the file itself to the deposit's direct address when it can make an HTTP
+request, telling the person which domain to allow when its own environment
+blocks that; hand it over with `somcp_upload_file`; and only then show the
+merchant the deposit page, which comes once the shop sees a failure. Then it
+calls the same tool again with `upload_ref`.
 
 **Files for the tools of the module.** A tool of the module that takes a file
 declares its fields and what each accepts (`files:` of its `SomcpTool`), and
@@ -2327,11 +2328,14 @@ attached in the assistant's conversation as its client passes it (ChatGPT's
 file parameters, declared in the tool's `_meta` as `openai/fileParams`);
 `data`, the bytes as a data URI (`x-mcp-file`, the form the protocol's file
 input proposals take); `url`, a public address the shop downloads. Without any,
-the answer says how the file gets in, in order: the assistant posts it itself
-to the deposit's direct address (`send_to`) when it can make an HTTP request;
-if its own environment blocks the request, it tells the person once which
-domain to allow in their assistant's network settings; otherwise it shows the
-merchant the deposit page (`deposit_page`). In compact mode the tool stays in
+the answer says how the file gets in, each step only if the one before failed:
+the assistant posts it itself to the deposit's direct address (`send_to`) when
+it can make an HTTP request, telling the person once which domain to allow in
+their assistant's network settings if its own environment blocks the request;
+then it brings it here with `upload_ref`; then, with `upload_ref` alone, it is
+given the merchant's deposit page. The page comes only after such a failure: a
+refused file, `upload_ref` with no file, or a tool called back with a deposit
+still empty. In compact mode the tool stays in
 the list, since a client reads what it can pass a file to from the tools it
 lists.
 
@@ -2346,16 +2350,15 @@ asking for files itself (it hands out its own deposit).
 |---|---|---|---|
 | `for` | string | yes, unless `upload_ref` | the tool the file is for, e.g. `somcp_create_product` |
 | `field` | string | no | its argument that takes the file, e.g. `images`, `virtual_file.file`, `logo`; may be left out when the tool has only one |
-| `upload_ref` | string | no | instead of `for` and `field`: a deposit a tool already opened and asked the assistant to fill - a tool of this module, or of another through the contract (`upload`) - filled with `file`, `data` or `url` under that deposit's own rules |
+| `upload_ref` | string | no | instead of `for` and `field`: a deposit a tool already opened and asked the assistant to fill - a tool of this module, or of another through the contract (`upload`) - filled with `file`, `data` or `url` under that deposit's own rules; alone, it answers with the merchant's deposit page |
 | `file` | object | no | a file of the assistant's conversation: `download_url` and `file_id` (required), `mime_type`, `file_name`; the shop downloads `download_url` with the guards of `url`; refused for `somcp_upload_module` |
 | `data` | string | no | the file as `data:<media type>;base64,<content>`; the media type decides the format checked; the exact bytes of a file the assistant holds, never one it writes itself |
 | `name` | string | no | with `data` only: the file's name, else the `name=` parameter of the data URI, else `file`; its extension is always the one the media type gives; refused with `file` or `url`, which bring their own |
 | `url` | string | no | a public `https` address (no redirect) the shop downloads now; refused for `somcp_upload_module` |
 
-At most one of `file`, `data` and `url`, and one of them with `upload_ref`. The
-directions any deposit hands out start with this way, before posting the file
-or asking the merchant, so a module asking for files through the contract gets
-it without a change.
+At most one of `file`, `data` and `url`. The directions any deposit hands out
+name this way right after posting the file, and before asking the merchant, so
+a module asking for files through the contract gets it without a change.
 
 **Returns** - with an entry: `deposited` true, `upload_ref`, `for`, `field`,
 then `files` (`name` and `bytes` of each file the deposit holds, as kept),
@@ -2365,8 +2368,10 @@ again. Each call adds a file and never replaces one, and `then` says so until
 the deposit is full: an assistant that read `deposited` as "replaced" sent the
 same file again. The sizes let it see a file it rebuilt instead of copying. Without: `deposited` false, `upload_ref`, `for`, `field`, `accepted`
 (extensions), `max_bytes`, `expires_at`, `send_to` (`url`, `method` POST,
-`encoding` multipart/form-data, `field` `file`), `deposit_page` (null when the
-back office address is not known yet) and `how`, the directions in order. The
+`encoding` multipart/form-data, `field` `file`) and `how`, the directions in
+order. With `upload_ref` and no file: the directions again, the merchant's
+deposit page included, as an answer rather than an error. A refused file is
+answered with the same directions after the reason. The
 direct address answers `{"received": true, "file": ...}`, or `received` false
 with the reason it refused the file.
 

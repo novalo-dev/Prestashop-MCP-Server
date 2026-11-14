@@ -1083,9 +1083,33 @@ $unnamed = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
 $unnamedSaid = json_decode($said($unnamed), true);
 $see('a data URI with no name is still kept, as file, and a full deposit says so', !$failed($unnamed)
     && ($unnamedSaid['files'][2]['name'] ?? '') === 'file.png' && strpos((string) ($unnamedSaid['then'] ?? ''), 'The deposit is full') !== false, $unnamed);
-$guide = SomcpUpload::directions('', $several, (array) SomcpUpload::find($several, $idEmployee), '');
-$see('the directions never say a file cannot come through the conversation, and start with somcp_upload_file',
-    strpos($guide, 'cannot travel') === false && strpos($guide, '0. Start here') !== false, ['body' => $guide]);
+// The order that asks least of the merchant: the assistant posts the file,
+// then hands it over, and only after a failure the shop sees does the
+// merchant's page come.
+$firstAsk = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['for' => 'somcp_create_manufacturer', 'field' => 'logo'],
+]));
+$askSaid = json_decode($said($firstAsk), true);
+$how = (string) ($askSaid['how'] ?? '');
+$see('a first ask gives the direct post first, then somcp_upload_file, and no page for the merchant',
+    !array_key_exists('deposit_page', (array) $askSaid) && strpos($how, 'cannot travel') === false
+    && strpos($how, '1. If you can make an HTTP request') !== false
+    && strpos($how, '1. If you can make an HTTP request') < strpos($how, '2. If you hold')
+    && strpos($how, 'and nothing else') !== false && strpos($how, 'show the merchant this address') === false, $firstAsk);
+$empty = SomcpUpload::invite($idEmployee, 'A proof of delivery', 'document', 'somcptestmodule', ['files' => 1]);
+$noFile = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $empty],
+]));
+$see('a deposit reference with no file earns the merchant\'s page, as an answer rather than an error', !$failed($noFile)
+    && (strpos($said($noFile), 'show the merchant this address') !== false || strpos($said($noFile), 'cannot be offered yet') !== false), $noFile);
+$badFile = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $empty, 'data' => 'data:application/pdf;base64,' . base64_encode('<html></html>')],
+]));
+$see('a file refused for a deposit comes back with the merchant\'s page', $failed($badFile)
+    && (strpos($said($badFile), 'show the merchant this address') !== false || strpos($said($badFile), 'cannot be offered yet') !== false), $badFile);
 
 // A module hands a file over by returning it: the same answer as
 // somcp_download_file, under the type its bytes show.

@@ -300,25 +300,35 @@ own, and a client ignores the argument of a way it does not know:
 would become code running on the shop. The same entries also fill a deposit
 already open, named by its `upload_ref` (`SomcpUpload::open()`): one a tool of
 the module or of another module asked for, so the directions of every deposit
-start with them, before the direct address and the page. A client reads its own way of passing a
+name them, after the direct address and before the page. A client reads its own way of passing a
 file from the tools it lists, so compact mode keeps `somcp_upload_file` (and
 `somcp_download_file`) in the list rather than behind a runner.
 
-After the call, when it brought no file:
+When a file is asked for, the directions give three ways, each to try only if
+the one before failed, in the order that asks least of the merchant:
 
 1. **the direct address**: an assistant that can make an HTTP request posts
    the file itself, multipart, to `controllers/front/deposit.php`. The link
    carries the hash of the reference, never the reference, the deposit's
    expiry and a signature with the key of the chat's file links under a label
    of its own, so a link to read a file can never deposit one. Anything wrong
-   gets the same empty 404;
-2. **the deposit page**: a page of the merchant's own back office
+   gets the same empty 404. The bytes travel as they are, at any size the
+   deposit takes, with nothing for the model to copy;
+2. **`somcp_upload_file`** with the deposit's `upload_ref` and one of the
+   entries above, for a file the assistant holds;
+3. **the deposit page**: a page of the merchant's own back office
    (`AdminSomcpUploadController`) that only the employee the deposit was opened
    for can use.
 
-The answer gives the two in that order, and says what the person can allow
-in their assistant's network settings when the assistant's own environment
-blocks the first: nothing on the shop's side can know that in advance.
+The page is handed out only after a failure the shop sees: a file
+`somcp_upload_file` refused, a call to it with the `upload_ref` alone (how an
+assistant says it has no file), or a call back to a deposit still empty
+(`SomcpUpload::directions()`, `$failed`). Given at once, an assistant went
+straight to it and the merchant deposited by hand a file the assistant held. A
+direct post that fails never reaches the shop, so the first answer already
+names step 2, and says what the person can allow in their assistant's network
+settings when the assistant's own environment blocks step 1: nothing on the
+shop's side can know that in advance.
 Files are stored under `var/somcp/uploads/`, outside the module folder, and a
 reference works once.
 
@@ -329,7 +339,7 @@ that declared it can open one, or as text the assistant reads - the same
 directions as above, the direct address included, so a module gets the
 assistant's own deposit without changing anything. Because a client can
 declare the first and not do it, a call that comes back to a deposit that is
-still empty gets the directions again as text.
+still empty gets the directions again as text, the page included.
 
 ### Out
 

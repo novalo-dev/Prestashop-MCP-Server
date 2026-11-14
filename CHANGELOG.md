@@ -33,8 +33,15 @@ went out with three attachments, two of them named "file" and blank: it took
 an empty one. The shop now tells it after each file how many it holds, that a
 new send adds one, and the name and size of each, so it can see a file that
 is not the one it meant. A file it sends as raw content keeps the name it
-gives. And the directions it gets no longer start by saying the file cannot
-come through the conversation, which sent it to the upload page first.
+gives.
+
+**The upload page comes last.** When a file is needed, the assistant first
+sends it to the shop itself, then hands over a file it holds from the
+conversation, and only when both fail does it give you the page to drop the
+file on. Before, it got the page at once and often went straight to it, asking
+you to upload by hand a file it already had. If your assistant tells you to
+allow your shop's domain in its network settings, doing so once lets it send
+files itself from then on.
 
 **PNG photos reach the assistant as images.** With the image quality setting
 on PNG, PrestaShop keeps product photos, logos and category images as PNG in

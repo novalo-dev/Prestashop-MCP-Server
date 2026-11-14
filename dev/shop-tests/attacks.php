@@ -1081,6 +1081,10 @@ $virtual = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
     ],
 ]));
 $idVirtual = (int) (json_decode($said($virtual), true)['id_product'] ?? 0);
+// The flag was switched on by the call above, in another request: this
+// process still holds the value it set itself, so it reads the database
+// again, as the next back office page would.
+Configuration::resetStaticCache();
 $see('the file of an offline virtual product is found as the back office looks for it', $idVirtual > 0
     && (int) ProductDownload::getIdFromIdProduct($idVirtual) > 0, $virtual);
 if ($idVirtual > 0) {

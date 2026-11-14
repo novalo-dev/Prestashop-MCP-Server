@@ -55,7 +55,7 @@ class SomcpDownload
     public const TTL = SomcpUpload::TTL;
 
     /**
-     * @var array<string, array{reader:string, pdf?:string}> The kinds a reference may name.
+     * @var array<string, array<string, string>> The kinds a reference may name.
      *
      * reader is the tool that reads this kind of file, whose scopes and back
      * office rights decide who may have it. pdf, for a document of an order,
@@ -438,7 +438,9 @@ class SomcpDownload
                     return null;
                 }
                 $format = (string) ($image->image_format ?: 'jpg');
-                $path = _PS_PROD_IMG_DIR_ . $image->getImgPath() . '.' . $format;
+                // The original the core writes and reads, under the same
+                // constant and path its own PDF templates use on 8 and 9.
+                $path = _PS_PRODUCT_IMG_DIR_ . $image->getExistingImgPath() . '.' . $format;
                 $name .= '.' . $format;
                 $shopTable = 'image_shop';
                 $shopKey = 'id_image';

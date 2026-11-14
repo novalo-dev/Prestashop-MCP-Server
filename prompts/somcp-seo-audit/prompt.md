@@ -61,7 +61,8 @@ installation has its own titles, descriptions and URLs.
 5. **Propose, then write what was approved.** For each fix, show the merchant
    the new title or description, in each language of the shop, and wait for
    their approval. The audit never changes anything. A CMS page is changed with
-   `somcp_update_cms_seo`, one page per call, only in the languages approved;
+   `somcp_update_cms_seo`, one page per call, with the languages approved in
+   `languages` and each text given in each of them;
    its `meta_title` is the page's Meta title, which replaces the page title in
    search results, while the `meta_title` of `somcp_audit_cms_seo` is the page
    title itself. Changing a friendly URL of a displayed page makes the old
@@ -93,7 +94,7 @@ installation has its own titles, descriptions and URLs.
 
 ## Reading the checks
 
-- `meta_title_too_long` (over 60 characters) and `meta_description_long` (over
+- `meta_title_too_long` (over 70 characters) and `meta_description_long` (over
   160) are cut in search results; `meta_description_short` (under 70) gives
   little to show.
 - `meta_title_duplicate` and `link_rewrite_duplicate` mean another product of

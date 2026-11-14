@@ -99,39 +99,48 @@ class SomcpToolSetStockQuantity
         $idShop = Somcp::currentShopId();
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
+        $errors = SomcpTool::unknownFields($arguments, ['id_product', 'id_product_attribute', 'quantity', 'delta']);
         $quantity = self::integer($arguments, 'quantity');
         $delta = self::integer($arguments, 'delta');
-        if ($quantity === false || $delta === false) {
-            return SomcpTool::text('Nothing was changed: quantity and delta must be whole numbers.', true);
+        if ($quantity === false) {
+            $errors[] = 'quantity: a whole number';
         }
-        if (($quantity === null) === ($delta === null)) {
-            return SomcpTool::text(
-                'Nothing was changed: give either quantity, the new level, or delta, a movement - one of the two.',
-                true
-            );
+        if ($delta === false) {
+            $errors[] = 'delta: a whole number';
         }
-
-        $product = SomcpToolGetProduct::locate(
-            self::identifier($arguments['id_product'] ?? null),
-            (int) Configuration::get('PS_LANG_DEFAULT'),
-            $idShop
-        );
-        if ($product === null) {
-            return SomcpTool::text(
-                'No product of this shop has this identifier. Nothing was changed. Find it with somcp_search_products.',
-                true
-            );
+        if ($quantity !== false && $delta !== false && ($quantity === null) === ($delta === null)) {
+            $errors[] = 'quantity: give either quantity, the new level, or delta, a movement - one of the two';
         }
 
-        $idCombination = self::identifier($arguments['id_product_attribute'] ?? null);
+        $idProduct = SomcpTool::id($arguments, 'id_product');
+        $product = null;
+        if ($idProduct === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_product');
+        } else {
+            $product = SomcpToolGetProduct::locate(
+                $idProduct,
+                // The default language of the token's shop, not the global one (#149).
+                (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop),
+                $idShop
+            );
+            if ($product === null) {
+                $errors[] = SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products');
+            }
+        }
+
+        $idCombination = SomcpTool::id($arguments, 'id_product_attribute');
         // A combination that cannot be read is refused rather than taken as
         // none, which would write the product line instead.
         if ($idCombination === 0 && !in_array($arguments['id_product_attribute'] ?? null, [null, 0, '0'], true)) {
-            return SomcpTool::text('Nothing was changed: id_product_attribute must be a combination identifier.', true);
+            $errors[] = SomcpTool::notAnIdentifier('id_product_attribute');
+        } elseif ($product !== null) {
+            $refusal = self::refusal($product, $idCombination, $idShop);
+            if ($refusal !== '') {
+                $errors[] = $refusal;
+            }
         }
-        $refusal = self::refusal($product, $idCombination, $idShop);
-        if ($refusal !== '') {
-            return SomcpTool::text('Nothing was changed: ' . $refusal, true);
+        if ($errors !== [] || $product === null || $quantity === false || $delta === false) {
+            return SomcpTool::refused('changed', $errors);
         }
 
         $previous = (int) StockAvailable::getQuantityAvailableByProduct((int) $product->id, $idCombination, $idShop);
@@ -226,7 +235,7 @@ class SomcpToolSetStockQuantity
     }
 
     /**
-     * Why this product or combination cannot take a quantity, or an empty string.
+     * The line saying why this product or combination cannot take a quantity, or an empty string.
      *
      * @param Product $product
      * @param int $idCombination
@@ -240,10 +249,13 @@ class SomcpToolSetStockQuantity
 
         if ($idCombination > 0) {
             if ($combinations === 0) {
-                return 'the product has no combinations; leave id_product_attribute out.';
+                return 'id_product_attribute: the product has no combinations; leave the field out';
             }
             if (!SomcpToolGetProduct::combinationBelongs($product, $idCombination, $idShop)) {
-                return 'this combination does not belong to this product in this shop. Read them with somcp_get_stock.';
+                // A combination belongs to its product, not to the shop, as
+                // somcp_get_product words it.
+                return 'id_product_attribute: no combination of this product has the identifier ' . $idCombination
+                    . ' - find it with somcp_get_stock';
             }
 
             return '';
@@ -253,12 +265,13 @@ class SomcpToolSetStockQuantity
         // and rewrites it on every change to one of them: a quantity written
         // there would be overwritten by the next order.
         if ($combinations > 0) {
-            return 'the product has combinations, and each one has its own quantity. Give id_product_attribute, '
-                . 'read from somcp_get_stock.';
+            return 'id_product_attribute: the product has combinations, and each one has its own quantity - give '
+                . 'one, read from somcp_get_stock';
         }
 
         if (Pack::isPack((int) $product->id) && self::packStockType($product) === Pack::STOCK_TYPE_PRODUCTS_ONLY) {
-            return 'the stock of this pack is worked out from the products it holds. Change theirs instead.';
+            return 'id_product: the stock of this pack is worked out from the products it holds - change theirs '
+                . 'instead';
         }
 
         return '';
@@ -331,24 +344,5 @@ class SomcpToolSetStockQuantity
         }
 
         return false;
-    }
-
-    /**
-     * An identifier as a client may send it: an integer, or digits in a string.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && ctype_digit($value)) {
-            return (int) $value;
-        }
-
-        return 0;
     }
 }

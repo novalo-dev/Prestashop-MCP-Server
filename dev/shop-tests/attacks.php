@@ -239,6 +239,84 @@ $expect('body that is not JSON', $http('POST', $mcpUrl, $bearer($valid['access_t
 $expect('batch of calls', $http('POST', $mcpUrl, $bearer($valid['access_token']), '[' . $ping . ',' . $ping . ']'), 400);
 
 // ---------------------------------------------------------------------------
+$section('Compact mode');
+// The runners must refuse what a direct call refuses, and the search must show
+// no more than the full list would: each is checked on what comes back, not
+// only on the HTTP status, which is 200 for a tool error.
+$compactWas = (string) Configuration::get(SomcpConfig::TOOLS_COMPACT);
+Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, '1');
+$see = static function (string $what, bool $held, array $response) use (&$failures, &$checks): void {
+    ++$checks;
+    printf("  %s  %s\n", $held ? 'ok   ' : 'FAIL ', $what);
+    if (!$held) {
+        $failures[] = $what . ': ' . substr($response['body'], 0, 300);
+    }
+};
+$said = static function (array $response): string {
+    return (string) ($response['json']['result']['content'][0]['text'] ?? '');
+};
+$failed = static function (array $response): bool {
+    return ($response['json']['result']['isError'] ?? false) === true;
+};
+$run = static function (string $runner, string $tool, array $arguments = []) use ($rpc): string {
+    return $rpc('tools/call', ['name' => $runner, 'arguments' => ['name' => $tool, 'arguments' => (object) $arguments]]);
+};
+
+$listed = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('tools/list'));
+$names = array_column((array) ($listed['json']['result']['tools'] ?? []), 'name');
+sort($names);
+$see('the list carries the pinned tools and the three tools of compact mode', $names === [
+    'somcp_download_file', 'somcp_ping', SomcpCompact::READ_TOOL, SomcpCompact::WRITE_TOOL, SomcpCompact::SEARCH_TOOL, 'somcp_upload_file',
+], $listed);
+$upload = array_values(array_filter((array) ($listed['json']['result']['tools'] ?? []), static function ($tool): bool {
+    return is_array($tool) && ($tool['name'] ?? '') === 'somcp_upload_file';
+}))[0] ?? [];
+$see('the upload tool tells a client it takes a file of the conversation', ($upload['_meta']['openai/fileParams'] ?? null) === ['file'], $listed);
+
+$searched = $http('POST', $mcpUrl, $bearer($reader['access_token']), $rpc('tools/call', [
+    'name' => SomcpCompact::SEARCH_TOOL,
+    'arguments' => ['names' => ['somcp_create_category', 'somcp_list_categories']],
+]));
+$answer = json_decode($said($searched), true);
+$see('a search hides a tool the connection may not use', is_array($answer)
+    && in_array('somcp_create_category', (array) ($answer['unknown'] ?? []), true)
+    && !in_array('somcp_create_category', array_column((array) ($answer['tools'] ?? []), 'name'), true), $searched);
+
+$wrongRunner = $http('POST', $mcpUrl, $bearer($valid['access_token']), $run(SomcpCompact::READ_TOOL, 'somcp_create_category', ['name' => 'Created by an attack']));
+$see('the read runner refuses a tool that changes the shop', $failed($wrongRunner)
+    && strpos($said($wrongRunner), SomcpCompact::WRITE_TOOL) !== false, $wrongRunner);
+$expect('read-only token running a change through the write runner', $http('POST', $mcpUrl, $bearer($reader['access_token']), $run(
+    SomcpCompact::WRITE_TOOL,
+    'somcp_create_category',
+    ['name' => 'Created by an attack']
+)), 403);
+$guessed = $http('POST', $mcpUrl, $bearer($valid['access_token']), $run(SomcpCompact::READ_TOOL, 'somcp_made_up_tool'));
+$see('a made-up name is refused and pointed to the search', $failed($guessed)
+    && strpos($said($guessed), SomcpCompact::SEARCH_TOOL) !== false, $guessed);
+$looped = $http('POST', $mcpUrl, $bearer($valid['access_token']), $run(SomcpCompact::READ_TOOL, SomcpCompact::WRITE_TOOL));
+$see('a runner refuses to run a runner', $failed($looped), $looped);
+$read = $http('POST', $mcpUrl, $bearer($valid['access_token']), $run(SomcpCompact::READ_TOOL, 'somcp_list_order_statuses'));
+$see('the read runner runs a read tool', $read['status'] === 200 && !$failed($read) && $said($read) !== '', $read);
+
+$guide = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('prompts/get', ['name' => 'somcp-order-lookup']));
+$see('a guide starts by saying how to run its tools', strpos(
+    (string) ($guide['json']['result']['messages'][0]['content']['text'] ?? ''),
+    '## How to call the tools of this guide'
+) === 0, $guide);
+$catalogue = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('prompts/get', ['name' => 'somcp-catalogue-manage']));
+$see('a guide that sends files says the file tools are called directly', strpos(
+    (string) ($catalogue['json']['result']['messages'][0]['content']['text'] ?? ''),
+    'directly, as they are in your list: somcp_ping, somcp_upload_file, somcp_download_file'
+) !== false, $catalogue);
+
+Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, '0');
+$full = $http('POST', $mcpUrl, $bearer($valid['access_token']), $rpc('tools/list'));
+$fullNames = array_column((array) ($full['json']['result']['tools'] ?? []), 'name');
+$see('compact mode off lists the tools themselves', count($fullNames) > 6
+    && !in_array(SomcpCompact::SEARCH_TOOL, $fullNames, true), $full);
+Configuration::updateValue(SomcpConfig::TOOLS_COMPACT, $compactWas);
+
+// ---------------------------------------------------------------------------
 $section('Token endpoint');
 $replayed = $code();
 $issued = $redeem($replayed, $clientA, $verifier);
@@ -812,6 +890,222 @@ $expect('expired link', $http('GET', $endpoint('file', http_build_query([
     'e' => time() - 60,
     's' => SomcpAssistantChat::signature($hash, time() - 60),
 ]))), 404);
+
+// ---------------------------------------------------------------------------
+$section('Files sent by an assistant');
+// The direct address of a deposit, posted to the way an assistant's code tool
+// posts: multipart, one file in the field the answer names.
+$post = static function (string $url, string $name, string $bytes) use (&$failures): array {
+    $file = tempnam(sys_get_temp_dir(), 'somcp');
+    file_put_contents((string) $file, $bytes);
+    $curl = curl_init($url);
+    curl_setopt_array($curl, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_TIMEOUT => 60,
+        CURLOPT_POSTFIELDS => [SomcpUpload::DIRECT_FIELD => new CURLFile((string) $file, 'application/octet-stream', $name)],
+    ]);
+    $text = curl_exec($curl);
+    $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+    curl_close($curl);
+    @unlink((string) $file);
+    $text = is_string($text) ? $text : '';
+
+    return ['status' => $status, 'headers' => [], 'body' => $text, 'json' => json_decode($text, true)];
+};
+$fileToken = $pair($all)['access_token'];
+$openDeposit = static function () use ($http, $mcpUrl, $bearer, $fileToken, $rpc, $endpoint): array {
+    $answer = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_upload_file',
+        'arguments' => ['for' => 'somcp_create_manufacturer', 'field' => 'logo'],
+    ]));
+    $opened = json_decode((string) ($answer['json']['result']['content'][0]['text'] ?? ''), true);
+    $query = [];
+    parse_str((string) parse_url((string) ($opened['send_to']['url'] ?? ''), PHP_URL_QUERY), $query);
+    // Rebuilt on the address the test serves, as the other doors are: the
+    // shop's own domain is not the built-in server's.
+    $door = $endpoint('deposit', http_build_query(array_intersect_key($query, ['u' => 1, 'e' => 1, 's' => 1])));
+
+    return ['ref' => (string) ($opened['upload_ref'] ?? ''), 'door' => $door, 'query' => $query];
+};
+// A real 1x1 PNG: the content is checked against the extension.
+$png = (string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==');
+$deposit = $openDeposit();
+$see('a deposit is opened with a reference and a signed address', $deposit['ref'] !== '' && isset($deposit['query']['s']), ['body' => json_encode($deposit)]);
+$expect('the door read with GET', $http('GET', $deposit['door']), 404);
+$expect('a forged signature', $post($endpoint('deposit', http_build_query(['u' => $deposit['query']['u'] ?? '', 'e' => $deposit['query']['e'] ?? 0, 's' => hash('sha256', 'forged')])), 'logo.png', $png), 404);
+$expect('the signature of a chat file link', $post($endpoint('deposit', http_build_query([
+    'u' => $deposit['query']['u'] ?? '',
+    'e' => $deposit['query']['e'] ?? 0,
+    's' => SomcpAssistantChat::signature((string) ($deposit['query']['u'] ?? ''), (int) ($deposit['query']['e'] ?? 0)),
+])), 'logo.png', $png), 404);
+$expect('a later expiry than the one signed', $post($endpoint('deposit', http_build_query([
+    'u' => $deposit['query']['u'] ?? '',
+    'e' => (int) ($deposit['query']['e'] ?? 0) + 3600,
+    's' => $deposit['query']['s'] ?? '',
+])), 'logo.png', $png), 404);
+$expect('a script named as an image', $post($deposit['door'], 'logo.png', '<?php echo 1;'), 400);
+$expect('a script under its own name', $post($deposit['door'], 'logo.php', '<?php echo 1;'), 400);
+$expect('a format the field does not take', $post($deposit['door'], 'logo.pdf', "%PDF-1.4\n%%EOF"), 400);
+$expect('the image the field takes', $post($deposit['door'], 'logo.png', $png), 200);
+$expect('a second file on a deposit opened for one', $post($deposit['door'], 'other.png', $png), 400);
+$see('the file is in the deposit and nowhere under the web root', count(SomcpUpload::deposited((int) (SomcpUpload::find($deposit['ref'], $idEmployee)['id_upload'] ?? 0))) === 1, ['body' => '']);
+$late = $openDeposit();
+$db->update('somcp_upload', ['expires_at' => '2000-01-01 00:00:00'], "`reference_hash` = '" . pSQL(SomcpRandom::hash($late['ref'])) . "'");
+$expect('a deposit that expired', $post($late['door'], 'logo.png', $png), 404);
+$refused = $http('POST', $mcpUrl, $bearer($pair($readOnly)['access_token']), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['for' => 'somcp_create_manufacturer'],
+]));
+$see('no deposit for a tool the connection may not call', $failed($refused) && strpos($said($refused), 'no tool of that name is available') !== false, $refused);
+$forged = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_download_file',
+    'arguments' => ['download_ref' => 'invoice.1.' . (time() + 600) . '.' . hash('sha256', 'forged')],
+]));
+$see('no file for a forged download_ref', $failed($forged) && strpos($said($forged), 'not a reference made for this account') !== false, $forged);
+$other = SomcpDownload::reference('invoice', 1, $idEmployee + 1000, Somcp::currentShopId());
+$stolen = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_download_file',
+    'arguments' => ['download_ref' => $other['download_ref']],
+]));
+$see('no file for a download_ref made for another account', $failed($stolen) && strpos($said($stolen), 'not a reference made for this account') !== false, $stolen);
+// The right reference opens the same door: the PDF comes back inside the
+// answer, when the demo data has an invoice to build it from.
+$idInvoice = (int) $db->getValue('SELECT oi.`id_order_invoice` FROM `' . _DB_PREFIX_ . 'order_invoice` oi'
+    . ' INNER JOIN `' . _DB_PREFIX_ . 'orders` o ON o.`id_order` = oi.`id_order` WHERE o.`id_shop` = ' . Somcp::currentShopId()
+    . ' ORDER BY oi.`id_order_invoice` ASC');
+if ($idInvoice > 0) {
+    $own = SomcpDownload::reference('invoice', $idInvoice, $idEmployee, Somcp::currentShopId());
+    $given = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_download_file',
+        'arguments' => ['download_ref' => $own['download_ref']],
+    ]));
+    $blob = (string) base64_decode((string) ($given['json']['result']['content'][1]['resource']['blob'] ?? ''));
+    $see('the invoice comes back inside the answer, as a PDF', !$failed($given) && strncmp($blob, '%PDF', 4) === 0, $given);
+    $about = json_decode((string) ($given['json']['result']['content'][0]['text'] ?? ''), true);
+    $see('an attached invoice comes with no link to hand out instead', is_array($about)
+        && !array_key_exists('url', $about) && !array_key_exists('page', $about), $given);
+    // A file too large to attach goes out at a shared address: the same door,
+    // opened here on the invoice and rebuilt on the address the test serves,
+    // as the deposit door is.
+    $shared = SomcpUpload::share($idEmployee, 'invoice.pdf', $blob);
+    $read = [];
+    parse_str((string) parse_url((string) ($shared['url'] ?? ''), PHP_URL_QUERY), $read);
+    $fetched = $http('GET', $endpoint('file', http_build_query(array_intersect_key($read, ['f' => 1, 'e' => 1, 's' => 1]))));
+    $see('the invoice is read from a shared address too, as the same PDF', $fetched['status'] === 200 && $fetched['body'] === $blob, $fetched);
+    $expect('the address of the invoice with a forged signature', $http('GET', $endpoint('file', http_build_query(['f' => $read['f'] ?? '', 'e' => $read['e'] ?? 0, 's' => hash('sha256', 'forged')]))), 404);
+    $expect('the address of the invoice used to deposit', $post($endpoint('deposit', http_build_query(['u' => $read['f'] ?? '', 'e' => $read['e'] ?? 0, 's' => $read['s'] ?? ''])), 'x.pdf', $blob), 404);
+    $narrow = $http('POST', $mcpUrl, $bearer($pair($readOnly)['access_token']), $rpc('tools/call', [
+        'name' => 'somcp_download_file',
+        'arguments' => ['download_ref' => $own['download_ref']],
+    ]));
+    $see('no invoice for a connection without the scope that reads orders', $failed($narrow) && strpos($said($narrow), 'may not read somcp_get_order_document') !== false, $narrow);
+}
+
+// Every way an assistant brings a file in ends in the same check: the bytes
+// as a data URI, and a file its client passes from the conversation.
+$entered = static function (array $arguments) use ($http, $mcpUrl, $bearer, $fileToken, $rpc): array {
+    return $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_upload_file',
+        'arguments' => ['for' => 'somcp_create_manufacturer', 'field' => 'logo'] + $arguments,
+    ]));
+};
+$byData = $entered(['data' => 'data:image/png;base64,' . base64_encode($png)]);
+$see('an image sent as a data URI is deposited', !$failed($byData) && strpos($said($byData), '"deposited": true') !== false, $byData);
+$scriptData = $entered(['data' => 'data:image/png;base64,' . base64_encode('<?php echo 1;')]);
+$see('a script sent as a data URI named as an image is refused', $failed($scriptData) && strpos($said($scriptData), 'Nothing was deposited') !== false, $scriptData);
+$typeData = $entered(['data' => 'data:application/x-php;base64,' . base64_encode('<?php echo 1;')]);
+$see('a data URI of a type the shop never stores is refused', $failed($typeData) && strpos($said($typeData), 'Nothing was deposited') !== false, $typeData);
+$privateFile = $entered(['file' => ['download_url' => 'https://127.0.0.1/logo.png', 'file_id' => 'file_1', 'file_name' => 'logo.png']]);
+$see('a client file at a private address is refused like any address', $failed($privateFile) && strpos($said($privateFile), 'private, local or reserved address') !== false, $privateFile);
+$archiveByFile = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['for' => 'somcp_upload_module', 'file' => ['download_url' => 'https://example.com/module.zip', 'file_id' => 'file_2']],
+]));
+$see('a module archive is never fetched from a client address either', $failed($archiveByFile) && strpos($said($archiveByFile), 'never fetched from an address') !== false, $archiveByFile);
+
+// A deposit a tool already opened - here as a module through the contract
+// opens one - is filled by the assistant through the same entries.
+$opened = SomcpUpload::invite($idEmployee, 'Photos for a test module', 'image', 'somcptestmodule', ['files' => 1]);
+$filled = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $opened, 'data' => 'data:image/png;base64,' . base64_encode($png)],
+]));
+$see('an open deposit is filled with the file the assistant holds', !$failed($filled) && strpos($said($filled), '"deposited": true') !== false, $filled);
+$overfilled = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $opened, 'data' => 'data:image/png;base64,' . base64_encode($png)],
+]));
+$see('a deposit already holding its file takes no more', $failed($overfilled) && strpos($said($overfilled), 'no open deposit of this account matches it') !== false, $overfilled);
+$othersDeposit = SomcpUpload::invite($idEmployee, 'Attached in the built-in assistant', 'image', SomcpUpload::CHAT_MODULE, ['files' => 1]);
+$intoChat = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $othersDeposit, 'data' => 'data:image/png;base64,' . base64_encode($png)],
+]));
+$see('a deposit of the built-in assistant is never filled from outside', $failed($intoChat), $intoChat);
+$archive = SomcpUpload::invite($idEmployee, 'A module archive', 'archive', 'somcptestmodule', ['files' => 1]);
+$archiveByUrl = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $archive, 'url' => 'https://example.com/module.zip'],
+]));
+$see('a deposit taking an archive is never filled from an address', $failed($archiveByUrl) && strpos($said($archiveByUrl), 'never fetched from an address') !== false, $archiveByUrl);
+
+// A module hands a file over by returning it: the same answer as
+// somcp_download_file, under the type its bytes show.
+$handed = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
+$see('a file a module returns comes attached as an image, with no link', ($handed['content'][1]['type'] ?? '') === 'image'
+    && strpos((string) ($handed['content'][0]['text'] ?? ''), '"url"') === false, ['body' => json_encode($handed)]);
+$named = SomcpContract::translate(['file' => ['name' => '#FA000104/2026 été.png', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
+$see('a file goes out under a name of plain characters only', strpos((string) ($named['content'][0]['text'] ?? ''), '"file": "FA000104-2026-t.png"') !== false, ['body' => json_encode($named)]);
+$lying = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => '<html></html>']], ['id_employee' => $idEmployee], 'somcptestmodule');
+$see('a file a module names as an image but is not goes out under no type', strpos((string) ($lying['content'][0]['text'] ?? ''), 'application/octet-stream') !== false
+    && ($lying['content'][1]['type'] ?? '') === 'resource', ['body' => json_encode($lying)]);
+
+// A file found by a read tool leaves through the same door as a document,
+// an image as an image.
+$idImage = (int) $db->getValue('SELECT `id_image` FROM `' . _DB_PREFIX_ . 'image_shop` WHERE `id_shop` = ' . Somcp::currentShopId() . ' ORDER BY `id_image` ASC');
+if ($idImage > 0 && SomcpDownload::exists('product_image', (string) $idImage)) {
+    $photo = SomcpDownload::reference('product_image', $idImage, $idEmployee, Somcp::currentShopId());
+    $shown = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_download_file',
+        'arguments' => ['download_ref' => $photo['download_ref']],
+    ]));
+    $see('a product photo comes back as an image', !$failed($shown) && ($shown['json']['result']['content'][1]['type'] ?? '') === 'image', $shown);
+    $otherPhoto = SomcpDownload::reference('product_image', $idImage, $idEmployee + 1000, Somcp::currentShopId());
+    $stolenPhoto = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_download_file',
+        'arguments' => ['download_ref' => $otherPhoto['download_ref']],
+    ]));
+    $see('no photo for a download_ref made for another account', $failed($stolenPhoto) && strpos($said($stolenPhoto), 'not a reference made for this account') !== false, $stolenPhoto);
+}
+// An attachment keeps the type its uploader's browser sent: what goes out is
+// read from its bytes instead.
+$disguised = 'somcp' . bin2hex(random_bytes(8));
+file_put_contents(_PS_DOWNLOAD_DIR_ . $disguised, '<html><script>alert(1)</script></html>');
+$attachment = new Attachment();
+$attachment->file = $disguised;
+$attachment->file_name = 'photo.png';
+$attachment->mime = 'image/png';
+$attachment->name = [(int) Configuration::get('PS_LANG_DEFAULT') => 'Somcp disguised file'];
+if ($attachment->add()) {
+    $sent = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_download_file',
+        'arguments' => ['download_ref' => SomcpDownload::reference('attachment', (int) $attachment->id, $idEmployee, Somcp::currentShopId())['download_ref']],
+    ]));
+    $told = json_decode((string) ($sent['json']['result']['content'][0]['text'] ?? ''), true);
+    $see('a page stored as a PNG attachment goes out under no type, never as an image', !$failed($sent)
+        && ($told['mime_type'] ?? '') === 'application/octet-stream'
+        && ($sent['json']['result']['content'][1]['type'] ?? '') === 'resource', $sent);
+    $attachment->delete();
+}
+@unlink(_PS_DOWNLOAD_DIR_ . $disguised);
+$traversal = SomcpDownload::reference('shop_logo', '..', $idEmployee, Somcp::currentShopId());
+$climbed = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_download_file',
+    'arguments' => ['download_ref' => $traversal['download_ref']],
+]));
+$see('a reference naming a path is not a file', $failed($climbed), $climbed);
 
 // ---------------------------------------------------------------------------
 if (isset($argv[3])) {

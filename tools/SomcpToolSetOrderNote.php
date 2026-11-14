@@ -104,32 +104,43 @@ class SomcpToolSetOrderNote
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
+        // Every problem in one answer, each named by its field, as the other
+        // tools answer: a note and an order both wrong are fixed in one call,
+        // not one at a time.
+        $problems = SomcpTool::unknownFields($arguments, ['id_order', 'reference', 'note']);
+
+        $note = '';
         if (!array_key_exists('note', $arguments) || !is_string($arguments['note'])) {
-            return SomcpTool::text('Nothing was changed: note must be a string, "" to clear the note.', true);
+            $problems[] = 'note: a string, "" to clear it';
+        } else {
+            // The back office form trims what is typed, and spaces kept around
+            // the text would make the same note look new.
+            $note = trim($arguments['note']);
+
+            // PrestaShop 9 declares the size of the field on the class and
+            // validateFields() checks it; 8.0.1 declares none, and the text
+            // column would silently cut a longer note. Read from the definition
+            // rather than the version, so a release that adds the size is
+            // followed.
+            $definition = Order::$definition['fields']['note'] ?? [];
+            if (empty($definition['size']) && strlen($note) > self::TEXT_COLUMN_BYTES) {
+                $problems[] = 'note: longer than the ' . self::TEXT_COLUMN_BYTES . ' bytes this shop can store';
+            }
         }
-        // The back office form trims what is typed, and spaces kept around the
-        // text would make the same note look new.
-        $note = trim($arguments['note']);
 
         // find() rather than the newest order of a reference: a split cart
-        // gives several orders one reference, and writing on one of them
-        // would act on a parcel nobody chose.
+        // gives several orders one reference, and writing on one of them would
+        // act on a parcel nobody chose. The pointer stays somcp_search_orders',
+        // now carried in the shared envelope with any field problem above.
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            return SomcpTool::text($order . ' Nothing was changed.', true);
+            $problems[] = $order;
+
+            return SomcpTool::refused('changed', $problems);
         }
 
-        // PrestaShop 9 declares the size of the field on the class and
-        // validateFields() checks it; 8.0.1 declares none, and the text column
-        // would silently cut a longer note. Read from the definition rather
-        // than the version, so a release that adds the size is followed.
-        $definition = Order::$definition['fields']['note'] ?? [];
-        if (empty($definition['size']) && strlen($note) > self::TEXT_COLUMN_BYTES) {
-            return SomcpTool::text(
-                'Nothing was changed: the note is longer than the ' . self::TEXT_COLUMN_BYTES
-                    . ' bytes this shop can store.',
-                true
-            );
+        if ($problems !== []) {
+            return SomcpTool::refused('changed', $problems);
         }
 
         $previous = (string) $order->note;

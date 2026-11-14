@@ -94,16 +94,15 @@ class SomcpToolGetAttributeGroup
 
         // A cast would read an array as 1 and answer about a group nobody
         // asked for: only a whole number is an identifier.
-        $value = $arguments['id_attribute_group'] ?? null;
-        $idGroup = is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
-
-        if (self::existingGroup($idGroup, $idShop) === null) {
-            return SomcpTool::text(
-                'No attribute group of this shop has this identifier. Find it with somcp_list_attributes.',
-                true
-            );
+        $idGroup = SomcpTool::id($arguments, 'id_attribute_group');
+        $errors = SomcpTool::unknownFields($arguments, ['id_attribute_group', 'language']);
+        if ($idGroup === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_attribute_group');
+        } elseif (self::existingGroup($idGroup, $idShop) === null) {
+            $errors[] = SomcpTool::notFound('id_attribute_group', 'attribute group', $idGroup, 'somcp_list_attributes');
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
         return SomcpTool::json(['language' => $iso] + self::group($idGroup, $idLang, $idShop));

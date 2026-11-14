@@ -9,6 +9,7 @@ quantities move with every order.
 - `somcp_ping`
 - `somcp_list_low_stock`
 - `somcp_get_stock`
+- `somcp_list_stock_movements`
 - `somcp_search_products`
 - `somcp_set_stock_quantity`
 - `somcp_list_categories`
@@ -42,6 +43,12 @@ which may not be the one the merchant has in mind.
    name its combinations by their attributes. Read the next page while
    `total_count` says there is more, before saying that is all.
 3. Report the quantities as the tool gives them, and say which one you mean.
+4. **Who changed a quantity, and why.** Use `somcp_list_stock_movements`, on
+   one product (`id_product`, and `id_product_attribute` for a combination) or
+   on the whole shop, with a period (`date_from`, `date_to`) when the merchant
+   gives one. A movement's `quantity` is signed: `-2` is two units gone. To
+   filter on a type or an employee, take the identifier from `types` or
+   `employees` of a first answer: they differ from one shop to another.
 
 ## Quantities
 

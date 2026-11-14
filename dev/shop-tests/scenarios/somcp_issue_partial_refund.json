@@ -1,8 +1,8 @@
 {
   "calls": [
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "lines": [{"id_order_detail": 1, "quantity": 1, "amount_tax_included": 1}]}, "expect": "error", "contains": ["Nothing was recorded.", "id_order: No order of this shop has this identifier"]},
-    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "shipping_amount_tax_included": 1}, "expect": "error", "contains": ["reference: No order of this shop has this reference"]},
-    {"why": "neither an identifier nor a reference", "arguments": {"shipping_amount_tax_included": 1}, "expect": "error", "contains": ["Give id_order or reference"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999, "lines": [{"id_order_detail": 1, "quantity": 1, "amount_tax_included": 1}]}, "expect": "error", "contains": ["Nothing was recorded. Correct these and call again:", "id_order: no order of this shop has the identifier"]},
+    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF", "shipping_amount_tax_included": 1}, "expect": "error", "contains": ["reference: no order of this shop has the reference"]},
+    {"why": "neither an identifier nor a reference", "arguments": {"shipping_amount_tax_included": 1}, "expect": "error", "contains": ["give id_order or reference"]},
     {"why": "nothing to refund: no line and no shipping", "arguments": {"id_order": 1}, "expect": "error", "contains": ["lines: give the lines to refund"]},
     {"why": "a line that is not one of this order's", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 1, "amount_tax_included": 1}]}, "expect": "error", "contains": ["lines[0].id_order_detail: no line of this order has the identifier 999999", "somcp_get_order"]},
     {"why": "a refund that generates nothing", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 1, "amount_tax_included": 1}], "credit_slip": false, "voucher": false}, "expect": "error", "contains": ["credit_slip, voucher: at least one must be true"]},
@@ -10,7 +10,7 @@
     {"why": "both amount fields on one line", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 1, "amount_tax_included": 1, "amount_tax_excluded": 1}]}, "expect": "error", "contains": ["not both"]},
     {"why": "a line without amount", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 1}]}, "expect": "error", "contains": ["lines[0]: the amount is missing"]},
     {"why": "an amount that is not above 0", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 1, "amount_tax_excluded": 0}]}, "expect": "error", "contains": ["lines[0].amount_tax_excluded: must be a number greater than 0"]},
-    {"why": "a field a line does not have", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 1, "amount_tax_included": 1, "amount": 1}]}, "expect": "error", "contains": ["lines[0].amount: unknown field"]},
+    {"why": "a field a line does not have", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 1, "amount_tax_included": 1, "amount": 1}]}, "expect": "error", "contains": ["lines[0].amount: not a field of this tool"]},
     {"why": "the same line twice", "arguments": {"id_order": 1, "lines": [{"id_order_detail": 999999, "quantity": 1, "amount_tax_included": 1}, {"id_order_detail": 999999, "quantity": 1, "amount_tax_included": 1}]}, "expect": "error", "contains": ["lines[1].id_order_detail: line 999999 is already given in lines[0]"]},
     {"why": "a negative shipping amount", "arguments": {"id_order": 1, "shipping_amount_tax_included": -1}, "expect": "error", "contains": ["shipping_amount_tax_included: must be a number, 0 or more"]},
     {"why": "a voucher refund type that does not exist", "arguments": {"id_order": 1, "shipping_amount_tax_included": 1, "voucher_refund_type": "everything"}, "expect": "error", "contains": ["voucher_refund_type: must be one of product_prices, product_prices_excluding_voucher"]},

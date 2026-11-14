@@ -47,12 +47,6 @@ class SomcpToolAuditPage
     /** Redirects followed before giving up: browsers stop around 20, search engines sooner. */
     private const MAX_REDIRECTS = 5;
 
-    /** Beyond this, search results cut the title (characters), as the audit tools of this section count. */
-    private const TITLE_MAX = 60;
-
-    /** Beyond this, search results cut the description (characters). */
-    private const DESCRIPTION_MAX = 160;
-
     /** A page slower than this, in milliseconds, is reported. */
     public const SLOW_MS = 2000;
 
@@ -70,7 +64,7 @@ class SomcpToolAuditPage
             'Fetches one public page of this shop as a visitor without an account, and returns what a search '
                 . 'engine reads there: status and redirects, title, meta tags, canonical, hreflang, headings, '
                 . 'images without alt, links, JSON-LD, Open Graph and warnings (each a code and why; a title over '
-                . '60 characters, a description over 160, a page over 2 seconds). url is a full address on one of '
+                . '70 characters, a description over 160, a page over 2 seconds). url is a full address on one of '
                 . 'the shop\'s domains or a path such as /en/3-clothes; anything else is refused. Use it after a '
                 . 'change to check what the theme prints. For the stored SEO fields, use somcp_audit_product_seo '
                 . 'and the other audits.',
@@ -595,18 +589,20 @@ class SomcpToolAuditPage
         $title = (string) $page['title'];
         if ($title === '') {
             $warnings[] = ['code' => 'no_title', 'why' => 'The page has no title: search engines make one up.'];
-        } elseif (Tools::strlen($title) > self::TITLE_MAX) {
+        } elseif (Tools::strlen($title) > SomcpTool::META_TITLE_RECOMMENDED) {
+            // The lengths every SEO tool advises past (SomcpTool), so the page
+            // and the stored fields are judged alike.
             $warnings[] = ['code' => 'title_too_long', 'why' => 'The title holds ' . Tools::strlen($title)
-                . ' characters: search results cut it after about ' . self::TITLE_MAX . '.'];
+                . ' characters: search results cut it after about ' . SomcpTool::META_TITLE_RECOMMENDED . '.'];
         }
         $description = (string) $page['meta_description'];
         if ($description === '') {
             $warnings[] = ['code' => 'no_meta_description', 'why' => 'The page has no meta description: search '
                 . 'engines show a piece of its text instead.'];
-        } elseif (Tools::strlen($description) > self::DESCRIPTION_MAX) {
+        } elseif (Tools::strlen($description) > SomcpTool::metaDescriptionRecommended()) {
             $warnings[] = ['code' => 'description_too_long', 'why' => 'The meta description holds '
                 . Tools::strlen($description) . ' characters: search results cut it after about '
-                . self::DESCRIPTION_MAX . '.'];
+                . SomcpTool::metaDescriptionRecommended() . '.'];
         }
 
         // An alternate per language only means something when the shop has

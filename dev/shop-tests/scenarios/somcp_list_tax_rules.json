@@ -4,6 +4,8 @@
     {"why": "disabled rules listed too", "arguments": {"active": false}, "expect": "ok", "contains": ["\"rules\"", "\"country\": \"FR\""]},
     {"why": "enabled rules only, said explicitly", "arguments": {"active": true}, "expect": "ok", "contains": ["\"active\": true"]},
     {"why": "finds a rule by part of its name, whatever the case", "arguments": {"name": "fr taux standard"}, "expect": "ok", "contains": ["\"name\": \"FR Taux standard"]},
-    {"why": "a name no rule carries gives an empty list", "arguments": {"name": "no such tax rule"}, "expect": "ok", "contains": ["\"rules\": []", "\"count\": 0"]}
+    {"why": "a name no rule carries gives an empty list", "arguments": {"name": "no such tax rule"}, "expect": "ok", "contains": ["\"rules\": []", "\"count\": 0"]},
+    {"why": "an active that is not a boolean is refused, not read as the default", "arguments": {"active": "no"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- active: true or false"]},
+    {"why": "a misspelt filter is named, not ignored into a wider list", "arguments": {"nmae": "FR"}, "expect": "error", "contains": ["- nmae: not a field of this tool"]}
   ]
 }

@@ -4,8 +4,9 @@
     {"why": "the other demo brand, in a language given by ISO code", "arguments": {"id_manufacturer": 2, "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"id_manufacturer\": 2", "Graphic Corner"]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_manufacturer": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
     {"why": "the identifier as a numeric string", "arguments": {"id_manufacturer": "2"}, "expect": "ok", "contains": ["\"id_manufacturer\": 2"]},
-    {"why": "a brand that does not exist", "arguments": {"id_manufacturer": 999999}, "expect": "error", "contains": ["No brand of this shop"]},
-    {"why": "no identifier", "arguments": {"id_manufacturer": 0}, "expect": "error", "contains": ["No brand of this shop"]},
-    {"why": "an identifier that is not a number", "arguments": {"id_manufacturer": [1]}, "expect": "error", "contains": ["No brand of this shop"]}
+    {"why": "a brand that does not exist", "arguments": {"id_manufacturer": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_manufacturer: no brand of this shop has the identifier 999999 - find it with somcp_list_manufacturers"]},
+    {"why": "no identifier", "arguments": {"id_manufacturer": 0}, "expect": "error", "contains": ["- id_manufacturer: a whole number above 0"]},
+    {"why": "an identifier that is not a number", "arguments": {"id_manufacturer": [1]}, "expect": "error", "contains": ["- id_manufacturer: a whole number above 0"]},
+    {"why": "a misspelt field is named, not read as a missing brand", "arguments": {"id_manufactuer": 1}, "expect": "error", "contains": ["Nothing was read", "- id_manufactuer: not a field of this tool", "- id_manufacturer: a whole number above 0"]}
   ]
 }

@@ -163,11 +163,9 @@ class SomcpToolSetOrderAddress
         // reference is refused with the list rather than landing on one of them.
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            $problems[] = (array_key_exists('reference', $arguments) && (int) ($arguments['id_order'] ?? 0) <= 0
-                ? 'reference: '
-                : 'id_order: ') . $order;
+            $problems[] = $order;
 
-            return self::refused($problems);
+            return SomcpTool::refused('changed', $problems);
         }
 
         // The address must be one of this customer's, not deleted: what the
@@ -187,7 +185,7 @@ class SomcpToolSetOrderAddress
         }
 
         if ($problems !== []) {
-            return self::refused($problems);
+            return SomcpTool::refused('changed', $problems);
         }
 
         $type = (string) $type;
@@ -254,7 +252,7 @@ class SomcpToolSetOrderAddress
                 $idEmployee
             );
 
-            return self::refused(['id_address: the address could not be changed. Nothing was changed.']);
+            return SomcpTool::refused('changed', ['id_address: the address could not be changed. Nothing was changed.']);
         }
 
         $order = new Order((int) $order->id);
@@ -293,14 +291,28 @@ class SomcpToolSetOrderAddress
      */
     private static function customerAddresses(Order $order): array
     {
-        $customer = new Customer((int) $order->id_customer);
+        return self::addressesOf((int) $order->id_customer, (int) $order->id_lang);
+    }
+
+    /**
+     * A customer's addresses in the shape customerAddresses() lists them,
+     * shared with somcp_create_order so both refusals list the same choices.
+     *
+     * @param int $idCustomer
+     * @param int $idLang
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function addressesOf(int $idCustomer, int $idLang): array
+    {
+        $customer = new Customer($idCustomer);
         if (!Validate::isLoadedObject($customer)) {
             return [];
         }
 
         $listed = [];
         // deleted addresses are already filtered out by getAddresses().
-        foreach ($customer->getAddresses((int) $order->id_lang) as $row) {
+        foreach ($customer->getAddresses($idLang) as $row) {
             $listed[] = [
                 'id_address' => (int) $row['id_address'],
                 'alias' => (string) ($row['alias'] ?? ''),
@@ -325,20 +337,5 @@ class SomcpToolSetOrderAddress
             'id_order' => (int) $order->id,
             'reference' => (string) $order->reference,
         ];
-    }
-
-    /**
-     * The order tools' refusal: every problem at once, nothing changed.
-     *
-     * Kept here, in the wording issue #126 asks for, until SomcpTool::refused()
-     * of #169 and #170 unifies the order tools on one helper.
-     *
-     * @param string[] $problems
-     *
-     * @return array<string, mixed>
-     */
-    private static function refused(array $problems): array
-    {
-        return SomcpTool::text("Nothing was changed.\n- " . implode("\n- ", $problems), true);
     }
 }

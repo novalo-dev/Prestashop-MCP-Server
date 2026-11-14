@@ -218,7 +218,10 @@ class SomcpToolAuditProductEntities
             $missing = [];
             foreach (self::CRITERIA as $criterion) {
                 if (!isset($met[$idProduct][$criterion])) {
-                    $missing[] = ['field' => self::field($criterion), 'on_screen' => self::label($criterion)];
+                    $field = self::field($criterion);
+                    // One table of labels for both product audits: the box name
+                    // comes from somcp_audit_product_schema, keyed by the field.
+                    $missing[] = ['field' => $field, 'on_screen' => SomcpToolAuditProductSchema::fieldLabel($field)];
                 }
             }
             $products[] = [
@@ -434,34 +437,5 @@ class SomcpToolAuditProductEntities
         ];
 
         return $fields[$criterion] ?? $criterion;
-    }
-
-    /**
-     * The label of a criterion on the product page, in the words of the
-     * shop's version.
-     *
-     * @param string $criterion
-     *
-     * @return string
-     */
-    private static function label(string $criterion): string
-    {
-        $nine = version_compare(_PS_VERSION_, '9.0.0', '>=');
-        $labels = [
-            'brand' => 'Brand',
-            // The barcode field is one line on 8.0.1, renamed on 9.0.0.
-            'gtin' => $nine ? 'GTIN (EAN, JA, ITF or UCC code)' : 'EAN-13 or JAN barcode',
-            'mpn' => 'MPN',
-            'features' => 'Features',
-            'description' => 'Description',
-            'summary' => 'Summary',
-            'images' => 'Images',
-            'weight' => 'Package weight',
-            'condition' => 'Condition',
-            'category' => 'Default category',
-            'meta_description' => 'Meta description',
-        ];
-
-        return $labels[$criterion] ?? $criterion;
     }
 }

@@ -17,12 +17,15 @@
 declare(strict_types=1);
 
 /*
- * The part of Neuron AI the built-in assistant calls, checked by reflection.
+ * The part of the dependencies the module calls, checked by reflection.
  *
  * Every class, method and constructor parameter listed here is one that
  * classes/SomcpAssistantChat.php, classes/SomcpAssistantMemory.php or
- * classes/SomcpRelayClient.php relies on. A new version of Neuron that renames, removes or reshapes one of them
- * fails here, in CI, instead of in the chat of a merchant. Keep the list in
+ * classes/SomcpRelayClient.php relies on, and below them the part of
+ * novalo/mcp-tool-discovery that classes/SomcpCompact.php and
+ * src/Discovery/ShopGate.php rely on. A new version of either that renames,
+ * removes or reshapes one of them fails here, in CI, instead of in the shop of
+ * a merchant. Keep the list in
  * step with those files. The CI runs it on the pruned archive, so a part
  * left out of the module is caught here too.
  *
@@ -61,6 +64,15 @@ $methods = [
     'NeuronAI\Exceptions\HttpException' => ['networkError', 'statusError'],
     // The summary of long conversations, whose call is counted.
     'NeuronAI\Agent\Middleware\Summarization' => ['generateSummary', 'getDefaultSummaryPrompt', 'formatMessagesForSummarization'],
+    // Compact mode and the tool search, from novalo/mcp-tool-discovery.
+    'Novalo\McpToolDiscovery\Discovery' => ['call'],
+    'Novalo\McpToolDiscovery\Mode\Compact\CompactMode' => ['listTools', 'guideHeader'],
+    'Novalo\McpToolDiscovery\Tool\Tool' => ['fromArray', 'toArray', 'title', 'description', 'readsOnly'],
+    'Novalo\McpToolDiscovery\Tool\ToolSet' => ['of', 'filter'],
+    'Novalo\McpToolDiscovery\Gate\CallResult' => ['text', 'error', 'fromArray'],
+    'Novalo\McpToolDiscovery\Search\SearchSetup' => ['searchFor'],
+    'Novalo\McpToolDiscovery\Search\SearchQuery' => ['fromArguments'],
+    'Novalo\McpToolDiscovery\Search\ToolSearch' => ['find'],
 ];
 
 // Constructor parameters by position, as the assistant passes them.
@@ -93,6 +105,8 @@ $constructors = [
     'NeuronAI\RAG\Embeddings\MistralEmbeddingsProvider' => ['key', 'model'],
     'NeuronAI\RAG\Embeddings\CohereEmbeddingsProvider' => ['key', 'model'],
     'NeuronAI\RAG\Embeddings\VoyageEmbeddingsProvider' => ['key', 'model'],
+    'Novalo\McpToolDiscovery\Mode\Compact\CompactMode' => ['prefix', 'pinned', 'titles', 'groupOf', 'maxDescribed'],
+    'Novalo\McpToolDiscovery\Discovery' => ['mode', 'gate', 'search'],
 ];
 
 $properties = [
@@ -103,11 +117,25 @@ $properties = [
     'NeuronAI\Chat\Messages\Citation' => ['source', 'title'],
     'NeuronAI\Chat\Messages\ContentBlocks\ImageContent' => ['content', 'sourceType', 'mediaType'],
     'NeuronAI\HttpClient\HttpRequest' => ['body', 'timeout'],
+    'Novalo\McpToolDiscovery\Tool\Tool' => ['name'],
+    'Novalo\McpToolDiscovery\Gate\CallResult' => ['content', 'isError', 'structuredContent'],
+    'Novalo\McpToolDiscovery\Search\SearchResult' => ['tools'],
 ];
 
-// Implemented by SomcpRelayClient: a method added here would leave it abstract.
+// Implemented by SomcpRelayClient and Novalo\Somcp\Discovery\ShopGate: a
+// method added here would leave them abstract.
 $interfaces = [
     'NeuronAI\HttpClient\HttpClientInterface' => ['request', 'stream'],
+    'Novalo\McpToolDiscovery\Gate\ToolGate' => ['visible', 'authorize', 'call'],
+];
+
+$constants = [
+    // SomcpCompact::SEARCH_TOOL and its runners are written out as the prefix
+    // plus these, so a renamed tool of the library is caught here.
+    'Novalo\McpToolDiscovery\Mode\Compact\CompactMode::SEARCH' => 'search_tools',
+    'Novalo\McpToolDiscovery\Mode\Compact\CompactMode::RUN_READ' => 'run_read_tool',
+    'Novalo\McpToolDiscovery\Mode\Compact\CompactMode::RUN_WRITE' => 'run_write_tool',
+    'Novalo\McpToolDiscovery\Exception\InvalidTool::class' => 'Novalo\McpToolDiscovery\Exception\InvalidTool',
 ];
 
 $classes = [
@@ -126,6 +154,18 @@ $problems = [];
 if (!defined('NeuronAI\RAG\Retrieval\SemanticMemoryRetrieval::SOURCE_TYPE')
     || constant('NeuronAI\RAG\Retrieval\SemanticMemoryRetrieval::SOURCE_TYPE') !== 'conversation') {
     $problems[] = 'SemanticMemoryRetrieval::SOURCE_TYPE is no longer conversation: compare it with SomcpAssistantMemory::SOURCE_TYPE';
+}
+
+foreach ($constants as $constant => $value) {
+    if (strpos($constant, '::class') !== false) {
+        if (!class_exists($value)) {
+            $problems[] = $value . ' is gone';
+        }
+        continue;
+    }
+    if (!defined($constant) || constant($constant) !== $value) {
+        $problems[] = $constant . ' is no longer ' . $value;
+    }
 }
 
 foreach ($classes as $class) {

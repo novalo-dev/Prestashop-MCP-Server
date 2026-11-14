@@ -141,10 +141,7 @@ class SomcpToolCreateManufacturerAddress extends SomcpToolCreateSupplier
         $errors = [];
         $fields = self::planAddress($arguments, $idShop, $errors);
         if ($errors !== []) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($fields, $idShop, $idEmployee): array {
@@ -165,14 +162,7 @@ class SomcpToolCreateManufacturerAddress extends SomcpToolCreateSupplier
      */
     protected static function planAddress(array $arguments, int $idShop, array &$errors): array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::ADDRESS_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::ADDRESS_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::ADDRESS_ARGUMENTS, self::ADDRESS_COMPUTED));
 
         // A cast would read an array as 1 and attach the address to a brand
         // nobody named: only a whole number is an identifier.
@@ -185,7 +175,9 @@ class SomcpToolCreateManufacturerAddress extends SomcpToolCreateSupplier
         } elseif (SomcpToolGetManufacturer::existingManufacturer($idManufacturer, $idShop) === null) {
             // A brand of another shop is refused like one that does not exist,
             // by the same test every brand tool uses.
-            $errors[] = 'id_manufacturer: no brand of this shop has this identifier, find it with somcp_list_manufacturers';
+            $errors[] = $idManufacturer > 0
+                ? SomcpTool::notFound('id_manufacturer', 'brand', $idManufacturer, 'somcp_list_manufacturers')
+                : SomcpTool::notAnIdentifier('id_manufacturer');
         }
 
         // The street lines, postal code, city, phones, DNI, country and state,

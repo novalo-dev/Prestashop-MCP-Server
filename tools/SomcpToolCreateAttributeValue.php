@@ -86,7 +86,8 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             [self::class, 'handle'],
             // Values are added under their group, on the back office
             // attributes page, with the right to add there.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminAttributesGroups')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminAttributesGroups'),
+            files: ['texture' => SomcpUpload::images()]
         );
     }
 
@@ -105,7 +106,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             ];
         };
 
-        return [
+        return self::facetedNullable([
             'type' => 'object',
             'properties' => [
                 'id_attribute_group' => [
@@ -126,19 +127,22 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
                 'meta_title' => $text('Assistant. Faceted search: the title tag of filtered pages, 128 characters '
                     . 'at most.'),
                 'color' => [
-                    'type' => 'string',
+                    'type' => ['string', 'null'],
                     'description' => 'Merchant. Groups of type color only: the colour of the swatch, as a hex code '
                         . 'such as #E84C3D.',
                 ],
-                'texture' => [
-                    'type' => 'string',
-                    'description' => 'Merchant. Groups of type color only: the public https address of an image '
-                        . '(JPEG, PNG, GIF or WebP, 10 MB at most) shown instead of the colour.',
-                ],
+                // The shared image schema, so a texture is asked for in the words
+                // of every other image, a photo attached in the chat included.
+                // null stays allowed: somcp_get_attribute_value returns it when
+                // there is no texture, and that answer is given back to the update.
+                'texture' => ['type' => ['object', 'null']] + SomcpUpload::schema(
+                    'Merchant. Color groups only: the swatch image.',
+                    'the texture'
+                ),
             ],
             'required' => ['id_attribute_group', 'name'],
             'additionalProperties' => false,
-        ];
+        ]);
     }
 
     /**
@@ -155,10 +159,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         $errors = [];
         $plan = self::planValue($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -179,14 +180,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
      */
     private static function planValue(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::VALUE_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::VALUE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::VALUE_ARGUMENTS, self::VALUE_COMPUTED));
 
         $group = null;
         if (!array_key_exists('id_attribute_group', $arguments)) {
@@ -194,9 +188,12 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         } else {
             // A group of another shop is answered like one that does not
             // exist, the test somcp_get_attribute_group makes.
-            $group = SomcpToolGetAttributeGroup::existingGroup(self::integer($arguments['id_attribute_group']) ?? 0, $idShop);
+            $idGiven = self::integer($arguments['id_attribute_group']) ?? 0;
+            $group = SomcpToolGetAttributeGroup::existingGroup($idGiven, $idShop);
             if ($group === null) {
-                $errors[] = 'id_attribute_group: no attribute group of this shop has this identifier - find it with somcp_list_attributes';
+                $errors[] = $idGiven > 0
+                    ? SomcpTool::notFound('id_attribute_group', 'attribute group', $idGiven, 'somcp_list_attributes')
+                    : SomcpTool::notAnIdentifier('id_attribute_group');
             }
         }
 
@@ -210,7 +207,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             'languages' => $languages,
             'texts' => [],
             'color' => '',
-            'texture' => '',
+            'texture' => null,
             'faceted' => self::facetedSearchActive(),
             'indexable' => false,
         ];
@@ -343,7 +340,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
     }
 
     /**
-     * The colour and the texture, accepted for a group of type color only.
+     * The colour and the texture, accepted for a group of type color only (null skipped elsewhere).
      *
      * Only that type draws them on the product page: stored on another, they
      * would be values the merchant set and no customer ever sees.
@@ -362,8 +359,16 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             return;
         }
         if (!$colorGroup) {
-            $errors[] = implode(', ', $given) . ': only a group of type color shows a colour or a texture, and this '
-                . 'one is a drop-down list or radio buttons; leave ' . (count($given) > 1 ? 'them' : 'it') . ' out';
+            // somcp_get_attribute_value returns both as null outside a group
+            // of type color: that null is skipped, so its answer can be given
+            // back to the update. A value is still refused.
+            $given = array_values(array_filter($given, static function (string $field) use ($arguments): bool {
+                return $arguments[$field] !== null;
+            }));
+            if ($given !== []) {
+                $errors[] = implode(', ', $given) . ': only a group of type color shows a colour or a texture, and this '
+                    . 'one is a drop-down list or radio buttons; leave ' . (count($given) > 1 ? 'them' : 'it') . ' out';
+            }
 
             return;
         }
@@ -379,17 +384,12 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             }
         }
 
-        if (array_key_exists('texture', $arguments)) {
-            // Checked for shape only: it is fetched once the value exists,
-            // with the guards of the image download, since the file is named
-            // after the value's identifier.
-            $url = trim((string) (self::string($arguments['texture']) ?? ''));
-            $parts = $url === '' ? false : parse_url($url);
-            if (!is_array($parts) || Tools::strtolower((string) ($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) {
-                $errors[] = 'texture: the public https address of an image';
-            } else {
-                $plan['texture'] = $url;
-            }
+        // null is what somcp_get_attribute_value returns when there is no
+        // texture: nothing to fetch. Anything else is read as every image is,
+        // and fetched once the value exists, since the file is named after the
+        // value's identifier.
+        if (array_key_exists('texture', $arguments) && $arguments['texture'] !== null) {
+            $plan['texture'] = SomcpUpload::argument($arguments, 'texture', $errors, 'texture');
         }
     }
 
@@ -467,7 +467,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         $result = [
             'created' => true,
             'id_attribute' => $idAttribute,
-            'texture' => $plan['texture'] === '' ? null : self::storeTexture($idAttribute, (string) $plan['texture']),
+            'texture' => $plan['texture'] === null ? null : self::storeTexture($idAttribute, $plan['texture']),
         ];
 
         // The module's hook has just run on add() and, finding no form in
@@ -497,29 +497,29 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
     }
 
     /**
-     * Downloads a texture and writes it where the back office writes it.
+     * Fetches a texture and writes it where the back office writes it.
      *
      * The attributes page uploads it as img/co/<id>.jpg, re-encoded as JPEG,
      * with no thumbnails: the product page and somcp_get_attribute_value both
-     * look for that file and nothing else.
+     * look for that file and nothing else. The bytes come from SomcpUpload::fetchImage(),
+     * as every image does, so an address and an upload_ref pass the same
+     * guards here as on a product.
      *
      * @param int $idAttribute
-     * @param string $url
+     * @param array{url: string, upload_ref: string} $source as SomcpUpload::argument() reads it
      *
-     * @return array<string, mixed> the address, and stored or the reason it was refused
+     * @return array<string, mixed> the url or upload_ref, with stored: true or the reason it was refused
      */
-    protected static function storeTexture(int $idAttribute, string $url): array
+    protected static function storeTexture(int $idAttribute, array $source): array
     {
+        $origin = SomcpUpload::origin($source);
         $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
         if ($file === false) {
-            return ['url' => $url, 'refused' => 'the shop has no room to receive it'];
+            return $origin + ['refused' => 'the shop has no room to receive it'];
         }
 
         try {
-            $refusal = self::download($url, $file);
-            if ($refusal === '') {
-                $refusal = self::checkImage($file);
-            }
+            $refusal = SomcpUpload::fetchImage($source, $file);
             if ($refusal === '') {
                 $refusal = ImageManager::resize($file, _PS_COL_IMG_DIR_ . $idAttribute . '.jpg')
                     ? ''
@@ -531,7 +531,7 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
             @unlink($file);
         }
 
-        return ['url' => $url] + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
+        return $origin + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
     }
 
     /**

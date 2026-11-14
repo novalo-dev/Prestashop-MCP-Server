@@ -180,7 +180,10 @@
                                         <span class="somcp-group-count" data-somcp-counted="chat"></span>
                                     </td>
                                 {else}
-                                    <td class="somcp-tool-on" colspan="2"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
+                                    {* One cell per column, as the rows under it, so every word of
+                                       the group sits under the heading it answers. *}
+                                    <td class="somcp-tool-on"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
+                                    <td class="somcp-tool-on"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
                                 {/if}
                             </tr>
                             {foreach from=$group.items item=tool}
@@ -196,14 +199,26 @@
                                         {if $tool.module}<code>{$tool.module|escape:'html':'UTF-8'}</code>
                                         {else}{l s='This module' d='Modules.Somcp.Admin'}{/if}
                                     </td>
-                                    <td class="somcp-tool-on" data-somcp-column="on">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_tool_on[{$tool.name|escape:'html':'UTF-8'}]"
-                                               value="1" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $tool.on} checked{/if}>
-                                    </td>
-                                    <td class="somcp-tool-on" data-somcp-column="chat">
-                                        <input type="checkbox" class="somcp-toggle" name="somcp_tool_chat[{$tool.name|escape:'html':'UTF-8'}]"
-                                               value="1" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $tool.chat} checked{/if}>
-                                    </td>
+                                    {if $tool.fixed === 'always'}
+                                        <td class="somcp-tool-on"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
+                                        <td class="somcp-tool-on"><span class="text-muted">{l s='Always on' d='Modules.Somcp.Admin'}</span></td>
+                                    {elseif $tool.fixed === 'compact'}
+                                        {* Decided by the compact setting under the list, which says
+                                           so here instead of a switch that would compete with it. *}
+                                        <td class="somcp-tool-on">
+                                            <span class="text-muted">{if $tool.on}{l s='Compact mode on' d='Modules.Somcp.Admin'}{else}{l s='Compact mode off' d='Modules.Somcp.Admin'}{/if}</span>
+                                        </td>
+                                        <td class="somcp-tool-on"><span class="text-muted">-</span></td>
+                                    {else}
+                                        <td class="somcp-tool-on" data-somcp-column="on">
+                                            <input type="checkbox" class="somcp-toggle" name="somcp_tool_on[{$tool.name|escape:'html':'UTF-8'}]"
+                                                   value="1" aria-label="{l s='Connected assistants' d='Modules.Somcp.Admin'}"{if $tool.on} checked{/if}>
+                                        </td>
+                                        <td class="somcp-tool-on" data-somcp-column="chat">
+                                            <input type="checkbox" class="somcp-toggle" name="somcp_tool_chat[{$tool.name|escape:'html':'UTF-8'}]"
+                                                   value="1" aria-label="{l s='Built-in assistant' d='Modules.Somcp.Admin'}"{if $tool.chat} checked{/if}>
+                                        </td>
+                                    {/if}
                                 </tr>
                             {/foreach}
                             </tbody>
@@ -337,7 +352,22 @@
                         {include file='./_inherit.tpl' field='SOMCP_TOOLS_TTL'}
                         <input type="number" min="10" max="3600" name="SOMCP_TOOLS_TTL" class="form-control fixed-width-xl"
                                value="{$somcp_settings.SOMCP_TOOLS_TTL|escape:'html':'UTF-8'}">
-                        <p class="help-block">{l s='In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it - so the assistant re-reads only when this has run out. A tool switched on or off appears or disappears after that delay, not before. Lower it while you are adding tools, raise it back afterwards. 300 by default.' d='Modules.Somcp.Admin'}</p>
+                        <p class="help-block">{l s='In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it. Assistants on the latest version of the protocol read the list again once this has run out; the others, ChatGPT among them today, keep it until you refresh their tools in their own settings. Lower it while you are adding tools, raise it back afterwards. 300 by default.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label col-lg-4">{l s='Compact list of tools' d='Modules.Somcp.Admin'}</label>
+                    <div class="col-lg-8">
+                        {include file='./_inherit.tpl' field='SOMCP_TOOLS_COMPACT'}
+                        <span class="switch prestashop-switch fixed-width-lg">
+                            <input type="radio" name="SOMCP_TOOLS_COMPACT" id="SOMCP_TOOLS_COMPACT_on" value="1"{if $somcp_settings.SOMCP_TOOLS_COMPACT === '1'} checked{/if}>
+                            <label for="SOMCP_TOOLS_COMPACT_on">{l s='Yes' d='Modules.Somcp.Admin'}</label>
+                            <input type="radio" name="SOMCP_TOOLS_COMPACT" id="SOMCP_TOOLS_COMPACT_off" value="0"{if $somcp_settings.SOMCP_TOOLS_COMPACT !== '1'} checked{/if}>
+                            <label for="SOMCP_TOOLS_COMPACT_off">{l s='No' d='Modules.Somcp.Admin'}</label>
+                            <a class="slide-button btn"></a>
+                        </span>
+                        <p class="help-block">{l s='Connected assistants receive six tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.' d='Modules.Somcp.Admin'}</p>
                     </div>
                 </div>
 

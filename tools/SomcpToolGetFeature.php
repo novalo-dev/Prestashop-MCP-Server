@@ -49,8 +49,9 @@ class SomcpToolGetFeature
             'somcp_get_feature',
             Somcp::t('Get a feature'),
             'Returns what the feature form of Catalog > Attributes & Features > Features shows for one feature '
-                . '(Composition, Material...): name, position (0 for the first), the number of its predefined values '
-                . 'and the faceted search fields, null without the faceted search module. id_feature comes from '
+                . '(Composition, Material...): name, position (0 for the first), the number of its predefined values, '
+                . 'products_count (the products that show it) and the faceted search fields, null without the faceted '
+                . 'search module. id_feature comes from '
                 . 'somcp_list_features: never guess one. For the list and the names of the values use '
                 . 'somcp_list_features; for one value somcp_get_feature_value.',
             [
@@ -94,16 +95,18 @@ class SomcpToolGetFeature
 
         // A cast would read an array as 1 and answer about a feature nobody
         // asked for: only a whole number is an identifier.
-        $value = $arguments['id_feature'] ?? null;
-        $idFeature = is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
-
-        if (self::existingFeature($idFeature, $idShop) === null) {
-            return SomcpTool::text('No feature of this shop has this identifier. Find it with somcp_list_features.', true);
+        $idFeature = SomcpTool::id($arguments, 'id_feature');
+        $errors = SomcpTool::unknownFields($arguments, ['id_feature', 'language']);
+        if ($idFeature === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_feature');
+        } elseif (self::existingFeature($idFeature, $idShop) === null) {
+            $errors[] = SomcpTool::notFound('id_feature', 'feature', $idFeature, 'somcp_list_features');
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
-        return SomcpTool::json(['language' => $iso] + self::feature($idFeature, $idLang));
+        return SomcpTool::json(['language' => $iso] + self::feature($idFeature, $idLang, $idShop));
     }
 
     /**
@@ -138,10 +141,11 @@ class SomcpToolGetFeature
      *
      * @param int $idFeature
      * @param int $idLang
+     * @param int $idShop
      *
      * @return array<string, mixed>
      */
-    public static function feature(int $idFeature, int $idLang): array
+    public static function feature(int $idFeature, int $idLang, int $idShop): array
     {
         $feature = new Feature($idFeature, $idLang);
 
@@ -157,6 +161,9 @@ class SomcpToolGetFeature
                 . ' WHERE `id_feature` = ' . (int) $idFeature
                 . ' AND (`custom` = 0 OR `custom` IS NULL)'
             ),
+            // What a delete would take it off, so the merchant hears it before
+            // confirming: somcp_delete_feature counts with the same function.
+            'products_count' => self::productsCount($idFeature, $idShop),
             'url_name' => null,
             'meta_title' => null,
             'indexable' => null,
@@ -182,5 +189,26 @@ class SomcpToolGetFeature
         }
 
         return $result;
+    }
+
+    /**
+     * The distinct products of the shop that show the feature, with a
+     * predefined or a custom value.
+     *
+     * @param int $idFeature
+     * @param int $idShop
+     *
+     * @return int
+     */
+    public static function productsCount(int $idFeature, int $idShop): int
+    {
+        // feature_product has no shop column: the product's shop row says
+        // whether this shop sells it.
+        return (int) Db::getInstance()->getValue(
+            'SELECT COUNT(DISTINCT fp.`id_product`) FROM `' . _DB_PREFIX_ . 'feature_product` fp'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = fp.`id_product`'
+            . ' AND ps.`id_shop` = ' . (int) $idShop
+            . ' WHERE fp.`id_feature` = ' . (int) $idFeature
+        );
     }
 }

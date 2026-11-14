@@ -9,6 +9,8 @@ of it can be undone by calling again.
 - `somcp_ping`
 - `somcp_list_order_statuses`
 - `somcp_create_order_status`
+- `somcp_update_order_status`
+- `somcp_delete_order_status`
 - `somcp_list_return_statuses`
 - `somcp_list_carriers`
 - `somcp_create_return_status`
@@ -30,6 +32,7 @@ of it can be undone by calling again.
 - `somcp_generate_order_invoice`
 - `somcp_add_order_discount`
 - `somcp_delete_order_discount`
+- `somcp_create_order`
 
 ## Know which shop you are in
 
@@ -282,10 +285,54 @@ email template when they ask for them.
   end at an existing one under another name.
 - A name another order status already has in the same language is
   refused: two statuses with one label could not be told apart.
+- A language of the shop left out of `languages` takes the default
+  language's text: say so when only some languages are filled.
+- The icon is written once the status exists. An answer whose `icon` says
+  `refused` means the status was created without one: never call again for
+  it, a second call would be refused on the name.
+- An existing order status is changed with `somcp_update_order_status`,
+  never by creating a second one next to it.
 - Creating one changes no order: nothing is emailed and nothing moves
   until an order is actually set to it.
 - Not to be retried: if the answer is lost, read
   `somcp_list_order_statuses` and look for the name before anything else.
+
+## Changing an order status
+
+When the merchant wants an existing order status renamed, recoloured, or
+set to send or stop sending an email, change it with
+`somcp_update_order_status`, `status_id` from `somcp_list_order_statuses`.
+
+- Only what is given changes. A status read with
+  `somcp_list_order_statuses` can be given back as it is: the answer then
+  says `changed: false` and nothing is written.
+- Changing what a status sets off (the email, the invoice, paid, shipped)
+  changes it for every order that reaches it from now on, never for the
+  orders already past it: say so to the merchant before the call.
+- An email template is only taken with `sends_email` on; turning
+  `sends_email` off empties the templates, as the back office does.
+- A name another order status already has in the same language is
+  refused, as at creation.
+- The statuses of PrestaShop and of modules can be changed too; only
+  deleting them is refused.
+- Not to be retried: if the answer is lost, read
+  `somcp_list_order_statuses` before anything else.
+
+## Deleting an order status
+
+When the merchant wants an order status gone, delete it with
+`somcp_delete_order_status` - only after the merchant has confirmed it by
+name: read `somcp_list_order_statuses`, name the exact status, and let them
+say yes to that one before calling.
+
+- The orders that have it keep it: deleting a status takes it off the list
+  and off the choices of `somcp_set_order_status`, but every order already
+  on it keeps it in its history. `orders_with_it` says how many that is.
+- The statuses of PrestaShop and of modules (`built_in: true`) cannot be
+  deleted, and are refused by name. Report a refusal as it comes back; do
+  not work around it.
+- If an answer is lost, read `somcp_list_order_statuses`: a status that is
+  no longer listed is deleted. Do not call again.
 
 ## A new return status
 
@@ -466,3 +513,30 @@ first call landed.
 - "Mark order XKBKNABJK as delivered"
 - "Annule la commande de Dupont"
 - "Ces trois commandes sont parties ce matin"
+
+## A new order
+
+When the merchant asks for an order to be placed for a customer - a phone
+order, a quote accepted by email - use `somcp_create_order`. It creates a real
+order and sends the emails a new order sends for its status.
+
+- Find the customer with `somcp_search_customers` and the address with
+  `somcp_get_customer`, the products with `somcp_search_products` and, for a
+  product with combinations, the combination with `somcp_get_product`. The
+  status comes from `somcp_list_order_statuses`, and a voucher from
+  `somcp_list_cart_rules`, given as `cart_rules`.
+- Before the call, show the merchant the lines, the carrier, the vouchers with
+  the total, and the status, and wait for their yes.
+- A price the merchant sets for a line goes in `unit_price_tax_excluded` of
+  that line, tax excluded as the **Price** field of the **Cart** block. Before
+  the call, show it beside the price the shop would charge (`price_tax_excl` of
+  `somcp_get_product`), so the merchant sees what they change. Lines left
+  without one keep the shop's price.
+- A voucher that does not apply to this cart is refused with the shop's
+  reason, and nothing is created: tell the merchant that reason rather than
+  dropping the voucher on your own.
+- A carrier or a payment module the shop does not offer is refused with the
+  choices: offer them to the merchant rather than picking one.
+- Never repeat the call on a lost answer: a second call creates a second
+  order. Look for it with `somcp_search_orders` (this customer, today), then
+  `somcp_get_order`.

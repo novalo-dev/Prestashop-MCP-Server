@@ -49,8 +49,8 @@ class SomcpToolGetManufacturer
             'somcp_get_manufacturer',
             Somcp::t('Get a brand'),
             'Returns what the brand form of Catalog > Brands & Suppliers > Brands shows for one brand: name, '
-                . 'Enabled, the descriptions, the meta texts (keywords null on PrestaShop 9), the logo address (null '
-                . 'without one) and the number of products of this shop attached to it. id_manufacturer comes from '
+                . 'Enabled, the descriptions, the meta texts (keywords null on PrestaShop 9), the logo (a download_ref '
+                . 'for somcp_download_file, null without one) and the number of products of this shop attached to it. id_manufacturer comes from '
                 . 'somcp_list_manufacturers: never guess one. For the list use somcp_list_manufacturers; '
                 . 'somcp_search_products has no brand filter. For its addresses use somcp_list_manufacturer_addresses.',
             [
@@ -95,9 +95,14 @@ class SomcpToolGetManufacturer
         // A cast would read an array as 1 and answer about a brand nobody
         // asked for: only a whole number is an identifier.
         $idManufacturer = SomcpTool::id($arguments, 'id_manufacturer');
-
-        if (self::existingManufacturer($idManufacturer, $idShop) === null) {
-            return SomcpTool::text('No brand of this shop has this identifier. Find it with somcp_list_manufacturers.', true);
+        $errors = SomcpTool::unknownFields($arguments, ['id_manufacturer', 'language']);
+        if ($idManufacturer === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_manufacturer');
+        } elseif (self::existingManufacturer($idManufacturer, $idShop) === null) {
+            $errors[] = SomcpTool::notFound('id_manufacturer', 'brand', $idManufacturer, 'somcp_list_manufacturers');
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
         return SomcpTool::json(['language' => $iso] + self::manufacturer($idManufacturer, $idLang, $idShop));
@@ -142,15 +147,7 @@ class SomcpToolGetManufacturer
     public static function manufacturer(int $idManufacturer, int $idLang, int $idShop): array
     {
         $manufacturer = new Manufacturer($idManufacturer, $idLang);
-        $link = Somcp::legacyContext()->link ?? new Link();
-
-        // Not Link::getManufacturerImageLink(), which falls back on the
-        // "no picture" image of the language: a brand without a logo must say
-        // so, not hand over a placeholder as if it were its logo.
-        $logo = null;
-        if (is_file(_PS_MANU_IMG_DIR_ . $idManufacturer . '.jpg')) {
-            $logo = (string) $link->getMediaLink(_THEME_MANU_DIR_ . $idManufacturer . '.jpg');
-        }
+        $logo = SomcpDownload::offer('manufacturer_logo', $idManufacturer, $idShop);
 
         // meta_keywords is gone from PrestaShop 9: read from the object's
         // properties, since a property access is an unknown property to static

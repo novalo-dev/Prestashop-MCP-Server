@@ -126,13 +126,12 @@ class SomcpToolUpdateManufacturerAddress extends SomcpToolCreateManufacturerAddr
         // The same test as somcp_get_manufacturer_address, so an address this
         // tool refuses is never one that tool describes: a customer's or a
         // supplier's address is never reachable under the brands permission.
-        $address = SomcpToolGetManufacturerAddress::existingAddress(self::identifier($arguments['id_address'] ?? null), $idShop);
+        $idAddress = self::identifier($arguments['id_address'] ?? null);
+        $address = SomcpToolGetManufacturerAddress::existingAddress($idAddress, $idShop);
         if ($address === null) {
-            return SomcpTool::text(
-                'No brand address of this shop has this identifier. Nothing was changed. Find it with '
-                    . 'somcp_list_manufacturer_addresses.',
-                true
-            );
+            return SomcpTool::refused('changed', [$idAddress > 0
+                ? SomcpTool::notFound('id_address', 'brand address', $idAddress, 'somcp_list_manufacturer_addresses')
+                : SomcpTool::notAnIdentifier('id_address')]);
         }
         unset($arguments['id_address']);
 
@@ -140,10 +139,7 @@ class SomcpToolUpdateManufacturerAddress extends SomcpToolCreateManufacturerAddr
         $changes = [];
         $values = self::planUpdate($arguments, $address, $idShop, $errors, $changes);
         if ($errors !== []) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($values === []) {

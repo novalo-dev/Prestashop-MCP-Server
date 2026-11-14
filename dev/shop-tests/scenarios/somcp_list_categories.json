@@ -2,6 +2,7 @@
   "calls": [
     {"why": "lists the categories of the demo shop, Home included", "arguments": {}, "expect": "ok", "contains": ["\"categories\"", "\"count\"", "\"id_category\": 2"]},
     {"why": "in a language given by ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"id_category\": 2"]},
-    {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]}
+    {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
+    {"why": "a field the tool does not take is named, not ignored into the whole list", "arguments": {"id_parent": 2}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_parent: not a field of this tool"]}
   ]
 }

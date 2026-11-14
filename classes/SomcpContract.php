@@ -378,6 +378,10 @@ class SomcpContract
             return self::upload($result['upload'], $context, $module);
         }
 
+        if (array_key_exists('file', $result)) {
+            return self::file($result['file'], $context, $module);
+        }
+
         if (array_key_exists('json', $result)) {
             if (is_array($result['json'])) {
                 return SomcpTool::json($result['json']);
@@ -391,7 +395,39 @@ class SomcpContract
             return SomcpTool::text((string) $result['text'], ($result['error'] ?? false) === true);
         }
 
-        return self::broken($module, 'the handler returned none of json, text or upload');
+        return self::broken($module, 'the handler returned none of json, text, file or upload');
+    }
+
+    /**
+     * A file handed to the assistant by returning `file`.
+     *
+     * The way out the file tools of this module take (SomcpDownload::
+     * handOver()): attached to the answer, an image as an image, with no link
+     * beside it, and under the type its bytes show, whatever the module says
+     * it is. A module that served its own link would decide alone who gets
+     * the file and how; it hands over the bytes instead.
+     *
+     * @param mixed $file
+     * @param array<string, mixed> $context
+     * @param string $module
+     *
+     * @return array<string, mixed>
+     */
+    private static function file($file, array $context, string $module): array
+    {
+        // Kept whole: handOver() turns every character a file name should not
+        // carry, slashes included, into a hyphen, where cutting at the last
+        // slash would drop half of a name like #FA000104/2026.pdf.
+        $name = is_array($file) && is_string($file['name'] ?? null) ? trim($file['name']) : '';
+        $contents = is_array($file) && is_string($file['contents'] ?? null) ? $file['contents'] : '';
+        if ($name === '' || $contents === '') {
+            return self::broken($module, 'file needs a name and its contents');
+        }
+
+        return SomcpDownload::handOver(
+            ['bytes' => $contents, 'name' => Tools::substr($name, 0, 255), 'mime' => SomcpUpload::typeOfBytes($contents, $name)],
+            $context
+        );
     }
 
     /**

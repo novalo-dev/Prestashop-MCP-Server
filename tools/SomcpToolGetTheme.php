@@ -36,19 +36,6 @@ if (!defined('_PS_VERSION_')) {
 class SomcpToolGetTheme
 {
     /**
-     * The four logos of the Logo panel, with the configuration key holding
-     * each file name in img/.
-     *
-     * @var array<string, string>
-     */
-    private const LOGOS = [
-        'header' => 'PS_LOGO',
-        'mail' => 'PS_LOGO_MAIL',
-        'invoice' => 'PS_LOGO_INVOICE',
-        'favicon' => 'PS_FAVICON',
-    ];
-
-    /**
      * @return SomcpTool
      */
     public static function define(): SomcpTool
@@ -57,7 +44,7 @@ class SomcpToolGetTheme
             'somcp_get_theme',
             Somcp::t('Get the theme and page layouts'),
             'Returns the theme as Design > Theme & Logo shows it: the theme in use and the other installed ones, '
-                . 'the four logos (mail and invoice null when the header logo stands in for them), the layouts the '
+                . 'the four logos as download_ref for somcp_download_file (mail and invoice null when the header logo stands in for them), the layouts the '
                 . 'theme offers, the default layout and the layout of every page of Choose layouts. Read only. For '
                 . 'the meta titles and URLs of the pages use somcp_list_meta_pages; for the main menu, '
                 . 'somcp_list_menu_links.',
@@ -231,29 +218,21 @@ class SomcpToolGetTheme
     }
 
     /**
-     * The four logos of the shop, as absolute addresses.
+     * The four logos of the Logo panel, as a download_ref each for
+     * somcp_download_file, under the names of SomcpDownload::SHOP_LOGOS.
      *
      * The mail and invoice logos are optional: the shop prints the header logo
-     * in their place, which the answer says rather than repeating its address.
+     * in their place, which the answer says rather than repeating it.
      *
      * @param int $idShop
      *
-     * @return array<string, string|bool|null>
+     * @return array<string, array{download_ref:string}|bool|null>
      */
     private static function logos(int $idShop): array
     {
-        $link = Somcp::legacyContext()->link ?? new Link();
-        $idShopGroup = (int) Shop::getGroupFromShop($idShop);
-
         $logos = [];
-        foreach (self::LOGOS as $field => $key) {
-            $file = (string) Configuration::get($key, null, $idShopGroup, $idShop);
-            // basename() keeps a stored value inside img/, and a missing file
-            // is null rather than an address that answers 404.
-            $file = $file !== '' ? basename($file) : '';
-            $logos[$field] = $file !== '' && is_file(_PS_IMG_DIR_ . $file)
-                ? (string) $link->getMediaLink(_PS_IMG_ . $file)
-                : null;
+        foreach (array_keys(SomcpDownload::SHOP_LOGOS) as $field) {
+            $logos[$field] = SomcpDownload::offer('shop_logo', $field, $idShop);
         }
 
         $logos['mail_uses_header'] = $logos['mail'] === null;

@@ -132,15 +132,13 @@ class SomcpToolResendOrderStatusEmail
         // list instead of landing on the newest of them.
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            $problems[] = (array_key_exists('reference', $arguments) && (int) ($arguments['id_order'] ?? 0) <= 0
-                ? 'reference: '
-                : 'id_order: ') . $order;
+            $problems[] = $order;
 
-            return self::refused($problems);
+            return SomcpTool::refused('sent', $problems);
         }
 
         if ($problems !== []) {
-            return self::refused($problems);
+            return SomcpTool::refused('sent', $problems);
         }
 
         $idLang = (int) $order->id_lang;
@@ -150,7 +148,7 @@ class SomcpToolResendOrderStatusEmail
         // otherwise mail that order's customer.
         $line = self::line($order, $idLang, $idOrderHistory);
         if ($line === null) {
-            return self::refused([
+            return SomcpTool::refused('sent', [
                 'id_order_history: not a status line of this order - find it in history of somcp_get_order',
             ]);
         }
@@ -159,7 +157,7 @@ class SomcpToolResendOrderStatusEmail
         // A status the shop does not email sends nothing; a success here would
         // claim an email that never left.
         if (!Validate::isLoadedObject($state) || !(bool) $state->send_email) {
-            return self::refused([
+            return SomcpTool::refused('sent', [
                 'id_order_history: the status ' . (string) $line['status'] . ' sends no email',
             ]);
         }
@@ -276,20 +274,5 @@ class SomcpToolResendOrderStatusEmail
             'id_order' => (int) $order->id,
             'reference' => (string) $order->reference,
         ];
-    }
-
-    /**
-     * The order tools' refusal: every problem at once, nothing sent.
-     *
-     * Kept here, in the wording issue #128 asks for, until SomcpTool::refused()
-     * of #169 and #170 unifies the order tools on one helper.
-     *
-     * @param string[] $problems
-     *
-     * @return array<string, mixed>
-     */
-    private static function refused(array $problems): array
-    {
-        return SomcpTool::text("Nothing was sent.\n- " . implode("\n- ", $problems), true);
     }
 }

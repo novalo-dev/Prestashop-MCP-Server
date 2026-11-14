@@ -52,7 +52,7 @@ class SomcpToolGetCategory
             'somcp_get_category',
             Somcp::t('Get a category'),
             'Returns what the form of Catalog > Categories > Edit shows for one category: names, Displayed, '
-                . 'parent, position, descriptions, customer groups, friendly and full URL, meta fields, images, '
+                . 'parent, position, descriptions, customer groups, friendly and full URL, meta fields, images (download_ref for somcp_download_file), '
                 . 'product and subcategory counts, and what the page does while hidden; a field this PrestaShop '
                 . 'version lacks is null. Same names as somcp_create_category and somcp_update_category, so a value '
                 . 'read here can be given back. id_category from somcp_list_categories: never guess one. Read only. '
@@ -98,14 +98,19 @@ class SomcpToolGetCategory
 
         // A cast would read an array as 1 and answer about a category nobody
         // asked for: only a whole number is an identifier.
-        $value = $arguments['id_category'] ?? null;
-        $idCategory = is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
-
-        $category = SomcpToolUpdateCategory::existingCategory($idCategory, $idShop);
-        if ($category === null) {
-            return SomcpTool::text('No category of this shop has this identifier. Find it with somcp_list_categories.', true);
+        $idCategory = SomcpTool::id($arguments, 'id_category');
+        $errors = SomcpTool::unknownFields($arguments, ['id_category', 'language']);
+        $category = null;
+        if ($idCategory === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_category');
+        } else {
+            $category = SomcpToolUpdateCategory::existingCategory($idCategory, $idShop);
+            if ($category === null) {
+                $errors[] = SomcpTool::notFound('id_category', 'category', $idCategory, 'somcp_list_categories');
+            }
+        }
+        if ($errors !== [] || $category === null) {
+            return SomcpTool::refused('read', $errors);
         }
 
         return SomcpTool::json(['language' => $iso] + SomcpToolCreateCategory::category((int) $category->id, $idLang, $idShop));

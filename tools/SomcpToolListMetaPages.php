@@ -36,7 +36,6 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-require_once __DIR__ . '/SomcpToolAuditProductSeo.php';
 require_once __DIR__ . '/SomcpToolUpdateMetaPage.php';
 
 class SomcpToolListMetaPages
@@ -60,8 +59,8 @@ class SomcpToolListMetaPages
                 'properties' => [
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of one language of the shop, for example en. The shop default '
-                            . 'is used otherwise.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                 ],
                 'additionalProperties' => false,
@@ -84,23 +83,13 @@ class SomcpToolListMetaPages
     {
         $idShop = Somcp::currentShopId();
 
-        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
-            $idLang = (int) Somcp::legacyContext()->language->id;
-            $iso = (string) Language::getIsoById($idLang);
-        } else {
-            // The same rule as the SEO audits: a language the shop does not
-            // have is refused rather than silently read in another one.
-            $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
-            if ($languages === null) {
-                return SomcpTool::text(
-                    'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
-                        . 'language out for the shop default.',
-                    true
-                );
-            }
-            $idLang = (int) array_key_first($languages);
-            $iso = (string) $languages[$idLang];
+        // The shop default when left out, never the context language, which
+        // follows the client's Accept-Language header.
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
         }
+        [$idLang, $iso] = $language;
 
         $link = Somcp::legacyContext()->link ?? new Link();
 

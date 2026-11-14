@@ -182,8 +182,7 @@ class SomcpToolIssueStandardRefund
 
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            $problems[] = (array_key_exists('reference', $arguments) && (int) ($arguments['id_order'] ?? 0) <= 0
-                ? 'reference' : 'id_order') . ': ' . $order;
+            $problems[] = $order;
 
             return SomcpToolIssuePartialRefund::refused($problems);
         }
@@ -317,9 +316,7 @@ class SomcpToolIssueStandardRefund
                 $problems[] = $path . ': must be an object with id_order_detail and quantity';
                 continue;
             }
-            foreach (array_diff(array_keys($entry), self::LINE_KEYS) as $unknown) {
-                $problems[] = $path . '.' . $unknown . ': unknown field';
-            }
+            array_push($problems, ...SomcpTool::unknownFields($entry, self::LINE_KEYS, [], $path . '.'));
 
             $idDetail = SomcpToolIssuePartialRefund::integer($entry['id_order_detail'] ?? null);
             if ($idDetail === null || $idDetail <= 0) {

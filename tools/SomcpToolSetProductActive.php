@@ -88,17 +88,24 @@ class SomcpToolSetProductActive
 
         // A boolean only: a string such as "false" cast to bool is true, and
         // would put online a product the merchant asked to take offline.
+        $errors = SomcpTool::unknownFields($arguments, ['id_product', 'active']);
         if (!array_key_exists('active', $arguments) || !is_bool($arguments['active'])) {
-            return SomcpTool::text('Nothing was changed: active must be true or false.', true);
+            $errors[] = 'active: true or false';
         }
-        $active = $arguments['active'];
+        $active = ($arguments['active'] ?? null) === true;
 
-        $product = self::locate(self::identifier($arguments['id_product'] ?? null), $idShop);
-        if ($product === null) {
-            return SomcpTool::text(
-                'No product of this shop has this identifier. Nothing was changed. Find it with somcp_search_products.',
-                true
-            );
+        $idProduct = SomcpTool::id($arguments, 'id_product');
+        $product = null;
+        if ($idProduct === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_product');
+        } else {
+            $product = self::locate($idProduct, $idShop);
+            if ($product === null) {
+                $errors[] = SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products');
+            }
+        }
+        if ($errors !== [] || $product === null) {
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ((bool) $product->active === $active) {
@@ -116,11 +123,10 @@ class SomcpToolSetProductActive
         // no name in the default language shows an empty title on the
         // storefront. Refused here on 8 too, so the tool answers the same.
         if ($active && self::defaultName($product) === '') {
-            return SomcpTool::text(
-                'Nothing was changed: the product has no name in the shop default language, and cannot be '
-                    . 'switched on without one. Give it a name with somcp_update_product first.',
-                true
-            );
+            return SomcpTool::refused('changed', [
+                'active: the product has no name in the shop default language, and cannot be switched on '
+                    . 'without one - give it a name with somcp_update_product first',
+            ]);
         }
 
         return self::apply($product, $active, $idShop, $idEmployee);
@@ -219,7 +225,8 @@ class SomcpToolSetProductActive
     }
 
     /**
-     * The name of the product in the shop default language.
+     * The name of the product in the default language of the token's shop,
+     * not the global one: on a multistore the two differ (#149).
      *
      * @param Product $product
      *
@@ -231,28 +238,9 @@ class SomcpToolSetProductActive
         // Loaded with every language, the name is an array keyed by language;
         // an override or a hook may still leave a single string.
         if (is_array($name)) {
-            $name = $name[(int) Configuration::get('PS_LANG_DEFAULT')] ?? '';
+            $name = $name[(int) Configuration::get('PS_LANG_DEFAULT', null, null, Somcp::currentShopId())] ?? '';
         }
 
         return trim((string) $name);
-    }
-
-    /**
-     * A product identifier as a client may send it: an integer, or digits in a string.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && ctype_digit($value)) {
-            return (int) $value;
-        }
-
-        return 0;
     }
 }

@@ -223,8 +223,7 @@ class SomcpToolIssuePartialRefund
 
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            $problems[] = (array_key_exists('reference', $arguments) && (int) ($arguments['id_order'] ?? 0) <= 0
-                ? 'reference' : 'id_order') . ': ' . $order;
+            $problems[] = $order;
 
             return self::refused($problems);
         }
@@ -475,9 +474,7 @@ class SomcpToolIssuePartialRefund
                 $problems[] = $path . ': must be an object with id_order_detail, quantity and an amount';
                 continue;
             }
-            foreach (array_diff(array_keys($entry), self::LINE_KEYS) as $unknown) {
-                $problems[] = $path . '.' . $unknown . ': unknown field';
-            }
+            array_push($problems, ...SomcpTool::unknownFields($entry, self::LINE_KEYS, [], $path . '.'));
 
             $idDetail = self::integer($entry['id_order_detail'] ?? null);
             if ($idDetail === null || $idDetail <= 0) {
@@ -683,7 +680,10 @@ class SomcpToolIssuePartialRefund
     }
 
     /**
-     * The error shape of the order tools: every problem at once.
+     * The refusal of the refund family and of the order writes built on it.
+     *
+     * Kept as the one entry point those tools call, so they all answer in the
+     * shared envelope of SomcpTool::refused() with the same verb.
      *
      * @param string[] $problems
      *
@@ -691,7 +691,7 @@ class SomcpToolIssuePartialRefund
      */
     public static function refused(array $problems): array
     {
-        return SomcpTool::text("Nothing was recorded.\n- " . implode("\n- ", $problems), true);
+        return SomcpTool::refused('recorded', $problems);
     }
 
     /**

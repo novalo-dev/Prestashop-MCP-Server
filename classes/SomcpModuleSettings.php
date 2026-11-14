@@ -77,6 +77,7 @@ class SomcpModuleSettings
         return [
             SomcpConfig::ENABLED => ['tab' => $config, 'label' => 'Enable the MCP server', 'kind' => 'switch'],
             SomcpConfig::TOOLS_TTL => ['tab' => $tools, 'label' => 'How long an assistant keeps the list of tools', 'kind' => 'seconds'],
+            SomcpConfig::TOOLS_COMPACT => ['tab' => $tools, 'label' => 'Compact list of tools', 'kind' => 'switch'],
             SomcpConfig::REQUIRED_PROFILE => ['tab' => $access, 'label' => 'Employees allowed to connect an assistant', 'kind' => 'profile'],
             SomcpConfig::CONSENT_PAGE => ['tab' => $access, 'label' => 'Consent page', 'kind' => 'switch'],
             SomcpConfig::ACCESS_TTL => ['tab' => $access, 'label' => 'Access token lifetime (seconds)', 'kind' => 'seconds'],
@@ -431,6 +432,12 @@ class SomcpModuleSettings
         }
         if (!$exists) {
             return 'No such ' . $kind . '.';
+        }
+        // The page shows no switch on these rows, and the chat may not do
+        // what the page does not offer.
+        $tool = $kind === 'tool' ? SomcpToolRegistry::getInstance()->get($name) : null;
+        if ($tool !== null && !$on && SomcpToolRegistry::alwaysOn($tool)) {
+            return $name . ' stays on: it is how an assistant checks which shop and account it reached.';
         }
         $lists = [
             'tool' => [SomcpConfig::TOOLS_OFF, SomcpConfig::TOOLS_OFF_CHAT, SomcpToolRegistry::disabled($chat)],

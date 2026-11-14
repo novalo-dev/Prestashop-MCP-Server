@@ -43,6 +43,12 @@ class SomcpToolSearchCustomers
     /** @var array<int, string> Sort keys offered, as on the columns of the list. */
     private const SORTS = ['date_add', 'last_visit', 'sales', 'lastname', 'id_customer'];
 
+    /** @var array<int, string> Directions offered, read by the schema and the check of the call alike. */
+    private const ORDERS = ['desc', 'asc'];
+
+    /** @var array<int, string> The yes/no filters of the list. */
+    private const FLAGS = ['active', 'newsletter', 'partner_offers', 'is_guest'];
+
     /**
      * @return SomcpTool
      */
@@ -115,7 +121,7 @@ class SomcpToolSearchCustomers
                     ],
                     'order' => [
                         'type' => 'string',
-                        'enum' => ['desc', 'asc'],
+                        'enum' => self::ORDERS,
                         'description' => 'desc (the default) or asc.',
                     ],
                     'language' => [
@@ -151,15 +157,18 @@ class SomcpToolSearchCustomers
      */
     public static function handle(array $arguments, array $context): array
     {
+        // A misspelt filter, or a value of the wrong kind, used to be dropped
+        // or replaced by the default order, and the assistant described the
+        // whole list as the customers asked for: refused instead.
+        $errors = self::problems($arguments);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $idShop = (int) Somcp::currentShop()->id;
-        $language = self::language($arguments, $idShop);
+        $language = SomcpTool::readLanguage($arguments, $idShop);
         if ($language === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s, which has '
-                    . implode(', ', SomcpToolAuditProductSeo::languages([], $idShop) ?? [])
-                    . '. Give the ISO code of one of them, or leave language out for the shop default.',
-                true
-            );
+            return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $iso] = $language;
 
@@ -260,8 +269,8 @@ class SomcpToolSearchCustomers
             $query->where("c.`email` = '" . pSQL(trim((string) $arguments['email'])) . "'");
         }
         foreach (['id_default_group', 'id_gender'] as $key) {
-            if (isset($arguments[$key]) && is_numeric($arguments[$key])) {
-                $query->where('c.`' . $key . '` = ' . (int) $arguments[$key]);
+            if (SomcpTool::id($arguments, $key) > 0) {
+                $query->where('c.`' . $key . '` = ' . SomcpTool::id($arguments, $key));
             }
         }
         // Each flag left out means "All", as on the list; the column is fixed
@@ -273,11 +282,11 @@ class SomcpToolSearchCustomers
         }
         // Both dates included, from the first to the last second of the day,
         // as the Registration filter of the grid.
-        if (!empty($arguments['date_from']) && is_string($arguments['date_from']) && Validate::isDate($arguments['date_from'])) {
-            $query->where("c.`date_add` >= '" . pSQL($arguments['date_from']) . " 00:00:00'");
+        if (($from = SomcpTool::day($arguments['date_from'] ?? null)) !== null) {
+            $query->where("c.`date_add` >= '" . pSQL($from) . " 00:00:00'");
         }
-        if (!empty($arguments['date_to']) && is_string($arguments['date_to']) && Validate::isDate($arguments['date_to'])) {
-            $query->where("c.`date_add` <= '" . pSQL($arguments['date_to']) . " 23:59:59'");
+        if (($to = SomcpTool::day($arguments['date_to'] ?? null)) !== null) {
+            $query->where("c.`date_add` <= '" . pSQL($to) . " 23:59:59'");
         }
 
         return $query;
@@ -316,6 +325,44 @@ class SomcpToolSearchCustomers
     }
 
     /**
+     * Every problem of the call, before anything is read.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return array<int, string>
+     */
+    private static function problems(array $arguments): array
+    {
+        $errors = SomcpTool::unknownFields($arguments, array_merge(
+            ['query', 'email', 'id_default_group', 'id_gender', 'date_from', 'date_to', 'sort', 'order', 'language', 'limit', 'offset'],
+            self::FLAGS
+        ));
+        foreach (['id_default_group', 'id_gender'] as $key) {
+            if (array_key_exists($key, $arguments) && SomcpTool::id($arguments, $key) === 0) {
+                $errors[] = SomcpTool::notAnIdentifier($key);
+            }
+        }
+        foreach (self::FLAGS as $key) {
+            if (array_key_exists($key, $arguments) && !is_bool($arguments[$key])) {
+                $errors[] = $key . ': true or false';
+            }
+        }
+        foreach (['date_from', 'date_to'] as $key) {
+            if (array_key_exists($key, $arguments) && SomcpTool::day($arguments[$key]) === null) {
+                $errors[] = $key . ': a date, YYYY-MM-DD';
+            }
+        }
+        if (array_key_exists('sort', $arguments) && !in_array($arguments['sort'], self::SORTS, true)) {
+            $errors[] = SomcpTool::oneOf('sort', self::SORTS);
+        }
+        if (array_key_exists('order', $arguments) && !in_array($arguments['order'], self::ORDERS, true)) {
+            $errors[] = SomcpTool::oneOf('order', self::ORDERS);
+        }
+
+        return $errors;
+    }
+
+    /**
      * The ORDER BY clause, from a fixed list only.
      *
      * @param array<string, mixed> $arguments
@@ -340,34 +387,6 @@ class SomcpToolSearchCustomers
             default:
                 return 'c.`date_add` ' . $direction . ', c.`id_customer` ' . $direction;
         }
-    }
-
-    /**
-     * The language to read the social titles and group names in, as
-     * [id_lang, iso], or null for a code the shop does not have.
-     *
-     * Left out, it is the shop default rather than the context language, which
-     * on an MCP call follows the client's browser header. Public so the other
-     * customer tools read their names in the same language for the same input.
-     *
-     * @param array<string, mixed> $arguments
-     * @param int $idShop
-     *
-     * @return array{0: int, 1: string}|null
-     */
-    public static function language(array $arguments, int $idShop): ?array
-    {
-        if (!array_key_exists('language', $arguments) || $arguments['language'] === null || $arguments['language'] === '') {
-            $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
-
-            return [$idLang, (string) Language::getIsoById($idLang)];
-        }
-        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
-        if ($languages === null) {
-            return null;
-        }
-
-        return [(int) array_key_first($languages), (string) reset($languages)];
     }
 
     /**

@@ -43,7 +43,10 @@ jobs:
     # that declare PHP 8.0 at most, so Composer refuses any package needing
     # 8.1 there whatever the platform says. PrestaShop 8 installs from the zip.
     name: PrestaShop ${{ matrix.prestashop }} on PHP ${{ matrix.php }}
-    runs-on: ubuntu-latest
+    # Pinned: on the Ubuntu 26.04 image ubuntu-latest moved to, apt and the
+    # shop install fail to resolve the archive and package hosts, which turns
+    # every run red for a reason unrelated to the module.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -70,7 +73,8 @@ jobs:
           - { prestashop: '8.2.5', php: '8.1' }
           - { prestashop: '8.2.6', php: '8.1' }
           - { prestashop: '8.2.7', php: '8.1' }
-          - { prestashop: '8.2.8', php: '8.1', attack: true }
+          - { prestashop: '8.2.8', php: '8.1' }
+          - { prestashop: '8.2.9', php: '8.1', attack: true }
           - { prestashop: '9.0.0', php: '8.1', composer: true }
           - { prestashop: '9.0.0', php: '8.2' }
           - { prestashop: '9.0.0', php: '8.3' }
@@ -120,8 +124,13 @@ jobs:
           - { prestashop: '9.2.0', php: '8.1' }
           - { prestashop: '9.2.0', php: '8.2' }
           - { prestashop: '9.2.0', php: '8.3' }
-          - { prestashop: '9.2.0', php: '8.4', composer: true }
-          - { prestashop: '9.2.0', php: '8.5', attack: true }
+          - { prestashop: '9.2.0', php: '8.4' }
+          - { prestashop: '9.2.0', php: '8.5' }
+          - { prestashop: '9.2.1', php: '8.1' }
+          - { prestashop: '9.2.1', php: '8.2' }
+          - { prestashop: '9.2.1', php: '8.3' }
+          - { prestashop: '9.2.1', php: '8.4', composer: true }
+          - { prestashop: '9.2.1', php: '8.5', attack: true }
     services:
       mysql:
         image: mysql:8.0
@@ -191,6 +200,11 @@ jobs:
               --email=demo@example.com --password=Somcp-shop-test-1 2>&1 | tee ../install.log \
               && exit 0
             echo "Install attempt $attempt failed"
+            # The failed attempt may have compiled the Symfony container
+            # before the native modules were installed; reused by the next
+            # attempt, it lacks their services and the module install then
+            # fails on one of them.
+            rm -rf var/cache/*
             sleep 15
           done
           echo "::error title=Install failed::$(tail -n 40 ../install.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"
@@ -213,7 +227,9 @@ jobs:
               || { echo "::error title=composer require failed::$(tail -n 40 composer.log | sed -e 's/%/%25/g' -e ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
             [ -f shop/modules/somcp/somcp.php ] \
               || { echo "::error title=Wrong folder::composer did not install the module in modules/somcp"; exit 1; }
-            [ ! -e shop/vendor/novalo ] \
+            # vendor/novalo holds the search library the module requires; the
+            # module itself must not be there.
+            [ ! -e shop/vendor/novalo/prestashop-mcp-server ] \
               || { echo "::error title=Wrong folder::composer put the module in vendor/ instead of modules/somcp"; exit 1; }
           else
             # The module as a merchant receives it: git archive leaves out what

@@ -762,6 +762,10 @@ T = {
  "Modules - modifications",
  "Módulos - cambios",
  "Module - Änderungen"),
+"Modules - upload": (
+ "Modules - envoi",
+ "Módulos - subida",
+ "Module - Hochladen"),
 "Design - read": (
  "Apparence - lecture",
  "Diseño - lectura",
@@ -850,6 +854,14 @@ T = {
  "Créer un statut de commande",
  "Crear un estado de pedido",
  "Einen Bestellstatus anlegen"),
+"Edit an order status": (
+ "Modifier un statut de commande",
+ "Editar un estado de pedido",
+ "Einen Bestellstatus bearbeiten"),
+"Delete an order status": (
+ "Supprimer un statut de commande",
+ "Eliminar un estado de pedido",
+ "Einen Bestellstatus löschen"),
 "List customer groups": (
  "Lister les groupes de clients",
  "Listar los grupos de clientes",
@@ -878,6 +890,14 @@ T = {
  "Tester la connexion",
  "Probar la conexión",
  "Die Verbindung testen"),
+"Put a file on the shop": (
+ "Déposer un fichier sur la boutique",
+ "Dejar un archivo en la tienda",
+ "Eine Datei im Shop ablegen"),
+"Get a file from the shop": (
+ "Récupérer un fichier de la boutique",
+ "Obtener un archivo de la tienda",
+ "Eine Datei aus dem Shop abrufen"),
 "Search orders": (
  "Rechercher des commandes",
  "Buscar pedidos",
@@ -1050,6 +1070,10 @@ T = {
  "Lire une catégorie",
  "Leer una categoría",
  "Eine Kategorie abrufen"),
+"Category KPIs": (
+ "Indicateurs des catégories",
+ "Indicadores de categorías",
+ "Kategorie-Kennzahlen"),
 "Create a category": (
  "Créer une catégorie",
  "Crear una categoría",
@@ -1062,6 +1086,26 @@ T = {
  "Afficher ou masquer une catégorie",
  "Mostrar u ocultar una categoría",
  "Eine Kategorie ein- oder ausblenden"),
+"Delete a category": (
+ "Supprimer une catégorie",
+ "Eliminar una categoría",
+ "Eine Kategorie löschen"),
+"Delete a feature": (
+ "Supprimer une caractéristique",
+ "Eliminar una característica",
+ "Ein Merkmal löschen"),
+"Delete a feature value": (
+ "Supprimer une valeur de caractéristique",
+ "Eliminar un valor de característica",
+ "Einen Merkmalswert löschen"),
+"Delete an attribute group": (
+ "Supprimer un groupe d'attributs",
+ "Eliminar un grupo de atributos",
+ "Eine Attributgruppe löschen"),
+"Delete an attribute value": (
+ "Supprimer une valeur d'attribut",
+ "Eliminar un valor de atributo",
+ "Einen Attributwert löschen"),
 "Get the stock of a product": (
  "Lire le stock d'un produit",
  "Leer el stock de un producto",
@@ -1074,6 +1118,10 @@ T = {
  "Lister les stocks bas",
  "Listar el stock bajo",
  "Niedrigen Bestand auflisten"),
+"List stock movements": (
+ "Lister les mouvements de stock",
+ "Listar los movimientos de stock",
+ "Lagerbewegungen auflisten"),
 "Search customers": (
  "Rechercher des clients",
  "Buscar clientes",
@@ -1158,6 +1206,14 @@ T = {
  "Définir la note d'une facture",
  "Establecer la nota de una factura",
  "Die Notiz einer Rechnung festlegen"),
+"Create an order": (
+ "Créer une commande",
+ "Crear un pedido",
+ "Eine Bestellung anlegen"),
+"Get a document of an order": (
+ "Obtenir un document d'une commande",
+ "Obtener un documento de un pedido",
+ "Ein Dokument einer Bestellung abrufen"),
 "Change the currency of an order": (
  "Changer la devise d'une commande",
  "Cambiar la moneda de un pedido",
@@ -1322,14 +1378,42 @@ T = {
  "Outils %from% à %to% sur %total%",
  "Herramientas %from% a %to% de %total%",
  "Werkzeuge %from% bis %to% von %total%"),
+"Compact list of tools": (
+ "Liste compacte des outils",
+ "Lista compacta de herramientas",
+ "Kompakte Werkzeugliste"),
+"Connected assistants receive six tools instead of the whole list: they search the tool they need, then run it. Lighter for assistants that struggle with many tools; they make one or two more calls before acting. The same permissions and switches apply. After a change, assistants on the latest version of the protocol follow it after the delay above; the others, ChatGPT among them today, once you refresh their tools in their settings. The built-in assistant is not affected.": (
+ "Les assistants connectés reçoivent six outils au lieu de la liste complète : ils cherchent l'outil dont ils ont besoin, puis le lancent. Plus léger pour les assistants que trop d'outils gênent ; ils font un ou deux appels de plus avant d'agir. Les mêmes droits et les mêmes interrupteurs s'appliquent. Après un changement, les assistants qui utilisent la dernière version du protocole le suivent après le délai ci-dessus ; les autres, dont ChatGPT aujourd'hui, une fois leurs outils rafraîchis dans leurs réglages. L'assistant intégré n'est pas concerné.",
+ "Los asistentes conectados reciben seis herramientas en lugar de la lista completa: buscan la herramienta que necesitan y luego la ejecutan. Más ligero para los asistentes a los que molestan muchas herramientas; hacen una o dos llamadas más antes de actuar. Se aplican los mismos permisos e interruptores. Tras un cambio, los asistentes que usan la última versión del protocolo lo siguen tras el plazo indicado arriba; los demás, entre ellos ChatGPT hoy, cuando actualice sus herramientas en sus ajustes. El asistente integrado no se ve afectado.",
+ "Verbundene Assistenten erhalten sechs Werkzeuge statt der ganzen Liste: Sie suchen das Werkzeug, das sie brauchen, und führen es dann aus. Leichter für Assistenten, die mit vielen Werkzeugen nicht zurechtkommen; sie brauchen vor dem Handeln ein oder zwei Aufrufe mehr. Es gelten dieselben Berechtigungen und Schalter. Nach einer Änderung übernehmen Assistenten mit der neuesten Version des Protokolls sie nach der oben eingestellten Frist; die anderen, derzeit auch ChatGPT, sobald Sie ihre Werkzeuge in ihren Einstellungen aktualisieren. Der integrierte Assistent ist nicht betroffen."),
+"Compact mode on": (
+ "Mode compact activé",
+ "Modo compacto activado",
+ "Kompaktmodus an"),
+"Compact mode off": (
+ "Mode compact désactivé",
+ "Modo compacto desactivado",
+ "Kompaktmodus aus"),
+"Search the shop tools": (
+ "Chercher les outils de la boutique",
+ "Buscar las herramientas de la tienda",
+ "Werkzeuge des Shops suchen"),
+"Run a read tool": (
+ "Lancer un outil de lecture",
+ "Ejecutar una herramienta de lectura",
+ "Ein Lesewerkzeug ausführen"),
+"Run a tool that changes the shop": (
+ "Lancer un outil qui modifie la boutique",
+ "Ejecutar una herramienta que modifica la tienda",
+ "Ein Werkzeug ausführen, das den Shop ändert"),
 "How long an assistant keeps the list of tools": (
  "Durée pendant laquelle un assistant garde la liste des outils",
  "Tiempo durante el cual un asistente conserva la lista de herramientas",
  "Wie lange ein Assistent die Werkzeugliste behält"),
-"In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it - so the assistant re-reads only when this has run out. A tool switched on or off appears or disappears after that delay, not before. Lower it while you are adding tools, raise it back afterwards. 300 by default.": (
- "En secondes, entre 10 et 3600. Cette boutique ne peut pas prévenir un assistant que la liste a changé - aucune connexion ne reste ouverte vers lui - donc il ne la relit qu'une fois ce délai écoulé. Un outil activé ou désactivé apparaît ou disparaît après ce délai, pas avant. Abaissez-le pendant que vous ajoutez des outils, remontez-le ensuite. 300 par défaut.",
- "En segundos, entre 10 y 3600. Esta tienda no puede avisar a un asistente de que la lista ha cambiado - no hay ninguna conexión abierta hacia él - así que solo la vuelve a leer cuando este plazo termina. Una herramienta activada o desactivada aparece o desaparece después de ese plazo, no antes. Redúzcalo mientras añade herramientas y vuelva a subirlo después. 300 por defecto.",
- "In Sekunden, zwischen 10 und 3600. Dieser Shop kann einem Assistenten nicht mitteilen, dass sich die Liste geändert hat - es besteht keine offene Verbindung zu ihm - daher liest er sie erst nach Ablauf dieser Zeit erneut. Ein ein- oder ausgeschaltetes Werkzeug erscheint oder verschwindet erst danach. Senken Sie den Wert beim Hinzufügen von Werkzeugen und erhöhen Sie ihn danach wieder. Standard 300."),
+"In seconds, between 10 and 3600. This shop cannot tell an assistant that the list changed - there is no connection open to it. Assistants on the latest version of the protocol read the list again once this has run out; the others, ChatGPT among them today, keep it until you refresh their tools in their own settings. Lower it while you are adding tools, raise it back afterwards. 300 by default.": (
+ "En secondes, entre 10 et 3600. Cette boutique ne peut pas prévenir un assistant que la liste a changé - aucune connexion ne reste ouverte vers lui. Les assistants qui utilisent la dernière version du protocole relisent la liste une fois ce délai écoulé ; les autres, dont ChatGPT aujourd'hui, la gardent jusqu'à ce que vous rafraîchissiez leurs outils dans leurs propres réglages. Abaissez-le pendant que vous ajoutez des outils, remontez-le ensuite. 300 par défaut.",
+ "En segundos, entre 10 y 3600. Esta tienda no puede avisar a un asistente de que la lista ha cambiado - no hay ninguna conexión abierta hacia él. Los asistentes que usan la última versión del protocolo vuelven a leer la lista cuando termina este plazo; los demás, entre ellos ChatGPT hoy, la conservan hasta que actualice sus herramientas en sus propios ajustes. Redúzcalo mientras añade herramientas y vuelva a subirlo después. 300 por defecto.",
+ "In Sekunden, zwischen 10 und 3600. Dieser Shop kann einem Assistenten nicht mitteilen, dass sich die Liste geändert hat - es bleibt keine Verbindung zu ihm offen. Assistenten mit der neuesten Version des Protokolls lesen die Liste nach Ablauf dieser Frist neu; die anderen, derzeit auch ChatGPT, behalten sie, bis Sie ihre Werkzeuge in ihren eigenen Einstellungen aktualisieren. Senken Sie den Wert, während Sie Werkzeuge hinzufügen, und erhöhen Sie ihn danach wieder. Standardmäßig 300."),
 "Available prompts": (
  "Prompts disponibles",
  "Prompts disponibles",
@@ -1359,9 +1443,9 @@ T = {
  "Buscar un pedido",
  "Eine Bestellung finden"),
 "Change an order status": (
- "Changer le statut d'une commande",
- "Cambiar el estado de un pedido",
- "Den Status einer Bestellung ändern"),
+ "Changer le statut des commandes",
+ "Cambiar el estado de los pedidos",
+ "Den Status von Bestellungen ändern"),
 "Manage products": (
  "Gérer les produits",
  "Gestionar los productos",
@@ -1398,6 +1482,14 @@ T = {
  "Installer, activer et désactiver les modules déjà présents sur cette boutique, ce qui exécute leur propre code",
  "Instalar, activar y desactivar los módulos ya presentes en esta tienda, lo que ejecuta su propio código",
  "Die bereits in diesem Shop vorhandenen Module installieren, aktivieren und deaktivieren, wobei ihr eigener Code ausgeführt wird"),
+"Upload a module": (
+ "Installer un module depuis une archive",
+ "Subir un módulo",
+ "Ein Modul hochladen"),
+"Upload and install a module archive: its code comes from outside the shop and runs on it with full rights": (
+ "Envoyer et installer l'archive d'un module : son code vient de l'extérieur de la boutique et s'y exécute avec tous les droits",
+ "Subir e instalar el archivo de un módulo: su código viene de fuera de la tienda y se ejecuta en ella con todos los derechos",
+ "Ein Modularchiv hochladen und installieren: sein Code kommt von außerhalb des Shops und läuft darin mit allen Rechten"),
 "Enable or disable a module": (
  "Activer ou désactiver un module",
  "Activar o desactivar un módulo",

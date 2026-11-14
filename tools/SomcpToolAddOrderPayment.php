@@ -131,55 +131,45 @@ class SomcpToolAddOrderPayment
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
+        // Every problem in one answer, each named by its field, as the other
+        // tools answer: a wrong amount and a wrong date are fixed in one call
+        // rather than two, and a misspelt field is named rather than ignored.
+        $problems = SomcpTool::unknownFields($arguments, [
+            'id_order', 'reference', 'amount', 'payment_method', 'currency',
+            'payment_date', 'transaction_id', 'id_order_invoice',
+        ]);
+
         $amount = self::amount($arguments['amount'] ?? null);
-        if ($amount === null) {
-            return SomcpTool::text('Nothing was recorded: amount must be a number.', true);
-        }
         // The core refuses a negative amount; a zero one would add a line that
         // records nothing, and is refused too.
-        if ($amount <= 0) {
-            return SomcpTool::text('Nothing was recorded: the amount must be greater than 0.', true);
+        if ($amount === null || $amount <= 0) {
+            $problems[] = 'amount: a number above 0';
         }
 
         $method = is_string($arguments['payment_method'] ?? null) ? trim($arguments['payment_method']) : '';
         if ($method === '') {
-            return SomcpTool::text(
-                'Nothing was recorded: payment_method is required, for example "Bank transfer".',
-                true
-            );
-        }
-        // The rule of AddPaymentCommand and of the class field: the same
-        // characters refused on both versions.
-        if (Tools::strlen($method) > self::METHOD_LENGTH || !Validate::isGenericName($method)) {
-            return SomcpTool::text(
-                'Nothing was recorded: the payment method holds ' . self::METHOD_LENGTH
-                    . ' characters at most, without < > = { }.',
-                true
-            );
+            $problems[] = 'payment_method: required, for example "Bank transfer"';
+        } elseif (Tools::strlen($method) > self::METHOD_LENGTH || !Validate::isGenericName($method)) {
+            // The rule of AddPaymentCommand and of the class field: the same
+            // characters refused on both versions.
+            $problems[] = 'payment_method: ' . self::METHOD_LENGTH . ' characters at most, without < > = { }';
         }
 
         $transaction = '';
         if (array_key_exists('transaction_id', $arguments)) {
             if (!is_string($arguments['transaction_id'])) {
-                return SomcpTool::text('Nothing was recorded: transaction_id must be a string.', true);
-            }
-            $transaction = trim($arguments['transaction_id']);
-            if (Tools::strlen($transaction) > self::TRANSACTION_LENGTH) {
-                return SomcpTool::text(
-                    'Nothing was recorded: the transaction ID holds ' . self::TRANSACTION_LENGTH
-                        . ' characters at most.',
-                    true
-                );
+                $problems[] = 'transaction_id: a string';
+            } else {
+                $transaction = trim($arguments['transaction_id']);
+                if (Tools::strlen($transaction) > self::TRANSACTION_LENGTH) {
+                    $problems[] = 'transaction_id: ' . self::TRANSACTION_LENGTH . ' characters at most';
+                }
             }
         }
 
         $date = self::date($arguments['payment_date'] ?? null);
         if ($date === null) {
-            return SomcpTool::text(
-                'Nothing was recorded: payment_date must be an ISO 8601 date, for example 2026-10-29 or '
-                    . '2026-10-29T14:30:00+01:00.',
-                true
-            );
+            $problems[] = 'payment_date: a date, ISO 8601, for example 2026-10-29 or 2026-10-29T14:30:00+01:00';
         }
 
         // find() rather than the newest order of a reference: a split cart
@@ -187,16 +177,17 @@ class SomcpToolAddOrderPayment
         // would act on a parcel nobody chose.
         $order = SomcpToolGetOrder::find($arguments);
         if (!$order instanceof Order) {
-            return SomcpTool::text($order . ' Nothing was recorded.', true);
+            $problems[] = $order;
+
+            return SomcpTool::refused('recorded', $problems);
         }
 
+        // The checks below need the order, and join the same list so the
+        // answer still holds every problem of the call.
         $currency = self::currency($arguments['currency'] ?? null, $order);
         if ($currency === null) {
-            return SomcpTool::text(
-                'Nothing was recorded: this currency does not exist in the shop. Give its ISO code, for '
-                    . 'example EUR, or leave it out for the order\'s currency.',
-                true
-            );
+            $problems[] = 'currency: the ISO code of a currency of this shop, for example EUR, or left out for '
+                . 'the order\'s currency';
         }
 
         // The back office asks for the invoice only when the order has one,
@@ -205,15 +196,22 @@ class SomcpToolAddOrderPayment
         if ($order->hasInvoice()) {
             $invoice = self::invoice($arguments['id_order_invoice'] ?? null, $order);
             if ($invoice === null) {
-                return SomcpTool::text(
-                    (array_key_exists('id_order_invoice', $arguments)
-                        ? 'This id_order_invoice is not an invoice of this order.'
-                        : 'This order has an invoice: say which one the payment is for with id_order_invoice.')
-                        . ' Nothing was recorded. Its invoices: '
-                        . json_encode(self::invoices($order), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-                    true
-                );
+                $listed = json_encode(self::invoices($order), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                if (!array_key_exists('id_order_invoice', $arguments)) {
+                    $problems[] = 'id_order_invoice: this order has an invoice, say which one the payment is for; '
+                        . 'its invoices: ' . $listed;
+                } elseif (SomcpTool::id($arguments, 'id_order_invoice') === 0) {
+                    $problems[] = SomcpTool::notAnIdentifier('id_order_invoice');
+                } else {
+                    $problems[] = 'id_order_invoice: no invoice of this order has the identifier '
+                        . SomcpTool::id($arguments, 'id_order_invoice') . ' - find it with somcp_get_order; its '
+                        . 'invoices: ' . $listed;
+                }
             }
+        }
+
+        if ($problems !== [] || $currency === null || $date === null || $amount === null) {
+            return SomcpTool::refused('recorded', $problems);
         }
 
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($order, $amount, $method, $transaction, $currency, $date, $invoice, $idEmployee): array {

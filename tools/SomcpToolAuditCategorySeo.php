@@ -95,7 +95,7 @@ class SomcpToolAuditCategorySeo
                             'type' => 'string',
                             'enum' => self::CHECKS,
                         ],
-                        'description' => 'Only these checks, all of them when left out. Meta title over 60 characters, meta '
+                        'description' => 'Only these checks, all of them when left out. Meta title over 70 characters, meta '
                             . 'description under 70 or over 160; empty_category and no_cover_image are per category.',
                     ],
                     'limit' => [
@@ -129,19 +129,12 @@ class SomcpToolAuditCategorySeo
 
         $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
         if ($languages === null) {
-            return SomcpTool::text(
-                'This language is not one of the shop\'s. Give the ISO code of one of its languages, or leave '
-                    . 'language out for all of them.',
-                true
-            );
+            return SomcpTool::languageRefused($idShop, true);
         }
 
-        $checks = self::checks($arguments);
+        $checks = SomcpToolAuditProductSeo::checksArgument($arguments, self::CHECKS);
         if ($checks === null) {
-            return SomcpTool::text(
-                'checks must be a list of these names: ' . implode(', ', self::CHECKS) . '.',
-                true
-            );
+            return SomcpToolAuditProductSeo::checksRefused(self::CHECKS);
         }
 
         $activeOnly = !(array_key_exists('active', $arguments) && $arguments['active'] === false);
@@ -228,12 +221,12 @@ class SomcpToolAuditCategorySeo
 
         $found = [
             'meta_title_missing' => $title === '' ? '' : null,
-            'meta_title_too_long' => Tools::strlen($title) > SomcpToolAuditProductSeo::TITLE_MAX ? $title : null,
+            'meta_title_too_long' => Tools::strlen($title) > SomcpTool::META_TITLE_RECOMMENDED ? $title : null,
             'meta_title_duplicate' => $duplicateTitle ? $title : null,
             'meta_description_missing' => $description === '' ? '' : null,
             // Same lower bound as the product audit, from its shared constant.
             'meta_description_short' => $description !== '' && Tools::strlen($description) < SomcpToolAuditProductSeo::DESCRIPTION_MIN ? $description : null,
-            'meta_description_long' => Tools::strlen($description) > SomcpToolAuditProductSeo::DESCRIPTION_MAX ? $description : null,
+            'meta_description_long' => Tools::strlen($description) > SomcpTool::metaDescriptionRecommended() ? $description : null,
             // Counted as words, tags removed: a description holding only
             // markup shows the visitor nothing either.
             'description_missing' => SomcpToolAuditProductSeo::words((string) $row['description']) === 0 ? '' : null,
@@ -254,31 +247,6 @@ class SomcpToolAuditCategorySeo
         }
 
         return $issues;
-    }
-
-    /**
-     * The checks asked for, all of them by default, or null for a bad list.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return array<int, string>|null
-     */
-    private static function checks(array $arguments): ?array
-    {
-        if (!array_key_exists('checks', $arguments) || $arguments['checks'] === null) {
-            return self::CHECKS;
-        }
-        if (!is_array($arguments['checks']) || $arguments['checks'] === []) {
-            return null;
-        }
-        foreach ($arguments['checks'] as $check) {
-            if (!is_string($check) || !in_array($check, self::CHECKS, true)) {
-                return null;
-            }
-        }
-
-        // Kept in the order of the list, so every answer reads the same way.
-        return array_values(array_intersect(self::CHECKS, $arguments['checks']));
     }
 
     /**

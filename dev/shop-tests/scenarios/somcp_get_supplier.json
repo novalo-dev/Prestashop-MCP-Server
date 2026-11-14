@@ -4,8 +4,9 @@
     {"why": "the other demo supplier, in a language given by ISO code", "arguments": {"id_supplier": 2, "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"id_supplier\": 2", "Accessories supplier"]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_supplier": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
     {"why": "the identifier as a numeric string", "arguments": {"id_supplier": "2"}, "expect": "ok", "contains": ["\"id_supplier\": 2"]},
-    {"why": "a supplier that does not exist", "arguments": {"id_supplier": 999999}, "expect": "error", "contains": ["No supplier of this shop"]},
-    {"why": "no identifier", "arguments": {"id_supplier": 0}, "expect": "error", "contains": ["No supplier of this shop"]},
-    {"why": "an identifier that is not a number", "arguments": {"id_supplier": [1]}, "expect": "error", "contains": ["No supplier of this shop"]}
+    {"why": "a supplier that does not exist", "arguments": {"id_supplier": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_supplier: no supplier of this shop has the identifier 999999 - find it with somcp_list_suppliers"]},
+    {"why": "no identifier", "arguments": {"id_supplier": 0}, "expect": "error", "contains": ["- id_supplier: a whole number above 0"]},
+    {"why": "an identifier that is not a number", "arguments": {"id_supplier": [1]}, "expect": "error", "contains": ["- id_supplier: a whole number above 0"]},
+    {"why": "a misspelt field is named, not read as a missing supplier", "arguments": {"id_suplier": 1}, "expect": "error", "contains": ["Nothing was read", "- id_suplier: not a field of this tool", "- id_supplier: a whole number above 0"]}
   ]
 }

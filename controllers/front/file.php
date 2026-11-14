@@ -27,7 +27,9 @@ declare(strict_types=1);
  * A link that fails any of the three gets the same empty 404 as a file that
  * does not exist, so nothing can be learnt by trying.
  *
- * Only deposits made by the chat can be served, and only until they expire.
+ * Only deposits made by the chat and files somcp_download_file hands out can
+ * be served, and only until they expire: the same link takes a file out of
+ * the shop for an assistant connected from outside, which fetches it itself.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -88,7 +90,7 @@ class SomcpFileModuleFrontController extends ModuleFrontController
         // sniffed again by the browser, and never run as a page.
         header('Content-Type: ' . $file['mimeType']);
         header('Content-Length: ' . (string) filesize($file['path']));
-        header('Content-Disposition: inline; filename="' . preg_replace('/[^A-Za-z0-9._-]/', '_', $file['name']) . '"');
+        header('Content-Disposition: inline; filename="' . SomcpDownload::cleanName($file['name']) . '"');
         header('X-Content-Type-Options: nosniff');
         header("Content-Security-Policy: default-src 'none'; sandbox");
         header('Cache-Control: private, max-age=3600');

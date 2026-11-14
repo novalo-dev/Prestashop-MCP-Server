@@ -66,6 +66,17 @@ class SomcpTool
      */
     private $meta;
 
+    /**
+     * @var array<string, array{accept: string|array<int, string>, bytes: int|callable(): int, url: bool}> The files the tool takes, by field.
+     *
+     * Declared next to the schema rather than guessed from it, because the
+     * shop has to know what a field takes before the assistant calls the
+     * tool: somcp_upload_file opens a deposit with exactly these rules, so a
+     * file refused at the door never reaches the tool. Built with
+     * SomcpUpload::rule() or SomcpUpload::images().
+     */
+    private $files;
+
     /** @var string Why the declared schema cannot be served, empty when it can. */
     private $schemaProblem;
 
@@ -88,7 +99,11 @@ class SomcpTool
      *                                   protocol requires: a vendor prefix ending in a
      *                                   slash, e.g. 'openai/fileParams'. Clients that do
      *                                   not know a key ignore it. Left empty, nothing is
-     *                                   sent - which is the case for every tool here.
+     *                                   sent.
+     * @param array<string, array{accept: string|array<int, string>, bytes: int|callable(): int, url: bool}> $files
+     *                                                                                                              the fields that take a file - their path in the
+     *                                                                                                              arguments, e.g. virtual_file.file - and what each
+     *                                                                                                              accepts, built with SomcpUpload::rule()
      */
     public function __construct(
         string $name,
@@ -99,6 +114,7 @@ class SomcpTool
         callable $handler,
         array $acts = [],
         array $meta = [],
+        array $files = [],
     ) {
         $this->name = $name;
         $this->title = $title;
@@ -110,6 +126,7 @@ class SomcpTool
         $this->requiredPermissions = is_array($acts['permissions'] ?? null) ? $acts['permissions'] : [];
         $this->annotations = is_array($acts['annotations'] ?? null) ? $acts['annotations'] : [];
         $this->meta = self::acceptableMeta($meta);
+        $this->files = $files;
     }
 
     /**
@@ -139,8 +156,10 @@ class SomcpTool
         foreach ($meta as $key => $value) {
             $key = (string) $key;
             $slash = strrpos($key, '/');
-            $prefix = $slash === false ? '' : Tools::substr($key, 0, $slash);
-            $name = $slash === false ? $key : Tools::substr($key, $slash + 1);
+            // Byte offsets, from strrpos: a key that is not plain ASCII fails
+            // the patterns below whichever way it is cut.
+            $prefix = $slash === false ? '' : substr($key, 0, $slash);
+            $name = $slash === false ? $key : substr($key, $slash + 1);
 
             $labels = $prefix === '' ? [] : explode('.', $prefix);
             $wellFormed = $name !== ''
@@ -273,6 +292,16 @@ class SomcpTool
         }
 
         return $node;
+    }
+
+    /**
+     * The fields of this tool that take a file, and what each accepts.
+     *
+     * @return array<string, array{accept: string|array<int, string>, bytes: int|callable(): int, url: bool}>
+     */
+    public function getFiles(): array
+    {
+        return $this->files;
     }
 
     /**
@@ -441,7 +470,13 @@ class SomcpTool
      */
     public function call(array $arguments, array $context): array
     {
-        return call_user_func($this->handler, $arguments, $context);
+        // The account the files this call finds are handed to: set here, the
+        // one place every call of every tool goes through, so a tool asks
+        // SomcpDownload::offer() for a file without carrying the caller down
+        // to every helper that describes one.
+        return SomcpDownload::asCaller((int) ($context['id_employee'] ?? 0), function () use ($arguments, $context): array {
+            return call_user_func($this->handler, $arguments, $context);
+        });
     }
 
     /** @var string Marks a result that is a question rather than an answer. */
@@ -518,6 +553,120 @@ class SomcpTool
             'content' => [['type' => 'text', 'text' => $text]],
             'isError' => $isError,
         ];
+    }
+
+    /**
+     * The answer to a call refused before anything was read or written.
+     *
+     * One envelope for every tool: the first line says what did not happen,
+     * then one line per problem, so the assistant fixes every problem in one
+     * go and recognises a refusal by its words, whatever tool it called.
+     *
+     * @param string $nothing what did not happen: created, changed, deleted, sent, recorded or read
+     * @param array<int, string> $problems lines as "<path>: <problem>"
+     *
+     * @return array<string, mixed>
+     */
+    public static function refused(string $nothing, array $problems): array
+    {
+        return self::text(
+            'Nothing was ' . $nothing . ". Correct these and call again:\n- "
+                . implode("\n- ", array_values(array_unique($problems))),
+            true
+        );
+    }
+
+    /**
+     * The lines for the arguments a tool does not take.
+     *
+     * Shared so a misspelt field reads the same in every tool: told the
+     * identifier is wrong, the assistant would try other identifiers rather
+     * than fix the name of the field. A field the matching get returns but
+     * the shop works out gets its own wording, so it is dropped, not renamed.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<int, string> $accepted
+     * @param array<int, string> $computed
+     * @param string $path prefix of a nested object, for example "brand."
+     *
+     * @return array<int, string>
+     */
+    public static function unknownFields(array $arguments, array $accepted, array $computed = [], string $path = ''): array
+    {
+        $problems = [];
+        foreach (array_keys($arguments) as $key) {
+            $key = (string) $key;
+            if (in_array($key, $accepted, true)) {
+                continue;
+            }
+            $problems[] = $path . $key . (in_array($key, $computed, true)
+                ? ': worked out by the shop, so it is not written here'
+                : ': not a field of this tool');
+        }
+
+        return $problems;
+    }
+
+    /**
+     * The line for an identifier the shop does not have.
+     *
+     * One wording so the assistant applies one recovery: find it with the
+     * tool named, never guess another one.
+     *
+     * @param string $path
+     * @param string $thing the word of the back office, for example brand
+     * @param int|string $value
+     * @param string $tool the tool that lists the identifiers
+     *
+     * @return string
+     */
+    public static function notFound(string $path, string $thing, $value, string $tool): string
+    {
+        return $path . ': no ' . $thing . ' of this shop has the identifier ' . $value . ' - find it with ' . $tool;
+    }
+
+    /**
+     * The line for an identifier that is not a whole number above 0.
+     *
+     * Kept apart from notFound(): a list or a word is a mistake in the call,
+     * not an object missing from the shop, and searching would not fix it.
+     *
+     * @param string $path
+     *
+     * @return string
+     */
+    public static function notAnIdentifier(string $path): string
+    {
+        return $path . ': a whole number above 0';
+    }
+
+    /**
+     * The line for a field the running PrestaShop does not have.
+     *
+     * The version is the one the merchant runs, so the answer can be read
+     * back to them as it is.
+     *
+     * @param string $path
+     * @param string $thing
+     *
+     * @return string
+     */
+    public static function notOnThisVersion(string $path, string $thing): string
+    {
+        return $path . ': not on PrestaShop ' . _PS_VERSION_ . ', which has no ' . $thing . '; leave the field out';
+    }
+
+    /**
+     * The line for a value outside a fixed list.
+     *
+     * @param string $path
+     * @param array<int, string> $values the same list as the schema enum
+     *
+     * @return string
+     */
+    public static function oneOf(string $path, array $values): string
+    {
+        return $path . ': one of ' . implode(', ', $values);
     }
 
     /**
@@ -636,16 +785,23 @@ class SomcpTool
      * The answer to a language readLanguage() refused, naming the ones the
      * shop has so the next call can pick one.
      *
+     * The SEO audits read every language when none is given, so their
+     * refusal says so instead of promising the shop default: one text, with
+     * only the way out that is true for the tool.
+     *
      * @param int $idShop
+     * @param bool $everyLanguage true for a tool that reads all the shop's
+     *                            languages when language is left out
      *
      * @return array<string, mixed>
      */
-    public static function languageRefused(int $idShop): array
+    public static function languageRefused(int $idShop, bool $everyLanguage = false): array
     {
         return self::text(
             'This language is not one of the shop\'s, which has '
                 . implode(', ', self::activeLanguages($idShop))
-                . '. Give the ISO code of one of them, or leave language out for the shop default.',
+                . '. Give the ISO code of one of them, or leave language out for '
+                . ($everyLanguage ? 'all of them.' : 'the shop default.'),
             true
         );
     }
@@ -664,5 +820,94 @@ class SomcpTool
     public static function carrierName(string $name): string
     {
         return $name === '0' ? (string) Configuration::get('PS_SHOP_NAME') : $name;
+    }
+
+    /** @var int Past this many a title is cut in a search result; advice, not a limit. */
+    public const META_TITLE_RECOMMENDED = 70;
+
+    /**
+     * The recommended meta description length the back office shows: 160 on 9.0.0
+     * (SeoSettings::RECOMMENDED_DESCRIPTION_LENGTH), the same figure by hand on
+     * 8.0.1, where the constant does not exist.
+     *
+     * @return int
+     */
+    public static function metaDescriptionRecommended(): int
+    {
+        $constant = 'PrestaShop\\PrestaShop\\Core\\Domain\\Category\\SeoSettings::RECOMMENDED_DESCRIPTION_LENGTH';
+        if (defined($constant)) {
+            return (int) constant($constant);
+        }
+
+        return 160;
+    }
+
+    /**
+     * The size of a column as the object definition declares it, the number the
+     * back office refuses past, so a text a get returns is always short enough
+     * for its update and a future PrestaShop that resizes it is followed. The
+     * fallback only serves a definition that declares no size.
+     *
+     * @param ObjectModel $probe
+     * @param string $field
+     * @param int $fallback
+     *
+     * @return int
+     */
+    public static function columnSize(ObjectModel $probe, string $field, int $fallback): int
+    {
+        return isset($probe::$definition['fields'][$field]['size'])
+            ? (int) $probe::$definition['fields'][$field]['size']
+            : $fallback;
+    }
+
+    /**
+     * The one rule every tool uses for a meta title or description: refused past
+     * the column size the shop stores (read from the object definition by the
+     * caller, so a text a get returns is always short enough for its update),
+     * advised past the recommended length a search result keeps. Returns false
+     * when the text was refused, so the caller skips the character check it would
+     * otherwise run on a value already rejected.
+     *
+     * @param string $where the field and language, for the message
+     * @param int $length the visible length already counted by the caller
+     * @param int $max the column size from the object definition
+     * @param int $recommended the length past which a search result cuts the text
+     * @param array<int, string> $errors
+     * @param array<int, string> $advice collected advice lines
+     *
+     * @return bool whether the text is within the column size
+     */
+    public static function seoTextLength(string $where, int $length, int $max, int $recommended, array &$errors, array &$advice): bool
+    {
+        if ($length > $max) {
+            $errors[] = $where . ': ' . $max . ' characters at most, ' . $length . ' given';
+
+            return false;
+        }
+        if ($length > $recommended) {
+            $advice[] = $where . ' is ' . $length . ' characters: past ' . $recommended . ', a search result cuts it';
+        }
+
+        return true;
+    }
+
+    /**
+     * Adds the shared meta length advice collected while planning to a tool's own
+     * SEO warnings, so a title or description written past the recommended length
+     * reads the same way in every tool, next to the tool's other warnings.
+     *
+     * @param array<string, array<int, string>> $warnings the tool's own per language warnings
+     * @param array<string, mixed> $plan
+     *
+     * @return array<string, array<int, string>>
+     */
+    public static function withMetaLengthAdvice(array $warnings, array $plan): array
+    {
+        foreach (($plan['metaAdvice'] ?? []) as $iso => $lines) {
+            $warnings[$iso] = array_merge($warnings[$iso] ?? [], $lines);
+        }
+
+        return $warnings;
     }
 }

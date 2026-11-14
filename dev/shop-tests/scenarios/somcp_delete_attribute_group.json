@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "a group made by the somcp_create_attribute_group scenario, with no value", "arguments": {"id_attribute_group": 6}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_attribute_group\": 6", "\"name\": \"Somcp plain group\"", "\"values_deleted\": 0", "\"combinations_deleted\": 0", "\"combinations_changed\": 0", "\"products\": []", "\"catalog_price_rules\": []", "\"still_in_shops\": 0"]},
+    {"why": "deleted again, nothing changes", "arguments": {"id_attribute_group": 6}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_attribute_group: no attribute group of this shop has the identifier 6 - find it with somcp_list_attributes"]},
+    {"why": "another one, with the identifier as a string and the name in English", "arguments": {"id_attribute_group": "5", "language": "en"}, "expect": "ok", "contains": ["\"deleted\": true", "\"id_attribute_group\": 5", "\"name\": \"Somcp test group\"", "\"language\": \"en\"", "\"values_deleted\": 0"]},
+    {"why": "a group that does not exist", "arguments": {"id_attribute_group": 999999}, "expect": "error", "contains": ["Nothing was deleted", "no attribute group of this shop has the identifier 999999"]},
+    {"why": "no identifier", "arguments": {}, "expect": "error", "contains": ["Nothing was deleted", "- id_attribute_group: a whole number above 0"]},
+    {"why": "an identifier given as a list is not read as group 1", "arguments": {"id_attribute_group": [1]}, "expect": "error", "contains": ["- id_attribute_group: a whole number above 0"]},
+    {"why": "an argument this tool does not know", "arguments": {"id_attribute_group": 1, "colour": "red"}, "expect": "error", "contains": ["Nothing was deleted", "- colour: not a field of this tool"]},
+    {"why": "a language the shop does not have, on a demo group that must stay", "arguments": {"id_attribute_group": 1, "language": "zz"}, "expect": "error", "contains": ["not one of the shop's"]}
+  ]
+}

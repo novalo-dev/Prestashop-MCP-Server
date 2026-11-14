@@ -1,13 +1,14 @@
 {
   "calls": [
-    {"why": "reads a demo order", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["recycled_packaging", "valid_orders_count", "quantity_in_stock_now", "stock_location", "shipments", "delivery_slips", "wrapping_tax_excluded", "taxes"]},
+    {"why": "reads a demo order", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["recycled_packaging", "valid_orders_count", "quantity_in_stock_now", "stock_location", "shipments", "delivery_slips", "wrapping_tax_excluded", "taxes", "\"language\": \"en\""]},
     {"why": "reads another demo order", "arguments": {"id_order": 2}, "expect": "ok", "contains": ["customizations", "private_note"]},
     {"why": "the identifiers the order write tools act on, and the address details", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["\"id_order_detail\"", "\"id_order_history\"", "\"pack_items\"", "\"id_address\"", "\"alias\"", "\"state\"", "\"dni\""]},
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999}, "expect": "error"},
-    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "error", "contains": ["No order of this shop has this reference", "somcp_search_orders"]},
+    {"why": "an order that does not exist is refused in the shared envelope", "arguments": {"id_order": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "id_order: no order of this shop has the identifier 999999 - find it with somcp_search_orders"]},
+    {"why": "a misspelt field is named, not read as a wrong order", "arguments": {"id_order": 1, "statut": "x"}, "expect": "error", "contains": ["Nothing was read.", "statut: not a field of this tool"]},
+    {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "error", "contains": ["no order of this shop has the reference", "somcp_search_orders"]},
     {"why": "the current status under the name somcp_set_order_status takes", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["\"status\": {\n            \"status_id\": "]},
     {"why": "an identifier given as a string of digits is read as that order", "arguments": {"id_order": "1"}, "expect": "ok", "contains": ["\"id_order\": 1,"]},
-    {"why": "an identifier given in an array is not read as an order", "arguments": {"id_order": ["1"]}, "expect": "error", "contains": ["Give id_order or reference"]},
-    {"why": "neither an identifier nor a reference", "arguments": {}, "expect": "error", "contains": ["Give id_order or reference", "somcp_search_orders"]}
+    {"why": "an identifier given in an array is not read as an order", "arguments": {"id_order": ["1"]}, "expect": "error", "contains": ["give id_order or reference"]},
+    {"why": "neither an identifier nor a reference", "arguments": {}, "expect": "error", "contains": ["give id_order or reference", "somcp_search_orders"]}
   ]
 }

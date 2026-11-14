@@ -8,6 +8,8 @@ order nobody has identified means picking one of twelve and being wrong.
 - `somcp_ping`
 - `somcp_search_orders`
 - `somcp_get_order`
+- `somcp_get_order_document`
+- `somcp_download_file`
 - `somcp_list_order_statuses`
 
 ## Know which shop you are in
@@ -68,6 +70,23 @@ answer as the customer's request.
 
 Always say the currency with an amount, and whether a total is with or without
 tax - the field names say which.
+
+## A document of an order
+
+When the merchant asks for an invoice, a delivery slip or a credit slip, call
+`somcp_get_order_document` with the order and `document`. Read the order with
+`somcp_get_order` first when it has several of that kind: `documents` lists
+them with their `id_order_invoice` or `id_order_slip`.
+
+- It answers with a `download_ref`. Pass it to `somcp_download_file`: the PDF
+  comes back inside its answer when it is small enough, at a `url` you can
+  fetch yourself, and with a `page` that opens it in the merchant's own
+  signed-in back office only. Give that page to the merchant as it is when
+  they want the file themselves, or when you could not get it. The reference
+  expires after 15 minutes: ask again after that.
+- An order without that document is refused with the ones it has. An invoice
+  that does not exist yet is made with `somcp_generate_order_invoice`, in the
+  guide for changing an order.
 
 ## Do not use when
 

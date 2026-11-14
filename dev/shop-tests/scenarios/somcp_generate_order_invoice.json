@@ -1,9 +1,9 @@
 {
   "calls": [
-    {"why": "an order that does not exist", "arguments": {"id_order": 999999}, "expect": "error", "contains": ["Nothing was generated.", "id_order: No order of this shop has this identifier"]},
-    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF"}, "expect": "error", "contains": ["reference: No order of this shop has this reference"]},
-    {"why": "neither an identifier nor a reference", "arguments": {}, "expect": "error", "contains": ["Give id_order or reference"]},
-    {"why": "a field the tool does not take, with nothing generated", "arguments": {"id_order": 4, "send_email": true}, "expect": "error", "contains": ["Nothing was generated.", "send_email: unknown field"]},
+    {"why": "an order that does not exist", "arguments": {"id_order": 999999}, "expect": "error", "contains": ["Nothing was generated. Correct these and call again:", "id_order: no order of this shop has the identifier"]},
+    {"why": "a reference no order has", "arguments": {"reference": "NOSUCHREF"}, "expect": "error", "contains": ["reference: no order of this shop has the reference"]},
+    {"why": "neither an identifier nor a reference", "arguments": {}, "expect": "error", "contains": ["give id_order or reference"]},
+    {"why": "a field the tool does not take, with nothing generated", "arguments": {"id_order": 4, "send_email": true}, "expect": "error", "contains": ["Nothing was generated. Correct these and call again:", "send_email: not a field of this tool"]},
     {"why": "a demo order without invoice, found by its reference: the invoice is generated with the shop's prefix", "arguments": {"reference": "FFATNOMMJ"}, "expect": "ok", "contains": ["\"generated\": true", "\"reference\": \"FFATNOMMJ\"", "\"id_order_invoice\"", "\"number\": \"", "\"total_tax_included\""]},
     {"why": "the same order again: nothing generated, the existing invoice given back", "arguments": {"id_order": 4}, "expect": "ok", "contains": ["\"generated\": false", "already has an invoice", "\"id_order_invoice\""]}
   ]

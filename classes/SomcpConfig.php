@@ -77,6 +77,17 @@ class SomcpConfig
     public const TOOLS_TTL = 'SOMCP_TOOLS_TTL';
 
     /**
+     * @var string '1' when connected assistants get the tools in compact form:
+     *             somcp_ping, the two file tools, and three tools to search and
+     *             run the others.
+     *
+     * Read by the endpoint on every request, so a change reaches an assistant
+     * when its copy of the list expires (TOOLS_TTL), with no reconnection. The
+     * built-in assistant is not concerned: it has its own search.
+     */
+    public const TOOLS_COMPACT = 'SOMCP_TOOLS_COMPACT';
+
+    /**
      * @var string Tools the merchant switched off, space separated.
      *
      * A list of what is off rather than what is on, so that a tool added by an
@@ -194,6 +205,10 @@ class SomcpConfig
             // list on every question, short enough that a merchant who just
             // switched a tool off does not wait long for it to disappear.
             self::TOOLS_TTL => '300',
+            // Off for a shop that updates: its assistants keep the list they
+            // know, and the merchant turns compact mode on when they choose.
+            // install() turns it on for a new shop, which has no assistant yet.
+            self::TOOLS_COMPACT => '0',
             self::TOOLS_OFF => '',
             self::PROMPTS_OFF => '',
             self::TOOLS_OFF_CHAT => '',
@@ -278,6 +293,7 @@ class SomcpConfig
             case self::CIMD_ENABLED:
             case self::DCR_ENABLED:
             case self::LOG_ENABLED:
+            case self::TOOLS_COMPACT:
                 return $raw === '1' ? '1' : '0';
             case self::ACCESS_TTL:
                 return (string) max(60, (int) $raw);

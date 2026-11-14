@@ -70,12 +70,6 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     /** @var int The size of the name and friendly URL columns. */
     private const NAME_MAX = 128;
 
-    /** @var int Stricter than PrestaShop's 255, so search engines show the title whole. */
-    private const CATEGORY_META_TITLE_MAX = 70;
-
-    /** @var int Stricter than PrestaShop's 512, so search results do not cut it. */
-    private const CATEGORY_META_DESCRIPTION_MAX = 150;
-
     /** @var int Keywords past this many are noise to a search engine. */
     private const META_KEYWORDS_MAX = 5;
 
@@ -103,7 +97,8 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             [self::class, 'handle'],
             // Adding a category is what the categories page asks for in Team,
             // Permissions; editing one is a different right.
-            SomcpTool::acts(SomcpPermission::ADD, 'AdminCategories')
+            SomcpTool::acts(SomcpPermission::ADD, 'AdminCategories'),
+            files: ['cover_image' => SomcpUpload::images(), 'menu_thumbnails' => SomcpUpload::images()]
         );
     }
 
@@ -147,13 +142,14 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 'groups' => [
                     'type' => 'array',
                     'description' => 'Merchant, from the shop: the customer groups that can see the category, '
-                        . 'their id_group from somcp_list_customer_groups. Every group when left out, as in the back office.',
-                    'items' => ['type' => 'integer'],
+                        . 'by id_group from somcp_list_customer_groups or as somcp_get_category returns them. Every '
+                        . 'group when left out.',
+                    'items' => self::groupItemSchema(),
                 ],
                 'link_rewrite' => $text('Assistant. The friendly URL, 128 characters at most; made from the '
                     . 'name when left out.'),
-                'meta_title' => $text('Assistant. 70 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
-                'meta_description' => $text('Assistant. 150 characters at most, without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_title' => $text('Assistant. 255 at most; over 70 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
+                'meta_description' => $text('Assistant. 512 at most; over 160 cut in search. Without < > { } (nor = before PrestaShop 9.1).'),
                 'meta_keywords' => $text('Assistant. PrestaShop 8 only, refused on 9. '
                     . '5 keywords at most, comma separated, without < > = { }.'),
                 'redirect_type' => [
@@ -166,12 +162,12 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                     'description' => 'Assistant. PrestaShop 9 only: the category a 301 or 302 redirects to, from '
                         . 'somcp_list_categories; 0 or left out for the closest parent.',
                 ],
-                'cover_image' => self::imageSchema('Merchant. The cover image.', 'the cover image'),
+                'cover_image' => SomcpUpload::schema('Merchant. The cover image.', 'the cover image'),
                 'menu_thumbnails' => [
                     'type' => 'array',
                     'description' => 'Merchant. PrestaShop 8 only, refused on 9, which dropped them: up to 3 images '
                         . 'the main menu shows, each given like the cover image.',
-                    'items' => self::imageSchema('Merchant. One menu thumbnail.', 'a menu thumbnail'),
+                    'items' => SomcpUpload::schema('Merchant. One menu thumbnail.', 'a menu thumbnail'),
                 ],
             ],
             'required' => ['name'],
@@ -193,10 +189,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         $errors = [];
         $plan = self::plan($arguments, $shop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", $errors),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $shop, $idEmployee): array {
@@ -218,14 +211,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     private static function plan(array $arguments, Shop $shop, array &$errors): ?array
     {
         $idShop = (int) $shop->id;
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::CATEGORY_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, self::ARGUMENTS, self::CATEGORY_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -393,10 +379,37 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             . ' AND `id_shop` = ' . (int) $shop->id
         );
         if (!$exists) {
-            $errors[] = 'id_parent: no category ' . $idParent . ' in this shop; take one from somcp_list_categories';
+            $errors[] = SomcpTool::notFound('id_parent', 'category', $idParent, 'somcp_list_categories');
         }
 
         return $idParent;
+    }
+
+    /**
+     * One item of groups: an id_group, or a group as somcp_get_category
+     * returns it.
+     *
+     * customerGroups() reads both through ids(), so the schema says so too: a
+     * client that checks the arguments against the schema would otherwise
+     * refuse the groups a get returned before they reach the tool.
+     *
+     * @return array<string, mixed>
+     */
+    protected static function groupItemSchema(): array
+    {
+        return [
+            'anyOf' => [
+                ['type' => 'integer'],
+                [
+                    'type' => 'object',
+                    'properties' => [
+                        'id_group' => ['type' => 'integer'],
+                        'name' => ['type' => 'string', 'description' => 'Ignored: the group is taken by its id_group.'],
+                    ],
+                    'required' => ['id_group'],
+                ],
+            ],
+        ];
     }
 
     /**
@@ -424,7 +437,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         $groups = [];
         foreach (array_unique(self::ids($value, 'id_group', 'groups', $errors)) as $idGroup) {
             if (!in_array($idGroup, $known, true)) {
-                $errors[] = 'groups: no customer group ' . $idGroup . ' in this shop; take one from somcp_list_customer_groups';
+                $errors[] = SomcpTool::notFound('groups', 'customer group', $idGroup, 'somcp_list_customer_groups');
                 continue;
             }
             $groups[] = $idGroup;
@@ -446,19 +459,23 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      */
     protected static function categoryMeta(array $arguments, array $languages, Category $probe, array &$plan, array &$errors): void
     {
-        $limits = ['meta_title' => self::CATEGORY_META_TITLE_MAX, 'meta_description' => self::CATEGORY_META_DESCRIPTION_MAX];
+        // The fields to check; the size refused is the column's, read from the
+        // definition in metaWithin, not these fallbacks.
+        $limits = ['meta_title' => 255, 'meta_description' => 512];
         self::metaWithin($arguments, $limits, $languages, $probe, $plan, $errors);
         self::metaKeywords($arguments, $languages, $probe, $plan, $errors);
     }
 
     /**
-     * Meta texts given in the call, each refused past its limit.
+     * Meta texts given in the call, refused past the column size and advised past
+     * the recommended length, through SomcpTool::seoTextLength.
      *
-     * Shared with the brand tools: the limits differ from one object to the
-     * other, the way they are counted and checked must not.
+     * Shared with the brand and supplier tools: which fields exist differs from
+     * one object to the other, the way they are sized, counted and checked must
+     * not.
      *
      * @param array<string, mixed> $arguments
-     * @param array<string, int> $limits characters at most, by field
+     * @param array<string, int> $limits the fields to check, by name; the size refused is the column's
      * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
      * @param ObjectModel $probe the object whose rules the texts are checked against
      * @param array<string, mixed> $plan
@@ -468,18 +485,25 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      */
     protected static function metaWithin(array $arguments, array $limits, array $languages, ObjectModel $probe, array &$plan, array &$errors): void
     {
-        foreach ($limits as $field => $max) {
+        foreach ($limits as $field => $fallback) {
+            // Refused past the column size rather than cut: a title cut by the
+            // tool is a title nobody wrote.
+            $max = SomcpTool::columnSize($probe, $field, (int) $fallback);
+            $recommended = $field === 'meta_title'
+                ? SomcpTool::META_TITLE_RECOMMENDED
+                : SomcpTool::metaDescriptionRecommended();
             $texts = self::texts($arguments, $field, $field, $languages, $errors);
             foreach ($texts ?? [] as $idLang => $text) {
                 $text = trim($text);
                 $texts[$idLang] = $text;
                 $where = $field . ' (' . $languages['filled'][$idLang] . ')';
-                // Refused rather than cut: a title cut by the tool is a title
-                // nobody wrote, and the merchant would not know it changed.
-                if (self::visibleLength($text) > $max) {
-                    $errors[] = $where . ': ' . $max . ' characters at most, ' . self::visibleLength($text) . ' given';
-                } elseif (($check = $probe->validateField($field, $text, $idLang)) !== true) {
+                $advice = [];
+                if (SomcpTool::seoTextLength($where, self::visibleLength($text), $max, $recommended, $errors, $advice)
+                    && ($check = $probe->validateField($field, $text, $idLang)) !== true) {
                     $errors[] = $where . ': a character PrestaShop refuses there (< > { }, and = before PrestaShop 9.1) - ' . self::reason($check);
+                }
+                foreach ($advice as $line) {
+                    $plan['metaAdvice'][$languages['filled'][$idLang]][] = $line;
                 }
             }
             if ($texts !== null) {
@@ -505,9 +529,13 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             return;
         }
         if (!isset($probe::$definition['fields']['meta_keywords'])) {
-            // PrestaShop 9 dropped the column. Accepting the field and storing
-            // nothing would tell the merchant something false.
-            $errors[] = 'meta_keywords: this PrestaShop version no longer has meta keywords; leave the field out';
+            // PrestaShop 9 dropped the column. The null the get tools return
+            // there is skipped, so their answer can be given back to the
+            // update; a value is refused, since storing nothing would tell the
+            // merchant something false.
+            if ($arguments['meta_keywords'] !== null) {
+                $errors[] = SomcpTool::notOnThisVersion('meta_keywords', 'meta keywords');
+            }
 
             return;
         }
@@ -591,9 +619,13 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         }
         if (!isset(Category::$definition['fields']['redirect_type'])) {
             // PrestaShop 8 has no such field on a category: the page answers
-            // 404 while hidden, whatever is sent.
-            $errors[] = ($typeGiven ? 'redirect_type' : 'id_type_redirected')
-                . ': this PrestaShop version has no redirection for a hidden category; leave the field out';
+            // 404 while hidden, whatever is sent. The null somcp_get_category
+            // returns there is skipped, so its answer can be given back.
+            foreach (['redirect_type', 'id_type_redirected'] as $field) {
+                if (array_key_exists($field, $arguments) && $arguments[$field] !== null) {
+                    $errors[] = SomcpTool::notOnThisVersion($field, 'redirection for a hidden category');
+                }
+            }
 
             return;
         }
@@ -605,7 +637,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         $type = $typeGiven ? self::string($arguments['redirect_type']) : $currentType;
         if ($typeGiven) {
             if ($type === null || !in_array($type, $types, true)) {
-                $errors[] = 'redirect_type: one of ' . implode(', ', $types);
+                $errors[] = SomcpTool::oneOf('redirect_type', $types);
 
                 return;
             }
@@ -632,7 +664,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             . ' AND `id_shop` = ' . (int) $idShop
         );
         if (!$exists || $target === (int) Configuration::get('PS_ROOT_CATEGORY')) {
-            $errors[] = 'id_type_redirected: no category ' . $target . ' in this shop to redirect to';
+            $errors[] = SomcpTool::notFound('id_type_redirected', 'category', $target, 'somcp_list_categories');
 
             return;
         }
@@ -644,7 +676,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      * only: the bytes are fetched once the category exists.
      *
      * The same object and the same errors as every other image field, through
-     * the shared imageSource(): a photo attached in the chat reaches the tool
+     * the shared SomcpUpload::source(): a photo attached in the chat reaches the tool
      * as an upload_ref, so the category cover and thumbnails accept it too.
      *
      * @param array<string, mixed> $arguments
@@ -655,7 +687,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     protected static function categoryImages(array $arguments, array &$errors): array
     {
         $images = [];
-        $cover = self::imageArgument($arguments, 'cover_image', $errors, 'cover image');
+        $cover = SomcpUpload::argument($arguments, 'cover_image', $errors, 'cover image');
         if ($cover !== null) {
             $images[] = $cover + ['for' => 'cover_image'];
         }
@@ -665,8 +697,12 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         }
         // PrestaShop 9 removed menu thumbnails from the category form along
         // with the uploader that wrote them; MenuThumbnailId went with them.
+        // The null somcp_get_category returns there is skipped, so its answer
+        // can be given back to the update.
         if (!class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
-            $errors[] = 'menu_thumbnails: this PrestaShop version no longer has menu thumbnails; leave the field out';
+            if ($arguments['menu_thumbnails'] !== null) {
+                $errors[] = SomcpTool::notOnThisVersion('menu_thumbnails', 'menu thumbnails');
+            }
 
             return $images;
         }
@@ -682,7 +718,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             return $images;
         }
         foreach ($items as $i => $item) {
-            $source = self::imageSource(
+            $source = SomcpUpload::source(
                 is_array($item) && !array_is_list($item) ? $item : [],
                 'menu_thumbnails[' . $i . ']',
                 $errors,
@@ -753,7 +789,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
 
         $idCategory = (int) $category->id;
         $images = self::storeImages($idCategory, $plan['images']);
-        $warnings = self::categoryWarnings($idCategory, $plan, $idShop);
+        $warnings = SomcpTool::withMetaLengthAdvice(self::categoryWarnings($idCategory, $plan, $idShop), $plan);
 
         SomcpLogger::log(
             'category_created',
@@ -796,14 +832,14 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         foreach ($images as $image) {
             $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
             if ($file === false) {
-                $report[] = self::imageOrigin($image) + ['for' => $image['for'], 'refused' => 'the shop has no room to receive it'];
+                $report[] = SomcpUpload::origin($image) + ['for' => $image['for'], 'refused' => 'the shop has no room to receive it'];
                 continue;
             }
 
             try {
                 // url or upload_ref, then the image check: the same path every
                 // tool takes, so a guard added there reaches the category too.
-                $refusal = self::fetchImage(['url' => $image['url'], 'upload_ref' => $image['upload_ref']], $file);
+                $refusal = SomcpUpload::fetchImage(['url' => $image['url'], 'upload_ref' => $image['upload_ref']], $file);
                 if ($refusal === '') {
                     if ($image['for'] === 'cover_image') {
                         // CategoryCoverImageUploader: the original as
@@ -830,7 +866,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 @unlink($file);
             }
 
-            $report[] = self::imageOrigin($image) + ['for' => $image['for']]
+            $report[] = SomcpUpload::origin($image) + ['for' => $image['for']]
                 + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
         }
 
@@ -885,6 +921,59 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     }
 
     /**
+     * The cover image and the menu thumbnails of a category, as
+     * somcp_get_category returns them: a download_ref each, for
+     * somcp_download_file.
+     *
+     * One reading for the get and the update, so an image the update is given
+     * back is compared with exactly what the get answered.
+     *
+     * @param int $idCategory
+     * @param int $idShop
+     *
+     * @return array{cover_image: array{download_ref:string}|null, menu_thumbnails: array<int, array{download_ref:string}|null>|null}
+     */
+    protected static function storedImages(int $idCategory, int $idShop): array
+    {
+        $cover = SomcpDownload::offer('category_image', $idCategory, $idShop);
+        // Null rather than an empty list where the version has no menu
+        // thumbnails at all, as meta_keywords on PrestaShop 9.
+        $thumbnails = null;
+        $slots = self::thumbnailSlots($idCategory);
+        if ($slots !== null) {
+            $thumbnails = [];
+            foreach ($slots as $slot) {
+                $thumbnails[] = SomcpDownload::offer('category_thumbnail', $idCategory . '-' . $slot, $idShop);
+            }
+        }
+
+        return ['cover_image' => $cover, 'menu_thumbnails' => $thumbnails];
+    }
+
+    /**
+     * The slots of the menu thumbnails a category has, in their order, or
+     * null where the version has none.
+     *
+     * @param int $idCategory
+     *
+     * @return array<int, int>|null
+     */
+    protected static function thumbnailSlots(int $idCategory): ?array
+    {
+        if (!class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
+            return null;
+        }
+        $slots = [];
+        for ($slot = 0; $slot < self::MENU_THUMBNAILS_MAX; ++$slot) {
+            if (SomcpDownload::exists('category_thumbnail', $idCategory . '-' . $slot)) {
+                $slots[] = $slot;
+            }
+        }
+
+        return $slots;
+    }
+
+    /**
      * The category with the fields somcp_get_category returns.
      *
      * Public because somcp_get_category answers with it: the read tool and the
@@ -912,22 +1001,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             $groups[] = ['id_group' => (int) $idGroup, 'name' => $names[(int) $idGroup] ?? ''];
         }
 
-        $cover = null;
-        if (is_file(_PS_CAT_IMG_DIR_ . $idCategory . '.jpg')) {
-            $cover = (string) $link->getMediaLink(_THEME_CAT_DIR_ . $idCategory . '.jpg');
-        }
-        // Null rather than an empty list where the version has no menu
-        // thumbnails at all, as meta_keywords on PrestaShop 9.
-        $thumbnails = null;
-        if (class_exists('PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\MenuThumbnailId')) {
-            $thumbnails = [];
-            for ($slot = 0; $slot < self::MENU_THUMBNAILS_MAX; ++$slot) {
-                $file = $idCategory . '-' . $slot . '_thumb.jpg';
-                if (is_file(_PS_CAT_IMG_DIR_ . $file)) {
-                    $thumbnails[] = (string) $link->getMediaLink(_THEME_CAT_DIR_ . $file);
-                }
-            }
-        }
+        $stored = self::storedImages($idCategory, $idShop);
 
         // Fields one version has and the other does not are read from the
         // object's properties: the core declares them only where its definition
@@ -955,8 +1029,8 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             'meta_title' => self::textOf($category->meta_title, $idLang),
             'meta_description' => self::textOf($category->meta_description, $idLang),
             'meta_keywords' => isset(Category::$definition['fields']['meta_keywords']) ? self::textOf($properties['meta_keywords'] ?? '', $idLang) : null,
-            'cover_image' => $cover,
-            'menu_thumbnails' => $thumbnails,
+            'cover_image' => $stored['cover_image'],
+            'menu_thumbnails' => $stored['menu_thumbnails'],
             'products_count' => (int) $db->getValue(
                 'SELECT COUNT(DISTINCT cp.`id_product`) FROM `' . _DB_PREFIX_ . 'category_product` cp'
                 . ' INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = cp.`id_product` AND ps.`id_shop` = ' . (int) $idShop

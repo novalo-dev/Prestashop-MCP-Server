@@ -7,10 +7,12 @@ word, a reference prefix or a barcode fragment.
 ## Tools
 
 - `somcp_ping`
+- `somcp_upload_file`
 - `somcp_search_products`
 - `somcp_get_product`
 - `somcp_list_categories`
 - `somcp_get_category`
+- `somcp_get_category_kpis`
 - `somcp_list_manufacturers`
 - `somcp_get_manufacturer`
 - `somcp_list_manufacturer_addresses`
@@ -34,6 +36,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_create_category`
 - `somcp_update_category`
 - `somcp_set_category_active`
+- `somcp_delete_category`
 - `somcp_create_manufacturer`
 - `somcp_update_manufacturer`
 - `somcp_set_manufacturer_active`
@@ -45,12 +48,16 @@ word, a reference prefix or a barcode fragment.
 - `somcp_set_supplier_active`
 - `somcp_create_attribute_group`
 - `somcp_update_attribute_group`
+- `somcp_delete_attribute_group`
 - `somcp_create_attribute_value`
 - `somcp_update_attribute_value`
+- `somcp_delete_attribute_value`
 - `somcp_create_feature`
 - `somcp_update_feature`
+- `somcp_delete_feature`
 - `somcp_create_feature_value`
 - `somcp_update_feature_value`
+- `somcp_delete_feature_value`
 
 ## Know which shop you are in
 
@@ -71,8 +78,9 @@ one that answered. The currency of the prices comes from there too.
    merchant was most likely holding that variant: say which one.
 3. Read `total_count`, not the length of the list. Twenty results out of four
    hundred is not "twenty products". Each line already holds the name of the
-   default category (`category_default`) and the small cover image
-   (`cover_image`, null without one): do not read each product to learn them.
+   default category (`category_default`) and the cover image (`cover_image`,
+   a `download_ref` for `somcp_download_file`, null without one): do not read
+   each product to learn them.
 4. When the merchant asks for several matches, show them the list and let them
    pick. Never choose one for them.
 5. To answer about one product - its description, carriers, images, suppliers,
@@ -92,6 +100,20 @@ virtual product is created with its file (`virtual_file`), given by `url` or
 Before taking a product out of a pack (`remove_pack_items`) or deleting the
 file of a virtual product (`remove_virtual_file`), name it to the merchant:
 customers who bought the file can no longer download it.
+
+## Images and files
+
+A file never travels in the conversation: an image, a logo or the file of a
+virtual product is given by `url` or by `upload_ref`.
+
+1. **A public `https` address**: give it as `url`. The shop downloads it.
+2. **A file you have but no address for** (one you made, or one the merchant
+   gave you): call `somcp_upload_file` with `for` (the tool) and `field` (its
+   argument, e.g. `images`). Send the file yourself to the address it gives
+   when you can make an HTTP request; otherwise show the merchant its deposit
+   page. Then give the `upload_ref` to the tool, once. If your own environment
+   blocks the request, tell the merchant once what the answer says to allow.
+3. **A file attached in the built-in chat** already has its `upload_ref`.
 
 ## Identifiers are never guessed
 
@@ -159,8 +181,8 @@ to one product and is read with `somcp_get_product`.
 Files - a manual, a data sheet - come from `somcp_list_attachments`: take the
 `id_attachment` from there. Files cannot be added through the conversation;
 when the one the merchant wants is not listed, they upload it in the back
-office first. Its `download_url` opens without being signed in: give it to the
-merchant, never put it anywhere public.
+office first. To open one, pass its `download_ref` to `somcp_download_file`,
+as for every file of the shop.
 
 Carriers come from `somcp_list_carriers`: give its `id_carrier` in
 `shipping.carriers`, never a guessed one. A disabled carrier is listed too;
@@ -305,8 +327,8 @@ the merchant says otherwise. Before calling it:
    count the visible text, spaces included, HTML tags not counted. A language
    of the shop left out of `languages` takes the default language's text.
 3. An image is given by `url` (a public `https` address the shop downloads) or
-   by `upload_ref` (a file already on the shop - one attached in the chat,
-   deposited by the merchant, or generated here); one of the two, never both.
+   by `upload_ref` (a file already on the shop - one attached in the chat, or
+   one from `somcp_upload_file`); one of the two, never both.
 
 When it succeeds, show the merchant the category as returned, the
 `seo_warnings`, and any image in `images` that was refused, with its reason. On
@@ -348,6 +370,27 @@ multistore installation the change shows in every shop sharing the category.
 `changed: false` means it was already in that state; the root category and Home
 cannot be hidden. On a lost answer, read it with `somcp_get_category` before
 calling twice.
+
+## Deleting a category
+
+`somcp_delete_category` deletes one category for good, with all its
+subcategories. Before calling it:
+
+1. Read the category with `somcp_get_category` and tell the merchant how many
+   subcategories go with it (`children_count`) and how many products it holds
+   (`products_count`).
+2. Ask what becomes of the products left in no category, as the back office
+   asks: moved to the parent and switched off (`associate_and_disable`, the
+   one it recommends), moved only (`associate_only`), or deleted as well
+   (`remove_associated`). Say plainly that the last one deletes products.
+3. Offer to hide it with `somcp_set_category_active` instead, which can be
+   undone, and delete only once the merchant confirms by the category's name.
+
+Products that keep another category stay in it. Show the merchant the lists
+the answer gives: the subcategories deleted, the products moved, switched off
+or deleted, and those whose default category changed. The root category and
+Home cannot be deleted. On a lost answer, look with `somcp_list_categories`
+before calling twice.
 
 ## Creating a brand
 
@@ -531,6 +574,26 @@ and the `note` when there is one. `changed: false` means the group already held
 those values. On a lost answer, read the group again with
 `somcp_get_attribute_group` before calling twice.
 
+## Deleting an attribute group
+
+`somcp_delete_attribute_group` deletes one attribute group for good, with all
+its values. Before calling it:
+
+1. Take the group from `somcp_list_attributes`, never guessed, and read it with
+   `somcp_get_attribute_group`: tell the merchant how many values go with it
+   (`values_count`) and which products offer it.
+2. Say plainly what goes with it: every combination built only on this group
+   is deleted with its stock and images, and the others lose that one value.
+3. Delete only once the merchant confirms by the group's name.
+
+Show the merchant what the answer counts: `values_deleted`,
+`combinations_deleted`, `combinations_changed` and the `products` concerned.
+When `catalog_price_rules` is not empty, those rules still have a condition on
+a deleted value and match nothing any more: tell the merchant to change or
+remove them. On multistore, `still_in_shops` says how many other stores keep
+the group. On a lost answer, read it with `somcp_get_attribute_group`, which
+then answers "not found", rather than calling twice.
+
 ## Adding an attribute value
 
 `somcp_create_attribute_value` adds one value - a size, a shade - to an
@@ -540,8 +603,9 @@ attribute group. Before calling it:
    the value there: a name the group already holds is refused.
 2. Ask the merchant for the name, in every language being filled. For a group
    of type `color` only, ask for the colour as a hex code and, when they want
-   a pattern rather than a plain colour, the public https address of the
-   texture image; on any other group, leave both out. When the shop has the
+   a pattern rather than a plain colour, the texture image: its public https
+   address (`url`) or a photo already on the shop, such as one attached in the
+   chat (`upload_ref`); on any other group, leave both out. When the shop has the
    faceted search module, write the URL word and the title tag yourself and
    show them first; without it, leave them out: they are refused.
 3. The value comes last in its group. One value per call.
@@ -562,8 +626,8 @@ calling it:
    value: tell the merchant so and call once they agree. Colour, texture and
    `remove_texture` only go with a group of type `color`.
 3. Moving the value to another group (`id_attribute_group`) is refused while a
-   combination uses it. A texture given is downloaded again and replaces the
-   current one.
+   combination uses it. A new texture, by `url` or `upload_ref`, replaces the
+   current one; the texture given back as read changes nothing.
 4. To reorder the values of a group, give `position`, the new place from 0 as
    `somcp_get_attribute_value` gives it: the other values shift, as with the
    drag and drop of the back office list.
@@ -573,6 +637,27 @@ and the `note` when there is one. If `texture` says `refused`, the value keeps
 its current texture: tell the merchant why. `changed: false` means the value
 already held those values. On a lost answer, read the value again with
 `somcp_get_attribute_value` before calling twice.
+
+## Deleting an attribute value
+
+`somcp_delete_attribute_value` deletes one value of an attribute for good.
+Before calling it:
+
+1. Take the value from `somcp_list_attributes`, never guessed, and read it with
+   `somcp_get_attribute_value`: `combinations_count` and `products` say how
+   many combinations go with the value and which products offer them.
+2. Say plainly what goes with it: every combination that uses the value is
+   deleted with its stock and images, and a product that loses its default
+   combination gets a new one.
+3. Delete only once the merchant confirms by the value's name.
+
+Show the merchant what the answer counts: the `combinations_deleted`, the
+`default_changed` products, and the `cart_rules` that were cleaned. When
+`catalog_price_rules` is not empty, those rules still have a condition on the
+deleted value and match nothing any more: tell the merchant to change or remove
+them. On multistore, `still_in_shops` says how many other stores keep the
+value. On a lost answer, read it with `somcp_get_attribute_value`, which then
+answers "not found", rather than calling twice.
 
 ## Creating a feature
 
@@ -612,6 +697,25 @@ When it succeeds, show the merchant each change with its old and new value.
 `changed: false` means the feature already held those values. On a lost
 answer, read the feature again with `somcp_get_feature` before calling twice.
 
+## Deleting a feature
+
+`somcp_delete_feature` deletes one feature for good, with all its values.
+Before calling it:
+
+1. Take the feature from `somcp_list_features`, never guessed, and read it
+   with `somcp_get_feature`: tell the merchant how many products lose it
+   (`products_count`).
+2. Say plainly what goes with it: every product that shows the feature loses
+   it, with its value, custom values included.
+3. Delete only once the merchant confirms by the feature's name.
+
+Show the merchant what the answer counts: `values_deleted` and `products`.
+When `catalog_price_rules` is not empty, those rules still have a condition on
+a deleted value and match nothing any more: tell the merchant to change or
+remove them. A feature shared with other stores is refused: it is deleted from
+the back office, in the all-stores context. On a lost answer, read it with
+`somcp_get_feature`, which then answers "not found", rather than calling twice.
+
 ## Adding a value to a feature
 
 `somcp_create_feature_value` adds one predefined value - Cotton, Linen - to an
@@ -646,6 +750,27 @@ calling it:
 When it succeeds, show the merchant each change with its old and new value.
 `changed: false` means the value already held those values. On a lost answer,
 read the value again with `somcp_get_feature_value` before calling twice.
+
+## Deleting a feature value
+
+`somcp_delete_feature_value` deletes one predefined value of a feature for
+good. Before calling it:
+
+1. Take the value from `somcp_list_features`, never guessed, and read it with
+   `somcp_get_feature_value`: tell the merchant how many products lose it
+   (`products_count`).
+2. Say plainly that every product that has the value loses it. A value typed
+   on one product only is changed with `somcp_update_product`; to delete the
+   whole feature, use `somcp_delete_feature`.
+3. Delete only once the merchant confirms by the value's text.
+
+Show the merchant `products_count` from the answer. When `catalog_price_rules`
+is not empty, those rules still have a condition on the deleted value and
+match nothing any more: tell the merchant to change or remove them. A value of
+a feature shared with other stores is refused: it is deleted from the back
+office, in the all-stores context. On a lost answer, read it with
+`somcp_get_feature_value`, which then answers "not found", rather than calling
+twice.
 
 ## Do not use when
 

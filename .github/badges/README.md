@@ -7,7 +7,10 @@ The exceptions are the badges whose value changes without a commit here, so a
 file in the repository could not follow them. The PHP tests, Integration and
 Security badges are served by GitHub Actions and show the last run of each
 workflow on develop. The release badge, stars, forks and contributors are
-served by shields.io, which reads them from GitHub.
+served by shields.io, which reads them from GitHub. The tools and prompts
+badges are counted from the code by the Badges workflow on every push to
+develop (`check-tools.php --badges`), published on the badges branch and drawn
+by shields.io, so no sentence has to be updated when a tool is added.
 
 The PrestaShop and PHP badges state facts about the module: change them in the
 same pull request as `ps_versions_compliancy` or `composer.json`.

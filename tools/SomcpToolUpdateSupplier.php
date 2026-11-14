@@ -76,7 +76,8 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
             [self::class, 'handle'],
             // Changing a supplier is the edit right of the suppliers page in
             // Team, Permissions; creating one is a different right.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminSuppliers')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminSuppliers'),
+            files: ['logo' => SomcpUpload::images()]
         );
     }
 
@@ -107,7 +108,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
         $properties['active']['description'] = 'Merchant. Enabled on the storefront.' . $kept;
         $properties['country']['description'] = 'Merchant. ISO code of the country, for example FR, among the '
             . 'countries of this shop. A new country takes the state given with it, none otherwise.' . $kept;
-        $properties['logo'] = self::imageSchema('Merchant. A new logo, which replaces the current one.', 'the logo');
+        $properties['logo'] = SomcpUpload::schema('Merchant. A new logo, which replaces the current one.', 'the logo');
         $properties['remove_logo'] = [
             'type' => 'boolean',
             'description' => 'Merchant. true removes the logo. Not with logo, which already replaces it.',
@@ -134,18 +135,18 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
 
         // The same test of the shop as somcp_get_supplier, so a supplier this
         // tool refuses is never one that tool describes.
-        $supplier = SomcpToolGetSupplier::existingSupplier(self::integer($arguments['id_supplier'] ?? null) ?? 0, $idShop);
+        $idSupplier = self::integer($arguments['id_supplier'] ?? null) ?? 0;
+        $supplier = SomcpToolGetSupplier::existingSupplier($idSupplier, $idShop);
         if ($supplier === null) {
-            return SomcpTool::text('No supplier of this shop has this identifier. Nothing was changed. Find it with somcp_list_suppliers.', true);
+            return SomcpTool::refused('changed', [$idSupplier > 0
+                ? SomcpTool::notFound('id_supplier', 'supplier', $idSupplier, 'somcp_list_suppliers')
+                : SomcpTool::notAnIdentifier('id_supplier')]);
         }
 
         $errors = [];
         $plan = self::planUpdate($arguments, $supplier, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -176,14 +177,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
      */
     private static function planUpdate(array $arguments, Supplier $supplier, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::SUPPLIER_ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::SUPPLIER_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
-        }
+        array_push($errors, ...SomcpTool::unknownFields($arguments, array_merge(self::SUPPLIER_ARGUMENTS, self::OWN_ARGUMENTS), self::SUPPLIER_COMPUTED));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -200,9 +194,19 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
             'supplier' => [],
             'address' => [],
             'id_address' => (int) Address::getAddressIdBySupplierId((int) $supplier->id),
-            'logo' => self::imageArgument($arguments, 'logo', $errors, 'logo'),
+            'logo' => null,
             'remove_logo' => false,
         ];
+
+        if (array_key_exists('logo', $arguments)) {
+            // A logo given back as somcp_get_supplier returned it - its
+            // download_ref, or null when there is none - is not a new logo and
+            // leaves plan['logo'] null, so nothing is downloaded or written.
+            // An address or an upload_ref is a real logo.
+            if (!SomcpUpload::same($arguments['logo'], 'supplier_logo', (string) $supplier->id)) {
+                $plan['logo'] = SomcpUpload::argument($arguments, 'logo', $errors, 'logo');
+            }
+        }
 
         $name = self::manufacturerName($arguments, $probe, $errors, false, 'supplier');
         if ($name !== null) {
@@ -379,7 +383,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
         // An address cannot be compared with a stored file, so a logo given
         // always counts as a change; a removal counts only when there is one.
         if ($plan['logo'] !== null) {
-            self::record($plan, 'logo', $before['logo'], self::imageOrigin($plan['logo']));
+            self::record($plan, 'logo', $before['logo'], SomcpUpload::origin($plan['logo']));
         } elseif ($before['logo'] === null) {
             $plan['remove_logo'] = false;
         } else {
@@ -523,7 +527,7 @@ class SomcpToolUpdateSupplier extends SomcpToolCreateSupplier
             $idEmployee
         );
 
-        $warnings = self::updateWarnings($idSupplier, $plan);
+        $warnings = SomcpTool::withMetaLengthAdvice(self::updateWarnings($idSupplier, $plan), $plan);
 
         return SomcpTool::json([
             'changed' => true,

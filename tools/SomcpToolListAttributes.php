@@ -91,9 +91,22 @@ class SomcpToolListAttributes
         // A group asked for by identifier must be one of this shop: an
         // identifier that matches nothing is said, not answered with an empty
         // list the assistant would read as "this group has no values".
+        // Every problem of the call in one answer, a misspelt field included:
+        // ignored, it would answer every group for the one asked for.
+        $errors = SomcpTool::unknownFields($arguments, ['id_attribute_group', 'language']);
         $idGroup = null;
         if (isset($arguments['id_attribute_group'])) {
-            $idGroup = is_scalar($arguments['id_attribute_group']) ? (int) $arguments['id_attribute_group'] : 0;
+            // A cast would read an array as 1 and answer about a group nobody
+            // asked for: only a whole number is an identifier.
+            $idGroup = SomcpTool::id($arguments, 'id_attribute_group');
+            if ($idGroup === 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_attribute_group');
+            } elseif (SomcpToolGetAttributeGroup::existingGroup($idGroup, $idShop) === null) {
+                $errors[] = SomcpTool::notFound('id_attribute_group', 'attribute group', $idGroup, 'somcp_list_attributes');
+            }
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
         // Queries rather than AttributeGroup::getAttributesGroups() and
@@ -130,13 +143,6 @@ class SomcpToolListAttributes
                 'values_count' => 0,
                 'values' => [],
             ];
-        }
-
-        if ($idGroup !== null && $groups === []) {
-            return SomcpTool::text(
-                'No attribute group of this shop has this identifier. List them all with somcp_list_attributes, without id_attribute_group.',
-                true
-            );
         }
 
         if ($groups !== []) {

@@ -26,6 +26,9 @@ neuron-core/neuron-ai/src/HttpClient/Amp
 neuron-core/neuron-ai/src/Chat/History/EloquentMessageStore.php
 neuron-core/neuron-ai/src/Workflow/Persistence/EloquentPersistence.php
 neuron-core/neuron-ai/src/Workflow/Persistence/RedisPersistence.php
+# A streaming channel that opens a socket to a server of its own (4.1.25):
+# the assistant streams through its own controller and never starts one.
+neuron-core/neuron-ai/src/Workflow/Streaming/Channel/IQStreamChannel.php
 neuron-core/neuron-ai/src/Tools/Toolkits/*/
 
 # The Composer plugin that places the module in modules/somcp when an agency

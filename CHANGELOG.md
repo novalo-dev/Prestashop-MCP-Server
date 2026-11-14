@@ -16,6 +16,15 @@ are:
 
 ## Unreleased
 
+### Changed
+
+**The built-in assistant runs on Neuron AI 4.1.25.** A conversation answered
+from two tabs at once now shows the answer of the latest one instead of an
+error.
+
+**Sign-in page of a connection.** The anti-robot check is updated to ALTCHA
+3.6.0, with corrected apostrophes in its English and French texts.
+
 ### Fixed
 
 **The file of a virtual product shows in the back office.** A virtual product

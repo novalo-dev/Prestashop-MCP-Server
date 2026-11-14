@@ -347,8 +347,9 @@ class SomcpModules
         static $booted = null;
         if ($booted === null) {
             try {
+                $environment = SomcpBackOffice::constant('_PS_ENV_');
                 /** @var Symfony\Component\HttpKernel\KernelInterface $made */
-                $made = new $class(defined('_PS_ENV_') ? _PS_ENV_ : 'prod', (bool) _PS_MODE_DEV_);
+                $made = new $class(is_string($environment) ? $environment : 'prod', (bool) SomcpBackOffice::constant('_PS_MODE_DEV_'));
                 $made->boot();
                 $booted = $made;
             } catch (Throwable $e) {
@@ -362,7 +363,7 @@ class SomcpModules
             };
         }
 
-        $context = Context::getContext();
+        $context = Somcp::legacyContext();
         $previousKernel = $kernel;
         $previousContainer = $context->container ?? null;
         $kernel = $booted;

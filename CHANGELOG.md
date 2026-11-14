@@ -50,7 +50,9 @@ its address on its own:
   built-in assistant. It is handed over only to an account that may use the
   tool that found it, and under the type its content shows: a file of
   **Catalog > Files** whose content is not what its name says is never passed
-  off as a picture or a document.
+  off as a picture or a document. Its name keeps plain letters and digits
+  only, so an invoice numbered #FA000104/2026 arrives as FA000104-2026.pdf,
+  which the assistant can show you.
 
 Before, an assistant connected from outside could only give the shop a web
 address: a file it had made, or one you gave it, had no way in. Modules asking for files

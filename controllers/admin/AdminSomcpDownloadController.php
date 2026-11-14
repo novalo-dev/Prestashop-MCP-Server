@@ -161,9 +161,9 @@ class AdminSomcpDownloadController extends ModuleAdminController
     /**
      * Sends a file, as the core sends a PDF, and stops the script.
      *
-     * The name is reduced to plain characters, as controllers/front/file.php
-     * does: it is the shop's own name for the file, but an attachment's name
-     * was typed by whoever uploaded it.
+     * The name is reduced to plain characters by SomcpDownload::cleanName(),
+     * as everywhere a file goes out: an attachment's name was typed by
+     * whoever uploaded it.
      *
      * @param array{bytes:string, name:string, mime:string} $file
      */
@@ -177,7 +177,7 @@ class AdminSomcpDownloadController extends ModuleAdminController
         // attachment may be an HTML or SVG file, which opened inline here would
         // run inside the back office. Anything else is saved, never shown.
         $shown = in_array($file['mime'], ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'], true);
-        $name = (string) preg_replace('/[^A-Za-z0-9._-]/', '_', $file['name']);
+        $name = SomcpDownload::cleanName($file['name']);
         header('Content-Type: ' . ($shown ? $file['mime'] : 'application/octet-stream'));
         header('Content-Length: ' . strlen($file['bytes']));
         header('Content-Disposition: ' . ($shown ? 'inline' : 'attachment') . '; filename="' . $name . '"');

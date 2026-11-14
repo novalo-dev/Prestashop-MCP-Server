@@ -277,7 +277,8 @@ as an image the assistant can see, with no link beside it, so the assistant
 reads the file or shows it rather than handing the merchant an address. Its
 type is read from its bytes against the extension of `name`; a file whose
 content does not match goes out as `application/octet-stream`, and the
-assistant is told not to read it as what its name says. Past 4 MiB, or in the
+assistant is told not to read it as what its name says. The name goes out with
+plain letters, digits, `.` and `_` only, everything else becoming `-`. Past 4 MiB, or in the
 built-in assistant, which reads text only, somcp gives a signed address valid
 15 minutes instead. Your tool keeps its own permission and scopes: the file is
 handed only to a call that may run it.

@@ -1056,6 +1056,8 @@ $see('a deposit taking an archive is never filled from an address', $failed($arc
 $handed = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
 $see('a file a module returns comes attached as an image, with no link', ($handed['content'][1]['type'] ?? '') === 'image'
     && strpos((string) ($handed['content'][0]['text'] ?? ''), '"url"') === false, ['body' => json_encode($handed)]);
+$named = SomcpContract::translate(['file' => ['name' => '#FA000104/2026 été.png', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
+$see('a file goes out under a name of plain characters only', strpos((string) ($named['content'][0]['text'] ?? ''), '"file": "FA000104-2026-t.png"') !== false, ['body' => json_encode($named)]);
 $lying = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => '<html></html>']], ['id_employee' => $idEmployee], 'somcptestmodule');
 $see('a file a module names as an image but is not goes out under no type', strpos((string) ($lying['content'][0]['text'] ?? ''), 'application/octet-stream') !== false
     && ($lying['content'][1]['type'] ?? '') === 'resource', ['body' => json_encode($lying)]);

@@ -409,6 +409,7 @@ class SomcpDownload
      */
     public static function handOver(array $file, array $context, string $kind = '', string $id = ''): array
     {
+        $file['name'] = self::cleanName($file['name']);
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $chat = ($context['chat'] ?? false) === true;
         $bytes = $file['bytes'];
@@ -479,6 +480,33 @@ class SomcpDownload
         }
 
         return $result;
+    }
+
+    /**
+     * The name a file goes out under: plain letters, digits, dot and
+     * underscore, everything else a hyphen.
+     *
+     * A name comes from the shop or from whoever uploaded the file - an
+     * invoice is #FA000104/2026.pdf - and a client builds a file from it: a
+     * slash, a hash, a space or any letter outside plain ASCII made ChatGPT
+     * read the invoice yet fail to show it. Hyphens in a row become one, and
+     * none is left at either end of the name or of its extension.
+     *
+     * @param string $name
+     *
+     * @return string
+     */
+    public static function cleanName(string $name): string
+    {
+        $extension = (string) pathinfo($name, PATHINFO_EXTENSION);
+        $base = $extension === '' ? $name : substr($name, 0, -(strlen($extension) + 1));
+        $clean = static function (string $part): string {
+            return trim((string) preg_replace(['/[^A-Za-z0-9._]+/', '/-{2,}/'], '-', $part), '-.');
+        };
+        $base = $clean($base);
+        $extension = $clean($extension);
+
+        return ($base === '' ? 'file' : $base) . ($extension === '' ? '' : '.' . $extension);
     }
 
     /**

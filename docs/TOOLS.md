@@ -2439,7 +2439,9 @@ Its `mime_type` is read from its bytes (`SomcpUpload::typeOf()`, the check of
 every file coming in), never taken from what was stored with it: an attachment
 whose content is not what its name says goes out as
 `application/octet-stream`, and `then` tells the assistant not to read it as
-that type.
+that type. Its name keeps plain letters, digits, `.` and `_` only, everything
+else becoming `-` (`SomcpDownload::cleanName()`): an invoice named
+`#FA000104/2026.pdf` goes out as `FA000104-2026.pdf`, which a client can show.
 A file too large to attach is then kept as a deposit by `SomcpUpload::share()`
 for 15 minutes - the same store, the same check of the bytes and the same
 signed link (`controllers/front/file.php`) as any other file - and purged with

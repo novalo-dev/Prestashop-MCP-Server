@@ -90,7 +90,7 @@ class SomcpFileModuleFrontController extends ModuleFrontController
         // sniffed again by the browser, and never run as a page.
         header('Content-Type: ' . $file['mimeType']);
         header('Content-Length: ' . (string) filesize($file['path']));
-        header('Content-Disposition: inline; filename="' . preg_replace('/[^A-Za-z0-9._-]/', '_', $file['name']) . '"');
+        header('Content-Disposition: inline; filename="' . SomcpDownload::cleanName($file['name']) . '"');
         header('X-Content-Type-Options: nosniff');
         header("Content-Security-Policy: default-src 'none'; sandbox");
         header('Cache-Control: private, max-age=3600');

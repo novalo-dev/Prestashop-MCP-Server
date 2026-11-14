@@ -349,7 +349,9 @@ read from its own declaration (`mayHave()`). `somcp_download_file` checks the
 reference, then that right, and only then looks the file up
 (`SomcpDownload::file()`): a document is built on demand with the core `PDF`
 class, any other file is read where the core keeps it (`stored()`), on the
-shop of the token. Up to 4 MiB the file is attached to the answer, an image as
+shop of the token, and goes out under the type its bytes show
+(`SomcpUpload::typeOf()`, the check of every file coming in), never the one
+stored beside it. Up to 4 MiB the file is attached to the answer, an image as
 an `image` block, any other file as an embedded resource, and nothing else
 comes with it: an address beside it is what an assistant would hand the
 merchant instead of reading the file. Only a file too large to attach leaves

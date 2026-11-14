@@ -40,7 +40,9 @@ its address on its own:
   Only a file too large to attach comes as an address it fetches itself for
   15 minutes, or a link for you to open it in your back office, as in the
   built-in assistant. It is handed over only to an account that may use the
-  tool that found it.
+  tool that found it, and under the type its content shows: a file of
+  **Catalog > Files** whose content is not what its name says is never passed
+  off as a picture or a document.
 
 Before, an assistant connected from outside could only give the shop a web
 address: a file it had made, or one you gave it, had no way in. Modules asking for files

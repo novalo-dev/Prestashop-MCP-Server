@@ -2428,6 +2428,11 @@ up, so whether it exists is told to no one who may not have it. A document is
 built on demand from the shop's templates with the core `PDF` class; any other
 file is read where the shop keeps it (`SomcpDownload::stored()`), and must
 belong to the shop of the token (its `_shop` table) where the object has one.
+Its `mime_type` is read from its bytes (`SomcpUpload::typeOf()`, the check of
+every file coming in), never taken from what was stored with it: an attachment
+whose content is not what its name says goes out as
+`application/octet-stream`, and `then` tells the assistant not to read it as
+that type.
 A file too large to attach is then kept as a deposit by `SomcpUpload::share()`
 for 15 minutes - the same store, the same check of the bytes and the same
 signed link (`controllers/front/file.php`) as any other file - and purged with

@@ -1042,6 +1042,27 @@ if ($idImage > 0 && SomcpDownload::exists('product_image', (string) $idImage)) {
     ]));
     $see('no photo for a download_ref made for another account', $failed($stolenPhoto) && strpos($said($stolenPhoto), 'not a reference made for this account') !== false, $stolenPhoto);
 }
+// An attachment keeps the type its uploader's browser sent: what goes out is
+// read from its bytes instead.
+$disguised = 'somcp' . bin2hex(random_bytes(8));
+file_put_contents(_PS_DOWNLOAD_DIR_ . $disguised, '<html><script>alert(1)</script></html>');
+$attachment = new Attachment();
+$attachment->file = $disguised;
+$attachment->file_name = 'photo.png';
+$attachment->mime = 'image/png';
+$attachment->name = [(int) Configuration::get('PS_LANG_DEFAULT') => 'Somcp disguised file'];
+if ($attachment->add()) {
+    $sent = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_download_file',
+        'arguments' => ['download_ref' => SomcpDownload::reference('attachment', (int) $attachment->id, $idEmployee, Somcp::currentShopId())['download_ref']],
+    ]));
+    $told = json_decode((string) ($sent['json']['result']['content'][0]['text'] ?? ''), true);
+    $see('a page stored as a PNG attachment goes out under no type, never as an image', !$failed($sent)
+        && ($told['mime_type'] ?? '') === 'application/octet-stream'
+        && ($sent['json']['result']['content'][1]['type'] ?? '') === 'resource', $sent);
+    $attachment->delete();
+}
+@unlink(_PS_DOWNLOAD_DIR_ . $disguised);
 $traversal = SomcpDownload::reference('shop_logo', '..', $idEmployee, Somcp::currentShopId());
 $climbed = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
     'name' => 'somcp_download_file',

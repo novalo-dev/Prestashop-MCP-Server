@@ -168,8 +168,14 @@ class SomcpToolDownloadFile
 
         $result = SomcpTool::json($about + [
             'inside' => true,
-            'then' => 'The file is attached to this answer: read it, or show it to the person. Do not give them a link'
-                . ' instead; call again only if they ask for one to open in their back office.',
+            'then' => $file['mime'] === 'application/octet-stream'
+                // Its bytes do not match the type its name gives
+                // (SomcpUpload::typeOf()): handed over all the same, never
+                // under a type it is not.
+                ? 'The file is attached to this answer, but its content is not the type its name gives: tell the'
+                    . ' person so, and do not read it as that type.'
+                : 'The file is attached to this answer: read it, or show it to the person. Do not give them a link'
+                    . ' instead; call again only if they ask for one to open in their back office.',
         ]);
         // An image goes as an image, which a client shows and a model that
         // reads pictures sees; anything else as a resource, read like an

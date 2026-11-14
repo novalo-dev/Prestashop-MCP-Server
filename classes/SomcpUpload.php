@@ -2009,24 +2009,32 @@ class SomcpUpload
     }
 
     /**
-     * The media type of an extension, for a file the shop hands out.
+     * The media type of a file the shop hands out, read from its bytes.
      *
-     * From the same table the shop checks what comes in against, so a file
-     * goes out under the type it would have been let in under. A favicon is
-     * the one file the shop keeps that it never takes in.
+     * The type a file was stored under is not trusted: an attachment of the
+     * catalogue keeps whatever type the uploader's browser sent. The bytes go
+     * through looksLike(), the check every file coming in passes, against the
+     * extension of its name, so a file goes out under the type it would have
+     * been let in under, or under none: application/octet-stream, which no
+     * client opens as anything. A favicon is the one file the shop keeps that
+     * it never takes in, checked by its own signature.
      *
-     * @param string $extension
+     * @param string $path where the file is
+     * @param string $name its name, whose extension says what it claims to be
      *
      * @return string
      */
-    public static function mimeOf(string $extension): string
+    public static function typeOf(string $path, string $name): string
     {
-        $extension = Tools::strtolower($extension);
-        if (isset(self::ACCEPTED[$extension])) {
+        $extension = Tools::strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+        if (isset(self::ACCEPTED[$extension]) && self::looksLike($path, $extension)) {
             return self::ACCEPTED[$extension]['mime'];
         }
+        if ($extension === 'ico' && strncmp((string) @file_get_contents($path, false, null, 0, 4), "\0\0\1\0", 4) === 0) {
+            return 'image/x-icon';
+        }
 
-        return $extension === 'ico' ? 'image/x-icon' : 'application/octet-stream';
+        return 'application/octet-stream';
     }
 
     /**

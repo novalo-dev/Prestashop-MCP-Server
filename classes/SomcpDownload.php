@@ -381,7 +381,10 @@ class SomcpDownload
             return 'gone';
         }
 
-        return ['bytes' => $bytes, 'name' => $stored['name'], 'mime' => $stored['mime']];
+        // The type from the bytes, never from what was stored beside the
+        // file; read here rather than in stored(), which every tool listing a
+        // file calls only to know there is one.
+        return ['bytes' => $bytes, 'name' => $stored['name'], 'mime' => SomcpUpload::typeOf($stored['path'], $stored['name'])];
     }
 
     /**
@@ -410,7 +413,7 @@ class SomcpDownload
     }
 
     /**
-     * Where the shop keeps a file that is not rendered, and what it is.
+     * Where the shop keeps a file that is not rendered, and its name.
      *
      * The folders and names are the core's own, the ones its back office
      * screens write. With a shop, the object must be attached to it, as its
@@ -420,14 +423,13 @@ class SomcpDownload
      * @param string $id
      * @param int|null $idShop
      *
-     * @return array{path:string, name:string, mime:string}|null
+     * @return array{path:string, name:string}|null
      */
     private static function stored(string $kind, string $id, ?int $idShop): ?array
     {
         $number = (int) $id;
         $name = $kind . '-' . $id;
         $path = '';
-        $mime = '';
         $shopTable = '';
         $shopKey = '';
 
@@ -464,7 +466,6 @@ class SomcpDownload
                 // Attachments are shared by every shop, as their screen lists them.
                 $path = _PS_DOWNLOAD_DIR_ . basename((string) $attachment->file);
                 $name = (string) $attachment->file_name;
-                $mime = (string) $attachment->mime;
                 break;
             case 'manufacturer_logo':
                 $path = _PS_MANU_IMG_DIR_ . $number . '.jpg';
@@ -538,11 +539,8 @@ class SomcpDownload
         if ($name === '') {
             $name = basename($path);
         }
-        if ($mime === '') {
-            $mime = SomcpUpload::mimeOf((string) pathinfo($name, PATHINFO_EXTENSION));
-        }
 
-        return ['path' => $path, 'name' => $name, 'mime' => $mime];
+        return ['path' => $path, 'name' => $name];
     }
 
     /**

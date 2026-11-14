@@ -1051,6 +1051,42 @@ $archiveByUrl = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
 ]));
 $see('a deposit taking an archive is never filled from an address', $failed($archiveByUrl) && strpos($said($archiveByUrl), 'never fetched from an address') !== false, $archiveByUrl);
 
+// A deposit of several files: each call adds one and the answer says so,
+// with the name and size kept, so an assistant neither sends the same file
+// again to be sure nor misses a file it rebuilt instead of copying.
+$several = SomcpUpload::invite($idEmployee, 'Attachments of a reply', 'image', 'somcptestmodule', ['files' => 3]);
+$first = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $several, 'data' => 'data:image/png;base64,' . base64_encode($png), 'name' => 'proof of delivery.png'],
+]));
+$firstSaid = json_decode($said($first), true);
+$see('a file put in a deposit is counted, with its name and size, and the answer says a call adds one', !$failed($first)
+    && ($firstSaid['files_held'] ?? 0) === 1 && ($firstSaid['files_allowed'] ?? 0) === 3
+    && ($firstSaid['files'][0]['name'] ?? '') === 'proof-of-delivery.png' && ($firstSaid['files'][0]['bytes'] ?? 0) === strlen($png)
+    && strpos((string) ($firstSaid['then'] ?? ''), 'never replaces one') !== false, $first);
+$second = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $several, 'data' => 'data:image/png;name=label%20scan.jpg;base64,' . base64_encode($png)],
+]));
+$secondSaid = json_decode($said($second), true);
+$see('a data URI is named from its name= parameter, under the extension its type gives', !$failed($second)
+    && ($secondSaid['files'][1]['name'] ?? '') === 'label-scan.png' && ($secondSaid['files_held'] ?? 0) === 2, $second);
+$nameAlone = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $several, 'url' => 'https://example.com/photo.png', 'name' => 'photo.png'],
+]));
+$see('a name given with anything but data is refused, not ignored', $failed($nameAlone) && strpos($said($nameAlone), 'name: only with data') !== false, $nameAlone);
+$unnamed = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $several, 'data' => 'data:image/png;base64,' . base64_encode($png)],
+]));
+$unnamedSaid = json_decode($said($unnamed), true);
+$see('a data URI with no name is still kept, as file, and a full deposit says so', !$failed($unnamed)
+    && ($unnamedSaid['files'][2]['name'] ?? '') === 'file.png' && strpos((string) ($unnamedSaid['then'] ?? ''), 'The deposit is full') !== false, $unnamed);
+$guide = SomcpUpload::directions('', $several, (array) SomcpUpload::find($several, $idEmployee), '');
+$see('the directions never say a file cannot come through the conversation, and start with somcp_upload_file',
+    strpos($guide, 'cannot travel') === false && strpos($guide, '0. Start here') !== false, ['body' => $guide]);
+
 // A module hands a file over by returning it: the same answer as
 // somcp_download_file, under the type its bytes show.
 $handed = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');

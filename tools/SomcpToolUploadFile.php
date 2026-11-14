@@ -46,7 +46,7 @@ if (!defined('_PS_VERSION_')) {
 class SomcpToolUploadFile
 {
     /** @var string[] The arguments the tool takes besides its entries, so a misspelt one is refused by name. */
-    private const KEYS = ['for', 'field', SomcpUpload::ARG_REF];
+    private const KEYS = ['for', 'field', SomcpUpload::ARG_REF, 'name'];
 
     /**
      * @return SomcpTool
@@ -57,11 +57,11 @@ class SomcpToolUploadFile
             'somcp_upload_file',
             Somcp::t('Put a file on the shop'),
             'Puts a file on the shop for another tool and answers with its upload_ref, used once. Name the tool '
-                . '(for) and its field, or give the upload_ref of a deposit a tool already asked you to fill; the shop '
-                . 'applies its formats and size. Bring the file in this call when you can, with one of: file (a file '
-                . 'the person attached in your conversation, when your client passes it), data (the bytes as a data '
-                . 'URI) or url (a public address). Without any, the answer says how to send it. Then pass upload_ref '
-                . 'to the tool. A file the merchant attached in this module\'s back office chat already has one.',
+                . '(for) and its field, or give the upload_ref of a deposit a tool asked you to fill; the shop applies '
+                . 'its formats and size. Bring the file in the call: file (one the person attached, as your client '
+                . 'passes it), data (its bytes as a data URI, its name in name) or url (a public address). Each call '
+                . 'adds a file, never replaces one. Without a file, the answer says how to send it. Then pass '
+                . 'upload_ref to the tool. A file attached in this module\'s back office chat already has one.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -79,6 +79,11 @@ class SomcpToolUploadFile
                         'type' => 'string',
                         'description' => 'Instead of for: the upload_ref of a deposit a tool opened and asked you to '
                             . 'fill, with the file in file, data or url.',
+                    ],
+                    'name' => [
+                        'type' => 'string',
+                        'description' => 'With data only: the file\'s name, e.g. delivery-proof.pdf. A data URI carries '
+                            . 'none, and the file would be named file.',
                     ],
                 ] + SomcpUpload::entrySchema(),
                 'additionalProperties' => false,
@@ -115,7 +120,10 @@ class SomcpToolUploadFile
         if (array_key_exists(SomcpUpload::ARG_REF, $arguments)) {
             return self::fill($arguments, $idEmployee);
         }
-        $problems = SomcpTool::unknownFields($arguments, array_merge(self::KEYS, array_keys(SomcpUpload::ENTRIES)));
+        $problems = array_merge(
+            SomcpTool::unknownFields($arguments, array_merge(self::KEYS, array_keys(SomcpUpload::ENTRIES))),
+            self::nameProblems($arguments)
+        );
 
         $for = is_string($arguments['for'] ?? null) ? trim($arguments['for']) : '';
         $tool = $for === '' ? null : SomcpToolRegistry::getInstance()->get($for);
@@ -180,7 +188,7 @@ class SomcpToolUploadFile
         $then = 'Then call ' . $for . ' with upload_ref ' . $reference . ' in ' . $field . '. It is used once.';
 
         if ($entry !== null) {
-            $refusal = SomcpUpload::enter($invitation, $entry, $arguments[$entry]);
+            $refusal = SomcpUpload::enter($invitation, $entry, $arguments[$entry], self::name($arguments));
             if ($refusal !== '') {
                 // The deposit stays open: the same file can still be sent by
                 // the other ways, and the answer says them.
@@ -196,8 +204,7 @@ class SomcpToolUploadFile
                 SomcpUpload::ARG_REF => $reference,
                 'for' => $for,
                 'field' => $field,
-                'then' => $then,
-            ]);
+            ] + self::held($invitation, $then));
         }
 
         $page = SomcpBackOffice::uploadUrl($reference, $idEmployee);
@@ -237,7 +244,10 @@ class SomcpToolUploadFile
      */
     private static function fill(array $arguments, int $idEmployee): array
     {
-        $problems = SomcpTool::unknownFields($arguments, array_merge([SomcpUpload::ARG_REF], array_keys(SomcpUpload::ENTRIES)));
+        $problems = array_merge(
+            SomcpTool::unknownFields($arguments, array_merge([SomcpUpload::ARG_REF, 'name'], array_keys(SomcpUpload::ENTRIES))),
+            self::nameProblems($arguments)
+        );
         $reference = is_string($arguments[SomcpUpload::ARG_REF]) ? trim($arguments[SomcpUpload::ARG_REF]) : '';
         $invitation = $reference === '' ? null : SomcpUpload::open($reference, $idEmployee);
         if ($invitation === null) {
@@ -261,7 +271,7 @@ class SomcpToolUploadFile
             return SomcpTool::refused('deposited', $problems);
         }
 
-        $refusal = SomcpUpload::enter($invitation, $entry, $arguments[$entry]);
+        $refusal = SomcpUpload::enter($invitation, $entry, $arguments[$entry], self::name($arguments));
         if ($refusal !== '') {
             return SomcpTool::text($entry . ': ' . $refusal . '. Nothing was deposited; the deposit is still open.', true);
         }
@@ -269,7 +279,70 @@ class SomcpToolUploadFile
         return SomcpTool::json([
             'deposited' => true,
             SomcpUpload::ARG_REF => $reference,
-            'then' => 'Call the tool that opened this deposit again, as it asked, with upload_ref ' . $reference . '.',
-        ]);
+        ] + self::held($invitation, 'Call the tool that opened this deposit again, as it asked, with upload_ref ' . $reference . '.'));
+    }
+
+    /**
+     * How full a deposit is now, and what comes next.
+     *
+     * Told at every file, because each call adds one: an assistant that took
+     * "deposited" for "replaced" called again, and the merchant's reply went
+     * out with three files instead of one.
+     *
+     * @param array<string, mixed> $invitation
+     * @param string $then what to call once every file is in
+     *
+     * @return array<string, mixed>
+     */
+    private static function held(array $invitation, string $then): array
+    {
+        $files = SomcpUpload::deposited((int) $invitation['id_upload']);
+        $held = count($files);
+        $allowed = (int) $invitation['max_files'];
+
+        return [
+            // Name and size as kept, so the assistant can compare them with
+            // the file it meant: a model that rebuilt a PDF instead of copying
+            // its bytes deposited a blank page of a few hundred bytes for a
+            // file of 28 KB, and nothing in the answer showed it.
+            'files' => array_map(static function (array $file): array {
+                return ['name' => SomcpDownload::cleanName((string) $file['file_name']), 'bytes' => (int) $file['file_size']];
+            }, $files),
+            'files_held' => $held,
+            'files_allowed' => $allowed,
+            'then' => ($held < $allowed
+                ? 'Each call adds a file and never replaces one: call again only for another file. '
+                : 'The deposit is full. ') . $then,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $arguments
+     *
+     * @return string
+     */
+    private static function name(array $arguments): string
+    {
+        return is_string($arguments['name'] ?? null) ? trim($arguments['name']) : '';
+    }
+
+    /**
+     * A name means something only for a data URI: an address and a client's
+     * file bring their own, and a name ignored silently would look applied.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return string[]
+     */
+    private static function nameProblems(array $arguments): array
+    {
+        if (!array_key_exists('name', $arguments)) {
+            return [];
+        }
+        if (!is_string($arguments['name'])) {
+            return ['name: a string, the file\'s name'];
+        }
+
+        return array_key_exists('data', $arguments) ? [] : ['name: only with data; the other ways bring the file\'s own name'];
     }
 }

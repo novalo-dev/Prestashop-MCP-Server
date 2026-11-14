@@ -2348,7 +2348,8 @@ asking for files itself (it hands out its own deposit).
 | `field` | string | no | its argument that takes the file, e.g. `images`, `virtual_file.file`, `logo`; may be left out when the tool has only one |
 | `upload_ref` | string | no | instead of `for` and `field`: a deposit a tool already opened and asked the assistant to fill - a tool of this module, or of another through the contract (`upload`) - filled with `file`, `data` or `url` under that deposit's own rules |
 | `file` | object | no | a file of the assistant's conversation: `download_url` and `file_id` (required), `mime_type`, `file_name`; the shop downloads `download_url` with the guards of `url`; refused for `somcp_upload_module` |
-| `data` | string | no | the file as `data:<media type>;base64,<content>`; the media type decides the format checked |
+| `data` | string | no | the file as `data:<media type>;base64,<content>`; the media type decides the format checked; the exact bytes of a file the assistant holds, never one it writes itself |
+| `name` | string | no | with `data` only: the file's name, else the `name=` parameter of the data URI, else `file`; its extension is always the one the media type gives; refused with `file` or `url`, which bring their own |
 | `url` | string | no | a public `https` address (no redirect) the shop downloads now; refused for `somcp_upload_module` |
 
 At most one of `file`, `data` and `url`, and one of them with `upload_ref`. The
@@ -2357,8 +2358,12 @@ or asking the merchant, so a module asking for files through the contract gets
 it without a change.
 
 **Returns** - with an entry: `deposited` true, `upload_ref`, `for`, `field`,
-`then`; with `upload_ref`: `deposited` true, `upload_ref` and `then`, to call
-the tool that opened the deposit again. Without: `deposited` false, `upload_ref`, `for`, `field`, `accepted`
+then `files` (`name` and `bytes` of each file the deposit holds, as kept),
+`files_held`, `files_allowed` and `then`; with `upload_ref`: the same without
+`for` and `field`, `then` saying to call the tool that opened the deposit
+again. Each call adds a file and never replaces one, and `then` says so until
+the deposit is full: an assistant that read `deposited` as "replaced" sent the
+same file again. The sizes let it see a file it rebuilt instead of copying. Without: `deposited` false, `upload_ref`, `for`, `field`, `accepted`
 (extensions), `max_bytes`, `expires_at`, `send_to` (`url`, `method` POST,
 `encoding` multipart/form-data, `field` `file`), `deposit_page` (null when the
 back office address is not known yet) and `how`, the directions in order. The

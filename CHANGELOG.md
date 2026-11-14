@@ -26,6 +26,16 @@ files once a virtual product is saved online. The assistant now tells
 PrestaShop to look for them as soon as it stores one. A customer still
 downloads a file only from a paid order of their own.
 
+**A file the assistant sends goes in once, under its name.** Asked to attach
+one PDF to a reply, an assistant could send it several times, and the reply
+went out with three attachments, two of them named "file" and blank: it took
+"received" for "replaced", and when it could not copy the real file it built
+an empty one. The shop now tells it after each file how many it holds, that a
+new send adds one, and the name and size of each, so it can see a file that
+is not the one it meant. A file it sends as raw content keeps the name it
+gives. And the directions it gets no longer start by saying the file cannot
+come through the conversation, which sent it to the upload page first.
+
 ## 2.0.0 - 2026-11-14
 
 A major version, for compact mode: connected assistants can now receive six

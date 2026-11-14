@@ -423,18 +423,22 @@ class SomcpUpload
         $direct = self::directUrl($reference, $invitation);
         $host = (string) parse_url($direct, PHP_URL_HOST);
 
-        return ($one ? 'A file is' : 'Up to ' . $files . ' files are') . ' needed, and '
-            . ($one ? 'it cannot' : 'they cannot') . ' travel inside this conversation.'
+        // No word here may say the file cannot come through the conversation:
+        // step 0 is exactly that, and an assistant told otherwise skipped it
+        // for the address it could not reach, then for the merchant's page.
+        return ($one ? 'A file is' : 'Up to ' . $files . ' files are') . ' needed. Bring '
+            . ($one ? 'it' : 'them') . ' to the shop the first way below that works, starting with 0.'
             . ' Accepted: ' . str_replace(' ', ', ', (string) ($invitation['extensions'] ?? ''))
             . '. Up to ' . $megabytes . ' MB each. Both addresses below stop working in '
             . (int) round(max(60, ((int) strtotime((string) ($invitation['expires_at'] ?? ''))) - time()) / 60) . ' minutes.' . "\n\n"
             // First, since it needs neither the network nor the merchant:
             // the way a file the person attached in the conversation reaches
             // the shop, through the entries of somcp_upload_file.
-            . '0. If you hold ' . ($one ? 'the file' : 'a file') . ' - one the person attached in this conversation,'
+            . '0. Start here. If you hold ' . ($one ? 'the file' : 'a file') . ' - one the person attached in this conversation,'
             . ' or its bytes - call somcp_upload_file with ' . self::ARG_REF . ' set to ' . $reference . ' and the file'
-            . ' in file (as your client passes an attached file), data (a data URI)'
-            . (self::byAddress($invitation) ? ' or url (a public address)' : '') . ', once per file.' . "\n\n"
+            . ' in file (as your client passes an attached file), data (a data URI, with its name in name)'
+            . (self::byAddress($invitation) ? ' or url (a public address)' : '') . ', once per file: each call adds'
+            . ' a file, it never replaces one.' . "\n\n"
             . '1. If you can make an HTTP request yourself (a code tool, a terminal, an HTTP or fetch tool),'
             . ' send ' . ($one ? 'the file' : 'each file') . ' now, without asking the merchant: POST it to' . "\n\n"
             . $direct . "\n\n"
@@ -1513,8 +1517,8 @@ class SomcpUpload
             'data' => [
                 'type' => 'string',
                 'format' => 'uri',
-                'description' => 'The file itself as a data URI, data:<media type>;base64,<content>, for a file you '
-                    . 'hold (small files: the whole call travels in one request).',
+                'description' => 'The exact bytes of a file you hold, as data:<media type>;base64,<content>, never a '
+                    . 'file you write yourself; small files only. Check the size the answer gives.',
                 'x-mcp-file' => (object) [],
             ],
             'file' => [
@@ -1551,10 +1555,15 @@ class SomcpUpload
      *
      * @return string empty when kept, the reason otherwise, worded for an assistant
      */
-    public static function enter(array $invitation, string $entry, $value): string
+    public static function enter(array $invitation, string $entry, $value, string $name = ''): string
     {
         if (!isset(self::ENTRIES[$entry])) {
             return 'not a way the shop takes a file';
+        }
+        // Only a data URI comes without a name of its own: an address and a
+        // client's file carry theirs.
+        if ($entry === 'data') {
+            return self::enterData($invitation, $value, $name);
         }
         $method = self::ENTRIES[$entry]['method'];
 
@@ -1601,10 +1610,11 @@ class SomcpUpload
     /**
      * @param array<string, mixed> $invitation
      * @param mixed $value
+     * @param string $name the name the assistant gave, since a data URI has none
      *
      * @return string
      */
-    private static function enterData(array $invitation, $value): string
+    private static function enterData(array $invitation, $value, string $name = ''): string
     {
         $data = is_string($value) ? trim($value) : '';
         if (preg_match('/^data:([A-Za-z0-9.+\/-]*)((?:;[^,;]*)*);base64,/', $data, $match) !== 1) {
@@ -1635,7 +1645,7 @@ class SomcpUpload
             if (@file_put_contents($temporary, $bytes) === false) {
                 return self::refusal('no_store', $invitation);
             }
-            $problem = self::admit($invitation, 'file.' . $extension, $temporary, false, $extension);
+            $problem = self::admit($invitation, self::dataName($name, $match[2], $extension), $temporary, false, $extension);
 
             return $problem === '' ? '' : self::refusal($problem, $invitation);
         } finally {
@@ -1643,6 +1653,33 @@ class SomcpUpload
                 @unlink($temporary);
             }
         }
+    }
+
+    /**
+     * The name a file sent as a data URI is kept under.
+     *
+     * A data URI has no name, so every one was kept as "file" and a module
+     * sending them on - a reply with its attachments - showed "file" twice.
+     * The name comes from the call, else from a name= parameter some clients
+     * put in the URI itself. Its extension is always the one the media type
+     * gave, the one admit() checked the bytes against.
+     *
+     * @param string $given the name argument of the call
+     * @param string $parameters the ;key=value part of the data URI
+     * @param string $extension
+     *
+     * @return string
+     */
+    private static function dataName(string $given, string $parameters, string $extension): string
+    {
+        $name = trim($given);
+        if ($name === '' && preg_match('/;name=([^;]*)/i', $parameters, $found) === 1) {
+            $name = trim(rawurldecode($found[1]));
+        }
+        $name = basename(str_replace('\\', '/', $name));
+        $base = (string) pathinfo($name, PATHINFO_FILENAME);
+
+        return ($base === '' ? 'file' : $base) . '.' . $extension;
     }
 
     /**

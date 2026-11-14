@@ -338,8 +338,8 @@ class SomcpModules
     private static function asBackOffice(): callable
     {
         global $kernel;
-        $class = class_exists('AdminKernel') ? 'AdminKernel' : 'AppKernel';
-        if (!class_exists($class) || $kernel instanceof $class) {
+        $class = self::backOfficeKernel();
+        if ($class === '' || $kernel instanceof $class) {
             return static function (): void {
             };
         }
@@ -376,6 +376,23 @@ class SomcpModules
             $context->container = $previousContainer;
             PrestaShop\PrestaShop\Adapter\SymfonyContainer::resetStaticCache();
         };
+    }
+
+    /**
+     * The class of the back office's kernel: AdminKernel on PrestaShop 9,
+     * where AppKernel is the abstract parent of every kernel, AppKernel on 8.
+     *
+     * @return string empty when neither can be built
+     */
+    private static function backOfficeKernel(): string
+    {
+        foreach (['AdminKernel', 'AppKernel'] as $class) {
+            if (class_exists($class) && !(new ReflectionClass($class))->isAbstract()) {
+                return $class;
+            }
+        }
+
+        return '';
     }
 
     /**

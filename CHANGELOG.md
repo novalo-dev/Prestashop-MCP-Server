@@ -69,7 +69,11 @@ and answering as if the setting had applied. Every mistake of a call comes
 back in one answer. The page audit now refuses an address outside the shop in
 the same words as the link check, together with any other mistake of the call,
 and the product page audit says which identifier is wrong and where to find
-the right one.
+the right one. The product and category SEO audits no longer swap a wrong
+setting for a default - a check name that does not exist, a page size given as
+a word, a "no" for active products - but name it, and the changes of a CMS page
+or of a Traffic & SEO page name the identifier that matches no page and where
+to find the right one, with the other mistakes of the call.
 
 ### Fixed
 

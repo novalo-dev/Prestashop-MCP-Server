@@ -10,7 +10,12 @@
     {"why": "the second page follows the first", "arguments": {"limit": 2, "offset": 2}, "expect": "ok", "contains": ["\"offset\": 2"]},
     {"why": "a page far beyond the end is empty, not an error", "arguments": {"offset": 100000}, "expect": "ok", "contains": ["\"returned\": 0"]},
     {"why": "a language the shop does not have, refused with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's, which has", "leave language out for all of them"]},
-    {"why": "a check that does not exist", "arguments": {"checks": ["meta_keywords"]}, "expect": "error", "contains": ["checks must be a list"]},
-    {"why": "checks given as a string", "arguments": {"checks": "no_cover_image"}, "expect": "error", "contains": ["checks must be a list"]}
+    {"why": "a check that does not exist", "arguments": {"checks": ["meta_keywords"]}, "expect": "error", "contains": ["Nothing was read", "checks: one of "]},
+    {"why": "checks given as a string", "arguments": {"checks": "no_cover_image"}, "expect": "error", "contains": ["Nothing was read", "checks: one of "]},
+    {"why": "a misspelt field is refused, not ignored", "arguments": {"check": ["no_gtin"]}, "expect": "error", "contains": ["Nothing was read", "check: not a field of this tool"]},
+    {"why": "an unknown check and a limit given as a word, both refused in one answer", "arguments": {"checks": ["meta_title_typo"], "limit": "many"}, "expect": "error", "contains": ["checks: one of ", "limit: a whole number from 1 to 100"]},
+    {"why": "active given as a word, never read as active only", "arguments": {"active": "no"}, "expect": "error", "contains": ["active: true or false"]},
+    {"why": "a limit over the most a page holds, refused rather than cut", "arguments": {"limit": 500}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
+    {"why": "a negative offset", "arguments": {"offset": -1}, "expect": "error", "contains": ["offset: a whole number, 0 or more"]}
   ]
 }

@@ -127,21 +127,19 @@ class SomcpToolAuditCategorySeo
     {
         $idShop = Somcp::currentShopId();
 
+        // Its fields are the product audit's, so both are read by one function.
+        $read = SomcpToolAuditProductSeo::auditArguments($arguments, SomcpToolAuditProductSeo::FIELDS, self::CHECKS, self::DEFAULT_LIMIT, self::MAX_LIMIT);
+        if ($read['problems'] !== []) {
+            return SomcpTool::refused('read', $read['problems']);
+        }
         $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
         if ($languages === null) {
             return SomcpTool::languageRefused($idShop, true);
         }
-
-        $checks = SomcpToolAuditProductSeo::checksArgument($arguments, self::CHECKS);
-        if ($checks === null) {
-            return SomcpToolAuditProductSeo::checksRefused(self::CHECKS);
-        }
-
-        $activeOnly = !(array_key_exists('active', $arguments) && $arguments['active'] === false);
-
-        $limit = isset($arguments['limit']) && is_numeric($arguments['limit']) ? (int) $arguments['limit'] : self::DEFAULT_LIMIT;
-        $limit = max(1, min(self::MAX_LIMIT, $limit));
-        $offset = isset($arguments['offset']) && is_numeric($arguments['offset']) ? max(0, (int) $arguments['offset']) : 0;
+        $checks = $read['checks'];
+        $activeOnly = $read['active_only'];
+        $limit = $read['limit'];
+        $offset = $read['offset'];
 
         $idLangs = array_keys($languages);
         // The duplicate scan is skipped when its check is not asked for, as the

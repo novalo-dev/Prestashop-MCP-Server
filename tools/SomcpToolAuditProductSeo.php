@@ -53,6 +53,9 @@ class SomcpToolAuditProductSeo
     public const WORDS_MIN = 150;
 
     /** @var array<int, string> Every check, in the order they are reported. */
+    /** Every field of the inputSchema, refused when misspelt rather than ignored. */
+    public const FIELDS = ['language', 'active', 'checks', 'limit', 'offset'];
+
     private const CHECKS = [
         'meta_title_missing',
         'meta_title_too_long',
@@ -136,26 +139,23 @@ class SomcpToolAuditProductSeo
     {
         $idShop = Somcp::currentShopId();
 
+        $read = self::auditArguments($arguments, self::FIELDS, self::CHECKS, self::DEFAULT_LIMIT, self::MAX_LIMIT);
+        if ($read['problems'] !== []) {
+            return SomcpTool::refused('read', $read['problems']);
+        }
         $languages = self::languages($arguments, $idShop);
         if ($languages === null) {
             return SomcpTool::languageRefused($idShop, true);
         }
-
-        $checks = self::checksArgument($arguments, self::CHECKS);
-        if ($checks === null) {
-            return self::checksRefused(self::CHECKS);
-        }
-
-        $activeOnly = !(array_key_exists('active', $arguments) && $arguments['active'] === false);
+        $checks = $read['checks'];
+        $activeOnly = $read['active_only'];
+        $limit = $read['limit'];
+        $offset = $read['offset'];
         // Only an inactive product can lack a redirection, so the check is
         // left out unless inactive products are audited too.
         if ($activeOnly) {
             $checks = array_values(array_diff($checks, ['inactive_without_redirect']));
         }
-
-        $limit = isset($arguments['limit']) && is_numeric($arguments['limit']) ? (int) $arguments['limit'] : self::DEFAULT_LIMIT;
-        $limit = max(1, min(self::MAX_LIMIT, $limit));
-        $offset = isset($arguments['offset']) && is_numeric($arguments['offset']) ? max(0, (int) $arguments['offset']) : 0;
 
         $idLangs = array_keys($languages);
         $duplicateTitles = in_array('meta_title_duplicate', $checks, true)
@@ -466,43 +466,71 @@ class SomcpToolAuditProductSeo
     }
 
     /**
-     * The checks asked for, all of them by default, or null for a bad list.
+     * The arguments every SEO audit with checks and pages takes, read once.
      *
-     * Shared by every SEO audit that takes a checks argument, so they read
-     * it, order it and refuse it the same way.
+     * Shared by the product and category audits so they refuse the same
+     * mistakes in the same words: a bad value is reported, never replaced by
+     * a default, since an assistant would otherwise read a page it did not
+     * ask for as the answer. The defaults apply only to an absent argument.
      *
      * @param array<string, mixed> $arguments
+     * @param array<int, string> $accepted every field of the tool's inputSchema
      * @param array<int, string> $allowed every check of the audit, in the order they are reported
+     * @param int $defaultLimit
+     * @param int $maxLimit
      *
-     * @return array<int, string>|null
+     * @return array{problems: array<int, string>, checks: array<int, string>, active_only: bool, limit: int, offset: int}
      */
-    public static function checksArgument(array $arguments, array $allowed): ?array
+    public static function auditArguments(array $arguments, array $accepted, array $allowed, int $defaultLimit, int $maxLimit): array
     {
-        if (!array_key_exists('checks', $arguments) || $arguments['checks'] === null) {
-            return $allowed;
-        }
-        if (!is_array($arguments['checks']) || $arguments['checks'] === []) {
-            return null;
-        }
-        foreach ($arguments['checks'] as $check) {
-            if (!is_string($check) || !in_array($check, $allowed, true)) {
-                return null;
+        $problems = SomcpTool::unknownFields($arguments, $accepted);
+
+        $checks = $allowed;
+        if (array_key_exists('checks', $arguments) && $arguments['checks'] !== null) {
+            $list = $arguments['checks'];
+            $valid = is_array($list) && $list !== [];
+            foreach ($valid ? $list : [] as $check) {
+                if (!is_string($check) || !in_array($check, $allowed, true)) {
+                    $valid = false;
+                }
+            }
+            if ($valid) {
+                // Kept in the order of the list, so every answer reads the same way.
+                $checks = array_values(array_intersect($allowed, $list));
+            } else {
+                // The same constant as the schema enum, so the names offered
+                // are always the ones the audit runs.
+                $problems[] = SomcpTool::oneOf('checks', $allowed);
             }
         }
 
-        // Kept in the order of the list, so every answer reads the same way.
-        return array_values(array_intersect($allowed, $arguments['checks']));
-    }
+        $activeOnly = true;
+        if (array_key_exists('active', $arguments) && $arguments['active'] !== null) {
+            if (!is_bool($arguments['active'])) {
+                $problems[] = 'active: true or false';
+            } else {
+                $activeOnly = $arguments['active'];
+            }
+        }
 
-    /**
-     * The refusal of a checks argument checksArgument() could not read.
-     *
-     * @param array<int, string> $allowed
-     *
-     * @return array<string, mixed>
-     */
-    public static function checksRefused(array $allowed): array
-    {
-        return SomcpTool::text('checks must be a list of these names: ' . implode(', ', $allowed) . '.', true);
+        $limit = $defaultLimit;
+        if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
+            if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > $maxLimit) {
+                $problems[] = 'limit: a whole number from 1 to ' . $maxLimit;
+            } else {
+                $limit = $arguments['limit'];
+            }
+        }
+
+        $offset = 0;
+        if (array_key_exists('offset', $arguments) && $arguments['offset'] !== null) {
+            if (!is_int($arguments['offset']) || $arguments['offset'] < 0) {
+                $problems[] = 'offset: a whole number, 0 or more';
+            } else {
+                $offset = $arguments['offset'];
+            }
+        }
+
+        return ['problems' => $problems, 'checks' => $checks, 'active_only' => $activeOnly, 'limit' => $limit, 'offset' => $offset];
     }
 }

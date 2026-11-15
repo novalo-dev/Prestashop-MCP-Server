@@ -134,21 +134,23 @@ class SomcpToolUpdateCmsSeo
         $idShop = Somcp::currentShopId();
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $cms = self::page($arguments['id_cms'] ?? null, $idShop);
+        // An unknown page is reported with the misspelt fields of the same
+        // call, so one answer lists every mistake.
+        $idCms = SomcpTool::id($arguments, 'id_cms');
+        $cms = self::page($idCms, $idShop);
         if ($cms === null) {
-            return SomcpTool::text(
-                'No CMS page of this shop has this identifier. Nothing was changed. Find it with somcp_list_cms_pages.',
-                true
-            );
+            $errors = SomcpTool::unknownFields($arguments, self::fields());
+            $errors[] = $idCms > 0
+                ? SomcpTool::notFound('id_cms', 'CMS page', $idCms, 'somcp_list_cms_pages')
+                : SomcpTool::notAnIdentifier('id_cms');
+
+            return SomcpTool::refused('changed', $errors);
         }
 
         $errors = [];
         $plan = self::plan($arguments, $cms, $idShop, $errors);
         if ($errors !== []) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -162,6 +164,16 @@ class SomcpToolUpdateCmsSeo
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($cms, $plan, $idShop, $idEmployee): array {
             return self::apply($cms, $plan, $idShop, $idEmployee);
         });
+    }
+
+    /**
+     * Every field of the inputSchema, refused when misspelt rather than ignored.
+     *
+     * @return array<int, string>
+     */
+    private static function fields(): array
+    {
+        return array_merge(['id_cms', 'languages', 'indexation'], self::TEXTS);
     }
 
     /**
@@ -210,12 +222,7 @@ class SomcpToolUpdateCmsSeo
     {
         $plan = ['texts' => [], 'indexation' => null, 'changes' => [], 'moved' => [], 'isos' => []];
 
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if ($key !== 'id_cms' && $key !== 'languages' && $key !== 'indexation' && !in_array($key, self::TEXTS, true)) {
-                $errors[] = $key . ': not a field of this tool';
-            }
-        }
+        $errors = array_merge($errors, SomcpTool::unknownFields($arguments, self::fields()));
 
         // The rule of the catalogue write tools (#149): the languages being
         // filled, all active ones by default, and each text keyed by them, so

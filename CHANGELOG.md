@@ -45,6 +45,16 @@ assistant can also remove it.
 
 ### Changed
 
+**Cart rule identifiers, named as everywhere else.** When the assistant reads
+a cart rule's **Product selection**, each product, category, attribute, brand
+or supplier now comes with the identifier name of its kind (`id_product`,
+`id_category`, `id_attribute`, `id_manufacturer`, `id_supplier`) instead of a
+bare `id`, so it can tell them apart and give them back. A Memcache server of
+**Advanced Parameters > Performance** is read with `id_memcached_server`. A
+cart rule identifier, or a customer group in the catalogue price rules,
+written as digits in quotes is now accepted by every cart rule tool, as the
+order tools already did.
+
 **A combination's specific price and supplier, as the product page reads
 them.** When you ask the assistant to change the specific price or the
 supplier reference of one combination of a product, it can now name that

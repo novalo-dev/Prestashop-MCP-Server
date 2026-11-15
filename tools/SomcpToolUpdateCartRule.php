@@ -158,7 +158,7 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
 
-        $idCartRule = self::integer($arguments['id_cart_rule'] ?? null) ?? 0;
+        $idCartRule = SomcpTool::id($arguments, 'id_cart_rule');
         // The same reading as somcp_get_cart_rule, so a rule this tool refuses
         // is never one that tool describes.
         $current = $idCartRule > 0 ? SomcpToolGetCartRule::byId($idCartRule, $idLang, $idShop) : null;

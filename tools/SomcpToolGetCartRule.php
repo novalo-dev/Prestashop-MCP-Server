@@ -44,6 +44,19 @@ class SomcpToolGetCartRule
     private const PRODUCT_TYPES = ['products', 'categories', 'attributes', 'manufacturers', 'suppliers'];
 
     /**
+     * @var array<string, string> the key each type of product rule gives its values: id_item holds
+     *                            a product, a category, an attribute value, a brand or a supplier, so
+     *                            the name says which, as the list tool of that type returns it
+     */
+    private const ITEM_KEYS = [
+        'products' => 'id_product',
+        'categories' => 'id_category',
+        'attributes' => 'id_attribute',
+        'manufacturers' => 'id_manufacturer',
+        'suppliers' => 'id_supplier',
+    ];
+
+    /**
      * @return SomcpTool
      */
     public static function define(): SomcpTool
@@ -98,11 +111,9 @@ class SomcpToolGetCartRule
             }
         }
 
-        $idCartRule = 0;
-        if (!isset($arguments['id_cart_rule']) || !is_int($arguments['id_cart_rule']) || $arguments['id_cart_rule'] < 1) {
+        $idCartRule = SomcpTool::id($arguments, 'id_cart_rule');
+        if ($idCartRule <= 0) {
             $problems[] = '- id_cart_rule: a whole number above 0, the ID given by somcp_list_cart_rules';
-        } else {
-            $idCartRule = (int) $arguments['id_cart_rule'];
         }
 
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
@@ -446,12 +457,7 @@ class SomcpToolGetCartRule
                     WHERE `id_supplier` IN (' . $in . ') ORDER BY `id_supplier`';
         }
 
-        $values = [];
-        foreach (Db::getInstance()->executeS($sql) ?: [] as $line) {
-            $values[] = ['id' => (int) $line['id'], 'name' => (string) ($line['name'] ?? '')];
-        }
-
-        return $values;
+        return self::pairs(Db::getInstance()->executeS($sql), self::ITEM_KEYS[$type]);
     }
 
     /**

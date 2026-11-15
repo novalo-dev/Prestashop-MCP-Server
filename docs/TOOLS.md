@@ -4597,7 +4597,7 @@ How the shop runs: caching.
 | `caching.use_cache` | **Use cache** | bool |
 | `caching.caching_system` | **Caching system** | `CacheMemcache`, `CacheMemcached`, `CacheApc` or `CacheXcache`, as stored, even when **Use cache** is off |
 | `caching.available_systems` | the options not greyed out | the systems whose PHP extension is loaded: `memcache`, `memcached`, `apc` or `apcu`, `xcache` |
-| `caching.servers` | Memcache servers table | `id`, `ip`, `port`, `weight`; empty list when none |
+| `caching.servers` | Memcache servers table | `id_memcached_server`, `ip`, `port`, `weight`; empty list when none |
 | `warnings` | - | `code` and `why`, as `somcp_get_seo_settings`: `debug_mode_on`, `debug_profiling_on`, `force_compilation`, `smarty_cache_off`, `overrides_disabled`, `ccc_css_off`, `ccc_js_off`, `cache_system_unavailable` (**Use cache** is on and the stored system's extension is not loaded) |
 
 **Errors** - an unknown argument (`<name>: not a field of this tool`). A setting the running version does not have is `null`, never an error.
@@ -5435,7 +5435,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `restrictions.carrier` | **Carrier selection**: `null` when off, else `[{"id_reference", "name"}]`, the `id_reference` of `somcp_list_carriers` (the core stores the reference, not `id_carrier`) |
 | `restrictions.group` | **Customer group selection**: `null` when off, else `[{"id_group", "name"}]` |
 | `restrictions.cart_rule` | **Compatibility with other cart rules**: `null` when off, else the rules it combines with, `[{"id_cart_rule", "name"}]` |
-| `restrictions.product` | **Product selection**: `null` when off, else the groups `[{"quantity": 1, "rules": [{"type": "products", "values": [{"id", "name"}]}]}]`, `type` one of `products`, `categories`, `attributes` (named "Group - Value", as the form), `manufacturers`, `suppliers` |
+| `restrictions.product` | **Product selection**: `null` when off, else the groups `[{"quantity": 1, "rules": [{"type": "products", "values": [{"id_product", "name"}]}]}]`, `type` one of `products`, `categories`, `attributes` (named "Group - Value", as the form), `manufacturers`, `suppliers`; each value is keyed by the identifier of its type, as the list tool of that type returns it: `id_product` (`somcp_search_products`), `id_category` (`somcp_list_categories`), `id_attribute` (`somcp_list_attributes`), `id_manufacturer` (`somcp_list_manufacturers`), `id_supplier` (`somcp_list_suppliers`) |
 | `restrictions.shop` | **Store selection** (multistore): `null` when off, else `[{"id_shop", "name"}]` |
 | `free_shipping` | **Actions** > **Free shipping** |
 | `reduction` / `reduction_applies_to` | **Apply a discount** / **Apply a discount to**, built by `SomcpToolListCartRules::describe()`, the shapes of `somcp_list_cart_rules` |

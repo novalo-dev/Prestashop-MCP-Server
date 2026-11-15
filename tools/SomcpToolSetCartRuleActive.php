@@ -101,11 +101,9 @@ class SomcpToolSetCartRuleActive
             }
         }
 
-        $idCartRule = 0;
-        if (!isset($arguments['id_cart_rule']) || !is_int($arguments['id_cart_rule']) || $arguments['id_cart_rule'] < 1) {
+        $idCartRule = SomcpTool::id($arguments, 'id_cart_rule');
+        if ($idCartRule <= 0) {
             $problems[] = '- id_cart_rule: a whole number above 0, the ID given by somcp_list_cart_rules';
-        } else {
-            $idCartRule = $arguments['id_cart_rule'];
         }
 
         // A boolean only: a string such as "false" cast to bool is true, and

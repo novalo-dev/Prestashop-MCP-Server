@@ -193,10 +193,11 @@ class SomcpToolListCatalogPriceRules
 
         $idGroup = null;
         if (array_key_exists('id_group', $arguments) && $arguments['id_group'] !== null) {
-            if (!is_int($arguments['id_group']) || $arguments['id_group'] < 1 || !self::groupExists((int) $arguments['id_group'])) {
+            $given = SomcpTool::id($arguments, 'id_group');
+            if ($given <= 0 || !self::groupExists($given)) {
                 $problems[] = '- id_group: not a group of this shop (take id_group from somcp_list_customer_groups)';
             } else {
-                $idGroup = (int) $arguments['id_group'];
+                $idGroup = $given;
             }
         }
 

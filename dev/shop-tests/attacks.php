@@ -487,7 +487,11 @@ $noAdmin = static function (string $what, array $response) use (&$adminLeaks, $a
         $adminLeaks[] = $what;
     }
 };
-// The anti-robot check, solved the way the visitor's browser does.
+// The anti-robot check, solved the way the visitor's browser does. A browser
+// has no deadline: after four failures the check is nine times harder, and
+// the library's default 30 seconds is not always enough on a busy runner.
+// A check given up on is refused before anything is counted, and a guess
+// lost that way would let the blocks below fail at random.
 $solve = static function (array $page): string {
     if (!preg_match('/challenge="([^"]+)"/', $page['body'], $m)) {
         return '';
@@ -497,6 +501,7 @@ $solve = static function (array $page): string {
     $solution = $altcha->solveChallenge(new AltchaOrg\Altcha\SolveChallengeOptions(
         algorithm: new AltchaOrg\Altcha\Algorithm\Pbkdf2(),
         challenge: $challenge,
+        timeout: 120.0,
     ));
 
     return $solution === null ? '' : (new AltchaOrg\Altcha\Payload($challenge, $solution))->toBase64();
@@ -727,14 +732,20 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     $guessCsrf = $csrfOf($again);
     // $forwarded is the X-Forwarded-For a proxy in front of the shop would
     // pass on: what the visitor wrote, then the address the proxy saw.
-    $guess = static function (string $password, string $forwarded = '') use ($http, $authorizeUrl, &$withCookie, $solve, &$lastPage, $guessCsrf, $signinEmployee): array {
+    $guess = static function (string $password, string $forwarded = '') use ($http, $authorizeUrl, &$withCookie, $solve, &$lastPage, $guessCsrf, $signinEmployee, &$failures): array {
         $headers = $forwarded === '' ? $withCookie : array_merge($withCookie, ['X-Forwarded-For: ' . $forwarded]);
+        // An unsolved check is refused without counting the guess: say so
+        // here, or the block that fails further down points at the guard.
+        $captcha = $solve($lastPage);
+        if ($captcha === '' && strpos($lastPage['body'], 'challenge="') !== false) {
+            $failures[] = sprintf('the anti-robot check could not be solved for the guess "%s", so it was not counted', $password);
+        }
         $response = $http('POST', $authorizeUrl, $headers, http_build_query([
             'somcp_step' => 'signin',
             'somcp_csrf' => $guessCsrf,
             'somcp_email' => (string) $signinEmployee->email,
             'somcp_password' => $password,
-            'somcp_altcha' => $solve($lastPage),
+            'somcp_altcha' => $captcha,
         ]));
         if (strpos($response['body'], 'challenge="') !== false) {
             $lastPage = $response;

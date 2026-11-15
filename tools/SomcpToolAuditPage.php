@@ -102,21 +102,17 @@ class SomcpToolAuditPage
             return SomcpTool::text('Nothing was fetched: this shop has no active domain.', true);
         }
 
-        $requested = is_string($arguments['url'] ?? null) ? trim($arguments['url']) : '';
-        $url = self::absolute($requested, $idShop);
-        if ($url === null) {
-            return SomcpTool::text(
-                'Nothing was fetched: url must be a full http or https address of this shop, or a path starting '
-                    . 'with a single /, such as /en/3-clothes.',
-                true
-            );
+        // Every mistake that can be seen before a request is reported in one
+        // answer, with the url lines somcp_check_links writes: told only that
+        // the address was wrong, the assistant changed the address when the
+        // field name was the mistake.
+        $problems = SomcpTool::unknownFields($arguments, ['url']);
+        [$url, $problem] = self::readUrl($arguments['url'] ?? null, $idShop, $hosts);
+        if ($problem !== null) {
+            $problems[] = $problem;
         }
-        if (!in_array(SomcpHttp::authority($url), $hosts, true)) {
-            return SomcpTool::text(
-                'Nothing was fetched: this is not an address of this shop. Its domains are: '
-                    . implode(', ', $hosts) . '.',
-                true
-            );
+        if ($problems !== [] || $url === null) {
+            return SomcpTool::refused('fetched', $problems);
         }
 
         $warnings = [];
@@ -343,6 +339,32 @@ class SomcpToolAuditPage
         }
 
         return $hosts;
+    }
+
+    /**
+     * The address to fetch and the line refusing it, one of the two null.
+     *
+     * Shared with somcp_check_links, which takes the same url, so both tools
+     * accept the same addresses and refuse the others in the same words.
+     *
+     * @param mixed $requested
+     * @param int $idShop
+     * @param array<int, string> $hosts from hosts()
+     *
+     * @return array{0: string|null, 1: string|null}
+     */
+    public static function readUrl($requested, int $idShop, array $hosts): array
+    {
+        $url = is_string($requested) ? self::absolute(trim($requested), $idShop) : null;
+        if ($url === null) {
+            return [null, 'url: a full http or https address of this shop, or a path starting with a single /, '
+                . 'such as /en/3-clothes'];
+        }
+        if (!in_array(SomcpHttp::authority($url), $hosts, true)) {
+            return [null, 'url: not an address of this shop. Its domains are: ' . implode(', ', $hosts)];
+        }
+
+        return [$url, null];
     }
 
     /**

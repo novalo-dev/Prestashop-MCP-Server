@@ -66,7 +66,10 @@ dates of a voucher are saved the same way.
 assistant calls one of these tools with a setting it does not take - a field
 name spelt wrong, for example - the tool now says so instead of ignoring it
 and answering as if the setting had applied. Every mistake of a call comes
-back in one answer.
+back in one answer. The page audit now refuses an address outside the shop in
+the same words as the link check, together with any other mistake of the call,
+and the product page audit says which identifier is wrong and where to find
+the right one.
 
 ### Fixed
 

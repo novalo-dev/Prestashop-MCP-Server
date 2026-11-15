@@ -144,23 +144,15 @@ class SomcpToolAuditStorePolicies
 
         // Every mistake found before reading anything is reported in one
         // answer, so the call is corrected in one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if ($field !== 'language') {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, ['language']);
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- language: not a language of this shop, which has '
+            $problems[] = 'language: not a language of this shop, which has '
                 . implode(', ', SomcpTool::activeLanguages($idShop));
         }
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);

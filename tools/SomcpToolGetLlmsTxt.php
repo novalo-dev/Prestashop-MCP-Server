@@ -80,15 +80,9 @@ class SomcpToolGetLlmsTxt
     {
         // This tool takes nothing: every unexpected field is reported in one
         // answer (the shape of #169), as somcp_get_seo_settings does.
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            $problems[] = '- ' . $field . ': not a field of this tool';
-        }
+        $problems = SomcpTool::unknownFields($arguments, []);
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
 
         $file = _PS_ROOT_DIR_ . '/llms.txt';

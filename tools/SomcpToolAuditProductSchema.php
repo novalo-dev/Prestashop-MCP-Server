@@ -112,13 +112,32 @@ class SomcpToolAuditProductSchema
         }
         [$idLang, $iso] = $language;
 
-        $product = SomcpToolGetProduct::locate((int) ($arguments['id_product'] ?? 0), $idLang, $idShop);
-        if ($product === null) {
-            return SomcpTool::text('No product of this shop has this identifier. Find it with somcp_search_products.', true);
+        // Every mistake in the call is reported in one answer, in the words
+        // somcp_get_product uses for the same two identifiers: a cast read a
+        // misspelt field or a list as a product nobody asked for.
+        $problems = SomcpTool::unknownFields($arguments, ['id_product', 'id_product_attribute', 'language']);
+        $idProduct = SomcpTool::id($arguments, 'id_product');
+        $product = null;
+        if ($idProduct === 0) {
+            $problems[] = SomcpTool::notAnIdentifier('id_product');
+        } else {
+            $product = SomcpToolGetProduct::locate($idProduct, $idLang, $idShop);
+            if ($product === null) {
+                $problems[] = SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products');
+            }
         }
-        $idCombination = max(0, (int) ($arguments['id_product_attribute'] ?? 0));
-        if ($idCombination > 0 && !SomcpToolGetProduct::combinationBelongs($product, $idCombination, $idShop)) {
-            return SomcpTool::text('This combination does not belong to this product in this shop.', true);
+        // 0 stands for the product's own page, as in somcp_get_product.
+        $rawCombination = $arguments['id_product_attribute'] ?? 0;
+        $idCombination = SomcpTool::id($arguments, 'id_product_attribute');
+        if ($idCombination === 0 && $rawCombination !== 0 && $rawCombination !== '0') {
+            $problems[] = SomcpTool::notAnIdentifier('id_product_attribute');
+        } elseif ($idCombination > 0 && $product !== null
+            && !SomcpToolGetProduct::combinationBelongs($product, $idCombination, $idShop)) {
+            $problems[] = 'id_product_attribute: no combination of this product has the identifier '
+                . $idCombination . ' - find it with somcp_get_product';
+        }
+        if ($problems !== [] || $product === null) {
+            return SomcpTool::refused('fetched', $problems);
         }
 
         // The shop's side is read by somcp_get_product itself, so a value

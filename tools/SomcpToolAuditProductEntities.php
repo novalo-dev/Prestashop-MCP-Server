@@ -137,27 +137,21 @@ class SomcpToolAuditProductEntities
 
         // Every mistake found before reading anything is reported in one
         // answer, so the call is corrected in one go (the shape of #169).
-        $problems = [];
-        $allowed = ['active', 'max_score', 'language', 'limit', 'offset'];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, $allowed, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, ['active', 'max_score', 'language', 'limit', 'offset']);
 
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         // One language asked for is looked up; none asked for falls back on
         // the shop default, which readLanguage() returns for an absent key.
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- language: not a language of this shop, which has '
+            $problems[] = 'language: not a language of this shop, which has '
                 . implode(', ', SomcpTool::activeLanguages($idShop));
         }
 
         $maxScore = null;
         if (array_key_exists('max_score', $arguments) && $arguments['max_score'] !== null) {
             if (!is_int($arguments['max_score']) || $arguments['max_score'] < 0 || $arguments['max_score'] > 100) {
-                $problems[] = '- max_score: a whole number from 0 to 100';
+                $problems[] = 'max_score: a whole number from 0 to 100';
             } else {
                 $maxScore = (int) $arguments['max_score'];
             }
@@ -165,18 +159,15 @@ class SomcpToolAuditProductEntities
 
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null
             && (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT)) {
-            $problems[] = '- limit: a whole number from 1 to ' . self::MAX_LIMIT;
+            $problems[] = 'limit: a whole number from 1 to ' . self::MAX_LIMIT;
         }
         if (array_key_exists('offset', $arguments) && $arguments['offset'] !== null
             && (!is_int($arguments['offset']) || $arguments['offset'] < 0)) {
-            $problems[] = '- offset: a whole number of 0 or more';
+            $problems[] = 'offset: a whole number of 0 or more';
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);

@@ -109,33 +109,21 @@ class SomcpToolCheckLinks
 
         // Every mistake that can be seen before a request is reported in one
         // answer, so the call can be corrected in one go.
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         $maxPages = $arguments['max_pages'] ?? self::DEFAULT_PAGES;
         if (!is_int($maxPages) || $maxPages < 1 || $maxPages > self::MAX_PAGES) {
-            $problems[] = '- max_pages: a whole number from 1 to ' . self::MAX_PAGES;
+            $problems[] = 'max_pages: a whole number from 1 to ' . self::MAX_PAGES;
             $maxPages = self::DEFAULT_PAGES;
         }
 
-        $requested = $arguments['url'] ?? '/';
-        $url = is_string($requested) ? SomcpToolAuditPage::absolute(trim($requested), $idShop) : null;
-        if ($url === null) {
-            $problems[] = '- url: a full http or https address of this shop, or a path starting with a single /, '
-                . 'such as /en/3-clothes';
-        } elseif (!in_array(SomcpHttp::authority($url), $hosts, true)) {
-            $problems[] = '- url: not an address of this shop. Its domains are: ' . implode(', ', $hosts);
+        [$url, $problem] = SomcpToolAuditPage::readUrl($arguments['url'] ?? '/', $idShop, $hosts);
+        if ($problem !== null) {
+            $problems[] = $problem;
         }
 
         if ($problems !== [] || $url === null) {
-            return SomcpTool::text(
-                "Nothing was fetched. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('fetched', $problems);
         }
 
         return SomcpTool::json(self::crawl($url, $hosts, $maxPages));

@@ -119,29 +119,23 @@ class SomcpToolGenerateLlmsTxt
 
         // Every mistake is reported in one answer, so the call is corrected in
         // one go (the shape of #169), before anything is read or written.
-        $allowed = ['language', 'summary', 'max_categories', 'overwrite'];
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, $allowed, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, ['language', 'summary', 'max_categories', 'overwrite']);
 
         $askedLang = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($askedLang ? $arguments : [], $idShop);
         if ($askedLang && $language === null) {
-            $problems[] = '- language: not a language of this shop, which has '
+            $problems[] = 'language: not a language of this shop, which has '
                 . implode(', ', SomcpTool::activeLanguages($idShop));
         }
 
         $summary = null;
         if (array_key_exists('summary', $arguments) && $arguments['summary'] !== null) {
             if (!is_string($arguments['summary'])) {
-                $problems[] = '- summary: must be text';
+                $problems[] = 'summary: must be text';
             } else {
                 $summary = trim($arguments['summary']);
                 if (Tools::strlen($summary) > self::SUMMARY_MAX) {
-                    $problems[] = '- summary: longer than ' . self::SUMMARY_MAX . ' characters';
+                    $problems[] = 'summary: longer than ' . self::SUMMARY_MAX . ' characters';
                 }
             }
         }
@@ -149,7 +143,7 @@ class SomcpToolGenerateLlmsTxt
         $maxCategories = self::CATEGORIES_DEFAULT;
         if (array_key_exists('max_categories', $arguments) && $arguments['max_categories'] !== null) {
             if (!is_int($arguments['max_categories']) || $arguments['max_categories'] < 1 || $arguments['max_categories'] > self::CATEGORIES_MAX) {
-                $problems[] = '- max_categories: a whole number from 1 to ' . self::CATEGORIES_MAX;
+                $problems[] = 'max_categories: a whole number from 1 to ' . self::CATEGORIES_MAX;
             } else {
                 $maxCategories = $arguments['max_categories'];
             }
@@ -158,17 +152,14 @@ class SomcpToolGenerateLlmsTxt
         $overwrite = false;
         if (array_key_exists('overwrite', $arguments) && $arguments['overwrite'] !== null) {
             if (!is_bool($arguments['overwrite'])) {
-                $problems[] = '- overwrite: true or false';
+                $problems[] = 'overwrite: true or false';
             } else {
                 $overwrite = $arguments['overwrite'];
             }
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was written. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('written', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);

@@ -64,6 +64,9 @@ class SomcpToolIssueStandardRefund
         'product_prices_excluding_voucher' => 1,
     ];
 
+    /** @var string[] The top-level arguments of the tool, as in its schema. */
+    private const KEYS = ['id_order', 'reference', 'lines', 'refund_shipping', 'credit_slip', 'voucher', 'voucher_refund_type'];
+
     /** @var string[] The keys of one entry of lines. */
     private const LINE_KEYS = ['id_order_detail', 'quantity'];
 
@@ -78,7 +81,8 @@ class SomcpToolIssueStandardRefund
             'Issues a standard refund on one paid order not delivered yet, like the Standard refund button of the '
                 . 'order page: whole quantities of some lines (id_order_detail from somcp_get_order), put back in '
                 . 'stock, and the shipping if asked. Needs merchandise returns on. Say the lines and what will be '
-                . 'generated, and wait for the merchant\'s go-ahead. Chosen amounts: somcp_issue_partial_refund. '
+                . 'generated, and wait for the merchant\'s go-ahead. Chosen amounts: somcp_issue_partial_refund. Unpaid '
+                . 'order: somcp_cancel_order_products. Delivered: somcp_return_order_products. '
                 . 'Never to be retried on a lost answer: check products[].quantity_refunded and '
                 . 'documents.credit_slips of somcp_get_order.',
             [
@@ -158,6 +162,10 @@ class SomcpToolIssueStandardRefund
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
 
+        // A misnamed field would otherwise be dropped and the refund carried
+        // out without it, while the merchant is told it was taken into account.
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
+
         $lines = self::lines($arguments, $problems);
 
         $shipping = SomcpToolIssuePartialRefund::flag($arguments, 'refund_shipping', false, $problems);
@@ -204,7 +212,8 @@ class SomcpToolIssueStandardRefund
                 . 'so the order page has no Standard refund - use somcp_issue_partial_refund, which needs neither';
         }
         if (!$order->hasBeenPaid() && !$order->hasPayments()) {
-            $problems[] = 'id_order: this order is neither paid nor has a payment - a standard refund needs one';
+            $problems[] = 'id_order: this order is neither paid nor has a payment - a standard refund needs one; '
+                . 'somcp_cancel_order_products takes products off an unpaid order';
         }
         if ($order->hasBeenDelivered()) {
             $problems[] = 'id_order: this order is already delivered - a standard refund is only for an order '

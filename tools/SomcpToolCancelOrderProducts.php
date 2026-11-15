@@ -52,6 +52,9 @@ require_once __DIR__ . '/SomcpToolUpdateOrderProduct.php';
 
 class SomcpToolCancelOrderProducts
 {
+    /** @var string[] The top-level arguments of the tool, as in its schema. */
+    private const KEYS = ['id_order', 'reference', 'lines'];
+
     /**
      * @return SomcpTool
      */
@@ -122,6 +125,11 @@ class SomcpToolCancelOrderProducts
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
+
+        // A misnamed field would otherwise be dropped and the cancellation
+        // carried out without it, while the merchant is told it was taken
+        // into account.
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         $lines = SomcpToolIssueStandardRefund::lines($arguments, $problems, 'cancel');
 

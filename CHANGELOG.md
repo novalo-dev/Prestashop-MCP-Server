@@ -16,6 +16,18 @@ are:
 
 ## Unreleased
 
+### Fixed
+
+**A misnamed field is refused on refunds, returns and cancellations.** When
+the assistant gave `somcp_issue_standard_refund`, `somcp_issue_partial_refund`,
+`somcp_return_order_products` or `somcp_cancel_order_products` a field they do
+not take, for example a shipping refund on a cancellation, the field was
+ignored and the rest carried out, while you were told it had been done. The
+call is now refused with the name of the field, and nothing is recorded. A
+standard refund refused on an unpaid order now points to the cancellation of
+products, and the refund and return tools say which one fits a delivered
+order, an order not delivered yet or a chosen amount.
+
 ## 2.0.1 - 2026-11-15
 
 ### Added

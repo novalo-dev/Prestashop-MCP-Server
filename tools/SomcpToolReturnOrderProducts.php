@@ -66,6 +66,11 @@ class SomcpToolReturnOrderProducts
         'product_prices_excluding_voucher' => 1,
     ];
 
+    /** @var string[] The top-level arguments of the tool, as in its schema. */
+    private const KEYS = [
+        'id_order', 'reference', 'lines', 'restock', 'refund_shipping', 'credit_slip', 'voucher', 'voucher_refund_type',
+    ];
+
     /**
      * @return SomcpTool
      */
@@ -78,7 +83,8 @@ class SomcpToolReturnOrderProducts
                 . 'products button of the order page: whole quantities of some lines (id_order_detail from '
                 . 'somcp_get_order), the shipping if asked. Needs merchandise returns on. Ask whether the goods go '
                 . 'back in stock, say the lines and what will be generated, and wait for the go-ahead. Never to be '
-                . 'retried on a lost answer: check products[].quantity_refunded of somcp_get_order.',
+                . 'retried on a lost answer: check products[].quantity_refunded of somcp_get_order. Not delivered yet: '
+                . 'somcp_issue_standard_refund. Chosen amounts: somcp_issue_partial_refund.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -160,6 +166,10 @@ class SomcpToolReturnOrderProducts
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
+
+        // A misnamed field would otherwise be dropped and the return carried
+        // out without it, while the merchant is told it was taken into account.
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         $lines = SomcpToolIssueStandardRefund::lines($arguments, $problems);
 

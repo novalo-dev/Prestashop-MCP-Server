@@ -191,7 +191,8 @@ for the merchant's go-ahead before the call.
 - It needs merchandise returns on (**Customer Service > Merchandise
   Returns**). When they are off, or for a chosen amount, use
   `somcp_issue_partial_refund`; a delivered order goes to
-  `somcp_return_order_products`.
+  `somcp_return_order_products`, an unpaid one to
+  `somcp_cancel_order_products`.
 - Never repeat the call on a lost answer: check `quantity_refunded` and
   `documents.credit_slips` with `somcp_get_order`.
 

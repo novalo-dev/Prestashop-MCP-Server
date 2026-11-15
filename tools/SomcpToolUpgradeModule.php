@@ -316,6 +316,13 @@ class SomcpToolUpgradeModule extends SomcpToolUploadModule
      * every module it lists. A module already loaded in this request keeps
      * its old code, which the version tells.
      *
+     * The new files have just landed in the folder. When they overwrote the
+     * main file in place, rather than arriving as a renamed folder, OPcache
+     * may still serve the previous version's bytecode, so the instance would
+     * answer with the old version and a sound upgrade would be refused. On a
+     * shop that keeps opcache.validate_timestamps off this never clears on its
+     * own, so the file is dropped from the cache before it loads.
+     *
      * @param string $name
      * @param string $version the version the archive declares
      *
@@ -323,6 +330,10 @@ class SomcpToolUpgradeModule extends SomcpToolUploadModule
      */
     private static function unfit(string $name, string $version): array
     {
+        $main = self::modulesDir() . $name . '/' . $name . '.php';
+        if (function_exists('opcache_invalidate') && is_file($main)) {
+            opcache_invalidate($main, true);
+        }
         $module = Module::getInstanceByName($name);
         if (!$module instanceof Module) {
             return ['the new files of ' . $name . ' do not load as a module'];

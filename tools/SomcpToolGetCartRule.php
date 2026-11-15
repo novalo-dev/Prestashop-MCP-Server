@@ -206,8 +206,8 @@ class SomcpToolGetCartRule
             // expects the identifier only when there is one.
             'id_customer' => $idCustomer > 0 ? $idCustomer : null,
             'customer' => $customer,
-            'date_from' => SomcpToolListCartRules::iso((string) $row['date_from']),
-            'date_to' => SomcpToolListCartRules::iso((string) $row['date_to']),
+            'date_from' => SomcpTool::isoDate($row['date_from']),
+            'date_to' => SomcpTool::isoDate($row['date_to']),
             'minimum_amount' => $minimum > 0 ? [
                 'value' => round($minimum, 2),
                 'currency' => SomcpToolListCartRules::currencyIso((int) $row['minimum_amount_currency']),
@@ -224,8 +224,8 @@ class SomcpToolGetCartRule
             'gift' => $gift,
             'summary' => $built['summary'],
             'times_used' => (int) $row['times_used'],
-            'date_add' => SomcpToolListCartRules::iso((string) $row['date_add']),
-            'date_upd' => SomcpToolListCartRules::iso((string) $row['date_upd']),
+            'date_add' => SomcpTool::isoDate($row['date_add']),
+            'date_upd' => SomcpTool::isoDate($row['date_upd']),
         ];
     }
 

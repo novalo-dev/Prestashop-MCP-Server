@@ -5381,7 +5381,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `code` | **Code**, empty string when none |
 | `quantity` | **Total available**: uses left, lowered at each order |
 | `quantity_per_user` | **Total available for each user** |
-| `date_from` / `date_to` | **Valid** **From**/**To** (**Expiration date** in the list), ISO 8601, empty string for no date |
+| `date_from` / `date_to` | **Valid** **From**/**To** (**Expiration date** in the list), ISO 8601 with the shop's offset, `null` when not set |
 | `active` | **Status** |
 | `id_customer` | **Limit to a single customer**: the identifier `somcp_get_customer` takes, `null` when the rule is for everyone |
 | `free_shipping` | **Free shipping** |
@@ -5428,7 +5428,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `priority` | **Priority** |
 | `active` | **Status** |
 | `id_customer` | **Conditions** > **Limit to a single customer**: `null` for everyone; with `customer` (`firstname`, `lastname`) beside it, the identifier `somcp_get_customer` takes |
-| `date_from` / `date_to` | **Valid** **From** / **To**, ISO 8601, as `somcp_list_cart_rules` |
+| `date_from` / `date_to` | **Valid** **From** / **To**, ISO 8601 with the shop's offset, `null` when not set, as `somcp_list_cart_rules` |
 | `minimum_amount` | **Minimum amount**: `null` when 0, else `{"value": 50, "currency": "EUR", "tax_included": false, "shipping_included": false}` |
 | `quantity` / `quantity_per_user` | **Total available** / **Total available for each user** |
 | `restrictions.country` | **Country selection**: `null` when off, else `[{"id_country", "name"}]` |
@@ -5443,7 +5443,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `gift` | **Send a free gift**: `{"id_product", "id_product_attribute", "name"}` or `null` |
 | `summary` | the one line of `somcp_list_cart_rules` |
 | `times_used` | as `somcp_list_cart_rules` |
-| `date_add` / `date_upd` | ISO 8601 |
+| `date_add` / `date_upd` | ISO 8601 with the shop's offset, `null` when not set |
 
 **Errors** - in the shape of #169, all in one answer: unknown arguments; a missing or non-positive `id_cart_rule`; an unknown language (#149). An `id_cart_rule` no rule of this shop has: `id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`, the token's shop deciding as in `somcp_list_cart_rules`.
 

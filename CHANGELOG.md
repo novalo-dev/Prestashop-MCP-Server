@@ -69,6 +69,11 @@ at the right hour in yours instead of an hour off, and an end set before the
 start is caught even when the two were written in different time zones. The
 dates of a voucher are saved the same way.
 
+**A voucher with no date reads as not set.** Listing vouchers and reading one
+gave a missing start or end date as an empty text, where every other tool says
+it is not set. Both now say it is not set, so a voucher read and given back to
+be changed carries the same value the other tools use.
+
 **The SEO and AI visibility tools refuse a misspelt setting.** When the
 assistant calls one of these tools with a setting it does not take - a field
 name spelt wrong, for example - the tool now says so instead of ignoring it

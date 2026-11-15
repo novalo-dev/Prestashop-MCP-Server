@@ -1356,8 +1356,8 @@ recomputes the order totals. It lowers what the customer owes.
 **Returns** - `added`, `order` (`id_order` and `reference`), `discount`
 (`id_order_cart_rule`, `id_cart_rule`, `id_order_invoice`, `name`,
 `value_tax_excluded`, `value_tax_included`, `free_shipping`), and the order
-totals after the change (`discounts_tax_included`, `total_tax_excluded`,
-`total_tax_included`, `currency`). `discount` carries the keys of `discounts[]`
+totals after the change under `totals` (as `somcp_get_order` gives them, with
+`currency` beside, like the other order write tools). `discount` carries the keys of `discounts[]`
 of `somcp_get_order` plus `id_cart_rule`, so the same discount reads the same
 in both answers, and its `id_order_cart_rule` is what
 `somcp_delete_order_discount` takes.
@@ -1366,11 +1366,20 @@ in both answers, and its `id_order_cart_rule` is what
 under "Nothing was recorded. Correct these and call again:": `name` missing, empty, too long or not clean;
 `type` not one of the three; `value` missing for `percent` /
 `amount_tax_included`, given for `free_shipping`, at or below 0, above 100 for a
-percent, or above the total for an amount (giving that total); the order not
+percent, or above the total for an amount; the order not
 found or a reference shared by several orders; `id_order_invoice` given on an
 order without invoices, or not an invoice of this order (naming
-`somcp_get_order`). The core's own refusals (invalid percent or amount) are put
-in the same shape.
+`somcp_get_order`). The core's own refusals are put in the same shape, with
+what the core compared: an amount above the total tax included of the invoice
+given, of the smallest invoice of the order when none is given (the amount must
+fit each invoice), or of the order when it has no invoice, naming that invoice
+by its `documents.invoices[].number` and giving its total; free shipping on an
+invoice or an order whose shipping tax included is above its total tax
+included, `type: free shipping cannot be added - the shipping of <the invoice
+/ the order> is above its total tax included`. A failure inside the core,
+which saves the cart rule, the cart and the order amounts with no transaction,
+says that part of the change may have been saved and to read `discounts` with
+`somcp_get_order` before trying again.
 
 **Notes** - the discount is one line of **Add new cart rule**
 (`add_order_cart_rule`): **Name**, **Type** (Percent, Amount, Free shipping),
@@ -1411,9 +1420,9 @@ recomputes the order totals. It raises what the customer owes.
 with the keys of `discounts[]` of `somcp_get_order` (`id_order_cart_rule`,
 `id_order_invoice`, `name`, `value_tax_included`, `value_tax_excluded`,
 `free_shipping`), `gift_line_updated` (the discount gave a gift product and
-its line lost one unit), and the order totals after the change
-(`discounts_tax_included`, `total_tax_excluded`, `total_tax_included`,
-`currency`), as `somcp_add_order_discount` returns them. A discount already
+its line lost one unit), and the order totals after the change under
+`totals` (as `somcp_get_order` gives them, with `currency` beside), as
+`somcp_add_order_discount` returns them. A discount already
 removed is `deleted: false` with a `reason`, and nothing happens.
 
 **Errors** - every problem at once, nothing deleted when one check fails, each

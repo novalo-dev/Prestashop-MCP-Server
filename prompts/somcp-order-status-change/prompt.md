@@ -388,11 +388,13 @@ let them say yes to that one before calling. Deleting is final.
 `id_order_invoice`. It changes what the customer owes.
 
 - A discount **lowers the total**. Say the new total before adding it, not
-  after: the answer gives `total_tax_included` and `discounts_tax_included`,
+  after: the answer gives `totals.total_tax_included` and
+  `totals.discounts_tax_included`,
   but the merchant decides on the figure first.
 - `name` is one plain text, the line the customer reads on the invoice.
-- A percentage is 1 to 100; an amount is at most the order total (the refusal
-  gives that total). `free_shipping` takes no value.
+- A percentage is 1 to 100; an amount is at most the order total, or the
+  total of each invoice once the order has invoices (the refusal gives the
+  total it was compared with). `free_shipping` takes no value.
 - **Do not repeat the call** on a lost answer: two identical discounts are both
   applied. Check `discounts` with `somcp_get_order`, and remove an extra one
   with `somcp_delete_order_discount`.

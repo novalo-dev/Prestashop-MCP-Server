@@ -38,6 +38,16 @@ standard refund refused on an unpaid order now points to the cancellation of
 products, and the refund and return tools say which one fits a delivered
 order, an order not delivered yet or a chosen amount.
 
+**A discount refused on an order with invoices gives the right ceiling.** When
+an amount added to an order with invoices was too high, the assistant was
+told the order total, while PrestaShop compares the amount with the invoice
+chosen, or with each invoice of the order; it then tried a figure that was
+refused again. The refusal now names the invoice and its total. Free shipping
+that PrestaShop refuses, because the shipping is above the total of the
+invoice or the order, is now explained instead of a bare refusal. If adding a
+discount fails half-way, the assistant no longer says nothing was saved: it
+checks the order's discounts before trying again.
+
 ## 2.0.1 - 2026-11-15
 
 ### Added

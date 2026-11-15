@@ -268,7 +268,7 @@ class SomcpToolAddOrderDiscount
             );
             $handler->handle($command);
         } catch (InvalidCartRuleDiscountValueException $e) {
-            return self::valueRefused($order, $type, $e, $idEmployee);
+            return self::valueRefused($order, $type, $idOrderInvoice, $e, $idEmployee);
         } catch (Throwable $e) {
             SomcpLogger::log(
                 'order_add_discount',
@@ -278,9 +278,14 @@ class SomcpToolAddOrderDiscount
                 $idEmployee
             );
 
-            return SomcpToolIssuePartialRefund::refused([
-                'id_order: the discount could not be added. Nothing was recorded.',
-            ]);
+            // The handler saves the cart rule, then the cart, then the order
+            // amounts, with no transaction: a failure half-way may have kept
+            // some of them, so say how to check rather than claim nothing moved.
+            return SomcpTool::text(
+                'The discount could not be added. Read discounts with somcp_get_order before trying again: part '
+                    . 'of the change may have been saved.',
+                true
+            );
         }
 
         $order = new Order((int) $order->id);
@@ -302,24 +307,25 @@ class SomcpToolAddOrderDiscount
                 'reference' => (string) $order->reference,
             ],
             'discount' => $added,
-            'discounts_tax_included' => (float) $order->total_discounts_tax_incl,
-            'total_tax_excluded' => (float) $order->total_paid_tax_excl,
-            'total_tax_included' => (float) $order->total_paid_tax_incl,
+            // As the other order write tools answer, so the totals after a
+            // change read the same whichever tool made it.
+            'totals' => SomcpToolGetOrder::totals($order),
             'currency' => (string) $currency->iso_code,
         ]);
     }
 
     /**
-     * The core's amount and percent refusals, put in the tool's shape.
+     * The core's amount, percent and free shipping refusals, put in the tool's shape.
      *
      * @param Order $order
      * @param string $type
+     * @param int|null $idOrderInvoice
      * @param InvalidCartRuleDiscountValueException $e
      * @param int $idEmployee
      *
      * @return array<string, mixed>
      */
-    private static function valueRefused(Order $order, string $type, InvalidCartRuleDiscountValueException $e, int $idEmployee): array
+    private static function valueRefused(Order $order, string $type, ?int $idOrderInvoice, InvalidCartRuleDiscountValueException $e, int $idEmployee): array
     {
         SomcpLogger::log(
             'order_add_discount',
@@ -341,15 +347,116 @@ class SomcpToolAddOrderDiscount
                 break;
             case InvalidCartRuleDiscountValueException::INVALID_MAX_AMOUNT:
                 $currency = new Currency((int) $order->id_currency);
-                $problem = 'value: an amount is at most the total tax included of the invoice, or of the order '
-                    . 'when none is given (' . Tools::ps_round((float) $order->total_paid_tax_incl, 2) . ' '
-                    . (string) $currency->iso_code . ').';
+                // The ceiling the handler compared with, smallest first: a
+                // ceiling it did not use would be refused again.
+                [$what, $total] = self::ceiling($order, $idOrderInvoice);
+                $problem = 'value: an amount is at most the total tax included of ' . $what . ' ('
+                    . Tools::ps_round($total, 2) . ' ' . (string) $currency->iso_code . ').';
+                break;
+            case InvalidCartRuleDiscountValueException::INVALID_FREE_SHIPPING:
+                $problem = 'type: free shipping cannot be added - the shipping of '
+                    . self::shippingAboveTotal($order, $idOrderInvoice) . ' is above its total tax included.';
                 break;
             default:
-                $problem = 'value: refused by PrestaShop.';
+                // Kept on type: either check of the handler can raise it.
+                $problem = 'type: refused by PrestaShop.';
         }
 
         return SomcpToolIssuePartialRefund::refused([$problem]);
+    }
+
+    /**
+     * The invoices the handler checks a discount against: the one given, else
+     * every invoice of the order, else none (the order itself is checked).
+     *
+     * @param Order $order
+     * @param int|null $idOrderInvoice
+     *
+     * @return array<int, OrderInvoice>
+     */
+    private static function checkedInvoices(Order $order, ?int $idOrderInvoice): array
+    {
+        // The rule of AddCartRuleToOrderHandler, the same on 8.0.1 and 9.0.0:
+        // the invoice given only counts when the order has invoices.
+        if (!$order->hasInvoice()) {
+            return [];
+        }
+        if ($idOrderInvoice !== null) {
+            $invoice = new OrderInvoice($idOrderInvoice);
+
+            return Validate::isLoadedObject($invoice) ? [$invoice] : [];
+        }
+        $invoices = [];
+        foreach ($order->getInvoicesCollection()->getResults() as $invoice) {
+            if ($invoice instanceof OrderInvoice) {
+                $invoices[] = $invoice;
+            }
+        }
+
+        return $invoices;
+    }
+
+    /**
+     * What an amount was compared with, in words, and its total tax included.
+     *
+     * @param Order $order
+     * @param int|null $idOrderInvoice
+     *
+     * @return array{0: string, 1: float}
+     */
+    private static function ceiling(Order $order, ?int $idOrderInvoice): array
+    {
+        $invoices = self::checkedInvoices($order, $idOrderInvoice);
+        if ($invoices === []) {
+            return ['the order', (float) $order->total_paid_tax_incl];
+        }
+        // The amount must fit every invoice checked, so the smallest decides.
+        $smallest = $invoices[0];
+        foreach ($invoices as $invoice) {
+            if ((float) $invoice->total_paid_tax_incl < (float) $smallest->total_paid_tax_incl) {
+                $smallest = $invoice;
+            }
+        }
+        $number = self::invoiceNumber($order, $smallest);
+
+        return [
+            $idOrderInvoice !== null || count($invoices) === 1 ? 'the invoice ' . $number : 'the smallest invoice of this order, ' . $number,
+            (float) $smallest->total_paid_tax_incl,
+        ];
+    }
+
+    /**
+     * The invoice, or the order, whose shipping is above its total, as the
+     * handler finds it.
+     *
+     * @param Order $order
+     * @param int|null $idOrderInvoice
+     *
+     * @return string
+     */
+    private static function shippingAboveTotal(Order $order, ?int $idOrderInvoice): string
+    {
+        $invoices = self::checkedInvoices($order, $idOrderInvoice);
+        foreach ($invoices as $invoice) {
+            if ((float) $invoice->total_paid_tax_incl < (float) $invoice->total_shipping_tax_incl) {
+                return 'the invoice ' . self::invoiceNumber($order, $invoice);
+            }
+        }
+
+        return $invoices === [] ? 'the order' : 'an invoice of this order';
+    }
+
+    /**
+     * An invoice named as documents.invoices[].number of somcp_get_order.
+     *
+     * @param Order $order
+     * @param OrderInvoice $invoice
+     *
+     * @return string
+     */
+    private static function invoiceNumber(Order $order, OrderInvoice $invoice): string
+    {
+        return (string) $invoice->getInvoiceNumberFormatted((int) $order->id_lang);
     }
 
     /**

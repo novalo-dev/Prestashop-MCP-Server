@@ -56,7 +56,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     protected const ARGUMENTS = [
         'languages', 'name', 'id_parent', 'active', 'description', 'additional_description', 'groups',
         'link_rewrite', 'meta_title', 'meta_description', 'meta_keywords', 'redirect_type', 'id_type_redirected',
-        'cover_image', 'menu_thumbnails',
+        'cover_image', 'thumbnail_image', 'menu_thumbnails',
     ];
 
     /**
@@ -98,7 +98,11 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             // Adding a category is what the categories page asks for in Team,
             // Permissions; editing one is a different right.
             SomcpTool::acts(SomcpPermission::ADD, 'AdminCategories'),
-            files: ['cover_image' => SomcpUpload::images(), 'menu_thumbnails' => SomcpUpload::images()]
+            files: [
+                'cover_image' => SomcpUpload::images(),
+                'thumbnail_image' => SomcpUpload::images(),
+                'menu_thumbnails' => SomcpUpload::images(),
+            ]
         );
     }
 
@@ -163,6 +167,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                         . 'somcp_list_categories; 0 or left out for the closest parent.',
                 ],
                 'cover_image' => SomcpUpload::schema('Merchant. The cover image.', 'the cover image'),
+                'thumbnail_image' => SomcpUpload::schema('Merchant. The Category thumbnail.', 'the category thumbnail'),
                 'menu_thumbnails' => [
                     'type' => 'array',
                     'description' => 'Merchant. PrestaShop 8 only, refused on 9, which dropped them: up to 3 images '
@@ -691,6 +696,10 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         if ($cover !== null) {
             $images[] = $cover + ['for' => 'cover_image'];
         }
+        $thumbnail = SomcpUpload::argument($arguments, 'thumbnail_image', $errors, 'category thumbnail');
+        if ($thumbnail !== null) {
+            $images[] = $thumbnail + ['for' => 'thumbnail_image'];
+        }
 
         if (!array_key_exists('menu_thumbnails', $arguments)) {
             return $images;
@@ -849,6 +858,9 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                         if ($stored) {
                             self::thumbnails($target, _PS_CAT_IMG_DIR_ . $idCategory, 'categories');
                         }
+                        $refusal = $stored ? '' : 'the shop could not read it as an image';
+                    } elseif ($image['for'] === 'thumbnail_image') {
+                        $refusal = self::storeThumbnail($file, $idCategory);
                     } else {
                         // CategoryMenuThumbnailUploader: c/<id>-<slot>_thumb.jpg,
                         // slots 0 to 2, with no thumbnails of their own.
@@ -857,8 +869,8 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                             ++$slot;
                             $thumbnails = true;
                         }
+                        $refusal = $stored ? '' : 'the shop could not read it as an image';
                     }
-                    $refusal = $stored ? '' : 'the shop could not read it as an image';
                 }
             } catch (Throwable $e) {
                 $refusal = 'the shop could not save it';
@@ -877,6 +889,74 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
         }
 
         return $report;
+    }
+
+    /**
+     * Writes the category thumbnail where the core's uploader of this version writes it.
+     *
+     * The two versions write different files under different names, and
+     * somcp_get_category and the storefront read them where the back office
+     * put them, so each is written exactly as its own uploader does.
+     *
+     * @param string $file the fetched and checked image
+     * @param int $idCategory
+     *
+     * @return string empty on success, the reason otherwise
+     */
+    protected static function storeThumbnail(string $file, int $idCategory): string
+    {
+        $target = _PS_CAT_IMG_DIR_ . $idCategory . '_thumb.jpg';
+        if (self::thumbnailRemovable()) {
+            // PrestaShop 9 (CategoryThumbnailImageUploader): the old
+            // c/<id>_thumb.jpg goes, the original takes its name, then one
+            // file per category image type and generation format.
+            if (is_file($target)) {
+                @unlink($target);
+            }
+            if (!ImageManager::resize($file, $target)) {
+                return 'the shop could not read it as an image';
+            }
+            self::thumbnails($target, _PS_CAT_IMG_DIR_ . $idCategory . '_thumb', 'categories');
+
+            return '';
+        }
+
+        // PrestaShop 8: c/<id>-<small type>.jpg at the size of the category
+        // image type named small, the same file the cover writes for that
+        // type, so the last one written wins as in the back office; then
+        // c/<id>_thumb.jpg at the size of the image. Without that type the
+        // core writes nothing, which is said rather than reported as stored.
+        $small = (string) ImageType::getFormattedName('small');
+        foreach (ImageType::getImagesTypes('categories') ?: [] as $type) {
+            if ((string) $type['name'] !== $small) {
+                continue;
+            }
+            $resized = ImageManager::resize(
+                $file,
+                _PS_CAT_IMG_DIR_ . $idCategory . '-' . stripslashes((string) $type['name']) . '.jpg',
+                (int) $type['width'],
+                (int) $type['height']
+            );
+            $size = $resized ? getimagesize($file) : false;
+            if (!is_array($size) || !ImageManager::resize($file, $target, (int) $size[0], (int) $size[1])) {
+                return 'the shop could not read it as an image';
+            }
+
+            return '';
+        }
+
+        return 'the shop has no category image type named ' . $small . ', the size the thumbnail is made at';
+    }
+
+    /**
+     * Whether this version can remove a category thumbnail: PrestaShop 9
+     * added the Delete button, and writes the thumbnail its own way.
+     *
+     * @return bool
+     */
+    protected static function thumbnailRemovable(): bool
+    {
+        return class_exists('PrestaShop\PrestaShop\Core\Domain\Category\Command\DeleteCategoryThumbnailImageCommand');
     }
 
     /**
@@ -921,7 +1001,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
     }
 
     /**
-     * The cover image and the menu thumbnails of a category, as
+     * The cover image, the thumbnail and the menu thumbnails of a category, as
      * somcp_get_category returns them: a download_ref each, for
      * somcp_download_file.
      *
@@ -931,7 +1011,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
      * @param int $idCategory
      * @param int $idShop
      *
-     * @return array{cover_image: array{download_ref:string}|null, menu_thumbnails: array<int, array{download_ref:string}|null>|null}
+     * @return array{cover_image: array{download_ref:string}|null, thumbnail_image: array{download_ref:string}|null, menu_thumbnails: array<int, array{download_ref:string}|null>|null}
      */
     protected static function storedImages(int $idCategory, int $idShop): array
     {
@@ -947,7 +1027,11 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             }
         }
 
-        return ['cover_image' => $cover, 'menu_thumbnails' => $thumbnails];
+        return [
+            'cover_image' => $cover,
+            'thumbnail_image' => SomcpDownload::offer('category_thumbnail_image', $idCategory, $idShop),
+            'menu_thumbnails' => $thumbnails,
+        ];
     }
 
     /**
@@ -1030,6 +1114,7 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
             'meta_description' => self::textOf($category->meta_description, $idLang),
             'meta_keywords' => isset(Category::$definition['fields']['meta_keywords']) ? self::textOf($properties['meta_keywords'] ?? '', $idLang) : null,
             'cover_image' => $stored['cover_image'],
+            'thumbnail_image' => $stored['thumbnail_image'],
             'menu_thumbnails' => $stored['menu_thumbnails'],
             'products_count' => (int) $db->getValue(
                 'SELECT COUNT(DISTINCT cp.`id_product`) FROM `' . _DB_PREFIX_ . 'category_product` cp'

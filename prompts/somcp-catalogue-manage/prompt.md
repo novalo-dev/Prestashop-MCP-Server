@@ -346,8 +346,10 @@ second call creates a second category.
    branch to the merchant: two categories can share a name. Read it with
    `somcp_get_category` to know what it holds before changing it.
 2. Give only what changes. `groups` replaces the current set, and new menu
-   thumbnails replace the current ones; the cover and the thumbnails are only
-   removed through `remove_cover_image` and `remove_menu_thumbnails`.
+   thumbnails replace the current ones; the cover, the category thumbnail
+   (`thumbnail_image`) and the menu thumbnails are only removed through
+   `remove_cover_image`, `remove_thumbnail_image` (PrestaShop 9 only) and
+   `remove_menu_thumbnails` (PrestaShop 8 only).
 3. To change a text in one language, pass `languages` with that language alone.
    A new `link_rewrite` on a displayed category breaks the old address of its
    page: tell the merchant before.

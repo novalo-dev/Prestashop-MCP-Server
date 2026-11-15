@@ -8,6 +8,7 @@
     {"why": "a category that does not exist", "arguments": {"id_category": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_category: no category of this shop has the identifier 999999 - find it with somcp_list_categories"]},
     {"why": "no identifier", "arguments": {"id_category": 0}, "expect": "error", "contains": ["- id_category: a whole number above 0"]},
     {"why": "an identifier that is not a number", "arguments": {"id_category": [8]}, "expect": "error", "contains": ["- id_category: a whole number above 0"]},
-    {"why": "a misspelt field is named, not read as a missing category", "arguments": {"id_categroy": 8}, "expect": "error", "contains": ["Nothing was read", "- id_categroy: not a field of this tool", "- id_category: a whole number above 0"]}
+    {"why": "a misspelt field is named, not read as a missing category", "arguments": {"id_categroy": 8}, "expect": "error", "contains": ["Nothing was read", "- id_categroy: not a field of this tool", "- id_category: a whole number above 0"]},
+    {"why": "the Category thumbnail is read beside the cover image", "arguments": {"id_category": 3}, "expect": "ok", "contains": ["\"cover_image\"", "\"thumbnail_image\"", "\"menu_thumbnails\""]}
   ]
 }

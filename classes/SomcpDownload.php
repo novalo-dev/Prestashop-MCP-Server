@@ -77,6 +77,7 @@ class SomcpDownload
         'carrier_logo' => ['reader' => 'somcp_list_carriers'],
         'category_image' => ['reader' => 'somcp_get_category'],
         'category_thumbnail' => ['reader' => 'somcp_get_category'],
+        'category_thumbnail_image' => ['reader' => 'somcp_get_category'],
         'shop_logo' => ['reader' => 'somcp_get_theme'],
     ];
 
@@ -625,6 +626,13 @@ class SomcpDownload
                 }
                 $number = (int) $match[1];
                 $path = _PS_CAT_IMG_DIR_ . $number . '-' . $match[2] . '_thumb.jpg';
+                $shopTable = 'category_shop';
+                $shopKey = 'id_category';
+                break;
+            case 'category_thumbnail_image':
+                // The Category thumbnail field, c/<id>_thumb.jpg on 8 and 9;
+                // category_thumbnail is the menu thumbnails of PrestaShop 8.
+                $path = _PS_CAT_IMG_DIR_ . $number . '_thumb.jpg';
                 $shopTable = 'category_shop';
                 $shopKey = 'id_category';
                 break;

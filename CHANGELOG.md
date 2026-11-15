@@ -36,6 +36,13 @@ the upgrade fails, the shop stays in maintenance and the assistant tells you:
 reopen it in **Shop Parameters > General > Maintenance** once you have checked
 it.
 
+**Category thumbnail.** The assistant can now set the **Category thumbnail**
+of a category, the small image shown where its parent category lists its
+subcategories, when it creates or changes the category, and reads it back with
+the category. The files are written where the back office writes them on your
+PrestaShop version. On PrestaShop 9, which has a Delete button for it, the
+assistant can also remove it.
+
 ### Changed
 
 **The built-in assistant runs on Neuron AI 4.1.25.** A conversation answered

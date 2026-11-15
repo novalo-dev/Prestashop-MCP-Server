@@ -5208,7 +5208,7 @@ The levers that turn visits into orders: carts left behind, what customers searc
 | `returned`, `total_count`, `offset` | as `somcp_search_orders` |
 | `older_than_hours` | the age used |
 | `total_value_tax_incl` | sum of `total_products_tax_incl` over every matching cart, not only this page, keyed by currency ISO code (no conversion) |
-| `total_value_complete` | false when more than 1000 carts match: the sum then covers the 1000 newest, each cart being priced by PrestaShop itself |
+| `total_value_complete` | false when the sum leaves a matching cart out: more than 1000 carts match (it then covers the 1000 newest), or a cart could not be priced any more (a product removed since); each cart is priced by PrestaShop itself |
 | `language` | ISO code used |
 
 **Errors** - in the shape of #169, all in one answer: unknown arguments, `older_than_hours` below 1, invalid dates, `date_from` after `date_to`, `limit` outside 1 to 100, a negative `offset`, an unknown language.

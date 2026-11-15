@@ -77,6 +77,14 @@ to find the right one, with the other mistakes of the call.
 
 ### Fixed
 
+**The total of the abandoned carts says when a cart is missing from it.**
+When the assistant adds up the value of your abandoned carts, a cart that could
+no longer be priced, because a product in it was deleted since, was left out of
+the sum while the answer still said every cart was counted. The answer now
+says the total is partial in that case too, so the assistant tells you rather
+than giving the figure as the whole. The carts of the page are also no longer
+priced twice, which makes the list quicker on a shop with many carts.
+
 **An llms.txt the module did not write is refused, not reported as written.**
 When the shop already has an llms.txt made by hand or by another tool, and the
 assistant asks to generate one without saying to replace it, the answer was a

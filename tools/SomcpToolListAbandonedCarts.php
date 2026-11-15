@@ -237,9 +237,13 @@ class SomcpToolListAbandonedCarts
         ) ?: [];
 
         $carts = [];
+        // The page's tax-included totals, handed to totalValue() so the
+        // carts already priced here are not priced a second time.
+        $priced = [];
         foreach ($rows as $row) {
             $idCart = (int) $row['id_cart'];
             [$totalExcl, $totalIncl, $products] = self::price($idCart, $idLang, true);
+            $priced[$idCart] = $totalIncl;
             $carts[] = [
                 'id_cart' => $idCart,
                 'date_add' => (string) $row['date_add'],
@@ -262,7 +266,7 @@ class SomcpToolListAbandonedCarts
             ];
         }
 
-        [$value, $complete] = self::totalValue($where, $from, $idLang, $total);
+        [$value, $complete] = self::totalValue($where, $from, $total, $priced);
 
         return SomcpTool::json([
             'carts' => $carts,
@@ -375,10 +379,13 @@ class SomcpToolListAbandonedCarts
      * expensive lines, asked of the cart itself so prices and taxes follow
      * the shop's rules. Null amounts when the cart cannot be priced any more
      * (a product removed since), so one old cart does not hide the others.
+     * Without the lines only the tax-included total is computed: it is the
+     * one totalValue() adds up, and every amount asked of the cart costs a
+     * full price calculation.
      *
      * @param int $idCart
      * @param int $idLang language of the product names
-     * @param bool $withLines
+     * @param bool $withLines the page's rows: both totals and the lines
      *
      * @return array{0: float|null, 1: float|null, 2: array<int, array<string, mixed>>}
      */
@@ -392,7 +399,9 @@ class SomcpToolListAbandonedCarts
         $incl = null;
         $lines = [];
         try {
-            $excl = round((float) $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS), 2);
+            if ($withLines) {
+                $excl = round((float) $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS), 2);
+            }
             $incl = round((float) $cart->getOrderTotal(true, Cart::ONLY_PRODUCTS), 2);
             if ($withLines) {
                 // The names in the language asked, not the one the visitor
@@ -428,15 +437,18 @@ class SomcpToolListAbandonedCarts
      * The products total tax included of every matching cart, not only this
      * page, keyed by currency ISO code: carts in different currencies are
      * never added together, as no rate would be right for all of them.
+     * Complete only when every matching cart was counted: not when more carts
+     * match than are valued, nor when one of them could not be priced, or the
+     * assistant would take a partial total for the whole.
      *
      * @param string $where
      * @param string $from
-     * @param int $idLang
      * @param int $total number of matching carts
+     * @param array<int, float|null> $priced tax-included totals of the page's carts, by id_cart
      *
      * @return array{0: array<string, float>, 1: bool}
      */
-    private static function totalValue(string $where, string $from, int $idLang, int $total): array
+    private static function totalValue(string $where, string $from, int $total, array $priced): array
     {
         $rows = Db::getInstance()->executeS(
             'SELECT a.`id_cart`, cu.`iso_code` AS `currency`
@@ -448,15 +460,19 @@ class SomcpToolListAbandonedCarts
         ) ?: [];
 
         $value = [];
+        $complete = $total <= self::MAX_VALUED;
         foreach ($rows as $row) {
-            $incl = self::price((int) $row['id_cart'], $idLang, false)[1];
+            $idCart = (int) $row['id_cart'];
+            // The product names play no part in a total: any language does.
+            $incl = array_key_exists($idCart, $priced) ? $priced[$idCart] : self::price($idCart, 0, false)[1];
             if ($incl === null) {
+                $complete = false;
                 continue;
             }
             $currency = (string) $row['currency'];
             $value[$currency] = round(($value[$currency] ?? 0.0) + $incl, 2);
         }
 
-        return [$value, $total <= self::MAX_VALUED];
+        return [$value, $complete];
     }
 }

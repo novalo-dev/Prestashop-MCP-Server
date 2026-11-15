@@ -45,7 +45,8 @@ dates you used.
    is what the **Total** column shows. `total_value_tax_incl` adds up every
    matching cart, not only the page, one amount per currency: never add two
    currencies together. When `total_value_complete` is false, the total
-   covers the newest carts only: say so.
+   leaves carts out (only the newest are counted, or a cart could no longer
+   be priced): say so.
 3. **Point at what helps.** Carts of known customers (`with_customer: true`)
    can be followed up; carts whose visitor is `online` are still being looked
    at and are not lost yet. `products` gives the three most expensive lines

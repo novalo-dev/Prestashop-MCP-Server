@@ -5154,13 +5154,14 @@ None.
 - `url` - as `somcp_get_llms_txt`: root of the token's shop domain + `/llms.txt`.
 - `language` - the ISO code used.
 - `warnings` - `code` and `why`, the shape of `somcp_get_robots_txt`: `not_at_domain_root` (the shop is in a folder), `shared_by_shops` (one file for every shop of the installation), `pages_not_indexable` (a listed CMS page has Indexation by search engines set to No).
+- `note` - a fixed reminder for the merchant: llms.txt is a proposed convention that no crawler or assistant is bound to read, and only what the shop holds was written.
 
 **Notes**
 - No back office screen writes an llms.txt on either version, so the tool assembles the file itself. It is written atomically next to robots.txt (a temporary file in the same folder, then renamed), so a reader never gets half a file.
 - The file is read with `somcp_get_robots_txt` (`read()`, `MAX_BYTES`) and the marker is the one constant `SomcpToolGetLlmsTxt::MARKER`, shared with `somcp_get_llms_txt`. Which CMS page is a policy page is decided by `SomcpToolAuditStorePolicies::policyPages()`, called not copied, so the policy pages come first in the file.
-- The rights are those of `somcp_generate_robots_txt`: `add`, `edit` and `delete` on `AdminMeta`, since it replaces a file at the root whole. A file somcp did not write is replaced only with `overwrite: true`, and its content comes back in the answer. A shop whose root is not writable gets a clear refusal, nothing changed, as `somcp_generate_robots_txt`.
+- The rights are those of `somcp_generate_robots_txt`: `add`, `edit` and `delete` on `AdminMeta`, since it replaces a file at the root whole. A file somcp did not write is replaced only with `overwrite: true`; without it the call is refused as an error and the file's content comes back in the refusal. A shop whose root is not writable gets a clear refusal, nothing changed, as `somcp_generate_robots_txt`.
 - Only what the shop holds is written: no claim, review, price or figure is invented. One file at the root means one language per file. Nothing is fetched over the network.
-- Errors in the shape of #169: unknown arguments; unknown language; `summary` too long; `max_categories` out of range; an existing file without the marker and no `overwrite: true`.
+- Errors in the shape of #169: unknown arguments; unknown language; `summary` too long; `max_categories` out of range. An existing file without the marker and no `overwrite: true` is an error too, nothing written: the sentence asks to call again with `overwrite` set to true once the merchant agrees, followed by the file's current content.
 - Same root, same `.htaccess` rule and same sources on 8.0.1 and 9.0.0.
 
 ### Sales

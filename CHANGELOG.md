@@ -77,6 +77,13 @@ to find the right one, with the other mistakes of the call.
 
 ### Fixed
 
+**An llms.txt the module did not write is refused, not reported as written.**
+When the shop already has an llms.txt made by hand or by another tool, and the
+assistant asks to generate one without saying to replace it, the answer was a
+normal one, so an assistant could tell you the file was written when nothing
+was. It is now refused as an error, nothing is written, and the current file is
+shown so you can decide whether to replace it.
+
 **Installing a module from the assistant works.** Installing or uploading a
 module from an assistant failed on every shop with the PrestaShop module that
 fetches modules from PrestaShop's servers, installed by default: it needs

@@ -172,16 +172,15 @@ class SomcpToolGenerateLlmsTxt
         // A file somcp did not write (no marker) is the merchant's own: it is
         // never replaced without overwrite, and its content comes back so the
         // merchant sees what would be lost.
+        // It is an error, not an answer: an assistant reading only isError
+        // would otherwise tell the merchant the file was written.
         if ($previous !== null && strpos($previous, SomcpToolGetLlmsTxt::MARKER) === false && !$overwrite) {
-            return SomcpTool::json([
-                'changed' => false,
-                'written' => false,
-                'reason' => 'existing_file_not_written_by_somcp',
-                'message' => 'There is already an llms.txt at the root that somcp did not write. Call again with '
-                    . 'overwrite set to true to replace it. Its current content is returned so the merchant can '
-                    . 'see what would be lost.',
-                'previous_content' => $previous,
-            ]);
+            return SomcpTool::text(
+                'Nothing was written: there is already an llms.txt at the root that somcp did not write. Show '
+                    . 'the merchant its current content below, and call again with overwrite set to true only if '
+                    . "they agree to replace it.\n\nCurrent content:\n" . $previous,
+                true
+            );
         }
 
         $shop = Somcp::currentShop();

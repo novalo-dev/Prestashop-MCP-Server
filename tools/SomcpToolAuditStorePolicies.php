@@ -178,7 +178,7 @@ class SomcpToolAuditStorePolicies
             $homeLinks[self::comparable($target)] = true;
         }
 
-        $taken = [];
+        $matches = self::matches($cms, $roles, $termsIdCms);
         $pages = [];
         $warnings = [];
         foreach (self::TYPES as $type) {
@@ -205,7 +205,7 @@ class SomcpToolAuditStorePolicies
                 continue;
             }
 
-            $match = self::find($type, $cms, $roles, $termsIdCms, $taken);
+            $match = $matches[$type] ?? null;
             if ($match === null) {
                 $pages[] = [
                     'type' => $type,
@@ -224,7 +224,6 @@ class SomcpToolAuditStorePolicies
             }
 
             $idCms = $match['id_cms'];
-            $taken[$idCms] = true;
             $row = $cms[$idCms];
             $text = $row['langs'][$idLang] ?? ['title' => '', 'link_rewrite' => '', 'content' => ''];
             $url = (string) $link->getCMSLink($idCms, $text['link_rewrite'], null, $idLang, $idShop);
@@ -356,8 +355,32 @@ class SomcpToolAuditStorePolicies
         $idShopGroup = (int) Shop::getGroupFromShop($idShop);
         $termsIdCms = (int) Configuration::get('PS_CONDITIONS_CMS_ID', null, $idShopGroup, $idShop);
 
-        $taken = [];
         $order = [];
+        foreach (self::matches($cms, $roles, $termsIdCms) as $type => $match) {
+            $order[$match['id_cms']] = $type;
+        }
+
+        return $order;
+    }
+
+    /**
+     * The page of each CMS type found, in the order the types are reported.
+     *
+     * The one matching of the tool: the audit and policyPages() both read
+     * it, so the llms.txt can never order other pages first than the ones
+     * this audit reports. A page given to one type is not offered to the
+     * next, which is why the types are matched in this fixed order.
+     *
+     * @param array<int, array{active: bool, indexation: bool, langs: array<int, array{title: string, link_rewrite: string, content: string}>}> $cms
+     * @param array<string, int> $roles type => id_cms
+     * @param int $termsIdCms
+     *
+     * @return array<string, array{id_cms: int, matched_by: string, candidates: array<int, int>}> type => match
+     */
+    private static function matches(array $cms, array $roles, int $termsIdCms): array
+    {
+        $taken = [];
+        $matches = [];
         foreach (self::TYPES as $type) {
             if ($type === 'contact') {
                 continue;
@@ -365,11 +388,11 @@ class SomcpToolAuditStorePolicies
             $match = self::find($type, $cms, $roles, $termsIdCms, $taken);
             if ($match !== null) {
                 $taken[$match['id_cms']] = true;
-                $order[$match['id_cms']] = $type;
+                $matches[$type] = $match;
             }
         }
 
-        return $order;
+        return $matches;
     }
 
     /**

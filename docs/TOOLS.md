@@ -891,7 +891,7 @@ order (→ `somcp_cancel_order_products`), or recording money received
 | `id_order` | integer | one of the two | identifier |
 | `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `lines` | array | yes, unless only shipping is refunded | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`), `quantity` (at least 1, at most what is left to refund), and the amount in the tax mode the page shows for this order, `amount_tax_excluded` **or** `amount_tax_included` (greater than 0, at most quantity times the unit price); the other one is refused with the right name |
-| `shipping_amount_tax_included` | number | no | part of the shipping to refund, at most what is left of it; 0 by default |
+| `shipping_amount_tax_excluded` **or** `shipping_amount_tax_included` | number | no | part of the shipping to refund, in the tax mode the page shows for this order, at most what is left of it; the other one is refused with the right name; 0 by default |
 | `restock` | boolean | no | **Re-stock products**; only matters once the order is delivered - before that the core always puts the quantities back. False by default |
 | `credit_slip` | boolean | no | **Generate a credit slip**; true by default, as the box is ticked when the form opens |
 | `voucher` | boolean | no | **Generate a voucher**; false by default |
@@ -901,8 +901,9 @@ At least one of `credit_slip` and `voucher` must be true, as on screen.
 
 **Returns** - `refunded`, `order` (`id_order` and `reference`), `lines` (per
 line: `id_order_detail`, `product_name`, `quantity`, `amount_tax_excluded`,
-`amount_tax_included`), `shipping_refunded_tax_included`,
-`total_refunded_tax_excluded`, `total_refunded_tax_included`, `currency`,
+`amount_tax_included`), `shipping_refunded_tax_excluded`,
+`shipping_refunded_tax_included`, `total_refunded_tax_excluded`,
+`total_refunded_tax_included`, `currency`,
 `restocked`, `credit_slip` (`id_order_slip` and its totals, or `null`),
 `voucher` (`id_cart_rule`, `code`, `amount`, `tax_included`, or `null`), and
 `warning` when the refund was recorded but the slip or the voucher cannot be
@@ -976,7 +977,8 @@ At least one of `credit_slip` and `voucher` must be true, as on screen.
 **Returns** - the answer of `somcp_issue_partial_refund`: `refunded`, `order`
 (`id_order` and `reference`), `lines` (per line: `id_order_detail`,
 `product_name`, `quantity`, `amount_tax_excluded`, `amount_tax_included`),
-`shipping_refunded_tax_included`, `total_refunded_tax_excluded`,
+`shipping_refunded_tax_excluded`, `shipping_refunded_tax_included`,
+`total_refunded_tax_excluded`,
 `total_refunded_tax_included`, `currency`, `restocked`, `credit_slip`
 (`id_order_slip` and its totals, or `null`), `voucher` (`id_cart_rule`,
 `code`, `amount`, `tax_included`, or `null`), and `warning` when the refund was

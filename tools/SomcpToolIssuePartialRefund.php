@@ -137,10 +137,17 @@ class SomcpToolIssuePartialRefund
                             'additionalProperties' => false,
                         ],
                     ],
+                    'shipping_amount_tax_excluded' => [
+                        'type' => 'number',
+                        'description' => 'The part of the shipping to refund, tax excluded, at most what is left '
+                            . 'of it. For orders whose customer group shows prices tax excluded; the answer '
+                            . 'names the right field otherwise. 0 when left out.',
+                    ],
                     'shipping_amount_tax_included' => [
                         'type' => 'number',
-                        'description' => 'The part of the shipping to refund, at most what is left of the order\'s '
-                            . 'shipping. 0 when left out.',
+                        'description' => 'The part of the shipping to refund, tax included, at most what is left '
+                            . 'of it. For orders whose customer group shows prices tax included; the answer '
+                            . 'names the right field otherwise. 0 when left out.',
                     ],
                     'restock' => [
                         'type' => 'boolean',
@@ -187,11 +194,22 @@ class SomcpToolIssuePartialRefund
 
         $lines = self::lines($arguments, $problems);
 
+        // The shipping names its tax mode like the lines do: the core reads it
+        // in the order's tax mode, so the field that does not match is refused
+        // rather than refunded in the wrong mode.
         $shipping = 0.0;
-        if (array_key_exists('shipping_amount_tax_included', $arguments)) {
-            $value = self::number($arguments['shipping_amount_tax_included']);
+        $shippingField = null;
+        $shippingIncludedGiven = false;
+        $hasShippingExcluded = array_key_exists('shipping_amount_tax_excluded', $arguments);
+        $hasShippingIncluded = array_key_exists('shipping_amount_tax_included', $arguments);
+        if ($hasShippingExcluded && $hasShippingIncluded) {
+            $problems[] = 'shipping_amount_tax_excluded, shipping_amount_tax_included: give one, not both';
+        } elseif ($hasShippingExcluded || $hasShippingIncluded) {
+            $shippingField = $hasShippingExcluded ? 'shipping_amount_tax_excluded' : 'shipping_amount_tax_included';
+            $shippingIncludedGiven = $hasShippingIncluded;
+            $value = self::number($arguments[$shippingField]);
             if ($value === null || $value < 0) {
-                $problems[] = 'shipping_amount_tax_included: must be a number, 0 or more';
+                $problems[] = $shippingField . ': must be a number, 0 or more';
             } else {
                 $shipping = $value;
             }
@@ -218,7 +236,8 @@ class SomcpToolIssuePartialRefund
         }
 
         if ($lines === [] && $shipping <= 0) {
-            $problems[] = 'lines: give the lines to refund, or a shipping_amount_tax_included above 0';
+            $problems[] = 'lines: give the lines to refund, or a shipping_amount_tax_excluded or '
+                . 'shipping_amount_tax_included above 0';
         }
 
         $order = SomcpToolGetOrder::find($arguments);
@@ -233,9 +252,17 @@ class SomcpToolIssuePartialRefund
         $refunds = self::checkLines($order, $lines, $taxIncluded, $precision, $problems);
 
         $shippingLeft = self::shippingLeft($order, $taxIncluded);
-        if ($shipping > 0 && Tools::ps_round($shipping, $precision) > Tools::ps_round($shippingLeft, $precision)) {
-            $problems[] = 'shipping_amount_tax_included: at most ' . Tools::ps_round($shippingLeft, $precision)
-                . ' is left to refund on the shipping of this order';
+        if ($shippingField !== null && $shipping > 0) {
+            if ($shippingIncludedGiven !== $taxIncluded) {
+                // Same wording as the lines: the field in the wrong tax mode is
+                // named, and its amount is not checked against what is left.
+                $problems[] = $shippingField . ': this order shows its prices tax '
+                    . ($taxIncluded ? 'included' : 'excluded') . ', give '
+                    . ($taxIncluded ? 'shipping_amount_tax_included' : 'shipping_amount_tax_excluded') . ' instead';
+            } elseif (Tools::ps_round($shipping, $precision) > Tools::ps_round($shippingLeft, $precision)) {
+                $problems[] = $shippingField . ': at most ' . Tools::ps_round($shippingLeft, $precision)
+                    . ' is left to refund on the shipping of this order';
+            }
         }
 
         // The page only shows the choice for an order partly paid with a
@@ -433,6 +460,7 @@ class SomcpToolIssuePartialRefund
                 'reference' => (string) $order->reference,
             ],
             'lines' => $lines,
+            'shipping_refunded_tax_excluded' => Tools::ps_round($shippingExcluded, $precision),
             'shipping_refunded_tax_included' => Tools::ps_round($shippingIncluded, $precision),
             'total_refunded_tax_excluded' => Tools::ps_round($totalExcluded + $shippingExcluded, $precision),
             'total_refunded_tax_included' => Tools::ps_round($totalIncluded + $shippingIncluded, $precision),

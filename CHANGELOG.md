@@ -45,6 +45,13 @@ assistant can also remove it.
 
 ### Changed
 
+**Refund an order's shipping in the tax mode it shows.** When you ask the
+assistant to refund part of an order's shipping, it now gives the amount in the
+tax mode the order shows, tax excluded or tax included, the same way it already
+gives the amounts of the lines; the field in the wrong mode is refused with the
+right one named. The refunded shipping is reported back both tax excluded and
+tax included.
+
 **An image's combinations, as the product page reads them.** When you ask the
 assistant to change which combinations a product image illustrates, it can now
 name them by the identifiers it just read on the product, instead of counting

@@ -45,6 +45,13 @@ assistant can also remove it.
 
 ### Changed
 
+**A combination's specific price and supplier, as the product page reads
+them.** When you ask the assistant to change the specific price or the
+supplier reference of one combination of a product, it can now name that
+combination by the identifier it just read on the product, instead of first
+listing it again among the combinations to count its place. A combination of
+another product is refused, and nothing is changed.
+
 **Limiting a specific price to one customer.** When you ask the assistant to
 set a product's specific price for a single customer, it is now told that
 `somcp_search_customers` finds that customer, so it points you to the search

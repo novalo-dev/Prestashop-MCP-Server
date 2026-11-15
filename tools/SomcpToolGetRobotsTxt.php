@@ -80,6 +80,12 @@ class SomcpToolGetRobotsTxt
      */
     public static function handle(array $arguments, array $context): array
     {
+        // This tool takes no argument: a misspelt field was silently ignored.
+        $errors = SomcpTool::unknownFields($arguments, []);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $file = _PS_ROOT_DIR_ . '/robots.txt';
         $shop = Somcp::currentShop();
 

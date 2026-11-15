@@ -226,18 +226,18 @@ class SomcpToolGetCustomer
             'birthday' => $birthday === '' || strpos($birthday, '0000-00-00') === 0 ? null : $birthday,
             // getStats() gives "--" when there is no birthday.
             'age' => is_numeric($age) && $birthday !== '' && strpos($birthday, '0000-00-00') !== 0 ? (int) $age : null,
-            'date_add' => SomcpToolSearchCustomers::isoDate($customer->date_add),
-            'last_visit' => SomcpToolSearchCustomers::isoDate($stats['last_visit'] ?? null),
+            'date_add' => SomcpTool::isoDate($customer->date_add),
+            'last_visit' => SomcpTool::isoDate($stats['last_visit'] ?? null),
             'customer_language' => (string) Language::getIsoById((int) $customer->id_lang),
             'newsletter' => (bool) $customer->newsletter,
-            'newsletter_date_add' => SomcpToolSearchCustomers::isoDate($customer->newsletter_date_add),
+            'newsletter_date_add' => SomcpTool::isoDate($customer->newsletter_date_add),
             // The groups under the exact names somcp_update_customer and
             // somcp_create_customer take, so the answer round-trips as read;
             // the groups list below keeps their names for the merchant.
             'group_ids' => array_map('intval', $customer->getGroups()),
             'id_default_group' => (int) $customer->id_default_group,
             'partner_offers' => (bool) $customer->optin,
-            'date_upd' => SomcpToolSearchCustomers::isoDate($customer->date_upd),
+            'date_upd' => SomcpTool::isoDate($customer->date_upd),
             'active' => (bool) $customer->active,
             'is_guest' => (bool) $customer->is_guest,
             // The same name as in somcp_get_order.
@@ -352,7 +352,7 @@ class SomcpToolGetCustomer
             $latest[] = [
                 'id_order' => (int) $row['id_order'],
                 'reference' => (string) $row['reference'],
-                'date_add' => SomcpToolSearchCustomers::isoDate($row['date_add']),
+                'date_add' => SomcpTool::isoDate($row['date_add']),
                 'payment' => (string) $row['payment'],
                 'status' => ['status_id' => (int) $row['current_state'], 'name' => (string) ($row['status'] ?? '')],
                 'products_count' => (int) ($row['products_count'] ?? 0),
@@ -428,7 +428,7 @@ class SomcpToolGetCustomer
         foreach ($db->executeS($query) ?: [] as $row) {
             $latest[] = [
                 'id_cart' => (int) $row['id_cart'],
-                'date_add' => SomcpToolSearchCustomers::isoDate($row['date_add']),
+                'date_add' => SomcpTool::isoDate($row['date_add']),
                 'carrier' => (string) ($row['carrier'] ?? ''),
                 'total_tax_incl' => self::cartTotal((int) $row['id_cart']),
                 'currency' => (string) ($row['currency'] ?? ''),
@@ -485,7 +485,7 @@ class SomcpToolGetCustomer
         $lines = [];
         foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
             $lines[] = [
-                'date_add' => SomcpToolSearchCustomers::isoDate($row['date_add']),
+                'date_add' => SomcpTool::isoDate($row['date_add']),
                 'id_order' => (int) $row['id_order'],
                 'valid' => (bool) $row['valid'],
                 'id_product' => (int) $row['product_id'],
@@ -555,7 +555,7 @@ class SomcpToolGetCustomer
                 'name' => (string) ($row['name'] ?? ''),
                 'code' => (string) ($row['code'] ?? ''),
                 'quantity' => (int) ($row['quantity'] ?? 0),
-                'date_to' => SomcpToolSearchCustomers::isoDate($row['date_to'] ?? null),
+                'date_to' => SomcpTool::isoDate($row['date_to'] ?? null),
                 'active' => (bool) ($row['active'] ?? false),
             ];
         }
@@ -573,7 +573,7 @@ class SomcpToolGetCustomer
         $emails = [];
         foreach ($customer->getLastEmails() ?: [] as $row) {
             $emails[] = [
-                'date_add' => SomcpToolSearchCustomers::isoDate($row['date_add']),
+                'date_add' => SomcpTool::isoDate($row['date_add']),
                 'template' => (string) $row['template'],
                 'subject' => (string) $row['subject'],
                 'language' => (string) ($row['language'] ?? ''),
@@ -598,7 +598,7 @@ class SomcpToolGetCustomer
                 continue;
             }
             $connections[] = [
-                'date_add' => SomcpToolSearchCustomers::isoDate($row['date_add']),
+                'date_add' => SomcpTool::isoDate($row['date_add']),
                 'pages_viewed' => (int) $row['pages'],
                 'total_time' => (string) ($row['time'] ?? ''),
                 'origin' => (string) ($row['http_referer'] ?? ''),

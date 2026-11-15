@@ -1,0 +1,59 @@
+name: MCP Registry
+
+# Publishes the version of config.xml to the official MCP Registry, under
+# io.github.novalo-dev/prestashop-mcp-server, from server.json. Build for
+# Release calls it once the release is out, so the registry follows every
+# version instead of a hand-run mcp-publisher. Run on its own from main to
+# publish a version the release already made.
+#
+# The registry trusts the run itself: GitHub OIDC proves it comes from a
+# repository of novalo-dev, so no token is stored anywhere.
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: mcp-registry
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to the MCP Registry
+    runs-on: ubuntu-latest
+    steps:
+      # Only what is released goes to the registry: the version must be the
+      # one of main, and its GitHub release must exist.
+      - name: Only from main
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "::error::The registry is published from main only."; exit 1
+          fi
+      - uses: actions/checkout@v4
+      - name: The version of config.xml, released
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(sed -n 's/.*<version><!\[CDATA\[\([^]]*\)\]\]><\/version>.*/\1/p' config.xml)
+          [ -n "$V" ] || { echo "::error::No version in config.xml"; exit 1; }
+          gh release view "v$V" > /dev/null || { echo "::error::v$V is not released yet: nothing to publish."; exit 1; }
+          echo "number=$V" >> "$GITHUB_OUTPUT"
+      - name: Set the version in server.json
+        run: |
+          jq --arg v "${{ steps.version.outputs.number }}" '.version = $v' server.json > server.json.new
+          mv server.json.new server.json
+      # Pinned, so a new release of the tool never changes what is published
+      # without a commit here.
+      - name: Install mcp-publisher 1.8.1
+        run: |
+          curl -fsSL https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz \
+            | tar xz mcp-publisher
+      - name: Publish
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
+          echo "Published io.github.novalo-dev/prestashop-mcp-server ${{ steps.version.outputs.number }} to the MCP Registry." >> "$GITHUB_STEP_SUMMARY"

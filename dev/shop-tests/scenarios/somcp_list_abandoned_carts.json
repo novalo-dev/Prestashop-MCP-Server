@@ -1,7 +1,7 @@
 {
   "calls": [
     {"why": "the abandoned carts by the back office rule, whatever the age of the demo carts on a fresh install", "arguments": {}, "expect": "ok", "contains": ["\"carts\"", "\"returned\"", "\"total_count\"", "\"offset\": 0", "\"older_than_hours\": 24", "\"total_value_tax_incl\"", "\"total_value_complete\": true", "\"language\""]},
-    {"why": "a shorter age, carts of customer accounts only, one page of five", "arguments": {"older_than_hours": 1, "with_customer": true, "limit": 5}, "expect": "ok", "contains": ["\"older_than_hours\": 1", "\"carts\""]},
+    {"why": "a shorter age, carts of customer accounts only, one page of five; no cart is expected in the list, since the demo carts are created by the install a few minutes before this test and none is an hour old yet", "arguments": {"older_than_hours": 1, "with_customer": true, "limit": 5}, "expect": "ok", "contains": ["\"older_than_hours\": 1", "\"carts\""]},
     {"why": "carts without a customer whose visitor is not online", "arguments": {"with_customer": false, "online": false}, "expect": "ok", "contains": ["\"carts\""]},
     {"why": "a customer name nobody has: nothing listed, not an error", "arguments": {"customer_name": "Nobody Somcpzz"}, "expect": "ok", "contains": ["\"total_count\": 0", "\"returned\": 0"]},
     {"why": "a period with no cart: an empty list and an empty total", "arguments": {"date_from": "2000-01-01", "date_to": "2000-01-31"}, "expect": "ok", "contains": ["\"total_count\": 0", "\"total_value_tax_incl\": {}"]},

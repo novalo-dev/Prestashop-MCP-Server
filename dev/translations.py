@@ -1486,6 +1486,10 @@ T = {
  "Installer un module depuis une archive",
  "Subir un módulo",
  "Ein Modul hochladen"),
+"Upgrade a module": (
+ "Mettre à niveau un module",
+ "Actualizar un módulo",
+ "Ein Modul aktualisieren"),
 "Upload and install a module archive: its code comes from outside the shop and runs on it with full rights": (
  "Envoyer et installer l'archive d'un module : son code vient de l'extérieur de la boutique et s'y exécute avec tous les droits",
  "Subir e instalar el archivo de un módulo: su código viene de fuera de la tienda y se ejecuta en ella con todos los derechos",

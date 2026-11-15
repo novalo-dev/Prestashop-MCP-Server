@@ -135,29 +135,30 @@ class SomcpToolUpdateMetaPage
         $idShop = Somcp::currentShopId();
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 
-        $meta = self::page($arguments['id_meta'] ?? null, $idShop);
-        if ($meta === null) {
-            return SomcpTool::text(
-                'No page of this shop has this identifier. Nothing was changed. Find it with somcp_list_meta_pages.',
-                true
-            );
-        }
-        if (!(bool) $meta->configurable) {
-            return SomcpTool::text(
-                'The page ' . (string) $meta->page . ' takes its texts from each product, category or CMS page, '
-                    . 'and Traffic & SEO does not list it. Nothing was changed. Change the product, category or page '
-                    . 'itself with its own tool.',
-                true
-            );
+        // An unknown page, or one Traffic & SEO does not list, is reported
+        // with the misspelt fields of the same call, so one answer lists
+        // every mistake.
+        $idMeta = SomcpTool::id($arguments, 'id_meta');
+        $meta = self::page($idMeta, $idShop);
+        if ($meta === null || !(bool) $meta->configurable) {
+            $errors = SomcpTool::unknownFields($arguments, self::fields());
+            if ($meta !== null) {
+                $errors[] = 'id_meta: the page ' . (string) $meta->page . ' takes its texts from each product, '
+                    . 'category or CMS page, and Traffic & SEO does not list it - change the product, category or '
+                    . 'page itself with its own tool';
+            } else {
+                $errors[] = $idMeta > 0
+                    ? SomcpTool::notFound('id_meta', 'page', $idMeta, 'somcp_list_meta_pages')
+                    : SomcpTool::notAnIdentifier('id_meta');
+            }
+
+            return SomcpTool::refused('changed', $errors);
         }
 
         $errors = [];
         $plan = self::plan($arguments, $meta, $idShop, $errors);
         if ($errors !== []) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         if ($plan['changes'] === []) {
@@ -171,6 +172,16 @@ class SomcpToolUpdateMetaPage
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($meta, $plan, $idShop, $idEmployee): array {
             return self::apply($meta, $plan, $idShop, $idEmployee);
         });
+    }
+
+    /**
+     * Every field of the inputSchema, refused when misspelt rather than ignored.
+     *
+     * @return array<int, string>
+     */
+    private static function fields(): array
+    {
+        return array_merge(['id_meta', 'languages'], self::TEXTS);
     }
 
     /**
@@ -211,12 +222,7 @@ class SomcpToolUpdateMetaPage
     {
         $plan = ['texts' => [], 'changes' => [], 'moved' => [], 'isos' => []];
 
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if ($key !== 'id_meta' && $key !== 'languages' && !in_array($key, self::TEXTS, true)) {
-                $errors[] = $key . ': not a field of this tool';
-            }
-        }
+        $errors = array_merge($errors, SomcpTool::unknownFields($arguments, self::fields()));
 
         if (array_key_exists('keywords', $arguments) && !self::hasKeywords()) {
             $errors[] = 'keywords: the Meta keywords field exists on PrestaShop 8 only, and this shop runs PrestaShop ' . _PS_VERSION_;

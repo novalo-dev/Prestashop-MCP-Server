@@ -1867,6 +1867,11 @@
       <source>Upload a module</source>
       <target>Upload a module</target>
     </trans-unit>
+    <!-- Upgrade a module -->
+    <trans-unit id="5d4813af6119f8a20f459d6c9f403409" resname="Upgrade a module">
+      <source>Upgrade a module</source>
+      <target>Upgrade a module</target>
+    </trans-unit>
     <!-- Upload and install a module archive: its code comes from outside the shop and runs on it with full rights -->
     <trans-unit id="8689bb78d4720f1d8e00aeec7d7258b4" resname="Upload and install a module archive: its code comes from outside the shop and runs on it with full rights">
       <source>Upload and install a module archive: its code comes from outside the shop and runs on it with full rights</source>

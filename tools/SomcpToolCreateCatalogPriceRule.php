@@ -129,11 +129,11 @@ class SomcpToolCreateCatalogPriceRule extends SomcpToolCreateProduct
                     ],
                     'from' => [
                         'type' => 'string',
-                        'description' => 'Start, YYYY-MM-DD HH:MM:SS. No start when left out.',
+                        'description' => 'Start, ISO 8601 as somcp_list_catalog_price_rules gives it, converted to the shop\'s time zone; without an offset, the shop\'s time. No start when left out.',
                     ],
                     'to' => [
                         'type' => 'string',
-                        'description' => 'End, YYYY-MM-DD HH:MM:SS, not before from. No end when left out.',
+                        'description' => 'End, ISO 8601, read as from, not before from. No end when left out.',
                     ],
                     'condition_groups' => [
                         'type' => 'array',

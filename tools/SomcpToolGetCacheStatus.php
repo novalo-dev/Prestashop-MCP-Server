@@ -210,7 +210,7 @@ class SomcpToolGetCacheStatus
         $query->orderBy('`id_memcached_server` ASC');
         foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
             $servers[] = [
-                'id' => (int) $row['id_memcached_server'],
+                'id_memcached_server' => (int) $row['id_memcached_server'],
                 'ip' => (string) $row['ip'],
                 'port' => (int) $row['port'],
                 'weight' => (int) $row['weight'],

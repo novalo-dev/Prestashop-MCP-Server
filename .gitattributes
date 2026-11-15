@@ -22,3 +22,5 @@
 /SECURITY.md export-ignore
 /ROADMAP.md export-ignore
 /llms.txt export-ignore
+/server.json export-ignore
+/glama.json export-ignore

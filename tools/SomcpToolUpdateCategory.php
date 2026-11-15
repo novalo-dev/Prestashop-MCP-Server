@@ -51,7 +51,16 @@ require_once __DIR__ . '/SomcpToolCreateCategory.php';
 class SomcpToolUpdateCategory extends SomcpToolCreateCategory
 {
     /** @var array<int, string> What this tool takes besides the fields of the creation. */
-    private const OWN_ARGUMENTS = ['id_category', 'position', 'remove_cover_image', 'remove_menu_thumbnails'];
+    private const OWN_ARGUMENTS = [
+        'id_category', 'position', 'remove_cover_image', 'remove_thumbnail_image', 'remove_menu_thumbnails',
+    ];
+
+    /** @var array<string, array{0: string, 1: string}> Each removal flag, the field that replaces it instead, and its key in the plan. */
+    private const REMOVALS = [
+        'remove_cover_image' => ['cover_image', 'remove_cover'],
+        'remove_thumbnail_image' => ['thumbnail_image', 'remove_thumbnail'],
+        'remove_menu_thumbnails' => ['menu_thumbnails', 'remove_thumbnails'],
+    ];
 
     /**
      * @return SomcpTool
@@ -74,7 +83,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             // Changing a category is the edit right of the categories page in
             // Team, Permissions; creating one is a different right.
             SomcpTool::acts(SomcpPermission::EDIT, 'AdminCategories'),
-            files: ['cover_image' => SomcpUpload::images(), 'menu_thumbnails' => SomcpUpload::images()]
+            files: [
+                'cover_image' => SomcpUpload::images(),
+                'thumbnail_image' => SomcpUpload::images(),
+                'menu_thumbnails' => SomcpUpload::images(),
+            ]
         );
     }
 
@@ -107,9 +120,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             . 'while it is not displayed - 301 or 302 (redirect), 404 or 410.' . $kept;
         $properties['id_type_redirected']['description'] = 'Assistant. PrestaShop 9 only: the category a 301 or 302 '
             . 'redirects to, from somcp_list_categories; 0 for the closest parent.' . $kept;
-        $properties['cover_image']['description'] = 'Merchant. A new cover image, replacing the current one: url '
-            . '(public https, no redirect, 10 MB at most) or upload_ref (somcp_upload_file). JPEG, PNG, GIF or WebP. '
-            . 'As read: no change.';
+        // Built by the shared function, not copied: a copy drifts, and this
+        // one already lost "never file content" that the shared text carries.
+        $properties['cover_image'] = SomcpUpload::schema('Merchant. A new cover image, which replaces the current one.', 'the cover image');
+        $properties['thumbnail_image']['description'] = 'Merchant. A new category thumbnail, replacing the current one, '
+            . 'by url or upload_ref like the cover. As read: no change.';
         $properties['menu_thumbnails']['description'] = 'Merchant. PrestaShop 8 only, refused on 9: up to 3 images '
             . 'replacing the current menu thumbnails, each by url or upload_ref like the cover. As somcp_get_category '
             . 'returns them: no change.';
@@ -122,6 +137,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         $properties['remove_cover_image'] = [
             'type' => 'boolean',
             'description' => 'Merchant. true removes the cover image. Not with cover_image, which already replaces it.',
+        ];
+        $properties['remove_thumbnail_image'] = [
+            'type' => 'boolean',
+            'description' => 'Merchant. PrestaShop 9 only, refused on 8, which has no Delete button for it: true '
+                . 'removes the category thumbnail. Not with thumbnail_image, which already replaces it.',
         ];
         $properties['remove_menu_thumbnails'] = [
             'type' => 'boolean',
@@ -277,6 +297,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             'position' => null,
             'images' => self::categoryImages(self::withoutImagesAsRead($arguments, $idCategory), $errors),
             'remove_cover' => false,
+            'remove_thumbnail' => false,
             'remove_thumbnails' => false,
             'replace_thumbnails' => false,
         ];
@@ -507,8 +528,9 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
      * returned them.
      *
      * An assistant reads a category, changes one field and gives the whole
-     * answer back: the download_ref of the cover image (or null when there is
-     * none) and those of the menu thumbnails it read are not new images, and
+     * answer back: the download_ref of the cover image and of the thumbnail
+     * (or null when there is none) and those of the menu thumbnails it read
+     * are not new images, and
      * must not be refused nor downloaded and written again. They are dropped
      * here, before categoryImages() reads the images, so they plan nothing. An
      * address or an upload_ref is a real image and stays; removing one stays
@@ -521,12 +543,14 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
      */
     private static function withoutImagesAsRead(array $arguments, int $idCategory): array
     {
-        if (!array_key_exists('cover_image', $arguments) && !array_key_exists('menu_thumbnails', $arguments)) {
+        if (!array_key_exists('cover_image', $arguments) && !array_key_exists('thumbnail_image', $arguments)
+            && !array_key_exists('menu_thumbnails', $arguments)) {
             return $arguments;
         }
-        if (array_key_exists('cover_image', $arguments)
-            && SomcpUpload::same($arguments['cover_image'], 'category_image', (string) $idCategory)) {
-            unset($arguments['cover_image']);
+        foreach (['cover_image' => 'category_image', 'thumbnail_image' => 'category_thumbnail_image'] as $field => $kind) {
+            if (array_key_exists($field, $arguments) && SomcpUpload::same($arguments[$field], $kind, (string) $idCategory)) {
+                unset($arguments[$field]);
+            }
         }
 
         // The thumbnails are one list on the form, replaced as a whole, so they
@@ -562,7 +586,7 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
      */
     private static function planRemovals(array $arguments, array &$plan, array &$errors): void
     {
-        foreach (['remove_cover_image' => 'cover_image', 'remove_menu_thumbnails' => 'menu_thumbnails'] as $flag => $field) {
+        foreach (self::REMOVALS as $flag => [$field, $key]) {
             if (!array_key_exists($flag, $arguments)) {
                 continue;
             }
@@ -582,7 +606,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
                 $errors[] = SomcpTool::notOnThisVersion('remove_menu_thumbnails', 'menu thumbnails');
                 continue;
             }
-            $plan[$flag === 'remove_cover_image' ? 'remove_cover' : 'remove_thumbnails'] = true;
+            if ($flag === 'remove_thumbnail_image' && !self::thumbnailRemovable()) {
+                $errors[] = SomcpTool::notOnThisVersion('remove_thumbnail_image', 'Delete button for the category thumbnail');
+                continue;
+            }
+            $plan[$key] = true;
         }
     }
 
@@ -652,23 +680,25 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             }
         }
 
-        if ($plan['images'] === [] && !$plan['remove_cover'] && !$plan['remove_thumbnails']) {
+        if ($plan['images'] === [] && !$plan['remove_cover'] && !$plan['remove_thumbnail'] && !$plan['remove_thumbnails']) {
             return;
         }
         $before = self::category((int) $category->id, (int) $languages['fallback'], $idShop);
         // The images given back as read were dropped by withoutImagesAsRead();
         // an address cannot be compared with a stored file, so it counts as a
         // change. A removal counts only when there is one.
-        $covers = array_values(array_filter($plan['images'], static function (array $image): bool {
-            return $image['for'] === 'cover_image';
-        }));
-        if ($covers !== []) {
-            self::record($plan, 'cover_image', $before['cover_image'], SomcpUpload::origin($covers[0]));
-        } elseif ($plan['remove_cover']) {
-            if ($before['cover_image'] === null) {
-                $plan['remove_cover'] = false;
-            } else {
-                self::record($plan, 'cover_image', $before['cover_image'], null);
+        foreach (['cover_image' => 'remove_cover', 'thumbnail_image' => 'remove_thumbnail'] as $field => $key) {
+            $given = array_values(array_filter($plan['images'], static function (array $image) use ($field): bool {
+                return $image['for'] === $field;
+            }));
+            if ($given !== []) {
+                self::record($plan, $field, $before[$field], SomcpUpload::origin($given[0]));
+            } elseif ($plan[$key]) {
+                if ($before[$field] === null) {
+                    $plan[$key] = false;
+                } else {
+                    self::record($plan, $field, $before[$field], null);
+                }
             }
         }
         $thumbnails = array_values(array_map(static function (array $image): array {
@@ -836,6 +866,11 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
             $report[] = ['for' => 'cover_image'] + ($removed ? ['removed' => true] : ['refused' => 'the shop could not delete it']);
         }
 
+        if ($plan['remove_thumbnail']) {
+            $report[] = ['for' => 'thumbnail_image'] + (self::removeThumbnail($idCategory)
+                ? ['removed' => true] : ['refused' => 'the shop could not delete it']);
+        }
+
         if ($plan['remove_thumbnails'] || $plan['replace_thumbnails']) {
             // Given thumbnails replace the current ones, which go first so the
             // new ones take the slots from 0, as the back office numbers them.
@@ -857,6 +892,40 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         // rather than after deleting them: if it cannot be fetched, the
         // category keeps the cover it had.
         return array_merge($report, self::storeImages($idCategory, $plan['images']));
+    }
+
+    /**
+     * Deletes the category thumbnail as the Delete button of PrestaShop 9 does.
+     *
+     * The files DeleteCategoryThumbnailImageHandler removes: the original, the
+     * copy the form keeps in the temporary folder, and the file of every
+     * category image type in every format the core can generate, whether or
+     * not that format is switched on today, so none is left behind.
+     *
+     * @param int $idCategory
+     *
+     * @return bool whether every file is gone
+     */
+    private static function removeThumbnail(int $idCategory): bool
+    {
+        $files = [
+            _PS_CAT_IMG_DIR_ . $idCategory . '_thumb.jpg',
+            _PS_TMP_IMG_DIR_ . 'category_' . $idCategory . '-thumb.jpg',
+        ];
+        // ImageFormatConfiguration::SUPPORTED_FORMATS of PrestaShop 9.
+        foreach (ImageType::getImagesTypes('categories') ?: [] as $type) {
+            foreach (['jpg', 'png', 'webp', 'avif'] as $format) {
+                $files[] = _PS_CAT_IMG_DIR_ . $idCategory . '_thumb-' . (string) $type['name'] . '.' . $format;
+            }
+        }
+        $removed = true;
+        foreach ($files as $file) {
+            if (is_file($file) && !@unlink($file)) {
+                $removed = false;
+            }
+        }
+
+        return $removed;
     }
 
     /**

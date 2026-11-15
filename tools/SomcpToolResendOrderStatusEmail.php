@@ -249,7 +249,7 @@ class SomcpToolResendOrderStatusEmail
             if ((int) $step['id_order_history'] === $idOrderHistory) {
                 return [
                     'id_order_history' => (int) $step['id_order_history'],
-                    'date' => (string) $step['date_add'],
+                    'date' => SomcpTool::isoDate($step['date_add']),
                     'status' => (string) $step['ostate_name'],
                     'status_id' => (int) $step['id_order_state'],
                     'employee' => trim(

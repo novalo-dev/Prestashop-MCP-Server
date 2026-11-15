@@ -11,6 +11,7 @@ earlier answer: a module can be installed, upgraded or disabled at any time.
 - `somcp_get_module`
 - `somcp_install_module`
 - `somcp_upload_module`
+- `somcp_upgrade_module`
 - `somcp_upload_file`
 - `somcp_set_module_active`
 
@@ -64,14 +65,15 @@ as the **Install** button of its card does. Only when the merchant asks for it:
 1. **Find the module** with `somcp_list_modules` and `status: "uninstalled"`,
    and confirm its display name and author with the merchant.
 2. **Say what installing does** before calling: the module's own code runs and
-   it attaches itself where it needs to. Then call `somcp_install_module` with
-   its `name`, once.
+   it attaches itself where it needs to, and the shop is in maintenance during
+   the install. Then call `somcp_install_module` with its `name`, once.
 3. **Answer from the result**: it is the module as `somcp_get_module` reads it
    after the install. If the answer is lost, read `somcp_get_module` instead of
-   calling again. On a refusal, give the module's own messages as they are.
+   calling again. On a refusal, give the module's own messages as they are; if
+   the shop stayed in maintenance, tell the merchant to reopen it once checked.
 
-A module already installed is refused and left unchanged: upgrading it is done
-in **Modules > Module Manager**. A module that is not on the shop is installed
+A module already installed is refused and left unchanged: upgrading it is
+`somcp_upgrade_module`, below. A module that is not on the shop is installed
 from its archive, below.
 
 ## Uploading a module
@@ -81,18 +83,44 @@ the **Upload a module** button of **Modules > Module Manager** does. Only when
 the merchant asks for it, with an archive they have:
 
 1. **Get the archive as an upload_ref**: attached to the chat, or from
-   `somcp_upload_file` with `for` set to `somcp_upload_module` - send the
-   `.zip` yourself to the address it gives when you can make an HTTP request,
-   or show the merchant its deposit page. Never from a link: it takes none.
+   `somcp_upload_file` with `for` set to `somcp_upload_module`, then its answer
+   in order, each step only if the one before failed: post the `.zip` yourself
+   to the address it gives; hand it over with that `upload_ref` (`file`, or
+   `data`); then call it with the `upload_ref` alone for the merchant's deposit
+   page. Never from a link: it takes none.
 2. **Say what it does** before calling: the archive's code comes from outside
    the shop and runs on it with full rights, so it should come from a source
-   the merchant trusts. Then call `somcp_upload_module` with the `upload_ref`,
-   once.
+   the merchant trusts, and the shop is in maintenance during the install. Then
+   call `somcp_upload_module` with the `upload_ref`, once.
 3. **Answer from the result**: the module as `somcp_get_module` reads it, plus
    the archive's `file_name`. The deposit is used up: if the answer is lost,
    read `somcp_get_module` instead of calling again. A module already on the
    shop is refused and nothing is replaced; on a failed install the folder is
    removed again and the module's own messages are given as they are.
+
+## Upgrading a module
+
+`somcp_upgrade_module` upgrades an installed module and runs its upgrade
+scripts, from the archive of a newer version or from newer files already in
+its folder. Only when the merchant asks for it:
+
+1. **Read the module first** with `somcp_get_module`: it must be installed, and
+   the merchant should know the version they move from. When it says
+   `needs_upgrade`, the newer files are already there: call with `name`.
+2. **Otherwise get the archive as an upload_ref**, as for an upload, with `for`
+   set to `somcp_upgrade_module`, and call with `upload_ref`.
+3. **Say what it does** before calling: the new code runs on the shop with full
+   rights, and **the shop is in maintenance** while it is replaced, so a quiet
+   moment is better. Then call `somcp_upgrade_module`, once.
+4. **Answer from the result**: `version_before`, `version_after` and the module
+   read back. A refusal changed nothing: the archive is not a higher version,
+   not made for this PrestaShop, or needs another module first, and the shop
+   says which. A failed upgrade keeps the new files, what its scripts already
+   changed stays, and **the shop stays in maintenance**: give the module's own
+   messages as they are, tell the merchant to reopen the shop in Shop
+   Parameters > General > Maintenance once they have checked it, and send them
+   to the module's author. If the answer is lost, read
+   `somcp_get_module` instead of calling again.
 
 ## Enabling or disabling a module
 

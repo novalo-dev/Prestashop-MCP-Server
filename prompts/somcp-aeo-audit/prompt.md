@@ -13,6 +13,7 @@ checked and why it matters.
 - `somcp_check_ai_crawler_access`
 - `somcp_audit_store_policies`
 - `somcp_get_llms_txt`
+- `somcp_generate_llms_txt` - after `somcp_get_llms_txt` shows no file, or a file to rebuild; never over a file somcp did not write without asking the merchant
 
 ## Know which shop you are in
 
@@ -98,8 +99,8 @@ name, a `summary` paragraph, the main categories, the policy and information
 pages and the contact page, in the `language` asked for. Agree the `summary`
 with the merchant first, since it is the one line that is not already on the
 shop; left out, the home page meta description is used. A file somcp did not
-write is shown and replaced only with `overwrite`, so read it first with
-`somcp_get_llms_txt` and show what would go. Read the `warnings`:
+write is refused with its current content: show it to the merchant, and call
+again with `overwrite` only once they agree to replace it. Read the `warnings`:
 `pages_not_indexable` is a listed page the shop asks search engines to skip.
 Only what the shop holds is written: never add a claim, a figure or a review
 to the summary.

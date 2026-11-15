@@ -207,7 +207,7 @@ class SomcpToolGetOrderDocument
             // The same name and value somcp_get_order gives, so the two chain.
             $identifier => $idDocument,
             'number' => (string) ($chosen['number'] ?? ''),
-            'date' => (string) ($chosen['date'] ?? ''),
+            'date' => $chosen['date'] ?? null,
             SomcpDownload::ARG_REF => $reference[SomcpDownload::ARG_REF],
             'expires_at' => $reference['expires_at'],
             'then' => 'somcp_download_file with this download_ref',

@@ -444,14 +444,14 @@ class SomcpToolCreateProduct
                                     'currency' => ['type' => 'string', 'description' => 'ISO code, left out for all currencies.'],
                                     'country' => ['type' => 'string', 'description' => 'ISO code, left out for all countries.'],
                                     'id_group' => ['type' => 'integer', 'description' => 'From somcp_list_customer_groups, 0 for all; ask the merchant.'],
-                                    'id_customer' => ['type' => 'integer', 'description' => '0 for all customers.'],
+                                    'id_customer' => ['type' => 'integer', 'description' => 'From somcp_search_customers, 0 for all customers.'],
                                     'from_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
                                     'price' => ['type' => 'number', 'description' => 'A fixed price tax excluded, or -1 (the default) to keep the product price.'],
                                     'reduction' => ['type' => 'number', 'description' => 'An amount, or for a percentage the fraction PrestaShop stores: 0.2 for 20 %.'],
                                     'reduction_type' => ['type' => 'string', 'enum' => ['amount', 'percentage']],
                                     'reduction_tax' => ['type' => 'boolean', 'description' => 'Whether an amount is tax included; true by default.'],
-                                    'from' => ['type' => 'string', 'description' => 'Start, YYYY-MM-DD HH:MM:SS. Left out: no start.'],
-                                    'to' => ['type' => 'string', 'description' => 'End, YYYY-MM-DD HH:MM:SS. Left out: no end.'],
+                                    'from' => ['type' => 'string', 'description' => 'Start, ISO 8601 as somcp_get_product gives it, converted to the shop\'s time zone; without an offset, the shop\'s time. Left out: no start.'],
+                                    'to' => ['type' => 'string', 'description' => 'End, ISO 8601, read as from. Left out: no end.'],
                                 ],
                                 'additionalProperties' => false,
                             ],
@@ -1909,7 +1909,7 @@ class SomcpToolCreateProduct
             $idGroup = self::integer($item['id_group']);
             if ($idGroup === null || $idGroup < 0) {
                 $errors[] = $at . 'id_group: a customer group identifier, or 0 for all';
-            } elseif ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup))) {
+            } elseif ($idGroup > 0 && !SomcpToolListCatalogPriceRules::groupOfShop($idGroup, $idShop)) {
                 $errors[] = SomcpTool::notFound($at . 'id_group', 'customer group', $idGroup, 'somcp_list_customer_groups');
             }
             $rule['id_group'] = (int) $idGroup;
@@ -2982,8 +2982,31 @@ class SomcpToolCreateProduct
 
             return $origin + ['refused' => $refusal];
         }
+        self::showVirtualFiles();
 
         return $origin + ['added' => true];
+    }
+
+    /**
+     * Turns on the setting without which the shop never looks a product's
+     * file up.
+     *
+     * ProductDownload::getIdFromIdProduct() answers nothing while
+     * PS_VIRTUAL_PROD_FEATURE_ACTIVE is off - the back office then shows
+     * Add downloadable file at No - and the core turns it on only when an
+     * active virtual product is saved. A file written to a product still
+     * offline, on a shop that never sold one, was stored but hidden. Like the
+     * other feature settings of the core it only spares queries: a customer
+     * still downloads a file only with the key of a paid order of their own
+     * (GetFileController), whatever it says.
+     *
+     * @return void
+     */
+    protected static function showVirtualFiles(): void
+    {
+        if (!Configuration::get('PS_VIRTUAL_PROD_FEATURE_ACTIVE')) {
+            Configuration::updateGlobalValue('PS_VIRTUAL_PROD_FEATURE_ACTIVE', '1');
+        }
     }
 
     /**
@@ -3568,20 +3591,18 @@ class SomcpToolCreateProduct
      * @param string $path
      * @param array<int, string> $errors
      *
-     * @return string|null YYYY-MM-DD HH:MM:SS
+     * @return string|null YYYY-MM-DD HH:MM:SS in the shop's time zone
      */
     protected static function dateTime($value, string $path, array &$errors): ?string
     {
-        $text = self::string($value);
-        // ISO 8601 as the conventions say, written the way MySQL stores it;
-        // a time zone suffix is dropped, the shop's own being the reference.
-        if ($text !== null && preg_match('/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2})(?::(\d{2}))?)?/', trim($text), $m)
-            && checkdate((int) substr($m[1], 5, 2), (int) substr($m[1], 8, 2), (int) substr($m[1], 0, 4))) {
-            return $m[1] . ' ' . ($m[2] ?? '00:00') . ':' . (($m[3] ?? '') !== '' ? $m[3] : '00');
+        // Converted to the shop's time zone, as every tool that takes a date
+        // and time does, so a bound given back as read changes nothing.
+        $date = SomcpTool::dateTime($value);
+        if ($date === null) {
+            $errors[] = $path . ': a date and time, ISO 8601';
         }
-        $errors[] = $path . ': a date and time, YYYY-MM-DD HH:MM:SS';
 
-        return null;
+        return $date;
     }
 
     /**

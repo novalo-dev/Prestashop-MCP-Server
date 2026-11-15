@@ -226,7 +226,10 @@ class SomcpToolSearchOrders
             $orders[] = [
                 'id_order' => (int) $row['id_order'],
                 'reference' => (string) $row['reference'],
-                'date' => (string) $row['date_add'],
+                // date is the name of 1.0.0, kept for the clients built on it;
+                // date_add is the name somcp_get_order and somcp_get_customer use.
+                'date' => SomcpTool::isoDate($row['date_add']),
+                'date_add' => SomcpTool::isoDate($row['date_add']),
                 'customer_name' => trim((string) $row['firstname'] . ' ' . (string) $row['lastname']),
                 'new_client' => (bool) $row['new_client'],
                 // What the Company column shows, whether B2B is on or not:
@@ -346,12 +349,16 @@ class SomcpToolSearchOrders
                 $conditions[] = "(c.`firstname` LIKE '%" . $escaped . "%' OR c.`lastname` LIKE '%" . $escaped . "%')";
             }
         }
-        if (!empty($arguments['date_from']) && Validate::isDate((string) $arguments['date_from'])) {
-            $conditions[] = "o.`date_add` >= '" . pSQL((string) $arguments['date_from']) . " 00:00:00'";
+        // Read as a day only, as the other tools that take a period do: a date
+        // with a time would otherwise be glued to the bound's own time.
+        $from = SomcpTool::day($arguments['date_from'] ?? null);
+        if ($from !== null) {
+            $conditions[] = "o.`date_add` >= '" . pSQL($from) . " 00:00:00'";
         }
-        if (!empty($arguments['date_to']) && Validate::isDate((string) $arguments['date_to'])) {
+        $to = SomcpTool::day($arguments['date_to'] ?? null);
+        if ($to !== null) {
             // The whole day, not up to midnight of it.
-            $conditions[] = "o.`date_add` <= '" . pSQL((string) $arguments['date_to']) . " 23:59:59'";
+            $conditions[] = "o.`date_add` <= '" . pSQL($to) . " 23:59:59'";
         }
         if (!empty($arguments['status_id'])) {
             $conditions[] = 'o.`current_state` = ' . SomcpTool::id($arguments, 'status_id');

@@ -276,7 +276,7 @@ class SomcpToolListStockMovements
                 // physical_quantity is stored unsigned on PrestaShop 9 and the
                 // direction lives in sign, so the two are put back together.
                 'quantity' => (int) $row['physical_quantity'] * ((int) $row['sign'] < 0 ? -1 : 1),
-                'date' => SomcpToolSearchCustomers::isoDate($row['date_add'] ?? null),
+                'date' => SomcpTool::isoDate($row['date_add'] ?? null),
                 'id_employee' => (int) $row['id_employee'],
                 'employee' => self::employeeName($row),
                 'id_order' => (int) $row['id_order'] > 0 ? (int) $row['id_order'] : null,
@@ -490,7 +490,7 @@ class SomcpToolListStockMovements
         }
         $id = SomcpTool::id($arguments, $field);
         if ($id <= 0) {
-            $problems[] = $field . ': a positive identifier';
+            $problems[] = SomcpTool::notAnIdentifier($field);
         }
 
         return $id;

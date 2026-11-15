@@ -77,6 +77,7 @@ class SomcpDownload
         'carrier_logo' => ['reader' => 'somcp_list_carriers'],
         'category_image' => ['reader' => 'somcp_get_category'],
         'category_thumbnail' => ['reader' => 'somcp_get_category'],
+        'category_thumbnail_image' => ['reader' => 'somcp_get_category'],
         'shop_logo' => ['reader' => 'somcp_get_theme'],
     ];
 
@@ -177,7 +178,7 @@ class SomcpDownload
 
         return [
             self::ARG_REF => implode('.', [$kind, $id, (string) $expires, self::signature($kind, $id, $idEmployee, $idShop, $expires)]),
-            'expires_at' => date('Y-m-d H:i:s', $expires),
+            'expires_at' => date('c', $expires),
         ];
     }
 
@@ -307,7 +308,7 @@ class SomcpDownload
 
         return [
             'url' => SomcpBackOffice::downloadUrl($query, $idEmployee),
-            'expires_at' => date('Y-m-d H:i:s', $expires),
+            'expires_at' => date('c', $expires),
         ];
     }
 
@@ -384,7 +385,7 @@ class SomcpDownload
         // The type from the bytes, never from what was stored beside the
         // file; read here rather than in stored(), which every tool listing a
         // file calls only to know there is one.
-        return ['bytes' => $bytes, 'name' => $stored['name'], 'mime' => SomcpUpload::typeOf($stored['path'], $stored['name'])];
+        return ['bytes' => $bytes] + SomcpUpload::identify($stored['path'], $stored['name']);
     }
 
     /**
@@ -440,7 +441,7 @@ class SomcpDownload
                 'inside' => false,
                 // Read with a GET, no sign-in, until expires_at.
                 'url' => $shared['url'] ?? null,
-                'expires_at' => $shared['expires_at'] ?? null,
+                'expires_at' => SomcpTool::isoDate($shared['expires_at'] ?? null),
                 'page' => $page,
                 'then' => $chat
                     ? 'Give the merchant ' . ($page !== null ? 'the page, which opens the file in their own signed-in back office only.' : 'url, which opens the file until expires_at.')
@@ -625,6 +626,13 @@ class SomcpDownload
                 }
                 $number = (int) $match[1];
                 $path = _PS_CAT_IMG_DIR_ . $number . '-' . $match[2] . '_thumb.jpg';
+                $shopTable = 'category_shop';
+                $shopKey = 'id_category';
+                break;
+            case 'category_thumbnail_image':
+                // The Category thumbnail field, c/<id>_thumb.jpg on 8 and 9;
+                // category_thumbnail is the menu thumbnails of PrestaShop 8.
+                $path = _PS_CAT_IMG_DIR_ . $number . '_thumb.jpg';
                 $shopTable = 'category_shop';
                 $shopKey = 'id_category';
                 break;

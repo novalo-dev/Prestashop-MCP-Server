@@ -209,8 +209,8 @@ class SomcpToolSearchCustomers
                 'active' => (bool) $row['active'],
                 'newsletter' => (bool) $row['newsletter'],
                 'partner_offers' => (bool) $row['optin'],
-                'date_add' => self::isoDate($row['date_add']),
-                'last_visit' => self::isoDate($row['last_visit']),
+                'date_add' => SomcpTool::isoDate($row['date_add']),
+                'last_visit' => SomcpTool::isoDate($row['last_visit']),
                 'is_guest' => (bool) $row['is_guest'],
             ];
         }
@@ -387,24 +387,6 @@ class SomcpToolSearchCustomers
             default:
                 return 'c.`date_add` ' . $direction . ', c.`id_customer` ' . $direction;
         }
-    }
-
-    /**
-     * A database date as ISO 8601, or null when there is none. Public so every
-     * customer tool gives its dates in the same form.
-     *
-     * @param mixed $value
-     *
-     * @return string|null
-     */
-    public static function isoDate($value): ?string
-    {
-        if (!is_string($value) || $value === '' || strpos($value, '0000-00-00') === 0) {
-            return null;
-        }
-        $time = strtotime($value);
-
-        return $time === false ? null : date('c', $time);
     }
 
     /**

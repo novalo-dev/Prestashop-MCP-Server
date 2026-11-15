@@ -121,16 +121,11 @@ class SomcpToolAuditSitemap
 
         // Every mistake is reported in one answer, so the call can be
         // corrected in one go.
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         $sample = $arguments['sample'] ?? self::DEFAULT_SAMPLE;
         if (!is_int($sample) || $sample < 0 || $sample > self::MAX_SAMPLE) {
-            $problems[] = '- sample: a whole number from 0 to ' . self::MAX_SAMPLE;
+            $problems[] = 'sample: a whole number from 0 to ' . self::MAX_SAMPLE;
             $sample = self::DEFAULT_SAMPLE;
         }
 
@@ -138,17 +133,14 @@ class SomcpToolAuditSitemap
         if (array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '') {
             $language = SomcpTool::readLanguage($arguments, $idShop);
             if ($language === null) {
-                $problems[] = '- language: not a language of this shop, which has ' . implode(', ', $languages);
+                $problems[] = 'language: not a language of this shop, which has ' . implode(', ', $languages);
             } else {
                 $languages = [$language[0] => $language[1]];
             }
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
 
         return SomcpTool::json(self::audit($idShop, $languages, $sample));

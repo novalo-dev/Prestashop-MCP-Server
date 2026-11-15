@@ -45,8 +45,8 @@ class SomcpToolInstallModule
             'Installs one module whose folder is in the shop\'s modules folder and not installed yet, like the '
                 . 'Install button of its card in Modules > Module Manager, with its own install checks, hooks and '
                 . 'tabs. name comes from somcp_list_modules, status uninstalled: never guess one. Answers with '
-                . 'the module as somcp_get_module reads it. An installed module is refused: it is upgraded in the '
-                . 'Module Manager. On multistore, installed for the shops of the current context. Not to be '
+                . 'the module as somcp_get_module reads it. An installed module is refused: upgrade it with '
+                . 'somcp_upgrade_module. On multistore, installed for the shops of the current context. Not to be '
                 . 'retried on a lost answer: check with somcp_get_module. It does not upload, upgrade, uninstall, '
                 . 'reset, enable or disable a module.',
             [
@@ -93,7 +93,7 @@ class SomcpToolInstallModule
             // refused here so an install never turns into an upgrade.
             return SomcpTool::text(
                 'This module is already installed, version ' . (string) $before['version_installed']
-                . '. Nothing was changed; use the Module Manager to upgrade it.',
+                . '. Nothing was changed; upgrade it with somcp_upgrade_module and a newer archive.',
                 true
             );
         }
@@ -126,6 +126,7 @@ class SomcpToolInstallModule
      */
     protected static function install(string $folder, int $idShop, ?callable $onFailure = null, array $extra = []): array
     {
+        $maintenance = SomcpModules::maintenanceOn();
         $run = SomcpModules::throughCore($folder, static function ($manager) use ($folder): bool {
             return (bool) $manager->install($folder);
         });
@@ -136,6 +137,8 @@ class SomcpToolInstallModule
         // event even after a failure, so nothing is assumed either way.
         $module = SomcpModules::read($folder, $idShop) ?? ['name' => $folder, 'installed' => false];
         if ($installed && $module['installed']) {
+            SomcpModules::maintenanceOff($maintenance);
+
             return SomcpTool::json($module + $extra);
         }
 
@@ -146,8 +149,21 @@ class SomcpToolInstallModule
 
         return SomcpTool::text(
             'The module was not installed' . ($errors !== [] ? ': ' . implode(' ', $errors) : '.')
-                . ' State read back: ' . json_encode($module, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                . ' State read back: ' . json_encode($module, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+                . "\n\n" . self::stillInMaintenance(),
             true
         );
+    }
+
+    /**
+     * What the merchant is told when a module action failed after the shop
+     * was put in maintenance: it stays so until they have looked.
+     *
+     * @return string
+     */
+    protected static function stillInMaintenance(): string
+    {
+        return 'The shop was put in maintenance for this and stays in maintenance: tell the merchant, who reopens'
+            . ' it in Shop Parameters > General > Maintenance once they have checked the shop.';
     }
 }

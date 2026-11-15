@@ -1,5 +1,6 @@
 {
   "calls": [
-    {"why": "the robots.txt of the demo shop, whether the install wrote one or not", "arguments": {}, "expect": "ok", "contains": ["\"present\"", "\"content\"", "\"groups\"", "\"sitemaps\"", "\"size\"", "\"last_modified\"", "\"warnings\""]}
+    {"why": "the robots.txt of the demo shop, whether the install wrote one or not", "arguments": {}, "expect": "ok", "contains": ["\"present\"", "\"content\"", "\"groups\"", "\"sitemaps\"", "\"size\"", "\"last_modified\"", "\"warnings\""]},
+    {"why": "a field the tool does not take is refused, not ignored", "arguments": {"language": "en"}, "expect": "error", "contains": ["language: not a field of this tool"]}
   ]
 }

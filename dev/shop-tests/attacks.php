@@ -43,6 +43,7 @@ if ($psRoot === false || !is_file($psRoot . '/config/config.inc.php') || $shopUr
 }
 
 require __DIR__ . '/boot.php';
+require __DIR__ . '/module-archive.php';
 
 if (!Module::isInstalled('somcp') || !Module::getInstanceByName('somcp') instanceof Somcp) {
     fwrite(STDERR, "The somcp module is not installed in this shop.\n");
@@ -486,7 +487,11 @@ $noAdmin = static function (string $what, array $response) use (&$adminLeaks, $a
         $adminLeaks[] = $what;
     }
 };
-// The anti-robot check, solved the way the visitor's browser does.
+// The anti-robot check, solved the way the visitor's browser does. A browser
+// has no deadline: after four failures the check is nine times harder, and
+// the library's default 30 seconds is not always enough on a busy runner.
+// A check given up on is refused before anything is counted, and a guess
+// lost that way would let the blocks below fail at random.
 $solve = static function (array $page): string {
     if (!preg_match('/challenge="([^"]+)"/', $page['body'], $m)) {
         return '';
@@ -496,6 +501,7 @@ $solve = static function (array $page): string {
     $solution = $altcha->solveChallenge(new AltchaOrg\Altcha\SolveChallengeOptions(
         algorithm: new AltchaOrg\Altcha\Algorithm\Pbkdf2(),
         challenge: $challenge,
+        timeout: 120.0,
     ));
 
     return $solution === null ? '' : (new AltchaOrg\Altcha\Payload($challenge, $solution))->toBase64();
@@ -726,14 +732,20 @@ if ($started['status'] !== 200 || $requestCookie === '' || $csrf === '' || strpo
     $guessCsrf = $csrfOf($again);
     // $forwarded is the X-Forwarded-For a proxy in front of the shop would
     // pass on: what the visitor wrote, then the address the proxy saw.
-    $guess = static function (string $password, string $forwarded = '') use ($http, $authorizeUrl, &$withCookie, $solve, &$lastPage, $guessCsrf, $signinEmployee): array {
+    $guess = static function (string $password, string $forwarded = '') use ($http, $authorizeUrl, &$withCookie, $solve, &$lastPage, $guessCsrf, $signinEmployee, &$failures): array {
         $headers = $forwarded === '' ? $withCookie : array_merge($withCookie, ['X-Forwarded-For: ' . $forwarded]);
+        // An unsolved check is refused without counting the guess: say so
+        // here, or the block that fails further down points at the guard.
+        $captcha = $solve($lastPage);
+        if ($captcha === '' && strpos($lastPage['body'], 'challenge="') !== false) {
+            $failures[] = sprintf('the anti-robot check could not be solved for the guess "%s", so it was not counted', $password);
+        }
         $response = $http('POST', $authorizeUrl, $headers, http_build_query([
             'somcp_step' => 'signin',
             'somcp_csrf' => $guessCsrf,
             'somcp_email' => (string) $signinEmployee->email,
             'somcp_password' => $password,
-            'somcp_altcha' => $solve($lastPage),
+            'somcp_altcha' => $captcha,
         ]));
         if (strpos($response['body'], 'challenge="') !== false) {
             $lastPage = $response;
@@ -1051,6 +1063,151 @@ $archiveByUrl = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
 ]));
 $see('a deposit taking an archive is never filled from an address', $failed($archiveByUrl) && strpos($said($archiveByUrl), 'never fetched from an address') !== false, $archiveByUrl);
 
+// A deposit of several files: each call adds one and the answer says so,
+// with the name and size kept, so an assistant neither sends the same file
+// again to be sure nor misses a file it rebuilt instead of copying.
+$several = SomcpUpload::invite($idEmployee, 'Attachments of a reply', 'image', 'somcptestmodule', ['files' => 3]);
+$first = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $several, 'data' => 'data:image/png;base64,' . base64_encode($png), 'name' => 'proof of delivery.png'],
+]));
+$firstSaid = json_decode($said($first), true);
+$see('a file put in a deposit is counted, with its name and size, and the answer says a call adds one', !$failed($first)
+    && ($firstSaid['files_held'] ?? 0) === 1 && ($firstSaid['files_allowed'] ?? 0) === 3
+    && ($firstSaid['files'][0]['name'] ?? '') === 'proof-of-delivery.png' && ($firstSaid['files'][0]['bytes'] ?? 0) === strlen($png)
+    && strpos((string) ($firstSaid['then'] ?? ''), 'never replaces one') !== false, $first);
+$second = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $several, 'data' => 'data:image/png;name=label%20scan.jpg;base64,' . base64_encode($png)],
+]));
+$secondSaid = json_decode($said($second), true);
+$see('a data URI is named from its name= parameter, under the extension its type gives', !$failed($second)
+    && ($secondSaid['files'][1]['name'] ?? '') === 'label-scan.png' && ($secondSaid['files_held'] ?? 0) === 2, $second);
+$nameAlone = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $several, 'url' => 'https://example.com/photo.png', 'name' => 'photo.png'],
+]));
+$see('a name given with anything but data is refused, not ignored', $failed($nameAlone) && strpos($said($nameAlone), 'name: only with data') !== false, $nameAlone);
+$unnamed = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $several, 'data' => 'data:image/png;base64,' . base64_encode($png)],
+]));
+$unnamedSaid = json_decode($said($unnamed), true);
+$see('a data URI with no name is still kept, as file, and a full deposit says so', !$failed($unnamed)
+    && ($unnamedSaid['files'][2]['name'] ?? '') === 'file.png' && strpos((string) ($unnamedSaid['then'] ?? ''), 'The deposit is full') !== false, $unnamed);
+// The order that asks least of the merchant: the assistant posts the file,
+// then hands it over, and only after a failure the shop sees does the
+// merchant's page come.
+$firstAsk = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['for' => 'somcp_create_manufacturer', 'field' => 'logo'],
+]));
+$askSaid = json_decode($said($firstAsk), true);
+$how = (string) ($askSaid['how'] ?? '');
+$see('a first ask gives the direct post first, then somcp_upload_file, and no page for the merchant',
+    !array_key_exists('deposit_page', (array) $askSaid) && strpos($how, 'cannot travel') === false
+    && strpos($how, '1. If you can make an HTTP request') !== false
+    && strpos($how, '1. If you can make an HTTP request') < strpos($how, '2. If you hold')
+    && strpos($how, 'and nothing else') !== false && strpos($how, 'show the merchant this address') === false, $firstAsk);
+$empty = SomcpUpload::invite($idEmployee, 'A proof of delivery', 'document', 'somcptestmodule', ['files' => 1]);
+$noFile = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $empty],
+]));
+$see('a deposit reference with no file earns the merchant\'s page, as an answer rather than an error', !$failed($noFile)
+    && (strpos($said($noFile), 'show the merchant this address') !== false || strpos($said($noFile), 'cannot be offered yet') !== false), $noFile);
+$badFile = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['upload_ref' => $empty, 'data' => 'data:application/pdf;base64,' . base64_encode('<html></html>')],
+]));
+$see('a file refused for a deposit comes back with the merchant\'s page', $failed($badFile)
+    && (strpos($said($badFile), 'show the merchant this address') !== false || strpos($said($badFile), 'cannot be offered yet') !== false), $badFile);
+
+// A module upgraded from its archive, through the endpoint as an assistant
+// does it (#255): each call is a request of its own, as at a merchant's, so
+// the module's class is never already loaded when it is upgraded. A 1.0.0 is
+// uploaded, then archives the back office would turn away are refused with
+// the current files kept, then a 1.1.0 runs its upgrade script.
+$upgradeName = 'somcpupgradetest';
+$upgradeKey = 'SOMCP_TEST_UPGRADED';
+$moduleCall = static function (string $tool, string $zip) use ($http, $mcpUrl, $bearer, $fileToken, $rpc, $said, $upgradeName): array {
+    $deposit = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_upload_file',
+        'arguments' => ['for' => $tool, 'data' => 'data:application/zip;base64,' . base64_encode($zip), 'name' => $upgradeName . '.zip'],
+    ]));
+    $reference = (string) (json_decode($said($deposit), true)['upload_ref'] ?? '');
+
+    return $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => $tool,
+        'arguments' => ['upload_ref' => $reference],
+    ]));
+};
+$installedVersion = static function () use ($db, $upgradeName): string {
+    return (string) $db->getValue('SELECT `version` FROM `' . _DB_PREFIX_ . "module` WHERE `name` = '" . pSQL($upgradeName) . "'");
+};
+$onDisk = static function () use ($upgradeName): string {
+    return (string) @file_get_contents(_PS_MODULE_DIR_ . $upgradeName . '/' . $upgradeName . '.php');
+};
+try {
+    $first = $moduleCall('somcp_upload_module', somcpTestModuleArchive($upgradeName, '1.0.0'));
+    $see('a module archive is uploaded and installed', !$failed($first) && $installedVersion() === '1.0.0', $first);
+    $same = $moduleCall('somcp_upgrade_module', somcpTestModuleArchive($upgradeName, '1.0.0'));
+    $see('an archive of the installed version is no upgrade', $failed($same)
+        && strpos($said($same), 'not higher than the installed 1.0.0') !== false && $installedVersion() === '1.0.0', $same);
+    $tooNew = $moduleCall('somcp_upgrade_module', somcpTestModuleArchive($upgradeName, '1.1.0', [], '99.0.0'));
+    $see('an archive made for another PrestaShop is refused, the current files kept', $failed($tooNew)
+        && strpos($said($tooNew), 'is not made for PrestaShop') !== false && strpos($onDisk(), "'1.0.0'") !== false
+        && $installedVersion() === '1.0.0', $tooNew);
+    $other = $moduleCall('somcp_upgrade_module', somcpTestModuleArchive('somcpnotonshop', '2.0.0'));
+    $see('an archive of a module not on the shop is sent to somcp_upload_module', $failed($other)
+        && strpos($said($other), 'somcp_upload_module') !== false && !is_dir(_PS_MODULE_DIR_ . 'somcpnotonshop'), $other);
+    $upgraded = $moduleCall('somcp_upgrade_module', somcpTestModuleArchive($upgradeName, '1.1.0', [
+        'upgrade/upgrade-1.1.0.php' => somcpTestUpgradeScript('1.1.0', $upgradeKey),
+    ]));
+    $upgradedSaid = json_decode($said($upgraded), true);
+    $see('a newer archive upgrades the module and runs its upgrade script', !$failed($upgraded)
+        && ($upgradedSaid['version_before'] ?? '') === '1.0.0' && ($upgradedSaid['version_after'] ?? '') === '1.1.0'
+        && $installedVersion() === '1.1.0'
+        && (string) $db->getValue('SELECT `value` FROM `' . _DB_PREFIX_ . "configuration` WHERE `name` = '" . pSQL($upgradeKey) . "'") === '1.1.0', $upgraded);
+    // The shop went in maintenance for the upgrade, and is open again now
+    // that it went through.
+    $closed = (int) $db->getValue('SELECT COUNT(*) FROM `' . _DB_PREFIX_ . "configuration` WHERE `name` = 'PS_SHOP_ENABLE' AND `value` = '0'");
+    $see('the shop is open again once the upgrade went through', $closed === 0, ['body' => (string) $closed]);
+
+    // Newer files put in the module's folder by hand, as an FTP upload does:
+    // the Upgrade button, with the module's name and no archive.
+    $onFtp = (string) tempnam(sys_get_temp_dir(), 'somcp-ftp');
+    file_put_contents($onFtp, somcpTestModuleArchive($upgradeName, '1.2.0', [
+        'upgrade/upgrade-1.2.0.php' => somcpTestUpgradeScript('1.2.0', $upgradeKey),
+    ]));
+    $ftp = new ZipArchive();
+    $ftp->open($onFtp);
+    $ftp->extractTo(_PS_MODULE_DIR_);
+    $ftp->close();
+    @unlink($onFtp);
+    $fromDisk = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_upgrade_module',
+        'arguments' => ['name' => $upgradeName],
+    ]));
+    $see('newer files already in the folder are upgraded by the module\'s name', !$failed($fromDisk)
+        && $installedVersion() === '1.2.0'
+        && (string) $db->getValue('SELECT `value` FROM `' . _DB_PREFIX_ . "configuration` WHERE `name` = '" . pSQL($upgradeKey) . "'") === '1.2.0', $fromDisk);
+    $nothing = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+        'name' => 'somcp_upgrade_module',
+        'arguments' => ['name' => $upgradeName],
+    ]));
+    $see('a module whose files are the installed version has nothing to upgrade', $failed($nothing)
+        && strpos($said($nothing), 'nothing to upgrade') !== false, $nothing);
+} finally {
+    $left = Module::getInstanceByName($upgradeName);
+    if ($left instanceof Module && Module::isInstalled($upgradeName)) {
+        $left->uninstall();
+    }
+    Tools::deleteDirectory(_PS_MODULE_DIR_ . $upgradeName);
+    Tools::deleteDirectory(_PS_MODULE_DIR_ . 'somcpnotonshop');
+    $db->delete('configuration', "`name` = '" . pSQL($upgradeKey) . "'");
+}
+
 // A module hands a file over by returning it: the same answer as
 // somcp_download_file, under the type its bytes show.
 $handed = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
@@ -1058,9 +1215,49 @@ $see('a file a module returns comes attached as an image, with no link', ($hande
     && strpos((string) ($handed['content'][0]['text'] ?? ''), '"url"') === false, ['body' => json_encode($handed)]);
 $named = SomcpContract::translate(['file' => ['name' => '#FA000104/2026 été.png', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
 $see('a file goes out under a name of plain characters only', strpos((string) ($named['content'][0]['text'] ?? ''), '"file": "FA000104-2026-t.png"') !== false, ['body' => json_encode($named)]);
+// PrestaShop writes PNG into files it names .jpg when the image quality
+// setting asks for PNG: an image named as another image goes out as what it is.
+$misnamed = SomcpContract::translate(['file' => ['name' => '52.jpg', 'contents' => $png]], ['id_employee' => $idEmployee], 'somcptestmodule');
+$see('a PNG named .jpg goes out as a PNG image, renamed to match', ($misnamed['content'][1]['type'] ?? '') === 'image'
+    && ($misnamed['content'][1]['mimeType'] ?? '') === 'image/png'
+    && strpos((string) ($misnamed['content'][0]['text'] ?? ''), '"file": "52.png"') !== false, ['body' => json_encode($misnamed)]);
 $lying = SomcpContract::translate(['file' => ['name' => 'photo.png', 'contents' => '<html></html>']], ['id_employee' => $idEmployee], 'somcptestmodule');
 $see('a file a module names as an image but is not goes out under no type', strpos((string) ($lying['content'][0]['text'] ?? ''), 'application/octet-stream') !== false
     && ($lying['content'][1]['type'] ?? '') === 'resource', ['body' => json_encode($lying)]);
+
+// The file of a virtual product created offline, on a shop where no virtual
+// product was ever saved active: stored, and found by the shop as the back
+// office looks for it.
+Configuration::updateGlobalValue('PS_VIRTUAL_PROD_FEATURE_ACTIVE', '0');
+$ebook = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_upload_file',
+    'arguments' => ['for' => 'somcp_create_product', 'field' => 'virtual_file.file', 'data' => 'data:application/pdf;base64,' . base64_encode("%PDF-1.4\n%%EOF\n")],
+]));
+$ebookRef = (string) (json_decode($said($ebook), true)['upload_ref'] ?? '');
+$virtual = $http('POST', $mcpUrl, $bearer($fileToken), $rpc('tools/call', [
+    'name' => 'somcp_create_product',
+    'arguments' => [
+        'languages' => ['en'],
+        'basics' => ['product_type' => 'virtual', 'name' => ['en' => 'Somcp offline ebook']],
+        'pricing' => ['price_tax_excl' => 5],
+        'virtual_file' => ['file' => ['upload_ref' => $ebookRef], 'display_filename' => 'ebook.pdf'],
+    ],
+]));
+$idVirtual = (int) (json_decode($said($virtual), true)['id_product'] ?? 0);
+// The flag was switched on by the call above, in another request: this
+// process still holds the value it set itself, so it reads the database
+// again, as the next back office page would.
+Configuration::resetStaticCache();
+$see('the file of an offline virtual product is found as the back office looks for it', $idVirtual > 0
+    && (int) ProductDownload::getIdFromIdProduct($idVirtual) > 0, $virtual);
+if ($idVirtual > 0) {
+    foreach ([ProductDownload::getIdFromIdProduct($idVirtual, false)] as $idDownload) {
+        if ((int) $idDownload > 0) {
+            (new ProductDownload((int) $idDownload))->delete(true);
+        }
+    }
+    (new Product($idVirtual))->delete();
+}
 
 // A file found by a read tool leaves through the same door as a document,
 // an image as an image.

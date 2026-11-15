@@ -349,7 +349,7 @@ class SomcpToolSetOrderTracking
         foreach ($shipments as $shipment) {
             $summaries[] = [
                 'id_order_carrier' => (int) $shipment['id_order_carrier'],
-                'date' => (string) $shipment['date'],
+                'date' => $shipment['date'],
                 'carrier' => (string) $shipment['carrier'],
                 'weight' => (float) $shipment['weight'],
                 'tracking_number' => (string) $shipment['tracking_number'],

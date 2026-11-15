@@ -552,15 +552,13 @@ class SomcpToolGetProduct
             return null;
         }
 
-        $expiration = self::date((string) ($row['date_expiration'] ?? ''));
-
         return [
             // As virtual_file.file of the update takes it: given back, the
             // update keeps the stored file.
             'file' => SomcpDownload::offer('product_file', (int) $row['id_product_download'], Somcp::currentShopId()),
             'display_filename' => (string) $row['display_filename'],
             'nb_downloadable' => (int) $row['nb_downloadable'],
-            'date_expiration' => $expiration === null ? null : date('c', (int) strtotime($expiration)),
+            'date_expiration' => SomcpTool::isoDate($row['date_expiration'] ?? null),
             'nb_days_accessible' => (int) $row['nb_days_accessible'],
             'active' => (bool) $row['active'],
         ];
@@ -682,8 +680,8 @@ class SomcpToolGetProduct
                 'amounts_currency' => (int) $row['id_currency'] > 0
                     ? (string) Currency::getIsoCodeById((int) $row['id_currency'])
                     : $defaultCurrency,
-                'from' => self::date((string) $row['from']),
-                'to' => self::date((string) $row['to']),
+                'from' => SomcpTool::isoDate($row['from']),
+                'to' => SomcpTool::isoDate($row['to']),
             ];
         }
 
@@ -970,7 +968,8 @@ class SomcpToolGetProduct
     }
 
     /**
-     * A date as ISO 8601, or null for the empty dates MySQL stores.
+     * A day as the database stores it, or null for the empty dates MySQL
+     * stores. Dates with a time go through SomcpTool::isoDate().
      *
      * @param string $value
      *

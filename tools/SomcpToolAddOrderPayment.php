@@ -299,7 +299,7 @@ class SomcpToolAddOrderPayment
             'currency' => (string) $currency->iso_code,
             'payment_method' => $method,
             'transaction_id' => $transaction,
-            'payment_date' => $date,
+            'payment_date' => SomcpTool::isoDate($date),
             // Who recorded it, as the Employee column of the Payment block on
             // PrestaShop 9; null on 8.0.1, which has neither the column nor the
             // argument. Matches id_employee of payments[] in somcp_get_order.
@@ -352,34 +352,14 @@ class SomcpToolAddOrderPayment
         if ($value === null) {
             return date('Y-m-d H:i:s');
         }
-        if (!is_string($value)
-            || !preg_match('/^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/', trim($value))) {
-            return null;
-        }
-
-        try {
-            $date = new DateTime(trim($value));
-        } catch (Throwable $e) {
-            return null;
-        }
-        // 2026-02-31 is read as March 3rd: refused rather than shifted. The
-        // offset typed is kept until the conversion below, so the day read
-        // back is the day typed.
-        if ($date->format('Y-m-d') !== substr(trim($value), 0, 10)) {
-            return null;
-        }
-
+        $date = SomcpTool::dateTime($value);
         // A day alone gets the time of the call, as addOrderPayment() does,
         // rather than midnight.
-        if (strlen(trim($value)) === 10) {
-            return $date->format('Y-m-d') . ' ' . date('H:i:s');
+        if ($date !== null && strlen(trim((string) $value)) === 10) {
+            return substr($date, 0, 10) . ' ' . date('H:i:s');
         }
 
-        // The shop stores its dates in its own time zone, the one PrestaShop
-        // set as PHP's default.
-        $date->setTimezone(new DateTimeZone(date_default_timezone_get()));
-
-        return $date->format('Y-m-d H:i:s');
+        return $date;
     }
 
     /**

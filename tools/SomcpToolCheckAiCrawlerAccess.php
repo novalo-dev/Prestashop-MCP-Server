@@ -99,15 +99,9 @@ class SomcpToolCheckAiCrawlerAccess
     {
         // Every mistake found before reading anything is reported in one
         // answer, so the call is corrected in one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            $problems[] = '- ' . $field . ': not a field of this tool';
-        }
+        $problems = SomcpTool::unknownFields($arguments, []);
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
 
         $shop = Somcp::currentShop();

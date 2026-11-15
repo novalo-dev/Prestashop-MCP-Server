@@ -465,7 +465,13 @@ A new language is a new column in the table and a new entry in `LANGS`.
   Changed, Fixed, Security or Removed.
 - Never change the version number in `config.xml` or `somcp.php`, and never add
   a file in `upgrade/`. The maintainer picks the number and writes the upgrade
-  when a release is published.
+  when a release is published. The version in `server.json` is not one to
+  change either: the MCP Registry workflow sets it from `config.xml` when
+  Build for Release publishes the module to the official MCP Registry.
+- How the maintainer numbers a version X.Y.Z: X moves for a major version;
+  Y moves when the release ships a file in `upgrade/`, so a shop that skips
+  it still knows a script has to run; Z moves for every other release, fixes
+  and new tools alike.
 - A change to the database schema goes in `sql/install.sql` and
   `sql/uninstall.sql`, and the pull request says so in its description, so the
   upgrade for shops already running the module is not forgotten at release

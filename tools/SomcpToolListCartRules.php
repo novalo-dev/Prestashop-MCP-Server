@@ -228,8 +228,8 @@ class SomcpToolListCartRules
                     'code' => (string) $row['code'],
                     'quantity' => (int) $row['quantity'],
                     'quantity_per_user' => (int) $row['quantity_per_user'],
-                    'date_from' => self::iso((string) $row['date_from']),
-                    'date_to' => self::iso((string) $row['date_to']),
+                    'date_from' => SomcpTool::isoDate($row['date_from']),
+                    'date_to' => SomcpTool::isoDate($row['date_to']),
                     'active' => (bool) $row['active'],
                     // null when the rule is for everyone, as somcp_get_customer
                     // expects the identifier only when there is one.
@@ -434,24 +434,6 @@ class SomcpToolListCartRules
         }
 
         return $on;
-    }
-
-    /**
-     * A stored datetime as ISO 8601, or an empty string when the column is the
-     * zero date PrestaShop stores for "no date".
-     *
-     * @param string $value
-     *
-     * @return string
-     */
-    public static function iso(string $value): string
-    {
-        if ($value === '' || strpos($value, '0000-00-00') === 0) {
-            return '';
-        }
-        $time = strtotime($value);
-
-        return $time === false ? '' : date('c', $time);
     }
 
     /**

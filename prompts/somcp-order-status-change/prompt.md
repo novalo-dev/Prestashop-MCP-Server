@@ -169,8 +169,10 @@ wait for the merchant's go-ahead before the call.
 - Read the order with `somcp_get_order` first: each line is named by its
   `products[].id_order_detail`, and `quantity_refunded` says what was already
   refunded.
-- Give each amount in the tax mode of the order: `amount_tax_excluded` or
-  `amount_tax_included`. A wrong one is refused with the right field named.
+- Give each amount in the tax mode of the order, the lines and the shipping
+  alike: `amount_tax_excluded` or `amount_tax_included` on a line,
+  `shipping_amount_tax_excluded` or `shipping_amount_tax_included` for the
+  shipping. A wrong one is refused with the right field named.
 - A credit slip is generated unless the merchant says otherwise; a voucher
   only when asked. `restock` only matters once the order is delivered.
 - Never repeat the call on a lost answer: check `quantity_refunded` and

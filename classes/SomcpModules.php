@@ -227,16 +227,15 @@ class SomcpModules
         // would break the JSON of the answer: what it prints is dropped.
         $level = ob_get_level();
         ob_start();
+        $restore = self::asBackOffice();
         try {
             self::prepareLanguageContext();
-            // The core's own way to reach its ModuleManager from legacy code:
-            // the Symfony container when there is one, the same classes built
-            // by hand otherwise, on PrestaShop 8 and 9 alike.
-            $manager = PrestaShop\PrestaShop\Core\Addon\Module\ModuleManagerBuilder::getInstance()->build();
+            $manager = self::manager();
             $done = (bool) $action($manager);
         } catch (Throwable $e) {
             $errors[] = $e->getMessage();
         } finally {
+            $restore();
             while (ob_get_level() > $level) {
                 ob_end_clean();
             }
@@ -255,6 +254,145 @@ class SomcpModules
             'done' => $done,
             'errors' => array_values(array_unique(array_filter(array_map('trim', $errors)))),
         ];
+    }
+
+    /**
+     * Puts every shop in maintenance before a module is installed or
+     * upgraded, and says how each one was before.
+     *
+     * A module's files and its install or upgrade scripts change the shop
+     * while customers browse it: half a module answering a checkout is worse
+     * than a short maintenance page. Every shop, because the module's files
+     * are shared by all of them. A shop already in maintenance stays so.
+     *
+     * @return array<int, string> PS_SHOP_ENABLE of each shop before, for maintenanceOff()
+     */
+    public static function maintenanceOn(): array
+    {
+        $before = [];
+        foreach (Shop::getShops(false, null, true) as $idShop) {
+            $idShop = (int) $idShop;
+            $before[$idShop] = (string) Configuration::get('PS_SHOP_ENABLE', null, null, $idShop);
+            Configuration::updateValue('PS_SHOP_ENABLE', 0, false, null, $idShop);
+        }
+
+        return $before;
+    }
+
+    /**
+     * Puts each shop back as maintenanceOn() found it.
+     *
+     * Called only once everything went through, or when nothing was changed:
+     * a module whose install or upgrade failed half way may leave the shop
+     * broken, and the merchant reopens it once they have looked.
+     *
+     * @param array<int, string> $before
+     */
+    public static function maintenanceOff(array $before): void
+    {
+        foreach ($before as $idShop => $value) {
+            Configuration::updateValue('PS_SHOP_ENABLE', $value, false, null, (int) $idShop);
+        }
+    }
+
+    /**
+     * The ModuleManager of the back office's container, the one its buttons use.
+     *
+     * Taken from the container rather than from ModuleManagerBuilder, which
+     * keeps the first manager it built for the whole request: built outside
+     * the back office, that one dispatches no event, so a module's tabs
+     * would not be registered on install.
+     *
+     * @return object
+     */
+    private static function manager(): object
+    {
+        $container = PrestaShop\PrestaShop\Adapter\SymfonyContainer::getInstance();
+        foreach (['prestashop.module.manager', 'PrestaShop\\PrestaShop\\Core\\Module\\ModuleManager'] as $id) {
+            if ($container !== null && $container->has($id)) {
+                /** @var object $manager */
+                $manager = $container->get($id);
+
+                return $manager;
+            }
+        }
+
+        return PrestaShop\PrestaShop\Core\Addon\Module\ModuleManagerBuilder::getInstance()->build();
+    }
+
+    /**
+     * Makes the back office's container the one every module reaches, for
+     * the time of one action of the Module Manager.
+     *
+     * The ModuleManager runs hooks before it installs or upgrades, and the
+     * modules answering them read services the back office's container holds
+     * and the MCP endpoint's does not: ps_distributionapiclient, shipped with
+     * PrestaShop, threw on actionBeforeInstallModule, so no module could be
+     * installed from an assistant. The back office's kernel is booted once
+     * per request, only when the request is not already one of its own (the
+     * built-in assistant, the command line), and the previous container is
+     * put back afterwards.
+     *
+     * @return callable puts the previous state back
+     */
+    private static function asBackOffice(): callable
+    {
+        global $kernel;
+        $class = self::backOfficeKernel();
+        if ($class === '' || $kernel instanceof $class) {
+            return static function (): void {
+            };
+        }
+
+        static $booted = null;
+        if ($booted === null) {
+            try {
+                $environment = SomcpBackOffice::constant('_PS_ENV_');
+                /** @var Symfony\Component\HttpKernel\KernelInterface $made */
+                $made = new $class(is_string($environment) ? $environment : 'prod', (bool) SomcpBackOffice::constant('_PS_MODE_DEV_'));
+                $made->boot();
+                $booted = $made;
+            } catch (Throwable $e) {
+                // Without it the manager is built by hand, as before: some
+                // modules' hooks may still fail, and their message is returned.
+                $booted = false;
+            }
+        }
+        if (!$booted instanceof Symfony\Component\HttpKernel\KernelInterface) {
+            return static function (): void {
+            };
+        }
+
+        $context = Somcp::legacyContext();
+        $previousKernel = $kernel;
+        $previousContainer = $context->container ?? null;
+        $kernel = $booted;
+        $context->container = $booted->getContainer();
+        PrestaShop\PrestaShop\Adapter\SymfonyContainer::resetStaticCache();
+
+        return static function () use ($previousKernel, $previousContainer, $context): void {
+            global $kernel;
+            $kernel = $previousKernel;
+            $context->container = $previousContainer;
+            PrestaShop\PrestaShop\Adapter\SymfonyContainer::resetStaticCache();
+        };
+    }
+
+    /**
+     * The class of the back office's kernel: AdminKernel on PrestaShop 9,
+     * where AppKernel is the abstract parent of every kernel, AppKernel on 8.
+     *
+     * @return string empty when neither can be built
+     */
+    private static function backOfficeKernel(): string
+    {
+        foreach (['AdminKernel', 'AppKernel'] as $class) {
+            if (class_exists($class) && !(new ReflectionClass($class))->isAbstract()) {
+                return $class;
+            }
+        }
+
+        return '';
     }
 
     /**

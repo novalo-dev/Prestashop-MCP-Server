@@ -1,6 +1,7 @@
 {
   "calls": [
     {"why": "the file written again from the core's rules", "arguments": {}, "expect": "ok", "contains": ["\"changed\"", "\"previous_content\"", "\"content\"", "User-agent: *", "Disallow: /*?order="]},
-    {"why": "a second call right after writes the same file and changes nothing", "arguments": {}, "expect": "ok", "contains": ["\"changed\": false"]}
+    {"why": "a second call right after writes the same file and changes nothing", "arguments": {}, "expect": "ok", "contains": ["\"changed\": false"]},
+    {"why": "a field the tool does not take is refused and nothing is written", "arguments": {"language": "en"}, "expect": "error", "contains": ["language: not a field of this tool", "Nothing was changed"]}
   ]
 }

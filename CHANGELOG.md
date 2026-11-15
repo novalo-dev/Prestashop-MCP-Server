@@ -16,6 +16,186 @@ are:
 
 ## Unreleased
 
+## 2.0.1 - 2026-11-15
+
+### Added
+
+**Upgrade a module.** The assistant can now upgrade a module already
+installed, as **Upgrade** in **Modules > Module Manager** does
+(`somcp_upgrade_module`): from the archive of a newer version you give it, or
+from newer files already in the module's folder, put there by FTP for
+example. It first checks, as PrestaShop does before installing a module, that
+the new version is higher, made for your PrestaShop version, with the modules
+it needs already installed; otherwise nothing is changed. With an archive, the
+previous files are put back if anything fails before the upgrade starts.
+Uploading a module still takes only modules that are not on the shop yet.
+
+**Your shop is in maintenance while a module is installed or upgraded.** The
+assistant closes the shop just before a module's files or scripts change it,
+and reopens it once everything went through, so customers never meet a module
+half installed. A shop you had already closed stays closed. If the install or
+the upgrade fails, the shop stays in maintenance and the assistant tells you:
+reopen it in **Shop Parameters > General > Maintenance** once you have checked
+it.
+
+**Category thumbnail.** The assistant can now set the **Category thumbnail**
+of a category, the small image shown where its parent category lists its
+subcategories, when it creates or changes the category, and reads it back with
+the category. The files are written where the back office writes them on your
+PrestaShop version. On PrestaShop 9, which has a Delete button for it, the
+assistant can also remove it.
+
+### Changed
+
+**Refund an order's shipping in the tax mode it shows.** When you ask the
+assistant to refund part of an order's shipping, it now gives the amount in the
+tax mode the order shows, tax excluded or tax included, the same way it already
+gives the amounts of the lines; the field in the wrong mode is refused with the
+right one named. The refunded shipping is reported back both tax excluded and
+tax included.
+
+**An image's combinations, as the product page reads them.** When you ask the
+assistant to change which combinations a product image illustrates, it can now
+name them by the identifiers it just read on the product, instead of counting
+their place among the combinations listed in the same call. Giving an image
+back the combinations it already shows changes nothing, and a combination of
+another product is refused.
+
+**Cart rule identifiers, named as everywhere else.** When the assistant reads
+a cart rule's **Product selection**, each product, category, attribute, brand
+or supplier now comes with the identifier name of its kind (`id_product`,
+`id_category`, `id_attribute`, `id_manufacturer`, `id_supplier`) instead of a
+bare `id`, so it can tell them apart and give them back. A Memcache server of
+**Advanced Parameters > Performance** is read with `id_memcached_server`. A
+cart rule identifier, or a customer group in the catalogue price rules,
+written as digits in quotes is now accepted by every cart rule tool, as the
+order tools already did.
+
+**A combination's specific price and supplier, as the product page reads
+them.** When you ask the assistant to change the specific price or the
+supplier reference of one combination of a product, it can now name that
+combination by the identifier it just read on the product, instead of first
+listing it again among the combinations to count its place. A combination of
+another product is refused, and nothing is changed.
+
+**Limiting a specific price to one customer.** When you ask the assistant to
+set a product's specific price for a single customer, it is now told that
+`somcp_search_customers` finds that customer, so it points you to the search
+instead of leaving the field unexplained.
+
+**The built-in assistant runs on Neuron AI 4.1.25.** A conversation answered
+from two tabs at once now shows the answer of the latest one instead of an
+error.
+
+**Sign-in page of a connection.** The anti-robot check is updated to ALTCHA
+3.6.0, with corrected apostrophes in its English and French texts.
+
+**Order dates say their time zone.** The assistant now reads every date of an
+order - when it was placed, its payments, shipments, status changes, invoices,
+delivery and credit slips, messages - with the time zone of your shop, as it
+already did for customers, so it no longer gets an hour wrong for a customer
+elsewhere or sees a gap between two tools that is not there. A date not set
+yet is given as empty instead of `0000-00-00`. A file the assistant hands
+over, an order document or a photo, says when its link stops working in your
+time zone too. Searching orders gives the order date as `date_add` beside
+`date`, which is kept for the tools already built on it.
+
+**Promotion dates say their time zone too.** The start and end of a specific
+price and of a catalog price rule are read with your shop's time zone. A start
+or end the assistant gives in another time zone, in UTC for example, is saved
+at the right hour in yours instead of an hour off, and an end set before the
+start is caught even when the two were written in different time zones. The
+dates of a voucher are saved the same way.
+
+**A voucher with no date reads as not set.** Listing vouchers and reading one
+gave a missing start or end date as an empty text, where every other tool says
+it is not set. Both now say it is not set, so a voucher read and given back to
+be changed carries the same value the other tools use.
+
+**The SEO and AI visibility tools refuse a misspelt setting.** When the
+assistant calls one of these tools with a setting it does not take - a field
+name spelt wrong, for example - the tool now says so instead of ignoring it
+and answering as if the setting had applied. Every mistake of a call comes
+back in one answer. The page audit now refuses an address outside the shop in
+the same words as the link check, together with any other mistake of the call,
+and the product page audit says which identifier is wrong and where to find
+the right one. The product and category SEO audits no longer swap a wrong
+setting for a default - a check name that does not exist, a page size given as
+a word, a "no" for active products - but name it, and the changes of a CMS page
+or of a Traffic & SEO page name the identifier that matches no page and where
+to find the right one, with the other mistakes of the call.
+
+### Fixed
+
+**A customer group of another shop is refused in price rules.** On a
+multistore, the assistant could filter the catalogue price rules by a customer
+group that the shop does not have, or give one to a new catalogue price rule or
+a product's specific price, because the group existed somewhere else in the
+installation. Only the groups of the shop, as **Shop Parameters > Customer
+Settings > Groups** lists them, are accepted now, so a rule or a price always
+targets a group your customers can belong to.
+
+**The viewed-but-not-sold list no longer says every page view is zero.** When
+*Save global page views* is off, the note of `somcp_list_viewed_not_sold` said
+every page-view count was zero. If the setting had been on earlier in the
+period, some counts were in fact above zero, so the assistant could tell you a
+product had no views when it had. The note now says page views are not being
+recorded any more, so the counts cover only the time the setting was on during
+the period, if any; the sales figures stay real.
+
+**The total of the abandoned carts says when a cart is missing from it.**
+When the assistant adds up the value of your abandoned carts, a cart that could
+no longer be priced, because a product in it was deleted since, was left out of
+the sum while the answer still said every cart was counted. The answer now
+says the total is partial in that case too, so the assistant tells you rather
+than giving the figure as the whole. The carts of the page are also no longer
+priced twice, which makes the list quicker on a shop with many carts.
+
+**An llms.txt the module did not write is refused, not reported as written.**
+When the shop already has an llms.txt made by hand or by another tool, and the
+assistant asks to generate one without saying to replace it, the answer was a
+normal one, so an assistant could tell you the file was written when nothing
+was. It is now refused as an error, nothing is written, and the current file is
+shown so you can decide whether to replace it.
+
+**Installing a module from the assistant works.** Installing or uploading a
+module from an assistant failed on every shop with the PrestaShop module that
+fetches modules from PrestaShop's servers, installed by default: it needs
+something only the back office provides, and stopped the install. The
+assistant now installs modules the way the back office does.
+
+**The file of a virtual product shows in the back office.** A virtual product
+the assistant created with its file, still offline, showed **Add downloadable
+file** at **No** in the back office, on a shop that had never sold a virtual
+product: the file was stored, but PrestaShop only starts looking for such
+files once a virtual product is saved online. The assistant now tells
+PrestaShop to look for them as soon as it stores one. A customer still
+downloads a file only from a paid order of their own.
+
+**A file the assistant sends goes in once, under its name.** Asked to attach
+one PDF to a reply, an assistant could send it several times, and the reply
+went out with three attachments, two of them named "file" and blank: it took
+"received" for "replaced", and when it could not copy the real file it built
+an empty one. The shop now tells it after each file how many it holds, that a
+new send adds one, and the name and size of each, so it can see a file that
+is not the one it meant. A file it sends as raw content keeps the name it
+gives.
+
+**The upload page comes last.** When a file is needed, the assistant first
+sends it to the shop itself, then hands over a file it holds from the
+conversation, and only when both fail does it give you the page to drop the
+file on. Before, it got the page at once and often went straight to it, asking
+you to upload by hand a file it already had. If your assistant tells you to
+allow your shop's domain in its network settings, doing so once lets it send
+files itself from then on.
+
+**PNG photos reach the assistant as images.** With the image quality setting
+on PNG, PrestaShop keeps product photos, logos and category images as PNG in
+files named .jpg. The assistant was handed them as files of unknown type and
+told not to read them, so it could not show or describe the photo. They now
+go out as the PNG images they are. A file that is not an image at all still
+goes out under no type.
+
 ## 2.0.0 - 2026-11-14
 
 A major version, for compact mode: connected assistants can now receive six

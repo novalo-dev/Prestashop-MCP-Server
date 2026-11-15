@@ -1,0 +1,24 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.novalo-dev/prestashop-mcp-server",
+  "title": "O'So MCP Server for PrestaShop",
+  "description": "Lets Claude, ChatGPT or Cursor connect to PrestaShop, with each employee approving what they may do.",
+  "version": "2.0.0",
+  "websiteUrl": "https://github.com/novalo-dev",
+  "repository": {
+    "url": "https://github.com/novalo-dev/Prestashop-MCP-Server",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://{shop}/module/somcp/mcp",
+      "variables": {
+        "shop": {
+          "description": "Your shop's domain, e.g. shop.example.com",
+          "isRequired": true
+        }
+      }
+    }
+  ]
+}

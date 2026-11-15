@@ -18,6 +18,8 @@
     {"why": "a computed field and a field this tool does not know", "arguments": {"languages": ["en"], "name": {"en": "Somcp extra"}, "products_count": 3, "colour": "red"}, "expect": "error", "contains": ["products_count: worked out by the shop", "colour: not a field of this tool"]},
     {"why": "active as a string", "arguments": {"languages": ["en"], "name": {"en": "Somcp string"}, "active": "false"}, "expect": "error", "contains": ["active: true or false"]},
     {"why": "an empty list of groups", "arguments": {"languages": ["en"], "name": {"en": "Somcp nobody"}, "groups": []}, "expect": "error", "contains": ["groups: at least one group"]},
-    {"why": "a language the shop does not have", "arguments": {"languages": ["zz"], "name": {"zz": "Somcp"}}, "expect": "error", "contains": ["not an active language"]}
+    {"why": "a language the shop does not have", "arguments": {"languages": ["zz"], "name": {"zz": "Somcp"}}, "expect": "error", "contains": ["not an active language"]},
+    {"why": "a Category thumbnail that is refused is reported without stopping the creation", "arguments": {"languages": ["en"], "name": {"en": "Somcp category with a refused thumbnail"}, "thumbnail_image": {"url": "https://127.0.0.1/thumb.jpg"}}, "expect": "ok", "contains": ["\"created\": true", "\"for\": \"thumbnail_image\"", "private, local or reserved address", "\"thumbnail_image\": null"]},
+    {"why": "a Category thumbnail given both ways at once is refused before anything is created", "arguments": {"languages": ["en"], "name": {"en": "Somcp both thumbnail"}, "thumbnail_image": {"url": "https://example.com/thumb.jpg", "upload_ref": "somcp-ref"}}, "expect": "error", "contains": ["Nothing was created", "thumbnail_image: url or upload_ref, not both"]}
   ]
 }

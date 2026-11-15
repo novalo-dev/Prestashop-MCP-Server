@@ -91,6 +91,13 @@ class SomcpToolListMetaPages
         }
         [$idLang, $iso] = $language;
 
+        // A misspelt field was silently ignored: the shared check so every
+        // SEO tool refuses it alike.
+        $errors = SomcpTool::unknownFields($arguments, ['language']);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $link = Somcp::legacyContext()->link ?? new Link();
 
         // PrestaShop 9 dropped the Meta keywords field and its column.

@@ -13,6 +13,8 @@ on:
   # Build for Release runs this workflow on the commit it is about to publish,
   # and publishes only if every job passed.
   workflow_call:
+  # A change to this workflow alone is checked with this run, not the whole CI.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -69,13 +71,25 @@ jobs:
       # script fails removing it again and stops the container. The image only
       # copies the files and starts the web server; the same installer it
       # would have run is called once the files and the database are there.
+      #
+      # The database is waited for through PDO, which PrestaShop itself uses:
+      # the PHP 8.5 images have no mysqli, so a mysqli probe failed every time
+      # and the loop always ran to its end.
+      #
+      # The installer renames the admin folder. That folder comes from a layer
+      # of the image, and Docker's overlay filesystem refuses to rename such a
+      # folder on some runners, so the install passed or failed depending on
+      # the runner. A copy under the same name lives in the container's own
+      # layer, where the rename works; the name stays admin, which PrestaShop 9
+      # needs at install time.
       - name: Install PrestaShop ${{ matrix.prestashop }}
         run: |
           for _ in $(seq 1 60); do
             docker exec shop test -f /var/www/html/install/index_cli.php \
-              && docker exec shop php -r 'exit(@mysqli_connect("db", "root", "root", "prestashop") ? 0 : 1);' && break
+              && docker exec shop php -r 'try { new PDO("mysql:host=db;dbname=prestashop", "root", "root"); exit(0); } catch (Throwable $e) { exit(1); }' && break
             sleep 5
           done
+          docker exec shop sh -c 'cd /var/www/html && if [ -d admin ]; then cp -a admin admin.copy && rm -rf admin && mv admin.copy admin; fi'
           set -o pipefail
           docker exec -u www-data -w /var/www/html shop php -d memory_limit=-1 install/index_cli.php \
             --domain=localhost:8080 --db_server=db --db_name=prestashop --db_user=root --db_password=root \

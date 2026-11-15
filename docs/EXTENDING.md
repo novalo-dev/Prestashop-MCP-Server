@@ -259,10 +259,11 @@ argument into a way in. A file reaches your tool as a deposit, read through
 `upload_ref`: checked against its extension by its bytes, belonging to the
 employee the assistant acts for, used once. Your tool asks for it with
 `upload` and `accepts_files`, below. The assistant then fills the deposit the
-first way it can: with `somcp_upload_file` and the deposit's `upload_ref` - a
+first way that works, in this order: by posting the file to the deposit's
+direct address, then with `somcp_upload_file` and the deposit's `upload_ref` - a
 file the person attached in its conversation (ChatGPT passes those), the bytes
-as a data URI, or a public address -, by posting the file to the deposit's
-direct address, or by showing the merchant the deposit page. In the built-in
+as a data URI, or a public address -, and only when both failed by showing the
+merchant the deposit page, which somcp hands out at that point. In the built-in
 assistant, a file the employee attached is already a deposit and comes with
 its `upload_ref`. Your module changes nothing when somcp learns a new way in.
 
@@ -277,7 +278,9 @@ as an image the assistant can see, with no link beside it, so the assistant
 reads the file or shows it rather than handing the merchant an address. Its
 type is read from its bytes against the extension of `name`; a file whose
 content does not match goes out as `application/octet-stream`, and the
-assistant is told not to read it as what its name says. The name goes out with
+assistant is told not to read it as what its name says. An image named as
+another image format (a PNG named `.jpg`) is the exception: it goes out as the
+image it is, renamed to match. The name goes out with
 plain letters, digits, `.` and `_` only, everything else becoming `-`. Past 4 MiB, or in the
 built-in assistant, which reads text only, somcp gives a signed address valid
 15 minutes instead. Your tool keeps its own permission and scopes: the file is
@@ -286,7 +289,7 @@ handed only to a call that may run it.
 | | Assistant connected over MCP | Built-in assistant |
 |---|---|---|
 | Shop to assistant | the file attached to the answer; a signed address past 4 MiB | a signed address for the merchant |
-| Assistant to shop | `somcp_upload_file` into the deposit, its direct address, or its page | `upload_ref` of an attached file, or the deposit page |
+| Assistant to shop | the deposit's direct address, then `somcp_upload_file` into the deposit, then its page | `upload_ref` of an attached file, or the deposit page |
 
 ## Asking the merchant for files
 

@@ -119,29 +119,23 @@ class SomcpToolGenerateLlmsTxt
 
         // Every mistake is reported in one answer, so the call is corrected in
         // one go (the shape of #169), before anything is read or written.
-        $allowed = ['language', 'summary', 'max_categories', 'overwrite'];
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, $allowed, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, ['language', 'summary', 'max_categories', 'overwrite']);
 
         $askedLang = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($askedLang ? $arguments : [], $idShop);
         if ($askedLang && $language === null) {
-            $problems[] = '- language: not a language of this shop, which has '
+            $problems[] = 'language: not a language of this shop, which has '
                 . implode(', ', SomcpTool::activeLanguages($idShop));
         }
 
         $summary = null;
         if (array_key_exists('summary', $arguments) && $arguments['summary'] !== null) {
             if (!is_string($arguments['summary'])) {
-                $problems[] = '- summary: must be text';
+                $problems[] = 'summary: must be text';
             } else {
                 $summary = trim($arguments['summary']);
                 if (Tools::strlen($summary) > self::SUMMARY_MAX) {
-                    $problems[] = '- summary: longer than ' . self::SUMMARY_MAX . ' characters';
+                    $problems[] = 'summary: longer than ' . self::SUMMARY_MAX . ' characters';
                 }
             }
         }
@@ -149,7 +143,7 @@ class SomcpToolGenerateLlmsTxt
         $maxCategories = self::CATEGORIES_DEFAULT;
         if (array_key_exists('max_categories', $arguments) && $arguments['max_categories'] !== null) {
             if (!is_int($arguments['max_categories']) || $arguments['max_categories'] < 1 || $arguments['max_categories'] > self::CATEGORIES_MAX) {
-                $problems[] = '- max_categories: a whole number from 1 to ' . self::CATEGORIES_MAX;
+                $problems[] = 'max_categories: a whole number from 1 to ' . self::CATEGORIES_MAX;
             } else {
                 $maxCategories = $arguments['max_categories'];
             }
@@ -158,17 +152,14 @@ class SomcpToolGenerateLlmsTxt
         $overwrite = false;
         if (array_key_exists('overwrite', $arguments) && $arguments['overwrite'] !== null) {
             if (!is_bool($arguments['overwrite'])) {
-                $problems[] = '- overwrite: true or false';
+                $problems[] = 'overwrite: true or false';
             } else {
                 $overwrite = $arguments['overwrite'];
             }
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was written. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('written', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
@@ -181,16 +172,15 @@ class SomcpToolGenerateLlmsTxt
         // A file somcp did not write (no marker) is the merchant's own: it is
         // never replaced without overwrite, and its content comes back so the
         // merchant sees what would be lost.
+        // It is an error, not an answer: an assistant reading only isError
+        // would otherwise tell the merchant the file was written.
         if ($previous !== null && strpos($previous, SomcpToolGetLlmsTxt::MARKER) === false && !$overwrite) {
-            return SomcpTool::json([
-                'changed' => false,
-                'written' => false,
-                'reason' => 'existing_file_not_written_by_somcp',
-                'message' => 'There is already an llms.txt at the root that somcp did not write. Call again with '
-                    . 'overwrite set to true to replace it. Its current content is returned so the merchant can '
-                    . 'see what would be lost.',
-                'previous_content' => $previous,
-            ]);
+            return SomcpTool::text(
+                'Nothing was written: there is already an llms.txt at the root that somcp did not write. Show '
+                    . 'the merchant its current content below, and call again with overwrite set to true only if '
+                    . "they agree to replace it.\n\nCurrent content:\n" . $previous,
+                true
+            );
         }
 
         $shop = Somcp::currentShop();

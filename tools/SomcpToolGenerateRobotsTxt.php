@@ -79,6 +79,12 @@ class SomcpToolGenerateRobotsTxt
      */
     public static function handle(array $arguments, array $context): array
     {
+        // This tool takes no argument: a misspelt field was silently ignored.
+        $errors = SomcpTool::unknownFields($arguments, []);
+        if ($errors !== []) {
+            return SomcpTool::refused('changed', $errors);
+        }
+
         // The button is restricted in demo mode (DemoRestricted on
         // generateRobotsFileAction), so the tool refuses where the screen does.
         if (SomcpBackOffice::constant('_PS_MODE_DEMO_')) {

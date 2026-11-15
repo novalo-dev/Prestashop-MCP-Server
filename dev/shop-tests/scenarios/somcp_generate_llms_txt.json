@@ -21,6 +21,48 @@
       ]
     },
     {
+      "why": "the shop default language asked for by its ISO code writes the same file",
+      "arguments": {
+        "language": "en"
+      },
+      "expect": "ok",
+      "contains": [
+        "\"changed\": false",
+        "\"language\": \"en\""
+      ]
+    },
+    {
+      "why": "a short summary is written as the line under the title",
+      "arguments": {
+        "summary": "Clothes, accessories and art prints of the demo shop."
+      },
+      "expect": "ok",
+      "contains": [
+        "\"changed\": true",
+        "> Clothes, accessories and art prints of the demo shop."
+      ]
+    },
+    {
+      "why": "a number of categories within range; overwrite true over a file somcp wrote is accepted - the refusal over a file without the marker is not called here, since the shop test cannot lay one down at the root",
+      "arguments": {
+        "max_categories": 3,
+        "overwrite": true
+      },
+      "expect": "ok",
+      "contains": [
+        "\"written\"",
+        "## Categories"
+      ]
+    },
+    {
+      "why": "the default summary and categories put back",
+      "arguments": {},
+      "expect": "ok",
+      "contains": [
+        "\"changed\": true"
+      ]
+    },
+    {
       "why": "a language the shop does not have is refused",
       "arguments": {
         "language": "zz"
@@ -48,6 +90,26 @@
       "expect": "error",
       "contains": [
         "summary: longer than 1000 characters"
+      ]
+    },
+    {
+      "why": "a number of categories out of range is refused",
+      "arguments": {
+        "max_categories": 0
+      },
+      "expect": "error",
+      "contains": [
+        "max_categories: a whole number from 1 to 100"
+      ]
+    },
+    {
+      "why": "overwrite given as a word is refused",
+      "arguments": {
+        "overwrite": "yes"
+      },
+      "expect": "error",
+      "contains": [
+        "overwrite: true or false"
       ]
     }
   ]

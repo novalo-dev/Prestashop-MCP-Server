@@ -276,7 +276,7 @@ jobs:
               echo "::error::$f missing from the archive"; exit 1
             fi
           done
-          if unzip -l "$NAME" | grep -qE 'somcp/(\.github/|dev/|docs/|\.git|README\.md|CONTRIBUTING\.md|CLA\.md)'; then
+          if unzip -l "$NAME" | grep -qE 'somcp/(\.github/|dev/|docs/|\.git|README\.md|CONTRIBUTING\.md|CLA\.md|server\.json|glama\.json)'; then
             echo "| Archive contents | **repository plumbing leaked in** |" >> "$GITHUB_STEP_SUMMARY"
             echo "::error::repository plumbing leaked into the archive"; exit 1
           fi
@@ -412,3 +412,13 @@ jobs:
             echo "A check failed: the row above in **bold** is the one. Fix the cause, push"
             echo "to \`main\`, then run this workflow again from **Run workflow**."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # The registry entry follows the release. A separate job, so a registry
+  # down never undoes a release already out: rerun this job, or run the MCP
+  # Registry workflow from main.
+  registry:
+    needs: release
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/registry.yml

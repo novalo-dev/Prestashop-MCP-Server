@@ -258,7 +258,7 @@ class SomcpUpload
         if (!SomcpElicitation::supported($capabilities, SomcpElicitation::MODE_URL)) {
             $invitation = self::find($reference, $idEmployee);
 
-            return self::askByHand($url, $reference, $invitation ?? []);
+            return self::askByHand($url, $reference, $invitation ?? [], false);
         }
 
         return SomcpTool::needsInput(
@@ -335,7 +335,9 @@ class SomcpUpload
             );
         }
 
-        return self::askByHand($url, $reference, $invitation);
+        // Back to a deposit still empty: whatever the assistant tried did not
+        // bring the file, so the merchant's page is part of the answer now.
+        return self::askByHand($url, $reference, $invitation, true);
     }
 
     /**
@@ -381,10 +383,11 @@ class SomcpUpload
      * @param string $url
      * @param string $reference
      * @param array<string, mixed> $invitation
+     * @param bool $failed whether the assistant already failed to bring the files (directions())
      *
      * @return array<string, mixed>
      */
-    private static function askByHand(string $url, string $reference, array $invitation): array
+    private static function askByHand(string $url, string $reference, array $invitation, bool $failed): array
     {
         return SomcpTool::text(self::directions(
             $url,
@@ -393,7 +396,8 @@ class SomcpUpload
             'Once the ' . ((int) ($invitation['max_files'] ?? 1) > 1 ? 'files are' : 'file is') . ' deposited,'
                 . ' by you or by the merchant, call this same tool again with the same arguments plus '
                 . self::ARG_REF . ' set to: ' . $reference . "\n\n"
-                . 'Do not report this as a failure.'
+                . 'Do not report this as a failure.',
+            $failed
         ));
     }
 
@@ -402,58 +406,74 @@ class SomcpUpload
      *
      * One text for every way a deposit is asked for - a tool of this module,
      * a tool of another module through the contract, the request tool - so an
-     * assistant meets the same steps wherever the file is needed. The
-     * assistant sends the file itself when it can; the merchant is asked only
-     * when it cannot. It cannot know in advance whether its own network lets it
-     * reach the shop, so it is told what a refusal looks like and what the
-     * person can change for next time, in words that fit any assistant.
+     * assistant meets the same steps wherever the file is needed, in the order
+     * that asks least of the merchant: the assistant posts the file itself,
+     * then hands it over through somcp_upload_file, and only then is the
+     * merchant asked. Given the page at once, an assistant went straight to it
+     * and the merchant deposited by hand a file the assistant held.
+     *
+     * The page is therefore given only after a failure somcp sees: a file
+     * somcp_upload_file refused, a call to it with no file, which is how an
+     * assistant says it has none, or a call back to a deposit still empty. A
+     * direct post that fails never reaches the shop, so the step after it
+     * has to be in the first answer already.
      *
      * @param string $url the deposit page of the back office, for the merchant; empty when it cannot be built yet
      * @param string $reference
      * @param array<string, mixed> $invitation the row from find()
      * @param string $then what to do once the files are in
+     * @param bool $failed whether the assistant already failed to bring the file, which earns the page
      *
      * @return string
      */
-    public static function directions(string $url, string $reference, array $invitation, string $then): string
+    public static function directions(string $url, string $reference, array $invitation, string $then, bool $failed = false): string
     {
         $files = max(1, (int) ($invitation['max_files'] ?? 1));
         $megabytes = (int) round(((int) ($invitation['max_bytes'] ?? self::DEFAULT_BYTES)) / 1048576);
         $one = $files === 1;
         $direct = self::directUrl($reference, $invitation);
         $host = (string) parse_url($direct, PHP_URL_HOST);
+        $file = $one ? 'the file' : 'the files';
 
-        return ($one ? 'A file is' : 'Up to ' . $files . ' files are') . ' needed, and '
-            . ($one ? 'it cannot' : 'they cannot') . ' travel inside this conversation.'
+        if (!$failed) {
+            $last = '3. Only if 1 and 2 both failed, or you do not have ' . $file . ': call somcp_upload_file with'
+                . ' ' . self::ARG_REF . ' set to ' . $reference . ' and nothing else. The shop then gives you its'
+                . ' page, for the merchant to deposit ' . $file . ' on.' . "\n\n";
+        } elseif ($url === '') {
+            // The page's address is built from the administration folder,
+            // which the module only learns by running in the back office.
+            $last = '3. The deposit page of the back office cannot be offered yet: ask the merchant to open the'
+                . ' module settings once, then ask for a new deposit.' . "\n\n";
+        } else {
+            $last = '3. If 1 and 2 failed, or you do not have ' . $file . ', show the merchant this address and ask'
+                . ' them to open it and deposit ' . $file . ':' . "\n\n" . $url . "\n\n"
+                . 'Wait for them to say ' . ($one ? 'it has' : 'they have') . ' been sent.' . "\n\n";
+        }
+
+        // No word here may say the file cannot come through the conversation:
+        // step 2 is exactly that, and an assistant told otherwise skipped it.
+        return ($one ? 'A file is' : 'Up to ' . $files . ' files are') . ' needed. Try the ways below in order,'
+            . ' each only if the one before failed.'
             . ' Accepted: ' . str_replace(' ', ', ', (string) ($invitation['extensions'] ?? ''))
-            . '. Up to ' . $megabytes . ' MB each. Both addresses below stop working in '
+            . '. Up to ' . $megabytes . ' MB each. This deposit closes in '
             . (int) round(max(60, ((int) strtotime((string) ($invitation['expires_at'] ?? ''))) - time()) / 60) . ' minutes.' . "\n\n"
-            // First, since it needs neither the network nor the merchant:
-            // the way a file the person attached in the conversation reaches
-            // the shop, through the entries of somcp_upload_file.
-            . '0. If you hold ' . ($one ? 'the file' : 'a file') . ' - one the person attached in this conversation,'
-            . ' or its bytes - call somcp_upload_file with ' . self::ARG_REF . ' set to ' . $reference . ' and the file'
-            . ' in file (as your client passes an attached file), data (a data URI)'
-            . (self::byAddress($invitation) ? ' or url (a public address)' : '') . ', once per file.' . "\n\n"
+            // First, since the bytes travel as they are, at any size the
+            // deposit takes, with nothing for the model to copy.
             . '1. If you can make an HTTP request yourself (a code tool, a terminal, an HTTP or fetch tool),'
             . ' send ' . ($one ? 'the file' : 'each file') . ' now, without asking the merchant: POST it to' . "\n\n"
             . $direct . "\n\n"
             . 'as multipart/form-data, in the field "' . self::DIRECT_FIELD . '", under its real name with its'
             . ' extension (for example curl -F "' . self::DIRECT_FIELD . '=@photo.jpg" followed by the address).'
-            . ' The shop answers {"received": true} when it keeps the file, or the reason it refused it.' . "\n\n"
-            . '2. If that request never reaches the shop - refused by your own environment, a blocked domain or'
-            . ' no network - tell the person once that allowing ' . $host . ' in the network or allowed domains'
-            . ' settings of their assistant would let you deposit files yourself next time, then go to step 3.'
-            . ' If you know you cannot make HTTP requests at all, go straight to step 3.' . "\n\n"
-            . ($url === ''
-                // The page's address is built from the administration folder,
-                // which the module only learns by running in the back office.
-                ? '3. The deposit page of the back office cannot be offered yet: ask the merchant to open the'
-                    . ' module settings once, then ask for a new deposit.' . "\n\n"
-                : '3. Show the merchant this address and ask them to open it and deposit '
-                    . ($one ? 'the file' : 'the files') . ':' . "\n\n"
-                    . $url . "\n\n"
-                    . 'Wait for them to say ' . ($one ? 'it has' : 'they have') . ' been sent.' . "\n\n")
+            . ' The shop answers {"received": true} when it keeps the file, or the reason it refused it. If the'
+            . ' request never reaches the shop - refused by your own environment, a blocked domain or no network -'
+            . ' tell the person once that allowing ' . $host . ' in the network or allowed domains settings of their'
+            . ' assistant would let you deposit files yourself next time, then go to 2.' . "\n\n"
+            . '2. If you hold ' . ($one ? 'the file' : 'a file') . ' - one the person attached in this conversation,'
+            . ' or its bytes - call somcp_upload_file with ' . self::ARG_REF . ' set to ' . $reference . ' and the file'
+            . ' in file (as your client passes an attached file), data (a data URI, with its name in name)'
+            . (self::byAddress($invitation) ? ' or url (a public address)' : '') . ', once per file: each call adds'
+            . ' a file, it never replaces one.' . "\n\n"
+            . $last
             . $then;
     }
 
@@ -1513,8 +1533,8 @@ class SomcpUpload
             'data' => [
                 'type' => 'string',
                 'format' => 'uri',
-                'description' => 'The file itself as a data URI, data:<media type>;base64,<content>, for a file you '
-                    . 'hold (small files: the whole call travels in one request).',
+                'description' => 'The exact bytes of a file you hold, as data:<media type>;base64,<content>, never a '
+                    . 'file you write yourself; small files only. Check the size the answer gives.',
                 'x-mcp-file' => (object) [],
             ],
             'file' => [
@@ -1551,10 +1571,15 @@ class SomcpUpload
      *
      * @return string empty when kept, the reason otherwise, worded for an assistant
      */
-    public static function enter(array $invitation, string $entry, $value): string
+    public static function enter(array $invitation, string $entry, $value, string $name = ''): string
     {
         if (!isset(self::ENTRIES[$entry])) {
             return 'not a way the shop takes a file';
+        }
+        // Only a data URI comes without a name of its own: an address and a
+        // client's file carry theirs.
+        if ($entry === 'data') {
+            return self::enterData($invitation, $value, $name);
         }
         $method = self::ENTRIES[$entry]['method'];
 
@@ -1601,10 +1626,11 @@ class SomcpUpload
     /**
      * @param array<string, mixed> $invitation
      * @param mixed $value
+     * @param string $name the name the assistant gave, since a data URI has none
      *
      * @return string
      */
-    private static function enterData(array $invitation, $value): string
+    private static function enterData(array $invitation, $value, string $name = ''): string
     {
         $data = is_string($value) ? trim($value) : '';
         if (preg_match('/^data:([A-Za-z0-9.+\/-]*)((?:;[^,;]*)*);base64,/', $data, $match) !== 1) {
@@ -1635,7 +1661,7 @@ class SomcpUpload
             if (@file_put_contents($temporary, $bytes) === false) {
                 return self::refusal('no_store', $invitation);
             }
-            $problem = self::admit($invitation, 'file.' . $extension, $temporary, false, $extension);
+            $problem = self::admit($invitation, self::dataName($name, $match[2], $extension), $temporary, false, $extension);
 
             return $problem === '' ? '' : self::refusal($problem, $invitation);
         } finally {
@@ -1643,6 +1669,33 @@ class SomcpUpload
                 @unlink($temporary);
             }
         }
+    }
+
+    /**
+     * The name a file sent as a data URI is kept under.
+     *
+     * A data URI has no name, so every one was kept as "file" and a module
+     * sending them on - a reply with its attachments - showed "file" twice.
+     * The name comes from the call, else from a name= parameter some clients
+     * put in the URI itself. Its extension is always the one the media type
+     * gave, the one admit() checked the bytes against.
+     *
+     * @param string $given the name argument of the call
+     * @param string $parameters the ;key=value part of the data URI
+     * @param string $extension
+     *
+     * @return string
+     */
+    private static function dataName(string $given, string $parameters, string $extension): string
+    {
+        $name = trim($given);
+        if ($name === '' && preg_match('/;name=([^;]*)/i', $parameters, $found) === 1) {
+            $name = trim(rawurldecode($found[1]));
+        }
+        $name = basename(str_replace('\\', '/', $name));
+        $base = (string) pathinfo($name, PATHINFO_FILENAME);
+
+        return ($base === '' ? 'file' : $base) . '.' . $extension;
     }
 
     /**
@@ -2055,28 +2108,79 @@ class SomcpUpload
     }
 
     /**
-     * typeOf() for bytes the shop holds in memory, such as a file a module
+     * identify() for bytes the shop holds in memory, such as a file a module
      * hands over: written to the store for the check, then removed.
      *
      * @param string $bytes
      * @param string $name
      *
-     * @return string
+     * @return array{name: string, mime: string}
      */
-    public static function typeOfBytes(string $bytes, string $name): string
+    public static function identifyBytes(string $bytes, string $name): array
     {
         $directory = self::directory();
         if ($directory === '') {
-            return 'application/octet-stream';
+            return ['name' => $name, 'mime' => 'application/octet-stream'];
         }
         $temporary = $directory . SomcpRandom::token(16) . '.part';
         try {
-            return @file_put_contents($temporary, $bytes) === false ? 'application/octet-stream' : self::typeOf($temporary, $name);
+            return @file_put_contents($temporary, $bytes) === false
+                ? ['name' => $name, 'mime' => 'application/octet-stream']
+                : self::identify($temporary, $name);
         } finally {
             if (is_file($temporary)) {
                 @unlink($temporary);
             }
         }
+    }
+
+    /**
+     * The name and media type a file the shop hands out goes under.
+     *
+     * An image named as another image is renamed after its bytes first:
+     * PrestaShop itself writes PNG into files it names .jpg when the image
+     * quality setting asks for PNG (ImageManager::resize()), so every such
+     * product photo, logo or category image went out as
+     * application/octet-stream, and the assistant was told not to read it.
+     * Only between the image formats the shop takes, each checked by
+     * getimagesize(): anything else whose bytes do not match its name still
+     * goes out under no type.
+     *
+     * @param string $path where the file is
+     * @param string $name its name, whose extension says what it claims to be
+     *
+     * @return array{name: string, mime: string}
+     */
+    public static function identify(string $path, string $name): array
+    {
+        $name = self::imageNamed($path, $name);
+
+        return ['name' => $name, 'mime' => self::typeOf($path, $name)];
+    }
+
+    /**
+     * @param string $path
+     * @param string $name
+     *
+     * @return string the name, its extension changed to the image format the bytes are when it names another
+     */
+    private static function imageNamed(string $path, string $name): string
+    {
+        $extension = (string) pathinfo($name, PATHINFO_EXTENSION);
+        if (!in_array(Tools::strtolower($extension), self::IMAGES, true)) {
+            return $name;
+        }
+        $image = @getimagesize($path);
+        if (!is_array($image) || in_array((int) $image[2], self::imageTypesOf(Tools::strtolower($extension)), true)) {
+            return $name;
+        }
+        foreach (['jpg', 'png', 'gif', 'webp'] as $real) {
+            if (in_array((int) $image[2], self::imageTypesOf($real), true)) {
+                return substr($name, 0, -strlen($extension)) . $real;
+            }
+        }
+
+        return $name;
     }
 
     /**

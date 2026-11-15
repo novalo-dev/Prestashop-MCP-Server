@@ -104,7 +104,7 @@ class SomcpToolSetCategoryActive
         }
         $active = ($arguments['active'] ?? null) === true;
 
-        $idCategory = self::identifier($arguments['id_category'] ?? null);
+        $idCategory = SomcpTool::id($arguments, 'id_category');
         $category = null;
         if ($idCategory <= 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_category');
@@ -199,26 +199,5 @@ class SomcpToolSetCategoryActive
             'id_category' => (int) $category->id,
             'active' => $active,
         ]);
-    }
-
-    /**
-     * A category identifier as a client may send it: an integer, or digits in a string.
-     *
-     * A cast would read an array as 1 and act on a category nobody named.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            return (int) trim($value);
-        }
-
-        return 0;
     }
 }

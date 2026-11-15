@@ -444,7 +444,7 @@ class SomcpToolCreateProduct
                                     'currency' => ['type' => 'string', 'description' => 'ISO code, left out for all currencies.'],
                                     'country' => ['type' => 'string', 'description' => 'ISO code, left out for all countries.'],
                                     'id_group' => ['type' => 'integer', 'description' => 'From somcp_list_customer_groups, 0 for all; ask the merchant.'],
-                                    'id_customer' => ['type' => 'integer', 'description' => '0 for all customers.'],
+                                    'id_customer' => ['type' => 'integer', 'description' => 'From somcp_search_customers, 0 for all customers.'],
                                     'from_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
                                     'price' => ['type' => 'number', 'description' => 'A fixed price tax excluded, or -1 (the default) to keep the product price.'],
                                     'reduction' => ['type' => 'number', 'description' => 'An amount, or for a percentage the fraction PrestaShop stores: 0.2 for 20 %.'],

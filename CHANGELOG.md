@@ -45,6 +45,11 @@ assistant can also remove it.
 
 ### Changed
 
+**Limiting a specific price to one customer.** When you ask the assistant to
+set a product's specific price for a single customer, it is now told that
+`somcp_search_customers` finds that customer, so it points you to the search
+instead of leaving the field unexplained.
+
 **The built-in assistant runs on Neuron AI 4.1.25.** A conversation answered
 from two tabs at once now shows the answer of the latest one instead of an
 error.

@@ -126,7 +126,7 @@ class SomcpToolUpdateManufacturerAddress extends SomcpToolCreateManufacturerAddr
         // The same test as somcp_get_manufacturer_address, so an address this
         // tool refuses is never one that tool describes: a customer's or a
         // supplier's address is never reachable under the brands permission.
-        $idAddress = self::identifier($arguments['id_address'] ?? null);
+        $idAddress = SomcpTool::id($arguments, 'id_address');
         $address = SomcpToolGetManufacturerAddress::existingAddress($idAddress, $idShop);
         if ($address === null) {
             return SomcpTool::refused('changed', [$idAddress > 0
@@ -153,20 +153,6 @@ class SomcpToolUpdateManufacturerAddress extends SomcpToolCreateManufacturerAddr
         return self::asEmployee($idEmployee, static function () use ($address, $values, $changes, $idShop, $idEmployee): array {
             return self::applyUpdate($address, $values, $changes, $idShop, $idEmployee);
         });
-    }
-
-    /**
-     * A whole number, or 0: a cast would read an array as 1 and change an address nobody named.
-     *
-     * @param mixed $value
-     *
-     * @return int
-     */
-    private static function identifier($value): int
-    {
-        return is_int($value) || (is_string($value) && preg_match('/^\d{1,10}$/', trim($value)))
-            ? (int) trim((string) $value)
-            : 0;
     }
 
     /**

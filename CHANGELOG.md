@@ -77,6 +77,14 @@ to find the right one, with the other mistakes of the call.
 
 ### Fixed
 
+**The viewed-but-not-sold list no longer says every page view is zero.** When
+*Save global page views* is off, the note of `somcp_list_viewed_not_sold` said
+every page-view count was zero. If the setting had been on earlier in the
+period, some counts were in fact above zero, so the assistant could tell you a
+product had no views when it had. The note now says page views are not being
+recorded any more, so the counts cover only the time the setting was on during
+the period, if any; the sales figures stay real.
+
 **The total of the abandoned carts says when a cart is missing from it.**
 When the assistant adds up the value of your abandoned carts, a cart that could
 no longer be priced, because a product in it was deleted since, was left out of

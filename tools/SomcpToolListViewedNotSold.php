@@ -64,7 +64,8 @@ class SomcpToolListViewedNotSold
                 . 'seen but not bought stand out, as Stats > Product details shows one product at a time. page_views '
                 . 'is Total Viewed, quantity_sold Total bought, conversion_rate units bought per view, '
                 . 'revenue_tax_excl Sales tax excluded in the default currency, quantity what is available for sale. '
-                . 'Page views need Save global page views on; when off, page_views is 0 and the answer says so. Read '
+                . 'Page views need Save global page views on; while off none are added, so page_views covers only '
+                . 'the time it was on, the answer saying so. Read '
                 . 'only. Best sellers: somcp_list_best_sellers; a product\'s stock: somcp_get_stock.',
             [
                 'type' => 'object',
@@ -162,7 +163,7 @@ class SomcpToolListViewedNotSold
             $value = $arguments['id_category'];
             if (!is_int($value) || $value < 1) {
                 $problems[] = '- id_category: a whole number, the identifier somcp_list_categories gives';
-            } elseif (!SomcpStats::categoryInShop((int) $value, $idShop)) {
+            } elseif (SomcpToolUpdateCategory::existingCategory((int) $value, $idShop) === null) {
                 $problems[] = '- id_category: no category of this shop has this identifier, find it with somcp_list_categories';
             } else {
                 $idCategory = (int) $value;
@@ -288,9 +289,9 @@ class SomcpToolListViewedNotSold
             'offset' => $offset,
         ];
         if (!$pageViewsRecorded) {
-            $answer['note'] = 'Page views are not recorded: every page_views is 0 because Save global page '
-                . 'views is off (Modules > Module Manager > Data mining for statistics > Configure). The sales '
-                . 'figures are real.';
+            $answer['note'] = 'Page views are not being recorded now: Save global page views is off (Modules > '
+                . 'Module Manager > Data mining for statistics > Configure), so page_views counts only the time it '
+                . 'was on in the period, if any. The sales figures are real.';
         }
 
         return SomcpTool::json($answer);

@@ -159,7 +159,7 @@ class SomcpToolListUnsoldProducts
             $value = $arguments['id_category'];
             if (!is_int($value) || $value < 1) {
                 $problems[] = '- id_category: a whole number, the identifier somcp_list_categories gives';
-            } elseif (!SomcpStats::categoryInShop((int) $value, $idShop)) {
+            } elseif (SomcpToolUpdateCategory::existingCategory((int) $value, $idShop) === null) {
                 $problems[] = '- id_category: no category of this shop has this identifier, find it with somcp_list_categories';
             } else {
                 $idCategory = (int) $value;

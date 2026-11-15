@@ -5282,7 +5282,7 @@ Sorted by `searches`, highest first, then `keywords`.
 
 | Field | Notes |
 |---|---|
-| `page_views_recorded` | `true` when `statsdata` is installed and enabled and **Save global page views** is on; `false` adds a `note` saying every `page_views` is 0 for that reason, the sales staying real |
+| `page_views_recorded` | `true` when `statsdata` is installed and enabled and **Save global page views** is on; `false` adds a `note` saying page views are not being recorded now, so `page_views` counts only the time the setting was on in the period, the sales staying real |
 | `products[].id_product`, `reference`, `name` | **Reference**, **Name**, under the names of `somcp_list_best_sellers` |
 | `products[].page_views` | **Total Viewed** |
 | `products[].quantity_sold` | **Total bought**, valid orders dated by their order date |
@@ -5300,7 +5300,7 @@ Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, the
 **Notes**
 - Saved products of the token's shop only (`product_shop`, `p.state = Product::STATE_SAVED`); orders of the token's shop only.
 - Page views and the stock quantity are read through the shared `SomcpStats` subqueries, the same way `somcp_list_best_sellers` reads them.
-- **Save global page views** (`PS_STATSDATA_PAGESVIEWS`) is off by default: without it `page_viewed` is empty and every `page_views` is a true 0.
+- **Save global page views** (`PS_STATSDATA_PAGESVIEWS`) is off by default: while it is off no new views are saved to `page_viewed`, so `page_views` counts only the time it was on in the period, which on a fresh install is none.
 - No customer is returned: the orders behind a product are `somcp_search_orders`.
 - No difference between 8.0.1 and 9.0.0 (`statsproduct` 2.1.1 / 2.1.3, `statsdata` 2.1.0 / 2.1.2).
 

@@ -100,6 +100,13 @@ class SomcpToolAuditBrandSeo
             return SomcpTool::languageRefused($idShop, true);
         }
 
+        // A misspelt field was read as absent and the audit ran as if the
+        // filter applied: the shared check so every SEO tool refuses it alike.
+        $errors = SomcpTool::unknownFields($arguments, ['language']);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $products = self::productCounts($idShop);
         $counts = array_fill_keys(self::CHECKS, 0);
         $brands = [];

@@ -62,6 +62,12 @@ at the right hour in yours instead of an hour off, and an end set before the
 start is caught even when the two were written in different time zones. The
 dates of a voucher are saved the same way.
 
+**The SEO and AI visibility tools refuse a misspelt setting.** When the
+assistant calls one of these tools with a setting it does not take - a field
+name spelt wrong, for example - the tool now says so instead of ignoring it
+and answering as if the setting had applied. Every mistake of a call comes
+back in one answer.
+
 ### Fixed
 
 **Installing a module from the assistant works.** Installing or uploading a

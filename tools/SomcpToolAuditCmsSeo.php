@@ -106,6 +106,13 @@ class SomcpToolAuditCmsSeo
             return SomcpTool::languageRefused($idShop, true);
         }
 
+        // A misspelt field was read as absent and the audit ran as if the
+        // filter applied: the shared check so every SEO tool refuses it alike.
+        $errors = SomcpTool::unknownFields($arguments, ['language']);
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+
         $idLangs = array_keys($languages);
         $duplicateTitles = self::duplicates(self::TITLE_SQL, $idShop, $idLangs);
         $duplicateUrls = self::duplicates('TRIM(cl.`link_rewrite`)', $idShop, $idLangs);

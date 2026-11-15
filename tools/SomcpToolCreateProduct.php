@@ -1909,7 +1909,7 @@ class SomcpToolCreateProduct
             $idGroup = self::integer($item['id_group']);
             if ($idGroup === null || $idGroup < 0) {
                 $errors[] = $at . 'id_group: a customer group identifier, or 0 for all';
-            } elseif ($idGroup > 0 && !Validate::isLoadedObject(new Group($idGroup))) {
+            } elseif ($idGroup > 0 && !SomcpToolListCatalogPriceRules::groupOfShop($idGroup, $idShop)) {
                 $errors[] = SomcpTool::notFound($at . 'id_group', 'customer group', $idGroup, 'somcp_list_customer_groups');
             }
             $rule['id_group'] = (int) $idGroup;

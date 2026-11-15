@@ -77,7 +77,8 @@ class SomcpToolListCatalogPriceRules
             Somcp::t('List catalogue price rules'),
             'Lists the catalogue price rules of this shop - discounts applied to products before the cart - as the '
                 . 'list Catalog > Discounts > Catalog Price Rules shows them, with the conditions that pick each '
-                . 'rule\'s products. Read only. For cart rules and the vouchers a customer types use '
+                . 'rule\'s products. In condition_groups, a product must meet every condition of one group, and one '
+                . 'group is enough; none means every product. Read only. For cart rules and the vouchers a customer types use '
                 . 'somcp_list_cart_rules; for one product\'s own specific prices use somcp_get_product.',
             [
                 'type' => 'object',
@@ -194,7 +195,7 @@ class SomcpToolListCatalogPriceRules
         $idGroup = null;
         if (array_key_exists('id_group', $arguments) && $arguments['id_group'] !== null) {
             $given = SomcpTool::id($arguments, 'id_group');
-            if ($given <= 0 || !self::groupExists($given)) {
+            if ($given <= 0 || !self::groupOfShop($given, $idShop)) {
                 $problems[] = '- id_group: not a group of this shop (take id_group from somcp_list_customer_groups)';
             } else {
                 $idGroup = $given;
@@ -241,8 +242,8 @@ class SomcpToolListCatalogPriceRules
         $where = self::conditions($arguments, $idCurrency, $idCountry, $idGroup);
         $db = Db::getInstance();
 
-        // The count joins the name as the page does, so the name filter and the
-        // total read the same rows.
+        // The count and the rows share one WHERE from conditions(), so the
+        // total always counts the rows the filters give, page after page.
         $from = '`' . _DB_PREFIX_ . 'specific_price_rule` spr';
         $total = (int) $db->getValue('SELECT COUNT(*) FROM ' . $from . ' WHERE ' . $where);
 
@@ -370,6 +371,13 @@ class SomcpToolListCatalogPriceRules
      * group holds (OR); an empty list means the rule applies to every product.
      * One function, called by this tool and by #111.
      *
+     * The same join as SpecificPriceRule::getConditions(), kept as a query of
+     * its own because that method has no ORDER BY, so the groups and their
+     * conditions could come back in another order from one read to the next,
+     * and it needs the rule loaded as an object and runs one more query per
+     * attribute or feature condition for a group identifier this tool does
+     * not give.
+     *
      * @param int $idRule
      * @param int $idLang
      *
@@ -452,17 +460,22 @@ class SomcpToolListCatalogPriceRules
     }
 
     /**
-     * Whether a customer group exists, to refuse an id_group filter that names
-     * no group of the shop.
+     * Whether a customer group is one of the shop, as somcp_list_customer_groups
+     * lists them: joined to the shop in group_shop. On a multistore a group of
+     * another shop exists in group but is never listed, so an identifier the
+     * list never gave is refused. One check, called by this tool and by the
+     * specific prices and catalogue price rules (SomcpToolCreateProduct::rule()).
      *
      * @param int $idGroup
+     * @param int $idShop
      *
      * @return bool
      */
-    private static function groupExists(int $idGroup): bool
+    public static function groupOfShop(int $idGroup, int $idShop): bool
     {
         return (int) Db::getInstance()->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'group` WHERE `id_group` = ' . $idGroup
+            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'group_shop`'
+            . ' WHERE `id_group` = ' . (int) $idGroup . ' AND `id_shop` = ' . (int) $idShop
         ) > 0;
     }
 

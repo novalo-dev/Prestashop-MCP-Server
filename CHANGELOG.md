@@ -118,6 +118,14 @@ to find the right one, with the other mistakes of the call.
 
 ### Fixed
 
+**A customer group of another shop is refused in price rules.** On a
+multistore, the assistant could filter the catalogue price rules by a customer
+group that the shop does not have, or give one to a new catalogue price rule or
+a product's specific price, because the group existed somewhere else in the
+installation. Only the groups of the shop, as **Shop Parameters > Customer
+Settings > Groups** lists them, are accepted now, so a rule or a price always
+targets a group your customers can belong to.
+
 **The viewed-but-not-sold list no longer says every page view is zero.** When
 *Save global page views* is off, the note of `somcp_list_viewed_not_sold` said
 every page-view count was zero. If the setting had been on earlier in the

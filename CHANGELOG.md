@@ -16,6 +16,8 @@ are:
 
 ## Unreleased
 
+## 2.0.1 - 2026-11-15
+
 ### Added
 
 **Upgrade a module.** The assistant can now upgrade a module already

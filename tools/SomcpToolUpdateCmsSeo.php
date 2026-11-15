@@ -44,17 +44,35 @@ if (!defined('_PS_VERSION_')) {
 // limits and the employee switch below are theirs.
 require_once __DIR__ . '/SomcpToolCreateProduct.php';
 require_once __DIR__ . '/SomcpToolAuditProductSeo.php';
+// The page read the way somcp_get_cms_page answers, to compare what is given back.
+require_once __DIR__ . '/SomcpToolGetCmsPage.php';
 
 class SomcpToolUpdateCmsSeo
 {
     /** @var array<int, string> The translatable fields this tool writes, by the name it takes them under. */
-    private const TEXTS = ['meta_title', 'meta_description', 'link_rewrite'];
+    private const TEXTS = ['meta_title', 'meta_description', 'link_rewrite', 'meta_keywords'];
 
     /** @var array<string, string> The column behind each name. */
     private const COLUMNS = [
         'meta_title' => 'head_seo_title',
         'meta_description' => 'meta_description',
         'link_rewrite' => 'link_rewrite',
+        'meta_keywords' => 'meta_keywords',
+    ];
+
+    /**
+     * @var array<string, string> what somcp_get_cms_page returns that is not written here, with where it is
+     *                            changed: accepted when given back unchanged, so a page read there can be
+     *                            given back as is
+     */
+    private const KEPT_AS_READ = [
+        'title' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
+        'content' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
+        'id_cms_category' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
+        'active' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
+        'position' => 'not changed by this tool - the merchant changes it in Design > Pages > Edit',
+        'seo_title' => 'worked out by the shop from the Meta title and the Title',
+        'url' => 'worked out by the shop from the Friendly URL',
     ];
 
     /** The column's own size. */
@@ -69,7 +87,8 @@ class SomcpToolUpdateCmsSeo
             'somcp_update_cms_seo',
             Somcp::t('Change the SEO of a CMS page'),
             'Changes the Meta title, meta description, Friendly URL and Indexation of one CMS page, like '
-                . 'its form in Design > Pages, in the languages filled. Not the Title or the content. '
+                . 'its form in Design > Pages, in the languages filled. Not the Title or the content; what '
+                . 'somcp_get_cms_page returns can be given back. '
                 . 'Any page, from somcp_list_cms_pages; somcp_audit_cms_seo finds those to fix. Read the page '
                 . 'with somcp_get_cms_page first and show the merchant the new values; warn that a '
                 . 'new friendly URL breaks the old address of a displayed page. Nothing is written until the '
@@ -106,12 +125,23 @@ class SomcpToolUpdateCmsSeo
                             . 'lower case words joined by hyphens, 128 characters at most, never empty.',
                         'additionalProperties' => ['type' => 'string'],
                     ],
+                    'meta_keywords' => [
+                        'type' => 'object',
+                        'description' => 'Assistant, approved by the merchant. Meta keywords of the page form, per '
+                            . 'ISO code, comma separated; PrestaShop 8 only.',
+                        'additionalProperties' => ['type' => 'string'],
+                    ],
                     'indexation' => [
                         'type' => 'boolean',
                         'description' => 'Merchant. Indexation by search engines: whether the page may appear in '
                             . 'search results. Legal pages are often kept out on purpose: ask before changing it.',
                     ],
-                ],
+                    'language' => [
+                        'type' => 'string',
+                        'description' => 'As somcp_get_cms_page returns it: the language its plain texts are in, '
+                            . 'filled alone when languages is left out.',
+                    ],
+                ] + self::keptProperties(),
                 'required' => ['id_cms'],
                 'additionalProperties' => false,
             ],
@@ -167,13 +197,107 @@ class SomcpToolUpdateCmsSeo
     }
 
     /**
+     * What somcp_get_cms_page returns and is not written here, offered so a
+     * page read there can be given back whole.
+     *
+     * @return array<string, array<string, string>>
+     */
+    private static function keptProperties(): array
+    {
+        $properties = [];
+        foreach (self::KEPT_AS_READ as $field => $where) {
+            $properties[$field] = ['description' => 'As somcp_get_cms_page returns it, accepted unchanged only: ' . $where . '.'];
+        }
+
+        return $properties;
+    }
+
+    /**
      * Every field of the inputSchema, refused when misspelt rather than ignored.
      *
      * @return array<int, string>
      */
     private static function fields(): array
     {
-        return array_merge(['id_cms', 'languages', 'indexation'], self::TEXTS);
+        return array_merge(['id_cms', 'languages', 'indexation', 'language'], self::TEXTS, array_keys(self::KEPT_AS_READ));
+    }
+
+    /**
+     * The language given back with a page read by somcp_get_cms_page, as the
+     * languages to fill, or the reason it does not fit them.
+     *
+     * The plain texts of that answer are in this one language, so it is what
+     * they are filled in when no languages are given.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<int, string> $errors
+     *
+     * @return array<string, mixed>
+     */
+    private static function withLanguage(array $arguments, array &$errors): array
+    {
+        if (!array_key_exists('language', $arguments)) {
+            return $arguments;
+        }
+        $language = $arguments['language'];
+        if (!is_string($language) || trim($language) === '') {
+            $errors[] = 'language: an ISO code, as somcp_get_cms_page returns it';
+
+            return $arguments;
+        }
+        $language = Tools::strtolower(trim($language));
+        if (!array_key_exists('languages', $arguments)) {
+            $arguments['languages'] = [$language];
+        } elseif (is_array($arguments['languages'])) {
+            $isos = array_map(static function ($iso): string {
+                return is_string($iso) ? Tools::strtolower(trim($iso)) : '';
+            }, $arguments['languages']);
+            if (!in_array($language, $isos, true)) {
+                $errors[] = 'language: not one of languages';
+            }
+        }
+
+        return $arguments;
+    }
+
+    /**
+     * Refuses each field of somcp_get_cms_page this tool does not write when
+     * it differs from what the page holds, with where it is changed.
+     *
+     * Compared with the page read exactly as somcp_get_cms_page reads it, in
+     * the language it was read in, rather than a second reading of it here.
+     *
+     * @param array<string, mixed> $arguments
+     * @param CMS $cms
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return void
+     */
+    private static function kept(array $arguments, CMS $cms, int $idShop, array &$errors): void
+    {
+        if (array_intersect(array_keys(self::KEPT_AS_READ), array_keys($arguments)) === []) {
+            return;
+        }
+        // The language of the answer given back; the shop default otherwise,
+        // as somcp_get_cms_page reads it when no language is asked.
+        $language = SomcpTool::readLanguage(
+            is_string($arguments['language'] ?? null) ? ['language' => Tools::strtolower(trim($arguments['language']))] : [],
+            $idShop
+        );
+        if ($language === null) {
+            $errors[] = 'language: not an active language of this shop';
+
+            return;
+        }
+        [$idLang, $iso] = $language;
+        $read = SomcpToolGetCmsPage::cmsPage($cms, $idLang, $iso, $idShop);
+        foreach (self::KEPT_AS_READ as $field => $where) {
+            // Compared as JSON, the shape both tools speak.
+            if (array_key_exists($field, $arguments) && json_encode($arguments[$field]) !== json_encode($read[$field])) {
+                $errors[] = $field . ': ' . $where;
+            }
+        }
     }
 
     /**
@@ -227,12 +351,25 @@ class SomcpToolUpdateCmsSeo
         // The rule of the catalogue write tools (#149): the languages being
         // filled, all active ones by default, and each text keyed by them, so
         // a text read from one tool is given back to this one the same way.
+        $arguments = self::withLanguage($arguments, $errors);
         $languages = SomcpToolCreateProduct::languages($arguments, $idShop, $errors);
         if ($languages === null) {
             return $plan;
         }
 
+        self::kept($arguments, $cms, $idShop, $errors);
+
         foreach (self::TEXTS as $field) {
+            if ($field === 'meta_keywords' && !isset(CMS::$definition['fields']['meta_keywords'])) {
+                // PrestaShop 9 dropped the column. The null somcp_get_cms_page
+                // returns there is skipped, so its answer can be given back; a
+                // value is refused, since storing nothing would tell the
+                // merchant something false.
+                if (($arguments['meta_keywords'] ?? null) !== null) {
+                    $errors[] = SomcpTool::notOnThisVersion('meta_keywords', 'meta keywords');
+                }
+                continue;
+            }
             $texts = SomcpToolCreateProduct::texts($arguments, $field, $field, $languages, $errors);
             foreach ($texts ?? [] as $idLang => $text) {
                 $iso = $languages['filled'][$idLang];
@@ -242,7 +379,10 @@ class SomcpToolUpdateCmsSeo
                     continue;
                 }
                 $column = self::COLUMNS[$field];
-                $previous = self::textOf($cms->{$column}, $idLang);
+                // Read from the object's properties: meta_keywords is gone
+                // from PrestaShop 9, unknown to static analysis there.
+                $properties = get_object_vars($cms);
+                $previous = self::textOf($properties[$column] ?? '', $idLang);
                 if ($new === $previous) {
                     continue;
                 }
@@ -434,12 +574,17 @@ class SomcpToolUpdateCmsSeo
     private static function describe(CMS $stored, array $isos): array
     {
         $texts = [];
+        $properties = get_object_vars($stored);
         foreach ($isos as $idLang => $iso) {
             $texts[$iso] = [
                 'title' => self::textOf($stored->meta_title, $idLang),
                 'meta_title' => self::textOf($stored->head_seo_title, $idLang),
                 'seo_title' => self::seoTitle($stored, $idLang),
                 'meta_description' => self::textOf($stored->meta_description, $idLang),
+                // null on PrestaShop 9, which has no meta keywords, as somcp_get_cms_page says it.
+                'meta_keywords' => isset(CMS::$definition['fields']['meta_keywords'])
+                    ? self::textOf($properties['meta_keywords'] ?? '', $idLang)
+                    : null,
                 'link_rewrite' => self::textOf($stored->link_rewrite, $idLang),
             ];
         }

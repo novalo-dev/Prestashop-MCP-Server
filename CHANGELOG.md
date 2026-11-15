@@ -16,6 +16,16 @@ are:
 
 ## Unreleased
 
+### Changed
+
+**A CMS page read by the assistant can be given back to change its SEO.**
+When the assistant read a page with `somcp_get_cms_page` and gave it back to
+`somcp_update_cms_seo` with a new Meta title, the call was refused for the
+Title, the content, the status and the other fields it carried, and had to be
+made again. They are now accepted as long as they are unchanged; a changed one
+is refused with where you change it, in **Design > Pages > Edit**. On
+PrestaShop 8, the assistant can also change the page's **Meta keywords**.
+
 ### Fixed
 
 **A misnamed field is refused on refunds, returns and cancellations.** When

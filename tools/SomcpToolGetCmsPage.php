@@ -108,7 +108,8 @@ class SomcpToolGetCmsPage
 
     /**
      * One page in one language, under the names the page tools take and
-     * answer with.
+     * answer with. Public so somcp_update_cms_seo compares what is given back
+     * with this very answer.
      *
      * @param CMS $cms the page, every language loaded
      * @param int $idLang
@@ -117,7 +118,7 @@ class SomcpToolGetCmsPage
      *
      * @return array<string, mixed>
      */
-    private static function cmsPage(CMS $cms, int $idLang, string $iso, int $idShop): array
+    public static function cmsPage(CMS $cms, int $idLang, string $iso, int $idShop): array
     {
         $link = Somcp::legacyContext()->link ?? new Link();
         $linkRewrite = SomcpToolUpdateCmsSeo::textOf($cms->link_rewrite, $idLang);

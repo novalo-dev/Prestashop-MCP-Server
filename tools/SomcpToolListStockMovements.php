@@ -490,7 +490,7 @@ class SomcpToolListStockMovements
         }
         $id = SomcpTool::id($arguments, $field);
         if ($id <= 0) {
-            $problems[] = $field . ': a positive identifier';
+            $problems[] = SomcpTool::notAnIdentifier($field);
         }
 
         return $id;

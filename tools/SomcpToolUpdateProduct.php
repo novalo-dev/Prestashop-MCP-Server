@@ -215,6 +215,16 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $properties['suppliers']['properties']['suppliers']['items']['properties']['id_product_attribute'] = $byIdentifier;
         $properties['images']['items']['properties']['combinations']['description'] = $position . ' Given, replaces '
             . 'the combinations this image illustrates.';
+        // An image also names the combinations it illustrates by their
+        // identifier, so the ones somcp_get_product gives come back as read
+        // without counting a position. somcp_create_product keeps positions:
+        // no combination exists before the call.
+        $properties['images']['items']['properties']['id_product_attributes'] = [
+            'type' => 'array',
+            'items' => ['type' => 'integer'],
+            'description' => 'Instead of combinations: existing combinations of this product, from '
+                . 'somcp_get_product. Given, replaces the combinations this image illustrates. Not both.',
+        ];
 
         $properties['specific_prices']['properties']['rules']['description'] = 'Merchant: specific prices of this '
             . 'shop. With id_specific_price, that rule has the values given replaced; without, a rule is added.';
@@ -1554,6 +1564,47 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
     }
 
     /**
+     * The combinations an image illustrates, named by their identifier.
+     *
+     * Beside images[].combinations, which counts positions in this call: an
+     * existing combination read with somcp_get_product is given back by its
+     * id_product_attribute, so a product read and given back whole is no
+     * change. One of the two per image, never both. somcp_create_product has
+     * no combination to point at before the call, so it keeps positions and
+     * does not call this.
+     *
+     * @param array<string, mixed> $item the image, with id_product_attributes removed here
+     * @param Product $product
+     * @param int $idShop
+     * @param string $path
+     * @param array<int, string> $errors
+     *
+     * @return array<int, int>|null null when the field is left out
+     */
+    private static function illustratedByIdentifier(array &$item, Product $product, int $idShop, string $path, array &$errors): ?array
+    {
+        if (!array_key_exists('id_product_attributes', $item)) {
+            return null;
+        }
+        $given = $item['id_product_attributes'];
+        unset($item['id_product_attributes']);
+        if (array_key_exists('combinations', $item)) {
+            $errors[] = $path . ': combinations or id_product_attributes, not both';
+
+            return null;
+        }
+        $ids = array_values(array_unique(self::ids($given, 'id_product_attribute', $path . '.id_product_attributes', $errors)));
+        foreach ($ids as $id) {
+            if (!SomcpToolGetProduct::combinationBelongs($product, $id, $idShop)) {
+                $errors[] = $path . '.id_product_attributes: no combination of this product has the identifier ' . $id
+                    . ' - find it with somcp_get_product';
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
      * Images to remove, change and add.
      *
      * @param array<string, mixed> $arguments
@@ -1591,6 +1642,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $path = 'images[' . $i . ']';
             $id = array_key_exists('id_image', $item) ? (self::integer($item['id_image']) ?? 0) : null;
             unset($item['id_image']);
+            $illustrated = self::illustratedByIdentifier($item, $product, $idShop, $path, $errors);
             self::onlyAccepted($item, 'image', $path, $errors);
             $fields = self::imageFields($item, $path, $listed, $languages, $errors);
             if ($fields['cover'] === true) {
@@ -1606,7 +1658,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                 if ($source === null) {
                     continue;
                 }
-                $added[] = ['index' => $i] + $source + $fields;
+                $added[] = ['index' => $i] + $source + $fields + ($illustrated === null ? [] : ['combination_ids' => $illustrated]);
                 self::record($plan, $path, null, 'added from ' . ($source['url'] !== '' ? $source['url'] : 'upload_ref ' . $source['upload_ref']));
                 continue;
             }
@@ -1636,7 +1688,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             }
             $named[$id] = true;
             $where = $path . ' (id_image ' . $id . ')';
-            $edit = ['index' => $i, 'id' => $id, 'legend' => null, 'cover' => false, 'position' => null, 'combinations' => null];
+            $edit = ['index' => $i, 'id' => $id, 'legend' => null, 'cover' => false, 'position' => null, 'combinations' => null, 'combination_ids' => null];
 
             if ($fields['legend'] !== null) {
                 $image = new Image($id);
@@ -1681,7 +1733,18 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                     self::record($plan, $where . '.combinations', self::sorted($old), $shown);
                 }
             }
-            if ($edit['legend'] !== null || $edit['cover'] || $edit['position'] !== null || $edit['combinations'] !== null) {
+            if ($illustrated !== null) {
+                // The same combinations, named by their identifier: an image
+                // given back the ones it already shows is no change.
+                $old = array_map('intval', array_column(Db::getInstance()->executeS(
+                    'SELECT `id_product_attribute` FROM `' . _DB_PREFIX_ . 'product_attribute_image` WHERE `id_image` = ' . $id
+                ) ?: [], 'id_product_attribute'));
+                if (!self::sameSet($old, $illustrated)) {
+                    $edit['combination_ids'] = $illustrated;
+                    self::record($plan, $where . '.combinations', self::sorted($old), self::sorted($illustrated));
+                }
+            }
+            if ($edit['legend'] !== null || $edit['cover'] || $edit['position'] !== null || $edit['combinations'] !== null || $edit['combination_ids'] !== null) {
                 $edits[] = $edit;
             }
         }
@@ -2410,15 +2473,17 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $new->update();
         }
 
-        // Combinations each image illustrates, for the items that said so.
+        // Combinations each image illustrates, for the items that said so,
+        // whether by position in this call or by an existing identifier.
         $links = [];
         foreach ($byItem as $entry) {
-            if (($entry['combinations'] ?? null) === null) {
-                continue;
+            if (($entry['combination_ids'] ?? null) !== null) {
+                $links[(int) $entry['id']] = $entry['combination_ids'];
+            } elseif (($entry['combinations'] ?? null) !== null) {
+                $links[(int) $entry['id']] = array_map(static function (int $index) use ($combinationIds): int {
+                    return $combinationIds[$index];
+                }, $entry['combinations']);
             }
-            $links[(int) $entry['id']] = array_map(static function (int $index) use ($combinationIds): int {
-                return $combinationIds[$index];
-            }, $entry['combinations']);
         }
         if ($links !== []) {
             $current = [];

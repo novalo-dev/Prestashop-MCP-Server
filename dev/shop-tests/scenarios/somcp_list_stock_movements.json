@@ -8,6 +8,7 @@
     {"why": "a combination without its product", "arguments": {"id_product_attribute": 1}, "expect": "error", "contains": ["id_product_attribute: give id_product too"]},
     {"why": "a combination that is not the product's", "arguments": {"id_product": 1, "id_product_attribute": 999999}, "expect": "error", "contains": ["id_product_attribute: no combination of this product has the identifier 999999 - find it with somcp_get_stock"]},
     {"why": "a product that does not exist", "arguments": {"id_product": 999999}, "expect": "error", "contains": ["id_product: no product of this shop has the identifier 999999 - find it with somcp_search_products"]},
+    {"why": "a filter given as a negative number, refused like every other tool's identifier", "arguments": {"id_product": -1}, "expect": "error", "contains": ["id_product: a whole number above 0"]},
     {"why": "a category that does not exist", "arguments": {"id_category": 999999}, "expect": "error", "contains": ["id_category: no category of this shop has the identifier 999999 - find it with somcp_list_categories"]},
     {"why": "a supplier that does not exist", "arguments": {"id_supplier": 999999}, "expect": "error", "contains": ["id_supplier: no supplier of this shop has the identifier 999999 - find it with somcp_list_suppliers"]},
     {"why": "the products of one category", "arguments": {"id_category": 2}, "expect": "ok", "contains": ["\"total_count\""]},

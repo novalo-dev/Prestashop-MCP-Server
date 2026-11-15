@@ -45,6 +45,13 @@ assistant can also remove it.
 
 ### Changed
 
+**An image's combinations, as the product page reads them.** When you ask the
+assistant to change which combinations a product image illustrates, it can now
+name them by the identifiers it just read on the product, instead of counting
+their place among the combinations listed in the same call. Giving an image
+back the combinations it already shows changes nothing, and a combination of
+another product is refused.
+
 **Cart rule identifiers, named as everywhere else.** When the assistant reads
 a cart rule's **Product selection**, each product, category, attribute, brand
 or supplier now comes with the identifier name of its kind (`id_product`,

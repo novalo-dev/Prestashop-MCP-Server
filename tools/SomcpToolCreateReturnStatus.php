@@ -182,13 +182,10 @@ class SomcpToolCreateReturnStatus extends SomcpToolCreateFeature
         }
 
         if (array_key_exists('color', $arguments)) {
-            $color = trim((string) (self::string($arguments['color']) ?? ''));
-            // Validate::isColor() also lets a bare word through, which the
-            // colour picker of the form never stores: only the hex code is.
-            // The same check somcp_create_attribute_value makes on a swatch.
-            if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color) || !Validate::isColor($color)) {
-                $errors[] = 'color: a hex code such as #E84C3D';
-            } else {
+            // The check every colour of the module goes through, so a return
+            // status takes the colours an order status takes.
+            $color = self::hexColor($arguments['color'], $errors);
+            if ($color !== null) {
                 $plan['color'] = $color;
             }
         }

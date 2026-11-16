@@ -212,7 +212,7 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
 
         $color = null;
         if (array_key_exists('color', $arguments)) {
-            $color = self::orderStatusColor($arguments['color'], $errors);
+            $color = self::hexColor($arguments['color'], $errors);
         }
 
         // The icon as somcp_list_order_statuses gave it - its download_ref,

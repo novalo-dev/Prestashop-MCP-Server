@@ -18,6 +18,17 @@ are:
 
 ### Changed
 
+**A return status read in the list can be given back to its update.** Changing
+a return status from the row the list gave was refused twice over: the
+Removable flag the list shows was refused as worked out by the shop, and a
+status created without a colour, which the list reads as empty, was refused
+for that empty colour, so the assistant could not rename it without dropping
+fields by hand. The row now goes back as it was read: an unchanged Removable
+flag and an empty colour on a status that has none change nothing, and only a
+different value is refused, with the reason. Every colour the module takes,
+for an order status, a return status or an attribute value, is now checked by
+one and the same rule.
+
 **The stock and movement searches find what the search box of Catalog > Stock
 finds.** A search for a colour or a size, such as Black, found nothing in the
 low stock list or the stock movements, and on PrestaShop 9 neither did a

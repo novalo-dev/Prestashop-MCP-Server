@@ -302,7 +302,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         }
 
         if (array_key_exists('color', $arguments)) {
-            $plan['color'] = self::orderStatusColor($arguments['color'], $errors) ?? '';
+            $plan['color'] = self::hexColor($arguments['color'], $errors) ?? '';
         }
 
         $plan['icon'] = self::orderStatusIcon($arguments, $errors);
@@ -351,31 +351,6 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         }
 
         return $plan;
-    }
-
-    /**
-     * The colour given in the call, or null with the reason when it is not one the form stores.
-     *
-     * Shared with somcp_update_order_status, so the two tools take the same colours.
-     *
-     * @param mixed $value
-     * @param array<int, string> $errors
-     *
-     * @return string|null
-     */
-    protected static function orderStatusColor($value, array &$errors): ?string
-    {
-        $color = trim((string) (self::string($value) ?? ''));
-        // Validate::isColor() also lets a bare word through, which the
-        // colour picker of the form never stores: only the hex code is.
-        // The same check somcp_create_attribute_value makes on a swatch.
-        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color) || !Validate::isColor($color)) {
-            $errors[] = 'color: a hex code such as #E84C3D';
-
-            return null;
-        }
-
-        return $color;
     }
 
     /**

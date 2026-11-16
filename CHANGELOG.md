@@ -47,6 +47,13 @@ made again. They are now accepted as long as they are unchanged; a changed one
 is refused with where you change it, in **Design > Pages > Edit**. On
 PrestaShop 8, the assistant can also change the page's **Meta keywords**.
 
+**The same order status icon given again changes nothing.** When the assistant
+gave an order status the icon it already had, `somcp_update_order_status`
+wrote the file again and reported a change, so the same call twice never said
+that nothing was written. The icon is now compared with the stored one first:
+the same file is left as it is, and the change record says whether an icon was
+replaced or a status without one got its first.
+
 ### Fixed
 
 **A new order is refused rather than placed without what was asked.** When

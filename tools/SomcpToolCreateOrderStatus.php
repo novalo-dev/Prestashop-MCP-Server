@@ -701,7 +701,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      * @param int $idOrderState
      * @param array{url: string, upload_ref: string} $source
      *
-     * @return array<string, mixed> the source, with stored: true or refused: the reason
+     * @return array<string, mixed> the source, with stored: true, unchanged: true or refused: the reason
      */
     protected static function storeIcon(int $idOrderState, array $source): array
     {
@@ -731,6 +731,14 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
             }
 
             $target = _PS_IMG_DIR_ . 'os/' . $idOrderState . '.gif';
+            // The same file given again is no change: rewriting it would
+            // report one, and a call repeated with the same icon could never
+            // answer that nothing was written.
+            if (is_file($target) && hash_file('sha256', $target) === hash_file('sha256', $file)) {
+                $report['unchanged'] = true;
+
+                return $report;
+            }
             if (!@rename($file, $target) && !(@copy($file, $target) && @unlink($file))) {
                 $report['refused'] = 'the shop could not save it';
 

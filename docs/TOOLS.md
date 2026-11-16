@@ -2169,8 +2169,10 @@ The former names `somcp_create_order_status` still accepts (`logable`,
 accepted here too.
 
 **Returns** - `changed`, `status_id`, `changes` (each field with `old` and
-`new`), `icon` when one was given or removed (`stored: true`, `removed:
-true` or `refused: <reason>`), then `status`, the status as
+`new`; an icon is recorded `old: "stored"` when it replaced one, `null`
+when the status had none), `icon` when one was given or removed (`stored:
+true`, `unchanged: true`, `removed: true` or `refused: <reason>`), then
+`status`, the status as
 `somcp_list_order_statuses` lists it, built by its row function. A call that
 would change nothing writes nothing and answers `changed: false` with
 `reason` and `status`.
@@ -2188,8 +2190,9 @@ can send in its language. A template given while `sends_email` stays off is
 refused; turning `sends_email` off empties the templates in every language,
 as 8.0.1 blanks them. A deleted status (`deleted` = 1) is refused like an
 unknown one, by the same test as `somcp_delete_order_status`. A given icon
-is always written, after the fields: a refused icon leaves the current one
-and says so. `module_name`, `unremovable` and `deleted` are never written.
+is compared with the stored `img/os/<id>.gif` first: the same file is no
+change, nothing is written and nothing is recorded; another one is written
+after the fields, and a refused icon leaves the current one and says so. `module_name`, `unremovable` and `deleted` are never written.
 Written through `OrderState::update()`. Every problem is reported at once,
 before anything is written. Not replayable: a lost answer is checked with
 `somcp_list_order_statuses`.

@@ -2,7 +2,7 @@
   "calls": [
     {"why": "every movement of the shop, with the types and employees the filters take", "arguments": {}, "expect": "ok", "contains": ["\"movements\"", "\"returned\"", "\"total_count\"", "\"offset\": 0", "\"types\"", "\"id_stock_mvt_reason\"", "\"sign\"", "\"employees\"", "\"language\": \"en\""]},
     {"why": "the names in a language given by its ISO code", "arguments": {"language": "EN"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
-    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read", "language: not a language of this shop"]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read", "language: not one of the shop's languages"]},
     {"why": "the movements of one product", "arguments": {"id_product": 7}, "expect": "ok", "contains": ["\"total_count\""]},
     {"why": "the movements of one combination of the demo tee, whose identifier depends on how the demo data was numbered", "arguments": {"id_product": 1, "id_product_attribute": 1}, "expect": "any"},
     {"why": "a combination without its product", "arguments": {"id_product_attribute": 1}, "expect": "error", "contains": ["id_product_attribute: give id_product too"]},

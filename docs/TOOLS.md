@@ -27,7 +27,9 @@ asks for.
   the text that names the shop's languages. Every answer holding a translated
   text carries `language`, the ISO code it was read in. The SEO audits, which
   read every language when `language` is left out, use the same refusal with
-  its other ending.
+  its other ending. A tool that lists every problem of a call before answering
+  puts the same refusal among them as one line, `SomcpTool::languageProblem()`
+  (`language: not one of the shop's languages, which are <codes>`).
 - Writing: `languages` lists the ISO codes being filled, among the shop's
   active languages, all of them by default; each text is an object keyed by
   those codes and given in each of them, a plain string being accepted when one
@@ -5218,7 +5220,7 @@ None.
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code of one of the shop's active languages, the language of the file and of its links; shop default when left out; an unknown code refused with `SomcpTool::languageRefused()` |
+| `language` | string | no | ISO code of one of the shop's active languages, the language of the file and of its links; shop default when left out; an unknown code refused among the other problems of the call with `SomcpTool::languageProblem()` |
 | `summary` | string | no | the paragraph describing the shop, written with the merchant; the home page meta description when left out; 1000 characters at most |
 | `max_categories` | integer | no | 20 by default, 100 at most: the first categories under Home in their Position order |
 | `overwrite` | boolean | no | required to replace a file somcp did not write (no marker) |

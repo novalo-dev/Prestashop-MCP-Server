@@ -199,8 +199,7 @@ class SomcpToolListAbandonedCarts
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- language: not a language of this shop, which has '
-                . implode(', ', SomcpTool::activeLanguages($idShop));
+            $problems[] = '- ' . SomcpTool::languageProblem($idShop);
         }
 
         if ($problems !== []) {

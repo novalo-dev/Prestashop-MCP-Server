@@ -124,8 +124,7 @@ class SomcpToolGenerateLlmsTxt
         $askedLang = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($askedLang ? $arguments : [], $idShop);
         if ($askedLang && $language === null) {
-            $problems[] = 'language: not a language of this shop, which has '
-                . implode(', ', SomcpTool::activeLanguages($idShop));
+            $problems[] = SomcpTool::languageProblem($idShop);
         }
 
         $summary = null;

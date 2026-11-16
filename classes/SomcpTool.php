@@ -879,6 +879,23 @@ class SomcpTool
     }
 
     /**
+     * The line for a language readLanguage() refused, in a tool that lists
+     * every problem of a call before answering.
+     *
+     * languageRefused() is a whole answer and cannot sit among other lines;
+     * this keeps its words, so one refusal reads the same in every tool.
+     *
+     * @param int $idShop
+     *
+     * @return string
+     */
+    public static function languageProblem(int $idShop): string
+    {
+        return 'language: not one of the shop\'s languages, which are '
+            . implode(', ', self::activeLanguages($idShop));
+    }
+
+    /**
      * The name of a carrier as the back office shows it.
      *
      * The carrier the installer creates is stored with the name 0, and the

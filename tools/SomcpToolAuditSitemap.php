@@ -133,7 +133,7 @@ class SomcpToolAuditSitemap
         if (array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '') {
             $language = SomcpTool::readLanguage($arguments, $idShop);
             if ($language === null) {
-                $problems[] = 'language: not a language of this shop, which has ' . implode(', ', $languages);
+                $problems[] = SomcpTool::languageProblem($idShop);
             } else {
                 $languages = [$language[0] => $language[1]];
             }

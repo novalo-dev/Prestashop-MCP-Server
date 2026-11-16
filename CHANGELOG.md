@@ -16,6 +16,8 @@ are:
 
 ## Unreleased
 
+## 2.0.2 - 2026-11-16
+
 ### Added
 
 **Read one tax rule with the rate it applies in each country.** The new tool

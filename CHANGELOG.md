@@ -68,6 +68,16 @@ seeing a status. A status created by `somcp_create_order_status` now gives
 its identifier as `status_id`, the name the update and delete tools take,
 instead of `id_order_state`.
 
+**A deleted category no longer announces what stayed behind.** When
+PrestaShop could not delete one of the subcategories of a category, the
+assistant still listed it as deleted; it is now listed apart, as still in
+your shop, with a sentence asking to check it. When a product deleted with
+its category was removed from the shop but PrestaShop could not clean up
+everything attached to it, the assistant now says so, in the same words as
+the deletion of a single product. Before deleting, it tells you how many
+subcategories go with the category and what the chosen mode does to its
+products.
+
 **A deleted return status always says which language its name is in.**
 When a return status had no name in your shop's default language,
 `somcp_delete_return_status` answered with the name found in another

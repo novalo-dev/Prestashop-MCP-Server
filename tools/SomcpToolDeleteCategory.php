@@ -62,8 +62,8 @@ class SomcpToolDeleteCategory
             'somcp_delete_category',
             Somcp::t('Delete a category'),
             'Deletes one category with all its subcategories, as Catalog > Categories does. Irreversible: read '
-                . 'it with somcp_get_category, tell the merchant how many subcategories go and what products '
-                . 'does, confirm by name. Only products left in no category are touched. Root and Home refused. '
+                . 'it with somcp_get_category, tell the merchant how many subcategories go with it and what the '
+                . 'chosen mode does to products, then confirm by name. Only products left in no category are touched. Root and Home refused. '
                 . 'id_category from somcp_list_categories. To hide one use somcp_set_category_active. One '
                 . 'category per call. Not to be retried: if the answer is lost, look with somcp_list_categories.',
             [
@@ -202,6 +202,18 @@ class SomcpToolDeleteCategory
 
         $result = self::settleProducts($products, $deletedIds, $idParent, $mode, $idShop);
 
+        // Category::delete() answers true even when a subcategory stayed, so
+        // each one is asked of the shop as the category itself was: one still
+        // there must not be announced as deleted.
+        $left = [];
+        foreach ($subcategories as $index => $subcategory) {
+            if (SomcpToolUpdateCategory::existingCategory((int) $subcategory['id_category'], $idShop) !== null) {
+                $left[] = $subcategory;
+                unset($subcategories[$index]);
+            }
+        }
+        $subcategories = array_values($subcategories);
+
         $stillInShops = (int) Db::getInstance()->getValue(
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'category_shop` WHERE `id_category` = ' . $idCategory
         );
@@ -228,8 +240,22 @@ class SomcpToolDeleteCategory
             'products_default_category_changed' => $result['default_changed'],
             'still_in_shops' => $stillInShops,
         ];
+        $warnings = [];
+        if ($left !== []) {
+            $answer['subcategories_not_deleted'] = $left;
+            $warnings[] = 'PrestaShop could not delete every subcategory: the ones in subcategories_not_deleted are '
+                . 'still in the shop. Tell the merchant, and read them with somcp_get_category before anything else.';
+        }
         if ($result['failed'] !== []) {
             $answer['products_not_settled'] = $result['failed'];
+        }
+        if ($result['cleanup_incomplete'] !== []) {
+            $answer['products_cleanup_incomplete'] = $result['cleanup_incomplete'];
+            $warnings[] = SomcpToolDeleteProduct::CLEANUP_INCOMPLETE . ' This is so for the products in '
+                . 'products_cleanup_incomplete. Tell the merchant; there is nothing to call again.';
+        }
+        if ($warnings !== []) {
+            $answer['warnings'] = $warnings;
         }
 
         return SomcpTool::json($answer);
@@ -276,11 +302,11 @@ class SomcpToolDeleteCategory
      * @param string $mode
      * @param int $idShop
      *
-     * @return array{moved: array<int, array<string, mixed>>, disabled: array<int, array<string, mixed>>, deleted: array<int, array<string, mixed>>, default_changed: array<int, array<string, mixed>>, failed: array<int, array<string, mixed>>}
+     * @return array{moved: array<int, array<string, mixed>>, disabled: array<int, array<string, mixed>>, deleted: array<int, array<string, mixed>>, default_changed: array<int, array<string, mixed>>, failed: array<int, array<string, mixed>>, cleanup_incomplete: array<int, array<string, mixed>>}
      */
     private static function settleProducts(array $products, array $deletedIds, int $idParent, string $mode, int $idShop): array
     {
-        $result = ['moved' => [], 'disabled' => [], 'deleted' => [], 'default_changed' => [], 'failed' => []];
+        $result = ['moved' => [], 'disabled' => [], 'deleted' => [], 'default_changed' => [], 'failed' => [], 'cleanup_incomplete' => []];
 
         foreach ($products as $idProduct => $name) {
             $entry = ['id_product' => $idProduct, 'name' => $name];
@@ -295,8 +321,13 @@ class SomcpToolDeleteCategory
             try {
                 if ($remaining === []) {
                     if ($mode === 'remove_associated') {
-                        [, $gone] = SomcpToolDeleteProduct::removeFromShop($product, $idShop);
+                        [$removed, $gone] = SomcpToolDeleteProduct::removeFromShop($product, $idShop);
                         $result[$gone ? 'deleted' : 'failed'][] = $entry;
+                        // Gone but not cleaned up, as somcp_delete_product
+                        // reports it: deleted, and said so.
+                        if ($gone && !$removed) {
+                            $result['cleanup_incomplete'][] = $entry;
+                        }
                         continue;
                     }
                     $disable = $mode === 'associate_and_disable' && (bool) $product->active;

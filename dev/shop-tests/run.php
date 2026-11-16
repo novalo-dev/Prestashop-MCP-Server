@@ -353,6 +353,92 @@ if ($createStatus !== null && $deleteStatus !== null) {
     }
 }
 
+// A category deleted with a subcategory and a product, once per mode (#227):
+// the JSON scenario only reaches categories with neither, so the reading of
+// the subcategories and the settling of the products never ran. The tree is
+// built here with the core's own objects, since its identifiers differ from
+// one version to the other; the product sits in the subcategory only, so it
+// is left in no category once the parent goes.
+$deleteCategory = $registry->get('somcp_delete_category');
+if ($deleteCategory !== null) {
+    $idLangTree = (int) Configuration::get('PS_LANG_DEFAULT');
+    $idShopTree = (int) $context->shop->id;
+    $newCategory = static function (string $name, int $idParent) use ($idLangTree, $idShopTree): int {
+        $category = new Category();
+        $category->name = [$idLangTree => $name];
+        $category->link_rewrite = [$idLangTree => Tools::str2url($name)];
+        $category->id_parent = $idParent;
+        $category->active = true;
+        $category->id_shop_list = [$idShopTree];
+
+        return $category->add() ? (int) $category->id : 0;
+    };
+    $expected = [
+        'associate_only' => ['products_moved'],
+        'associate_and_disable' => ['products_moved', 'products_disabled'],
+        'remove_associated' => ['products_deleted'],
+    ];
+    foreach ($expected as $mode => $lists) {
+        ++$calls;
+        $label = "somcp_delete_category (a subcategory and a product, $mode)";
+        $idParentTree = $newCategory('Somcp tree ' . $mode, (int) $context->shop->id_category);
+        $idChildTree = $idParentTree > 0 ? $newCategory('Somcp branch ' . $mode, $idParentTree) : 0;
+        $product = new Product();
+        $product->name = [$idLangTree => 'Somcp leaf ' . $mode];
+        $product->link_rewrite = [$idLangTree => Tools::str2url('Somcp leaf ' . $mode)];
+        $product->price = 1;
+        $product->active = true;
+        $product->id_category_default = $idChildTree;
+        $product->id_shop_list = [$idShopTree];
+        if ($idChildTree === 0 || !$product->add() || !$product->addToCategories([$idChildTree])) {
+            $failures[] = "$label: the category tree or its product could not be built";
+            continue;
+        }
+        $idLeaf = (int) $product->id;
+
+        try {
+            $arguments = ['id_category' => $idParentTree, 'products' => $mode];
+            $result = $deleteCategory->call($arguments, [
+                'id_shop' => $idShopTree,
+                'id_employee' => (int) $employee->id,
+                'id_lang' => (int) $context->language->id,
+                'id_client' => 0,
+                'scopes' => implode(' ', $deleteCategory->getRequiredScopes()),
+                'responses' => [],
+                'resumed' => [],
+                'capabilities' => [],
+                'arguments' => $arguments,
+            ]);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $answer = json_decode(trim($text), true);
+            $problems = [];
+            if (!empty($result['isError']) || !is_array($answer)) {
+                $problems[] = 'not deleted';
+            } else {
+                if (array_column((array) ($answer['deleted_subcategories'] ?? []), 'id_category') !== [$idChildTree]) {
+                    $problems[] = "deleted_subcategories is not [$idChildTree]";
+                }
+                foreach (['products_moved', 'products_disabled', 'products_deleted'] as $list) {
+                    $listed = in_array($idLeaf, array_map('intval', array_column((array) ($answer[$list] ?? []), 'id_product')), true);
+                    if ($listed !== in_array($list, $lists, true)) {
+                        $problems[] = "product $idLeaf " . ($listed ? 'listed' : 'missing') . " in $list";
+                    }
+                }
+            }
+            if ($problems !== []) {
+                $failures[] = "$label: " . implode(', ', $problems) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', $label);
+            }
+        } catch (Throwable $e) {
+            $failures[] = "$label: " . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+}
+
 // Permissions. The calls above run as a superadmin holding exactly the scopes
 // each tool needs; what matters as much is who is turned away. Checked on the
 // registry's own gate - isAvailableTo(), which decides both the listing and

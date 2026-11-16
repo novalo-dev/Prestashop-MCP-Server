@@ -25,6 +25,13 @@ with the tax it applies per country, state and zip code range and its
 behaviour. Until now the assistant only knew the rate in the shop's default
 country, so it could not say what a customer delivered abroad pays.
 
+**Products: the ecotax of each combination can be read and set, as on the
+combination's page.** The product's own ecotax was there, not the one a
+combination can carry, so a shop charging an ecotax per size or model could
+not read or set it, and a product copied with its combinations lost it. It is
+refused on PrestaShop 9 while the ecotax is switched off in the shop's tax
+settings, as for the product.
+
 ### Changed
 
 **A product with its own order of specific price priorities can go back to the

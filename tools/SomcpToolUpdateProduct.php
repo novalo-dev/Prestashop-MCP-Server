@@ -113,6 +113,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         'price' => 'price_impact_tax_excl',
         'unit_price_impact' => 'unit_price_impact_tax_excl',
         'weight' => 'weight_impact',
+        'ecotax' => 'ecotax_tax_excl',
     ];
 
     /** @var array<string, string> The removal lists, and what each one holds. */

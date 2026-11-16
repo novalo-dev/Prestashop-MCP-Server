@@ -105,7 +105,7 @@ class SomcpToolCreateProduct
         'combination' => [
             'attributes', 'default_on', 'reference', 'mpn', 'upc', 'ean13', 'isbn', 'quantity', 'location',
             'available_date', 'available_now', 'available_later', 'price_impact_tax_excl',
-            'unit_price_impact_tax_excl', 'weight_impact', 'wholesale_price', 'minimal_quantity',
+            'unit_price_impact_tax_excl', 'weight_impact', 'wholesale_price', 'ecotax_tax_excl', 'minimal_quantity',
             'low_stock_threshold', 'low_stock_alert',
         ],
     ];
@@ -130,7 +130,7 @@ class SomcpToolCreateProduct
         'supplier.id_product_attribute', 'image.id_image', 'combination.id_product_attribute',
         'combination.price_impact_tax_incl', 'combination.unit_price_impact_tax_incl', 'combination.currency',
         'combination.images', 'feature.name', 'feature.custom', 'customization_field.id_customization_field',
-        'pricing.ecotax_tax_incl', 'pack_item.name', 'pack_item.reference', 'virtual_file.active',
+        'pricing.ecotax_tax_incl', 'combination.ecotax_tax_incl', 'pack_item.name', 'pack_item.reference', 'virtual_file.active',
     ];
 
     /**
@@ -580,6 +580,7 @@ class SomcpToolCreateProduct
                             'unit_price_impact_tax_excl' => ['type' => 'number'],
                             'weight_impact' => ['type' => 'number'],
                             'wholesale_price' => ['type' => 'number'],
+                            'ecotax_tax_excl' => ['type' => 'number', 'description' => 'Ecotax of this combination, tax excluded; 0 to use the product\'s. Refused on PrestaShop 9 while the ecotax is switched off in the shop\'s tax settings.'],
                             'minimal_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
                             'low_stock_threshold' => ['type' => ['integer', 'null'], 'description' => 'Low stock level; null for none.'],
                             'low_stock_alert' => ['type' => 'boolean', 'description' => 'Email at the low stock level.'],
@@ -1781,6 +1782,18 @@ class SomcpToolCreateProduct
                 $errors[] = $path . '.' . $given . ': ' . self::reason($check);
             } else {
                 $combination['fields'][$field] = $number;
+            }
+        }
+        if (array_key_exists('ecotax_tax_excl', $item)) {
+            // The same rule as the product's ecotax: PrestaShop 9 shows the
+            // field only with the ecotax switched on, PrestaShop 8 always.
+            $ecotax = self::float($item['ecotax_tax_excl']);
+            if (version_compare(_PS_VERSION_, '9.0.0', '>=') && !Configuration::get('PS_USE_ECOTAX')) {
+                $errors[] = $path . '.ecotax_tax_excl: the ecotax is switched off in the shop\'s tax settings';
+            } elseif ($ecotax === null || $ecotax < 0 || $probe->validateField('ecotax', $ecotax) !== true) {
+                $errors[] = $path . '.ecotax_tax_excl: a positive number';
+            } else {
+                $combination['fields']['ecotax'] = $ecotax;
             }
         }
         if (array_key_exists('minimal_quantity', $item)) {

@@ -18,6 +18,15 @@ are:
 
 ### Changed
 
+**The prices given to the order tools take the names the other tools use.**
+The unit price of a line added to an order, changed on an order or set on a
+new order was named "tax excluded" / "tax included" in full, while the product
+and catalogue tools read it with the short "tax excl." / "tax incl." names of
+the order page, so a price read on a product and given back to an order was
+refused as an unknown field, with nothing to say which name to send. The order
+tools now take the same names, and a former name is answered with the one to
+send instead of being refused as unknown.
+
 **A main menu link read in the list can be given back to its update.**
 Changing a custom link of the main menu from the row the list gave was refused
 for "In menu", the flag the list itself shows, so the assistant had to drop it

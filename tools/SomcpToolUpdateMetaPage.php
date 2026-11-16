@@ -205,15 +205,13 @@ class SomcpToolUpdateMetaPage
      */
     private static function fieldProblems(array $arguments): array
     {
-        $accepted = array_merge(['id_meta', 'languages'], array_keys(self::TEXTS), array_keys(self::RENAMED));
-        $problems = SomcpTool::unknownFields($arguments, $accepted);
-        foreach (self::RENAMED as $old => $new) {
-            if (array_key_exists($old, $arguments)) {
-                $problems[] = $old . ': renamed ' . $new;
-            }
-        }
-
-        return $problems;
+        return SomcpTool::unknownFields(
+            $arguments,
+            array_merge(['id_meta', 'languages'], array_keys(self::TEXTS)),
+            [],
+            '',
+            self::RENAMED
+        );
     }
 
     /**

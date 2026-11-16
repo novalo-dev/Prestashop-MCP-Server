@@ -583,20 +583,27 @@ class SomcpTool
      * identifier is wrong, the assistant would try other identifiers rather
      * than fix the name of the field. A field the matching get returns but
      * the shop works out gets its own wording, so it is dropped, not renamed.
+     * A name the tool took before is answered with the one it takes now, so
+     * a client built on the published names is told what to send.
      *
      * @param array<string, mixed> $arguments
      * @param array<int, string> $accepted
      * @param array<int, string> $computed
      * @param string $path prefix of a nested object, for example "brand."
+     * @param array<string, string> $renamed former names, keyed to the new ones
      *
      * @return array<int, string>
      */
-    public static function unknownFields(array $arguments, array $accepted, array $computed = [], string $path = ''): array
+    public static function unknownFields(array $arguments, array $accepted, array $computed = [], string $path = '', array $renamed = []): array
     {
         $problems = [];
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;
             if (in_array($key, $accepted, true)) {
+                continue;
+            }
+            if (isset($renamed[$key])) {
+                $problems[] = $path . $key . ': renamed ' . $renamed[$key];
                 continue;
             }
             $problems[] = $path . $key . (in_array($key, $computed, true)

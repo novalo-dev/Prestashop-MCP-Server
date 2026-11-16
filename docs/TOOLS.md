@@ -102,7 +102,9 @@ the schema spells it, dotted when nested (`seo.meta_keywords`,
 from one shared function: an unknown identifier, `no <thing> of this shop has
 the identifier <n> - find it with <tool>` (`notFound()`); a field the tool does
 not take, `not a field of this tool`, or one the shop works out, `worked out by
-the shop, so it is not written here` (`unknownFields()`, read tools included);
+the shop, so it is not written here`, or a name the tool took before,
+`renamed <new name>`, so a client built on the published names is told what
+to send (`unknownFields()`, read tools included);
 a field the running PrestaShop does not have, `not on PrestaShop <version>,
 which has no <thing>; leave the field out` (`notOnThisVersion()`), where the
 `null` a get tool returns for that field on that version is skipped, so its
@@ -1180,8 +1182,8 @@ order (→ `somcp_update_order_product`), removing one
 | `id_product` | **Search for a product** | integer | yes | from `somcp_search_products` |
 | `id_product_attribute` | combination select | integer | when the product has combinations | from `combinations[].id_product_attribute` of `somcp_get_product`; refused when it is not of the product |
 | `quantity` | **Quantity** | integer | yes | from 1 |
-| `unit_price_tax_excluded` | **tax excl.** | number | no | left out with the other price, the product's price for the order's customer, currency and delivery address |
-| `unit_price_tax_included` | **tax incl.** | number | no | given alone, the price tax excluded is worked out with the line's tax rate; both given, they must agree with it to the currency's precision |
+| `unit_price_tax_excl` | **tax excl.** | number | no | left out with the other price, the product's price for the order's customer, currency and delivery address |
+| `unit_price_tax_incl` | **tax incl.** | number | no | given alone, the price tax excluded is worked out with the line's tax rate; both given, they must agree with it to the currency's precision; the former names `unit_price_tax_excluded` and `unit_price_tax_included` are refused as `renamed unit_price_tax_excl` / `renamed unit_price_tax_incl` |
 | `id_order_invoice` | **Invoice** | integer | no | an invoice of the order, from `documents.invoices[].id_order_invoice` of `somcp_get_order`; left out on an invoiced order, a new invoice is made |
 | `free_shipping` | **Free shipping** | boolean | no | only with a new invoice |
 
@@ -1246,8 +1248,8 @@ customer will not receive (→ `somcp_issue_partial_refund`,
 | `reference` | - | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `id_order_detail` | the line | integer | yes | from `products[].id_order_detail` of `somcp_get_order`; must belong to the order |
 | `quantity` | **Quantity** | integer | no | from 1; left out, unchanged |
-| `unit_price_tax_excluded` | **tax excl.** | number | no | left out, unchanged |
-| `unit_price_tax_included` | **tax incl.** | number | no | given alone, the price tax excluded is worked out with the line's tax rate; both given, they must agree with it to the currency's precision |
+| `unit_price_tax_excl` | **tax excl.** | number | no | left out, unchanged |
+| `unit_price_tax_incl` | **tax incl.** | number | no | given alone, the price tax excluded is worked out with the line's tax rate; both given, they must agree with it to the currency's precision; the former names `unit_price_tax_excluded` and `unit_price_tax_included` are refused as `renamed unit_price_tax_excl` / `renamed unit_price_tax_incl` |
 | `id_order_invoice` | **Invoice** | integer | no | moves the line to another invoice of the order, from `documents.invoices[].id_order_invoice` of `somcp_get_order`; left out, unchanged |
 
 At least one of `quantity`, a price and `id_order_invoice`; a call that changes
@@ -1677,7 +1679,7 @@ for a customer or group on every order (→ `specific_prices` of
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_customer` | integer | yes | **Customer**, from `somcp_search_customers`; a customer of the token's shop, not deleted |
-| `products` | array, 1 or more | yes | **Cart**: each line `id_product` (from `somcp_search_products`), `id_product_attribute` (from `combinations[].id_product_attribute` of `somcp_get_product`, required when the product has combinations) `quantity` (from 1, at least the minimal quantity) and `unit_price_tax_excluded` (**Price**, from 0, tax excluded as the screen says, in the cart's currency; left out, the price the shop computes; the name of `products[].unit_price_tax_excluded` of `somcp_get_order`, so a price read there is given back as is); the same product and combination twice is refused |
+| `products` | array, 1 or more | yes | **Cart**: each line `id_product` (from `somcp_search_products`), `id_product_attribute` (from `combinations[].id_product_attribute` of `somcp_get_product`, required when the product has combinations) `quantity` (from 1, at least the minimal quantity) and `unit_price_tax_excl` (**Price**, from 0, tax excluded as the screen says, in the cart's currency; left out, the price the shop computes; the suffix of every other price, the former name `unit_price_tax_excluded` refused as `renamed unit_price_tax_excl`); the same product and combination twice is refused |
 | `id_address_delivery` | integer | yes | **Addresses > Delivery**, from `addresses[].id_address` of `somcp_get_customer`; an address of this customer |
 | `id_address_invoice` | integer | no | **Addresses > Invoice**, same; the delivery address when left out |
 | `id_carrier` | integer | yes unless every product is virtual | **Shipping > Delivery option**: one of the carriers the cart is offered for this address and these products; refused otherwise, with those offered (`id_carrier`, `name`, `shipping_tax_included`) |
@@ -1708,7 +1710,7 @@ the customer; each line (product of the shop, available for order, required
 customization fields, `id_product` or `id_product_attribute` given but not a
 whole number above 0 (0 is no combination), combination, minimal quantity,
 stock when the product
-cannot be ordered out of stock, `unit_price_tax_excluded` not a number of 0 or
+cannot be ordered out of stock, `unit_price_tax_excl` not a number of 0 or
 more); the addresses (with the customer's addresses
 listed) and their country; the currency; the language; the messages; the
 payment module; the status; `cart_rules` not a list, an entry that is not an
@@ -1733,7 +1735,7 @@ emails a new order sends for that status. Multistore: the customer, addresses,
 products and combinations, carrier and payment module are checked against the
 token's shop. Prices are the ones the cart
 computes for this customer, currency and address, except a line given
-`unit_price_tax_excluded`: as the **Price** field of the **Cart** block, it is
+`unit_price_tax_excl`: as the **Price** field of the **Cart** block, it is
 a specific price tied to the cart (`id_cart`) and its customer, for every shop,
 currency, country and group, written after the line is on the cart and before
 the carrier and the vouchers are weighed. A price above the shop's price is

@@ -54,7 +54,7 @@ class SomcpToolAddOrderProduct
     /** @var string[] */
     private const KEYS = [
         'id_order', 'reference', 'id_product', 'id_product_attribute', 'quantity',
-        'unit_price_tax_excluded', 'unit_price_tax_included', 'id_order_invoice', 'free_shipping',
+        'unit_price_tax_excl', 'unit_price_tax_incl', 'id_order_invoice', 'free_shipping',
     ];
 
     /**
@@ -96,12 +96,12 @@ class SomcpToolAddOrderProduct
                         'type' => 'integer',
                         'description' => 'Quantity, at least 1.',
                     ],
-                    'unit_price_tax_excluded' => [
+                    'unit_price_tax_excl' => [
                         'type' => 'number',
                         'description' => 'Unit price tax excl., in the order currency. Left out: the price of the '
                             . 'product for this customer.',
                     ],
-                    'unit_price_tax_included' => [
+                    'unit_price_tax_incl' => [
                         'type' => 'number',
                         'description' => 'Unit price tax incl., in the order currency. Given alone, the price tax '
                             . 'excl. is worked out with the tax rate of the line.',
@@ -138,7 +138,7 @@ class SomcpToolAddOrderProduct
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
 
-        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS, [], '', SomcpToolUpdateOrderProduct::RENAMED));
 
         $quantity = $arguments['quantity'] ?? null;
         if (!is_int($quantity) || $quantity < 1) {
@@ -147,7 +147,7 @@ class SomcpToolAddOrderProduct
         }
 
         $prices = [];
-        foreach (['unit_price_tax_excluded', 'unit_price_tax_included'] as $key) {
+        foreach (['unit_price_tax_excl', 'unit_price_tax_incl'] as $key) {
             if (!array_key_exists($key, $arguments)) {
                 continue;
             }
@@ -309,8 +309,8 @@ class SomcpToolAddOrderProduct
         $address = new Address((int) $order->id_address_delivery);
         $rate = (float) $product->getTaxesRate($address);
 
-        $excl = $given['unit_price_tax_excluded'] ?? null;
-        $incl = $given['unit_price_tax_included'] ?? null;
+        $excl = $given['unit_price_tax_excl'] ?? null;
+        $incl = $given['unit_price_tax_incl'] ?? null;
 
         if ($excl === null && $incl === null) {
             $null = null;
@@ -349,7 +349,7 @@ class SomcpToolAddOrderProduct
             $excl = $incl / (1 + $rate / 100);
         } elseif (abs(Tools::ps_round($excl * (1 + $rate / 100), $precision) - Tools::ps_round($incl, $precision))
             > 1 / (10 ** $precision)) {
-            $problems[] = 'unit_price_tax_included: does not agree with unit_price_tax_excluded and the tax rate of '
+            $problems[] = 'unit_price_tax_incl: does not agree with unit_price_tax_excl and the tax rate of '
                 . 'the line (' . $rate . ' %) - give one of the two';
 
             return null;

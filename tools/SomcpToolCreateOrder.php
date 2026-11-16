@@ -66,7 +66,10 @@ class SomcpToolCreateOrder
     ];
 
     /** @var string[] The keys of one cart line. */
-    private const LINE_KEYS = ['id_product', 'id_product_attribute', 'quantity', 'unit_price_tax_excluded'];
+    private const LINE_KEYS = ['id_product', 'id_product_attribute', 'quantity', 'unit_price_tax_excl'];
+
+    /** @var array<string, string> The name a line's price had before it took the suffix of every other price */
+    private const LINE_RENAMED = ['unit_price_tax_excluded' => 'unit_price_tax_excl'];
 
     /**
      * @return SomcpTool
@@ -111,7 +114,7 @@ class SomcpToolCreateOrder
                                     'minimum' => 1,
                                     'description' => 'At least the minimal quantity of the product.',
                                 ],
-                                'unit_price_tax_excluded' => [
+                                'unit_price_tax_excl' => [
                                     'type' => 'number',
                                     'minimum' => 0,
                                     'description' => 'Price of the line, tax excl., in the order currency, as the '
@@ -331,7 +334,7 @@ class SomcpToolCreateOrder
      * @param int $idShop
      * @param string[] $problems
      *
-     * @return array<int, array{id_product:int, id_product_attribute:int, quantity:int, unit_price_tax_excluded:float|null}>
+     * @return array<int, array{id_product:int, id_product_attribute:int, quantity:int, unit_price_tax_excl:float|null}>
      */
     private static function lines(array $arguments, int $idShop, array &$problems): array
     {
@@ -351,7 +354,7 @@ class SomcpToolCreateOrder
                 $problems[] = $path . ': give an object with id_product and quantity';
                 continue;
             }
-            array_push($problems, ...SomcpTool::unknownFields($item, self::LINE_KEYS, [], $path . '.'));
+            array_push($problems, ...SomcpTool::unknownFields($item, self::LINE_KEYS, [], $path . '.', self::LINE_RENAMED));
 
             $quantity = $item['quantity'] ?? null;
             if (!is_int($quantity) || $quantity < 1) {
@@ -362,10 +365,10 @@ class SomcpToolCreateOrder
             // The same check and wording as somcp_update_order_product, whose
             // field this is: a price read on one order is given back as is.
             $price = null;
-            if (array_key_exists('unit_price_tax_excluded', $item)) {
-                $price = $item['unit_price_tax_excluded'];
+            if (array_key_exists('unit_price_tax_excl', $item)) {
+                $price = $item['unit_price_tax_excl'];
                 if ((!is_int($price) && !is_float($price)) || $price < 0) {
-                    $problems[] = $path . '.unit_price_tax_excluded: must be a number, 0 or more';
+                    $problems[] = $path . '.unit_price_tax_excl: must be a number, 0 or more';
                     $price = null;
                 } else {
                     $price = (float) $price;
@@ -446,7 +449,7 @@ class SomcpToolCreateOrder
                 'id_product' => $idProduct,
                 'id_product_attribute' => $idCombination,
                 'quantity' => (int) $quantity,
-                'unit_price_tax_excluded' => $price,
+                'unit_price_tax_excl' => $price,
             ];
         }
 
@@ -871,7 +874,7 @@ class SomcpToolCreateOrder
     private static function linePrices(Cart $cart, array $lines, array &$problems): void
     {
         foreach ($lines as $i => $line) {
-            if ($line['unit_price_tax_excluded'] === null) {
+            if ($line['unit_price_tax_excl'] === null) {
                 continue;
             }
             SpecificPrice::deleteByIdCart((int) $cart->id, (int) $line['id_product'], (int) $line['id_product_attribute']);
@@ -885,7 +888,7 @@ class SomcpToolCreateOrder
             $price->id_customer = (int) $cart->id_customer;
             $price->id_product = (int) $line['id_product'];
             $price->id_product_attribute = (int) $line['id_product_attribute'];
-            $price->price = (float) $line['unit_price_tax_excluded'];
+            $price->price = (float) $line['unit_price_tax_excl'];
             $price->from_quantity = 1;
             $price->reduction = 0;
             $price->reduction_type = 'amount';
@@ -897,7 +900,7 @@ class SomcpToolCreateOrder
                 $added = false;
             }
             if (!$added) {
-                $problems[] = 'products[' . $i . '].unit_price_tax_excluded: the shop refused this price';
+                $problems[] = 'products[' . $i . '].unit_price_tax_excl: the shop refused this price';
             }
         }
     }

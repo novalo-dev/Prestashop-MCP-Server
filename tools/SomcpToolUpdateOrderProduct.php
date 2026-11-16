@@ -63,7 +63,17 @@ class SomcpToolUpdateOrderProduct
     /** @var string[] */
     private const KEYS = [
         'id_order', 'reference', 'id_order_detail', 'quantity',
-        'unit_price_tax_excluded', 'unit_price_tax_included', 'id_order_invoice',
+        'unit_price_tax_excl', 'unit_price_tax_incl', 'id_order_invoice',
+    ];
+
+    /**
+     * @var array<string, string> The names the order line tools took before
+     *                            they used the suffix of every other price:
+     *                            a client built on them is told what to send
+     */
+    public const RENAMED = [
+        'unit_price_tax_excluded' => 'unit_price_tax_excl',
+        'unit_price_tax_included' => 'unit_price_tax_incl',
     ];
 
     /**
@@ -101,11 +111,11 @@ class SomcpToolUpdateOrderProduct
                         'description' => 'New quantity, at least 1. Left out: unchanged. A quantity of 0 is '
                             . 'refused: remove the line with somcp_delete_order_product.',
                     ],
-                    'unit_price_tax_excluded' => [
+                    'unit_price_tax_excl' => [
                         'type' => 'number',
                         'description' => 'New unit price tax excl., in the order currency. Left out: unchanged.',
                     ],
-                    'unit_price_tax_included' => [
+                    'unit_price_tax_incl' => [
                         'type' => 'number',
                         'description' => 'New unit price tax incl., in the order currency. Given alone, the price '
                             . 'tax excl. is worked out with the tax rate of the line.',
@@ -138,7 +148,7 @@ class SomcpToolUpdateOrderProduct
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
 
-        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS, [], '', self::RENAMED));
 
         // Read before it is used in a refusal; validated once the order and the
         // line are known.
@@ -154,7 +164,7 @@ class SomcpToolUpdateOrderProduct
         }
 
         $prices = [];
-        foreach (['unit_price_tax_excluded', 'unit_price_tax_included'] as $key) {
+        foreach (['unit_price_tax_excl', 'unit_price_tax_incl'] as $key) {
             if (!array_key_exists($key, $arguments)) {
                 continue;
             }
@@ -206,7 +216,7 @@ class SomcpToolUpdateOrderProduct
         // value, so the tool asks for at least one field rather than rewriting
         // the line with itself.
         if (!$wantsQuantity && $prices === [] && !$wantsInvoice) {
-            $problems[] = 'give at least one of quantity, unit_price_tax_excluded, unit_price_tax_included or '
+            $problems[] = 'give at least one of quantity, unit_price_tax_excl, unit_price_tax_incl or '
                 . 'id_order_invoice to change';
         }
 
@@ -270,8 +280,8 @@ class SomcpToolUpdateOrderProduct
      */
     private static function prices(array $current, array $given, float $rate, int $precision, array &$problems): ?array
     {
-        $excl = $given['unit_price_tax_excluded'] ?? null;
-        $incl = $given['unit_price_tax_included'] ?? null;
+        $excl = $given['unit_price_tax_excl'] ?? null;
+        $incl = $given['unit_price_tax_incl'] ?? null;
 
         if ($excl === null && $incl === null) {
             $excl = (float) $current['unit_price_tax_excl'];
@@ -284,7 +294,7 @@ class SomcpToolUpdateOrderProduct
             > 1 / (10 ** $precision)) {
             // The pair is compared the way somcp_add_order_product compares it,
             // to the currency precision.
-            $problems[] = 'unit_price_tax_included: does not agree with unit_price_tax_excluded and the tax rate '
+            $problems[] = 'unit_price_tax_incl: does not agree with unit_price_tax_excl and the tax rate '
                 . 'of the line (' . $rate . ' %) - give one of the two';
 
             return null;
@@ -328,11 +338,11 @@ class SomcpToolUpdateOrderProduct
 
         $oldExcl = (float) $current['unit_price_tax_excl'];
         if (abs(Tools::ps_round($amounts['excl'], $precision) - Tools::ps_round($oldExcl, $precision)) >= $step) {
-            $changes['unit_price_tax_excluded'] = ['old' => $oldExcl, 'new' => Tools::ps_round($amounts['excl'], $precision)];
+            $changes['unit_price_tax_excl'] = ['old' => $oldExcl, 'new' => Tools::ps_round($amounts['excl'], $precision)];
         }
         $oldIncl = (float) $current['unit_price_tax_incl'];
         if (abs(Tools::ps_round($amounts['incl'], $precision) - Tools::ps_round($oldIncl, $precision)) >= $step) {
-            $changes['unit_price_tax_included'] = ['old' => $oldIncl, 'new' => Tools::ps_round($amounts['incl'], $precision)];
+            $changes['unit_price_tax_incl'] = ['old' => $oldIncl, 'new' => Tools::ps_round($amounts['incl'], $precision)];
         }
         $oldQuantity = (int) $current['product_quantity'];
         if ($targetQuantity !== $oldQuantity) {

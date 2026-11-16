@@ -148,6 +148,13 @@ calls. `somcp_list_cms_pages` and `somcp_get_cms_page` now report every problem
 of a call at once, worded as in the other tools, and read a page number given
 as text, such as "3", as the other tools do.
 
+**The dates of abandoned carts and searched terms carry your shop's time
+zone.** The abandoned carts list and the searched terms list gave their dates
+as stored, without a time zone, while orders, customers and vouchers give
+theirs with your shop's offset. Set side by side, the assistant could find an
+hour between a cart and an order that was not there, or tell a customer abroad
+the wrong time. They now read like every other date.
+
 ### Fixed
 
 **A built-in order status refused for deletion reads like the other

@@ -221,7 +221,8 @@ class SomcpToolListSearchTerms
                 // The most products the term found in the period, not an average.
                 'results' => (int) $row['results'],
                 // Not on the screen: tells an old gap in the catalogue from a new one.
-                'last_searched' => (string) $row['last_searched'],
+                // With the shop's offset, as every other date the tools give.
+                'last_searched' => SomcpTool::isoDate($row['last_searched']),
             ];
         }
 

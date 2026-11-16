@@ -5272,7 +5272,7 @@ The levers that turn visits into orders: carts left behind, what customers searc
 | Field | Notes |
 |---|---|
 | `carts[].id_cart` | **ID** |
-| `carts[].date_add` / `date_upd` | **Date** of the list is `date_add`; **Last updated** of the 9.0.0 page is `date_upd` |
+| `carts[].date_add` / `date_upd` | **Date** of the list is `date_add`; **Last updated** of the 9.0.0 page is `date_upd`; ISO 8601 with the shop's offset (`SomcpTool::isoDate()`), as the order and customer tools give their dates |
 | `carts[].id_customer` | 0 when the cart has no customer, as `somcp_get_order` |
 | `carts[].customer_name` | full name, empty when none; no email, phone or address (shared conventions); `somcp_get_customer` gives the rest under the right scope |
 | `carts[].is_guest` | the customer is a guest account |
@@ -5322,7 +5322,7 @@ The levers that turn visits into orders: carts left behind, what customers searc
 | `terms[].keywords` | **Keywords**, as stored (the first spelling the grouping keeps) |
 | `terms[].searches` | **Occurrences** |
 | `terms[].results` | **Results**: the most products found by that term in the period (`MAX(results)`), not an average |
-| `terms[].last_searched` | `MAX(date_add)`, `YYYY-MM-DD HH:MM:SS`; not on the screen, so an old gap can be told from a new one |
+| `terms[].last_searched` | `MAX(date_add)`, ISO 8601 with the shop's offset (`SomcpTool::isoDate()`); not on the screen, so an old gap can be told from a new one |
 | `date_from` / `date_to` | the period used |
 | `returned`, `total_count`, `offset` | `total_count` counts the terms after the minimum length and `min_searches`, so it matches the rows of the screen |
 

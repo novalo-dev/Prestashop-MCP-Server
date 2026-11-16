@@ -36,10 +36,9 @@ declare(strict_types=1);
  * customer and the order keeps no trace of it, so the description tells the
  * assistant to call it once and never retry on a lost answer.
  *
- * Note on the shared helpers assumed by issue #128: id_order_history is read
- * by SomcpTool::id(), like every order tool's identifiers;
- * SomcpTool::refused() (#169, #170) is not on develop yet, so the refusal is
- * built here in the order tools' shape until that issue lands.
+ * id_order_history is read by SomcpTool::id() and a refusal goes through
+ * SomcpTool::refused(), like in every order tool, so the assistant reads the
+ * same identifiers and the same refusal envelope whichever tool it called.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -202,12 +201,17 @@ class SomcpToolResendOrderStatusEmail
             $templateVars = ['{followup}' => str_replace('@', $shippingNumber, (string) $carrier->url)];
         }
 
+        $failure = '';
+        $thrown = false;
         try {
             $sent = (bool) $history->sendEmail($order, $templateVars);
         } catch (Throwable $e) {
             // Thrown when the customer or the template cannot be loaded: the
             // mail did not leave, reported as a failure rather than a crash.
+            // The message can carry file paths, so it goes to the log only.
             $sent = false;
+            $thrown = true;
+            $failure = $e->getMessage();
         } finally {
             $legacy->language = $previousLanguage;
         }
@@ -216,12 +220,12 @@ class SomcpToolResendOrderStatusEmail
             'order_resend_status_email',
             $sent ? SomcpLogger::OUTCOME_SUCCESS : SomcpLogger::OUTCOME_FAILURE,
             'order ' . (int) $order->id . ', history ' . (int) $history->id . ', status ' . (int) $state->id
-                . ($sent ? '' : ', email failed'),
+                . ($sent ? '' : ', email failed' . ('' !== $failure ? ': ' . $failure : '')),
             '',
             $idEmployee
         );
 
-        return SomcpTool::json([
+        $answer = [
             'sent' => $sent,
             'order' => self::identify($order),
             'history_line' => $line,
@@ -230,7 +234,19 @@ class SomcpToolResendOrderStatusEmail
                 ? 'The email was sent again. Do not repeat this call: each call emails the customer, and '
                     . 'nothing on the order records it.'
                 : 'The email could not be sent. The order is unchanged.',
-        ]);
+        ];
+        if (!$sent) {
+            // The assistant needs to know where the merchant should look,
+            // which a bare failure does not say.
+            $reason = 'The shop did not send the email. Check the email settings in Advanced Parameters > E-mail, '
+                . 'then try once more.';
+            if ($thrown) {
+                $reason .= ' The customer or the email template of the status could not be loaded.';
+            }
+            $answer['reason'] = $reason;
+        }
+
+        return SomcpTool::json($answer);
     }
 
     /**
@@ -247,16 +263,7 @@ class SomcpToolResendOrderStatusEmail
     {
         foreach ($order->getHistory($idLang) as $step) {
             if ((int) $step['id_order_history'] === $idOrderHistory) {
-                return [
-                    'id_order_history' => (int) $step['id_order_history'],
-                    'date' => SomcpTool::isoDate($step['date_add']),
-                    'status' => (string) $step['ostate_name'],
-                    'status_id' => (int) $step['id_order_state'],
-                    'employee' => trim(
-                        (string) ($step['employee_firstname'] ?? '') . ' '
-                        . (string) ($step['employee_lastname'] ?? '')
-                    ),
-                ];
+                return SomcpToolGetOrder::historyEntry($step);
             }
         }
 

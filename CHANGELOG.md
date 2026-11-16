@@ -49,6 +49,14 @@ PrestaShop 8, the assistant can also change the page's **Meta keywords**.
 
 ### Fixed
 
+**A resent order status email that fails now says where to look.** When the
+shop could not send the email again, the assistant only knew it had failed and
+could not tell the merchant what to check. It now says to look at the email
+settings in **Advanced Parameters > E-mail**, and whether the customer or the
+email template of the status could not be loaded. The status line it gives back
+is built by the same code as the order's history, so it always matches the line
+the assistant read.
+
 **A misnamed field is refused on refunds, returns and cancellations.** When
 the assistant gave `somcp_issue_standard_refund`, `somcp_issue_partial_refund`,
 `somcp_return_order_products` or `somcp_cancel_order_products` a field they do

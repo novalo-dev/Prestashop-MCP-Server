@@ -1627,7 +1627,10 @@ writing to the customer (→ `somcp_add_order_message`).
 the shape of one entry of `history` of `somcp_get_order` (`id_order_history`,
 `date`, `status`, `status_id`, `employee`), and `template` (the status's email
 template). A send that fails is `sent: false` with a `warning` and nothing
-changed.
+changed, and a `reason` that says where to look: the shop's email settings in
+**Advanced Parameters > E-mail**, and the customer or the status's email
+template when they could not be loaded. The core's own message never reaches
+the answer: it goes to the module's log only.
 
 **Errors** - every problem at once, nothing sent when one check fails, each
 under "Nothing was sent. Correct these and call again:": a field the tool does not take; the order not found

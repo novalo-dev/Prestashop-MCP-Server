@@ -49,6 +49,14 @@ PrestaShop 8, the assistant can also change the page's **Meta keywords**.
 
 ### Fixed
 
+**A new order is refused rather than placed without what was asked.** When
+the free shipping of a new order could not be saved, `somcp_create_order`
+placed the order anyway, with the shipping charged. It is now refused and
+nothing is recorded. A combination is also checked to be sold in your shop,
+like the product, so an order of one shop can no longer carry a combination of
+another; a combination given as "0" means none, as 0 does, and a product or
+combination that is not a whole number above 0 is named as such.
+
 **A product or combination that is not an identifier is named as such when
 adding a product to an order.** When the assistant gave
 `somcp_add_order_product` a product or a combination that is not a whole

@@ -50,6 +50,7 @@ if (!defined('_PS_VERSION_')) {
 // product, currency and address checks, the employee on the context and the
 // refusal envelope live in these classes.
 require_once __DIR__ . '/SomcpToolCreateProduct.php';
+require_once __DIR__ . '/SomcpToolGetProduct.php';
 require_once __DIR__ . '/SomcpToolCreateCartRule.php';
 require_once __DIR__ . '/SomcpToolIssuePartialRefund.php';
 require_once __DIR__ . '/SomcpToolAddOrderProduct.php';
@@ -80,7 +81,8 @@ class SomcpToolCreateOrder
                 . 'at the prices the cart computes or a price given per line. It sends the new-order emails of that status: show the '
                 . 'lines, carrier, total and status and wait for a yes. Not replayable: on a lost answer look '
                 . 'with somcp_search_orders (this customer, today), then somcp_get_order. For an existing order: '
-                . 'somcp_add_order_product, somcp_set_order_status. A new customer: somcp_create_customer.',
+                . 'somcp_add_order_product, somcp_set_order_status, somcp_add_order_payment. A new customer: '
+                . 'somcp_create_customer.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -371,8 +373,14 @@ class SomcpToolCreateOrder
             }
 
             $idProduct = SomcpTool::id($item, 'id_product');
-            if ($idProduct <= 0) {
+            if (!array_key_exists('id_product', $item)) {
                 $problems[] = $path . '.id_product: give the product, from somcp_search_products';
+                continue;
+            }
+            if ($idProduct <= 0) {
+                // Given but not an identifier: worded as in every other tool,
+                // rather than as if the product had been left out.
+                $problems[] = SomcpTool::notAnIdentifier($path . '.id_product');
                 continue;
             }
             $product = new Product($idProduct, false, null, $idShop);
@@ -394,15 +402,18 @@ class SomcpToolCreateOrder
             $idCombination = SomcpTool::id($item, 'id_product_attribute');
             $minimal = (int) $product->minimal_quantity;
             if ($idCombination > 0) {
-                $combination = new Combination($idCombination);
-                if (!Validate::isLoadedObject($combination) || (int) $combination->id_product !== $idProduct) {
+                // Checked against the token's shop like the product: a
+                // combination not sold in this shop would be ordered anyway.
+                if (!SomcpToolGetProduct::combinationBelongs($product, $idCombination, $idShop)) {
                     $problems[] = $path . '.id_product_attribute: no combination of this product has the '
                         . 'identifier ' . $idCombination . ' - read them with somcp_get_product';
                     continue;
                 }
-                $minimal = (int) $combination->minimal_quantity;
-            } elseif (array_key_exists('id_product_attribute', $item) && $item['id_product_attribute'] !== 0) {
-                $problems[] = $path . '.id_product_attribute: must be a positive identifier';
+                $minimal = (int) (new Combination($idCombination))->minimal_quantity;
+            } elseif (array_key_exists('id_product_attribute', $item)
+                && !in_array($item['id_product_attribute'], [0, '0'], true)) {
+                // 0, as a number or as a string, means no combination.
+                $problems[] = SomcpTool::notAnIdentifier($path . '.id_product_attribute');
                 continue;
             } elseif ((bool) $product->hasAttributes()) {
                 $problems[] = $path . '.id_product_attribute: this product has combinations - give one, from '
@@ -674,6 +685,15 @@ class SomcpToolCreateOrder
 
             if ($plan['flags']['free_shipping']) {
                 $freeShippingRule = self::freeShipping($cart);
+                if ($freeShippingRule === null) {
+                    // Placing the order anyway would charge the shipping the
+                    // merchant asked to waive.
+                    self::discard($cart, null, null);
+
+                    return SomcpToolIssuePartialRefund::refused([
+                        'free_shipping: the free shipping could not be applied',
+                    ]);
+                }
             }
 
             if ($plan['message'] !== '') {
@@ -943,9 +963,9 @@ class SomcpToolCreateOrder
      *
      * @param Cart $cart
      *
-     * @return CartRule
+     * @return CartRule|null Null when the rule could not be saved
      */
-    private static function freeShipping(Cart $cart): CartRule
+    private static function freeShipping(Cart $cart): ?CartRule
     {
         $rule = new CartRule();
         $rule->code = CartRule::BO_ORDER_CODE_PREFIX . (int) $cart->id;
@@ -963,7 +983,9 @@ class SomcpToolCreateOrder
         $rule->date_from = date('Y-m-d H:i:s');
         $rule->date_to = date('Y-m-d H:i:s', time() + 24 * 36000);
         $rule->active = true;
-        $rule->add();
+        if (!$rule->add() || (int) $rule->id <= 0) {
+            return null;
+        }
         $cart->addCartRule((int) $rule->id);
 
         return $rule;

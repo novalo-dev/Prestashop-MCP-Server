@@ -1705,7 +1705,9 @@ shipping cart rule included), and `currency`.
 **Errors** - under "Nothing was recorded. Correct these and call again:", every problem at once, each named
 with its field (`products[1].quantity: ...`): a field the tool does not take;
 the customer; each line (product of the shop, available for order, required
-customization fields, combination, minimal quantity, stock when the product
+customization fields, `id_product` or `id_product_attribute` given but not a
+whole number above 0 (0 is no combination), combination, minimal quantity,
+stock when the product
 cannot be ordered out of stock, `unit_price_tax_excluded` not a number of 0 or
 more); the addresses (with the customer's addresses
 listed) and their country; the currency; the language; the messages; the
@@ -1714,7 +1716,7 @@ identifier, a voucher the shop does not have, the same voucher twice. Then,
 once the cart exists: a quantity the cart refuses, a line price the shop
 refuses, the carrier, and each
 voucher that does not apply, `cart_rules[<n>]: <the shop's reason>` in the
-order's language. A call refused at that point deletes the cart, the prices
+order's language, and a free shipping the shop could not save. A call refused at that point deletes the cart, the prices
 set for its lines and the free shipping cart rule it made.
 
 **Notes** - a new cart every call, never the customer's last empty cart as the
@@ -1727,8 +1729,9 @@ price,
 afterwards. The employee of the token goes into the `Manual order -- Employee:`
 message, as the button does. In catalog mode the order is recorded through the
 core's back office payment, as the handler does. `validateOrder()` sends the
-emails a new order sends for that status. Multistore: the customer, addresses
-and products are checked against the token's shop. Prices are the ones the cart
+emails a new order sends for that status. Multistore: the customer, addresses,
+products and combinations, carrier and payment module are checked against the
+token's shop. Prices are the ones the cart
 computes for this customer, currency and address, except a line given
 `unit_price_tax_excluded`: as the **Price** field of the **Cart** block, it is
 a specific price tied to the cart (`id_cart`) and its customer, for every shop,

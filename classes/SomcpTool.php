@@ -957,11 +957,33 @@ class SomcpTool
 
             return false;
         }
-        if ($length > $recommended) {
-            $advice[] = $where . ' is ' . $length . ' characters: past ' . $recommended . ', a search result cuts it';
+        $line = self::metaLengthAdvice($where, $length, $recommended);
+        if ($line !== null) {
+            $advice[] = $line;
         }
 
         return true;
+    }
+
+    /**
+     * The advice on a meta title or description longer than a search result
+     * shows, in one sentence for every tool: it gives the length, which is
+     * what the assistant needs to shorten the text.
+     *
+     * @param string $where the field, with its language when the caller does
+     *                      not group its warnings by language
+     * @param int $length the length already counted by the caller, as its refusal counts it
+     * @param int $recommended the length past which a search result cuts the text
+     *
+     * @return string|null null within the recommended length
+     */
+    public static function metaLengthAdvice(string $where, int $length, int $recommended): ?string
+    {
+        if ($length <= $recommended) {
+            return null;
+        }
+
+        return $where . ' is ' . $length . ' characters: past ' . $recommended . ', a search result cuts it';
     }
 
     /**

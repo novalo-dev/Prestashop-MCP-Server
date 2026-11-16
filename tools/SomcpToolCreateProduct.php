@@ -3121,16 +3121,21 @@ class SomcpToolCreateProduct
             $list = [];
             $title = (string) ($plan['texts']['meta_title'][$idLang] ?? '');
             $description = (string) ($plan['texts']['meta_description'][$idLang] ?? '');
-            if ($title === '') {
-                $list[] = 'no meta_title: the storefront uses the product name';
-            } elseif (self::visibleLength($title) > SomcpTool::META_TITLE_RECOMMENDED) {
-                // Advice, not a limit: the lengths the SEO audits flag past.
-                $list[] = 'meta_title over ' . SomcpTool::META_TITLE_RECOMMENDED . ' characters: search results cut it';
-            }
-            if ($description === '') {
-                $list[] = 'no meta_description: search engines pick a passage of the page';
-            } elseif (self::visibleLength($description) > SomcpTool::metaDescriptionRecommended()) {
-                $list[] = 'meta_description over ' . SomcpTool::metaDescriptionRecommended() . ' characters: search results cut it';
+            // Advice, not a limit: the lengths the SEO audits flag past, in
+            // the sentence every tool gives. The warnings are per language,
+            // so the field name alone says where.
+            $lines = [
+                $title === ''
+                    ? 'no meta_title: the storefront uses the product name'
+                    : SomcpTool::metaLengthAdvice('meta_title', self::visibleLength($title), SomcpTool::META_TITLE_RECOMMENDED),
+                $description === ''
+                    ? 'no meta_description: search engines pick a passage of the page'
+                    : SomcpTool::metaLengthAdvice('meta_description', self::visibleLength($description), SomcpTool::metaDescriptionRecommended()),
+            ];
+            foreach ($lines as $line) {
+                if ($line !== null) {
+                    $list[] = $line;
+                }
             }
             foreach (['link_rewrite' => (string) ($plan['texts']['link_rewrite'][$idLang] ?? ''), 'meta_title' => $title] as $field => $value) {
                 if ($value === '') {

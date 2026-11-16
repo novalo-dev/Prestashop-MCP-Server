@@ -545,15 +545,17 @@ class SomcpToolUpdateCmsSeo
         $warnings = [];
         foreach ($plan['isos'] as $idLang => $iso) {
             // The title search engines read, as Meta::getCmsMetas() builds it.
+            // It falls back on the page title when no meta title is set, and
+            // is advised in the sentence every tool gives, under meta_title.
             $seoTitle = self::seoTitle($stored, $idLang);
-            if (Tools::strlen($seoTitle) > SomcpTool::META_TITLE_RECOMMENDED) {
-                $warnings[$iso][] = 'the title shown in search results is over ' . SomcpTool::META_TITLE_RECOMMENDED
-                    . ' characters and will be cut';
-            }
             $description = self::textOf($stored->meta_description, $idLang);
-            if (Tools::strlen($description) > SomcpTool::metaDescriptionRecommended()) {
-                $warnings[$iso][] = 'meta_description is over ' . SomcpTool::metaDescriptionRecommended()
-                    . ' characters: search results cut it';
+            foreach ([
+                SomcpTool::metaLengthAdvice('meta_title', Tools::strlen($seoTitle), SomcpTool::META_TITLE_RECOMMENDED),
+                SomcpTool::metaLengthAdvice('meta_description', Tools::strlen($description), SomcpTool::metaDescriptionRecommended()),
+            ] as $advice) {
+                if ($advice !== null) {
+                    $warnings[$iso][] = $advice;
+                }
             }
             if (isset($plan['moved'][$idLang]) && (bool) $stored->active) {
                 $warnings[$iso][] = 'link_rewrite changed on a displayed page: the old address of the page no longer works';

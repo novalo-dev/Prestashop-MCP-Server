@@ -464,15 +464,22 @@ class SomcpToolUpdateMetaPage
     {
         $warnings = [];
         foreach ($plan['isos'] as $idLang => $iso) {
-            $title = SomcpToolUpdateCmsSeo::textOf($stored->title, $idLang);
-            if (Tools::strlen($title) > SomcpTool::META_TITLE_RECOMMENDED) {
-                $warnings[$iso][] = 'meta_title is over ' . SomcpTool::META_TITLE_RECOMMENDED
-                    . ' characters: search results cut it';
-            }
-            $description = SomcpToolUpdateCmsSeo::textOf($stored->description, $idLang);
-            if (Tools::strlen($description) > SomcpTool::metaDescriptionRecommended()) {
-                $warnings[$iso][] = 'meta_description is over ' . SomcpTool::metaDescriptionRecommended()
-                    . ' characters: search results cut it';
+            // The sentence every tool gives, under the names this tool takes.
+            foreach ([
+                SomcpTool::metaLengthAdvice(
+                    'meta_title',
+                    Tools::strlen(SomcpToolUpdateCmsSeo::textOf($stored->title, $idLang)),
+                    SomcpTool::META_TITLE_RECOMMENDED
+                ),
+                SomcpTool::metaLengthAdvice(
+                    'meta_description',
+                    Tools::strlen(SomcpToolUpdateCmsSeo::textOf($stored->description, $idLang)),
+                    SomcpTool::metaDescriptionRecommended()
+                ),
+            ] as $advice) {
+                if ($advice !== null) {
+                    $warnings[$iso][] = $advice;
+                }
             }
             if (isset($plan['moved'][$idLang])) {
                 $warnings[$iso][] = 'link_rewrite changed: the old address of the page no longer works';

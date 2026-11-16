@@ -18,6 +18,14 @@ are:
 
 ### Changed
 
+**A meta title or description longer than search results show is pointed out
+with its length, the same way by every tool.** The category, brand and
+supplier tools said how long the text was; the product, CMS page and SEO & URLs
+tools only said it was too long, each in words of its own, so the assistant
+had to count before shortening it. Every tool now gives the same advice, with
+the length: for example, the meta title is 85 characters, past 70, and a
+search result cuts it.
+
 **The prices given to the order tools take the names the other tools use.**
 The unit price of a line added to an order, changed on an order or set on a
 new order was named "tax excluded" / "tax included" in full, while the product

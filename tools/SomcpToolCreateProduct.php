@@ -88,7 +88,7 @@ class SomcpToolCreateProduct
             'delivery_out_stock', 'additional_shipping_cost', 'carriers',
         ],
         'pricing' => ['price_tax_excl', 'id_tax_rules_group', 'wholesale_price', 'unit_price_tax_excl', 'unity', 'on_sale', 'ecotax_tax_excl'],
-        'specific_prices' => ['rules', 'priorities'],
+        'specific_prices' => ['rules', 'priorities', 'use_default_priorities'],
         'seo' => ['meta_title', 'meta_description', 'link_rewrite', 'redirect_type', 'id_type_redirected', 'meta_keywords', 'tags'],
         'options' => ['visibility', 'available_for_order', 'show_price', 'online_only', 'active'],
         'suppliers' => ['id_supplier_default', 'suppliers'],
@@ -461,6 +461,11 @@ class SomcpToolCreateProduct
                             'description' => 'Merchant: the order used to pick between rules, the four of id_shop, '
                                 . 'id_currency, id_country, id_group.',
                             'items' => ['type' => 'string'],
+                        ],
+                        'use_default_priorities' => [
+                            'type' => 'boolean',
+                            'description' => 'Merchant: true for Use default order (the shop default), false for Set '
+                                . 'a specific order for this product, given in priorities.',
                         ],
                     ],
                     'additionalProperties' => false,
@@ -1866,6 +1871,69 @@ class SomcpToolCreateProduct
         }
 
         $plan['priorities'] = self::priorities($group, $errors);
+        $useDefault = self::useDefaultPriorities($group, $errors);
+        if ($useDefault === true && $plan['priorities'] !== null) {
+            // Use default order writes no row: an order given beside it is
+            // only accepted when it is that default, as a product read back.
+            if ($plan['priorities'] !== self::defaultPriorities()) {
+                $errors[] = self::priorityConflict();
+            }
+            $plan['priorities'] = null;
+        } elseif ($useDefault === false && $plan['priorities'] === null && !array_key_exists('priorities', $group)) {
+            $errors[] = 'specific_prices.use_default_priorities: false needs priorities, the order of this product';
+        }
+    }
+
+    /**
+     * Whether the product follows the shop's default order of priorities,
+     * as given in the call, or null when not given.
+     *
+     * @param array<string, mixed> $group
+     * @param array<int, string> $errors
+     *
+     * @return bool|null
+     */
+    protected static function useDefaultPriorities(array $group, array &$errors): ?bool
+    {
+        if (!array_key_exists('use_default_priorities', $group)) {
+            return null;
+        }
+        if (!is_bool($group['use_default_priorities'])) {
+            $errors[] = 'specific_prices.use_default_priorities: true or false';
+
+            return null;
+        }
+
+        return $group['use_default_priorities'];
+    }
+
+    /**
+     * The shop's default order of priorities, as SpecificPrice::getPriority()
+     * falls back on it, without id_customer, which the core always puts first.
+     *
+     * @return array<int, string>
+     */
+    protected static function defaultPriorities(): array
+    {
+        return array_values(array_filter(
+            explode(';', (string) Configuration::get('PS_SPECIFIC_PRICE_PRIORITIES')),
+            static function ($value): bool {
+                return $value !== '' && $value !== 'id_customer';
+            }
+        ));
+    }
+
+    /**
+     * The line for an order of priorities given with use_default_priorities
+     * true that is not the order the product would follow.
+     *
+     * @return string
+     */
+    protected static function priorityConflict(): string
+    {
+        return 'specific_prices.use_default_priorities: true follows the shop default order, '
+            . implode(', ', self::defaultPriorities()) . '; leave priorities out, or give false to set an order '
+            . 'of this product';
     }
 
     /**

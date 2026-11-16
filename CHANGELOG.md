@@ -27,6 +27,13 @@ country, so it could not say what a customer delivered abroad pays.
 
 ### Changed
 
+**A product with its own order of specific price priorities can go back to the
+shop's default order.** The product tools could give a product an order of its
+own, never take it away, so a product kept it even after the merchant changed
+the default. somcp_update_product now takes use_default_priorities, the Use
+default order choice of the Pricing tab, and somcp_get_product says which of
+the two the product follows.
+
 **A meta title or description longer than search results show is pointed out
 with its length, the same way by every tool.** The category, brand and
 supplier tools said how long the text was; the product, CMS page and SEO & URLs

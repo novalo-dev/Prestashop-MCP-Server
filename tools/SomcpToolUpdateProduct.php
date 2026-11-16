@@ -1302,10 +1302,32 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         self::distinctRules($idProduct, $idShop, $owned, $remove, $rules, $plan, $errors);
 
         $priorities = self::priorities($group, $errors);
-        if ($priorities !== null) {
-            $current = array_values(array_filter(SpecificPrice::getPriority($idProduct), static function ($value): bool {
-                return $value !== 'id_customer';
-            }));
+        $useDefault = self::useDefaultPriorities($group, $errors);
+        $own = SomcpToolGetProduct::hasOwnPriorities($idProduct);
+        $current = array_values(array_filter(SpecificPrice::getPriority($idProduct), static function ($value): bool {
+            return $value !== 'id_customer';
+        }));
+        $toDefault = false;
+        if ($useDefault === true) {
+            // The order that applies is accepted beside it, so a product read
+            // with somcp_get_product and given back unchanged changes nothing.
+            if ($priorities !== null && $priorities !== $current) {
+                $errors[] = self::priorityConflict();
+            }
+            $priorities = null;
+            if ($own) {
+                self::record($plan, 'specific_prices.use_default_priorities', false, true);
+                $toDefault = true;
+            }
+        } elseif ($useDefault === false && !$own) {
+            // Set a specific order with the selects left as shown writes the
+            // order that applies as the product's own, as the page does.
+            $priorities = $priorities ?? $current;
+            self::record($plan, 'specific_prices.use_default_priorities', true, false);
+            if ($priorities !== $current) {
+                self::record($plan, 'specific_prices.priorities', $current, $priorities);
+            }
+        } elseif ($priorities !== null) {
             if ($current === $priorities) {
                 $priorities = null;
             } else {
@@ -1313,7 +1335,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             }
         }
 
-        $plan['specific_prices'] = ['remove' => $remove, 'rules' => $rules, 'priorities' => $priorities];
+        $plan['specific_prices'] = ['remove' => $remove, 'rules' => $rules, 'priorities' => $priorities, 'to_default' => $toDefault];
     }
 
     /**
@@ -1903,7 +1925,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $written[] = 'the suppliers';
         }
         self::writeSpecificPriceChanges($idProduct, $plan['specific_prices'], $combinationIds, $idShop);
-        if ($plan['specific_prices']['remove'] !== [] || $plan['specific_prices']['rules'] !== [] || $plan['specific_prices']['priorities'] !== null) {
+        if ($plan['specific_prices']['remove'] !== [] || $plan['specific_prices']['rules'] !== []
+            || $plan['specific_prices']['priorities'] !== null || $plan['specific_prices']['to_default']) {
             $written[] = 'the specific prices';
         }
 
@@ -2345,6 +2368,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
 
         if ($prices['priorities'] !== null && !SpecificPrice::setSpecificPriority($idProduct, $prices['priorities'])) {
             throw new RuntimeException('the specific price priorities could not be saved');
+        }
+        // Use default order: the one statement the core's
+        // RemoveSpecificPricePriorityForProductCommand runs, as the table has
+        // no object to delete through.
+        if ($prices['to_default']
+            && !Db::getInstance()->delete('specific_price_priority', 'id_product = ' . (int) $idProduct)) {
+            throw new RuntimeException('the default order of the specific price priorities could not be restored');
         }
     }
 

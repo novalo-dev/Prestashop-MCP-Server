@@ -688,7 +688,25 @@ class SomcpToolGetProduct
         return [
             'rules' => $rules,
             'priorities' => array_values(array_filter(SpecificPrice::getPriority((int) $product->id))),
+            // The radio of 9.0.0, Use default order or Set a specific order:
+            // getPriority() gives the order that applies either way.
+            'use_default_priorities' => !self::hasOwnPriorities((int) $product->id),
         ];
+    }
+
+    /**
+     * Whether the product has an order of priorities of its own, the one
+     * row SpecificPrice::getPriority() reads before the shop's default.
+     *
+     * @param int $idProduct
+     *
+     * @return bool
+     */
+    public static function hasOwnPriorities(int $idProduct): bool
+    {
+        return (bool) Db::getInstance()->getValue(
+            'SELECT 1 FROM `' . _DB_PREFIX_ . 'specific_price_priority` WHERE `id_product` = ' . (int) $idProduct
+        );
     }
 
     /**

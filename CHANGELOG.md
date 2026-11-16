@@ -18,6 +18,15 @@ are:
 
 ### Changed
 
+**A main menu link read in the list can be given back to its update.**
+Changing a custom link of the main menu from the row the list gave was refused
+for "In menu", the flag the list itself shows, so the assistant had to drop it
+by hand. The row now goes back as it was read: an unchanged "In menu" changes
+nothing, and a different one is refused with the way to put a link in the
+menu. The list also says when a link has no label in the language read and
+shows the default language's instead; given back, that label is no longer
+copied into the other language, which stays as it was.
+
 **A return status read in the list can be given back to its update.** Changing
 a return status from the row the list gave was refused twice over: the
 Removable flag the list shows was refused as worked out by the shop, and a

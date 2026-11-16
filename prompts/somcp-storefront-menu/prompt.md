@@ -51,7 +51,8 @@ have its own menu: what you read is the menu of the shop that answered.
 - A `link` entry is a custom link: `url` is its address and `new_window`
   whether it opens in a new window. `custom_links` lists every custom link of
   the shop, the **Link list** of the configuration page, with `in_menu` saying
-  whether it is in the menu.
+  whether it is in the menu, and `translated` false when the link has no label
+  in the language read, so its label and address are the default language's.
 - `skipped` lists the stored codes whose object no longer exists - a deleted
   category or page, for example. The storefront and the configuration page
   hide them: tell the merchant they point to nothing.
@@ -83,6 +84,10 @@ have its own menu: what you read is the menu of the shop that answered.
 - Only what you give changes. To change a text in one language, pass
   `languages` with that language alone: without it every language is filled,
   and the text is needed in each. The other languages keep their texts.
+- A row of `custom_links` can be given back whole: `in_menu` and
+  `translated` are accepted as read. With `translated` false, the
+  default-language texts it showed leave that language empty - to translate
+  the link, give the new texts instead.
 - `changed: false` means the link already held those values: nothing was
   written. Say so rather than calling again.
 - Confirm the new texts with the merchant before calling. If the answer is

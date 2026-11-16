@@ -120,20 +120,13 @@ class SomcpToolDeleteAttributeGroup
                 $errors[] = SomcpTool::notFound('id_attribute_group', 'attribute group', $idGroup, 'somcp_list_attributes');
             }
         }
-        // Read only when given, so an unknown language is listed with the
-        // call's other mistakes rather than answered on its own.
-        $askedLanguage = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
-        $language = SomcpTool::readLanguage($askedLanguage ? $arguments : [], $idShop);
-        if ($askedLanguage && $language === null) {
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
             $errors[] = SomcpTool::languageProblem($idShop);
         }
-        if ($errors !== [] || $group === null) {
+        if ($errors !== [] || $group === null || $language === null) {
             return SomcpTool::refused('deleted', $errors);
-        }
-
-        // Left only for a shop whose default language cannot be read.
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
         }
 
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($group, $language, $idShop, $idEmployee): array {

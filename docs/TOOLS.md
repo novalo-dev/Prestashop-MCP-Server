@@ -1768,7 +1768,7 @@ identifiers.
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - per status: `id_order_return_state`, `name`, `color`, `removable`
 (false for the five built-in statuses, 1 to 5). Plus `count` and `language`
@@ -2250,11 +2250,11 @@ past order on either version.
 | `active` | boolean | no | the **Status** filter; left out, every carrier, since a disabled one can still be tied to a product |
 | `is_free` | boolean | no | the **Free shipping** filter; left out, both |
 | `name` | string | no | part of the carrier name (the **Name** filter of the list), case-insensitive; left out, every carrier |
-| `language` | string | no | for `delay`, which is translated: ISO code of one of the shop's active languages, refused otherwise; the shop default when left out |
+| `language` | string | no | for `delay`, which is translated: ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 **Returns** - per carrier, in the order of the list (`position`, then `id_carrier`): `id_carrier` (**ID**, what `shipping.carriers` of the product tools takes), `id_reference`, `name` (**Name**; the carrier stored as `0` is shown under the shop name, as `somcp_get_product` names it, through one shared function), `delay` (**Delay** on the list, **Transit time** on the form, in `language` for the token's shop), `active` (**Status**), `is_free` (**Free shipping**), `position` (from 0; the list shows it from 1), `logo` (`img/s/<id_carrier>.jpg` as a `download_ref`, `null` when there is none), `tracking_url` (as stored, `@` where the tracking number goes, empty when none), `external_module` (the module that computes its costs when a module created it, `null` otherwise). Plus `count` and `language` (the ISO code `delay` was read in).
 
-**Errors** - a language the shop does not have: the shared refusal, naming the ones it has. An empty list is `carriers: []`, `count: 0`.
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`, with the other problems of the call: a language the shop does not have, named by `SomcpTool::languageProblem()` with the ones it has. An empty list is `carriers: []`, `count: 0`.
 
 **Notes** - PrestaShop gives a carrier a new `id_carrier` each time it is edited and keeps the old row as deleted; `id_reference` does not change. Orders keep the `id_carrier` they were placed with, products are tied to the reference (the product tools turn the `id_carrier` they are given into it). Only the carriers of the token's shop (`carrier_shop`), not deleted; disabled ones are listed. Zones, ranges, prices, groups, tax, handling costs, sizes and weight belong to a future read of one carrier. In Configuration with `somcp_list_order_statuses`: an order uses a carrier without containing one, so the scope is `mcp.orders.read`.
 
@@ -2613,7 +2613,7 @@ The products and the categories they are sorted into: texts, prices, combination
 |---|---|---|---|
 | `id_product` | integer | yes | from `somcp_search_products` |
 | `id_product_attribute` | integer | no | one combination of that product: `combinations` then holds that one only, and `specific_prices` and `suppliers` keep what applies to it |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - one object, grouped like the tabs of the product page, with `language` (the ISO code the texts are read in) at the top. Texts are in `language`; every amount comes with `currency`. Values are the ones PrestaShop stores, so the write tools can take them back as they are.
 
@@ -2649,7 +2649,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - `tax_rate` is the rate of the tax rule in the shop's default country, the one the back office shows, and the one `somcp_search_products` uses: 0 when the shop has taxes switched off or the rule has nothing for that country. Amounts with tax are rounded to the precision of the shop default currency; the ecotax is not added to them.
 - No carrier ticked on the product means every carrier may deliver it: each one then says `available: true`.
 - `low_stock_threshold` is read by `SomcpCatalog::threshold()`, the code `somcp_get_stock` uses, and the ecotax rate by `SomcpCatalog::ecotaxRate()`, the code `somcp_search_products` uses, so the three tools agree. The pack items are read from the `pack` table rather than `Pack::getItems()`, which loads a full product per item.
-- A `language` the shop does not have is refused, like the other read tools, rather than read in the default language.
+- A `language` the shop does not have is refused, like the other read tools, rather than read in the default language - one line among the other problems of the call (`SomcpTool::languageProblem()`).
 - Read the product in the shop of the token (`product_shop`), never the default shop. Stock follows the shop's stock sharing, as the core decides it.
 - Features are read from the tables rather than `Product::getFrontFeatures()`, which returns nothing when features are switched off for the storefront and does not say whether a value is custom. Combinations are read the same way rather than with `Product::getAttributeCombinations()`, whose stock join ignores the shop.
 
@@ -2852,7 +2852,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - per category: `id_category`, `name`. Plus `count`.
 
@@ -3166,7 +3166,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `postcode` | string | no | part of the **Zip/Postal code** |
 | `city` | string | no | part of the **City**, case-insensitive |
 | `country` | string | no | ISO code of the **Country**, for example `FR` |
-| `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused. The shop default language when left out. |
+| `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused, among the other problems of the call with `SomcpTool::languageProblem()`. The shop default language when left out. |
 
 **Returns** - `addresses`, per address: `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `postcode`, `city`, `country` (ISO code, `null` when the country no longer exists), `country_name` (the name the **Country** column shows, in `language`, `null` when the country no longer exists). Plus `count` and `language`. An `id_manufacturer` that is not a brand of this shop, a `country` code no country has and a `language` the shop does not have are errors, not an empty list.
 
@@ -3310,7 +3310,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_supplier` | integer | yes | from `somcp_list_suppliers` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_supplier`, `name`, `description`, `phone`, `phone_mobile`, `address1`, `address2`, `postcode`, `city`, `country` (ISO code), `state` (ISO code, when the country has states), `dni` (national ID number), `meta_title`, `meta_description`, `meta_keywords`, `logo` (a `download_ref`, `null` without one), `active`, `products_count`.
 
@@ -3419,7 +3419,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | no | one group only |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `attribute_groups`, per group: `id_attribute_group`, `name`, `group_type` (`select`, `radio` or `color`), `position` (0 for the first, the **Position** column), `values_count` (the **Values** column), and its `values`: `id_attribute`, `name`, `position`, `color` (`#RRGGBB`, `null` outside a group of type `color`). The fields keep the names of `somcp_get_attribute_group` and `somcp_get_attribute_value`. Plus `count`, the number of groups. An `id_attribute_group` that is not a group of this shop is an error, not an empty list.
 
@@ -3649,7 +3649,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | no | one feature only |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `features`, per feature: `id_feature`, `name`, `position` (0 for the first, as `somcp_get_feature` returns it), `values_count` (the **Values** column: its predefined values), and its `values`: `id_feature_value`, `value`, and on PrestaShop 9 `position`. Plus `count`, the number of features. An `id_feature` that is not a feature of this shop is an error, not an empty list.
 
@@ -3874,7 +3874,7 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 |---|---|---|---|
 | `name` | string | no | part of the name (Name), case-insensitive, in the language read |
 | `file_name` | string | no | part of the name the file was uploaded under (File), case-insensitive |
-| `language` | string | no | ISO code of one of the shop's active languages; the shop default when left out; any other code is refused |
+| `language` | string | no | ISO code of one of the shop's active languages; the shop default when left out; any other code is refused, among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `attachments`, per file: `id_attachment` (ID), `name` (Name), `description` (Description of the form, in the same language), `file_name` (File), `file_size` (Size, in bytes), `products_count` (Products), `mime`, `file` (a `download_ref` for `somcp_download_file`). Plus `count`, the number of files, and `language`, the ISO code the names and descriptions were read in.
 
@@ -3885,7 +3885,7 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 - Files have no shop of their own in PrestaShop: every shop sees the same list, as in the back office. `products_count` only counts products of the shop of the token (`product_shop`), so a count never reaches into another shop.
 - A file with no name in the language read is still listed, with an empty `name`, rather than missing from the only list of identifiers.
 - Filters as the back office list does: `name` on the translated name, `file_name` on the uploaded name. Left out, every file is listed.
-- The language follows the shared rule: the shop default when left out (never the language of the client's browser), refused with the list of the shop's languages when unknown, inactive or not a string, and named in the answer so a text can be given back keyed by its ISO code.
+- The language follows the shared rule: the shop default when left out (never the language of the client's browser), refused with the list of the shop's languages when unknown, inactive or not a string, as one line among the other problems of the call (`SomcpTool::languageProblem()`), and named in the answer so a text can be given back keyed by its ISO code.
 - Lists only, never uploads: files do not travel through the conversation.
 
 ### Stock
@@ -3907,7 +3907,7 @@ The quantities the storefront sells against, per product and combination.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_product` | integer | yes |  |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_product`, `name`, `reference`, `id_supplier`, `supplier`, `active`, the product line - `quantity` (total), `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `low_stock_alert`, `reserved_by` - and per combination: `id_product_attribute`, `attributes`, `reference`, `quantity`, `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `low_stock_alert`, `reserved_by`. Each `reserved_by` entry is `id_order`, `reference` and `quantity`.
 
@@ -4064,7 +4064,7 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 |---|---|---|---|
 | `id_customer` | integer | one of the two | from `somcp_search_customers` or `somcp_get_order`; used first when both are given |
 | `email` | string | one of the two | exact; an email shared by several accounts of the shop (a guest and a registered account) is refused with the `id_customer` of each |
-| `language` | string | no | ISO code of one of the shop's active languages, for the social title, group, country, order status and product names; refused otherwise; the shop default language when left out |
+| `language` | string | no | ISO code of one of the shop's active languages, for the social title, group, country, order status and product names; refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default language when left out |
 
 A misspelt field is named and nothing is read. A customer of another shop, or deleted with their data kept (`deleted = 1`), answers as unknown in the shared envelope: `id_customer: no customer of this shop has the identifier <n> - find it with somcp_search_customers`; an email nobody has, `email: no customer of this shop has this email - find one with somcp_search_customers`.
 

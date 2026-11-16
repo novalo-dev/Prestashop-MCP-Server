@@ -9,7 +9,7 @@
     {"why": "a brand identifier that is not a number", "arguments": {"id_manufacturer": [1]}, "expect": "error", "contains": ["- id_manufacturer: a whole number above 0"]},
     {"why": "the country name is given beside its ISO code, in the shop default language", "arguments": {"id_manufacturer": 1}, "expect": "ok", "contains": ["\"country\": \"US\"", "\"country_name\": \"United States\"", "\"language\": \"en\""]},
     {"why": "the country name in a language the shop has", "arguments": {"id_manufacturer": 1, "language": "en"}, "expect": "ok", "contains": ["\"country_name\": \"United States\"", "\"language\": \"en\""]},
-    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's"]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["- language: not one of the shop's languages, which are "]},
     {"why": "part of the city, in another case", "arguments": {"city": "new york"}, "expect": "ok", "contains": ["Studio Design", "New York"]},
     {"why": "part of the postal code", "arguments": {"postcode": "1015"}, "expect": "ok", "contains": ["10154"]},
     {"why": "a city no brand address has gives an empty list", "arguments": {"city": "no-such-city-anywhere"}, "expect": "ok", "contains": ["\"addresses\": []", "\"count\": 0"]},

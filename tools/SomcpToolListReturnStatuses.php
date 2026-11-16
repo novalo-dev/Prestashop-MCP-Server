@@ -91,16 +91,17 @@ class SomcpToolListReturnStatuses
     {
         $idShop = Somcp::currentShopId();
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A misspelt field is named rather than ignored, as every list does.
         $errors = SomcpTool::unknownFields($arguments, ['language']);
-        if ($errors !== []) {
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         $statuses = [];
         foreach (OrderReturnState::getOrderReturnStates($idLang) as $state) {

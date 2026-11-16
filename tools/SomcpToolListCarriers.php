@@ -99,23 +99,24 @@ class SomcpToolListCarriers
         $idShop = (int) Somcp::currentShop()->id;
 
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A misspelt filter, or an Enabled or Free shipping that is not a
         // boolean, would widen the list without a word, and the assistant
         // would offer a carrier the merchant had ruled out: all are refused.
         $errors = SomcpTool::unknownFields($arguments, ['active', 'is_free', 'name', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         foreach (['active', 'is_free'] as $flag) {
             if (array_key_exists($flag, $arguments) && !is_bool($arguments[$flag])) {
                 $errors[] = $flag . ': true or false';
             }
         }
-        if ($errors !== []) {
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         // A query rather than Carrier::getCarriers(), which reads the shop
         // from the global context and, asked for every carrier, still drops

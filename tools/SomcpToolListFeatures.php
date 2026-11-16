@@ -82,10 +82,6 @@ class SomcpToolListFeatures
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A feature asked for by identifier must be one of this shop: an
         // identifier that matches nothing is said, not answered with an empty
@@ -93,6 +89,10 @@ class SomcpToolListFeatures
         // Every problem of the call in one answer, a misspelt field included:
         // ignored, it would answer every feature for the one asked for.
         $errors = SomcpTool::unknownFields($arguments, ['id_feature', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $idFeature = null;
         if (isset($arguments['id_feature'])) {
             // A cast would read an array as 1 and answer about a feature
@@ -104,9 +104,10 @@ class SomcpToolListFeatures
                 $errors[] = SomcpTool::notFound('id_feature', 'feature', $idFeature, 'somcp_list_features');
             }
         }
-        if ($errors !== []) {
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         // Queries rather than Feature::getFeatures() and
         // FeatureValue::getFeatureValuesWithLang(), which read the shop from

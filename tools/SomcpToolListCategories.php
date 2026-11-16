@@ -77,17 +77,18 @@ class SomcpToolListCategories
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A misspelt field is named rather than ignored: the assistant would
         // otherwise take the whole list for the answer to a filter it meant.
         $errors = SomcpTool::unknownFields($arguments, ['language']);
-        if ($errors !== []) {
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         // A query rather than Category::getSimpleCategories(), which reads the
         // shop from the global context: here it comes from the token and is

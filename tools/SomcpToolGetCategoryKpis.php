@@ -90,15 +90,14 @@ class SomcpToolGetCategoryKpis
 
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
-        if ($asked && $language === null) {
+        // A default language the shop cannot read is one more line too, so
+        // the tool always answers in the envelope of its other mistakes.
+        if ($language === null) {
             $problems[] = SomcpTool::languageProblem($idShop);
         }
 
-        if ($problems !== []) {
+        if ($problems !== [] || $language === null) {
             return SomcpTool::refused('read', $problems);
-        }
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $iso] = $language;
 

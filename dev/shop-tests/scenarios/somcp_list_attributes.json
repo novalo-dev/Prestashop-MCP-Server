@@ -5,7 +5,7 @@
     {"why": "the values of a group that is not a colour group have no colour", "arguments": {"id_attribute_group": 1}, "expect": "ok", "contains": ["\"group_type\": \"select\"", "\"color\": null"]},
     {"why": "the values of the colour group of the demo shop carry their colour", "arguments": {"id_attribute_group": 2}, "expect": "ok", "contains": ["\"group_type\": \"color\"", "\"color\": \"#"]},
     {"why": "in a language given by ISO code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"id_attribute_group\": 1", "\"language\": \"en\""]},
-    {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
+    {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["- language: not one of the shop's languages, which are ", "Nothing was read. Correct these and call again:"]},
     {"why": "a group that does not exist", "arguments": {"id_attribute_group": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_attribute_group: no attribute group of this shop has the identifier 999999 - find it with somcp_list_attributes"]},
     {"why": "the group identifier as a numeric string", "arguments": {"id_attribute_group": "1"}, "expect": "ok", "contains": ["\"count\": 1", "\"id_attribute_group\": 1"]},
     {"why": "no identifier", "arguments": {"id_attribute_group": 0}, "expect": "error", "contains": ["- id_attribute_group: a whole number above 0"]},

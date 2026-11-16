@@ -85,14 +85,17 @@ class SomcpToolGetStock
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
+        // The product is found in any language; the language itself is
+        // checked with the other mistakes below.
+        $idLang = $language === null ? 0 : $language[0];
 
         // A cast would read an array as 1 and answer about a product nobody
         // asked for: only a whole number is an identifier.
         $errors = SomcpTool::unknownFields($arguments, ['id_product', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $idProduct = SomcpTool::id($arguments, 'id_product');
         $product = null;
         if ($idProduct === 0) {
@@ -103,9 +106,10 @@ class SomcpToolGetStock
                 $errors[] = SomcpTool::notFound('id_product', 'product', $idProduct, 'somcp_search_products');
             }
         }
-        if ($errors !== [] || $product === null) {
+        if ($errors !== [] || $product === null || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         $stock = SomcpToolGetProduct::stockRows($product, $shop);
         // The row without a combination holds the total of all of them.

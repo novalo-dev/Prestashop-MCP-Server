@@ -86,16 +86,17 @@ class SomcpToolListAttachments
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A misspelt filter, ignored, would widen the list without a word.
         $errors = SomcpTool::unknownFields($arguments, ['name', 'file_name', 'language']);
-        if ($errors !== []) {
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         $query = new DbQuery();
         $query->select('a.`id_attachment`, al.`name`, al.`description`, a.`file_name`, a.`file_size`, a.`mime`');

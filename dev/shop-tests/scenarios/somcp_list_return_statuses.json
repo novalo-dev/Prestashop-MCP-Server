@@ -28,8 +28,8 @@
       },
       "expect": "error",
       "contains": [
-        "This language is not one of the shop's, which has",
-        "or leave language out for the shop default"
+        "- language: not one of the shop's languages, which are ",
+        "Nothing was read. Correct these and call again:"
       ]
     },
     {

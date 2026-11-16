@@ -112,10 +112,6 @@ class SomcpToolListManufacturerAddresses
         $idShop = (int) Somcp::currentShop()->id;
 
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        $idLang = $language[0];
 
         // Every problem of the call in one answer, a misspelt filter included:
         // ignored, it would widen the list without a word.
@@ -123,6 +119,10 @@ class SomcpToolListManufacturerAddresses
             $arguments,
             ['id_manufacturer', 'lastname', 'firstname', 'postcode', 'city', 'country', 'language']
         );
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
 
         // The Country filter of the list picks one country: an unknown code
         // is said, rather than answered with an empty list the assistant would
@@ -150,9 +150,10 @@ class SomcpToolListManufacturerAddresses
                 $errors[] = SomcpTool::notFound('id_manufacturer', 'brand', $idManufacturer, 'somcp_list_manufacturers');
             }
         }
-        if ($errors !== []) {
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        $idLang = $language[0];
 
         // A query rather than Address objects: the list only needs the columns
         // the back office list shows, and the brand must be in the shop of the

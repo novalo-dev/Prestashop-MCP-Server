@@ -18,6 +18,17 @@ are:
 
 ### Changed
 
+**The order address, carrier and currency changes give the total before and
+after.** The assistant was told to say the new total before changing an
+address or a carrier, which it could not know: PrestaShop recomputes the
+shipping cost, the taxes and the total only during the change. It now warns
+that they will be recomputed and gives the current total first, then the
+previous and the new total once the change is made, from the same totals as
+the order page. The currency change names those two totals the same way. When
+PrestaShop fails half-way through an address change, the assistant no longer
+says nothing was changed: it reads the order's addresses again before trying
+once more, as it already did for the carrier.
+
 **A CMS page read by the assistant can be given back to change its SEO.**
 When the assistant read a page with `somcp_get_cms_page` and gave it back to
 `somcp_update_cms_seo` with a new Meta title, the call was refused for the

@@ -1454,7 +1454,7 @@ Not replayable: a lost answer is checked with `somcp_get_order` (`discounts`):
 address of its customer, as **Select another address** of the **Shipping
 address** and **Invoice address** blocks of the order page does, and lets the
 core recompute the taxes and the totals. The country can change the tax, so the
-new total is reported.
+totals before and after the change are reported.
 
 **Do not use for** - correcting the content of an address (→ the address and
 customer tools), or changing the carrier of the order.
@@ -1472,10 +1472,10 @@ customer tools), or changing the carrier of the order.
 `previous_address` and `address`, each in the shape of `addresses.delivery` of
 `somcp_get_order` built by the same function (`id_address`, `alias`,
 `firstname`, `lastname`, `company`, `address1`, `address2`, `postcode`, `city`,
-`state`, `country`, ...), and the order totals after the change
-(`total_tax_excluded`, `total_tax_included`, `currency`), as `totals` of
-`somcp_get_order` names them. The same address as now is `changed: false` with
-a `reason`, and nothing happens.
+`state`, `country`, ...), `previous_totals` and `totals`, the order totals
+before and after the change, each exactly as `somcp_get_order` returns `totals`
+(built by the same function), and `currency`. The same address as now is
+`changed: false` with a `reason`, and nothing happens.
 
 **Errors** - every problem at once, nothing changed when one check fails, each
 under "Nothing was changed. Correct these and call again:": a field the tool does not take; the order not
@@ -1484,7 +1484,10 @@ invoice`; `id_address` missing or not a whole number; `id_address: no address
 of this customer has the identifier <n> - find it with somcp_get_customer` for
 an unknown, deleted or other customer's address, followed in the same answer by
 the list of the customer's addresses (`id_address`, `alias`, `address1`,
-`postcode`, `city`, `country`). The core's exceptions are put in the same shape.
+`postcode`, `city`, `country`). A failure inside the core is reported without
+its raw message as "The address could not be changed. Read addresses with
+somcp_get_order before trying again: part of the change may have been saved.":
+both handlers save the cart before the order.
 
 **Notes** - the delivery address is moved by the core's
 `ChangeOrderDeliveryAddressHandler` (it also keeps the carrier's delivery
@@ -1522,11 +1525,10 @@ address (→ `somcp_set_order_address`).
 `previous_carrier` and `carrier` (`id_carrier`, `name`, as
 `somcp_list_carriers` names them), `previous_shipment` and `shipment`, each in
 the shape of one entry of `shipping.shipments` of `somcp_get_order` built by
-the same function (its `date` ISO 8601 with the shop's offset), then the order
-totals after the change
-(`shipping_tax_excluded`, `shipping_tax_included`, `total_tax_excluded`,
-`total_tax_included`) as `totals` of `somcp_get_order` names them, and
-`currency`. The carrier already in place is `changed: false` with a `reason`,
+the same function (its `date` ISO 8601 with the shop's offset), then
+`previous_totals` and `totals`, the order totals before and after the change,
+each exactly as `somcp_get_order` returns `totals` (built by the same
+function), and `currency`. The carrier already in place is `changed: false` with a `reason`,
 `carrier` and `shipment`, and nothing happens.
 
 **Errors** - every problem at once, nothing changed when one check fails, each
@@ -1575,7 +1577,7 @@ tool yet).
 | `currency` | **Change currency** | string | yes | ISO code of an active currency of the shop, as `somcp_get_order` returns `currency`; refused otherwise, with the shop's active currencies |
 
 **Returns** - `changed`, `order` (`id_order`, `reference`), `old_currency` and
-`new_currency` (ISO codes), and `totals_before` / `totals_after`, each exactly
+`new_currency` (ISO codes), and `previous_totals` / `totals`, each exactly
 as `somcp_get_order` returns `totals` (built by the same function).
 
 **Errors** - every problem at once, nothing changed when one check fails, each

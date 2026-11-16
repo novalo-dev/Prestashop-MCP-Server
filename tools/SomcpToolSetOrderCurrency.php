@@ -311,8 +311,10 @@ class SomcpToolSetOrderCurrency
             ],
             'old_currency' => (string) $old->iso_code,
             'new_currency' => (string) $new->iso_code,
-            'totals_before' => $before,
-            'totals_after' => $after,
+            // Named as the address and carrier tools name the totals they
+            // recompute, so the three say it one way.
+            'previous_totals' => $before,
+            'totals' => $after,
         ]);
     }
 }

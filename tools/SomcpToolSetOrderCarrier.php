@@ -69,8 +69,10 @@ class SomcpToolSetOrderCarrier
             'somcp_set_order_carrier',
             Somcp::t('Change the carrier of an order'),
             'Changes the carrier of one shipment of an order, like the Carrier field of Edit shipping details '
-                . 'on the order page; PrestaShop recomputes the shipping cost and the total, so say the new '
-                . 'total before the change. Only the carriers the order may use are taken. The tracking number '
+                . 'on the order page; PrestaShop recomputes the shipping cost and the total. Before the change, '
+                . 'warn that they will be recomputed and give the current total from somcp_get_order; after it, '
+                . 'give previous_totals and totals from the answer. Only the carriers the order may use are '
+                . 'taken. The tracking number '
                 . 'is somcp_set_order_tracking, the address somcp_set_order_address. One shipment per call. '
                 . 'Not to be retried on a lost answer: check shipping.shipments with somcp_get_order.',
             [
@@ -244,6 +246,9 @@ class SomcpToolSetOrderCarrier
 
         $idOrder = (int) $order->id;
         $previousCarrierId = (int) $orderCarrier->id_carrier;
+        // The core prices the new carrier only while it saves it, so the
+        // answer carries the totals of both sides instead of a forecast.
+        $previousTotals = SomcpToolGetOrder::totals($order);
 
         // The handler switches the context to the order's language for the
         // length of the change, and restores it whatever happens.
@@ -313,12 +318,10 @@ class SomcpToolSetOrderCarrier
             'carrier' => self::carrier($idCarrier, $idLang),
             'previous_shipment' => $previousShipment,
             'shipment' => $shipment,
-            // The order totals after the change, named as totals of
+            // The order totals before and after the change, built as totals of
             // somcp_get_order: the shipping cost follows the carrier.
-            'shipping_tax_excluded' => (float) $order->total_shipping_tax_excl,
-            'shipping_tax_included' => (float) $order->total_shipping_tax_incl,
-            'total_tax_excluded' => (float) $order->total_paid_tax_excl,
-            'total_tax_included' => (float) $order->total_paid_tax_incl,
+            'previous_totals' => $previousTotals,
+            'totals' => SomcpToolGetOrder::totals($order),
             'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',
         ]);
     }

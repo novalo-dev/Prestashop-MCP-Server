@@ -421,8 +421,10 @@ the order page does. Take `id_address` from `somcp_get_customer`
 guess it.
 
 - Changing the delivery address **can change the taxes and the total**, because
-  the tax follows the country. Say the new total (`total_tax_included` in the
-  answer) before the change, not after.
+  the tax follows the country, and PrestaShop recomputes them only during the
+  change. Before it, warn of that and give the current total
+  (`totals.total_tax_included` of `somcp_get_order`); after it, give the
+  previous and the new total (`previous_totals` and `totals` in the answer).
 - An address that is not the customer's is refused with the list of the ones
   that are: pick from that list.
 - The same address as now answers `changed: false` and nothing happens. On a
@@ -437,8 +439,11 @@ guess it.
 returns; never guess it. The tracking number stays with
 `somcp_set_order_tracking`.
 
-- Changing the carrier **changes the shipping cost and the total**. Say the new
-  amount before the change, not after.
+- Changing the carrier **changes the shipping cost and the total**, recomputed
+  by PrestaShop only during the change. Before it, warn of that and give the
+  current total (`totals.total_tax_included` of `somcp_get_order`); after it,
+  give the previous and the new amounts (`previous_totals` and `totals` in the
+  answer).
 - A carrier that does not deliver this order is refused with the carriers that
   do: pick from that list.
 - The carrier already in place answers `changed: false` and nothing happens.
@@ -452,8 +457,9 @@ validated yet, as **Change currency** in the Payment block does. Give the ISO
 code (`EUR`, `USD`); a refused call lists the shop's active currencies.
 
 - A currency change **converts every amount of the order at today's rate**.
-  Say the new total first, before the change, and suggest checking the
-  exchange rates of the shop beforehand.
+  Before it, warn of that, give the current total, and suggest checking the
+  exchange rates of the shop; after it, give the previous and the new total
+  (`previous_totals` and `totals` in the answer).
 - A validated order is refused, as on screen: its amounts are final.
 - The currency already in place answers `changed: false` and nothing happens.
   On a lost answer, read `currency` with `somcp_get_order` rather than calling

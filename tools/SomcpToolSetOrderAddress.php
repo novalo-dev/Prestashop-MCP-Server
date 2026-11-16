@@ -83,11 +83,10 @@ class SomcpToolSetOrderAddress
             'somcp_set_order_address',
             Somcp::t('Change an address of an order'),
             'Points the delivery or the invoice address of one order to another address of the same customer, '
-                . 'like Select another address on the order page, and lets PrestaShop recompute the taxes and '
-                . 'the totals - the country can change the tax, so say the new total before the change. It does '
-                . 'not edit the content of an address (the address and customer tools do) and does not change the '
-                . 'carrier. One order per call. Not to be retried on a lost answer: '
-                . 'check addresses.delivery.id_address and addresses.invoice.id_address with somcp_get_order.',
+                . 'like Select another address on the order page; PrestaShop recomputes the taxes and the total. '
+                . 'Before the change, warn of it and give the current total from somcp_get_order; after it, give '
+                . 'previous_totals and totals from the answer. Not for the content of an address nor the carrier. '
+                . 'One order per call. Not to be retried on a lost answer: check addresses with somcp_get_order.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -231,6 +230,11 @@ class SomcpToolSetOrderAddress
         $remover = new OrderProductRemover();
         $amountUpdater = new OrderAmountUpdater($config, $contextManager, $detailUpdater, $remover);
 
+        // The core recomputes the totals during the call and cannot price the
+        // change beforehand, so the answer carries both sides for the
+        // assistant to say how much the total moved.
+        $previousTotals = SomcpToolGetOrder::totals($order);
+
         try {
             if ($type === 'delivery') {
                 // The delivery handler also keeps the carrier's delivery option
@@ -252,7 +256,14 @@ class SomcpToolSetOrderAddress
                 $idEmployee
             );
 
-            return SomcpTool::refused('changed', ['id_address: the address could not be changed. Nothing was changed.']);
+            // Both handlers save the cart before the order, without a
+            // transaction: a failure half-way may have kept the first step,
+            // so say how to check rather than claim nothing moved.
+            return SomcpTool::text(
+                'The address could not be changed. Read addresses with somcp_get_order before trying again: '
+                    . 'part of the change may have been saved.',
+                true
+            );
         }
 
         $order = new Order((int) $order->id);
@@ -273,10 +284,10 @@ class SomcpToolSetOrderAddress
             'address_type' => $type,
             'previous_address' => $previous,
             'address' => SomcpToolGetOrder::address($idAddress, $idLang),
-            // The order totals after the move, named as totals of
+            // The order totals before and after the move, built as totals of
             // somcp_get_order: the tax can change with the country.
-            'total_tax_excluded' => (float) $order->total_paid_tax_excl,
-            'total_tax_included' => (float) $order->total_paid_tax_incl,
+            'previous_totals' => $previousTotals,
+            'totals' => SomcpToolGetOrder::totals($order),
             'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',
         ]);
     }

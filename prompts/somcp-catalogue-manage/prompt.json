@@ -28,6 +28,7 @@
     "somcp_get_feature_value",
     "somcp_list_attachments",
     "somcp_list_tax_rules",
+    "somcp_get_tax_rule",
     "somcp_list_customer_groups",
     "somcp_list_carriers",
     "somcp_create_product",

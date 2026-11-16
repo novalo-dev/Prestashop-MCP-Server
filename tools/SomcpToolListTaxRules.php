@@ -127,11 +127,7 @@ class SomcpToolListTaxRules
         // Tax Rules), so a rule sits where the merchant sees it.
         $query->orderBy('g.`id_tax_rules_group` ASC');
 
-        $idCountry = (int) Configuration::get('PS_COUNTRY_DEFAULT', null, null, $idShop);
-        // The same call somcp_get_product and somcp_search_products make, so
-        // the rate read here is the one those tools apply to a price.
-        $rates = TaxRulesGroup::getAssociatedTaxRatesByIdCountry($idCountry);
-        $iso = (string) Country::getIsoById($idCountry);
+        [$rates, $iso] = self::defaultCountryRates($idShop);
 
         $rules = [];
         foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
@@ -154,5 +150,28 @@ class SomcpToolListTaxRules
             // somcp_get_product then gives a rate of 0 whatever the rule.
             'taxes_enabled' => (bool) Configuration::get('PS_TAX', null, null, $idShop),
         ]);
+    }
+
+    /**
+     * The rate of every tax rule in the shop's default country, keyed by
+     * id_tax_rules_group, and the ISO code of that country.
+     *
+     * Shared with somcp_get_tax_rule, so the rate one tool gives for a rule
+     * is the rate the other gives.
+     *
+     * @param int $idShop
+     *
+     * @return array{0: array<int|string, mixed>, 1: string}
+     */
+    public static function defaultCountryRates(int $idShop): array
+    {
+        $idCountry = (int) Configuration::get('PS_COUNTRY_DEFAULT', null, null, $idShop);
+
+        // The same call somcp_get_product and somcp_search_products make, so
+        // the rate read here is the one those tools apply to a price.
+        return [
+            TaxRulesGroup::getAssociatedTaxRatesByIdCountry($idCountry),
+            (string) Country::getIsoById($idCountry),
+        ];
     }
 }

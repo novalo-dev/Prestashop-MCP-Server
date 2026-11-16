@@ -16,6 +16,15 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Read one tax rule with the rate it applies in each country.** The new tool
+somcp_get_tax_rule opens a rule of International > Taxes > Tax Rules as its
+edit page shows it: its name, whether it is enabled, and every row of its list,
+with the tax it applies per country, state and zip code range and its
+behaviour. Until now the assistant only knew the rate in the shop's default
+country, so it could not say what a customer delivered abroad pays.
+
 ### Changed
 
 **A meta title or description longer than search results show is pointed out

@@ -1038,6 +1038,10 @@ T = {
     "Lister les règles de taxes",
     "Listar las reglas de impuestos",
     "Steuerregeln auflisten"),
+"Get a tax rule": (
+ "Lire une règle de taxes",
+ "Leer una regla de impuestos",
+ "Eine Steuerregel abrufen"),
 "List files": (
  "Lister les fichiers",
  "Listar los archivos",

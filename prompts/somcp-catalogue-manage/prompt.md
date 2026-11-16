@@ -27,6 +27,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_feature_value`
 - `somcp_list_attachments`
 - `somcp_list_tax_rules`
+- `somcp_get_tax_rule`
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
 - `somcp_create_product`
@@ -197,6 +198,9 @@ there, 0 for no tax. Match the merchant's "20 %" on the `rate`, not on the
 name, and say that the rate is the one of the country given: a customer
 delivered elsewhere may pay another one. When `taxes_enabled` is false the
 shop charges no tax at all, whatever the rule.
+For the rate a customer delivered abroad pays, read the rule with
+`somcp_get_tax_rule`: its `country_rules` give the tax per country, state and
+zip code range, and `country` narrows them to one country.
 
 ## Who fills each field
 

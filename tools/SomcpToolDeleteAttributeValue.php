@@ -118,11 +118,18 @@ class SomcpToolDeleteAttributeValue
                 $errors[] = SomcpTool::notFound('id_attribute', 'attribute value', $idAttribute, 'somcp_list_attributes');
             }
         }
+        // Read only when given, so an unknown language is listed with the
+        // call's other mistakes rather than answered on its own.
+        $askedLanguage = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        $language = SomcpTool::readLanguage($askedLanguage ? $arguments : [], $idShop);
+        if ($askedLanguage && $language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         if ($errors !== [] || $value === null) {
             return SomcpTool::refused('deleted', $errors);
         }
 
-        $language = SomcpTool::readLanguage($arguments, $idShop);
+        // Left only for a shop whose default language cannot be read.
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
         }

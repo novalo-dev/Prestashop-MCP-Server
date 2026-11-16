@@ -89,16 +89,18 @@ class SomcpToolGetAttributeGroup
     public static function handle(array $arguments, array $context): array
     {
         $idShop = (int) Somcp::currentShop()->id;
-        $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
+        // Read only when given, so an unknown language is listed with the
+        // call's other mistakes rather than answered on its own.
+        $askedLanguage = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        $language = SomcpTool::readLanguage($askedLanguage ? $arguments : [], $idShop);
 
         // A cast would read an array as 1 and answer about a group nobody
         // asked for: only a whole number is an identifier.
         $idGroup = SomcpTool::id($arguments, 'id_attribute_group');
         $errors = SomcpTool::unknownFields($arguments, ['id_attribute_group', 'language']);
+        if ($askedLanguage && $language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         if ($idGroup === 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_attribute_group');
         } elseif (self::existingGroup($idGroup, $idShop) === null) {
@@ -107,6 +109,12 @@ class SomcpToolGetAttributeGroup
         if ($errors !== []) {
             return SomcpTool::refused('read', $errors);
         }
+
+        // Left only for a shop whose default language cannot be read.
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $iso] = $language;
 
         // What a delete would take with the group, so the merchant sees it
         // before confirming somcp_delete_attribute_group and never learns it

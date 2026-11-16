@@ -2875,7 +2875,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_category` | integer | yes | from `somcp_list_categories` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_category`, `name`, `active` (Displayed), `id_parent` and `parent_name`, `level`, `position`, `description`, `additional_description`, `groups` (id and name of each customer group with access), `link_rewrite`, `url`, `meta_title`, `meta_description`, `meta_keywords`, `cover_image`, `thumbnail_image` (the **Category thumbnail**) and `menu_thumbnails` (a `download_ref` each, `null` when there is none), `products_count`, `children_count`, and on PrestaShop 9 `redirect_type` with `id_type_redirected`.
 
@@ -3064,7 +3064,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_manufacturer` | integer | yes | from `somcp_list_manufacturers` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_manufacturer`, `name`, `short_description`, `description`, `meta_title`, `meta_description`, `meta_keywords`, `logo` (a `download_ref`, `null` without one), `active`, `products_count`.
 
@@ -3441,7 +3441,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | yes | from `somcp_list_attributes` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. Then what a delete of the group would take, in the shop of the token: `combinations_count` (the combinations that hold one of its values), `combinations_only_on_it` (those made only of its values, which `somcp_delete_attribute_group` deletes with their stock) and `products` (the distinct products of those combinations, each as `id_product` and `name`, in `language`), counted by `SomcpToolGetAttributeGroup::whatGoes()`, the function the delete counts with. A group that is not one of this shop is an error.
 
@@ -3514,11 +3514,11 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | yes | from `somcp_list_attributes` or `somcp_get_attribute_group`; a string of digits accepted, as the other attribute group tools |
-| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `deleted: true`, `id_attribute_group`, `name` (read before the delete with `SomcpToolGetAttributeGroup::group()`, in `language`), `language`, `values_deleted` (the `values_count` it had), `combinations_deleted` (combinations whose every value was in this group), `combinations_changed` (combinations that only lost one value), `products` (the distinct products of those combinations, each as `id_product` and `name`), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a condition on one of its values, left in place by the core), `still_in_shops` (how many other shops still hold the group). All counted before the delete, in the shop of the token.
 
-**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute_group` missing or not a whole number above 0; a group not in this shop (`id_attribute_group: no attribute group of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeGroup::existingGroup()`). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same group is refused the same way, never answered as a success.
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute_group` missing or not a whole number above 0; a group not in this shop (`id_attribute_group: no attribute group of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeGroup::existingGroup()`). An unknown language is one more line of the same envelope (`SomcpTool::languageProblem()`). A second call for the same group is refused the same way, never answered as a success.
 
 **Notes**
 - Irreversible. Through `AttributeGroup::delete()`, never with SQL of its own: the values are removed from every combination, the combinations left without any value are deleted through `Combination::delete()` with their stock and images, the values are deleted, the other groups are reordered and `actionAttributeGroupDelete` fires. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
@@ -3543,7 +3543,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute` | integer | yes | from `somcp_list_attributes` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (the current texture as a `download_ref`, `null` when there is none), when `ps_facetedsearch` is installed and enabled `url_name` and `meta_title`, then `combinations_count` (the combinations of this shop that hold the value, deleted with it by `somcp_delete_attribute_value`) and `products` (the distinct products of those combinations, each as `id_product` and `name`, in `language`). A value that is not one of this shop is an error.
 
@@ -3621,11 +3621,11 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute` | integer | yes | from `somcp_list_attributes` or `somcp_get_attribute_value`; a string of digits accepted, as the other attribute value tools |
-| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `deleted: true`, `id_attribute`, `id_attribute_group`, `name` (read before the delete, in `language`), `language`, `combinations_deleted` (the combinations that held the value, each as `id_product` and `id_product_attribute`, as they were before the call), `default_changed` (the `id_product` of the products that got a new default combination), `cart_rules` (the `id_cart_rule` whose product restrictions held this value), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a condition on it, left in place by the core), `still_in_shops` (how many other shops still hold the value). All counted before the delete, in the shop of the token, through the function shared with `somcp_get_attribute_value`.
 
-**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute` missing or not a whole number above 0; a value not in this shop (`id_attribute: no attribute value of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeValue::existingValue()`). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same value is refused the same way, never answered as a success.
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute` missing or not a whole number above 0; a value not in this shop (`id_attribute: no attribute value of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeValue::existingValue()`). An unknown language is one more line of the same envelope (`SomcpTool::languageProblem()`). A second call for the same value is refused the same way, never answered as a success.
 
 **Notes**
 - Irreversible. Through `ProductAttribute::delete()`, never with SQL of its own: every combination that uses the value is deleted through `Combination::delete()` with its stock and images, a product that loses its default combination gets the first one left, the cart rule restrictions on the value are cleaned, the other values of the group are reordered and `actionAttributeDelete` fires. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
@@ -3671,7 +3671,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | yes | from `somcp_list_features` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_feature`, `name`, `position`, `values_count`, `products_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
 
@@ -3743,11 +3743,11 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | yes | from `somcp_list_features` or `somcp_get_feature`; a string of digits accepted, as the other feature tools |
-| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `deleted: true`, `id_feature`, `name` (read before the delete with `SomcpToolGetFeature::feature()`, in `language`), `language`, `values_deleted` (all its values, custom ones included), `products_count` (how many distinct products of this shop showed it, counted with `SomcpToolGetFeature::productsCount()` and named as in `somcp_get_feature`), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a condition on one of its values, left in place by the core, read with `SomcpToolCreateCatalogPriceRule::rulesOn()`). All counted before the delete.
 
-**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature` missing or not a whole number above 0; a feature not in this shop (`id_feature: no feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeature::existingFeature()`); a feature shared with other shops (see Notes). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same feature is refused the same way, never answered as a success.
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature` missing or not a whole number above 0; a feature not in this shop (`id_feature: no feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeature::existingFeature()`); a feature shared with other shops (see Notes). An unknown language is one more line of the same envelope (`SomcpTool::languageProblem()`). A second call for the same feature is refused the same way, never answered as a success.
 
 **Notes**
 - Irreversible. Through `Feature::delete()`, never with SQL of its own: its values and their texts are deleted, it is removed from every product, `actionFeatureDelete` fires and the positions are reordered. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
@@ -3771,7 +3771,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). `products_count`: the distinct products of this shop that have the value (`feature_product` joined to `product_shop`), counted with `SomcpToolGetFeatureValue::productsCount()`, the function `somcp_delete_feature_value` reports its `products_count` with: the merchant hears it before confirming a delete. A value that is not one of this shop is an error.
 
@@ -3845,11 +3845,11 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature_value` | integer | yes | from `values[]` of `somcp_list_features`; a string of digits accepted, as the other feature tools |
-| `language` | string | no | ISO code for `feature_name` and `value` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+| `language` | string | no | ISO code for `feature_name` and `value` in the answer; read with `SomcpTool::readLanguage()`, refused among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `deleted: true`, `id_feature_value`, `id_feature`, `feature_name` and `value` (read before the delete with `SomcpToolGetFeatureValue::featureValue()`, the names `somcp_get_feature_value` answers with), `language`, `products_count` (how many distinct products of this shop had the value, counted with `SomcpToolGetFeatureValue::productsCount()` as `products_count` of `somcp_get_feature_value`), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a **Feature** condition on the value, left in place by the core, read with `SomcpToolCreateCatalogPriceRule::rulesOn()`). All counted before the delete.
 
-**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature_value` missing or not a whole number above 0; a value not in this shop (`id_feature_value: no value of a feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeatureValue::loadedValue()`); a custom value (`custom` = 1, sent to `somcp_get_product` and `somcp_update_product`); a value of a feature shared with other shops (see Notes). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same value is refused the same way, never answered as a success.
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature_value` missing or not a whole number above 0; a value not in this shop (`id_feature_value: no value of a feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeatureValue::loadedValue()`); a custom value (`custom` = 1, sent to `somcp_get_product` and `somcp_update_product`); a value of a feature shared with other shops (see Notes). An unknown language is one more line of the same envelope (`SomcpTool::languageProblem()`). A second call for the same value is refused the same way, never answered as a success.
 
 **Notes**
 - Irreversible. Through `FeatureValue::delete()`, never with SQL of its own: the value is removed from every product (`feature_product`), its row and texts are deleted and `actionFeatureValueDelete` fires, which `ps_facetedsearch` listens to for its own row of the value. The employee of the token is put on the context for the call, as `somcp_delete_product` does.

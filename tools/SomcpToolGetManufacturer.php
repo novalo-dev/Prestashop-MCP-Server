@@ -86,16 +86,18 @@ class SomcpToolGetManufacturer
     public static function handle(array $arguments, array $context): array
     {
         $idShop = (int) Somcp::currentShop()->id;
-        $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
+        // Read only when given, so an unknown language is listed with the
+        // call's other mistakes rather than answered on its own.
+        $askedLanguage = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        $language = SomcpTool::readLanguage($askedLanguage ? $arguments : [], $idShop);
 
         // A cast would read an array as 1 and answer about a brand nobody
         // asked for: only a whole number is an identifier.
         $idManufacturer = SomcpTool::id($arguments, 'id_manufacturer');
         $errors = SomcpTool::unknownFields($arguments, ['id_manufacturer', 'language']);
+        if ($askedLanguage && $language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         if ($idManufacturer === 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_manufacturer');
         } elseif (self::existingManufacturer($idManufacturer, $idShop) === null) {
@@ -104,6 +106,12 @@ class SomcpToolGetManufacturer
         if ($errors !== []) {
             return SomcpTool::refused('read', $errors);
         }
+
+        // Left only for a shop whose default language cannot be read.
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $iso] = $language;
 
         return SomcpTool::json(['language' => $iso] + self::manufacturer($idManufacturer, $idLang, $idShop));
     }

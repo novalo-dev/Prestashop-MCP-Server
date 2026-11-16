@@ -18,6 +18,14 @@ are:
 
 ### Changed
 
+**Before an attribute group is deleted, the assistant can show what goes with
+it.** Deleting a group such as Size removes every combination built only on
+its values, with their stock, and the products concerned were only named once
+the delete was done. Reading a group now also gives how many combinations hold
+one of its values, how many are built only on them, and the products
+concerned, counted exactly as the delete counts them, so the merchant confirms
+knowing which combinations go.
+
 **The shop pages' SEO reads and writes under the names of the other SEO
 tools.** The pages of **Shop Parameters > Traffic & SEO > SEO & URLs** named
 their Page title, Meta description, Meta keywords and Rewritten URL `title`,

@@ -36,8 +36,9 @@ declare(strict_types=1);
  * context, so on multistore the group leaves the shop of the token and keeps
  * its values; the counts are then 0 and still_in_shops says where it remains.
  *
- * Which groups exist in the shop of the token, and their names, come from
- * somcp_get_attribute_group, so the attribute group tools never disagree.
+ * Which groups exist in the shop of the token, their names, and what a
+ * delete takes with them come from somcp_get_attribute_group, which shows the
+ * same counts before the call, so the attribute group tools never disagree.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -62,10 +63,10 @@ class SomcpToolDeleteAttributeGroup
         return new SomcpTool(
             'somcp_delete_attribute_group',
             Somcp::t('Delete an attribute group'),
-            'Deletes one attribute group (Size, Colour...) with all its values, as Catalog > Attributes & Features '
+            'Deletes one attribute group (Size, Color...) with all its values, as Catalog > Attributes & Features '
                 . '> Attributes does. Irreversible: combinations built only on it go with their stock, the others '
-                . 'lose one value. Read it with somcp_get_attribute_group, name the products concerned, confirm by '
-                . 'name. Price rules left on its values are listed in catalog_price_rules. id_attribute_group from '
+                . 'lose one value. Read it with somcp_get_attribute_group, show the merchant its products, '
+                . 'combinations_count and combinations_only_on_it, confirm by name. Price rules left on its values are listed in catalog_price_rules. id_attribute_group from '
                 . 'somcp_list_attributes. On multistore it leaves this shop only. One group per call. Not to be '
                 . 'retried: if the answer is lost, look with somcp_get_attribute_group.',
             [
@@ -153,7 +154,7 @@ class SomcpToolDeleteAttributeGroup
         // only removes the shop row and the values stay.
         $full = !$group->hasMultishopEntries() || Shop::getContext() == Shop::CONTEXT_ALL;
         $counted = $full
-            ? self::whatGoes($idGroup, $idShop, $idLang)
+            ? SomcpToolGetAttributeGroup::whatGoes($idGroup, $idShop, $idLang)
             : ['deleted' => 0, 'changed' => 0, 'products' => [], 'rules' => []];
 
         $group->id_shop_list = [$idShop];
@@ -197,86 +198,5 @@ class SomcpToolDeleteAttributeGroup
             'catalog_price_rules' => $counted['rules'],
             'still_in_shops' => $stillInShops,
         ]);
-    }
-
-    /**
-     * The combinations of this shop that hold a value of the group, split
-     * into those made only of its values (deleted) and the others (changed),
-     * their products, and the catalogue price rules of this shop with a
-     * condition on one of its values, which the core leaves behind.
-     *
-     * @param int $idGroup
-     * @param int $idShop
-     * @param int $idLang
-     *
-     * @return array{deleted: int, changed: int, products: array<int, array<string, mixed>>, rules: array<int, int>}
-     */
-    private static function whatGoes(int $idGroup, int $idShop, int $idLang): array
-    {
-        $db = Db::getInstance();
-        $rows = $db->executeS(
-            'SELECT pa.`id_product_attribute`, pa.`id_product`,'
-            . ' SUM(a.`id_attribute_group` = ' . (int) $idGroup . ') AS `own`, COUNT(*) AS `total`'
-            . ' FROM `' . _DB_PREFIX_ . 'product_attribute` pa'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_attribute_shop` pas ON pas.`id_product_attribute` = pa.`id_product_attribute`'
-            . ' AND pas.`id_shop` = ' . (int) $idShop
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_attribute_combination` pac ON pac.`id_product_attribute` = pa.`id_product_attribute`'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'attribute` a ON a.`id_attribute` = pac.`id_attribute`'
-            . ' GROUP BY pa.`id_product_attribute`, pa.`id_product`'
-            . ' HAVING `own` > 0'
-        ) ?: [];
-
-        $deleted = 0;
-        $changed = 0;
-        $productIds = [];
-        foreach ($rows as $row) {
-            if ((int) $row['own'] === (int) $row['total']) {
-                ++$deleted;
-            } else {
-                ++$changed;
-            }
-            $productIds[(int) $row['id_product']] = true;
-        }
-
-        $products = [];
-        if ($productIds !== []) {
-            $names = $db->executeS(
-                'SELECT `id_product`, `name` FROM `' . _DB_PREFIX_ . 'product_lang`'
-                . ' WHERE `id_shop` = ' . (int) $idShop . ' AND `id_lang` = ' . (int) $idLang
-                . ' AND `id_product` IN (' . implode(',', array_map('intval', array_keys($productIds))) . ')'
-            ) ?: [];
-            $byId = [];
-            foreach ($names as $name) {
-                $byId[(int) $name['id_product']] = trim((string) $name['name']);
-            }
-            $ids = array_keys($productIds);
-            sort($ids);
-            foreach ($ids as $idProduct) {
-                $products[] = ['id_product' => $idProduct, 'name' => $byId[$idProduct] ?? ''];
-            }
-        }
-
-        // The value of an attribute condition is the id_attribute, as
-        // somcp_create_catalog_price_rule writes it.
-        $rules = $db->executeS(
-            'SELECT DISTINCT g.`id_specific_price_rule` FROM `' . _DB_PREFIX_ . 'specific_price_rule_condition` c'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule_condition_group` g'
-            . ' ON g.`id_specific_price_rule_condition_group` = c.`id_specific_price_rule_condition_group`'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule` r ON r.`id_specific_price_rule` = g.`id_specific_price_rule`'
-            . ' AND r.`id_shop` = ' . (int) $idShop
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'attribute` a ON a.`id_attribute` = CAST(c.`value` AS UNSIGNED)'
-            . ' AND a.`id_attribute_group` = ' . (int) $idGroup
-            . ' WHERE c.`type` = \'attribute\''
-            . ' ORDER BY g.`id_specific_price_rule`'
-        ) ?: [];
-
-        return [
-            'deleted' => $deleted,
-            'changed' => $changed,
-            'products' => $products,
-            'rules' => array_map(static function (array $row): int {
-                return (int) $row['id_specific_price_rule'];
-            }, $rules),
-        ];
     }
 }

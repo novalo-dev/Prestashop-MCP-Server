@@ -586,7 +586,9 @@ its values. Before calling it:
 
 1. Take the group from `somcp_list_attributes`, never guessed, and read it with
    `somcp_get_attribute_group`: tell the merchant how many values go with it
-   (`values_count`) and which products offer it.
+   (`values_count`), which products offer it (`products`), how many
+   combinations hold it (`combinations_count`) and how many are built only on
+   it (`combinations_only_on_it`), since those go with their stock.
 2. Say plainly what goes with it: every combination built only on this group
    is deleted with its stock and images, and the others lose that one value.
 3. Delete only once the merchant confirms by the group's name.

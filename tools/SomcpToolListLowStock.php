@@ -43,6 +43,14 @@ class SomcpToolListLowStock
     private const MAX_LIMIT = 100;
 
     /**
+     * @var string What searchCondition() matches, worded once for the search
+     *             property of this tool and of somcp_list_stock_movements
+     */
+    public const SEARCH = 'Part of a product name, product or combination reference, combination attribute '
+        . '(Black, Size - M) or supplier name, as the Catalog > Stock search box; on PrestaShop 9 also '
+        . 'EAN-13, ISBN, UPC or MPN.';
+
+    /**
      * @return SomcpTool
      */
     public static function define(): SomcpTool
@@ -81,8 +89,7 @@ class SomcpToolListLowStock
                     ],
                     'search' => [
                         'type' => 'string',
-                        'description' => 'Part of the product name, of the product or combination '
-                            . 'reference, or of the supplier name.',
+                        'description' => self::SEARCH,
                     ],
                     'language' => [
                         'type' => 'string',
@@ -280,14 +287,53 @@ class SomcpToolListLowStock
         if ($filters['search'] !== '') {
             // Matched on the line itself: a combination is found by its own
             // reference without bringing its sizes that do not match along.
-            $like = "LIKE '%" . pSQL($filters['search']) . "%'";
-            $query->where(
-                '(pl.`name` ' . $like . ' OR p.`reference` ' . $like
-                . ' OR pa.`reference` ' . $like . ' OR su.`name` ' . $like . ')'
-            );
+            $query->where(self::searchCondition($filters['search'], $idLang));
         }
 
         return $query;
+    }
+
+    /**
+     * The condition of the search box of Catalog > Stock, shared by this tool
+     * and somcp_list_stock_movements so the same word finds the same lines in
+     * both and on the screen.
+     *
+     * It expects the aliases both queries use: p (product), pl (product_lang),
+     * pa (product_attribute, null on a line without combination) and su
+     * (supplier). The core matches the combination name it builds, "group -
+     * attribute" pairs joined with ", " in the language read, so "Black",
+     * "Color" and "Color - Black" all find a black combination; from
+     * PrestaShop 9 on the box also matches the barcodes of the product and of
+     * the combination, which 8 does not, and a tool that matched more than the
+     * running version's box would list lines the merchant cannot find there.
+     *
+     * @param string $search Text the caller gave, escaped here
+     * @param int $idLang Language of the names, already resolved
+     *
+     * @return string
+     */
+    public static function searchCondition(string $search, int $idLang): string
+    {
+        $like = "LIKE '%" . pSQL($search) . "%'";
+        $fields = ['pl.`name`', 'p.`reference`', 'pa.`reference`', 'su.`name`'];
+        if (version_compare(_PS_VERSION_, '9.0.0', '>=')) {
+            foreach (['ean13', 'isbn', 'upc', 'mpn'] as $code) {
+                $fields[] = 'p.`' . $code . '`';
+                $fields[] = 'pa.`' . $code . '`';
+            }
+        }
+        // Null on a line without combination, so such a line is never
+        // matched by an attribute, as on the screen.
+        $fields[] = '(SELECT GROUP_CONCAT(DISTINCT CONCAT(agl.`name`, \' - \', al.`name`) SEPARATOR \', \')'
+            . ' FROM `' . _DB_PREFIX_ . 'product_attribute_combination` pac'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'attribute` a ON a.`id_attribute` = pac.`id_attribute`'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'attribute_lang` al ON al.`id_attribute` = a.`id_attribute`'
+            . ' AND al.`id_lang` = ' . (int) $idLang
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'attribute_group_lang` agl'
+            . ' ON agl.`id_attribute_group` = a.`id_attribute_group` AND agl.`id_lang` = ' . (int) $idLang
+            . ' WHERE pac.`id_product_attribute` = pa.`id_product_attribute`)';
+
+        return '(' . implode(' ' . $like . ' OR ', $fields) . ' ' . $like . ')';
     }
 
     /**

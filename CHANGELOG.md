@@ -18,6 +18,15 @@ are:
 
 ### Changed
 
+**The stock and movement searches find what the search box of Catalog > Stock
+finds.** A search for a colour or a size, such as Black, found nothing in the
+low stock list or the stock movements, and on PrestaShop 9 neither did a
+scanned barcode, so the assistant told the merchant that no such stock existed
+while the Stock page listed it. Both searches now also match the attributes of
+a combination and, on PrestaShop 9, the EAN-13, ISBN, UPC and MPN of the
+product or the combination, exactly as the search box of the running version
+does.
+
 **Before an attribute group is deleted, the assistant can show what goes with
 it.** Deleting a group such as Size removes every combination built only on
 its values, with their stock, and the products concerned were only named once

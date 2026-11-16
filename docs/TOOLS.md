@@ -3887,7 +3887,7 @@ The quantities the storefront sells against, per product and combination.
 | `active` | boolean | no | enabled products only, true by default; false includes the disabled ones (**Filter by status**) |
 | `id_category` | integer | no | products associated with this category, its default one or not, from `somcp_list_categories` (**Filter by categories**) |
 | `id_supplier` | integer | no | products whose default supplier this is (`product.id_supplier`), from `somcp_list_suppliers` (**Filter by supplier**) |
-| `search` | string | no | part of the product name, of the product or combination reference, or of the supplier name (**Search products**) |
+| `search` | string | no | part of the product name, of the product or combination reference, of the attributes of the combination (Black, Size - M), or of the supplier name, as the search box of the tab (**Search products**); from PrestaShop 9 on, also of an EAN-13, ISBN, UPC or MPN code |
 | `language` | string | no | ISO code of one of the shop's active languages, for the product names and the search, refused otherwise; the shop default when left out; given back as `language` in the answer |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
@@ -3942,7 +3942,7 @@ The quantities the storefront sells against, per product and combination.
 |---|---|---|---|
 | `id_product` | integer | no | movements of one product (from `somcp_search_products`) |
 | `id_product_attribute` | integer | no | of one combination of `id_product` (from `somcp_get_stock`); refused without `id_product` |
-| `search` | string | no | part of the product name, reference or supplier name, as the tab's search box |
+| `search` | string | no | part of the product name, of the product or combination reference, of the attributes of the combination (Black, Size - M), or of the supplier name, as the search box of the tab; from PrestaShop 9 on, also of an EAN-13, ISBN, UPC or MPN code |
 | `id_stock_mvt_reason` | integer | no | one movement type, as **Filter by movement type**, from `types` of a previous answer |
 | `id_employee` | integer | no | movements made by one employee, as **Filter by employee**, from `employees` of a previous answer |
 | `date_from` / `date_to` | string | no | days `YYYY-MM-DD`, as **From** / **To** of **Filter by period**, both included (`date_to` up to 23:59:59); a value that is not a day is refused |

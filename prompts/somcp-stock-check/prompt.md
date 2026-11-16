@@ -38,7 +38,8 @@ which may not be the one the merchant has in mind.
    level. Narrow it the way the Stock page does when the merchant asks: a
    category (`id_category`, from `somcp_list_categories`), a supplier
    (`id_supplier`, from `somcp_list_suppliers`) or a word of the name, the
-   reference or the supplier name (`search`).
+   reference, an attribute such as Black or the supplier name (`search`), and
+   on PrestaShop 9 a barcode.
    It returns one line per combination: read `somcp_get_stock` on a product to
    name its combinations by their attributes. Read the next page while
    `total_count` says there is more, before saying that is all.

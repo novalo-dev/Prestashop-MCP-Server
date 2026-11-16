@@ -678,7 +678,10 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
 
         $result = [
             'created' => true,
-            'id_order_state' => $idOrderState,
+            // status_id, as somcp_update_order_status, somcp_delete_order_status
+            // and the status row name it: the identifier read here is the one
+            // the next call is given back.
+            'status_id' => $idOrderState,
         ];
         if ($icon !== null) {
             $result['icon'] = $icon;

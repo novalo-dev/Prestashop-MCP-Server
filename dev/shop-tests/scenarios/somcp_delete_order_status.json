@@ -1,7 +1,7 @@
 {
   "calls": [
-    {"why": "a built-in status of PrestaShop is refused: no back office offers Delete on an unremovable one", "arguments": {"status_id": 1}, "expect": "error", "contains": ["is a built-in status", "Nothing was deleted"]},
-    {"why": "the identifier read as a string of digits, still a built-in status", "arguments": {"status_id": "2"}, "expect": "error", "contains": ["is a built-in status", "Nothing was deleted"]},
+    {"why": "a built-in status of PrestaShop is refused: no back office offers Delete on an unremovable one", "arguments": {"status_id": 1}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- status_id: order status", "is a built-in status", "For security reasons, you cannot delete default order statuses."]},
+    {"why": "the identifier read as a string of digits, still a built-in status", "arguments": {"status_id": "2"}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- status_id: order status", "is a built-in status", "For security reasons, you cannot delete default order statuses."]},
     {"why": "an identifier that is not a number", "arguments": {"status_id": "2 OR 1=1"}, "expect": "error", "contains": ["Nothing was deleted", "- status_id: a whole number above 0"]},
     {"why": "an identifier given as a list", "arguments": {"status_id": [1]}, "expect": "error", "contains": ["- status_id: a whole number above 0"]},
     {"why": "no identifier", "arguments": {}, "expect": "error", "contains": ["- status_id: a whole number above 0"]},

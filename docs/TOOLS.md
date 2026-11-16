@@ -2096,7 +2096,7 @@ returns, so a status read there can be given back. The former names
 `template`) are still accepted; a former name next to its current one is
 refused.
 
-**Returns** - `created`, `id_order_state`, `status` (the status built by the
+**Returns** - `created`, `status_id`, `status` (the status built by the
 row function of `somcp_list_order_statuses`, `status_id` and `icon`
 included) and, when an icon was given, `icon`: its `url` or `upload_ref`,
 with `stored: true` or `refused: <reason>`.
@@ -2209,7 +2209,7 @@ past order on either version.
 
 **Does** - deletes one order status the merchant created, as the **Delete** action of the order status list of **Shop Parameters > Order Settings > Statuses** does.
 
-**Do not use for** - the statuses of a return (→ `somcp_delete_return_status`): a return status is not an order status, and its identifiers are never order status identifiers.
+**Do not use for** - the statuses of a return (→ `somcp_delete_return_status`): a return status is not an order status, and its identifiers are never order status identifiers; hiding a status from customers (→ `somcp_update_order_status` with the **Hide this status in all customer orders.** box, `hidden_from_customer`): the status stays in the list and on the orders, only the customer stops seeing it.
 
 **Parameters**
 
@@ -2222,10 +2222,13 @@ past order on either version.
 **Notes**
 - The deletion is soft on both versions, unlike a return status: the row stays, `deleted` is set to 1 through `OrderState::update()` (as the 9.0.0 `DeleteOrderStateHandler` does), so the orders that had it keep their history and their current status, and `somcp_get_order` still shows its name in `history[]`. The icon file is kept.
 - Once deleted it leaves `OrderState::getOrderStates()`, so it disappears from the list and from the choices of `somcp_set_order_status`.
-- The 14 statuses of PrestaShop and the ones modules add are `unremovable`, and neither back office offers **Delete** on them (the rows `somcp_list_order_statuses` reports with `built_in: true`); the tool refuses them itself, with the status name, before the question of use.
+- The 14 statuses of PrestaShop and the ones modules add are `unremovable`, and neither back office offers **Delete** on them (the rows `somcp_list_order_statuses` reports with `built_in: true`); the tool refuses them itself, before the question of use, as one `status_id` line of the shared refusal with the status name and the 8.0.1 back office sentence: `- status_id: order status <n> (<name>) is a built-in status of PrestaShop or of a module. For security reasons, you cannot delete default order statuses.`
 - Permission `delete` on `AdminStatuses`: the right the back office checks on its delete action for an order status; edit alone does not allow it.
 - Only a whole number is an identifier (`SomcpTool::id()`). An unknown identifier, or one already deleted, is refused pointing to `somcp_list_order_statuses`, never read as a success. Whether the status is gone is read back rather than inferred from `update()`.
 - Not replayable: the read tool to check is `somcp_list_order_statuses`.
+- A working deletion is checked by `dev/shop-tests/run.php` rather than the JSON scenario: the status it deletes is created first by `somcp_create_order_status`, and its identifier differs from one version to the other.
+
+**Differences between 8.0.1 and 9.0.0** - 8.0.1 deletes through `AdminStatusesController::postProcess()` and refuses a default status with "For security reasons, you cannot delete default order statuses."; 9.0.0 deletes through `DeleteOrderStateHandler`, without that sentence. The tool gives the sentence on both, and the result (`deleted` set to 1) is the same.
 
 #### `somcp_list_carriers`
 **State**: written · [issue #20](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/20)

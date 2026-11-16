@@ -56,6 +56,18 @@ replaced or a status without one got its first.
 
 ### Fixed
 
+**A built-in order status refused for deletion reads like the other
+refusals, and a new status gives its identifier under the usual name.** When
+the assistant tried to delete one of the order statuses of PrestaShop or of a
+module, the refusal was a sentence of its own, unlike the other refusals of
+the tool. It is now given in the same list, with the name of the status and
+the back office sentence "For security reasons, you cannot delete default
+order statuses.". The assistant is also pointed to the **Hide this status in
+all customer orders.** box when the merchant only wants customers to stop
+seeing a status. A status created by `somcp_create_order_status` now gives
+its identifier as `status_id`, the name the update and delete tools take,
+instead of `id_order_state`.
+
 **A new order is refused rather than placed without what was asked.** When
 the free shipping of a new order could not be saved, `somcp_create_order`
 placed the order anyway, with the shipping charged. It is now refused and

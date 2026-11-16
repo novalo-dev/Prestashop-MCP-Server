@@ -252,6 +252,107 @@ if ($upload !== null) {
     }
 }
 
+// An order status icon given by deposit, then the status deleted twice
+// (#224): the JSON scenarios cannot hold a real deposit, nor the identifier of
+// a status they created, which differs from one version to the other. The
+// icon form takes a GIF only, so a PNG is turned away at the deposit and a
+// GIF is stored; the status created with it is then deleted, and deleting it
+// again must be refused rather than read as a success.
+$createStatus = $registry->get('somcp_create_order_status');
+$deleteStatus = $registry->get('somcp_delete_order_status');
+if ($createStatus !== null && $deleteStatus !== null) {
+    $statusCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $statusText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $deposit = static function (string $dataUri, string $name) use ($createStatus, $employee): array {
+        $reference = SomcpUpload::inviteFor((int) $employee->id, $createStatus, 'icon');
+        $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+
+        return [
+            $reference,
+            $invitation === null ? 'no deposit could be opened' : SomcpUpload::enter($invitation, 'data', $dataUri, $name),
+        ];
+    };
+
+    ++$calls;
+    [, $entered] = $deposit('data:image/png;base64,' . base64_encode((string) file_get_contents(__DIR__ . '/../../logo.png')), 'icon.png');
+    if ($entered === '' || strpos($entered, 'only gif are accepted') === false) {
+        $failures[] = 'somcp_create_order_status (a PNG icon): expected the deposit to take a GIF only, got "' . $entered . '"';
+    } else {
+        printf("  %-6s %s\n", 'error', 'somcp_create_order_status (a PNG icon turned away at the deposit)');
+    }
+
+    ++$calls;
+    // The smallest valid GIF: one transparent pixel.
+    [$reference, $entered] = $deposit('data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'icon.gif');
+    $idCreated = 0;
+    if ($entered !== '') {
+        $failures[] = 'somcp_create_order_status (a GIF icon): the GIF was not deposited - ' . $entered;
+    } else {
+        try {
+            $result = $statusCall($createStatus, [
+                'languages' => ['en'],
+                'name' => ['en' => 'Somcp deleted twice'],
+                'icon' => ['upload_ref' => $reference],
+            ]);
+            $answer = json_decode(trim($statusText($result)), true);
+            $idCreated = is_array($answer) ? (int) ($answer['status_id'] ?? 0) : 0;
+            if (!empty($result['isError']) || $idCreated === 0 || empty($answer['icon']['stored'])) {
+                $failures[] = 'somcp_create_order_status (a GIF icon): expected a status created with its icon stored - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_order_status (a GIF icon deposited, then stored)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_create_order_status (a GIF icon): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+
+    if ($idCreated > 0) {
+        $calls += 2;
+        try {
+            $result = $statusCall($deleteStatus, ['status_id' => $idCreated]);
+            $text = $statusText($result);
+            $missing = array_filter(['"deleted": true', '"language": "en"', '"orders_with_it": 0'], static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            });
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_delete_order_status (a status the merchant created): expected it deleted - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_order_status (a status the merchant created)');
+            }
+
+            $result = $statusCall($deleteStatus, ['status_id' => $idCreated]);
+            $text = $statusText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was deleted') === false
+                || strpos($text, 'no order status of this shop has the identifier ' . $idCreated) === false) {
+                $failures[] = 'somcp_delete_order_status (the same status again): expected a refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_delete_order_status (the same status again, refused)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_delete_order_status (a status the merchant created): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+}
+
 // Permissions. The calls above run as a superadmin holding exactly the scopes
 // each tool needs; what matters as much is who is turned away. Checked on the
 // registry's own gate - isAvailableTo(), which decides both the listing and

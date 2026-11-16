@@ -69,7 +69,7 @@
       },
       "expect": "error",
       "contains": [
-        "not a language of this shop"
+        "not one of the shop's languages"
       ]
     },
     {

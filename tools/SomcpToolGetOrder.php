@@ -636,18 +636,33 @@ class SomcpToolGetOrder
     {
         $history = [];
         foreach ($order->getHistory($idLang) as $step) {
-            $history[] = [
-                // The Resend email action of each line of the Status tab
-                // points to it.
-                'id_order_history' => (int) $step['id_order_history'],
-                'date' => SomcpTool::isoDate($step['date_add']),
-                'status' => (string) $step['ostate_name'],
-                'status_id' => (int) $step['id_order_state'],
-                'employee' => trim((string) ($step['employee_firstname'] ?? '') . ' ' . (string) ($step['employee_lastname'] ?? '')),
-            ];
+            $history[] = self::historyEntry($step);
         }
 
         return $history;
+    }
+
+    /**
+     * One entry of history, built here only: somcp_resend_order_status_email
+     * gives back the line it resent through this same function, so the
+     * assistant can match it with the line it read, and a change of shape
+     * reaches both tools at once.
+     *
+     * @param array<string, mixed> $step A row of Order::getHistory()
+     *
+     * @return array<string, mixed>
+     */
+    public static function historyEntry(array $step): array
+    {
+        return [
+            // The Resend email action of each line of the Status tab
+            // points to it.
+            'id_order_history' => (int) $step['id_order_history'],
+            'date' => SomcpTool::isoDate($step['date_add']),
+            'status' => (string) $step['ostate_name'],
+            'status_id' => (int) $step['id_order_state'],
+            'employee' => trim((string) ($step['employee_firstname'] ?? '') . ' ' . (string) ($step['employee_lastname'] ?? '')),
+        ];
     }
 
     /**

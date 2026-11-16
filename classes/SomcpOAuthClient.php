@@ -350,8 +350,8 @@ class SomcpOAuthClient
             if (!is_string($uri) || Tools::strlen($uri) > 500) {
                 continue;
             }
-            $parts = parse_url($uri);
-            if (!is_array($parts) || empty($parts['scheme']) || isset($parts['fragment'])) {
+            $parts = self::readAddress($uri);
+            if ($parts === null || empty($parts['scheme']) || isset($parts['fragment'])) {
                 continue;
             }
 
@@ -400,8 +400,8 @@ class SomcpOAuthClient
      */
     public static function redirectHostAllowed(string $redirectUri): bool
     {
-        $parts = parse_url($redirectUri);
-        if (!is_array($parts)) {
+        $parts = self::readAddress($redirectUri);
+        if ($parts === null) {
             return false;
         }
         $host = Tools::strtolower((string) ($parts['host'] ?? ''));
@@ -413,6 +413,39 @@ class SomcpOAuthClient
         }
 
         return ($parts['scheme'] ?? '') === 'https' && in_array($host, self::allowedHosts(), true);
+    }
+
+    /**
+     * Reads a return address the way the browser that follows it will.
+     *
+     * The host is checked with parse_url(), but the address is then sent as
+     * it is in a Location header, and the browser reads it with its own
+     * parser. The two disagree on a backslash, which a browser takes as the
+     * end of the host part, on characters it strips before reading, and they
+     * only agree on a user name by chance. A return address never needs any
+     * of these, so an address that carries one is refused outright: the
+     * host checked here is then the host the browser goes to. Used when a
+     * client registers and again on every authorization request, so a
+     * client stored before this check is held to it as well.
+     *
+     * @param string $uri
+     *
+     * @return array<string, int|string>|null the parts, null when the address is refused
+     */
+    private static function readAddress(string $uri): ?array
+    {
+        if (strpos($uri, '\\') !== false || preg_match('/[\x00-\x20\x7F]/', $uri)) {
+            return null;
+        }
+        if (preg_match('#^[a-z][a-z0-9+.-]*://([^/?\#]*)#i', $uri, $authority) && strpos($authority[1], '@') !== false) {
+            return null;
+        }
+        $parts = parse_url($uri);
+        if (!is_array($parts) || isset($parts['user']) || isset($parts['pass'])) {
+            return null;
+        }
+
+        return $parts;
     }
 
     /**

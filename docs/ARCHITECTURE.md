@@ -67,9 +67,11 @@ The pieces, in `classes/`:
 - `SomcpOAuthClient` identifies the client, by dynamic registration or by a
   client ID metadata document, and validates its redirect URIs: `https`, or
   `http` on loopback only, and a public host only when it is on the list the
-  merchant sets (the known clients by default). The host is checked again on
-  every authorization request, and one off the list gets the shop's "page not
-  found".
+  merchant sets (the known clients by default). An address that carries a
+  user name, a backslash or a blank is refused whatever host it seems to name,
+  so the host checked is the host the browser goes to. The host is checked
+  again on every authorization request, and one off the list gets the shop's
+  "page not found".
 - `SomcpOAuthServer` runs the authorization request and the consent.
 - `SomcpOAuthToken` issues codes and tokens. Everything is stored **hashed**.
   Tokens are bound to the resource they were issued for (RFC 8707), so a token

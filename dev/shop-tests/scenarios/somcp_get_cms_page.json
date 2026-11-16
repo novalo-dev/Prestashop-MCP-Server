@@ -3,7 +3,9 @@
     {"why": "reads the delivery page of the demo shop with every field of its edit form", "arguments": {"id_cms": 1}, "expect": "ok", "contains": ["\"id_cms\": 1", "\"language\": \"en\"", "\"id_cms_category\": 1", "\"title\": \"Delivery\"", "\"meta_title\"", "\"seo_title\"", "\"meta_description\"", "\"meta_keywords\"", "\"link_rewrite\": \"delivery\"", "\"content\"", "\"indexation\"", "\"active\": true", "\"position\"", "\"url\""]},
     {"why": "the texts read in a language the shop has, said by its code", "arguments": {"id_cms": 1, "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"title\": \"Delivery\""]},
     {"why": "another page of the demo shop", "arguments": {"id_cms": 2}, "expect": "ok", "contains": ["\"id_cms\": 2", "\"content\""]},
-    {"why": "a page the shop does not have is refused, pointing to the list", "arguments": {"id_cms": 999999}, "expect": "error", "contains": ["No CMS page of this shop", "somcp_list_cms_pages"]},
+    {"why": "a page the shop does not have is refused, pointing to the list", "arguments": {"id_cms": 999999}, "expect": "error", "contains": ["Nothing was read.", "id_cms: no CMS page of this shop has the identifier 999999", "somcp_list_cms_pages"]},
+    {"why": "a misspelt field is named rather than ignored", "arguments": {"id_cms": 1, "id_page": 1}, "expect": "error", "contains": ["Nothing was read.", "id_page: not a field of this tool"]},
+    {"why": "an identifier given as a string of digits is read as that page, as in the other tools", "arguments": {"id_cms": "1"}, "expect": "ok", "contains": ["\"id_cms\": 1", "\"title\": \"Delivery\""]},
     {"why": "an identifier that is not a whole number is refused, naming the field", "arguments": {"id_cms": "first"}, "expect": "error", "contains": ["id_cms"]},
     {"why": "a missing identifier is refused, naming the field", "arguments": {}, "expect": "error", "contains": ["id_cms"]},
     {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"id_cms": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}

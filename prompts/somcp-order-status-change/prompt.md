@@ -191,7 +191,8 @@ for the merchant's go-ahead before the call.
 - It needs merchandise returns on (**Customer Service > Merchandise
   Returns**). When they are off, or for a chosen amount, use
   `somcp_issue_partial_refund`; a delivered order goes to
-  `somcp_return_order_products`.
+  `somcp_return_order_products`, an unpaid one to
+  `somcp_cancel_order_products`.
 - Never repeat the call on a lost answer: check `quantity_refunded` and
   `documents.credit_slips` with `somcp_get_order`.
 
@@ -387,11 +388,13 @@ let them say yes to that one before calling. Deleting is final.
 `id_order_invoice`. It changes what the customer owes.
 
 - A discount **lowers the total**. Say the new total before adding it, not
-  after: the answer gives `total_tax_included` and `discounts_tax_included`,
+  after: the answer gives `totals.total_tax_included` and
+  `totals.discounts_tax_included`,
   but the merchant decides on the figure first.
 - `name` is one plain text, the line the customer reads on the invoice.
-- A percentage is 1 to 100; an amount is at most the order total (the refusal
-  gives that total). `free_shipping` takes no value.
+- A percentage is 1 to 100; an amount is at most the order total, or the
+  total of each invoice once the order has invoices (the refusal gives the
+  total it was compared with). `free_shipping` takes no value.
 - **Do not repeat the call** on a lost answer: two identical discounts are both
   applied. Check `discounts` with `somcp_get_order`, and remove an extra one
   with `somcp_delete_order_discount`.
@@ -418,8 +421,10 @@ the order page does. Take `id_address` from `somcp_get_customer`
 guess it.
 
 - Changing the delivery address **can change the taxes and the total**, because
-  the tax follows the country. Say the new total (`total_tax_included` in the
-  answer) before the change, not after.
+  the tax follows the country, and PrestaShop recomputes them only during the
+  change. Before it, warn of that and give the current total
+  (`totals.total_tax_included` of `somcp_get_order`); after it, give the
+  previous and the new total (`previous_totals` and `totals` in the answer).
 - An address that is not the customer's is refused with the list of the ones
   that are: pick from that list.
 - The same address as now answers `changed: false` and nothing happens. On a
@@ -434,8 +439,11 @@ guess it.
 returns; never guess it. The tracking number stays with
 `somcp_set_order_tracking`.
 
-- Changing the carrier **changes the shipping cost and the total**. Say the new
-  amount before the change, not after.
+- Changing the carrier **changes the shipping cost and the total**, recomputed
+  by PrestaShop only during the change. Before it, warn of that and give the
+  current total (`totals.total_tax_included` of `somcp_get_order`); after it,
+  give the previous and the new amounts (`previous_totals` and `totals` in the
+  answer).
 - A carrier that does not deliver this order is refused with the carriers that
   do: pick from that list.
 - The carrier already in place answers `changed: false` and nothing happens.
@@ -449,8 +457,9 @@ validated yet, as **Change currency** in the Payment block does. Give the ISO
 code (`EUR`, `USD`); a refused call lists the shop's active currencies.
 
 - A currency change **converts every amount of the order at today's rate**.
-  Say the new total first, before the change, and suggest checking the
-  exchange rates of the shop beforehand.
+  Before it, warn of that, give the current total, and suggest checking the
+  exchange rates of the shop; after it, give the previous and the new total
+  (`previous_totals` and `totals` in the answer).
 - A validated order is refused, as on screen: its amounts are final.
 - The currency already in place answers `changed: false` and nothing happens.
   On a lost answer, read `currency` with `somcp_get_order` rather than calling
@@ -529,7 +538,7 @@ order and sends the emails a new order sends for its status.
   `somcp_list_cart_rules`, given as `cart_rules`.
 - Before the call, show the merchant the lines, the carrier, the vouchers with
   the total, and the status, and wait for their yes.
-- A price the merchant sets for a line goes in `unit_price_tax_excluded` of
+- A price the merchant sets for a line goes in `unit_price_tax_excl` of
   that line, tax excluded as the **Price** field of the **Cart** block. Before
   the call, show it beside the price the shop would charge (`price_tax_excl` of
   `somcp_get_product`), so the merchant sees what they change. Lines left

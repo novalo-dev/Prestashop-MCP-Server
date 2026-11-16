@@ -113,6 +113,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         'price' => 'price_impact_tax_excl',
         'unit_price_impact' => 'unit_price_impact_tax_excl',
         'weight' => 'weight_impact',
+        'ecotax' => 'ecotax_tax_excl',
     ];
 
     /** @var array<string, string> The removal lists, and what each one holds. */
@@ -393,16 +394,17 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $packItems = $plan['pack'] === null ? null : self::replacePack((int) $product->id, $plan['pack']);
         $virtualFile = $plan['virtual_file'] === null ? null : self::applyVirtualFile((int) $product->id, $plan['virtual_file']);
 
-        if ($plan['index']) {
-            // What the back office does after saving a product: one the search
-            // can find is indexed, one it can no longer find leaves the index.
-            if ($stored->active && in_array($stored->visibility, ['both', 'search'], true)) {
-                if (Configuration::get('PS_SEARCH_INDEXATION')) {
-                    Search::indexation(false, (int) $stored->id);
-                }
-            } else {
-                Search::removeProductsSearchIndex([(int) $stored->id]);
+        // What the back office does after every save of a product, whatever
+        // changed: the index also holds the tags, categories, features, brand,
+        // references and combinations, so a call that changed only one of them
+        // still leaves stale words behind. One the search can find is indexed,
+        // one it can no longer find leaves the index.
+        if ($stored->active && in_array($stored->visibility, ['both', 'search'], true)) {
+            if (Configuration::get('PS_SEARCH_INDEXATION')) {
+                Search::indexation(false, (int) $stored->id);
             }
+        } else {
+            Search::removeProductsSearchIndex([(int) $stored->id]);
         }
 
         $warnings = self::updateWarnings($stored, $plan, $idShop);
@@ -470,7 +472,6 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             'texts' => [],
             'changes' => [],
             'touched' => [],
-            'index' => false,
         ];
 
         // The creation's own readings, for the groups whose fields are single
@@ -578,9 +579,6 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                 $plan['product'][$field] = $merged;
             }
         }
-
-        // Whether the product can be found by the search may have changed.
-        $plan['index'] = $plan['product'] !== [];
     }
 
     /**
@@ -1302,10 +1300,32 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         self::distinctRules($idProduct, $idShop, $owned, $remove, $rules, $plan, $errors);
 
         $priorities = self::priorities($group, $errors);
-        if ($priorities !== null) {
-            $current = array_values(array_filter(SpecificPrice::getPriority($idProduct), static function ($value): bool {
-                return $value !== 'id_customer';
-            }));
+        $useDefault = self::useDefaultPriorities($group, $errors);
+        $own = SomcpToolGetProduct::hasOwnPriorities($idProduct);
+        $current = array_values(array_filter(SpecificPrice::getPriority($idProduct), static function ($value): bool {
+            return $value !== 'id_customer';
+        }));
+        $toDefault = false;
+        if ($useDefault === true) {
+            // The order that applies is accepted beside it, so a product read
+            // with somcp_get_product and given back unchanged changes nothing.
+            if ($priorities !== null && $priorities !== $current) {
+                $errors[] = self::priorityConflict();
+            }
+            $priorities = null;
+            if ($own) {
+                self::record($plan, 'specific_prices.use_default_priorities', false, true);
+                $toDefault = true;
+            }
+        } elseif ($useDefault === false && !$own) {
+            // Set a specific order with the selects left as shown writes the
+            // order that applies as the product's own, as the page does.
+            $priorities = $priorities ?? $current;
+            self::record($plan, 'specific_prices.use_default_priorities', true, false);
+            if ($priorities !== $current) {
+                self::record($plan, 'specific_prices.priorities', $current, $priorities);
+            }
+        } elseif ($priorities !== null) {
             if ($current === $priorities) {
                 $priorities = null;
             } else {
@@ -1313,7 +1333,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             }
         }
 
-        $plan['specific_prices'] = ['remove' => $remove, 'rules' => $rules, 'priorities' => $priorities];
+        $plan['specific_prices'] = ['remove' => $remove, 'rules' => $rules, 'priorities' => $priorities, 'to_default' => $toDefault];
     }
 
     /**
@@ -1576,12 +1596,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
      * @param array<string, mixed> $item the image, with id_product_attributes removed here
      * @param Product $product
      * @param int $idShop
+     * @param array<string, mixed> $plan read for the combinations the same call removes
      * @param string $path
      * @param array<int, string> $errors
      *
      * @return array<int, int>|null null when the field is left out
      */
-    private static function illustratedByIdentifier(array &$item, Product $product, int $idShop, string $path, array &$errors): ?array
+    private static function illustratedByIdentifier(array &$item, Product $product, int $idShop, array $plan, string $path, array &$errors): ?array
     {
         if (!array_key_exists('id_product_attributes', $item)) {
             return null;
@@ -1598,6 +1619,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             if (!SomcpToolGetProduct::combinationBelongs($product, $id, $idShop)) {
                 $errors[] = $path . '.id_product_attributes: no combination of this product has the identifier ' . $id
                     . ' - find it with somcp_get_product';
+            } elseif (in_array($id, $plan['combinations']['remove'], true)) {
+                // The combinations are deleted before the image links are
+                // written, so the link would point at a row that is gone.
+                $errors[] = $path . '.id_product_attributes: combination ' . $id . ' is also in remove_combinations';
             }
         }
 
@@ -1642,7 +1667,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $path = 'images[' . $i . ']';
             $id = array_key_exists('id_image', $item) ? (self::integer($item['id_image']) ?? 0) : null;
             unset($item['id_image']);
-            $illustrated = self::illustratedByIdentifier($item, $product, $idShop, $path, $errors);
+            $illustrated = self::illustratedByIdentifier($item, $product, $idShop, $plan, $path, $errors);
             self::onlyAccepted($item, 'image', $path, $errors);
             $fields = self::imageFields($item, $path, $listed, $languages, $errors);
             if ($fields['cover'] === true) {
@@ -1903,7 +1928,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $written[] = 'the suppliers';
         }
         self::writeSpecificPriceChanges($idProduct, $plan['specific_prices'], $combinationIds, $idShop);
-        if ($plan['specific_prices']['remove'] !== [] || $plan['specific_prices']['rules'] !== [] || $plan['specific_prices']['priorities'] !== null) {
+        if ($plan['specific_prices']['remove'] !== [] || $plan['specific_prices']['rules'] !== []
+            || $plan['specific_prices']['priorities'] !== null || $plan['specific_prices']['to_default']) {
             $written[] = 'the specific prices';
         }
 
@@ -2345,6 +2371,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
 
         if ($prices['priorities'] !== null && !SpecificPrice::setSpecificPriority($idProduct, $prices['priorities'])) {
             throw new RuntimeException('the specific price priorities could not be saved');
+        }
+        // Use default order: the one statement the core's
+        // RemoveSpecificPricePriorityForProductCommand runs, as the table has
+        // no object to delete through.
+        if ($prices['to_default']
+            && !Db::getInstance()->delete('specific_price_priority', 'id_product = ' . (int) $idProduct)) {
+            throw new RuntimeException('the default order of the specific price priorities could not be restored');
         }
     }
 

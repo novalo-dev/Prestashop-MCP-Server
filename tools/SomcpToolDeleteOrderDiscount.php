@@ -257,9 +257,9 @@ class SomcpToolDeleteOrderDiscount
                 'free_shipping' => (bool) $orderCartRule->free_shipping,
             ],
             'gift_line_updated' => $giftLine,
-            'discounts_tax_included' => (float) $order->total_discounts_tax_incl,
-            'total_tax_excluded' => (float) $order->total_paid_tax_excl,
-            'total_tax_included' => (float) $order->total_paid_tax_incl,
+            // As the other order write tools answer, so the totals after a
+            // change read the same whichever tool made it.
+            'totals' => SomcpToolGetOrder::totals($order),
             'currency' => (string) $currency->iso_code,
         ];
     }

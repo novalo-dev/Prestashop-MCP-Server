@@ -52,13 +52,13 @@ class SomcpToolDeleteOrderStatus
         return new SomcpTool(
             'somcp_delete_order_status',
             Somcp::t('Delete an order status'),
-            'Deletes one order status the merchant created, as the Delete action of the order status list of '
-                . 'Shop Parameters > Order Settings > Statuses. The orders that have it keep it; it leaves the '
-                . 'list and the choices of somcp_set_order_status. status_id from somcp_list_order_statuses, '
-                . 'never guessed, and have the merchant confirm it by name. The statuses of PrestaShop and of '
-                . 'modules (built_in) are refused. Not for return statuses; use somcp_delete_return_status. One '
-                . 'status per call. Do not retry on a lost answer: read somcp_list_order_statuses to see whether '
-                . 'it is gone.',
+            'Deletes one order status the merchant created, as the Delete action of Shop Parameters > Order '
+                . 'Settings > Statuses. The orders that have it keep it; it leaves the list and the choices of '
+                . 'somcp_set_order_status. status_id from somcp_list_order_statuses, never guessed; have the '
+                . 'merchant confirm it by name. Built-in statuses (built_in) are refused. Not for return statuses '
+                . '(somcp_delete_return_status) or hiding a status from customers (somcp_update_order_status, '
+                . 'hidden_from_customer). One status per call. On a lost answer, read somcp_list_order_statuses '
+                . 'rather than retry.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -112,13 +112,14 @@ class SomcpToolDeleteOrderStatus
 
         // The 14 of PrestaShop and the ones modules add are unremovable, and
         // neither back office offers Delete on them; this is what the list
-        // reports as built_in. Refused here before any question of use.
+        // reports as built_in. Refused here before any question of use, in
+        // the envelope of the other refusals, with the sentence the 8.0.1
+        // back office gives: 9.0.0 has none, and the tool says it on both.
         if ((bool) $status->unremovable) {
-            return SomcpTool::text(
-                'Order status ' . $idOrderState . ' (' . $name . ') is a built-in status of PrestaShop or of a '
-                    . 'module, and neither back office offers Delete on those. Nothing was deleted.',
-                true
-            );
+            return SomcpTool::refused('deleted', [
+                'status_id: order status ' . $idOrderState . ' (' . $name . ') is a built-in status of PrestaShop '
+                    . 'or of a module. For security reasons, you cannot delete default order statuses.',
+            ]);
         }
 
         // How many orders of the shop still have it as their current status:

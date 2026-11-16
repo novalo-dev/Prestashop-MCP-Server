@@ -302,7 +302,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         }
 
         if (array_key_exists('color', $arguments)) {
-            $plan['color'] = self::orderStatusColor($arguments['color'], $errors) ?? '';
+            $plan['color'] = self::hexColor($arguments['color'], $errors) ?? '';
         }
 
         $plan['icon'] = self::orderStatusIcon($arguments, $errors);
@@ -351,31 +351,6 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
         }
 
         return $plan;
-    }
-
-    /**
-     * The colour given in the call, or null with the reason when it is not one the form stores.
-     *
-     * Shared with somcp_update_order_status, so the two tools take the same colours.
-     *
-     * @param mixed $value
-     * @param array<int, string> $errors
-     *
-     * @return string|null
-     */
-    protected static function orderStatusColor($value, array &$errors): ?string
-    {
-        $color = trim((string) (self::string($value) ?? ''));
-        // Validate::isColor() also lets a bare word through, which the
-        // colour picker of the form never stores: only the hex code is.
-        // The same check somcp_create_attribute_value makes on a swatch.
-        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color) || !Validate::isColor($color)) {
-            $errors[] = 'color: a hex code such as #E84C3D';
-
-            return null;
-        }
-
-        return $color;
     }
 
     /**
@@ -678,7 +653,10 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
 
         $result = [
             'created' => true,
-            'id_order_state' => $idOrderState,
+            // status_id, as somcp_update_order_status, somcp_delete_order_status
+            // and the status row name it: the identifier read here is the one
+            // the next call is given back.
+            'status_id' => $idOrderState,
         ];
         if ($icon !== null) {
             $result['icon'] = $icon;
@@ -701,7 +679,7 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
      * @param int $idOrderState
      * @param array{url: string, upload_ref: string} $source
      *
-     * @return array<string, mixed> the source, with stored: true or refused: the reason
+     * @return array<string, mixed> the source, with stored: true, unchanged: true or refused: the reason
      */
     protected static function storeIcon(int $idOrderState, array $source): array
     {
@@ -731,6 +709,14 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
             }
 
             $target = _PS_IMG_DIR_ . 'os/' . $idOrderState . '.gif';
+            // The same file given again is no change: rewriting it would
+            // report one, and a call repeated with the same icon could never
+            // answer that nothing was written.
+            if (is_file($target) && hash_file('sha256', $target) === hash_file('sha256', $file)) {
+                $report['unchanged'] = true;
+
+                return $report;
+            }
             if (!@rename($file, $target) && !(@copy($file, $target) && @unlink($file))) {
                 $report['refused'] = 'the shop could not save it';
 

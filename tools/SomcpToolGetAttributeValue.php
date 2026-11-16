@@ -35,8 +35,10 @@ if (!defined('_PS_VERSION_')) {
 }
 
 // Loaded here rather than left to the order the registry reads tools/ in: the
-// reader of translated texts lives in that class.
+// reader of translated texts and the price rule conditions live in these
+// classes.
 require_once __DIR__ . '/SomcpToolCreateCategory.php';
+require_once __DIR__ . '/SomcpToolCreateCatalogPriceRule.php';
 
 class SomcpToolGetAttributeValue
 {
@@ -282,23 +284,7 @@ class SomcpToolGetAttributeValue
             sort($defaultChanged);
         }
 
-        $products = [];
-        if ($productIds !== []) {
-            $names = $db->executeS(
-                'SELECT `id_product`, `name` FROM `' . _DB_PREFIX_ . 'product_lang`'
-                . ' WHERE `id_shop` = ' . (int) $idShop . ' AND `id_lang` = ' . (int) $idLang
-                . ' AND `id_product` IN (' . implode(',', array_map('intval', array_keys($productIds))) . ')'
-            ) ?: [];
-            $byId = [];
-            foreach ($names as $name) {
-                $byId[(int) $name['id_product']] = trim((string) $name['name']);
-            }
-            $ids = array_keys($productIds);
-            sort($ids);
-            foreach ($ids as $idProduct) {
-                $products[] = ['id_product' => $idProduct, 'name' => $byId[$idProduct] ?? ''];
-            }
-        }
+        $products = self::productNames(array_keys($productIds), $idShop, $idLang);
 
         // The cart rules whose product restrictions hold this value: the core
         // cleans them with cleanProductRuleIntegrity('attributes', ...).
@@ -312,28 +298,56 @@ class SomcpToolGetAttributeValue
             . ' ORDER BY g.`id_cart_rule`'
         ) ?: [];
 
-        // The value of an attribute condition is the id_attribute, as
-        // somcp_create_catalog_price_rule writes it; the core leaves these.
-        $rules = $db->executeS(
-            'SELECT DISTINCT g.`id_specific_price_rule` FROM `' . _DB_PREFIX_ . 'specific_price_rule_condition` c'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule_condition_group` g'
-            . ' ON g.`id_specific_price_rule_condition_group` = c.`id_specific_price_rule_condition_group`'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule` r ON r.`id_specific_price_rule` = g.`id_specific_price_rule`'
-            . ' AND r.`id_shop` = ' . (int) $idShop
-            . ' WHERE c.`type` = \'attribute\' AND CAST(c.`value` AS UNSIGNED) = ' . (int) $idAttribute
-            . ' ORDER BY g.`id_specific_price_rule`'
-        ) ?: [];
-
         return [
             'combinations' => $combinations,
             'default_changed' => $defaultChanged,
             'cart_rules' => array_map(static function (array $row): int {
                 return (int) $row['id_cart_rule'];
             }, $cartRules),
-            'rules' => array_map(static function (array $row): int {
-                return (int) $row['id_specific_price_rule'];
-            }, $rules),
+            // The core leaves the price rule conditions on the value behind;
+            // read through the function every delete names them with.
+            'rules' => SomcpToolCreateCatalogPriceRule::rulesOn('attribute', [$idAttribute], $idShop),
             'products' => $products,
         ];
+    }
+
+    /**
+     * The products named in the language read, as {id_product, name}, by
+     * increasing id_product.
+     *
+     * Shared by the counts of what an attribute value or group delete takes
+     * with it, so every tool that names the products concerned names them
+     * alike.
+     *
+     * @param array<int, int> $ids
+     * @param int $idShop
+     * @param int $idLang
+     *
+     * @return array<int, array{id_product: int, name: string}>
+     */
+    public static function productNames(array $ids, int $idShop, int $idLang): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static function (int $id): bool {
+            return $id > 0;
+        })));
+        if ($ids === []) {
+            return [];
+        }
+        sort($ids);
+        $names = Db::getInstance()->executeS(
+            'SELECT `id_product`, `name` FROM `' . _DB_PREFIX_ . 'product_lang`'
+            . ' WHERE `id_shop` = ' . (int) $idShop . ' AND `id_lang` = ' . (int) $idLang
+            . ' AND `id_product` IN (' . implode(',', $ids) . ')'
+        ) ?: [];
+        $byId = [];
+        foreach ($names as $name) {
+            $byId[(int) $name['id_product']] = trim((string) $name['name']);
+        }
+        $products = [];
+        foreach ($ids as $idProduct) {
+            $products[] = ['id_product' => $idProduct, 'name' => $byId[$idProduct] ?? ''];
+        }
+
+        return $products;
     }
 }

@@ -85,22 +85,28 @@ class SomcpToolGetCmsPage
     {
         $idShop = (int) Somcp::currentShop()->id;
 
-        // A cast would read an array or a word as a page nobody asked for:
-        // only a whole number is an identifier, as somcp_update_cms_seo takes it.
-        $idCms = $arguments['id_cms'] ?? null;
-        if (!is_int($idCms)) {
-            return SomcpTool::text('id_cms: an integer, from somcp_list_cms_pages.', true);
-        }
-
         $language = SomcpTool::readLanguage($arguments, $idShop);
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $iso] = $language;
 
-        $cms = SomcpToolUpdateCmsSeo::page($idCms, $idShop);
-        if ($cms === null) {
-            return SomcpTool::text('No CMS page of this shop has this identifier. Find it with somcp_list_cms_pages.', true);
+        // A cast would read an array or a word as a page nobody asked for:
+        // only a whole number is an identifier, as somcp_update_cms_seo takes
+        // it. Every problem is collected, so one call corrects them all.
+        $idCms = SomcpTool::id($arguments, 'id_cms');
+        $errors = SomcpTool::unknownFields($arguments, ['id_cms', 'language']);
+        $cms = null;
+        if ($idCms === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_cms');
+        } else {
+            $cms = SomcpToolUpdateCmsSeo::page($idCms, $idShop);
+            if ($cms === null) {
+                $errors[] = SomcpTool::notFound('id_cms', 'CMS page', $idCms, 'somcp_list_cms_pages');
+            }
+        }
+        if ($errors !== [] || $cms === null) {
+            return SomcpTool::refused('read', $errors);
         }
 
         return SomcpTool::json(self::cmsPage($cms, $idLang, $iso, $idShop));
@@ -108,7 +114,8 @@ class SomcpToolGetCmsPage
 
     /**
      * One page in one language, under the names the page tools take and
-     * answer with.
+     * answer with. Public so somcp_update_cms_seo compares what is given back
+     * with this very answer.
      *
      * @param CMS $cms the page, every language loaded
      * @param int $idLang
@@ -117,7 +124,7 @@ class SomcpToolGetCmsPage
      *
      * @return array<string, mixed>
      */
-    private static function cmsPage(CMS $cms, int $idLang, string $iso, int $idShop): array
+    public static function cmsPage(CMS $cms, int $idLang, string $iso, int $idShop): array
     {
         $link = Somcp::legacyContext()->link ?? new Link();
         $linkRewrite = SomcpToolUpdateCmsSeo::textOf($cms->link_rewrite, $idLang);

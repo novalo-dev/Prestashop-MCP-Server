@@ -48,6 +48,13 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
     private const ARGUMENTS = ['id_link', 'languages', 'label', 'url', 'new_window', 'language'];
 
     /**
+     * @var array<int, string> What a row of custom_links of somcp_list_menu_links holds and this tool does
+     *                         not write: accepted when it holds what the list reads, so a row read there can be
+     *                         given back as it is, and refused with what changes it when it differs
+     */
+    private const KEPT_AS_READ = ['in_menu', 'translated'];
+
+    /**
      * @return SomcpTool
      */
     public static function define(): SomcpTool
@@ -100,6 +107,16 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
                         'description' => 'ISO code of one of the shop\'s active languages for the labels of the '
                             . 'answer. The shop default language when left out.',
                     ],
+                    'in_menu' => [
+                        'type' => 'boolean',
+                        'description' => 'As custom_links of somcp_list_menu_links returns it, accepted unchanged '
+                            . 'only: somcp_add_menu_link puts a link in the menu.',
+                    ],
+                    'translated' => [
+                        'type' => 'boolean',
+                        'description' => 'As custom_links of somcp_list_menu_links returns it, accepted unchanged '
+                            . 'only. false: the default-language label and url given back leave this language empty.',
+                    ],
                 ],
                 'required' => ['id_link'],
                 'additionalProperties' => false,
@@ -139,7 +156,7 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
         }
 
         $errors = [];
-        $plan = self::planUpdate($arguments, $idShop, $errors);
+        $plan = self::planUpdate($arguments, $idLang, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
             return SomcpTool::text(
                 "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
@@ -170,30 +187,33 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
      * differs, collecting one message per refused field.
      *
      * @param array<string, mixed> $arguments
+     * @param int $idLang the language of the answer
      * @param int $idShop
      * @param array<int, string> $errors
      *
      * @return array<string, mixed>|null
      */
-    private static function planUpdate(array $arguments, int $idShop, array &$errors): ?array
+    private static function planUpdate(array $arguments, int $idLang, int $idShop, array &$errors): ?array
     {
-        foreach (array_diff(array_keys($arguments), self::ARGUMENTS) as $key) {
-            $errors[] = $key . ': not a field of this tool';
+        foreach (SomcpTool::unknownFields($arguments, array_merge(self::ARGUMENTS, self::KEPT_AS_READ)) as $problem) {
+            $errors[] = $problem;
         }
 
-        $idLink = $arguments['id_link'] ?? null;
-        if (is_string($idLink) && ctype_digit($idLink)) {
-            $idLink = (int) $idLink;
+        if (!array_key_exists('id_link', $arguments)) {
+            $errors[] = 'id_link: required, from custom_links of somcp_list_menu_links';
+
+            return null;
         }
-        if (!is_int($idLink) || $idLink < 1) {
-            $errors[] = 'id_link: required, a positive integer from custom_links of somcp_list_menu_links';
+        $idLink = SomcpTool::id($arguments, 'id_link');
+        if ($idLink === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_link');
 
             return null;
         }
 
         $current = self::storedLink($idLink, $idShop);
         if ($current === null) {
-            $errors[] = 'id_link: no custom link ' . $idLink . ' on this shop';
+            $errors[] = SomcpTool::notFound('id_link', 'custom link', $idLink, 'somcp_list_menu_links');
 
             return null;
         }
@@ -228,8 +248,23 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
             }
         }
 
+        $kept = self::keptAsRead($arguments, $idLink, $languages['filled'], $idLang, $idShop, $errors);
+
         if ($errors !== []) {
             return null;
+        }
+
+        // A row read in a language without texts of its own showed the
+        // default language's: given back, those texts are what the list
+        // showed, not a translation, so that language is left as it is.
+        if ($kept !== null) {
+            [$idLangRead, $shown] = $kept;
+            if (($labels[$idLangRead] ?? null) === $shown['label']) {
+                unset($labels[$idLangRead]);
+            }
+            if (($urls[$idLangRead] ?? null) === $shown['url']) {
+                unset($urls[$idLangRead]);
+            }
         }
 
         $changes = [];
@@ -256,6 +291,68 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
             'fallback' => (int) $languages['fallback'],
             'changes' => $changes,
         ];
+    }
+
+    /**
+     * Checks in_menu and translated against what somcp_list_menu_links reads
+     * for the link, so a row given back whole is not refused for them.
+     *
+     * The row was read in one language: the one filled when a single one is,
+     * otherwise the language of the answer.
+     *
+     * @param array<string, mixed> $arguments
+     * @param int $idLink
+     * @param array<int, string> $filled ISO codes of the languages filled, by language identifier
+     * @param int $idLang
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return array{0: int, 1: array{label: string, url: string}}|null the language read and the
+     *                                                                  default-language texts it showed,
+     *                                                                  when translated is false
+     */
+    private static function keptAsRead(array $arguments, int $idLink, array $filled, int $idLang, int $idShop, array &$errors): ?array
+    {
+        $given = array_intersect_key($arguments, array_flip(self::KEPT_AS_READ));
+        if ($given === []) {
+            return null;
+        }
+        $idLangRead = count($filled) === 1 ? (int) array_key_first($filled) : $idLang;
+
+        $read = null;
+        foreach (SomcpToolListMenuLinks::menu($idLangRead, $idShop)['custom_links'] as $link) {
+            if ($link['id_link'] === $idLink) {
+                $read = $link;
+            }
+        }
+        if ($read === null) {
+            return null;
+        }
+
+        if (array_key_exists('in_menu', $given)) {
+            if (!is_bool($given['in_menu'])) {
+                $errors[] = 'in_menu: true or false';
+            } elseif ($given['in_menu'] !== $read['in_menu']) {
+                $errors[] = 'in_menu: not changed by this tool - put the link in the menu with somcp_add_menu_link';
+            }
+        }
+
+        if (!array_key_exists('translated', $given)) {
+            return null;
+        }
+        if (!is_bool($given['translated'])) {
+            $errors[] = 'translated: true or false';
+
+            return null;
+        }
+        if ($given['translated'] !== $read['translated']) {
+            $errors[] = 'translated: worked out by the shop - false when the link has no label in the language '
+                . 'read and shows the default language\'s';
+
+            return null;
+        }
+
+        return $read['translated'] ? null : [$idLangRead, ['label' => (string) $read['label'], 'url' => (string) $read['url']]];
     }
 
     /**

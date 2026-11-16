@@ -16,6 +16,254 @@ are:
 
 ## Unreleased
 
+## 2.0.2 - 2026-11-16
+
+### Added
+
+**Read one tax rule with the rate it applies in each country.** The new tool
+somcp_get_tax_rule opens a rule of International > Taxes > Tax Rules as its
+edit page shows it: its name, whether it is enabled, and every row of its list,
+with the tax it applies per country, state and zip code range and its
+behaviour. Until now the assistant only knew the rate in the shop's default
+country, so it could not say what a customer delivered abroad pays.
+
+**Products: the ecotax of each combination can be read and set, as on the
+combination's page.** The product's own ecotax was there, not the one a
+combination can carry, so a shop charging an ecotax per size or model could
+not read or set it, and a product copied with its combinations lost it. It is
+refused on PrestaShop 9 while the ecotax is switched off in the shop's tax
+settings, as for the product.
+
+### Changed
+
+**The customer and main menu tools read identifiers as the others do.** A
+customer group written in quotes, as the assistant sometimes copies it from an
+answer ("3"), was refused when creating or changing a customer, though the
+customer search took it: it is now read as group 3. When adding an entry to
+the main menu or changing a custom link, an identifier the shop does not have
+now names the tool that lists the right ones (the categories, products, CMS
+pages, brands, suppliers or custom links), as every other tool does, and an
+identifier that is not a number gets the same refusal everywhere.
+
+**A product with its own order of specific price priorities can go back to the
+shop's default order.** The product tools could give a product an order of its
+own, never take it away, so a product kept it even after the merchant changed
+the default. somcp_update_product now takes use_default_priorities, the Use
+default order choice of the Pricing tab, and somcp_get_product says which of
+the two the product follows.
+
+**A meta title or description longer than search results show is pointed out
+with its length, the same way by every tool.** The category, brand and
+supplier tools said how long the text was; the product, CMS page and SEO & URLs
+tools only said it was too long, each in words of its own, so the assistant
+had to count before shortening it. Every tool now gives the same advice, with
+the length: for example, the meta title is 85 characters, past 70, and a
+search result cuts it.
+
+**The prices given to the order tools take the names the other tools use.**
+The unit price of a line added to an order, changed on an order or set on a
+new order was named "tax excluded" / "tax included" in full, while the product
+and catalogue tools read it with the short "tax excl." / "tax incl." names of
+the order page, so a price read on a product and given back to an order was
+refused as an unknown field, with nothing to say which name to send. The order
+tools now take the same names, and a former name is answered with the one to
+send instead of being refused as unknown.
+
+**A main menu link read in the list can be given back to its update.**
+Changing a custom link of the main menu from the row the list gave was refused
+for "In menu", the flag the list itself shows, so the assistant had to drop it
+by hand. The row now goes back as it was read: an unchanged "In menu" changes
+nothing, and a different one is refused with the way to put a link in the
+menu. The list also says when a link has no label in the language read and
+shows the default language's instead; given back, that label is no longer
+copied into the other language, which stays as it was.
+
+**A return status read in the list can be given back to its update.** Changing
+a return status from the row the list gave was refused twice over: the
+Removable flag the list shows was refused as worked out by the shop, and a
+status created without a colour, which the list reads as empty, was refused
+for that empty colour, so the assistant could not rename it without dropping
+fields by hand. The row now goes back as it was read: an unchanged Removable
+flag and an empty colour on a status that has none change nothing, and only a
+different value is refused, with the reason. Every colour the module takes,
+for an order status, a return status or an attribute value, is now checked by
+one and the same rule.
+
+**The stock and movement searches find what the search box of Catalog > Stock
+finds.** A search for a colour or a size, such as Black, found nothing in the
+low stock list or the stock movements, and on PrestaShop 9 neither did a
+scanned barcode, so the assistant told the merchant that no such stock existed
+while the Stock page listed it. Both searches now also match the attributes of
+a combination and, on PrestaShop 9, the EAN-13, ISBN, UPC and MPN of the
+product or the combination, exactly as the search box of the running version
+does.
+
+**Before an attribute group is deleted, the assistant can show what goes with
+it.** Deleting a group such as Size removes every combination built only on
+its values, with their stock, and the products concerned were only named once
+the delete was done. Reading a group now also gives how many combinations hold
+one of its values, how many are built only on them, and the products
+concerned, counted exactly as the delete counts them, so the merchant confirms
+knowing which combinations go.
+
+**A feature delete names the products it touched as the feature read does.**
+Deleting a feature answered the number of products that lost it as
+`products`, while reading the feature gives the same number as
+`products_count`, and the attribute deletes use `products` for the list of
+the products themselves. The feature delete now answers `products_count`, so
+the assistant reads the same count under the same name before and after the
+delete.
+
+**The shop pages' SEO reads and writes under the names of the other SEO
+tools.** The pages of **Shop Parameters > Traffic & SEO > SEO & URLs** named
+their Page title, Meta description, Meta keywords and Rewritten URL `title`,
+`description`, `keywords` and `url_rewrite`, where the product, category, brand
+and CMS tools say `meta_title`, `meta_description`, `meta_keywords` and
+`link_rewrite` - and where `title` is the CMS page's own Title. The assistant
+that followed the habit of the other tools was refused. The shop pages now use
+the same names; a call with a former name is refused with the name to send
+instead, and the record of a change reads as in the other update tools.
+
+**The order address, carrier and currency changes give the total before and
+after.** The assistant was told to say the new total before changing an
+address or a carrier, which it could not know: PrestaShop recomputes the
+shipping cost, the taxes and the total only during the change. It now warns
+that they will be recomputed and gives the current total first, then the
+previous and the new total once the change is made, from the same totals as
+the order page. The currency change names those two totals the same way. When
+PrestaShop fails half-way through an address change, the assistant no longer
+says nothing was changed: it reads the order's addresses again before trying
+once more, as it already did for the carrier.
+
+**A CMS page read by the assistant can be given back to change its SEO.**
+When the assistant read a page with `somcp_get_cms_page` and gave it back to
+`somcp_update_cms_seo` with a new Meta title, the call was refused for the
+Title, the content, the status and the other fields it carried, and had to be
+made again. They are now accepted as long as they are unchanged; a changed one
+is refused with where you change it, in **Design > Pages > Edit**. On
+PrestaShop 8, the assistant can also change the page's **Meta keywords**.
+
+**The same order status icon given again changes nothing.** When the assistant
+gave an order status the icon it already had, `somcp_update_order_status`
+wrote the file again and reported a change, so the same call twice never said
+that nothing was written. The icon is now compared with the stored one first:
+the same file is left as it is, and the change record says whether an icon was
+replaced or a status without one got its first.
+
+**A misspelt filter or field of the content page tools is refused rather than
+ignored.** When the assistant listed the pages of Design > Pages with a filter
+named wrongly, such as `id_category` for the page category, it got the pages of
+every category and took them for the ones asked for; a wrong page number was
+answered in a sentence of its own, and a call with two mistakes needed two
+calls. `somcp_list_cms_pages` and `somcp_get_cms_page` now report every problem
+of a call at once, worded as in the other tools, and read a page number given
+as text, such as "3", as the other tools do.
+
+**The dates of abandoned carts and searched terms carry your shop's time
+zone.** The abandoned carts list and the searched terms list gave their dates
+as stored, without a time zone, while orders, customers and vouchers give
+theirs with your shop's offset. Set side by side, the assistant could find an
+hour between a cart and an order that was not there, or tell a customer abroad
+the wrong time. They now read like every other date.
+
+### Fixed
+
+**A product changed by the assistant is found by the shop search with its new
+words.** Changing only the tags, categories, features, brand, references or
+combinations of a product left the search index as it was, so a customer
+searching for a new tag did not find the product until the next full
+reindexing. The product is now indexed again after every change, as the back
+office does on each save, when automatic indexing is turned on.
+
+**A product image can no longer be linked to a combination the same change
+deletes.** When the assistant removed a combination of a product and, in the
+same change, named that combination among those an image illustrates, the
+combination was deleted and the image was then linked to it, leaving a link
+to nothing. The change is now refused, as it already was for a specific price
+or a supplier reference, and nothing is saved.
+
+**A built-in order status refused for deletion reads like the other
+refusals, and a new status gives its identifier under the usual name.** When
+the assistant tried to delete one of the order statuses of PrestaShop or of a
+module, the refusal was a sentence of its own, unlike the other refusals of
+the tool. It is now given in the same list, with the name of the status and
+the back office sentence "For security reasons, you cannot delete default
+order statuses.". The assistant is also pointed to the **Hide this status in
+all customer orders.** box when the merchant only wants customers to stop
+seeing a status. A status created by `somcp_create_order_status` now gives
+its identifier as `status_id`, the name the update and delete tools take,
+instead of `id_order_state`.
+
+**A deleted category no longer announces what stayed behind.** When
+PrestaShop could not delete one of the subcategories of a category, the
+assistant still listed it as deleted; it is now listed apart, as still in
+your shop, with a sentence asking to check it. When a product deleted with
+its category was removed from the shop but PrestaShop could not clean up
+everything attached to it, the assistant now says so, in the same words as
+the deletion of a single product. Before deleting, it tells you how many
+subcategories go with the category and what the chosen mode does to its
+products.
+
+**A deleted return status always says which language its name is in.**
+When a return status had no name in your shop's default language,
+`somcp_delete_return_status` answered with the name found in another
+language, but left the language empty if that language had been turned off
+since. It now gives its code in every case, as the deletion of an order
+status does.
+
+**A new order is refused rather than placed without what was asked.** When
+the free shipping of a new order could not be saved, `somcp_create_order`
+placed the order anyway, with the shipping charged. It is now refused and
+nothing is recorded. A combination is also checked to be sold in your shop,
+like the product, so an order of one shop can no longer carry a combination of
+another; a combination given as "0" means none, as 0 does, and a product or
+combination that is not a whole number above 0 is named as such.
+
+**A product or combination that is not an identifier is named as such when
+adding a product to an order.** When the assistant gave
+`somcp_add_order_product` a product or a combination that is not a whole
+number above 0, for example -1, it was told to give a product as if it had
+left the field out, or that the identifier must be positive in words no other
+tool uses. It now reads "a whole number above 0", as everywhere else, and a
+missing product keeps its own message. The refund lines and the invoice of a
+payment read their identifiers by the same rule as every other order tool.
+
+**A resent order status email that fails now says where to look.** When the
+shop could not send the email again, the assistant only knew it had failed and
+could not tell the merchant what to check. It now says to look at the email
+settings in **Advanced Parameters > E-mail**, and whether the customer or the
+email template of the status could not be loaded. The status line it gives back
+is built by the same code as the order's history, so it always matches the line
+the assistant read.
+
+**A misnamed field is refused on refunds, returns and cancellations.** When
+the assistant gave `somcp_issue_standard_refund`, `somcp_issue_partial_refund`,
+`somcp_return_order_products` or `somcp_cancel_order_products` a field they do
+not take, for example a shipping refund on a cancellation, the field was
+ignored and the rest carried out, while you were told it had been done. The
+call is now refused with the name of the field, and nothing is recorded. A
+standard refund refused on an unpaid order now points to the cancellation of
+products, and the refund and return tools say which one fits a delivered
+order, an order not delivered yet or a chosen amount.
+
+**A discount refused on an order with invoices gives the right ceiling.** When
+an amount added to an order with invoices was too high, the assistant was
+told the order total, while PrestaShop compares the amount with the invoice
+chosen, or with each invoice of the order; it then tried a figure that was
+refused again. The refusal now names the invoice and its total. Free shipping
+that PrestaShop refuses, because the shipping is above the total of the
+invoice or the order, is now explained instead of a bare refusal. If adding a
+discount fails half-way, the assistant no longer says nothing was saved: it
+checks the order's discounts before trying again.
+
+### Security
+
+**An assistant's return address is read the way the browser reads it.** The
+address an assistant gives to receive the merchant's approval is now refused
+when it carries a user name, a backslash or a blank, whatever site it seems to
+name, at registration and again at each sign-in. The known assistants never
+use such addresses: nothing changes for them.
+
 ## 2.0.1 - 2026-11-15
 
 ### Added

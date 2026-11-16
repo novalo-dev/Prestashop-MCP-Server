@@ -688,7 +688,25 @@ class SomcpToolGetProduct
         return [
             'rules' => $rules,
             'priorities' => array_values(array_filter(SpecificPrice::getPriority((int) $product->id))),
+            // The radio of 9.0.0, Use default order or Set a specific order:
+            // getPriority() gives the order that applies either way.
+            'use_default_priorities' => !self::hasOwnPriorities((int) $product->id),
         ];
+    }
+
+    /**
+     * Whether the product has an order of priorities of its own, the one
+     * row SpecificPrice::getPriority() reads before the shop's default.
+     *
+     * @param int $idProduct
+     *
+     * @return bool
+     */
+    public static function hasOwnPriorities(int $idProduct): bool
+    {
+        return (bool) Db::getInstance()->getValue(
+            'SELECT 1 FROM `' . _DB_PREFIX_ . 'specific_price_priority` WHERE `id_product` = ' . (int) $idProduct
+        );
     }
 
     /**
@@ -816,7 +834,7 @@ class SomcpToolGetProduct
 
         $query = new DbQuery();
         $query->select('pa.`id_product_attribute`, pa.`reference`, pa.`mpn`, pa.`upc`, pa.`ean13`, pa.`isbn`');
-        $query->select('pas.`default_on`, pas.`price`, pas.`unit_price_impact`, pas.`weight`, pas.`wholesale_price`');
+        $query->select('pas.`default_on`, pas.`price`, pas.`unit_price_impact`, pas.`weight`, pas.`wholesale_price`, pas.`ecotax`');
         $query->select('pas.`minimal_quantity`, pas.`low_stock_threshold`, pas.`low_stock_alert`, pas.`available_date`');
         if ($labels) {
             $query->select('pal.`available_now`, pal.`available_later`');
@@ -873,6 +891,10 @@ class SomcpToolGetProduct
                 'unit_price_impact_tax_incl' => round((float) $row['unit_price_impact'] * $money['tax_ratio'], $money['precision']),
                 'weight_impact' => (float) $row['weight'],
                 'wholesale_price' => (float) $row['wholesale_price'],
+                // The combination's own ecotax, stored without tax, 0 when it
+                // takes the product's; tax included as for the product.
+                'ecotax_tax_excl' => (float) $row['ecotax'],
+                'ecotax_tax_incl' => round((float) $row['ecotax'] * (1 + SomcpCatalog::ecotaxRate($idShop) / 100), $money['precision']),
                 'minimal_quantity' => (int) $row['minimal_quantity'],
                 'low_stock_threshold' => SomcpCatalog::threshold($row['low_stock_threshold']),
                 'low_stock_alert' => SomcpCatalog::lowStockAlert($row['low_stock_alert']),

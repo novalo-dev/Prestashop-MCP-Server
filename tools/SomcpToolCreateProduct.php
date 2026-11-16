@@ -88,7 +88,7 @@ class SomcpToolCreateProduct
             'delivery_out_stock', 'additional_shipping_cost', 'carriers',
         ],
         'pricing' => ['price_tax_excl', 'id_tax_rules_group', 'wholesale_price', 'unit_price_tax_excl', 'unity', 'on_sale', 'ecotax_tax_excl'],
-        'specific_prices' => ['rules', 'priorities'],
+        'specific_prices' => ['rules', 'priorities', 'use_default_priorities'],
         'seo' => ['meta_title', 'meta_description', 'link_rewrite', 'redirect_type', 'id_type_redirected', 'meta_keywords', 'tags'],
         'options' => ['visibility', 'available_for_order', 'show_price', 'online_only', 'active'],
         'suppliers' => ['id_supplier_default', 'suppliers'],
@@ -105,7 +105,7 @@ class SomcpToolCreateProduct
         'combination' => [
             'attributes', 'default_on', 'reference', 'mpn', 'upc', 'ean13', 'isbn', 'quantity', 'location',
             'available_date', 'available_now', 'available_later', 'price_impact_tax_excl',
-            'unit_price_impact_tax_excl', 'weight_impact', 'wholesale_price', 'minimal_quantity',
+            'unit_price_impact_tax_excl', 'weight_impact', 'wholesale_price', 'ecotax_tax_excl', 'minimal_quantity',
             'low_stock_threshold', 'low_stock_alert',
         ],
     ];
@@ -130,7 +130,7 @@ class SomcpToolCreateProduct
         'supplier.id_product_attribute', 'image.id_image', 'combination.id_product_attribute',
         'combination.price_impact_tax_incl', 'combination.unit_price_impact_tax_incl', 'combination.currency',
         'combination.images', 'feature.name', 'feature.custom', 'customization_field.id_customization_field',
-        'pricing.ecotax_tax_incl', 'pack_item.name', 'pack_item.reference', 'virtual_file.active',
+        'pricing.ecotax_tax_incl', 'combination.ecotax_tax_incl', 'pack_item.name', 'pack_item.reference', 'virtual_file.active',
     ];
 
     /**
@@ -462,6 +462,11 @@ class SomcpToolCreateProduct
                                 . 'id_currency, id_country, id_group.',
                             'items' => ['type' => 'string'],
                         ],
+                        'use_default_priorities' => [
+                            'type' => 'boolean',
+                            'description' => 'Merchant: true for Use default order (the shop default), false for Set '
+                                . 'a specific order for this product, given in priorities.',
+                        ],
                     ],
                     'additionalProperties' => false,
                 ],
@@ -575,6 +580,7 @@ class SomcpToolCreateProduct
                             'unit_price_impact_tax_excl' => ['type' => 'number'],
                             'weight_impact' => ['type' => 'number'],
                             'wholesale_price' => ['type' => 'number'],
+                            'ecotax_tax_excl' => ['type' => 'number', 'description' => 'Ecotax of this combination, tax excluded; 0 to use the product\'s. Refused on PrestaShop 9 while the ecotax is switched off in the shop\'s tax settings.'],
                             'minimal_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
                             'low_stock_threshold' => ['type' => ['integer', 'null'], 'description' => 'Low stock level; null for none.'],
                             'low_stock_alert' => ['type' => 'boolean', 'description' => 'Email at the low stock level.'],
@@ -1778,6 +1784,18 @@ class SomcpToolCreateProduct
                 $combination['fields'][$field] = $number;
             }
         }
+        if (array_key_exists('ecotax_tax_excl', $item)) {
+            // The same rule as the product's ecotax: PrestaShop 9 shows the
+            // field only with the ecotax switched on, PrestaShop 8 always.
+            $ecotax = self::float($item['ecotax_tax_excl']);
+            if (version_compare(_PS_VERSION_, '9.0.0', '>=') && !Configuration::get('PS_USE_ECOTAX')) {
+                $errors[] = $path . '.ecotax_tax_excl: the ecotax is switched off in the shop\'s tax settings';
+            } elseif ($ecotax === null || $ecotax < 0 || $probe->validateField('ecotax', $ecotax) !== true) {
+                $errors[] = $path . '.ecotax_tax_excl: a positive number';
+            } else {
+                $combination['fields']['ecotax'] = $ecotax;
+            }
+        }
         if (array_key_exists('minimal_quantity', $item)) {
             $minimal = self::integer($item['minimal_quantity']);
             if ($minimal === null || $minimal < 1 || $probe->validateField('minimal_quantity', $minimal) !== true) {
@@ -1866,6 +1884,69 @@ class SomcpToolCreateProduct
         }
 
         $plan['priorities'] = self::priorities($group, $errors);
+        $useDefault = self::useDefaultPriorities($group, $errors);
+        if ($useDefault === true && $plan['priorities'] !== null) {
+            // Use default order writes no row: an order given beside it is
+            // only accepted when it is that default, as a product read back.
+            if ($plan['priorities'] !== self::defaultPriorities()) {
+                $errors[] = self::priorityConflict();
+            }
+            $plan['priorities'] = null;
+        } elseif ($useDefault === false && $plan['priorities'] === null && !array_key_exists('priorities', $group)) {
+            $errors[] = 'specific_prices.use_default_priorities: false needs priorities, the order of this product';
+        }
+    }
+
+    /**
+     * Whether the product follows the shop's default order of priorities,
+     * as given in the call, or null when not given.
+     *
+     * @param array<string, mixed> $group
+     * @param array<int, string> $errors
+     *
+     * @return bool|null
+     */
+    protected static function useDefaultPriorities(array $group, array &$errors): ?bool
+    {
+        if (!array_key_exists('use_default_priorities', $group)) {
+            return null;
+        }
+        if (!is_bool($group['use_default_priorities'])) {
+            $errors[] = 'specific_prices.use_default_priorities: true or false';
+
+            return null;
+        }
+
+        return $group['use_default_priorities'];
+    }
+
+    /**
+     * The shop's default order of priorities, as SpecificPrice::getPriority()
+     * falls back on it, without id_customer, which the core always puts first.
+     *
+     * @return array<int, string>
+     */
+    protected static function defaultPriorities(): array
+    {
+        return array_values(array_filter(
+            explode(';', (string) Configuration::get('PS_SPECIFIC_PRICE_PRIORITIES')),
+            static function ($value): bool {
+                return $value !== '' && $value !== 'id_customer';
+            }
+        ));
+    }
+
+    /**
+     * The line for an order of priorities given with use_default_priorities
+     * true that is not the order the product would follow.
+     *
+     * @return string
+     */
+    protected static function priorityConflict(): string
+    {
+        return 'specific_prices.use_default_priorities: true follows the shop default order, '
+            . implode(', ', self::defaultPriorities()) . '; leave priorities out, or give false to set an order '
+            . 'of this product';
     }
 
     /**
@@ -3121,16 +3202,21 @@ class SomcpToolCreateProduct
             $list = [];
             $title = (string) ($plan['texts']['meta_title'][$idLang] ?? '');
             $description = (string) ($plan['texts']['meta_description'][$idLang] ?? '');
-            if ($title === '') {
-                $list[] = 'no meta_title: the storefront uses the product name';
-            } elseif (self::visibleLength($title) > SomcpTool::META_TITLE_RECOMMENDED) {
-                // Advice, not a limit: the lengths the SEO audits flag past.
-                $list[] = 'meta_title over ' . SomcpTool::META_TITLE_RECOMMENDED . ' characters: search results cut it';
-            }
-            if ($description === '') {
-                $list[] = 'no meta_description: search engines pick a passage of the page';
-            } elseif (self::visibleLength($description) > SomcpTool::metaDescriptionRecommended()) {
-                $list[] = 'meta_description over ' . SomcpTool::metaDescriptionRecommended() . ' characters: search results cut it';
+            // Advice, not a limit: the lengths the SEO audits flag past, in
+            // the sentence every tool gives. The warnings are per language,
+            // so the field name alone says where.
+            $lines = [
+                $title === ''
+                    ? 'no meta_title: the storefront uses the product name'
+                    : SomcpTool::metaLengthAdvice('meta_title', self::visibleLength($title), SomcpTool::META_TITLE_RECOMMENDED),
+                $description === ''
+                    ? 'no meta_description: search engines pick a passage of the page'
+                    : SomcpTool::metaLengthAdvice('meta_description', self::visibleLength($description), SomcpTool::metaDescriptionRecommended()),
+            ];
+            foreach ($lines as $line) {
+                if ($line !== null) {
+                    $list[] = $line;
+                }
             }
             foreach (['link_rewrite' => (string) ($plan['texts']['link_rewrite'][$idLang] ?? ''), 'meta_title' => $title] as $field => $value) {
                 if ($value === '') {

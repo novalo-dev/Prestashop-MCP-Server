@@ -1307,6 +1307,11 @@
       <source>List tax rules</source>
       <target>Listar las reglas de impuestos</target>
     </trans-unit>
+    <!-- Get a tax rule -->
+    <trans-unit id="021e92bb20649d93d7569d1c33ac5ea2" resname="Get a tax rule">
+      <source>Get a tax rule</source>
+      <target>Leer una regla de impuestos</target>
+    </trans-unit>
     <!-- List files -->
     <trans-unit id="92f00b54c2461cd9c23db65a88cd11e1" resname="List files">
       <source>List files</source>

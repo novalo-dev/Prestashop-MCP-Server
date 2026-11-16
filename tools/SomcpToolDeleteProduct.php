@@ -39,6 +39,15 @@ if (!defined('_PS_VERSION_')) {
 class SomcpToolDeleteProduct
 {
     /**
+     * Said when Product::delete() fails after the product left the shop.
+     *
+     * Shared with somcp_delete_category, which removes products the same way,
+     * so the two tools word that case alike.
+     */
+    public const CLEANUP_INCOMPLETE = 'The product was removed from this shop, but PrestaShop could not clean up '
+        . 'everything attached to it.';
+
+    /**
      * @return SomcpTool
      */
     public static function define(): SomcpTool
@@ -118,8 +127,7 @@ class SomcpToolDeleteProduct
 
             return SomcpTool::text(
                 $gone
-                    ? 'The product was removed from this shop, but PrestaShop could not clean up everything '
-                        . 'attached to it. Tell the merchant; there is nothing to call again.'
+                    ? self::CLEANUP_INCOMPLETE . ' Tell the merchant; there is nothing to call again.'
                     : 'The product could not be deleted, and may have lost part of its combinations or images. '
                         . 'Read it with somcp_get_product to see what it holds before anything else.',
                 true

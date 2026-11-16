@@ -97,24 +97,30 @@ class SomcpToolListCmsPages
     {
         $idShop = (int) Somcp::currentShop()->id;
 
-        $active = $arguments['active'] ?? null;
-        if ($active !== null && !is_bool($active)) {
-            return SomcpTool::text('active: true or false.', true);
-        }
-        $title = $arguments['title'] ?? null;
-        if ($title !== null && !is_string($title)) {
-            return SomcpTool::text('title: a string, part of the page Title.', true);
-        }
-        $idCategory = $arguments['id_cms_category'] ?? null;
-        if ($idCategory !== null && !is_int($idCategory)) {
-            return SomcpTool::text('id_cms_category: an integer, from categories[] of somcp_list_cms_pages.', true);
-        }
-
         $language = SomcpTool::readLanguage($arguments, $idShop);
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $iso] = $language;
+
+        // A misspelt filter is named rather than ignored: the assistant would
+        // otherwise read the pages of every category as those it asked for.
+        $errors = SomcpTool::unknownFields($arguments, ['id_cms_category', 'active', 'title', 'language']);
+        $active = $arguments['active'] ?? null;
+        if ($active !== null && !is_bool($active)) {
+            $errors[] = 'active: true or false';
+        }
+        $title = $arguments['title'] ?? null;
+        if ($title !== null && !is_string($title)) {
+            $errors[] = 'title: a string, part of the page Title';
+        }
+        $idCategory = null;
+        if (($arguments['id_cms_category'] ?? null) !== null) {
+            $idCategory = SomcpTool::id($arguments, 'id_cms_category');
+            if ($idCategory === 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_cms_category');
+            }
+        }
 
         $pages = self::pages($idLang, $idShop);
 
@@ -126,13 +132,13 @@ class SomcpToolListCmsPages
 
         // A category asked for must be one of this shop: an identifier that
         // matches nothing is said, not answered with an empty list the
-        // assistant would read as "this category has no pages".
-        if ($idCategory !== null && !in_array($idCategory, array_column($categories, 'id_cms_category'), true)) {
-            return SomcpTool::text(
-                'id_cms_category: no page category of this shop has this identifier. '
-                    . 'Call somcp_list_cms_pages without it to see them in categories[].',
-                true
-            );
+        // assistant would read as "this category has no pages". Checked with
+        // the other problems, so one call corrects them all.
+        if ($idCategory !== null && $idCategory !== 0 && !in_array($idCategory, array_column($categories, 'id_cms_category'), true)) {
+            $errors[] = SomcpTool::notFound('id_cms_category', 'page category', $idCategory, 'somcp_list_cms_pages');
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
         }
 
         $needle = $title !== null ? Tools::strtolower(trim($title)) : '';

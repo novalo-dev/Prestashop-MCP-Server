@@ -439,6 +439,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 |---|---|---|
 | `somcp_list_attachments` | ● List files | Files › view |
 | `somcp_list_tax_rules` | ● List tax rules | Tax Rules › view |
+| `somcp_get_tax_rule` | ● Get a tax rule | Tax Rules › view |
 
 ### 📊 Stock
 

@@ -144,8 +144,7 @@ class SomcpToolAuditProductEntities
         // the shop default, which readLanguage() returns for an absent key.
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = 'language: not a language of this shop, which has '
-                . implode(', ', SomcpTool::activeLanguages($idShop));
+            $problems[] = SomcpTool::languageProblem($idShop);
         }
 
         $maxScore = null;

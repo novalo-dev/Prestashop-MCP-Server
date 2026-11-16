@@ -423,6 +423,29 @@ $registerHttps = static function (string $uri) use ($http, $endpoint, $json): ar
     ]));
 };
 $expect('client registering a host that is not on the list', $registerHttps('https://attacker.example/callback'), 400);
+// The module checks the host and the browser then follows the address as it
+// is: an address it could read two ways, or one that carries a user name, is
+// refused, whatever host it seems to name.
+$expect('client registering a listed host after a backslash', $registerHttps('https://attacker.example\\@claude.ai/callback'), 400);
+$expect('client registering a listed host with a user name', $registerHttps('https://attacker.example@claude.ai/callback'), 400);
+// The same check runs on every authorization request, for clients stored
+// before it existed.
+foreach ([
+    'https://attacker.example\\@claude.ai/callback' => false,
+    'https://attacker.example@claude.ai/callback' => false,
+    "https://claude.ai\t/callback" => false,
+    'https://claude.ai/api/mcp/auth_callback' => true,
+    'http://127.0.0.1:9/callback' => true,
+] as $address => $allowed) {
+    ++$checks;
+    $label = ($allowed ? 'return address accepted at sign-in: ' : 'return address refused at sign-in: ') . json_encode($address);
+    if (SomcpOAuthClient::redirectHostAllowed($address) !== $allowed) {
+        $failures[] = $label;
+        echo "  FAIL  $label\n";
+    } else {
+        echo "  ok    $label\n";
+    }
+}
 SomcpConfig::set(SomcpConfig::REDIRECT_HOSTS, SomcpConfig::clean(SomcpConfig::REDIRECT_HOSTS, ''));
 $expect('client registering a known host while the list is empty', $registerHttps('https://claude.ai/api/mcp/auth_callback'), 400);
 // A client registered while its host was allowed, then the host taken off

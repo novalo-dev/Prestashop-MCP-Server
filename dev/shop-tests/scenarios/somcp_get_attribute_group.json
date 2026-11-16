@@ -1,6 +1,7 @@
 {
   "calls": [
     {"why": "a demo attribute group, Size", "arguments": {"id_attribute_group": 1, "language": "en"}, "expect": "ok", "contains": ["\"id_attribute_group\": 1", "Size", "\"public_name\"", "\"group_type\": \"select\"", "\"position\"", "\"values_count\"", "\"url_name\"", "\"meta_title\"", "\"indexable\"", "\"language\": \"en\""]},
+    {"why": "what a delete of Color would take, as the demo data holds it and no earlier scenario changes it (somcp_create_product adds combinations on Size only): 8 combinations of product 1 that also hold a Size, 2 on Color alone for each of the cushions 9, 10 and 11", "arguments": {"id_attribute_group": 2, "language": "en"}, "expect": "ok", "contains": ["\"combinations_count\": 14", "\"combinations_only_on_it\": 6", "\"products\"", "\"id_product\": 1", "\"id_product\": 9", "\"id_product\": 10", "\"id_product\": 11"]},
     {"why": "the demo colour group, of type color", "arguments": {"id_attribute_group": 2, "language": "en"}, "expect": "ok", "contains": ["\"id_attribute_group\": 2", "\"group_type\": \"color\""]},
     {"why": "in the shop default language", "arguments": {"id_attribute_group": 1}, "expect": "ok", "contains": ["\"id_attribute_group\": 1"]},
     {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_attribute_group": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},

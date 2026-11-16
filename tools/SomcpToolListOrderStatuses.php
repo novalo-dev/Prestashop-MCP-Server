@@ -61,8 +61,8 @@ class SomcpToolListOrderStatuses
                 'properties' => [
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the names in, '
-                            . 'for example fr. The shop default is used otherwise.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                 ],
                 'additionalProperties' => false,
@@ -92,8 +92,7 @@ class SomcpToolListOrderStatuses
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = 'language: not a language of this shop, which has '
-                . implode(', ', SomcpTool::activeLanguages($idShop));
+            $problems[] = SomcpTool::languageProblem($idShop);
         }
 
         if ($problems !== []) {

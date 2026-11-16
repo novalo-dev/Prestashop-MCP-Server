@@ -44,6 +44,7 @@ if (!defined('_PS_VERSION_')) {
 // shared checks and steps live in these classes.
 require_once __DIR__ . '/SomcpToolGetFeature.php';
 require_once __DIR__ . '/SomcpToolCreateProduct.php';
+require_once __DIR__ . '/SomcpToolCreateCatalogPriceRule.php';
 
 class SomcpToolDeleteFeature
 {
@@ -157,7 +158,14 @@ class SomcpToolDeleteFeature
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'feature_value` WHERE `id_feature` = ' . (int) $idFeature
         );
         $products = (int) $described['products_count'];
-        $rules = self::priceRules($idFeature, $idShop);
+        // The core leaves the price rule conditions on its values behind: a
+        // feature condition holds the id_feature_value, so the values are
+        // read before the delete removes them.
+        $rules = SomcpToolCreateCatalogPriceRule::rulesOn('feature', array_map(static function (array $row): int {
+            return (int) $row['id_feature_value'];
+        }, $db->executeS(
+            'SELECT `id_feature_value` FROM `' . _DB_PREFIX_ . 'feature_value` WHERE `id_feature` = ' . (int) $idFeature
+        ) ?: []), $idShop);
 
         $feature->id_shop_list = [$idShop];
         try {
@@ -189,7 +197,7 @@ class SomcpToolDeleteFeature
             'name' => (string) $described['name'],
             'language' => $iso,
             'values_deleted' => $valuesDeleted,
-            'products' => $products,
+            'products_count' => $products,
             'catalog_price_rules' => $rules,
         ]);
     }
@@ -211,35 +219,5 @@ class SomcpToolDeleteFeature
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'feature_shop` WHERE `id_feature` = ' . (int) $idFeature
             . ' AND `id_shop` <> ' . (int) $idShop
         );
-    }
-
-    /**
-     * The catalogue price rules of this shop with a condition on one of the
-     * feature's values, which the core leaves behind.
-     *
-     * @param int $idFeature
-     * @param int $idShop
-     *
-     * @return array<int, int>
-     */
-    private static function priceRules(int $idFeature, int $idShop): array
-    {
-        // The value of a feature condition is the id_feature_value, as
-        // somcp_create_catalog_price_rule writes it.
-        $rows = Db::getInstance()->executeS(
-            'SELECT DISTINCT g.`id_specific_price_rule` FROM `' . _DB_PREFIX_ . 'specific_price_rule_condition` c'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule_condition_group` g'
-            . ' ON g.`id_specific_price_rule_condition_group` = c.`id_specific_price_rule_condition_group`'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule` r ON r.`id_specific_price_rule` = g.`id_specific_price_rule`'
-            . ' AND r.`id_shop` = ' . (int) $idShop
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'feature_value` v ON v.`id_feature_value` = CAST(c.`value` AS UNSIGNED)'
-            . ' AND v.`id_feature` = ' . (int) $idFeature
-            . ' WHERE c.`type` = \'feature\''
-            . ' ORDER BY g.`id_specific_price_rule`'
-        ) ?: [];
-
-        return array_map(static function (array $row): int {
-            return (int) $row['id_specific_price_rule'];
-        }, $rows);
     }
 }

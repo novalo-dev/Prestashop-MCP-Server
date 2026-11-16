@@ -53,10 +53,11 @@ class SomcpToolUpdateReturnStatus extends SomcpToolCreateReturnStatus
     private const OWN_ARGUMENTS = ['id_order_return_state'];
 
     /**
-     * @var array<int, string> What somcp_list_return_statuses returns and this tool refuses, because the shop
-     *                         works it out. The identifier of the creation is this tool's own argument here.
+     * @var array<int, string> What somcp_list_return_statuses returns and this tool does not write, because the
+     *                         shop works it out: accepted when it holds what the shop holds, so a row read in the
+     *                         list can be given back as it is, and refused with the reason when it differs
      */
-    private const UPDATE_COMPUTED = ['removable'];
+    private const KEPT_AS_READ = ['removable'];
 
     /**
      * @return SomcpTool
@@ -99,7 +100,15 @@ class SomcpToolUpdateReturnStatus extends SomcpToolCreateReturnStatus
         $properties['name']['description'] = 'Merchant. The name of the step, 64 characters at most, without '
             . '< > = { }. One text per language being filled, keyed by ISO code: {"fr": "...", "en": "..."}.'
             . $kept;
-        $properties['color']['description'] .= $kept;
+        // Worded again rather than appended to: at creation a colour left out
+        // means none, here it means the one the status already has.
+        $properties['color']['description'] = 'Merchant. The colour the status is highlighted in, as a hex code '
+            . '#RRGGBB, for example #E84C3D. Left out, or "" on a status without one: unchanged.';
+        $properties['removable'] = [
+            'type' => 'boolean',
+            'description' => 'As somcp_list_return_statuses returns it, accepted unchanged only: worked out by '
+                . 'the shop, the five statuses every shop starts with cannot be deleted.',
+        ];
 
         $schema['properties'] = [
             'id_order_return_state' => ['type' => 'integer', 'description' => 'The return status to change, from somcp_list_return_statuses.'],
@@ -166,13 +175,17 @@ class SomcpToolUpdateReturnStatus extends SomcpToolCreateReturnStatus
      */
     private static function planUpdate(array $arguments, OrderReturnState $status, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::RETURN_STATUS_ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::UPDATE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
+        foreach (SomcpTool::unknownFields(
+            $arguments,
+            array_merge(self::RETURN_STATUS_ARGUMENTS, self::OWN_ARGUMENTS, self::KEPT_AS_READ)
+        ) as $problem) {
+            $errors[] = $problem;
+        }
+        // The row of somcp_list_return_statuses given back as it was read
+        // changes nothing; only a different value is refused, with why.
+        if (array_key_exists('removable', $arguments)
+            && self::bool($arguments['removable']) !== SomcpToolCreateReturnStatus::removable((int) $status->id)) {
+            $errors[] = 'removable: worked out by the shop - the five statuses every shop starts with cannot be deleted';
         }
 
         $languages = self::languages($arguments, (int) Somcp::currentShop()->id, $errors);
@@ -196,14 +209,16 @@ class SomcpToolUpdateReturnStatus extends SomcpToolCreateReturnStatus
             }
         }
 
-        if (array_key_exists('color', $arguments)) {
-            $color = trim((string) (self::string($arguments['color']) ?? ''));
-            // The same check as at creation: Validate::isColor() also lets a
-            // bare word through, which the colour picker of the form never
-            // stores - only the hex code is.
-            if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color) || !Validate::isColor($color)) {
-                $errors[] = 'color: a hex code such as #E84C3D';
-            } else {
+        // A status created without a colour reads "" in the list: given back,
+        // it is what the shop holds, not a colour to check. On a status that
+        // has one it is still refused, as the form cannot remove a colour.
+        $emptyKept = array_key_exists('color', $arguments)
+            && trim((string) (self::string($arguments['color']) ?? '')) === ''
+            && (string) $status->color === '';
+        if (array_key_exists('color', $arguments) && !$emptyKept) {
+            // The same check as at creation, shared with the order statuses.
+            $color = self::hexColor($arguments['color'], $errors);
+            if ($color !== null) {
                 $plan['given_color'] = $color;
             }
         }

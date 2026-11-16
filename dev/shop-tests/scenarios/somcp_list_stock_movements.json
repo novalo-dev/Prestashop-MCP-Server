@@ -2,7 +2,7 @@
   "calls": [
     {"why": "every movement of the shop, with the types and employees the filters take", "arguments": {}, "expect": "ok", "contains": ["\"movements\"", "\"returned\"", "\"total_count\"", "\"offset\": 0", "\"types\"", "\"id_stock_mvt_reason\"", "\"sign\"", "\"employees\"", "\"language\": \"en\""]},
     {"why": "the names in a language given by its ISO code", "arguments": {"language": "EN"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
-    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read", "language: not a language of this shop"]},
+    {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read", "language: not one of the shop's languages"]},
     {"why": "the movements of one product", "arguments": {"id_product": 7}, "expect": "ok", "contains": ["\"total_count\""]},
     {"why": "the movements of one combination of the demo tee, whose identifier depends on how the demo data was numbered", "arguments": {"id_product": 1, "id_product_attribute": 1}, "expect": "any"},
     {"why": "a combination without its product", "arguments": {"id_product_attribute": 1}, "expect": "error", "contains": ["id_product_attribute: give id_product too"]},
@@ -23,6 +23,7 @@
     {"why": "enabled products only", "arguments": {"active": true}, "expect": "ok", "contains": ["\"total_count\""]},
     {"why": "disabled products only", "arguments": {"active": false}, "expect": "ok", "contains": ["\"total_count\""]},
     {"why": "a status that is not true or false", "arguments": {"active": "yes"}, "expect": "error", "contains": ["active: true or false"]},
+    {"why": "a search on an attribute of the demo combinations, the shop may have no movement", "arguments": {"search": "Black"}, "expect": "ok", "contains": ["\"movements\""]},
     {"why": "a search that matches nothing", "arguments": {"search": "no-such-product-zz"}, "expect": "ok", "contains": ["\"movements\": []", "\"total_count\": 0"]},
     {"why": "a page of 100", "arguments": {"limit": 100}, "expect": "ok", "contains": ["\"movements\""]},
     {"why": "a limit over the cap", "arguments": {"limit": 500}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},

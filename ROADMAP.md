@@ -43,6 +43,17 @@ conventions at the top of that file, and is tied to the back office page where
 a merchant would do the same thing by hand. Reads first; a write tool changes
 one object per call.
 
+## Batch writes
+
+A write tool changes one object per call, and that stays: each change is
+checked, confirmed and reported on its own. What is coming is a way to run the
+same write tool over a list in one call - thirty orders set to Shipped, or
+twenty products switched off - with an answer item by item, each one saying
+whether it went through or why it was refused, and every item checked against
+the employee's rights as if it were called alone. The runner lives in the
+search library the module already installs, `novalo/mcp-tool-discovery`, off
+by default; the module turns it on once it moves to the version that ships it.
+
 ## Tests
 
 Every push runs the CI: the PrestaShop coding standard, PHPStan, Semgrep,

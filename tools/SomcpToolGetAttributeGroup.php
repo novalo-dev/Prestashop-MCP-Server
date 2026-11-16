@@ -37,6 +37,8 @@ if (!defined('_PS_VERSION_')) {
 // Loaded here rather than left to the order the registry reads tools/ in: the
 // reader of translated texts lives in that class.
 require_once __DIR__ . '/SomcpToolCreateCategory.php';
+require_once __DIR__ . '/SomcpToolGetAttributeValue.php';
+require_once __DIR__ . '/SomcpToolCreateCatalogPriceRule.php';
 
 class SomcpToolGetAttributeGroup
 {
@@ -49,10 +51,11 @@ class SomcpToolGetAttributeGroup
             'somcp_get_attribute_group',
             Somcp::t('Get an attribute group'),
             'Returns what the attribute form of Catalog > Attributes & Features > Attributes shows for one group '
-                . '(Size, Colour...): name (back office), public_name (product page), group_type, position (0 for the '
-                . 'first), the number of its values and the faceted search fields, null without the faceted search '
-                . 'module. id_attribute_group comes from somcp_list_attributes: never guess one. For the list and the '
-                . 'names of the values use somcp_list_attributes; for one value somcp_get_attribute_value.',
+                . '(Size, Color...): name (back office), public_name (product page), group_type, position (0 for the '
+                . 'first), the number of its values, the faceted search fields (null without the faceted search '
+                . 'module), and what a delete takes: combinations_count, combinations_only_on_it (deleted with their '
+                . 'stock) and products, to show the merchant before somcp_delete_attribute_group. id_attribute_group '
+                . 'from somcp_list_attributes: never guess one. Values: somcp_list_attributes; one: somcp_get_attribute_value.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -105,7 +108,21 @@ class SomcpToolGetAttributeGroup
             return SomcpTool::refused('read', $errors);
         }
 
-        return SomcpTool::json(['language' => $iso] + self::group($idGroup, $idLang, $idShop));
+        // What a delete would take with the group, so the merchant sees it
+        // before confirming somcp_delete_attribute_group and never learns it
+        // only from the delete's own answer. Counted by the same function the
+        // delete counts with, so the two tools never disagree.
+        $goes = self::whatGoes($idGroup, $idShop, $idLang);
+
+        return SomcpTool::json(
+            ['language' => $iso]
+            + self::group($idGroup, $idLang, $idShop)
+            + [
+                'combinations_count' => $goes['deleted'] + $goes['changed'],
+                'combinations_only_on_it' => $goes['deleted'],
+                'products' => $goes['products'],
+            ]
+        );
     }
 
     /**
@@ -189,5 +206,67 @@ class SomcpToolGetAttributeGroup
         }
 
         return $result;
+    }
+
+    /**
+     * What a delete of the group takes with it, in the shop of the token: the
+     * combinations that hold one of its values, split into those made only of
+     * its values (deleted with their stock) and the others (which lose one
+     * value), their products, and the catalogue price rules of this shop with
+     * a condition on one of its values, which the core leaves behind.
+     *
+     * Shared by somcp_get_attribute_group, which shows the counts and the
+     * products before the delete, and somcp_delete_attribute_group, which
+     * reports them in its answer. One function so the two never disagree on
+     * what goes.
+     *
+     * @param int $idGroup
+     * @param int $idShop
+     * @param int $idLang
+     *
+     * @return array{deleted: int, changed: int, products: array<int, array{id_product: int, name: string}>, rules: array<int, int>}
+     */
+    public static function whatGoes(int $idGroup, int $idShop, int $idLang): array
+    {
+        $db = Db::getInstance();
+        $rows = $db->executeS(
+            'SELECT pa.`id_product_attribute`, pa.`id_product`,'
+            . ' SUM(a.`id_attribute_group` = ' . (int) $idGroup . ') AS `own`, COUNT(*) AS `total`'
+            . ' FROM `' . _DB_PREFIX_ . 'product_attribute` pa'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_attribute_shop` pas ON pas.`id_product_attribute` = pa.`id_product_attribute`'
+            . ' AND pas.`id_shop` = ' . (int) $idShop
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'product_attribute_combination` pac ON pac.`id_product_attribute` = pa.`id_product_attribute`'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'attribute` a ON a.`id_attribute` = pac.`id_attribute`'
+            . ' GROUP BY pa.`id_product_attribute`, pa.`id_product`'
+            . ' HAVING `own` > 0'
+        ) ?: [];
+
+        $deleted = 0;
+        $changed = 0;
+        $productIds = [];
+        foreach ($rows as $row) {
+            if ((int) $row['own'] === (int) $row['total']) {
+                ++$deleted;
+            } else {
+                ++$changed;
+            }
+            $productIds[] = (int) $row['id_product'];
+        }
+
+        // Every value of the group, as the core deletes them all: a price rule
+        // condition names the id_attribute, as somcp_create_catalog_price_rule
+        // writes it.
+        $values = array_map(static function (array $row): int {
+            return (int) $row['id_attribute'];
+        }, $db->executeS(
+            'SELECT `id_attribute` FROM `' . _DB_PREFIX_ . 'attribute` WHERE `id_attribute_group` = ' . (int) $idGroup
+        ) ?: []);
+
+        return [
+            'deleted' => $deleted,
+            'changed' => $changed,
+            'products' => SomcpToolGetAttributeValue::productNames($productIds, $idShop, $idLang),
+            'rules' => SomcpToolCreateCatalogPriceRule::rulesOn('attribute', $values, $idShop),
+        ];
     }
 }

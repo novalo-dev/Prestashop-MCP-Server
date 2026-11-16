@@ -30,6 +30,8 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+require_once __DIR__ . '/SomcpToolListLowStock.php';
+
 class SomcpToolListStockMovements
 {
     /** @var int Movements returned when the caller asks for no particular number. */
@@ -71,8 +73,7 @@ class SomcpToolListStockMovements
                     ],
                     'search' => [
                         'type' => 'string',
-                        'description' => 'Part of the product name, of the product or combination reference, '
-                            . 'or of the supplier name, as the search box of the tab.',
+                        'description' => SomcpToolListLowStock::SEARCH,
                     ],
                     'id_stock_mvt_reason' => [
                         'type' => 'integer',
@@ -147,8 +148,7 @@ class SomcpToolListStockMovements
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = 'language: not a language of this shop, which has '
-                . implode(', ', SomcpTool::activeLanguages($idShop));
+            $problems[] = SomcpTool::languageProblem($idShop);
         }
         $idLang = $language !== null ? $language[0] : 0;
 
@@ -376,11 +376,9 @@ class SomcpToolListStockMovements
             $query->where('ps.`active` = ' . ($filters['active'] ? 1 : 0));
         }
         if ($filters['search'] !== '') {
-            $like = "LIKE '%" . pSQL($filters['search']) . "%'";
-            $query->where(
-                '(pl.`name` ' . $like . ' OR p.`reference` ' . $like
-                . ' OR pa.`reference` ' . $like . ' OR su.`name` ' . $like . ')'
-            );
+            // The same condition as somcp_list_low_stock, as both tabs of
+            // Catalog > Stock send their box to the same filter.
+            $query->where(SomcpToolListLowStock::searchCondition($filters['search'], $idLang));
         }
 
         return $query;

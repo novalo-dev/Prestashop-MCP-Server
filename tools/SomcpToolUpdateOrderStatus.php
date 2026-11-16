@@ -60,11 +60,12 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
             'somcp_update_order_status',
             Somcp::t('Edit an order status'),
             'Changes one order status, as its Edit form of Shop Parameters > Order Settings > Statuses, under '
-                . 'the names and rules of somcp_create_order_status. status_id from somcp_list_order_statuses, '
-                . 'never guessed. Only what is given changes; a status read there can be given back unchanged. A '
-                . 'change to what a status sets off (email, invoice, paid, shipped) applies to orders reaching it '
-                . 'from now on: tell the merchant first. Not for return statuses (somcp_update_return_status). One '
-                . 'status per call. Not to be retried: if the answer is lost, read somcp_list_order_statuses first.',
+                . 'the rules of somcp_create_order_status. status_id from somcp_list_order_statuses. '
+                . 'Only what is given changes; a status read there can be given back unchanged. A change to what a '
+                . 'status sets off (email, invoice, paid, shipped) applies to orders reaching it from now on: tell the '
+                . 'merchant first. Not for an order\'s status (somcp_set_order_status), a new status, a deletion '
+                . '(somcp_create_order_status, somcp_delete_order_status) or a return status. Not to be retried: if '
+                . 'lost, read the list first.',
             self::inputSchema(),
             [SomcpScope::ORDERS_WRITE],
             [self::class, 'handle'],
@@ -211,7 +212,7 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
 
         $color = null;
         if (array_key_exists('color', $arguments)) {
-            $color = self::orderStatusColor($arguments['color'], $errors);
+            $color = self::hexColor($arguments['color'], $errors);
         }
 
         // The icon as somcp_list_order_statuses gave it - its download_ref,
@@ -447,6 +448,9 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
         // The icon comes last, as at creation: a refused file leaves the
         // current icon and the fields above stand, and the answer says so.
         if ($plan['icon'] !== null) {
+            // Looked at before the write, so the record says whether an icon
+            // was replaced or a status without one got its first.
+            $hadIcon = is_file(self::iconPath($idOrderState));
             $icon = self::storeIcon($idOrderState, $plan['icon']);
             if (isset($icon['refused'])) {
                 SomcpLogger::log(
@@ -456,8 +460,8 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
                     '',
                     $idEmployee
                 );
-            } else {
-                $result['changes'][] = ['field' => 'icon', 'old' => null, 'new' => 'stored'];
+            } elseif (empty($icon['unchanged'])) {
+                $result['changes'][] = ['field' => 'icon', 'old' => $hadIcon ? 'stored' : null, 'new' => 'stored'];
             }
             $result['icon'] = $icon;
         } elseif ($plan['remove_icon'] && is_file(self::iconPath($idOrderState))) {
@@ -467,7 +471,8 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
         }
 
         if ($result['changes'] === []) {
-            // Only an icon was given, and it was refused: nothing changed.
+            // Only an icon was given, and it was refused or the same as the
+            // stored one: nothing changed.
             $result['changed'] = false;
         }
 

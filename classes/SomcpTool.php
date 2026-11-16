@@ -583,20 +583,27 @@ class SomcpTool
      * identifier is wrong, the assistant would try other identifiers rather
      * than fix the name of the field. A field the matching get returns but
      * the shop works out gets its own wording, so it is dropped, not renamed.
+     * A name the tool took before is answered with the one it takes now, so
+     * a client built on the published names is told what to send.
      *
      * @param array<string, mixed> $arguments
      * @param array<int, string> $accepted
      * @param array<int, string> $computed
      * @param string $path prefix of a nested object, for example "brand."
+     * @param array<string, string> $renamed former names, keyed to the new ones
      *
      * @return array<int, string>
      */
-    public static function unknownFields(array $arguments, array $accepted, array $computed = [], string $path = ''): array
+    public static function unknownFields(array $arguments, array $accepted, array $computed = [], string $path = '', array $renamed = []): array
     {
         $problems = [];
         foreach (array_keys($arguments) as $key) {
             $key = (string) $key;
             if (in_array($key, $accepted, true)) {
+                continue;
+            }
+            if (isset($renamed[$key])) {
+                $problems[] = $path . $key . ': renamed ' . $renamed[$key];
                 continue;
             }
             $problems[] = $path . $key . (in_array($key, $computed, true)
@@ -872,6 +879,23 @@ class SomcpTool
     }
 
     /**
+     * The line for a language readLanguage() refused, in a tool that lists
+     * every problem of a call before answering.
+     *
+     * languageRefused() is a whole answer and cannot sit among other lines;
+     * this keeps its words, so one refusal reads the same in every tool.
+     *
+     * @param int $idShop
+     *
+     * @return string
+     */
+    public static function languageProblem(int $idShop): string
+    {
+        return 'language: not one of the shop\'s languages, which are '
+            . implode(', ', self::activeLanguages($idShop));
+    }
+
+    /**
      * The name of a carrier as the back office shows it.
      *
      * The carrier the installer creates is stored with the name 0, and the
@@ -950,11 +974,33 @@ class SomcpTool
 
             return false;
         }
-        if ($length > $recommended) {
-            $advice[] = $where . ' is ' . $length . ' characters: past ' . $recommended . ', a search result cuts it';
+        $line = self::metaLengthAdvice($where, $length, $recommended);
+        if ($line !== null) {
+            $advice[] = $line;
         }
 
         return true;
+    }
+
+    /**
+     * The advice on a meta title or description longer than a search result
+     * shows, in one sentence for every tool: it gives the length, which is
+     * what the assistant needs to shorten the text.
+     *
+     * @param string $where the field, with its language when the caller does
+     *                      not group its warnings by language
+     * @param int $length the length already counted by the caller, as its refusal counts it
+     * @param int $recommended the length past which a search result cuts the text
+     *
+     * @return string|null null within the recommended length
+     */
+    public static function metaLengthAdvice(string $where, int $length, int $recommended): ?string
+    {
+        if ($length <= $recommended) {
+            return null;
+        }
+
+        return $where . ' is ' . $length . ' characters: past ' . $recommended . ', a search result cuts it';
     }
 
     /**

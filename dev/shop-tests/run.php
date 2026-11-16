@@ -252,6 +252,252 @@ if ($upload !== null) {
     }
 }
 
+// A product changed by its tags alone, then searched for: the index holds
+// the tags, categories, features and combinations as well as the texts, and
+// the scenarios only read the tool's answer, never the index. The tag is new,
+// so the word can only be in the index if the update indexed the product
+// again; the product's tags and the setting are put back afterwards.
+$updateProduct = $registry->get('somcp_update_product');
+$idIndexed = 1;
+$idLangEn = (int) Language::getIdByIso('en');
+if ($updateProduct !== null && $idLangEn > 0) {
+    ++$calls;
+    $indexation = Configuration::get('PS_SEARCH_INDEXATION');
+    $tagsBefore = Tag::getProductTags($idIndexed);
+    Configuration::updateValue('PS_SEARCH_INDEXATION', 1);
+    try {
+        $result = $updateProduct->call([
+            'id_product' => $idIndexed,
+            'languages' => ['en'],
+            'seo' => ['tags' => ['en' => 'somcpreindexed']],
+        ], [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $updateProduct->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => [],
+        ]);
+        $found = (int) Db::getInstance()->getValue(
+            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'search_index` si'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'search_word` sw ON sw.`id_word` = si.`id_word`'
+            . ' WHERE si.`id_product` = ' . $idIndexed . " AND sw.`word` = 'somcpreindexed'"
+            . ' AND sw.`id_lang` = ' . $idLangEn . ' AND sw.`id_shop` = ' . (int) $context->shop->id
+        );
+        if (!empty($result['isError']) || $found === 0) {
+            $failures[] = 'somcp_update_product (tags alone): expected the new tag in the search index, found '
+                . $found . ' - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_product (tags alone, the product indexed again)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_product (tags alone): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        Tag::deleteTagsForProduct($idIndexed);
+        foreach (is_array($tagsBefore) ? $tagsBefore : [] as $idLang => $names) {
+            Tag::addTags((int) $idLang, $idIndexed, $names);
+        }
+        Configuration::updateValue('PS_SEARCH_INDEXATION', $indexation);
+        Search::indexation(false, $idIndexed);
+    }
+}
+
+// An order status icon given by deposit, then the status deleted twice
+// (#224): the JSON scenarios cannot hold a real deposit, nor the identifier of
+// a status they created, which differs from one version to the other. The
+// icon form takes a GIF only, so a PNG is turned away at the deposit and a
+// GIF is stored; the status created with it is then deleted, and deleting it
+// again must be refused rather than read as a success.
+$createStatus = $registry->get('somcp_create_order_status');
+$deleteStatus = $registry->get('somcp_delete_order_status');
+if ($createStatus !== null && $deleteStatus !== null) {
+    $statusCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $statusText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+    $deposit = static function (string $dataUri, string $name) use ($createStatus, $employee): array {
+        $reference = SomcpUpload::inviteFor((int) $employee->id, $createStatus, 'icon');
+        $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+
+        return [
+            $reference,
+            $invitation === null ? 'no deposit could be opened' : SomcpUpload::enter($invitation, 'data', $dataUri, $name),
+        ];
+    };
+
+    ++$calls;
+    [, $entered] = $deposit('data:image/png;base64,' . base64_encode((string) file_get_contents(__DIR__ . '/../../logo.png')), 'icon.png');
+    if ($entered === '' || strpos($entered, 'only gif are accepted') === false) {
+        $failures[] = 'somcp_create_order_status (a PNG icon): expected the deposit to take a GIF only, got "' . $entered . '"';
+    } else {
+        printf("  %-6s %s\n", 'error', 'somcp_create_order_status (a PNG icon turned away at the deposit)');
+    }
+
+    ++$calls;
+    // The smallest valid GIF: one transparent pixel.
+    [$reference, $entered] = $deposit('data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'icon.gif');
+    $idCreated = 0;
+    if ($entered !== '') {
+        $failures[] = 'somcp_create_order_status (a GIF icon): the GIF was not deposited - ' . $entered;
+    } else {
+        try {
+            $result = $statusCall($createStatus, [
+                'languages' => ['en'],
+                'name' => ['en' => 'Somcp deleted twice'],
+                'icon' => ['upload_ref' => $reference],
+            ]);
+            $answer = json_decode(trim($statusText($result)), true);
+            $idCreated = is_array($answer) ? (int) ($answer['status_id'] ?? 0) : 0;
+            if (!empty($result['isError']) || $idCreated === 0 || empty($answer['icon']['stored'])) {
+                $failures[] = 'somcp_create_order_status (a GIF icon): expected a status created with its icon stored - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_create_order_status (a GIF icon deposited, then stored)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_create_order_status (a GIF icon): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+
+    if ($idCreated > 0) {
+        $calls += 2;
+        try {
+            $result = $statusCall($deleteStatus, ['status_id' => $idCreated]);
+            $text = $statusText($result);
+            $missing = array_filter(['"deleted": true', '"language": "en"', '"orders_with_it": 0'], static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            });
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_delete_order_status (a status the merchant created): expected it deleted - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_order_status (a status the merchant created)');
+            }
+
+            $result = $statusCall($deleteStatus, ['status_id' => $idCreated]);
+            $text = $statusText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was deleted') === false
+                || strpos($text, 'no order status of this shop has the identifier ' . $idCreated) === false) {
+                $failures[] = 'somcp_delete_order_status (the same status again): expected a refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_delete_order_status (the same status again, refused)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_delete_order_status (a status the merchant created): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+}
+
+// A category deleted with a subcategory and a product, once per mode (#227):
+// the JSON scenario only reaches categories with neither, so the reading of
+// the subcategories and the settling of the products never ran. The tree is
+// built here with the core's own objects, since its identifiers differ from
+// one version to the other; the product sits in the subcategory only, so it
+// is left in no category once the parent goes.
+$deleteCategory = $registry->get('somcp_delete_category');
+if ($deleteCategory !== null) {
+    $idLangTree = (int) Configuration::get('PS_LANG_DEFAULT');
+    $idShopTree = (int) $context->shop->id;
+    $newCategory = static function (string $name, int $idParent) use ($idLangTree, $idShopTree): int {
+        $category = new Category();
+        $category->name = [$idLangTree => $name];
+        $category->link_rewrite = [$idLangTree => Tools::str2url($name)];
+        $category->id_parent = $idParent;
+        $category->active = true;
+        $category->id_shop_list = [$idShopTree];
+
+        return $category->add() ? (int) $category->id : 0;
+    };
+    $expected = [
+        'associate_only' => ['products_moved'],
+        'associate_and_disable' => ['products_moved', 'products_disabled'],
+        'remove_associated' => ['products_deleted'],
+    ];
+    foreach ($expected as $mode => $lists) {
+        ++$calls;
+        $label = "somcp_delete_category (a subcategory and a product, $mode)";
+        $idParentTree = $newCategory('Somcp tree ' . $mode, (int) $context->shop->id_category);
+        $idChildTree = $idParentTree > 0 ? $newCategory('Somcp branch ' . $mode, $idParentTree) : 0;
+        $product = new Product();
+        $product->name = [$idLangTree => 'Somcp leaf ' . $mode];
+        $product->link_rewrite = [$idLangTree => Tools::str2url('Somcp leaf ' . $mode)];
+        $product->price = 1;
+        $product->active = true;
+        $product->id_category_default = $idChildTree;
+        $product->id_shop_list = [$idShopTree];
+        if ($idChildTree === 0 || !$product->add() || !$product->addToCategories([$idChildTree])) {
+            $failures[] = "$label: the category tree or its product could not be built";
+            continue;
+        }
+        $idLeaf = (int) $product->id;
+        // Adding the subcategory loaded the parent through calcLevelDepth()
+        // before the tree was renumbered, and the core keeps that copy for the
+        // rest of the process. A real call runs in a request of its own, so
+        // the copy is dropped here for the tool to read the tree as stored.
+        Cache::clean('objectmodel_Category_' . $idParentTree . '_*');
+        Cache::clean('objectmodel_Category_' . $idChildTree . '_*');
+
+        try {
+            $arguments = ['id_category' => $idParentTree, 'products' => $mode];
+            $result = $deleteCategory->call($arguments, [
+                'id_shop' => $idShopTree,
+                'id_employee' => (int) $employee->id,
+                'id_lang' => (int) $context->language->id,
+                'id_client' => 0,
+                'scopes' => implode(' ', $deleteCategory->getRequiredScopes()),
+                'responses' => [],
+                'resumed' => [],
+                'capabilities' => [],
+                'arguments' => $arguments,
+            ]);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $answer = json_decode(trim($text), true);
+            $problems = [];
+            if (!empty($result['isError']) || !is_array($answer)) {
+                $problems[] = 'not deleted';
+            } else {
+                if (array_column((array) ($answer['deleted_subcategories'] ?? []), 'id_category') !== [$idChildTree]) {
+                    $problems[] = "deleted_subcategories is not [$idChildTree]";
+                }
+                foreach (['products_moved', 'products_disabled', 'products_deleted'] as $list) {
+                    $listed = in_array($idLeaf, array_map('intval', array_column((array) ($answer[$list] ?? []), 'id_product')), true);
+                    if ($listed !== in_array($list, $lists, true)) {
+                        $problems[] = "product $idLeaf " . ($listed ? 'listed' : 'missing') . " in $list";
+                    }
+                }
+            }
+            if ($problems !== []) {
+                $failures[] = "$label: " . implode(', ', $problems) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', $label);
+            }
+        } catch (Throwable $e) {
+            $failures[] = "$label: " . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+}
+
 // Permissions. The calls above run as a superadmin holding exactly the scopes
 // each tool needs; what matters as much is who is turned away. Checked on the
 // registry's own gate - isAvailableTo(), which decides both the listing and

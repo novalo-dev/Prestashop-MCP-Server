@@ -374,12 +374,8 @@ class SomcpToolCreateAttributeValue extends SomcpToolCreateFeature
         }
 
         if (array_key_exists('color', $arguments)) {
-            $color = trim((string) (self::string($arguments['color']) ?? ''));
-            // Validate::isColor() also lets a bare word through, which the
-            // colour picker of the form never stores: only the hex code is.
-            if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color) || !Validate::isColor($color)) {
-                $errors[] = 'color: a hex code such as #E84C3D';
-            } else {
+            $color = self::hexColor($arguments['color'], $errors);
+            if ($color !== null) {
                 $plan['color'] = $color;
             }
         }

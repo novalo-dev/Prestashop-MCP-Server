@@ -523,4 +523,30 @@ class SomcpToolCreateFeature extends SomcpToolCreateCategory
             }
         }
     }
+
+    /**
+     * The colour given in the call, or null with the reason when it is not one the form stores.
+     *
+     * One check for every colour a tool takes - an order status, a return
+     * status, the swatch of an attribute value - so they all take the same
+     * colours in the same words. Validate::isColor() also lets a bare word
+     * through, which the colour picker of the forms never stores: only the
+     * hex code is.
+     *
+     * @param mixed $value
+     * @param array<int, string> $errors
+     *
+     * @return string|null
+     */
+    protected static function hexColor($value, array &$errors): ?string
+    {
+        $color = trim((string) (self::string($value) ?? ''));
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color) || !Validate::isColor($color)) {
+            $errors[] = 'color: a hex code such as #E84C3D';
+
+            return null;
+        }
+
+        return $color;
+    }
 }

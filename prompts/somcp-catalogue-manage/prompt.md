@@ -27,6 +27,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_feature_value`
 - `somcp_list_attachments`
 - `somcp_list_tax_rules`
+- `somcp_get_tax_rule`
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
 - `somcp_create_product`
@@ -197,6 +198,9 @@ there, 0 for no tax. Match the merchant's "20 %" on the `rate`, not on the
 name, and say that the rate is the one of the country given: a customer
 delivered elsewhere may pay another one. When `taxes_enabled` is false the
 shop charges no tax at all, whatever the rule.
+For the rate a customer delivered abroad pays, read the rule with
+`somcp_get_tax_rule`: its `country_rules` give the tax per country, state and
+zip code range, and `country` narrows them to one country.
 
 ## Who fills each field
 
@@ -586,7 +590,9 @@ its values. Before calling it:
 
 1. Take the group from `somcp_list_attributes`, never guessed, and read it with
    `somcp_get_attribute_group`: tell the merchant how many values go with it
-   (`values_count`) and which products offer it.
+   (`values_count`), which products offer it (`products`), how many
+   combinations hold it (`combinations_count`) and how many are built only on
+   it (`combinations_only_on_it`), since those go with their stock.
 2. Say plainly what goes with it: every combination built only on this group
    is deleted with its stock and images, and the others lose that one value.
 3. Delete only once the merchant confirms by the group's name.
@@ -714,10 +720,10 @@ Before calling it:
    it, with its value, custom values included.
 3. Delete only once the merchant confirms by the feature's name.
 
-Show the merchant what the answer counts: `values_deleted` and `products`.
-When `catalog_price_rules` is not empty, those rules still have a condition on
-a deleted value and match nothing any more: tell the merchant to change or
-remove them. A feature shared with other stores is refused: it is deleted from
+Show the merchant what the answer counts: `values_deleted` and
+`products_count`. When `catalog_price_rules` is not empty, those rules still
+have a condition on a deleted value and match nothing any more: tell the
+merchant to change or remove them. A feature shared with other stores is refused: it is deleted from
 the back office, in the all-stores context. On a lost answer, read it with
 `somcp_get_feature`, which then answers "not found", rather than calling twice.
 

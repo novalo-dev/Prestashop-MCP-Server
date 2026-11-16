@@ -199,8 +199,7 @@ class SomcpToolListAbandonedCarts
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- language: not a language of this shop, which has '
-                . implode(', ', SomcpTool::activeLanguages($idShop));
+            $problems[] = '- ' . SomcpTool::languageProblem($idShop);
         }
 
         if ($problems !== []) {
@@ -246,8 +245,10 @@ class SomcpToolListAbandonedCarts
             $priced[$idCart] = $totalIncl;
             $carts[] = [
                 'id_cart' => $idCart,
-                'date_add' => (string) $row['date_add'],
-                'date_upd' => (string) $row['date_upd'],
+                // With the shop's offset, as the order and customer tools give
+                // theirs: the assistant sets this hour against those.
+                'date_add' => SomcpTool::isoDate($row['date_add']),
+                'date_upd' => SomcpTool::isoDate($row['date_upd']),
                 'id_customer' => (int) $row['id_customer'],
                 // The name only: email, phone and address stay with
                 // somcp_get_customer, under the customers scope.

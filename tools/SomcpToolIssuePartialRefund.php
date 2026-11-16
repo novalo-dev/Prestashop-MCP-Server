@@ -72,6 +72,12 @@ class SomcpToolIssuePartialRefund
         'product_prices_excluding_voucher' => 1,
     ];
 
+    /** @var string[] The top-level arguments of the tool, as in its schema. */
+    private const KEYS = [
+        'id_order', 'reference', 'lines', 'shipping_amount_tax_excluded', 'shipping_amount_tax_included', 'restock',
+        'credit_slip', 'voucher', 'voucher_refund_type',
+    ];
+
     /** @var string[] The keys of one entry of lines. */
     private const LINE_KEYS = ['id_order_detail', 'quantity', 'amount_tax_excluded', 'amount_tax_included'];
 
@@ -191,6 +197,10 @@ class SomcpToolIssuePartialRefund
     {
         $idEmployee = (int) ($context['id_employee'] ?? 0);
         $problems = [];
+
+        // A misnamed field would otherwise be dropped and the refund carried
+        // out without it, while the merchant is told it was taken into account.
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
 
         $lines = self::lines($arguments, $problems);
 
@@ -504,9 +514,13 @@ class SomcpToolIssuePartialRefund
             }
             array_push($problems, ...SomcpTool::unknownFields($entry, self::LINE_KEYS, [], $path . '.'));
 
-            $idDetail = self::integer($entry['id_order_detail'] ?? null);
-            if ($idDetail === null || $idDetail <= 0) {
+            // The one rule for an identifier, so a line reads as in every
+            // other tool; integer() is left to the quantities, where 0 is a
+            // value of its own.
+            $idDetail = SomcpTool::id($entry, 'id_order_detail');
+            if ($idDetail === 0) {
                 $problems[] = $path . '.id_order_detail: must be the identifier of a line, from somcp_get_order';
+                $idDetail = null;
             } elseif (isset($seen[$idDetail])) {
                 // Two entries for one line would add up in nobody's head.
                 $problems[] = $path . '.id_order_detail: line ' . $idDetail . ' is already given in lines['

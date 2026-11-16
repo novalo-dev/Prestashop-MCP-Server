@@ -64,14 +64,16 @@ installation has its own titles, descriptions and URLs.
    `somcp_update_cms_seo`, one page per call, with the languages approved in
    `languages` and each text given in each of them;
    its `meta_title` is the page's Meta title, which replaces the page title in
-   search results, while the `meta_title` of `somcp_audit_cms_seo` is the page
-   title itself. Changing a friendly URL of a displayed page makes the old
-   address stop working: say so before the call. Read the page again with
-   `somcp_audit_cms_seo` afterwards. One of the shop's own pages (contact,
-   new products, search...) is changed with `somcp_update_meta_page`, under
-   the names `somcp_list_meta_pages` returns: `title`, `description` and
-   `url_rewrite`. The home page has no friendly URL, and a new one on any other
-   page makes its old address stop working: say so before the call.
+   search results, while its `title` is the page title itself, as
+   `somcp_audit_cms_seo` gives them. Changing a friendly URL of a displayed
+   page makes the old address stop working: say so before the call. Read the
+   page again with `somcp_audit_cms_seo` afterwards. One of the shop's own
+   pages (contact, new products, search...) is changed with
+   `somcp_update_meta_page`, under the names every SEO tool uses and
+   `somcp_list_meta_pages` returns: `meta_title`, `meta_description`,
+   `meta_keywords` and `link_rewrite`. The home page has no friendly URL, and
+   a new one on any other page makes its old address stop working: say so
+   before the call.
 6. **Check the public page.** A value in the database is not proof of what
    the theme prints: call `somcp_audit_page` with the address or the path of
    the page (`/` for the home page) to see the title, description, headings,

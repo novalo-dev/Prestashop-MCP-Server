@@ -226,6 +226,7 @@ class SomcpToolListMenuLinks
                 'url' => $link['url'],
                 'new_window' => $link['new_window'],
                 'in_menu' => isset($inMenu[$idLink]),
+                'translated' => $link['translated'],
             ];
         }
 
@@ -238,7 +239,7 @@ class SomcpToolListMenuLinks
      * @param string $item
      * @param int $idLang
      * @param int $idShop
-     * @param array<int, array{label: string, url: string, new_window: bool}> $links
+     * @param array<int, array{label: string, url: string, new_window: bool, translated: bool}> $links
      *
      * @return array<string, mixed>|null
      */
@@ -324,12 +325,13 @@ class SomcpToolListMenuLinks
      *
      * A link with no label in that language takes the default language's, as
      * the module does when it builds the menu, so a link is never listed
-     * without a name.
+     * without a name. translated says so: given back to the update, a text
+     * shown from the default language must not be taken for this language's.
      *
      * @param int $idLang
      * @param int $idShop
      *
-     * @return array<int, array{label: string, url: string, new_window: bool}>
+     * @return array<int, array{label: string, url: string, new_window: bool, translated: bool}>
      */
     public static function customLinks(int $idLang, int $idShop): array
     {
@@ -360,6 +362,9 @@ class SomcpToolListMenuLinks
                 'label' => (string) ($useDefault ? ($row['default_label'] ?? '') : $row['label']),
                 'url' => (string) ($useDefault ? ($row['default_link'] ?? '') : ($row['link'] ?? '')),
                 'new_window' => (bool) $row['new_window'],
+                // The default language is its own fallback: what it shows is
+                // always its own text, even an empty one.
+                'translated' => !$useDefault || $idLang === $idDefault,
             ];
         }
 

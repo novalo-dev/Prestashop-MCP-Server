@@ -28,7 +28,7 @@ Free and open source - PrestaShop 8.0 to 9.x - English, French, Spanish, German
 
 </div>
 
-https://github.com/user-attachments/assets/cf0b0e3f-1172-4ba9-aad1-11a6298aadf7
+https://github.com/user-attachments/assets/3ed9d7ce-a317-4ec7-bf12-03241dd6544f
 
 Ask your AI assistant to find an order, change a status, check your stock or
 audit a product page, and it does it in your back office - with the rights of

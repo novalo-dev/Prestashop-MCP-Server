@@ -48,6 +48,21 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
     private const LINK_FIELDS = ['languages', 'label', 'url', 'new_window'];
 
     /**
+     * @var array<string, array{0: string, 1: string}> The word and the listing
+     *                                                 tool of each type, so an unknown
+     *                                                 identifier names where to find one
+     */
+    private const FOUND_IN = [
+        'category' => ['category', 'somcp_list_categories'],
+        'product' => ['product', 'somcp_search_products'],
+        'cms_page' => ['CMS page', 'somcp_list_cms_pages'],
+        'cms_category' => ['CMS category', 'somcp_list_cms_pages'],
+        'brand' => ['brand', 'somcp_list_manufacturers'],
+        'supplier' => ['supplier', 'somcp_list_suppliers'],
+        'link' => ['custom link', 'somcp_list_menu_links'],
+    ];
+
+    /**
      * @return SomcpTool
      */
     public static function define(): SomcpTool
@@ -84,7 +99,7 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
                     'id_supplier' => $ids('type supplier: the supplier, from somcp_list_suppliers.'),
                     'id_link' => $ids('type link: an existing custom link, id_link of custom_links of '
                         . 'somcp_list_menu_links. Leave out to create a new one from label and url.'),
-                    'id_shop' => $ids('type shop: the shop, on a multistore installation.'),
+                    'id_shop' => $ids('type shop: the shop, on a multistore installation, from the shops somcp_ping names.'),
                     'languages' => [
                         'type' => 'array',
                         'items' => ['type' => 'string'],
@@ -232,16 +247,17 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
 
         $id = 0;
         if ($idField !== null && !$newLink) {
-            $value = $arguments[$idField] ?? null;
-            if (is_string($value) && ctype_digit($value)) {
-                $value = (int) $value;
-            }
-            if (!is_int($value) || $value < 1) {
-                $errors[] = $idField . ': required with type ' . $type . ', a positive integer';
+            if (!array_key_exists($idField, $arguments)) {
+                $errors[] = $idField . ': required with type ' . $type;
 
                 return null;
             }
-            $id = $value;
+            $id = SomcpTool::id($arguments, $idField);
+            if ($id === 0) {
+                $errors[] = SomcpTool::notAnIdentifier($idField);
+
+                return null;
+            }
         }
 
         $items = SomcpToolListMenuLinks::storedItems($idShop);
@@ -253,7 +269,11 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
             // The module's own lookup names the object, so whatever it cannot
             // name would show nowhere on the storefront either.
             if (SomcpToolListMenuLinks::entry($item, $idLang, $idShop, $links) === null) {
-                $errors[] = $idField . ': no ' . str_replace('_', ' ', $type) . ' ' . $id . ' on this shop';
+                // notFound() would word a shop "no shop of this shop", and no
+                // tool lists the shops but somcp_ping, which names them.
+                $errors[] = $type === 'shop'
+                    ? 'id_shop: no shop of this installation has the identifier ' . $id . ' - find it with somcp_ping'
+                    : SomcpTool::notFound((string) $idField, self::FOUND_IN[$type][0], $id, self::FOUND_IN[$type][1]);
             } elseif (in_array($item, $items, true)) {
                 // The screen no longer offers what is already selected.
                 $errors[] = ($idField ?? 'type') . ': already in the menu (' . $item . '), nothing to add';

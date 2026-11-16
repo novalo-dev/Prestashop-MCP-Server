@@ -199,19 +199,21 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
             $errors[] = $problem;
         }
 
-        $idLink = $arguments['id_link'] ?? null;
-        if (is_string($idLink) && ctype_digit($idLink)) {
-            $idLink = (int) $idLink;
+        if (!array_key_exists('id_link', $arguments)) {
+            $errors[] = 'id_link: required, from custom_links of somcp_list_menu_links';
+
+            return null;
         }
-        if (!is_int($idLink) || $idLink < 1) {
-            $errors[] = 'id_link: required, a positive integer from custom_links of somcp_list_menu_links';
+        $idLink = SomcpTool::id($arguments, 'id_link');
+        if ($idLink === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_link');
 
             return null;
         }
 
         $current = self::storedLink($idLink, $idShop);
         if ($current === null) {
-            $errors[] = 'id_link: no custom link ' . $idLink . ' on this shop';
+            $errors[] = SomcpTool::notFound('id_link', 'custom link', $idLink, 'somcp_list_menu_links');
 
             return null;
         }

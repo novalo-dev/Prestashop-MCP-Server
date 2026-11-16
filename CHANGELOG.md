@@ -34,6 +34,15 @@ settings, as for the product.
 
 ### Changed
 
+**The customer and main menu tools read identifiers as the others do.** A
+customer group written in quotes, as the assistant sometimes copies it from an
+answer ("3"), was refused when creating or changing a customer, though the
+customer search took it: it is now read as group 3. When adding an entry to
+the main menu or changing a custom link, an identifier the shop does not have
+now names the tool that lists the right ones (the categories, products, CMS
+pages, brands, suppliers or custom links), as every other tool does, and an
+identifier that is not a number gets the same refusal everywhere.
+
 **A product with its own order of specific price priorities can go back to the
 shop's default order.** The product tools could give a product an order of its
 own, never take it away, so a product kept it even after the merchant changed

@@ -374,8 +374,11 @@ class SomcpToolUpdateCustomer
                 return null;
             }
             $groupIds = [];
-            foreach ($given as $id) {
-                if (!is_int($id) || $id <= 0) {
+            foreach ($given as $item) {
+                // The same rule as every identifier, so a group read as "3" from
+                // a text answer is taken as group 3.
+                $id = SomcpTool::id(['id_group' => $item], 'id_group');
+                if ($id === 0) {
                     $errors[] = SomcpTool::notAnIdentifier('group_ids');
                     continue;
                 }
@@ -391,17 +394,18 @@ class SomcpToolUpdateCustomer
 
         $idDefault = (int) $customer->id_default_group;
         if (array_key_exists('id_default_group', $arguments)) {
-            if (!is_int($arguments['id_default_group']) || $arguments['id_default_group'] <= 0) {
+            $idGiven = SomcpTool::id($arguments, 'id_default_group');
+            if ($idGiven === 0) {
                 $errors[] = SomcpTool::notAnIdentifier('id_default_group');
 
                 return $groupIds;
             }
-            if (!isset($shopGroups[$arguments['id_default_group']])) {
-                $errors[] = SomcpTool::notFound('id_default_group', 'customer group', $arguments['id_default_group'], 'somcp_list_customer_groups');
+            if (!isset($shopGroups[$idGiven])) {
+                $errors[] = SomcpTool::notFound('id_default_group', 'customer group', $idGiven, 'somcp_list_customer_groups');
 
                 return $groupIds;
             }
-            $idDefault = $arguments['id_default_group'];
+            $idDefault = $idGiven;
         }
         // The rule of the core handler: a customer cannot default to a group
         // they have no access to, whichever of the two the call changes.

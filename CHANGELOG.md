@@ -157,6 +157,13 @@ the wrong time. They now read like every other date.
 
 ### Fixed
 
+**A product image can no longer be linked to a combination the same change
+deletes.** When the assistant removed a combination of a product and, in the
+same change, named that combination among those an image illustrates, the
+combination was deleted and the image was then linked to it, leaving a link
+to nothing. The change is now refused, as it already was for a specific price
+or a supplier reference, and nothing is saved.
+
 **A built-in order status refused for deletion reads like the other
 refusals, and a new status gives its identifier under the usual name.** When
 the assistant tried to delete one of the order statuses of PrestaShop or of a

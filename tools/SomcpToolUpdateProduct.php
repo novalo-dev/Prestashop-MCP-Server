@@ -1599,12 +1599,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
      * @param array<string, mixed> $item the image, with id_product_attributes removed here
      * @param Product $product
      * @param int $idShop
+     * @param array<string, mixed> $plan read for the combinations the same call removes
      * @param string $path
      * @param array<int, string> $errors
      *
      * @return array<int, int>|null null when the field is left out
      */
-    private static function illustratedByIdentifier(array &$item, Product $product, int $idShop, string $path, array &$errors): ?array
+    private static function illustratedByIdentifier(array &$item, Product $product, int $idShop, array $plan, string $path, array &$errors): ?array
     {
         if (!array_key_exists('id_product_attributes', $item)) {
             return null;
@@ -1621,6 +1622,10 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             if (!SomcpToolGetProduct::combinationBelongs($product, $id, $idShop)) {
                 $errors[] = $path . '.id_product_attributes: no combination of this product has the identifier ' . $id
                     . ' - find it with somcp_get_product';
+            } elseif (in_array($id, $plan['combinations']['remove'], true)) {
+                // The combinations are deleted before the image links are
+                // written, so the link would point at a row that is gone.
+                $errors[] = $path . '.id_product_attributes: combination ' . $id . ' is also in remove_combinations';
             }
         }
 
@@ -1665,7 +1670,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             $path = 'images[' . $i . ']';
             $id = array_key_exists('id_image', $item) ? (self::integer($item['id_image']) ?? 0) : null;
             unset($item['id_image']);
-            $illustrated = self::illustratedByIdentifier($item, $product, $idShop, $path, $errors);
+            $illustrated = self::illustratedByIdentifier($item, $product, $idShop, $plan, $path, $errors);
             self::onlyAccepted($item, 'image', $path, $errors);
             $fields = self::imageFields($item, $path, $listed, $languages, $errors);
             if ($fields['cover'] === true) {

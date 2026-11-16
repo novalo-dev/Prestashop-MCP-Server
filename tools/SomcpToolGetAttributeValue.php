@@ -35,8 +35,10 @@ if (!defined('_PS_VERSION_')) {
 }
 
 // Loaded here rather than left to the order the registry reads tools/ in: the
-// reader of translated texts lives in that class.
+// reader of translated texts and the price rule conditions live in these
+// classes.
 require_once __DIR__ . '/SomcpToolCreateCategory.php';
+require_once __DIR__ . '/SomcpToolCreateCatalogPriceRule.php';
 
 class SomcpToolGetAttributeValue
 {
@@ -296,27 +298,15 @@ class SomcpToolGetAttributeValue
             . ' ORDER BY g.`id_cart_rule`'
         ) ?: [];
 
-        // The value of an attribute condition is the id_attribute, as
-        // somcp_create_catalog_price_rule writes it; the core leaves these.
-        $rules = $db->executeS(
-            'SELECT DISTINCT g.`id_specific_price_rule` FROM `' . _DB_PREFIX_ . 'specific_price_rule_condition` c'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule_condition_group` g'
-            . ' ON g.`id_specific_price_rule_condition_group` = c.`id_specific_price_rule_condition_group`'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'specific_price_rule` r ON r.`id_specific_price_rule` = g.`id_specific_price_rule`'
-            . ' AND r.`id_shop` = ' . (int) $idShop
-            . ' WHERE c.`type` = \'attribute\' AND CAST(c.`value` AS UNSIGNED) = ' . (int) $idAttribute
-            . ' ORDER BY g.`id_specific_price_rule`'
-        ) ?: [];
-
         return [
             'combinations' => $combinations,
             'default_changed' => $defaultChanged,
             'cart_rules' => array_map(static function (array $row): int {
                 return (int) $row['id_cart_rule'];
             }, $cartRules),
-            'rules' => array_map(static function (array $row): int {
-                return (int) $row['id_specific_price_rule'];
-            }, $rules),
+            // The core leaves the price rule conditions on the value behind;
+            // read through the function every delete names them with.
+            'rules' => SomcpToolCreateCatalogPriceRule::rulesOn('attribute', [$idAttribute], $idShop),
             'products' => $products,
         ];
     }

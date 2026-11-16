@@ -26,6 +26,14 @@ one of its values, how many are built only on them, and the products
 concerned, counted exactly as the delete counts them, so the merchant confirms
 knowing which combinations go.
 
+**A feature delete names the products it touched as the feature read does.**
+Deleting a feature answered the number of products that lost it as
+`products`, while reading the feature gives the same number as
+`products_count`, and the attribute deletes use `products` for the list of
+the products themselves. The feature delete now answers `products_count`, so
+the assistant reads the same count under the same name before and after the
+delete.
+
 **The shop pages' SEO reads and writes under the names of the other SEO
 tools.** The pages of **Shop Parameters > Traffic & SEO > SEO & URLs** named
 their Page title, Meta description, Meta keywords and Rewritten URL `title`,

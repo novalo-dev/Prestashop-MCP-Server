@@ -716,10 +716,10 @@ Before calling it:
    it, with its value, custom values included.
 3. Delete only once the merchant confirms by the feature's name.
 
-Show the merchant what the answer counts: `values_deleted` and `products`.
-When `catalog_price_rules` is not empty, those rules still have a condition on
-a deleted value and match nothing any more: tell the merchant to change or
-remove them. A feature shared with other stores is refused: it is deleted from
+Show the merchant what the answer counts: `values_deleted` and
+`products_count`. When `catalog_price_rules` is not empty, those rules still
+have a condition on a deleted value and match nothing any more: tell the
+merchant to change or remove them. A feature shared with other stores is refused: it is deleted from
 the back office, in the all-stores context. On a lost answer, read it with
 `somcp_get_feature`, which then answers "not found", rather than calling twice.
 

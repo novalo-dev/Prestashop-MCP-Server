@@ -394,16 +394,17 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $packItems = $plan['pack'] === null ? null : self::replacePack((int) $product->id, $plan['pack']);
         $virtualFile = $plan['virtual_file'] === null ? null : self::applyVirtualFile((int) $product->id, $plan['virtual_file']);
 
-        if ($plan['index']) {
-            // What the back office does after saving a product: one the search
-            // can find is indexed, one it can no longer find leaves the index.
-            if ($stored->active && in_array($stored->visibility, ['both', 'search'], true)) {
-                if (Configuration::get('PS_SEARCH_INDEXATION')) {
-                    Search::indexation(false, (int) $stored->id);
-                }
-            } else {
-                Search::removeProductsSearchIndex([(int) $stored->id]);
+        // What the back office does after every save of a product, whatever
+        // changed: the index also holds the tags, categories, features, brand,
+        // references and combinations, so a call that changed only one of them
+        // still leaves stale words behind. One the search can find is indexed,
+        // one it can no longer find leaves the index.
+        if ($stored->active && in_array($stored->visibility, ['both', 'search'], true)) {
+            if (Configuration::get('PS_SEARCH_INDEXATION')) {
+                Search::indexation(false, (int) $stored->id);
             }
+        } else {
+            Search::removeProductsSearchIndex([(int) $stored->id]);
         }
 
         $warnings = self::updateWarnings($stored, $plan, $idShop);
@@ -471,7 +472,6 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             'texts' => [],
             'changes' => [],
             'touched' => [],
-            'index' => false,
         ];
 
         // The creation's own readings, for the groups whose fields are single
@@ -579,9 +579,6 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                 $plan['product'][$field] = $merged;
             }
         }
-
-        // Whether the product can be found by the search may have changed.
-        $plan['index'] = $plan['product'] !== [];
     }
 
     /**

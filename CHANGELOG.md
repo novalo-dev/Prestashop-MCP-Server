@@ -166,6 +166,13 @@ the wrong time. They now read like every other date.
 
 ### Fixed
 
+**A product changed by the assistant is found by the shop search with its new
+words.** Changing only the tags, categories, features, brand, references or
+combinations of a product left the search index as it was, so a customer
+searching for a new tag did not find the product until the next full
+reindexing. The product is now indexed again after every change, as the back
+office does on each save, when automatic indexing is turned on.
+
 **A product image can no longer be linked to a combination the same change
 deletes.** When the assistant removed a combination of a product and, in the
 same change, named that combination among those an image illustrates, the

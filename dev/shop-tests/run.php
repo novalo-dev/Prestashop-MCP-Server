@@ -252,6 +252,59 @@ if ($upload !== null) {
     }
 }
 
+// A product changed by its tags alone, then searched for: the index holds
+// the tags, categories, features and combinations as well as the texts, and
+// the scenarios only read the tool's answer, never the index. The tag is new,
+// so the word can only be in the index if the update indexed the product
+// again; the product's tags and the setting are put back afterwards.
+$updateProduct = $registry->get('somcp_update_product');
+$idIndexed = 1;
+$idLangEn = (int) Language::getIdByIso('en');
+if ($updateProduct !== null && $idLangEn > 0) {
+    ++$calls;
+    $indexation = Configuration::get('PS_SEARCH_INDEXATION');
+    $tagsBefore = Tag::getProductTags($idIndexed);
+    Configuration::updateValue('PS_SEARCH_INDEXATION', 1);
+    try {
+        $result = $updateProduct->call([
+            'id_product' => $idIndexed,
+            'languages' => ['en'],
+            'seo' => ['tags' => ['en' => 'somcpreindexed']],
+        ], [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $updateProduct->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => [],
+        ]);
+        $found = (int) Db::getInstance()->getValue(
+            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'search_index` si'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'search_word` sw ON sw.`id_word` = si.`id_word`'
+            . ' WHERE si.`id_product` = ' . $idIndexed . " AND sw.`word` = 'somcpreindexed'"
+            . ' AND sw.`id_lang` = ' . $idLangEn . ' AND sw.`id_shop` = ' . (int) $context->shop->id
+        );
+        if (!empty($result['isError']) || $found === 0) {
+            $failures[] = 'somcp_update_product (tags alone): expected the new tag in the search index, found '
+                . $found . ' - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_product (tags alone, the product indexed again)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_product (tags alone): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        Tag::deleteTagsForProduct($idIndexed);
+        foreach (is_array($tagsBefore) ? $tagsBefore : [] as $idLang => $names) {
+            Tag::addTags((int) $idLang, $idIndexed, $names);
+        }
+        Configuration::updateValue('PS_SEARCH_INDEXATION', $indexation);
+        Search::indexation(false, $idIndexed);
+    }
+}
+
 // An order status icon given by deposit, then the status deleted twice
 // (#224): the JSON scenarios cannot hold a real deposit, nor the identifier of
 // a status they created, which differs from one version to the other. The

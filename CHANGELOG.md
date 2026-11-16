@@ -18,6 +18,16 @@ are:
 
 ### Changed
 
+**The shop pages' SEO reads and writes under the names of the other SEO
+tools.** The pages of **Shop Parameters > Traffic & SEO > SEO & URLs** named
+their Page title, Meta description, Meta keywords and Rewritten URL `title`,
+`description`, `keywords` and `url_rewrite`, where the product, category, brand
+and CMS tools say `meta_title`, `meta_description`, `meta_keywords` and
+`link_rewrite` - and where `title` is the CMS page's own Title. The assistant
+that followed the habit of the other tools was refused. The shop pages now use
+the same names; a call with a former name is refused with the name to send
+instead, and the record of a change reads as in the other update tools.
+
 **The order address, carrier and currency changes give the total before and
 after.** The assistant was told to say the new total before changing an
 address or a carrier, which it could not know: PrestaShop recomputes the

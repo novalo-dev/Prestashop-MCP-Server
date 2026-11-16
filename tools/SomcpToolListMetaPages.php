@@ -110,10 +110,12 @@ class SomcpToolListMetaPages
             $pages[] = [
                 'id_meta' => (int) $row['id_meta'],
                 'page' => $page,
-                'title' => (string) ($row['title'] ?? ''),
-                'description' => (string) ($row['description'] ?? ''),
-                'keywords' => $keywords ? (string) ($row['keywords'] ?? '') : null,
-                'url_rewrite' => (string) ($row['url_rewrite'] ?? ''),
+                // Named as every other SEO tool names them, so a page read
+                // here is given back to somcp_update_meta_page as it is.
+                'meta_title' => (string) ($row['title'] ?? ''),
+                'meta_description' => (string) ($row['description'] ?? ''),
+                'meta_keywords' => $keywords ? (string) ($row['keywords'] ?? '') : null,
+                'link_rewrite' => (string) ($row['url_rewrite'] ?? ''),
                 'url' => $configurable ? self::url($link, $page, $idLang, $idShop) : null,
                 'configurable' => $configurable,
             ];

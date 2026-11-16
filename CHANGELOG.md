@@ -139,6 +139,15 @@ that nothing was written. The icon is now compared with the stored one first:
 the same file is left as it is, and the change record says whether an icon was
 replaced or a status without one got its first.
 
+**A misspelt filter or field of the content page tools is refused rather than
+ignored.** When the assistant listed the pages of Design > Pages with a filter
+named wrongly, such as `id_category` for the page category, it got the pages of
+every category and took them for the ones asked for; a wrong page number was
+answered in a sentence of its own, and a call with two mistakes needed two
+calls. `somcp_list_cms_pages` and `somcp_get_cms_page` now report every problem
+of a call at once, worded as in the other tools, and read a page number given
+as text, such as "3", as the other tools do.
+
 ### Fixed
 
 **A built-in order status refused for deletion reads like the other

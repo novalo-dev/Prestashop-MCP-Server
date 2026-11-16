@@ -7,8 +7,10 @@
     {"why": "finds a page by part of its title, whatever the case", "arguments": {"title": "DELIVERY"}, "expect": "ok", "contains": ["\"title\": \"Delivery\"", "\"total_count\": 1"]},
     {"why": "a title no page carries gives an empty list", "arguments": {"title": "no such page"}, "expect": "ok", "contains": ["\"pages\": []", "\"total_count\": 0"]},
     {"why": "the texts read in a language the shop has, said by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
-    {"why": "a page category the shop does not have is refused", "arguments": {"id_cms_category": 999999}, "expect": "error", "contains": ["id_cms_category"]},
-    {"why": "a non-boolean Displayed filter is refused, naming the field", "arguments": {"active": "yes"}, "expect": "error", "contains": ["active"]},
+    {"why": "a page category the shop does not have is refused", "arguments": {"id_cms_category": 999999}, "expect": "error", "contains": ["Nothing was read.", "id_cms_category: no page category of this shop has the identifier 999999", "somcp_list_cms_pages"]},
+    {"why": "a non-boolean Displayed filter is refused, naming the field", "arguments": {"active": "yes"}, "expect": "error", "contains": ["active: true or false"]},
+    {"why": "a misspelt filter is named rather than ignored", "arguments": {"id_category": 1}, "expect": "error", "contains": ["Nothing was read.", "id_category: not a field of this tool"]},
+    {"why": "two wrong filters are reported in one refusal", "arguments": {"active": "yes", "title": 3}, "expect": "error", "contains": ["Nothing was read.", "active: true or false", "title: a string, part of the page Title"]},
     {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
   ]
 }

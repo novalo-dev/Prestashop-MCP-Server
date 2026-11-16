@@ -395,6 +395,12 @@ if ($deleteCategory !== null) {
             continue;
         }
         $idLeaf = (int) $product->id;
+        // Adding the subcategory loaded the parent through calcLevelDepth()
+        // before the tree was renumbered, and the core keeps that copy for the
+        // rest of the process. A real call runs in a request of its own, so
+        // the copy is dropped here for the tool to read the tree as stored.
+        Cache::clean('objectmodel_Category_' . $idParentTree . '_*');
+        Cache::clean('objectmodel_Category_' . $idChildTree . '_*');
 
         try {
             $arguments = ['id_category' => $idParentTree, 'products' => $mode];

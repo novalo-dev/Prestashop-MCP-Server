@@ -254,6 +254,14 @@ invoice or the order, is now explained instead of a bare refusal. If adding a
 discount fails half-way, the assistant no longer says nothing was saved: it
 checks the order's discounts before trying again.
 
+### Security
+
+**An assistant's return address is read the way the browser reads it.** The
+address an assistant gives to receive the merchant's approval is now refused
+when it carries a user name, a backslash or a blank, whatever site it seems to
+name, at registration and again at each sign-in. The known assistants never
+use such addresses: nothing changes for them.
+
 ## 2.0.1 - 2026-11-15
 
 ### Added

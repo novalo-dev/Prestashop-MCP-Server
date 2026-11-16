@@ -123,8 +123,9 @@ class SomcpToolUpdateCategory extends SomcpToolCreateCategory
         // Built by the shared function, not copied: a copy drifts, and this
         // one already lost "never file content" that the shared text carries.
         $properties['cover_image'] = SomcpUpload::schema('Merchant. A new cover image, which replaces the current one.', 'the cover image');
-        $properties['thumbnail_image']['description'] = 'Merchant. A new category thumbnail, replacing the current one, '
-            . 'by url or upload_ref like the cover. As read: no change.';
+        // The thumbnail too: its hand-written copy had lost the address rules,
+        // the size, the formats and "never file content".
+        $properties['thumbnail_image'] = SomcpUpload::schema('Merchant. A new Category thumbnail, which replaces the current one.', 'the category thumbnail');
         $properties['menu_thumbnails']['description'] = 'Merchant. PrestaShop 8 only, refused on 9: up to 3 images '
             . 'replacing the current menu thumbnails, each by url or upload_ref like the cover. As somcp_get_category '
             . 'returns them: no change.';

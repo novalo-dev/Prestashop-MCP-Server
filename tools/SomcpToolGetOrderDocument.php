@@ -49,15 +49,18 @@ class SomcpToolGetOrderDocument
     private const KEYS = ['id_order', 'reference', 'document', 'id_order_invoice', 'id_order_slip'];
 
     /**
-     * @var array<string, array{list:string, identifier:string, label:string}> per kind: where
-     *                                                                         somcp_get_order lists it, the
-     *                                                                         identifier that names it, and
-     *                                                                         how a refusal says it
+     * @var array<string, array{list:string, identifier:string, label:string, article:string}> per kind:
+     *                                                                                         where somcp_get_order
+     *                                                                                         lists it, the identifier
+     *                                                                                         that names it, how a
+     *                                                                                         refusal says it, and its
+     *                                                                                         article, which the label
+     *                                                                                         alone cannot give
      */
     private const DOCUMENTS = [
-        'invoice' => ['list' => 'invoices', 'identifier' => 'id_order_invoice', 'label' => 'invoice'],
-        'delivery_slip' => ['list' => 'delivery_slips', 'identifier' => 'id_order_invoice', 'label' => 'delivery slip'],
-        'credit_slip' => ['list' => 'credit_slips', 'identifier' => 'id_order_slip', 'label' => 'credit slip'],
+        'invoice' => ['list' => 'invoices', 'identifier' => 'id_order_invoice', 'label' => 'invoice', 'article' => 'an'],
+        'delivery_slip' => ['list' => 'delivery_slips', 'identifier' => 'id_order_invoice', 'label' => 'delivery slip', 'article' => 'a'],
+        'credit_slip' => ['list' => 'credit_slips', 'identifier' => 'id_order_slip', 'label' => 'credit slip', 'article' => 'a'],
     ];
 
     /**
@@ -174,7 +177,7 @@ class SomcpToolGetOrderDocument
             }
             if ($chosen === null) {
                 return self::refused([
-                    $identifier . ': not a ' . $spec['label'] . ' of order ' . $idOrder . '. Its documents: '
+                    $identifier . ': not ' . $spec['article'] . ' ' . $spec['label'] . ' of order ' . $idOrder . '. Its documents: '
                         . self::summary($documents) . '. Read them with somcp_get_order.',
                 ]);
             }

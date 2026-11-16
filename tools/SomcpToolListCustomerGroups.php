@@ -59,8 +59,8 @@ class SomcpToolListCustomerGroups
                     ],
                     'language' => [
                         'type' => 'string',
-                        'description' => 'ISO code of the language to read the names in, for example fr. '
-                            . 'The shop default is used otherwise. A language the shop does not have is refused.',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr; a code '
+                            . 'the shop does not have is refused. The shop default language when left out.',
                     ],
                 ],
                 'additionalProperties' => false,

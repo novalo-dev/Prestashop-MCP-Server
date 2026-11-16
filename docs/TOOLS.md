@@ -2298,7 +2298,7 @@ one customer's groups (→ `somcp_get_customer`).
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `name` | string | no | part of **Group name**, case-insensitive; the same parameter as `somcp_list_suppliers`, `somcp_list_manufacturers` and `somcp_list_attachments` |
-| `language` | string | no | ISO code of the language to read the names in, shop default otherwise; a language the shop does not have is refused, naming the ones it has |
+| `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused. The shop default language when left out. |
 
 **Returns** - `groups`, per group:
 
@@ -2812,7 +2812,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Kept that short on purpose, as the maintainer decided: it is the list an assistant reads before any write that takes a category, which must never guess an identifier.
 - Two categories can share a name in different branches (Men > T-shirts, Women > T-shirts): the assistant reads `somcp_get_category` to tell them apart before writing.
 - The root category is left out: nothing can be placed in it. Home is listed.
-- Read through a query on `category`, `category_shop` and `category_lang` in the shop of the token, rather than `Category::getSimpleCategories()`, which takes the shop from the global context. Inactive categories are listed too, in tree order (`nleft`), so each one follows its parent. A language the shop does not have falls back on the shop default.
+- Read through a query on `category`, `category_shop` and `category_lang` in the shop of the token, rather than `Category::getSimpleCategories()`, which takes the shop from the global context. Inactive categories are listed too, in tree order (`nleft`), so each one follows its parent.
 
 #### `somcp_get_category`
 **State**: written
@@ -2835,7 +2835,6 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Columns of `category`, `category_lang`, `category_group`, checked against PrestaShop 8.0.3 and 9.2. `meta_keywords` exists on PrestaShop 8 only and is `null` on 9; `redirect_type` and `id_type_redirected` exist on 9 only and are `null` on 8; `menu_thumbnails` exist on 8 only and are `null` on 9.
 - Read in the shop of the token: a category of another shop, or an identifier that does not exist, is answered like one that does not exist. `products_count` and `children_count` count the products and subcategories of this shop only.
 - Read by the same method `somcp_create_category` and `somcp_update_category` answer with, and checked by the same test of the shop as `somcp_update_category`, so the three tools name every field alike and agree on what exists.
-- A language the shop does not have falls back on the shop default.
 
 #### `somcp_get_category_kpis`
 **State**: written
@@ -3024,7 +3023,6 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read in the shop of the token: a brand of another shop, or an identifier that does not exist, is answered like one that does not exist (`manufacturer_shop`), since the `Manufacturer` constructor takes no shop. `products_count` counts the products of this shop only.
 - `logo` is `null` when the brand has none, rather than the "no picture" image `Link::getManufacturerImageLink()` falls back on.
 - The reader and the test of the shop are public, for the brand write tools to answer with the brand as this tool returns it.
-- A language the shop does not have falls back on the shop default.
 
 #### `somcp_create_manufacturer`
 **State**: written
@@ -3118,7 +3116,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `postcode` | string | no | part of the **Zip/Postal code** |
 | `city` | string | no | part of the **City**, case-insensitive |
 | `country` | string | no | ISO code of the **Country**, for example `FR` |
-| `language` | string | no | ISO code of an active language of the shop, for `country_name`; the shop default language when left out |
+| `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused. The shop default language when left out. |
 
 **Returns** - `addresses`, per address: `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `postcode`, `city`, `country` (ISO code, `null` when the country no longer exists), `country_name` (the name the **Country** column shows, in `language`, `null` when the country no longer exists). Plus `count` and `language`. An `id_manufacturer` that is not a brand of this shop, a `country` code no country has and a `language` the shop does not have are errors, not an empty list.
 
@@ -3272,7 +3270,6 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 - Read in the shop of the token: a supplier of another shop, or an identifier that does not exist, is answered like one that does not exist (`supplier_shop`), since the `Supplier` constructor takes no shop. `products_count` counts the products of this shop in `product_supplier`, as the back office supplier list does: a product can have several suppliers.
 - `logo` is `null` when the supplier has none, rather than the "no picture" image `Link::getSupplierImageLink()` falls back on.
 - The reader and the test of the shop are public, for the supplier write tools to answer with the supplier as this tool returns it.
-- A language the shop does not have falls back on the shop default.
 
 #### `somcp_create_supplier`
 **State**: written

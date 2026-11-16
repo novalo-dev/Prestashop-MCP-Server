@@ -199,7 +199,6 @@ class SomcpToolDeleteReturnStatus
     private static function statusName(OrderReturnState $status): array
     {
         $idShop = Somcp::currentShopId();
-        $languages = SomcpTool::activeLanguages($idShop);
         $default = SomcpTool::readLanguage([], $idShop);
         $idLang = $default === null ? 0 : $default[0];
         $iso = $default === null ? '' : $default[1];
@@ -210,9 +209,13 @@ class SomcpToolDeleteReturnStatus
         if ((string) ($status->name[$idLang] ?? '') !== '') {
             return [(string) $status->name[$idLang], $iso];
         }
+        // The code of the language the text was found in, read from the
+        // language itself as somcp_delete_order_status does: one turned off
+        // since is not among the active ones, and language must never be
+        // empty next to a name.
         foreach ($status->name as $idOther => $name) {
             if ((string) $name !== '') {
-                return [(string) $name, $languages[(int) $idOther] ?? ''];
+                return [(string) $name, (string) Language::getIsoById((int) $idOther)];
             }
         }
 

@@ -68,6 +68,13 @@ seeing a status. A status created by `somcp_create_order_status` now gives
 its identifier as `status_id`, the name the update and delete tools take,
 instead of `id_order_state`.
 
+**A deleted return status always says which language its name is in.**
+When a return status had no name in your shop's default language,
+`somcp_delete_return_status` answered with the name found in another
+language, but left the language empty if that language had been turned off
+since. It now gives its code in every case, as the deletion of an order
+status does.
+
 **A new order is refused rather than placed without what was asked.** When
 the free shipping of a new order could not be saved, `somcp_create_order`
 placed the order anyway, with the shipping charged. It is now refused and

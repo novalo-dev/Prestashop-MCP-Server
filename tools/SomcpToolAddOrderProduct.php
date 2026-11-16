@@ -162,8 +162,12 @@ class SomcpToolAddOrderProduct
         $idProduct = SomcpTool::id($arguments, 'id_product');
         $product = null;
         $idShop = Somcp::currentShopId();
-        if ($idProduct <= 0) {
+        if (!array_key_exists('id_product', $arguments)) {
             $problems[] = 'id_product: give the product, from somcp_search_products';
+        } elseif ($idProduct <= 0) {
+            // Given but not an identifier: worded as in every other tool,
+            // rather than as if the product had been left out.
+            $problems[] = SomcpTool::notAnIdentifier('id_product');
         } else {
             $product = new Product($idProduct, false, null, $idShop);
             if (!Validate::isLoadedObject($product) || !self::inShop($idProduct, $idShop)) {
@@ -174,7 +178,14 @@ class SomcpToolAddOrderProduct
         }
 
         $idCombination = SomcpTool::id($arguments, 'id_product_attribute');
-        if ($product instanceof Product) {
+        $combinationGiven = array_key_exists('id_product_attribute', $arguments);
+        // 0 is how a client says "no combination"; anything else that is not
+        // an identifier is refused in the shared wording, whatever the product.
+        $notAnIdentifier = $combinationGiven && $idCombination <= 0
+            && !in_array($arguments['id_product_attribute'], [0, '0'], true);
+        if ($notAnIdentifier) {
+            $problems[] = SomcpTool::notAnIdentifier('id_product_attribute');
+        } elseif ($product instanceof Product) {
             $hasCombinations = (bool) $product->hasAttributes();
             if ($idCombination > 0) {
                 $combination = new Combination($idCombination);
@@ -186,8 +197,6 @@ class SomcpToolAddOrderProduct
                 $problems[] = 'id_product_attribute: this product has combinations - give one, from '
                     . 'combinations[].id_product_attribute of somcp_get_product';
             }
-        } elseif (array_key_exists('id_product_attribute', $arguments) && $idCombination <= 0) {
-            $problems[] = 'id_product_attribute: must be a positive identifier';
         }
 
         $order = SomcpToolGetOrder::find($arguments);

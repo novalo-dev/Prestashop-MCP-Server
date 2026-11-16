@@ -194,7 +194,7 @@ class SomcpToolAddOrderPayment
         // and the core ignores it otherwise.
         $invoice = null;
         if ($order->hasInvoice()) {
-            $invoice = self::invoice($arguments['id_order_invoice'] ?? null, $order);
+            $invoice = self::invoice($arguments, $order);
             if ($invoice === null) {
                 $listed = json_encode(self::invoices($order), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                 if (!array_key_exists('id_order_invoice', $arguments)) {
@@ -396,20 +396,17 @@ class SomcpToolAddOrderPayment
      * The core only checks that it exists: one of another order would tie
      * this payment to someone else's invoice.
      *
-     * @param mixed $value
+     * @param array<string, mixed> $arguments
      * @param Order $order
      *
      * @return OrderInvoice|null
      */
-    private static function invoice($value, Order $order): ?OrderInvoice
+    private static function invoice(array $arguments, Order $order): ?OrderInvoice
     {
-        $idInvoice = 0;
-        if (is_int($value)) {
-            $idInvoice = $value;
-        } elseif (is_string($value) && preg_match('/^\d{1,10}$/', trim($value))) {
-            $idInvoice = (int) trim($value);
-        }
-        if ($idInvoice <= 0) {
+        // Read by the one rule for an identifier, so the invoice is taken in
+        // the same forms as every other identifier of the order tools.
+        $idInvoice = SomcpTool::id($arguments, 'id_order_invoice');
+        if ($idInvoice === 0) {
             return null;
         }
 

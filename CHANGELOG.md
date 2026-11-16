@@ -49,6 +49,15 @@ PrestaShop 8, the assistant can also change the page's **Meta keywords**.
 
 ### Fixed
 
+**A product or combination that is not an identifier is named as such when
+adding a product to an order.** When the assistant gave
+`somcp_add_order_product` a product or a combination that is not a whole
+number above 0, for example -1, it was told to give a product as if it had
+left the field out, or that the identifier must be positive in words no other
+tool uses. It now reads "a whole number above 0", as everywhere else, and a
+missing product keeps its own message. The refund lines and the invoice of a
+payment read their identifiers by the same rule as every other order tool.
+
 **A resent order status email that fails now says where to look.** When the
 shop could not send the email again, the assistant only knew it had failed and
 could not tell the merchant what to check. It now says to look at the email

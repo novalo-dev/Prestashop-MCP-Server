@@ -327,8 +327,9 @@ class SomcpToolIssueStandardRefund
             }
             array_push($problems, ...SomcpTool::unknownFields($entry, self::LINE_KEYS, [], $path . '.'));
 
-            $idDetail = SomcpToolIssuePartialRefund::integer($entry['id_order_detail'] ?? null);
-            if ($idDetail === null || $idDetail <= 0) {
+            // The one rule for an identifier, as in every other tool.
+            $idDetail = SomcpTool::id($entry, 'id_order_detail');
+            if ($idDetail === 0) {
                 $problems[] = $path . '.id_order_detail: must be the identifier of a line, from somcp_get_order';
                 $idDetail = null;
             } elseif (isset($seen[$idDetail])) {

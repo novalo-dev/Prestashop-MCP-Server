@@ -1194,8 +1194,10 @@ line exactly as `somcp_get_order` returns one of `products[]`), `invoice`
 
 **Errors** - every problem at once, nothing recorded when one check fails,
 each as `<path>: <problem>` under "Nothing was recorded. Correct these and call again:": unknown fields; the
-order not found or a reference shared by several orders; `id_product` unknown
-in the shop; `id_product_attribute` missing, unknown or not of the product;
+order not found or a reference shared by several orders; `id_product`
+missing or unknown in the shop; `id_product` or `id_product_attribute` given
+but not a whole number above 0 (`<field>: a whole number above 0`, as in every
+tool); `id_product_attribute` missing, unknown or not of the product;
 `quantity` below 1; prices not numbers, below 0, or not agreeing with the tax
 rate; `id_order_invoice` not an invoice of the order; `free_shipping` without
 a new invoice; a shipped order; a product already in the order or in the

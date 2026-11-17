@@ -2332,6 +2332,53 @@ shop has the identifier <n> - find it with somcp_list_tax_rules`), an unknown
 - A rule made with **Country** All has one row per country: the answer can hold some 240 rows. No paging: the list of the edit page shows them all on one page too; `country` narrows it.
 - On 8.0.1 the panel is **Tax Rules**, on 9.0.0 **Tax rules**; the fields and tables are the same on both.
 
+#### `somcp_create_tax_rule`
+**State**: written · [issue #238](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/238)
+**Nature**: `acts(ADD, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - creates one tax rule of **International > Taxes > Tax Rules** with
+its **Name** and **Enable**, as **Add new tax rule** then **Save and stay** do.
+It is the first step of setting up the taxes of a new shop: the rule gets its
+rows per country afterwards, and products take its `id_tax_rules_group`.
+
+**Do not use for** - adding a country, a state or a zip range to a rule,
+changing or deleting a rule (no tool yet); giving a rule to a product
+(→ `somcp_update_product`, `id_tax_rules_group`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** | string | yes | at most 64 characters, `Validate::isGenericName()` (no `<`, `>`, `=`, `{`, `}`) |
+| `active` | **Enable** | boolean | no | left out, `false`, the default of the form; the answer says so. A disabled rule is not offered on the product page |
+
+**Then** - `new TaxRulesGroup()`, `name`, `active`, `add()` with
+`id_shop_list` set to the token's shop, as the form saves it in that shop's
+context; then read back through `SomcpToolGetTaxRule::rule()`, the function of
+`somcp_get_tax_rule`.
+
+**Returns** - `created: true`, then `tax_rule`, the rule as
+`somcp_get_tax_rule` returns it in the shop default language
+(`id_tax_rules_group`, `name`, `active`, `date_add`, `date_upd`,
+`country_rules` empty, `rate_in_default_country` 0, `default_country`,
+`taxes_enabled`, `language`). When `active` was left out, a `note` says the
+rule was created disabled, as the form does.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, every problem at once, each named with its field: `name` missing
+(`name: required`), not a text, empty, too long (`name: 64 characters at most,
+<n> given`) or with a refused character; `active` not a boolean (`active: true
+or false`, as `somcp_list_tax_rules`); unknown arguments through
+`SomcpTool::unknownFields()`, the fields `somcp_get_tax_rule` returns and the
+shop works out named as such. A failed `add()` is reported as such, the rule
+removed again if it went in: nothing half written.
+
+**Notes**
+- Not replayable: each call creates one more rule, even with the same name. On a lost answer, read `somcp_list_tax_rules` with `name` and `active: false` before calling again.
+- Scope `mcp.catalog.write`, as `somcp_list_tax_rules` reads with `mcp.catalog.read`: a tax rule is created to price products.
+- Multistore: the rule is created for the token's shop only, as the form in one shop's context.
+- The same form, fields, class definition and tables on 8.0.1 and 9.0.0; only the panel title differs (**Tax Rules** / **Tax rules**). Names are not unique: the back office saves two rules of the same name.
+
 #### `somcp_list_taxes`
 **State**: written · [issue #237](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/237)
 **Nature**: `acts(VIEW, 'AdminTaxes')` · **Scope**: `mcp.catalog.read`
@@ -5824,7 +5871,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

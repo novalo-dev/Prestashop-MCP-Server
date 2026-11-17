@@ -127,9 +127,45 @@ class SomcpToolGetTaxRule
             return SomcpTool::refused('read', $errors);
         }
 
+        return SomcpTool::json(self::answer($idGroup, $group, $idLang, $iso, $idShop, $idCountry));
+    }
+
+    /**
+     * One tax rule as this tool answers it, or null when the shop of the
+     * token has no such rule.
+     *
+     * Public so the tools that write a rule answer with it read back here:
+     * the write and the read then give the same fields under the same names.
+     *
+     * @param int $idGroup
+     * @param int $idLang
+     * @param string $iso
+     * @param int $idShop
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function rule(int $idGroup, int $idLang, string $iso, int $idShop): ?array
+    {
+        $group = self::existingRule($idGroup, $idShop);
+
+        return $group === null ? null : self::answer($idGroup, $group, $idLang, $iso, $idShop, 0);
+    }
+
+    /**
+     * @param int $idGroup
+     * @param array<string, mixed> $group the stored row, from existingRule()
+     * @param int $idLang
+     * @param string $iso
+     * @param int $idShop
+     * @param int $idCountry 0 for every country
+     *
+     * @return array<string, mixed>
+     */
+    private static function answer(int $idGroup, array $group, int $idLang, string $iso, int $idShop, int $idCountry): array
+    {
         [$rates, $defaultCountry] = SomcpToolListTaxRules::defaultCountryRates($idShop);
 
-        return SomcpTool::json([
+        return [
             'id_tax_rules_group' => $idGroup,
             'name' => (string) $group['name'],
             'active' => (bool) $group['active'],
@@ -144,7 +180,7 @@ class SomcpToolGetTaxRule
             // whatever the rows below say.
             'taxes_enabled' => (bool) Configuration::get('PS_TAX', null, null, $idShop),
             'language' => $iso,
-        ]);
+        ];
     }
 
     /**

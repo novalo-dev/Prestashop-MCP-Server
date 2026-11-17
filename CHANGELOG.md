@@ -24,6 +24,13 @@ they are enabled, filtered by part of the name or by Enabled, in the language
 asked for. Until now no tool gave the identifier of a tax, so an assistant
 setting up the tax rules of a new shop had to guess which tax each one applies.
 
+**Create a tax rule.** The new tool somcp_create_tax_rule creates a tax rule
+of International > Taxes > Tax Rules with its name and whether it is enabled,
+as Add new tax rule does, and answers with the rule as it was saved. Left
+unsaid, the rule is created disabled, as in the form, and the answer says so.
+Until now the assistant setting up a new shop could read tax rules but not
+add one.
+
 ### Changed
 
 **Orders: the amounts of an order are named like everywhere else.** The order

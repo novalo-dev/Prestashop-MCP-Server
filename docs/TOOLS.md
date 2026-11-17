@@ -2186,6 +2186,14 @@ given with the values the list gives for this status they are no change, so
 a row read there can be given back whole; a different value is refused with
 `<field>: worked out by the shop, so it is not written here`.
 `somcp_create_order_status` refuses the three whatever their value.
+A whole row of the list can therefore be given back unchanged: an empty
+`color` is no change on a status that has no colour (refused on one that
+has), and `name` or `email_template` given as one text, as the list gives
+them, is no change when it is the stored text of one of the shop's
+languages; a different single text stays refused on a shop with several
+languages, which needs one object keyed by ISO code. The test scenario
+changes built-in status 2 rather than a status it creates, since a created
+status gets a different identifier on 8 and 9.
 
 **Returns** - `changed`, `status_id`, `changes` (each field with `old` and
 `new`; an icon is recorded `old: "stored"` when it replaced one, `null`

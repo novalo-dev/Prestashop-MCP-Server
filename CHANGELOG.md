@@ -39,6 +39,12 @@ its roles, its built-in mark or its payment module: these are worked out by the
 shop, so when they hold what the shop holds they are taken as unchanged, and
 only a different value is refused, with the reason.
 
+**Order statuses: the whole row of the list is accepted back.** A status read
+in the list of statuses and given back as it is no longer fails on an empty
+colour, nor, on a shop with several languages, on its name or email template
+given as one text: when they hold what the shop holds, nothing is written and
+the answer says nothing changed.
+
 **Orders: the amounts of an order are named like everywhere else.** The order
 read and the order tools that answer with its lines, discounts, shipments,
 totals and documents now name each amount with `_tax_excl` or `_tax_incl`, as

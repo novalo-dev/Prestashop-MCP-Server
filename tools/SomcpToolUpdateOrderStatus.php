@@ -199,6 +199,7 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
         if ($languages === null) {
             return null;
         }
+        $arguments = self::textsKeptAsRead($arguments, $state, $languages);
 
         $probe = new OrderState();
         $idSelf = $state === null ? 0 : (int) $state->id;
@@ -217,8 +218,16 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
             $names = self::orderStatusNames($names, $languages, $probe, $errors, $idSelf);
         }
 
+        // A status created without a colour reads "" in the list: given back,
+        // it is what the shop holds, not a colour to check, as the return
+        // statuses take it. On a status that has one it is still refused, as
+        // the form cannot remove a colour.
+        $emptyKept = array_key_exists('color', $arguments)
+            && trim((string) (self::string($arguments['color']) ?? '')) === ''
+            && $state !== null
+            && (string) $state->color === '';
         $color = null;
-        if (array_key_exists('color', $arguments)) {
+        if (array_key_exists('color', $arguments) && !$emptyKept) {
             $color = self::hexColor($arguments['color'], $errors);
         }
 
@@ -327,6 +336,36 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
                 $errors[] = $field . ': worked out by the shop, so it is not written here';
             }
             unset($arguments[$field]);
+        }
+
+        return $arguments;
+    }
+
+    /**
+     * Takes out a name or template given as one text that the shop already holds.
+     *
+     * The list answers both as one text, in the language it was read in. On a
+     * shop with several languages such a text names no language, so it is
+     * refused as ambiguous - unless it is the stored text of one of them: then
+     * it is the row given back as read, and nothing to write. With a single
+     * language the parser takes a plain text on its own, so it is left to it.
+     *
+     * @param array<string, mixed> $arguments
+     * @param OrderState|null $state loaded in every language
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     *
+     * @return array<string, mixed>
+     */
+    private static function textsKeptAsRead(array $arguments, ?OrderState $state, array $languages): array
+    {
+        if ($state === null || count($languages['filled']) < 2) {
+            return $arguments;
+        }
+        foreach (['name' => $state->name, 'email_template' => $state->template] as $field => $stored) {
+            if (isset($arguments[$field]) && is_string($arguments[$field])
+                && in_array($arguments[$field], self::byLanguage($stored, $languages), true)) {
+                unset($arguments[$field]);
+            }
         }
 
         return $arguments;

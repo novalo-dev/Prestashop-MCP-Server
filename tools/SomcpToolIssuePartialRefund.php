@@ -416,8 +416,8 @@ class SomcpToolIssuePartialRefund
                 'id_order_detail' => (int) $idOrderDetail,
                 'product_name' => (string) $detail->product_name,
                 'quantity' => (int) $refund['quantity'],
-                'amount_tax_excluded' => (float) $refund['total_refunded_tax_excl'],
-                'amount_tax_included' => (float) $refund['total_refunded_tax_incl'],
+                'amount_tax_excl' => (float) $refund['total_refunded_tax_excl'],
+                'amount_tax_incl' => (float) $refund['total_refunded_tax_incl'],
             ];
             $totalExcluded += (float) $refund['total_refunded_tax_excl'];
             $totalIncluded += (float) $refund['total_refunded_tax_incl'];
@@ -444,8 +444,8 @@ class SomcpToolIssuePartialRefund
             $orderSlip = new OrderSlip($idSlip);
             $slip = [
                 'id_order_slip' => $idSlip,
-                'total_tax_excluded' => (float) $orderSlip->total_products_tax_excl + (float) $orderSlip->total_shipping_tax_excl,
-                'total_tax_included' => (float) $orderSlip->total_products_tax_incl + (float) $orderSlip->total_shipping_tax_incl,
+                'total_tax_excl' => (float) $orderSlip->total_products_tax_excl + (float) $orderSlip->total_shipping_tax_excl,
+                'total_tax_incl' => (float) $orderSlip->total_products_tax_incl + (float) $orderSlip->total_shipping_tax_incl,
             ];
         }
 
@@ -485,10 +485,10 @@ class SomcpToolIssuePartialRefund
                 'reference' => (string) $order->reference,
             ],
             'lines' => $lines,
-            'shipping_refunded_tax_excluded' => Tools::ps_round($shippingExcluded, $precision),
-            'shipping_refunded_tax_included' => Tools::ps_round($shippingIncluded, $precision),
-            'total_refunded_tax_excluded' => Tools::ps_round($totalExcluded + $shippingExcluded, $precision),
-            'total_refunded_tax_included' => Tools::ps_round($totalIncluded + $shippingIncluded, $precision),
+            'shipping_refunded_tax_excl' => Tools::ps_round($shippingExcluded, $precision),
+            'shipping_refunded_tax_incl' => Tools::ps_round($shippingIncluded, $precision),
+            'total_refunded_tax_excl' => Tools::ps_round($totalExcluded + $shippingExcluded, $precision),
+            'total_refunded_tax_incl' => Tools::ps_round($totalIncluded + $shippingIncluded, $precision),
             'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',
             'restocked' => $restocked && $lines !== [],
             'credit_slip' => $slip,

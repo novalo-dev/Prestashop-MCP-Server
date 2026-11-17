@@ -910,10 +910,10 @@ order (→ `somcp_cancel_order_products`), or recording money received
 At least one of `credit_slip` and `voucher` must be true, as on screen.
 
 **Returns** - `refunded`, `order` (`id_order` and `reference`), `lines` (per
-line: `id_order_detail`, `product_name`, `quantity`, `amount_tax_excluded`,
-`amount_tax_included`), `shipping_refunded_tax_excluded`,
-`shipping_refunded_tax_included`, `total_refunded_tax_excluded`,
-`total_refunded_tax_included`, `currency`,
+line: `id_order_detail`, `product_name`, `quantity`, `amount_tax_excl`,
+`amount_tax_incl`), `shipping_refunded_tax_excl`,
+`shipping_refunded_tax_incl`, `total_refunded_tax_excl`,
+`total_refunded_tax_incl`, `currency`,
 `restocked`, `credit_slip` (`id_order_slip` and its totals, or `null`),
 `voucher` (`id_cart_rule`, `code`, `amount`, `tax_included`, or `null`), and
 `warning` when the refund was recorded but the slip or the voucher cannot be
@@ -986,10 +986,10 @@ At least one of `credit_slip` and `voucher` must be true, as on screen.
 
 **Returns** - the answer of `somcp_issue_partial_refund`: `refunded`, `order`
 (`id_order` and `reference`), `lines` (per line: `id_order_detail`,
-`product_name`, `quantity`, `amount_tax_excluded`, `amount_tax_included`),
-`shipping_refunded_tax_excluded`, `shipping_refunded_tax_included`,
-`total_refunded_tax_excluded`,
-`total_refunded_tax_included`, `currency`, `restocked`, `credit_slip`
+`product_name`, `quantity`, `amount_tax_excl`, `amount_tax_incl`),
+`shipping_refunded_tax_excl`, `shipping_refunded_tax_incl`,
+`total_refunded_tax_excl`,
+`total_refunded_tax_incl`, `currency`, `restocked`, `credit_slip`
 (`id_order_slip` and its totals, or `null`), `voucher` (`id_cart_rule`,
 `code`, `amount`, `tax_included`, or `null`), and `warning` when the refund was
 recorded but the slip or the voucher cannot be found afterwards.
@@ -1064,9 +1064,9 @@ At least one of `credit_slip` and `voucher` must be true, as on screen.
 
 **Returns** - the answer of `somcp_issue_partial_refund`: `refunded`, `order`
 (`id_order` and `reference`), `lines` (per line: `id_order_detail`,
-`product_name`, `quantity`, `amount_tax_excluded`, `amount_tax_included`),
-`shipping_refunded_tax_included`, `total_refunded_tax_excluded`,
-`total_refunded_tax_included`, `currency`, `restocked` (what `restock` said),
+`product_name`, `quantity`, `amount_tax_excl`, `amount_tax_incl`),
+`shipping_refunded_tax_excl`, `shipping_refunded_tax_incl`, `total_refunded_tax_excl`,
+`total_refunded_tax_incl`, `currency`, `restocked` (what `restock` said),
 `credit_slip` (`id_order_slip` and its totals, or `null`), `voucher`
 (`id_cart_rule`, `code`, `amount`, `tax_included`, or `null`), and `warning`
 when the refund was recorded but the slip or the voucher cannot be found

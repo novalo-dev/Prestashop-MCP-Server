@@ -40,7 +40,9 @@ the product, statistics and customer tools do, and give the order total as
 `total_paid_tax_excl` and `total_paid_tax_incl`, as the order search does.
 The same goes for the discount added or removed, the payment recorded, the
 invoice generated and the delivery options of a new order, and cancelling
-products now answers the order totals in the shape of the order read. Before, the same amount went by two names depending on the tool, and an
+products now answers the order totals in the shape of the order read. The
+refunds, partial, standard or on returned products, answer the amounts refunded,
+the shipping and the credit slip totals with the same names. Before, the same amount went by two names depending on the tool, and an
 assistant reading one answer with the names of another found nothing.
 
 **Refunds and discounts take the amounts under the names of the other order

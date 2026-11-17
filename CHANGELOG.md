@@ -33,6 +33,13 @@ add one.
 
 ### Changed
 
+**Products: an unchanged ecotax given back is no longer refused.** On
+PrestaShop 9 with the ecotax switched off in the tax settings, a product read
+and given back unchanged was refused because of its ecotax, which the product
+read itself carries. The ecotax already stored, for the product or one of its
+combinations, now goes through as unchanged; only a different one is still
+refused while the ecotax is off.
+
 **Reading an order: what the order tools need to act on it.** When the
 assistant reads an order, it now sees which invoice each product line and
 each payment is on, the identifier of each payment, and the payment module of

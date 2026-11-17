@@ -425,7 +425,8 @@ class SomcpToolCreateProduct
                         'ecotax_tax_excl' => [
                             'type' => 'number',
                             'description' => 'Merchant. Ecotax, tax excluded. Refused on PrestaShop 9 while the '
-                                . 'ecotax is switched off in the shop\'s tax settings.',
+                                . 'ecotax is switched off in the shop\'s tax settings, unless it is the value already '
+                            . 'stored, given back unchanged.',
                         ],
                     ],
                     'required' => ['price_tax_excl'],
@@ -580,7 +581,7 @@ class SomcpToolCreateProduct
                             'unit_price_impact_tax_excl' => ['type' => 'number'],
                             'weight_impact' => ['type' => 'number'],
                             'wholesale_price' => ['type' => 'number'],
-                            'ecotax_tax_excl' => ['type' => 'number', 'description' => 'Ecotax of this combination, tax excluded; 0 to use the product\'s. Refused on PrestaShop 9 while the ecotax is switched off in the shop\'s tax settings.'],
+                            'ecotax_tax_excl' => ['type' => 'number', 'description' => 'Ecotax of this combination, tax excluded; 0 to use the product\'s. On PrestaShop 9 with the ecotax switched off in the tax settings, only the stored value, given back unchanged.'],
                             'minimal_quantity' => ['type' => 'integer', 'description' => '1 by default.'],
                             'low_stock_threshold' => ['type' => ['integer', 'null'], 'description' => 'Low stock level; null for none.'],
                             'low_stock_alert' => ['type' => 'boolean', 'description' => 'Email at the low stock level.'],
@@ -1553,10 +1554,11 @@ class SomcpToolCreateProduct
      * @param array<string, mixed> $plan
      * @param array<int, string> $errors
      * @param bool $creating false when changing a product, which already has a price and a tax rule
+     * @param float $storedEcotax the ecotax the product stores, 0 for a new one
      *
      * @return void
      */
-    protected static function pricing(array $group, Product $probe, array &$plan, array &$errors, bool $creating = true): void
+    protected static function pricing(array $group, Product $probe, array &$plan, array &$errors, bool $creating = true, float $storedEcotax = 0.0): void
     {
         if ($creating && !array_key_exists('price_tax_excl', $group)) {
             $errors[] = 'pricing.price_tax_excl: required, the selling price tax excluded';
@@ -1566,9 +1568,7 @@ class SomcpToolCreateProduct
         self::number($group, 'unit_price_tax_excl', 'unit_price', 'pricing', $probe, $plan, $errors);
         self::boolean($group, 'on_sale', 'pricing', $plan, $errors);
         if (array_key_exists('ecotax_tax_excl', $group)) {
-            // PrestaShop 9 shows the field only with the ecotax switched on;
-            // PrestaShop 8 always shows it.
-            if (version_compare(_PS_VERSION_, '9.0.0', '>=') && !Configuration::get('PS_USE_ECOTAX')) {
+            if (self::ecotaxSwitchedOff($group['ecotax_tax_excl'], $storedEcotax)) {
                 $errors[] = 'pricing.ecotax_tax_excl: the ecotax is switched off in the shop\'s tax settings';
             } else {
                 self::number($group, 'ecotax_tax_excl', 'ecotax', 'pricing', $probe, $plan, $errors);
@@ -1729,10 +1729,11 @@ class SomcpToolCreateProduct
      * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
      * @param array<string, mixed> $fields the values before this item
      * @param array<int, string> $errors
+     * @param float $storedEcotax the ecotax the combination stores, 0 for a new one
      *
      * @return array{fields: array<string, mixed>, texts: array<string, array<int, string>>, quantity: int|null, location: string|null}
      */
-    protected static function combinationItem(array $item, string $path, array $languages, array $fields, array &$errors): array
+    protected static function combinationItem(array $item, string $path, array $languages, array $fields, array &$errors, float $storedEcotax = 0.0): array
     {
         $probe = new Combination();
         $combination = ['fields' => $fields, 'texts' => [], 'quantity' => null, 'location' => null];
@@ -1785,10 +1786,8 @@ class SomcpToolCreateProduct
             }
         }
         if (array_key_exists('ecotax_tax_excl', $item)) {
-            // The same rule as the product's ecotax: PrestaShop 9 shows the
-            // field only with the ecotax switched on, PrestaShop 8 always.
             $ecotax = self::float($item['ecotax_tax_excl']);
-            if (version_compare(_PS_VERSION_, '9.0.0', '>=') && !Configuration::get('PS_USE_ECOTAX')) {
+            if (self::ecotaxSwitchedOff($item['ecotax_tax_excl'], $storedEcotax)) {
                 $errors[] = $path . '.ecotax_tax_excl: the ecotax is switched off in the shop\'s tax settings';
             } elseif ($ecotax === null || $ecotax < 0 || $probe->validateField('ecotax', $ecotax) !== true) {
                 $errors[] = $path . '.ecotax_tax_excl: a positive number';
@@ -3709,6 +3708,30 @@ class SomcpToolCreateProduct
         }
 
         return null;
+    }
+
+    /**
+     * Whether an ecotax given in the call is refused because the shop hides
+     * the field: PrestaShop 9 shows it only with the ecotax switched on,
+     * PrestaShop 8 always. The value already stored still goes through, so
+     * a product or a combination read by somcp_get_product can be given
+     * back unchanged, as every get is taken back by its update.
+     *
+     * @param mixed $given
+     * @param float $stored the stored ecotax, 0 for what is being created
+     *
+     * @return bool
+     */
+    protected static function ecotaxSwitchedOff($given, float $stored): bool
+    {
+        if (version_compare(_PS_VERSION_, '9.0.0', '<') || Configuration::get('PS_USE_ECOTAX')) {
+            return false;
+        }
+        $value = self::float($given);
+
+        // Rounded as the ecotax column stores it, so a value read back
+        // compares equal to what is stored.
+        return $value === null || round($value, 6) !== round($stored, 6);
     }
 
     /**

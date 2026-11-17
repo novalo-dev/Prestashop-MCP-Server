@@ -1911,6 +1911,10 @@ T = {
  "Télécharger le zip",
  "Descargar el zip",
  "Zip herunterladen"),
+"Full release notes": (
+ "Notes de version complètes",
+ "Notas de la versión completas",
+ "Vollständige Versionshinweise"),
 "See what is new": (
  "Voir les nouveautés",
  "Ver las novedades",

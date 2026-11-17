@@ -2412,6 +2412,11 @@
       <source>Download the zip</source>
       <target>Télécharger le zip</target>
     </trans-unit>
+    <!-- Full release notes -->
+    <trans-unit id="cc291a75b7e78cd020214d19d8a1c8d4" resname="Full release notes">
+      <source>Full release notes</source>
+      <target>Notes de version complètes</target>
+    </trans-unit>
     <!-- See what is new -->
     <trans-unit id="f22c6a5299272fb2676f3a10381289fa" resname="See what is new">
       <source>See what is new</source>

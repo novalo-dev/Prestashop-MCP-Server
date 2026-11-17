@@ -1164,33 +1164,50 @@
             </form>
 
         {if $somcp_update.available}
-            <div class="alert alert-info">
-                <p><strong>{l s='Version %version% is available.' sprintf=['%version%' => ($somcp_update.latest|escape:'html':'UTF-8')] d='Modules.Somcp.Admin'}</strong></p>
-            {if $somcp_update.titles}
-                <p>{l s='What is new:' d='Modules.Somcp.Admin'}</p>
-                <ul>
-                {foreach from=$somcp_update.titles item=title}
-                    <li>{$title|escape:'html':'UTF-8'}</li>
-                {/foreach}
-                {if $somcp_update.more > 0}
-                    <li>{l s='and %count% more' sprintf=['%count%' => $somcp_update.more|intval] d='Modules.Somcp.Admin'}</li>
-                {/if}
-                </ul>
-            {/if}
-                <p>
-                    <a class="btn btn-primary" href="{$somcp_update.download|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">
-                        <i class="icon-download"></i> {l s='Download the zip' d='Modules.Somcp.Admin'}
-                    </a>
-                    <a class="btn btn-default" href="{$somcp_update.notes|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">
-                        <i class="icon-external-link"></i> {l s='See what is new' d='Modules.Somcp.Admin'}
-                    </a>
-                </p>
-                <p class="help-block">{l s='To update, open Modules > Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.' d='Modules.Somcp.Admin'}</p>
+            {* One line on the page, the details in a window: the list of what is
+               new, how to update and the reconnection notice used to fill the
+               pane with two alerts. Without a script the button is a link to
+               the release notes. *}
+            <div class="alert alert-info somcp-update-notice">
+                <strong>{l s='Version %version% is available.' sprintf=['%version%' => ($somcp_update.latest|escape:'html':'UTF-8')] d='Modules.Somcp.Admin'}</strong>
+                <a class="btn btn-primary" href="{$somcp_update.notes|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer" data-somcp-dialog-open="somcp-update-dialog">
+                    {l s='See what is new' d='Modules.Somcp.Admin'}
+                </a>
             </div>
-            {* An assistant keeps the permissions it was granted when it connected,
-               so a release that brings new ones stays out of its reach until it
-               goes through the approval screen again. *}
-            <div class="alert alert-info">{l s='After the update, reconnect your assistants so that their access includes the new permissions.' d='Modules.Somcp.Admin'}</div>
+            <dialog class="somcp-dialog somcp-update-dialog" id="somcp-update-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-somcp-dialog-close aria-label="{l s='Close' d='Modules.Somcp.Admin'}">&times;</button>
+                        <h4 class="modal-title">{l s='Version %version% is available.' sprintf=['%version%' => ($somcp_update.latest|escape:'html':'UTF-8')] d='Modules.Somcp.Admin'}</h4>
+                    </div>
+                    <div class="modal-body">
+                    {if $somcp_update.titles}
+                        <p><strong>{l s='What is new:' d='Modules.Somcp.Admin'}</strong></p>
+                        <ul class="somcp-update-list">
+                        {foreach from=$somcp_update.titles item=title}
+                            <li>{$title|escape:'html':'UTF-8'}</li>
+                        {/foreach}
+                        {if $somcp_update.more > 0}
+                            <li>{l s='and %count% more' sprintf=['%count%' => $somcp_update.more|intval] d='Modules.Somcp.Admin'}</li>
+                        {/if}
+                        </ul>
+                    {/if}
+                        <p class="help-block">{l s='To update, open Modules > Module Manager, click Upload a module and drop the zip. PrestaShop replaces the module in place and keeps your settings and connected assistants.' d='Modules.Somcp.Admin'}</p>
+                        {* An assistant keeps the permissions it was granted when it
+                           connected, so a release that brings new ones stays out of
+                           its reach until it goes through the approval screen again. *}
+                        <p class="somcp-update-reconnect"><i class="icon-info-circle"></i> {l s='After the update, reconnect your assistants so that their access includes the new permissions.' d='Modules.Somcp.Admin'}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-default" href="{$somcp_update.notes|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">
+                            <i class="icon-external-link"></i> {l s='Full release notes' d='Modules.Somcp.Admin'}
+                        </a>
+                        <a class="btn btn-primary" href="{$somcp_update.download|escape:'html':'UTF-8'}" target="_blank" rel="noopener noreferrer">
+                            <i class="icon-download"></i> {l s='Download the zip' d='Modules.Somcp.Admin'}
+                        </a>
+                    </div>
+                </div>
+            </dialog>
         {elseif $somcp_update.enabled && !$somcp_update.failed && $somcp_update.latest}
             <div class="alert alert-success">{l s='You have the latest version.' d='Modules.Somcp.Admin'}</div>
         {/if}

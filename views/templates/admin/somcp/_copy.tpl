@@ -376,6 +376,33 @@
             });
         });
 
+        // Windows opened from a link on the page, such as the update details.
+        // The link still leads somewhere useful in a browser without dialogs;
+        // with one, the click opens the window instead. Escape, a close button
+        // or a click on the backdrop close it.
+        document.querySelectorAll('[data-somcp-dialog-open]').forEach(function (opener) {
+            var dialog = document.getElementById(opener.getAttribute('data-somcp-dialog-open'));
+            if (!dialog || typeof dialog.showModal !== 'function') {
+                return;
+            }
+            opener.addEventListener('click', function (event) {
+                event.preventDefault();
+                if (!dialog.open) {
+                    dialog.showModal();
+                }
+            });
+            dialog.querySelectorAll('[data-somcp-dialog-close]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    dialog.close();
+                });
+            });
+            dialog.addEventListener('click', function (event) {
+                if (event.target === dialog) {
+                    dialog.close();
+                }
+            });
+        });
+
         // The tools and prompts lists, grouped by scope. Each group folds under
         // its heading row, which carries the group's two switches and how many
         // of its rows are on. Every row stays in the form, hidden rather than

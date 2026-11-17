@@ -63,8 +63,14 @@ class SomcpUpdate
      */
     private const MAX_BYTES = 1048576;
 
-    /** @var int Changelog titles shown before "and N more". */
-    private const MAX_TITLES = 5;
+    /**
+     * @var int Changelog titles kept before "and N more".
+     *
+     * The update window lists every point of the release, so this only bounds
+     * what a release far larger than any so far would store in the
+     * configuration table.
+     */
+    private const MAX_TITLES = 100;
 
     /**
      * @return bool

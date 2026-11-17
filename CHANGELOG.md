@@ -130,6 +130,13 @@ the whole catalogue to sort it itself. It now also sorts by ID, reference,
 category and status, each way, and by name from Z to A, as the columns of the
 product list in the back office do.
 
+**Updates: the news of a new version in a window.** The Help and updates
+page used to announce a new version with two blocks of text: the first five
+points of what was new, then a separate reminder to reconnect the assistants.
+It now shows one line with a See what is new button, which opens a window
+listing every point of the release, how to install it, the reconnection
+reminder and the buttons to read the full notes or download the zip.
+
 ### Fixed
 
 **Asking the SEO and product data audits for disabled products or hidden

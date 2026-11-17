@@ -1,9 +1,9 @@
 {
   "calls": [
-    {"why": "the first tax rule of the demo shop, installed for France; its rows depend on the localization pack, so only the absence of a crash is checked", "arguments": {"id_tax_rules_group": 1}, "expect": "any"},
-    {"why": "the same rule, its rows narrowed to France, the default country of the demo shop", "arguments": {"id_tax_rules_group": 1, "country": "FR", "language": "en"}, "expect": "any"},
-    {"why": "a country given in lower case is the same country", "arguments": {"id_tax_rules_group": 1, "country": "fr"}, "expect": "any"},
-    {"why": "the identifier as a numeric string", "arguments": {"id_tax_rules_group": "1"}, "expect": "any"},
+    {"why": "the first tax rule of the demo shop, installed for France; its rows depend on the localization pack, so only what does not is checked", "arguments": {"id_tax_rules_group": 1}, "expect": "ok", "contains": ["\"id_tax_rules_group\": 1", "\"country_rules\"", "\"rate_in_default_country\"", "\"default_country\": \"FR\"", "\"taxes_enabled\": true", "\"language\": \"en\""]},
+    {"why": "the same rule, its rows narrowed to France, the default country of the demo shop; whether the pack gives France a row is not checked", "arguments": {"id_tax_rules_group": 1, "country": "FR", "language": "en"}, "expect": "ok", "contains": ["\"country_rules\"", "\"default_country\": \"FR\""]},
+    {"why": "a country given in lower case is the same country", "arguments": {"id_tax_rules_group": 1, "country": "fr"}, "expect": "ok", "contains": ["\"country_rules\"", "\"default_country\": \"FR\""]},
+    {"why": "the identifier as a numeric string", "arguments": {"id_tax_rules_group": "1"}, "expect": "ok", "contains": ["\"id_tax_rules_group\": 1"]},
     {"why": "a rule that does not exist", "arguments": {"id_tax_rules_group": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_tax_rules_group: no tax rule of this shop has the identifier 999999 - find it with somcp_list_tax_rules"]},
     {"why": "no identifier", "arguments": {"id_tax_rules_group": 0}, "expect": "error", "contains": ["- id_tax_rules_group: a whole number above 0"]},
     {"why": "an identifier that is not a number", "arguments": {"id_tax_rules_group": [1]}, "expect": "error", "contains": ["- id_tax_rules_group: a whole number above 0"]},

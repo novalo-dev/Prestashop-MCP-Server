@@ -883,16 +883,21 @@ class SomcpTool
      * every problem of a call before answering.
      *
      * languageRefused() is a whole answer and cannot sit among other lines;
-     * this keeps its words, so one refusal reads the same in every tool.
+     * this keeps its words, way out included, so one refusal reads the same
+     * in every tool, alone or among other mistakes.
      *
      * @param int $idShop
+     * @param bool $everyLanguage true for a tool that reads all the shop's
+     *                            languages when language is left out
      *
      * @return string
      */
-    public static function languageProblem(int $idShop): string
+    public static function languageProblem(int $idShop, bool $everyLanguage = false): string
     {
         return 'language: not one of the shop\'s languages, which are '
-            . implode(', ', self::activeLanguages($idShop));
+            . implode(', ', self::activeLanguages($idShop))
+            . ' - leave language out for '
+            . ($everyLanguage ? 'all of them' : 'the shop default');
     }
 
     /**

@@ -140,10 +140,18 @@ class SomcpToolAuditProductSeo
         $idShop = Somcp::currentShopId();
 
         $read = self::auditArguments($arguments, self::FIELDS, self::CHECKS, self::DEFAULT_LIMIT, self::MAX_LIMIT);
-        if ($read['problems'] !== []) {
-            return SomcpTool::refused('read', $read['problems']);
-        }
+        $problems = $read['problems'];
         $languages = self::languages($arguments, $idShop);
+        // A language given and unknown is one more mistake of the same answer,
+        // so the call is corrected in one go.
+        $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        if ($asked && $languages === null) {
+            $problems[] = SomcpTool::languageProblem($idShop, true);
+        }
+        if ($problems !== []) {
+            return SomcpTool::refused('read', $problems);
+        }
+        // Left out, every language is read: null then means a shop with none.
         if ($languages === null) {
             return SomcpTool::languageRefused($idShop, true);
         }

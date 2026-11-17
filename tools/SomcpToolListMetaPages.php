@@ -86,17 +86,23 @@ class SomcpToolListMetaPages
         // The shop default when left out, never the context language, which
         // follows the client's Accept-Language header.
         $language = SomcpTool::readLanguage($arguments, $idShop);
+
+        // A misspelt field was silently ignored: the shared check so every
+        // SEO tool refuses it alike, with a language given and unknown among
+        // the same mistakes.
+        $errors = SomcpTool::unknownFields($arguments, ['language']);
+        $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        if ($asked && $language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+        // Left out, null means a shop whose default language cannot be read.
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $iso] = $language;
-
-        // A misspelt field was silently ignored: the shared check so every
-        // SEO tool refuses it alike.
-        $errors = SomcpTool::unknownFields($arguments, ['language']);
-        if ($errors !== []) {
-            return SomcpTool::refused('read', $errors);
-        }
 
         $link = Somcp::legacyContext()->link ?? new Link();
 

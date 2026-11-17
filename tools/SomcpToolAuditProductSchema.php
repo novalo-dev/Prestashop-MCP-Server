@@ -107,15 +107,18 @@ class SomcpToolAuditProductSchema
     {
         $idShop = Somcp::currentShopId();
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
+        // The product is found in any language, as somcp_get_product finds
+        // it; the language itself is checked with the other mistakes.
+        $idLang = $language === null ? 0 : $language[0];
 
         // Every mistake in the call is reported in one answer, in the words
         // somcp_get_product uses for the same two identifiers: a cast read a
         // misspelt field or a list as a product nobody asked for.
         $problems = SomcpTool::unknownFields($arguments, ['id_product', 'id_product_attribute', 'language']);
+        $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        if ($asked && $language === null) {
+            $problems[] = SomcpTool::languageProblem($idShop);
+        }
         $idProduct = SomcpTool::id($arguments, 'id_product');
         $product = null;
         if ($idProduct === 0) {
@@ -139,6 +142,12 @@ class SomcpToolAuditProductSchema
         if ($problems !== [] || $product === null) {
             return SomcpTool::refused('fetched', $problems);
         }
+        // Left out, the language is the shop default: null then means a shop
+        // whose default cannot be read.
+        if ($language === null) {
+            return SomcpTool::languageRefused($idShop);
+        }
+        [$idLang, $iso] = $language;
 
         // The shop's side is read by somcp_get_product itself, so a value
         // reported here is the one that tool shows and its update writes.

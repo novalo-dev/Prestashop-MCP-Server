@@ -163,15 +163,21 @@ class SomcpToolSearchProducts
         // list or change its order without a word, and the assistant would
         // describe the products as the ones asked for: refused instead.
         $errors = self::problems($arguments);
-        if ($errors !== []) {
-            return SomcpTool::refused('read', $errors);
-        }
 
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
         // Names are searched in this language too: a name searched in the
         // wrong one finds nothing, and the product would look missing.
         $language = SomcpTool::readLanguage($arguments, $idShop);
+        // A language given and unknown is one more mistake of the same answer.
+        $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        if ($asked && $language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+        // Left out, null means a shop whose default language cannot be read.
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
         }

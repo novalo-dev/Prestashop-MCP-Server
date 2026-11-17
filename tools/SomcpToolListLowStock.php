@@ -142,15 +142,21 @@ class SomcpToolListLowStock
                 $errors[] = SomcpTool::notAnIdentifier($key);
             }
         }
-        if ($errors !== []) {
-            return SomcpTool::refused('read', $errors);
-        }
 
         $shop = Somcp::currentShop();
         // The shop default rather than the context language, which on an MCP
         // call follows the client's browser header: a name searched in one
         // language would find nothing in another (#149).
         $language = SomcpTool::readLanguage($arguments, (int) $shop->id);
+        // A language given and unknown is one more mistake of the same answer.
+        $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        if ($asked && $language === null) {
+            $errors[] = SomcpTool::languageProblem((int) $shop->id);
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+        // Left out, null means a shop whose default language cannot be read.
         if ($language === null) {
             return SomcpTool::languageRefused((int) $shop->id);
         }

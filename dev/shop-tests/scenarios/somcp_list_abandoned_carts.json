@@ -11,6 +11,10 @@
     {"why": "a date that does not exist is refused, not ignored", "arguments": {"date_from": "2026-13-01"}, "expect": "error", "contains": ["date_from: a date, YYYY-MM-DD"]},
     {"why": "a period that ends before it starts is refused", "arguments": {"date_from": "2026-02-01", "date_to": "2026-01-01"}, "expect": "error", "contains": ["date_to: a date not before date_from"]},
     {"why": "more than 100 carts at once is refused", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
-    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "foo: not a field of this tool", "offset: a whole number, 0 at least"]}
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "foo: not a field of this tool", "offset: a whole number, 0 at least"]},
+    {"why": "the carts of the demo carrier, matched on its reference", "arguments": {"id_carrier": 2}, "expect": "ok", "contains": ["\"carts\"", "\"total_count\""]},
+    {"why": "a cart that has an order is not abandoned: an empty list, not an error", "arguments": {"id_cart": 1}, "expect": "ok", "contains": ["\"total_count\": 0"]},
+    {"why": "a carrier the shop does not have is refused", "arguments": {"id_carrier": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "id_carrier: no carrier of this shop has the identifier 999999 - find it with somcp_list_carriers"]},
+    {"why": "a cart that is not an identifier and an unknown carrier come back in one answer", "arguments": {"id_cart": "abc", "id_carrier": 999999}, "expect": "error", "contains": ["id_cart: ", "id_carrier: no carrier of this shop"]}
   ]
 }

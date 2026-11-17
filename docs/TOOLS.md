@@ -5387,6 +5387,8 @@ The levers that turn visits into orders: carts left behind, what customers searc
 | `with_customer` | boolean | no | true: only carts linked to a customer account (guest accounts included); false: only carts without one |
 | `customer_name` | string | no | the **Customer** filter: first name, last name or both, whole or partial |
 | `online` | boolean | no | the **Online** filter |
+| `id_cart` | integer | no | the **ID** filter; a cart that is not abandoned (it has an order, is empty or too recent) gives an empty list, not an error |
+| `id_carrier` | integer | no | the **Carrier** filter, from `somcp_list_carriers`, matched on the carrier's reference so carts saved before the carrier was edited are found |
 | `language` | string | no | ISO code of one of the shop's active languages for product names (#149); shop default when left out; unknown code refused |
 | `limit` / `offset` | integer | no | as `somcp_search_orders`: 20 by default, 100 at most |
 
@@ -5411,7 +5413,7 @@ The levers that turn visits into orders: carts left behind, what customers searc
 | `total_value_complete` | false when the sum leaves a matching cart out: more than 1000 carts match (it then covers the 1000 newest), or a cart could not be priced any more (a product removed since); each cart is priced by PrestaShop itself |
 | `language` | ISO code used |
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments, `older_than_hours` below 1, invalid dates, `date_from` after `date_to`, `limit` outside 1 to 100, a negative `offset`, an unknown language.
+**Errors** - in the shape of #169, all in one answer: unknown arguments, `older_than_hours` below 1, invalid dates, `date_from` after `date_to`, `limit` outside 1 to 100, a negative `offset`, an unknown language, an `id_cart` or `id_carrier` that is not a whole number above 0, a carrier this shop does not have or a deleted one (`id_carrier: no carrier of this shop has the identifier N - find it with somcp_list_carriers`).
 
 **Notes**
 - The back office rule on both versions: a cart with no order, created more than 24 hours ago (`AdminCartsController` on 8.0.1, `CartStatus::ABANDONED_CART_EXPIRATION_TIME` in `CartQueryBuilder` on 9.0.0, both on `cart.date_add` against PHP's clock). A younger cart without an order is **Non ordered**.

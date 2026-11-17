@@ -16,6 +16,14 @@ are:
 
 ## Unreleased
 
+### Changed
+
+**Abandoned carts: one cart or one carrier.** The list can now be narrowed to
+one cart or to the carts of one carrier, as the ID and Carrier filters of
+Orders > Shopping Carts. Carts saved before the carrier was edited are found
+too. Until now the assistant asked about one cart or one carrier read every
+abandoned cart and sorted them itself.
+
 ## 2.0.3 - 2026-11-17
 
 ### Added

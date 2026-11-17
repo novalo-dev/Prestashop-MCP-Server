@@ -1538,14 +1538,14 @@ class SomcpToolCreateProduct
         if (array_key_exists('carriers', $group)) {
             $references = [];
             foreach (array_unique(self::ids($group['carriers'], 'id_carrier', 'shipping.carriers', $errors)) as $idCarrier) {
-                $carrier = new Carrier($idCarrier);
-                if (!Validate::isLoadedObject($carrier) || $carrier->deleted || !$carrier->isAssociatedToShop($idShop)) {
+                // A product is tied to the carrier's reference, which survives
+                // the new identifier a carrier gets each time it is edited.
+                $reference = SomcpTool::carrierReference($idCarrier, $idShop);
+                if ($reference === null) {
                     $errors[] = SomcpTool::notFound('shipping.carriers', 'carrier', $idCarrier, 'somcp_list_carriers');
                     continue;
                 }
-                // A product is tied to the carrier's reference, which survives
-                // the new identifier a carrier gets each time it is edited.
-                $references[] = (int) $carrier->id_reference;
+                $references[] = $reference;
             }
             $plan['carriers'] = array_values(array_unique($references));
         }

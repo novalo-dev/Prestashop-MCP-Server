@@ -946,6 +946,30 @@ class SomcpTool
         return $name === '0' ? (string) Configuration::get('PS_SHOP_NAME') : $name;
     }
 
+    /**
+     * The reference of a carrier this shop has, null when it has no such one.
+     *
+     * A carrier gets a new identifier each time it is edited, and products
+     * and carts keep the one they were saved with; the reference is what
+     * every version shares. Shared so the product tools and the cart filter
+     * accept the same carriers and refuse the same ones: deleted, or of
+     * another shop.
+     *
+     * @param int $idCarrier
+     * @param int $idShop
+     *
+     * @return int|null
+     */
+    public static function carrierReference(int $idCarrier, int $idShop): ?int
+    {
+        $carrier = new Carrier($idCarrier);
+        if (!Validate::isLoadedObject($carrier) || $carrier->deleted || !$carrier->isAssociatedToShop($idShop)) {
+            return null;
+        }
+
+        return (int) $carrier->id_reference;
+    }
+
     /** @var int Past this many a title is cut in a search result; advice, not a limit. */
     public const META_TITLE_RECOMMENDED = 70;
 

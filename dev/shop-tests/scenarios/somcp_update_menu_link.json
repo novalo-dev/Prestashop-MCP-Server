@@ -17,6 +17,6 @@
     {"why": "a language the shop does not have is refused among the languages filled", "arguments": {"id_link": 1, "languages": ["zz"], "label": {"zz": "Sale"}}, "expect": "error", "contains": ["languages: \"zz\" is not an active language"]},
     {"why": "new_window takes a boolean", "arguments": {"id_link": 1, "new_window": "yes"}, "expect": "error", "contains": ["new_window: true or false"]},
     {"why": "an argument the tool does not take is refused, naming it", "arguments": {"id_link": 1, "new_window": true, "position": 1}, "expect": "error", "contains": ["position: not a field of this tool"]},
-    {"why": "a language the shop does not have is refused for the answer", "arguments": {"id_link": 1, "new_window": true, "language": "zz"}, "expect": "error", "contains": ["language"]}
+    {"why": "a language the shop does not have is refused for the answer", "arguments": {"id_link": 1, "new_window": true, "language": "zz"}, "expect": "error", "contains": ["Nothing was changed.", "- language: not one of the shop's languages, which are "]}
   ]
 }

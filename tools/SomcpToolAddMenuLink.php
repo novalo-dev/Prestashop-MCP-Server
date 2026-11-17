@@ -161,10 +161,6 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
         $idShop = Somcp::currentShopId();
 
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         if (!SomcpToolListMenuLinks::moduleActive($idShop)) {
             return SomcpTool::text(
@@ -175,13 +171,21 @@ class SomcpToolAddMenuLink extends SomcpToolCreateProduct
         }
 
         $errors = [];
-        $plan = self::plan($arguments, $idLang, $idShop, $errors);
-        if ($errors !== [] || $plan === null) {
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        // The language only serves to look the entry up: while the one given
+        // is wrong, the default one still finds the other mistakes.
+        $lookup = $language ?? SomcpTool::readLanguage([], $idShop);
+        $plan = $lookup === null ? null : self::plan($arguments, $lookup[0], $idShop, $errors);
+        if ($errors !== [] || $plan === null || $language === null) {
             return SomcpTool::text(
                 "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
                 true
             );
         }
+        [$idLang, $iso] = $language;
 
         $idEmployee = (int) ($context['id_employee'] ?? 0);
 

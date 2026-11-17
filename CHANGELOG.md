@@ -32,6 +32,10 @@ only, as the Enabled and Status filters of the back office do. Until now the
 enabled ones came along, so an assistant that had just listed the disabled
 taxes got every tax rule back.
 
+**Tax rules: a name too long for the shop.** On shops whose tax rule names
+hold 50 characters, a longer name is now refused with the limit instead of
+being cut, so the rule saved always carries the name the merchant gave.
+
 ## 2.0.3 - 2026-11-17
 
 ### Added

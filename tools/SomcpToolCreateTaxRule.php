@@ -49,7 +49,12 @@ class SomcpToolCreateTaxRule
         'default_country', 'taxes_enabled', 'language',
     ];
 
-    /** @var int The size of the name column (TaxRulesGroup::$definition). */
+    /**
+     * The size of the name column in TaxRulesGroup::$definition, used only when
+     * the column itself cannot be read.
+     *
+     * @var int
+     */
     private const NAME_MAX = 64;
 
     /**
@@ -71,8 +76,8 @@ class SomcpToolCreateTaxRule
                 'properties' => [
                     'name' => [
                         'type' => 'string',
-                        'description' => 'Merchant. Required. The Name of the rule, 64 characters at most, '
-                            . 'without < > = { }.',
+                        'description' => 'Merchant. Required. The Name of the rule, at most the size of the '
+                            . 'Name column (64 characters on PrestaShop 9, 50 on some 8.0 shops), without < > = { }.',
                     ],
                     'active' => [
                         'type' => 'boolean',
@@ -187,6 +192,30 @@ class SomcpToolCreateTaxRule
     }
 
     /**
+     * The size of the name column of this shop's database.
+     *
+     * The class says 64, but some 8.0 shops still have the 50-character
+     * column of their install: a longer name passes the class check, then is
+     * cut or refused by the database, so the rule saved is not the name given.
+     *
+     * @return int
+     */
+    private static function nameMax(): int
+    {
+        // executeS rather than getRow, which appends a LIMIT that SHOW COLUMNS
+        // does not take.
+        $columns = Db::getInstance()->executeS(
+            'SHOW COLUMNS FROM `' . bqSQL(_DB_PREFIX_ . 'tax_rules_group') . "` LIKE 'name'"
+        );
+        if (is_array($columns) && isset($columns[0]['Type'])
+            && preg_match('/^varchar\((\d+)\)/i', (string) $columns[0]['Type'], $match)) {
+            return (int) $match[1];
+        }
+
+        return self::NAME_MAX;
+    }
+
+    /**
      * The name given in the call, or null with the reason.
      *
      * @param array<string, mixed> $arguments
@@ -212,8 +241,9 @@ class SomcpToolCreateTaxRule
 
             return null;
         }
-        if (Tools::strlen($name) > self::NAME_MAX) {
-            $errors[] = 'name: ' . self::NAME_MAX . ' characters at most, ' . Tools::strlen($name) . ' given';
+        $max = self::nameMax();
+        if (Tools::strlen($name) > $max) {
+            $errors[] = 'name: ' . $max . ' characters at most, ' . Tools::strlen($name) . ' given';
 
             return null;
         }

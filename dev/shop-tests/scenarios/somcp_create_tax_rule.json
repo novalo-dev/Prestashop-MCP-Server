@@ -5,7 +5,8 @@
     {"why": "the same name again creates a second rule, as the back office does", "arguments": {"name": "Somcp test tax rule", "active": false}, "expect": "ok", "contains": ["\"created\": true", "\"name\": \"Somcp test tax rule\"", "\"active\": false"]},
     {"why": "no name", "arguments": {"active": true}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- name: required"]},
     {"why": "an empty name", "arguments": {"name": "   "}, "expect": "error", "contains": ["- name: empty"]},
-    {"why": "a name of 65 characters", "arguments": {"name": "Somcp tax rule whose name goes past the sixty four characters ok!"}, "expect": "error", "contains": ["- name: 64 characters at most, 65 given"]},
+    {"why": "a name of 65 characters, past the column on every version (64 or 50)", "arguments": {"name": "Somcp tax rule whose name goes past the sixty four characters ok!"}, "expect": "error", "contains": ["- name: ", " characters at most, 65 given"]},
+    {"why": "a name of 55 characters: refused on a 50-character column, created on a 64-character one; only the absence of a crash is checked", "arguments": {"name": "Somcp tax rule with a name of fifty five characters ok!"}, "expect": "any"},
     {"why": "a character PrestaShop refuses in the name", "arguments": {"name": "Somcp {rule}"}, "expect": "error", "contains": ["- name: a character PrestaShop refuses in a tax rule name"]},
     {"why": "an active that is not a boolean", "arguments": {"name": "Somcp rule", "active": "yes"}, "expect": "error", "contains": ["- active: true or false"]},
     {"why": "a misspelt field and a field the shop works out, with the other mistakes at once", "arguments": {"nmae": "Somcp rule", "id_tax_rules_group": 1, "active": 1}, "expect": "error", "contains": ["- nmae: not a field of this tool", "- id_tax_rules_group: worked out by the shop", "- name: required", "- active: true or false"]}

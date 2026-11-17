@@ -2375,7 +2375,7 @@ changing or deleting a rule (no tool yet); giving a rule to a product
 
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
-| `name` | **Name** | string | yes | at most 64 characters, `Validate::isGenericName()` (no `<`, `>`, `=`, `{`, `}`) |
+| `name` | **Name** | string | yes | at most the size of the **Name** column, read from the database: 64 characters on PrestaShop 9, 50 on some 8.0 shops; `Validate::isGenericName()` (no `<`, `>`, `=`, `{`, `}`) |
 | `active` | **Enable** | boolean | no | left out, `false`, the default of the form; the answer says so. A disabled rule is not offered on the product page |
 
 **Then** - `new TaxRulesGroup()`, `name`, `active`, `add()` with
@@ -2392,7 +2392,7 @@ rule was created disabled, as the form does.
 
 **Errors** - in the envelope `Nothing was created. Correct these and call
 again:`, every problem at once, each named with its field: `name` missing
-(`name: required`), not a text, empty, too long (`name: 64 characters at most,
+(`name: required`), not a text, empty, too long (`name: <size of the column> characters at most,
 <n> given`) or with a refused character; `active` not a boolean (`active: true
 or false`, as `somcp_list_tax_rules`); unknown arguments through
 `SomcpTool::unknownFields()`, the fields `somcp_get_tax_rule` returns and the
@@ -2403,7 +2403,7 @@ removed again if it went in: nothing half written.
 - Not replayable: each call creates one more rule, even with the same name. On a lost answer, read `somcp_list_tax_rules` with `name`, with `active: true` and with `active: false`, before calling again.
 - Scope `mcp.catalog.write`, as `somcp_list_tax_rules` reads with `mcp.catalog.read`: a tax rule is created to price products.
 - Multistore: the rule is created for the token's shop only, as the form in one shop's context.
-- The same form, fields, class definition and tables on 8.0.1 and 9.0.0; only the panel title differs (**Tax Rules** / **Tax rules**). Names are not unique: the back office saves two rules of the same name.
+- The same form, fields and class definition on 8.0.1 and 9.0.0; the panel title differs (**Tax Rules** / **Tax rules**), and so can the size of the `tax_rules_group.name` column: `varchar(64)` on 9.0.0, `varchar(50)` on some 8.0 shops although the class says 64. The limit is read from the column (`SHOW COLUMNS`), 64 when it cannot be read, so a name the database would cut is refused instead. Names are not unique: the back office saves two rules of the same name.
 
 #### `somcp_list_taxes`
 **State**: written · [issue #237](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/237)

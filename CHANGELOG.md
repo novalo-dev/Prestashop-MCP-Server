@@ -31,7 +31,9 @@ read and the order tools that answer with its lines, discounts, shipments,
 totals and documents now name each amount with `_tax_excl` or `_tax_incl`, as
 the product, statistics and customer tools do, and give the order total as
 `total_paid_tax_excl` and `total_paid_tax_incl`, as the order search does.
-Before, the same amount went by two names depending on the tool, and an
+The same goes for the discount added or removed, the payment recorded, the
+invoice generated and the delivery options of a new order, and cancelling
+products now answers the order totals in the shape of the order read. Before, the same amount went by two names depending on the tool, and an
 assistant reading one answer with the names of another found nothing.
 
 ## 2.0.2 - 2026-11-16

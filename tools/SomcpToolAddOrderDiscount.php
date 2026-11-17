@@ -488,8 +488,8 @@ class SomcpToolAddOrderDiscount
             'id_cart_rule' => (int) $new['id_cart_rule'],
             'id_order_invoice' => (int) $new['id_order_invoice'],
             'name' => (string) $new['name'],
-            'value_tax_excluded' => (float) $new['value_tax_excl'],
-            'value_tax_included' => (float) $new['value'],
+            'value_tax_excl' => (float) $new['value_tax_excl'],
+            'value_tax_incl' => (float) $new['value'],
             'free_shipping' => (bool) $new['free_shipping'],
         ];
     }

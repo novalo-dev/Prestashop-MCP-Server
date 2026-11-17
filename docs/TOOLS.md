@@ -829,7 +829,7 @@ order paid (→ `somcp_set_order_status`).
 8601 with the shop's offset, as it was recorded in the shop's time), `id_employee` (who recorded it, as the **Employee** column of
 9.0.0; `null` on 8.0.1, which has neither the column nor the argument, and
 matches `id_employee` of `payments[]` in `somcp_get_order`), `total_paid_real`
-after the payment, `total_tax_included` of the order, `order_currency`,
+after the payment, `total_paid_tax_incl` of the order, `order_currency`,
 `remaining` (what is still due, never below zero), and `warning` when the
 payment row was added but the order or its invoice could not be fully updated.
 
@@ -1131,8 +1131,8 @@ whole order with its status (→ `somcp_set_order_status`).
 
 **Returns** - `cancelled`, `order` (`id_order` and `reference`), `lines` (per
 line: `id_order_detail`, `product_name`, `quantity_cancelled`,
-`quantity_left`), the order totals after the change (`total_tax_excluded`,
-`total_tax_included`, `currency`), `order_cancelled` (true when no line was
+`quantity_left`), the order totals after the change (`totals`, in the shape of `totals` of
+`somcp_get_order`, and `currency`), `order_cancelled` (true when no line was
 left and the status changed), `status` after the call (`id`, `name`), and
 `warning` when the order was cancelled but the customer email failed.
 
@@ -1367,7 +1367,7 @@ recomputes the order totals. It lowers what the customer owes.
 
 **Returns** - `added`, `order` (`id_order` and `reference`), `discount`
 (`id_order_cart_rule`, `id_cart_rule`, `id_order_invoice`, `name`,
-`value_tax_excluded`, `value_tax_included`, `free_shipping`), and the order
+`value_tax_excl`, `value_tax_incl`, `free_shipping`), and the order
 totals after the change under `totals` (as `somcp_get_order` gives them, with
 `currency` beside, like the other order write tools). `discount` carries the keys of `discounts[]`
 of `somcp_get_order` plus `id_cart_rule`, so the same discount reads the same
@@ -1430,7 +1430,7 @@ recomputes the order totals. It raises what the customer owes.
 
 **Returns** - `deleted`, `order` (`id_order` and `reference`), `discount`
 with the keys of `discounts[]` of `somcp_get_order` (`id_order_cart_rule`,
-`id_order_invoice`, `name`, `value_tax_included`, `value_tax_excluded`,
+`id_order_invoice`, `name`, `value_tax_incl`, `value_tax_excl`,
 `free_shipping`), `gift_line_updated` (the discount gave a gift product and
 its line lost one unit), and the order totals after the change under
 `totals` (as `somcp_get_order` gives them, with `currency` beside), as
@@ -1690,7 +1690,7 @@ for a customer or group on every order (→ `specific_prices` of
 | `products` | array, 1 or more | yes | **Cart**: each line `id_product` (from `somcp_search_products`), `id_product_attribute` (from `combinations[].id_product_attribute` of `somcp_get_product`, required when the product has combinations) `quantity` (from 1, at least the minimal quantity) and `unit_price_tax_excl` (**Price**, from 0, tax excluded as the screen says, in the cart's currency; left out, the price the shop computes; the suffix of every other price, the former name `unit_price_tax_excluded` refused as `renamed unit_price_tax_excl`); the same product and combination twice is refused |
 | `id_address_delivery` | integer | yes | **Addresses > Delivery**, from `addresses[].id_address` of `somcp_get_customer`; an address of this customer |
 | `id_address_invoice` | integer | no | **Addresses > Invoice**, same; the delivery address when left out |
-| `id_carrier` | integer | yes unless every product is virtual | **Shipping > Delivery option**: one of the carriers the cart is offered for this address and these products; refused otherwise, with those offered (`id_carrier`, `name`, `shipping_tax_included`) |
+| `id_carrier` | integer | yes unless every product is virtual | **Shipping > Delivery option**: one of the carriers the cart is offered for this address and these products; refused otherwise, with those offered (`id_carrier`, `name`, `shipping_tax_incl`) |
 | `free_shipping` | boolean | no, default false | **Free shipping**: the cart rule the screen creates (`CartRule::BO_ORDER_CODE_PREFIX` + cart id) |
 | `recycled_packaging` | boolean | no, default false | **Recycled packaging** |
 | `gift` | boolean | no, default false | **Gift** |
@@ -1902,8 +1902,8 @@ attaches the invoice).
 **Returns** - `generated`, `order` (`id_order` and `reference`), `invoice`
 (`id_order_invoice`, `number` formatted with the prefix for the order's shop as
 `payments[].invoice_number` of `somcp_get_order`, `date` in ISO 8601 with the
-shop's offset, `total_tax_excluded`,
-`total_tax_included`, `currency`). When the order already has an invoice:
+shop's offset, `total_paid_tax_excl`,
+`total_paid_tax_incl`, `currency`). When the order already has an invoice:
 `generated: false` with a `reason` and the existing invoice, and nothing
 happens.
 

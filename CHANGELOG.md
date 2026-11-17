@@ -24,6 +24,14 @@ Orders > Shopping Carts. Carts saved before the carrier was edited are found
 too. Until now the assistant asked about one cart or one carrier read every
 abandoned cart and sorted them itself.
 
+### Fixed
+
+**Disabled tax rules and disabled products short of stock.** Asking for the
+disabled tax rules, or the disabled products short of stock, now lists those
+only, as the Enabled and Status filters of the back office do. Until now the
+enabled ones came along, so an assistant that had just listed the disabled
+taxes got every tax rule back.
+
 ## 2.0.3 - 2026-11-17
 
 ### Added

@@ -56,8 +56,8 @@ class SomcpToolListTaxRules
                 'properties' => [
                     'active' => [
                         'type' => 'boolean',
-                        'description' => 'true (the default) for enabled rules only, false to include '
-                            . 'disabled ones too.',
+                        'description' => 'true (the default) for enabled rules only, false for disabled ones '
+                            . 'only, the Enabled filter of Tax Rules.',
                     ],
                     'name' => [
                         'type' => 'string',
@@ -87,16 +87,11 @@ class SomcpToolListTaxRules
         // A misspelt filter, or an active that is not a boolean, would answer
         // another list than the one asked for without a word: refused.
         $errors = SomcpTool::unknownFields($arguments, ['active', 'name']);
-        if (array_key_exists('active', $arguments) && !is_bool($arguments['active'])) {
-            $errors[] = 'active: true or false';
-        }
+        // The Enabled filter as every list reads it: false is the disabled
+        // rules only, not every rule.
+        $status = SomcpTool::statusFilter($arguments, true, $errors);
         if ($errors !== []) {
             return SomcpTool::refused('read', $errors);
-        }
-
-        $onlyActive = true;
-        if (isset($arguments['active'])) {
-            $onlyActive = $arguments['active'];
         }
 
         // A query rather than TaxRulesGroup::getTaxRulesGroups(), which reads
@@ -114,8 +109,8 @@ class SomcpToolListTaxRules
         // the orders that used it keep their history; it can no longer be
         // given to a product.
         $query->where('g.`deleted` = 0');
-        if ($onlyActive) {
-            $query->where('g.`active` = 1');
+        if ($status !== null) {
+            $query->where('g.`active` = ' . (int) $status);
         }
         // The Name filter of the back office list: with some fifty rules from
         // a localization pack, reading them all to find one wastes the answer.

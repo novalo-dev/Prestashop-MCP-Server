@@ -5,7 +5,7 @@
     {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "language: not one of the shop's languages, which are", "leave language out for the shop default"]},
     {"why": "a threshold above every demo quantity fills a full first page", "arguments": {"threshold": 1000000}, "expect": "ok", "contains": ["\"id_product_attribute\"", "\"reference\"", "\"threshold\": 1000000", "\"returned\": 20"]},
     {"why": "a threshold under every quantity lists nothing", "arguments": {"threshold": -1000000}, "expect": "ok", "contains": ["\"lines\": []", "\"total_count\": 0"]},
-    {"why": "inactive products included", "arguments": {"threshold": 1000000, "active": false}, "expect": "ok", "contains": ["\"total_count\""]},
+    {"why": "disabled products only, the Status filter set to No: every product of a fresh install is enabled", "arguments": {"threshold": 1000000, "active": false}, "expect": "ok", "contains": ["\"total_count\": 0"]},
     {"why": "the next page", "arguments": {"threshold": 1000000, "limit": 5, "offset": 5}, "expect": "ok", "contains": ["\"returned\": 5", "\"offset\": 5"]},
     {"why": "a limit over the cap is brought back to 100", "arguments": {"threshold": 1000000, "limit": 500}, "expect": "ok", "contains": ["\"lines\""]},
     {"why": "each line names its default supplier", "arguments": {"threshold": 1000000, "limit": 5}, "expect": "ok", "contains": ["\"supplier\""]},

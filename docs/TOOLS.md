@@ -2304,7 +2304,7 @@ On 8.0.1 the filter label is **Free Shipping**, on 9.0.0 **Free shipping**; the 
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `active` | boolean | no | true by default, enabled rules only; false lists disabled ones too |
+| `active` | boolean | no | the **Enabled** filter: true by default, enabled rules only; false disabled rules only; anything else refused (`active: true or false`) |
 | `name` | string | no | part of the rule name (the **Name** filter of the list), case-insensitive; left out, every rule |
 
 **Returns** - per rule: `id_tax_rules_group`, `name`, `active`, `rate` in the default country, `country` (ISO code of that country). Plus `count`, and `taxes_enabled`: false when the shop has taxes switched off, so that no rule applies.
@@ -2333,7 +2333,7 @@ the rules (→ `somcp_list_tax_rules`).
 
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
-| `id_tax_rules_group` | the rule opened from the list | integer | yes | from `somcp_list_tax_rules` (`active: false` lists disabled ones too) |
+| `id_tax_rules_group` | the rule opened from the list | integer | yes | from `somcp_list_tax_rules` (`active: false` lists the disabled ones) |
 | `country` | **Country** | string | no | ISO code of a country (`DE`): only the rows of that country; left out, every row |
 | `language` | | string | no | ISO code for the country, state and tax names; the shop default when left out |
 
@@ -2400,7 +2400,7 @@ shop works out named as such. A failed `add()` is reported as such, the rule
 removed again if it went in: nothing half written.
 
 **Notes**
-- Not replayable: each call creates one more rule, even with the same name. On a lost answer, read `somcp_list_tax_rules` with `name` and `active: false` before calling again.
+- Not replayable: each call creates one more rule, even with the same name. On a lost answer, read `somcp_list_tax_rules` with `name`, with `active: true` and with `active: false`, before calling again.
 - Scope `mcp.catalog.write`, as `somcp_list_tax_rules` reads with `mcp.catalog.read`: a tax rule is created to price products.
 - Multistore: the rule is created for the token's shop only, as the form in one shop's context.
 - The same form, fields, class definition and tables on 8.0.1 and 9.0.0; only the panel title differs (**Tax Rules** / **Tax rules**). Names are not unique: the back office saves two rules of the same name.
@@ -4053,7 +4053,7 @@ The quantities the storefront sells against, per product and combination.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `threshold` | integer | no | each product's own low stock level when absent, 0 when it has none |
-| `active` | boolean | no | enabled products only, true by default; false includes the disabled ones (**Filter by status**) |
+| `active` | boolean | no | enabled products only, true by default; false disabled products only (**Filter by status**); anything else refused (`active: true or false`) |
 | `id_category` | integer | no | products associated with this category, its default one or not, from `somcp_list_categories` (**Filter by categories**) |
 | `id_supplier` | integer | no | products whose default supplier this is (`product.id_supplier`), from `somcp_list_suppliers` (**Filter by supplier**) |
 | `search` | string | no | part of the product name, of the product or combination reference, of the attributes of the combination (Black, Size - M), or of the supplier name, as the search box of the tab (**Search products**); from PrestaShop 9 on, also of an EAN-13, ISBN, UPC or MPN code |

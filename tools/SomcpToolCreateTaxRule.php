@@ -64,8 +64,8 @@ class SomcpToolCreateTaxRule
                 . 'countries: products then take its id_tax_rules_group. Read somcp_list_tax_rules first: '
                 . 'PrestaShop accepts two rules of the same name. The name is the merchant\'s - ask, never '
                 . 'invent. Left out, Enable is No, as in the form. One rule per call. Not to be retried: if the '
-                . 'answer is lost, look for the name in somcp_list_tax_rules with active false before anything '
-                . 'else. To give a rule to a product use somcp_update_product.',
+                . 'answer is lost, look for the name in somcp_list_tax_rules, with active true and with active '
+                . 'false, before anything else. To give a rule to a product use somcp_update_product.',
             [
                 'type' => 'object',
                 'properties' => [

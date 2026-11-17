@@ -60,7 +60,7 @@ class SomcpToolGetTaxRule
                     'id_tax_rules_group' => [
                         'type' => 'integer',
                         'description' => 'Identifier of the tax rule, from somcp_list_tax_rules (active: false '
-                            . 'lists disabled ones too).',
+                            . 'lists the disabled ones).',
                     ],
                     'country' => [
                         'type' => 'string',

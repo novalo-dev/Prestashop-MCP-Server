@@ -16,6 +16,8 @@ are:
 
 ## Unreleased
 
+## 2.0.3 - 2026-11-17
+
 ### Added
 
 **List the taxes.** The new tool somcp_list_taxes lists the taxes of

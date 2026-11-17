@@ -107,7 +107,8 @@ happen (`Nothing was read.`, `created`, `changed`, `deleted`, `sent`,
 the schema spells it, dotted when nested (`seo.meta_keywords`,
 `combinations[2].available_now`). Four kinds of problem, four wordings, each
 from one shared function: an unknown identifier, `no <thing> of this shop has
-the identifier <n> - find it with <tool>` (`notFound()`); a field the tool does
+the identifier <n> - find it with <tool>`, or `the <technical name, reference>
+<value>` for an object found by name (`notFound()`); a field the tool does
 not take, `not a field of this tool`, or one the shop works out, `worked out by
 the shop, so it is not written here`, or a name the tool took before,
 `renamed <new name>`, so a client built on the published names is told what
@@ -4451,7 +4452,7 @@ The modules present on the shop, their state and version.
 
 **Returns** - per module, sorted by `display_name`: `name` (technical name, the module's folder, the identifier `somcp_get_module`, `somcp_install_module` and `somcp_set_module_active` take); `display_name` (card title, in the language of the request); `version` (version of the files on disk); `version_installed` (`module.version`, `null` when not installed); `needs_upgrade` (`true` when the files on disk are newer than `version_installed`, the core's rule of `Module::needUpgrade()`); `author` ("by ..."); `description` (card text); `installed` (boolean); `active` (**Enabled** / **Disabled** on the token's shop, from `module_shop`, `false` when not installed); `active_on_mobile` (**Enable Mobile** / **Disable Mobile**, from bit 4 of `module_shop.enable_device`, `null` when not installed). Then `total_count` (modules matching, before `limit`) and `offset`.
 
-**Errors** - an unknown `status`, a non-string `query`, an out-of-range `limit` or `offset`: a refusal that names the field. No module matching: not an error, `modules` is empty.
+**Errors** - in the shared envelope, every problem at once, nothing read: a field the tool does not take (`<field>: not a field of this tool`), an unknown `status`, a non-string `query`, an out-of-range `limit` or `offset`, each naming the field. No module matching: not an error, `modules` is empty.
 
 **Notes** - read from the shop only: what is on disk through `Module::getModulesOnDisk(true)` (each module's `config.xml` or class), the state from `module` and `module_shop` for the token's shop, never the global context's. The marketplace's **Upgrade available**, its categories (**Category** filter) and **Recently used** need a network call or are not stored by the shop: not returned. Stays on the legacy `Module` class, present on both versions. `somcp` lists itself like any other module. `id_module` is never returned: the name is the identifier everywhere.
 
@@ -4473,7 +4474,7 @@ The modules present on the shop, their state and version.
 
 **Returns** - the same fields, same names and same rules as one entry of `modules[]` in `somcp_list_modules`: `name`, `display_name` (card title), `version` (files on disk), `version_installed` (`null` when not installed), `needs_upgrade`, `author`, `description`, `installed`, `active` (on the token's shop, `false` when not installed), `active_on_mobile` (`null` when not installed). Plus `hooks[]`: the hooks the module is attached to on the token's shop, each with `name` (`hook.name`) and `position` (`hook_module.position`, as stored), sorted by hook name; empty when the module is not installed or not enabled on this shop.
 
-**Errors** - a missing, empty or non-string `name`: a refusal that names the field. A `name` neither on disk nor in `module`: "No module of this shop has this name", naming `somcp_list_modules` as the way to find it.
+**Errors** - in the shared envelope, every problem at once, nothing read: a field the tool does not take (`<field>: not a field of this tool`); a missing, empty or non-string `name`, naming the field. A `name` neither on disk nor in `module`: `name: no module of this shop has the technical name <name> - find it with somcp_list_modules` (`SomcpTool::notFound()`).
 
 **Notes** - read from the shop only, as `somcp_list_modules`, through the same row builder (`SomcpModules`): the files through `Module::getModulesOnDisk(true)`, the state from `module`, `module_shop` and `hook_module` for the token's shop, never the global context's. A module installed whose folder is gone is returned from the database alone, with an empty `version`. `id_module` is never returned: the name is the identifier everywhere. **Upgrade available**, **Category** and **Recently used** are not returned, for the reasons given in `somcp_list_modules`.
 
@@ -4495,10 +4496,10 @@ The modules present on the shop, their state and version.
 
 **Returns** - the fields of `somcp_get_module` read back after the install, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`.
 
-**Errors** - same shape as `somcp_get_module`:
-- a missing, empty or non-string `name`: a refusal that names the field;
-- a `name` neither on disk nor installed, or installed with its folder gone: "No module of this shop has this name", naming `somcp_list_modules`;
-- a module already installed: refused and nothing changed ("already installed, version ...; upgrade it with somcp_upgrade_module and a newer archive"), since `ModuleManager::install()` would upgrade it;
+**Errors** - in the shared envelope, every problem at once, under "Nothing was installed. Correct these and call again:":
+- a field the tool does not take (`<field>: not a field of this tool`); a missing, empty or non-string `name`, naming the field;
+- a `name` neither on disk nor installed, or installed with its folder gone: `name: no module of this shop has the technical name <name> - find it with somcp_list_modules` (`SomcpTool::notFound()`);
+- a module already installed: refused and nothing changed (`name: already installed, version <v> - upgrade it with somcp_upgrade_module and a newer archive`), since `ModuleManager::install()` would upgrade it;
 - the core refuses (no **add** right on the Module Manager), or the module's `install()` returns `false`: "The module was not installed", with the module's own messages (`getErrors()`) and the state read back, so nothing is claimed as installed.
 
 **Notes** - disk only: no archive, no `url`, no `upload_ref`; `install()` gets no source. Through the core's `ModuleManager` of the back office's container (`SomcpModules::throughCore()`): the MCP endpoint is no back office request, so the back office's kernel is booted for the call and its container made the one every module reaches, then the previous one put back. Before that, `ps_distributionapiclient`, shipped with PrestaShop, threw on `actionBeforeInstallModule` for want of a back office service, and nothing could be installed from an assistant. With the token's employee on the context for the length of the call, the module's install checks (name, `ps_versions_compliancy`, `dependencies`, override conflicts, in `Module::install()`), hooks and tabs are set up as from the back office. Every shop is in maintenance during the install and put back as it was once the module is installed; a failed install leaves it in maintenance and says so. What the module prints while installing is dropped. On a multistore installation the core installs for the shops of the current context. Not replayable: on a lost answer, read `somcp_get_module` instead of retrying.
@@ -4566,7 +4567,7 @@ Then the new files are checked as the back office checks a module before install
 
 **Errors** - in the shared envelope, `SomcpTool::refused('upgraded', ...)`: every problem at once under "Nothing was upgraded.":
 - both `upload_ref` and `name`, or neither; the refusals of `somcp_upload_module` for the archive;
-- no folder `modules/<name>` (→ `somcp_upload_module`); on disk but not installed (→ `somcp_install_module`); `name` of no module; files on disk at the installed version ("nothing to upgrade");
+- no folder `modules/<name>` (→ `somcp_upload_module`); on disk but not installed (→ `somcp_install_module`); `name` of no module (`name: no module of this shop has the technical name <name> - find it with somcp_list_modules`); files on disk at the installed version ("nothing to upgrade");
 - no version in the archive; a version not higher than the installed one;
 - the new files not loading as a module, answering with another version (the module already loaded in this request), made for other PrestaShop versions, or needing a module that is not installed;
 - the upgrade itself failing: "The module was not upgraded", the core's message and the state read back. The new files stay, and what the scripts already changed in the database stays changed, as in the back office; the shop stays in maintenance.
@@ -4600,12 +4601,11 @@ At least one of `active` and `active_on_mobile` is given; both may be given in o
 
 **Returns** - the fields of `somcp_get_module` read back after the change, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`; plus `changed`: each field written with `from` and `to` (`{"active": {"from": true, "to": false}}`).
 
-**Errors** - `SomcpTool::text('<field>: ...', true)`:
-- a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, or neither given: a refusal that names the field;
-- a `name` that is not a module of the shop: "No module of this shop has this name", naming `somcp_list_modules`;
+**Errors** - in the shared envelope, under "Nothing was changed. Correct these and call again:", the mistakes of the call all at once, then the state of the module once they are corrected:
+- a field the tool does not take (`<field>: not a field of this tool`), a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, neither given, or `active_on_mobile` on PrestaShop 9 ("not available on this version of PrestaShop"): each naming the field;
+- a `name` that is not a module of the shop: `name: no module of this shop has the technical name <name> - find it with somcp_list_modules` (`SomcpTool::notFound()`);
 - a module not installed: refused, naming `somcp_install_module`;
 - a call that would change nothing (the state read is already the one asked): refused and nothing called, since the core answers success and fires the hooks anyway;
-- `active_on_mobile` on PrestaShop 9: "not available on this version of PrestaShop";
 - `active_on_mobile: true` on a module disabled and not enabled in the same call: refused;
 - `name` is `somcp` with `active: false`: refused - the answer would never reach the assistant and every connected assistant would lose its access;
 - on PrestaShop 8, disabling a module also enabled on another shop than the token's: refused, since the core would disable it on every shop;

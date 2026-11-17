@@ -33,6 +33,13 @@ add one.
 
 ### Changed
 
+**Modules: every mistake of a call named at once.** Listing, reading,
+installing, enabling and disabling a module used to answer the first mistake
+of a call alone, and a misspelt field came back as a missing name. They now
+name every mistake together, the misspelt field by its name, as the other
+tools do, and a module the shop does not have is answered with the same
+wording in all of them.
+
 **Products: an unchanged ecotax given back is no longer refused.** On
 PrestaShop 9 with the ecotax switched off in the tax settings, a product read
 and given back unchanged was refused because of its ecotax, which the product

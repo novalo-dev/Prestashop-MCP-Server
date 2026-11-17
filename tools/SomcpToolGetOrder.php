@@ -165,8 +165,7 @@ class SomcpToolGetOrder
         $orders = self::candidates($arguments);
         if ($orders === []) {
             return $byReference
-                ? 'reference: no order of this shop has the reference ' . trim((string) $arguments['reference'])
-                    . ' - find it with somcp_search_orders'
+                ? SomcpTool::notFound('reference', 'order', trim((string) $arguments['reference']), 'somcp_search_orders', 'reference')
                 : SomcpTool::notFound('id_order', 'order', SomcpTool::id($arguments, 'id_order'), 'somcp_search_orders');
         }
         if (count($orders) === 1) {

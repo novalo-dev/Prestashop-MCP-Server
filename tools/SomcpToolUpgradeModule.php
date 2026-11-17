@@ -214,7 +214,7 @@ class SomcpToolUpgradeModule extends SomcpToolUploadModule
     {
         $before = SomcpModules::read($name, $idShop);
         if ($before === null) {
-            return SomcpTool::refused('upgraded', ['name: no module of this shop has this name; find it with somcp_list_modules']);
+            return SomcpTool::refused('upgraded', [SomcpTool::notFound('name', 'module', $name, 'somcp_list_modules', 'technical name')]);
         }
         if (!$before['installed']) {
             return SomcpTool::refused('upgraded', ['name: ' . $before['name'] . ' is not installed; it is installed with'

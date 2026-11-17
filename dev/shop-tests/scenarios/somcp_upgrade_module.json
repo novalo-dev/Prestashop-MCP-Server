@@ -4,7 +4,7 @@
     {"why": "neither an archive nor a name is refused, naming both ways", "arguments": {}, "expect": "error", "contains": ["Nothing was upgraded", "upload_ref:", "or name"]},
     {"why": "an empty upload_ref is refused, naming the field", "arguments": {"upload_ref": " "}, "expect": "error", "contains": ["upload_ref:"]},
     {"why": "an archive and a name at once are refused: one way only", "arguments": {"upload_ref": "no-such-deposit", "name": "somcp"}, "expect": "error", "contains": ["upload_ref, name: one of them"]},
-    {"why": "a name no module of the shop has is refused", "arguments": {"name": "somcpnosuchmodule"}, "expect": "error", "contains": ["name: no module of this shop has this name"]},
+    {"why": "a name no module of the shop has is refused", "arguments": {"name": "somcpnosuchmodule"}, "expect": "error", "contains": ["name: no module of this shop has the technical name somcpnosuchmodule - find it with somcp_list_modules"]},
     {"why": "a module whose files are the installed version has nothing to upgrade, and nothing is changed", "arguments": {"name": "somcp"}, "expect": "error", "contains": ["nothing to upgrade"]},
     {"why": "a link is never taken: an archive comes by upload_ref only", "arguments": {"url": "https://example.com/module.zip"}, "expect": "error", "contains": ["url: not taken", "by upload_ref only"]},
     {"why": "a misspelt field is named with the shared line", "arguments": {"upload_ref": "no-such-deposit", "module": "mymodule"}, "expect": "error", "contains": ["module: not a field of this tool"]}

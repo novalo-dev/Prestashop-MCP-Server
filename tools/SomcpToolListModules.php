@@ -99,21 +99,27 @@ class SomcpToolListModules
      */
     public static function handle(array $arguments, array $context): array
     {
+        // Every mistake at once, a misspelt filter named rather than ignored:
+        // the assistant would otherwise read every module as those it asked for.
+        $errors = SomcpTool::unknownFields($arguments, ['status', 'query', 'limit', 'offset']);
         $status = $arguments['status'] ?? null;
         if ($status !== null && (!is_string($status) || !in_array($status, self::STATUSES, true))) {
-            return SomcpTool::text('status: one of ' . implode(', ', self::STATUSES) . ', or left out for every module.', true);
+            $errors[] = 'status: one of ' . implode(', ', self::STATUSES) . ', or left out for every module';
         }
         $query = $arguments['query'] ?? null;
         if ($query !== null && !is_string($query)) {
-            return SomcpTool::text('query: a string, part of the technical or display name.', true);
+            $errors[] = 'query: a string, part of the technical or display name';
         }
         $limit = $arguments['limit'] ?? self::DEFAULT_LIMIT;
         if (!is_int($limit) || $limit < 1 || $limit > self::MAX_LIMIT) {
-            return SomcpTool::text('limit: an integer from 1 to ' . self::MAX_LIMIT . '.', true);
+            $errors[] = 'limit: an integer from 1 to ' . self::MAX_LIMIT;
         }
         $offset = $arguments['offset'] ?? 0;
         if (!is_int($offset) || $offset < 0) {
-            return SomcpTool::text('offset: an integer, 0 or more.', true);
+            $errors[] = 'offset: an integer, 0 or more';
+        }
+        if ($errors !== [] || !is_int($limit) || !is_int($offset) || ($query !== null && !is_string($query))) {
+            return SomcpTool::refused('read', $errors);
         }
 
         // The shop comes from the token, never from the caller.

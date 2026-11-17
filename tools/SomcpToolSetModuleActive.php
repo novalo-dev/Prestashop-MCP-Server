@@ -86,55 +86,55 @@ class SomcpToolSetModuleActive
      */
     public static function handle(array $arguments, array $context): array
     {
+        // Every mistake of the call at once, so one call corrects them all;
+        // a misspelt field is named rather than read as a missing one.
+        $errors = SomcpTool::unknownFields($arguments, ['name', 'active', 'active_on_mobile']);
         $name = $arguments['name'] ?? null;
         if (!is_string($name) || trim($name) === '') {
-            return SomcpTool::text('name: a string, the technical name from somcp_list_modules.', true);
+            $errors[] = 'name: a string, the technical name from somcp_list_modules';
         }
         $active = $arguments['active'] ?? null;
         if ($active !== null && !is_bool($active)) {
-            return SomcpTool::text('active: true or false.', true);
+            $errors[] = 'active: true or false';
         }
         $mobile = $arguments['active_on_mobile'] ?? null;
         if ($mobile !== null && !is_bool($mobile)) {
-            return SomcpTool::text('active_on_mobile: true or false.', true);
+            $errors[] = 'active_on_mobile: true or false';
         }
         if ($active === null && $mobile === null) {
-            return SomcpTool::text('active: give active, active_on_mobile or both.', true);
+            $errors[] = 'active: give active, active_on_mobile or both';
         }
         // PrestaShop 9 deprecated the mobile switch and made it do nothing:
         // accepting it there would claim a change that never happens.
         if ($mobile !== null && version_compare(_PS_VERSION_, '9.0.0', '>=')) {
-            return SomcpTool::text(
-                'active_on_mobile: not available on this version of PrestaShop, which has no mobile switch for modules.',
-                true
-            );
+            $errors[] = 'active_on_mobile: not available on this version of PrestaShop, which has no mobile switch for modules';
+        }
+        if ($errors !== [] || !is_string($name) || ($active !== null && !is_bool($active))
+            || ($mobile !== null && !is_bool($mobile))) {
+            return SomcpTool::refused('changed', $errors);
         }
 
         // The shop comes from the token, never from the caller.
         $idShop = (int) Somcp::currentShop()->id;
         $before = SomcpModules::read($name, $idShop);
         if ($before === null) {
-            return SomcpTool::text('No module of this shop has this name. Find it with somcp_list_modules.', true);
+            return SomcpTool::refused('changed', [SomcpTool::notFound('name', 'module', trim($name), 'somcp_list_modules', 'technical name')]);
         }
         if (!$before['installed']) {
-            return SomcpTool::text(
-                'This module is not installed. Nothing was changed; install it first with somcp_install_module.',
-                true
-            );
+            return SomcpTool::refused('changed', ['name: this module is not installed - install it first with somcp_install_module']);
         }
         // The name the core knows the folder by, not the caller's spelling.
         $folder = (string) $before['name'];
         if (!Validate::isModuleName($folder)) {
-            return SomcpTool::text('No module of this shop has this name. Find it with somcp_list_modules.', true);
+            return SomcpTool::refused('changed', [SomcpTool::notFound('name', 'module', trim($name), 'somcp_list_modules', 'technical name')]);
         }
         if ($active === false && Tools::strtolower($folder) === 'somcp') {
             // Disabled, this module would cut every connected assistant off,
             // this answer included.
-            return SomcpTool::text(
-                'active: this module cannot disable itself, every connected assistant would lose its access. '
-                    . 'Nothing was changed; disable it from Modules > Module Manager.',
-                true
-            );
+            return SomcpTool::refused('changed', [
+                'active: this module cannot disable itself, every connected assistant would lose its access'
+                    . ' - disable it from Modules > Module Manager',
+            ]);
         }
 
         $plan = self::plan((bool) $before['active'], (bool) $before['active_on_mobile'], $active, $mobile);
@@ -151,11 +151,10 @@ class SomcpToolSetModuleActive
                     . ' AND `id_shop` != ' . $idShop
             );
             if ($elsewhere > 0) {
-                return SomcpTool::text(
+                return SomcpTool::refused('changed', [
                     'active: this module is also enabled on other shops, and this version of PrestaShop would '
-                        . 'disable it on all of them. Nothing was changed; disable it from Modules > Module Manager.',
-                    true
-                );
+                        . 'disable it on all of them - disable it from Modules > Module Manager',
+                ]);
             }
         }
 

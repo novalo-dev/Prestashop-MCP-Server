@@ -652,12 +652,14 @@ class SomcpTool
      * @param string $thing the word of the back office, for example brand
      * @param int|string $value
      * @param string $tool the tool that lists the identifiers
+     * @param string $by what the value is, for an object found by name or
+     *                   reference rather than by identifier
      *
      * @return string
      */
-    public static function notFound(string $path, string $thing, $value, string $tool): string
+    public static function notFound(string $path, string $thing, $value, string $tool, string $by = 'identifier'): string
     {
-        return $path . ': no ' . $thing . ' of this shop has the identifier ' . $value . ' - find it with ' . $tool;
+        return $path . ': no ' . $thing . ' of this shop has the ' . $by . ' ' . $value . ' - find it with ' . $tool;
     }
 
     /**

@@ -13,6 +13,7 @@
     {"why": "an unknown status is refused, naming the accepted ones", "arguments": {"status": "active"}, "expect": "error", "contains": ["status", "enabled", "uninstalled"]},
     {"why": "a non-string query is refused, naming the field", "arguments": {"query": 12}, "expect": "error", "contains": ["query"]},
     {"why": "a limit above 100 is refused, naming the field", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit"]},
-    {"why": "a negative offset is refused, naming the field", "arguments": {"offset": -1}, "expect": "error", "contains": ["offset"]}
+    {"why": "a negative offset is refused, naming the field", "arguments": {"offset": -1}, "expect": "error", "contains": ["offset"]},
+    {"why": "every mistake of the call is named at once, a misspelt field included", "arguments": {"status": "nope", "limit": 0, "nmae": "x"}, "expect": "error", "contains": ["Nothing was read.", "- status: one of ", "- limit: an integer from 1 to ", "- nmae: not a field of this tool"]}
   ]
 }

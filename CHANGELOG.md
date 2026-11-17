@@ -53,6 +53,13 @@ short "tax excl." / "tax incl." names of the order page. They now take the
 same names, and a former name is answered with the one to send instead of
 being refused as unknown.
 
+**The record of a change reads the same in every update tool.** Changing
+the SEO of a CMS page answered each change with its language apart and the
+value before under `previous`, where the other update tools name a translated
+text with its language, such as `meta_description (en)`, and give the value
+before under `old`. The CMS page SEO update now answers each change the same
+way, so the assistant reads every update with one habit.
+
 ## 2.0.2 - 2026-11-16
 
 ### Added

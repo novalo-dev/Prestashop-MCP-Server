@@ -388,7 +388,7 @@ class SomcpToolUpdateCmsSeo
                 }
                 $plan['texts'][$column][$idLang] = $new;
                 $plan['isos'][$idLang] = $iso;
-                $plan['changes'][] = ['field' => $field, 'language' => $iso, 'previous' => $previous, 'new' => $new];
+                $plan['changes'][] = ['field' => $where, 'old' => $previous, 'new' => $new];
                 if ($field === 'link_rewrite') {
                     $plan['moved'][$idLang] = $iso;
                 }
@@ -404,7 +404,7 @@ class SomcpToolUpdateCmsSeo
                 $plan['indexation'] = $arguments['indexation'];
                 $plan['changes'][] = [
                     'field' => 'indexation',
-                    'previous' => (bool) $cms->indexation,
+                    'old' => (bool) $cms->indexation,
                     'new' => $arguments['indexation'],
                 ];
             }

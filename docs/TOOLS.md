@@ -45,7 +45,9 @@ periods are worked out by the assistant, which already knows the shop's time
 zone.
 
 **Amounts.** Always with their currency code, and always with tax or without
-said in the field name. Never a bare `total`.
+said in the field name. Never a bare `total`. A price ends in `_tax_excl` or
+`_tax_incl`; the total paid of an order or an invoice is `total_paid_tax_excl` /
+`total_paid_tax_incl`.
 
 **Files out.** No tool gives the address of a file of the shop. A tool that
 finds one - a product photo, a logo, a texture, an order status icon, an
@@ -517,7 +519,7 @@ them, what the order page shows:
   `state` (the region), `dni` (empty when not set);
 - `products`, per line: `id_order_detail`, `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
   (strings), `tax_name`, `tax_rate`, `stock_location`, `quantity_in_stock_now`,
-  `quantity_refunded`, `refunded_tax_excluded`, `refunded_tax_included`,
+  `quantity_refunded`, `refunded_tax_excl`, `refunded_tax_incl`,
   `quantity_returned`, `customizations` (`id_customization`, `type` text or
   file, `name`, `value`), `pack_items` (`id_product`, `id_product_attribute`,
   `name`, `reference`, `quantity`, `quantity_in_stock_now`; empty when the
@@ -526,16 +528,20 @@ them, what the order page shows:
   `somcp_list_cart_rules` names it), `id_order_invoice` and `free_shipping`;
 - `history`, each step with `id_order_history`;
 - `shipping.shipments`, one per shipment: `id_order_carrier`, `date`,
-  `id_carrier`, `carrier`, `weight`, `shipping_cost_tax_excluded`,
-  `shipping_cost_tax_included`, `tracking_number`, `tracking_url`;
-- `totals`: `taxes`, `wrapping_tax_excluded` and `wrapping_tax_included`;
+  `id_carrier`, `carrier`, `weight`, `shipping_cost_tax_excl`,
+  `shipping_cost_tax_incl`, `tracking_number`, `tracking_url`;
+- `totals`: `taxes`, `wrapping_tax_excl` and `wrapping_tax_incl`, and the total
+  paid as `total_paid_tax_excl` and `total_paid_tax_incl`, as `somcp_search_orders`
+  gives it;
 - `payments`, each with `currency`, `invoice_number` (empty when not tied to an
   invoice), `id_employee` and `employee` (who recorded it, PrestaShop 9 only,
   `null` and empty on 8);
 - `documents`: `invoices` (with `id_order_invoice` and `note`), `delivery_slips`
   (`id_order_invoice`, `number` with the shop's prefix, `date`,
-  `total_tax_included`) and `credit_slips` (`id_order_slip`, `number` with the
-  shop's credit slip prefix in the order's language, `date`, totals);
+  `total_tax_incl`) and `credit_slips` (`id_order_slip`, `number` with the
+  shop's credit slip prefix in the order's language, `date`, `total_tax_excl`,
+  `total_tax_incl`); each invoice gives its total as `total_paid_tax_excl` and
+  `total_paid_tax_incl`;
 - `messages`, each with `from` (`employee` or `customer`) and `from_name`.
 
 **Errors** - every problem at once, nothing read, each under "Nothing was read.
@@ -1699,10 +1705,10 @@ for a customer or group on every order (→ `specific_prices` of
 **Returns** - `created: true`, `id_order`, `reference`, `id_cart`, `status`
 (`status_id`, `name`), `payment` (the payment name the order records),
 `products`, the lines as the order records them in the keys of `products[]` of
-`somcp_get_order` (`unit_price_tax_excluded`, `unit_price_tax_included`,
-`total_tax_excluded` ...), `totals` in the shape of `totals` of
+`somcp_get_order` (`unit_price_tax_excl`, `unit_price_tax_incl`,
+`total_tax_excl` ...), `totals` in the shape of `totals` of
 `somcp_get_order` (the vouchers in
-`discounts_tax_included` and `discounts_tax_excluded`), `discounts`, each
+`discounts_tax_incl` and `discounts_tax_excl`), `discounts`, each
 voucher applied in the keys of `discounts[]` of `somcp_get_order` (the free
 shipping cart rule included), and `currency`.
 

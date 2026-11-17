@@ -24,6 +24,16 @@ they are enabled, filtered by part of the name or by Enabled, in the language
 asked for. Until now no tool gave the identifier of a tax, so an assistant
 setting up the tax rules of a new shop had to guess which tax each one applies.
 
+### Changed
+
+**Orders: the amounts of an order are named like everywhere else.** The order
+read and the order tools that answer with its lines, discounts, shipments,
+totals and documents now name each amount with `_tax_excl` or `_tax_incl`, as
+the product, statistics and customer tools do, and give the order total as
+`total_paid_tax_excl` and `total_paid_tax_incl`, as the order search does.
+Before, the same amount went by two names depending on the tool, and an
+assistant reading one answer with the names of another found nothing.
+
 ## 2.0.2 - 2026-11-16
 
 ### Added

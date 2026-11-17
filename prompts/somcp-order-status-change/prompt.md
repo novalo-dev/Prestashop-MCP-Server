@@ -388,8 +388,8 @@ let them say yes to that one before calling. Deleting is final.
 `id_order_invoice`. It changes what the customer owes.
 
 - A discount **lowers the total**. Say the new total before adding it, not
-  after: the answer gives `totals.total_tax_included` and
-  `totals.discounts_tax_included`,
+  after: the answer gives `totals.total_paid_tax_incl` and
+  `totals.discounts_tax_incl`,
   but the merchant decides on the figure first.
 - `name` is one plain text, the line the customer reads on the invoice.
 - A percentage is 1 to 100; an amount is at most the order total, or the
@@ -423,7 +423,7 @@ guess it.
 - Changing the delivery address **can change the taxes and the total**, because
   the tax follows the country, and PrestaShop recomputes them only during the
   change. Before it, warn of that and give the current total
-  (`totals.total_tax_included` of `somcp_get_order`); after it, give the
+  (`totals.total_paid_tax_incl` of `somcp_get_order`); after it, give the
   previous and the new total (`previous_totals` and `totals` in the answer).
 - An address that is not the customer's is refused with the list of the ones
   that are: pick from that list.
@@ -441,7 +441,7 @@ returns; never guess it. The tracking number stays with
 
 - Changing the carrier **changes the shipping cost and the total**, recomputed
   by PrestaShop only during the change. Before it, warn of that and give the
-  current total (`totals.total_tax_included` of `somcp_get_order`); after it,
+  current total (`totals.total_paid_tax_incl` of `somcp_get_order`); after it,
   give the previous and the new amounts (`previous_totals` and `totals` in the
   answer).
 - A carrier that does not deliver this order is refused with the carriers that

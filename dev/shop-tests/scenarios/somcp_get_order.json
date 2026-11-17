@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "reads a demo order", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["recycled_packaging", "valid_orders_count", "quantity_in_stock_now", "stock_location", "shipments", "delivery_slips", "wrapping_tax_excluded", "taxes", "\"language\": \"en\""]},
+    {"why": "reads a demo order", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["recycled_packaging", "valid_orders_count", "quantity_in_stock_now", "stock_location", "shipments", "delivery_slips", "wrapping_tax_excl", "total_paid_tax_incl", "taxes", "\"language\": \"en\""]},
     {"why": "reads another demo order", "arguments": {"id_order": 2}, "expect": "ok", "contains": ["customizations", "private_note"]},
     {"why": "the identifiers the order write tools act on, and the address details", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["\"id_order_detail\"", "\"id_order_history\"", "\"pack_items\"", "\"id_address\"", "\"alias\"", "\"state\"", "\"dni\""]},
     {"why": "dates in ISO 8601 with the shop's offset: the payment somcp_add_order_payment recorded on order 4 for 2026-10-01, its scenario running first", "arguments": {"id_order": 4}, "expect": "ok", "contains": ["\"date\": \"2026-10-01T", "\"date_add\": \""]},

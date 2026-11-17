@@ -900,8 +900,8 @@ order (→ `somcp_cancel_order_products`), or recording money received
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
 | `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
-| `lines` | array | yes, unless only shipping is refunded | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`), `quantity` (at least 1, at most what is left to refund), and the amount in the tax mode the page shows for this order, `amount_tax_excluded` **or** `amount_tax_included` (greater than 0, at most quantity times the unit price); the other one is refused with the right name |
-| `shipping_amount_tax_excluded` **or** `shipping_amount_tax_included` | number | no | part of the shipping to refund, in the tax mode the page shows for this order, at most what is left of it; the other one is refused with the right name; 0 by default |
+| `lines` | array | yes, unless only shipping is refunded | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`), `quantity` (at least 1, at most what is left to refund), and the amount in the tax mode the page shows for this order, `amount_tax_excl` **or** `amount_tax_incl` (greater than 0, at most quantity times the unit price); the other one is refused with the right name; the former names `amount_tax_excluded` and `amount_tax_included` are refused with the current one (`lines[0].amount_tax_excluded: renamed amount_tax_excl`) |
+| `shipping_amount_tax_excl` **or** `shipping_amount_tax_incl` | number | no | part of the shipping to refund, in the tax mode the page shows for this order, at most what is left of it; the other one is refused with the right name; 0 by default; the former names `shipping_amount_tax_excluded` and `shipping_amount_tax_included` are refused with the current one |
 | `restock` | boolean | no | **Re-stock products**; only matters once the order is delivered - before that the core always puts the quantities back. False by default |
 | `credit_slip` | boolean | no | **Generate a credit slip**; true by default, as the box is ticked when the form opens |
 | `voucher` | boolean | no | **Generate a voucher**; false by default |
@@ -1361,8 +1361,8 @@ recomputes the order totals. It lowers what the customer owes.
 | `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
 | `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `name` | string | yes | the discount name the customer reads on the invoice; one plain text, stored in the shop's default language, not an object per ISO code; at most the length `CartRule` allows (254 on 8.0.1, the setting on 9.0.0) |
-| `type` | string | yes | `percent`, `amount_tax_included` (the amount includes taxes, as the screen says) or `free_shipping` |
-| `value` | number | for `percent` and `amount_tax_included` | the percentage (1 to 100) or the amount tax included; refused for `free_shipping` |
+| `type` | string | yes | `percent`, `amount_tax_incl` (the amount includes taxes, as the screen says) or `free_shipping`; the former value `amount_tax_included` is refused with `type: renamed amount_tax_incl` |
+| `value` | number | for `percent` and `amount_tax_incl` | the percentage (1 to 100) or the amount tax included; refused for `free_shipping` |
 | `id_order_invoice` | integer | no | **Invoice**, only when the order has invoices; from `documents.invoices[].id_order_invoice` of `somcp_get_order`; must be one of this order's |
 
 **Returns** - `added`, `order` (`id_order` and `reference`), `discount`
@@ -1377,7 +1377,7 @@ in both answers, and its `id_order_cart_rule` is what
 **Errors** - every problem at once, nothing recorded when one check fails, each
 under "Nothing was recorded. Correct these and call again:": `name` missing, empty, too long or not clean;
 `type` not one of the three; `value` missing for `percent` /
-`amount_tax_included`, given for `free_shipping`, at or below 0, above 100 for a
+`amount_tax_incl`, given for `free_shipping`, at or below 0, above 100 for a
 percent, or above the total for an amount; the order not
 found or a reference shared by several orders; `id_order_invoice` given on an
 order without invoices, or not an invoice of this order (naming

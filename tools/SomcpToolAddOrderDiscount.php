@@ -57,7 +57,13 @@ require_once __DIR__ . '/SomcpToolIssuePartialRefund.php';
 class SomcpToolAddOrderDiscount
 {
     /** @var array<int, string> The three discount kinds the order page offers. */
-    private const TYPES = ['percent', 'amount_tax_included', 'free_shipping'];
+    private const TYPES = ['percent', 'amount_tax_incl', 'free_shipping'];
+
+    /**
+     * @var array<string, string> former values of type, answered with the current ones so a client built
+     *                            on the published names is told what to send
+     */
+    private const TYPES_RENAMED = ['amount_tax_included' => 'amount_tax_incl'];
 
     /** @var array<int, string> The arguments the tool reads; anything else is refused. */
     private const KEYS = ['id_order', 'reference', 'name', 'type', 'value', 'id_order_invoice'];
@@ -98,13 +104,13 @@ class SomcpToolAddOrderDiscount
                     'type' => [
                         'type' => 'string',
                         'enum' => self::TYPES,
-                        'description' => 'percent, amount_tax_included (the amount includes taxes, as the '
+                        'description' => 'percent, amount_tax_incl (the amount includes taxes, as the '
                             . 'screen says) or free_shipping.',
                     ],
                     'value' => [
                         'type' => 'number',
                         'description' => 'The percentage (1 to 100) or the amount tax included. Required for '
-                            . 'percent and amount_tax_included, refused for free_shipping.',
+                            . 'percent and amount_tax_incl, refused for free_shipping.',
                     ],
                     'id_order_invoice' => [
                         'type' => 'integer',
@@ -160,7 +166,12 @@ class SomcpToolAddOrderDiscount
         }
 
         $type = $arguments['type'] ?? null;
-        if (!is_string($type) || !in_array($type, self::TYPES, true)) {
+        if (is_string($type) && isset(self::TYPES_RENAMED[$type])) {
+            // The wording of SomcpTool::unknownFields() for a former name,
+            // so a renamed value reads like a renamed field.
+            $problems[] = 'type: renamed ' . self::TYPES_RENAMED[$type];
+            $type = null;
+        } elseif (!is_string($type) || !in_array($type, self::TYPES, true)) {
             $problems[] = 'type: one of ' . implode(', ', self::TYPES) . '.';
             $type = null;
         }
@@ -523,7 +534,7 @@ class SomcpToolAddOrderDiscount
         if ($type === 'percent') {
             return OrderDiscountType::DISCOUNT_PERCENT;
         }
-        if ($type === 'amount_tax_included') {
+        if ($type === 'amount_tax_incl') {
             return OrderDiscountType::DISCOUNT_AMOUNT;
         }
 

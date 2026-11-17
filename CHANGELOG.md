@@ -43,6 +43,14 @@ invoice generated and the delivery options of a new order, and cancelling
 products now answers the order totals in the shape of the order read. Before, the same amount went by two names depending on the tool, and an
 assistant reading one answer with the names of another found nothing.
 
+**Refunds and discounts take the amounts under the names of the other order
+tools.** A partial refund took the amount of each line and of the shipping
+"tax excluded" / "tax included" in full, and a discount on an order took its
+amount type as "amount tax included", while every other order tool uses the
+short "tax excl." / "tax incl." names of the order page. They now take the
+same names, and a former name is answered with the one to send instead of
+being refused as unknown.
+
 ## 2.0.2 - 2026-11-16
 
 ### Added

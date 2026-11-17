@@ -74,12 +74,27 @@ class SomcpToolIssuePartialRefund
 
     /** @var string[] The top-level arguments of the tool, as in its schema. */
     private const KEYS = [
-        'id_order', 'reference', 'lines', 'shipping_amount_tax_excluded', 'shipping_amount_tax_included', 'restock',
+        'id_order', 'reference', 'lines', 'shipping_amount_tax_excl', 'shipping_amount_tax_incl', 'restock',
         'credit_slip', 'voucher', 'voucher_refund_type',
     ];
 
     /** @var string[] The keys of one entry of lines. */
-    private const LINE_KEYS = ['id_order_detail', 'quantity', 'amount_tax_excluded', 'amount_tax_included'];
+    private const LINE_KEYS = ['id_order_detail', 'quantity', 'amount_tax_excl', 'amount_tax_incl'];
+
+    /**
+     * @var array<string, string> former names of the amounts, answered with the current ones so a client
+     *                            built on the published names is told what to send
+     */
+    private const RENAMED = [
+        'shipping_amount_tax_excluded' => 'shipping_amount_tax_excl',
+        'shipping_amount_tax_included' => 'shipping_amount_tax_incl',
+    ];
+
+    /** @var array<string, string> Former names of the amounts of a line. */
+    private const LINE_RENAMED = [
+        'amount_tax_excluded' => 'amount_tax_excl',
+        'amount_tax_included' => 'amount_tax_incl',
+    ];
 
     /**
      * @return SomcpTool
@@ -126,13 +141,13 @@ class SomcpToolIssuePartialRefund
                                     'description' => 'How many units to refund, at least 1 and at most what is '
                                         . 'left to refund on the line.',
                                 ],
-                                'amount_tax_excluded' => [
+                                'amount_tax_excl' => [
                                     'type' => 'number',
                                     'description' => 'The amount to refund, tax excluded, greater than 0, at most '
                                         . 'quantity times the unit price. For orders whose customer group shows '
                                         . 'prices tax excluded; the answer names the right field otherwise.',
                                 ],
-                                'amount_tax_included' => [
+                                'amount_tax_incl' => [
                                     'type' => 'number',
                                     'description' => 'The amount to refund, tax included, greater than 0, at most '
                                         . 'quantity times the unit price. For orders whose customer group shows '
@@ -143,13 +158,13 @@ class SomcpToolIssuePartialRefund
                             'additionalProperties' => false,
                         ],
                     ],
-                    'shipping_amount_tax_excluded' => [
+                    'shipping_amount_tax_excl' => [
                         'type' => 'number',
                         'description' => 'The part of the shipping to refund, tax excluded, at most what is left '
                             . 'of it. For orders whose customer group shows prices tax excluded; the answer '
                             . 'names the right field otherwise. 0 when left out.',
                     ],
-                    'shipping_amount_tax_included' => [
+                    'shipping_amount_tax_incl' => [
                         'type' => 'number',
                         'description' => 'The part of the shipping to refund, tax included, at most what is left '
                             . 'of it. For orders whose customer group shows prices tax included; the answer '
@@ -200,7 +215,7 @@ class SomcpToolIssuePartialRefund
 
         // A misnamed field would otherwise be dropped and the refund carried
         // out without it, while the merchant is told it was taken into account.
-        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS));
+        array_push($problems, ...SomcpTool::unknownFields($arguments, self::KEYS, [], '', self::RENAMED));
 
         $lines = self::lines($arguments, $problems);
 
@@ -210,12 +225,12 @@ class SomcpToolIssuePartialRefund
         $shipping = 0.0;
         $shippingField = null;
         $shippingIncludedGiven = false;
-        $hasShippingExcluded = array_key_exists('shipping_amount_tax_excluded', $arguments);
-        $hasShippingIncluded = array_key_exists('shipping_amount_tax_included', $arguments);
+        $hasShippingExcluded = array_key_exists('shipping_amount_tax_excl', $arguments);
+        $hasShippingIncluded = array_key_exists('shipping_amount_tax_incl', $arguments);
         if ($hasShippingExcluded && $hasShippingIncluded) {
-            $problems[] = 'shipping_amount_tax_excluded, shipping_amount_tax_included: give one, not both';
+            $problems[] = 'shipping_amount_tax_excl, shipping_amount_tax_incl: give one, not both';
         } elseif ($hasShippingExcluded || $hasShippingIncluded) {
-            $shippingField = $hasShippingExcluded ? 'shipping_amount_tax_excluded' : 'shipping_amount_tax_included';
+            $shippingField = $hasShippingExcluded ? 'shipping_amount_tax_excl' : 'shipping_amount_tax_incl';
             $shippingIncludedGiven = $hasShippingIncluded;
             $value = self::number($arguments[$shippingField]);
             if ($value === null || $value < 0) {
@@ -246,8 +261,8 @@ class SomcpToolIssuePartialRefund
         }
 
         if ($lines === [] && $shipping <= 0) {
-            $problems[] = 'lines: give the lines to refund, or a shipping_amount_tax_excluded or '
-                . 'shipping_amount_tax_included above 0';
+            $problems[] = 'lines: give the lines to refund, or a shipping_amount_tax_excl or '
+                . 'shipping_amount_tax_incl above 0';
         }
 
         $order = SomcpToolGetOrder::find($arguments);
@@ -268,7 +283,7 @@ class SomcpToolIssuePartialRefund
                 // named, and its amount is not checked against what is left.
                 $problems[] = $shippingField . ': this order shows its prices tax '
                     . ($taxIncluded ? 'included' : 'excluded') . ', give '
-                    . ($taxIncluded ? 'shipping_amount_tax_included' : 'shipping_amount_tax_excluded') . ' instead';
+                    . ($taxIncluded ? 'shipping_amount_tax_incl' : 'shipping_amount_tax_excl') . ' instead';
             } elseif (Tools::ps_round($shipping, $precision) > Tools::ps_round($shippingLeft, $precision)) {
                 $problems[] = $shippingField . ': at most ' . Tools::ps_round($shippingLeft, $precision)
                     . ' is left to refund on the shipping of this order';
@@ -512,7 +527,7 @@ class SomcpToolIssuePartialRefund
                 $problems[] = $path . ': must be an object with id_order_detail, quantity and an amount';
                 continue;
             }
-            array_push($problems, ...SomcpTool::unknownFields($entry, self::LINE_KEYS, [], $path . '.'));
+            array_push($problems, ...SomcpTool::unknownFields($entry, self::LINE_KEYS, [], $path . '.', self::LINE_RENAMED));
 
             // The one rule for an identifier, so a line reads as in every
             // other tool; integer() is left to the quantities, where 0 is a
@@ -537,16 +552,16 @@ class SomcpToolIssuePartialRefund
                 $problems[] = $path . '.quantity: must be a whole number, at least 1';
             }
 
-            $excluded = array_key_exists('amount_tax_excluded', $entry);
-            $included = array_key_exists('amount_tax_included', $entry);
+            $excluded = array_key_exists('amount_tax_excl', $entry);
+            $included = array_key_exists('amount_tax_incl', $entry);
             $amount = null;
             if ($excluded && $included) {
-                $problems[] = $path . ': give amount_tax_excluded or amount_tax_included, not both';
+                $problems[] = $path . ': give amount_tax_excl or amount_tax_incl, not both';
             } elseif (!$excluded && !$included) {
-                $problems[] = $path . ': the amount is missing - amount_tax_excluded or amount_tax_included, as '
+                $problems[] = $path . ': the amount is missing - amount_tax_excl or amount_tax_incl, as '
                     . 'the order shows its prices';
             } else {
-                $field = $excluded ? 'amount_tax_excluded' : 'amount_tax_included';
+                $field = $excluded ? 'amount_tax_excl' : 'amount_tax_incl';
                 $amount = self::number($entry[$field]);
                 if ($amount === null || $amount <= 0) {
                     $problems[] = $path . '.' . $field . ': must be a number greater than 0';
@@ -598,9 +613,9 @@ class SomcpToolIssuePartialRefund
             }
 
             if ($line['amount'] !== null && $line['tax_included'] !== $taxIncluded) {
-                $problems[] = $path . '.' . ($line['tax_included'] ? 'amount_tax_included' : 'amount_tax_excluded')
+                $problems[] = $path . '.' . ($line['tax_included'] ? 'amount_tax_incl' : 'amount_tax_excl')
                     . ': this order shows its prices tax ' . ($taxIncluded ? 'included' : 'excluded') . ', give '
-                    . ($taxIncluded ? 'amount_tax_included' : 'amount_tax_excluded') . ' instead';
+                    . ($taxIncluded ? 'amount_tax_incl' : 'amount_tax_excl') . ' instead';
                 continue;
             }
 
@@ -624,7 +639,7 @@ class SomcpToolIssuePartialRefund
             // The calculator would quietly lower it to the maximum: refused
             // instead, so the amount refunded is the amount asked for.
             if (Tools::ps_round((float) $line['amount'], $precision) > $max) {
-                $problems[] = $path . '.' . ($taxIncluded ? 'amount_tax_included' : 'amount_tax_excluded')
+                $problems[] = $path . '.' . ($taxIncluded ? 'amount_tax_incl' : 'amount_tax_excl')
                     . ': at most ' . $max . ' for ' . $quantity . ' unit' . ($quantity > 1 ? 's' : '');
                 continue;
             }

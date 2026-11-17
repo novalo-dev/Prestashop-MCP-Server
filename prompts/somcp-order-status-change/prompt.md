@@ -170,8 +170,8 @@ wait for the merchant's go-ahead before the call.
   `products[].id_order_detail`, and `quantity_refunded` says what was already
   refunded.
 - Give each amount in the tax mode of the order, the lines and the shipping
-  alike: `amount_tax_excluded` or `amount_tax_included` on a line,
-  `shipping_amount_tax_excluded` or `shipping_amount_tax_included` for the
+  alike: `amount_tax_excl` or `amount_tax_incl` on a line,
+  `shipping_amount_tax_excl` or `shipping_amount_tax_incl` for the
   shipping. A wrong one is refused with the right field named.
 - A credit slip is generated unless the merchant says otherwise; a voucher
   only when asked. `restock` only matters once the order is delivered.
@@ -384,7 +384,7 @@ let them say yes to that one before calling. Deleting is final.
 
 `somcp_add_order_discount` adds a discount to an order already placed, as
 **Add a discount** on the order page does: a `percent`, an
-`amount_tax_included` or `free_shipping`, on the whole order or on one
+`amount_tax_incl` or `free_shipping`, on the whole order or on one
 `id_order_invoice`. It changes what the customer owes.
 
 - A discount **lowers the total**. Say the new total before adding it, not

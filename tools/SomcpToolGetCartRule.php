@@ -104,29 +104,27 @@ class SomcpToolGetCartRule
 
         // Every mistake is reported in one answer, so the call is corrected in
         // one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         $idCartRule = SomcpTool::id($arguments, 'id_cart_rule');
         if ($idCartRule <= 0) {
-            $problems[] = '- id_cart_rule: a whole number above 0, the ID given by somcp_list_cart_rules';
+            $problems[] = 'id_cart_rule: a whole number above 0, the ID given by somcp_list_cart_rules';
         }
 
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- ' . SomcpTool::languageProblem($idShop);
+            $problems[] = SomcpTool::languageProblem($idShop);
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            // An unknown rule joins the other problems, so the call is not
+            // refused a second time once they are fixed.
+            if ($idCartRule > 0 && SomcpToolSetCartRuleActive::existing($idCartRule, $idShop) === null) {
+                $problems[] = SomcpTool::notFound('id_cart_rule', 'cart rule', $idCartRule, 'somcp_list_cart_rules');
+            }
+
+            return SomcpTool::refused('read', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
@@ -135,11 +133,7 @@ class SomcpToolGetCartRule
 
         $cartRule = self::byId($idCartRule, $idLang, $idShop);
         if ($cartRule === null) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n- id_cart_rule: no cart rule of this shop has the identifier "
-                    . $idCartRule . ' - find it with somcp_list_cart_rules',
-                true
-            );
+            return SomcpTool::refused('read', [SomcpTool::notFound('id_cart_rule', 'cart rule', $idCartRule, 'somcp_list_cart_rules')]);
         }
 
         return SomcpTool::json([

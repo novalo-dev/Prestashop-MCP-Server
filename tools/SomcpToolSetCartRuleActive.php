@@ -94,40 +94,30 @@ class SomcpToolSetCartRuleActive
 
         // Every mistake is reported in one answer, so the call is corrected in
         // one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         $idCartRule = SomcpTool::id($arguments, 'id_cart_rule');
         if ($idCartRule <= 0) {
-            $problems[] = '- id_cart_rule: a whole number above 0, the ID given by somcp_list_cart_rules';
+            $problems[] = 'id_cart_rule: a whole number above 0, the ID given by somcp_list_cart_rules';
         }
 
         // A boolean only: a string such as "false" cast to bool is true, and
         // would switch on a rule the merchant asked to stop.
         if (!array_key_exists('active', $arguments) || !is_bool($arguments['active'])) {
-            $problems[] = '- active: true or false';
+            $problems[] = 'active: true or false';
         }
 
-        if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+        $cartRule = $idCartRule > 0 ? self::existing($idCartRule, $idShop) : null;
+        // Looked up even when other problems refuse the call, so an unknown
+        // rule is reported with them rather than on the next call.
+        if ($idCartRule > 0 && $cartRule === null) {
+            $problems[] = SomcpTool::notFound('id_cart_rule', 'cart rule', $idCartRule, 'somcp_list_cart_rules');
+        }
+
+        if ($problems !== [] || $cartRule === null) {
+            return SomcpTool::refused('changed', $problems);
         }
         $active = (bool) $arguments['active'];
-
-        $cartRule = self::existing($idCartRule, $idShop);
-        if ($cartRule === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- id_cart_rule: no cart rule of this shop has the "
-                    . 'identifier ' . $idCartRule . ' - find it with somcp_list_cart_rules',
-                true
-            );
-        }
 
         if ((bool) $cartRule->active === $active) {
             return SomcpTool::json([
@@ -149,14 +139,15 @@ class SomcpToolSetCartRuleActive
      * The rule, when the token's shop can use it.
      *
      * The test is the one of somcp_list_cart_rules, so a rule that tool does
-     * not list is never switched here.
+     * not list is never switched here. Public so somcp_get_cart_rule tells an
+     * unknown rule with the other problems of a call by the same test.
      *
      * @param int $idCartRule
      * @param int $idShop
      *
      * @return CartRule|null
      */
-    private static function existing(int $idCartRule, int $idShop): ?CartRule
+    public static function existing(int $idCartRule, int $idShop): ?CartRule
     {
         $found = (int) Db::getInstance()->getValue(
             'SELECT cr.`id_cart_rule` FROM `' . _DB_PREFIX_ . 'cart_rule` cr

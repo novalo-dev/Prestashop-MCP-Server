@@ -5635,7 +5635,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `times_used` | as `somcp_list_cart_rules` |
 | `date_add` / `date_upd` | ISO 8601 with the shop's offset, `null` when not set |
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; a missing or non-positive `id_cart_rule`; an unknown language (#149). An `id_cart_rule` no rule of this shop has: `id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`, the token's shop deciding as in `somcp_list_cart_rules`.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; a missing or non-positive `id_cart_rule`; an unknown language (#149). An `id_cart_rule` no rule of this shop has: `id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`, the token's shop deciding as in `somcp_list_cart_rules`, in the same answer as the other problems of the call.
 
 **Notes**
 - The rules this shop can use and `times_used` are read by the same functions as `somcp_list_cart_rules` (`inShop()`, `timesUsed()`), so a rule the list hides is one this tool refuses.
@@ -5710,7 +5710,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, `name (<iso>)` for a translated name), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to, `product_selection` says that product is still in **Product selection**. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
-**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): those of `somcp_create_cart_rule`, checked by its `planRule()` on the rule as it will be once merged with what is kept (for example `date_from` given alone after the kept `date_to`: **The voucher cannot end before it begins.**; `reduction` set to `null` on a rule with no free shipping and no gift: **An action is required for this cart rule.**); `code` already used by another rule (its own code is accepted, as the form compares with `id_cart_rule`); an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`).
+**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): those of `somcp_create_cart_rule`, checked by its `planRule()` on the rule as it will be once merged with what is kept (for example `date_from` given alone after the kept `date_to`: **The voucher cannot end before it begins.**; `reduction` set to `null` on a rule with no free shipping and no gift: **An action is required for this cart rule.**); `code` already used by another rule (its own code is accepted, as the form compares with `id_cart_rule`); an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`), given with the fields of the call the tool does not take, in one answer.
 
 **Notes**
 - Written with `CartRule::update()` only. The back office's `afterUpdate()` deletes every restriction row of the rule (`cart_rule_country`, `_carrier`, `_group`, `_product_rule_group`, `_shop`, `cart_rule_combination`) and writes back what the form posted; this tool posts no restriction, so it leaves those tables alone.
@@ -5739,7 +5739,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Returns** - `changed: true`, `id_cart_rule`, `active`, and `warnings` when the rule is switched on but cannot apply yet or any more: the end of **Valid** passed, its start still to come, **Total available** at 0, or no **Code** (it then applies on its own to every cart that meets its conditions - the **Caution!** of the form). A rule already in that state answers `changed: false` with a `reason`, and nothing is written.
 
-**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): unknown arguments; `active: true or false`; an `id_cart_rule` that is not a whole number above 0; an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`).
+**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): unknown arguments; `active: true or false`; an `id_cart_rule` that is not a whole number above 0; an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`), given with the fields of the call the tool does not take, in one answer.
 
 **Notes**
 - The rules this shop can use are those of `somcp_list_cart_rules` (`shop_restriction = 0`, or a `cart_rule_shop` row for it), tested with its `SomcpToolListCartRules::inShop()`.

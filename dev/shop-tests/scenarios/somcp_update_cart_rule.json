@@ -14,6 +14,7 @@
     {"why": "the status, a restriction, a computed field that differs and an unknown one", "arguments": {"id_cart_rule": 1, "active": true, "restrictions": {"country": [{"id_country": 8}]}, "times_used": 99, "foo": 1}, "expect": "error", "contains": ["active: not changed by this tool", "restrictions: not set by this tool", "times_used: worked out by the shop", "foo: not a field of this tool"]},
     {"why": "an empty name and a percent above 100", "arguments": {"id_cart_rule": 1, "languages": ["en"], "name": {"en": " "}, "reduction": {"type": "percent", "value": 150}}, "expect": "error", "contains": ["name: missing in en", "reduction.value: Reduction percentage must be between 0% and 100%"]},
     {"why": "a rule that does not exist", "arguments": {"id_cart_rule": 999999, "quantity": 2}, "expect": "error", "contains": ["id_cart_rule: no cart rule of this shop has the identifier 999999 - find it with somcp_list_cart_rules"]},
-    {"why": "an identifier that is not a number", "arguments": {"id_cart_rule": [1]}, "expect": "error", "contains": ["no cart rule of this shop has the identifier 0"]}
+    {"why": "an identifier that is not a number", "arguments": {"id_cart_rule": [1]}, "expect": "error", "contains": ["no cart rule of this shop has the identifier 0"]},
+    {"why": "an unknown rule and a misspelt field come back in one answer", "arguments": {"id_cart_rule": 999999, "nmae": {"en": "Somcp"}, "date_add": "2026-01-01"}, "expect": "error", "contains": ["Nothing was changed", "id_cart_rule: no cart rule of this shop has the identifier 999999", "nmae: not a field of this tool"]}
   ]
 }

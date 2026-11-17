@@ -164,21 +164,25 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         $current = $idCartRule > 0 ? SomcpToolGetCartRule::byId($idCartRule, $idLang, $idShop) : null;
         $cartRule = new CartRule(max(0, $idCartRule));
         if ($current === null || !Validate::isLoadedObject($cartRule)) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- id_cart_rule: no cart rule of this shop has the "
-                    . 'identifier ' . $idCartRule . ' - find it with somcp_list_cart_rules',
-                true
+            // The names of the call are still checked, as planRule() checks
+            // them, so an unknown rule and a misspelt field come back in one
+            // answer. given() is left out: its read-only fields can only be
+            // compared with a rule that exists.
+            $errors = SomcpTool::unknownFields(
+                $arguments,
+                array_merge(self::RULE_ARGUMENTS, self::KEPT_AS_READ, ['id_cart_rule']),
+                self::RULE_COMPUTED
             );
+            $errors[] = SomcpTool::notFound('id_cart_rule', 'cart rule', $idCartRule, 'somcp_list_cart_rules');
+
+            return SomcpTool::refused('changed', $errors);
         }
 
         $errors = [];
         $given = self::given($arguments, $current, $errors);
         $plan = self::planRule(self::merged($given, $current), $idShop, $errors, $idCartRule);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
-                true
-            );
+            return SomcpTool::refused('changed', $errors);
         }
 
         $write = self::differences($cartRule, $given, $plan);

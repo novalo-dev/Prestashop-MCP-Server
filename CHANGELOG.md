@@ -33,6 +33,13 @@ add one.
 
 ### Changed
 
+**Cart rules: an unknown rule reported with every other mistake.** Reading,
+switching on or off and changing a cart rule now word a mistake in the call as
+the other tools do. Given a cart rule that does not exist together with a
+misspelt field, they used to refuse the call twice, one problem at a time;
+they now list every problem of the call in one answer, so the assistant fixes
+the call in one go.
+
 **Sales lists: refusals worded as in the other tools.** The lists of
 abandoned carts, cart rules, catalog price rules, search terms, unsold
 products and products viewed but not sold now word a mistake in the call as

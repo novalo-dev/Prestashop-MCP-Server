@@ -4174,7 +4174,7 @@ A misspelt field is named and nothing is read. A customer of another shop, or de
 - `viewed_products`: the 10 product pages most recently visited: `id_product`, `name`.
 - `vouchers`: the cart rules reserved to this customer, each `id_cart_rule`, `name`, `code`, `quantity`, `date_to`, `active`.
 - `messages_count`: the customer's messages (`CustomerThread::getCustomerMessages()`).
-- `last_emails`: the 10 newest, each `date_add`, `template`, `subject`, `language`.
+- `last_emails`: the 10 newest, each `date_add`, `template`, `subject`, `language` (ISO code of the language the email was sent in).
 - `last_connections`: the 10 newest, each `date_add`, `pages_viewed`, `total_time`, `origin` (the referrer), `ip_address`.
 
 Plus `language` (the ISO code the names were read in). Dates in ISO 8601.

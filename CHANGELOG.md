@@ -53,6 +53,12 @@ short "tax excl." / "tax incl." names of the order page. They now take the
 same names, and a former name is answered with the one to send instead of
 being refused as unknown.
 
+**The language of a customer's last emails is given by its code.** The
+customer read gave the language of each of the last emails sent as its name,
+such as "English (English)", where every other answer gives a language by its
+code, such as `en`, and every tool takes that code back. It is now the code,
+so the assistant can pass it on as it reads it.
+
 **The record of a change reads the same in every update tool.** Changing
 the SEO of a CMS page answered each change with its language apart and the
 value before under `previous`, changing a cart rule's name gave its language

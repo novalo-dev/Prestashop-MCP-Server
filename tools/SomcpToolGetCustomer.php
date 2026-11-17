@@ -577,7 +577,9 @@ class SomcpToolGetCustomer
                 'date_add' => SomcpTool::isoDate($row['date_add']),
                 'template' => (string) $row['template'],
                 'subject' => (string) $row['subject'],
-                'language' => (string) ($row['language'] ?? ''),
+                // The query names the language in words; the ISO code is what
+                // every other answer gives and every tool takes back.
+                'language' => (string) Language::getIsoById((int) ($row['id_lang'] ?? 0)),
             ];
         }
 

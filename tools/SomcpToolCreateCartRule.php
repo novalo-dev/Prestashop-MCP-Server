@@ -177,10 +177,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
         $errors = [];
         $plan = self::planRule($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", array_unique($errors)),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -203,25 +200,21 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
      */
     protected static function planRule(array $arguments, int $idShop, array &$errors, int $idSelf = 0): ?array
     {
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if ($key === 'restrictions') {
-                // Given back from somcp_get_cart_rule with every restriction
-                // off, it asks for nothing this tool does not already do.
-                $given = is_array($arguments['restrictions']) ? array_filter($arguments['restrictions'], static function ($value): bool {
-                    return $value !== null;
-                }) : [1];
-                if ($given !== []) {
-                    $errors[] = 'restrictions: not set by this tool - the merchant sets them on the Conditions tab of the rule in the back office';
-                }
-                continue;
-            }
-            if (!in_array($key, self::RULE_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::RULE_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
+        if (array_key_exists('restrictions', $arguments)) {
+            // Given back from somcp_get_cart_rule with every restriction
+            // off, it asks for nothing this tool does not already do.
+            $given = is_array($arguments['restrictions']) ? array_filter($arguments['restrictions'], static function ($value): bool {
+                return $value !== null;
+            }) : [1];
+            if ($given !== []) {
+                $errors[] = 'restrictions: not set by this tool - the merchant sets them on the Conditions tab of the rule in the back office';
             }
         }
+        $errors = array_merge($errors, SomcpTool::unknownFields(
+            array_diff_key($arguments, ['restrictions' => true]),
+            self::RULE_ARGUMENTS,
+            self::RULE_COMPUTED
+        ));
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
@@ -305,10 +298,12 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
 
         $fields['id_customer'] = 0;
         if (isset($arguments['id_customer'])) {
-            $idCustomer = self::integer($arguments['id_customer']) ?? 0;
+            $idCustomer = SomcpTool::id($arguments, 'id_customer');
             $customer = $idCustomer > 0 ? new Customer($idCustomer) : null;
-            if ($customer === null || !Validate::isLoadedObject($customer) || (int) $customer->id_shop !== $idShop || (int) $customer->deleted === 1) {
-                $errors[] = 'id_customer: no customer of this shop has the identifier ' . $idCustomer . ' - find it with somcp_search_customers';
+            if ($idCustomer <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_customer');
+            } elseif ($customer === null || !Validate::isLoadedObject($customer) || (int) $customer->id_shop !== $idShop || (int) $customer->deleted === 1) {
+                $errors[] = SomcpTool::notFound('id_customer', 'customer', $idCustomer, 'somcp_search_customers');
             } else {
                 $fields['id_customer'] = $idCustomer;
             }
@@ -479,7 +474,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
                     $errors[] = 'reduction.type: percent or amount';
                 }
                 if (isset($reduction['id_product'])) {
-                    $idProduct = self::integer($reduction['id_product']) ?? -1;
+                    $idProduct = self::productId($reduction, 'reduction.', $errors);
                 }
             }
         }
@@ -490,7 +485,7 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             // The string somcp_get_cart_rule returns, or an object carrying the product.
             if (is_array($appliesTo) && !array_is_list($appliesTo)) {
                 if (isset($appliesTo['id_product'])) {
-                    $idProduct = self::integer($appliesTo['id_product']) ?? -1;
+                    $idProduct = self::productId($appliesTo, 'reduction_applies_to.', $errors);
                 }
                 $appliesTo = $appliesTo['type'] ?? null;
             }
@@ -516,7 +511,8 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
         }
 
         if ($target !== 'specific_product') {
-            if ($idProduct !== 0) {
+            // -1 is a product already refused as not an identifier.
+            if ($idProduct > 0) {
                 $errors[] = 'reduction.id_product: only with reduction_applies_to specific_product';
             }
             $fields['reduction_product'] = self::APPLIES_TO[$target];
@@ -525,13 +521,16 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
         }
 
         $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
-        if ($idProduct <= 0) {
+        if ($idProduct < 0) {
+            return 0;
+        }
+        if ($idProduct === 0) {
             $errors[] = 'reduction.id_product: required for specific_product, from somcp_search_products';
 
             return 0;
         }
         if (SomcpToolGetProduct::locate($idProduct, $idLang, $idShop) === null) {
-            $errors[] = 'reduction.id_product: no product of this shop has the identifier ' . $idProduct . ' - find it with somcp_search_products';
+            $errors[] = SomcpTool::notFound('reduction.id_product', 'product', $idProduct, 'somcp_search_products');
 
             return 0;
         }
@@ -574,11 +573,16 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             }
         }
 
-        $idProduct = self::integer($gift['id_product'] ?? null) ?? 0;
+        $idProduct = SomcpTool::id($gift, 'id_product');
+        if ($idProduct <= 0) {
+            $errors[] = SomcpTool::notAnIdentifier('gift.id_product');
+
+            return;
+        }
         $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
-        $product = $idProduct > 0 ? SomcpToolGetProduct::locate($idProduct, $idLang, $idShop) : null;
+        $product = SomcpToolGetProduct::locate($idProduct, $idLang, $idShop);
         if ($product === null) {
-            $errors[] = 'gift.id_product: no product of this shop has the identifier ' . $idProduct . ' - find it with somcp_search_products';
+            $errors[] = SomcpTool::notFound('gift.id_product', 'product', $idProduct, 'somcp_search_products');
 
             return;
         }
@@ -586,7 +590,17 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
             $errors[] = 'gift.id_product: Product with required customization fields cannot be used as a gift.';
         }
 
-        $idCombination = self::integer($gift['id_product_attribute'] ?? 0) ?? -1;
+        // 0, or nothing given, is the product without a combination, as the
+        // field of the Actions tab leaves it.
+        $idCombination = 0;
+        if (!in_array($gift['id_product_attribute'] ?? 0, [0, '0', null], true)) {
+            $idCombination = SomcpTool::id($gift, 'id_product_attribute');
+            if ($idCombination <= 0) {
+                $errors[] = SomcpTool::notAnIdentifier('gift.id_product_attribute');
+
+                return;
+            }
+        }
         if ($product->hasAttributes()) {
             if ($idCombination <= 0) {
                 $errors[] = 'gift.id_product_attribute: required, this product has combinations - find them with somcp_get_product';
@@ -600,6 +614,28 @@ class SomcpToolCreateCartRule extends SomcpToolCreateProduct
 
         $fields['gift_product'] = $idProduct;
         $fields['gift_product_attribute'] = max(0, $idCombination);
+    }
+
+    /**
+     * The product named inside reduction or reduction_applies_to, or -1 once
+     * refused, so the checks that follow do not refuse it a second time.
+     *
+     * @param array<string, mixed> $object
+     * @param string $path
+     * @param array<int, string> $errors
+     *
+     * @return int
+     */
+    private static function productId(array $object, string $path, array &$errors): int
+    {
+        $idProduct = SomcpTool::id($object, 'id_product');
+        if ($idProduct <= 0) {
+            $errors[] = SomcpTool::notAnIdentifier($path . 'id_product');
+
+            return -1;
+        }
+
+        return $idProduct;
     }
 
     /**

@@ -63,15 +63,17 @@ class SomcpToolCreateCatalogPriceRule extends SomcpToolCreateProduct
     private const NAME_MAX = 255;
 
     /**
-     * @var array<string, array{0: string, 1: string}> Per condition type, the table that holds the identifier and the
-     *                                                 list tool that gives it
+     * @var array<string, array{0: string, 1: string, 2: string}> Per condition type, the table that holds the
+     *                                                            identifier, the word of the Conditions of the form
+     *                                                            (the same on 8.0 and 9.0) and the list tool that
+     *                                                            gives it
      */
     private const CONDITION_SOURCES = [
-        'category' => ['category', 'somcp_list_categories'],
-        'manufacturer' => ['manufacturer', 'somcp_list_manufacturers'],
-        'supplier' => ['supplier', 'somcp_list_suppliers'],
-        'attribute' => ['attribute', 'somcp_list_attributes'],
-        'feature' => ['feature_value', 'somcp_list_features'],
+        'category' => ['category', 'category', 'somcp_list_categories'],
+        'manufacturer' => ['manufacturer', 'brand', 'somcp_list_manufacturers'],
+        'supplier' => ['supplier', 'supplier', 'somcp_list_suppliers'],
+        'attribute' => ['attribute', 'attribute', 'somcp_list_attributes'],
+        'feature' => ['feature_value', 'feature value', 'somcp_list_features'],
     ];
 
     /**
@@ -168,10 +170,7 @@ class SomcpToolCreateCatalogPriceRule extends SomcpToolCreateProduct
         $errors = [];
         $plan = self::plan($arguments, $idShop, $errors);
         if ($errors !== [] || $plan === null) {
-            return SomcpTool::text(
-                "Nothing was created. Correct these and call again:\n- " . implode("\n- ", array_unique($errors)),
-                true
-            );
+            return SomcpTool::refused('created', $errors);
         }
 
         return self::asEmployee($idEmployee, static function () use ($plan, $idShop, $idEmployee): array {
@@ -192,13 +191,7 @@ class SomcpToolCreateCatalogPriceRule extends SomcpToolCreateProduct
      */
     private static function plan(array $arguments, int $idShop, array &$errors): ?array
     {
-        foreach (array_keys($arguments) as $field) {
-            if (in_array($field, self::RULE_COMPUTED, true)) {
-                $errors[] = $field . ': worked out by the shop, not given';
-            } elseif (!in_array($field, self::RULE_FIELDS, true)) {
-                $errors[] = $field . ': not a field of this tool';
-            }
-        }
+        $errors = array_merge($errors, SomcpTool::unknownFields($arguments, self::RULE_FIELDS, self::RULE_COMPUTED));
 
         $name = isset($arguments['name']) ? self::string($arguments['name']) : null;
         $name = $name === null ? '' : trim($name);
@@ -291,10 +284,14 @@ class SomcpToolCreateCatalogPriceRule extends SomcpToolCreateProduct
                         $errors[] = $at . '.' . $field . ': not a field of a ' . $type . ' condition, which takes ' . $key;
                     }
                 }
-                [$table, $listTool] = self::CONDITION_SOURCES[$type];
-                $id = isset($condition[$key]) ? self::integer($condition[$key]) : null;
-                if ($id === null || $id < 1 || !self::exists($table, $id)) {
-                    $errors[] = $at . '.' . $key . ': no ' . str_replace('_', ' ', $table) . ' has this identifier (take ' . $key . ' from ' . $listTool . ')';
+                [$table, $word, $listTool] = self::CONDITION_SOURCES[$type];
+                $id = SomcpTool::id($condition, $key);
+                if ($id <= 0) {
+                    $errors[] = SomcpTool::notAnIdentifier($at . '.' . $key);
+                    continue;
+                }
+                if (!self::exists($table, $id)) {
+                    $errors[] = SomcpTool::notFound($at . '.' . $key, $word, $id, $listTool);
                     continue;
                 }
                 $conditions[] = ['type' => $type, 'value' => $id];

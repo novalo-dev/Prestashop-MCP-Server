@@ -126,13 +126,13 @@ class SomcpToolDeleteFeatureValue
                 $value = $loaded;
             }
         }
-        if ($errors !== [] || $value === null) {
-            return SomcpTool::refused('deleted', $errors);
-        }
-
         $language = SomcpTool::readLanguage($arguments, $idShop);
+        // Listed with the call's other mistakes, so it is corrected in one go.
         if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($errors !== [] || $value === null || $language === null) {
+            return SomcpTool::refused('deleted', $errors);
         }
 
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($value, $language, $idShop, $idEmployee): array {

@@ -106,14 +106,17 @@ class SomcpToolGetProduct
         $shop = Somcp::currentShop();
         $idShop = (int) $shop->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
+        // The product is found in any language; the language itself is
+        // checked with the other mistakes below.
+        $idLang = $language === null ? 0 : $language[0];
 
         // A cast would read an array as 1 and answer about a product nobody
         // asked for: only a whole number is an identifier.
         $errors = SomcpTool::unknownFields($arguments, ['id_product', 'id_product_attribute', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $idProduct = SomcpTool::id($arguments, 'id_product');
         $product = null;
         if ($idProduct === 0) {
@@ -139,9 +142,10 @@ class SomcpToolGetProduct
             $errors[] = 'id_product_attribute: no combination of this product has the identifier '
                 . $idCombination . ' - find it with somcp_get_product';
         }
-        if ($errors !== [] || $product === null) {
+        if ($errors !== [] || $product === null || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));
         $money = [

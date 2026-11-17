@@ -1042,6 +1042,14 @@ T = {
  "Lire une règle de taxes",
  "Leer una regla de impuestos",
  "Eine Steuerregel abrufen"),
+"Create a tax rule": (
+ "Créer une règle de taxes",
+ "Crear una regla de impuestos",
+ "Eine Steuerregel anlegen"),
+"List taxes": (
+ "Lister les taxes",
+ "Listar los impuestos",
+ "Steuern auflisten"),
 "List files": (
  "Lister les fichiers",
  "Listar los archivos",
@@ -1903,6 +1911,10 @@ T = {
  "Télécharger le zip",
  "Descargar el zip",
  "Zip herunterladen"),
+"Full release notes": (
+ "Notes de version complètes",
+ "Notas de la versión completas",
+ "Vollständige Versionshinweise"),
 "See what is new": (
  "Voir les nouveautés",
  "Ver las novedades",

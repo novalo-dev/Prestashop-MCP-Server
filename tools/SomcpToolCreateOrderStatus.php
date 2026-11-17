@@ -273,13 +273,10 @@ class SomcpToolCreateOrderStatus extends SomcpToolCreateFeature
     protected static function planOrderStatus(array $arguments, int $idShop, array &$errors): ?array
     {
         $arguments = self::currentNames($arguments, $errors);
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::ORDER_STATUS_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::ORDER_STATUS_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
+        // A new status has nothing stored to compare with, so every field the
+        // shop works out is refused here, whatever its value.
+        foreach (SomcpTool::unknownFields($arguments, self::ORDER_STATUS_ARGUMENTS, self::ORDER_STATUS_COMPUTED) as $problem) {
+            $errors[] = $problem;
         }
 
         $languages = self::languages($arguments, $idShop, $errors);

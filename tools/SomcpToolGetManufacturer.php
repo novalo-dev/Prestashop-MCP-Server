@@ -87,23 +87,25 @@ class SomcpToolGetManufacturer
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A cast would read an array as 1 and answer about a brand nobody
         // asked for: only a whole number is an identifier.
         $idManufacturer = SomcpTool::id($arguments, 'id_manufacturer');
         $errors = SomcpTool::unknownFields($arguments, ['id_manufacturer', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         if ($idManufacturer === 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_manufacturer');
         } elseif (self::existingManufacturer($idManufacturer, $idShop) === null) {
             $errors[] = SomcpTool::notFound('id_manufacturer', 'brand', $idManufacturer, 'somcp_list_manufacturers');
         }
-        if ($errors !== []) {
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+
+        [$idLang, $iso] = $language;
 
         return SomcpTool::json(['language' => $iso] + self::manufacturer($idManufacturer, $idLang, $idShop));
     }

@@ -3,7 +3,7 @@
     {"why": "a demo product with combinations", "arguments": {"id_product": 1}, "expect": "ok", "contains": ["\"id_product\": 1", "\"physical_quantity\"", "\"reserved_quantity\"", "\"low_stock_threshold\"", "\"reserved_by\"", "\"id_product_attribute\"", "\"attributes\""]},
     {"why": "the reference, default supplier, status and low stock alert of the product and its combinations", "arguments": {"id_product": 1}, "expect": "ok", "contains": ["\"reference\"", "\"id_supplier\"", "\"supplier\"", "\"active\": true", "\"low_stock_alert\""]},
     {"why": "in a language given by ISO code", "arguments": {"id_product": 1, "language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"combinations\""]},
-    {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_product": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
+    {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_product": 1, "language": "zz"}, "expect": "error", "contains": ["- language: not one of the shop's languages, which are ", "Nothing was read. Correct these and call again:"]},
     {"why": "a virtual product, without combinations", "arguments": {"id_product": 12}, "expect": "ok", "contains": ["\"combinations\": []", "\"low_stock_alert\"", "\"active\""]},
     {"why": "a pack", "arguments": {"id_product": 15}, "expect": "ok"},
     {"why": "a product that does not exist", "arguments": {"id_product": 999999}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_product: no product of this shop has the identifier 999999 - find it with somcp_search_products"]},

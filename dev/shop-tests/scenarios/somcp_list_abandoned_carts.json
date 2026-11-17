@@ -11,6 +11,6 @@
     {"why": "a date that does not exist is refused, not ignored", "arguments": {"date_from": "2026-13-01"}, "expect": "error", "contains": ["date_from: a date, YYYY-MM-DD"]},
     {"why": "a period that ends before it starts is refused", "arguments": {"date_from": "2026-02-01", "date_to": "2026-01-01"}, "expect": "error", "contains": ["date_to: a date not before date_from"]},
     {"why": "more than 100 carts at once is refused", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},
-    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1}, "expect": "error", "contains": ["foo: not a field of this tool", "offset: a whole number, 0 at least"]}
+    {"why": "every mistake comes back in one answer, an unknown argument among them", "arguments": {"foo": 1, "offset": -1}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "foo: not a field of this tool", "offset: a whole number, 0 at least"]}
   ]
 }

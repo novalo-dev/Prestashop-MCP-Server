@@ -145,17 +145,12 @@ class SomcpToolListAbandonedCarts
 
         // Every mistake is reported in one answer, so the call is corrected
         // in one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         $hours = self::DEFAULT_HOURS;
         if (array_key_exists('older_than_hours', $arguments) && $arguments['older_than_hours'] !== null) {
             if (!is_int($arguments['older_than_hours']) || $arguments['older_than_hours'] < 1) {
-                $problems[] = '- older_than_hours: a whole number of hours, 1 at least';
+                $problems[] = 'older_than_hours: a whole number of hours, 1 at least';
             } else {
                 $hours = (int) $arguments['older_than_hours'];
             }
@@ -164,23 +159,23 @@ class SomcpToolListAbandonedCarts
         $dateFrom = self::date($arguments, 'date_from', $problems);
         $dateTo = self::date($arguments, 'date_to', $problems);
         if ($dateFrom !== null && $dateTo !== null && $dateTo < $dateFrom) {
-            $problems[] = '- date_to: a date not before date_from';
+            $problems[] = 'date_to: a date not before date_from';
         }
 
         foreach (['with_customer', 'online'] as $field) {
             if (array_key_exists($field, $arguments) && $arguments[$field] !== null && !is_bool($arguments[$field])) {
-                $problems[] = '- ' . $field . ': true or false';
+                $problems[] = $field . ': true or false';
             }
         }
         if (array_key_exists('customer_name', $arguments) && $arguments['customer_name'] !== null
             && !is_string($arguments['customer_name'])) {
-            $problems[] = '- customer_name: a text';
+            $problems[] = 'customer_name: a text';
         }
 
         $limit = self::DEFAULT_LIMIT;
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
             if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT) {
-                $problems[] = '- limit: a whole number from 1 to ' . self::MAX_LIMIT;
+                $problems[] = 'limit: a whole number from 1 to ' . self::MAX_LIMIT;
             } else {
                 // Cast although checked: the value goes into the LIMIT clause,
                 // where only a number may ever land.
@@ -190,7 +185,7 @@ class SomcpToolListAbandonedCarts
         $offset = 0;
         if (array_key_exists('offset', $arguments) && $arguments['offset'] !== null) {
             if (!is_int($arguments['offset']) || $arguments['offset'] < 0) {
-                $problems[] = '- offset: a whole number, 0 at least';
+                $problems[] = 'offset: a whole number, 0 at least';
             } else {
                 $offset = (int) $arguments['offset'];
             }
@@ -199,14 +194,11 @@ class SomcpToolListAbandonedCarts
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- ' . SomcpTool::languageProblem($idShop);
+            $problems[] = SomcpTool::languageProblem($idShop);
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
@@ -369,7 +361,7 @@ class SomcpToolListAbandonedCarts
         }
         $day = SomcpTool::day($arguments[$field]);
         if ($day === null) {
-            $problems[] = '- ' . $field . ': a date, YYYY-MM-DD';
+            $problems[] = $field . ': a date, YYYY-MM-DD';
         }
 
         return $day;

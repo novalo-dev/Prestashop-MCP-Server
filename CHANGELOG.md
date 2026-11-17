@@ -16,6 +16,156 @@ are:
 
 ## Unreleased
 
+## 2.0.3 - 2026-11-17
+
+### Added
+
+**List the taxes.** The new tool somcp_list_taxes lists the taxes of
+International > Taxes > Taxes with their identifier, name, rate and whether
+they are enabled, filtered by part of the name or by Enabled, in the language
+asked for. Until now no tool gave the identifier of a tax, so an assistant
+setting up the tax rules of a new shop had to guess which tax each one applies.
+
+**Create a tax rule.** The new tool somcp_create_tax_rule creates a tax rule
+of International > Taxes > Tax Rules with its name and whether it is enabled,
+as Add new tax rule does, and answers with the rule as it was saved. Left
+unsaid, the rule is created disabled, as in the form, and the answer says so.
+Until now the assistant setting up a new shop could read tax rules but not
+add one.
+
+### Changed
+
+**Modules: every mistake of a call named at once.** Listing, reading,
+installing, enabling and disabling a module used to answer the first mistake
+of a call alone, and a misspelt field came back as a missing name. They now
+name every mistake together, the misspelt field by its name, as the other
+tools do, and a module the shop does not have is answered with the same
+wording in all of them.
+
+**Products: an unchanged ecotax given back is no longer refused.** On
+PrestaShop 9 with the ecotax switched off in the tax settings, a product read
+and given back unchanged was refused because of its ecotax, which the product
+read itself carries. The ecotax already stored, for the product or one of its
+combinations, now goes through as unchanged; only a different one is still
+refused while the ecotax is off.
+
+**Reading an order: what the order tools need to act on it.** When the
+assistant reads an order, it now sees which invoice each product line and
+each payment is on, the identifier of each payment, and the payment module of
+the order. It can tell the merchant where a line is before moving it, find a
+payment it recorded, or place the same order again without guessing.
+
+**Cart rules: an unknown rule reported with every other mistake.** Reading,
+switching on or off and changing a cart rule now word a mistake in the call as
+the other tools do. Given a cart rule that does not exist together with a
+misspelt field, they used to refuse the call twice, one problem at a time;
+they now list every problem of the call in one answer, so the assistant fixes
+the call in one go.
+
+**Creating a cart rule or a catalog price rule: refusals worded as in the
+other tools.** A mistake in the call now reads as it does everywhere else. A
+customer, product or condition that is not found is named with the identifier
+given and the tool that lists them, and a condition with the word of the
+Conditions of the form (category, brand, supplier, attribute, feature value)
+rather than the name of a database table. An identifier given as text such as
+"3" is read as that number, as in every other tool.
+
+**Sales lists: refusals worded as in the other tools.** The lists of
+abandoned carts, cart rules, catalog price rules, search terms, unsold
+products and products viewed but not sold now word a mistake in the call as
+the catalogue, stock, order and customer tools do. A category or customer
+group that is not found is named with the identifier given and the tool that
+lists them, and a category given as "3" is read as category 3 instead of
+being refused.
+
+**Order statuses: a status read in the list can be given back whole.** Changing
+an order status with the fields read in the list of statuses no longer fails on
+its roles, its built-in mark or its payment module: these are worked out by the
+shop, so when they hold what the shop holds they are taken as unchanged, and
+only a different value is refused, with the reason.
+
+**Order statuses: the whole row of the list is accepted back.** A status read
+in the list of statuses and given back as it is no longer fails on an empty
+colour, nor, on a shop with several languages, on its name or email template
+given as one text: when they hold what the shop holds, nothing is written and
+the answer says nothing changed.
+
+**Orders: the amounts of an order are named like everywhere else.** The order
+read and the order tools that answer with its lines, discounts, shipments,
+totals and documents now name each amount with `_tax_excl` or `_tax_incl`, as
+the product, statistics and customer tools do, and give the order total as
+`total_paid_tax_excl` and `total_paid_tax_incl`, as the order search does.
+The same goes for the discount added or removed, the payment recorded, the
+invoice generated and the delivery options of a new order, and cancelling
+products now answers the order totals in the shape of the order read. The
+refunds, partial, standard or on returned products, answer the amounts refunded,
+the shipping and the credit slip totals with the same names. Before, the same amount went by two names depending on the tool, and an
+assistant reading one answer with the names of another found nothing.
+
+**Refunds and discounts take the amounts under the names of the other order
+tools.** A partial refund took the amount of each line and of the shipping
+"tax excluded" / "tax included" in full, and a discount on an order took its
+amount type as "amount tax included", while every other order tool uses the
+short "tax excl." / "tax incl." names of the order page. They now take the
+same names, and a former name is answered with the one to send instead of
+being refused as unknown.
+
+**The language of a customer's last emails is given by its code.** The
+customer read gave the language of each of the last emails sent as its name,
+such as "English (English)", where every other answer gives a language by its
+code, such as `en`, and every tool takes that code back. It is now the code,
+so the assistant can pass it on as it reads it.
+
+**The record of a change reads the same in every update tool.** Changing
+the SEO of a CMS page answered each change with its language apart and the
+value before under `previous`, changing a cart rule's name gave its language
+apart too, and editing an order line gave its changes as one block keyed by
+field instead of a list. The other update tools list each change with its
+`field`, `old` and `new` value, a translated text named with its language,
+such as `meta_description (en)`. These three updates now answer the same way,
+so the assistant reads every update with one habit.
+
+**Products can be searched in every order of the product list.** The product
+search sorted only by date, name from A to Z, price and quantity, so an
+assistant asked for the products by reference or the last ones by ID read
+the whole catalogue to sort it itself. It now also sorts by ID, reference,
+category and status, each way, and by name from Z to A, as the columns of the
+product list in the back office do.
+
+**Updates: the news of a new version in a window.** The Help and updates
+page used to announce a new version with two blocks of text: the first five
+points of what was new, then a separate reminder to reconnect the assistants.
+It now shows one line with a See what is new button, which opens a window
+listing every point of the release, how to install it, the reconnection
+reminder and the buttons to read the full notes or download the zip.
+
+### Fixed
+
+**Asking the SEO and product data audits for disabled products or hidden
+categories now audits those only.** The product SEO audit, the category SEO
+audit and the product data audit read "not active" as every product or
+category, enabled ones included, and reported their issues as if they were
+disabled. They now take it as the Status filter of the product list does:
+enabled only, or disabled only. The product data audit also refuses a Status
+that is not yes or no instead of auditing every product.
+
+**An order of priorities given with Use default order is checked against the
+shop's default order.** When the assistant switched a product with its own
+order of specific price priorities back to the default, it accepted that
+product's own order beside it, so the product was moved to the default order
+while the call named another one. The order given is now checked against the
+shop's default order, and the change is refused when it differs.
+
+**Packs: the quantity of a pack counted from its products is kept up to date.**
+A pack whose stock is worked out from the products it holds kept 0 in its own
+stock line when the assistant created it, and its old figure when its contents,
+the way it counts its stock or the stock of one of its products changed: the
+back office product list and the other modules showed a wrong quantity, while
+the shop itself kept selling it correctly. The pack is now recounted from its
+products after each of those changes, as the shop works out what can be sold,
+and the answers give the new quantity: pack_quantity when creating or changing
+the pack, packs when changing the stock of a product it holds.
+
 ## 2.0.2 - 2026-11-16
 
 ### Added
@@ -73,8 +223,10 @@ send instead of being refused as unknown.
 Changing a custom link of the main menu from the row the list gave was refused
 for "In menu", the flag the list itself shows, so the assistant had to drop it
 by hand. The row now goes back as it was read: an unchanged "In menu" changes
-nothing, and a different one is refused with the way to put a link in the
-menu. The list also says when a link has no label in the language read and
+nothing, and a different one is refused with what does it: the tool that
+puts a link in the menu, or, for a link the merchant wants out of the menu,
+the Main menu module's configuration screen, rather than a tool that would
+add it. The list also says when a link has no label in the language read and
 shows the default language's instead; given back, that label is no longer
 copied into the other language, which stays as it was.
 

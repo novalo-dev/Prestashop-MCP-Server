@@ -1312,6 +1312,16 @@
       <source>Get a tax rule</source>
       <target>Leer una regla de impuestos</target>
     </trans-unit>
+    <!-- Create a tax rule -->
+    <trans-unit id="63fc4e3a4e9a8cf1c165accef7f10b75" resname="Create a tax rule">
+      <source>Create a tax rule</source>
+      <target>Crear una regla de impuestos</target>
+    </trans-unit>
+    <!-- List taxes -->
+    <trans-unit id="0fd7b8361fef733e7f4558af57526e46" resname="List taxes">
+      <source>List taxes</source>
+      <target>Listar los impuestos</target>
+    </trans-unit>
     <!-- List files -->
     <trans-unit id="92f00b54c2461cd9c23db65a88cd11e1" resname="List files">
       <source>List files</source>
@@ -2401,6 +2411,11 @@
     <trans-unit id="edcb4d7773cb33d7fd22a9417412ba51" resname="Download the zip">
       <source>Download the zip</source>
       <target>Descargar el zip</target>
+    </trans-unit>
+    <!-- Full release notes -->
+    <trans-unit id="cc291a75b7e78cd020214d19d8a1c8d4" resname="Full release notes">
+      <source>Full release notes</source>
+      <target>Notas de la versión completas</target>
     </trans-unit>
     <!-- See what is new -->
     <trans-unit id="f22c6a5299272fb2676f3a10381289fa" resname="See what is new">

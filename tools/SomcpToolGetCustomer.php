@@ -92,22 +92,23 @@ class SomcpToolGetCustomer
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A misspelt field is named, not read as a missing customer, and the
         // not-found line is worded like every other tool, through the shared
         // envelope of #169 and #170.
         $errors = SomcpTool::unknownFields($arguments, ['id_customer', 'email', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $found = self::locate($arguments, $idShop);
         if (is_string($found)) {
             $errors[] = $found;
         }
-        if ($errors !== []) {
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
         $customer = $found;
 
         $currencyIso = self::currencyIso($idShop);
@@ -576,7 +577,9 @@ class SomcpToolGetCustomer
                 'date_add' => SomcpTool::isoDate($row['date_add']),
                 'template' => (string) $row['template'],
                 'subject' => (string) $row['subject'],
-                'language' => (string) ($row['language'] ?? ''),
+                // The query names the language in words; the ISO code is what
+                // every other answer gives and every tool takes back.
+                'language' => (string) Language::getIsoById((int) ($row['id_lang'] ?? 0)),
             ];
         }
 

@@ -1,15 +1,15 @@
 {
   "calls": [
-    {"why": "the whole audit of the demo categories, every check and language", "arguments": {}, "expect": "ok", "contains": ["\"categories\"", "\"total_count\"", "\"counts\"", "\"meta_title_missing\"", "\"meta_description_short\"", "\"empty_category\"", "\"no_cover_image\"", "\"active_only\": true"]},
+    {"why": "the whole audit of the demo categories, every check and language", "arguments": {}, "expect": "ok", "contains": ["\"categories\"", "\"total_count\"", "\"counts\"", "\"meta_title_missing\"", "\"meta_description_short\"", "\"empty_category\"", "\"no_cover_image\"", "\"active\": true"]},
     {"why": "one language, by its ISO code, one entry per page", "arguments": {"language": "en", "limit": 1}, "expect": "ok", "contains": ["\"returned\": 1", "\"language\": \"en\""]},
     {"why": "the ISO code in capitals is the same language", "arguments": {"language": "EN", "limit": 1}, "expect": "ok", "contains": ["\"language\": \"en\""]},
     {"why": "one check only, the others left out of the counts", "arguments": {"checks": ["no_cover_image"], "limit": 5}, "expect": "ok", "contains": ["\"no_cover_image\""]},
     {"why": "the short meta description check alone", "arguments": {"checks": ["meta_description_short"]}, "expect": "ok", "contains": ["\"counts\""]},
-    {"why": "hidden categories included", "arguments": {"active": false}, "expect": "ok", "contains": ["\"active_only\": false"]},
+    {"why": "hidden categories only", "arguments": {"active": false}, "expect": "ok", "contains": ["\"active\": false"]},
     {"why": "a limit below one is refused rather than raised to one", "arguments": {"limit": 0}, "expect": "error", "contains": ["Nothing was read", "limit: a whole number from 1 to 100"]},
     {"why": "the second page follows the first", "arguments": {"limit": 2, "offset": 2}, "expect": "ok", "contains": ["\"offset\": 2"]},
     {"why": "a page far beyond the end is empty, not an error", "arguments": {"offset": 100000}, "expect": "ok", "contains": ["\"returned\": 0"]},
-    {"why": "a language the shop does not have, refused with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's, which has", "leave language out for all of them"]},
+    {"why": "a language the shop does not have, refused with the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "language: not one of the shop's languages, which are", "leave language out for all of them"]},
     {"why": "a check that does not exist", "arguments": {"checks": ["meta_keywords"]}, "expect": "error", "contains": ["Nothing was read", "checks: one of "]},
     {"why": "checks given as a string", "arguments": {"checks": "no_cover_image"}, "expect": "error", "contains": ["Nothing was read", "checks: one of "]},
     {"why": "a misspelt field is refused, not ignored", "arguments": {"check": ["no_gtin"]}, "expect": "error", "contains": ["Nothing was read", "check: not a field of this tool"]},

@@ -92,13 +92,9 @@ class SomcpToolGetCacheStatus
     {
         // A misspelt argument would otherwise be ignored, and the assistant
         // would take the answer for the one it asked for.
-        if ($arguments !== []) {
-            $lines = [];
-            foreach (array_keys($arguments) as $key) {
-                $lines[] = '- ' . $key . ': not a field of this tool';
-            }
-
-            return SomcpTool::text("Nothing was read. Correct these and call again:\n" . implode("\n", $lines), true);
+        $problems = SomcpTool::unknownFields($arguments, []);
+        if ($problems !== []) {
+            return SomcpTool::refused('read', $problems);
         }
 
         $idShop = Somcp::currentShopId();

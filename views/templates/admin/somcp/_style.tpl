@@ -48,7 +48,8 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
 
 /* A native dialog dressed as the back office modal. Its own box is cleared so
    only modal-content draws the frame. */
-.somcp .somcp-sponsor {
+.somcp .somcp-sponsor,
+.somcp .somcp-dialog {
     width: 520px;
     max-width: calc(100% - 32px);
     padding: 0;
@@ -57,7 +58,8 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     overflow: visible;
 }
 
-.somcp .somcp-sponsor::backdrop {
+.somcp .somcp-sponsor::backdrop,
+.somcp .somcp-dialog::backdrop {
     background: rgba(0, 0, 0, .45);
 }
 
@@ -72,6 +74,41 @@ a[href="{$somcp_sponsor_url|escape:'html':'UTF-8'}"] > i.icon-heart {
     height: 102px;
     margin: 0 auto 12px;
     color: #db61a2;
+}
+
+/* The update window can list a hundred points: the list scrolls, the title
+   and the buttons stay in view. */
+.somcp .somcp-update-dialog {
+    width: 640px;
+}
+
+.somcp .somcp-update-dialog .modal-body {
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+}
+
+.somcp .somcp-update-list {
+    padding-left: 20px;
+    margin-bottom: 16px;
+}
+
+.somcp .somcp-update-list li {
+    margin-bottom: 4px;
+}
+
+.somcp .somcp-update-reconnect {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 4px;
+    background: #f1f7fd;
+}
+
+.somcp .somcp-update-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 /* A pane is hidden, never removed: the settings form spans two of them and

@@ -120,13 +120,13 @@ class SomcpToolDeleteAttributeGroup
                 $errors[] = SomcpTool::notFound('id_attribute_group', 'attribute group', $idGroup, 'somcp_list_attributes');
             }
         }
-        if ($errors !== [] || $group === null) {
-            return SomcpTool::refused('deleted', $errors);
-        }
-
         $language = SomcpTool::readLanguage($arguments, $idShop);
+        // Listed with the call's other mistakes, so it is corrected in one go.
         if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($errors !== [] || $group === null || $language === null) {
+            return SomcpTool::refused('deleted', $errors);
         }
 
         return SomcpToolCreateProduct::asEmployee($idEmployee, static function () use ($group, $language, $idShop, $idEmployee): array {

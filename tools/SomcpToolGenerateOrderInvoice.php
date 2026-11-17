@@ -201,8 +201,8 @@ class SomcpToolGenerateOrderInvoice
                 // of somcp_get_order: the prefix is a per-shop setting.
                 'number' => (string) $invoice->getInvoiceNumberFormatted((int) $order->id_lang, (int) $order->id_shop),
                 'date' => SomcpTool::isoDate($invoice->date_add),
-                'total_tax_excluded' => (float) $invoice->total_paid_tax_excl,
-                'total_tax_included' => (float) $invoice->total_paid_tax_incl,
+                'total_paid_tax_excl' => (float) $invoice->total_paid_tax_excl,
+                'total_paid_tax_incl' => (float) $invoice->total_paid_tax_incl,
                 'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',
             ];
         }

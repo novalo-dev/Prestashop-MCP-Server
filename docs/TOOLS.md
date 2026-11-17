@@ -29,7 +29,10 @@ asks for.
   read every language when `language` is left out, use the same refusal with
   its other ending. A tool that lists every problem of a call before answering
   puts the same refusal among them as one line, `SomcpTool::languageProblem()`
-  (`language: not one of the shop's languages, which are <codes>`).
+  (`language: not one of the shop's languages, which are <codes> - leave
+  language out for the shop default`, or `for all of them` in the SEO audits),
+  and keeps `languageRefused()` for a shop whose default language cannot be
+  read.
 - Writing: `languages` lists the ISO codes being filled, among the shop's
   active languages, all of them by default; each text is an object keyed by
   those codes and given in each of them, a plain string being accepted when one
@@ -45,7 +48,9 @@ periods are worked out by the assistant, which already knows the shop's time
 zone.
 
 **Amounts.** Always with their currency code, and always with tax or without
-said in the field name. Never a bare `total`.
+said in the field name. Never a bare `total`. A price ends in `_tax_excl` or
+`_tax_incl`; the total paid of an order or an invoice is `total_paid_tax_excl` /
+`total_paid_tax_incl`.
 
 **Files out.** No tool gives the address of a file of the shop. A tool that
 finds one - a product photo, a logo, a texture, an order status icon, an
@@ -102,7 +107,8 @@ happen (`Nothing was read.`, `created`, `changed`, `deleted`, `sent`,
 the schema spells it, dotted when nested (`seo.meta_keywords`,
 `combinations[2].available_now`). Four kinds of problem, four wordings, each
 from one shared function: an unknown identifier, `no <thing> of this shop has
-the identifier <n> - find it with <tool>` (`notFound()`); a field the tool does
+the identifier <n> - find it with <tool>`, or `the <technical name, reference>
+<value>` for an object found by name (`notFound()`); a field the tool does
 not take, `not a field of this tool`, or one the shop works out, `worked out by
 the shop, so it is not written here`, or a name the tool took before,
 `renamed <new name>`, so a client built on the published names is told what
@@ -508,16 +514,20 @@ slip or message) is ISO 8601 with the shop's offset, `null` when empty. Among
 them, what the order page shows:
 
 - `order`: `language` (the ISO code of the order's language, the customer's,
-  which the names of the order are read in), `status` (`status_id`, the
+  which the names of the order are read in), `payment_module` (the technical
+  name of the payment module, the one `somcp_create_order` takes, beside
+  `payment_method`, the name shown to the customer), `status` (`status_id`, the
   identifier `somcp_set_order_status` takes, `name`, `paid`, `shipped`), `note` (Order note / Order private note),
   `id_cart`, `gift`, `gift_message`, `recycled_packaging`;
 - `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
   `total_spent` with `total_spent_currency`, `private_note` (read only);
 - `addresses.delivery` and `addresses.invoice`: `id_address`, `alias`,
   `state` (the region), `dni` (empty when not set);
-- `products`, per line: `id_order_detail`, `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
+- `products`, per line: `id_order_detail`, `id_order_invoice` (the invoice
+  the line is on, the one `somcp_update_order_product` takes, 0 when on none),
+  `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
   (strings), `tax_name`, `tax_rate`, `stock_location`, `quantity_in_stock_now`,
-  `quantity_refunded`, `refunded_tax_excluded`, `refunded_tax_included`,
+  `quantity_refunded`, `refunded_tax_excl`, `refunded_tax_incl`,
   `quantity_returned`, `customizations` (`id_customization`, `type` text or
   file, `name`, `value`), `pack_items` (`id_product`, `id_product_attribute`,
   `name`, `reference`, `quantity`, `quantity_in_stock_now`; empty when the
@@ -526,16 +536,22 @@ them, what the order page shows:
   `somcp_list_cart_rules` names it), `id_order_invoice` and `free_shipping`;
 - `history`, each step with `id_order_history`;
 - `shipping.shipments`, one per shipment: `id_order_carrier`, `date`,
-  `id_carrier`, `carrier`, `weight`, `shipping_cost_tax_excluded`,
-  `shipping_cost_tax_included`, `tracking_number`, `tracking_url`;
-- `totals`: `taxes`, `wrapping_tax_excluded` and `wrapping_tax_included`;
-- `payments`, each with `currency`, `invoice_number` (empty when not tied to an
-  invoice), `id_employee` and `employee` (who recorded it, PrestaShop 9 only,
+  `id_carrier`, `carrier`, `weight`, `shipping_cost_tax_excl`,
+  `shipping_cost_tax_incl`, `tracking_number`, `tracking_url`;
+- `totals`: `taxes`, `wrapping_tax_excl` and `wrapping_tax_incl`, and the total
+  paid as `total_paid_tax_excl` and `total_paid_tax_incl`, as `somcp_search_orders`
+  gives it;
+- `payments`, each with `id_order_payment` (the identifier
+  `somcp_add_order_payment` answers), `id_order_invoice` (0 when not tied to an
+  invoice), `currency`, `invoice_number` (empty when not tied to an invoice),
+  `id_employee` and `employee` (who recorded it, PrestaShop 9 only,
   `null` and empty on 8);
 - `documents`: `invoices` (with `id_order_invoice` and `note`), `delivery_slips`
   (`id_order_invoice`, `number` with the shop's prefix, `date`,
-  `total_tax_included`) and `credit_slips` (`id_order_slip`, `number` with the
-  shop's credit slip prefix in the order's language, `date`, totals);
+  `total_tax_incl`) and `credit_slips` (`id_order_slip`, `number` with the
+  shop's credit slip prefix in the order's language, `date`, `total_tax_excl`,
+  `total_tax_incl`); each invoice gives its total as `total_paid_tax_excl` and
+  `total_paid_tax_incl`;
 - `messages`, each with `from` (`employee` or `customer`) and `from_name`.
 
 **Errors** - every problem at once, nothing read, each under "Nothing was read.
@@ -823,7 +839,7 @@ order paid (→ `somcp_set_order_status`).
 8601 with the shop's offset, as it was recorded in the shop's time), `id_employee` (who recorded it, as the **Employee** column of
 9.0.0; `null` on 8.0.1, which has neither the column nor the argument, and
 matches `id_employee` of `payments[]` in `somcp_get_order`), `total_paid_real`
-after the payment, `total_tax_included` of the order, `order_currency`,
+after the payment, `total_paid_tax_incl` of the order, `order_currency`,
 `remaining` (what is still due, never below zero), and `warning` when the
 payment row was added but the order or its invoice could not be fully updated.
 
@@ -871,7 +887,7 @@ refused.
 
 One payment per call. Not replayable: a payment added twice is money counted
 twice. A lost answer is checked with `somcp_get_order`, whose `payments` lists
-it. The card fields of `order_payment` (`card_number`, `card_brand`,
+it with its `id_order_payment`; `payment_date` is the `date` of that row. The card fields of `order_payment` (`card_number`, `card_brand`,
 `card_expiration`, `card_holder`) are not on the screen and are not taken.
 
 #### `somcp_issue_partial_refund`
@@ -894,8 +910,8 @@ order (→ `somcp_cancel_order_products`), or recording money received
 |---|---|---|---|
 | `id_order` | integer | one of the two | identifier |
 | `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
-| `lines` | array | yes, unless only shipping is refunded | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`), `quantity` (at least 1, at most what is left to refund), and the amount in the tax mode the page shows for this order, `amount_tax_excluded` **or** `amount_tax_included` (greater than 0, at most quantity times the unit price); the other one is refused with the right name |
-| `shipping_amount_tax_excluded` **or** `shipping_amount_tax_included` | number | no | part of the shipping to refund, in the tax mode the page shows for this order, at most what is left of it; the other one is refused with the right name; 0 by default |
+| `lines` | array | yes, unless only shipping is refunded | one entry per line: `id_order_detail` (from `products[].id_order_detail` of `somcp_get_order`), `quantity` (at least 1, at most what is left to refund), and the amount in the tax mode the page shows for this order, `amount_tax_excl` **or** `amount_tax_incl` (greater than 0, at most quantity times the unit price); the other one is refused with the right name; the former names `amount_tax_excluded` and `amount_tax_included` are refused with the current one (`lines[0].amount_tax_excluded: renamed amount_tax_excl`) |
+| `shipping_amount_tax_excl` **or** `shipping_amount_tax_incl` | number | no | part of the shipping to refund, in the tax mode the page shows for this order, at most what is left of it; the other one is refused with the right name; 0 by default; the former names `shipping_amount_tax_excluded` and `shipping_amount_tax_included` are refused with the current one |
 | `restock` | boolean | no | **Re-stock products**; only matters once the order is delivered - before that the core always puts the quantities back. False by default |
 | `credit_slip` | boolean | no | **Generate a credit slip**; true by default, as the box is ticked when the form opens |
 | `voucher` | boolean | no | **Generate a voucher**; false by default |
@@ -904,10 +920,10 @@ order (→ `somcp_cancel_order_products`), or recording money received
 At least one of `credit_slip` and `voucher` must be true, as on screen.
 
 **Returns** - `refunded`, `order` (`id_order` and `reference`), `lines` (per
-line: `id_order_detail`, `product_name`, `quantity`, `amount_tax_excluded`,
-`amount_tax_included`), `shipping_refunded_tax_excluded`,
-`shipping_refunded_tax_included`, `total_refunded_tax_excluded`,
-`total_refunded_tax_included`, `currency`,
+line: `id_order_detail`, `product_name`, `quantity`, `amount_tax_excl`,
+`amount_tax_incl`), `shipping_refunded_tax_excl`,
+`shipping_refunded_tax_incl`, `total_refunded_tax_excl`,
+`total_refunded_tax_incl`, `currency`,
 `restocked`, `credit_slip` (`id_order_slip` and its totals, or `null`),
 `voucher` (`id_cart_rule`, `code`, `amount`, `tax_included`, or `null`), and
 `warning` when the refund was recorded but the slip or the voucher cannot be
@@ -980,10 +996,10 @@ At least one of `credit_slip` and `voucher` must be true, as on screen.
 
 **Returns** - the answer of `somcp_issue_partial_refund`: `refunded`, `order`
 (`id_order` and `reference`), `lines` (per line: `id_order_detail`,
-`product_name`, `quantity`, `amount_tax_excluded`, `amount_tax_included`),
-`shipping_refunded_tax_excluded`, `shipping_refunded_tax_included`,
-`total_refunded_tax_excluded`,
-`total_refunded_tax_included`, `currency`, `restocked`, `credit_slip`
+`product_name`, `quantity`, `amount_tax_excl`, `amount_tax_incl`),
+`shipping_refunded_tax_excl`, `shipping_refunded_tax_incl`,
+`total_refunded_tax_excl`,
+`total_refunded_tax_incl`, `currency`, `restocked`, `credit_slip`
 (`id_order_slip` and its totals, or `null`), `voucher` (`id_cart_rule`,
 `code`, `amount`, `tax_included`, or `null`), and `warning` when the refund was
 recorded but the slip or the voucher cannot be found afterwards.
@@ -1058,9 +1074,9 @@ At least one of `credit_slip` and `voucher` must be true, as on screen.
 
 **Returns** - the answer of `somcp_issue_partial_refund`: `refunded`, `order`
 (`id_order` and `reference`), `lines` (per line: `id_order_detail`,
-`product_name`, `quantity`, `amount_tax_excluded`, `amount_tax_included`),
-`shipping_refunded_tax_included`, `total_refunded_tax_excluded`,
-`total_refunded_tax_included`, `currency`, `restocked` (what `restock` said),
+`product_name`, `quantity`, `amount_tax_excl`, `amount_tax_incl`),
+`shipping_refunded_tax_excl`, `shipping_refunded_tax_incl`, `total_refunded_tax_excl`,
+`total_refunded_tax_incl`, `currency`, `restocked` (what `restock` said),
 `credit_slip` (`id_order_slip` and its totals, or `null`), `voucher`
 (`id_cart_rule`, `code`, `amount`, `tax_included`, or `null`), and `warning`
 when the refund was recorded but the slip or the voucher cannot be found
@@ -1125,8 +1141,8 @@ whole order with its status (→ `somcp_set_order_status`).
 
 **Returns** - `cancelled`, `order` (`id_order` and `reference`), `lines` (per
 line: `id_order_detail`, `product_name`, `quantity_cancelled`,
-`quantity_left`), the order totals after the change (`total_tax_excluded`,
-`total_tax_included`, `currency`), `order_cancelled` (true when no line was
+`quantity_left`), the order totals after the change (`totals`, in the shape of `totals` of
+`somcp_get_order`, and `currency`), `order_cancelled` (true when no line was
 left and the status changed), `status` after the call (`id`, `name`), and
 `warning` when the order was cancelled but the customer email failed.
 
@@ -1258,8 +1274,9 @@ At least one of `quantity`, a price and `id_order_invoice`; a call that changes
 nothing writes nothing and answers `changed: false` with a `reason`. Prices are
 in the order's currency, as on the screen.
 
-**Returns** - `changed`, `order` (`id_order`, `reference`), `changes` (per
-changed field its `old` and `new` value, under the parameter names), `line`
+**Returns** - `changed`, `order` (`id_order`, `reference`), `changes` (one
+entry per field changed: `field`, under the parameter name, its `old` and `new`
+value, as the other update tools give them), `line`
 (the edited line exactly as `somcp_get_order` returns one of `products[]`),
 `totals` (exactly as `somcp_get_order` returns them) and `currency`.
 
@@ -1355,13 +1372,13 @@ recomputes the order totals. It lowers what the customer owes.
 | `id_order` | integer | one of the two | identifier, from `somcp_search_orders` |
 | `reference` | string | one of the two | reference; one shared by several orders is refused with their identifiers |
 | `name` | string | yes | the discount name the customer reads on the invoice; one plain text, stored in the shop's default language, not an object per ISO code; at most the length `CartRule` allows (254 on 8.0.1, the setting on 9.0.0) |
-| `type` | string | yes | `percent`, `amount_tax_included` (the amount includes taxes, as the screen says) or `free_shipping` |
-| `value` | number | for `percent` and `amount_tax_included` | the percentage (1 to 100) or the amount tax included; refused for `free_shipping` |
+| `type` | string | yes | `percent`, `amount_tax_incl` (the amount includes taxes, as the screen says) or `free_shipping`; the former value `amount_tax_included` is refused with `type: renamed amount_tax_incl` |
+| `value` | number | for `percent` and `amount_tax_incl` | the percentage (1 to 100) or the amount tax included; refused for `free_shipping` |
 | `id_order_invoice` | integer | no | **Invoice**, only when the order has invoices; from `documents.invoices[].id_order_invoice` of `somcp_get_order`; must be one of this order's |
 
 **Returns** - `added`, `order` (`id_order` and `reference`), `discount`
 (`id_order_cart_rule`, `id_cart_rule`, `id_order_invoice`, `name`,
-`value_tax_excluded`, `value_tax_included`, `free_shipping`), and the order
+`value_tax_excl`, `value_tax_incl`, `free_shipping`), and the order
 totals after the change under `totals` (as `somcp_get_order` gives them, with
 `currency` beside, like the other order write tools). `discount` carries the keys of `discounts[]`
 of `somcp_get_order` plus `id_cart_rule`, so the same discount reads the same
@@ -1371,7 +1388,7 @@ in both answers, and its `id_order_cart_rule` is what
 **Errors** - every problem at once, nothing recorded when one check fails, each
 under "Nothing was recorded. Correct these and call again:": `name` missing, empty, too long or not clean;
 `type` not one of the three; `value` missing for `percent` /
-`amount_tax_included`, given for `free_shipping`, at or below 0, above 100 for a
+`amount_tax_incl`, given for `free_shipping`, at or below 0, above 100 for a
 percent, or above the total for an amount; the order not
 found or a reference shared by several orders; `id_order_invoice` given on an
 order without invoices, or not an invoice of this order (naming
@@ -1424,7 +1441,7 @@ recomputes the order totals. It raises what the customer owes.
 
 **Returns** - `deleted`, `order` (`id_order` and `reference`), `discount`
 with the keys of `discounts[]` of `somcp_get_order` (`id_order_cart_rule`,
-`id_order_invoice`, `name`, `value_tax_included`, `value_tax_excluded`,
+`id_order_invoice`, `name`, `value_tax_incl`, `value_tax_excl`,
 `free_shipping`), `gift_line_updated` (the discount gave a gift product and
 its line lost one unit), and the order totals after the change under
 `totals` (as `somcp_get_order` gives them, with `currency` beside), as
@@ -1684,7 +1701,7 @@ for a customer or group on every order (→ `specific_prices` of
 | `products` | array, 1 or more | yes | **Cart**: each line `id_product` (from `somcp_search_products`), `id_product_attribute` (from `combinations[].id_product_attribute` of `somcp_get_product`, required when the product has combinations) `quantity` (from 1, at least the minimal quantity) and `unit_price_tax_excl` (**Price**, from 0, tax excluded as the screen says, in the cart's currency; left out, the price the shop computes; the suffix of every other price, the former name `unit_price_tax_excluded` refused as `renamed unit_price_tax_excl`); the same product and combination twice is refused |
 | `id_address_delivery` | integer | yes | **Addresses > Delivery**, from `addresses[].id_address` of `somcp_get_customer`; an address of this customer |
 | `id_address_invoice` | integer | no | **Addresses > Invoice**, same; the delivery address when left out |
-| `id_carrier` | integer | yes unless every product is virtual | **Shipping > Delivery option**: one of the carriers the cart is offered for this address and these products; refused otherwise, with those offered (`id_carrier`, `name`, `shipping_tax_included`) |
+| `id_carrier` | integer | yes unless every product is virtual | **Shipping > Delivery option**: one of the carriers the cart is offered for this address and these products; refused otherwise, with those offered (`id_carrier`, `name`, `shipping_tax_incl`) |
 | `free_shipping` | boolean | no, default false | **Free shipping**: the cart rule the screen creates (`CartRule::BO_ORDER_CODE_PREFIX` + cart id) |
 | `recycled_packaging` | boolean | no, default false | **Recycled packaging** |
 | `gift` | boolean | no, default false | **Gift** |
@@ -1699,10 +1716,10 @@ for a customer or group on every order (→ `specific_prices` of
 **Returns** - `created: true`, `id_order`, `reference`, `id_cart`, `status`
 (`status_id`, `name`), `payment` (the payment name the order records),
 `products`, the lines as the order records them in the keys of `products[]` of
-`somcp_get_order` (`unit_price_tax_excluded`, `unit_price_tax_included`,
-`total_tax_excluded` ...), `totals` in the shape of `totals` of
+`somcp_get_order` (`unit_price_tax_excl`, `unit_price_tax_incl`,
+`total_tax_excl` ...), `totals` in the shape of `totals` of
 `somcp_get_order` (the vouchers in
-`discounts_tax_included` and `discounts_tax_excluded`), `discounts`, each
+`discounts_tax_incl` and `discounts_tax_excl`), `discounts`, each
 voucher applied in the keys of `discounts[]` of `somcp_get_order` (the free
 shipping cart rule included), and `currency`.
 
@@ -1768,7 +1785,7 @@ identifiers.
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - per status: `id_order_return_state`, `name`, `color`, `removable`
 (false for the five built-in statuses, 1 to 5). Plus `count` and `language`
@@ -1896,8 +1913,8 @@ attaches the invoice).
 **Returns** - `generated`, `order` (`id_order` and `reference`), `invoice`
 (`id_order_invoice`, `number` formatted with the prefix for the order's shop as
 `payments[].invoice_number` of `somcp_get_order`, `date` in ISO 8601 with the
-shop's offset, `total_tax_excluded`,
-`total_tax_included`, `currency`). When the order already has an invoice:
+shop's offset, `total_paid_tax_excl`,
+`total_paid_tax_incl`, `currency`). When the order already has an invoice:
 `generated: false` with a `reason` and the existing invoice, and nothing
 happens.
 
@@ -2173,6 +2190,21 @@ The former names `somcp_create_order_status` still accepts (`logable`,
 `hidden`, `send_email`, `pdf_invoice`, `pdf_delivery`, `template`) are
 accepted here too.
 
+`roles`, `built_in` and `payment_module`, read with
+`somcp_list_order_statuses`, are worked out by the shop and never written:
+given with the values the list gives for this status they are no change, so
+a row read there can be given back whole; a different value is refused with
+`<field>: worked out by the shop, so it is not written here`.
+`somcp_create_order_status` refuses the three whatever their value.
+A whole row of the list can therefore be given back unchanged: an empty
+`color` is no change on a status that has no colour (refused on one that
+has), and `name` or `email_template` given as one text, as the list gives
+them, is no change when it is the stored text of one of the shop's
+languages; a different single text stays refused on a shop with several
+languages, which needs one object keyed by ISO code. The test scenario
+changes built-in status 2 rather than a status it creates, since a created
+status gets a different identifier on 8 and 9.
+
 **Returns** - `changed`, `status_id`, `changes` (each field with `old` and
 `new`; an icon is recorded `old: "stored"` when it replaced one, `null`
 when the status had none), `icon` when one was given or removed (`stored:
@@ -2250,11 +2282,11 @@ past order on either version.
 | `active` | boolean | no | the **Status** filter; left out, every carrier, since a disabled one can still be tied to a product |
 | `is_free` | boolean | no | the **Free shipping** filter; left out, both |
 | `name` | string | no | part of the carrier name (the **Name** filter of the list), case-insensitive; left out, every carrier |
-| `language` | string | no | for `delay`, which is translated: ISO code of one of the shop's active languages, refused otherwise; the shop default when left out |
+| `language` | string | no | for `delay`, which is translated: ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 **Returns** - per carrier, in the order of the list (`position`, then `id_carrier`): `id_carrier` (**ID**, what `shipping.carriers` of the product tools takes), `id_reference`, `name` (**Name**; the carrier stored as `0` is shown under the shop name, as `somcp_get_product` names it, through one shared function), `delay` (**Delay** on the list, **Transit time** on the form, in `language` for the token's shop), `active` (**Status**), `is_free` (**Free shipping**), `position` (from 0; the list shows it from 1), `logo` (`img/s/<id_carrier>.jpg` as a `download_ref`, `null` when there is none), `tracking_url` (as stored, `@` where the tracking number goes, empty when none), `external_module` (the module that computes its costs when a module created it, `null` otherwise). Plus `count` and `language` (the ISO code `delay` was read in).
 
-**Errors** - a language the shop does not have: the shared refusal, naming the ones it has. An empty list is `carriers: []`, `count: 0`.
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`, with the other problems of the call: a language the shop does not have, named by `SomcpTool::languageProblem()` with the ones it has. An empty list is `carriers: []`, `count: 0`.
 
 **Notes** - PrestaShop gives a carrier a new `id_carrier` each time it is edited and keeps the old row as deleted; `id_reference` does not change. Orders keep the `id_carrier` they were placed with, products are tied to the reference (the product tools turn the `id_carrier` they are given into it). Only the carriers of the token's shop (`carrier_shop`), not deleted; disabled ones are listed. Zones, ranges, prices, groups, tax, handling costs, sizes and weight belong to a future read of one carrier. In Configuration with `somcp_list_order_statuses`: an order uses a carrier without containing one, so the scope is `mcp.orders.read`.
 
@@ -2314,9 +2346,9 @@ countries, and the ISO code is what `somcp_list_tax_rules` gives.
 - `rate_in_default_country` and `default_country`: the rate `somcp_list_tax_rules` gives for this rule and the country it is for, through the same `SomcpToolListTaxRules::defaultCountryRates()`, so the two tools agree;
 - `taxes_enabled`, as `somcp_list_tax_rules`, and `language`.
 
-**Errors** - a language the shop does not have: the shared refusal, naming the
-ones it has. Otherwise in the shared envelope, every problem at once: an
-unknown argument, an identifier that is not a whole number above 0, an
+**Errors** - in the shared envelope, every problem at once: a language the
+shop does not have, named by `SomcpTool::languageProblem()` with the ones it
+has; an unknown argument, an identifier that is not a whole number above 0, an
 unknown, deleted or other-shop rule (`id_tax_rules_group: no tax rule of this
 shop has the identifier <n> - find it with somcp_list_tax_rules`), an unknown
 `country` (refused, never read as every row).
@@ -2325,6 +2357,95 @@ shop has the identifier <n> - find it with somcp_list_tax_rules`), an unknown
 - Read through queries on `tax_rules_group` joined to `tax_rules_group_shop` for the token's shop, as `somcp_list_tax_rules` does, never `new TaxRulesGroup()` or `TaxRulesGroup::getTaxRulesGroups()`, which load a rule of any shop or read the shop from the global context. The rows from `tax_rule`, joined to `country_lang`, `state` and `tax_lang` in the language read; a row whose tax was deleted since is still listed, as the edit page lists it.
 - A rule made with **Country** All has one row per country: the answer can hold some 240 rows. No paging: the list of the edit page shows them all on one page too; `country` narrows it.
 - On 8.0.1 the panel is **Tax Rules**, on 9.0.0 **Tax rules**; the fields and tables are the same on both.
+
+#### `somcp_create_tax_rule`
+**State**: written · [issue #238](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/238)
+**Nature**: `acts(ADD, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - creates one tax rule of **International > Taxes > Tax Rules** with
+its **Name** and **Enable**, as **Add new tax rule** then **Save and stay** do.
+It is the first step of setting up the taxes of a new shop: the rule gets its
+rows per country afterwards, and products take its `id_tax_rules_group`.
+
+**Do not use for** - adding a country, a state or a zip range to a rule,
+changing or deleting a rule (no tool yet); giving a rule to a product
+(→ `somcp_update_product`, `id_tax_rules_group`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** | string | yes | at most 64 characters, `Validate::isGenericName()` (no `<`, `>`, `=`, `{`, `}`) |
+| `active` | **Enable** | boolean | no | left out, `false`, the default of the form; the answer says so. A disabled rule is not offered on the product page |
+
+**Then** - `new TaxRulesGroup()`, `name`, `active`, `add()` with
+`id_shop_list` set to the token's shop, as the form saves it in that shop's
+context; then read back through `SomcpToolGetTaxRule::rule()`, the function of
+`somcp_get_tax_rule`.
+
+**Returns** - `created: true`, then `tax_rule`, the rule as
+`somcp_get_tax_rule` returns it in the shop default language
+(`id_tax_rules_group`, `name`, `active`, `date_add`, `date_upd`,
+`country_rules` empty, `rate_in_default_country` 0, `default_country`,
+`taxes_enabled`, `language`). When `active` was left out, a `note` says the
+rule was created disabled, as the form does.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, every problem at once, each named with its field: `name` missing
+(`name: required`), not a text, empty, too long (`name: 64 characters at most,
+<n> given`) or with a refused character; `active` not a boolean (`active: true
+or false`, as `somcp_list_tax_rules`); unknown arguments through
+`SomcpTool::unknownFields()`, the fields `somcp_get_tax_rule` returns and the
+shop works out named as such. A failed `add()` is reported as such, the rule
+removed again if it went in: nothing half written.
+
+**Notes**
+- Not replayable: each call creates one more rule, even with the same name. On a lost answer, read `somcp_list_tax_rules` with `name` and `active: false` before calling again.
+- Scope `mcp.catalog.write`, as `somcp_list_tax_rules` reads with `mcp.catalog.read`: a tax rule is created to price products.
+- Multistore: the rule is created for the token's shop only, as the form in one shop's context.
+- The same form, fields, class definition and tables on 8.0.1 and 9.0.0; only the panel title differs (**Tax Rules** / **Tax rules**). Names are not unique: the back office saves two rules of the same name.
+
+#### `somcp_list_taxes`
+**State**: written · [issue #237](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/237)
+**Nature**: `acts(VIEW, 'AdminTaxes')` · **Scope**: `mcp.catalog.read`
+
+**Does** - lists the taxes of **International > Taxes > Taxes** with the
+columns of that list: **ID**, **Name**, **Rate**, **Enabled**. It is the source
+of the `id_tax` a tax rule applies (`somcp_get_tax_rule` gives it per country):
+no other tool gives one. Read only.
+
+**Do not use for** - the tax rules a product takes (→ `somcp_list_tax_rules`:
+a product takes a tax rule, never a tax); what a rule applies per country
+(→ `somcp_get_tax_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** filter | string | no | part of the name, case-insensitive, in the language of the answer; left out, every tax |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**, the default of the list) |
+| `language` | | string | no | ISO code for the names, through `SomcpTool::readLanguage()`; the shop default when left out |
+
+No paging: a shop holds tens of taxes, not thousands, and one answer lets the
+assistant pick the right one by name and rate.
+
+**Returns** - `taxes`, sorted by `id_tax` as the list: `id_tax`, `name`, `rate`
+(a number, `4` for `4.000`), `active`. Plus `count`, `taxes_enabled` (**Enable
+tax** of the **Tax options**, as `somcp_list_tax_rules` gives it: when false no
+rate is charged at all) and `language`.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_tax_rules`), a language the shop does not have, named by
+`SomcpTool::languageProblem()` with the ones it has. An empty list is
+`taxes: []`, `count: 0`.
+
+**Notes**
+- Read through a query on `tax` and `tax_lang` (left join, so a tax with no name in the language read is still listed), `deleted = 0`, rather than `Tax::getTaxes()`, which takes the language and nothing else and has no name filter. A tax deleted from the list stays in the table with `deleted = 1` when an order used it; the list leaves it out, and so does the tool.
+- Taxes are not tied to a shop (no `tax_shop` table on either version): the same list for every shop.
+- `name` filters as the **Name** filter of `somcp_list_tax_rules`, `somcp_list_manufacturers` and `somcp_list_attachments` do.
+- The same list, columns, filters and tables on 8.0.1 and 9.0.0; 9.0.0 only offers two more **Items per page** choices. The **Tax options** form below the list is not read.
 
 #### `somcp_list_customer_groups`
 **State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)
@@ -2582,7 +2703,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | `mpn` | string | no | part of the product's MPN |
 | `upc` | string | no | part of the product's UPC barcode |
 | `isbn` | string | no | part of the product's ISBN |
-| `sort` | enum | no | `date_add_desc` (default), `name_asc`, `price_asc`, `price_desc`, `quantity_asc`, `quantity_desc` |
+| `sort` | enum | no | `date_add_desc` (default), then the columns of the back office product list, each way: `id_asc`, `id_desc`, `name_asc`, `name_desc`, `reference_asc`, `reference_desc`, `category_asc`, `category_desc` (the name of the default category in the language of the call, as the **Category** column shows it), `price_asc`, `price_desc`, `quantity_asc`, `quantity_desc`, `active_asc`, `active_desc` (**Status**); ties by `id_product`, in the same direction |
 | `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
@@ -2613,7 +2734,7 @@ The products and the categories they are sorted into: texts, prices, combination
 |---|---|---|---|
 | `id_product` | integer | yes | from `somcp_search_products` |
 | `id_product_attribute` | integer | no | one combination of that product: `combinations` then holds that one only, and `specific_prices` and `suppliers` keep what applies to it |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - one object, grouped like the tabs of the product page, with `language` (the ISO code the texts are read in) at the top. Texts are in `language`; every amount comes with `currency`. Values are the ones PrestaShop stores, so the write tools can take them back as they are.
 
@@ -2649,7 +2770,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - `tax_rate` is the rate of the tax rule in the shop's default country, the one the back office shows, and the one `somcp_search_products` uses: 0 when the shop has taxes switched off or the rule has nothing for that country. Amounts with tax are rounded to the precision of the shop default currency; the ecotax is not added to them.
 - No carrier ticked on the product means every carrier may deliver it: each one then says `available: true`.
 - `low_stock_threshold` is read by `SomcpCatalog::threshold()`, the code `somcp_get_stock` uses, and the ecotax rate by `SomcpCatalog::ecotaxRate()`, the code `somcp_search_products` uses, so the three tools agree. The pack items are read from the `pack` table rather than `Pack::getItems()`, which loads a full product per item.
-- A `language` the shop does not have is refused, like the other read tools, rather than read in the default language.
+- A `language` the shop does not have is refused, like the other read tools, rather than read in the default language - one line among the other problems of the call (`SomcpTool::languageProblem()`).
 - Read the product in the shop of the token (`product_shop`), never the default shop. Stock follows the shop's stock sharing, as the core decides it.
 - Features are read from the tables rather than `Product::getFrontFeatures()`, which returns nothing when features are switched off for the storefront and does not say whether a value is custom. Combinations are read the same way rather than with `Product::getAttributeCombinations()`, whose stock join ignores the shop.
 
@@ -2706,7 +2827,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | `pricing` | `price_tax_excl` | merchant | required |
 | | `id_tax_rules_group` | merchant, from the shop | id from `somcp_list_tax_rules`, never guessed; 0 for no tax; left out, the rule the back office preselects for a new product (the most used one), so a product is never sold without VAT by omission |
 | | `wholesale_price`, `unit_price_tax_excl`, `unity`, `on_sale` | merchant | |
-| | `ecotax_tax_excl` | merchant | a positive number; refused on PrestaShop 9 while the ecotax is switched off (`PS_USE_ECOTAX`), since the field is then not on the page; always taken on PrestaShop 8 |
+| | `ecotax_tax_excl` | merchant | a positive number; refused on PrestaShop 9 while the ecotax is switched off (`PS_USE_ECOTAX`), since the field is then not on the page, unless it is the value already stored, given back unchanged (0 for a new product); always taken on PrestaShop 8 |
 | `specific_prices` | `rules` as read by `somcp_get_product`, plus `priorities` | merchant | currency and country by ISO code, group from `somcp_list_customer_groups`; each written through `SpecificPrice::add()` for the shop of the token; a combination is named by its position in `combinations` (`combination`, from 0); a percentage `reduction` is the fraction PrestaShop stores, 0.2 for 20 %; a rule with neither a price nor a reduction is refused; `priorities` lists `id_shop`, `id_currency`, `id_country`, `id_group` once each (`id_customer`, always first, is left out); `use_default_priorities` (boolean, the radio **Use default order** / **Set a specific order for this product** of 9.0.0; 8.0.1 has no radio, the tool works the same on both, the table being the same): `true`, the default, writes no row and takes `priorities` only when it is the shop's default order, `false` needs `priorities`; **Apply to all products** (8.0.1), a shop setting, is not written; `from` and `to` in ISO 8601, converted to the shop's time zone (the shop's time without an offset), so a bound given back as read changes nothing |
 | `seo` | `meta_title`, `meta_description`, `link_rewrite`, `redirect_type`, `id_type_redirected`, `meta_keywords`, `tags` | assistant | every language being filled; see **SEO** below |
 | `options` | `visibility`, `available_for_order`, `show_price`, `online_only`, `active` | merchant | `active` false by default |
@@ -2715,7 +2836,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | `images` | `url` or `upload_ref` | merchant | see **Images** below |
 | | `legend`, `cover`, `position`, `combinations` (positions in `combinations`) | merchant and assistant | legend in every language being filled; one cover at most, the first image that arrived otherwise |
 | `combinations` | `attributes` | merchant, from the shop | `id_attribute` values from `somcp_list_attributes`; two combinations with the same attributes are refused |
-| | `default_on`, `reference`, `mpn`, `upc`, `ean13`, `isbn`, `quantity`, `location`, `available_date`, `available_now`, `available_later`, `price_impact_tax_excl`, `unit_price_impact_tax_excl`, `weight_impact`, `wholesale_price`, `ecotax_tax_excl`, `minimal_quantity`, `low_stock_threshold`, `low_stock_alert` | merchant and assistant | same rules as the product's own fields; one combination is the default; `ecotax_tax_excl` is the combination's ecotax tax excluded, 0 to use the product's, refused on PrestaShop 9 while **Use ecotax** is off, as `pricing.ecotax_tax_excl` (the 8.0.1 form shows it tax included as **Ecotax (tax incl.)**, 9.0.0 both; the stored, tax excluded value is the input); `ecotax_tax_incl`, worked out by the shop, is not written |
+| | `default_on`, `reference`, `mpn`, `upc`, `ean13`, `isbn`, `quantity`, `location`, `available_date`, `available_now`, `available_later`, `price_impact_tax_excl`, `unit_price_impact_tax_excl`, `weight_impact`, `wholesale_price`, `ecotax_tax_excl`, `minimal_quantity`, `low_stock_threshold`, `low_stock_alert` | merchant and assistant | same rules as the product's own fields; one combination is the default; `ecotax_tax_excl` is the combination's ecotax tax excluded, 0 to use the product's, refused on PrestaShop 9 while **Use ecotax** is off, unless it is the value already stored, given back unchanged (0 for a new combination), as `pricing.ecotax_tax_excl` (the 8.0.1 form shows it tax included as **Ecotax (tax incl.)**, 9.0.0 both; the stored, tax excluded value is the input); `ecotax_tax_incl`, worked out by the shop, is not written |
 
 **SEO**
 - Fields: `meta_title`, `meta_description`, `link_rewrite`, `redirect_type`, `id_type_redirected`, `meta_keywords` where the column exists (PrestaShop 8; on 9 the field is refused with a clear message, not dropped silently), and `tags`.
@@ -2730,7 +2851,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - That download is a new network request from the shop, so it is guarded: `https` on the standard port only, no credentials in the address, the host must resolve to a public address (no localhost, no private, link-local, shared, documentation or multicast range, IPv4 hidden in IPv6 included, checked after resolution and then pinned for the connection), no proxy, redirects not followed, 10 MB at most counted while reading, and the content must be a JPEG, PNG, GIF or WebP that `ImageManager` accepts. A refused image is reported in the answer and does not stop the creation.
 - Thumbnails generated through `ImageManager` for every image type, as the back office does, in JPEG and in each extra format switched on in the settings (PrestaShop 8.1 and later), with the fitment of each type on PrestaShop 9.
 
-**Returns** - `created`, `id_product`, `seo_warnings`, `images` (per image, its `url` or `upload_ref`: `id_image` or the reason it was refused), `pack_items` (per item, as given: `added` or the reason it was refused), `virtual_file` (its `url` or `upload_ref`: `added` or the reason it was refused; `null` when none was given), and the product as `somcp_get_product` returns it.
+**Returns** - `created`, `id_product`, `seo_warnings`, `images` (per image, its `url` or `upload_ref`: `id_image` or the reason it was refused), `pack_items` (per item, as given: `added` or the reason it was refused), `pack_quantity` (for a pack counted from its products, the quantity its stock line now holds, worked out from them as `Pack::getQuantity()` does; `null` otherwise), `virtual_file` (its `url` or `upload_ref`: `added` or the reason it was refused; `null` when none was given), and the product as `somcp_get_product` returns it.
 
 **Notes**
 - Written through the core classes (`Product::add()`, `Combination`, `StockAvailable`, `SpecificPrice`, `Image`) so hooks fire and other modules see a normal product creation.
@@ -2761,7 +2882,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | a set chosen as a whole in the back office: `categories`, `related_products`, `features`, `attachments`, `carriers`, `customization` fields | the set given replaces the old one entirely | kept |
 | `combinations` | an item with `id_product_attribute` changes that combination, field by field; an item without one creates a combination | kept |
 | `images` | an item with `id_image` changes its legend, cover, position or combinations, and may carry the `download_ref` `somcp_get_product` returns for that image, which is ignored (a `url`, an `upload_ref` or the `download_ref` of another image beside an `id_image` is refused); an item with `url` or `upload_ref` adds an image | kept |
-| `specific_prices` | an item with `id_specific_price` changes it, field by field; an item without one adds it; `use_default_priorities` `true` removes the product's own order of priorities (the one statement `RemoveSpecificPricePriorityForProductCommand` runs, `DELETE` on `specific_price_priority` for the product), a change only when it had one, and takes `priorities` only when it is the order that applies, so a product read back changes nothing; `false` with `priorities` sets an order of its own, `false` alone on a product following the default writes that default as its own | kept |
+| `specific_prices` | an item with `id_specific_price` changes it, field by field; an item without one adds it; `use_default_priorities` `true` removes the product's own order of priorities (the one statement `RemoveSpecificPricePriorityForProductCommand` runs, `DELETE` on `specific_price_priority` for the product), a change only when it had one, and takes `priorities` only when it is the shop's default order, as the creation does, so a product that follows the default read back changes nothing; `false` with `priorities` sets an order of its own, `false` alone on a product following the default writes that default as its own | kept |
 | `suppliers` | per supplier and combination, the values given replace the old ones | kept |
 | `pack.items` | the list given replaces the pack's contents entirely, compared with the `pack` table first so the same list writes nothing; refused on a product that is not a pack | kept |
 | `virtual_file` | a `file` given replaces the file on disk (the old one deleted once the new one is written, as the back office does) and always counts as a change; the other fields change alone; `file` and `display_filename` are required when the product has no file yet; refused on a product that is not virtual | kept |
@@ -2772,7 +2893,7 @@ Removing is always explicit, never inferred from a missing item: `remove_combina
 
 The `combination` of a specific price or a supplier, and the `combinations` of an image, are positions in the `combinations` of the call, as at creation. An item holding only an `id_product_attribute` points at an existing combination without changing it. A specific price or a supplier row can instead name an existing combination by the `id_product_attribute` `somcp_get_product` gives it, so a rule or a row comes back as it was read; one of the two per item, never both (`<path>: combination or id_product_attribute, not both`), and a combination of another product, or one in `remove_combinations`, is refused with the path of the field. An image names the combinations it illustrates by `combinations` (positions) or, instead, by `id_product_attributes` (existing combinations of this product, from `somcp_get_product`), one of the two per image, never both (`images[<i>]: combinations or id_product_attributes, not both`), so an image given back the combinations it already shows is no change; an empty list means it illustrates none, and a combination that is not of this product is refused (`images[<i>].id_product_attributes: no combination of this product has the identifier <m> - find it with somcp_get_product`), and so is one in `remove_combinations`, which the call deletes before it links the images (`images[<i>].id_product_attributes: combination <m> is also in remove_combinations`). `somcp_create_product` keeps positions only.
 
-**Returns** - `changed: true`, `id_product`, `changes` (each field written: `field`, `old`, `new`; an item added or removed says so), `seo_warnings` for the languages whose texts changed, `images` (per item: `removed`, `changed`, the `id_image` of an image added, or the reason it was refused), `pack_items` (the pack as written, per item `added` or the reason it was refused; `null` when unchanged), `virtual_file` (`added`, `changed`, `removed` or the reason it was refused; `null` when unchanged), and the product as `somcp_get_product` returns it. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
+**Returns** - `changed: true`, `id_product`, `changes` (each field written: `field`, `old`, `new`; an item added or removed says so), `seo_warnings` for the languages whose texts changed, `images` (per item: `removed`, `changed`, the `id_image` of an image added, or the reason it was refused), `pack_items` (the pack as written, per item `added` or the reason it was refused; `null` when unchanged), `pack_quantity` (for a pack counted from its products, its quantity recounted from them; `null` otherwise), `packs` (the packs counted from their products that hold this product, each `id_product` and its recounted `quantity`), `virtual_file` (`added`, `changed`, `removed` or the reason it was refused; `null` when unchanged), and the product as `somcp_get_product` returns it. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
 **Notes**
 - `id_product` that does not exist in this shop, or an `id_product_attribute`, `id_image`, `id_specific_price` that does not belong to it: refused, nothing written.
@@ -2852,7 +2973,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - per category: `id_category`, `name`. Plus `count`.
 
@@ -2875,7 +2996,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_category` | integer | yes | from `somcp_list_categories` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_category`, `name`, `active` (Displayed), `id_parent` and `parent_name`, `level`, `position`, `description`, `additional_description`, `groups` (id and name of each customer group with access), `link_rewrite`, `url`, `meta_title`, `meta_description`, `meta_keywords`, `cover_image`, `thumbnail_image` (the **Category thumbnail**) and `menu_thumbnails` (a `download_ref` each, `null` when there is none), `products_count`, `children_count`, and on PrestaShop 9 `redirect_type` with `id_type_redirected`.
 
@@ -3064,7 +3185,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_manufacturer` | integer | yes | from `somcp_list_manufacturers` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_manufacturer`, `name`, `short_description`, `description`, `meta_title`, `meta_description`, `meta_keywords`, `logo` (a `download_ref`, `null` without one), `active`, `products_count`.
 
@@ -3166,7 +3287,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `postcode` | string | no | part of the **Zip/Postal code** |
 | `city` | string | no | part of the **City**, case-insensitive |
 | `country` | string | no | ISO code of the **Country**, for example `FR` |
-| `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused. The shop default language when left out. |
+| `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused, among the other problems of the call with `SomcpTool::languageProblem()`. The shop default language when left out. |
 
 **Returns** - `addresses`, per address: `id_address`, `id_manufacturer`, `manufacturer_name`, `lastname`, `firstname`, `postcode`, `city`, `country` (ISO code, `null` when the country no longer exists), `country_name` (the name the **Country** column shows, in `language`, `null` when the country no longer exists). Plus `count` and `language`. An `id_manufacturer` that is not a brand of this shop, a `country` code no country has and a `language` the shop does not have are errors, not an empty list.
 
@@ -3310,7 +3431,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_supplier` | integer | yes | from `somcp_list_suppliers` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_supplier`, `name`, `description`, `phone`, `phone_mobile`, `address1`, `address2`, `postcode`, `city`, `country` (ISO code), `state` (ISO code, when the country has states), `dni` (national ID number), `meta_title`, `meta_description`, `meta_keywords`, `logo` (a `download_ref`, `null` without one), `active`, `products_count`.
 
@@ -3419,7 +3540,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | no | one group only |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `attribute_groups`, per group: `id_attribute_group`, `name`, `group_type` (`select`, `radio` or `color`), `position` (0 for the first, the **Position** column), `values_count` (the **Values** column), and its `values`: `id_attribute`, `name`, `position`, `color` (`#RRGGBB`, `null` outside a group of type `color`). The fields keep the names of `somcp_get_attribute_group` and `somcp_get_attribute_value`. Plus `count`, the number of groups. An `id_attribute_group` that is not a group of this shop is an error, not an empty list.
 
@@ -3441,7 +3562,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | yes | from `somcp_list_attributes` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_attribute_group`, `name`, `public_name`, `group_type` (select, radio, color), `position`, `values_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. Then what a delete of the group would take, in the shop of the token: `combinations_count` (the combinations that hold one of its values), `combinations_only_on_it` (those made only of its values, which `somcp_delete_attribute_group` deletes with their stock) and `products` (the distinct products of those combinations, each as `id_product` and `name`, in `language`), counted by `SomcpToolGetAttributeGroup::whatGoes()`, the function the delete counts with. A group that is not one of this shop is an error.
 
@@ -3514,11 +3635,11 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute_group` | integer | yes | from `somcp_list_attributes` or `somcp_get_attribute_group`; a string of digits accepted, as the other attribute group tools |
-| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `deleted: true`, `id_attribute_group`, `name` (read before the delete with `SomcpToolGetAttributeGroup::group()`, in `language`), `language`, `values_deleted` (the `values_count` it had), `combinations_deleted` (combinations whose every value was in this group), `combinations_changed` (combinations that only lost one value), `products` (the distinct products of those combinations, each as `id_product` and `name`), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a condition on one of its values, left in place by the core), `still_in_shops` (how many other shops still hold the group). All counted before the delete, in the shop of the token.
 
-**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute_group` missing or not a whole number above 0; a group not in this shop (`id_attribute_group: no attribute group of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeGroup::existingGroup()`). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same group is refused the same way, never answered as a success.
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute_group` missing or not a whole number above 0; a group not in this shop (`id_attribute_group: no attribute group of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeGroup::existingGroup()`). An unknown language is one more line of the same envelope (`SomcpTool::languageProblem()`). A second call for the same group is refused the same way, never answered as a success.
 
 **Notes**
 - Irreversible. Through `AttributeGroup::delete()`, never with SQL of its own: the values are removed from every combination, the combinations left without any value are deleted through `Combination::delete()` with their stock and images, the values are deleted, the other groups are reordered and `actionAttributeGroupDelete` fires. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
@@ -3543,7 +3664,7 @@ The name and every contact field are one string each, the same in every language
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute` | integer | yes | from `somcp_list_attributes` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_attribute`, `id_attribute_group` and `group_name`, `name`, `position`, `color` (hex code) and `texture` (the current texture as a `download_ref`, `null` when there is none), when `ps_facetedsearch` is installed and enabled `url_name` and `meta_title`, then `combinations_count` (the combinations of this shop that hold the value, deleted with it by `somcp_delete_attribute_value`) and `products` (the distinct products of those combinations, each as `id_product` and `name`, in `language`). A value that is not one of this shop is an error.
 
@@ -3621,11 +3742,11 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_attribute` | integer | yes | from `somcp_list_attributes` or `somcp_get_attribute_value`; a string of digits accepted, as the other attribute value tools |
-| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `deleted: true`, `id_attribute`, `id_attribute_group`, `name` (read before the delete, in `language`), `language`, `combinations_deleted` (the combinations that held the value, each as `id_product` and `id_product_attribute`, as they were before the call), `default_changed` (the `id_product` of the products that got a new default combination), `cart_rules` (the `id_cart_rule` whose product restrictions held this value), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a condition on it, left in place by the core), `still_in_shops` (how many other shops still hold the value). All counted before the delete, in the shop of the token, through the function shared with `somcp_get_attribute_value`.
 
-**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute` missing or not a whole number above 0; a value not in this shop (`id_attribute: no attribute value of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeValue::existingValue()`). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same value is refused the same way, never answered as a success.
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_attribute` missing or not a whole number above 0; a value not in this shop (`id_attribute: no attribute value of this shop has the identifier <n> - find it with somcp_list_attributes`, found with `SomcpToolGetAttributeValue::existingValue()`). An unknown language is one more line of the same envelope (`SomcpTool::languageProblem()`). A second call for the same value is refused the same way, never answered as a success.
 
 **Notes**
 - Irreversible. Through `ProductAttribute::delete()`, never with SQL of its own: every combination that uses the value is deleted through `Combination::delete()` with its stock and images, a product that loses its default combination gets the first one left, the cart rule restrictions on the value are cleaned, the other values of the group are reordered and `actionAttributeDelete` fires. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
@@ -3649,7 +3770,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | no | one feature only |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `features`, per feature: `id_feature`, `name`, `position` (0 for the first, as `somcp_get_feature` returns it), `values_count` (the **Values** column: its predefined values), and its `values`: `id_feature_value`, `value`, and on PrestaShop 9 `position`. Plus `count`, the number of features. An `id_feature` that is not a feature of this shop is an error, not an empty list.
 
@@ -3671,7 +3792,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | yes | from `somcp_list_features` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_feature`, `name`, `position`, `values_count`, `products_count`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`, `indexable`. A feature that is not one of this shop is an error.
 
@@ -3743,11 +3864,11 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature` | integer | yes | from `somcp_list_features` or `somcp_get_feature`; a string of digits accepted, as the other feature tools |
-| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+| `language` | string | no | ISO code for `name` in the answer; read with `SomcpTool::readLanguage()`, refused among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `deleted: true`, `id_feature`, `name` (read before the delete with `SomcpToolGetFeature::feature()`, in `language`), `language`, `values_deleted` (all its values, custom ones included), `products_count` (how many distinct products of this shop showed it, counted with `SomcpToolGetFeature::productsCount()` and named as in `somcp_get_feature`), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a condition on one of its values, left in place by the core, read with `SomcpToolCreateCatalogPriceRule::rulesOn()`). All counted before the delete.
 
-**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature` missing or not a whole number above 0; a feature not in this shop (`id_feature: no feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeature::existingFeature()`); a feature shared with other shops (see Notes). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same feature is refused the same way, never answered as a success.
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature` missing or not a whole number above 0; a feature not in this shop (`id_feature: no feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeature::existingFeature()`); a feature shared with other shops (see Notes). An unknown language is one more line of the same envelope (`SomcpTool::languageProblem()`). A second call for the same feature is refused the same way, never answered as a success.
 
 **Notes**
 - Irreversible. Through `Feature::delete()`, never with SQL of its own: its values and their texts are deleted, it is removed from every product, `actionFeatureDelete` fires and the positions are reordered. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
@@ -3771,7 +3892,7 @@ The faceted search fields follow the rule given under `somcp_create_attribute_gr
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature_value` | integer | yes | from `somcp_list_features` |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_feature_value`, `id_feature` and `feature_name`, `value`, and when `ps_facetedsearch` is installed and enabled: `url_name`, `meta_title`. On PrestaShop 9, `position` too (0 for the first). `products_count`: the distinct products of this shop that have the value (`feature_product` joined to `product_shop`), counted with `SomcpToolGetFeatureValue::productsCount()`, the function `somcp_delete_feature_value` reports its `products_count` with: the merchant hears it before confirming a delete. A value that is not one of this shop is an error.
 
@@ -3845,11 +3966,11 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_feature_value` | integer | yes | from `values[]` of `somcp_list_features`; a string of digits accepted, as the other feature tools |
-| `language` | string | no | ISO code for `feature_name` and `value` in the answer; read with `SomcpTool::readLanguage()`, refused with `SomcpTool::languageRefused()` |
+| `language` | string | no | ISO code for `feature_name` and `value` in the answer; read with `SomcpTool::readLanguage()`, refused among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `deleted: true`, `id_feature_value`, `id_feature`, `feature_name` and `value` (read before the delete with `SomcpToolGetFeatureValue::featureValue()`, the names `somcp_get_feature_value` answers with), `language`, `products_count` (how many distinct products of this shop had the value, counted with `SomcpToolGetFeatureValue::productsCount()` as `products_count` of `somcp_get_feature_value`), `catalog_price_rules` (the `id_specific_price_rule` of this shop with a **Feature** condition on the value, left in place by the core, read with `SomcpToolCreateCatalogPriceRule::rulesOn()`). All counted before the delete.
 
-**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature_value` missing or not a whole number above 0; a value not in this shop (`id_feature_value: no value of a feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeatureValue::loadedValue()`); a custom value (`custom` = 1, sent to `somcp_get_product` and `somcp_update_product`); a value of a feature shared with other shops (see Notes). An unknown language is refused by `SomcpTool::languageRefused()`. A second call for the same value is refused the same way, never answered as a success.
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:`: an unknown argument (`<name>: not a field of this tool`); `id_feature_value` missing or not a whole number above 0; a value not in this shop (`id_feature_value: no value of a feature of this shop has the identifier <n> - find it with somcp_list_features`, found with `SomcpToolGetFeatureValue::loadedValue()`); a custom value (`custom` = 1, sent to `somcp_get_product` and `somcp_update_product`); a value of a feature shared with other shops (see Notes). An unknown language is one more line of the same envelope (`SomcpTool::languageProblem()`). A second call for the same value is refused the same way, never answered as a success.
 
 **Notes**
 - Irreversible. Through `FeatureValue::delete()`, never with SQL of its own: the value is removed from every product (`feature_product`), its row and texts are deleted and `actionFeatureValueDelete` fires, which `ps_facetedsearch` listens to for its own row of the value. The employee of the token is put on the context for the call, as `somcp_delete_product` does.
@@ -3874,7 +3995,7 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 |---|---|---|---|
 | `name` | string | no | part of the name (Name), case-insensitive, in the language read |
 | `file_name` | string | no | part of the name the file was uploaded under (File), case-insensitive |
-| `language` | string | no | ISO code of one of the shop's active languages; the shop default when left out; any other code is refused |
+| `language` | string | no | ISO code of one of the shop's active languages; the shop default when left out; any other code is refused, among the other problems of the call with `SomcpTool::languageProblem()` |
 
 **Returns** - `attachments`, per file: `id_attachment` (ID), `name` (Name), `description` (Description of the form, in the same language), `file_name` (File), `file_size` (Size, in bytes), `products_count` (Products), `mime`, `file` (a `download_ref` for `somcp_download_file`). Plus `count`, the number of files, and `language`, the ISO code the names and descriptions were read in.
 
@@ -3885,7 +4006,7 @@ The faceted search fields follow the rule given under `somcp_create_feature`. A 
 - Files have no shop of their own in PrestaShop: every shop sees the same list, as in the back office. `products_count` only counts products of the shop of the token (`product_shop`), so a count never reaches into another shop.
 - A file with no name in the language read is still listed, with an empty `name`, rather than missing from the only list of identifiers.
 - Filters as the back office list does: `name` on the translated name, `file_name` on the uploaded name. Left out, every file is listed.
-- The language follows the shared rule: the shop default when left out (never the language of the client's browser), refused with the list of the shop's languages when unknown, inactive or not a string, and named in the answer so a text can be given back keyed by its ISO code.
+- The language follows the shared rule: the shop default when left out (never the language of the client's browser), refused with the list of the shop's languages when unknown, inactive or not a string, as one line among the other problems of the call (`SomcpTool::languageProblem()`), and named in the answer so a text can be given back keyed by its ISO code.
 - Lists only, never uploads: files do not travel through the conversation.
 
 ### Stock
@@ -3907,7 +4028,7 @@ The quantities the storefront sells against, per product and combination.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_product` | integer | yes |  |
-| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out; given back as `language` in the answer |
 
 **Returns** - `id_product`, `name`, `reference`, `id_supplier`, `supplier`, `active`, the product line - `quantity` (total), `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `low_stock_alert`, `reserved_by` - and per combination: `id_product_attribute`, `attributes`, `reference`, `quantity`, `physical_quantity`, `reserved_quantity`, `low_stock_threshold`, `low_stock_alert`, `reserved_by`. Each `reserved_by` entry is `id_order`, `reference` and `quantity`.
 
@@ -3967,7 +4088,7 @@ The quantities the storefront sells against, per product and combination.
 | `quantity` | integer | one of the two | the new quantity |
 | `delta` | integer | one of the two | a movement, positive or negative |
 
-**Returns** - `changed`, `id_product`, `id_product_attribute`, `previous_quantity`, `quantity`.
+**Returns** - `changed`, `id_product`, `id_product_attribute`, `previous_quantity`, `quantity`, and `packs` when the product is held in packs counted from their products: each `id_product` and the `quantity` recounted after the change.
 
 **Notes**
 - The Stock page's own sequence (`StockRepository::updateStock()`): the change goes through `StockAvailable::updateQuantity()` as a movement with the employee edition reason, then the physical and reserved quantities of the product are brought in line. A `quantity` becomes the movement that reaches it. `setQuantity()` is not used: it skips packs, the low stock alert and the movement reason. The employee of the token is put on the context for the write, so the movement carries their name.
@@ -4064,7 +4185,7 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 |---|---|---|---|
 | `id_customer` | integer | one of the two | from `somcp_search_customers` or `somcp_get_order`; used first when both are given |
 | `email` | string | one of the two | exact; an email shared by several accounts of the shop (a guest and a registered account) is refused with the `id_customer` of each |
-| `language` | string | no | ISO code of one of the shop's active languages, for the social title, group, country, order status and product names; refused otherwise; the shop default language when left out |
+| `language` | string | no | ISO code of one of the shop's active languages, for the social title, group, country, order status and product names; refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default language when left out |
 
 A misspelt field is named and nothing is read. A customer of another shop, or deleted with their data kept (`deleted = 1`), answers as unknown in the shared envelope: `id_customer: no customer of this shop has the identifier <n> - find it with somcp_search_customers`; an email nobody has, `email: no customer of this shop has this email - find one with somcp_search_customers`.
 
@@ -4078,7 +4199,7 @@ A misspelt field is named and nothing is read. A customer of another shop, or de
 - `viewed_products`: the 10 product pages most recently visited: `id_product`, `name`.
 - `vouchers`: the cart rules reserved to this customer, each `id_cart_rule`, `name`, `code`, `quantity`, `date_to`, `active`.
 - `messages_count`: the customer's messages (`CustomerThread::getCustomerMessages()`).
-- `last_emails`: the 10 newest, each `date_add`, `template`, `subject`, `language`.
+- `last_emails`: the 10 newest, each `date_add`, `template`, `subject`, `language` (ISO code of the language the email was sent in).
 - `last_connections`: the 10 newest, each `date_add`, `pages_viewed`, `total_time`, `origin` (the referrer), `ip_address`.
 
 Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
@@ -4270,13 +4391,13 @@ The CMS pages of the storefront.
 | `id_cms_category` | integer | no | only the pages of that category (not of its sub-categories), as the screen; every category when left out. A category the shop does not have is refused |
 | `active` | boolean | no | **Displayed** filter: `true` displayed pages only, `false` hidden only; both when left out |
 | `title` | string | no | part of the **Title**, compared without case |
-| `language` | string | no | ISO code of one of the shop's active languages, the shop default when left out, any other value refused |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 No paging: a shop has a few dozen pages at most, and every matching page is returned.
 
 **Returns** - `pages[]` with `id_cms` (**ID**, the identifier `somcp_update_cms_seo` and `somcp_audit_cms_seo` take), `link_rewrite` (**URL**), `title` (**Title**, column `meta_title`), `meta_title` (**Meta title**, column `head_seo_title`, empty string when not set), `position` (**Position**, from 0 as in the other tools; the screen shows it from 1), `active` (**Displayed**), `id_cms_category`, `url` (the page's address on the storefront); `categories[]`, every category of the shop, root included, with `id_cms_category`, `name`, `description`, `id_parent` (`0` for the root), `position` (from 0), `active`, `pages_count` (pages directly in it); then `total_count` (pages returned) and `language` (ISO code the texts are in). Pages sorted by category then position, categories by `id_parent` then position.
 
-**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); an `id_cms_category` that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, whose `categories[]`, called without the filter, list them; a non-boolean `active`: `active: true or false`; a non-string `title`: `title: a string, part of the page Title`; an unknown `language`: the shared language refusal, checked first. No page matching is not an error: `pages` is empty.
+**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); an `id_cms_category` that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, whose `categories[]`, called without the filter, list them; a non-boolean `active`: `active: true or false`; a non-string `title`: `title: a string, part of the page Title`; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages. No page matching is not an error: `pages` is empty.
 
 **Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_update_cms_seo`, never by the column name. Categories are returned because no other tool gives an `id_cms_category`. Only the token's shop (`cms_shop`, `cms_category_shop`, `id_shop` of the `_lang` tables). The content of a page is not returned.
 
@@ -4295,13 +4416,13 @@ Same columns, filters and grid queries on 8.0.1 and 9.0.0; 9.0.0 adds a **Rearra
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_cms` | integer | yes | **ID** of the list, from `somcp_list_cms_pages`. A page the token's shop does not have (absent from `cms_shop`) is refused as unknown, never read from another shop, by the same check as `somcp_update_cms_seo` |
-| `language` | string | no | ISO code of one of the shop's active languages, the shop default when left out, any other value refused |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 **Returns** - `id_cms`; `language` (ISO code the texts are in); `id_cms_category` (**Page category**, named as in `somcp_list_cms_pages`, whose `categories[]` give its name); `title` (**Title**, column `meta_title`); `meta_title` (**Meta title**, column `head_seo_title`, empty string when not set); `seo_title` (the title search engines read: `meta_title` when filled, `title` otherwise, built by the same function as `somcp_update_cms_seo`); `meta_description` (**Meta description**); `meta_keywords` (**Meta keywords**, PrestaShop 8 only, `null` on 9, read from `CMS::$definition`, never the version number); `link_rewrite` (**Friendly URL**); `content` (**Page content**, the stored HTML as is, never cut, empty string when not set); `indexation` (**Indexation by search engines**, boolean); `active` (**Displayed**, boolean); `position` (**Position**, from 0 as in `somcp_list_cms_pages` and the other tools; the screen shows it from 1); `url` (the page's address on the storefront).
 
 Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `link_rewrite`, `indexation`) has the same name here, so a value read can be given back; the texts here are plain strings in the language asked, where `somcp_update_cms_seo` takes them as an object indexed by ISO code (`{"en": "..."}`).
 
-**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); a missing `id_cms`, or one that is not a whole number above 0: `id_cms: a whole number above 0` (`"3"` is read as 3); an unknown `id_cms`: `id_cms: no CMS page of this shop has the identifier <id> - find it with somcp_list_cms_pages`, the line `somcp_update_cms_seo` gives too; an unknown `language`: the shared language refusal, checked first.
+**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); a missing `id_cms`, or one that is not a whole number above 0: `id_cms: a whole number above 0` (`"3"` is read as 3); an unknown `id_cms`: `id_cms: no CMS page of this shop has the identifier <id> - find it with somcp_list_cms_pages`, the line `somcp_update_cms_seo` gives too; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages.
 
 **Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_list_cms_pages` and `somcp_update_cms_seo`, never by the column name. Read through the core object `CMS`, not raw SQL. The texts are per language and per shop (`cms_lang.id_shop`). The form's **SEO preview** is built from the fields above and stores nothing.
 
@@ -4331,7 +4452,7 @@ The modules present on the shop, their state and version.
 
 **Returns** - per module, sorted by `display_name`: `name` (technical name, the module's folder, the identifier `somcp_get_module`, `somcp_install_module` and `somcp_set_module_active` take); `display_name` (card title, in the language of the request); `version` (version of the files on disk); `version_installed` (`module.version`, `null` when not installed); `needs_upgrade` (`true` when the files on disk are newer than `version_installed`, the core's rule of `Module::needUpgrade()`); `author` ("by ..."); `description` (card text); `installed` (boolean); `active` (**Enabled** / **Disabled** on the token's shop, from `module_shop`, `false` when not installed); `active_on_mobile` (**Enable Mobile** / **Disable Mobile**, from bit 4 of `module_shop.enable_device`, `null` when not installed). Then `total_count` (modules matching, before `limit`) and `offset`.
 
-**Errors** - an unknown `status`, a non-string `query`, an out-of-range `limit` or `offset`: a refusal that names the field. No module matching: not an error, `modules` is empty.
+**Errors** - in the shared envelope, every problem at once, nothing read: a field the tool does not take (`<field>: not a field of this tool`), an unknown `status`, a non-string `query`, an out-of-range `limit` or `offset`, each naming the field. No module matching: not an error, `modules` is empty.
 
 **Notes** - read from the shop only: what is on disk through `Module::getModulesOnDisk(true)` (each module's `config.xml` or class), the state from `module` and `module_shop` for the token's shop, never the global context's. The marketplace's **Upgrade available**, its categories (**Category** filter) and **Recently used** need a network call or are not stored by the shop: not returned. Stays on the legacy `Module` class, present on both versions. `somcp` lists itself like any other module. `id_module` is never returned: the name is the identifier everywhere.
 
@@ -4353,7 +4474,7 @@ The modules present on the shop, their state and version.
 
 **Returns** - the same fields, same names and same rules as one entry of `modules[]` in `somcp_list_modules`: `name`, `display_name` (card title), `version` (files on disk), `version_installed` (`null` when not installed), `needs_upgrade`, `author`, `description`, `installed`, `active` (on the token's shop, `false` when not installed), `active_on_mobile` (`null` when not installed). Plus `hooks[]`: the hooks the module is attached to on the token's shop, each with `name` (`hook.name`) and `position` (`hook_module.position`, as stored), sorted by hook name; empty when the module is not installed or not enabled on this shop.
 
-**Errors** - a missing, empty or non-string `name`: a refusal that names the field. A `name` neither on disk nor in `module`: "No module of this shop has this name", naming `somcp_list_modules` as the way to find it.
+**Errors** - in the shared envelope, every problem at once, nothing read: a field the tool does not take (`<field>: not a field of this tool`); a missing, empty or non-string `name`, naming the field. A `name` neither on disk nor in `module`: `name: no module of this shop has the technical name <name> - find it with somcp_list_modules` (`SomcpTool::notFound()`).
 
 **Notes** - read from the shop only, as `somcp_list_modules`, through the same row builder (`SomcpModules`): the files through `Module::getModulesOnDisk(true)`, the state from `module`, `module_shop` and `hook_module` for the token's shop, never the global context's. A module installed whose folder is gone is returned from the database alone, with an empty `version`. `id_module` is never returned: the name is the identifier everywhere. **Upgrade available**, **Category** and **Recently used** are not returned, for the reasons given in `somcp_list_modules`.
 
@@ -4375,10 +4496,10 @@ The modules present on the shop, their state and version.
 
 **Returns** - the fields of `somcp_get_module` read back after the install, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`.
 
-**Errors** - same shape as `somcp_get_module`:
-- a missing, empty or non-string `name`: a refusal that names the field;
-- a `name` neither on disk nor installed, or installed with its folder gone: "No module of this shop has this name", naming `somcp_list_modules`;
-- a module already installed: refused and nothing changed ("already installed, version ...; upgrade it with somcp_upgrade_module and a newer archive"), since `ModuleManager::install()` would upgrade it;
+**Errors** - in the shared envelope, every problem at once, under "Nothing was installed. Correct these and call again:":
+- a field the tool does not take (`<field>: not a field of this tool`); a missing, empty or non-string `name`, naming the field;
+- a `name` neither on disk nor installed, or installed with its folder gone: `name: no module of this shop has the technical name <name> - find it with somcp_list_modules` (`SomcpTool::notFound()`);
+- a module already installed: refused and nothing changed (`name: already installed, version <v> - upgrade it with somcp_upgrade_module and a newer archive`), since `ModuleManager::install()` would upgrade it;
 - the core refuses (no **add** right on the Module Manager), or the module's `install()` returns `false`: "The module was not installed", with the module's own messages (`getErrors()`) and the state read back, so nothing is claimed as installed.
 
 **Notes** - disk only: no archive, no `url`, no `upload_ref`; `install()` gets no source. Through the core's `ModuleManager` of the back office's container (`SomcpModules::throughCore()`): the MCP endpoint is no back office request, so the back office's kernel is booted for the call and its container made the one every module reaches, then the previous one put back. Before that, `ps_distributionapiclient`, shipped with PrestaShop, threw on `actionBeforeInstallModule` for want of a back office service, and nothing could be installed from an assistant. With the token's employee on the context for the length of the call, the module's install checks (name, `ps_versions_compliancy`, `dependencies`, override conflicts, in `Module::install()`), hooks and tabs are set up as from the back office. Every shop is in maintenance during the install and put back as it was once the module is installed; a failed install leaves it in maintenance and says so. What the module prints while installing is dropped. On a multistore installation the core installs for the shops of the current context. Not replayable: on a lost answer, read `somcp_get_module` instead of retrying.
@@ -4446,7 +4567,7 @@ Then the new files are checked as the back office checks a module before install
 
 **Errors** - in the shared envelope, `SomcpTool::refused('upgraded', ...)`: every problem at once under "Nothing was upgraded.":
 - both `upload_ref` and `name`, or neither; the refusals of `somcp_upload_module` for the archive;
-- no folder `modules/<name>` (→ `somcp_upload_module`); on disk but not installed (→ `somcp_install_module`); `name` of no module; files on disk at the installed version ("nothing to upgrade");
+- no folder `modules/<name>` (→ `somcp_upload_module`); on disk but not installed (→ `somcp_install_module`); `name` of no module (`name: no module of this shop has the technical name <name> - find it with somcp_list_modules`); files on disk at the installed version ("nothing to upgrade");
 - no version in the archive; a version not higher than the installed one;
 - the new files not loading as a module, answering with another version (the module already loaded in this request), made for other PrestaShop versions, or needing a module that is not installed;
 - the upgrade itself failing: "The module was not upgraded", the core's message and the state read back. The new files stay, and what the scripts already changed in the database stays changed, as in the back office; the shop stays in maintenance.
@@ -4480,12 +4601,11 @@ At least one of `active` and `active_on_mobile` is given; both may be given in o
 
 **Returns** - the fields of `somcp_get_module` read back after the change, through the same function (`SomcpModules::read()`): `name`, `display_name`, `version`, `version_installed`, `needs_upgrade`, `author`, `description`, `installed`, `active`, `active_on_mobile`, `hooks[]`; plus `changed`: each field written with `from` and `to` (`{"active": {"from": true, "to": false}}`).
 
-**Errors** - `SomcpTool::text('<field>: ...', true)`:
-- a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, or neither given: a refusal that names the field;
-- a `name` that is not a module of the shop: "No module of this shop has this name", naming `somcp_list_modules`;
+**Errors** - in the shared envelope, under "Nothing was changed. Correct these and call again:", the mistakes of the call all at once, then the state of the module once they are corrected:
+- a field the tool does not take (`<field>: not a field of this tool`), a missing, empty or non-string `name`, a non-boolean `active` / `active_on_mobile`, neither given, or `active_on_mobile` on PrestaShop 9 ("not available on this version of PrestaShop"): each naming the field;
+- a `name` that is not a module of the shop: `name: no module of this shop has the technical name <name> - find it with somcp_list_modules` (`SomcpTool::notFound()`);
 - a module not installed: refused, naming `somcp_install_module`;
 - a call that would change nothing (the state read is already the one asked): refused and nothing called, since the core answers success and fires the hooks anyway;
-- `active_on_mobile` on PrestaShop 9: "not available on this version of PrestaShop";
 - `active_on_mobile: true` on a module disabled and not enabled in the same call: refused;
 - `name` is `somcp` with `active: false`: refused - the answer would never reach the assistant and every connected assistant would lose its access;
 - on PrestaShop 8, disabling a module also enabled on another shop than the token's: refused, since the core would disable it on every shop;
@@ -4520,11 +4640,11 @@ What the storefront looks like: the main menu of `ps_mainmenu`, the active theme
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code of one of the shop's active languages, for the labels; the shop default when left out, any other value refused |
+| `language` | string | no | ISO code of one of the shop's active languages, for the labels; refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 **Returns** - `module_active`; `entries[]` (**Selected items**, in menu order) with `position` (**Change position**, 1 for the first), `item` (the stored code, `CAT3`, `ALLMAN0`, ...), `type` (the group of **Available items**: `category`, `product`, `cms_page`, `cms_category`, `all_brands`, `brand`, `all_suppliers`, `supplier`, `link`, `shop`), the identifier that applies under the name its list tool gives (`id_category`, `id_product`, `id_cms`, `id_cms_category`, `id_manufacturer`, `id_supplier`, `id_link`, `id_shop`; none for **All brands** / **All suppliers**), `label` (category, product, brand, supplier or shop name, CMS page title, CMS category name, "All brands" / "All suppliers", custom link label, in the requested language), `url` and `new_window` (**Link** and **New window**, custom links only, `null` otherwise); `skipped[]`, the stored codes whose object no longer exists, which the screen hides; `custom_links[]` (**Link list**), every custom link of the token's shop, in the menu or not, with `id_link`, `label`, `url`, `new_window`, `in_menu`, `translated` (`false` when the link has no label in the language read, so `label` and `url` are the default language's, as the storefront shows them); `language` (ISO code the labels are in).
 
-**Errors** - an unknown argument: `<name>: not a field of this tool`; an unknown `language`: the shared language refusal. `ps_mainmenu` not installed or not enabled on the token's shop is not an error: `module_active: false` and empty lists.
+**Errors** - every problem at once, nothing read, under "Nothing was read. Correct these and call again:": an unknown argument: `<name>: not a field of this tool`; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages, among the other problems. `ps_mainmenu` not installed or not enabled on the token's shop is not an error: `module_active: false` and empty lists.
 
 **Notes** - reads `MOD_BLOCKTOPMENU_ITEMS` (comma-separated `PREFIX<id>`, falling back from the shop to its group and the global value, as the module) and the tables `linksmenutop` and `linksmenutop_lang` (`id_shop` 0 or the token's shop), never the module's widget, which builds the storefront tree for a customer group and caches it. Labels through the core classes, as the module's `makeMenuOption()`; a custom link without a label in the requested language takes the default language's, as the module does. On the storefront a category entry shows the category and its whole active subtree, a CMS category its sub-categories and pages, **All brands** / **All suppliers** every brand / supplier. Read only.
 
@@ -4549,11 +4669,11 @@ Same labels, configuration key, prefixes, tables and columns on 8.0.1 (`ps_mainm
 | `url` | object keyed by ISO code | new custom link | **Link**, same rule as `label`; an absolute `http` / `https` address or a path starting with `/`, checked with `Validate::isUrl()`; 128 characters at most |
 | `new_window` | boolean | no | **New window**, new custom link only; `false` by default, as the form |
 | `position` | integer | no | **Change position**: 1 for the first entry; at the end when left out; above the number of entries plus one is refused |
-| `language` | string | no | ISO code of one of the shop's active languages for the labels of the answer, refused otherwise; the shop default when left out |
+| `language` | string | no | ISO code of one of the shop's active languages for the labels of the answer, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 **Returns** - `added`: the new entry in the shape of `entries[]` of `somcp_list_menu_links` (`position`, `item`, `type`, the identifier, `label`, `url`, `new_window`); `created_link`: `true` when a custom link was created, its `id_link` in `added`; `entries`: the whole menu read back after the save; `language`.
 
-**Errors** - one message per refused field, nothing written: `ps_mainmenu` not installed or not enabled on the token's shop; the identifier of `type` left out (`<field>: required with type <type>`) or not a whole number above 0 (`<field>: a whole number above 0`, a string of digits taken as the number); an object that does not exist, a custom link of another shop included (`<field>: no <thing> of this shop has the identifier <id> - find it with <tool>`, with the list tool its row names; for a shop, `id_shop: no shop of this installation has the identifier <id> - find it with somcp_ping`); an entry already in the menu, which the screen no longer offers in **Available items**; `id_link` given with `label`, `url`, `new_window` or `languages`; an empty `label` or `url`, an invalid `url`, a text over 128 characters, `position` out of range, a `languages` code the shop does not have; an unknown argument; an unknown `language`: the shared language refusal.
+**Errors** - one message per refused field, nothing written: `ps_mainmenu` not installed or not enabled on the token's shop; the identifier of `type` left out (`<field>: required with type <type>`) or not a whole number above 0 (`<field>: a whole number above 0`, a string of digits taken as the number); an object that does not exist, a custom link of another shop included (`<field>: no <thing> of this shop has the identifier <id> - find it with <tool>`, with the list tool its row names; for a shop, `id_shop: no shop of this installation has the identifier <id> - find it with somcp_ping`); an entry already in the menu, which the screen no longer offers in **Available items**; `id_link` given with `label`, `url`, `new_window` or `languages`; an empty `label` or `url`, an invalid `url`, a text over 128 characters, `position` out of range, a `languages` code the shop does not have; an unknown argument; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages, among the other problems, the entry being looked up in the shop default meanwhile.
 
 **Notes** - writes the list the way **Save** does: `MOD_BLOCKTOPMENU_ITEMS` read as `somcp_list_menu_links` reads it, the code inserted at its place, the codes reported in `skipped` kept where they are, then `Configuration::updateValue(..., false, $idShopGroup, $idShop)` for the token's shop only, never the global row. A new custom link goes through the module's `Ps_MenuTopLinks::add()` with the token's `id_shop`, one row per language, before the list is written; the module itself accepts an empty label and link, so the tool checks them. The module's cache is then emptied through its public `hookActionCategoryUpdate()`, so the storefront shows the change at once. Not replayable: on a lost answer, read `somcp_list_menu_links`.
 
@@ -4576,15 +4696,15 @@ Same panels, labels, configuration key, tables and submit code on 8.0.1 (`ps_mai
 | `label` | object keyed by ISO code | no | **Label**; a plain string accepted when one language is filled; given, required and not empty in every language filled; 128 characters at most |
 | `url` | object keyed by ISO code | no | **Link**, same rule as `label`; an absolute `http` / `https` address or a path starting with `/`, checked with `Validate::isUrl()`; 128 characters at most |
 | `new_window` | boolean | no | **New window** |
-| `language` | string | no | ISO code of one of the shop's active languages for the labels of the answer, refused otherwise; the shop default when left out |
-| `in_menu` | boolean | no | as `custom_links[]` of `somcp_list_menu_links` returns it, accepted unchanged so a row read there can be given back whole; a different value is refused as `in_menu: not changed by this tool - put the link in the menu with somcp_add_menu_link` |
+| `language` | string | no | ISO code of one of the shop's active languages for the labels of the answer, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
+| `in_menu` | boolean | no | as `custom_links[]` of `somcp_list_menu_links` returns it, accepted unchanged so a row read there can be given back whole; a different value is refused: `true` for a link out of the menu as `in_menu: not changed by this tool - put the link in the menu with somcp_add_menu_link`, `false` for a link in the menu as `in_menu: not changed by this tool - taking a link out of the menu is done in Modules > Module Manager > Main menu > Configure` |
 | `translated` | boolean | no | as `custom_links[]` returns it for the language read (the one filled when a single one is, otherwise `language`), accepted unchanged, a different value refused as worked out by the shop; `false` with the default-language `label` / `url` the list showed leaves that language as it is: no change |
 
 At least one of `label`, `url`, `new_window` is required.
 
 **Returns** - `changed`; `id_link`; `changes`, each field written with `field` (`label (<iso>)`, `url (<iso>)`, `new_window`), `old` and `new`; `link`, the link after the save in the shape of `custom_links[]` of `somcp_list_menu_links` (`id_link`, `label`, `url`, `new_window`, `in_menu`, `translated`); `language`. A call that would change nothing writes nothing and answers `changed: false`, with empty `changes` and a `reason`.
 
-**Errors** - one message per refused field, nothing written: `ps_mainmenu` not installed or not enabled on the token's shop; `id_link` left out (`id_link: required, from custom_links of somcp_list_menu_links`) or not a whole number above 0 (`id_link: a whole number above 0`, a string of digits taken as the number); an unknown `id_link` for the token's shop (`id_link: no custom link of this shop has the identifier <id> - find it with somcp_list_menu_links`); none of `label`, `url`, `new_window` given; an empty `label` or `url`, an invalid `url`, a text over 128 characters, a `languages` code the shop does not have (the texts of `somcp_add_menu_link`); an unknown argument; an `in_menu` or `translated` that differs from what the list reads; an unknown `language`: the shared language refusal.
+**Errors** - one message per refused field, nothing written: `ps_mainmenu` not installed or not enabled on the token's shop; `id_link` left out (`id_link: required, from custom_links of somcp_list_menu_links`) or not a whole number above 0 (`id_link: a whole number above 0`, a string of digits taken as the number); an unknown `id_link` for the token's shop (`id_link: no custom link of this shop has the identifier <id> - find it with somcp_list_menu_links`); none of `label`, `url`, `new_window` given; an empty `label` or `url`, an invalid `url`, a text over 128 characters, a `languages` code the shop does not have (the texts of `somcp_add_menu_link`); an unknown argument; an `in_menu` or `translated` that differs from what the list reads; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages, among the other problems, the link being looked up in the shop default meanwhile.
 
 **Notes** - reads the link raw from `linksmenutop` and `linksmenutop_lang` (`id_shop` 0 or the token's shop; `Ps_MenuTopLinks::getLinkLang()` escapes the texts for display), merges what is given, then calls the module's `Ps_MenuTopLinks::update()` with the full texts of every language that has a row and the link's own `id_shop`, so a link shared by every shop stays shared. `update()` only runs `UPDATE`: a language filled that has no `linksmenutop_lang` row (installed after the link was created) gets one first, with the columns of `Ps_MenuTopLinks::add()`. The link is read back to confirm the write, then the module's cache is emptied through its public `hookActionCategoryUpdate()`, as `somcp_add_menu_link`. The link's place in the menu never changes. On a lost answer, read `somcp_list_menu_links` and compare before calling again.
 
@@ -4602,11 +4722,11 @@ Same panel, labels, message, tables and code on 8.0.1 (`ps_mainmenu` 2.3.1) and 
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `language` | string | no | ISO code of one of the shop's active languages, for the page titles and descriptions; the shop default when left out, any other value refused |
+| `language` | string | no | ISO code of one of the shop's active languages, for the page titles and descriptions; refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 **Returns** - `theme` (**My current theme**) with `name` (technical name, `classic`), `display_name` (`Classic`), `version` (**Version**), `author` (**Designed by**), `parent` (the parent theme of a child theme, `null` otherwise); `other_themes[]`, the other cards of **My theme for ... shop**, with `name`, `display_name`, `version`, `author`, for information only; `logos` with `header` (**Header logo**), `mail` (**Mail logo**), `invoice` (**Invoice logo**), `favicon` (**Favicon**), a `download_ref` each, `null` when unset or when the file is missing, and `mail_uses_header` / `invoice_uses_header`, `true` when that logo is `null` and the shop prints the header logo instead; `default_layout`, the layout key of a page without its own setting; `available_layouts[]` (the options of **Layout**) with `layout` (key, `layout-full-width`, ...), `name` (**Full Width**), `description`; `pages[]` (rows of **Choose layouts**, in the screen's order) with `page` (the meta page name, the same value as `somcp_list_meta_pages`), `title` (**Page**, the page name when the title is empty, as the screen), `description` (**Description**), `layout` (**Layout**, the key), `uses_default` (`true` when the page has no setting of its own); `language` (ISO code the texts are in).
 
-**Errors** - an unknown argument: `<name>: not a field of this tool`; an unknown `language`: the shared language refusal; the theme's folder or configuration missing from the server.
+**Errors** - an unknown argument: `<name>: not a field of this tool` and an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages, among the other problems, together under "Nothing was read. Correct these and call again:"; the theme's folder or configuration missing from the server.
 
 **Notes** - the token's shop only: its `shop.theme_name` and its own `config/themes/<theme>/shop<id>.json`, read through the core `ThemeManagerBuilder::buildRepository()` and `ThemeRepository::getInstanceByName()` as the back office, never by parsing the file; on a multistore installation two shops can use different themes. Layouts from `theme_settings.layouts` and `theme_settings.default_layout`, a page absent from the first using the second, as `PageLayoutCustomizationFormFactory`; available layouts from `meta.available_layouts`. Pages from `Meta::getAllMeta()`, as `GetPagesForLayoutCustomizationHandler`. Logos from `PS_LOGO`, `PS_LOGO_MAIL`, `PS_LOGO_INVOICE`, `PS_FAVICON` for the token's shop, files in `img/`. Read only, apart from the configuration cache the core writes on a first read, as the back office does. Logo upload, **Use this theme**, theme deletion, **Add new theme**, **Export current theme** and the two `ps_themecusto` tabs are not part of this tool.
 
@@ -4736,11 +4856,11 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `language` | string | no | ISO code; every language of the shop when left out |
-| `active` | boolean | no | true by default: hidden products rank for nothing |
+| `active` | boolean | no | `true` (default) active products only - hidden products rank for nothing - `false` disabled products only, the Status filter of `somcp_search_products` |
 | `checks` | array of enum | no | a subset of the checks below; all by default |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - `products`, one entry per product and language: `id_product`, `name`, `language`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over the whole catalogue, `languages` audited and `active_only`.
+**Returns** - `products`, one entry per product and language: `id_product`, `name`, `language`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over the whole catalogue, `languages` audited and `active`, the Status filter applied.
 
 **Notes**
 - Checks: `meta_title_missing`, `meta_title_too_long` (over 70 characters), `meta_title_duplicate` (another product has it in that language), `meta_description_missing`, `meta_description_short` (under 70), `meta_description_long` (over 160), `link_rewrite_duplicate`, `description_short` (the description holds under 150 words, tags removed), `image_legend_missing` (an image without its alternative text), `no_image`, `no_brand`, `no_gtin` (no ean13, upc nor isbn), `inactive_without_redirect` only when `active` is false.
@@ -4748,7 +4868,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 - The product-wide checks (`no_image`, `no_brand`, `no_gtin`, `inactive_without_redirect`) repeat on each language entry, and `counts` counts entries, not products.
 - Duplicates are found by the database, grouping the values of the products audited (same shop, same `active` filter) in one language, so its collation decides what is the same title or URL, as it does for the shop's own URLs. Spaces around a value are ignored.
 - `inactive_without_redirect`: a 301 or 302 sends to another page and `200-displayed` (PrestaShop 9) keeps the page shown; anything else - empty, 404, 410, `404-displayed`, `410-displayed` - is reported. On PrestaShop 9 a product on `default` is judged by **Shop Parameters > Product Settings > Default behavior for disabled products** (`PS_PRODUCT_REDIRECTION_DEFAULT`, read for the token's shop): not reported when that default is **Display product as discontinued with 200 response**, reported with both values otherwise. PrestaShop 8 has neither `default` nor that setting.
-- An image counts in the shop when `image_shop` has it; a language without an `image_lang` row is a missing legend. Errors, every one in the same answer under "Nothing was read. Correct these and call again:": a field the tool does not take, a `checks` that is not a list of the names above (`checks: one of ...`), an `active` that is not true or false, a `limit` that is not a whole number from 1 to 100, an `offset` below 0 - never replaced by a default, which applies only to an argument left out. These arguments are read by `SomcpToolAuditProductSeo::auditArguments()`, shared with `somcp_audit_category_seo`. An unknown `language` is then refused on its own, with the shared language refusal.
+- An image counts in the shop when `image_shop` has it; a language without an `image_lang` row is a missing legend. Errors, every one in the same answer under "Nothing was read. Correct these and call again:": a field the tool does not take, a `checks` that is not a list of the names above (`checks: one of ...`), an `active` that is not true or false, a `limit` that is not a whole number from 1 to 100, an `offset` below 0 - never replaced by a default, which applies only to an argument left out. These arguments are read by `SomcpToolAuditProductSeo::auditArguments()`, shared with `somcp_audit_category_seo`. An unknown `language` is one more line of the same answer: `language: not one of the shop's languages, which are <codes> - leave language out for all of them`.
 - Read in SQL from `product`, `product_shop`, `product_lang` and `image_lang` of this shop, in batches of products, so a catalogue of 50,000 products stays fast; only the page asked for is kept, while `counts` and `total_count` cover the whole catalogue. A product still being created (`state` 0) is left out. No write, ever: corrections go through `somcp_update_product`.
 
 #### `somcp_audit_category_seo`
@@ -4764,20 +4884,20 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `language` | string | no | ISO code; every language when left out |
-| `active` | boolean | no | `true` (default) displayed categories only, `false` hidden ones too |
+| `active` | boolean | no | `true` (default) displayed categories only, `false` hidden ones only |
 | `checks` | array | no | only these checks; all of them when left out |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - `categories`, one entry per category and language: `id_category`, `name`, `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over every category audited, `languages` audited, and `active_only`.
+**Returns** - `categories`, one entry per category and language: `id_category`, `name`, `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over every category audited, `languages` audited, and `active`, the Status filter applied.
 
 **Notes**
 - Checks: `meta_title_missing`, `meta_title_too_long` (over 70 characters), `meta_title_duplicate` (another category has it in that language), `meta_description_missing`, `meta_description_short` (under 70 characters), `meta_description_long` (over 160), `description_missing` (a category page with no text to rank on: no word once tags are removed), `link_rewrite_duplicate`, `empty_category` (displayed, no active product), `no_cover_image`.
 - The root and Home categories are left out: they have no page of their own. The root is the category without a parent, a Home category the one flagged `is_root_category`.
 - The `value` is the title, description or friendly URL at fault, and an empty string for the checks that report an absence. `empty_category` and `no_cover_image` concern the whole category and repeat on each language entry; `counts` counts entries, not categories.
-- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code: a meta title over 70 characters, a meta description under 70 or over 160, the lengths every write tool advises past (`SomcpTool::META_TITLE_RECOMMENDED`, `SomcpTool::metaDescriptionRecommended()`). Duplicates are found by the database among the categories audited in one language, as for products. Displayed categories only by default, like the product audit's active products; `active: false` adds the hidden ones, which keep their fields, but only a displayed one can be `empty_category`. `checks` narrows the audit and the `counts` to the names given, the same list and refusal as the product audit.
+- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code: a meta title over 70 characters, a meta description under 70 or over 160, the lengths every write tool advises past (`SomcpTool::META_TITLE_RECOMMENDED`, `SomcpTool::metaDescriptionRecommended()`). Duplicates are found by the database among the categories audited in one language, as for products. Displayed categories only by default, like the product audit's active products; `active: false` audits the hidden ones only, which keep their fields, but only a displayed one can be `empty_category`. `checks` narrows the audit and the `counts` to the names given, the same list and refusal as the product audit.
 - `empty_category`: no product of the category, directly associated with it, is active in this shop - what the category page lists. A product still being created (`state` 0) does not count.
 - `no_cover_image`: the shop has no `img/c/<id_category>.jpg`, the file the back office form shows as the cover, on PrestaShop 8 and 9.
-- Errors: the ones of `somcp_audit_product_seo`, from the same `SomcpToolAuditProductSeo::auditArguments()`: a field the tool does not take, a bad `checks`, `active`, `limit` or `offset`, every one in the same answer under "Nothing was read. Correct these and call again:", never replaced by a default; an unknown `language` is then refused on its own.
+- Errors: the ones of `somcp_audit_product_seo`, from the same `SomcpToolAuditProductSeo::auditArguments()`: a field the tool does not take, a bad `checks`, `active`, `limit` or `offset`, every one in the same answer under "Nothing was read. Correct these and call again:", never replaced by a default; an unknown `language` is one more line of the same answer, ending `leave language out for all of them`.
 - Read in SQL from `category`, `category_shop`, `category_lang` and `category_product` of this shop, in batches; only the page asked for is kept, while `counts` and `total_count` cover every category. No write, ever.
 
 #### `somcp_audit_cms_seo`
@@ -4849,7 +4969,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | `language` | string | no | as `somcp_get_cms_page` returns it: the language its plain texts are in, read as `languages: ["<iso>"]` when `languages` is left out; next to a `languages` that does not hold it, refused as `language: not one of languages` |
 | `title`, `content`, `id_cms_category`, `active`, `position`, `seo_title`, `url` | as read | no | what `somcp_get_cms_page` returns and this tool does not write, accepted unchanged so a page read there can be given back whole; a different value is refused with where it is changed (`not changed by this tool - the merchant changes it in Design > Pages > Edit`, or `worked out by the shop from the Meta title and the Title` / `from the Friendly URL`) |
 
-**Returns** - `changed`, `id_cms`; when something changed, `changes` (each a `field`, its `language` for a text, the `previous` and `new` value), `seo_warnings` (per ISO code) and `page` (`id_cms`, `active`, `indexation`, and per language changed its `title`, `meta_title`, `seo_title` - the title search engines read -, `meta_description`, `meta_keywords` (`null` on PrestaShop 9) and `link_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
+**Returns** - `changed`, `id_cms`; when something changed, `changes` (each a `field`, named `<field> (<iso>)` for a text, its `old` and `new` value, as the other update tools give them), `seo_warnings` (per ISO code) and `page` (`id_cms`, `active`, `indexation`, and per language changed its `title`, `meta_title`, `seo_title` - the title search engines read -, `meta_description`, `meta_keywords` (`null` on PrestaShop 9) and `link_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
 
 **Notes**
 - The names follow the CMS page form of Design > Pages, not the columns: the form's **Title** is the column `meta_title`, the page's h1 and its default title tag, and its **Meta title** is `head_seo_title`, which overrides the title tag when filled (`EditCmsPageHandler` on PrestaShop 8 and 9). This tool writes the second under the name `meta_title`; the page title stays with the content. `somcp_get_cms_page` and `somcp_audit_cms_seo` return `title`, `meta_title` and `seo_title` with the same meaning as this tool.
@@ -5093,7 +5213,7 @@ What answer engines and AI assistants need to recommend a product: complete and 
 - `price` is compared with the price with tax the storefront computes for the shop's default country, currency and group, specific prices included (`Product::getPriceStatic()`), to the cent. `quantity` is compared with the availability the core's product presenter prints: `Discontinued` for an inactive product, `InStock` with stock or with stock management off, `BackOrder` (or `PreOrder`, which themes also print) when **When out of stock** allows orders, `OutOfStock` otherwise.
 - Labels: **Reference**, **MPN**, **UPC barcode**, **ISBN**, **Brand**; the `ean13` field is **EAN-13 or JAN barcode** on PrestaShop 8 and **GTIN (EAN, JA, ITF or UCC code)** on PrestaShop 9; `condition` is **Condition** on PrestaShop 8 and **Display condition on product page** on PrestaShop 9, where the box has no label of its own. One table of labels for this tool and `somcp_audit_product_entities` (`SomcpToolAuditProductSchema::fieldLabel()`), so one box never gets two names.
 - Said plainly when the theme prints no `Product` JSON-LD at all: a theme matter, not something a tool can write. Classic prints its own; the comparison reads what is printed, never assumes a theme.
-- Errors: the mistakes of the call, every one in the same answer under "Nothing was fetched. Correct these and call again:" - a field the tool does not take, an `id_product` or `id_product_attribute` that is not a whole number above 0, an unknown product (`id_product: no product of this shop has the identifier <n> - find it with somcp_search_products`) or a combination of another product (`id_product_attribute: no combination of this product has the identifier <n> - find it with somcp_get_product`), as `somcp_get_product` words them; an unknown language, refused on its own; then, in their own sentence, a page that does not answer or answers other than 200 (with the HTTP status), a redirect or an address outside the shop's domains, a shop with no active domain.
+- Errors: the mistakes of the call, every one in the same answer under "Nothing was fetched. Correct these and call again:" - a field the tool does not take, an `id_product` or `id_product_attribute` that is not a whole number above 0, an unknown product (`id_product: no product of this shop has the identifier <n> - find it with somcp_search_products`) or a combination of another product (`id_product_attribute: no combination of this product has the identifier <n> - find it with somcp_get_product`), as `somcp_get_product` words them; an unknown language (`language: not one of the shop's languages, which are <codes> - leave language out for the shop default`); then, in their own sentence, a page that does not answer or answers other than 200 (with the HTTP status), a redirect or an address outside the shop's domains, a shop with no active domain.
 - Read only.
 
 #### `somcp_audit_product_entities`
@@ -5119,7 +5239,7 @@ What answer engines and AI assistants need to recommend a product: complete and 
 - Eleven criteria, each worth the same, the score `100 x met / 11` rounded: brand (`id_manufacturer`), a GTIN (one of `ean13`, `upc`, `isbn`), `mpn`, features (3 or more), description (150 words or more, tags stripped, counted as `somcp_audit_product_seo`), summary (`description_short`), images (3 or more, each with a caption in the language), weight (above 0), condition (set and **Display condition on product page** on), a default category deeper than Home, meta description.
 - The labels match the product page of the shop's version: the barcode is **EAN-13 or JAN barcode** on PrestaShop 8 and **GTIN (EAN, JA, ITF or UCC code)** on PrestaShop 9; the default category is **Main category** on PrestaShop 8 and **Default category** on PrestaShop 9; `condition` is **Condition** on PrestaShop 8 and **Display condition on product page** on PrestaShop 9; **Weight** on both. Same columns in the database. The labels come from one table shared with `somcp_audit_product_schema` (`SomcpToolAuditProductSchema::fieldLabel()`).
 - The whole catalogue is scored with set queries on `product`, `product_shop`, `product_lang`, `feature_product` and the image tables of the token's shop and language, never one `Product` object per product.
-- Errors in the shape of #169: an unknown language, `max_score` outside 0 to 100, `limit` above 100.
+- Errors in the shape of #169: an unknown language, `max_score` outside 0 to 100, `limit` above 100, an `active` that is not true or false (`SomcpTool::statusFilter()`, shared with the SEO audits).
 - Read only.
 
 #### `somcp_check_ai_crawler_access`
@@ -5355,7 +5475,7 @@ Sorted by `searches`, highest first, then `keywords`.
 | `date_from` / `date_to` | string | yes | **From:** / **To:**, `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; the employee's saved stats period is never read nor changed |
 | `id_category` | integer | no | **Choose a category**: only the products of that category, from `somcp_list_categories`; unknown in the shop is refused |
 | `min_page_views` | integer | no | only the products viewed at least this many times; 1 by default, so a product nobody opened is left out; 0 lists every product |
-| `language` | string | no | ISO code of one of the shop's active languages for `name`, as #149; shop default when left out; an unknown code is refused |
+| `language` | string | no | ISO code of one of the shop's active languages for `name`, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 | `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
 **Returns**
@@ -5375,7 +5495,7 @@ Sorted by `searches`, highest first, then `keywords`.
 
 Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, then `id_product`: the products most seen and least bought come first.
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `id_category` not a whole number or unknown in the shop; `min_page_views` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `id_category` not a whole number above 0 (`"3"` is read as 3, as in every tool) or unknown in the shop, the identifier given named with `somcp_list_categories` to find it; `min_page_views` below 0; `limit` outside 1 to 100; a negative `offset`; an unknown `language`, named by `SomcpTool::languageProblem()` with the shop's languages.
 
 **Notes**
 - Saved products of the token's shop only (`product_shop`, `p.state = Product::STATE_SAVED`); orders of the token's shop only.
@@ -5399,7 +5519,7 @@ Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, the
 | `date_from` / `date_to` | string | no | `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; both or neither. Left out: no period, every valid order ever, as the screen. Given: products bought by no valid order dated (`o.date_add`) in the period, products added to the shop (`product_shop.date_add`) after `date_from` left out |
 | `id_category` | integer | no | **Choose a category**: only the products of that category, from `somcp_list_categories`; unknown in the shop is refused |
 | `min_quantity` | integer | no | only the products with at least this quantity for sale; 1 by default, so the stock that does not move; 0 lists every product, as the screen |
-| `language` | string | no | ISO code of one of the shop's active languages for `name`, as #149; shop default when left out; an unknown code is refused |
+| `language` | string | no | ISO code of one of the shop's active languages for `name`, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 | `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
 **Returns**
@@ -5421,7 +5541,7 @@ Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, the
 
 Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, highest first, then `id_product`: the stock that costs the most comes first.
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`), one given without the other; `id_category` not a whole number or unknown in the shop; `min_quantity` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149. An empty list is `products: []`, `total_count: 0`.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`), one given without the other; `id_category` not a whole number above 0 (`"3"` is read as 3, as in every tool) or unknown in the shop, the identifier given named with `somcp_list_categories` to find it; `min_quantity` below 0; `limit` outside 1 to 100; a negative `offset`; an unknown `language`, named by `SomcpTool::languageProblem()` with the shop's languages. An empty list is `products: []`, `total_count: 0`.
 
 **Notes**
 - Active, saved products of the token's shop only (`product_shop.active = 1`, `p.state = Product::STATE_SAVED`); orders of the token's shop only (`o.id_shop`). The screen counts the orders of every shop: the figures differ only in a multistore shop.
@@ -5524,7 +5644,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `times_used` | as `somcp_list_cart_rules` |
 | `date_add` / `date_upd` | ISO 8601 with the shop's offset, `null` when not set |
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; a missing or non-positive `id_cart_rule`; an unknown language (#149). An `id_cart_rule` no rule of this shop has: `id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`, the token's shop deciding as in `somcp_list_cart_rules`.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; a missing or non-positive `id_cart_rule`; an unknown language (#149). An `id_cart_rule` no rule of this shop has: `id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`, the token's shop deciding as in `somcp_list_cart_rules`, in the same answer as the other problems of the call.
 
 **Notes**
 - The rules this shop can use and `times_used` are read by the same functions as `somcp_list_cart_rules` (`inShop()`, `timesUsed()`), so a rule the list hides is one this tool refuses.
@@ -5566,7 +5686,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Returns** - `created: true`, `id_cart_rule`, and `cart_rule` as `somcp_get_cart_rule` returns it, read back with its function (`SomcpToolGetCartRule::byId()`), names in the default language.
 
-**Errors** - in the shape of #169 (`Nothing was created. Correct these and call again:` then one line per problem), every problem found before anything is written: unknown arguments; the checks of `AdminCartRulesController::postProcess()` with the core's wording, under their field: **The voucher cannot end before it begins.** (`date_to`), **The minimum amount cannot be lower than zero.** (`minimum_amount.value`), **Reduction percentage must be between 0% and 100%** and **Reduction amount cannot be lower than zero.** (`reduction.value`), **This cart rule code is already used** (`code`), **An action is required for this cart rule.** (`reduction`), **Product with required customization fields cannot be used as a gift.** (`gift.id_product`); an unknown customer, product or combination (`<path>: no <thing> of this shop has the identifier <n> - find it with <tool>`); an unknown or inactive currency; a language of #149.
+**Errors** - in the shape of #169 (`Nothing was created. Correct these and call again:` then one line per problem), every problem found before anything is written: unknown arguments; the checks of `AdminCartRulesController::postProcess()` with the core's wording, under their field: **The voucher cannot end before it begins.** (`date_to`), **The minimum amount cannot be lower than zero.** (`minimum_amount.value`), **Reduction percentage must be between 0% and 100%** and **Reduction amount cannot be lower than zero.** (`reduction.value`), **This cart rule code is already used** (`code`), **An action is required for this cart rule.** (`reduction`), **Product with required customization fields cannot be used as a gift.** (`gift.id_product`); a customer or product identifier that is not a whole number above 0 (`<path>: a whole number above 0`; 0 stays the default for `gift.id_product_attribute`); an unknown customer, product or combination (`<path>: no <thing> of this shop has the identifier <n> - find it with <tool>`); an unknown or inactive currency; a language of #149.
 
 **Notes**
 - Written through `CartRule::add()`, so `actionObjectCartRuleAddAfter` fires, as in the back office. The checks live in one protected function, `SomcpToolCreateCartRule::planRule()`, that `somcp_update_cart_rule` extends.
@@ -5597,9 +5717,9 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 `active`, `restrictions`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are accepted when given back unchanged from `somcp_get_cart_rule` (the names it adds in its reading language apart), and refused when they differ: `active` points to `somcp_set_cart_rule_active`, `restrictions` to the back office, the others are worked out by the shop.
 
-**Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, and `language` for `name`), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to, `product_selection` says that product is still in **Product selection**. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
+**Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, `name (<iso>)` for a translated name), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to, `product_selection` says that product is still in **Product selection**. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
-**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): those of `somcp_create_cart_rule`, checked by its `planRule()` on the rule as it will be once merged with what is kept (for example `date_from` given alone after the kept `date_to`: **The voucher cannot end before it begins.**; `reduction` set to `null` on a rule with no free shipping and no gift: **An action is required for this cart rule.**); `code` already used by another rule (its own code is accepted, as the form compares with `id_cart_rule`); an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`).
+**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): those of `somcp_create_cart_rule`, checked by its `planRule()` on the rule as it will be once merged with what is kept (for example `date_from` given alone after the kept `date_to`: **The voucher cannot end before it begins.**; `reduction` set to `null` on a rule with no free shipping and no gift: **An action is required for this cart rule.**); `code` already used by another rule (its own code is accepted, as the form compares with `id_cart_rule`); an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`), given with the fields of the call the tool does not take, in one answer.
 
 **Notes**
 - Written with `CartRule::update()` only. The back office's `afterUpdate()` deletes every restriction row of the rule (`cart_rule_country`, `_carrier`, `_group`, `_product_rule_group`, `_shop`, `cart_rule_combination`) and writes back what the form posted; this tool posts no restriction, so it leaves those tables alone.
@@ -5628,7 +5748,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Returns** - `changed: true`, `id_cart_rule`, `active`, and `warnings` when the rule is switched on but cannot apply yet or any more: the end of **Valid** passed, its start still to come, **Total available** at 0, or no **Code** (it then applies on its own to every cart that meets its conditions - the **Caution!** of the form). A rule already in that state answers `changed: false` with a `reason`, and nothing is written.
 
-**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): unknown arguments; `active: true or false`; an `id_cart_rule` that is not a whole number above 0; an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`).
+**Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): unknown arguments; `active: true or false`; an `id_cart_rule` that is not a whole number above 0; an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`), given with the fields of the call the tool does not take, in one answer.
 
 **Notes**
 - The rules this shop can use are those of `somcp_list_cart_rules` (`shop_restriction = 0`, or a `cart_rule_shop` row for it), tested with its `SomcpToolListCartRules::inShop()`.
@@ -5682,7 +5802,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `current` | the period holds the shop's current time |
 | `returned`, `total_count`, `offset`, `language` | as `somcp_list_abandoned_carts` |
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; an unknown `currency` or `country`; an `id_group` that `somcp_list_customer_groups` does not list for the shop; a `reduction_type` other than `amount`/`percentage`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `catalog_price_rules: []`, `total_count: 0`.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; an unknown `currency` or `country`; an `id_group` not a whole number above 0, or that `somcp_list_customer_groups` does not list for the shop, the identifier given named with that tool to find it; a `reduction_type` other than `amount`/`percentage`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `catalog_price_rules: []`, `total_count: 0`.
 
 **Notes**
 - The back office lists every shop's rules (`CONTEXT_ALL`); the token's shop keeps `id_shop` 0 and its own.
@@ -5718,7 +5838,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 **Returns** - `created: true`, `catalog_price_rule` (one entry of `somcp_list_catalog_price_rules`, read back from the shop, names in the shop default language), `all_products` and `products_affected`: the number of distinct products `getAffectedProducts()` picked, or for a rule without condition (`all_products: true`, one specific price for product 0) the number of products of the shop.
 
-**Errors** - in the shape of #169, all in one answer, nothing written: unknown arguments; `name` missing, empty, too long or refused by `isCleanHtml`; `reduction` missing; the checks of one rule of `specific_prices` in `somcp_create_product`, with the same texts (unknown currency, country or group, `from_quantity` below 1, a negative `price` other than -1, a negative `reduction`, above 1 for a percentage, neither a price nor a reduction, bad dates or `to` before `from`); an unknown condition `type`, an empty group, a missing or unknown identifier, each naming the list tool to take it from.
+**Errors** - in the shape of #169, all in one answer, nothing written: unknown arguments; `name` missing, empty, too long or refused by `isCleanHtml`; `reduction` missing; the checks of one rule of `specific_prices` in `somcp_create_product`, with the same texts (unknown currency, country or group, `from_quantity` below 1, a negative `price` other than -1, a negative `reduction`, above 1 for a percentage, neither a price nor a reduction, bad dates or `to` before `from`); a field the shop works out (`<field>: worked out by the shop, so it is not written here`); an unknown condition `type`, an empty group; a condition identifier that is not a whole number above 0 (`<path>: a whole number above 0`) or that the shop does not have, named with the word of the **Conditions** of the form (category, brand, supplier, attribute, feature value): `<path>: no <word> of this shop has the identifier <n> - find it with <tool>`.
 
 **Notes**
 - The checks of the price and the reduction are `SomcpToolCreateProduct::rule()`, called rather than copied: the rule writes specific prices.
@@ -5776,7 +5896,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

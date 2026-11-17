@@ -16,7 +16,7 @@
     {"why": "sorted by last visit, oldest first", "arguments": {"sort": "last_visit", "order": "asc"}, "expect": "ok", "contains": ["\"customers\""]},
     {"why": "sorted by last name", "arguments": {"sort": "lastname", "order": "asc", "limit": 1}, "expect": "ok", "contains": ["\"returned\": 1"]},
     {"why": "the names in the shop language given by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
-    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's"]},
+    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "language: not one of the shop's languages"]},
     {"why": "the next page", "arguments": {"limit": 1, "offset": 1}, "expect": "ok", "contains": ["\"offset\": 1"]},
     {"why": "a limit over the cap is brought back to 100", "arguments": {"limit": 500}, "expect": "ok", "contains": ["\"customers\""]},
     {"why": "a misspelt filter is named and nothing is read", "arguments": {"emial": "pub@prestashop.com"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "emial: not a field of this tool"]},

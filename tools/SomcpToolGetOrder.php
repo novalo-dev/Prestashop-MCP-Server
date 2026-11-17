@@ -112,6 +112,9 @@ class SomcpToolGetOrder
                 // write tools key texts by rather than an identifier no tool lists.
                 'language' => (string) Language::getIsoById($idLang),
                 'payment_method' => (string) $order->payment,
+                // The technical name somcp_create_order takes, which the name
+                // shown to the customer above is not.
+                'payment_module' => (string) $order->module,
                 'status' => self::status($order, $idLang),
                 // The Order note of the Status tab, written by the shop.
                 'note' => (string) $order->note,
@@ -162,8 +165,7 @@ class SomcpToolGetOrder
         $orders = self::candidates($arguments);
         if ($orders === []) {
             return $byReference
-                ? 'reference: no order of this shop has the reference ' . trim((string) $arguments['reference'])
-                    . ' - find it with somcp_search_orders'
+                ? SomcpTool::notFound('reference', 'order', trim((string) $arguments['reference']), 'somcp_search_orders', 'reference')
                 : SomcpTool::notFound('id_order', 'order', SomcpTool::id($arguments, 'id_order'), 'somcp_search_orders');
         }
         if (count($orders) === 1) {
@@ -346,6 +348,9 @@ class SomcpToolGetOrder
                 'id_order_detail' => (int) $product['id_order_detail'],
                 'id_product' => (int) $product['product_id'],
                 'id_product_attribute' => (int) $product['product_attribute_id'],
+                // The invoice somcp_update_order_product moves the line from, 0
+                // when the line is on none, as the vouchers read it.
+                'id_order_invoice' => (int) ($product['id_order_invoice'] ?? 0),
                 'reference' => (string) $product['product_reference'],
                 'supplier_reference' => (string) $product['product_supplier_reference'],
                 // Strings: an EAN-13 can start with zeros, and the column is
@@ -358,18 +363,18 @@ class SomcpToolGetOrder
                 'quantity' => (int) $product['product_quantity'],
                 'quantity_refunded' => (int) $product['product_quantity_refunded'],
                 'quantity_returned' => (int) $product['product_quantity_return'],
-                'refunded_tax_excluded' => (float) ($product['total_refunded_tax_excl'] ?? 0),
-                'refunded_tax_included' => (float) ($product['total_refunded_tax_incl'] ?? 0),
+                'refunded_tax_excl' => (float) ($product['total_refunded_tax_excl'] ?? 0),
+                'refunded_tax_incl' => (float) ($product['total_refunded_tax_incl'] ?? 0),
                 // Now, not product_quantity_in_stock, which is the quantity at
                 // the time of the order.
                 'quantity_in_stock_now' => (int) ($product['current_stock'] ?? 0),
                 'stock_location' => (string) ($product['location'] ?? ''),
                 'tax_name' => (string) $product['tax_name'],
                 'tax_rate' => (float) $product['tax_rate'],
-                'unit_price_tax_excluded' => (float) $product['unit_price_tax_excl'],
-                'unit_price_tax_included' => (float) $product['unit_price_tax_incl'],
-                'total_tax_excluded' => (float) $product['total_price_tax_excl'],
-                'total_tax_included' => (float) $product['total_price_tax_incl'],
+                'unit_price_tax_excl' => (float) $product['unit_price_tax_excl'],
+                'unit_price_tax_incl' => (float) $product['unit_price_tax_incl'],
+                'total_tax_excl' => (float) $product['total_price_tax_excl'],
+                'total_tax_incl' => (float) $product['total_price_tax_incl'],
                 'customizations' => self::customizations($product),
                 'pack_items' => self::packItems((int) $product['product_id'], $idLang, $idShop),
             ];
@@ -470,8 +475,8 @@ class SomcpToolGetOrder
                 'id_cart_rule' => (int) $rule['id_cart_rule'],
                 'id_order_invoice' => (int) $rule['id_order_invoice'],
                 'name' => (string) $rule['name'],
-                'value_tax_included' => (float) $rule['value'],
-                'value_tax_excluded' => (float) $rule['value_tax_excl'],
+                'value_tax_incl' => (float) $rule['value'],
+                'value_tax_excl' => (float) $rule['value_tax_excl'],
                 'free_shipping' => (bool) $rule['free_shipping'],
             ];
         }
@@ -500,8 +505,8 @@ class SomcpToolGetOrder
             'carrier' => Validate::isLoadedObject($carrier) ? (string) $carrier->name : '',
             'tracking_numbers' => array_values(array_unique($tracking)),
             'weight' => (float) $order->getTotalWeight(),
-            'shipping_tax_excluded' => (float) $order->total_shipping_tax_excl,
-            'shipping_tax_included' => (float) $order->total_shipping_tax_incl,
+            'shipping_tax_excl' => (float) $order->total_shipping_tax_excl,
+            'shipping_tax_incl' => (float) $order->total_shipping_tax_incl,
             'shipments' => self::shipments($order, $idLang),
         ];
     }
@@ -543,8 +548,8 @@ class SomcpToolGetOrder
                 'id_carrier' => (int) $orderCarrier->id_carrier,
                 'carrier' => Validate::isLoadedObject($carrier) ? (string) $carrier->name : '',
                 'weight' => (float) $orderCarrier->weight,
-                'shipping_cost_tax_excluded' => (float) $orderCarrier->shipping_cost_tax_excl,
-                'shipping_cost_tax_included' => (float) $orderCarrier->shipping_cost_tax_incl,
+                'shipping_cost_tax_excl' => (float) $orderCarrier->shipping_cost_tax_excl,
+                'shipping_cost_tax_incl' => (float) $orderCarrier->shipping_cost_tax_incl,
                 'tracking_number' => $tracking,
                 // As the order page builds it: the carrier's address with @
                 // standing for the number, and nothing until there is one.
@@ -563,18 +568,18 @@ class SomcpToolGetOrder
     public static function totals(Order $order): array
     {
         return [
-            'products_tax_excluded' => (float) $order->total_products,
-            'products_tax_included' => (float) $order->total_products_wt,
-            'discounts_tax_excluded' => (float) $order->total_discounts_tax_excl,
-            'discounts_tax_included' => (float) $order->total_discounts_tax_incl,
-            'shipping_tax_excluded' => (float) $order->total_shipping_tax_excl,
-            'shipping_tax_included' => (float) $order->total_shipping_tax_incl,
-            'wrapping_tax_excluded' => (float) $order->total_wrapping_tax_excl,
-            'wrapping_tax_included' => (float) $order->total_wrapping_tax_incl,
+            'products_tax_excl' => (float) $order->total_products,
+            'products_tax_incl' => (float) $order->total_products_wt,
+            'discounts_tax_excl' => (float) $order->total_discounts_tax_excl,
+            'discounts_tax_incl' => (float) $order->total_discounts_tax_incl,
+            'shipping_tax_excl' => (float) $order->total_shipping_tax_excl,
+            'shipping_tax_incl' => (float) $order->total_shipping_tax_incl,
+            'wrapping_tax_excl' => (float) $order->total_wrapping_tax_excl,
+            'wrapping_tax_incl' => (float) $order->total_wrapping_tax_incl,
             // The Taxes line of the totals on the order page.
             'taxes' => (float) $order->total_paid_tax_incl - (float) $order->total_paid_tax_excl,
-            'total_tax_excluded' => (float) $order->total_paid_tax_excl,
-            'total_tax_included' => (float) $order->total_paid_tax_incl,
+            'total_paid_tax_excl' => (float) $order->total_paid_tax_excl,
+            'total_paid_tax_incl' => (float) $order->total_paid_tax_incl,
             'total_paid' => (float) $order->total_paid,
             'total_paid_real' => (float) $order->total_paid_real,
         ];
@@ -607,6 +612,10 @@ class SomcpToolGetOrder
             // No card number, holder or expiry: the order page does not show
             // them, and they have no business leaving the shop.
             $payments[] = [
+                // What somcp_add_order_payment answers and takes, so a payment
+                // it recorded is found again by its identifier.
+                'id_order_payment' => (int) $payment->id,
+                'id_order_invoice' => $invoice instanceof OrderInvoice ? (int) $invoice->id : 0,
                 'date' => SomcpTool::isoDate($payment->date_add),
                 'amount' => (float) $payment->amount,
                 'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',
@@ -688,8 +697,8 @@ class SomcpToolGetOrder
                 'id_order_invoice' => (int) $invoice->id,
                 'number' => (string) $invoice->getInvoiceNumberFormatted((int) $order->id_lang),
                 'date' => SomcpTool::isoDate($invoice->date_add),
-                'total_tax_excluded' => (float) $invoice->total_paid_tax_excl,
-                'total_tax_included' => (float) $invoice->total_paid_tax_incl,
+                'total_paid_tax_excl' => (float) $invoice->total_paid_tax_excl,
+                'total_paid_tax_incl' => (float) $invoice->total_paid_tax_incl,
                 // The note printed on the invoice PDF, so somcp_set_invoice_note
                 // can be read back after it writes.
                 'note' => (string) $invoice->note,
@@ -705,8 +714,8 @@ class SomcpToolGetOrder
                 'id_order_slip' => (int) $slip['id_order_slip'],
                 'number' => sprintf('%s%06d', $slipPrefix, (int) $slip['id_order_slip']),
                 'date' => SomcpTool::isoDate($slip['date_add']),
-                'total_tax_excluded' => (float) $slip['total_products_tax_excl'],
-                'total_tax_included' => (float) $slip['total_products_tax_incl'],
+                'total_tax_excl' => (float) $slip['total_products_tax_excl'],
+                'total_tax_incl' => (float) $slip['total_products_tax_incl'],
             ];
         }
 
@@ -724,7 +733,7 @@ class SomcpToolGetOrder
                 'id_order_invoice' => (int) $deliverySlip->id,
                 'number' => sprintf('%s%06d', $prefix, (int) $deliverySlip->delivery_number),
                 'date' => SomcpTool::isoDate($deliverySlip->delivery_date),
-                'total_tax_included' => (float) $deliverySlip->total_paid_tax_incl,
+                'total_tax_incl' => (float) $deliverySlip->total_paid_tax_incl,
             ];
         }
 

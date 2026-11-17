@@ -121,12 +121,7 @@ class SomcpToolListUnsoldProducts
 
         // Every mistake is reported in one answer, so the call is corrected
         // in one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         // The period is optional, but half a period is a mistake rather than
         // an open end: the texts of somcp_list_best_sellers for the rest.
@@ -138,38 +133,39 @@ class SomcpToolListUnsoldProducts
             $dateFrom = SomcpTool::day($arguments['date_from'] ?? null);
             if ($dateFrom === null) {
                 $problems[] = $hasFrom
-                    ? '- date_from: a date, YYYY-MM-DD'
-                    : '- date_from: a date, YYYY-MM-DD, given with date_to or neither';
+                    ? 'date_from: a date, YYYY-MM-DD'
+                    : 'date_from: a date, YYYY-MM-DD, given with date_to or neither';
             }
             $dateTo = SomcpTool::day($arguments['date_to'] ?? null);
             if ($dateTo === null) {
                 $problems[] = $hasTo
-                    ? '- date_to: a date, YYYY-MM-DD'
-                    : '- date_to: a date, YYYY-MM-DD, given with date_from or neither';
+                    ? 'date_to: a date, YYYY-MM-DD'
+                    : 'date_to: a date, YYYY-MM-DD, given with date_from or neither';
             }
             if ($dateFrom !== null && $dateTo !== null && $dateTo < $dateFrom) {
-                $problems[] = '- date_to: a date not before date_from';
+                $problems[] = 'date_to: a date not before date_from';
             }
         }
 
         $idCategory = 0;
         if (array_key_exists('id_category', $arguments) && $arguments['id_category'] !== null) {
-            // A cast would read an array as 1 and filter on a category nobody
-            // asked for: only a whole number is an identifier.
-            $value = $arguments['id_category'];
-            if (!is_int($value) || $value < 1) {
-                $problems[] = '- id_category: a whole number, the identifier somcp_list_categories gives';
-            } elseif (SomcpToolUpdateCategory::existingCategory((int) $value, $idShop) === null) {
-                $problems[] = '- id_category: no category of this shop has this identifier, find it with somcp_list_categories';
+            // Read as every tool reads an identifier: "3" is the category 3,
+            // while an array or a word is never one, so no cast filters on a
+            // category nobody asked for.
+            $value = SomcpTool::id($arguments, 'id_category');
+            if ($value <= 0) {
+                $problems[] = SomcpTool::notAnIdentifier('id_category');
+            } elseif (SomcpToolUpdateCategory::existingCategory($value, $idShop) === null) {
+                $problems[] = SomcpTool::notFound('id_category', 'category', $value, 'somcp_list_categories');
             } else {
-                $idCategory = (int) $value;
+                $idCategory = $value;
             }
         }
 
         $minQuantity = self::DEFAULT_MIN_QUANTITY;
         if (array_key_exists('min_quantity', $arguments) && $arguments['min_quantity'] !== null) {
             if (!is_int($arguments['min_quantity']) || $arguments['min_quantity'] < 0) {
-                $problems[] = '- min_quantity: a whole number, 0 at least';
+                $problems[] = 'min_quantity: a whole number, 0 at least';
             } else {
                 $minQuantity = (int) $arguments['min_quantity'];
             }
@@ -178,7 +174,7 @@ class SomcpToolListUnsoldProducts
         $limit = self::DEFAULT_LIMIT;
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
             if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT) {
-                $problems[] = '- limit: a whole number from 1 to ' . self::MAX_LIMIT;
+                $problems[] = 'limit: a whole number from 1 to ' . self::MAX_LIMIT;
             } else {
                 // Cast although checked: the value goes into the LIMIT clause.
                 $limit = (int) $arguments['limit'];
@@ -187,23 +183,22 @@ class SomcpToolListUnsoldProducts
         $offset = 0;
         if (array_key_exists('offset', $arguments) && $arguments['offset'] !== null) {
             if (!is_int($arguments['offset']) || $arguments['offset'] < 0) {
-                $problems[] = '- offset: a whole number, 0 at least';
+                $problems[] = 'offset: a whole number, 0 at least';
             } else {
                 $offset = (int) $arguments['offset'];
             }
         }
 
-        if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $problems[] = SomcpTool::languageProblem($idShop);
         }
 
-        $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
+        if ($problems !== [] || $language === null) {
+            return SomcpTool::refused('read', $problems);
         }
+
         [$idLang, $iso] = $language;
 
         // Amounts are rounded the way the shop's default currency is shown.

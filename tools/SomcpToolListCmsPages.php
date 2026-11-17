@@ -98,14 +98,14 @@ class SomcpToolListCmsPages
         $idShop = (int) Somcp::currentShop()->id;
 
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A misspelt filter is named rather than ignored: the assistant would
         // otherwise read the pages of every category as those it asked for.
         $errors = SomcpTool::unknownFields($arguments, ['id_cms_category', 'active', 'title', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $active = $arguments['active'] ?? null;
         if ($active !== null && !is_bool($active)) {
             $errors[] = 'active: true or false';
@@ -122,6 +122,12 @@ class SomcpToolListCmsPages
             }
         }
 
+        // The pages and their categories are read in the language of the
+        // call: without one, only the problems found so far are answered.
+        if ($language === null) {
+            return SomcpTool::refused('read', $errors);
+        }
+        [$idLang, $iso] = $language;
         $pages = self::pages($idLang, $idShop);
 
         $counts = [];

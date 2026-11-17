@@ -52,6 +52,13 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
     private const OWN_ARGUMENTS = ['status_id', 'remove_icon'];
 
     /**
+     * @var array<int, string> What somcp_list_order_statuses returns and this tool does not write, because the
+     *                         shop works it out: accepted when it holds what the list gives for this status, so a
+     *                         row read there can be given back as it is, and refused with the reason when it differs
+     */
+    private const KEPT_AS_READ = ['roles', 'built_in', 'payment_module'];
+
+    /**
      * @return SomcpTool
      */
     public static function define(): SomcpTool
@@ -179,19 +186,20 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
     private static function planUpdate(array $arguments, ?OrderState $state, int $idShop, array &$errors): ?array
     {
         $arguments = self::currentNames($arguments, $errors);
-        foreach (array_keys($arguments) as $key) {
-            $key = (string) $key;
-            if (!in_array($key, self::ORDER_STATUS_ARGUMENTS, true) && !in_array($key, self::OWN_ARGUMENTS, true)) {
-                $errors[] = $key . (in_array($key, self::ORDER_STATUS_COMPUTED, true)
-                    ? ': worked out by the shop, so it is not written here'
-                    : ': not a field of this tool');
-            }
+        $arguments = self::keptAsRead($arguments, $state, $errors);
+        foreach (SomcpTool::unknownFields(
+            $arguments,
+            array_merge(self::ORDER_STATUS_ARGUMENTS, self::OWN_ARGUMENTS),
+            self::ORDER_STATUS_COMPUTED
+        ) as $problem) {
+            $errors[] = $problem;
         }
 
         $languages = self::languages($arguments, $idShop, $errors);
         if ($languages === null) {
             return null;
         }
+        $arguments = self::textsKeptAsRead($arguments, $state, $languages);
 
         $probe = new OrderState();
         $idSelf = $state === null ? 0 : (int) $state->id;
@@ -210,8 +218,16 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
             $names = self::orderStatusNames($names, $languages, $probe, $errors, $idSelf);
         }
 
+        // A status created without a colour reads "" in the list: given back,
+        // it is what the shop holds, not a colour to check, as the return
+        // statuses take it. On a status that has one it is still refused, as
+        // the form cannot remove a colour.
+        $emptyKept = array_key_exists('color', $arguments)
+            && trim((string) (self::string($arguments['color']) ?? '')) === ''
+            && $state !== null
+            && (string) $state->color === '';
         $color = null;
-        if (array_key_exists('color', $arguments)) {
+        if (array_key_exists('color', $arguments) && !$emptyKept) {
             $color = self::hexColor($arguments['color'], $errors);
         }
 
@@ -284,6 +300,75 @@ class SomcpToolUpdateOrderStatus extends SomcpToolCreateOrderStatus
         }
 
         return $plan;
+    }
+
+    /**
+     * Takes out the read-only fields of the list row that hold what the shop holds.
+     *
+     * Compared as somcp_list_order_statuses answers them, from its own row
+     * rather than a copy, so a row read there and given back whole is no
+     * change, and the two tools cannot come to disagree on a stored value.
+     * A different value is refused with why: the shop works it out, and
+     * keeping it silently would let the assistant believe it was written.
+     *
+     * @param array<string, mixed> $arguments
+     * @param OrderState|null $state
+     * @param array<int, string> $errors
+     *
+     * @return array<string, mixed>
+     */
+    private static function keptAsRead(array $arguments, ?OrderState $state, array &$errors): array
+    {
+        if (array_intersect(self::KEPT_AS_READ, array_keys($arguments)) === []) {
+            return $arguments;
+        }
+        // An unknown status is already refused: nothing stored to compare with.
+        if ($state === null) {
+            return array_diff_key($arguments, array_flip(self::KEPT_AS_READ));
+        }
+
+        $row = self::status((int) $state->id, (int) Configuration::get('PS_LANG_DEFAULT'));
+        foreach (self::KEPT_AS_READ as $field) {
+            if (!array_key_exists($field, $arguments)) {
+                continue;
+            }
+            if (json_encode($arguments[$field]) !== json_encode($row[$field] ?? null)) {
+                $errors[] = $field . ': worked out by the shop, so it is not written here';
+            }
+            unset($arguments[$field]);
+        }
+
+        return $arguments;
+    }
+
+    /**
+     * Takes out a name or template given as one text that the shop already holds.
+     *
+     * The list answers both as one text, in the language it was read in. On a
+     * shop with several languages such a text names no language, so it is
+     * refused as ambiguous - unless it is the stored text of one of them: then
+     * it is the row given back as read, and nothing to write. With a single
+     * language the parser takes a plain text on its own, so it is left to it.
+     *
+     * @param array<string, mixed> $arguments
+     * @param OrderState|null $state loaded in every language
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     *
+     * @return array<string, mixed>
+     */
+    private static function textsKeptAsRead(array $arguments, ?OrderState $state, array $languages): array
+    {
+        if ($state === null || count($languages['filled']) < 2) {
+            return $arguments;
+        }
+        foreach (['name' => $state->name, 'email_template' => $state->template] as $field => $stored) {
+            if (isset($arguments[$field]) && is_string($arguments[$field])
+                && in_array($arguments[$field], self::byLanguage($stored, $languages), true)) {
+                unset($arguments[$field]);
+            }
+        }
+
+        return $arguments;
     }
 
     /**

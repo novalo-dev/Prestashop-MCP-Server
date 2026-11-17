@@ -615,6 +615,34 @@ class SomcpTool
     }
 
     /**
+     * The Status filter of a list: true enabled only, false disabled only,
+     * null no filter. The same active has to select the same rows in every
+     * tool, as the Status column filter of the back office does, so an
+     * assistant that lists disabled products and then audits them reads the
+     * same products. Left out, or null, the tool's own default applies; any
+     * other value is refused with the other problems of the call.
+     *
+     * @param array<string, mixed> $arguments
+     * @param bool|null $default
+     * @param array<int, string> $errors
+     *
+     * @return bool|null
+     */
+    public static function statusFilter(array $arguments, ?bool $default, array &$errors): ?bool
+    {
+        if (!array_key_exists('active', $arguments) || $arguments['active'] === null) {
+            return $default;
+        }
+        if (!is_bool($arguments['active'])) {
+            $errors[] = 'active: true or false';
+
+            return $default;
+        }
+
+        return $arguments['active'];
+    }
+
+    /**
      * The line for an identifier the shop does not have.
      *
      * One wording so the assistant applies one recovery: find it with the
@@ -624,12 +652,14 @@ class SomcpTool
      * @param string $thing the word of the back office, for example brand
      * @param int|string $value
      * @param string $tool the tool that lists the identifiers
+     * @param string $by what the value is, for an object found by name or
+     *                   reference rather than by identifier
      *
      * @return string
      */
-    public static function notFound(string $path, string $thing, $value, string $tool): string
+    public static function notFound(string $path, string $thing, $value, string $tool, string $by = 'identifier'): string
     {
-        return $path . ': no ' . $thing . ' of this shop has the identifier ' . $value . ' - find it with ' . $tool;
+        return $path . ': no ' . $thing . ' of this shop has the ' . $by . ' ' . $value . ' - find it with ' . $tool;
     }
 
     /**
@@ -883,16 +913,21 @@ class SomcpTool
      * every problem of a call before answering.
      *
      * languageRefused() is a whole answer and cannot sit among other lines;
-     * this keeps its words, so one refusal reads the same in every tool.
+     * this keeps its words, way out included, so one refusal reads the same
+     * in every tool, alone or among other mistakes.
      *
      * @param int $idShop
+     * @param bool $everyLanguage true for a tool that reads all the shop's
+     *                            languages when language is left out
      *
      * @return string
      */
-    public static function languageProblem(int $idShop): string
+    public static function languageProblem(int $idShop, bool $everyLanguage = false): string
     {
         return 'language: not one of the shop\'s languages, which are '
-            . implode(', ', self::activeLanguages($idShop));
+            . implode(', ', self::activeLanguages($idShop))
+            . ' - leave language out for '
+            . ($everyLanguage ? 'all of them' : 'the shop default');
     }
 
     /**

@@ -91,15 +91,15 @@ class SomcpToolGetCategory
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A cast would read an array as 1 and answer about a category nobody
         // asked for: only a whole number is an identifier.
         $idCategory = SomcpTool::id($arguments, 'id_category');
         $errors = SomcpTool::unknownFields($arguments, ['id_category', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $category = null;
         if ($idCategory === 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_category');
@@ -109,9 +109,11 @@ class SomcpToolGetCategory
                 $errors[] = SomcpTool::notFound('id_category', 'category', $idCategory, 'somcp_list_categories');
             }
         }
-        if ($errors !== [] || $category === null) {
+        if ($errors !== [] || $category === null || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+
+        [$idLang, $iso] = $language;
 
         return SomcpTool::json(['language' => $iso] + SomcpToolCreateCategory::category((int) $category->id, $idLang, $idShop));
     }

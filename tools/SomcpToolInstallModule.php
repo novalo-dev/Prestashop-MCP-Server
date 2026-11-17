@@ -77,31 +77,35 @@ class SomcpToolInstallModule
      */
     public static function handle(array $arguments, array $context): array
     {
+        // A misspelt field is named rather than read as a missing name.
+        $errors = SomcpTool::unknownFields($arguments, ['name']);
         $name = $arguments['name'] ?? null;
         if (!is_string($name) || trim($name) === '') {
-            return SomcpTool::text('name: a string, the technical name from somcp_list_modules.', true);
+            $errors[] = 'name: a string, the technical name from somcp_list_modules';
+        }
+        if ($errors !== [] || !is_string($name)) {
+            return SomcpTool::refused('installed', $errors);
         }
 
         // The shop comes from the token, never from the caller.
         $idShop = (int) Somcp::currentShop()->id;
         $before = SomcpModules::read($name, $idShop);
         if ($before === null) {
-            return SomcpTool::text('No module of this shop has this name. Find it with somcp_list_modules.', true);
+            return SomcpTool::refused('installed', [SomcpTool::notFound('name', 'module', trim($name), 'somcp_list_modules', 'technical name')]);
         }
         if ($before['installed']) {
             // ModuleManager::install() upgrades a module already installed:
             // refused here so an install never turns into an upgrade.
-            return SomcpTool::text(
-                'This module is already installed, version ' . (string) $before['version_installed']
-                . '. Nothing was changed; upgrade it with somcp_upgrade_module and a newer archive.',
-                true
-            );
+            return SomcpTool::refused('installed', [
+                'name: already installed, version ' . (string) $before['version_installed']
+                    . ' - upgrade it with somcp_upgrade_module and a newer archive',
+            ]);
         }
         // The name the core knows the folder by, not the caller's spelling;
         // a module installed whose folder is gone never reaches this point.
         $folder = (string) $before['name'];
         if ($before['version'] === '' || !Validate::isModuleName($folder)) {
-            return SomcpTool::text('No module of this shop has this name. Find it with somcp_list_modules.', true);
+            return SomcpTool::refused('installed', [SomcpTool::notFound('name', 'module', trim($name), 'somcp_list_modules', 'technical name')]);
         }
 
         $idEmployee = (int) ($context['id_employee'] ?? 0);

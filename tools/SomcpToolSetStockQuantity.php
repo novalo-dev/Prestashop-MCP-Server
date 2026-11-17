@@ -221,9 +221,11 @@ class SomcpToolSetStockQuantity
             (int) $product->id
         );
 
+        $packs = self::recountPacksHolding((int) $product->id, $idShop, $idCombination);
+
         SomcpLogger::log('stock_quantity_changed', SomcpLogger::OUTCOME_SUCCESS, $what . ' by ' . $movement, '', $idEmployee);
 
-        return SomcpTool::json([
+        $answer = [
             'changed' => true,
             'id_product' => (int) $product->id,
             'id_product_attribute' => $idCombination,
@@ -231,7 +233,12 @@ class SomcpToolSetStockQuantity
             // Read back rather than worked out: a pack the core does not count
             // itself, or an order placed in between, would make the sum wrong.
             'quantity' => (int) StockAvailable::getQuantityAvailableByProduct((int) $product->id, $idCombination, $idShop),
-        ]);
+        ];
+        if ($packs !== []) {
+            $answer['packs'] = $packs;
+        }
+
+        return SomcpTool::json($answer);
     }
 
     /**
@@ -275,6 +282,84 @@ class SomcpToolSetStockQuantity
         }
 
         return '';
+    }
+
+    /**
+     * Brings the stored quantity of a pack counted from its products in line with them.
+     *
+     * Such a pack sells what its products allow - Pack::getQuantity() works it
+     * out on every page - but its own stock line keeps whatever was written
+     * last: 0 for a pack created here, the old figure after its contents or
+     * their stock changed. The core has no step that rewrites it, and the back
+     * office product list, the stock page and other modules read that line.
+     * The count follows Pack::getQuantity(): for each product, how many packs
+     * its stock fills, the smallest of them. It is read for the given shop
+     * rather than the context one, and written without a stock movement, since
+     * nothing entered or left the warehouse. A pack that keeps its own count
+     * is left alone: that figure is the merchant's.
+     *
+     * @param int $idProduct
+     * @param int $idShop
+     *
+     * @return int|null the quantity the pack now holds, null when it is not a pack counted from its products
+     */
+    public static function recountPack(int $idProduct, int $idShop): ?int
+    {
+        // The items may have been written earlier in this request, after the
+        // core cached the product as no pack, or the item quantities as they
+        // were before the call.
+        Pack::resetStaticCache();
+        Cache::clean('StockAvailable::getQuantityAvailableByProduct_*');
+
+        $product = new Product($idProduct, false, null, $idShop);
+        if (!Validate::isLoadedObject($product) || !Pack::isPack($idProduct) || self::packStockType($product) !== Pack::STOCK_TYPE_PRODUCTS_ONLY) {
+            return null;
+        }
+
+        $quantity = null;
+        foreach (Pack::getItems($idProduct, (int) Configuration::get('PS_LANG_DEFAULT')) as $item) {
+            $available = (int) StockAvailable::getQuantityAvailableByProduct((int) $item->id, (int) $item->id_pack_product_attribute, $idShop);
+            $packs = (int) floor($available / max(1, (int) $item->pack_quantity));
+            $quantity = $quantity === null ? $packs : min($quantity, $packs);
+        }
+        $quantity = (int) $quantity;
+
+        if ($quantity !== (int) StockAvailable::getQuantityAvailableByProduct($idProduct, 0, $idShop)) {
+            StockAvailable::setQuantity($idProduct, 0, $quantity, $idShop, false);
+            Cache::clean('StockAvailable::getQuantityAvailableByProduct_*');
+        }
+
+        return $quantity;
+    }
+
+    /**
+     * Recounts every pack counted from its products that holds this product or combination.
+     *
+     * The core lowers a pack holding a product only when the pack counts
+     * both its own stock and its products', so a pack counted from its
+     * products alone kept the old figure after one of them changed.
+     *
+     * @param int $idProduct
+     * @param int $idCombination 0 for the product itself, whatever combination is packed
+     * @param int $idShop
+     *
+     * @return array<int, array{id_product: int, quantity: int}>
+     */
+    public static function recountPacksHolding(int $idProduct, int $idShop, int $idCombination = 0): array
+    {
+        $packs = [];
+        $rows = Db::getInstance()->executeS(
+            'SELECT DISTINCT `id_product_pack` FROM `' . _DB_PREFIX_ . 'pack` WHERE `id_product_item` = ' . $idProduct
+                . ($idCombination > 0 ? ' AND `id_product_attribute_item` = ' . $idCombination : '')
+        );
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $quantity = self::recountPack((int) $row['id_product_pack'], $idShop);
+            if ($quantity !== null) {
+                $packs[] = ['id_product' => (int) $row['id_product_pack'], 'quantity' => $quantity];
+            }
+        }
+
+        return $packs;
     }
 
     /**

@@ -134,37 +134,32 @@ class SomcpToolListCartRules
 
         // Every mistake is reported in one answer, so the call is corrected in
         // one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         foreach (['active', 'has_code', 'current'] as $field) {
             if (array_key_exists($field, $arguments) && $arguments[$field] !== null && !is_bool($arguments[$field])) {
-                $problems[] = '- ' . $field . ': true or false';
+                $problems[] = $field . ': true or false';
             }
         }
 
         if (array_key_exists('name', $arguments) && $arguments['name'] !== null && !is_string($arguments['name'])) {
-            $problems[] = '- name: a text';
+            $problems[] = 'name: a text';
         }
         // An empty code would match every rule: the split between coded and
         // uncoded rules is has_code, so an empty code is a mistake, not a
         // silent "all".
         if (array_key_exists('code', $arguments) && $arguments['code'] !== null) {
             if (!is_string($arguments['code'])) {
-                $problems[] = '- code: a text';
+                $problems[] = 'code: a text';
             } elseif (trim($arguments['code']) === '') {
-                $problems[] = '- code: a piece of a code to look for; for the rules with no code use has_code: false';
+                $problems[] = 'code: a piece of a code to look for; for the rules with no code use has_code: false';
             }
         }
 
         $limit = self::DEFAULT_LIMIT;
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
             if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT) {
-                $problems[] = '- limit: a whole number from 1 to ' . self::MAX_LIMIT;
+                $problems[] = 'limit: a whole number from 1 to ' . self::MAX_LIMIT;
             } else {
                 // Cast although checked: the value goes into the LIMIT clause,
                 // where only a number may ever land.
@@ -174,7 +169,7 @@ class SomcpToolListCartRules
         $offset = 0;
         if (array_key_exists('offset', $arguments) && $arguments['offset'] !== null) {
             if (!is_int($arguments['offset']) || $arguments['offset'] < 0) {
-                $problems[] = '- offset: a whole number, 0 at least';
+                $problems[] = 'offset: a whole number, 0 at least';
             } else {
                 $offset = (int) $arguments['offset'];
             }
@@ -183,14 +178,11 @@ class SomcpToolListCartRules
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- ' . SomcpTool::languageProblem($idShop);
+            $problems[] = SomcpTool::languageProblem($idShop);
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);

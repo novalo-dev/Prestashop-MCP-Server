@@ -89,23 +89,25 @@ class SomcpToolGetAttributeValue
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A cast would read an array as 1 and answer about a value nobody
         // asked for: only a whole number is an identifier.
         $idAttribute = SomcpTool::id($arguments, 'id_attribute');
         $errors = SomcpTool::unknownFields($arguments, ['id_attribute', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         if ($idAttribute === 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_attribute');
         } elseif (self::existingValue($idAttribute, $idShop) === null) {
             $errors[] = SomcpTool::notFound('id_attribute', 'attribute value', $idAttribute, 'somcp_list_attributes');
         }
-        if ($errors !== []) {
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+
+        [$idLang, $iso] = $language;
 
         // What a delete would take with the value, so the merchant sees it
         // before confirming somcp_delete_attribute_value and never learns it

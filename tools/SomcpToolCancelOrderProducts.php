@@ -257,8 +257,9 @@ class SomcpToolCancelOrderProducts
                 'reference' => (string) $order->reference,
             ],
             'lines' => $lines,
-            'total_tax_excluded' => (float) $order->total_paid_tax_excl,
-            'total_tax_included' => (float) $order->total_paid_tax_incl,
+            // The totals of somcp_get_order, so the assistant compares the
+            // order after the cancel with the one it read, name for name.
+            'totals' => SomcpToolGetOrder::totals($order),
             'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',
             'order_cancelled' => $cancelled,
             'status' => [

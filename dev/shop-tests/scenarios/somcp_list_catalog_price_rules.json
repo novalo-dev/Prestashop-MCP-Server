@@ -8,7 +8,7 @@
     {"why": "names in a language asked by its ISO code", "arguments": {"language": "en", "offset": 0}, "expect": "ok", "contains": ["\"language\": \"en\""]},
     {"why": "a currency the shop does not have is refused", "arguments": {"currency": "XXX"}, "expect": "error", "contains": ["currency: not a currency of this shop"]},
     {"why": "a country the shop does not have is refused", "arguments": {"country": "ZZ"}, "expect": "error", "contains": ["country: no country of this shop has the ISO code"]},
-    {"why": "a group no shop has is refused", "arguments": {"id_group": 999999}, "expect": "error", "contains": ["id_group: not a group of this shop"]},
+    {"why": "a group no shop has is refused", "arguments": {"id_group": 999999}, "expect": "error", "contains": ["id_group: no customer group of this shop has the identifier 999999 - find it with somcp_list_customer_groups"]},
     {"why": "a reduction type that is neither amount nor percentage is refused", "arguments": {"reduction_type": "free"}, "expect": "error", "contains": ["reduction_type: amount or percentage"]},
     {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["language: not one of the shop's languages"]},
     {"why": "more than 100 rules at once is refused", "arguments": {"limit": 101}, "expect": "error", "contains": ["limit: a whole number from 1 to 100"]},

@@ -305,7 +305,7 @@ class SomcpToolAddOrderPayment
             // argument. Matches id_employee of payments[] in somcp_get_order.
             'id_employee' => $storedEmployee,
             'total_paid_real' => $paid,
-            'total_tax_included' => $total,
+            'total_paid_tax_incl' => $total,
             'order_currency' => Validate::isLoadedObject($orderCurrency) ? (string) $orderCurrency->iso_code : '',
             'remaining' => $remaining,
             // addOrderPayment() answers false when the payment row was added
@@ -435,7 +435,7 @@ class SomcpToolAddOrderPayment
             $invoices[] = [
                 'id_order_invoice' => (int) $invoice->id,
                 'number' => (string) $invoice->getInvoiceNumberFormatted((int) $order->id_lang),
-                'total_tax_included' => (float) $invoice->total_paid_tax_incl,
+                'total_paid_tax_incl' => (float) $invoice->total_paid_tax_incl,
             ];
         }
 

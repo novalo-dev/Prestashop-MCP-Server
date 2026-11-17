@@ -110,7 +110,8 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
                     'in_menu' => [
                         'type' => 'boolean',
                         'description' => 'As custom_links of somcp_list_menu_links returns it, accepted unchanged '
-                            . 'only: somcp_add_menu_link puts a link in the menu.',
+                            . 'only: somcp_add_menu_link puts a link in the menu; taking it out is done in Modules > '
+                            . 'Module Manager > Main menu > Configure.',
                     ],
                     'translated' => [
                         'type' => 'boolean',
@@ -142,10 +143,6 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
         $idShop = Somcp::currentShopId();
 
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         if (!SomcpToolListMenuLinks::moduleActive($idShop)) {
             return SomcpTool::text(
@@ -156,13 +153,21 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
         }
 
         $errors = [];
-        $plan = self::planUpdate($arguments, $idLang, $idShop, $errors);
-        if ($errors !== [] || $plan === null) {
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        // The language only serves to look the entry up: while the one given
+        // is wrong, the default one still finds the other mistakes.
+        $lookup = $language ?? SomcpTool::readLanguage([], $idShop);
+        $plan = $lookup === null ? null : self::planUpdate($arguments, $lookup[0], $idShop, $errors);
+        if ($errors !== [] || $plan === null || $language === null) {
             return SomcpTool::text(
                 "Nothing was changed. Correct these and call again:\n- " . implode("\n- ", array_values(array_unique($errors))),
                 true
             );
         }
+        [$idLang, $iso] = $language;
 
         if ($plan['changes'] === []) {
             return SomcpTool::json([
@@ -333,7 +338,12 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
             if (!is_bool($given['in_menu'])) {
                 $errors[] = 'in_menu: true or false';
             } elseif ($given['in_menu'] !== $read['in_menu']) {
-                $errors[] = 'in_menu: not changed by this tool - put the link in the menu with somcp_add_menu_link';
+                // Each direction names what does it: no tool takes an entry out of the menu yet,
+                // so sending that case to somcp_add_menu_link would have the assistant add instead.
+                $errors[] = $given['in_menu']
+                    ? 'in_menu: not changed by this tool - put the link in the menu with somcp_add_menu_link'
+                    : 'in_menu: not changed by this tool - taking a link out of the menu is done in '
+                        . 'Modules > Module Manager > Main menu > Configure';
             }
         }
 

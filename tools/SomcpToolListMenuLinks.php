@@ -107,19 +107,14 @@ class SomcpToolListMenuLinks
         // A misspelt argument would otherwise be ignored and the default
         // language answered, which the assistant would take for the one it
         // asked for.
-        $unknown = array_diff(array_keys($arguments), ['language']);
-        if ($unknown !== []) {
-            $lines = [];
-            foreach ($unknown as $key) {
-                $lines[] = '- ' . $key . ': not a field of this tool';
-            }
-
-            return SomcpTool::text("Nothing was read. Correct these and call again:\n" . implode("\n", $lines), true);
-        }
-
+        $errors = SomcpTool::unknownFields($arguments, ['language']);
         $language = SomcpTool::readLanguage($arguments, $idShop);
+        // Listed with the call's other mistakes, so it is corrected in one go.
         if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($errors !== [] || $language === null) {
+            return SomcpTool::refused('read', $errors);
         }
         [$idLang, $iso] = $language;
 

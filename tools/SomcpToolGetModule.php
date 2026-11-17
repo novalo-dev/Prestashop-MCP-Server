@@ -75,14 +75,19 @@ class SomcpToolGetModule
      */
     public static function handle(array $arguments, array $context): array
     {
+        // A misspelt field is named rather than read as a missing name.
+        $errors = SomcpTool::unknownFields($arguments, ['name']);
         $name = $arguments['name'] ?? null;
         if (!is_string($name) || trim($name) === '') {
-            return SomcpTool::text('name: a string, the technical name from somcp_list_modules.', true);
+            $errors[] = 'name: a string, the technical name from somcp_list_modules';
+        }
+        if ($errors !== [] || !is_string($name)) {
+            return SomcpTool::refused('read', $errors);
         }
         // The shop comes from the token, never from the caller.
         $module = SomcpModules::read($name, (int) Somcp::currentShop()->id);
         if ($module === null) {
-            return SomcpTool::text('No module of this shop has this name. Find it with somcp_list_modules.', true);
+            return SomcpTool::refused('read', [SomcpTool::notFound('name', 'module', trim($name), 'somcp_list_modules', 'technical name')]);
         }
 
         return SomcpTool::json($module);

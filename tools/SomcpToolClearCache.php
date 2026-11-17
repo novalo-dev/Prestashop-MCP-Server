@@ -84,13 +84,9 @@ class SomcpToolClearCache
     {
         // A misspelt argument would otherwise be ignored, and the caller
         // would believe it had asked for something narrower than a full clear.
-        if ($arguments !== []) {
-            $lines = [];
-            foreach (array_keys($arguments) as $key) {
-                $lines[] = '- ' . $key . ': not a field of this tool';
-            }
-
-            return SomcpTool::text("Nothing was cleared. Correct these and call again:\n" . implode("\n", $lines), true);
+        $problems = SomcpTool::unknownFields($arguments, []);
+        if ($problems !== []) {
+            return SomcpTool::refused('cleared', $problems);
         }
 
         try {

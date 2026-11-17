@@ -938,7 +938,7 @@ class SomcpToolCreateOrder
             $offered[(int) $match[1]] = [
                 'id_carrier' => (int) $match[1],
                 'name' => SomcpTool::carrierName($carrier instanceof Carrier ? (string) $carrier->name : ''),
-                'shipping_tax_included' => (float) ($option['total_price_with_tax'] ?? 0),
+                'shipping_tax_incl' => (float) ($option['total_price_with_tax'] ?? 0),
             ];
         }
 

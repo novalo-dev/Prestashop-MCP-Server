@@ -161,12 +161,18 @@ class SomcpToolSearchCustomers
         // or replaced by the default order, and the assistant described the
         // whole list as the customers asked for: refused instead.
         $errors = self::problems($arguments);
-        if ($errors !== []) {
-            return SomcpTool::refused('read', $errors);
-        }
 
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
+        // A language given and unknown is one more mistake of the same answer.
+        $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        if ($asked && $language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($errors !== []) {
+            return SomcpTool::refused('read', $errors);
+        }
+        // Left out, null means a shop whose default language cannot be read.
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);
         }

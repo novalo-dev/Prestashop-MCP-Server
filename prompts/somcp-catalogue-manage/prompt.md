@@ -28,6 +28,8 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_attachments`
 - `somcp_list_tax_rules`
 - `somcp_get_tax_rule`
+- `somcp_list_taxes`
+- `somcp_create_tax_rule`
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
 - `somcp_create_product`
@@ -201,6 +203,13 @@ shop charges no tax at all, whatever the rule.
 For the rate a customer delivered abroad pays, read the rule with
 `somcp_get_tax_rule`: its `country_rules` give the tax per country, state and
 zip code range, and `country` narrows them to one country.
+The taxes those rows apply, with their `id_tax` and rate, come from
+`somcp_list_taxes`; a product never takes a tax, only a tax rule.
+
+A missing tax rule is created with `somcp_create_tax_rule`, after reading
+`somcp_list_tax_rules` with `active: false`: two rules may carry the same name.
+The name is the merchant's; the rule is created without countries and
+disabled unless `active` is `true`.
 
 ## Who fills each field
 

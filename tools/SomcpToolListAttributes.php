@@ -83,10 +83,6 @@ class SomcpToolListAttributes
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A group asked for by identifier must be one of this shop: an
         // identifier that matches nothing is said, not answered with an empty
@@ -94,6 +90,10 @@ class SomcpToolListAttributes
         // Every problem of the call in one answer, a misspelt field included:
         // ignored, it would answer every group for the one asked for.
         $errors = SomcpTool::unknownFields($arguments, ['id_attribute_group', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $idGroup = null;
         if (isset($arguments['id_attribute_group'])) {
             // A cast would read an array as 1 and answer about a group nobody
@@ -105,9 +105,10 @@ class SomcpToolListAttributes
                 $errors[] = SomcpTool::notFound('id_attribute_group', 'attribute group', $idGroup, 'somcp_list_attributes');
             }
         }
-        if ($errors !== []) {
+        if ($errors !== [] || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         // Queries rather than AttributeGroup::getAttributesGroups() and
         // AttributeGroup::getAttributes(), which read the shop from the global

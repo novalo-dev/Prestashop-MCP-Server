@@ -19,6 +19,7 @@
     {"why": "the type is required", "arguments": {"id_category": 5}, "expect": "error", "contains": ["type: one of"]},
     {"why": "a type the menu does not have is refused", "arguments": {"type": "page"}, "expect": "error", "contains": ["type: one of"]},
     {"why": "an argument the tool does not take is refused, naming it", "arguments": {"type": "category", "id_category": 5, "colour": "red"}, "expect": "error", "contains": ["colour: not a field of this tool"]},
-    {"why": "a language the shop does not have is refused", "arguments": {"type": "category", "id_category": 5, "language": "zz"}, "expect": "error", "contains": ["language"]}
+    {"why": "a language the shop does not have is refused", "arguments": {"type": "category", "id_category": 5, "language": "zz"}, "expect": "error", "contains": ["Nothing was changed.", "- language: not one of the shop's languages, which are "]},
+    {"why": "a category that does not exist and a language the shop does not have, reported together", "arguments": {"type": "category", "id_category": 999999, "language": "zz"}, "expect": "error", "contains": ["Nothing was changed.", "- language: not one of the shop's languages, which are ", "- id_category: no category of this shop has the identifier 999999 - find it with somcp_list_categories"]}
   ]
 }

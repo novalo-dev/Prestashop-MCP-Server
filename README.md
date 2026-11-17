@@ -28,7 +28,7 @@ Free and open source - PrestaShop 8.0 to 9.x - English, French, Spanish, German
 
 </div>
 
-https://github.com/user-attachments/assets/cf0b0e3f-1172-4ba9-aad1-11a6298aadf7
+https://github.com/user-attachments/assets/3ed9d7ce-a317-4ec7-bf12-03241dd6544f
 
 Ask your AI assistant to find an order, change a status, check your stock or
 audit a product page, and it does it in your back office - with the rights of
@@ -440,6 +440,8 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_attachments` | ● List files | Files › view |
 | `somcp_list_tax_rules` | ● List tax rules | Tax Rules › view |
 | `somcp_get_tax_rule` | ● Get a tax rule | Tax Rules › view |
+| `somcp_list_taxes` | ● List taxes | Taxes › view |
+| `somcp_create_tax_rule` | ✎ Create a tax rule | Tax Rules › add |
 
 ### 📊 Stock
 

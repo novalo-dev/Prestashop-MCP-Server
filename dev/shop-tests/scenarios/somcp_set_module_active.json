@@ -8,11 +8,12 @@
     {"why": "enabling it again brings the shop back to its demo state", "arguments": {"name": "Ps_Banner", "active": true}, "expect": "ok", "contains": ["ps_banner", "changed", "from"]},
     {"why": "the mobile switch is refused when it changes nothing on PrestaShop 8 and does not exist on 9", "arguments": {"name": "ps_banner", "active_on_mobile": true}, "expect": "error", "contains": ["active_on_mobile"]},
     {"why": "the mobile switch is refused on a module left disabled, the core would do nothing", "arguments": {"name": "ps_banner", "active": false, "active_on_mobile": true}, "expect": "error", "contains": ["active_on_mobile"]},
-    {"why": "a name no module carries points to the list tool", "arguments": {"name": "no_such_module", "active": true}, "expect": "error", "contains": ["No module", "somcp_list_modules"]},
+    {"why": "a name no module carries points to the list tool", "arguments": {"name": "no_such_module", "active": true}, "expect": "error", "contains": ["name: no module of this shop has the technical name no_such_module - find it with somcp_list_modules"]},
     {"why": "neither active nor active_on_mobile is refused, naming the field", "arguments": {"name": "ps_banner"}, "expect": "error", "contains": ["active"]},
     {"why": "a non-boolean active is refused, naming the field", "arguments": {"name": "ps_banner", "active": "yes"}, "expect": "error", "contains": ["active"]},
     {"why": "a non-boolean active_on_mobile is refused, naming the field", "arguments": {"name": "ps_banner", "active_on_mobile": 1}, "expect": "error", "contains": ["active_on_mobile"]},
     {"why": "a missing name is refused, naming the field", "arguments": {"active": true}, "expect": "error", "contains": ["name"]},
-    {"why": "a non-string name is refused, naming the field", "arguments": {"name": 12, "active": true}, "expect": "error", "contains": ["name"]}
+    {"why": "a non-string name is refused, naming the field", "arguments": {"name": 12, "active": true}, "expect": "error", "contains": ["name"]},
+    {"why": "every mistake of the call is named at once", "arguments": {"name": "ps_banner", "active": "yes", "active_on_mobile": "no"}, "expect": "error", "contains": ["Nothing was changed.", "- active: true or false", "- active_on_mobile: true or false"]}
   ]
 }

@@ -87,7 +87,7 @@ class SomcpToolAuditCategorySeo
                     'active' => [
                         'type' => 'boolean',
                         'description' => 'true (the default) for displayed categories only - hidden categories '
-                            . 'rank for nothing - false to include hidden ones too.',
+                            . 'rank for nothing - false for hidden categories only.',
                     ],
                     'checks' => [
                         'type' => 'array',
@@ -129,15 +129,23 @@ class SomcpToolAuditCategorySeo
 
         // Its fields are the product audit's, so both are read by one function.
         $read = SomcpToolAuditProductSeo::auditArguments($arguments, SomcpToolAuditProductSeo::FIELDS, self::CHECKS, self::DEFAULT_LIMIT, self::MAX_LIMIT);
-        if ($read['problems'] !== []) {
-            return SomcpTool::refused('read', $read['problems']);
-        }
+        $problems = $read['problems'];
         $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
+        // A language given and unknown is one more mistake of the same answer,
+        // so the call is corrected in one go.
+        $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        if ($asked && $languages === null) {
+            $problems[] = SomcpTool::languageProblem($idShop, true);
+        }
+        if ($problems !== []) {
+            return SomcpTool::refused('read', $problems);
+        }
+        // Left out, every language is read: null then means a shop with none.
         if ($languages === null) {
             return SomcpTool::languageRefused($idShop, true);
         }
         $checks = $read['checks'];
-        $activeOnly = $read['active_only'];
+        $status = $read['status'];
         $limit = $read['limit'];
         $offset = $read['offset'];
 
@@ -145,17 +153,17 @@ class SomcpToolAuditCategorySeo
         // The duplicate scan is skipped when its check is not asked for, as the
         // product audit does.
         $duplicateTitles = in_array('meta_title_duplicate', $checks, true)
-            ? self::duplicates('meta_title', $idShop, $idLangs, $activeOnly)
+            ? self::duplicates('meta_title', $idShop, $idLangs, $status)
             : [];
         $duplicateUrls = in_array('link_rewrite_duplicate', $checks, true)
-            ? self::duplicates('link_rewrite', $idShop, $idLangs, $activeOnly)
+            ? self::duplicates('link_rewrite', $idShop, $idLangs, $status)
             : [];
 
         $counts = array_fill_keys($checks, 0);
         $entries = [];
         $total = 0;
 
-        foreach (array_chunk(self::categoryIds($idShop, $activeOnly), self::BATCH) as $batch) {
+        foreach (array_chunk(self::categoryIds($idShop, $status), self::BATCH) as $batch) {
             $products = self::productCounts($batch, $idShop);
 
             foreach (self::rows($batch, $idShop, $idLangs) as $row) {
@@ -196,7 +204,9 @@ class SomcpToolAuditCategorySeo
             // An object even when no check is left, so a client reads one shape.
             'counts' => $counts === [] ? new stdClass() : $counts,
             'languages' => array_values($languages),
-            'active_only' => $activeOnly,
+            // The Status filter applied, so the assistant can say which
+            // categories the counts cover.
+            'active' => $status,
         ]);
     }
 
@@ -251,11 +261,11 @@ class SomcpToolAuditCategorySeo
      * The categories of this shop to audit, in order.
      *
      * @param int $idShop
-     * @param bool $activeOnly
+     * @param bool $status true for displayed categories only, false for hidden ones only
      *
      * @return array<int, int>
      */
-    private static function categoryIds(int $idShop, bool $activeOnly): array
+    private static function categoryIds(int $idShop, bool $status): array
     {
         $query = new DbQuery();
         $query->select('c.`id_category`');
@@ -264,11 +274,8 @@ class SomcpToolAuditCategorySeo
         // it is not part of its catalogue.
         $query->innerJoin('category_shop', 'cs', 'cs.`id_category` = c.`id_category` AND cs.`id_shop` = ' . $idShop);
         $query->where(self::audited());
-        // Displayed only unless hidden categories are asked for, the field the
-        // form's "Displayed" writes.
-        if ($activeOnly) {
-            $query->where('c.`active` = 1');
-        }
+        // Displayed or hidden ones, the field the form's "Displayed" writes.
+        $query->where('c.`active` = ' . (int) $status);
         $query->orderBy('c.`id_category` ASC');
 
         return array_map('intval', array_column(Db::getInstance()->executeS($query) ?: [], 'id_category'));
@@ -336,18 +343,18 @@ class SomcpToolAuditCategorySeo
      * @param string $field meta_title or link_rewrite, never from the caller
      * @param int $idShop
      * @param array<int, int> $idLangs
-     * @param bool $activeOnly
+     * @param bool $status true for displayed categories only, false for hidden ones only
      *
      * @return array<string, true>
      */
-    private static function duplicates(string $field, int $idShop, array $idLangs, bool $activeOnly): array
+    private static function duplicates(string $field, int $idShop, array $idLangs, bool $status): array
     {
         $column = bqSQL($field);
         $langs = implode(',', array_map('intval', $idLangs));
-        // Compared among the categories audited, so a hidden one dropped from
-        // the audit does not make a displayed title count as a duplicate.
+        // Compared among the categories audited, so a category left out of
+        // the audit does not make a title count as a duplicate.
         $audited = 'INNER JOIN `' . _DB_PREFIX_ . 'category` c ON c.`id_category` = cl.`id_category` AND ' . self::audited()
-             . ($activeOnly ? ' AND c.`active` = 1' : '') . '
+             . ' AND c.`active` = ' . (int) $status . '
              INNER JOIN `' . _DB_PREFIX_ . 'category_shop` cs ON cs.`id_category` = cl.`id_category` AND cs.`id_shop` = ' . $idShop;
 
         // Compared among the categories audited, by the database's own

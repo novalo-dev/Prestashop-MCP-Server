@@ -86,16 +86,16 @@ class SomcpToolGetCmsPage
         $idShop = (int) Somcp::currentShop()->id;
 
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A cast would read an array or a word as a page nobody asked for:
         // only a whole number is an identifier, as somcp_update_cms_seo takes
         // it. Every problem is collected, so one call corrects them all.
         $idCms = SomcpTool::id($arguments, 'id_cms');
         $errors = SomcpTool::unknownFields($arguments, ['id_cms', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $cms = null;
         if ($idCms === 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_cms');
@@ -105,9 +105,10 @@ class SomcpToolGetCmsPage
                 $errors[] = SomcpTool::notFound('id_cms', 'CMS page', $idCms, 'somcp_list_cms_pages');
             }
         }
-        if ($errors !== [] || $cms === null) {
+        if ($errors !== [] || $cms === null || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         return SomcpTool::json(self::cmsPage($cms, $idLang, $iso, $idShop));
     }

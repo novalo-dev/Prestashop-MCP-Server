@@ -95,16 +95,23 @@ class SomcpToolAuditBrandSeo
     {
         $idShop = Somcp::currentShopId();
 
-        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
-        if ($languages === null) {
-            return SomcpTool::languageRefused($idShop, true);
-        }
-
         // A misspelt field was read as absent and the audit ran as if the
         // filter applied: the shared check so every SEO tool refuses it alike.
         $errors = SomcpTool::unknownFields($arguments, ['language']);
+
+        $languages = SomcpToolAuditProductSeo::languages($arguments, $idShop);
+        // A language given and unknown is one more mistake of the same answer,
+        // so the call is corrected in one go.
+        $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
+        if ($asked && $languages === null) {
+            $errors[] = SomcpTool::languageProblem($idShop, true);
+        }
         if ($errors !== []) {
             return SomcpTool::refused('read', $errors);
+        }
+        // Left out, every language is read: null then means a shop with none.
+        if ($languages === null) {
+            return SomcpTool::languageRefused($idShop, true);
         }
 
         $products = self::productCounts($idShop);

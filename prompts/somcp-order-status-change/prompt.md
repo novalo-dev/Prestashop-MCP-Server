@@ -170,8 +170,8 @@ wait for the merchant's go-ahead before the call.
   `products[].id_order_detail`, and `quantity_refunded` says what was already
   refunded.
 - Give each amount in the tax mode of the order, the lines and the shipping
-  alike: `amount_tax_excluded` or `amount_tax_included` on a line,
-  `shipping_amount_tax_excluded` or `shipping_amount_tax_included` for the
+  alike: `amount_tax_excl` or `amount_tax_incl` on a line,
+  `shipping_amount_tax_excl` or `shipping_amount_tax_incl` for the
   shipping. A wrong one is refused with the right field named.
 - A credit slip is generated unless the merchant says otherwise; a voucher
   only when asked. `restock` only matters once the order is delivered.
@@ -384,12 +384,12 @@ let them say yes to that one before calling. Deleting is final.
 
 `somcp_add_order_discount` adds a discount to an order already placed, as
 **Add a discount** on the order page does: a `percent`, an
-`amount_tax_included` or `free_shipping`, on the whole order or on one
+`amount_tax_incl` or `free_shipping`, on the whole order or on one
 `id_order_invoice`. It changes what the customer owes.
 
 - A discount **lowers the total**. Say the new total before adding it, not
-  after: the answer gives `totals.total_tax_included` and
-  `totals.discounts_tax_included`,
+  after: the answer gives `totals.total_paid_tax_incl` and
+  `totals.discounts_tax_incl`,
   but the merchant decides on the figure first.
 - `name` is one plain text, the line the customer reads on the invoice.
 - A percentage is 1 to 100; an amount is at most the order total, or the
@@ -423,7 +423,7 @@ guess it.
 - Changing the delivery address **can change the taxes and the total**, because
   the tax follows the country, and PrestaShop recomputes them only during the
   change. Before it, warn of that and give the current total
-  (`totals.total_tax_included` of `somcp_get_order`); after it, give the
+  (`totals.total_paid_tax_incl` of `somcp_get_order`); after it, give the
   previous and the new total (`previous_totals` and `totals` in the answer).
 - An address that is not the customer's is refused with the list of the ones
   that are: pick from that list.
@@ -441,7 +441,7 @@ returns; never guess it. The tracking number stays with
 
 - Changing the carrier **changes the shipping cost and the total**, recomputed
   by PrestaShop only during the change. Before it, warn of that and give the
-  current total (`totals.total_tax_included` of `somcp_get_order`); after it,
+  current total (`totals.total_paid_tax_incl` of `somcp_get_order`); after it,
   give the previous and the new amounts (`previous_totals` and `totals` in the
   answer).
 - A carrier that does not deliver this order is refused with the carriers that

@@ -394,6 +394,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $packItems = $plan['pack'] === null ? null : self::replacePack((int) $product->id, $plan['pack']);
         $virtualFile = $plan['virtual_file'] === null ? null : self::applyVirtualFile((int) $product->id, $plan['virtual_file']);
 
+        // A pack counted from its products follows its contents and how it
+        // counts; a product held in such packs carries them with its quantity.
+        // Recounting costs a few reads and writes only what differs, so it is
+        // done after every change rather than guessing which ones matter.
+        $packQuantity = SomcpToolSetStockQuantity::recountPack((int) $product->id, $idShop);
+        $packs = SomcpToolSetStockQuantity::recountPacksHolding((int) $product->id, $idShop);
+
         // What the back office does after every save of a product, whatever
         // changed: the index also holds the tags, categories, features, brand,
         // references and combinations, so a call that changed only one of them
@@ -424,6 +431,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             'seo_warnings' => $warnings === [] ? new stdClass() : $warnings,
             'images' => $images,
             'pack_items' => $packItems,
+            'pack_quantity' => $packQuantity,
+            'packs' => $packs,
             'virtual_file' => $virtualFile,
             'product' => self::read((int) $product->id, (string) $plan['read_language'], $context),
         ]);
@@ -483,7 +492,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         self::condition($groups['condition'], $probe, $plan, $errors);
         self::stock($groups['stock'], $languages, $probe, $plan, $errors);
         self::shipping($groups['shipping'], $languages, $idShop, $probe, $plan, $errors);
-        self::pricing($groups['pricing'], $probe, $plan, $errors, false);
+        self::pricing($groups['pricing'], $probe, $plan, $errors, false, (float) $product->ecotax);
         self::options($groups['options'], $probe, $plan, $errors);
         self::planSeo($groups['seo'], $languages, $product, $idShop, $probe, $plan, $errors);
 
@@ -1012,14 +1021,14 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $idProduct = (int) $product->id;
         $existing = [];
         foreach (Db::getInstance()->executeS(
-            'SELECT pa.`id_product_attribute`, pas.`default_on`, GROUP_CONCAT(pac.`id_attribute` ORDER BY pac.`id_attribute` SEPARATOR \'-\') AS `attributes`'
+            'SELECT pa.`id_product_attribute`, pas.`default_on`, pas.`ecotax`, GROUP_CONCAT(pac.`id_attribute` ORDER BY pac.`id_attribute` SEPARATOR \'-\') AS `attributes`'
             . ' FROM `' . _DB_PREFIX_ . 'product_attribute` pa'
             . ' INNER JOIN `' . _DB_PREFIX_ . 'product_attribute_shop` pas ON pas.`id_product_attribute` = pa.`id_product_attribute` AND pas.`id_shop` = ' . $idShop
             . ' LEFT JOIN `' . _DB_PREFIX_ . 'product_attribute_combination` pac ON pac.`id_product_attribute` = pa.`id_product_attribute`'
             . ' WHERE pa.`id_product` = ' . $idProduct
-            . ' GROUP BY pa.`id_product_attribute`, pas.`default_on`'
+            . ' GROUP BY pa.`id_product_attribute`, pas.`default_on`, pas.`ecotax`'
         ) ?: [] as $row) {
-            $existing[(int) $row['id_product_attribute']] = ['default' => (bool) $row['default_on'], 'attributes' => (string) $row['attributes']];
+            $existing[(int) $row['id_product_attribute']] = ['default' => (bool) $row['default_on'], 'attributes' => (string) $row['attributes'], 'ecotax' => (float) $row['ecotax']];
         }
 
         $remove = self::removals($arguments, 'remove_combinations', array_keys($existing), 'combination of this product', $errors);
@@ -1061,7 +1070,7 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
                     $errors[] = $path . '.attributes: the attributes of a combination do not change; remove it and add another';
                     continue;
                 }
-                $combination = self::combinationItem($item, $path, $languages, [], $errors);
+                $combination = self::combinationItem($item, $path, $languages, [], $errors, $existing[$id]['ecotax']);
                 $combination['id'] = $id;
                 if (($combination['fields']['default_on'] ?? null) === true) {
                     $defaults[] = $i;
@@ -1307,9 +1316,12 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         }));
         $toDefault = false;
         if ($useDefault === true) {
-            // The order that applies is accepted beside it, so a product read
-            // with somcp_get_product and given back unchanged changes nothing.
-            if ($priorities !== null && $priorities !== $current) {
+            // Only the shop default is accepted beside it, as the creation
+            // checks it: the product's own order would be dropped for the
+            // default while the call named another one. A product that already
+            // follows the default reads that very order, so a get given back
+            // unchanged still changes nothing.
+            if ($priorities !== null && $priorities !== self::defaultPriorities()) {
                 $errors[] = self::priorityConflict();
             }
             $priorities = null;

@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "a new meta description for the delivery page, in one language", "arguments": {"id_cms": 1, "languages": ["en"], "meta_description": {"en": "Delivery times, carriers and shipping costs of the shop"}}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"meta_description\"", "\"previous\"", "\"seo_warnings\"", "\"seo_title\""]},
+    {"why": "a new meta description for the delivery page, in one language", "arguments": {"id_cms": 1, "languages": ["en"], "meta_description": {"en": "Delivery times, carriers and shipping costs of the shop"}}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"meta_description (en)\"", "\"old\"", "\"seo_warnings\"", "\"seo_title\""]},
     {"why": "the same value again changes nothing", "arguments": {"id_cms": 1, "languages": ["en"], "meta_description": {"en": "Delivery times, carriers and shipping costs of the shop"}}, "expect": "ok", "contains": ["\"changed\": false"]},
     {"why": "a plain text when one language is filled, as the catalogue write tools accept it", "arguments": {"id_cms": 1, "languages": ["en"], "meta_description": "Delivery times, carriers and shipping costs of the shop"}, "expect": "ok", "contains": ["\"changed\": false"]},
     {"why": "a language to fill the shop does not have", "arguments": {"id_cms": 1, "languages": ["zz"], "meta_title": {"zz": "x"}}, "expect": "error", "contains": ["languages: \"zz\" is not an active language of this shop"]},

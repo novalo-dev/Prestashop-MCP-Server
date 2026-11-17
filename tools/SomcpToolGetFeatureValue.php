@@ -90,15 +90,15 @@ class SomcpToolGetFeatureValue
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A cast would read an array as 1 and answer about a value nobody
         // asked for: only a whole number is an identifier.
         $idFeatureValue = SomcpTool::id($arguments, 'id_feature_value');
         $errors = SomcpTool::unknownFields($arguments, ['id_feature_value', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $featureValue = null;
         if ($idFeatureValue === 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_feature_value');
@@ -108,9 +108,11 @@ class SomcpToolGetFeatureValue
                 $errors[] = SomcpTool::notFound('id_feature_value', 'feature value', $idFeatureValue, 'somcp_list_features');
             }
         }
-        if ($errors !== [] || $featureValue === null) {
+        if ($errors !== [] || $featureValue === null || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
+
         if (self::isCustom($featureValue)) {
             return SomcpTool::text(
                 'This is a custom value, typed on one product only: it belongs to that product. Read it with somcp_get_product.',

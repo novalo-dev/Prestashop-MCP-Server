@@ -688,6 +688,8 @@ class SomcpToolCreateProduct
 
         $images = self::images($product, $plan, $combinationIds, $idShop);
         $packItems = self::writePack((int) $product->id, $plan['pack'] ?? []);
+        // Before the product is read back, so the stock it shows is the count.
+        $packQuantity = $packItems === [] ? null : SomcpToolSetStockQuantity::recountPack((int) $product->id, $idShop);
         $virtualFile = $plan['virtual_file'] === null ? null : self::writeVirtualFile((int) $product->id, $plan['virtual_file']);
         $warnings = self::seoWarnings($product, $plan, $idShop);
 
@@ -708,6 +710,7 @@ class SomcpToolCreateProduct
             'seo_warnings' => $warnings === [] ? new stdClass() : $warnings,
             'images' => $images,
             'pack_items' => $packItems,
+            'pack_quantity' => $packQuantity,
             'virtual_file' => $virtualFile,
             // Read back with the reading tool rather than echoed from the
             // arguments: what the assistant shows the merchant is what the shop

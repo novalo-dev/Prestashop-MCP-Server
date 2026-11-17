@@ -154,6 +154,16 @@ product's own order beside it, so the product was moved to the default order
 while the call named another one. The order given is now checked against the
 shop's default order, and the change is refused when it differs.
 
+**Packs: the quantity of a pack counted from its products is kept up to date.**
+A pack whose stock is worked out from the products it holds kept 0 in its own
+stock line when the assistant created it, and its old figure when its contents,
+the way it counts its stock or the stock of one of its products changed: the
+back office product list and the other modules showed a wrong quantity, while
+the shop itself kept selling it correctly. The pack is now recounted from its
+products after each of those changes, as the shop works out what can be sold,
+and the answers give the new quantity: pack_quantity when creating or changing
+the pack, packs when changing the stock of a product it holds.
+
 ## 2.0.2 - 2026-11-16
 
 ### Added

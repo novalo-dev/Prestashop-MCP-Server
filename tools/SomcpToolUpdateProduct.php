@@ -394,6 +394,13 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         $packItems = $plan['pack'] === null ? null : self::replacePack((int) $product->id, $plan['pack']);
         $virtualFile = $plan['virtual_file'] === null ? null : self::applyVirtualFile((int) $product->id, $plan['virtual_file']);
 
+        // A pack counted from its products follows its contents and how it
+        // counts; a product held in such packs carries them with its quantity.
+        // Recounting costs a few reads and writes only what differs, so it is
+        // done after every change rather than guessing which ones matter.
+        $packQuantity = SomcpToolSetStockQuantity::recountPack((int) $product->id, $idShop);
+        $packs = SomcpToolSetStockQuantity::recountPacksHolding((int) $product->id, $idShop);
+
         // What the back office does after every save of a product, whatever
         // changed: the index also holds the tags, categories, features, brand,
         // references and combinations, so a call that changed only one of them
@@ -424,6 +431,8 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
             'seo_warnings' => $warnings === [] ? new stdClass() : $warnings,
             'images' => $images,
             'pack_items' => $packItems,
+            'pack_quantity' => $packQuantity,
+            'packs' => $packs,
             'virtual_file' => $virtualFile,
             'product' => self::read((int) $product->id, (string) $plan['read_language'], $context),
         ]);

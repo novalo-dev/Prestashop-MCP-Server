@@ -2326,6 +2326,48 @@ shop has the identifier <n> - find it with somcp_list_tax_rules`), an unknown
 - A rule made with **Country** All has one row per country: the answer can hold some 240 rows. No paging: the list of the edit page shows them all on one page too; `country` narrows it.
 - On 8.0.1 the panel is **Tax Rules**, on 9.0.0 **Tax rules**; the fields and tables are the same on both.
 
+#### `somcp_list_taxes`
+**State**: written · [issue #237](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/237)
+**Nature**: `acts(VIEW, 'AdminTaxes')` · **Scope**: `mcp.catalog.read`
+
+**Does** - lists the taxes of **International > Taxes > Taxes** with the
+columns of that list: **ID**, **Name**, **Rate**, **Enabled**. It is the source
+of the `id_tax` a tax rule applies (`somcp_get_tax_rule` gives it per country):
+no other tool gives one. Read only.
+
+**Do not use for** - the tax rules a product takes (→ `somcp_list_tax_rules`:
+a product takes a tax rule, never a tax); what a rule applies per country
+(→ `somcp_get_tax_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `name` | **Name** filter | string | no | part of the name, case-insensitive, in the language of the answer; left out, every tax |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**, the default of the list) |
+| `language` | | string | no | ISO code for the names, through `SomcpTool::readLanguage()`; the shop default when left out |
+
+No paging: a shop holds tens of taxes, not thousands, and one answer lets the
+assistant pick the right one by name and rate.
+
+**Returns** - `taxes`, sorted by `id_tax` as the list: `id_tax`, `name`, `rate`
+(a number, `4` for `4.000`), `active`. Plus `count`, `taxes_enabled` (**Enable
+tax** of the **Tax options**, as `somcp_list_tax_rules` gives it: when false no
+rate is charged at all) and `language`.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_tax_rules`), a language the shop does not have, named by
+`SomcpTool::languageProblem()` with the ones it has. An empty list is
+`taxes: []`, `count: 0`.
+
+**Notes**
+- Read through a query on `tax` and `tax_lang` (left join, so a tax with no name in the language read is still listed), `deleted = 0`, rather than `Tax::getTaxes()`, which takes the language and nothing else and has no name filter. A tax deleted from the list stays in the table with `deleted = 1` when an order used it; the list leaves it out, and so does the tool.
+- Taxes are not tied to a shop (no `tax_shop` table on either version): the same list for every shop.
+- `name` filters as the **Name** filter of `somcp_list_tax_rules`, `somcp_list_manufacturers` and `somcp_list_attachments` do.
+- The same list, columns, filters and tables on 8.0.1 and 9.0.0; 9.0.0 only offers two more **Items per page** choices. The **Tax options** form below the list is not read.
+
 #### `somcp_list_customer_groups`
 **State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)
 **Nature**: `acts(VIEW, 'AdminGroups')` · **Scope**: `mcp.customers.read`
@@ -5776,7 +5818,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

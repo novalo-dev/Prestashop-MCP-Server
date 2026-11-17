@@ -16,6 +16,14 @@ are:
 
 ## Unreleased
 
+### Added
+
+**List the taxes.** The new tool somcp_list_taxes lists the taxes of
+International > Taxes > Taxes with their identifier, name, rate and whether
+they are enabled, filtered by part of the name or by Enabled, in the language
+asked for. Until now no tool gave the identifier of a tax, so an assistant
+setting up the tax rules of a new shop had to guess which tax each one applies.
+
 ## 2.0.2 - 2026-11-16
 
 ### Added

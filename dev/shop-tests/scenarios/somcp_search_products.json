@@ -12,7 +12,7 @@
     {"why": "a misspelt filter is named and nothing is read", "arguments": {"id_categroy": 3}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "id_categroy: not a field of this tool"]},
     {"why": "an order outside the list is refused with the list, never replaced by the newest first", "arguments": {"sort": "price"}, "expect": "error", "contains": ["sort: one of date_add_desc, id_asc, id_desc, name_asc, name_desc, reference_asc, reference_desc, category_asc, category_desc, price_asc, price_desc, quantity_asc, quantity_desc, active_asc, active_desc"]},
     {"why": "by ID, the first one", "arguments": {"sort": "id_asc", "limit": 1}, "expect": "ok", "contains": ["\"id_product\": 1"]},
-    {"why": "by reference, the first one by name: demo_1 before demo_10", "arguments": {"sort": "reference_asc", "limit": 1}, "expect": "ok", "contains": ["\"reference\": \"demo_1\""]},
+    {"why": "by reference, among the demonstration ones so products other calls create without a reference do not come first: demo_1 before demo_10", "arguments": {"reference": "demo_", "sort": "reference_asc", "limit": 1}, "expect": "ok", "contains": ["\"reference\": \"demo_1\""]},
     {"why": "by the name of the default category, as the Category column shows it: Art first", "arguments": {"sort": "category_asc", "limit": 1}, "expect": "ok", "contains": ["\"category_default\": \"Art\""]},
     {"why": "by ID, the newest first", "arguments": {"sort": "id_desc"}, "expect": "ok"},
     {"why": "by status, enabled first", "arguments": {"sort": "active_desc"}, "expect": "ok"},

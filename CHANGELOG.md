@@ -116,6 +116,15 @@ field instead of a list. The other update tools list each change with its
 such as `meta_description (en)`. These three updates now answer the same way,
 so the assistant reads every update with one habit.
 
+### Fixed
+
+**An order of priorities given with Use default order is checked against the
+shop's default order.** When the assistant switched a product with its own
+order of specific price priorities back to the default, it accepted that
+product's own order beside it, so the product was moved to the default order
+while the call named another one. The order given is now checked against the
+shop's default order, and the change is refused when it differs.
+
 ## 2.0.2 - 2026-11-16
 
 ### Added

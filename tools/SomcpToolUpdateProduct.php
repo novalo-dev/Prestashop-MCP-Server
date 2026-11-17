@@ -1307,9 +1307,12 @@ class SomcpToolUpdateProduct extends SomcpToolCreateProduct
         }));
         $toDefault = false;
         if ($useDefault === true) {
-            // The order that applies is accepted beside it, so a product read
-            // with somcp_get_product and given back unchanged changes nothing.
-            if ($priorities !== null && $priorities !== $current) {
+            // Only the shop default is accepted beside it, as the creation
+            // checks it: the product's own order would be dropped for the
+            // default while the call named another one. A product that already
+            // follows the default reads that very order, so a get given back
+            // unchanged still changes nothing.
+            if ($priorities !== null && $priorities !== self::defaultPriorities()) {
                 $errors[] = self::priorityConflict();
             }
             $priorities = null;

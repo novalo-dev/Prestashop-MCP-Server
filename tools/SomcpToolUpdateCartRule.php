@@ -498,7 +498,7 @@ class SomcpToolUpdateCartRule extends SomcpToolCreateCartRule
         $changes = [];
         foreach ($write['names'] as $idNameLang => $name) {
             $iso = (string) ($plan['languages']['filled'][$idNameLang] ?? '');
-            $changes[] = ['field' => 'name', 'language' => $iso, 'old' => $current['name'][$iso] ?? '', 'new' => $after['name'][$iso] ?? $name];
+            $changes[] = ['field' => 'name (' . $iso . ')', 'old' => $current['name'][$iso] ?? '', 'new' => $after['name'][$iso] ?? $name];
         }
         foreach (array_keys(self::COLUMNS) as $field) {
             if (json_encode($current[$field] ?? null) !== json_encode($after[$field] ?? null)) {

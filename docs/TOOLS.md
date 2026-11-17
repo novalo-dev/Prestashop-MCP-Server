@@ -1264,8 +1264,9 @@ At least one of `quantity`, a price and `id_order_invoice`; a call that changes
 nothing writes nothing and answers `changed: false` with a `reason`. Prices are
 in the order's currency, as on the screen.
 
-**Returns** - `changed`, `order` (`id_order`, `reference`), `changes` (per
-changed field its `old` and `new` value, under the parameter names), `line`
+**Returns** - `changed`, `order` (`id_order`, `reference`), `changes` (one
+entry per field changed: `field`, under the parameter name, its `old` and `new`
+value, as the other update tools give them), `line`
 (the edited line exactly as `somcp_get_order` returns one of `products[]`),
 `totals` (exactly as `somcp_get_order` returns them) and `currency`.
 
@@ -5692,7 +5693,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 
 `active`, `restrictions`, `customer`, `summary`, `times_used`, `date_add` and `date_upd` are accepted when given back unchanged from `somcp_get_cart_rule` (the names it adds in its reading language apart), and refused when they differ: `active` points to `somcp_set_cart_rule_active`, `restrictions` to the back office, the others are worked out by the shop.
 
-**Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, and `language` for `name`), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to, `product_selection` says that product is still in **Product selection**. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
+**Returns** - `changed: true`, `id_cart_rule`, `changes` (one entry per field changed: `field`, `old`, `new` as `somcp_get_cart_rule` reads them, `name (<iso>)` for a translated name), and `cart_rule` as `somcp_get_cart_rule` returns it, read back with `SomcpToolGetCartRule::byId()`. When a discount leaves the product it applied to, `product_selection` says that product is still in **Product selection**. A call that would change nothing writes nothing and answers `changed: false` with a `reason`.
 
 **Errors** - in the shape of #169 (`Nothing was changed. Correct these and call again:` then one line per problem): those of `somcp_create_cart_rule`, checked by its `planRule()` on the rule as it will be once merged with what is kept (for example `date_from` given alone after the kept `date_to`: **The voucher cannot end before it begins.**; `reduction` set to `null` on a rule with no free shipping and no gift: **An action is required for this cart rule.**); `code` already used by another rule (its own code is accepted, as the form compares with `id_cart_rule`); an unknown `id_cart_rule` (`id_cart_rule: no cart rule of this shop has the identifier <n> - find it with somcp_list_cart_rules`).
 

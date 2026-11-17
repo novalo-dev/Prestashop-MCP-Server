@@ -318,8 +318,9 @@ class SomcpToolUpdateOrderProduct
     }
 
     /**
-     * What the call changes, under the parameter names, each with its old and
-     * new value. Empty when the line already holds these values.
+     * What the call changes, one entry per field under its parameter name,
+     * with its old and new value, as the other update tools list them. Empty
+     * when the line already holds these values.
      *
      * @param array<string, mixed> $current
      * @param array{excl: float, incl: float} $amounts
@@ -329,7 +330,7 @@ class SomcpToolUpdateOrderProduct
      * @param int $currentInvoice
      * @param int $precision
      *
-     * @return array<string, array{old: mixed, new: mixed}>
+     * @return array<int, array{field: string, old: mixed, new: mixed}>
      */
     private static function changes(array $current, array $amounts, int $targetQuantity, bool $wantsInvoice, int $targetInvoice, int $currentInvoice, int $precision): array
     {
@@ -338,18 +339,18 @@ class SomcpToolUpdateOrderProduct
 
         $oldExcl = (float) $current['unit_price_tax_excl'];
         if (abs(Tools::ps_round($amounts['excl'], $precision) - Tools::ps_round($oldExcl, $precision)) >= $step) {
-            $changes['unit_price_tax_excl'] = ['old' => $oldExcl, 'new' => Tools::ps_round($amounts['excl'], $precision)];
+            $changes[] = ['field' => 'unit_price_tax_excl', 'old' => $oldExcl, 'new' => Tools::ps_round($amounts['excl'], $precision)];
         }
         $oldIncl = (float) $current['unit_price_tax_incl'];
         if (abs(Tools::ps_round($amounts['incl'], $precision) - Tools::ps_round($oldIncl, $precision)) >= $step) {
-            $changes['unit_price_tax_incl'] = ['old' => $oldIncl, 'new' => Tools::ps_round($amounts['incl'], $precision)];
+            $changes[] = ['field' => 'unit_price_tax_incl', 'old' => $oldIncl, 'new' => Tools::ps_round($amounts['incl'], $precision)];
         }
         $oldQuantity = (int) $current['product_quantity'];
         if ($targetQuantity !== $oldQuantity) {
-            $changes['quantity'] = ['old' => $oldQuantity, 'new' => $targetQuantity];
+            $changes[] = ['field' => 'quantity', 'old' => $oldQuantity, 'new' => $targetQuantity];
         }
         if ($wantsInvoice && $targetInvoice !== $currentInvoice) {
-            $changes['id_order_invoice'] = ['old' => $currentInvoice, 'new' => $targetInvoice];
+            $changes[] = ['field' => 'id_order_invoice', 'old' => $currentInvoice, 'new' => $targetInvoice];
         }
 
         return $changes;
@@ -406,7 +407,7 @@ class SomcpToolUpdateOrderProduct
      * @param int $quantity
      * @param bool $wantsInvoice
      * @param int $idInvoice
-     * @param array<string, array{old: mixed, new: mixed}> $changes
+     * @param array<int, array{field: string, old: mixed, new: mixed}> $changes
      * @param int $idEmployee
      *
      * @return array<string, mixed>
@@ -459,7 +460,7 @@ class SomcpToolUpdateOrderProduct
         SomcpLogger::log(
             'order_update_product',
             SomcpLogger::OUTCOME_SUCCESS,
-            'order ' . (int) $order->id . ', line ' . $idOrderDetail . ', ' . implode(' ', array_keys($changes)),
+            'order ' . (int) $order->id . ', line ' . $idOrderDetail . ', ' . implode(' ', array_column($changes, 'field')),
             '',
             $idEmployee
         );

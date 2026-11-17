@@ -55,10 +55,12 @@ being refused as unknown.
 
 **The record of a change reads the same in every update tool.** Changing
 the SEO of a CMS page answered each change with its language apart and the
-value before under `previous`, where the other update tools name a translated
-text with its language, such as `meta_description (en)`, and give the value
-before under `old`. The CMS page SEO update now answers each change the same
-way, so the assistant reads every update with one habit.
+value before under `previous`, changing a cart rule's name gave its language
+apart too, and editing an order line gave its changes as one block keyed by
+field instead of a list. The other update tools list each change with its
+`field`, `old` and `new` value, a translated text named with its language,
+such as `meta_description (en)`. These three updates now answer the same way,
+so the assistant reads every update with one habit.
 
 ## 2.0.2 - 2026-11-16
 

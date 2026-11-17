@@ -116,6 +116,13 @@ field instead of a list. The other update tools list each change with its
 such as `meta_description (en)`. These three updates now answer the same way,
 so the assistant reads every update with one habit.
 
+**Products can be searched in every order of the product list.** The product
+search sorted only by date, name from A to Z, price and quantity, so an
+assistant asked for the products by reference or the last ones by ID read
+the whole catalogue to sort it itself. It now also sorts by ID, reference,
+category and status, each way, and by name from Z to A, as the columns of the
+product list in the back office do.
+
 ### Fixed
 
 **Asking the SEO and product data audits for disabled products or hidden

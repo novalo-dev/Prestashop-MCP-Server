@@ -2702,7 +2702,7 @@ The products and the categories they are sorted into: texts, prices, combination
 | `mpn` | string | no | part of the product's MPN |
 | `upc` | string | no | part of the product's UPC barcode |
 | `isbn` | string | no | part of the product's ISBN |
-| `sort` | enum | no | `date_add_desc` (default), `name_asc`, `price_asc`, `price_desc`, `quantity_asc`, `quantity_desc` |
+| `sort` | enum | no | `date_add_desc` (default), then the columns of the back office product list, each way: `id_asc`, `id_desc`, `name_asc`, `name_desc`, `reference_asc`, `reference_desc`, `category_asc`, `category_desc` (the name of the default category in the language of the call, as the **Category** column shows it), `price_asc`, `price_desc`, `quantity_asc`, `quantity_desc`, `active_asc`, `active_desc` (**Status**); ties by `id_product`, in the same direction |
 | `language` | string | no | ISO code of one of the shop's active languages, refused otherwise; the shop default when left out; given back as `language` in the answer |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 

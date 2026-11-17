@@ -43,8 +43,15 @@ class SomcpToolSearchProducts
     /** @var int Most a single call will return, whatever it asks for. */
     private const MAX_LIMIT = 100;
 
-    /** @var array<int, string> The orders sort() knows, read by the schema and the check of the call alike. */
-    private const SORTS = ['date_add_desc', 'name_asc', 'price_asc', 'price_desc', 'quantity_asc', 'quantity_desc'];
+    /**
+     * @var array<int, string> The orders sort() knows, read by the schema and the check of the call alike:
+     *                         the columns of the back office product list, each way, and the newest first
+     */
+    private const SORTS = [
+        'date_add_desc', 'id_asc', 'id_desc', 'name_asc', 'name_desc', 'reference_asc', 'reference_desc',
+        'category_asc', 'category_desc', 'price_asc', 'price_desc', 'quantity_asc', 'quantity_desc',
+        'active_asc', 'active_desc',
+    ];
 
     /**
      * @return SomcpTool
@@ -127,7 +134,9 @@ class SomcpToolSearchProducts
                     'sort' => [
                         'type' => 'string',
                         'enum' => self::SORTS,
-                        'description' => 'Order of the results. Most recently created first by default.',
+                        'description' => 'Order of the results: the columns of the back office product list (ID, '
+                            . 'Name, Reference, Category, Price (tax excl.), Quantity, Status), each way. Most '
+                            . 'recently created first by default.',
                     ],
                     'language' => [
                         'type' => 'string',
@@ -291,6 +300,16 @@ class SomcpToolSearchProducts
             'sa.`id_product` = p.`id_product` AND sa.`id_product_attribute` = 0'
                 . (string) StockAvailable::addSqlShopRestriction(null, $shop, 'sa')
         );
+        // The Category column shows the name of the default category in the
+        // language of the call, so that is what a category sort orders by;
+        // joined only then, the other calls do not pay for it.
+        if (in_array($arguments['sort'] ?? null, ['category_asc', 'category_desc'], true)) {
+            $query->leftJoin(
+                'category_lang',
+                'scl',
+                'scl.`id_category` = ps.`id_category_default` AND scl.`id_lang` = ' . $idLang . ' AND scl.`id_shop` = ' . $idShop
+            );
+        }
         // A product the back office is still creating is not in its list
         // either: it has no name yet and nobody can sell it.
         $query->where('p.`state` = ' . (int) Product::STATE_SAVED);
@@ -550,8 +569,26 @@ class SomcpToolSearchProducts
         // The identifier last, so two products with the same value keep the
         // same order from one page to the next.
         switch ((string) ($arguments['sort'] ?? '')) {
+            case 'id_asc':
+                return 'p.`id_product` ASC';
+            case 'id_desc':
+                return 'p.`id_product` DESC';
             case 'name_asc':
                 return 'pl.`name` ASC, p.`id_product` ASC';
+            case 'name_desc':
+                return 'pl.`name` DESC, p.`id_product` DESC';
+            case 'reference_asc':
+                return 'p.`reference` ASC, p.`id_product` ASC';
+            case 'reference_desc':
+                return 'p.`reference` DESC, p.`id_product` DESC';
+            case 'category_asc':
+                return 'scl.`name` ASC, p.`id_product` ASC';
+            case 'category_desc':
+                return 'scl.`name` DESC, p.`id_product` DESC';
+            case 'active_asc':
+                return 'ps.`active` ASC, p.`id_product` ASC';
+            case 'active_desc':
+                return 'ps.`active` DESC, p.`id_product` DESC';
             case 'price_asc':
                 return $priceTaxExcl . ' ASC, p.`id_product` ASC';
             case 'price_desc':

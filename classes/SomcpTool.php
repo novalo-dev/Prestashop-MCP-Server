@@ -615,6 +615,34 @@ class SomcpTool
     }
 
     /**
+     * The Status filter of a list: true enabled only, false disabled only,
+     * null no filter. The same active has to select the same rows in every
+     * tool, as the Status column filter of the back office does, so an
+     * assistant that lists disabled products and then audits them reads the
+     * same products. Left out, or null, the tool's own default applies; any
+     * other value is refused with the other problems of the call.
+     *
+     * @param array<string, mixed> $arguments
+     * @param bool|null $default
+     * @param array<int, string> $errors
+     *
+     * @return bool|null
+     */
+    public static function statusFilter(array $arguments, ?bool $default, array &$errors): ?bool
+    {
+        if (!array_key_exists('active', $arguments) || $arguments['active'] === null) {
+            return $default;
+        }
+        if (!is_bool($arguments['active'])) {
+            $errors[] = 'active: true or false';
+
+            return $default;
+        }
+
+        return $arguments['active'];
+    }
+
+    /**
      * The line for an identifier the shop does not have.
      *
      * One wording so the assistant applies one recovery: find it with the

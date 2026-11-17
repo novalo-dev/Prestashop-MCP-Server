@@ -165,6 +165,9 @@ class SomcpToolAuditProductEntities
             $problems[] = 'offset: a whole number of 0 or more';
         }
 
+        // Active only when left out, as the schema says.
+        $status = SomcpTool::statusFilter($arguments, true, $problems) ?? true;
+
         if ($problems !== []) {
             return SomcpTool::refused('read', $problems);
         }
@@ -175,9 +178,8 @@ class SomcpToolAuditProductEntities
 
         $limit = isset($arguments['limit']) ? (int) $arguments['limit'] : self::DEFAULT_LIMIT;
         $offset = isset($arguments['offset']) ? (int) $arguments['offset'] : 0;
-        $activeOnly = !(array_key_exists('active', $arguments) && $arguments['active'] === false);
 
-        $met = self::score($idShop, $idLang, $activeOnly);
+        $met = self::score($idShop, $idLang, $status);
 
         // The score of every audited product, so the list is ordered by it
         // and the average covers the whole catalogue, not one page.
@@ -245,11 +247,11 @@ class SomcpToolAuditProductEntities
      *
      * @param int $idShop
      * @param int $idLang
-     * @param bool $activeOnly
+     * @param bool $status true for active products only, false for disabled ones only
      *
      * @return array<int, array<string, true>>
      */
-    private static function score(int $idShop, int $idLang, bool $activeOnly): array
+    private static function score(int $idShop, int $idLang, bool $status): array
     {
         $root = (int) Configuration::get('PS_ROOT_CATEGORY');
         $shop = new Shop($idShop);
@@ -260,7 +262,7 @@ class SomcpToolAuditProductEntities
             : (int) Configuration::get('PS_HOME_CATEGORY');
 
         $met = [];
-        foreach (self::productIds($idShop, $activeOnly) as $idProduct) {
+        foreach (self::productIds($idShop, $status) as $idProduct) {
             $met[$idProduct] = [];
         }
         if ($met === []) {
@@ -353,11 +355,11 @@ class SomcpToolAuditProductEntities
      * The products of this shop to audit, smallest id first.
      *
      * @param int $idShop
-     * @param bool $activeOnly
+     * @param bool $status true for active products only, false for disabled ones only
      *
      * @return array<int, int>
      */
-    private static function productIds(int $idShop, bool $activeOnly): array
+    private static function productIds(int $idShop, bool $status): array
     {
         $query = new DbQuery();
         $query->select('p.`id_product`');
@@ -367,9 +369,7 @@ class SomcpToolAuditProductEntities
         $query->innerJoin('product_shop', 'ps', 'ps.`id_product` = p.`id_product` AND ps.`id_shop` = ' . $idShop);
         // A product the back office is still creating has no page yet.
         $query->where('p.`state` = ' . (int) Product::STATE_SAVED);
-        if ($activeOnly) {
-            $query->where('ps.`active` = 1');
-        }
+        $query->where('ps.`active` = ' . (int) $status);
         $query->orderBy('p.`id_product` ASC');
 
         return array_map('intval', array_column(Db::getInstance()->executeS($query) ?: [], 'id_product'));

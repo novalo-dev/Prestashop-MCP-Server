@@ -4856,11 +4856,11 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `language` | string | no | ISO code; every language of the shop when left out |
-| `active` | boolean | no | true by default: hidden products rank for nothing |
+| `active` | boolean | no | `true` (default) active products only - hidden products rank for nothing - `false` disabled products only, the Status filter of `somcp_search_products` |
 | `checks` | array of enum | no | a subset of the checks below; all by default |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - `products`, one entry per product and language: `id_product`, `name`, `language`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over the whole catalogue, `languages` audited and `active_only`.
+**Returns** - `products`, one entry per product and language: `id_product`, `name`, `language`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over the whole catalogue, `languages` audited and `active`, the Status filter applied.
 
 **Notes**
 - Checks: `meta_title_missing`, `meta_title_too_long` (over 70 characters), `meta_title_duplicate` (another product has it in that language), `meta_description_missing`, `meta_description_short` (under 70), `meta_description_long` (over 160), `link_rewrite_duplicate`, `description_short` (the description holds under 150 words, tags removed), `image_legend_missing` (an image without its alternative text), `no_image`, `no_brand`, `no_gtin` (no ean13, upc nor isbn), `inactive_without_redirect` only when `active` is false.
@@ -4884,17 +4884,17 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `language` | string | no | ISO code; every language when left out |
-| `active` | boolean | no | `true` (default) displayed categories only, `false` hidden ones too |
+| `active` | boolean | no | `true` (default) displayed categories only, `false` hidden ones only |
 | `checks` | array | no | only these checks; all of them when left out |
 | `limit` / `offset` | integer | no | 20 by default, 100 at most |
 
-**Returns** - `categories`, one entry per category and language: `id_category`, `name`, `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over every category audited, `languages` audited, and `active_only`.
+**Returns** - `categories`, one entry per category and language: `id_category`, `name`, `language`, `active`, `issues` (each a `check` from the list below and the `value` at fault). Plus `returned`, `total_count` (entries with at least one issue), `offset`, `counts` per check over every category audited, `languages` audited, and `active`, the Status filter applied.
 
 **Notes**
 - Checks: `meta_title_missing`, `meta_title_too_long` (over 70 characters), `meta_title_duplicate` (another category has it in that language), `meta_description_missing`, `meta_description_short` (under 70 characters), `meta_description_long` (over 160), `description_missing` (a category page with no text to rank on: no word once tags are removed), `link_rewrite_duplicate`, `empty_category` (displayed, no active product), `no_cover_image`.
 - The root and Home categories are left out: they have no page of their own. The root is the category without a parent, a Home category the one flagged `is_root_category`.
 - The `value` is the title, description or friendly URL at fault, and an empty string for the checks that report an absence. `empty_category` and `no_cover_image` concern the whole category and repeat on each language entry; `counts` counts entries, not categories.
-- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code: a meta title over 70 characters, a meta description under 70 or over 160, the lengths every write tool advises past (`SomcpTool::META_TITLE_RECOMMENDED`, `SomcpTool::metaDescriptionRecommended()`). Duplicates are found by the database among the categories audited in one language, as for products. Displayed categories only by default, like the product audit's active products; `active: false` adds the hidden ones, which keep their fields, but only a displayed one can be `empty_category`. `checks` narrows the audit and the `counts` to the names given, the same list and refusal as the product audit.
+- The lengths and the word count are the ones of `somcp_audit_product_seo`, read from the same code: a meta title over 70 characters, a meta description under 70 or over 160, the lengths every write tool advises past (`SomcpTool::META_TITLE_RECOMMENDED`, `SomcpTool::metaDescriptionRecommended()`). Duplicates are found by the database among the categories audited in one language, as for products. Displayed categories only by default, like the product audit's active products; `active: false` audits the hidden ones only, which keep their fields, but only a displayed one can be `empty_category`. `checks` narrows the audit and the `counts` to the names given, the same list and refusal as the product audit.
 - `empty_category`: no product of the category, directly associated with it, is active in this shop - what the category page lists. A product still being created (`state` 0) does not count.
 - `no_cover_image`: the shop has no `img/c/<id_category>.jpg`, the file the back office form shows as the cover, on PrestaShop 8 and 9.
 - Errors: the ones of `somcp_audit_product_seo`, from the same `SomcpToolAuditProductSeo::auditArguments()`: a field the tool does not take, a bad `checks`, `active`, `limit` or `offset`, every one in the same answer under "Nothing was read. Correct these and call again:", never replaced by a default; an unknown `language` is one more line of the same answer, ending `leave language out for all of them`.
@@ -5239,7 +5239,7 @@ What answer engines and AI assistants need to recommend a product: complete and 
 - Eleven criteria, each worth the same, the score `100 x met / 11` rounded: brand (`id_manufacturer`), a GTIN (one of `ean13`, `upc`, `isbn`), `mpn`, features (3 or more), description (150 words or more, tags stripped, counted as `somcp_audit_product_seo`), summary (`description_short`), images (3 or more, each with a caption in the language), weight (above 0), condition (set and **Display condition on product page** on), a default category deeper than Home, meta description.
 - The labels match the product page of the shop's version: the barcode is **EAN-13 or JAN barcode** on PrestaShop 8 and **GTIN (EAN, JA, ITF or UCC code)** on PrestaShop 9; the default category is **Main category** on PrestaShop 8 and **Default category** on PrestaShop 9; `condition` is **Condition** on PrestaShop 8 and **Display condition on product page** on PrestaShop 9; **Weight** on both. Same columns in the database. The labels come from one table shared with `somcp_audit_product_schema` (`SomcpToolAuditProductSchema::fieldLabel()`).
 - The whole catalogue is scored with set queries on `product`, `product_shop`, `product_lang`, `feature_product` and the image tables of the token's shop and language, never one `Product` object per product.
-- Errors in the shape of #169: an unknown language, `max_score` outside 0 to 100, `limit` above 100.
+- Errors in the shape of #169: an unknown language, `max_score` outside 0 to 100, `limit` above 100, an `active` that is not true or false (`SomcpTool::statusFilter()`, shared with the SEO audits).
 - Read only.
 
 #### `somcp_check_ai_crawler_access`

@@ -118,6 +118,14 @@ so the assistant reads every update with one habit.
 
 ### Fixed
 
+**Asking the SEO and product data audits for disabled products or hidden
+categories now audits those only.** The product SEO audit, the category SEO
+audit and the product data audit read "not active" as every product or
+category, enabled ones included, and reported their issues as if they were
+disabled. They now take it as the Status filter of the product list does:
+enabled only, or disabled only. The product data audit also refuses a Status
+that is not yes or no instead of auditing every product.
+
 **An order of priorities given with Use default order is checked against the
 shop's default order.** When the assistant switched a product with its own
 order of specific price priorities back to the default, it accepted that

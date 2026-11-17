@@ -98,7 +98,7 @@ class SomcpToolAuditProductSeo
                     'active' => [
                         'type' => 'boolean',
                         'description' => 'true (the default) for active products only - hidden products rank for '
-                            . 'nothing - false to include inactive ones too.',
+                            . 'nothing - false for disabled products only, the Status filter of somcp_search_products.',
                     ],
                     'checks' => [
                         'type' => 'array',
@@ -156,21 +156,21 @@ class SomcpToolAuditProductSeo
             return SomcpTool::languageRefused($idShop, true);
         }
         $checks = $read['checks'];
-        $activeOnly = $read['active_only'];
+        $status = $read['status'];
         $limit = $read['limit'];
         $offset = $read['offset'];
         // Only an inactive product can lack a redirection, so the check is
-        // left out unless inactive products are audited too.
-        if ($activeOnly) {
+        // left out when only active products are audited.
+        if ($status) {
             $checks = array_values(array_diff($checks, ['inactive_without_redirect']));
         }
 
         $idLangs = array_keys($languages);
         $duplicateTitles = in_array('meta_title_duplicate', $checks, true)
-            ? self::duplicates('meta_title', $idShop, $idLangs, $activeOnly)
+            ? self::duplicates('meta_title', $idShop, $idLangs, $status)
             : [];
         $duplicateUrls = in_array('link_rewrite_duplicate', $checks, true)
-            ? self::duplicates('link_rewrite', $idShop, $idLangs, $activeOnly)
+            ? self::duplicates('link_rewrite', $idShop, $idLangs, $status)
             : [];
 
         // PrestaShop 9 stores "default" on a product that follows the shop's
@@ -183,7 +183,7 @@ class SomcpToolAuditProductSeo
         $entries = [];
         $total = 0;
 
-        foreach (array_chunk(self::productIds($idShop, $activeOnly), self::BATCH) as $batch) {
+        foreach (array_chunk(self::productIds($idShop, $status), self::BATCH) as $batch) {
             $images = self::images($batch, $idShop, $idLangs);
 
             foreach (self::rows($batch, $idShop, $idLangs) as $row) {
@@ -223,7 +223,9 @@ class SomcpToolAuditProductSeo
             // An object even when no check is left, so a client reads one shape.
             'counts' => $counts === [] ? new stdClass() : $counts,
             'languages' => array_values($languages),
-            'active_only' => $activeOnly,
+            // The Status filter applied, so the assistant can say which
+            // products the counts cover.
+            'active' => $status,
         ]);
     }
 
@@ -310,11 +312,11 @@ class SomcpToolAuditProductSeo
      * The products of this shop to audit, in order.
      *
      * @param int $idShop
-     * @param bool $activeOnly
+     * @param bool $status true for active products only, false for disabled ones only
      *
      * @return array<int, int>
      */
-    private static function productIds(int $idShop, bool $activeOnly): array
+    private static function productIds(int $idShop, bool $status): array
     {
         $query = new DbQuery();
         $query->select('p.`id_product`');
@@ -324,9 +326,7 @@ class SomcpToolAuditProductSeo
         $query->innerJoin('product_shop', 'ps', 'ps.`id_product` = p.`id_product` AND ps.`id_shop` = ' . $idShop);
         // A product the back office is still creating has no page yet.
         $query->where('p.`state` = ' . (int) Product::STATE_SAVED);
-        if ($activeOnly) {
-            $query->where('ps.`active` = 1');
-        }
+        $query->where('ps.`active` = ' . (int) $status);
         $query->orderBy('p.`id_product` ASC');
 
         return array_map('intval', array_column(Db::getInstance()->executeS($query) ?: [], 'id_product'));
@@ -411,18 +411,18 @@ class SomcpToolAuditProductSeo
      * @param string $field meta_title or link_rewrite, never from the caller
      * @param int $idShop
      * @param array<int, int> $idLangs
-     * @param bool $activeOnly
+     * @param bool $status true for active products only, false for disabled ones only
      *
      * @return array<string, true>
      */
-    private static function duplicates(string $field, int $idShop, array $idLangs, bool $activeOnly): array
+    private static function duplicates(string $field, int $idShop, array $idLangs, bool $status): array
     {
         $column = bqSQL($field);
         $langs = implode(',', array_map('intval', $idLangs));
         $audited = 'INNER JOIN `' . _DB_PREFIX_ . 'product` p ON p.`id_product` = pl.`id_product` AND p.`state` = '
             . (int) Product::STATE_SAVED . '
              INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.`id_product` = pl.`id_product` AND ps.`id_shop` = '
-            . $idShop . ($activeOnly ? ' AND ps.`active` = 1' : '');
+            . $idShop . ' AND ps.`active` = ' . (int) $status;
 
         // Compared among the products audited, by the database's own
         // collation, as the shop compares its friendly URLs.
@@ -487,7 +487,7 @@ class SomcpToolAuditProductSeo
      * @param int $defaultLimit
      * @param int $maxLimit
      *
-     * @return array{problems: array<int, string>, checks: array<int, string>, active_only: bool, limit: int, offset: int}
+     * @return array{problems: array<int, string>, checks: array<int, string>, status: bool, limit: int, offset: int}
      */
     public static function auditArguments(array $arguments, array $accepted, array $allowed, int $defaultLimit, int $maxLimit): array
     {
@@ -512,14 +512,8 @@ class SomcpToolAuditProductSeo
             }
         }
 
-        $activeOnly = true;
-        if (array_key_exists('active', $arguments) && $arguments['active'] !== null) {
-            if (!is_bool($arguments['active'])) {
-                $problems[] = 'active: true or false';
-            } else {
-                $activeOnly = $arguments['active'];
-            }
-        }
+        // Active only when left out: hidden pages rank for nothing.
+        $status = SomcpTool::statusFilter($arguments, true, $problems) ?? true;
 
         $limit = $defaultLimit;
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
@@ -539,6 +533,6 @@ class SomcpToolAuditProductSeo
             }
         }
 
-        return ['problems' => $problems, 'checks' => $checks, 'active_only' => $activeOnly, 'limit' => $limit, 'offset' => $offset];
+        return ['problems' => $problems, 'checks' => $checks, 'status' => $status, 'limit' => $limit, 'offset' => $offset];
     }
 }

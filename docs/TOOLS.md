@@ -4697,7 +4697,7 @@ Same panels, labels, configuration key, tables and submit code on 8.0.1 (`ps_mai
 | `url` | object keyed by ISO code | no | **Link**, same rule as `label`; an absolute `http` / `https` address or a path starting with `/`, checked with `Validate::isUrl()`; 128 characters at most |
 | `new_window` | boolean | no | **New window** |
 | `language` | string | no | ISO code of one of the shop's active languages for the labels of the answer, refused otherwise; the shop default when left out |
-| `in_menu` | boolean | no | as `custom_links[]` of `somcp_list_menu_links` returns it, accepted unchanged so a row read there can be given back whole; a different value is refused as `in_menu: not changed by this tool - put the link in the menu with somcp_add_menu_link` |
+| `in_menu` | boolean | no | as `custom_links[]` of `somcp_list_menu_links` returns it, accepted unchanged so a row read there can be given back whole; a different value is refused: `true` for a link out of the menu as `in_menu: not changed by this tool - put the link in the menu with somcp_add_menu_link`, `false` for a link in the menu as `in_menu: not changed by this tool - taking a link out of the menu is done in Modules > Module Manager > Main menu > Configure` |
 | `translated` | boolean | no | as `custom_links[]` returns it for the language read (the one filled when a single one is, otherwise `language`), accepted unchanged, a different value refused as worked out by the shop; `false` with the default-language `label` / `url` the list showed leaves that language as it is: no change |
 
 At least one of `label`, `url`, `new_window` is required.

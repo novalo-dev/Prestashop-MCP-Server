@@ -166,8 +166,10 @@ send instead of being refused as unknown.
 Changing a custom link of the main menu from the row the list gave was refused
 for "In menu", the flag the list itself shows, so the assistant had to drop it
 by hand. The row now goes back as it was read: an unchanged "In menu" changes
-nothing, and a different one is refused with the way to put a link in the
-menu. The list also says when a link has no label in the language read and
+nothing, and a different one is refused with what does it: the tool that
+puts a link in the menu, or, for a link the merchant wants out of the menu,
+the Main menu module's configuration screen, rather than a tool that would
+add it. The list also says when a link has no label in the language read and
 shows the default language's instead; given back, that label is no longer
 copied into the other language, which stays as it was.
 

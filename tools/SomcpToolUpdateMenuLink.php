@@ -110,7 +110,8 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
                     'in_menu' => [
                         'type' => 'boolean',
                         'description' => 'As custom_links of somcp_list_menu_links returns it, accepted unchanged '
-                            . 'only: somcp_add_menu_link puts a link in the menu.',
+                            . 'only: somcp_add_menu_link puts a link in the menu; taking it out is done in Modules > '
+                            . 'Module Manager > Main menu > Configure.',
                     ],
                     'translated' => [
                         'type' => 'boolean',
@@ -333,7 +334,12 @@ class SomcpToolUpdateMenuLink extends SomcpToolAddMenuLink
             if (!is_bool($given['in_menu'])) {
                 $errors[] = 'in_menu: true or false';
             } elseif ($given['in_menu'] !== $read['in_menu']) {
-                $errors[] = 'in_menu: not changed by this tool - put the link in the menu with somcp_add_menu_link';
+                // Each direction names what does it: no tool takes an entry out of the menu yet,
+                // so sending that case to somcp_add_menu_link would have the assistant add instead.
+                $errors[] = $given['in_menu']
+                    ? 'in_menu: not changed by this tool - put the link in the menu with somcp_add_menu_link'
+                    : 'in_menu: not changed by this tool - taking a link out of the menu is done in '
+                        . 'Modules > Module Manager > Main menu > Configure';
             }
         }
 

@@ -510,14 +510,18 @@ slip or message) is ISO 8601 with the shop's offset, `null` when empty. Among
 them, what the order page shows:
 
 - `order`: `language` (the ISO code of the order's language, the customer's,
-  which the names of the order are read in), `status` (`status_id`, the
+  which the names of the order are read in), `payment_module` (the technical
+  name of the payment module, the one `somcp_create_order` takes, beside
+  `payment_method`, the name shown to the customer), `status` (`status_id`, the
   identifier `somcp_set_order_status` takes, `name`, `paid`, `shipped`), `note` (Order note / Order private note),
   `id_cart`, `gift`, `gift_message`, `recycled_packaging`;
 - `customer`: `title` (Mr. / Mrs.), `is_guest`, `valid_orders_count`,
   `total_spent` with `total_spent_currency`, `private_note` (read only);
 - `addresses.delivery` and `addresses.invoice`: `id_address`, `alias`,
   `state` (the region), `dni` (empty when not set);
-- `products`, per line: `id_order_detail`, `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
+- `products`, per line: `id_order_detail`, `id_order_invoice` (the invoice
+  the line is on, the one `somcp_update_order_product` takes, 0 when on none),
+  `supplier_reference`, `ean13`, `isbn`, `upc`, `mpn`
   (strings), `tax_name`, `tax_rate`, `stock_location`, `quantity_in_stock_now`,
   `quantity_refunded`, `refunded_tax_excl`, `refunded_tax_incl`,
   `quantity_returned`, `customizations` (`id_customization`, `type` text or
@@ -533,8 +537,10 @@ them, what the order page shows:
 - `totals`: `taxes`, `wrapping_tax_excl` and `wrapping_tax_incl`, and the total
   paid as `total_paid_tax_excl` and `total_paid_tax_incl`, as `somcp_search_orders`
   gives it;
-- `payments`, each with `currency`, `invoice_number` (empty when not tied to an
-  invoice), `id_employee` and `employee` (who recorded it, PrestaShop 9 only,
+- `payments`, each with `id_order_payment` (the identifier
+  `somcp_add_order_payment` answers), `id_order_invoice` (0 when not tied to an
+  invoice), `currency`, `invoice_number` (empty when not tied to an invoice),
+  `id_employee` and `employee` (who recorded it, PrestaShop 9 only,
   `null` and empty on 8);
 - `documents`: `invoices` (with `id_order_invoice` and `note`), `delivery_slips`
   (`id_order_invoice`, `number` with the shop's prefix, `date`,
@@ -877,7 +883,7 @@ refused.
 
 One payment per call. Not replayable: a payment added twice is money counted
 twice. A lost answer is checked with `somcp_get_order`, whose `payments` lists
-it. The card fields of `order_payment` (`card_number`, `card_brand`,
+it with its `id_order_payment`; `payment_date` is the `date` of that row. The card fields of `order_payment` (`card_number`, `card_brand`,
 `card_expiration`, `card_holder`) are not on the screen and are not taken.
 
 #### `somcp_issue_partial_refund`

@@ -112,6 +112,9 @@ class SomcpToolGetOrder
                 // write tools key texts by rather than an identifier no tool lists.
                 'language' => (string) Language::getIsoById($idLang),
                 'payment_method' => (string) $order->payment,
+                // The technical name somcp_create_order takes, which the name
+                // shown to the customer above is not.
+                'payment_module' => (string) $order->module,
                 'status' => self::status($order, $idLang),
                 // The Order note of the Status tab, written by the shop.
                 'note' => (string) $order->note,
@@ -346,6 +349,9 @@ class SomcpToolGetOrder
                 'id_order_detail' => (int) $product['id_order_detail'],
                 'id_product' => (int) $product['product_id'],
                 'id_product_attribute' => (int) $product['product_attribute_id'],
+                // The invoice somcp_update_order_product moves the line from, 0
+                // when the line is on none, as the vouchers read it.
+                'id_order_invoice' => (int) ($product['id_order_invoice'] ?? 0),
                 'reference' => (string) $product['product_reference'],
                 'supplier_reference' => (string) $product['product_supplier_reference'],
                 // Strings: an EAN-13 can start with zeros, and the column is
@@ -607,6 +613,10 @@ class SomcpToolGetOrder
             // No card number, holder or expiry: the order page does not show
             // them, and they have no business leaving the shop.
             $payments[] = [
+                // What somcp_add_order_payment answers and takes, so a payment
+                // it recorded is found again by its identifier.
+                'id_order_payment' => (int) $payment->id,
+                'id_order_invoice' => $invoice instanceof OrderInvoice ? (int) $invoice->id : 0,
                 'date' => SomcpTool::isoDate($payment->date_add),
                 'amount' => (float) $payment->amount,
                 'currency' => Validate::isLoadedObject($currency) ? (string) $currency->iso_code : '',

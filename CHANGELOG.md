@@ -33,6 +33,12 @@ add one.
 
 ### Changed
 
+**Reading an order: what the order tools need to act on it.** When the
+assistant reads an order, it now sees which invoice each product line and
+each payment is on, the identifier of each payment, and the payment module of
+the order. It can tell the merchant where a line is before moving it, find a
+payment it recorded, or place the same order again without guessing.
+
 **Cart rules: an unknown rule reported with every other mistake.** Reading,
 switching on or off and changing a cart rule now word a mistake in the call as
 the other tools do. Given a cart rule that does not exist together with a

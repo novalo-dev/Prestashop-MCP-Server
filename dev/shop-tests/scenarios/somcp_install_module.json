@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "a module already installed is refused and left as it is, never upgraded by surprise", "arguments": {"name": "somcp"}, "expect": "error", "contains": ["already installed", "Nothing was changed"]},
+    {"why": "a module already installed is refused and left as it is, never upgraded by surprise", "arguments": {"name": "somcp"}, "expect": "error", "contains": ["already installed", "Nothing was installed"]},
     {"why": "the name is compared without case, so an installed module is refused under any spelling", "arguments": {"name": "SOMCP"}, "expect": "error", "contains": ["already installed"]},
     {"why": "a name no module carries, on disk or installed, points to the list tool", "arguments": {"name": "no_such_module"}, "expect": "error", "contains": ["name: no module of this shop has the technical name no_such_module - find it with somcp_list_modules"]},
     {"why": "a missing name is refused, naming the field", "arguments": {}, "expect": "error", "contains": ["name"]},

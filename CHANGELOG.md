@@ -40,6 +40,14 @@ misspelt field, they used to refuse the call twice, one problem at a time;
 they now list every problem of the call in one answer, so the assistant fixes
 the call in one go.
 
+**Creating a cart rule or a catalog price rule: refusals worded as in the
+other tools.** A mistake in the call now reads as it does everywhere else. A
+customer, product or condition that is not found is named with the identifier
+given and the tool that lists them, and a condition with the word of the
+Conditions of the form (category, brand, supplier, attribute, feature value)
+rather than the name of a database table. An identifier given as text such as
+"3" is read as that number, as in every other tool.
+
 **Sales lists: refusals worded as in the other tools.** The lists of
 abandoned carts, cart rules, catalog price rules, search terms, unsold
 products and products viewed but not sold now word a mistake in the call as

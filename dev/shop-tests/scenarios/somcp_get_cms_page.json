@@ -8,6 +8,7 @@
     {"why": "an identifier given as a string of digits is read as that page, as in the other tools", "arguments": {"id_cms": "1"}, "expect": "ok", "contains": ["\"id_cms\": 1", "\"title\": \"Delivery\""]},
     {"why": "an identifier that is not a whole number is refused, naming the field", "arguments": {"id_cms": "first"}, "expect": "error", "contains": ["id_cms"]},
     {"why": "a missing identifier is refused, naming the field", "arguments": {}, "expect": "error", "contains": ["id_cms"]},
-    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"id_cms": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"id_cms": 1, "language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- language: not one of the shop's languages, which are ", "leave language out for the shop default"]},
+    {"why": "a page nobody has and a language the shop does not have, reported together", "arguments": {"id_cms": 999999, "language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- language: not one of the shop's languages, which are ", "- id_cms: no CMS page of this shop has the identifier 999999 - find it with somcp_list_cms_pages"]}
   ]
 }

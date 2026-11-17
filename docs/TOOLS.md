@@ -2345,9 +2345,9 @@ countries, and the ISO code is what `somcp_list_tax_rules` gives.
 - `rate_in_default_country` and `default_country`: the rate `somcp_list_tax_rules` gives for this rule and the country it is for, through the same `SomcpToolListTaxRules::defaultCountryRates()`, so the two tools agree;
 - `taxes_enabled`, as `somcp_list_tax_rules`, and `language`.
 
-**Errors** - a language the shop does not have: the shared refusal, naming the
-ones it has. Otherwise in the shared envelope, every problem at once: an
-unknown argument, an identifier that is not a whole number above 0, an
+**Errors** - in the shared envelope, every problem at once: a language the
+shop does not have, named by `SomcpTool::languageProblem()` with the ones it
+has; an unknown argument, an identifier that is not a whole number above 0, an
 unknown, deleted or other-shop rule (`id_tax_rules_group: no tax rule of this
 shop has the identifier <n> - find it with somcp_list_tax_rules`), an unknown
 `country` (refused, never read as every row).
@@ -4390,13 +4390,13 @@ The CMS pages of the storefront.
 | `id_cms_category` | integer | no | only the pages of that category (not of its sub-categories), as the screen; every category when left out. A category the shop does not have is refused |
 | `active` | boolean | no | **Displayed** filter: `true` displayed pages only, `false` hidden only; both when left out |
 | `title` | string | no | part of the **Title**, compared without case |
-| `language` | string | no | ISO code of one of the shop's active languages, the shop default when left out, any other value refused |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 No paging: a shop has a few dozen pages at most, and every matching page is returned.
 
 **Returns** - `pages[]` with `id_cms` (**ID**, the identifier `somcp_update_cms_seo` and `somcp_audit_cms_seo` take), `link_rewrite` (**URL**), `title` (**Title**, column `meta_title`), `meta_title` (**Meta title**, column `head_seo_title`, empty string when not set), `position` (**Position**, from 0 as in the other tools; the screen shows it from 1), `active` (**Displayed**), `id_cms_category`, `url` (the page's address on the storefront); `categories[]`, every category of the shop, root included, with `id_cms_category`, `name`, `description`, `id_parent` (`0` for the root), `position` (from 0), `active`, `pages_count` (pages directly in it); then `total_count` (pages returned) and `language` (ISO code the texts are in). Pages sorted by category then position, categories by `id_parent` then position.
 
-**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); an `id_cms_category` that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, whose `categories[]`, called without the filter, list them; a non-boolean `active`: `active: true or false`; a non-string `title`: `title: a string, part of the page Title`; an unknown `language`: the shared language refusal, checked first. No page matching is not an error: `pages` is empty.
+**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); an `id_cms_category` that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, whose `categories[]`, called without the filter, list them; a non-boolean `active`: `active: true or false`; a non-string `title`: `title: a string, part of the page Title`; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages. No page matching is not an error: `pages` is empty.
 
 **Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_update_cms_seo`, never by the column name. Categories are returned because no other tool gives an `id_cms_category`. Only the token's shop (`cms_shop`, `cms_category_shop`, `id_shop` of the `_lang` tables). The content of a page is not returned.
 
@@ -4415,13 +4415,13 @@ Same columns, filters and grid queries on 8.0.1 and 9.0.0; 9.0.0 adds a **Rearra
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_cms` | integer | yes | **ID** of the list, from `somcp_list_cms_pages`. A page the token's shop does not have (absent from `cms_shop`) is refused as unknown, never read from another shop, by the same check as `somcp_update_cms_seo` |
-| `language` | string | no | ISO code of one of the shop's active languages, the shop default when left out, any other value refused |
+| `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 **Returns** - `id_cms`; `language` (ISO code the texts are in); `id_cms_category` (**Page category**, named as in `somcp_list_cms_pages`, whose `categories[]` give its name); `title` (**Title**, column `meta_title`); `meta_title` (**Meta title**, column `head_seo_title`, empty string when not set); `seo_title` (the title search engines read: `meta_title` when filled, `title` otherwise, built by the same function as `somcp_update_cms_seo`); `meta_description` (**Meta description**); `meta_keywords` (**Meta keywords**, PrestaShop 8 only, `null` on 9, read from `CMS::$definition`, never the version number); `link_rewrite` (**Friendly URL**); `content` (**Page content**, the stored HTML as is, never cut, empty string when not set); `indexation` (**Indexation by search engines**, boolean); `active` (**Displayed**, boolean); `position` (**Position**, from 0 as in `somcp_list_cms_pages` and the other tools; the screen shows it from 1); `url` (the page's address on the storefront).
 
 Every field `somcp_update_cms_seo` takes (`meta_title`, `meta_description`, `link_rewrite`, `indexation`) has the same name here, so a value read can be given back; the texts here are plain strings in the language asked, where `somcp_update_cms_seo` takes them as an object indexed by ISO code (`{"en": "..."}`).
 
-**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); a missing `id_cms`, or one that is not a whole number above 0: `id_cms: a whole number above 0` (`"3"` is read as 3); an unknown `id_cms`: `id_cms: no CMS page of this shop has the identifier <id> - find it with somcp_list_cms_pages`, the line `somcp_update_cms_seo` gives too; an unknown `language`: the shared language refusal, checked first.
+**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); a missing `id_cms`, or one that is not a whole number above 0: `id_cms: a whole number above 0` (`"3"` is read as 3); an unknown `id_cms`: `id_cms: no CMS page of this shop has the identifier <id> - find it with somcp_list_cms_pages`, the line `somcp_update_cms_seo` gives too; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages.
 
 **Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_list_cms_pages` and `somcp_update_cms_seo`, never by the column name. Read through the core object `CMS`, not raw SQL. The texts are per language and per shop (`cms_lang.id_shop`). The form's **SEO preview** is built from the fields above and stores nothing.
 
@@ -5475,7 +5475,7 @@ Sorted by `searches`, highest first, then `keywords`.
 | `date_from` / `date_to` | string | yes | **From:** / **To:**, `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; the employee's saved stats period is never read nor changed |
 | `id_category` | integer | no | **Choose a category**: only the products of that category, from `somcp_list_categories`; unknown in the shop is refused |
 | `min_page_views` | integer | no | only the products viewed at least this many times; 1 by default, so a product nobody opened is left out; 0 lists every product |
-| `language` | string | no | ISO code of one of the shop's active languages for `name`, as #149; shop default when left out; an unknown code is refused |
+| `language` | string | no | ISO code of one of the shop's active languages for `name`, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 | `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
 **Returns**
@@ -5495,7 +5495,7 @@ Sorted by `searches`, highest first, then `keywords`.
 
 Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, then `id_product`: the products most seen and least bought come first.
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `id_category` not a whole number above 0 (`"3"` is read as 3, as in every tool) or unknown in the shop, the identifier given named with `somcp_list_categories` to find it; `min_page_views` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `id_category` not a whole number above 0 (`"3"` is read as 3, as in every tool) or unknown in the shop, the identifier given named with `somcp_list_categories` to find it; `min_page_views` below 0; `limit` outside 1 to 100; a negative `offset`; an unknown `language`, named by `SomcpTool::languageProblem()` with the shop's languages.
 
 **Notes**
 - Saved products of the token's shop only (`product_shop`, `p.state = Product::STATE_SAVED`); orders of the token's shop only.
@@ -5519,7 +5519,7 @@ Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, the
 | `date_from` / `date_to` | string | no | `YYYY-MM-DD`, both days included, as `somcp_list_best_sellers`; both or neither. Left out: no period, every valid order ever, as the screen. Given: products bought by no valid order dated (`o.date_add`) in the period, products added to the shop (`product_shop.date_add`) after `date_from` left out |
 | `id_category` | integer | no | **Choose a category**: only the products of that category, from `somcp_list_categories`; unknown in the shop is refused |
 | `min_quantity` | integer | no | only the products with at least this quantity for sale; 1 by default, so the stock that does not move; 0 lists every product, as the screen |
-| `language` | string | no | ISO code of one of the shop's active languages for `name`, as #149; shop default when left out; an unknown code is refused |
+| `language` | string | no | ISO code of one of the shop's active languages for `name`, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 | `limit` / `offset` | integer | no | as `somcp_list_best_sellers`: 20 by default, 100 at most |
 
 **Returns**
@@ -5541,7 +5541,7 @@ Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, the
 
 Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, highest first, then `id_product`: the stock that costs the most comes first.
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`), one given without the other; `id_category` not a whole number above 0 (`"3"` is read as 3, as in every tool) or unknown in the shop, the identifier given named with `somcp_list_categories` to find it; `min_quantity` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149. An empty list is `products: []`, `total_count: 0`.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`), one given without the other; `id_category` not a whole number above 0 (`"3"` is read as 3, as in every tool) or unknown in the shop, the identifier given named with `somcp_list_categories` to find it; `min_quantity` below 0; `limit` outside 1 to 100; a negative `offset`; an unknown `language`, named by `SomcpTool::languageProblem()` with the shop's languages. An empty list is `products: []`, `total_count: 0`.
 
 **Notes**
 - Active, saved products of the token's shop only (`product_shop.active = 1`, `p.state = Product::STATE_SAVED`); orders of the token's shop only (`o.id_shop`). The screen counts the orders of every shop: the figures differ only in a multistore shop.

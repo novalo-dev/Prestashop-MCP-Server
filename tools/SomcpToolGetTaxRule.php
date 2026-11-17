@@ -95,15 +95,15 @@ class SomcpToolGetTaxRule
     {
         $idShop = (int) Somcp::currentShop()->id;
         $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
-        [$idLang, $iso] = $language;
 
         // A cast would read an array as 1 and answer about a rule nobody
         // asked for: only a whole number is an identifier.
         $idGroup = SomcpTool::id($arguments, 'id_tax_rules_group');
         $errors = SomcpTool::unknownFields($arguments, ['id_tax_rules_group', 'country', 'language']);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
         $group = null;
         if ($idGroup === 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_tax_rules_group');
@@ -123,9 +123,10 @@ class SomcpToolGetTaxRule
                 $errors[] = 'country: not a country of this shop - give its ISO code, for example DE';
             }
         }
-        if ($errors !== [] || $group === null) {
+        if ($errors !== [] || $group === null || $language === null) {
             return SomcpTool::refused('read', $errors);
         }
+        [$idLang, $iso] = $language;
 
         return SomcpTool::json(self::answer($idGroup, $group, $idLang, $iso, $idShop, $idCountry));
     }

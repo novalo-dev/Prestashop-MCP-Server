@@ -11,6 +11,6 @@
     {"why": "a non-boolean Displayed filter is refused, naming the field", "arguments": {"active": "yes"}, "expect": "error", "contains": ["active: true or false"]},
     {"why": "a misspelt filter is named rather than ignored", "arguments": {"id_category": 1}, "expect": "error", "contains": ["Nothing was read.", "id_category: not a field of this tool"]},
     {"why": "two wrong filters are reported in one refusal", "arguments": {"active": "yes", "title": 3}, "expect": "error", "contains": ["Nothing was read.", "active: true or false", "title: a string, part of the page Title"]},
-    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- language: not one of the shop's languages, which are ", "leave language out for the shop default"]}
   ]
 }

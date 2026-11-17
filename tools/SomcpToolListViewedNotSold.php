@@ -184,14 +184,16 @@ class SomcpToolListViewedNotSold
             }
         }
 
-        if ($problems !== [] || $dateFrom === null || $dateTo === null) {
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $problems[] = SomcpTool::languageProblem($idShop);
+        }
+
+        if ($problems !== [] || $dateFrom === null || $dateTo === null || $language === null) {
             return SomcpTool::refused('read', $problems);
         }
 
-        $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
         [$idLang, $iso] = $language;
 
         // Save global page views (PS_STATSDATA_PAGESVIEWS) is off by default:

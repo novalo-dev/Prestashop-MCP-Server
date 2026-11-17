@@ -189,14 +189,16 @@ class SomcpToolListUnsoldProducts
             }
         }
 
-        if ($problems !== []) {
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        // Listed with the call's other mistakes, so it is corrected in one go.
+        if ($language === null) {
+            $problems[] = SomcpTool::languageProblem($idShop);
+        }
+
+        if ($problems !== [] || $language === null) {
             return SomcpTool::refused('read', $problems);
         }
 
-        $language = SomcpTool::readLanguage($arguments, $idShop);
-        if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
-        }
         [$idLang, $iso] = $language;
 
         // Amounts are rounded the way the shop's default currency is shown.

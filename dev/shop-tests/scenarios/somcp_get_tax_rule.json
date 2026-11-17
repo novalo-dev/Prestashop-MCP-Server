@@ -9,7 +9,8 @@
     {"why": "an identifier that is not a number", "arguments": {"id_tax_rules_group": [1]}, "expect": "error", "contains": ["- id_tax_rules_group: a whole number above 0"]},
     {"why": "a country the shop does not know is refused, never read as every row, with the unknown rule in the same answer", "arguments": {"id_tax_rules_group": 999999, "country": "ZZ"}, "expect": "error", "contains": ["- id_tax_rules_group: no tax rule of this shop has the identifier 999999", "- country: not a country of this shop - give its ISO code, for example DE"]},
     {"why": "a country that is not a string is refused", "arguments": {"id_tax_rules_group": 999999, "country": 33}, "expect": "error", "contains": ["- country: not a country of this shop"]},
-    {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_tax_rules_group": 1, "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "leave language out for the shop default"]},
+    {"why": "a language the shop does not have is refused, with the ones it has", "arguments": {"id_tax_rules_group": 1, "language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- language: not one of the shop's languages, which are ", "leave language out for the shop default"]},
+    {"why": "a misspelt field and a language the shop does not have, reported together", "arguments": {"id_tax_rules_group": 1, "langauge": "en", "language": "zz"}, "expect": "error", "contains": ["Nothing was read.", "- langauge: not a field of this tool", "- language: not one of the shop's languages, which are "]},
     {"why": "a misspelt field is named, not read as a missing rule", "arguments": {"id_tax_rule_group": 1}, "expect": "error", "contains": ["Nothing was read", "- id_tax_rule_group: not a field of this tool", "- id_tax_rules_group: a whole number above 0"]}
   ]
 }

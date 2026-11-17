@@ -147,24 +147,19 @@ class SomcpToolListCatalogPriceRules
 
         // Every mistake is reported in one answer, so the call is corrected in
         // one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         if (array_key_exists('name', $arguments) && $arguments['name'] !== null && !is_string($arguments['name'])) {
-            $problems[] = '- name: a text';
+            $problems[] = 'name: a text';
         }
 
         if (array_key_exists('current', $arguments) && $arguments['current'] !== null && !is_bool($arguments['current'])) {
-            $problems[] = '- current: true or false';
+            $problems[] = 'current: true or false';
         }
 
         if (array_key_exists('reduction_type', $arguments) && $arguments['reduction_type'] !== null) {
             if (!is_string($arguments['reduction_type']) || !in_array($arguments['reduction_type'], ['amount', 'percentage'], true)) {
-                $problems[] = '- reduction_type: amount or percentage';
+                $problems[] = 'reduction_type: amount or percentage';
             }
         }
 
@@ -175,7 +170,7 @@ class SomcpToolListCatalogPriceRules
             $iso = is_string($arguments['currency']) ? $arguments['currency'] : '';
             $resolved = preg_match('/^[A-Za-z]{3}$/', $iso) ? (int) Currency::getIdByIsoCode(Tools::strtoupper($iso), $idShop) : 0;
             if ($resolved <= 0) {
-                $problems[] = '- currency: not a currency of this shop';
+                $problems[] = 'currency: not a currency of this shop';
             } else {
                 $idCurrency = $resolved;
             }
@@ -186,7 +181,7 @@ class SomcpToolListCatalogPriceRules
             $iso = is_string($arguments['country']) ? Tools::strtoupper($arguments['country']) : '';
             $resolved = preg_match('/^[A-Z]{2}$/', $iso) ? (int) Country::getByIso($iso) : 0;
             if ($resolved <= 0) {
-                $problems[] = '- country: no country of this shop has the ISO code "' . (string) ($arguments['country'] ?? '') . '"';
+                $problems[] = 'country: no country of this shop has the ISO code "' . (string) ($arguments['country'] ?? '') . '"';
             } else {
                 $idCountry = $resolved;
             }
@@ -195,8 +190,10 @@ class SomcpToolListCatalogPriceRules
         $idGroup = null;
         if (array_key_exists('id_group', $arguments) && $arguments['id_group'] !== null) {
             $given = SomcpTool::id($arguments, 'id_group');
-            if ($given <= 0 || !self::groupOfShop($given, $idShop)) {
-                $problems[] = '- id_group: not a group of this shop (take id_group from somcp_list_customer_groups)';
+            if ($given <= 0) {
+                $problems[] = SomcpTool::notAnIdentifier('id_group');
+            } elseif (!self::groupOfShop($given, $idShop)) {
+                $problems[] = SomcpTool::notFound('id_group', 'customer group', $given, 'somcp_list_customer_groups');
             } else {
                 $idGroup = $given;
             }
@@ -205,7 +202,7 @@ class SomcpToolListCatalogPriceRules
         $limit = self::DEFAULT_LIMIT;
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
             if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT) {
-                $problems[] = '- limit: a whole number from 1 to ' . self::MAX_LIMIT;
+                $problems[] = 'limit: a whole number from 1 to ' . self::MAX_LIMIT;
             } else {
                 // Cast although checked: the value goes into the LIMIT clause,
                 // where only a number may ever land.
@@ -215,7 +212,7 @@ class SomcpToolListCatalogPriceRules
         $offset = 0;
         if (array_key_exists('offset', $arguments) && $arguments['offset'] !== null) {
             if (!is_int($arguments['offset']) || $arguments['offset'] < 0) {
-                $problems[] = '- offset: a whole number, 0 at least';
+                $problems[] = 'offset: a whole number, 0 at least';
             } else {
                 $offset = (int) $arguments['offset'];
             }
@@ -224,14 +221,11 @@ class SomcpToolListCatalogPriceRules
         $asked = array_key_exists('language', $arguments) && $arguments['language'] !== null && $arguments['language'] !== '';
         $language = SomcpTool::readLanguage($asked ? $arguments : [], $idShop);
         if ($asked && $language === null) {
-            $problems[] = '- ' . SomcpTool::languageProblem($idShop);
+            $problems[] = SomcpTool::languageProblem($idShop);
         }
 
         if ($problems !== []) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
         if ($language === null) {
             return SomcpTool::languageRefused($idShop);

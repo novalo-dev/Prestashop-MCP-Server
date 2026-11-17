@@ -5486,7 +5486,7 @@ Sorted by `searches`, highest first, then `keywords`.
 
 Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, then `id_product`: the products most seen and least bought come first.
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `id_category` not a whole number or unknown in the shop; `min_page_views` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` missing or not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`); `id_category` not a whole number above 0 (`"3"` is read as 3, as in every tool) or unknown in the shop, the identifier given named with `somcp_list_categories` to find it; `min_page_views` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149.
 
 **Notes**
 - Saved products of the token's shop only (`product_shop`, `p.state = Product::STATE_SAVED`); orders of the token's shop only.
@@ -5532,7 +5532,7 @@ Sorted by `page_views`, highest first, then `conversion_rate`, lowest first, the
 
 Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, highest first, then `id_product`: the stock that costs the most comes first.
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`), one given without the other; `id_category` not a whole number or unknown in the shop; `min_quantity` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149. An empty list is `products: []`, `total_count: 0`.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; `date_from` / `date_to` not a date, `date_to` before `date_from` (the texts of `somcp_list_best_sellers`), one given without the other; `id_category` not a whole number above 0 (`"3"` is read as 3, as in every tool) or unknown in the shop, the identifier given named with `somcp_list_categories` to find it; `min_quantity` below 0; `limit` outside 1 to 100; a negative `offset`. An unknown `language` is refused with the text of #149. An empty list is `products: []`, `total_count: 0`.
 
 **Notes**
 - Active, saved products of the token's shop only (`product_shop.active = 1`, `p.state = Product::STATE_SAVED`); orders of the token's shop only (`o.id_shop`). The screen counts the orders of every shop: the figures differ only in a multistore shop.
@@ -5793,7 +5793,7 @@ Sorted by `stock_value_tax_excl`, highest first, `null` last, then `quantity`, h
 | `current` | the period holds the shop's current time |
 | `returned`, `total_count`, `offset`, `language` | as `somcp_list_abandoned_carts` |
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments; an unknown `currency` or `country`; an `id_group` that `somcp_list_customer_groups` does not list for the shop; a `reduction_type` other than `amount`/`percentage`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `catalog_price_rules: []`, `total_count: 0`.
+**Errors** - in the shape of #169, all in one answer: unknown arguments; an unknown `currency` or `country`; an `id_group` not a whole number above 0, or that `somcp_list_customer_groups` does not list for the shop, the identifier given named with that tool to find it; a `reduction_type` other than `amount`/`percentage`; `limit` outside 1 to 100; a negative `offset`; an unknown language (#149). An empty list is `catalog_price_rules: []`, `total_count: 0`.
 
 **Notes**
 - The back office lists every shop's rules (`CONTEXT_ALL`); the token's shop keeps `id_shop` 0 and its own.

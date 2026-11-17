@@ -114,30 +114,25 @@ class SomcpToolListSearchTerms
     {
         // Every mistake is reported in one answer, so the call is corrected
         // in one go (the shape of #169).
-        $problems = [];
-        foreach (array_keys($arguments) as $field) {
-            if (!in_array($field, self::FIELDS, true)) {
-                $problems[] = '- ' . $field . ': not a field of this tool';
-            }
-        }
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
 
         // The texts of somcp_list_best_sellers, which takes the period the same way.
         $dateFrom = SomcpTool::day($arguments['date_from'] ?? null);
         if ($dateFrom === null) {
-            $problems[] = '- date_from: a date, YYYY-MM-DD';
+            $problems[] = 'date_from: a date, YYYY-MM-DD';
         }
         $dateTo = SomcpTool::day($arguments['date_to'] ?? null);
         if ($dateTo === null) {
-            $problems[] = '- date_to: a date, YYYY-MM-DD';
+            $problems[] = 'date_to: a date, YYYY-MM-DD';
         }
         if ($dateFrom !== null && $dateTo !== null && $dateTo < $dateFrom) {
-            $problems[] = '- date_to: a date not before date_from';
+            $problems[] = 'date_to: a date not before date_from';
         }
 
         $minSearches = self::DEFAULT_MIN_SEARCHES;
         if (array_key_exists('min_searches', $arguments) && $arguments['min_searches'] !== null) {
             if (!is_int($arguments['min_searches']) || $arguments['min_searches'] < 1) {
-                $problems[] = '- min_searches: a whole number, 1 at least';
+                $problems[] = 'min_searches: a whole number, 1 at least';
             } else {
                 $minSearches = (int) $arguments['min_searches'];
             }
@@ -145,14 +140,14 @@ class SomcpToolListSearchTerms
 
         if (array_key_exists('no_results_only', $arguments) && $arguments['no_results_only'] !== null
             && !is_bool($arguments['no_results_only'])) {
-            $problems[] = '- no_results_only: true or false';
+            $problems[] = 'no_results_only: true or false';
         }
         $noResultsOnly = ($arguments['no_results_only'] ?? false) === true;
 
         $limit = self::DEFAULT_LIMIT;
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
             if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT) {
-                $problems[] = '- limit: a whole number from 1 to ' . self::MAX_LIMIT;
+                $problems[] = 'limit: a whole number from 1 to ' . self::MAX_LIMIT;
             } else {
                 // Cast although checked: the value goes into the LIMIT clause.
                 $limit = (int) $arguments['limit'];
@@ -161,17 +156,14 @@ class SomcpToolListSearchTerms
         $offset = 0;
         if (array_key_exists('offset', $arguments) && $arguments['offset'] !== null) {
             if (!is_int($arguments['offset']) || $arguments['offset'] < 0) {
-                $problems[] = '- offset: a whole number, 0 at least';
+                $problems[] = 'offset: a whole number, 0 at least';
             } else {
                 $offset = (int) $arguments['offset'];
             }
         }
 
         if ($problems !== [] || $dateFrom === null || $dateTo === null) {
-            return SomcpTool::text(
-                "Nothing was read. Correct these and call again:\n" . implode("\n", array_unique($problems)),
-                true
-            );
+            return SomcpTool::refused('read', $problems);
         }
 
         if (!Module::isInstalled(self::MODULE) || !Module::isEnabled(self::MODULE)) {

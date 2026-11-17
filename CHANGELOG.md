@@ -33,6 +33,14 @@ add one.
 
 ### Changed
 
+**Sales lists: refusals worded as in the other tools.** The lists of
+abandoned carts, cart rules, catalog price rules, search terms, unsold
+products and products viewed but not sold now word a mistake in the call as
+the catalogue, stock, order and customer tools do. A category or customer
+group that is not found is named with the identifier given and the tool that
+lists them, and a category given as "3" is read as category 3 instead of
+being refused.
+
 **Order statuses: a status read in the list can be given back whole.** Changing
 an order status with the fields read in the list of statuses no longer fails on
 its roles, its built-in mark or its payment module: these are worked out by the

@@ -33,6 +33,12 @@ add one.
 
 ### Changed
 
+**Order statuses: a status read in the list can be given back whole.** Changing
+an order status with the fields read in the list of statuses no longer fails on
+its roles, its built-in mark or its payment module: these are worked out by the
+shop, so when they hold what the shop holds they are taken as unchanged, and
+only a different value is refused, with the reason.
+
 **Orders: the amounts of an order are named like everywhere else.** The order
 read and the order tools that answer with its lines, discounts, shipments,
 totals and documents now name each amount with `_tax_excl` or `_tax_incl`, as

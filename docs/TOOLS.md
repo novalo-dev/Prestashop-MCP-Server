@@ -2180,6 +2180,13 @@ The former names `somcp_create_order_status` still accepts (`logable`,
 `hidden`, `send_email`, `pdf_invoice`, `pdf_delivery`, `template`) are
 accepted here too.
 
+`roles`, `built_in` and `payment_module`, read with
+`somcp_list_order_statuses`, are worked out by the shop and never written:
+given with the values the list gives for this status they are no change, so
+a row read there can be given back whole; a different value is refused with
+`<field>: worked out by the shop, so it is not written here`.
+`somcp_create_order_status` refuses the three whatever their value.
+
 **Returns** - `changed`, `status_id`, `changes` (each field with `old` and
 `new`; an icon is recorded `old: "stored"` when it replaced one, `null`
 when the status had none), `icon` when one was given or removed (`stored:

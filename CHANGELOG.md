@@ -44,6 +44,12 @@ does not exist in the shop, and where to find the right one. Until now they
 answered that nothing matched, and the assistant told the merchant there was
 no such product or customer.
 
+**Best sellers and page SEO: every mistake named at once.** The best sellers
+now name every mistake of a request in one answer, a misspelt filter
+included, instead of the first one only, or none for a misspelt filter, which
+used to answer as if it had not been given. A wrong language given back to
+the SEO update of a CMS page is named once, with the shop's languages.
+
 ### Fixed
 
 **Disabled tax rules and disabled products short of stock.** Asking for the

@@ -230,22 +230,26 @@ class SomcpToolUpdateCmsSeo
      * they are filled in when no languages are given.
      *
      * @param array<string, mixed> $arguments
+     * @param int $idShop
      * @param array<int, string> $errors
      *
      * @return array<string, mixed>
      */
-    private static function withLanguage(array $arguments, array &$errors): array
+    private static function withLanguage(array $arguments, int $idShop, array &$errors): array
     {
         if (!array_key_exists('language', $arguments)) {
             return $arguments;
         }
-        $language = $arguments['language'];
-        if (!is_string($language) || trim($language) === '') {
-            $errors[] = 'language: an ISO code, as somcp_get_cms_page returns it';
+        // Worded as every tool words an unknown language, with the shop's
+        // languages; no languages are built from it, so the refusal never
+        // names a field the call did not give.
+        $read = SomcpTool::readLanguage(['language' => $arguments['language']], $idShop);
+        if ($read === null) {
+            $errors[] = SomcpTool::languageProblem($idShop);
 
             return $arguments;
         }
-        $language = Tools::strtolower(trim($language));
+        $language = Tools::strtolower($read[1]);
         if (!array_key_exists('languages', $arguments)) {
             $arguments['languages'] = [$language];
         } elseif (is_array($arguments['languages'])) {
@@ -282,12 +286,11 @@ class SomcpToolUpdateCmsSeo
         // The language of the answer given back; the shop default otherwise,
         // as somcp_get_cms_page reads it when no language is asked.
         $language = SomcpTool::readLanguage(
-            is_string($arguments['language'] ?? null) ? ['language' => Tools::strtolower(trim($arguments['language']))] : [],
+            array_key_exists('language', $arguments) ? ['language' => $arguments['language']] : [],
             $idShop
         );
         if ($language === null) {
-            $errors[] = 'language: not an active language of this shop';
-
+            // Already listed by withLanguage(): one line for one mistake.
             return;
         }
         [$idLang, $iso] = $language;
@@ -351,7 +354,7 @@ class SomcpToolUpdateCmsSeo
         // The rule of the catalogue write tools (#149): the languages being
         // filled, all active ones by default, and each text keyed by them, so
         // a text read from one tool is given back to this one the same way.
-        $arguments = self::withLanguage($arguments, $errors);
+        $arguments = self::withLanguage($arguments, $idShop, $errors);
         $languages = SomcpToolCreateProduct::languages($arguments, $idShop, $errors);
         if ($languages === null) {
             return $plan;

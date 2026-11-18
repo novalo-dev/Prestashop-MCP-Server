@@ -2465,7 +2465,9 @@ one customer's groups (→ `somcp_get_customer`).
 
 | Name | Type | Required | Role |
 |---|---|---|---|
+| `id_group` | integer | no | **ID**: keeps the group with this identifier; a group this shop does not have gives an empty list, as the filter on screen |
 | `name` | string | no | part of **Group name**, case-insensitive; the same parameter as `somcp_list_suppliers`, `somcp_list_manufacturers` and `somcp_list_attachments` |
+| `show_prices` | boolean | no | **Show prices** (**Yes** / **No**): `true` for the groups that show prices, `false` for those that hide them; every group when left out |
 | `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused. The shop default language when left out. |
 
 **Returns** - `groups`, per group:
@@ -2485,6 +2487,11 @@ Plus `count`, `customer_groups_enabled` (**Customer groups** of
 **Performance**: when false the shop ignores groups for prices) and
 `language`. Groups of the token's shop only (`group_shop`), sorted by
 **ID** as the list.
+
+**Errors** - every problem at once, nothing read, each under "Nothing was read.
+Correct these and call again:": a field the tool does not take; `id_group: a
+whole number above 0`; `name: a text`; `show_prices: true or false`; a language
+the shop does not have, with the ones it has.
 
 **Notes**
 - Read with one query on `group`, `group_lang` and `group_shop` for the

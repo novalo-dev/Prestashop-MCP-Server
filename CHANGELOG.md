@@ -24,6 +24,13 @@ Orders > Shopping Carts. Carts saved before the carrier was edited are found
 too. Until now the assistant asked about one cart or one carrier read every
 abandoned cart and sorted them itself.
 
+**Customer groups: one group, or the groups that show prices.** The list of
+customer groups can now be narrowed to one group or to the groups that show
+or hide prices, as the ID and Show prices filters of Shop Parameters >
+Customer Settings > Groups. A mistake in the call, such as a misspelt filter,
+is now named with the others instead of being ignored, which used to give
+every group back as if nothing had been asked.
+
 ### Fixed
 
 **Disabled tax rules and disabled products short of stock.** Asking for the

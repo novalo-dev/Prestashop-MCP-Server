@@ -1,10 +1,7 @@
 {
   "calls": [
-    {"why": "a new name, given back in the next call", "arguments": {"id_tax_rules_group": 1, "name": "US-AL Rate (4%) renamed"}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"name\"", "\"old\": \"US-AL Rate (4%)\"", "\"new\": \"US-AL Rate (4%) renamed\"", "\"tax_rule\"", "\"name\": \"US-AL Rate (4%) renamed\""]},
-    {"why": "the demo name given back", "arguments": {"id_tax_rules_group": 1, "name": "US-AL Rate (4%)"}, "expect": "ok", "contains": ["\"changed\": true", "\"name\": \"US-AL Rate (4%)\""]},
-    {"why": "the name it already holds changes nothing", "arguments": {"id_tax_rules_group": 1, "name": "US-AL Rate (4%)"}, "expect": "ok", "contains": ["\"changed\": false", "\"id_tax_rules_group\": 1", "Nothing was written."]},
-    {"why": "switched off, as the Enabled column of the list", "arguments": {"id_tax_rules_group": 1, "active": false}, "expect": "ok", "contains": ["\"changed\": true", "\"field\": \"active\"", "\"active\": false"]},
-    {"why": "switched back on, so the rule is as the demo data left it", "arguments": {"id_tax_rules_group": 1, "active": true}, "expect": "ok", "contains": ["\"changed\": true", "\"active\": true"]},
+    {"why": "the first rule of the demo shop is carried by the lines of the demo orders: a change is refused rather than historised under a new identifier", "arguments": {"id_tax_rules_group": 1, "active": false}, "expect": "error", "contains": ["Nothing was changed.", "- id_tax_rules_group: used by orders already placed", "change it in the back office"]},
+    {"why": "the value the demo rule already holds changes nothing, even on a rule carried by orders", "arguments": {"id_tax_rules_group": 1, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "\"id_tax_rules_group\": 1", "Nothing was written."]},
     {"why": "a rule that does not exist", "arguments": {"id_tax_rules_group": 999999, "active": true}, "expect": "error", "contains": ["Nothing was changed.", "- id_tax_rules_group: ", "somcp_list_tax_rules"]},
     {"why": "every mistake at once", "arguments": {"id_tax_rules_group": 1, "name": "Somcp {rule}", "active": "yes", "rate_in_default_country": 4, "nmae": "x"}, "expect": "error", "contains": ["Nothing was changed.", "- name: a character PrestaShop refuses", "- active: true or false", "- rate_in_default_country: worked out by the shop", "- nmae: not a field of this tool"]}
   ]

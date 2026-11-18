@@ -406,14 +406,16 @@ if ($createStatus !== null && $deleteStatus !== null) {
     }
 }
 
-// A tax rule created then deleted twice (#296): the JSON scenarios cannot
-// hold the identifier of a rule they created, which differs from one version
-// to the other, and every demo rule is still taken by a product or a carrier.
-// The rule must leave no row behind, and deleting it again must be refused
-// rather than read as a success.
+// A tax rule created, updated, then deleted twice (#294, #296): the JSON
+// scenarios cannot hold the identifier of a rule they created, which differs
+// from one version to the other, and every demo rule is still taken by a
+// product, a carrier or the lines of the demo orders, so none of them can be
+// renamed, switched off or deleted. The rule must leave no row behind, and
+// deleting it again must be refused rather than read as a success.
 $createTaxRule = $registry->get('somcp_create_tax_rule');
+$updateTaxRule = $registry->get('somcp_update_tax_rule');
 $deleteTaxRule = $registry->get('somcp_delete_tax_rule');
-if ($createTaxRule !== null && $deleteTaxRule !== null) {
+if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== null) {
     $taxRuleCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
         return $tool->call($arguments, [
             'id_shop' => (int) $context->shop->id,
@@ -436,7 +438,7 @@ if ($createTaxRule !== null && $deleteTaxRule !== null) {
         return $text;
     };
 
-    $calls += 3;
+    $calls += 7;
     try {
         $result = $taxRuleCall($createTaxRule, ['name' => 'Somcp deleted twice', 'active' => true]);
         $answer = json_decode(trim($taxRuleText($result)), true);
@@ -444,6 +446,27 @@ if ($createTaxRule !== null && $deleteTaxRule !== null) {
         if (!empty($result['isError']) || $idRule === 0) {
             $failures[] = 'somcp_delete_tax_rule (a rule just created): the rule could not be created - ' . excerpt($result);
         } else {
+            // Each step leaves the rule as the next one expects it, and the last
+            // one gives it back its name, so the deletion below reads the same.
+            $updates = [
+                'a new name' => [['name' => 'Somcp renamed tax rule'], ['"changed": true', '"field": "name"', '"old": "Somcp deleted twice"', '"new": "Somcp renamed tax rule"', '"tax_rule"', '"name": "Somcp renamed tax rule"']],
+                'the name it already holds, nothing written' => [['name' => 'Somcp renamed tax rule'], ['"changed": false', '"id_tax_rules_group": ' . $idRule, 'Nothing was written.']],
+                'switched off, as the Enabled column of the list' => [['active' => false], ['"changed": true', '"field": "active"', '"active": false']],
+                'switched back on with its first name' => [['active' => true, 'name' => 'Somcp deleted twice'], ['"changed": true', '"active": true', '"name": "Somcp deleted twice"']],
+            ];
+            foreach ($updates as $why => [$arguments, $needles]) {
+                $result = $taxRuleCall($updateTaxRule, ['id_tax_rules_group' => $idRule] + $arguments);
+                $text = $taxRuleText($result);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_tax_rule (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_tax_rule (' . $why . ')');
+                }
+            }
+
             $result = $taxRuleCall($deleteTaxRule, ['id_tax_rules_group' => $idRule]);
             $text = $taxRuleText($result);
             $left = (int) Db::getInstance()->getValue(

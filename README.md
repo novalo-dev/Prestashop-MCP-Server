@@ -445,6 +445,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_tax_rule` | ✎ Update a tax rule | Tax Rules › edit |
 | `somcp_delete_tax_rule` | ✎ Delete a tax rule | Tax Rules › delete |
 | `somcp_add_country_rule` | ✎ Add a country to a tax rule | Tax Rules › New tax rule |
+| `somcp_update_country_rule` | ✎ Change a country of a tax rule | Tax Rules › row edit |
 | `somcp_delete_country_rule` | ✎ Delete a country from a tax rule | Tax Rules › row delete |
 
 ### 📊 Stock

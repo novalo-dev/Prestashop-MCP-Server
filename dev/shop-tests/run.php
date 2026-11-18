@@ -494,7 +494,7 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
         $failures[] = 'somcp_delete_tax_rule (a rule just created): ' . get_class($e) . ' - ' . $e->getMessage();
     }
 
-    // Rows added to a rule just created, then deleted (#303, #304): the scenario cannot hold the
+    // Rows added to a rule just created, changed, then deleted (#303, #306, #304): the scenario cannot hold the
     // identifier of the rule, and every demo rule is taken by orders, so the
     // working addition is tried here, then the rule is deleted whatever happens.
     $addCountryRule = $registry->get('somcp_add_country_rule');
@@ -531,6 +531,70 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
                 $failures[] = 'somcp_add_country_rule (the same rows again): expected a refusal - ' . excerpt($result);
             } else {
                 printf("  %-6s %s\n", 'error', 'somcp_add_country_rule (the same rows again, refused)');
+            }
+
+            // The AL row changed in place (#306): a field, the same call again,
+            // the range removed, a country its state does not belong to, and
+            // a behavior, the FL row of another state left as it was.
+            $updateCountryRule = $registry->get('somcp_update_country_rule');
+            $idAl = is_array($answer) ? (int) ($answer['id_tax_rule'][0] ?? 0) : 0;
+            if ($updateCountryRule !== null && $idAl > 0) {
+                $calls += 5;
+                $alRow = static function ($answer) use ($idAl): ?array {
+                    foreach (is_array($answer) ? ($answer['tax_rule']['country_rules'] ?? []) : [] as $row) {
+                        if (is_array($row) && (int) ($row['id_tax_rule'] ?? 0) === $idAl) {
+                            return $row;
+                        }
+                    }
+
+                    return null;
+                };
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'description' => 'somcp2']);
+                $text = $taxRuleText($result);
+                $changed = json_decode(trim($text), true);
+                if (!empty($result['isError']) || !is_array($changed) || ($changed['changed'] ?? null) !== true
+                    || strpos($text, '"field": "description"') === false || ($alRow($changed)['description'] ?? null) !== 'somcp2') {
+                    $failures[] = 'somcp_update_country_rule (the description of a row): expected it changed - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country_rule (the description of a row)');
+                }
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'description' => 'somcp2']);
+                $changed = json_decode(trim($taxRuleText($result)), true);
+                if (!empty($result['isError']) || !is_array($changed) || ($changed['changed'] ?? null) !== false) {
+                    $failures[] = 'somcp_update_country_rule (the same call again): expected nothing changed - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country_rule (the same call again, nothing changed)');
+                }
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'zipcode_from' => null]);
+                $changed = json_decode(trim($taxRuleText($result)), true);
+                $row = $alRow($changed);
+                if (!empty($result['isError']) || !is_array($changed) || ($changed['changed'] ?? null) !== true
+                    || $row === null || $row['zipcode_from'] !== null || $row['zipcode_to'] !== null) {
+                    $failures[] = 'somcp_update_country_rule (the range removed): expected no zip code left - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country_rule (the range removed)');
+                }
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'country' => 'FR']);
+                $text = $taxRuleText($result);
+                if (empty($result['isError']) || strpos($text, 'Nothing was changed.') === false
+                    || strpos($text, '- state: AL is not a state of FR') === false) {
+                    $failures[] = 'somcp_update_country_rule (a country without the row\'s state): expected a refusal - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'error', 'somcp_update_country_rule (a country without the row\'s state, refused)');
+                }
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'behavior' => 'combine']);
+                $changed = json_decode(trim($taxRuleText($result)), true);
+                if (!empty($result['isError']) || !is_array($changed) || ($changed['changed'] ?? null) !== true
+                    || ($alRow($changed)['behavior'] ?? null) !== 'combine') {
+                    $failures[] = 'somcp_update_country_rule (the behavior of a row): expected it changed - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country_rule (the behavior of a row)');
+                }
             }
 
             // The two rows deleted one by one (#304), the rule left with none,

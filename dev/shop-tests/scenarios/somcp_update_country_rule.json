@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "a row that does not exist", "arguments": {"id_tax_rule": 999999, "description": "x"}, "expect": "error", "contains": ["Nothing was changed.", "- id_tax_rule: ", "somcp_get_tax_rule"]},
+    {"why": "every mistake at once", "arguments": {"id_tax_rule": 1, "behavior": "both", "rate": 4, "id_tax_rules_group": 1}, "expect": "error", "contains": ["Nothing was changed.", "- behavior: one of this_tax_only, ", "- rate: worked out by the shop", "- id_tax_rules_group: not a field of this tool"]}
+  ]
+}

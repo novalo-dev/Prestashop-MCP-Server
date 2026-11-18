@@ -33,6 +33,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_tax_rule`
 - `somcp_delete_tax_rule`
 - `somcp_add_country_rule`
+- `somcp_update_country_rule`
 - `somcp_delete_country_rule`
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
@@ -234,7 +235,10 @@ A rule charges a tax only through its rows: one is added with
 with the tax from `somcp_list_taxes`, and shown to the merchant first. The
 same call twice adds the row twice, so a lost answer is checked by reading
 the rule again. A rule used by past orders gets a new identifier, given in the
-answer, as for a change. A row is deleted with `somcp_delete_country_rule`,
+answer, as for a change. A row is changed in place with
+`somcp_update_country_rule`, giving its `id_tax_rule` and only what changes,
+after showing the merchant the change; a second state is a second row, added
+with `somcp_add_country_rule`. A row is deleted with `somcp_delete_country_rule`,
 by the `id_tax_rule` the rule gives, after asking the merchant: a rule left
 without rows charges no tax to the products that take it.
 

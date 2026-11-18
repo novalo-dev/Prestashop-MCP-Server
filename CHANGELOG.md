@@ -51,6 +51,16 @@ answer says how many, since they are now sold without tax. A rule used by past
 orders keeps the row for them, and the deletion applies to a copy under a new
 identifier, which the answer gives.
 
+**Change a country of a tax rule.** The new tool somcp_update_country_rule
+changes one row of a tax rule in place, as the Edit of that row on the rule's
+edit page does: its country, state, zip/postal code range, behavior, tax or
+description, only what is asked. Until now a wrong row had to be deleted and
+added again. The answer gives the old and new value of each change, and a call
+that would change nothing writes nothing. A row cannot be turned into a This
+tax only row that would clash with another row of the same country and state.
+A rule used by past orders keeps the row as it was for them, and the change
+applies to a copy under a new identifier, which the answer gives.
+
 ### Changed
 
 **Taxes: one tax, or the taxes at one rate.** The list of taxes can now be

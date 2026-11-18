@@ -48,7 +48,7 @@ class SomcpToolAddCountryRule
     ];
 
     /** @var array<int, string> the fields of a country_rules entry the shop works out */
-    private const COMPUTED = ['id_tax_rule', 'country_name', 'state', 'state_name', 'tax_name', 'rate'];
+    public const COMPUTED = ['id_tax_rule', 'country_name', 'state', 'state_name', 'tax_name', 'rate'];
 
     /** @var int the size of the zip code columns of a fresh install, when the database cannot say */
     private const ZIPCODE_MAX = 12;
@@ -326,7 +326,7 @@ class SomcpToolAddCountryRule
      *
      * @return array{0: string, 1: string}
      */
-    private static function zipcodes(array $arguments, ?Country $country, array &$errors): array
+    public static function zipcodes(array $arguments, ?Country $country, array &$errors): array
     {
         $bounds = [];
         $max = self::columnSize('zipcode_from', self::ZIPCODE_MAX);
@@ -368,7 +368,7 @@ class SomcpToolAddCountryRule
      *
      * @return int|null
      */
-    private static function behavior(array $arguments, array &$errors): ?int
+    public static function behavior(array $arguments, array &$errors): ?int
     {
         // The first option of the form when left out.
         if (!array_key_exists('behavior', $arguments) || $arguments['behavior'] === null) {
@@ -397,7 +397,7 @@ class SomcpToolAddCountryRule
      *
      * @return int|null
      */
-    private static function tax(array $arguments, array &$errors): ?int
+    public static function tax(array $arguments, array &$errors): ?int
     {
         if (!array_key_exists('id_tax', $arguments) || $arguments['id_tax'] === null) {
             $errors[] = 'id_tax: required, from somcp_list_taxes, 0 for No Tax';
@@ -433,7 +433,7 @@ class SomcpToolAddCountryRule
      *
      * @return string
      */
-    private static function description(array $arguments, array &$errors): string
+    public static function description(array $arguments, array &$errors): string
     {
         $value = $arguments['description'] ?? null;
         if ($value === null || $value === '') {
@@ -454,20 +454,26 @@ class SomcpToolAddCountryRule
      * tax only row must be the only one for its country and state, or the
      * other rows never apply.
      *
+     * Public so somcp_update_country_rule checks a changed row the same way,
+     * the row itself left out of both tests as the edit page leaves it out.
+     *
      * @param int $idGroup
      * @param Country $country
      * @param array<int, string> $states
      * @param int $behavior
      * @param array<int, string> $errors
+     * @param int $idRow the row being changed, 0 for an addition
+     * @param string $stateField the field the call named the state with, so a refusal points at it
      */
-    private static function unique(int $idGroup, Country $country, array $states, int $behavior, array &$errors): void
+    public static function unique(int $idGroup, Country $country, array $states, int $behavior, array &$errors, int $idRow = 0, string $stateField = 'states'): void
     {
         $group = new TaxRulesGroup($idGroup);
         foreach ($states as $idState => $iso) {
-            $field = $iso === '' ? 'country' : 'states';
+            $field = $iso === '' ? 'country' : $stateField;
             $where = $country->iso_code . ($iso === '' ? '' : ' ' . $iso);
-            // The core's own test, the one its edit page runs before each row.
-            if ($group->hasUniqueTaxRuleForCountry((int) $country->id, (int) $idState)) {
+            // The core's own test, the one its edit page runs before each row,
+            // with the edited row as its third argument as the page passes it.
+            if ($group->hasUniqueTaxRuleForCountry((int) $country->id, (int) $idState, $idRow)) {
                 $errors[] = $field . ': ' . $where . ' already has a This tax only row in this rule - delete it with '
                     . 'somcp_delete_country_rule first';
                 continue;
@@ -475,6 +481,7 @@ class SomcpToolAddCountryRule
             if ($behavior === 0 && (int) Db::getInstance()->getValue(
                 'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax_rules_group` = ' . (int) $idGroup
                 . ' AND `id_country` = ' . (int) $country->id . ' AND `id_state` = ' . (int) $idState
+                . ' AND `id_tax_rule` != ' . (int) $idRow
             ) > 0) {
                 $errors[] = $field . ': ' . $where . ' already has a row in this rule, and a This tax only row must '
                     . 'be alone - choose combine or one_after_another, or delete that row with somcp_delete_country_rule first';
@@ -493,7 +500,7 @@ class SomcpToolAddCountryRule
      *
      * @return int
      */
-    private static function columnSize(string $column, int $default): int
+    public static function columnSize(string $column, int $default): int
     {
         // executeS rather than getRow, which appends a LIMIT that SHOW COLUMNS
         // does not take.

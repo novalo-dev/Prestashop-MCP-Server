@@ -97,15 +97,7 @@ class SomcpToolDeleteCountryRule
             // A cast would read a list as 1 and delete a row nobody named.
             $errors[] = SomcpTool::notAnIdentifier('id_tax_rule');
         } else {
-            $idGroup = (int) Db::getInstance()->getValue(
-                'SELECT `id_tax_rules_group` FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax_rule` = ' . (int) $idRow
-            );
-            // The rule must be one somcp_get_tax_rule answers for this shop,
-            // so a row of a deleted rule or of another shop is not found.
-            if ($idGroup === 0 || SomcpToolGetTaxRule::existingRule($idGroup, $idShop) === null) {
-                $errors[] = SomcpTool::notFound('id_tax_rule', 'country row of a tax rule', $idRow, 'somcp_get_tax_rule');
-                $idGroup = 0;
-            }
+            $idGroup = self::ruleOf($idRow, $idShop, $errors);
         }
         $language = SomcpTool::readLanguage([], $idShop);
         if ($errors !== [] || $idGroup === 0 || $language === null) {
@@ -208,15 +200,44 @@ class SomcpToolDeleteCountryRule
     }
 
     /**
+     * The rule of a row, when that rule is one somcp_get_tax_rule answers for
+     * this shop, so a row of a deleted rule or of another shop is not found.
+     *
+     * Public so every tool that names a row by its id_tax_rule finds it, or
+     * refuses it, with the same test and the same line.
+     *
+     * @param int $idRow
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return int 0 when the row is not found, the reason added to $errors
+     */
+    public static function ruleOf(int $idRow, int $idShop, array &$errors): int
+    {
+        $idGroup = (int) Db::getInstance()->getValue(
+            'SELECT `id_tax_rules_group` FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax_rule` = ' . (int) $idRow
+        );
+        if ($idGroup === 0 || SomcpToolGetTaxRule::existingRule($idGroup, $idShop) === null) {
+            $errors[] = SomcpTool::notFound('id_tax_rule', 'country row of a tax rule', $idRow, 'somcp_get_tax_rule');
+
+            return 0;
+        }
+
+        return $idGroup;
+    }
+
+    /**
      * The row of the copy that matches a row of the rule it replaced, as
      * TaxRulesGroup::getIdTaxRuleGroupFromHistorizedId() finds it in the core.
+     *
+     * Public so somcp_update_country_rule changes the same row on the copy.
      *
      * @param int $idOld
      * @param int $idCopy
      *
      * @return int 0 when the copy has no such row
      */
-    private static function sameRow(int $idOld, int $idCopy): int
+    public static function sameRow(int $idOld, int $idCopy): int
     {
         return (int) Db::getInstance()->getValue(
             'SELECT n.`id_tax_rule` FROM `' . _DB_PREFIX_ . 'tax_rule` o'

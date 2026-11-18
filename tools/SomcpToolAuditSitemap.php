@@ -149,16 +149,17 @@ class SomcpToolAuditSitemap
     /**
      * The box "check the presence of the image files on the server" of the module's screen. gsitemap 4.3.1
      * removed it and deletes the setting on upgrade, so the installed module version decides, not the
-     * PrestaShop version: a PrestaShop 8 shop may run a gsitemap without it.
+     * PrestaShop version: a PrestaShop 8 shop may run a gsitemap without it. Read whether the module is
+     * enabled or not, as the frequency and the excluded pages of the same screen are.
      *
-     * @param bool $active
+     * @param bool $installed
      * @param int $idShop
      *
-     * @return bool|null null when the module is missing or its version has no such box
+     * @return bool|null null when the module is not installed or its version has no such box
      */
-    private static function checkImageFile(bool $active, int $idShop): ?bool
+    private static function checkImageFile(bool $installed, int $idShop): ?bool
     {
-        if (!$active) {
+        if (!$installed) {
             return null;
         }
         $version = (string) Db::getInstance()->getValue(
@@ -180,7 +181,8 @@ class SomcpToolAuditSitemap
      */
     private static function audit(int $idShop, array $languages, int $sample): array
     {
-        $active = Module::isInstalled('gsitemap') && Module::isEnabled('gsitemap');
+        $installed = (bool) Module::isInstalled('gsitemap');
+        $active = $installed && Module::isEnabled('gsitemap');
         $warnings = [];
         if (!$active) {
             $warnings[] = [
@@ -281,7 +283,7 @@ class SomcpToolAuditSitemap
             'last_generated' => $lastTime === false ? null : date('c', $lastTime),
             'frequency' => $frequency,
             'excluded_pages' => self::excluded($idShop),
-            'check_image_file' => self::checkImageFile($active, $idShop),
+            'check_image_file' => self::checkImageFile($installed, $idShop),
             'robots_txt_sitemaps' => $robots,
             'missing_products' => $products['missing'],
             'inactive_listed' => $products['inactive'],

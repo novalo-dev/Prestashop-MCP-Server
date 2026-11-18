@@ -37,6 +37,13 @@ listing them, the box of its Configure screen, on the module versions that
 still have it. Until now the assistant could not tell why images were missing
 from a sitemap generated with the box ticked.
 
+**Products, low stock and customers: an unknown category, supplier, group or
+title.** The product search, the low stock list and the customer search now
+say when the category, supplier, customer group or social title asked for
+does not exist in the shop, and where to find the right one. Until now they
+answered that nothing matched, and the assistant told the merchant there was
+no such product or customer.
+
 ### Fixed
 
 **Disabled tax rules and disabled products short of stock.** Asking for the

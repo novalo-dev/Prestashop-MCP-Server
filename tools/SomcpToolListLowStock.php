@@ -144,6 +144,16 @@ class SomcpToolListLowStock
         }
 
         $shop = Somcp::currentShop();
+        // A category or a supplier the shop does not have used to answer an
+        // empty list, which the assistant read as "nothing low on stock".
+        $idCategory = SomcpTool::id($arguments, 'id_category');
+        if ($idCategory > 0 && SomcpToolUpdateCategory::existingCategory($idCategory, (int) $shop->id) === null) {
+            $errors[] = SomcpTool::notFound('id_category', 'category', $idCategory, 'somcp_list_categories');
+        }
+        $idSupplier = SomcpTool::id($arguments, 'id_supplier');
+        if ($idSupplier > 0 && SomcpToolGetSupplier::existingSupplier($idSupplier, (int) $shop->id) === null) {
+            $errors[] = SomcpTool::notFound('id_supplier', 'supplier', $idSupplier, 'somcp_list_suppliers');
+        }
         // The shop default rather than the context language, which on an MCP
         // call follows the client's browser header: a name searched in one
         // language would find nothing in another (#149).

@@ -2726,6 +2726,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - `category_default` and `cover_image` are read for the page only, one query each (`category_lang` and `image_shop` of the shop of the token), never one per product. The cover is handed out by `SomcpDownload::offer()`, as the images of `somcp_get_product`.
 - A `language` the shop does not have is refused, like the other read tools, rather than read in the default language.
 - A field the tool does not take, a `sort` outside the list, an `active` that is not true or false, an `id_product` or `id_category` that is not a whole number above 0, a price bound that is not a number or a quantity bound that is not a whole number is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
+- An `id_category` the shop does not have is refused in the same answer, `id_category: no category of this shop has the identifier <n> - find it with somcp_list_categories`, instead of answering an empty list.
 
 #### `somcp_get_product`
 **State**: written
@@ -4077,6 +4078,7 @@ The quantities the storefront sells against, per product and combination.
 - Lowest quantity first. A product still being created, or not in this shop, is left out.
 - The filters are those of the **Stock** tab of **Catalog > Stock**, the same on PrestaShop 8 and 9. `search` matches each line on its own: a combination is found by its own reference, without its other combinations. `total_count` counts with every filter applied.
 - A field the tool does not take, a `threshold` that is not a whole number, an `active` that is not true or false, or an `id_category` or `id_supplier` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read, rather than dropped while the whole stock is listed.
+- An `id_category` or `id_supplier` the shop does not have is refused in the same answer, named with the tool that lists them (`id_category: no category of this shop has the identifier <n> - find it with somcp_list_categories`, `id_supplier: no supplier of this shop has the identifier <n> - find it with somcp_list_suppliers`), instead of answering an empty list.
 
 #### `somcp_set_stock_quantity`
 **State**: written
@@ -4176,6 +4178,7 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 - `sales_tax_incl` sums `total_paid_tax_incl / conversion_rate` of the customer's valid orders in this shop, `0` when none (the grid shows "--"). PrestaShop 8.0 sums `total_paid_real` on its **Sales** column instead, so the figure can differ from the 8.0 screen for an order not fully paid; 9.0 sums the same total as the tool.
 - `last_visit` is the latest `connections.date_add` of a visitor tied to the customer, as the **Last visit** column.
 - A field the tool does not take, a `sort` or `order` outside its list, a yes/no filter that is not true or false, a date that is not YYYY-MM-DD, or an `id_default_group` or `id_gender` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
+- An `id_default_group` the shop does not have is refused in the same answer, `id_default_group: no customer group of this shop has the identifier <n> - find it with somcp_list_customer_groups`; an `id_gender` it does not have with the list of its social titles, worded as `somcp_create_customer` words it (`id_gender: not a social title of this shop, which has 1 Mr., 2 Mrs.`), named in the language asked. Neither is answered with an empty list.
 - A read: nothing written, nothing to retry.
 
 #### `somcp_get_customer`
@@ -4239,7 +4242,7 @@ Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
 | `lastname` | **Last name** | string | yes | same rule |
 | `email` | **Email** | string | yes | refused when a registered account of this shop already uses it, with that account's `id_customer` |
 | `is_guest` | **Guest account** (9.0.0 only on screen) | boolean | no | `false` by default; a guest has no password and may share its email with other guests |
-| `id_gender` | **Social title** | integer | no | `id_gender` of the shop; an unknown one is refused with the list of the shop's social titles and their identifiers |
+| `id_gender` | **Social title** | integer | no | `id_gender` of the shop, a whole number or a string of digits as `somcp_search_customers` takes it; an unknown one is refused with the list of the shop's social titles and their identifiers |
 | `birthday` | **Birthday** | string | no | `YYYY-MM-DD`, in the past |
 | `active` | **Enabled** | boolean | no | `true` by default |
 | `partner_offers` | **Partner offers** | boolean | no | `false` by default (`optin`) |

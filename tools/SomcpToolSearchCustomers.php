@@ -169,6 +169,21 @@ class SomcpToolSearchCustomers
         if ($asked && $language === null) {
             $errors[] = SomcpTool::languageProblem($idShop);
         }
+        // A group or a title the shop does not have used to answer an empty
+        // list, which the assistant read as "no such customer".
+        $idGroup = SomcpTool::id($arguments, 'id_default_group');
+        if ($idGroup > 0 && !SomcpToolListCatalogPriceRules::groupOfShop($idGroup, $idShop)) {
+            $errors[] = SomcpTool::notFound('id_default_group', 'customer group', $idGroup, 'somcp_list_customer_groups');
+        }
+        $idGender = SomcpTool::id($arguments, 'id_gender');
+        if ($idGender > 0) {
+            // Named in the language asked, or the shop default when it is not one of the shop's.
+            $genders = SomcpToolCreateCustomer::genders($language !== null ? (int) $language[0]
+                : (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop));
+            if (!isset($genders[$idGender])) {
+                $errors[] = SomcpToolCreateCustomer::genderProblem($genders);
+            }
+        }
         if ($errors !== []) {
             return SomcpTool::refused('read', $errors);
         }

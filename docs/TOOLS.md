@@ -2750,7 +2750,7 @@ that is not a number (`rate: a number, for example 20 or 5.5`), an
 - Taxes are not tied to a shop (no `tax_shop` table on either version): the same list for every shop.
 - `name` filters as the **Name** filter of `somcp_list_tax_rules`, `somcp_list_manufacturers` and `somcp_list_attachments` do.
 - `rate` is an equality, where the list matches the rate as text: there `6` also finds 6.250, 6.600 and 6.850, while the rate an assistant is given is always the one it means exactly.
-- The same list, columns, filters and tables on 8.0.1 and 9.0.0; 9.0.0 only offers two more **Items per page** choices. The **Tax options** form below the list is not read.
+- The same list, columns, filters and tables on 8.0.1 and 9.0.0; 9.0.0 only offers two more **Items per page** choices. The **Tax options** form below the list is read by `somcp_get_tax_options`.
 - The taxes are created, changed and deleted with `somcp_create_tax`.
 
 #### `somcp_create_tax`
@@ -2858,6 +2858,51 @@ Decision (rows): refuse rather than delete them with the tax as the back office 
 - Not replayable: the second call finds no tax (`notFound()`).
 - A tax is tied to no shop: gone for every shop of a multistore.
 - The same `Tax::delete()`, handlers and tables on 8.0.1 and 9.0.0.
+
+#### `somcp_get_tax_options`
+**State**: written · [issue #311](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/311)
+**Nature**: `acts(VIEW, 'AdminTaxes')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the **Tax options** of **International > Taxes > Taxes**, the
+form below the list of taxes: **Enable tax**, **Display tax in the shopping
+cart**, **Based on**, **Use ecotax** and **Ecotax**. These settings decide
+whether the rates of the tax rules are charged at all, on which address and
+with which ecotax. Read only.
+
+**Do not use for** - the taxes and their rates (→ `somcp_list_taxes`); the
+rate a country charges (→ `somcp_get_tax_rule`); the ecotax of one product
+(→ `somcp_get_product`, `ecotax_tax_excl`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language` | | string | no | ISO code, through `SomcpTool::readLanguage()` and listed with `SomcpTool::languageProblem()`; the shop default when left out. A tax rule name is not translated, but the answer gives `language` as the other tax tools do |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - one object, under the names an update takes back (#307), read
+by the shared `SomcpToolGetTaxOptions::options()`:
+- `taxes_enabled`: **Enable tax** (`PS_TAX`), the name `somcp_list_taxes`, `somcp_list_tax_rules` and `somcp_get_tax_rule` already give it;
+- `display_tax_in_cart`: **Display tax in the shopping cart** (`PS_TAX_DISPLAY`);
+- `based_on`: **Based on** (`PS_TAX_ADDRESS_TYPE`), `"invoice_address"` or `"delivery_address"`; a value that is neither (an old shop) is given as stored, with a `warning`;
+- `use_ecotax`: **Use ecotax** (`PS_USE_ECOTAX`);
+- `ecotax_id_tax_rules_group`: **Ecotax** (`PS_ECOTAX_TAX_RULES_GROUP_ID`), `0` for **No tax**; the `id_tax_rules_group` of `somcp_list_tax_rules`;
+- `ecotax_tax_rule`: the name of that rule, read through `SomcpToolGetTaxRule::existingRule()`, `null` for 0 or for a rule deleted since (then a `warning`: choose another in the **Tax options**);
+- `ecotax_rate`: the rate the shop charges on an ecotax, `SomcpCatalog::ecotaxRate()`, the number the product tools use for `ecotax_tax_incl`;
+- `language`.
+
+Each key is read with `Configuration::get($key, null, $idShopGroup, $idShop)`,
+the shop and group of the token, as `somcp_get_seo_settings` reads.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once (`SomcpTool::refused('read', $problems)`): an unknown
+argument, a language the shop does not have.
+
+**Notes**
+- When **Enable tax** is off, a `warning` says so: no rate of any tax rule is charged, and the cart shows no tax line whatever **Display tax in the shopping cart** holds (the core turns it off with **Enable tax**).
+- Read only, replayable.
+- The same form, the same five keys and the same `TaxOptionsConfiguration` on 8.0.1 and 9.0.0.
 
 #### `somcp_list_customer_groups`
 **State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)

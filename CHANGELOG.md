@@ -48,6 +48,14 @@ them and removed from the list, as PrestaShop does, and the answer says so. The
 deletion is irreversible; to keep a tax for later, switch it off with
 somcp_update_tax instead.
 
+**Read the tax options.** The new tool somcp_get_tax_options reads the Tax
+options below the list of International > Taxes > Taxes: Enable tax, Display
+tax in the shopping cart, Based on (invoice or delivery address), Use ecotax
+and the Ecotax rule with the rate it charges. Until now the assistant could
+create taxes and tax rules but could not see whether the shop charges them at
+all, nor on which address; it now says so before setting up a rate, and warns
+when taxes are switched off.
+
 **Update a tax rule.** The new tool somcp_update_tax_rule changes the name of
 a tax rule of International > Taxes > Tax Rules and whether it is enabled, as
 its edit page and the Enabled column of the list do, and answers with the old

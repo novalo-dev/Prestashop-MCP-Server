@@ -1082,6 +1082,10 @@ T = {
  "Supprimer une taxe",
  "Eliminar un impuesto",
  "Eine Steuer löschen"),
+"Read the tax options": (
+ "Lire les options de taxe",
+ "Leer las opciones de impuestos",
+ "Steueroptionen lesen"),
 "List files": (
  "Lister les fichiers",
  "Listar los archivos",

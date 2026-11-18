@@ -30,6 +30,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_tax_rule`
 - `somcp_list_taxes`
 - `somcp_create_tax`
+- `somcp_update_tax`
 - `somcp_create_tax_rule`
 - `somcp_update_tax_rule`
 - `somcp_delete_tax_rule`
@@ -218,6 +219,14 @@ reading `somcp_list_taxes`: give one `name` per language and a `rate` from 0 to
 100. It is created disabled unless `active` is `true`, and a tax rule can only
 charge an enabled tax, so enable it before giving its `id_tax` to
 `somcp_add_country_rule`. The name is the merchant's; never invent a rate.
+
+A tax is changed with `somcp_update_tax`: give `id_tax` and only the fields to
+change (`name`, `rate`, `active`). Changing a `rate` changes it for every tax
+rule that charges the tax, without touching the rules. On PrestaShop 8,
+disabling a tax that tax rules charge would delete those rows; the tool refuses
+it, so move the rows with `somcp_update_country_rule` first. A tax carried by
+past orders is kept for them and the change gets a new `id_tax`, which the
+answer gives.
 
 A missing tax rule is created with `somcp_create_tax_rule`, after reading
 `somcp_list_tax_rules` with `active: true` and with `active: false` (the

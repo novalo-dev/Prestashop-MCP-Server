@@ -2787,6 +2787,45 @@ Unknown arguments through `SomcpTool::unknownFields()`, with `id_tax` named as w
 - Not replayable: the same call twice creates two taxes, as the form does; the description says to read `somcp_list_taxes` first.
 - A tax is tied to no shop (no `tax_shop` table): the same tax for every shop of a multistore.
 - The same fields, checks and tables on 8.0.1 and 9.0.0; `Validate::isGenericName()` refuses `< > = { }` on both.
+- Changing a tax is `somcp_update_tax`, deleting it `somcp_delete_tax`.
+
+#### `somcp_update_tax`
+**State**: written · [issue #309](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/309)
+**Nature**: `acts(EDIT, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes one tax of **International > Taxes > Taxes**, as its **Edit**
+then **Save** or the **Enabled** switch of its row: **Name**, **Rate**,
+**Enable**. Only the fields given change. Every field is checked by the
+functions of `somcp_create_tax`, and the answer is the same shared row.
+
+**Do not use for** - the tax one country charges in a rule
+(→ `somcp_update_country_rule`, `id_tax`); deleting a tax
+(→ `somcp_delete_tax`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax` | the tax edited | integer | yes | from `somcp_list_taxes`; `SomcpTool::notAnIdentifier('id_tax')`, and `SomcpTool::notFound()` for a tax missing or flagged deleted |
+| `languages` | | array of strings | no | as `somcp_create_tax`: the languages the `name` given covers |
+| `name` | **Name** | object by ISO code | no | the check of `somcp_create_tax`, for the languages given only; a language left out keeps its name; given, never empty |
+| `rate` | **Rate** | number | no | the check of `somcp_create_tax` (0 to 100, three decimals) |
+| `active` | **Enable** | boolean | no | `true` or `false` |
+
+Left out: unchanged. Unknown arguments through `SomcpTool::unknownFields()`; a row of `somcp_list_taxes` can be given back, nothing in it being worked out but `id_tax`, which this tool takes.
+
+**Refused, nothing written** - on PrestaShop 8 only, `active: false` for an enabled tax that tax rule rows charge, since the core would delete those rows: `active: on PrestaShop 8, disabling this tax deletes its 2 row(s) in the tax rules 1, 9 - change their tax with somcp_update_country_rule first, or keep the tax enabled`, counted through `SomcpToolUpdateTax::charging()`. On 9.0.0 the rows stay and the change goes through.
+
+Decision (PrestaShop 8, disabling): refuse rather than follow the back office, which removes the rows from every rule without a word and leaves those countries untaxed with nothing to undo it. Detected with `version_compare(_PS_VERSION_, '9.0.0', '<')`.
+
+**Returns** - `changed: true`, `id_tax` (the new tax for a used one); for a used tax `replaced_id_tax` and a `warning`; `changes` (one entry per field changed: `field`, `old`, `new`); then `tax`, the shared row. Nothing differs: `changed: false`, `id_tax` and `The tax already holds every value given. Nothing was written.`. A multistore shop is told the change shows everywhere (`in_every_shop`).
+
+**Errors** - in the envelope of #169, under `Nothing was changed.`, every problem at once.
+
+**Notes**
+- Replayable: the same call twice changes nothing the second time.
+- A tax is tied to no shop: the change shows in every shop of a multistore.
+- On 8.0.1 a used tax turned off goes through the core's copy path, which does not delete rows; the refusal above applies only to a tax no order carries.
 
 #### `somcp_list_customer_groups`
 **State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)

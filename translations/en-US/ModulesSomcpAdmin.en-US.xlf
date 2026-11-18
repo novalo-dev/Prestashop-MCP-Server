@@ -1352,6 +1352,11 @@
       <source>Create a tax</source>
       <target>Create a tax</target>
     </trans-unit>
+    <!-- Change a tax -->
+    <trans-unit id="447c0e8572e292767b7df773493f23cd" resname="Change a tax">
+      <source>Change a tax</source>
+      <target>Change a tax</target>
+    </trans-unit>
     <!-- List files -->
     <trans-unit id="92f00b54c2461cd9c23db65a88cd11e1" resname="List files">
       <source>List files</source>

@@ -27,6 +27,18 @@ could not be set up at all; now a tax rule can be given a rate the merchant
 needs. A tax is created disabled, as the form's default, and is shared by every
 shop of a multistore, as PrestaShop stores it.
 
+**Change a tax.** The new tool somcp_update_tax changes the name, rate or
+enabled state of a tax of International > Taxes > Taxes, as its edit page and
+the Enabled switch of the list do, and answers with the old and new value of
+each change and the tax as it was saved. Only the fields given change, and a
+call that would change nothing writes nothing. Changing a rate changes it for
+every tax rule that charges the tax, without touching the rules. On PrestaShop
+8, disabling a tax that tax rules still charge would delete those rows from
+every rule and leave those countries untaxed, so the tool refuses it and asks
+for the rows to be moved first; on PrestaShop 9 the rows stay. A tax used by
+past orders is kept unchanged for them and the change applies under a new
+identifier, which the answer gives.
+
 **Update a tax rule.** The new tool somcp_update_tax_rule changes the name of
 a tax rule of International > Taxes > Tax Rules and whether it is enabled, as
 its edit page and the Enabled column of the list do, and answers with the old

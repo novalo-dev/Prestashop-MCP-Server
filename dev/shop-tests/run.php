@@ -766,6 +766,86 @@ if ($createTax !== null) {
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_create_tax (a disabled tax)');
         }
+
+        // The tax changed in place (#309): a field, the same call again, enabled.
+        $updateTax = $registry->get('somcp_update_tax');
+        if ($updateTax !== null && $idTax > 0) {
+            $calls += 3;
+            $taxUpdates = [
+                'a new rate' => [['rate' => 2.5], ['"changed": true', '"field": "rate"', '"new": 2.5']],
+                'the same rate again, nothing written' => [['rate' => 2.5], ['"changed": false', 'Nothing was written.']],
+                'enabled' => [['active' => true], ['"changed": true', '"field": "active"', '"active": true']],
+            ];
+            foreach ($taxUpdates as $why => [$arguments, $needles]) {
+                $result = $taxCall($updateTax, ['id_tax' => $idTax] + $arguments);
+                $text = $taxText($result);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_tax (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_tax (' . $why . ')');
+                }
+            }
+
+            // Disabling a tax a tax rule row charges: refused on PrestaShop 8,
+            // where the core would delete the row; allowed on 9, where it stays.
+            $ruleForTax = $registry->get('somcp_create_tax_rule');
+            $rowForTax = $registry->get('somcp_add_country_rule');
+            if ($ruleForTax !== null && $rowForTax !== null) {
+                $idRuleForTax = 0;
+                try {
+                    $result = $taxCall($ruleForTax, ['name' => 'Somcp rule charging a test tax', 'active' => true]);
+                    $answer = json_decode(trim($taxText($result)), true);
+                    $idRuleForTax = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+                    $result = $idRuleForTax > 0 ? $taxCall($rowForTax, [
+                        'id_tax_rules_group' => $idRuleForTax, 'country' => 'US', 'states' => ['AL'],
+                        'id_tax' => $idTax, 'behavior' => 'this_tax_only',
+                    ]) : $result;
+                    $added = json_decode(trim($taxText($result)), true);
+                    $charged = (int) Db::getInstance()->getValue(
+                        'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax` = ' . (int) $idTax
+                    );
+                    if ($idRuleForTax === 0 || !is_array($added) || ($added['created'] ?? false) !== true || $charged < 1) {
+                        $failures[] = 'somcp_update_tax (disabling a charged tax): the charging row could not be set up - ' . excerpt($result);
+                    } else {
+                        $calls += 1;
+                        $result = $taxCall($updateTax, ['id_tax' => $idTax, 'active' => false]);
+                        $text = $taxText($result);
+                        $left = (int) Db::getInstance()->getValue(
+                            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax` = ' . (int) $idTax
+                        );
+                        if (version_compare(_PS_VERSION_, '9.0.0', '<')) {
+                            if (empty($result['isError']) || strpos($text, 'Nothing was changed.') === false
+                                || strpos($text, '- active: on PrestaShop 8, disabling this tax deletes its 1 row(s)') === false
+                                || $left !== $charged) {
+                                $failures[] = 'somcp_update_tax (disabling a charged tax on PrestaShop 8): expected a refusal, the row kept - ' . excerpt($result);
+                            } else {
+                                printf("  %-6s %s\n", 'error', 'somcp_update_tax (disabling a charged tax, refused on PrestaShop 8)');
+                            }
+                        } else {
+                            if (!empty($result['isError']) || strpos($text, '"changed": true') === false || $left !== $charged) {
+                                $failures[] = 'somcp_update_tax (disabling a charged tax on PrestaShop 9): expected it changed, the row kept - ' . excerpt($result);
+                            } else {
+                                printf("  %-6s %s\n", 'ok', 'somcp_update_tax (disabling a charged tax, allowed on PrestaShop 9)');
+                            }
+                        }
+                    }
+                } catch (Throwable $e) {
+                    $failures[] = 'somcp_update_tax (disabling a charged tax): ' . get_class($e) . ' - ' . $e->getMessage();
+                } finally {
+                    // The rule and its row go, so the tax is charged by nothing
+                    // and the deletion below removes it.
+                    if ($idRuleForTax > 0) {
+                        $rule = new TaxRulesGroup($idRuleForTax);
+                        if (Validate::isLoadedObject($rule)) {
+                            $rule->delete();
+                        }
+                    }
+                }
+            }
+        }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_tax (a disabled tax): ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {

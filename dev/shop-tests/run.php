@@ -493,6 +493,65 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
     } catch (Throwable $e) {
         $failures[] = 'somcp_delete_tax_rule (a rule just created): ' . get_class($e) . ' - ' . $e->getMessage();
     }
+
+    // A rule an order line carries (#295): changed, it must stay as it was
+    // for that order and the change go on a copy. No scenario can give an
+    // order line a rule of its own, so order line 1 is pointed at a rule
+    // created here and given back the rule it had, whatever happens.
+    $calls += 1;
+    $orderLine = (int) Db::getInstance()->getValue(
+        'SELECT MIN(`id_order_detail`) FROM `' . _DB_PREFIX_ . 'order_detail`'
+    );
+    $lineRule = (int) Db::getInstance()->getValue(
+        'SELECT `id_tax_rules_group` FROM `' . _DB_PREFIX_ . 'order_detail` WHERE `id_order_detail` = ' . $orderLine
+    );
+    try {
+        $result = $taxRuleCall($createTaxRule, ['name' => 'Somcp used by an order', 'active' => true]);
+        $answer = json_decode(trim($taxRuleText($result)), true);
+        $idUsed = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+        if ($orderLine === 0 || $idUsed === 0) {
+            $failures[] = 'somcp_update_tax_rule (a rule used by an order): no order line, or the rule could not be created - ' . excerpt($result);
+        } else {
+            Db::getInstance()->update('order_detail', ['id_tax_rules_group' => $idUsed], '`id_order_detail` = ' . $orderLine);
+            $result = $taxRuleCall($updateTaxRule, ['id_tax_rules_group' => $idUsed, 'name' => 'Somcp used by an order renamed']);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            $idCopy = is_array($answer) ? (int) ($answer['id_tax_rules_group'] ?? 0) : 0;
+            $old = Db::getInstance()->getRow(
+                'SELECT `deleted`, `name` FROM `' . _DB_PREFIX_ . 'tax_rules_group` WHERE `id_tax_rules_group` = ' . $idUsed
+            );
+            $copy = Db::getInstance()->getRow(
+                'SELECT `deleted`, `name` FROM `' . _DB_PREFIX_ . 'tax_rules_group` WHERE `id_tax_rules_group` = ' . $idCopy
+            );
+            $rows = static function (int $id): int {
+                return (int) Db::getInstance()->getValue(
+                    'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax_rules_group` = ' . $id
+                );
+            };
+            $inShop = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rules_group_shop` WHERE `id_tax_rules_group` = ' . $idCopy
+                . ' AND `id_shop` = ' . (int) $context->shop->id
+            );
+            $kept = (int) Db::getInstance()->getValue(
+                'SELECT `id_tax_rules_group` FROM `' . _DB_PREFIX_ . 'order_detail` WHERE `id_order_detail` = ' . $orderLine
+            );
+            if (!empty($result['isError']) || !is_array($answer) || $idCopy === 0 || $idCopy === $idUsed
+                || (int) ($answer['replaced_id_tax_rules_group'] ?? 0) !== $idUsed
+                || strpos((string) ($answer['warning'] ?? ''), 'a new identifier, ' . $idCopy . '.') === false
+                || !is_array($old) || (int) $old['deleted'] !== 1 || $old['name'] !== 'Somcp used by an order'
+                || !is_array($copy) || (int) $copy['deleted'] !== 0 || $copy['name'] !== 'Somcp used by an order renamed'
+                || $rows($idCopy) !== $rows($idUsed) || $inShop !== 1 || $kept !== $idUsed) {
+                $failures[] = 'somcp_update_tax_rule (a rule used by an order): expected a copy under a new identifier, the old rule deleted and kept by the order - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_tax_rule (a rule used by an order, changed on a copy)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_tax_rule (a rule used by an order): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($orderLine > 0) {
+            Db::getInstance()->update('order_detail', ['id_tax_rules_group' => $lineRule], '`id_order_detail` = ' . $orderLine);
+        }
+    }
 }
 
 // A category deleted with a subcategory and a product, once per mode (#227):

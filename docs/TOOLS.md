@@ -2437,15 +2437,29 @@ Nothing differs: `changed: false`, `id_tax_rules_group` and `reason` (`The
 tax rule already holds every value given. Nothing was written.`), and
 `update()` is never called. Something differs and no order line carries the
 rule (`TaxRulesGroup::isUsed()`): `name`, `active`, `update()` with
-`id_shop_list` set to the token's shop. Carried by an order line: refused with
-`id_tax_rules_group: used by orders already placed - PrestaShop would replace
-it with a copy under a new identifier, which this tool does not do yet; change
-it in the back office`, nothing written (#295).
+`id_shop_list` set to the token's shop. Carried by an order line: the rule
+stays unchanged for the orders already placed and the change goes on a copy,
+through `SomcpToolUpdateTaxRule::replaceUsed()`, never `update()` on the used
+rule: (1) `duplicateObject()`, (2) a `tax_rules_group_shop` row for the copy
+per shop of the old rule, (3) the `tax_rule` rows copied as `historize()` does,
+(4) `product`, `product_shop` and `carrier_tax_rules_group_shop` moved to the
+copy (never `carrier`), (5) the old rule `softDelete()`d, so the lists no
+longer show it, then (6) `name` and `active` written on the copy with
+`update()`. The copy is complete before anything leaves the old rule: a failure
+in 1 to 3 removes it and nothing moved; a failure in 4 to 6 names the step and
+both identifiers, logged, so the merchant can look in the back office. The
+tools that change the country rows of a rule call the same function (#303,
+#304).
 
 **Returns** - `changed: true`, `id_tax_rules_group`, `changes` (one entry per
 field changed: `field`, `old`, `new`), then `tax_rule` as `somcp_get_tax_rule`
 returns it, read back through `SomcpToolGetTaxRule::rule()`. When the rule is
 also in other shops, `also_in_other_shops` (their number) and a `warning`.
+A rule carried by an order line: `id_tax_rules_group` is the copy's,
+`replaced_id_tax_rules_group` the old one, and the `warning` starts with `This
+rule is used by orders already placed: PrestaShop keeps it unchanged for them
+and gives the rule a new identifier, <new>. Products and carriers now use the
+new one.`
 
 **Errors** - in the envelope `Nothing was changed. Correct these and call
 again:`, every problem at once, each named with its field: identifier not
@@ -2454,10 +2468,11 @@ refuses it, `active` not a boolean, unknown arguments through
 `SomcpTool::unknownFields()`. A failed `update()` is reported as such.
 
 **Notes**
-- Replayable: the same call twice changes nothing the second time.
+- Replayable: the same call twice changes nothing the second time. For a rule carried by an order line, the old identifier is not found after the first call: on a lost answer, find the copy with `somcp_list_tax_rules` and `name`.
 - A disabled rule is no longer offered on the product page; products that already have it keep it.
 - Multistore: a tax rule has no per-shop name or status (`tax_rules_group` only), so the change shows in every shop the rule is in, as the back office does it from one shop's context.
-- The same form, fields and class definition on 8.0.1 and 9.0.0 for a rule no order uses; the panel title differs (**Tax Rules** / **Tax rules**), and so can the size of the `tax_rules_group.name` column (see `somcp_create_tax_rule`).
+- The same form, fields and class definition on 8.0.1 and 9.0.0; the panel title differs (**Tax Rules** / **Tax rules**), and so can the size of the `tax_rules_group.name` column (see `somcp_create_tax_rule`).
+- Differences between 8.0.1 and 9.0.0: for a rule an order line carries, `TaxRulesGroup::update()` copies it through `historize()`. On 9.0.0 that works; on 8.0.1 its last but one statement updates a `carrier.id_tax_rules_group` column that does not exist, so `historize()` fails after the old rule is deleted and its copy made, the carriers stay on the deleted rule and the change is never written. The tool runs the 9.0.0 sequence itself, so it behaves the same on both.
 
 #### `somcp_delete_tax_rule`
 **State**: written · [issue #296](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/296)

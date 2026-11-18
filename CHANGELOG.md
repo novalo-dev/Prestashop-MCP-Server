@@ -23,8 +23,9 @@ a tax rule of International > Taxes > Tax Rules and whether it is enabled, as
 its edit page and the Enabled column of the list do, and answers with the old
 and new value of each change and the rule as it was saved. A call that would
 change nothing writes nothing. Until now the assistant could create a tax rule
-but not rename it or switch it off. A rule that orders already placed carry is
-refused for now and is changed in the back office.
+but not rename it or switch it off. A rule used by past orders keeps its old
+version for them, and the change applies under a new identifier, which the
+answer gives: products and carriers move to it, on PrestaShop 8 as on 9.
 
 **Delete a tax rule.** The new tool somcp_delete_tax_rule deletes a tax rule
 of International > Taxes > Tax Rules with its rows per country, as the Delete

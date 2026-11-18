@@ -216,8 +216,9 @@ disabled unless `active` is `true`.
 
 The Name of a rule, and whether it is enabled, are changed with
 `somcp_update_tax_rule`, which gives the old and new value of each field it
-changed. A rule that orders already placed carry is refused: it is changed in
-the back office.
+changed. A rule that orders already placed carry stays unchanged for them and
+the change gets a new identifier: the one in the answer is used from then on,
+and the merchant is told the products and carriers moved to it.
 
 A rule is deleted with `somcp_delete_tax_rule` only after reading it with
 `somcp_get_tax_rule` and asking the merchant, by its name: the deletion cannot

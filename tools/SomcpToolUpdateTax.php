@@ -298,7 +298,8 @@ class SomcpToolUpdateTax extends SomcpToolCreateTax
      *
      * On a tax an order line carries, the core keeps the old tax for that order
      * and writes the change on a new one: the new identifier is read back and
-     * reported, and the tax rules are moved to it by the core.
+     * reported, and the tax rules the core moved to it are checked, so a row
+     * left on the hidden old tax is said rather than missed.
      *
      * @param Tax $tax loaded in every language
      * @param array<string, mixed> $plan
@@ -329,6 +330,41 @@ class SomcpToolUpdateTax extends SomcpToolCreateTax
             $failure = $e->getMessage();
         }
 
+        // On a used tax the core hides the old tax and creates the new one
+        // before it moves the tax rule rows, so a failed move still leaves both
+        // behind. Read the rows back whatever update() said, rather than
+        // telling the assistant the rules moved, or that nothing was saved.
+        $copiedId = (int) $tax->id;
+        if ($usedBefore && $copiedId > 0 && $copiedId !== $oldId) {
+            $left = self::charging($oldId);
+            if (!$done || $left['rows'] > 0) {
+                SomcpLogger::log(
+                    'tax_update_failed',
+                    SomcpLogger::OUTCOME_FAILURE,
+                    'tax ' . $oldId . ' copied to tax ' . $copiedId,
+                    '',
+                    $idEmployee
+                );
+
+                if ($left['rows'] === 0) {
+                    return SomcpTool::text(
+                        'The tax was copied to a new identifier, ' . $copiedId . ', and the old one, ' . $oldId
+                            . ', is now hidden, but PrestaShop reported a failure: ' . $failure
+                            . '. Read the taxes with somcp_list_taxes before calling again.',
+                        true
+                    );
+                }
+
+                return SomcpTool::text(
+                    'The tax was copied to a new identifier, ' . $copiedId . ', but ' . $left['rows']
+                        . ' row(s) of the tax rules ' . implode(', ', $left['rules'])
+                        . ' still charge the old one, ' . $oldId . ', which is now hidden - give them the new '
+                        . 'tax with somcp_update_country_rule.',
+                    true
+                );
+            }
+        }
+
         if (!$done) {
             SomcpLogger::log('tax_update_failed', SomcpLogger::OUTCOME_FAILURE, 'tax ' . $oldId, '', $idEmployee);
 
@@ -339,8 +375,8 @@ class SomcpToolUpdateTax extends SomcpToolCreateTax
         }
 
         // The core gives a used tax a new identifier and moves the tax rules
-        // to it; otherwise the identifier is unchanged.
-        $newId = (int) $tax->id;
+        // to it, checked above; otherwise the identifier is unchanged.
+        $newId = $copiedId;
         SomcpLogger::log('tax_updated', SomcpLogger::OUTCOME_SUCCESS, 'tax ' . $newId, '', $idEmployee);
 
         $result = [

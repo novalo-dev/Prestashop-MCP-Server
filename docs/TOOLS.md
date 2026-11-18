@@ -2820,7 +2820,7 @@ Decision (PrestaShop 8, disabling): refuse rather than follow the back office, w
 
 **Returns** - `changed: true`, `id_tax` (the new tax for a used one); for a used tax `replaced_id_tax` and a `warning`; `changes` (one entry per field changed: `field`, `old`, `new`); then `tax`, the shared row. Nothing differs: `changed: false`, `id_tax` and `The tax already holds every value given. Nothing was written.`. A multistore shop is told the change shows everywhere (`in_every_shop`).
 
-**Errors** - in the envelope of #169, under `Nothing was changed.`, every problem at once.
+**Errors** - in the envelope of #169, under `Nothing was changed.`, every problem at once. On a used tax, the rows still on the old tax are counted after the save, whatever the core answered (`SomcpToolUpdateTax::charging()`): a row left there is an error that says what the shop now holds, `The tax was copied to a new identifier, <new>, but <n> row(s) of the tax rules <ids> still charge the old one, <old>, which is now hidden - give them the new tax with somcp_update_country_rule.`, logged as `tax_update_failed` with both identifiers.
 
 **Notes**
 - Replayable: the same call twice changes nothing the second time.

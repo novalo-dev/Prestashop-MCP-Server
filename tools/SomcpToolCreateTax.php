@@ -377,8 +377,7 @@ class SomcpToolCreateTax extends SomcpToolCreateFeature
         if (!Shop::isFeatureActive()) {
             return 1;
         }
-        $shops = Shop::getShops(false);
 
-        return is_array($shops) ? count($shops) : 1;
+        return count(Shop::getShops(false));
     }
 }

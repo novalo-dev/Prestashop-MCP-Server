@@ -1,6 +1,6 @@
 {
   "calls": [
-    {"why": "the sitemaps of the demo shop, generated or not; the test shop has no web server running, so the sample depends on the runner", "arguments": {}, "expect": "ok", "contains": ["\"module_active\"", "\"sitemaps\"", "\"index\"", "\"last_generated\"", "\"frequency\"", "\"excluded_pages\"", "\"robots_txt_sitemaps\"", "\"missing_products\"", "\"inactive_listed\"", "\"sample_errors\"", "\"warnings\""]},
+    {"why": "the sitemaps of the demo shop, generated or not; the test shop has no web server running, so the sample depends on the runner", "arguments": {}, "expect": "ok", "contains": ["\"module_active\"", "\"sitemaps\"", "\"index\"", "\"last_generated\"", "\"frequency\"", "\"excluded_pages\"", "\"check_image_file\"", "\"robots_txt_sitemaps\"", "\"missing_products\"", "\"inactive_listed\"", "\"sample_errors\"", "\"warnings\""]},
     {"why": "no address fetched", "arguments": {"sample": 0}, "expect": "ok", "contains": ["\"sample_errors\": []"]},
     {"why": "the files of one language only", "arguments": {"language": "en", "sample": 0}, "expect": "ok", "contains": ["\"sitemaps\""]},
     {"why": "the language code is read whatever its case", "arguments": {"language": "EN", "sample": 0}, "expect": "ok", "contains": ["\"sitemaps\""]},

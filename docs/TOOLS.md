@@ -5173,6 +5173,7 @@ None.
 | `last_generated` | - | `GSITEMAP_LAST_EXPORT`, `null` before the first generation |
 | `frequency` | **How often do you update your store?** | the value as on screen (`weekly`, ...) |
 | `excluded_pages` | **Indicate the pages that you do not want to include in your sitemap files:** | the `page` names unticked |
+| `check_image_file` | **Check this box if you wish to check the presence of the image files on the server** | `GSITEMAP_CHECK_IMAGE_FILE` of the token's shop while the installed `gsitemap` is below 4.3.1; `null` from 4.3.1 on, whose screen no longer has the box, and when the module is not installed |
 | `robots_txt_sitemaps` | - | the `Sitemap:` lines of robots.txt, as `somcp_get_robots_txt` returns them |
 | `missing_products` | - | active products of the token's shop visible in the catalogue and absent from every sitemap: `count`, and the first 20 as `products`, each `id_product` and `name` (default language) |
 | `inactive_listed` | - | disabled products still listed, the first 20: `url`, `id_product` |
@@ -5188,7 +5189,7 @@ None.
 - Errors, every one in the same answer: `sample` out of range, a `language` the shop does not have, a field the tool does not take.
 
 **Differences between 8.0.1 and 9.0.0**
-- `gsitemap` 4.2.0 / 4.4.0: the image-file check exists on 8.0.1 only; the brand priority on 9.0.0 only; the page list of 9.0.0 holds public pages only, and **best-sales** is labelled **Best sellers**. Same table, same file names, same index location.
+- `gsitemap` 4.2.0 / 4.4.0: the image-file check exists on 8.0.1 only, answered as `check_image_file` before gsitemap 4.3.1 and `null` after (the module version decides, not PrestaShop's); the brand priority on 9.0.0 only; the page list of 9.0.0 holds public pages only, and **best-sales** is labelled **Best sellers**. Same table, same file names, same index location.
 
 ### AEO
 

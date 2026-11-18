@@ -31,6 +31,12 @@ Customer Settings > Groups. A mistake in the call, such as a misspelt filter,
 is now named with the others instead of being ignored, which used to give
 every group back as if nothing had been asked.
 
+**Sitemap audit: the image-file check.** The sitemap audit now says whether the
+Google sitemap module checks that the image files exist on the server before
+listing them, the box of its Configure screen, on the module versions that
+still have it. Until now the assistant could not tell why images were missing
+from a sitemap generated with the box ticked.
+
 ### Fixed
 
 **Disabled tax rules and disabled products short of stock.** Asking for the

@@ -79,9 +79,9 @@ class SomcpToolAuditSitemap
             'somcp_audit_sitemap',
             Somcp::t('Audit the shop\'s sitemaps'),
             'Reads the XML sitemaps the Google sitemap module generated for this shop: files and address counts, '
-                . 'frequency and excluded pages of its screen, whether robots.txt announces the index, active '
-                . 'products missing, disabled products still listed, and a sample of addresses fetched as a '
-                . 'visitor. Read only; never generates the sitemap. For robots.txt itself, use '
+                . 'frequency, excluded pages and image-file check of its screen, whether robots.txt announces the '
+                . 'index, active products missing, disabled products still listed, and a sample of addresses '
+                . 'fetched as a visitor. Read only; never generates the sitemap. For robots.txt itself, use '
                 . 'somcp_get_robots_txt; for the links of the pages, somcp_check_links.',
             [
                 'type' => 'object',
@@ -144,6 +144,31 @@ class SomcpToolAuditSitemap
         }
 
         return SomcpTool::json(self::audit($idShop, $languages, $sample));
+    }
+
+    /**
+     * The box "check the presence of the image files on the server" of the module's screen. gsitemap 4.3.1
+     * removed it and deletes the setting on upgrade, so the installed module version decides, not the
+     * PrestaShop version: a PrestaShop 8 shop may run a gsitemap without it.
+     *
+     * @param bool $active
+     * @param int $idShop
+     *
+     * @return bool|null null when the module is missing or its version has no such box
+     */
+    private static function checkImageFile(bool $active, int $idShop): ?bool
+    {
+        if (!$active) {
+            return null;
+        }
+        $version = (string) Db::getInstance()->getValue(
+            'SELECT `version` FROM `' . _DB_PREFIX_ . 'module` WHERE `name` = \'gsitemap\''
+        );
+        if ($version === '' || version_compare($version, '4.3.1', '>=')) {
+            return null;
+        }
+
+        return (bool) Configuration::get('GSITEMAP_CHECK_IMAGE_FILE', null, null, $idShop);
     }
 
     /**
@@ -256,6 +281,7 @@ class SomcpToolAuditSitemap
             'last_generated' => $lastTime === false ? null : date('c', $lastTime),
             'frequency' => $frequency,
             'excluded_pages' => self::excluded($idShop),
+            'check_image_file' => self::checkImageFile($active, $idShop),
             'robots_txt_sitemaps' => $robots,
             'missing_products' => $products['missing'],
             'inactive_listed' => $products['inactive'],

@@ -494,6 +494,56 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
         $failures[] = 'somcp_delete_tax_rule (a rule just created): ' . get_class($e) . ' - ' . $e->getMessage();
     }
 
+    // Rows added to a rule just created (#303): the scenario cannot hold the
+    // identifier of the rule, and every demo rule is taken by orders, so the
+    // working addition is tried here, then the rule is deleted whatever happens.
+    $addCountryRule = $registry->get('somcp_add_country_rule');
+    if ($addCountryRule !== null) {
+        $calls += 2;
+        $idRows = 0;
+        try {
+            $result = $taxRuleCall($createTaxRule, ['name' => 'Somcp country rows', 'active' => true]);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            $idRows = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+            $rowsAsked = [
+                'id_tax_rules_group' => $idRows, 'country' => 'US', 'states' => ['AL', 'FL'],
+                'zipcode_from' => '36000', 'zipcode_to' => '35000', 'id_tax' => 1,
+                'behavior' => 'this_tax_only', 'description' => 'somcp',
+            ];
+            $result = $taxRuleCall($addCountryRule, $rowsAsked);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            $rowsRead = is_array($answer) ? ($answer['tax_rule']['country_rules'] ?? []) : [];
+            $folded = array_filter($rowsRead, static function ($row): bool {
+                return is_array($row) && ($row['zipcode_from'] ?? null) === '35000' && ($row['zipcode_to'] ?? null) === '36000'
+                    && ($row['behavior'] ?? null) === 'this_tax_only' && in_array($row['state'] ?? null, ['AL', 'FL'], true);
+            });
+            if ($idRows === 0 || !empty($result['isError']) || !is_array($answer) || ($answer['created'] ?? false) !== true
+                || count($answer['id_tax_rule'] ?? []) !== 2 || count($rowsRead) !== 2 || count($folded) !== 2) {
+                $failures[] = 'somcp_add_country_rule (two states of a rule just created): expected two rows, the range in order - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_add_country_rule (two states of a rule just created)');
+            }
+
+            $result = $taxRuleCall($addCountryRule, $rowsAsked);
+            $text = $taxRuleText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was created.') === false
+                || strpos($text, 'states: US AL already has a This tax only row in this rule') === false) {
+                $failures[] = 'somcp_add_country_rule (the same rows again): expected a refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_add_country_rule (the same rows again, refused)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_add_country_rule (two states of a rule just created): ' . get_class($e) . ' - ' . $e->getMessage();
+        } finally {
+            if ($idRows > 0) {
+                $rule = new TaxRulesGroup($idRows);
+                if (Validate::isLoadedObject($rule)) {
+                    $rule->delete();
+                }
+            }
+        }
+    }
+
     // A rule an order line carries (#295): changed, it must stay as it was
     // for that order and the change go on a copy. No scenario can give an
     // order line a rule of its own, so order line 1 is pointed at a rule

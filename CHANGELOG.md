@@ -33,6 +33,16 @@ action of the list does. Unlike the back office, it refuses a rule that
 products or carriers still take, and says how many: deleted, they would be
 sold without tax from then on, on every invoice, without anyone noticing.
 
+**Add a country to a tax rule.** The new tool somcp_add_country_rule adds a
+row to a tax rule of International > Taxes > Tax Rules, as the New tax rule
+panel of its edit page does: a country, some of its states or all of them, a
+zip/postal code range, a behavior, a tax and a description. Until now a rule
+created by the assistant charged nothing, since no tool could give it a
+country. A call adds all its rows or none, and refuses a This tax only row
+that would clash with another row of the same country and state. A rule used
+by past orders keeps its old version for them, and the rows go on a copy under
+a new identifier, which the answer gives.
+
 ### Changed
 
 **Abandoned carts: one cart or one carrier.** The list can now be narrowed to

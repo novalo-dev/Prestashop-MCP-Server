@@ -318,13 +318,16 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
     /**
      * The country given, among the countries of this shop.
      *
+     * Public so the tax rule tools read a country as the address tools do,
+     * with the same refusal line.
+     *
      * @param array<string, mixed> $arguments
      * @param int $idShop
      * @param array<int, string> $errors
      *
      * @return Country|null
      */
-    protected static function supplierCountry(array $arguments, int $idShop, array &$errors): ?Country
+    public static function supplierCountry(array $arguments, int $idShop, array &$errors): ?Country
     {
         if (!array_key_exists('country', $arguments)) {
             $errors[] = 'country: required, the ISO code of the country';
@@ -376,11 +379,30 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
 
             return 0;
         }
-        $iso = self::string($arguments['state']);
+
+        return self::stateOf($country, $arguments['state'], 'state', $errors);
+    }
+
+    /**
+     * One state of the country, by its ISO code, or 0 with the reason.
+     *
+     * Public so every tool that takes a state by its code looks it up and
+     * words its refusal the same way, whatever the field is called.
+     *
+     * @param Country $country
+     * @param mixed $value
+     * @param string $path the field named in the refusal
+     * @param array<int, string> $errors
+     *
+     * @return int
+     */
+    public static function stateOf(Country $country, $value, string $path, array &$errors): int
+    {
+        $iso = self::string($value);
         $iso = $iso === null ? '' : Tools::strtoupper(trim($iso));
         $idState = Validate::isStateIsoCode($iso) ? (int) State::getIdByIso($iso, (int) $country->id) : 0;
         if ($idState <= 0) {
-            $errors[] = 'state: ' . $country->iso_code . ' has no state with the ISO code "' . $iso . '"';
+            $errors[] = $path . ': ' . $country->iso_code . ' has no state with the ISO code "' . $iso . '"';
         }
 
         return $idState;

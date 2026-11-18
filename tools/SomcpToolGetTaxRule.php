@@ -34,8 +34,11 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpToolGetTaxRule
 {
-    /** @var array<int, string> the choices of Behavior, by the value stored in tax_rule.behavior */
-    private const BEHAVIORS = [
+    /**
+     * @var array<int, string> the choices of Behavior, by the value stored in tax_rule.behavior;
+     *                         public so the tools that write a row take the words this one answers
+     */
+    public const BEHAVIORS = [
         0 => 'this_tax_only',
         1 => 'combine',
         2 => 'one_after_another',

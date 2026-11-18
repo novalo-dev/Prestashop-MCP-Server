@@ -1054,6 +1054,10 @@ T = {
  "Supprimer une règle de taxes",
  "Eliminar una regla de impuestos",
  "Eine Steuerregel löschen"),
+"Add a country to a tax rule": (
+ "Ajouter un pays à une règle de taxes",
+ "Añadir un país a una regla de impuestos",
+ "Einer Steuerregel ein Land hinzufügen"),
 "List taxes": (
  "Lister les taxes",
  "Listar los impuestos",

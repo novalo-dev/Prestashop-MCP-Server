@@ -2367,8 +2367,8 @@ its **Name** and **Enable**, as **Add new tax rule** then **Save and stay** do.
 It is the first step of setting up the taxes of a new shop: the rule gets its
 rows per country afterwards, and products take its `id_tax_rules_group`.
 
-**Do not use for** - adding a country, a state or a zip range to a rule (no
-tool yet); changing a rule (→ `somcp_update_tax_rule`); deleting a rule
+**Do not use for** - adding a country, a state or a zip range to a rule
+(→ `somcp_add_country_rule`); changing a rule (→ `somcp_update_tax_rule`); deleting a rule
 (→ `somcp_delete_tax_rule`); giving a rule to a product
 (→ `somcp_update_product`, `id_tax_rules_group`).
 
@@ -2415,8 +2415,9 @@ removed again if it went in: nothing half written.
 do, and so also switches a rule on or off as the **Enabled** column of the
 list does (the same `active` field). Only what is given changes.
 
-**Do not use for** - adding, changing or deleting a country row of the rule
-(no tool yet); deleting a rule (→ `somcp_delete_tax_rule`); giving a
+**Do not use for** - adding a country row to the rule
+(→ `somcp_add_country_rule`); changing or deleting one (no tool yet);
+deleting a rule (→ `somcp_delete_tax_rule`); giving a
 rule to a product (→ `somcp_update_product`, `id_tax_rules_group`).
 
 **Parameters**
@@ -2484,7 +2485,7 @@ its rows per country, as the row action **Delete** of the list does
 
 **Do not use for** - switching a rule off (→ `somcp_update_tax_rule`,
 `active: false`), which keeps it for later; deleting one country row of a
-rule (no tool yet).
+rule (no tool yet); adding a country row (→ `somcp_add_country_rule`).
 
 **Parameters**
 
@@ -2518,6 +2519,66 @@ as such, with a hint to read the rule with `somcp_get_tax_rule`.
 - Not replayable: a second call finds nothing and says so.
 - A real deletion, not the `deleted = 1` a change of a used rule leaves: past orders keep their amounts (`order_detail_tax`).
 - No difference between 8.0.1 and 9.0.0: the same controller path, the same `delete()`, the same tables.
+
+#### `somcp_add_country_rule`
+**State**: written · [issue #303](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/303)
+**Nature**: `acts(ADD, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - adds a row to one tax rule of **International > Taxes > Tax
+Rules**, as the **New tax rule** panel of its edit page then **Save and
+stay** do: a country, its states, a zip/postal code range, a behavior, a tax
+and a description. A rule without a row charges nothing.
+
+**Do not use for** - every country at once (**All**, not yet); creating a
+rule (→ `somcp_create_tax_rule`); renaming or switching a rule off
+(→ `somcp_update_tax_rule`); changing or deleting a row (no tool yet).
+
+**Parameters**
+
+The names are those `somcp_get_tax_rule` gives in each `country_rules`
+entry, so a row read there can be given here.
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax_rules_group` | the rule edited | integer | yes | from `somcp_list_tax_rules`; unknown, deleted or not in the token's shop: not found, through `SomcpToolGetTaxRule::existingRule()` |
+| `country` | **Country** | string | yes | ISO code, read through `SomcpToolCreateSupplier::supplierCountry()`, as the supplier and manufacturer address tools (`country: no country of this shop has the ISO code "ZZ"`) |
+| `states` | **State** | array of strings | no | ISO codes of the country's states, one row each, each through `SomcpToolCreateSupplier::stateOf()` (`states: US has no state with the ISO code "ZZ"`); left out or empty: **All** (one row, `id_state` 0); given for a country without states: `states: FR has no states, leave the field out`; a code twice counts once |
+| `zipcode_from` | **Zip/Postal code range**, first bound | string | no | `Validate::isPostCode()`, no hyphen, the size of the column at most (12), and `Country::checkZipCode()` when the country has `need_zip_code` and a `zip_code_format` (`zipcode_from: not in the format of US (00000)`) |
+| `zipcode_to` | **Zip/Postal code range**, second bound | string | no | the same checks; only with `zipcode_from` (`zipcode_to: only with zipcode_from`); the two ordered and folded by `TaxRule::breakDownZipCode()` |
+| `behavior` | **Behavior** | string | no | `this_tax_only` (the default, first option of the form), `combine` or `one_after_another`, the values of `SomcpToolGetTaxRule::BEHAVIORS` |
+| `id_tax` | **Tax** | integer | yes | from `somcp_list_taxes`; `0` is **No Tax**; otherwise a tax that exists and is not deleted. Required here, unlike the form, so a row is never added without a tax by omission |
+| `description` | **Description** | string | no | `Validate::isString()`, the size of the column at most (100) |
+
+Unknown arguments through `SomcpTool::unknownFields()`; `id_tax_rule`,
+`country_name`, `state`, `state_name`, `tax_name` and `rate` are named as
+worked out by the shop.
+
+**Refused, nothing written** - every problem at once:
+- a country and state that already have a **This tax only** row, through `TaxRulesGroup::hasUniqueTaxRuleForCountry()` as the form checks it: `states: US AL already has a This tax only row in this rule - delete it first` (`country: US ...` without a state);
+- a **This tax only** row asked where the country and state already have any row, which the form lets through although the other rows would never apply: `states: US AL already has a row in this rule, and a This tax only row must be alone - choose combine or one_after_another, or delete that row first`.
+
+**Then** - one `TaxRule` per state (or one with `id_state` 0), then `add()`;
+a failure after the first row deletes the rows the call added, so a call adds
+all its rows or none. Then `update()` on the rule, for the token's shop only,
+as `updateTaxRulesGroup()` does, so its `date_upd` says when it last changed.
+A rule an order line carries (`TaxRulesGroup::isUsed()`) is first replaced by
+a copy under a new identifier, through `SomcpToolUpdateTaxRule::replaceUsed()`,
+the copy `somcp_update_tax_rule` makes, and the rows go on the copy.
+
+**Returns** - `created: true`, `id_tax_rules_group` (the copy's for a used
+rule, with `replaced_id_tax_rules_group`), `id_tax_rule` (the rows added, one
+per state), `also_in_other_shops` and `warning` when `tax_rules_group_shop`
+ties the rule to other shops, then `tax_rule` as `somcp_get_tax_rule` returns
+it.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, each problem named with its field. A failed `add()` is reported as
+such, with a hint to read the rule with `somcp_get_tax_rule`.
+
+**Notes**
+- Not replayable: the same call twice adds the rows twice (unless the first is **This tax only**, then refused). Read the rule first, and again if an answer is lost.
+- A row with no state applies to the whole country; a **Combine** or **One after another** row adds to the other rows that match an address.
+- No difference between 8.0.1 and 9.0.0: the same panel and table; `TaxRule` gives no size on 8.0.1, hence the limits read from the columns.
 
 #### `somcp_list_taxes`
 **State**: written · [issue #237](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/237)

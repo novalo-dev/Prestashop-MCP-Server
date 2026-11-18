@@ -2544,7 +2544,8 @@ entry, so a row read there can be given here.
 |---|---|---|---|---|
 | `id_tax_rules_group` | the rule edited | integer | yes | from `somcp_list_tax_rules`; unknown, deleted or not in the token's shop: not found, through `SomcpToolGetTaxRule::existingRule()` |
 | `country` | **Country** | string | yes | ISO code, read through `SomcpToolCreateSupplier::supplierCountry()`, as the supplier and manufacturer address tools (`country: no country of this shop has the ISO code "ZZ"`) |
-| `states` | **State** | array of strings | no | ISO codes of the country's states, one row each, each through `SomcpToolCreateSupplier::stateOf()` (`states: US has no state with the ISO code "ZZ"`); left out or empty: **All** (one row, `id_state` 0); given for a country without states: `states: FR has no states, leave the field out`; a code twice counts once |
+| `state` | **State** | string or `null` | no | one state, as `somcp_get_tax_rule` gives it: one ISO code of the country's states through `SomcpToolCreateSupplier::stateOf()` (`state: US has no state with the ISO code "ZZ"`), one row; `null` is **All**; a code for a country without states: `state: FR has no states, leave the field out` (`null` is accepted there). With `states` in the same call: `state: state or states, not both`, `state: null` counting as given |
+| `states` | **State** | array of strings | no | the list for several: ISO codes of the country's states, one row each, each through `SomcpToolCreateSupplier::stateOf()` (`states: US has no state with the ISO code "ZZ"`); left out or empty: **All** (one row, `id_state` 0); given for a country without states: `states: FR has no states, leave the field out`; a code twice counts once |
 | `zipcode_from` | **Zip/Postal code range**, first bound | string | no | `Validate::isPostCode()`, no hyphen, the size of the column at most (12), and `Country::checkZipCode()` when the country has `need_zip_code` and a `zip_code_format` (`zipcode_from: not in the format of US (00000)`) |
 | `zipcode_to` | **Zip/Postal code range**, second bound | string | no | the same checks; only with `zipcode_from` (`zipcode_to: only with zipcode_from`); the two ordered and folded by `TaxRule::breakDownZipCode()` |
 | `behavior` | **Behavior** | string | no | `this_tax_only` (the default, first option of the form), `combine` or `one_after_another`, the values of `SomcpToolGetTaxRule::BEHAVIORS` |
@@ -2552,11 +2553,13 @@ entry, so a row read there can be given here.
 | `description` | **Description** | string | no | `Validate::isString()`, the size of the column at most (100) |
 
 Unknown arguments through `SomcpTool::unknownFields()`; `id_tax_rule`,
-`country_name`, `state`, `state_name`, `tax_name` and `rate` are named as
-worked out by the shop.
+`country_name`, `state_name`, `tax_name` and `rate` are named as worked out
+by the shop. A `country_rules` entry of `somcp_get_tax_rule`, or the
+`country_rule` of `somcp_delete_country_rule`, is given back with
+`id_tax_rules_group` once those five are picked out.
 
 **Refused, nothing written** - every problem at once:
-- a country and state that already have a **This tax only** row, through `TaxRulesGroup::hasUniqueTaxRuleForCountry()` as the form checks it: `states: US AL already has a This tax only row in this rule - delete it with somcp_delete_country_rule first` (`country: US ...` without a state);
+- a country and state that already have a **This tax only** row, through `TaxRulesGroup::hasUniqueTaxRuleForCountry()` as the form checks it, named with the field the call used (`state` or `states`): `states: US AL already has a This tax only row in this rule - delete it with somcp_delete_country_rule first` (`country: US ...` without a state);
 - a **This tax only** row asked where the country and state already have any row, which the form lets through although the other rows would never apply: `states: US AL already has a row in this rule, and a This tax only row must be alone - choose combine or one_after_another, or delete that row with somcp_delete_country_rule first`.
 
 **Then** - one `TaxRule` per state (or one with `id_state` 0), then `add()`;

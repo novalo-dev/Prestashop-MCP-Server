@@ -41,7 +41,8 @@ created by the assistant charged nothing, since no tool could give it a
 country. A call adds all its rows or none, and refuses a This tax only row
 that would clash with another row of the same country and state. A rule used
 by past orders keeps its old version for them, and the rows go on a copy under
-a new identifier, which the answer gives.
+a new identifier, which the answer gives. A row read from the rule, or the row
+a deletion gives back, can be given again as it was, its state included.
 
 **Delete a country from a tax rule.** The new tool somcp_delete_country_rule
 deletes one row of a tax rule, as the Delete of that row on the rule's edit

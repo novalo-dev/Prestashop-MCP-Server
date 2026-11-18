@@ -603,9 +603,13 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
             $rowIds = is_array($answer) ? array_map('intval', $answer['id_tax_rule'] ?? []) : [];
             if ($deleteCountryRule !== null && count($rowIds) === 2) {
                 $calls += 3;
+                $firstDeleted = null;
                 foreach ($rowIds as $step => $idRowDeleted) {
                     $result = $taxRuleCall($deleteCountryRule, ['id_tax_rule' => $idRowDeleted]);
                     $answerDeleted = json_decode(trim($taxRuleText($result)), true);
+                    if ($step === 0 && is_array($answerDeleted) && is_array($answerDeleted['country_rule'] ?? null)) {
+                        $firstDeleted = $answerDeleted['country_rule'];
+                    }
                     $rulesLeft = is_array($answerDeleted) ? ($answerDeleted['tax_rule']['country_rules'] ?? null) : null;
                     if (!empty($result['isError']) || !is_array($answerDeleted) || ($answerDeleted['deleted'] ?? false) !== true
                         || (int) ($answerDeleted['country_rule']['id_tax_rule'] ?? 0) !== $idRowDeleted
@@ -622,6 +626,26 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
                     $failures[] = 'somcp_delete_country_rule (the same row again): expected a refusal - ' . excerpt($result);
                 } else {
                     printf("  %-6s %s\n", 'error', 'somcp_delete_country_rule (the same row again, refused)');
+                }
+
+                // The row a deletion gives back, added again as it was (#307):
+                // what a read returns is what the write takes, state included.
+                if (is_array($firstDeleted)) {
+                    ++$calls;
+                    $again = array_diff_key($firstDeleted, array_flip(['id_tax_rule', 'country_name', 'state_name', 'tax_name', 'rate']));
+                    $result = $taxRuleCall($addCountryRule, ['id_tax_rules_group' => $idRows] + $again);
+                    $answerAgain = json_decode(trim($taxRuleText($result)), true);
+                    $rowAgain = is_array($answerAgain) ? ($answerAgain['tax_rule']['country_rules'][0] ?? null) : null;
+                    if (!empty($result['isError']) || !is_array($answerAgain) || ($answerAgain['created'] ?? false) !== true
+                        || count($answerAgain['id_tax_rule'] ?? []) !== 1 || !is_array($rowAgain)
+                        || ($rowAgain['state'] ?? null) !== 'AL' || ($rowAgain['state'] ?? null) !== ($firstDeleted['state'] ?? '')
+                        || ($rowAgain['zipcode_from'] ?? '') !== ($firstDeleted['zipcode_from'] ?? '')
+                        || ($rowAgain['zipcode_to'] ?? '') !== ($firstDeleted['zipcode_to'] ?? '')
+                        || ($rowAgain['description'] ?? '') !== ($firstDeleted['description'] ?? '')) {
+                        $failures[] = 'somcp_add_country_rule (a deleted row given back): expected it added as it was - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_add_country_rule (a deleted row given back)');
+                    }
                 }
             }
         } catch (Throwable $e) {

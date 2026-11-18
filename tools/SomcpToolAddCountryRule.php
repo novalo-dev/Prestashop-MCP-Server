@@ -44,11 +44,11 @@ class SomcpToolAddCountryRule
 {
     /** @var array<int, string> Every argument this tool takes. */
     private const ARGUMENTS = [
-        'id_tax_rules_group', 'country', 'states', 'zipcode_from', 'zipcode_to', 'behavior', 'id_tax', 'description',
+        'id_tax_rules_group', 'country', 'state', 'states', 'zipcode_from', 'zipcode_to', 'behavior', 'id_tax', 'description',
     ];
 
     /** @var array<int, string> the fields of a country_rules entry the shop works out */
-    public const COMPUTED = ['id_tax_rule', 'country_name', 'state', 'state_name', 'tax_name', 'rate'];
+    public const COMPUTED = ['id_tax_rule', 'country_name', 'state_name', 'tax_name', 'rate'];
 
     /** @var int the size of the zip code columns of a fresh install, when the database cannot say */
     private const ZIPCODE_MAX = 12;
@@ -67,9 +67,10 @@ class SomcpToolAddCountryRule
             'Adds a row to one tax rule of International > Taxes > Tax Rules, as the New tax rule panel of '
                 . 'its edit page: Country, State, Zip/Postal code range, Behavior, Tax, Description. A rule '
                 . 'charges nothing without one. Read the rule with somcp_get_tax_rule first; the same call twice '
-                . 'adds the row twice. id_tax comes from somcp_list_taxes. A rule used by orders already placed '
-                . 'gets a new id_tax_rules_group, given in the answer. To create a rule use '
-                . 'somcp_create_tax_rule.',
+                . 'adds it twice. id_tax comes from somcp_list_taxes. A rule used by past orders gets a new '
+                . 'id_tax_rules_group, given in the answer. A row read with somcp_get_tax_rule or deleted with '
+                . 'somcp_delete_country_rule can be given back without id_tax_rule, country_name, state_name, '
+                . 'tax_name and rate. New rule: somcp_create_tax_rule.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -81,12 +82,18 @@ class SomcpToolAddCountryRule
                         'type' => 'string',
                         'description' => 'Merchant. ISO code of the Country, for example US.',
                     ],
+                    'state' => [
+                        'type' => ['string', 'null'],
+                        'description' => 'Merchant. One state, as somcp_get_tax_rule gives it: the ISO code of '
+                            . 'one of the country\'s states, or null for the whole country (All); states for '
+                            . 'several.',
+                    ],
                     'states' => [
                         'type' => 'array',
                         'items' => ['type' => 'string'],
-                        'description' => 'Merchant. ISO codes of the country\'s states, for example ["AL", "FL"]: '
-                            . 'one row each. Left out or empty: the whole country (All). Only for a country '
-                            . 'with states.',
+                        'description' => 'Merchant. The list for several states: ISO codes of the country\'s '
+                            . 'states, for example ["AL", "FL"], one row each. Left out or empty: the whole '
+                            . 'country (All). Only for a country with states.',
                     ],
                     'zipcode_from' => [
                         'type' => 'string',
@@ -152,6 +159,14 @@ class SomcpToolAddCountryRule
             }
         }
 
+        // state is the singular a row is read with, so the row can be given
+        // back as read; states the list for several. Both at once could only
+        // contradict each other.
+        $stateField = array_key_exists('state', $arguments) ? 'state' : 'states';
+        if (array_key_exists('state', $arguments) && array_key_exists('states', $arguments)) {
+            $errors[] = 'state: state or states, not both';
+        }
+
         $country = SomcpToolCreateSupplier::supplierCountry($arguments, $idShop, $errors);
         $states = $country === null ? [] : self::states($arguments, $country, $errors);
         [$zipFrom, $zipTo] = self::zipcodes($arguments, $country, $errors);
@@ -160,7 +175,7 @@ class SomcpToolAddCountryRule
         $description = self::description($arguments, $errors);
 
         if ($errors === [] && $stored !== null && $country !== null && $behavior !== null) {
-            self::unique($idGroup, $country, $states, $behavior, $errors);
+            self::unique($idGroup, $country, $states, $behavior, $errors, 0, $stateField);
         }
         if ($errors !== [] || $stored === null || $country === null || $behavior === null || $idTax === null) {
             return SomcpTool::refused('created', $errors);
@@ -280,7 +295,8 @@ class SomcpToolAddCountryRule
 
     /**
      * The states asked, by id_state, with their ISO code; [0 => ''] for the
-     * whole country.
+     * whole country. Read from state, one code as somcp_get_tax_rule gives
+     * it, or from states, the list.
      *
      * @param array<string, mixed> $arguments
      * @param Country $country
@@ -290,6 +306,25 @@ class SomcpToolAddCountryRule
      */
     private static function states(array $arguments, Country $country, array &$errors): array
     {
+        if (array_key_exists('state', $arguments)) {
+            if (array_key_exists('states', $arguments)) {
+                // Refused in handle(), which names the clash once.
+                return [0 => ''];
+            }
+            $one = $arguments['state'];
+            if ($one === null || $one === '') {
+                // The All a row without a state is read as.
+                return [0 => ''];
+            }
+            if (!(bool) $country->contains_states) {
+                $errors[] = 'state: ' . $country->iso_code . ' has no states, leave the field out';
+
+                return [0 => ''];
+            }
+            $idState = SomcpToolCreateSupplier::stateOf($country, $one, 'state', $errors);
+
+            return $idState > 0 ? [$idState => Tools::strtoupper(trim((string) $one))] : [0 => ''];
+        }
         $given = $arguments['states'] ?? null;
         if ($given === null || $given === []) {
             return [0 => ''];

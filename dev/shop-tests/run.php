@@ -720,10 +720,12 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
     }
 }
 
-// A tax created, then removed (#308): the JSON scenario cannot hold the
-// identifier of a tax it created, and every demo tax is charged by a tax rule
-// row, so none can be the one made, changed or removed here. The tax below is
-// charged by no rule and carried by no order, so it is really deleted at the end.
+// A tax created, changed, then deleted (#308, #309, #310): the JSON scenario
+// cannot hold the identifier of a tax it created, and every demo tax is charged
+// by a tax rule row, so none can be the one made, changed or removed here. The
+// tax below is created, its rate and switch changed, charged by a rule created
+// for it (so disabling it tells the two versions apart), then that row removed
+// and the tax really deleted; whatever is left is cleaned up at the end.
 $createTax = $registry->get('somcp_create_tax');
 if ($createTax !== null) {
     $taxCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
@@ -829,6 +831,44 @@ if ($createTax !== null) {
                                 $failures[] = 'somcp_update_tax (disabling a charged tax on PrestaShop 9): expected it changed, the row kept - ' . excerpt($result);
                             } else {
                                 printf("  %-6s %s\n", 'ok', 'somcp_update_tax (disabling a charged tax, allowed on PrestaShop 9)');
+                            }
+                        }
+
+                        // The tax deleted (#310): refused while the row charges
+                        // it, then the row removed and the tax really deleted.
+                        $deleteTax = $registry->get('somcp_delete_tax');
+                        $deleteRowForTax = $registry->get('somcp_delete_country_rule');
+                        $idRowForTax = (int) ($added['id_tax_rule'][0] ?? 0);
+                        if ($deleteTax !== null && $deleteRowForTax !== null && $idRowForTax > 0) {
+                            $calls += 3;
+                            $result = $taxCall($deleteTax, ['id_tax' => $idTax]);
+                            $text = $taxText($result);
+                            if (empty($result['isError']) || strpos($text, 'Nothing was deleted.') === false
+                                || strpos($text, '- id_tax: charged by 1 row(s)') === false) {
+                                $failures[] = 'somcp_delete_tax (a tax a rule charges): expected a refusal - ' . excerpt($result);
+                            } else {
+                                printf("  %-6s %s\n", 'error', 'somcp_delete_tax (a tax a rule charges, refused)');
+                            }
+
+                            $taxCall($deleteRowForTax, ['id_tax_rule' => $idRowForTax]);
+
+                            $result = $taxCall($deleteTax, ['id_tax' => $idTax]);
+                            $text = $taxText($result);
+                            if (!empty($result['isError']) || strpos($text, '"deleted": true') === false
+                                || strpos($text, '"kept_for_orders": false') === false) {
+                                $failures[] = 'somcp_delete_tax (a tax nothing charges): expected it deleted - ' . excerpt($result);
+                            } else {
+                                printf("  %-6s %s\n", 'ok', 'somcp_delete_tax (a tax nothing charges)');
+                            }
+
+                            $gone = (int) Db::getInstance()->getValue(
+                                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax` WHERE `id_tax` = ' . (int) $idTax . ' AND `deleted` = 0'
+                            );
+                            if ($gone !== 0) {
+                                $failures[] = 'somcp_delete_tax (the tax after deletion): expected it gone from the list, still there';
+                            } else {
+                                printf("  %-6s %s\n", 'ok', 'somcp_delete_tax (the tax gone from the list)');
+                                $idTax = 0;
                             }
                         }
                     }

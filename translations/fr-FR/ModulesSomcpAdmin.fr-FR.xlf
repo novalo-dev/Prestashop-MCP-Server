@@ -1357,6 +1357,11 @@
       <source>Change a tax</source>
       <target>Modifier une taxe</target>
     </trans-unit>
+    <!-- Delete a tax -->
+    <trans-unit id="51e8d443135548b7d91a7e7ceadfc989" resname="Delete a tax">
+      <source>Delete a tax</source>
+      <target>Supprimer une taxe</target>
+    </trans-unit>
     <!-- List files -->
     <trans-unit id="92f00b54c2461cd9c23db65a88cd11e1" resname="List files">
       <source>List files</source>

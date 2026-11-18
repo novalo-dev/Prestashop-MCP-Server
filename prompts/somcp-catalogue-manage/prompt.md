@@ -31,6 +31,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_taxes`
 - `somcp_create_tax`
 - `somcp_update_tax`
+- `somcp_delete_tax`
 - `somcp_create_tax_rule`
 - `somcp_update_tax_rule`
 - `somcp_delete_tax_rule`
@@ -227,6 +228,13 @@ disabling a tax that tax rules charge would delete those rows; the tool refuses
 it, so move the rows with `somcp_update_country_rule` first. A tax carried by
 past orders is kept for them and the change gets a new `id_tax`, which the
 answer gives.
+
+A tax is deleted with `somcp_delete_tax`, after confirming with the merchant by
+name: it is irreversible. It is refused while tax rule rows still charge it, so
+give those countries another tax with `somcp_update_country_rule` or delete the
+rows with `somcp_delete_country_rule` first; to keep a tax for later, switch it
+off with `somcp_update_tax` instead. A tax carried by past orders is kept hidden
+for them and gone from the list.
 
 A missing tax rule is created with `somcp_create_tax_rule`, after reading
 `somcp_list_tax_rules` with `active: true` and with `active: false` (the

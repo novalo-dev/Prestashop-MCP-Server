@@ -39,6 +39,15 @@ for the rows to be moved first; on PrestaShop 9 the rows stay. A tax used by
 past orders is kept unchanged for them and the change applies under a new
 identifier, which the answer gives.
 
+**Delete a tax.** The new tool somcp_delete_tax deletes a tax of International >
+Taxes > Taxes, as the Delete of its row does. It is refused while tax rule rows
+still charge the tax, so those countries are never left untaxed without notice:
+give them another tax with somcp_update_country_rule, or delete the rows with
+somcp_delete_country_rule, first. A tax used by past orders is kept hidden for
+them and removed from the list, as PrestaShop does, and the answer says so. The
+deletion is irreversible; to keep a tax for later, switch it off with
+somcp_update_tax instead.
+
 **Update a tax rule.** The new tool somcp_update_tax_rule changes the name of
 a tax rule of International > Taxes > Tax Rules and whether it is enabled, as
 its edit page and the Enabled column of the list do, and answers with the old

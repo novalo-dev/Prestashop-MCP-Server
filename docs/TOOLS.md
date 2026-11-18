@@ -2827,6 +2827,38 @@ Decision (PrestaShop 8, disabling): refuse rather than follow the back office, w
 - A tax is tied to no shop: the change shows in every shop of a multistore.
 - On 8.0.1 a used tax turned off goes through the core's copy path, which does not delete rows; the refusal above applies only to a tax no order carries.
 
+#### `somcp_delete_tax`
+**State**: written · [issue #310](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/310)
+**Nature**: `acts(DELETE, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one tax of **International > Taxes > Taxes**, as the
+**Delete** of its row. Irreversible.
+
+**Do not use for** - a tax that should stop being charged in one country
+(→ `somcp_delete_country_rule`); turning a tax off (→ `somcp_update_tax`,
+`active`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax` | the row deleted | integer | yes | from `somcp_list_taxes`, the check of `somcp_update_tax` (`notAnIdentifier()`, `notFound()` for a tax missing or flagged deleted) |
+
+Unknown arguments through `SomcpTool::unknownFields()`, with `name`, `rate` and `active` named as worked out by the shop, so a row of `somcp_list_taxes` given whole is understood.
+
+**Refused, nothing written** - a tax that tax rule rows charge: `id_tax: charged by 2 row(s) of the tax rules 1, 9 - give them another tax with somcp_update_country_rule, or delete them with somcp_delete_country_rule first, or those countries would be charged nothing`, counted through `SomcpToolUpdateTax::charging()`.
+
+Decision (rows): refuse rather than delete them with the tax as the back office does, which removes the rows from every rule at once and leaves those countries untaxed with nothing to read back. Refused, the assistant moves or deletes the rows one by one with the country row tools, each of which says what it changes.
+
+**Returns** - `deleted: true`, `id_tax`, `tax` (the row as it was: `name`, `rate`, `active`), and `kept_for_orders`: `true` with a `warning` when the tax was only flagged (an order carries it), `false` when it was really removed.
+
+**Errors** - in the envelope of #169, under `Nothing was deleted.`, every problem at once.
+
+**Notes**
+- Not replayable: the second call finds no tax (`notFound()`).
+- A tax is tied to no shop: gone for every shop of a multistore.
+- The same `Tax::delete()`, handlers and tables on 8.0.1 and 9.0.0.
+
 #### `somcp_list_customer_groups`
 **State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)
 **Nature**: `acts(VIEW, 'AdminGroups')` · **Scope**: `mcp.customers.read`

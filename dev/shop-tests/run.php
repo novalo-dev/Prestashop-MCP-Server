@@ -406,6 +406,72 @@ if ($createStatus !== null && $deleteStatus !== null) {
     }
 }
 
+// A tax rule created then deleted twice (#296): the JSON scenarios cannot
+// hold the identifier of a rule they created, which differs from one version
+// to the other, and every demo rule is still taken by a product or a carrier.
+// The rule must leave no row behind, and deleting it again must be refused
+// rather than read as a success.
+$createTaxRule = $registry->get('somcp_create_tax_rule');
+$deleteTaxRule = $registry->get('somcp_delete_tax_rule');
+if ($createTaxRule !== null && $deleteTaxRule !== null) {
+    $taxRuleCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $taxRuleText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+
+    $calls += 3;
+    try {
+        $result = $taxRuleCall($createTaxRule, ['name' => 'Somcp deleted twice', 'active' => true]);
+        $answer = json_decode(trim($taxRuleText($result)), true);
+        $idRule = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+        if (!empty($result['isError']) || $idRule === 0) {
+            $failures[] = 'somcp_delete_tax_rule (a rule just created): the rule could not be created - ' . excerpt($result);
+        } else {
+            $result = $taxRuleCall($deleteTaxRule, ['id_tax_rules_group' => $idRule]);
+            $text = $taxRuleText($result);
+            $left = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rules_group` WHERE `id_tax_rules_group` = ' . $idRule
+            );
+            $missing = array_filter(['"deleted": true', '"name": "Somcp deleted twice"', '"country_rules_deleted": 0'], static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            });
+            if (!empty($result['isError']) || $missing !== [] || $left !== 0) {
+                $failures[] = 'somcp_delete_tax_rule (a rule just created): expected it deleted with no row left - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_tax_rule (a rule just created)');
+            }
+
+            $result = $taxRuleCall($deleteTaxRule, ['id_tax_rules_group' => $idRule]);
+            $text = $taxRuleText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was deleted') === false
+                || strpos($text, 'no tax rule of this shop has the identifier ' . $idRule) === false) {
+                $failures[] = 'somcp_delete_tax_rule (the same rule again): expected a refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_delete_tax_rule (the same rule again, refused)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_tax_rule (a rule just created): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // A category deleted with a subcategory and a product, once per mode (#227):
 // the JSON scenario only reaches categories with neither, so the reading of
 // the subcategories and the settling of the products never ran. The tree is

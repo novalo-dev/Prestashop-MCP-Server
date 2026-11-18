@@ -31,6 +31,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_taxes`
 - `somcp_create_tax_rule`
 - `somcp_update_tax_rule`
+- `somcp_delete_tax_rule`
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
 - `somcp_create_product`
@@ -217,6 +218,12 @@ The Name of a rule, and whether it is enabled, are changed with
 `somcp_update_tax_rule`, which gives the old and new value of each field it
 changed. A rule that orders already placed carry is refused: it is changed in
 the back office.
+
+A rule is deleted with `somcp_delete_tax_rule` only after reading it with
+`somcp_get_tax_rule` and asking the merchant, by its name: the deletion cannot
+be undone, and switching it off with `somcp_update_tax_rule` keeps it for
+later. It is refused while products or carriers still take it; the products
+get another rule with `somcp_update_product` first.
 
 ## Who fills each field
 

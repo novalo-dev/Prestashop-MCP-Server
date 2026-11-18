@@ -26,6 +26,12 @@ change nothing writes nothing. Until now the assistant could create a tax rule
 but not rename it or switch it off. A rule that orders already placed carry is
 refused for now and is changed in the back office.
 
+**Delete a tax rule.** The new tool somcp_delete_tax_rule deletes a tax rule
+of International > Taxes > Tax Rules with its rows per country, as the Delete
+action of the list does. Unlike the back office, it refuses a rule that
+products or carriers still take, and says how many: deleted, they would be
+sold without tax from then on, on every invoice, without anyone noticing.
+
 ### Changed
 
 **Abandoned carts: one cart or one carrier.** The list can now be narrowed to

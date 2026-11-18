@@ -443,6 +443,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_taxes` | ● List taxes | Taxes › view |
 | `somcp_create_tax_rule` | ✎ Create a tax rule | Tax Rules › add |
 | `somcp_update_tax_rule` | ✎ Update a tax rule | Tax Rules › edit |
+| `somcp_delete_tax_rule` | ✎ Delete a tax rule | Tax Rules › delete |
 
 ### 📊 Stock
 

@@ -1050,6 +1050,10 @@ T = {
  "Modifier une règle de taxes",
  "Modificar una regla de impuestos",
  "Eine Steuerregel ändern"),
+"Delete a tax rule": (
+ "Supprimer une règle de taxes",
+ "Eliminar una regla de impuestos",
+ "Eine Steuerregel löschen"),
 "List taxes": (
  "Lister les taxes",
  "Listar los impuestos",

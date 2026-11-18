@@ -2367,9 +2367,10 @@ its **Name** and **Enable**, as **Add new tax rule** then **Save and stay** do.
 It is the first step of setting up the taxes of a new shop: the rule gets its
 rows per country afterwards, and products take its `id_tax_rules_group`.
 
-**Do not use for** - adding a country, a state or a zip range to a rule,
-deleting a rule (no tool yet); changing a rule (→ `somcp_update_tax_rule`);
-giving a rule to a product (→ `somcp_update_product`, `id_tax_rules_group`).
+**Do not use for** - adding a country, a state or a zip range to a rule (no
+tool yet); changing a rule (→ `somcp_update_tax_rule`); deleting a rule
+(→ `somcp_delete_tax_rule`); giving a rule to a product
+(→ `somcp_update_product`, `id_tax_rules_group`).
 
 **Parameters**
 
@@ -2415,7 +2416,7 @@ do, and so also switches a rule on or off as the **Enabled** column of the
 list does (the same `active` field). Only what is given changes.
 
 **Do not use for** - adding, changing or deleting a country row of the rule
-(no tool yet); deleting a rule (→ `somcp_delete_tax_rule`, #296); giving a
+(no tool yet); deleting a rule (→ `somcp_delete_tax_rule`); giving a
 rule to a product (→ `somcp_update_product`, `id_tax_rules_group`).
 
 **Parameters**
@@ -2457,6 +2458,51 @@ refuses it, `active` not a boolean, unknown arguments through
 - A disabled rule is no longer offered on the product page; products that already have it keep it.
 - Multistore: a tax rule has no per-shop name or status (`tax_rules_group` only), so the change shows in every shop the rule is in, as the back office does it from one shop's context.
 - The same form, fields and class definition on 8.0.1 and 9.0.0 for a rule no order uses; the panel title differs (**Tax Rules** / **Tax rules**), and so can the size of the `tax_rules_group.name` column (see `somcp_create_tax_rule`).
+
+#### `somcp_delete_tax_rule`
+**State**: written · [issue #296](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/296)
+**Nature**: `acts(DELETE, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one tax rule of **International > Taxes > Tax Rules** with
+its rows per country, as the row action **Delete** of the list does
+(**Delete selected** does the same for several, one per call here).
+
+**Do not use for** - switching a rule off (→ `somcp_update_tax_rule`,
+`active: false`), which keeps it for later; deleting one country row of a
+rule (no tool yet).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax_rules_group` | the row deleted | integer | yes | from `somcp_list_tax_rules`; unknown, deleted or not in the token's shop: not found, through `SomcpToolGetTaxRule::existingRule()`, as `somcp_get_tax_rule` answers it |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Refused, nothing deleted** - every reason at once, unlike the back office,
+which deletes the rule and leaves products and carriers pointing at a rule
+that no longer exists, then charged no tax without a word:
+- products of the token's shop on it (`product_shop`): `id_tax_rules_group: used by N products - give them another tax rule with somcp_update_product first, or they would be sold without tax`;
+- carriers of the token's shop on it (`carrier_tax_rules_group_shop`, deleted carriers left out): `id_tax_rules_group: used by N carriers - give them another tax rule in Shipping > Carriers first`;
+- a rule `tax_rules_group_shop` also ties to another shop: `id_tax_rules_group: also used by N other shops of this installation - delete it from the back office in the context of every shop`, since `delete()` removes it from every shop.
+
+One of a kind is said in the singular (`used by 1 carrier`).
+
+**Then** - `TaxRulesGroup::delete()`, as `AdminController::processDelete()`
+calls it for this controller; then `tax_rules_group` is checked to no longer
+hold the row.
+
+**Returns** - `deleted: true`, `id_tax_rules_group`, `name` (read before),
+`country_rules_deleted` (the number of its `tax_rule` rows, read before).
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`, each problem named with its field. A failed `delete()` is reported
+as such, with a hint to read the rule with `somcp_get_tax_rule`.
+
+**Notes**
+- Not replayable: a second call finds nothing and says so.
+- A real deletion, not the `deleted = 1` a change of a used rule leaves: past orders keep their amounts (`order_detail_tax`).
+- No difference between 8.0.1 and 9.0.0: the same controller path, the same `delete()`, the same tables.
 
 #### `somcp_list_taxes`
 **State**: written · [issue #237](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/237)
@@ -5962,7 +6008,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

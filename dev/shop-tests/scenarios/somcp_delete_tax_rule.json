@@ -1,0 +1,9 @@
+{
+  "calls": [
+    {"why": "the rule of the demo products and of three carriers stays, with both reasons at once", "arguments": {"id_tax_rules_group": 9}, "expect": "error", "contains": ["Nothing was deleted.", "- id_tax_rules_group: used by ", " products - give them another tax rule with somcp_update_product first", "carriers - give them another tax rule in Shipping > Carriers first"]},
+    {"why": "the rule of carrier 1 alone stays, said in the singular", "arguments": {"id_tax_rules_group": 1}, "expect": "error", "contains": ["Nothing was deleted.", "- id_tax_rules_group: used by 1 carrier - "]},
+    {"why": "a rule that does not exist", "arguments": {"id_tax_rules_group": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "- id_tax_rules_group: no tax rule of this shop has the identifier 999999", "somcp_list_tax_rules"]},
+    {"why": "not a whole number", "arguments": {"id_tax_rules_group": [1]}, "expect": "error", "contains": ["- id_tax_rules_group: a whole number above 0"]},
+    {"why": "a field this tool does not take", "arguments": {"id_tax_rules_group": 1, "confirm": true}, "expect": "error", "contains": ["- confirm: not a field of this tool"]}
+  ]
+}

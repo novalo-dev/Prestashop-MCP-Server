@@ -32,6 +32,7 @@
     "somcp_list_taxes",
     "somcp_create_tax_rule",
     "somcp_update_tax_rule",
+    "somcp_delete_tax_rule",
     "somcp_list_customer_groups",
     "somcp_list_carriers",
     "somcp_create_product",

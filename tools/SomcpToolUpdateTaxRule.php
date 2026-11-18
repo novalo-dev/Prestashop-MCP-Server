@@ -57,8 +57,8 @@ class SomcpToolUpdateTaxRule
                 . 'page does; Enable also switches the rule on or off as the Enabled column of the list. '
                 . 'id_tax_rules_group comes from somcp_list_tax_rules: never guess one. Only what is given '
                 . 'changes. Show the merchant the change and call once they agree. A rule used by orders '
-                . 'already placed is refused. Not for its country rows. To give a rule to a product use '
-                . 'somcp_update_product.',
+                . 'already placed is refused. Not for its country rows. To delete a rule use '
+                . 'somcp_delete_tax_rule; to give a rule to a product use somcp_update_product.',
             [
                 'type' => 'object',
                 'properties' => [

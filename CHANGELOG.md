@@ -53,6 +53,12 @@ identifier, which the answer gives.
 
 ### Changed
 
+**Taxes: one tax, or the taxes at one rate.** The list of taxes can now be
+narrowed by ID and by rate, as the ID and Rate filters of International >
+Taxes. A rate finds the taxes at exactly that rate: asked for 6, it no longer
+gives 6.25 or 6.85 too, as the filter of the page does. Until now the assistant
+read every tax and picked the right one itself.
+
 **Abandoned carts: one cart or one carrier.** The list can now be narrowed to
 one cart or to the carts of one carrier, as the ID and Carrier filters of
 Orders > Shopping Carts. Carts saved before the carrier was edited are found

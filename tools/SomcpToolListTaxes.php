@@ -52,10 +52,20 @@ class SomcpToolListTaxes
             [
                 'type' => 'object',
                 'properties' => [
+                    'id_tax' => [
+                        'type' => 'integer',
+                        'description' => 'Keep the tax with this identifier (ID), as the filter of the list: '
+                            . 'an identifier no tax has gives an empty list.',
+                    ],
                     'name' => [
                         'type' => 'string',
                         'description' => 'Part of the tax name (Name), case-insensitive, read in the language '
                             . 'of the answer. Left out, every tax.',
+                    ],
+                    'rate' => [
+                        'type' => 'number',
+                        'description' => 'Keep the taxes whose Rate is exactly this number, for example 20 or '
+                            . '5.5, compared at the three decimals the shop stores.',
                     ],
                     'active' => [
                         'type' => 'boolean',
@@ -92,7 +102,22 @@ class SomcpToolListTaxes
         // A misspelt filter, or an Enabled that is not a boolean, would answer
         // another list than the one asked for without a word: refused, with
         // a wrong language among them so the call is corrected in one go.
-        $errors = SomcpTool::unknownFields($arguments, ['name', 'active', 'language']);
+        $errors = SomcpTool::unknownFields($arguments, ['id_tax', 'name', 'rate', 'active', 'language']);
+        $idTax = 0;
+        if (array_key_exists('id_tax', $arguments) && $arguments['id_tax'] !== null) {
+            $idTax = SomcpTool::id($arguments, 'id_tax');
+            if ($idTax === 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_tax');
+            }
+        }
+        $rate = null;
+        if (array_key_exists('rate', $arguments) && $arguments['rate'] !== null) {
+            if ((is_int($arguments['rate']) || is_float($arguments['rate'])) && is_finite((float) $arguments['rate'])) {
+                $rate = round((float) $arguments['rate'], 3);
+            } else {
+                $errors[] = 'rate: a number, for example 20 or 5.5';
+            }
+        }
         if (array_key_exists('active', $arguments) && !is_bool($arguments['active'])) {
             $errors[] = 'active: true or false';
         }
@@ -116,7 +141,16 @@ class SomcpToolListTaxes
         // A tax deleted from the list stays in the table, flagged, when an
         // order used it; the back office list leaves it out, and so does this.
         $query->where('t.`deleted` = 0');
-        // The Enabled (All / Yes / No) and Name filters of the list.
+        // The ID, Rate, Enabled (All / Yes / No) and Name filters of the list.
+        if ($idTax > 0) {
+            $query->where('t.`id_tax` = ' . (int) $idTax);
+        }
+        // An equality where the list matches the rate as text: there, 6 also
+        // finds 6.250 and 6.850, and an assistant given a rate means that one.
+        // Rounded to the three decimals of the column, so 5.5 finds 5.500.
+        if ($rate !== null) {
+            $query->where('t.`rate` = ' . sprintf('%.3F', $rate));
+        }
         if (isset($arguments['active'])) {
             $query->where('t.`active` = ' . (int) $arguments['active']);
         }

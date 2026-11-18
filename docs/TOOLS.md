@@ -2647,7 +2647,9 @@ a product takes a tax rule, never a tax); what a rule applies per country
 
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
+| `id_tax` | **ID** filter | integer | no | the tax with this identifier; one no tax has gives an empty list, as the **ID** filter of `somcp_list_customer_groups` |
 | `name` | **Name** filter | string | no | part of the name, case-insensitive, in the language of the answer; left out, every tax |
+| `rate` | **Rate** filter | number | no | the taxes whose rate is exactly this number, compared at the three decimals of the column (`5.5` finds `5.500`) |
 | `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**, the default of the list) |
 | `language` | | string | no | ISO code for the names, through `SomcpTool::readLanguage()`; the shop default when left out |
 
@@ -2661,6 +2663,8 @@ rate is charged at all) and `language`.
 
 **Errors** - in the envelope `Nothing was read. Correct these and call again:`,
 every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_tax` that is not an identifier (`SomcpTool::notAnIdentifier()`), a `rate`
+that is not a number (`rate: a number, for example 20 or 5.5`), an
 `active` that is not a boolean (`active: true or false`, the line of
 `somcp_list_tax_rules`), a language the shop does not have, named by
 `SomcpTool::languageProblem()` with the ones it has. An empty list is
@@ -2670,6 +2674,7 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 - Read through a query on `tax` and `tax_lang` (left join, so a tax with no name in the language read is still listed), `deleted = 0`, rather than `Tax::getTaxes()`, which takes the language and nothing else and has no name filter. A tax deleted from the list stays in the table with `deleted = 1` when an order used it; the list leaves it out, and so does the tool.
 - Taxes are not tied to a shop (no `tax_shop` table on either version): the same list for every shop.
 - `name` filters as the **Name** filter of `somcp_list_tax_rules`, `somcp_list_manufacturers` and `somcp_list_attachments` do.
+- `rate` is an equality, where the list matches the rate as text: there `6` also finds 6.250, 6.600 and 6.850, while the rate an assistant is given is always the one it means exactly.
 - The same list, columns, filters and tables on 8.0.1 and 9.0.0; 9.0.0 only offers two more **Items per page** choices. The **Tax options** form below the list is not read.
 
 #### `somcp_list_customer_groups`

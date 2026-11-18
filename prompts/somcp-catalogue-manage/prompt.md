@@ -208,7 +208,8 @@ For the rate a customer delivered abroad pays, read the rule with
 `somcp_get_tax_rule`: its `country_rules` give the tax per country, state and
 zip code range, and `country` narrows them to one country.
 The taxes those rows apply, with their `id_tax` and rate, come from
-`somcp_list_taxes`; a product never takes a tax, only a tax rule.
+`somcp_list_taxes`, which `rate` narrows to the taxes at exactly that rate;
+a product never takes a tax, only a tax rule.
 
 A missing tax rule is created with `somcp_create_tax_rule`, after reading
 `somcp_list_tax_rules` with `active: true` and with `active: false` (the

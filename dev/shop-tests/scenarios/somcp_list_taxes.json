@@ -8,6 +8,10 @@
     {"why": "in a language given by ISO code, which the answer names", "arguments": {"language": "EN"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
     {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["- language: not one of the shop's languages, which are ", "en"]},
     {"why": "an active that is not a boolean is refused, not read as all of them", "arguments": {"active": "no"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- active: true or false"]},
+    {"why": "one tax by its identifier (ID)", "arguments": {"id_tax": 1}, "expect": "ok", "contains": ["\"id_tax\": 1", "\"count\": 1"]},
+    {"why": "an identifier no tax has lists nothing", "arguments": {"id_tax": 999999}, "expect": "ok", "contains": ["\"taxes\": []", "\"count\": 0"]},
+    {"why": "a rate no tax has lists nothing, compared exactly rather than as text", "arguments": {"rate": 999}, "expect": "ok", "contains": ["\"taxes\": []"]},
+    {"why": "an identifier and a rate of the wrong kind are refused at once", "arguments": {"id_tax": [1], "rate": "x"}, "expect": "error", "contains": ["- id_tax: a whole number above 0", "- rate: a number, for example 20 or 5.5"]},
     {"why": "a misspelt filter is named, not ignored into a wider list", "arguments": {"nmae": "TVA"}, "expect": "error", "contains": ["- nmae: not a field of this tool"]},
     {"why": "every mistake of the call at once", "arguments": {"active": "yes", "language": "zz", "nmae": "TVA"}, "expect": "error", "contains": ["- nmae: not a field of this tool", "- active: true or false", "- language: not one of the shop's languages, which are "]}
   ]

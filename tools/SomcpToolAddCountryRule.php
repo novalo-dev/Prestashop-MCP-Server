@@ -100,7 +100,7 @@ class SomcpToolAddCountryRule
                     ],
                     'behavior' => [
                         'type' => 'string',
-                        'enum' => array_values(SomcpToolGetTaxRule::BEHAVIORS),
+                        'enum' => SomcpToolGetTaxRule::BEHAVIORS,
                         'description' => 'Merchant. Behavior: this_tax_only (the default), combine or '
                             . 'one_after_another, as somcp_get_tax_rule gives it.',
                     ],
@@ -378,7 +378,7 @@ class SomcpToolAddCountryRule
             ? array_search(trim($arguments['behavior']), SomcpToolGetTaxRule::BEHAVIORS, true)
             : false;
         if ($key === false) {
-            $errors[] = SomcpTool::oneOf('behavior', array_values(SomcpToolGetTaxRule::BEHAVIORS));
+            $errors[] = SomcpTool::oneOf('behavior', SomcpToolGetTaxRule::BEHAVIORS);
 
             return null;
         }

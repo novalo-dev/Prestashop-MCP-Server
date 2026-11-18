@@ -2779,7 +2779,7 @@ Decision (**Rate**): 0 to 100 rather than the form's numeric-in-6-characters, wh
 
 Unknown arguments through `SomcpTool::unknownFields()`, with `id_tax` named as worked out by the shop, so a row of `somcp_list_taxes` can be given back.
 
-**Returns** - `created: true`, `id_tax`, and `tax`, the row of `somcp_list_taxes` for that tax in the shop default language (`id_tax`, `name`, `rate`, `active`), read back through the shared `SomcpToolListTaxes::tax()`. With `active: false` a `warning` tells the merchant to enable the tax before giving it to a rule; on a multistore the answer says the tax exists in every shop (`in_every_shop`).
+**Returns** - `created: true`, `id_tax`, and `tax`, the row of `somcp_list_taxes` for that tax in the shop default language (`id_tax`, `name`, `rate`, `active`), read back through the shared `SomcpToolListTaxes::tax()`. With `active: false` a `warning` tells the merchant to enable the tax before giving it to a rule; on a multistore the answer gives `also_in_other_shops`, the number of other shops the tax now shows in, with a `warning`, as the tax rule tools do.
 
 **Errors** - in the envelope of #169, under `Nothing was created.`, every problem at once.
 
@@ -2818,13 +2818,13 @@ Left out: unchanged. Unknown arguments through `SomcpTool::unknownFields()`; a r
 
 Decision (PrestaShop 8, disabling): refuse rather than follow the back office, which removes the rows from every rule without a word and leaves those countries untaxed with nothing to undo it. Detected with `version_compare(_PS_VERSION_, '9.0.0', '<')`.
 
-**Returns** - `changed: true`, `id_tax` (the new tax for a used one); for a used tax `replaced_id_tax` and a `warning`; `changes` (one entry per field changed: `field`, `old`, `new`); then `tax`, the shared row. Nothing differs: `changed: false`, `id_tax` and `The tax already holds every value given. Nothing was written.`. A multistore shop is told the change shows everywhere (`in_every_shop`).
+**Returns** - `changed: true`, `id_tax` (the new tax for a used one); for a used tax `replaced_id_tax` and a `warning`; `changes` (one entry per field changed: `field`, `old`, `new`); then `tax`, the shared row. Nothing differs: `changed: false`, `id_tax` and `The tax already holds every value given. Nothing was written.`. On a multistore, `also_in_other_shops` gives the number of other shops the change shows in, with a `warning`, as the tax rule tools do.
 
 **Errors** - in the envelope of #169, under `Nothing was changed.`, every problem at once. On a used tax, the rows still on the old tax are counted after the save, whatever the core answered (`SomcpToolUpdateTax::charging()`): a row left there is an error that says what the shop now holds, `The tax was copied to a new identifier, <new>, but <n> row(s) of the tax rules <ids> still charge the old one, <old>, which is now hidden - give them the new tax with somcp_update_country_rule.`, logged as `tax_update_failed` with both identifiers.
 
 **Notes**
 - Replayable: the same call twice changes nothing the second time.
-- A tax is tied to no shop: the change shows in every shop of a multistore.
+- A tax is tied to no shop: the change shows in every shop of a multistore (`also_in_other_shops`, counted by `SomcpToolCreateTax::otherShops()`).
 - On 8.0.1 a used tax turned off goes through the core's copy path, which does not delete rows; the refusal above applies only to a tax no order carries.
 
 #### `somcp_delete_tax`
@@ -2850,7 +2850,7 @@ Unknown arguments through `SomcpTool::unknownFields()`, with `name`, `rate` and 
 
 Decision (rows): refuse rather than delete them with the tax as the back office does, which removes the rows from every rule at once and leaves those countries untaxed with nothing to read back. Refused, the assistant moves or deletes the rows one by one with the country row tools, each of which says what it changes.
 
-**Returns** - `deleted: true`, `id_tax`, `tax` (the row as it was: `name`, `rate`, `active`), and `kept_for_orders`: `true` with a `warning` when the tax was only flagged (an order carries it), `false` when it was really removed.
+**Returns** - `deleted: true`, `id_tax`, `tax` (the row as it was: `name`, `rate`, `active`), and `kept_for_orders`: `true` with a `warning` when the tax was only flagged (an order carries it), `false` when it was really removed. On a multistore, `also_in_other_shops` gives the number of other shops the tax is gone from, with a `warning`.
 
 **Errors** - in the envelope of #169, under `Nothing was deleted.`, every problem at once.
 

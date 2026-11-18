@@ -347,11 +347,11 @@ class SomcpToolCreateTax extends SomcpToolCreateFeature
             $warnings[] = 'The tax is created disabled, as the form\'s default: enable it with somcp_update_tax '
                 . 'before giving it to a tax rule.';
         }
-        $shops = self::shopCount();
-        if ($shops > 1) {
-            $result['in_every_shop'] = true;
+        $otherShops = self::otherShops();
+        if ($otherShops > 0) {
+            $result['also_in_other_shops'] = $otherShops;
             $warnings[] = 'A tax is not tied to a shop: this tax now exists in every shop of this installation ('
-                . $shops . ').';
+                . ($otherShops + 1) . ').';
         }
         if ($warnings !== []) {
             $result['warning'] = implode(' ', $warnings);
@@ -365,19 +365,20 @@ class SomcpToolCreateTax extends SomcpToolCreateFeature
     }
 
     /**
-     * How many shops this installation has.
+     * How many shops other than the one of the token a tax shows in.
      *
-     * A tax shows in every one of them; the answer says so past the first, so
-     * the merchant is not surprised to find the tax in another shop.
+     * A tax is in no shop table, so it shows in every shop of the
+     * installation. Public so the three tax tools answer it under the same
+     * also_in_other_shops as the tax rule tools, counted one way.
      *
-     * @return int
+     * @return int 0 without multistore
      */
-    protected static function shopCount(): int
+    public static function otherShops(): int
     {
         if (!Shop::isFeatureActive()) {
-            return 1;
+            return 0;
         }
 
-        return count(Shop::getShops(false));
+        return max(0, count(Shop::getShops(false)) - 1);
     }
 }

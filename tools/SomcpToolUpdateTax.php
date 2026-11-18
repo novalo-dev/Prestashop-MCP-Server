@@ -390,11 +390,11 @@ class SomcpToolUpdateTax extends SomcpToolCreateTax
                 . 'gives the tax a new identifier, ' . $newId . '. The tax rules now charge the new one.';
         }
         $result['changes'] = $plan['changes'];
-        $shops = self::shopCount();
-        if ($shops > 1) {
-            $result['in_every_shop'] = true;
+        $otherShops = self::otherShops();
+        if ($otherShops > 0) {
+            $result['also_in_other_shops'] = $otherShops;
             $warnings[] = 'A tax is not tied to a shop: the change shows in every shop of this installation ('
-                . $shops . ').';
+                . ($otherShops + 1) . ').';
         }
         if ($warnings !== []) {
             $result['warning'] = implode(' ', $warnings);

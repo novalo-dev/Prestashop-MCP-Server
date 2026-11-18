@@ -763,7 +763,8 @@ if ($createTax !== null) {
                 return strpos($text, $needle) === false;
             }
         );
-        if (!empty($result['isError']) || $idTax === 0 || $missing !== []) {
+        // The old key of the other shops (#314) must not come back beside also_in_other_shops.
+        if (!empty($result['isError']) || $idTax === 0 || $missing !== [] || strpos($text, '"in_every_shop"') !== false) {
             $failures[] = 'somcp_create_tax (a disabled tax): expected it created with its rate and the warning - ' . excerpt($result);
         } else {
             printf("  %-6s %s\n", 'ok', 'somcp_create_tax (a disabled tax)');
@@ -784,7 +785,7 @@ if ($createTax !== null) {
                 $missing = array_filter($needles, static function (string $needle) use ($text): bool {
                     return strpos($text, $needle) === false;
                 });
-                if (!empty($result['isError']) || $missing !== []) {
+                if (!empty($result['isError']) || $missing !== [] || strpos($text, '"in_every_shop"') !== false) {
                     $failures[] = 'somcp_update_tax (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
                 } else {
                     printf("  %-6s %s\n", 'ok', 'somcp_update_tax (' . $why . ')');
@@ -855,7 +856,8 @@ if ($createTax !== null) {
                             $result = $taxCall($deleteTax, ['id_tax' => $idTax]);
                             $text = $taxText($result);
                             if (!empty($result['isError']) || strpos($text, '"deleted": true') === false
-                                || strpos($text, '"kept_for_orders": false') === false) {
+                                || strpos($text, '"kept_for_orders": false') === false
+                                || strpos($text, '"in_every_shop"') !== false) {
                                 $failures[] = 'somcp_delete_tax (a tax nothing charges): expected it deleted - ' . excerpt($result);
                             } else {
                                 printf("  %-6s %s\n", 'ok', 'somcp_delete_tax (a tax nothing charges)');

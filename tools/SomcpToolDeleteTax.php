@@ -169,9 +169,21 @@ class SomcpToolDeleteTax
             'tax' => $before,
             'kept_for_orders' => $kept,
         ];
+        $warnings = [];
         if ($kept) {
-            $result['warning'] = 'This tax is used by orders already placed: PrestaShop keeps it hidden for them, '
+            $warnings[] = 'This tax is used by orders already placed: PrestaShop keeps it hidden for them, '
                 . 'and it is gone from the list.';
+        }
+        // Said as the tax rule tools say it, so a merchant with several shops
+        // knows the tax is gone from the others too.
+        $otherShops = SomcpToolCreateTax::otherShops();
+        if ($otherShops > 0) {
+            $result['also_in_other_shops'] = $otherShops;
+            $warnings[] = 'A tax is not tied to a shop: it is gone from every shop of this installation ('
+                . ($otherShops + 1) . ').';
+        }
+        if ($warnings !== []) {
+            $result['warning'] = implode(' ', $warnings);
         }
 
         return SomcpTool::json($result);

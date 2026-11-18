@@ -2416,8 +2416,8 @@ do, and so also switches a rule on or off as the **Enabled** column of the
 list does (the same `active` field). Only what is given changes.
 
 **Do not use for** - adding a country row to the rule
-(→ `somcp_add_country_rule`); changing or deleting one (no tool yet);
-deleting a rule (→ `somcp_delete_tax_rule`); giving a
+(→ `somcp_add_country_rule`); deleting one (→ `somcp_delete_country_rule`);
+changing one (no tool yet); deleting a rule (→ `somcp_delete_tax_rule`); giving a
 rule to a product (→ `somcp_update_product`, `id_tax_rules_group`).
 
 **Parameters**
@@ -2485,7 +2485,8 @@ its rows per country, as the row action **Delete** of the list does
 
 **Do not use for** - switching a rule off (→ `somcp_update_tax_rule`,
 `active: false`), which keeps it for later; deleting one country row of a
-rule (no tool yet); adding a country row (→ `somcp_add_country_rule`).
+rule (→ `somcp_delete_country_rule`); adding a country row
+(→ `somcp_add_country_rule`).
 
 **Parameters**
 
@@ -2531,7 +2532,8 @@ and a description. A rule without a row charges nothing.
 
 **Do not use for** - every country at once (**All**, not yet); creating a
 rule (→ `somcp_create_tax_rule`); renaming or switching a rule off
-(→ `somcp_update_tax_rule`); changing or deleting a row (no tool yet).
+(→ `somcp_update_tax_rule`); deleting a row (→ `somcp_delete_country_rule`);
+changing a row (no tool yet).
 
 **Parameters**
 
@@ -2554,8 +2556,8 @@ Unknown arguments through `SomcpTool::unknownFields()`; `id_tax_rule`,
 worked out by the shop.
 
 **Refused, nothing written** - every problem at once:
-- a country and state that already have a **This tax only** row, through `TaxRulesGroup::hasUniqueTaxRuleForCountry()` as the form checks it: `states: US AL already has a This tax only row in this rule - delete it first` (`country: US ...` without a state);
-- a **This tax only** row asked where the country and state already have any row, which the form lets through although the other rows would never apply: `states: US AL already has a row in this rule, and a This tax only row must be alone - choose combine or one_after_another, or delete that row first`.
+- a country and state that already have a **This tax only** row, through `TaxRulesGroup::hasUniqueTaxRuleForCountry()` as the form checks it: `states: US AL already has a This tax only row in this rule - delete it with somcp_delete_country_rule first` (`country: US ...` without a state);
+- a **This tax only** row asked where the country and state already have any row, which the form lets through although the other rows would never apply: `states: US AL already has a row in this rule, and a This tax only row must be alone - choose combine or one_after_another, or delete that row with somcp_delete_country_rule first`.
 
 **Then** - one `TaxRule` per state (or one with `id_state` 0), then `add()`;
 a failure after the first row deletes the rows the call added, so a call adds
@@ -2579,6 +2581,54 @@ such, with a hint to read the rule with `somcp_get_tax_rule`.
 - Not replayable: the same call twice adds the rows twice (unless the first is **This tax only**, then refused). Read the rule first, and again if an answer is lost.
 - A row with no state applies to the whole country; a **Combine** or **One after another** row adds to the other rows that match an address.
 - No difference between 8.0.1 and 9.0.0: the same panel and table; `TaxRule` gives no size on 8.0.1, hence the limits read from the columns.
+
+#### `somcp_delete_country_rule`
+**State**: written · [issue #304](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/304)
+**Nature**: `acts(DELETE, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one row of a tax rule of **International > Taxes > Tax
+Rules**, as the row **Delete** of the list on its edit page does (**Delete
+selected** does the same for several, one per call here).
+
+**Do not use for** - deleting the whole rule (→ `somcp_delete_tax_rule`);
+switching a rule off (→ `somcp_update_tax_rule`, `active: false`); adding a
+row (→ `somcp_add_country_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax_rule` | the row deleted | integer | yes | from `somcp_get_tax_rule`, `country_rules[].id_tax_rule`; read with `SomcpTool::id()`; its rule must pass `SomcpToolGetTaxRule::existingRule()` for the token's shop, otherwise `id_tax_rule: no country row of a tax rule of this shop has the identifier <n> - find it with somcp_get_tax_rule`, so a row of a deleted rule or of another shop's rule is not found |
+
+Unknown arguments through `SomcpTool::unknownFields()`. No
+`id_tax_rules_group`: the row names its rule, and a second identifier could
+only contradict it.
+
+**Then** - the row read before, through `SomcpToolGetTaxRule::countryRule()`;
+`TaxRule::delete()`, then `tax_rule` is checked to no longer hold the row;
+then `update()` on the rule, for the token's shop only, as
+`updateTaxRulesGroup()` does, so its `date_upd` says when it last changed. A
+rule an order line carries (`TaxRulesGroup::isUsed()`) is first replaced by a
+copy under a new identifier, through `SomcpToolUpdateTaxRule::replaceUsed()`,
+and the same row is deleted from the copy, as PrestaShop 9 does it. The last
+row may go: the rule stays, charging nothing.
+
+**Returns** - `deleted: true`, `id_tax_rule`, `id_tax_rules_group` (the
+copy's for a used rule, with `replaced_id_tax_rules_group`), `country_rule`
+(the row as it was, a `country_rules` entry of `somcp_get_tax_rule`), then
+`tax_rule` as `somcp_get_tax_rule` returns it after the deletion. A `warning`
+when the last row went while products or carriers of the token's shop take
+the rule (the counts of `SomcpToolDeleteTaxRule::users()`), and
+`also_in_other_shops` when `tax_rules_group_shop` ties the rule to other
+shops.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`, each problem named with its field. A failed `delete()` is reported
+as such, with a hint to read the rule with `somcp_get_tax_rule`.
+
+**Notes**
+- Not replayable: a second call finds nothing and says so.
+- No difference between 8.0.1 and 9.0.0 for an unused rule: the same controller path, the same `TaxRule::delete()`, the same table; for a used rule the copy is made the same way on both.
 
 #### `somcp_list_taxes`
 **State**: written · [issue #237](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/237)

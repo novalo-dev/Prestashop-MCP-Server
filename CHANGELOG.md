@@ -43,6 +43,14 @@ that would clash with another row of the same country and state. A rule used
 by past orders keeps its old version for them, and the rows go on a copy under
 a new identifier, which the answer gives.
 
+**Delete a country from a tax rule.** The new tool somcp_delete_country_rule
+deletes one row of a tax rule, as the Delete of that row on the rule's edit
+page does, and answers with the row as it was and the rule as it is left.
+When the last row of a rule goes while products or carriers still take it, the
+answer says how many, since they are now sold without tax. A rule used by past
+orders keeps the row for them, and the deletion applies to a copy under a new
+identifier, which the answer gives.
+
 ### Changed
 
 **Abandoned carts: one cart or one carrier.** The list can now be narrowed to

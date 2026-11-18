@@ -1332,6 +1332,11 @@
       <source>Add a country to a tax rule</source>
       <target>Añadir un país a una regla de impuestos</target>
     </trans-unit>
+    <!-- Delete a country from a tax rule -->
+    <trans-unit id="16f8d7c2a66e8428af1e2ba43d261275" resname="Delete a country from a tax rule">
+      <source>Delete a country from a tax rule</source>
+      <target>Eliminar un país de una regla de impuestos</target>
+    </trans-unit>
     <!-- List taxes -->
     <trans-unit id="0fd7b8361fef733e7f4558af57526e46" resname="List taxes">
       <source>List taxes</source>

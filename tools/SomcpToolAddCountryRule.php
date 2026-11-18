@@ -468,7 +468,8 @@ class SomcpToolAddCountryRule
             $where = $country->iso_code . ($iso === '' ? '' : ' ' . $iso);
             // The core's own test, the one its edit page runs before each row.
             if ($group->hasUniqueTaxRuleForCountry((int) $country->id, (int) $idState)) {
-                $errors[] = $field . ': ' . $where . ' already has a This tax only row in this rule - delete it first';
+                $errors[] = $field . ': ' . $where . ' already has a This tax only row in this rule - delete it with '
+                    . 'somcp_delete_country_rule first';
                 continue;
             }
             if ($behavior === 0 && (int) Db::getInstance()->getValue(
@@ -476,7 +477,7 @@ class SomcpToolAddCountryRule
                 . ' AND `id_country` = ' . (int) $country->id . ' AND `id_state` = ' . (int) $idState
             ) > 0) {
                 $errors[] = $field . ': ' . $where . ' already has a row in this rule, and a This tax only row must '
-                    . 'be alone - choose combine or one_after_another, or delete that row first';
+                    . 'be alone - choose combine or one_after_another, or delete that row with somcp_delete_country_rule first';
             }
         }
     }

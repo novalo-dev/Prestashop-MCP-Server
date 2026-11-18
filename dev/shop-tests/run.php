@@ -494,7 +494,7 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
         $failures[] = 'somcp_delete_tax_rule (a rule just created): ' . get_class($e) . ' - ' . $e->getMessage();
     }
 
-    // Rows added to a rule just created (#303): the scenario cannot hold the
+    // Rows added to a rule just created, then deleted (#303, #304): the scenario cannot hold the
     // identifier of the rule, and every demo rule is taken by orders, so the
     // working addition is tried here, then the rule is deleted whatever happens.
     $addCountryRule = $registry->get('somcp_add_country_rule');
@@ -531,6 +531,34 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
                 $failures[] = 'somcp_add_country_rule (the same rows again): expected a refusal - ' . excerpt($result);
             } else {
                 printf("  %-6s %s\n", 'error', 'somcp_add_country_rule (the same rows again, refused)');
+            }
+
+            // The two rows deleted one by one (#304), the rule left with none,
+            // then the same row again refused rather than read as a success.
+            $deleteCountryRule = $registry->get('somcp_delete_country_rule');
+            $rowIds = is_array($answer) ? array_map('intval', $answer['id_tax_rule'] ?? []) : [];
+            if ($deleteCountryRule !== null && count($rowIds) === 2) {
+                $calls += 3;
+                foreach ($rowIds as $step => $idRowDeleted) {
+                    $result = $taxRuleCall($deleteCountryRule, ['id_tax_rule' => $idRowDeleted]);
+                    $answerDeleted = json_decode(trim($taxRuleText($result)), true);
+                    $rulesLeft = is_array($answerDeleted) ? ($answerDeleted['tax_rule']['country_rules'] ?? null) : null;
+                    if (!empty($result['isError']) || !is_array($answerDeleted) || ($answerDeleted['deleted'] ?? false) !== true
+                        || (int) ($answerDeleted['country_rule']['id_tax_rule'] ?? 0) !== $idRowDeleted
+                        || !is_array($rulesLeft) || count($rulesLeft) !== 1 - $step) {
+                        $failures[] = 'somcp_delete_country_rule (row ' . ($step + 1) . ' of a rule just created): expected it deleted - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_delete_country_rule (row ' . ($step + 1) . ' of a rule just created)');
+                    }
+                }
+                $result = $taxRuleCall($deleteCountryRule, ['id_tax_rule' => $rowIds[0]]);
+                $text = $taxRuleText($result);
+                if (empty($result['isError']) || strpos($text, 'Nothing was deleted.') === false
+                    || strpos($text, 'has the identifier ' . $rowIds[0]) === false) {
+                    $failures[] = 'somcp_delete_country_rule (the same row again): expected a refusal - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'error', 'somcp_delete_country_rule (the same row again, refused)');
+                }
             }
         } catch (Throwable $e) {
             $failures[] = 'somcp_add_country_rule (two states of a rule just created): ' . get_class($e) . ' - ' . $e->getMessage();

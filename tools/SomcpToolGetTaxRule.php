@@ -217,15 +217,36 @@ class SomcpToolGetTaxRule
     }
 
     /**
+     * One row of the rule, in the shape of a country_rules entry, or null
+     * when the rule has no such row.
+     *
+     * Public so the tools that change a row answer with it as this tool
+     * reads it, rather than with a second shape that could drift.
+     *
+     * @param int $idGroup
+     * @param int $idTaxRule
+     * @param int $idLang
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function countryRule(int $idGroup, int $idTaxRule, int $idLang): ?array
+    {
+        $rows = self::rows($idGroup, $idLang, 0, $idTaxRule);
+
+        return $rows[0] ?? null;
+    }
+
+    /**
      * The rows of the rule, in the order of the list of its edit page.
      *
      * @param int $idGroup
      * @param int $idLang
      * @param int $idCountry 0 for every country
+     * @param int $idTaxRule 0 for every row
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function rows(int $idGroup, int $idLang, int $idCountry): array
+    private static function rows(int $idGroup, int $idLang, int $idCountry, int $idTaxRule = 0): array
     {
         // Left joins: a row may point at a tax deleted since, or at no state,
         // and the edit page still lists it.
@@ -242,6 +263,9 @@ class SomcpToolGetTaxRule
         $query->where('tr.`id_tax_rules_group` = ' . (int) $idGroup);
         if ($idCountry > 0) {
             $query->where('tr.`id_country` = ' . (int) $idCountry);
+        }
+        if ($idTaxRule > 0) {
+            $query->where('tr.`id_tax_rule` = ' . (int) $idTaxRule);
         }
         $query->orderBy('tr.`id_tax_rule` ASC');
 

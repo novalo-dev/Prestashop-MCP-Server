@@ -160,38 +160,58 @@ class SomcpToolDeleteTaxRule
      */
     private static function stillUsed(int $idGroup, int $idShop): array
     {
-        $db = Db::getInstance();
         $problems = [];
+        ['products' => $products, 'carriers' => $carriers, 'shops' => $shops] = self::users($idGroup, $idShop);
 
-        $products = (int) $db->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'product_shop`'
-            . ' WHERE `id_tax_rules_group` = ' . (int) $idGroup . ' AND `id_shop` = ' . (int) $idShop
-        );
         if ($products > 0) {
             $problems[] = 'id_tax_rules_group: used by ' . $products . ' product' . ($products > 1 ? 's' : '')
                 . ' - give them another tax rule with somcp_update_product first, or they would be sold without tax';
         }
 
-        // A deleted carrier keeps its row here, but is never offered again.
-        $carriers = (int) $db->getValue(
-            'SELECT COUNT(DISTINCT ct.`id_carrier`) FROM `' . _DB_PREFIX_ . 'carrier_tax_rules_group_shop` ct'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'carrier` c ON c.`id_carrier` = ct.`id_carrier` AND c.`deleted` = 0'
-            . ' WHERE ct.`id_tax_rules_group` = ' . (int) $idGroup . ' AND ct.`id_shop` = ' . (int) $idShop
-        );
         if ($carriers > 0) {
             $problems[] = 'id_tax_rules_group: used by ' . $carriers . ' carrier' . ($carriers > 1 ? 's' : '')
                 . ' - give them another tax rule in Shipping > Carriers first';
         }
 
-        $shops = (int) $db->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rules_group_shop`'
-            . ' WHERE `id_tax_rules_group` = ' . (int) $idGroup . ' AND `id_shop` != ' . (int) $idShop
-        );
         if ($shops > 0) {
             $problems[] = 'id_tax_rules_group: also used by ' . $shops . ' other shop' . ($shops > 1 ? 's' : '')
                 . ' of this installation - delete it from the back office in the context of every shop';
         }
 
         return $problems;
+    }
+
+    /**
+     * How many products and carriers of the shop take the rule, and how
+     * many other shops have it.
+     *
+     * Public so the tool that deletes the last row of a rule warns about the
+     * same products and carriers this one refuses for.
+     *
+     * @param int $idGroup
+     * @param int $idShop
+     *
+     * @return array{products: int, carriers: int, shops: int}
+     */
+    public static function users(int $idGroup, int $idShop): array
+    {
+        $db = Db::getInstance();
+
+        return [
+            'products' => (int) $db->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'product_shop`'
+                . ' WHERE `id_tax_rules_group` = ' . (int) $idGroup . ' AND `id_shop` = ' . (int) $idShop
+            ),
+            // A deleted carrier keeps its row here, but is never offered again.
+            'carriers' => (int) $db->getValue(
+                'SELECT COUNT(DISTINCT ct.`id_carrier`) FROM `' . _DB_PREFIX_ . 'carrier_tax_rules_group_shop` ct'
+                . ' INNER JOIN `' . _DB_PREFIX_ . 'carrier` c ON c.`id_carrier` = ct.`id_carrier` AND c.`deleted` = 0'
+                . ' WHERE ct.`id_tax_rules_group` = ' . (int) $idGroup . ' AND ct.`id_shop` = ' . (int) $idShop
+            ),
+            'shops' => (int) $db->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rules_group_shop`'
+                . ' WHERE `id_tax_rules_group` = ' . (int) $idGroup . ' AND `id_shop` != ' . (int) $idShop
+            ),
+        ];
     }
 }

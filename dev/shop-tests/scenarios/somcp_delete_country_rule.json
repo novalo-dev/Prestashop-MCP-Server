@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "a row that does not exist", "arguments": {"id_tax_rule": 999999}, "expect": "error", "contains": ["Nothing was deleted.", "- id_tax_rule: ", "somcp_get_tax_rule"]},
+    {"why": "a list is not an identifier", "arguments": {"id_tax_rule": [1]}, "expect": "error", "contains": ["Nothing was deleted.", "- id_tax_rule: a whole number above 0"]},
+    {"why": "the rule is named by the row, not given", "arguments": {"id_tax_rule": 1, "id_tax_rules_group": 1}, "expect": "error", "contains": ["Nothing was deleted.", "- id_tax_rules_group: not a field of this tool"]}
+  ]
+}

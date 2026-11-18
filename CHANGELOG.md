@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Create a tax.** The new tool somcp_create_tax creates a tax of International >
+Taxes > Taxes, with its name in each language, its rate and whether it is
+enabled, as the Add new tax form does, and answers with the tax as the list
+shows it. Until now the assistant could list the taxes a shop had but not make a
+new one, so a rate the install did not provide (a reduced VAT, a new sales tax)
+could not be set up at all; now a tax rule can be given a rate the merchant
+needs. A tax is created disabled, as the form's default, and is shared by every
+shop of a multistore, as PrestaShop stores it.
+
 **Update a tax rule.** The new tool somcp_update_tax_rule changes the name of
 a tax rule of International > Taxes > Tax Rules and whether it is enabled, as
 its edit page and the Enabled column of the list do, and answers with the old

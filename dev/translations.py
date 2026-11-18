@@ -1070,6 +1070,10 @@ T = {
  "Lister les taxes",
  "Listar los impuestos",
  "Steuern auflisten"),
+"Create a tax": (
+ "Créer une taxe",
+ "Crear un impuesto",
+ "Eine Steuer anlegen"),
 "List files": (
  "Lister les fichiers",
  "Listar los archivos",

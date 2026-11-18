@@ -720,6 +720,65 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
     }
 }
 
+// A tax created, then removed (#308): the JSON scenario cannot hold the
+// identifier of a tax it created, and every demo tax is charged by a tax rule
+// row, so none can be the one made, changed or removed here. The tax below is
+// charged by no rule and carried by no order, so it is really deleted at the end.
+$createTax = $registry->get('somcp_create_tax');
+if ($createTax !== null) {
+    $taxCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $taxText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+
+    $calls += 1;
+    $idTax = 0;
+    try {
+        $result = $taxCall($createTax, ['languages' => ['en'], 'name' => ['en' => 'Somcp test tax'], 'rate' => 1.234]);
+        $answer = json_decode(trim($taxText($result)), true);
+        $idTax = is_array($answer) ? (int) ($answer['id_tax'] ?? 0) : 0;
+        $text = $taxText($result);
+        $missing = array_filter(
+            ['"created": true', '"rate": 1.234', '"active": false', 'enable it with somcp_update_tax'],
+            static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }
+        );
+        if (!empty($result['isError']) || $idTax === 0 || $missing !== []) {
+            $failures[] = 'somcp_create_tax (a disabled tax): expected it created with its rate and the warning - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_tax (a disabled tax)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_tax (a disabled tax): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // No rule charges it and no order carries it, so it is really removed.
+        if ($idTax > 0) {
+            $tax = new Tax($idTax);
+            if (Validate::isLoadedObject($tax)) {
+                $tax->delete();
+            }
+        }
+    }
+}
+
 // A category deleted with a subcategory and a product, once per mode (#227):
 // the JSON scenario only reaches categories with neither, so the reading of
 // the subcategories and the settling of the products never ran. The tree is

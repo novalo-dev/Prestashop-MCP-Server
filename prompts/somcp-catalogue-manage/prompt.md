@@ -29,6 +29,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_tax_rules`
 - `somcp_get_tax_rule`
 - `somcp_list_taxes`
+- `somcp_create_tax`
 - `somcp_create_tax_rule`
 - `somcp_update_tax_rule`
 - `somcp_delete_tax_rule`
@@ -211,6 +212,12 @@ zip code range, and `country` narrows them to one country.
 The taxes those rows apply, with their `id_tax` and rate, come from
 `somcp_list_taxes`, which `rate` narrows to the taxes at exactly that rate;
 a product never takes a tax, only a tax rule.
+
+A rate a shop does not have yet is created with `somcp_create_tax`, after
+reading `somcp_list_taxes`: give one `name` per language and a `rate` from 0 to
+100. It is created disabled unless `active` is `true`, and a tax rule can only
+charge an enabled tax, so enable it before giving its `id_tax` to
+`somcp_add_country_rule`. The name is the merchant's; never invent a rate.
 
 A missing tax rule is created with `somcp_create_tax_rule`, after reading
 `somcp_list_tax_rules` with `active: true` and with `active: false` (the

@@ -1347,6 +1347,11 @@
       <source>List taxes</source>
       <target>Steuern auflisten</target>
     </trans-unit>
+    <!-- Create a tax -->
+    <trans-unit id="a359ec56c8052fe0440c1f859793be63" resname="Create a tax">
+      <source>Create a tax</source>
+      <target>Eine Steuer anlegen</target>
+    </trans-unit>
     <!-- List files -->
     <trans-unit id="92f00b54c2461cd9c23db65a88cd11e1" resname="List files">
       <source>List files</source>

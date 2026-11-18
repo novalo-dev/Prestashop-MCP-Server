@@ -164,12 +164,7 @@ class SomcpToolListTaxes
 
         $taxes = [];
         foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
-            $taxes[] = [
-                'id_tax' => (int) $row['id_tax'],
-                'name' => (string) ($row['name'] ?? ''),
-                'rate' => (float) $row['rate'],
-                'active' => (bool) $row['active'],
-            ];
+            $taxes[] = self::row($row);
         }
 
         return SomcpTool::json([
@@ -180,5 +175,48 @@ class SomcpToolListTaxes
             'taxes_enabled' => (bool) Configuration::get('PS_TAX', null, null, $idShop),
             'language' => $iso,
         ]);
+    }
+
+    /**
+     * One tax read back as a row of this list, or null when none has the identifier.
+     *
+     * The row the tax write tools answer with, so a created, changed or
+     * deleted tax reads with the same fields under the same names as the list.
+     * A tax flagged deleted (kept for past orders) is not read, as the list
+     * leaves it out.
+     *
+     * @param int $idTax
+     * @param int $idLang the language the name is read in
+     *
+     * @return array{id_tax: int, name: string, rate: float, active: bool}|null
+     */
+    public static function tax(int $idTax, int $idLang): ?array
+    {
+        $query = new DbQuery();
+        $query->select('t.`id_tax`, tl.`name`, t.`rate`, t.`active`');
+        $query->from('tax', 't');
+        $query->leftJoin('tax_lang', 'tl', 'tl.`id_tax` = t.`id_tax` AND tl.`id_lang` = ' . (int) $idLang);
+        $query->where('t.`id_tax` = ' . (int) $idTax);
+        $query->where('t.`deleted` = 0');
+        $row = Db::getInstance()->getRow($query);
+
+        return is_array($row) && $row !== [] ? self::row($row) : null;
+    }
+
+    /**
+     * One database row mapped to the fields of this list.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array{id_tax: int, name: string, rate: float, active: bool}
+     */
+    private static function row(array $row): array
+    {
+        return [
+            'id_tax' => (int) $row['id_tax'],
+            'name' => (string) ($row['name'] ?? ''),
+            'rate' => (float) $row['rate'],
+            'active' => (bool) $row['active'],
+        ];
     }
 }

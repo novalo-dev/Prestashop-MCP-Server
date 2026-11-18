@@ -2751,6 +2751,42 @@ that is not a number (`rate: a number, for example 20 or 5.5`), an
 - `name` filters as the **Name** filter of `somcp_list_tax_rules`, `somcp_list_manufacturers` and `somcp_list_attachments` do.
 - `rate` is an equality, where the list matches the rate as text: there `6` also finds 6.250, 6.600 and 6.850, while the rate an assistant is given is always the one it means exactly.
 - The same list, columns, filters and tables on 8.0.1 and 9.0.0; 9.0.0 only offers two more **Items per page** choices. The **Tax options** form below the list is not read.
+- The taxes are created, changed and deleted with `somcp_create_tax`.
+
+#### `somcp_create_tax`
+**State**: written · [issue #308](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/308)
+**Nature**: `acts(ADD, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`
+
+**Does** - creates one tax of **International > Taxes > Taxes**, as **Add new
+tax** then **Save**: a **Name** per language, a **Rate** and **Enable**. A tax
+rule charges a tax per country (`somcp_add_country_rule`, `id_tax`): this is
+how a rate the install did not provide is made.
+
+**Do not use for** - the rate a country charges in a rule (→ a tax rule row,
+`somcp_add_country_rule`, which takes this `id_tax`); a product's tax
+(→ `somcp_update_product`, which takes a tax rule, never a tax).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages` | | array of strings | no | ISO codes of the languages the `name` is given in, through `SomcpToolCreateProduct::languages()`; every active language by default, a language left out taking the default one's text (`completeTexts()`) |
+| `name` | **Name** | object by ISO code | yes | one text per language being filled (a plain string when one is), each trimmed, at most the size of `tax_lang.name` (`SomcpTool::columnSize()`, 32), checked with `validateField('name', ...)` on a `Tax`: `name (fr): 32 characters at most, 40 given`, `name (fr): a character PrestaShop refuses in a tax name (< > = { }) - ...` |
+| `rate` | **Rate** | number | yes | a percentage from 0 to 100 with at most three decimals, `rate: a number from 0 to 100, at most three decimals, for example 20 or 5.5`; stored as given (`5.5` is `5.500`) |
+| `active` | **Enable** | boolean | no | left out, `false`, the form's default; not a boolean: `active: true or false` |
+
+Decision (**Rate**): 0 to 100 rather than the form's numeric-in-6-characters, which takes `-5` and `999999`; a rate out of range would charge every order of the countries the tax is given to. The three decimals are the column's: a fourth is refused rather than stored rounded.
+
+Unknown arguments through `SomcpTool::unknownFields()`, with `id_tax` named as worked out by the shop, so a row of `somcp_list_taxes` can be given back.
+
+**Returns** - `created: true`, `id_tax`, and `tax`, the row of `somcp_list_taxes` for that tax in the shop default language (`id_tax`, `name`, `rate`, `active`), read back through the shared `SomcpToolListTaxes::tax()`. With `active: false` a `warning` tells the merchant to enable the tax before giving it to a rule; on a multistore the answer says the tax exists in every shop (`in_every_shop`).
+
+**Errors** - in the envelope of #169, under `Nothing was created.`, every problem at once.
+
+**Notes**
+- Not replayable: the same call twice creates two taxes, as the form does; the description says to read `somcp_list_taxes` first.
+- A tax is tied to no shop (no `tax_shop` table): the same tax for every shop of a multistore.
+- The same fields, checks and tables on 8.0.1 and 9.0.0; `Validate::isGenericName()` refuses `< > = { }` on both.
 
 #### `somcp_list_customer_groups`
 **State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)

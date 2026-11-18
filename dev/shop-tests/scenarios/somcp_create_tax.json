@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "a rate above 100 is refused", "arguments": {"name": {"en": "x"}, "rate": 120}, "expect": "error", "contains": ["Nothing was created. Correct these and call again:", "- rate: a number from 0 to 100"]},
+    {"why": "a forbidden character in the name, a non-boolean active and a field the shop works out, all at once", "arguments": {"name": {"en": "a={b}"}, "rate": 5, "active": "yes", "id_tax": 3}, "expect": "error", "contains": ["- name (en): a character PrestaShop refuses in a tax name", "- active: true or false", "- id_tax: worked out by the shop"]},
+    {"why": "no name", "arguments": {"rate": 5}, "expect": "error", "contains": ["Nothing was created.", "- name: required"]}
+  ]
+}

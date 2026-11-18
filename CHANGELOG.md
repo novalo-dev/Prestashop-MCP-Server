@@ -16,6 +16,16 @@ are:
 
 ## Unreleased
 
+### Added
+
+**Update a tax rule.** The new tool somcp_update_tax_rule changes the name of
+a tax rule of International > Taxes > Tax Rules and whether it is enabled, as
+its edit page and the Enabled column of the list do, and answers with the old
+and new value of each change and the rule as it was saved. A call that would
+change nothing writes nothing. Until now the assistant could create a tax rule
+but not rename it or switch it off. A rule that orders already placed carry is
+refused for now and is changed in the back office.
+
 ### Changed
 
 **Abandoned carts: one cart or one carrier.** The list can now be narrowed to

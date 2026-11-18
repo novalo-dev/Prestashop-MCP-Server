@@ -188,12 +188,15 @@ class SomcpToolGetTaxRule
      * The tax rule as stored, when it belongs to the shop of the token and
      * was not deleted.
      *
+     * Public so the tools that change a rule refuse exactly the rules this
+     * tool answers as unknown.
+     *
      * @param int $idGroup
      * @param int $idShop
      *
      * @return array<string, mixed>|null
      */
-    private static function existingRule(int $idGroup, int $idShop): ?array
+    public static function existingRule(int $idGroup, int $idShop): ?array
     {
         // A query rather than new TaxRulesGroup(), which loads a rule of any
         // shop. A rule deleted from the back office stays in the table,

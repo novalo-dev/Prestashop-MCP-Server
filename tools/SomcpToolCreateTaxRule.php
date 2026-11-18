@@ -42,9 +42,10 @@ class SomcpToolCreateTaxRule
 
     /**
      * @var array<int, string> what somcp_get_tax_rule returns and the shop works out, named so the
-     *                         assistant learns why it is dropped rather than meeting an "unknown field"
+     *                         assistant learns why it is dropped rather than meeting an "unknown field";
+     *                         public so somcp_update_tax_rule refuses the same fields
      */
-    private const COMPUTED = [
+    public const COMPUTED = [
         'id_tax_rules_group', 'date_add', 'date_upd', 'country_rules', 'rate_in_default_country',
         'default_country', 'taxes_enabled', 'language',
     ];
@@ -218,12 +219,15 @@ class SomcpToolCreateTaxRule
     /**
      * The name given in the call, or null with the reason.
      *
+     * Public so somcp_update_tax_rule checks a new name here, against the
+     * same column, rather than with a second copy that could drift.
+     *
      * @param array<string, mixed> $arguments
      * @param array<int, string> $errors
      *
      * @return string|null
      */
-    private static function name(array $arguments, array &$errors): ?string
+    public static function name(array $arguments, array &$errors): ?string
     {
         if (!array_key_exists('name', $arguments) || $arguments['name'] === null) {
             $errors[] = 'name: required';

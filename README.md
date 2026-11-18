@@ -442,6 +442,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_get_tax_rule` | ● Get a tax rule | Tax Rules › view |
 | `somcp_list_taxes` | ● List taxes | Taxes › view |
 | `somcp_create_tax_rule` | ✎ Create a tax rule | Tax Rules › add |
+| `somcp_update_tax_rule` | ✎ Update a tax rule | Tax Rules › edit |
 
 ### 📊 Stock
 

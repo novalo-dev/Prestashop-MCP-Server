@@ -30,6 +30,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_tax_rule`
 - `somcp_list_taxes`
 - `somcp_create_tax_rule`
+- `somcp_update_tax_rule`
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
 - `somcp_create_product`
@@ -211,6 +212,11 @@ A missing tax rule is created with `somcp_create_tax_rule`, after reading
 enabled rules, then the disabled ones): two rules may carry the same name.
 The name is the merchant's; the rule is created without countries and
 disabled unless `active` is `true`.
+
+The Name of a rule, and whether it is enabled, are changed with
+`somcp_update_tax_rule`, which gives the old and new value of each field it
+changed. A rule that orders already placed carry is refused: it is changed in
+the back office.
 
 ## Who fills each field
 

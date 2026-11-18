@@ -1317,6 +1317,11 @@
       <source>Create a tax rule</source>
       <target>Créer une règle de taxes</target>
     </trans-unit>
+    <!-- Update a tax rule -->
+    <trans-unit id="fea1da3360c83a06c7b4032aabb265b2" resname="Update a tax rule">
+      <source>Update a tax rule</source>
+      <target>Modifier une règle de taxes</target>
+    </trans-unit>
     <!-- List taxes -->
     <trans-unit id="0fd7b8361fef733e7f4558af57526e46" resname="List taxes">
       <source>List taxes</source>

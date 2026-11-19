@@ -102,6 +102,14 @@ applies to a copy under a new identifier, which the answer gives.
 
 ### Changed
 
+**Sales summary: one delivery country, and every mistake at once.** The sales
+summary can now be limited to the orders delivered in one country, as the All
+countries filter of Stats > Sales and orders: the revenue, the sales, the orders
+and the products bought then count that country only. A call with several
+mistakes (a wrong date, a field the tool does not take, a comparison asked as
+"yes") now names them all in one answer, where it used to stop at the first one
+or take "yes" as a yes.
+
 **Taxes: one tax, or the taxes at one rate.** The list of taxes can now be
 narrowed by ID and by rate, as the ID and Rate filters of International >
 Taxes. A rate finds the taxes at exactly that rate: asked for 6, it no longer

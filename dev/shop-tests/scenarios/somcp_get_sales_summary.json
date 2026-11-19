@@ -5,9 +5,11 @@
     {"why": "one day, both bounds the same", "arguments": {"date_from": "2001-01-01", "date_to": "2001-01-01"}, "expect": "ok", "contains": ["\"orders_count\": 0"]},
     {"why": "the previous period has the same length and ends the day before", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "compare_previous": true}, "expect": "ok", "contains": ["\"previous\"", "\"date_from\": \"2001-01-22\"", "\"date_to\": \"2001-01-31\""]},
     {"why": "no comparison unless asked", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "compare_previous": false}, "expect": "ok"},
-    {"why": "the end before the start is refused, naming the field", "arguments": {"date_from": "2001-02-10", "date_to": "2001-02-01"}, "expect": "error", "contains": ["date_to"]},
-    {"why": "a malformed date is refused, naming the field", "arguments": {"date_from": "01/02/2001", "date_to": "2001-02-10"}, "expect": "error", "contains": ["date_from"]},
-    {"why": "a day that does not exist is refused", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-30"}, "expect": "error", "contains": ["date_to"]},
-    {"why": "a missing date is refused", "arguments": {"date_from": "2001-02-01"}, "expect": "error", "contains": ["date_to"]}
+    {"why": "the end before the start is refused, naming the field", "arguments": {"date_from": "2001-02-10", "date_to": "2001-02-01"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "date_to"]},
+    {"why": "a malformed date is refused, naming the field", "arguments": {"date_from": "01/02/2001", "date_to": "2001-02-10"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "date_from"]},
+    {"why": "a day that does not exist is refused", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-30"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "date_to"]},
+    {"why": "a missing date is refused", "arguments": {"date_from": "2001-02-01"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "date_to"]},
+    {"why": "the orders delivered in one country, the code given in any case", "arguments": {"date_from": "2000-01-01", "date_to": "2099-12-31", "delivery_country": "us"}, "expect": "ok", "contains": ["\"delivery_country\": \"US\"", "\"orders_count\""]},
+    {"why": "every mistake of a call is named in one answer", "arguments": {"date_from": "01/02/2001", "date_to": "2001-02-30", "compare_previous": "yes", "delivery_country": "QQ", "x": 1}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "x: not a field of this tool", "date_from: a date, YYYY-MM-DD", "date_to: a date, YYYY-MM-DD", "compare_previous: true or false", "delivery_country: an ISO code of a country, for example FR"]}
   ]
 }

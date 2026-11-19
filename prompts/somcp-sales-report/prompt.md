@@ -28,7 +28,11 @@ in mind.
 2. **Read the figures** with `somcp_get_sales_summary`. Add
    `compare_previous: true` when a comparison helps ("is it better than
    before?"): `previous` then holds the period of the same length that ends the
-   day before `date_from`, with its own dates.
+   day before `date_from`, with its own dates. When the merchant asks about
+   one country, pass its ISO code as `delivery_country`: the figures then keep
+   the orders delivered there, as the **All countries** filter of
+   **Stats > Sales and orders**, and `new_customers` stays the same. Pass the
+   same `delivery_country` to `somcp_search_orders` for the orders behind them.
 3. **The products that sold most**, when the merchant asks for best sellers:
    use `somcp_list_best_sellers` with the same dates. It is sorted by sales
    tax excluded, as **Stats > Best-selling products**; pass `sort` for the

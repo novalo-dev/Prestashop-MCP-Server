@@ -37,6 +37,8 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpToolGetSalesSummary
 {
+    private const FIELDS = ['date_from', 'date_to', 'compare_previous', 'delivery_country'];
+
     /**
      * @return SomcpTool
      */
@@ -67,6 +69,11 @@ class SomcpToolGetSalesSummary
                         'type' => 'boolean',
                         'description' => 'Also return, in previous, the same figures for the period of the same length that ends the day before date_from.',
                     ],
+                    'delivery_country' => [
+                        'type' => 'string',
+                        'description' => 'ISO code of a country, for example FR: only the orders delivered there, as the '
+                            . 'All countries filter of Sales and orders. Every country when left out.',
+                    ],
                 ],
                 'required' => ['date_from', 'date_to'],
                 'additionalProperties' => false,
@@ -85,26 +92,43 @@ class SomcpToolGetSalesSummary
      */
     public static function handle(array $arguments, array $context): array
     {
+        // Every mistake is named in one answer, so the assistant fixes them
+        // all at once rather than one call per mistake.
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
         $dateFrom = SomcpTool::day($arguments['date_from'] ?? null);
         if ($dateFrom === null) {
-            return SomcpTool::text('date_from: a date, YYYY-MM-DD.', true);
+            $problems[] = 'date_from: a date, YYYY-MM-DD';
         }
         $dateTo = SomcpTool::day($arguments['date_to'] ?? null);
         if ($dateTo === null) {
-            return SomcpTool::text('date_to: a date, YYYY-MM-DD.', true);
+            $problems[] = 'date_to: a date, YYYY-MM-DD';
+        } elseif ($dateFrom !== null && $dateTo < $dateFrom) {
+            $problems[] = 'date_to: a date not before date_from';
         }
-        if ($dateTo < $dateFrom) {
-            return SomcpTool::text('date_to: a date not before date_from.', true);
+        // "yes" used to be taken as true: only a boolean says what was meant.
+        $compare = $arguments['compare_previous'] ?? null;
+        if ($compare !== null && !is_bool($compare)) {
+            $problems[] = 'compare_previous: true or false';
+        }
+        $idCountry = SomcpToolSearchOrders::deliveryCountry($arguments, $problems);
+        if ($problems !== [] || $dateFrom === null || $dateTo === null) {
+            return SomcpTool::refused('read', $problems);
         }
 
         // The shop comes from the token, never from the caller.
         $idShop = Somcp::currentShopId();
         $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));
 
-        $summary = ['date_from' => $dateFrom, 'date_to' => $dateTo, 'currency' => (string) $currency->iso_code]
-            + self::figures($dateFrom, $dateTo, $idShop);
+        $country = [];
+        if ($idCountry > 0) {
+            $country['delivery_country'] = Tools::strtoupper((string) Country::getIsoById($idCountry));
+        }
 
-        if (!empty($arguments['compare_previous'])) {
+        $summary = ['date_from' => $dateFrom, 'date_to' => $dateTo] + $country
+            + ['currency' => (string) $currency->iso_code]
+            + self::figures($dateFrom, $dateTo, $idShop, $idCountry);
+
+        if ($compare === true) {
             // Same number of days, ending the day before the period asked,
             // so a month is compared with the days just before it.
             $days = (int) (new DateTime($dateFrom))->diff(new DateTime($dateTo))->days;
@@ -113,8 +137,9 @@ class SomcpToolGetSalesSummary
             $summary['previous'] = [
                 'date_from' => $previousFrom->format('Y-m-d'),
                 'date_to' => $previousTo->format('Y-m-d'),
+            ] + $country + [
                 'currency' => (string) $currency->iso_code,
-            ] + self::figures($previousFrom->format('Y-m-d'), $previousTo->format('Y-m-d'), $idShop);
+            ] + self::figures($previousFrom->format('Y-m-d'), $previousTo->format('Y-m-d'), $idShop, $idCountry);
         }
 
         return SomcpTool::json($summary);
@@ -126,15 +151,23 @@ class SomcpToolGetSalesSummary
      * @param string $dateFrom YYYY-MM-DD, already checked
      * @param string $dateTo YYYY-MM-DD, already checked
      * @param int $idShop
+     * @param int $idCountry delivery country, 0 for every country
      *
      * @return array<string, int|float>
      */
-    private static function figures(string $dateFrom, string $dateTo, int $idShop): array
+    private static function figures(string $dateFrom, string $dateTo, int $idShop, int $idCountry): array
     {
         $db = Db::getInstance();
         // Whole days: an invoice issued at 18:00 on the last day counts.
         $between = "'" . pSQL($dateFrom) . " 00:00:00' AND '" . pSQL($dateTo) . " 23:59:59'";
         $orders = 'o.`valid` = 1 AND o.`id_shop` = ' . (int) $idShop . ' AND o.`invoice_date` BETWEEN ' . $between;
+        if ($idCountry > 0) {
+            // All countries of Sales and orders keeps the orders whose
+            // delivery address is in the country; a subquery rather than a
+            // join keeps every query below unchanged, credit slips included.
+            $orders .= ' AND o.`id_address_delivery` IN (SELECT a.`id_address` FROM `' . _DB_PREFIX_
+                . 'address` a WHERE a.`id_country` = ' . (int) $idCountry . ')';
+        }
 
         // Revenue and Placed orders of Stats Dashboard.
         $totals = $db->getRow(
@@ -171,7 +204,8 @@ class SomcpToolGetSalesSummary
         );
 
         // Registrations: accounts created in the period, guests included as
-        // the dashboard counts them.
+        // the dashboard counts them. An account has no delivery country, so
+        // the country filter leaves this figure as it is.
         $newCustomers = (int) $db->getValue(
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'customer` c
              WHERE c.`id_shop` = ' . (int) $idShop . ' AND c.`date_add` BETWEEN ' . $between

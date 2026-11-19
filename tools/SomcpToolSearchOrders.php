@@ -178,15 +178,10 @@ class SomcpToolSearchOrders
             return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $languageIso] = $language;
-        $idCountry = 0;
-        if (isset($arguments['delivery_country']) && trim((string) $arguments['delivery_country']) !== '') {
-            $iso = trim((string) $arguments['delivery_country']);
-            // Country::getByIso() stops the request on a malformed code
-            // rather than answering false, so the code is checked first.
-            $idCountry = Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
-            if ($idCountry <= 0) {
-                return SomcpTool::text('No country has this ISO code: give delivery_country as a code such as FR.', true);
-            }
+        $countryProblems = [];
+        $idCountry = self::deliveryCountry($arguments, $countryProblems);
+        if ($countryProblems !== []) {
+            return SomcpTool::text('No country has this ISO code: give delivery_country as a code such as FR.', true);
         }
         $where = self::conditions($arguments, $idShop, $idCountry);
 
@@ -316,6 +311,38 @@ class SomcpToolSearchOrders
         }
 
         return $errors;
+    }
+
+    /**
+     * The delivery country filter, read once for every tool that takes it.
+     *
+     * Shared so a code is read and refused the same way wherever the
+     * assistant gives it: a sales summary and the orders behind it must
+     * keep the same orders for the same code.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<int, string> $problems a line is added for a code no country has
+     *
+     * @return int the country, 0 when the filter is left out or refused
+     */
+    public static function deliveryCountry(array $arguments, array &$problems): int
+    {
+        $value = $arguments['delivery_country'] ?? null;
+        if ($value === null || (is_string($value) && trim($value) === '')) {
+            return 0;
+        }
+        // A list or an object is no code: refused rather than cast.
+        $iso = is_scalar($value) ? trim((string) $value) : '';
+        // Country::getByIso() stops the request on a malformed code
+        // rather than answering false, so the code is checked first.
+        $idCountry = Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
+        if ($idCountry <= 0) {
+            $problems[] = 'delivery_country: an ISO code of a country, for example FR';
+
+            return 0;
+        }
+
+        return $idCountry;
     }
 
     /**

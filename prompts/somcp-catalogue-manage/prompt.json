@@ -43,6 +43,7 @@
     "somcp_delete_country_rule",
     "somcp_list_customer_groups",
     "somcp_list_carriers",
+    "somcp_get_carrier",
     "somcp_create_product",
     "somcp_update_product",
     "somcp_set_product_active",

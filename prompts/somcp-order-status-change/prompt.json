@@ -13,6 +13,7 @@
     "somcp_delete_order_status",
     "somcp_list_return_statuses",
     "somcp_list_carriers",
+    "somcp_get_carrier",
     "somcp_create_return_status",
     "somcp_update_return_status",
     "somcp_delete_return_status",

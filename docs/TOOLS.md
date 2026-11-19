@@ -2288,9 +2288,43 @@ past order on either version.
 
 **Errors** - in the envelope `Nothing was read. Correct these and call again:`, with the other problems of the call: a language the shop does not have, named by `SomcpTool::languageProblem()` with the ones it has. An empty list is `carriers: []`, `count: 0`.
 
-**Notes** - PrestaShop gives a carrier a new `id_carrier` each time it is edited and keeps the old row as deleted; `id_reference` does not change. Orders keep the `id_carrier` they were placed with, products are tied to the reference (the product tools turn the `id_carrier` they are given into it). Only the carriers of the token's shop (`carrier_shop`), not deleted; disabled ones are listed. Zones, ranges, prices, groups, tax, handling costs, sizes and weight belong to a future read of one carrier. In Configuration with `somcp_list_order_statuses`: an order uses a carrier without containing one, so the scope is `mcp.orders.read`.
+**Notes** - PrestaShop gives a carrier a new `id_carrier` each time it is edited and keeps the old row as deleted; `id_reference` does not change. Orders keep the `id_carrier` they were placed with, products are tied to the reference (the product tools turn the `id_carrier` they are given into it). Only the carriers of the token's shop (`carrier_shop`), not deleted; disabled ones are listed. Zones, groups, tax, handling costs, billing, sizes and weight of one carrier are read by `somcp_get_carrier`. In Configuration with `somcp_list_order_statuses`: an order uses a carrier without containing one, so the scope is `mcp.orders.read`.
 
 On 8.0.1 the filter label is **Free Shipping**, on 9.0.0 **Free shipping**; the edit page is the wizard `AdminCarrierWizard` on 8.0.1 and a Symfony form on 9.0.0. The columns read are the same on both.
+
+#### `somcp_get_carrier`
+**State**: written · [issue #316](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/316)
+**Nature**: `acts(VIEW, 'AdminCarriers')` · **Scope**: `mcp.orders.read`
+
+**Does** - reads one carrier of **Shipping > Carriers** as its edit page shows it: name, **Transit time**, **Speed grade**, logo, **Tracking URL**, **Group access**, **Zones**, **Free shipping**, **Tax**, handling costs, billing by price or by weight, **Out-of-range behavior** and the four size and weight limits.
+
+**Do not use for** - listing the carriers (→ `somcp_list_carriers`); the carrier of one order (→ `somcp_get_order`); the ranges and the price of each range per zone (→ part 2, #317).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_carrier` | **ID** | integer | yes | from `somcp_list_carriers`; read through `SomcpTool::id()` |
+| `language` | | string | no | ISO code for `delay` and the group names, through `SomcpTool::readLanguage()` and listed with `SomcpTool::languageProblem()`; the shop default when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - one object. The fields `somcp_list_carriers` gives (`id_carrier`, `id_reference`, `name`, `delay`, `active`, `is_free`, `position`, `logo`, `tracking_url`, `external_module`), read by the same query and shaped by the same function (`SomcpToolListCarriers::query()` and `entry()`), plus:
+- `grade`: **Speed grade**;
+- `group_access`: `[{id_group, name}]` from `carrier_group`, among the groups of the shop, `name` in `language`, the `id_group` of `somcp_list_customer_groups`;
+- `zones`: `[{id_zone, name}]` from `carrier_zone`, sorted by name as the screen sorts them;
+- `id_tax_rules_group`: **Tax**, from `carrier_tax_rules_group_shop` for the shop of the token, `0` for **No tax**; `tax_rule`: its name through `SomcpToolGetTaxRule::existingRule()`, `null` for 0 or a rule deleted since (then a `warning`);
+- `handling_costs` (**Add handling costs** on 8.0.1, **Handling costs** on 9.0.0); when true, `handling_cost_tax_excl`: `PS_SHIPPING_HANDLING` for the shop and group of the token, set on **Shipping > Preferences**;
+- `billing`: `"price"` or `"weight"`, as `Carrier::getShippingMethod()` decides (a carrier stored with `shipping_method` 0 follows `PS_SHIPPING_METHOD`), `null` for a free carrier;
+- `out_of_range`: `"highest_range"` (**Apply the cost of the highest defined range**) or `"disable_carrier"` (**Disable carrier**);
+- `max_width`, `max_height`, `max_depth` (integers), `max_weight` (number), `0` for no limit, with `dimension_unit` (`PS_DIMENSION_UNIT`) and `weight_unit` (`PS_WEIGHT_UNIT`);
+- `warning` when there is one (a deleted tax rule, costs computed by a module), and `language`.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`, every problem at once: a missing or non-integer `id_carrier` (`SomcpTool::notAnIdentifier()`), a carrier not found (`SomcpTool::notFound('id_carrier', 'carrier', $id, 'somcp_list_carriers')`; for an older version of a carrier, left `deleted` by an edit, the line adds the `id_reference` to find the current one by), an unknown argument, a language the shop does not have.
+
+**Notes** - only a carrier of the shop of the token (`carrier_shop`), not deleted. A carrier made by a module is read the same way, with a `warning` that its costs are computed by that module. The logo is a `download_ref` through `SomcpDownload::offer('carrier_logo', ...)`, as `somcp_list_carriers` gives it. `SomcpToolGetCarrier::carrier()` is public for the tools that will answer with a carrier. Read only, replayable.
+
+**Differences between 8.0.1 and 9.0.0** - the page: the wizard `AdminCarrierWizard` on 8.0.1 (**Enabled** in **Summary**, **Group access** in step 3, the zones as rows of the ranges table), a Symfony form on 9.0.0 (**Active** and **Group access** in **General settings**, **Zones** a multiple select), and their labels (**Billing** / **Shipping costs**, **Maximum package width (cm)** / **Max order width**); the columns and the answer are the same.
 
 #### `somcp_list_tax_rules`
 **State**: written
@@ -6434,7 +6468,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

@@ -1102,6 +1102,11 @@
       <source>List carriers</source>
       <target>List carriers</target>
     </trans-unit>
+    <!-- Read a carrier -->
+    <trans-unit id="84e99d3fd81765da665db8112b31e85f" resname="Read a carrier">
+      <source>Read a carrier</source>
+      <target>Read a carrier</target>
+    </trans-unit>
     <!-- Create a return status -->
     <trans-unit id="bed8b046732e0d12fe3f9bbb9776d996" resname="Create a return status">
       <source>Create a return status</source>

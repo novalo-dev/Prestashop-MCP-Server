@@ -118,6 +118,53 @@ class SomcpToolListCarriers
         }
         [$idLang, $iso] = $language;
 
+        $query = self::query($idShop, (int) $idLang);
+        if (isset($arguments['active'])) {
+            $query->where('c.`active` = ' . ($arguments['active'] ? 1 : 0));
+        }
+        if (isset($arguments['is_free'])) {
+            $query->where('c.`is_free` = ' . ($arguments['is_free'] ? 1 : 0));
+        }
+        // The order of the back office list, so a carrier sits where the
+        // merchant sees it.
+        $query->orderBy('c.`position` ASC, c.`id_carrier` ASC');
+
+        // Matched on the name as shown rather than in the query: the carrier
+        // the installer creates is stored as 0 and shown under the shop name.
+        $name = isset($arguments['name']) && is_scalar($arguments['name'])
+            ? Tools::strtolower(trim((string) $arguments['name']))
+            : '';
+
+        $carriers = [];
+        foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
+            $shown = SomcpTool::carrierName((string) $row['name']);
+            if ($name !== '' && strpos(Tools::strtolower($shown), $name) === false) {
+                continue;
+            }
+            $carriers[] = self::entry($row, $idShop);
+        }
+
+        return SomcpTool::json([
+            'carriers' => $carriers,
+            'count' => count($carriers),
+            'language' => $iso,
+        ]);
+    }
+
+    /**
+     * The carriers of the shop of the token, not deleted, with the columns
+     * this list answers.
+     *
+     * Public so somcp_get_carrier reads the same columns from the same
+     * query, and the two tools never give two answers for one carrier.
+     *
+     * @param int $idShop
+     * @param int $idLang for the delay
+     *
+     * @return DbQuery
+     */
+    public static function query(int $idShop, int $idLang): DbQuery
+    {
         // A query rather than Carrier::getCarriers(), which reads the shop
         // from the global context and, asked for every carrier, still drops
         // the disabled ones: here the shop comes from the token, and a
@@ -137,58 +184,44 @@ class SomcpToolListCarriers
         $query->leftJoin(
             'carrier_lang',
             'cl',
-            'cl.`id_carrier` = c.`id_carrier` AND cl.`id_lang` = ' . (int) $idLang . ' AND cl.`id_shop` = ' . $idShop
+            'cl.`id_carrier` = c.`id_carrier` AND cl.`id_lang` = ' . $idLang . ' AND cl.`id_shop` = ' . $idShop
         );
         // An edited carrier leaves its previous row behind, flagged, for the
         // orders placed with it; the back office list does not show those.
         $query->where('c.`deleted` = 0');
-        if (isset($arguments['active'])) {
-            $query->where('c.`active` = ' . ($arguments['active'] ? 1 : 0));
-        }
-        if (isset($arguments['is_free'])) {
-            $query->where('c.`is_free` = ' . ($arguments['is_free'] ? 1 : 0));
-        }
-        // The order of the back office list, so a carrier sits where the
-        // merchant sees it.
-        $query->orderBy('c.`position` ASC, c.`id_carrier` ASC');
 
-        // Matched on the name as shown rather than in the query: the carrier
-        // the installer creates is stored as 0 and shown under the shop name.
-        $name = isset($arguments['name']) && is_scalar($arguments['name'])
-            ? Tools::strtolower(trim((string) $arguments['name']))
-            : '';
+        return $query;
+    }
 
-        $carriers = [];
-        foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
-            $id = (int) $row['id_carrier'];
-            $shown = SomcpTool::carrierName((string) $row['name']);
-            if ($name !== '' && strpos(Tools::strtolower($shown), $name) === false) {
-                continue;
-            }
-            $carriers[] = [
-                'id_carrier' => $id,
-                'id_reference' => (int) $row['id_reference'],
-                'name' => $shown,
-                'delay' => (string) $row['delay'],
-                'active' => (bool) $row['active'],
-                'is_free' => (bool) $row['is_free'],
-                // From 0, as the other tools give a position; the list shows
-                // it from 1.
-                'position' => (int) $row['position'],
-                'logo' => SomcpDownload::offer('carrier_logo', $id, $idShop),
-                'tracking_url' => (string) $row['url'],
-                // Such a carrier's costs are computed by its module, not by
-                // the ranges of the carrier form.
-                'external_module' => (bool) $row['is_module'] && (string) $row['external_module_name'] !== ''
-                    ? (string) $row['external_module_name']
-                    : null,
-            ];
-        }
+    /**
+     * One carrier as this list answers it, from a row of query().
+     *
+     * @param array<string, mixed> $row
+     * @param int $idShop
+     *
+     * @return array<string, mixed>
+     */
+    public static function entry(array $row, int $idShop): array
+    {
+        $id = (int) $row['id_carrier'];
 
-        return SomcpTool::json([
-            'carriers' => $carriers,
-            'count' => count($carriers),
-            'language' => $iso,
-        ]);
+        return [
+            'id_carrier' => $id,
+            'id_reference' => (int) $row['id_reference'],
+            'name' => SomcpTool::carrierName((string) $row['name']),
+            'delay' => (string) $row['delay'],
+            'active' => (bool) $row['active'],
+            'is_free' => (bool) $row['is_free'],
+            // From 0, as the other tools give a position; the list shows
+            // it from 1.
+            'position' => (int) $row['position'],
+            'logo' => SomcpDownload::offer('carrier_logo', $id, $idShop),
+            'tracking_url' => (string) $row['url'],
+            // Such a carrier's costs are computed by its module, not by
+            // the ranges of the carrier form.
+            'external_module' => (bool) $row['is_module'] && (string) $row['external_module_name'] !== ''
+                ? (string) $row['external_module_name']
+                : null,
+        ];
     }
 }

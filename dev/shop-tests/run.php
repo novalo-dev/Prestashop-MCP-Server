@@ -905,8 +905,10 @@ if ($createTax !== null) {
 // the options first and give them back, and a change it made would stay for
 // the tools after it. The read of somcp_get_tax_options is given back as it
 // is (nothing written), one field changed, the same call again, the ecotax
-// switched on and off (no demo product carries an ecotax, so no confirmation
-// is needed), then every value given back and read again.
+// switched on and off, then every value given back and read again. On
+// PrestaShop 8 the product scenarios leave a product carrying an ecotax, so
+// the switch off is refused without the confirmation, then confirmed; the
+// ecotax the core wipes is written back afterwards for the tools after it.
 $getTaxOptions = $registry->get('somcp_get_tax_options');
 $updateTaxOptions = $registry->get('somcp_update_tax_options');
 if ($getTaxOptions !== null && $updateTaxOptions !== null) {
@@ -936,7 +938,17 @@ if ($getTaxOptions !== null && $updateTaxOptions !== null) {
     foreach ($optionKeys as $key) {
         $optionsWere[$key] = Configuration::get($key, null, $idGroupOptions, $idShopOptions);
     }
-    $calls += 7;
+    // Read as the tool counts them, and kept to be written back in finally.
+    $ecotaxProducts = Db::getInstance()->executeS(
+        'SELECT `id_product`, `ecotax` FROM `' . _DB_PREFIX_ . 'product` WHERE `ecotax` > 0'
+    ) ?: [];
+    $ecotaxShops = Db::getInstance()->executeS(
+        'SELECT `id_product`, `id_shop`, `ecotax` FROM `' . _DB_PREFIX_ . 'product_shop` WHERE `ecotax` > 0'
+    ) ?: [];
+    $carryingEcotax = count(array_filter($ecotaxShops, static function (array $row) use ($idShopOptions): bool {
+        return (int) $row['id_shop'] === $idShopOptions;
+    }));
+    $calls += $carryingEcotax > 0 ? 8 : 7;
     try {
         [$result, $text] = $optionsCall($getTaxOptions, []);
         $read = json_decode(trim($text), true);
@@ -949,16 +961,23 @@ if ($getTaxOptions !== null && $updateTaxOptions !== null) {
                 'Based on changed' => [['based_on' => $other], ['"changed": true', '"field": "based_on"', '"new": "' . $other . '"']],
                 'the same call again, nothing written' => [['based_on' => $other], ['"changed": false']],
                 'the ecotax on' => [['use_ecotax' => true, 'ecotax_id_tax_rules_group' => 0], ['"changed": true', '"use_ecotax": true']],
-                'the ecotax off, no product carrying one' => [['use_ecotax' => false], ['"changed": true', '"field": "use_ecotax"']],
-                'every value given back' => [$read, []],
             ];
-            foreach ($steps as $why => [$arguments, $needles]) {
+            if ($carryingEcotax > 0) {
+                $steps['the ecotax off unconfirmed, a product carrying one'] = [['use_ecotax' => false], ['Nothing was changed', 'reset_product_ecotax: true to confirm'], true];
+                $steps['the ecotax off, confirmed'] = [['use_ecotax' => false, 'reset_product_ecotax' => true], ['"changed": true', '"field": "use_ecotax"', '"products_reset": ']];
+            } else {
+                $steps['the ecotax off, no product carrying one'] = [['use_ecotax' => false], ['"changed": true', '"field": "use_ecotax"']];
+            }
+            $steps['every value given back'] = [$read, []];
+            foreach ($steps as $why => $step) {
+                [$arguments, $needles] = $step;
+                $refusal = $step[2] ?? false;
                 [$result, $text] = $optionsCall($updateTaxOptions, $arguments);
                 $missing = array_filter($needles, static function (string $needle) use ($text): bool {
                     return strpos($text, $needle) === false;
                 });
-                if (!empty($result['isError']) || $missing !== []) {
-                    $failures[] = 'somcp_update_tax_options (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                if (empty($result['isError']) === $refusal || $missing !== []) {
+                    $failures[] = 'somcp_update_tax_options (' . $why . '): expected ' . ($refusal ? 'refused' : 'ok') . ' with ' . implode(', ', $missing) . ' - ' . excerpt($result);
                 } else {
                     printf("  %-6s %s\n", 'ok', 'somcp_update_tax_options (' . $why . ')');
                 }
@@ -980,6 +999,14 @@ if ($getTaxOptions !== null && $updateTaxOptions !== null) {
             if ($value !== false) {
                 Configuration::updateValue($key, $value, false, $idGroupOptions, $idShopOptions);
             }
+        }
+        // The confirmed switch off set every ecotax to 0, which no tool can
+        // give back: the stored amounts are written back as they were read.
+        foreach ($ecotaxProducts as $row) {
+            Db::getInstance()->update('product', ['ecotax' => (float) $row['ecotax']], '`id_product` = ' . (int) $row['id_product']);
+        }
+        foreach ($ecotaxShops as $row) {
+            Db::getInstance()->update('product_shop', ['ecotax' => (float) $row['ecotax']], '`id_product` = ' . (int) $row['id_product'] . ' AND `id_shop` = ' . (int) $row['id_shop']);
         }
     }
 }

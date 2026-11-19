@@ -113,7 +113,7 @@ class SomcpToolGetTaxOptions
         }
         if ($result['ecotax_id_tax_rules_group'] > 0 && $result['ecotax_tax_rule'] === null) {
             $warnings[] = 'The ecotax rule ' . $result['ecotax_id_tax_rules_group'] . ' no longer exists: choose '
-                . 'another in the Tax options of International > Taxes > Taxes.';
+                . 'another with somcp_update_tax_options.';
         }
         $result['language'] = $iso;
         if ($warnings !== []) {

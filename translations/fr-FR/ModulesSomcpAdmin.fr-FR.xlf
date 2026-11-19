@@ -1367,6 +1367,11 @@
       <source>Read the tax options</source>
       <target>Lire les options de taxe</target>
     </trans-unit>
+    <!-- Change the tax options -->
+    <trans-unit id="8ea17560b96b18d975befc410b0784b7" resname="Change the tax options">
+      <source>Change the tax options</source>
+      <target>Modifier les options de taxe</target>
+    </trans-unit>
     <!-- List files -->
     <trans-unit id="92f00b54c2461cd9c23db65a88cd11e1" resname="List files">
       <source>List files</source>

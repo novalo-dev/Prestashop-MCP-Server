@@ -2888,7 +2888,7 @@ by the shared `SomcpToolGetTaxOptions::options()`:
 - `based_on`: **Based on** (`PS_TAX_ADDRESS_TYPE`), `"invoice_address"` or `"delivery_address"`; a value that is neither (an old shop) is given as stored, with a `warning`;
 - `use_ecotax`: **Use ecotax** (`PS_USE_ECOTAX`);
 - `ecotax_id_tax_rules_group`: **Ecotax** (`PS_ECOTAX_TAX_RULES_GROUP_ID`), `0` for **No tax**; the `id_tax_rules_group` of `somcp_list_tax_rules`;
-- `ecotax_tax_rule`: the name of that rule, read through `SomcpToolGetTaxRule::existingRule()`, `null` for 0 or for a rule deleted since (then a `warning`: choose another in the **Tax options**);
+- `ecotax_tax_rule`: the name of that rule, read through `SomcpToolGetTaxRule::existingRule()`, `null` for 0 or for a rule deleted since (then a `warning`: choose another with `somcp_update_tax_options`);
 - `ecotax_rate`: the rate the shop charges on an ecotax, `SomcpCatalog::ecotaxRate()`, the number the product tools use for `ecotax_tax_incl`;
 - `language`.
 
@@ -2903,6 +2903,72 @@ argument, a language the shop does not have.
 - When **Enable tax** is off, a `warning` says so: no rate of any tax rule is charged, and the cart shows no tax line whatever **Display tax in the shopping cart** holds (the core turns it off with **Enable tax**).
 - Read only, replayable.
 - The same form, the same five keys and the same `TaxOptionsConfiguration` on 8.0.1 and 9.0.0.
+- To change them: `somcp_update_tax_options`.
+
+#### `somcp_update_tax_options`
+**State**: written · [issue #312](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/312)
+**Nature**: `acts(EDIT, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes the **Tax options** of **International > Taxes > Taxes**, as
+the **Save** of that card does: **Enable tax**, **Display tax in the shopping
+cart**, **Based on**, **Use ecotax**, **Ecotax**. Only the fields given change;
+the answer of `somcp_get_tax_options` can be given back as it is.
+
+**Do not use for** - the rates (→ `somcp_update_tax`, `somcp_update_country_rule`); the ecotax of one product (→ `somcp_update_product`).
+
+**Parameters**
+
+Every field takes what `somcp_get_tax_options` answers.
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `taxes_enabled` | **Enable tax** | boolean | no | `PS_TAX` |
+| `display_tax_in_cart` | **Display tax in the shopping cart** | boolean | no | `PS_TAX_DISPLAY`; `true` with **Enable tax** off (given or stored) refused |
+| `based_on` | **Based on** | string | no | `invoice_address` (**Invoice address**) or `delivery_address` (**Delivery address**), stored as `id_address_invoice` / `id_address_delivery` in `PS_TAX_ADDRESS_TYPE` |
+| `use_ecotax` | **Use ecotax** | boolean | no | `PS_USE_ECOTAX`; see the refusal below |
+| `ecotax_id_tax_rules_group` | **Ecotax** | integer | no | `PS_ECOTAX_TAX_RULES_GROUP_ID`: `0` (**No tax**) or an enabled tax rule of the shop from `somcp_list_tax_rules`, checked with `SomcpToolGetTaxRule::existingRule()`; refused while **Use ecotax** stays off, as the form hides the field and never saves it |
+| `reset_product_ecotax` | | boolean | no | confirms `use_ecotax: false` when products carry an ecotax; refused with anything but `use_ecotax: false` |
+
+A value given equal to the stored one is never refused, whatever the other
+fields hold: the conditions on `display_tax_in_cart` and
+`ecotax_id_tax_rules_group` apply only to a value that changes. Unknown
+arguments through `SomcpTool::unknownFields()`: `ecotax_tax_rule`,
+`ecotax_rate` and `language` given back as `somcp_get_tax_options` reads them
+are no change, given otherwise they are named as worked out by the shop, as
+`warning` always is.
+
+**Refused, nothing written** - `use_ecotax: false` while it is on and at least
+one product of the shop carries an ecotax (`product_shop.ecotax > 0`), unless
+`reset_product_ecotax: true` is given. The core then sets the ecotax of every
+product to 0 (`Product::resetEcoTax()`), which no screen can give back.
+
+**Then** - nothing differs: `changed: false` and `The tax options already hold
+every value given. Nothing was written.` Something differs: each key saved
+with `Configuration::updateValue($key, $value, false, $idShopGroup, $idShop)`,
+the shop and group of the token, in the order of the core's Save; turning the
+ecotax off with the flag runs `Product::resetEcoTax()` first, as the core does;
+a save that leaves **Enable tax** off also stores `PS_TAX_DISPLAY` 0, as the
+core does, and lists it in `changes`. Logged as `tax_options_updated`.
+
+**Returns** - `changed: true`, `changes` (one entry per key changed: `field`,
+`old`, `new`, under the names of the parameters, `based_on` in its screen
+words), `products_reset` (the count, only when the ecotax was turned off with
+the flag), `warning` when products were reset (in every shop) or the
+installation has more than one shop (this shop only), then `tax_options`, the
+object of `somcp_get_tax_options` read back through
+`SomcpToolGetTaxOptions::options()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once: a switch that is not `true` or `false`, a
+`based_on` that is neither address, an ecotax rule unknown, disabled or given
+with the ecotax off, `reset_product_ecotax` without `use_ecotax: false`, the
+ecotax turned off without the flag. A save that fails half way names the
+fields already saved and asks to read them with `somcp_get_tax_options`.
+
+**Notes**
+- Replayable: the same call twice changes nothing the second time.
+- Changing **Based on** or **Enable tax** changes the prices of carts not yet ordered; orders already placed keep their amounts.
+- The same form, keys and `TaxOptionsConfiguration.php` on 8.0.1 and 9.0.0.
 
 #### `somcp_list_customer_groups`
 **State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)

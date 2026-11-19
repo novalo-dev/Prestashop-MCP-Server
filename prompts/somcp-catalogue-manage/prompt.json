@@ -34,6 +34,7 @@
     "somcp_update_tax",
     "somcp_delete_tax",
     "somcp_get_tax_options",
+    "somcp_update_tax_options",
     "somcp_create_tax_rule",
     "somcp_update_tax_rule",
     "somcp_delete_tax_rule",

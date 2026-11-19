@@ -18,6 +18,15 @@ are:
 
 ### Added
 
+**Change the tax options.** The new tool somcp_update_tax_options changes the
+Tax options of International > Taxes > Taxes, as their Save: Enable tax,
+Display tax in the shopping cart, Based on (invoice or delivery address), Use
+ecotax and the Ecotax tax rule. Until now the assistant could read them but a
+merchant setting up a shop had to change them by hand. Turning the ecotax off
+sets the ecotax of every product to 0, as the back office does, and nothing
+gives it back: when products carry one, the tool asks for an explicit
+confirmation first.
+
 **Create a tax.** The new tool somcp_create_tax creates a tax of International >
 Taxes > Taxes, with its name in each language, its rate and whether it is
 enabled, as the Add new tax form does, and answers with the tax as the list

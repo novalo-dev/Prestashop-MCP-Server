@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "a wrong address, a switch given as a word and a field the shop works out are refused at once", "arguments": {"based_on": "billing", "taxes_enabled": "yes", "ecotax_rate": 5}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- based_on: invoice_address or delivery_address", "- taxes_enabled: true or false", "- ecotax_rate: worked out by the shop"]},
+    {"why": "an ecotax rule the shop does not have, and a reset without turning the ecotax off, are refused at once", "arguments": {"ecotax_id_tax_rules_group": 999999, "reset_product_ecotax": true}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- ecotax_id_tax_rules_group: ", "somcp_list_tax_rules", "- reset_product_ecotax: only with use_ecotax: false"]}
+  ]
+}

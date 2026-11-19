@@ -33,6 +33,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_tax`
 - `somcp_delete_tax`
 - `somcp_get_tax_options`
+- `somcp_update_tax_options`
 - `somcp_create_tax_rule`
 - `somcp_update_tax_rule`
 - `somcp_delete_tax_rule`
@@ -218,6 +219,12 @@ a product never takes a tax, only a tax rule.
 Whether those rates are charged at all, on the invoice or the delivery
 address, and with which ecotax, comes from `somcp_get_tax_options`: read it
 before setting up taxes, and say so when `taxes_enabled` is false.
+They are changed with `somcp_update_tax_options`: give only the fields to
+change, or the answer of `somcp_get_tax_options` back with the changes in it.
+Turning `use_ecotax` off sets the ecotax of every product to 0, which nothing
+gives back: when products carry one, the tool refuses until
+`reset_product_ecotax: true` is given, and that is only given once the merchant
+has said so.
 
 A rate a shop does not have yet is created with `somcp_create_tax`, after
 reading `somcp_list_taxes`: give one `name` per language and a `rate` from 0 to

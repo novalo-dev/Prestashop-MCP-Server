@@ -901,6 +901,89 @@ if ($createTax !== null) {
     }
 }
 
+// The tax options changed and put back (#312): the JSON scenario cannot read
+// the options first and give them back, and a change it made would stay for
+// the tools after it. The read of somcp_get_tax_options is given back as it
+// is (nothing written), one field changed, the same call again, the ecotax
+// switched on and off (no demo product carries an ecotax, so no confirmation
+// is needed), then every value given back and read again.
+$getTaxOptions = $registry->get('somcp_get_tax_options');
+$updateTaxOptions = $registry->get('somcp_update_tax_options');
+if ($getTaxOptions !== null && $updateTaxOptions !== null) {
+    $optionsCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text];
+    };
+    $optionKeys = ['PS_TAX', 'PS_TAX_DISPLAY', 'PS_TAX_ADDRESS_TYPE', 'PS_USE_ECOTAX', 'PS_ECOTAX_TAX_RULES_GROUP_ID'];
+    $idShopOptions = (int) $context->shop->id;
+    $idGroupOptions = (int) Shop::getGroupFromShop($idShopOptions);
+    $optionsWere = [];
+    foreach ($optionKeys as $key) {
+        $optionsWere[$key] = Configuration::get($key, null, $idGroupOptions, $idShopOptions);
+    }
+    $calls += 7;
+    try {
+        [$result, $text] = $optionsCall($getTaxOptions, []);
+        $read = json_decode(trim($text), true);
+        if (!empty($result['isError']) || !is_array($read)) {
+            $failures[] = 'somcp_update_tax_options (the options read first): expected them read - ' . excerpt($result);
+        } else {
+            $other = ($read['based_on'] ?? '') === 'invoice_address' ? 'delivery_address' : 'invoice_address';
+            $steps = [
+                'the read given back as it is, nothing written' => [$read, ['"changed": false', 'Nothing was written.']],
+                'Based on changed' => [['based_on' => $other], ['"changed": true', '"field": "based_on"', '"new": "' . $other . '"']],
+                'the same call again, nothing written' => [['based_on' => $other], ['"changed": false']],
+                'the ecotax on' => [['use_ecotax' => true, 'ecotax_id_tax_rules_group' => 0], ['"changed": true', '"use_ecotax": true']],
+                'the ecotax off, no product carrying one' => [['use_ecotax' => false], ['"changed": true', '"field": "use_ecotax"']],
+                'every value given back' => [$read, []],
+            ];
+            foreach ($steps as $why => [$arguments, $needles]) {
+                [$result, $text] = $optionsCall($updateTaxOptions, $arguments);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_tax_options (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_tax_options (' . $why . ')');
+                }
+            }
+            [$result, $text] = $optionsCall($getTaxOptions, []);
+            $again = json_decode(trim($text), true);
+            if (!is_array($again) || $again != $read) {
+                $failures[] = 'somcp_update_tax_options (read again): expected the options as read at the start - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_tax_options (read again, as at the start)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_tax_options: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the demo options.
+        foreach ($optionsWere as $key => $value) {
+            // A key the shop never had is left out, as the test never writes it.
+            if ($value !== false) {
+                Configuration::updateValue($key, $value, false, $idGroupOptions, $idShopOptions);
+            }
+        }
+    }
+}
+
 // A category deleted with a subcategory and a product, once per mode (#227):
 // the JSON scenario only reaches categories with neither, so the reading of
 // the subcategories and the settling of the products never ran. The tree is

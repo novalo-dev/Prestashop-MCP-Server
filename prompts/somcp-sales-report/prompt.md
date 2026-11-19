@@ -61,6 +61,11 @@ in mind.
 - `somcp_list_best_sellers` counts the same orders the same way: its
   `revenue_tax_excl` is **Sales** of Best-selling products, credit slips not
   taken off, and `page_views` is `0` when the shop does not record page views.
+- `orders_by_status` counts every order **placed** in the period, valid or
+  not, under its latest status, as the distribution of order statuses of
+  **Stats > Sales and orders**: dated by the order date, not the invoice date,
+  so it counts the orders `somcp_search_orders` finds on the same dates. Pass
+  `language` for the status names in the merchant's language.
 - An empty period gives zeros, not an error: say there was no sale.
 
 ## Do not use when

@@ -102,6 +102,13 @@ applies to a copy under a new identifier, which the answer gives.
 
 ### Changed
 
+**Sales summary: the orders in each status.** The sales summary now gives how
+many orders of the period are in each status, and their share, as the
+distribution of order statuses of Stats > Sales and orders shows them: every
+order placed in the period, valid or not, under its latest status, the status
+names in the language asked for. Until now the assistant had to page through
+every order of the period to tell how many were still waiting or cancelled.
+
 **Sales summary: one delivery country, and every mistake at once.** The sales
 summary can now be limited to the orders delivered in one country, as the All
 countries filter of Stats > Sales and orders: the revenue, the sales, the orders

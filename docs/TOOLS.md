@@ -455,7 +455,7 @@ or carts that were never paid for (→ Carts).
 | `total_min` / `total_max` | number | no | amount paid, tax included |
 | `payment_method` | string | no | whole or partial |
 | `new_client` | boolean | no | `true`: the customer had no earlier order, in any status (New client column); `false`: returning customers |
-| `delivery_country` | string | no | ISO code of the country of the delivery address; an unknown code is an error |
+| `delivery_country` | string | no | ISO code of the country of the delivery address; an unknown code is one more line of the refusal |
 | `company` | string | no | customer's company, whole or partial |
 | `only_valid` | boolean | no | paid orders only |
 | `sort` | enum | no | `date_desc` (default), `date_asc`, `total_desc`, `total_asc` |
@@ -487,9 +487,12 @@ customer has none. The count joins the same tables as the list, so
 A field the tool does not take, a `sort` outside its list, a `new_client` that
 is not true or false, a `total_min` or `total_max` that is not a number, a
 `date_from` or `date_to` that is not `YYYY-MM-DD`, or a `status_id` that is not
-a whole number above 0 or matches no order status is refused in one answer,
-`Nothing was read`, before anything is read: never ignored, never replaced by
-the default order.
+a whole number above 0 or matches no order status, a `language` the shop does
+not have, or a `delivery_country` that is no country's ISO code
+(`delivery_country: an ISO code of a country, for example FR`, the line of
+`SomcpToolSearchOrders::deliveryCountry()` that `somcp_get_sales_summary` gives
+too) is refused in one answer, `Nothing was read`, before anything is read:
+never ignored, never replaced by the default order.
 
 #### `somcp_get_order`
 **State**: written

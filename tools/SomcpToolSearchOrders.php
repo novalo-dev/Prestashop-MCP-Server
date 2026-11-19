@@ -170,6 +170,9 @@ class SomcpToolSearchOrders
         if ($asked && $language === null) {
             $errors[] = SomcpTool::languageProblem($idShop);
         }
+        // Joins the same list, so an unknown country and any other mistake
+        // are answered together, as somcp_get_sales_summary answers them.
+        $idCountry = self::deliveryCountry($arguments, $errors);
         if ($errors !== []) {
             return SomcpTool::refused('read', $errors);
         }
@@ -178,11 +181,6 @@ class SomcpToolSearchOrders
             return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $languageIso] = $language;
-        $countryProblems = [];
-        $idCountry = self::deliveryCountry($arguments, $countryProblems);
-        if ($countryProblems !== []) {
-            return SomcpTool::text('No country has this ISO code: give delivery_country as a code such as FR.', true);
-        }
         $where = self::conditions($arguments, $idShop, $idCountry);
 
         // The count joins the same tables as the list, so a filter on the

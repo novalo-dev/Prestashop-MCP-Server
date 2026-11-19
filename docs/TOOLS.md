@@ -2562,9 +2562,10 @@ as such, with a hint to read the rule with `somcp_get_tax_rule`.
 **Does** - adds a row to one tax rule of **International > Taxes > Tax
 Rules**, as the **New tax rule** panel of its edit page then **Save and
 stay** do: a country, its states, a zip/postal code range, a behavior, a tax
-and a description. A rule without a row charges nothing.
+and a description. A rule without a row charges nothing. **All** in
+**Country** adds one row for each country of the shop in one call.
 
-**Do not use for** - every country at once (**All**, not yet); creating a
+**Do not use for** - creating a
 rule (→ `somcp_create_tax_rule`); renaming or switching a rule off
 (→ `somcp_update_tax_rule`); deleting a row (→ `somcp_delete_country_rule`);
 changing a row (→ `somcp_update_country_rule`).
@@ -2577,7 +2578,7 @@ entry, so a row read there can be given here.
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
 | `id_tax_rules_group` | the rule edited | integer | yes | from `somcp_list_tax_rules`; unknown, deleted or not in the token's shop: not found, through `SomcpToolGetTaxRule::existingRule()` |
-| `country` | **Country** | string | yes | ISO code, read through `SomcpToolCreateSupplier::supplierCountry()`, as the supplier and manufacturer address tools (`country: no country of this shop has the ISO code "ZZ"`) |
+| `country` | **Country** | string or `null` | yes | ISO code, read through `SomcpToolCreateSupplier::supplierCountry()`, as the supplier and manufacturer address tools (`country: no country of this shop has the ISO code "ZZ"`); `null` is **All**: one row, `id_state` 0, for each country of the shop (`country_shop`), active or not, as `processCreateRule()` loops over `Country::getCountries()`, read through `SomcpToolCreateSupplier::shopCountries()`, the join `supplierCountry()` uses. Left out stays `country: required, the ISO code of the country`: **All** is asked for, never the result of a field left out |
 | `state` | **State** | string or `null` | no | one state, as `somcp_get_tax_rule` gives it: one ISO code of the country's states through `SomcpToolCreateSupplier::stateOf()` (`state: US has no state with the ISO code "ZZ"`), one row; `null` is **All**; a code for a country without states: `state: FR has no states, leave the field out` (`null` is accepted there). With `states` in the same call: `state: state or states, not both`, `state: null` counting as given |
 | `states` | **State** | array of strings | no | the list for several: ISO codes of the country's states, one row each, each through `SomcpToolCreateSupplier::stateOf()` (`states: US has no state with the ISO code "ZZ"`); left out or empty: **All** (one row, `id_state` 0); given for a country without states: `states: FR has no states, leave the field out`; a code twice counts once |
 | `zipcode_from` | **Zip/Postal code range**, first bound | string | no | `Validate::isPostCode()`, no hyphen, the size of the column at most (12), and `Country::checkZipCode()` when the country has `need_zip_code` and a `zip_code_format` (`zipcode_from: not in the format of US (00000)`) |
@@ -2594,9 +2595,12 @@ by the shop. A `country_rules` entry of `somcp_get_tax_rule`, or the
 
 **Refused, nothing written** - every problem at once:
 - a country and state that already have a **This tax only** row, through `TaxRulesGroup::hasUniqueTaxRuleForCountry()` as the form checks it, named with the field the call used (`state` or `states`): `states: US AL already has a This tax only row in this rule - delete it with somcp_delete_country_rule first` (`country: US ...` without a state);
-- a **This tax only** row asked where the country and state already have any row, which the form lets through although the other rows would never apply: `states: US AL already has a row in this rule, and a This tax only row must be alone - choose combine or one_after_another, or delete that row with somcp_delete_country_rule first`.
+- a **This tax only** row asked where the country and state already have any row, which the form lets through although the other rows would never apply: `states: US AL already has a row in this rule, and a This tax only row must be alone - choose combine or one_after_another, or delete that row with somcp_delete_country_rule first`;
+- with **All**, the same two tests for each country, gathered into one line rather than one per country: `country: 3 countries already have a row in this rule that All would contradict: FR, US, DE - delete them with somcp_delete_country_rule first, or choose combine or one_after_another`. The core stops at the first such country and keeps the rows written before it; the tool writes none;
+- with **All**, a state or a range, which belong to one country: `state: only with one country, not with All` (or `states:`), `zipcode_from: only with one country, not with All` (or `zipcode_to:`). A range is refused rather than checked against the format of every country, which the core refuses for most of them anyway.
 
-**Then** - one `TaxRule` per state (or one with `id_state` 0), then `add()`;
+**Then** - one `TaxRule` per state (or one with `id_state` 0), for each
+country with **All**, then `add()`;
 a failure after the first row deletes the rows the call added, so a call adds
 all its rows or none. Then `update()` on the rule, for the token's shop only,
 as `updateTaxRulesGroup()` does, so its `date_upd` says when it last changed.
@@ -2606,7 +2610,8 @@ the copy `somcp_update_tax_rule` makes, and the rows go on the copy.
 
 **Returns** - `created: true`, `id_tax_rules_group` (the copy's for a used
 rule, with `replaced_id_tax_rules_group`), `id_tax_rule` (the rows added, one
-per state), `also_in_other_shops` and `warning` when `tax_rules_group_shop`
+per state, or per country with **All**), `country_count` (the number of
+countries written, with **All** only), `also_in_other_shops` and `warning` when `tax_rules_group_shop`
 ties the rule to other shops, then `tax_rule` as `somcp_get_tax_rule` returns
 it.
 

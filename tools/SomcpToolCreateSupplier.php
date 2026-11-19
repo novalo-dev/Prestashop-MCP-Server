@@ -337,13 +337,9 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         $iso = self::string($arguments['country']);
         $iso = $iso === null ? '' : Tools::strtoupper(trim($iso));
         // Validated before the query: Country::getByIso() would stop the
-        // request on a malformed code, and the shop's own countries are read
-        // through country_shop, which that method does not look at.
-        $idCountry = Validate::isLanguageIsoCode($iso) ? (int) Db::getInstance()->getValue(
-            'SELECT c.`id_country` FROM `' . _DB_PREFIX_ . 'country` c'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'country_shop` cs ON cs.`id_country` = c.`id_country` AND cs.`id_shop` = ' . (int) $idShop
-            . ' WHERE c.`iso_code` = \'' . pSQL($iso) . '\''
-        ) : 0;
+        // request on a malformed code.
+        $found = Validate::isLanguageIsoCode($iso) ? self::shopCountries($idShop, $iso) : [];
+        $idCountry = (int) array_key_first($found);
         $country = $idCountry > 0 ? new Country($idCountry) : null;
         if ($country === null || !Validate::isLoadedObject($country)) {
             $errors[] = 'country: no country of this shop has the ISO code "' . $iso . '"';
@@ -352,6 +348,35 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         }
 
         return $country;
+    }
+
+    /**
+     * The countries of this shop, by id_country, with their ISO code.
+     *
+     * Read through country_shop, which Country::getByIso() does not look at,
+     * active or not as the Country list of the tax rule form offers them.
+     * Public and shared so one code and the All of a tax rule row go through
+     * the same join.
+     *
+     * @param int $idShop
+     * @param string $iso one ISO code, already validated, or '' for every country
+     *
+     * @return array<int, string>
+     */
+    public static function shopCountries(int $idShop, string $iso = ''): array
+    {
+        $rows = Db::getInstance()->executeS(
+            'SELECT c.`id_country`, c.`iso_code` FROM `' . _DB_PREFIX_ . 'country` c'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'country_shop` cs ON cs.`id_country` = c.`id_country` AND cs.`id_shop` = ' . (int) $idShop
+            . ($iso === '' ? '' : ' WHERE c.`iso_code` = \'' . pSQL($iso) . '\'')
+            . ' ORDER BY c.`id_country`'
+        );
+        $countries = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $countries[(int) $row['id_country']] = (string) $row['iso_code'];
+        }
+
+        return $countries;
     }
 
     /**

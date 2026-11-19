@@ -98,6 +98,11 @@ that would clash with another row of the same country and state. A rule used
 by past orders keeps its old version for them, and the rows go on a copy under
 a new identifier, which the answer gives. A row read from the rule, or the row
 a deletion gives back, can be given again as it was, its state included.
+The All choice of Country is offered too: one call adds a row for every
+country of the shop, as the panel does, which is how a merchant sets up a rule
+that charges the same rate everywhere before changing a few countries. Unlike
+the panel, which stops at the first country that clashes and keeps the rows
+already written, it writes nothing and names every clashing country at once.
 
 **Delete a country from a tax rule.** The new tool somcp_delete_country_rule
 deletes one row of a tax rule, as the Delete of that row on the rule's edit

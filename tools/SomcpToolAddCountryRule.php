@@ -20,7 +20,8 @@ declare(strict_types=1);
 /*
  * somcp_add_country_rule - one row of a tax rule of International > Taxes >
  * Tax Rules, as the New tax rule panel of its edit page then Save and stay
- * add it: a country, its states, a zip code range, a behavior and a tax.
+ * add it: a country, its states, a zip code range, a behavior and a tax. The
+ * All of Country adds one row for each country of the shop in one call.
  *
  * Without a row a rule charges nothing: somcp_create_tax_rule makes the rule,
  * this tool makes it charge. The country and the states are read as the
@@ -79,8 +80,9 @@ class SomcpToolAddCountryRule
                         'description' => 'The rule to add to, from somcp_list_tax_rules.',
                     ],
                     'country' => [
-                        'type' => 'string',
-                        'description' => 'Merchant. ISO code of the Country, for example US.',
+                        'type' => ['string', 'null'],
+                        'description' => 'Merchant. ISO code of the Country, for example US, or null for All: one '
+                            . 'row for each country of the shop, active or not.',
                     ],
                     'state' => [
                         'type' => ['string', 'null'],
@@ -167,17 +169,38 @@ class SomcpToolAddCountryRule
             $errors[] = 'state: state or states, not both';
         }
 
-        $country = SomcpToolCreateSupplier::supplierCountry($arguments, $idShop, $errors);
-        $states = $country === null ? [] : self::states($arguments, $country, $errors);
-        [$zipFrom, $zipTo] = self::zipcodes($arguments, $country, $errors);
+        // null is asked for, never a field left out: the same word state: null
+        // already means for State, and a row for every country by omission
+        // would charge orders the merchant never meant.
+        $all = array_key_exists('country', $arguments) && $arguments['country'] === null;
+        // Each target is a country and the states it gets a row for.
+        $targets = [];
+        $zipFrom = '';
+        $zipTo = '';
+        if ($all) {
+            self::refuseWithAll($arguments, $errors);
+            foreach (array_keys(SomcpToolCreateSupplier::shopCountries($idShop)) as $idCountry) {
+                $targets[] = [new Country($idCountry), [0 => '']];
+            }
+        } else {
+            $country = SomcpToolCreateSupplier::supplierCountry($arguments, $idShop, $errors);
+            if ($country !== null) {
+                $targets[] = [$country, self::states($arguments, $country, $errors)];
+            }
+            [$zipFrom, $zipTo] = self::zipcodes($arguments, $country, $errors);
+        }
         $behavior = self::behavior($arguments, $errors);
         $idTax = self::tax($arguments, $errors);
         $description = self::description($arguments, $errors);
 
-        if ($errors === [] && $stored !== null && $country !== null && $behavior !== null) {
-            self::unique($idGroup, $country, $states, $behavior, $errors, 0, $stateField);
+        if ($errors === [] && $stored !== null && $targets !== [] && $behavior !== null) {
+            if ($all) {
+                self::uniqueAll($idGroup, $targets, $behavior, $errors);
+            } else {
+                self::unique($idGroup, $targets[0][0], $targets[0][1], $behavior, $errors, 0, $stateField);
+            }
         }
-        if ($errors !== [] || $stored === null || $country === null || $behavior === null || $idTax === null) {
+        if ($errors !== [] || $stored === null || $targets === [] || $behavior === null || $idTax === null) {
             return SomcpTool::refused('created', $errors);
         }
 
@@ -198,32 +221,34 @@ class SomcpToolAddCountryRule
 
         $added = [];
         $failure = '';
-        foreach ($states as $idState => $iso) {
-            $row = new TaxRule();
-            $row->id_tax_rules_group = $idGroup;
-            $row->id_country = (int) $country->id;
-            $row->id_state = (int) $idState;
-            // The core's own folding, so the bounds are stored as the form
-            // stores them: ordered, and a single code as from with 0 as to.
-            [$row->zipcode_from, $row->zipcode_to] = $row->breakDownZipCode(
-                $zipFrom === '' ? '0' : ($zipTo === '' ? $zipFrom : $zipFrom . '-' . $zipTo)
-            );
-            $row->zipcode_from = (string) $row->zipcode_from;
-            $row->zipcode_to = (string) $row->zipcode_to;
-            $row->id_tax = $idTax;
-            $row->behavior = $behavior;
-            $row->description = $description;
-            try {
-                $done = $row->add();
-                $failure = $done ? '' : 'PrestaShop refused to save the row' . ($iso !== '' ? ' of ' . $iso : '');
-            } catch (Throwable $e) {
-                $done = false;
-                $failure = $e->getMessage();
+        foreach ($targets as [$country, $states]) {
+            foreach ($states as $idState => $iso) {
+                $row = new TaxRule();
+                $row->id_tax_rules_group = $idGroup;
+                $row->id_country = (int) $country->id;
+                $row->id_state = (int) $idState;
+                // The core's own folding, so the bounds are stored as the form
+                // stores them: ordered, and a single code as from with 0 as to.
+                [$row->zipcode_from, $row->zipcode_to] = $row->breakDownZipCode(
+                    $zipFrom === '' ? '0' : ($zipTo === '' ? $zipFrom : $zipFrom . '-' . $zipTo)
+                );
+                $row->zipcode_from = (string) $row->zipcode_from;
+                $row->zipcode_to = (string) $row->zipcode_to;
+                $row->id_tax = $idTax;
+                $row->behavior = $behavior;
+                $row->description = $description;
+                try {
+                    $done = $row->add();
+                    $failure = $done ? '' : 'PrestaShop refused to save the row of ' . $country->iso_code . ($iso !== '' ? ' ' . $iso : '');
+                } catch (Throwable $e) {
+                    $done = false;
+                    $failure = $e->getMessage();
+                }
+                if (!$done) {
+                    break 2;
+                }
+                $added[] = (int) $row->id;
             }
-            if (!$done) {
-                break;
-            }
-            $added[] = (int) $row->id;
         }
         if ($failure !== '') {
             // All the rows of the call or none: a rule charging some of the
@@ -251,7 +276,8 @@ class SomcpToolAddCountryRule
         SomcpLogger::log(
             'tax_rule_country_added',
             SomcpLogger::OUTCOME_SUCCESS,
-            'tax rule ' . $idGroup . ', ' . count($added) . ' row(s) for ' . $country->iso_code
+            'tax rule ' . $idGroup . ', ' . count($added) . ' row(s) for '
+                . ($all ? 'every country (All)' : $targets[0][0]->iso_code)
                 . ($replacedId > 0 ? ', replacing rule ' . $replacedId . ' kept for past orders' : ''),
             '',
             $idEmployee
@@ -262,6 +288,9 @@ class SomcpToolAddCountryRule
             'id_tax_rules_group' => $idGroup,
             'id_tax_rule' => $added,
         ];
+        if ($all) {
+            $result['country_count'] = count($targets);
+        }
         $warnings = [];
         if ($replacedId > 0) {
             $result['replaced_id_tax_rules_group'] = $replacedId;
@@ -350,6 +379,56 @@ class SomcpToolAddCountryRule
         }
 
         return $states === [] ? [0 => ''] : $states;
+    }
+
+    /**
+     * Refuses with All what only one country can take: a state belongs to
+     * one country, and a range would be checked against the format of every
+     * country, which the core refuses for most of them anyway.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<int, string> $errors
+     */
+    private static function refuseWithAll(array $arguments, array &$errors): void
+    {
+        if (array_key_exists('state', $arguments) && $arguments['state'] !== null && $arguments['state'] !== '') {
+            $errors[] = 'state: only with one country, not with All';
+        } elseif (!empty($arguments['states'])) {
+            $errors[] = 'states: only with one country, not with All';
+        }
+        foreach (['zipcode_from', 'zipcode_to'] as $field) {
+            if (isset($arguments[$field]) && $arguments[$field] !== '') {
+                $errors[] = $field . ': only with one country, not with All';
+                break;
+            }
+        }
+    }
+
+    /**
+     * The test of unique() for every country of All, the conflicts gathered
+     * into one line: one line per country would bury the answer under
+     * hundreds of the same refusal.
+     *
+     * @param int $idGroup
+     * @param array<int, array{0: Country, 1: array<int, string>}> $targets
+     * @param int $behavior
+     * @param array<int, string> $errors
+     */
+    private static function uniqueAll(int $idGroup, array $targets, int $behavior, array &$errors): void
+    {
+        $clashes = [];
+        foreach ($targets as [$country, $states]) {
+            $found = [];
+            self::unique($idGroup, $country, $states, $behavior, $found);
+            if ($found !== []) {
+                $clashes[] = (string) $country->iso_code;
+            }
+        }
+        if ($clashes !== []) {
+            $errors[] = 'country: ' . count($clashes) . ' countries already have a row in this rule that All would '
+                . 'contradict: ' . implode(', ', $clashes) . ' - delete them with somcp_delete_country_rule first, '
+                . 'or choose combine or one_after_another';
+        }
     }
 
     /**

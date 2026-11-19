@@ -660,6 +660,66 @@ if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== nul
         }
     }
 
+    // Every country at once (#318): the All of Country, on a rule just
+    // created, then the same call again and a state and a range with All.
+    if ($addCountryRule !== null) {
+        $calls += 3;
+        $idAll = 0;
+        try {
+            $result = $taxRuleCall($createTaxRule, ['name' => 'Somcp every country', 'active' => true]);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            $idAll = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+            $shopCountries = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'country_shop` WHERE `id_shop` = ' . (int) $context->shop->id
+            );
+            $allAsked = ['id_tax_rules_group' => $idAll, 'country' => null, 'id_tax' => 1];
+            $result = $taxRuleCall($addCountryRule, $allAsked);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            if ($idAll === 0 || $shopCountries === 0 || !empty($result['isError']) || !is_array($answer)
+                || ($answer['created'] ?? false) !== true || ($answer['country_count'] ?? null) !== $shopCountries
+                || count($answer['id_tax_rule'] ?? []) !== $shopCountries) {
+                $failures[] = 'somcp_add_country_rule (every country, All): expected one row per country of the shop - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_add_country_rule (every country, All)');
+            }
+
+            $result = $taxRuleCall($addCountryRule, $allAsked + ['behavior' => 'this_tax_only']);
+            $text = $taxRuleText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was created.') === false
+                || strpos($text, 'countries already have a row in this rule that All would contradict:') === false
+                || substr_count($text, 'All would contradict') !== 1) {
+                $failures[] = 'somcp_add_country_rule (All again): expected one refusal line naming the countries - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_add_country_rule (All again, refused)');
+            }
+
+            $before = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax_rules_group` = ' . $idAll
+            );
+            $result = $taxRuleCall($addCountryRule, $allAsked + ['states' => ['AL'], 'zipcode_from' => '35000']);
+            $text = $taxRuleText($result);
+            $after = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax_rules_group` = ' . $idAll
+            );
+            if (empty($result['isError']) || $after !== $before
+                || strpos($text, 'states: only with one country, not with All') === false
+                || strpos($text, 'zipcode_from: only with one country, not with All') === false) {
+                $failures[] = 'somcp_add_country_rule (All with a state and a range): expected both refused, no row written - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_add_country_rule (All with a state and a range, refused)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_add_country_rule (every country, All): ' . get_class($e) . ' - ' . $e->getMessage();
+        } finally {
+            if ($idAll > 0) {
+                $rule = new TaxRulesGroup($idAll);
+                if (Validate::isLoadedObject($rule)) {
+                    $rule->delete();
+                }
+            }
+        }
+    }
+
     // A rule an order line carries (#295): changed, it must stay as it was
     // for that order and the change go on a copy. No scenario can give an
     // order line a rule of its own, so order line 1 is pointed at a rule

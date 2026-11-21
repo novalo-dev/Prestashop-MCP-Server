@@ -178,6 +178,9 @@ included, instead of the first one only, or none for a misspelt filter, which
 used to answer as if it had not been given. A wrong language given back to
 the SEO update of a CMS page is named once, with the shop's languages.
 
+**The built-in assistant runs on Neuron AI 4.1.27.** Nothing changes in how
+you use it.
+
 ### Fixed
 
 **Disabled tax rules and disabled products short of stock.** Asking for the

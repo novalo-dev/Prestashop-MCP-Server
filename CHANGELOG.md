@@ -181,6 +181,9 @@ the SEO update of a CMS page is named once, with the shop's languages.
 **The built-in assistant runs on Neuron AI 4.1.27.** Nothing changes in how
 you use it.
 
+**The anti-robot check of the sign-in page runs on the ALTCHA library 2.4.0.**
+Nothing changes on the page.
+
 ### Fixed
 
 **Disabled tax rules and disabled products short of stock.** Asking for the

@@ -2299,9 +2299,9 @@ On 8.0.1 the filter label is **Free Shipping**, on 9.0.0 **Free shipping**; the 
 **State**: written · [issue #316](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/316)
 **Nature**: `acts(VIEW, 'AdminCarriers')` · **Scope**: `mcp.orders.read`
 
-**Does** - reads one carrier of **Shipping > Carriers** as its edit page shows it: name, **Transit time**, **Speed grade**, logo, **Tracking URL**, **Group access**, **Zones**, **Free shipping**, **Tax**, handling costs, billing by price or by weight, **Out-of-range behavior** and the four size and weight limits.
+**Does** - reads one carrier of **Shipping > Carriers** as its edit page shows it: name, **Transit time**, **Speed grade**, logo, **Tracking URL**, **Group access**, **Zones**, **Free shipping**, **Tax**, handling costs, billing by price or by weight, the **Ranges** with the price of each per zone, **Out-of-range behavior** and the four size and weight limits.
 
-**Do not use for** - listing the carriers (→ `somcp_list_carriers`); the carrier of one order (→ `somcp_get_order`); the ranges and the price of each range per zone (→ part 2, #317).
+**Do not use for** - listing the carriers (→ `somcp_list_carriers`); the carrier of one order (→ `somcp_get_order`); the shipping cost of one cart, to which the shop adds handling costs, free shipping thresholds and the carrier tax.
 
 **Parameters**
 
@@ -2320,8 +2320,10 @@ Unknown arguments through `SomcpTool::unknownFields()`.
 - `handling_costs` (**Add handling costs** on 8.0.1, **Handling costs** on 9.0.0); when true, `handling_cost_tax_excl`: `PS_SHIPPING_HANDLING` for the shop and group of the token, set on **Shipping > Preferences**;
 - `billing`: `"price"` or `"weight"`, as `Carrier::getShippingMethod()` decides (a carrier stored with `shipping_method` 0 follows `PS_SHIPPING_METHOD`), `null` for a free carrier;
 - `out_of_range`: `"highest_range"` (**Apply the cost of the highest defined range**) or `"disable_carrier"` (**Disable carrier**);
+- `ranges`: the ranges of the kind `billing` names (`range_price` for `"price"`, `range_weight` for `"weight"`), sorted by `from`, each `{from, to, prices}`, `from` included and `to` excluded as the 8.0.1 header says (**>=**, **<**); `prices` is `[{id_zone, zone, price_tax_excl}]`, one per zone of `zones`, from `delivery`, the row of the shop of the token, else of its group, else the global one, as `Carrier::sqlDeliveryRangeShop()` picks it; a zone with no row has `price_tax_excl: null` and a `warning`, since the shop does not offer the carrier there. The rows of the other kind (a carrier stored with both, like demo carrier 2) are left out: the form does not show them and the core does not charge them. `[]` for a free carrier, whose form shows no ranges;
+- `range_unit`: the ISO code of the default currency (`PS_CURRENCY_DEFAULT`) for price ranges, `PS_WEIGHT_UNIT` for weight ranges, `null` for a free carrier;
 - `max_width`, `max_height`, `max_depth` (integers), `max_weight` (number), `0` for no limit, with `dimension_unit` (`PS_DIMENSION_UNIT`) and `weight_unit` (`PS_WEIGHT_UNIT`);
-- `warning` when there is one (a deleted tax rule, costs computed by a module), and `language`.
+- `warning` when there is one (a deleted tax rule, a zone without a price, costs computed by a module), and `language`.
 
 **Errors** - in the envelope `Nothing was read. Correct these and call again:`, every problem at once: a missing or non-integer `id_carrier` (`SomcpTool::notAnIdentifier()`), a carrier not found (`SomcpTool::notFound('id_carrier', 'carrier', $id, 'somcp_list_carriers')`; for an older version of a carrier, left `deleted` by an edit, the line adds the `id_reference` to find the current one by), an unknown argument, a language the shop does not have.
 

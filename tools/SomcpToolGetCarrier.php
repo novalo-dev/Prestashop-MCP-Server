@@ -20,13 +20,15 @@ declare(strict_types=1);
 /*
  * somcp_get_carrier - one carrier of Shipping > Carriers as its edit page
  * shows it: the zones and customer groups it serves, its tax, its handling
- * costs, how its costs are billed and its size and weight limits.
+ * costs, how its costs are billed, its ranges and the price of each per
+ * zone, and its size and weight limits.
  *
  * somcp_list_carriers stops at what the list shows, so an assistant setting
  * up the delivery of a shop could not tell where a carrier delivers nor to
- * whom. The columns both tools give come from the list's own query, so the
- * two never answer differently for one carrier; carrier() is public for the
- * reads and writes of a carrier that answer with it.
+ * whom, nor what a customer pays there. The columns both tools give come
+ * from the list's own query, so the two never answer differently for one
+ * carrier; carrier() is public for the reads and writes of a carrier that
+ * answer with it.
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -53,9 +55,11 @@ class SomcpToolGetCarrier
             Somcp::t('Read a carrier'),
             'Reads one carrier of Shipping > Carriers as its edit page shows it: name, Transit time, Speed '
                 . 'grade, logo, Tracking URL, Group access, Zones, Free shipping, Tax, handling costs, billing '
-                . 'by price or weight, Out-of-range behavior and the size and weight limits. Take id_carrier '
+                . 'by price or weight, the ranges with the price of each in every zone, Out-of-range behavior '
+                . 'and the size and weight limits. Take id_carrier '
                 . 'from somcp_list_carriers, which lists them all; for the carrier of one order use '
-                . 'somcp_get_order.',
+                . 'somcp_get_order. The ranges are not what one cart pays, the shop adding handling costs, '
+                . 'free shipping thresholds and the carrier tax.',
             [
                 'type' => 'object',
                 'properties' => [
@@ -172,6 +176,13 @@ class SomcpToolGetCarrier
 
         $carrier['billing'] = self::billing($row, $idShopGroup, $idShop);
         $carrier['out_of_range'] = self::OUT_OF_RANGE[(int) $row['range_behavior']] ?? self::OUT_OF_RANGE[0];
+        $carrier['ranges'] = self::ranges($idCarrier, $carrier['billing'], $carrier['zones'], $idShopGroup, $idShop, $warnings);
+        $carrier['range_unit'] = null;
+        if ($carrier['billing'] === 'price') {
+            $carrier['range_unit'] = (string) Currency::getIsoCodeById((int) Configuration::get('PS_CURRENCY_DEFAULT', null, $idShopGroup, $idShop));
+        } elseif ($carrier['billing'] === 'weight') {
+            $carrier['range_unit'] = (string) Configuration::get('PS_WEIGHT_UNIT', null, $idShopGroup, $idShop);
+        }
         // 0 is no limit, as the form shows it.
         $carrier['max_width'] = (int) $row['max_width'];
         $carrier['max_height'] = (int) $row['max_height'];
@@ -220,6 +231,86 @@ class SomcpToolGetCarrier
         }
 
         return $method === Carrier::SHIPPING_METHOD_PRICE ? 'price' : null;
+    }
+
+    /**
+     * The ranges of the carrier and the price of each in every zone it
+     * serves, as the ranges table of Shipping locations and costs shows them.
+     *
+     * Only the ranges of the kind the carrier is billed by: a carrier can
+     * keep rows of the other kind from an earlier setting, which the form
+     * does not show and the core never charges, so giving them would tell
+     * the merchant a price no customer pays. A free carrier has none.
+     *
+     * @param int $idCarrier
+     * @param string|null $billing "price", "weight" or null, from billing()
+     * @param array<int, array{id_zone: int, name: string}> $zones from zones()
+     * @param int $idShopGroup
+     * @param int $idShop
+     * @param array<int, string> $warnings completed with the zones a range has no price for
+     *
+     * @return array<int, array{from: float, to: float, prices: array<int, array{id_zone: int, zone: string, price_tax_excl: float|null}>}>
+     */
+    private static function ranges(int $idCarrier, ?string $billing, array $zones, int $idShopGroup, int $idShop, array &$warnings): array
+    {
+        if ($billing !== 'price' && $billing !== 'weight') {
+            return [];
+        }
+        $table = $billing === 'price' ? 'range_price' : 'range_weight';
+        $column = 'id_' . $table;
+
+        $query = new DbQuery();
+        $query->select('r.`' . $column . '` AS `id_range`, r.`delimiter1`, r.`delimiter2`');
+        $query->from($table, 'r');
+        $query->where('r.`id_carrier` = ' . $idCarrier);
+        $query->orderBy('r.`delimiter1` ASC, r.`' . $column . '` ASC');
+        $rows = Db::getInstance()->executeS($query) ?: [];
+        if ($rows === []) {
+            return [];
+        }
+
+        // The rows the core may charge in this shop: its own, then its
+        // group's, then the global one, the order in which
+        // Carrier::sqlDeliveryRangeShop() picks a single row per range and zone.
+        $delivery = Db::getInstance()->executeS(
+            'SELECT `' . $column . '` AS `id_range`, `id_zone`, `price`, `id_shop`, `id_shop_group`'
+            . ' FROM `' . _DB_PREFIX_ . 'delivery`'
+            . ' WHERE `id_carrier` = ' . $idCarrier . ' AND `' . $column . '` > 0'
+            . ' AND (`id_shop` = ' . $idShop
+            . ' OR (`id_shop_group` = ' . $idShopGroup . ' AND (`id_shop` IS NULL OR `id_shop` = 0))'
+            . ' OR ((`id_shop_group` IS NULL OR `id_shop_group` = 0) AND (`id_shop` IS NULL OR `id_shop` = 0)))'
+            . ' ORDER BY `id_shop` DESC, `id_shop_group` DESC'
+        ) ?: [];
+        $prices = [];
+        foreach ($delivery as $line) {
+            $key = (int) $line['id_range'] . ':' . (int) $line['id_zone'];
+            if (!isset($prices[$key])) {
+                $prices[$key] = (float) $line['price'];
+            }
+        }
+
+        $ranges = [];
+        $unpriced = [];
+        foreach ($rows as $row) {
+            $range = ['from' => (float) $row['delimiter1'], 'to' => (float) $row['delimiter2'], 'prices' => []];
+            foreach ($zones as $zone) {
+                $key = (int) $row['id_range'] . ':' . $zone['id_zone'];
+                $price = $prices[$key] ?? null;
+                if ($price === null) {
+                    $unpriced[$zone['id_zone']] = $zone['name'];
+                }
+                $range['prices'][] = ['id_zone' => $zone['id_zone'], 'zone' => $zone['name'], 'price_tax_excl' => $price];
+            }
+            $ranges[] = $range;
+        }
+        if ($unpriced !== []) {
+            // The core only offers a carrier where every range it needs has
+            // a price, so a missing one hides the carrier in that zone.
+            $warnings[] = 'Some ranges have no price in the zones ' . implode(', ', $unpriced)
+                . ', so the shop does not offer this carrier there for those amounts.';
+        }
+
+        return $ranges;
     }
 
     /**

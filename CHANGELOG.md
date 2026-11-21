@@ -21,10 +21,11 @@ are:
 **Read a carrier in full.** The new tool somcp_get_carrier reads one carrier of
 Shipping > Carriers as its edit page shows it: the zones it delivers to, the
 customer groups allowed to use it, its tax, its handling costs, whether its
-costs are billed by price or by weight, its Out-of-range behavior, its speed
-grade and its size and weight limits. Until now the assistant only saw the
-carrier list, so it could not tell where a carrier delivers, to whom, nor how
-it charges, and a merchant setting up delivery had to open each carrier.
+costs are billed by price or by weight, its ranges with the price of each in
+every zone, its Out-of-range behavior, its speed grade and its size and weight
+limits. Until now the assistant only saw the carrier list, so it could not tell
+where a carrier delivers, to whom, nor what a customer pays there, and a
+merchant setting up delivery had to open each carrier.
 
 **Change the tax options.** The new tool somcp_update_tax_options changes the
 Tax options of International > Taxes > Taxes, as their Save: Enable tax,

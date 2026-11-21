@@ -165,3 +165,68 @@ rules:
       true or always false, which the Addons validator reports, while on a
       shop it is the shop's value. Read it with SomcpBackOffice::constant().
     pattern-regex: defined\(\s*(['"])(\w+)\1\s*\)\s*(&&|and|\?)\s*\\?\2\b
+
+  # The two rules below are what the PrestaShop Addons security review
+  # reports on a module, written down so they stop a pull request here
+  # instead of a submission there.
+
+  - id: somcp-upload-read-in-place
+    languages: [php]
+    severity: ERROR
+    message: >-
+      An uploaded file is opened by the name the request gives it. Move it
+      first with move_uploaded_file() to a path built by the module, then
+      read that path: the Addons scanner reports a read of $_FILES as a
+      request the client controls (SSRF).
+    patterns:
+      - pattern-either:
+          - pattern: $F(..., $_FILES[...][...], ...)
+          - pattern: $F(..., (string) $_FILES[...][...], ...)
+      - metavariable-regex:
+          metavariable: $F
+          regex: ^(file_get_contents|fopen|readfile|file|copy|rename|simplexml_load_file|parse_ini_file|include|require|include_once|require_once|curl_file_create|hash_file|md5_file|sha1_file|getimagesize|exif_read_data)$
+
+  - id: somcp-path-from-input
+    mode: taint
+    languages: [php]
+    severity: ERROR
+    message: >-
+      A value that comes from the request or from a tool's arguments,
+      directly or through what was stored under a name it chose, decides
+      which file is read, sent or removed. Take the bare name with
+      basename(), resolve it with realpath() and check it stays in the
+      module's own folder.
+    # Unlike the SQL rule above, a value keeps its taint through the helpers
+    # it crosses: the Addons scanner follows a request value into a cache key,
+    # into what is read back under it, and into any path built from that.
+    pattern-sources:
+      - pattern: $_GET
+      - pattern: $_POST
+      - pattern: $_REQUEST
+      - pattern: $_COOKIE
+      - pattern: $_FILES
+      - pattern: Tools::getValue(...)
+      - pattern: Tools::getAllValues(...)
+      - pattern: file_get_contents('php://input')
+      # What the assistant sent: every tool handler receives it under this name.
+      - patterns:
+          - pattern-inside: |
+              function $F(..., $arguments, ...) { ... }
+          - pattern: $arguments
+    pattern-sanitizers:
+      - pattern: basename(...)
+      - pattern: realpath(...)
+      - pattern: (int) $X
+      - pattern: (float) $X
+      - pattern: (bool) $X
+      - pattern: intval(...)
+    pattern-sinks:
+      - patterns:
+          - pattern: $F($PATH, ...)
+          # Reading the body of the request is how the input arrives, not a
+          # file the input chose.
+          - pattern-not: $F('php://input', ...)
+          - focus-metavariable: $PATH
+          - metavariable-regex:
+              metavariable: $F
+              regex: ^(readfile|file_get_contents|fopen|file|unlink|is_file|file_exists|filesize|fpassthru|copy|rename|rmdir|opendir|scandir|file_put_contents|include|require|include_once|require_once)$

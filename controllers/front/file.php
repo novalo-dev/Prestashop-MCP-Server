@@ -78,7 +78,12 @@ class SomcpFileModuleFrontController extends ModuleFrontController
             && hash_equals(SomcpAssistantChat::signature($hash, $expires), $signature)) {
             $file = SomcpUpload::linked($hash);
         }
-        if ($file === null) {
+        // The file sent is looked up again in the store by its bare name:
+        // the path linked() returned was read from a row found through the
+        // request, and nothing derived from a request should name the file
+        // that leaves the server.
+        $path = $file === null ? null : SomcpUpload::stored(basename($file['path']));
+        if ($file === null || $path === null) {
             SomcpHttp::noContent(404);
         }
 
@@ -89,7 +94,7 @@ class SomcpFileModuleFrontController extends ModuleFrontController
         // The type stored at deposit, checked then against the bytes; never
         // sniffed again by the browser, and never run as a page.
         header('Content-Type: ' . $file['mimeType']);
-        header('Content-Length: ' . (string) filesize($file['path']));
+        header('Content-Length: ' . (string) filesize($path));
         header('Content-Disposition: inline; filename="' . SomcpDownload::cleanName($file['name']) . '"');
         header('X-Content-Type-Options: nosniff');
         header("Content-Security-Policy: default-src 'none'; sandbox");
@@ -97,7 +102,7 @@ class SomcpFileModuleFrontController extends ModuleFrontController
         header('X-Robots-Tag: noindex, nofollow');
         // As on every other answer of the module: SomcpHttp::sendHeaders().
         header_remove('X-Powered-By');
-        readfile($file['path']);
+        readfile($path);
         exit;
     }
 }

@@ -189,6 +189,17 @@ taxes got every tax rule back.
 hold 50 characters, a longer name is now refused with the limit instead of
 being cut, so the rule saved always carries the name the merchant gave.
 
+### Security
+
+**The file behind a signed link is looked up in the store by its name.** A
+file of the assistant opened through its signed link was sent from the path
+read in the database. It is now found again by its bare name inside the
+uploads folder before it is sent, so nothing reached through a request can
+name a file elsewhere. Two rules join the security checks to keep it that
+way: one refuses an upload read where PHP put it, the other a file read,
+sent or removed at a path the request had a hand in. These are the two
+shapes the PrestaShop Addons security review reports.
+
 ## 2.0.3 - 2026-11-17
 
 ### Added

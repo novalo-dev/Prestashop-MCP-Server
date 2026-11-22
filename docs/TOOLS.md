@@ -446,7 +446,7 @@ or carts that were never paid for (→ Carts).
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_order` | integer | no | exact identifier |
+| `id_order` | integer | no | exact identifier, a whole number above 0 |
 | `reference` | string | no | whole or partial reference |
 | `customer_name` | string | no | first name, last name or both, in any order |
 | `customer_email` | string | no | exact match, more reliable than the name |
@@ -486,7 +486,9 @@ customer has none. The count joins the same tables as the list, so
 
 A field the tool does not take, a `sort` outside its list, a `new_client` that
 is not true or false, a `total_min` or `total_max` that is not a number, a
-`date_from` or `date_to` that is not `YYYY-MM-DD`, or a `status_id` that is not
+`date_from` or `date_to` that is not `YYYY-MM-DD`, an `id_order` that is not a
+whole number above 0 (`id_order: a whole number above 0`; one no order of the
+shop has answers an empty list), or a `status_id` that is not
 a whole number above 0 or matches no order status, a `language` the shop does
 not have, or a `delivery_country` that is no country's ISO code
 (`delivery_country: an ISO code of a country, for example FR`, the line of

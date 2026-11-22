@@ -282,6 +282,11 @@ class SomcpToolSearchOrders
                 $errors[] = $key . ': a date, YYYY-MM-DD';
             }
         }
+        // As every other list reads its identifier filters: 0 or a value that
+        // is not a whole number is a mistake to name, not a filter to drop.
+        if (array_key_exists('id_order', $arguments) && SomcpTool::id($arguments, 'id_order') === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_order');
+        }
         if (array_key_exists('status_id', $arguments)) {
             $idStatus = SomcpTool::id($arguments, 'status_id');
             if ($idStatus === 0) {
@@ -358,9 +363,10 @@ class SomcpToolSearchOrders
         // connected to one shop has no business reading another's orders.
         $conditions = ['o.`id_shop` = ' . $idShop];
 
-        if (!empty($arguments['id_order'])) {
-            // A value that is not a whole number matches no order rather than
-            // being cast to another one.
+        if (array_key_exists('id_order', $arguments)) {
+            // Only a whole number above 0 reaches this point: problems() refuses
+            // the rest. One the shop has not answers an empty list, as the ID
+            // filter of the back office list does.
             $conditions[] = 'o.`id_order` = ' . SomcpTool::id($arguments, 'id_order');
         }
         if (!empty($arguments['reference'])) {

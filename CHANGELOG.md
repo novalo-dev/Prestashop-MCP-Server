@@ -230,6 +230,10 @@ every call are unchanged.
 
 ### Fixed
 
+**Orders: searching by an order number that is not one.** Searching the orders
+by an order number that is not one is now refused with the reason, instead of
+answering the latest orders or none.
+
 **Disabled tax rules and disabled products short of stock.** Asking for the
 disabled tax rules, or the disabled products short of stock, now lists those
 only, as the Enabled and Status filters of the back office do. Until now the

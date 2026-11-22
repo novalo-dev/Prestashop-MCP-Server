@@ -5,6 +5,8 @@
     {"why": "a language the shop does not have", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "language: not one of the shop's languages, which are", "leave language out for the shop default"]},
     {"why": "an unknown language and a misspelt field together, both named in one answer", "arguments": {"language": "zz", "statut": "x"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "statut: not a field of this tool", "language: not one of the shop's languages, which are ", "leave language out for the shop default"]},
     {"why": "one order by identifier, its date under the name of 1.0.0 and under the one somcp_get_order uses", "arguments": {"id_order": 1}, "expect": "ok", "contains": ["\"date\": \"", "\"date_add\": \""]},
+    {"why": "an order identifier of 0 is refused, not read as no filter", "arguments": {"id_order": 0}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_order: a whole number above 0"]},
+    {"why": "an order identifier that is not a number is refused, not read as no order", "arguments": {"id_order": "abc"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_order: a whole number above 0"]},
     {"why": "a day given with a time is refused, not glued to the bound's own time", "arguments": {"date_to": "2026-11-05 10:00:00"}, "expect": "error", "contains": ["date_to: a date, YYYY-MM-DD"]},
     {"why": "filters, sort and paging together", "arguments": {"date_from": "2000-01-01", "total_min": 0, "only_valid": false, "limit": 2, "offset": 1}, "expect": "ok"},
     {"why": "a reference nobody has", "arguments": {"reference": "ZZZZZZZZZ"}, "expect": "any"},

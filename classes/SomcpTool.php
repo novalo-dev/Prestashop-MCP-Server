@@ -30,6 +30,12 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpTool
 {
+    /**
+     * @var array<string, int|null> The bytes each text column holds, per
+     *                              table and field, read once per request
+     */
+    private static $textColumnBytes = [];
+
     /** @var string */
     private $name;
 
@@ -1007,6 +1013,48 @@ class SomcpTool
         return isset($probe::$definition['fields'][$field]['size'])
             ? (int) $probe::$definition['fields'][$field]['size']
             : $fallback;
+    }
+
+    /**
+     * The bytes the column of a text field holds when the text is longer, null
+     * when it fits.
+     *
+     * A field whose definition declares a size is left to validateField(),
+     * which checks it. One that declares none is held by its column alone:
+     * PrestaShop 8.0.1 declares no size on the rich texts and the order note,
+     * and the core opens every connection with an empty sql_mode, so MySQL
+     * cuts what does not fit without a word and the tool would report a
+     * success. The column is read rather than a fixed 65 535 bytes assumed:
+     * the category descriptions of 9.0.0 declare no size either, on a
+     * mediumtext that stores far more. Counted in bytes, as the column counts.
+     *
+     * @param ObjectModel $probe
+     * @param string $field
+     * @param string $text the text as it would be stored
+     *
+     * @return int|null
+     */
+    public static function overTextColumn(ObjectModel $probe, string $field, string $text): ?int
+    {
+        $definition = $probe::$definition;
+        if (!empty($definition['fields'][$field]['size'])) {
+            return null;
+        }
+        $table = (string) $definition['table'] . (!empty($definition['fields'][$field]['lang']) ? '_lang' : '');
+        $key = $table . '.' . $field;
+        if (!array_key_exists($key, self::$textColumnBytes)) {
+            // executeS rather than getRow, which appends a LIMIT that SHOW
+            // COLUMNS does not take.
+            $columns = Db::getInstance()->executeS(
+                'SHOW COLUMNS FROM `' . bqSQL(_DB_PREFIX_ . $table) . "` LIKE '" . pSQL($field) . "'"
+            );
+            $type = is_array($columns) && isset($columns[0]['Type']) ? strtolower((string) $columns[0]['Type']) : '';
+            $sizes = ['tinytext' => 255, 'text' => 65535, 'mediumtext' => 16777215, 'longtext' => 4294967295];
+            self::$textColumnBytes[$key] = $sizes[$type] ?? null;
+        }
+        $bytes = self::$textColumnBytes[$key];
+
+        return $bytes !== null && strlen($text) > $bytes ? $bytes : null;
     }
 
     /**

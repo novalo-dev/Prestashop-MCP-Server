@@ -45,12 +45,6 @@ require_once __DIR__ . '/SomcpToolCreateProduct.php';
 class SomcpToolSetOrderNote
 {
     /**
-     * @var int The bytes a MySQL text column holds: orders.note on 8.0.1,
-     *          where the class declares no size and MySQL would cut the rest
-     */
-    private const TEXT_COLUMN_BYTES = 65535;
-
-    /**
      * @return SomcpTool
      */
     public static function define(): SomcpTool
@@ -120,11 +114,10 @@ class SomcpToolSetOrderNote
             // PrestaShop 9 declares the size of the field on the class and
             // validateFields() checks it; 8.0.1 declares none, and the text
             // column would silently cut a longer note. Read from the definition
-            // rather than the version, so a release that adds the size is
-            // followed.
-            $definition = Order::$definition['fields']['note'] ?? [];
-            if (empty($definition['size']) && strlen($note) > self::TEXT_COLUMN_BYTES) {
-                $problems[] = 'note: longer than the ' . self::TEXT_COLUMN_BYTES . ' bytes this shop can store';
+            // and the column rather than the version, so a release that adds
+            // the size is followed.
+            if (($bytes = SomcpTool::overTextColumn(new Order(), 'note', $note)) !== null) {
+                $problems[] = 'note: longer than the ' . $bytes . ' bytes this shop can store';
             }
         }
 

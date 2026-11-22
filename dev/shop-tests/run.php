@@ -1071,6 +1071,49 @@ if ($getTaxOptions !== null && $updateTaxOptions !== null) {
     }
 }
 
+// A supplier description too long for its column (#333): a JSON scenario
+// cannot hold a 65 KB string in a readable way. On PrestaShop 8 the class
+// declares no size and the text column would cut the description without a
+// word, so the tool refuses it with the reason; on 9 the declared size keeps
+// it in. The name, address and city are left out, so neither version creates
+// anything and nothing is left behind.
+$createSupplier = $registry->get('somcp_create_supplier');
+if ($createSupplier !== null) {
+    $calls += 1;
+    try {
+        $arguments = ['languages' => ['en'], 'description' => ['en' => '<p>' . str_repeat('a', 65536) . '</p>']];
+        $result = $createSupplier->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $createSupplier->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $needles = ['Nothing was created', 'name: required, the supplier name'];
+        if (empty(Supplier::$definition['fields']['description']['size'])) {
+            $needles[] = 'description (en): longer than the 65535 bytes this shop can store';
+        }
+        $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+            return strpos($text, $needle) === false;
+        });
+        if (empty($result['isError']) || $missing !== []) {
+            $failures[] = 'somcp_create_supplier (a description too long for the shop): expected a refusal with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'error', 'somcp_create_supplier (a description too long for the shop, refused)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_supplier (a description too long for the shop): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // A category deleted with a subcategory and a product, once per mode (#227):
 // the JSON scenario only reaches categories with neither, so the reading of
 // the subcategories and the settling of the products never ran. The tree is

@@ -809,7 +809,8 @@ the note are removed, as the back office form does, before the comparison.
 The size limit differs: on 9.0.0 the class declares the mediumtext limit and
 `validateFields()` checks it; on 8.0.1 the class declares none and the `text`
 column holds 65535 bytes, so a longer note is refused rather than cut by MySQL.
-The limit is read from `Order::$definition`, not from the version.
+The limit is read from `Order::$definition` and, when it declares none, from
+the column itself (`SomcpTool::overTextColumn()`), not from the version.
 
 Not replayable: a lost answer is checked with `somcp_get_order`, whose
 `order.note` shows the saved text.
@@ -3619,13 +3620,13 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `name` | merchant | required; 128 characters at most; forbidden characters `<>{}`, and `;=#` before PrestaShop 9.1 (`Validate::isCatalogName` of the running version) |
 | `id_parent` | merchant, from the shop | from `somcp_list_categories`; Home (the top category of the shop of the token) when left out; never the root |
 | `active` (Displayed) | merchant | true by default |
-| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office |
-| `additional_description` (additional information) | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office |
+| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
+| `additional_description` (additional information) | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
 | `groups` (group access) | merchant, from the shop | ids from `somcp_list_customer_groups`, or the `{"id_group", "name"}` objects `somcp_get_category` returns (the schema takes both, the name is ignored); every group when left out, as in the back office; an empty list is refused rather than read as every group |
 | `link_rewrite` | assistant | generated from the name when left out; `Tools::str2url()` then `Validate::isLinkRewrite()`; 128 characters at most |
 | `meta_title` | assistant | 255 characters at most; past 70, a search result cuts it |
 | `meta_description` | assistant | 512 characters at most; past 160, a search result cuts it |
-| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
+| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}`; 255 characters at most |
 | `redirect_type` | assistant | PrestaShop 9 only, refused on 8 with a clear message: what the page does while not displayed, a value of the core's `RedirectType` (`301`, `302`, `404`, `410`); the shop default when left out |
 | `id_type_redirected` | merchant, from the shop | PrestaShop 9 only: the category a `301` or `302` goes to, from `somcp_list_categories`; 0 or left out for the closest parent, as the storefront does; refused next to a `404` or `410` |
 | `cover_image` | merchant | an object with `url` or `upload_ref` (one of the two, never both), downloaded or redeemed with the guards of `somcp_create_product`'s images |
@@ -3783,11 +3784,11 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Field | Who fills it | Rule |
 |---|---|---|
 | `name` | merchant | required; one string, the same in every language (`Manufacturer::$name` has no `lang`); 64 characters at most; forbidden characters `<>{}`, and `;=#` before PrestaShop 9.1 (`Validate::isCatalogName` of the running version) |
-| `short_description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` |
-| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` |
+| `short_description` | assistant | rich text, cleaned by `Validate::isCleanHtml()`; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
+| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()`; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
 | `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most; past 70, a search result cuts it |
 | `meta_description` | assistant | same characters; 512 characters at most; past 160, a search result cuts it |
-| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
+| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}`; 255 characters at most |
 | `logo` | merchant | an object with `url` (a public `https` address) or `upload_ref` (a file already on the shop), one of the two, as the `images` of `somcp_create_product`, fetched and checked by the same shared function |
 | `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 
@@ -4030,7 +4031,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Field | Who fills it | Rule |
 |---|---|---|
 | `name` | merchant | required; one string, the same in every language (`Supplier::$name` has no `lang`); 64 characters at most; forbidden characters `<>{}`, and `;=#` before PrestaShop 9.1 (`Validate::isCatalogName` of the running version) |
-| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` |
+| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()`; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
 | `phone`, `phone_mobile` | merchant | `Validate::isPhoneNumber()`: digits, spaces and `+-.()/`; 32 characters at most |
 | `address1` | merchant | required by PrestaShop for a supplier; `Validate::isAddress()`; 128 characters at most |
 | `address2` | merchant | same rules, not required |
@@ -4041,7 +4042,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `dni` | merchant | national ID number, required when the country asks for one (`need_identification_number`, checked by `Address::validateField()`); `Validate::isDniLite()`, 16 characters at most |
 | `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most; past 70, a search result cuts it |
 | `meta_description` | assistant | same characters; 512 characters at most; past 160, a search result cuts it |
-| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
+| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}`; 255 characters at most |
 | `logo` | merchant | an object with `url` (a public `https` address) or `upload_ref` (a file already on the shop), one of the two, as the `images` of `somcp_create_product`, fetched and checked by the same shared function |
 | `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 

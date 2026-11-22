@@ -961,6 +961,71 @@ if ($createTax !== null) {
     }
 }
 
+// A carrier read, given back, changed and put back (#320): the JSON scenario
+// cannot give a read back nor compare two reads. Demo carrier 3 is used by no
+// order, so it is changed in place and keeps its identifier; no call is made
+// on a carrier with orders, which would leave a new version behind for the
+// tools after it.
+$getCarrier = $registry->get('somcp_get_carrier');
+$updateCarrier = $registry->get('somcp_update_carrier');
+if ($getCarrier !== null && $updateCarrier !== null) {
+    $carrierCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text, json_decode(trim($text), true)];
+    };
+    $calls += 6;
+    $carrierBefore = null;
+    try {
+        [$result, $text, $carrierBefore] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+        if (!empty($result['isError']) || !is_array($carrierBefore)) {
+            $failures[] = 'somcp_update_carrier (reading carrier 3 first): ' . excerpt($result);
+            $carrierBefore = null;
+        } else {
+            $steps = [
+                'the read given back as it is, nothing written' => [$carrierBefore, ['"changed": false', 'Nothing was written.']],
+                'a new speed grade, changed in place' => [['id_carrier' => 3, 'grade' => 5], ['"changed": true', '"id_carrier": 3', '"field": "grade"', '"new": 5']],
+                'the same speed grade again, nothing written' => [['id_carrier' => 3, 'grade' => 5], ['"changed": false']],
+                'the read of the start given back, the grade put back' => [$carrierBefore, ['"changed": true', '"id_carrier": 3', '"field": "grade"', '"new": ' . (int) $carrierBefore['grade']]],
+            ];
+            foreach ($steps as $why => [$arguments, $needles]) {
+                [$result, $text] = $carrierCall($updateCarrier, $arguments);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== [] || strpos($text, '"replaced_id_carrier"') !== false) {
+                    $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                }
+            }
+            [$result, $text, $carrierAfter] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+            unset($carrierBefore['logo'], $carrierAfter['logo']);
+            if (!empty($result['isError']) || $carrierAfter !== $carrierBefore) {
+                $failures[] = 'somcp_update_carrier (carrier 3 read again): expected it as read at the start - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 3 read again, as at the start)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_carrier (a carrier changed and put back): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // The tax options changed and put back (#312): the JSON scenario cannot read
 // the options first and give them back, and a change it made would stay for
 // the tools after it. The read of somcp_get_tax_options is given back as it

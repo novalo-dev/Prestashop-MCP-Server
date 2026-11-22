@@ -43,6 +43,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
+- `somcp_update_carrier`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -206,6 +207,9 @@ Carriers come from `somcp_list_carriers`: give its `id_carrier` in
 say so before tying a product to it. No carrier given means every carrier
 may deliver the product. To tell which zones and customer groups a carrier
 serves before tying it, read it with `somcp_get_carrier`.
+To rename a carrier, change its transit time, speed grade, tracking URL,
+status or customer groups, use `somcp_update_carrier`; a carrier an order
+uses gets a new `id_carrier`, given in the answer: use that one from then on.
 
 Tax rules come from `somcp_list_tax_rules`: take the `id_tax_rules_group` from
 there, 0 for no tax. Match the merchant's "20 %" on the `rate`, not on the

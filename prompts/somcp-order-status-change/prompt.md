@@ -14,6 +14,7 @@ of it can be undone by calling again.
 - `somcp_list_return_statuses`
 - `somcp_list_carriers`
 - `somcp_get_carrier`
+- `somcp_update_carrier`
 - `somcp_create_return_status`
 - `somcp_update_return_status`
 - `somcp_search_orders`
@@ -90,6 +91,9 @@ status change: it never moves the order to shipped, and
   which may be an older row of the carrier: match it on `id_reference`.
   `somcp_get_carrier` gives the zones and groups it serves, how it bills
   and the price of each range per zone.
+  `somcp_update_carrier` changes its name, transit time, speed grade,
+  tracking URL, status or groups, only when the merchant asks for it; a
+  carrier an order uses gets a new `id_carrier`, given in the answer.
 
 When the merchant says an order has left with its number, set the number
 first, then the shipped status: the shipped email then carries the tracking

@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "a carrier the shop does not have is refused, pointing to the list", "arguments": {"id_carrier": 999999}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_carrier: no carrier of this shop has the identifier 999999 - find it with somcp_list_carriers"]},
+    {"why": "a speed grade out of range, a status that is not a boolean, no customer group and a misspelt field are refused at once", "arguments": {"id_carrier": 3, "grade": 12, "active": "yes", "group_access": [], "x": 1}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- grade: an integer from 0 to 9", "- active: true or false", "- group_access: at least one customer group", "- x: not a field of this tool"]},
+    {"why": "a tracking URL that is not absolute and a customer group the shop does not have are refused", "arguments": {"id_carrier": 3, "tracking_url": "not a url", "group_access": [999999]}, "expect": "error", "contains": ["- tracking_url: an absolute URL", "- group_access: no customer group of this shop has the identifier 999999 - find it with somcp_list_customer_groups"]},
+    {"why": "a field another tool writes, given with another value, is named rather than ignored", "arguments": {"id_carrier": 3, "max_weight": 123456}, "expect": "error", "contains": ["- max_weight: changed by another tool, not this one"]}
+  ]
+}

@@ -329,6 +329,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_return_statuses` | ● List return statuses | Statuses › view |
 | `somcp_list_carriers` | ● List carriers | Carriers › view |
 | `somcp_get_carrier` | ● Read a carrier | Carriers › view |
+| `somcp_update_carrier` | ✎ Change a carrier | Carriers › edit |
 | `somcp_set_order_status` | ✎ Change the status of an order | Orders › edit |
 | `somcp_set_order_tracking` | ✎ Set the tracking number of an order | Orders › edit |
 | `somcp_add_order_message` | ✎ Add a message to an order | Orders › edit |

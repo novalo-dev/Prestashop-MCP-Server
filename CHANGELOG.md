@@ -27,6 +27,14 @@ limits. Until now the assistant only saw the carrier list, so it could not tell
 where a carrier delivers, to whom, nor what a customer pays there, and a
 merchant setting up delivery had to open each carrier.
 
+**Change a carrier.** The new tool somcp_update_carrier changes the general
+settings of one carrier of Shipping > Carriers: its name, its transit time in
+each language, its speed grade, its tracking URL, whether it is active and the
+customer groups allowed to use it. Until now the assistant could read a carrier
+but had to send the merchant to the back office to change any of it. A carrier
+no order uses keeps its identifier; one that orders already use gets a new one,
+as the back office does, so those orders keep the carrier they were placed with.
+
 **Change the tax options.** The new tool somcp_update_tax_options changes the
 Tax options of International > Taxes > Taxes, as their Save: Enable tax,
 Display tax in the shopping cart, Based on (invoice or delivery address), Use

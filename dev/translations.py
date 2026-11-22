@@ -878,6 +878,10 @@ T = {
  "Lire un transporteur",
  "Leer un transportista",
  "Einen Versanddienst lesen"),
+"Change a carrier": (
+ "Modifier un transporteur",
+ "Modificar un transportista",
+ "Einen Versanddienst ändern"),
 "Create a return status": (
  "Créer un statut de retour",
  "Crear un estado de devolución",

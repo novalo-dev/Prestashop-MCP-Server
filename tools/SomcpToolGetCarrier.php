@@ -370,14 +370,15 @@ class SomcpToolGetCarrier
      *
      * An edit gives the carrier a new identifier and keeps the old row,
      * flagged: an identifier copied from an old order is one of those, and
-     * the reference leads to the carrier as it is now.
+     * the reference leads to the carrier as it is now. Public so the carrier
+     * writes refuse an old version with the same line.
      *
      * @param int $idCarrier
      * @param int $idShop
      *
      * @return string
      */
-    private static function notFound(int $idCarrier, int $idShop): string
+    public static function notFound(int $idCarrier, int $idShop): string
     {
         $line = SomcpTool::notFound('id_carrier', 'carrier', $idCarrier, 'somcp_list_carriers');
         $idReference = (int) Db::getInstance()->getValue(

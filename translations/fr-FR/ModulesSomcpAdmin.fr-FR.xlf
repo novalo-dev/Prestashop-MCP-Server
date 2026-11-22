@@ -1107,6 +1107,11 @@
       <source>Read a carrier</source>
       <target>Lire un transporteur</target>
     </trans-unit>
+    <!-- Change a carrier -->
+    <trans-unit id="1beee38e2cf4d04609f880d19fd0e875" resname="Change a carrier">
+      <source>Change a carrier</source>
+      <target>Modifier un transporteur</target>
+    </trans-unit>
     <!-- Create a return status -->
     <trans-unit id="bed8b046732e0d12fe3f9bbb9776d996" resname="Create a return status">
       <source>Create a return status</source>

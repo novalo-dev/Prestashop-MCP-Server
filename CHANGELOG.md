@@ -27,6 +27,11 @@ limits. Until now the assistant only saw the carrier list, so it could not tell
 where a carrier delivers, to whom, nor what a customer pays there, and a
 merchant setting up delivery had to open each carrier.
 
+**List the delivery zones.** The new tool somcp_list_zones lists the zones of
+International > Locations > Zones, with the number of countries in each. Until
+now the assistant only saw the zones a carrier already serves, so it could not
+tell which other zones the shop has before choosing where a carrier delivers.
+
 **Change a carrier.** The new tool somcp_update_carrier changes the general
 settings of one carrier of Shipping > Carriers: its name, its transit time in
 each language, its speed grade, its tracking URL, whether it is active and the

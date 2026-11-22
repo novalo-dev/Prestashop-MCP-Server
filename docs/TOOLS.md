@@ -2332,6 +2332,50 @@ Unknown arguments through `SomcpTool::unknownFields()`.
 
 **Differences between 8.0.1 and 9.0.0** - the page: the wizard `AdminCarrierWizard` on 8.0.1 (**Enabled** in **Summary**, **Group access** in step 3, the zones as rows of the ranges table), a Symfony form on 9.0.0 (**Active** and **Group access** in **General settings**, **Zones** a multiple select), and their labels (**Billing** / **Shipping costs**, **Maximum package width (cm)** / **Max order width**); the columns and the answer are the same.
 
+#### `somcp_list_zones`
+**State**: written · [issue #335](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/335)
+**Nature**: `acts(VIEW, 'AdminZones')` · **Scope**: `mcp.orders.read`
+
+**Does** - lists the zones of **International > Locations > Zones** with the
+columns of that list: **ID**, **Zone**, **Enabled**, and the number of
+countries in each. It is the source of the `id_zone` that the zones of a
+carrier take and that every country belongs to: no other tool gives one.
+Read only.
+
+**Do not use for** - the zones a carrier serves and its prices per zone
+(→ `somcp_get_carrier`); the countries themselves.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_zone` | **ID** filter | integer | no | one zone, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_cms_pages` do |
+| `name` | **Zone** filter | string | no | part of the name, case-insensitive; left out, every zone |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**, the default of the list) |
+
+No paging and no `language`: a shop holds a handful of zones, and their names
+are not translated (there is no `zone_lang`).
+
+**Returns** - `zones`, sorted by `id_zone` as the list: `id_zone` (**ID**),
+`name` (**Zone**), `active` (**Enabled**), `countries` (the number of countries
+of the zone, `country.id_zone`, so the assistant sees an empty zone before
+giving it to a carrier). Plus `count`. The keys `id_zone` and `name` are those
+of the `zones` of `somcp_get_carrier`, so a zone read here is given to the
+carrier tools under the same names.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_zone` that is not an identifier (`SomcpTool::notAnIdentifier()`), an
+`active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`). An empty list is `zones: []`, `count: 0`.
+
+**Notes**
+- Read through a query on `zone` joined to `zone_shop` on the shop of the token, rather than `Zone::getZones()`, which reads every zone of the installation without the shop and has no name filter.
+- `name` filters as the **Name** filter of `somcp_list_taxes` and `somcp_list_carriers` do.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`zone`, `zone_shop`).
+
 #### `somcp_update_carrier`
 **State**: written · [issue #320](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/320), position [#322](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/322), shipping costs settings [#323](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/323), size and weight limits [#330](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/330), logo [#331](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/331)
 **Nature**: `acts(EDIT, 'AdminCarriers')` · **Scope**: `mcp.orders.write`

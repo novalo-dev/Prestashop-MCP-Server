@@ -1117,6 +1117,11 @@
       <source>Delete a carrier</source>
       <target>Delete a carrier</target>
     </trans-unit>
+    <!-- List zones -->
+    <trans-unit id="41a56c9f32163238a58057c116e95405" resname="List zones">
+      <source>List zones</source>
+      <target>List zones</target>
+    </trans-unit>
     <!-- Create a return status -->
     <trans-unit id="bed8b046732e0d12fe3f9bbb9776d996" resname="Create a return status">
       <source>Create a return status</source>

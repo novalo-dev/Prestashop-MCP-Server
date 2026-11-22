@@ -886,6 +886,10 @@ T = {
  "Supprimer un transporteur",
  "Eliminar un transportista",
  "Einen Versanddienst löschen"),
+"List zones": (
+ "Lister les zones",
+ "Listar las zonas",
+ "Zonen auflisten"),
 "Create a return status": (
  "Créer un statut de retour",
  "Crear un estado de devolución",

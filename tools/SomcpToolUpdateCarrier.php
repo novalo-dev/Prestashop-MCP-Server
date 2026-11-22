@@ -608,8 +608,7 @@ class SomcpToolUpdateCarrier
      */
     private static function planDelay(array $arguments, ?array $stored, array $languages, Carrier $probe, array &$errors, array &$plan): void
     {
-        if ($stored !== null && is_string($arguments['delay']) && count($languages['filled']) > 1
-            && in_array($arguments['delay'], $stored['delay'], true)) {
+        if ($stored !== null && SomcpToolCreateProduct::givenBackAsRead($arguments['delay'], $stored['delay'], $languages)) {
             return;
         }
         $texts = SomcpToolCreateProduct::texts($arguments, 'delay', 'delay', $languages, $errors, true);

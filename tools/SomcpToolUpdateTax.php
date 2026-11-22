@@ -161,7 +161,9 @@ class SomcpToolUpdateTax extends SomcpToolCreateTax
             'set' => [],
         ];
 
-        if (array_key_exists('name', $arguments)) {
+        // somcp_list_taxes answers the name as one text: given back as read, it is no change.
+        if (array_key_exists('name', $arguments)
+            && !($tax !== null && self::givenBackAsRead($arguments['name'], is_array($tax->name) ? $tax->name : [], $languages))) {
             $names = self::texts($arguments, 'name', 'name', $languages, $errors, true);
             if ($names !== null) {
                 $names = self::taxNames($names, $languages, $probe, $errors);

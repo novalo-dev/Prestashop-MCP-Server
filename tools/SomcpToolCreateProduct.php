@@ -3441,6 +3441,26 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * Whether a plain text is a translated field given back as a read answered it.
+     *
+     * The read tools answer a translated field as one text, in the language
+     * they read it in. On a shop with several languages such a text names no
+     * language, so texts() refuses it as ambiguous; when it is the stored text
+     * of one of the languages, it is the row given back as it was read, which
+     * is no change rather than a mistake.
+     *
+     * @param mixed $value the argument as given
+     * @param array<int, string> $stored the stored texts, by language identifier
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     *
+     * @return bool
+     */
+    public static function givenBackAsRead($value, array $stored, array $languages): bool
+    {
+        return is_string($value) && count($languages['filled']) > 1 && in_array($value, $stored, true);
+    }
+
+    /**
      * A product label - stock or delivery - checked against the product's own rules.
      *
      * @param array<string, mixed> $group

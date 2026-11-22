@@ -852,6 +852,26 @@ if ($createTax !== null) {
                 }
             }
 
+            // The row of somcp_list_taxes given back whole changes nothing,
+            // its name being one text even on a shop with several languages (#309).
+            $listTaxes = $registry->get('somcp_list_taxes');
+            if ($listTaxes !== null) {
+                $calls += 2;
+                $listed = json_decode(trim($taxText($taxCall($listTaxes, ['id_tax' => $idTax]))), true);
+                $row = is_array($listed) ? ($listed['taxes'][0] ?? null) : null;
+                if (!is_array($row) || (int) ($row['id_tax'] ?? 0) !== $idTax) {
+                    $failures[] = 'somcp_update_tax (the row of somcp_list_taxes given back): the row could not be read';
+                } else {
+                    $result = $taxCall($updateTax, $row);
+                    $text = $taxText($result);
+                    if (!empty($result['isError']) || strpos($text, '"changed": false') === false) {
+                        $failures[] = 'somcp_update_tax (the row of somcp_list_taxes given back): expected no change - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_tax (the row of somcp_list_taxes given back, nothing written)');
+                    }
+                }
+            }
+
             // Disabling a tax a tax rule row charges: refused on PrestaShop 8,
             // where the core would delete the row; allowed on 9, where it stays.
             $ruleForTax = $registry->get('somcp_create_tax_rule');

@@ -2928,7 +2928,7 @@ functions of `somcp_create_tax`, and the answer is the same shared row.
 |---|---|---|---|---|
 | `id_tax` | the tax edited | integer | yes | from `somcp_list_taxes`; `SomcpTool::notAnIdentifier('id_tax')`, and `SomcpTool::notFound()` for a tax missing or flagged deleted |
 | `languages` | | array of strings | no | as `somcp_create_tax`: the languages the `name` given covers |
-| `name` | **Name** | object by ISO code | no | the check of `somcp_create_tax`, for the languages given only; a language left out keeps its name; given, never empty |
+| `name` | **Name** | object by ISO code | no | the check of `somcp_create_tax`, for the languages given only; a language left out keeps its name; given, never empty. The `name` of a row of `somcp_list_taxes`, one text, is taken back as it is: when it is the stored name of one of the languages, it is no change, even on a shop with several languages |
 | `rate` | **Rate** | number | no | the check of `somcp_create_tax` (0 to 100, three decimals) |
 | `active` | **Enable** | boolean | no | `true` or `false` |
 

@@ -39,6 +39,9 @@ class SomcpToolListBestSellers
     private const DEFAULT_LIMIT = 20;
     private const MAX_LIMIT = 100;
 
+    /** The fields the tool takes; any other is refused rather than ignored. */
+    private const FIELDS = ['date_from', 'date_to', 'sort', 'language', 'limit', 'offset'];
+
     /**
      * Sort values mapped to the computed columns, all read descending.
      */
@@ -114,39 +117,51 @@ class SomcpToolListBestSellers
      */
     public static function handle(array $arguments, array $context): array
     {
+        // The shop comes from the token, never from the caller; read first so
+        // the language line can name the shop's languages.
+        $shop = Somcp::currentShop();
+        $idShop = (int) $shop->id;
+
+        // Every mistake is reported in one answer, so the call is corrected
+        // in one go (the shape of #169), a misspelt filter included rather
+        // than ignored.
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
+
         $dateFrom = SomcpTool::day($arguments['date_from'] ?? null);
         if ($dateFrom === null) {
-            return SomcpTool::text('date_from: a date, YYYY-MM-DD.', true);
+            $problems[] = 'date_from: a date, YYYY-MM-DD';
         }
         $dateTo = SomcpTool::day($arguments['date_to'] ?? null);
         if ($dateTo === null) {
-            return SomcpTool::text('date_to: a date, YYYY-MM-DD.', true);
+            $problems[] = 'date_to: a date, YYYY-MM-DD';
         }
-        if ($dateTo < $dateFrom) {
-            return SomcpTool::text('date_to: a date not before date_from.', true);
+        if ($dateFrom !== null && $dateTo !== null && $dateTo < $dateFrom) {
+            $problems[] = 'date_to: a date not before date_from';
         }
 
         $sort = $arguments['sort'] ?? 'sales';
         if (!is_string($sort) || !isset(self::SORTS[$sort])) {
-            return SomcpTool::text('sort: one of ' . implode(', ', array_keys(self::SORTS)) . '.', true);
+            $problems[] = SomcpTool::oneOf('sort', array_keys(self::SORTS));
         }
 
         $limit = $arguments['limit'] ?? self::DEFAULT_LIMIT;
         if (!is_int($limit) || $limit < 1 || $limit > self::MAX_LIMIT) {
-            return SomcpTool::text('limit: an integer from 1 to ' . self::MAX_LIMIT . '.', true);
+            $problems[] = 'limit: a whole number from 1 to ' . self::MAX_LIMIT;
         }
         $offset = $arguments['offset'] ?? 0;
         if (!is_int($offset) || $offset < 0) {
-            return SomcpTool::text('offset: an integer, 0 or more.', true);
+            $problems[] = 'offset: a whole number, 0 at least';
         }
 
-        // The shop comes from the token, never from the caller.
-        $shop = Somcp::currentShop();
-        $idShop = (int) $shop->id;
-
         $language = SomcpTool::readLanguage($arguments, $idShop);
+        // Listed with the call's other mistakes, so it is corrected in one go.
         if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
+            $problems[] = SomcpTool::languageProblem($idShop);
+        }
+
+        if ($problems !== [] || $language === null || $dateFrom === null || $dateTo === null
+            || !is_string($sort) || !is_int($limit) || !is_int($offset)) {
+            return SomcpTool::refused('read', $problems);
         }
         [$idLang, $iso] = $language;
 

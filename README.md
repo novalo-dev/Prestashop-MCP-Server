@@ -64,9 +64,10 @@ checks. [Compact mode](#compact-mode).
 
 > "Who is the customer behind order #1042, and what else did they buy?"
 
-The tools cover orders, catalogue, stock, customers, statistics, SEO, content
-pages, modules and appearance, and ready-made prompts guide the assistant
-through the usual jobs. [See them all](#tools).
+The tools cover orders, carriers and their delivery zones, taxes, catalogue,
+stock, customers, statistics, SEO, content pages, modules and appearance, and
+ready-made prompts guide the assistant through the usual jobs.
+[See them all](#tools).
 
 ---
 
@@ -328,6 +329,12 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_order_statuses` | ● List order statuses | Statuses › view |
 | `somcp_list_return_statuses` | ● List return statuses | Statuses › view |
 | `somcp_list_carriers` | ● List carriers | Carriers › view |
+| `somcp_get_carrier` | ● Read a carrier | Carriers › view |
+| `somcp_update_carrier` | ✎ Change a carrier | Carriers › edit |
+| `somcp_delete_carrier` | ✎ Delete a carrier | Carriers › delete |
+| `somcp_list_zones` | ● List zones | Zones › view |
+| `somcp_list_countries` | ● List countries | Countries › view |
+| `somcp_list_states` | ● List states | States › view |
 | `somcp_set_order_status` | ✎ Change the status of an order | Orders › edit |
 | `somcp_set_order_tracking` | ✎ Set the tracking number of an order | Orders › edit |
 | `somcp_add_order_message` | ✎ Add a message to an order | Orders › edit |
@@ -441,7 +448,19 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_tax_rules` | ● List tax rules | Tax Rules › view |
 | `somcp_get_tax_rule` | ● Get a tax rule | Tax Rules › view |
 | `somcp_list_taxes` | ● List taxes | Taxes › view |
+| `somcp_list_languages` | ● List languages | Languages › view |
+| `somcp_list_currencies` | ● List currencies | Currencies › view |
+| `somcp_create_tax` | ✎ Create a tax | Taxes › add |
+| `somcp_update_tax` | ✎ Change a tax | Taxes › edit |
+| `somcp_delete_tax` | ✎ Delete a tax | Taxes › delete |
+| `somcp_get_tax_options` | ● Read the tax options | Taxes › view |
+| `somcp_update_tax_options` | ✎ Change the tax options | Taxes › edit |
 | `somcp_create_tax_rule` | ✎ Create a tax rule | Tax Rules › add |
+| `somcp_update_tax_rule` | ✎ Update a tax rule | Tax Rules › edit |
+| `somcp_delete_tax_rule` | ✎ Delete a tax rule | Tax Rules › delete |
+| `somcp_add_country_rule` | ✎ Add a country to a tax rule | Tax Rules › New tax rule |
+| `somcp_update_country_rule` | ✎ Change a country of a tax rule | Tax Rules › row edit |
+| `somcp_delete_country_rule` | ✎ Delete a country from a tax rule | Tax Rules › row delete |
 
 ### 📊 Stock
 

@@ -621,6 +621,12 @@ class SomcpToolSearchProducts
                 $errors[] = SomcpTool::notAnIdentifier($key);
             }
         }
+        // A category the shop does not have used to answer an empty list,
+        // which the assistant read as "no product in it".
+        $idCategory = SomcpTool::id($arguments, 'id_category');
+        if ($idCategory > 0 && SomcpToolUpdateCategory::existingCategory($idCategory, (int) Somcp::currentShop()->id) === null) {
+            $errors[] = SomcpTool::notFound('id_category', 'category', $idCategory, 'somcp_list_categories');
+        }
         foreach (['price_tax_excl_min', 'price_tax_excl_max', 'price_tax_incl_min', 'price_tax_incl_max'] as $key) {
             if (array_key_exists($key, $arguments) && !is_numeric($arguments[$key])) {
                 $errors[] = $key . ': a number';

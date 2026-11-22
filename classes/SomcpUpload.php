@@ -1835,6 +1835,35 @@ class SomcpUpload
     }
 
     /**
+     * The full path of a deposit from its bare file name, or null when no
+     * such file is in the store.
+     *
+     * For the code that sends a file to a browser: the path it holds came
+     * from a row found through a value of the request, and what leaves the
+     * server is decided here instead, from a name stripped of any folder
+     * and a file that sits in the store once every link and ".." is
+     * resolved.
+     *
+     * @param string $storedAs
+     *
+     * @return string|null
+     */
+    public static function stored(string $storedAs): ?string
+    {
+        $name = basename($storedAs);
+        $directory = realpath(self::directory());
+        if ($name === '' || $directory === false) {
+            return null;
+        }
+        $path = realpath($directory . DIRECTORY_SEPARATOR . $name);
+        if ($path === false || strpos($path, $directory . DIRECTORY_SEPARATOR) !== 0 || !is_file($path)) {
+            return null;
+        }
+
+        return $path;
+    }
+
+    /**
      * Hands a file of the shop out by the same door the chat's files use.
      *
      * The file is kept as a deposit and served by controllers/front/file.php

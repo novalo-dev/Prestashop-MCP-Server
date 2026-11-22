@@ -39,6 +39,8 @@ asks for.
   language is filled (`SomcpToolCreateProduct::languages()` and `texts()`, for
   every write tool). A name given back in a write answer is in the shop's
   default language, with `language` beside it.
+- The codes, with the default and the enabled languages, are listed by
+  `somcp_list_languages`.
 
 **Dates.** ISO 8601 in and out. A date and time a tool returns carries the
 shop's offset (`2026-11-05T08:00:00+01:00`) and is `null` when the field is
@@ -446,7 +448,7 @@ or carts that were never paid for (→ Carts).
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `id_order` | integer | no | exact identifier |
+| `id_order` | integer | no | exact identifier, a whole number above 0 |
 | `reference` | string | no | whole or partial reference |
 | `customer_name` | string | no | first name, last name or both, in any order |
 | `customer_email` | string | no | exact match, more reliable than the name |
@@ -455,7 +457,7 @@ or carts that were never paid for (→ Carts).
 | `total_min` / `total_max` | number | no | amount paid, tax included |
 | `payment_method` | string | no | whole or partial |
 | `new_client` | boolean | no | `true`: the customer had no earlier order, in any status (New client column); `false`: returning customers |
-| `delivery_country` | string | no | ISO code of the country of the delivery address; an unknown code is an error |
+| `delivery_country` | string | no | ISO code of the country of the delivery address; an unknown code is one more line of the refusal |
 | `company` | string | no | customer's company, whole or partial |
 | `only_valid` | boolean | no | paid orders only |
 | `sort` | enum | no | `date_desc` (default), `date_asc`, `total_desc`, `total_asc` |
@@ -486,10 +488,15 @@ customer has none. The count joins the same tables as the list, so
 
 A field the tool does not take, a `sort` outside its list, a `new_client` that
 is not true or false, a `total_min` or `total_max` that is not a number, a
-`date_from` or `date_to` that is not `YYYY-MM-DD`, or a `status_id` that is not
-a whole number above 0 or matches no order status is refused in one answer,
-`Nothing was read`, before anything is read: never ignored, never replaced by
-the default order.
+`date_from` or `date_to` that is not `YYYY-MM-DD`, an `id_order` that is not a
+whole number above 0 (`id_order: a whole number above 0`; one no order of the
+shop has answers an empty list), or a `status_id` that is not
+a whole number above 0 or matches no order status, a `language` the shop does
+not have, or a `delivery_country` that is no country's ISO code
+(`delivery_country: an ISO code of a country, for example FR`, the line of
+`SomcpToolSearchOrders::deliveryCountry()` that `somcp_get_sales_summary` gives
+too) is refused in one answer, `Nothing was read`, before anything is read:
+never ignored, never replaced by the default order.
 
 #### `somcp_get_order`
 **State**: written
@@ -806,7 +813,8 @@ the note are removed, as the back office form does, before the comparison.
 The size limit differs: on 9.0.0 the class declares the mediumtext limit and
 `validateFields()` checks it; on 8.0.1 the class declares none and the `text`
 column holds 65535 bytes, so a longer note is refused rather than cut by MySQL.
-The limit is read from `Order::$definition`, not from the version.
+The limit is read from `Order::$definition` and, when it declares none, from
+the column itself (`SomcpTool::overTextColumn()`), not from the version.
 
 Not replayable: a lost answer is checked with `somcp_get_order`, whose
 `order.note` shows the saved text.
@@ -2288,9 +2296,281 @@ past order on either version.
 
 **Errors** - in the envelope `Nothing was read. Correct these and call again:`, with the other problems of the call: a language the shop does not have, named by `SomcpTool::languageProblem()` with the ones it has. An empty list is `carriers: []`, `count: 0`.
 
-**Notes** - PrestaShop gives a carrier a new `id_carrier` each time it is edited and keeps the old row as deleted; `id_reference` does not change. Orders keep the `id_carrier` they were placed with, products are tied to the reference (the product tools turn the `id_carrier` they are given into it). Only the carriers of the token's shop (`carrier_shop`), not deleted; disabled ones are listed. Zones, ranges, prices, groups, tax, handling costs, sizes and weight belong to a future read of one carrier. In Configuration with `somcp_list_order_statuses`: an order uses a carrier without containing one, so the scope is `mcp.orders.read`.
+**Notes** - PrestaShop gives a carrier a new `id_carrier` each time it is edited and keeps the old row as deleted; `id_reference` does not change. Orders keep the `id_carrier` they were placed with, products are tied to the reference (the product tools turn the `id_carrier` they are given into it). Only the carriers of the token's shop (`carrier_shop`), not deleted; disabled ones are listed. Zones, groups, tax, handling costs, billing, sizes and weight of one carrier are read by `somcp_get_carrier`. In Configuration with `somcp_list_order_statuses`: an order uses a carrier without containing one, so the scope is `mcp.orders.read`.
 
 On 8.0.1 the filter label is **Free Shipping**, on 9.0.0 **Free shipping**; the edit page is the wizard `AdminCarrierWizard` on 8.0.1 and a Symfony form on 9.0.0. The columns read are the same on both.
+
+#### `somcp_get_carrier`
+**State**: written · [issue #316](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/316)
+**Nature**: `acts(VIEW, 'AdminCarriers')` · **Scope**: `mcp.orders.read`
+
+**Does** - reads one carrier of **Shipping > Carriers** as its edit page shows it: name, **Transit time**, **Speed grade**, logo, **Tracking URL**, **Group access**, **Zones**, **Free shipping**, **Tax**, handling costs, billing by price or by weight, the **Ranges** with the price of each per zone, **Out-of-range behavior** and the four size and weight limits.
+
+**Do not use for** - listing the carriers (→ `somcp_list_carriers`); the carrier of one order (→ `somcp_get_order`); the shipping cost of one cart, to which the shop adds handling costs, free shipping thresholds and the carrier tax.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_carrier` | **ID** | integer | yes | from `somcp_list_carriers`; read through `SomcpTool::id()` |
+| `language` | | string | no | ISO code for `delay` and the group names, through `SomcpTool::readLanguage()` and listed with `SomcpTool::languageProblem()`; the shop default when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - one object. The fields `somcp_list_carriers` gives (`id_carrier`, `id_reference`, `name`, `delay`, `active`, `is_free`, `position`, `logo`, `tracking_url`, `external_module`), read by the same query and shaped by the same function (`SomcpToolListCarriers::query()` and `entry()`), plus:
+- `grade`: **Speed grade**;
+- `group_access`: `[{id_group, name}]` from `carrier_group`, among the groups of the shop, `name` in `language`, the `id_group` of `somcp_list_customer_groups`;
+- `zones`: `[{id_zone, name}]` from `carrier_zone`, sorted by name as the screen sorts them;
+- `id_tax_rules_group`: **Tax**, from `carrier_tax_rules_group_shop` for the shop of the token, `0` for **No tax**; `tax_rule`: its name through `SomcpToolGetTaxRule::existingRule()`, `null` for 0 or a rule deleted since (then a `warning`);
+- `handling_costs` (**Add handling costs** on 8.0.1, **Handling costs** on 9.0.0); when true, `handling_cost_tax_excl`: `PS_SHIPPING_HANDLING` for the shop and group of the token, set on **Shipping > Preferences**;
+- `billing`: `"price"` or `"weight"`, as `Carrier::getShippingMethod()` decides (a carrier stored with `shipping_method` 0 follows `PS_SHIPPING_METHOD`), `null` for a free carrier;
+- `out_of_range`: `"highest_range"` (**Apply the cost of the highest defined range**) or `"disable_carrier"` (**Disable carrier**);
+- `ranges`: the ranges of the kind `billing` names (`range_price` for `"price"`, `range_weight` for `"weight"`), sorted by `from`, each `{from, to, prices}`, `from` included and `to` excluded as the 8.0.1 header says (**>=**, **<**); `prices` is `[{id_zone, zone, price_tax_excl}]`, one per zone of `zones`, from `delivery`, the row of the shop of the token, else of its group, else the global one, as `Carrier::sqlDeliveryRangeShop()` picks it; a zone with no row has `price_tax_excl: null` and a `warning`, since the shop does not offer the carrier there. The rows of the other kind (a carrier stored with both, like demo carrier 2) are left out: the form does not show them and the core does not charge them. `[]` for a free carrier, whose form shows no ranges;
+- `range_unit`: the ISO code of the default currency (`PS_CURRENCY_DEFAULT`) for price ranges, `PS_WEIGHT_UNIT` for weight ranges, `null` for a free carrier;
+- `max_width`, `max_height`, `max_depth` (integers), `max_weight` (number), `0` for no limit, with `dimension_unit` (`PS_DIMENSION_UNIT`) and `weight_unit` (`PS_WEIGHT_UNIT`);
+- `warning` when there is one (a deleted tax rule, a zone without a price, costs computed by a module), and `language`.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`, every problem at once: a missing or non-integer `id_carrier` (`SomcpTool::notAnIdentifier()`), a carrier not found (`SomcpTool::notFound('id_carrier', 'carrier', $id, 'somcp_list_carriers')`; for an older version of a carrier, left `deleted` by an edit, the line adds the `id_reference` to find the current one by), an unknown argument, a language the shop does not have.
+
+**Notes** - only a carrier of the shop of the token (`carrier_shop`), not deleted. A carrier made by a module is read the same way, with a `warning` that its costs are computed by that module. The logo is a `download_ref` through `SomcpDownload::offer('carrier_logo', ...)`, as `somcp_list_carriers` gives it. `SomcpToolGetCarrier::carrier()` is public for the tools that answer with a carrier, and `notFound()` for the line they refuse an old version with; its answer can be given back to `somcp_update_carrier` as it is. Read only, replayable.
+
+**Differences between 8.0.1 and 9.0.0** - the page: the wizard `AdminCarrierWizard` on 8.0.1 (**Enabled** in **Summary**, **Group access** in step 3, the zones as rows of the ranges table), a Symfony form on 9.0.0 (**Active** and **Group access** in **General settings**, **Zones** a multiple select), and their labels (**Billing** / **Shipping costs**, **Maximum package width (cm)** / **Max order width**); the columns and the answer are the same.
+
+#### `somcp_list_zones`
+**State**: written · [issue #335](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/335)
+**Nature**: `acts(VIEW, 'AdminZones')` · **Scope**: `mcp.orders.read`
+
+**Does** - lists the zones of **International > Locations > Zones** with the
+columns of that list: **ID**, **Zone**, **Enabled**, and the number of
+countries in each. It is the source of the `id_zone` that the zones of a
+carrier take and that every country belongs to: no other tool gives one.
+Read only.
+
+**Do not use for** - the zones a carrier serves and its prices per zone
+(→ `somcp_get_carrier`); the countries themselves.
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_zone` | **ID** filter | integer | no | one zone, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_cms_pages` do |
+| `name` | **Zone** filter | string | no | part of the name, case-insensitive; left out, every zone |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**, the default of the list) |
+
+No paging and no `language`: a shop holds a handful of zones, and their names
+are not translated (there is no `zone_lang`).
+
+**Returns** - `zones`, sorted by `id_zone` as the list: `id_zone` (**ID**),
+`name` (**Zone**), `active` (**Enabled**), `countries` (the number of countries
+of the zone, `country.id_zone`, so the assistant sees an empty zone before
+giving it to a carrier). Plus `count`. The keys `id_zone` and `name` are those
+of the `zones` of `somcp_get_carrier`, so a zone read here is given to the
+carrier tools under the same names.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_zone` that is not an identifier (`SomcpTool::notAnIdentifier()`), an
+`active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`). An empty list is `zones: []`, `count: 0`.
+
+**Notes**
+- Read through a query on `zone` joined to `zone_shop` on the shop of the token, rather than `Zone::getZones()`, which reads every zone of the installation without the shop and has no name filter.
+- `name` filters as the **Name** filter of `somcp_list_taxes` and `somcp_list_carriers` do.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`zone`, `zone_shop`).
+
+#### `somcp_list_countries`
+**State**: written · [issue #338](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/338)
+**Nature**: `acts(VIEW, 'AdminCountries')` · **Scope**: `mcp.orders.read`
+
+**Does** - lists the countries of **International > Locations > Countries**
+with the columns of that list: **ID**, **Country**, **ISO code**, **Call
+prefix**, **Zone**, **Enabled**, and what an address of the country must
+hold. It is the source of the country ISO code that every other tool takes
+as `country` or `delivery_country`, and it shows which countries the shop
+sells to. Read only.
+
+**Do not use for** - the zones (→ `somcp_list_zones`); the tax rows of a
+country (→ `somcp_get_tax_rule`); enabling or changing a country (a later
+tool).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_country` | **ID** filter | integer | no | one country, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_zones` do |
+| `name` | **Country** filter | string | no | part of the name in `language`, case-insensitive |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`fr` finds **France**) |
+| `id_zone` | **Zone** filter | integer | no | the countries of one zone, from `somcp_list_zones`; a zone the shop does not have: `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')` |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both |
+| `language` | - | string | no | ISO code of one of the shop's active languages, for the names; a code the shop does not have is refused; the shop default language when left out, as `somcp_list_taxes` |
+| `limit` | **Display** | integer | no | how many countries to return, 50 by default (the default of the screen) and 300 at most |
+| `offset` | the pages of the list | integer | no | how many to skip, to read the next page |
+
+No **Call prefix** filter: the answer gives every prefix.
+
+**Returns** - `countries`, sorted by `name` as the list: `id_country` (**ID**),
+`name` (**Country**), `iso_code` (**ISO code**), `call_prefix` (**Call
+prefix**, an integer, `0` where the screen shows `-`), `id_zone` and `zone`
+(**Zone**, the name as `somcp_list_zones` gives it), `active` (**Enabled**),
+`contains_states` (**Contains states**), `need_zip_code` (**Does it need
+Zip/Postal code?**), `zip_code_format` (**Zip/Postal code format**, as stored,
+for example `NNNNN`, `""` when none), `need_identification_number` (**Do you
+need a tax identification number?**, the **DNI** an address there must give).
+Then `returned`, `total_count` (the matches before `limit`), `offset` and
+`language`, the paging keys of `somcp_search_customers`. **Default currency**,
+**Address format** and **Display tax label** are settings of the country, left
+for the tool that edits one.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_country` or `id_zone` that is not an identifier
+(`SomcpTool::notAnIdentifier()`), a zone the shop does not have, an `active`
+that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`), a language the shop does not have
+(`SomcpTool::languageProblem()`). An empty list is `countries: []`,
+`returned: 0`.
+
+**Notes**
+- Read through a query on `country` joined to `country_shop` on the shop of the token and to `country_lang` in the language asked, rather than `Country::getCountries()`, which has no name or ISO filter and no paging.
+- The back-office address of the page is never part of the answer.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`country`, `country_lang`, `country_shop`); the edit form is legacy on 8.0.1 and Symfony on 9.0.0, with **Zip/Postal** written **ZIP/Postal**.
+
+#### `somcp_list_states`
+**State**: written · [issue #341](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/341)
+**Nature**: `acts(VIEW, 'AdminStates')` · **Scope**: `mcp.orders.read`
+
+**Does** - lists the states of **International > Locations > States** with
+the columns of that list: **ID**, **Name**, **ISO code**, **Zone**,
+**Country**, **Enabled**. It is the source of the state ISO code that `state`
+and `states` of `somcp_add_country_rule` and `somcp_update_country_rule`, and
+`state` of `somcp_create_supplier`, `somcp_update_supplier` and
+`somcp_update_manufacturer_address`, take within its country. Read only.
+
+**Do not use for** - the countries (→ `somcp_list_countries`); the zones (→
+`somcp_list_zones`); the tax rows of a state (→ `somcp_get_tax_rule`);
+enabling a state or changing its zone (a later tool).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_state` | **ID** filter | integer | no | one state, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_zones` do |
+| `name` | **Name** filter | string | no | part of the name, case-insensitive |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`ca` finds **California**, and the states of other countries with the same code) |
+| `country` | **Country** filter | string | no | the ISO code of the country, as `country` of the country rule and supplier tools and `iso_code` of `somcp_list_countries` give it, for example `US`, read through `SomcpToolCreateSupplier::shopCountries()`; a code the shop does not have: `SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code')` |
+| `id_zone` | **Zone** filter | integer | no | the states of one zone, from `somcp_list_zones`; a zone the shop does not have: `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')`, checked by `SomcpToolListCountries::zoneOfShop()` |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both |
+| `limit` | **Display** / **Items per page** | integer | no | how many states to return, 50 by default (the default of both screens) and 300 at most |
+| `offset` | the pages of the list | integer | no | how many to skip, to read the next page |
+
+The country filter takes the ISO code, not `id_country`: every tool that takes
+a state takes its country by ISO code, so the assistant gives this tool the
+value it gives the next one. No `language`: a state name is not translated.
+
+**Returns** - `states`, sorted by `id_state` as the list: `id_state` (**ID**),
+`name` (**Name**), `iso_code` (**ISO code**, the value `state` and `states` of
+the other tools take), `id_country`, `country` (the ISO code of the country,
+the value `country` of the other tools takes) and `country_name` (**Country**,
+in the shop default language, as `somcp_get_tax_rule` names it), `id_zone`
+and `zone` (**Zone**, the name as `somcp_list_zones` gives it, the state's own
+zone, not always that of its country), `active` (**Enabled**). Then
+`returned`, `total_count` (the matches before `limit`) and `offset`, the
+paging keys of `somcp_search_customers` and `somcp_list_countries`.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_state` or `id_zone` that is not an identifier
+(`SomcpTool::notAnIdentifier()`), a country or a zone the shop does not have,
+an `active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`). An empty list is `states: []`, `returned: 0`.
+
+**Notes**
+- Read through a query on `state` joined to `country` (for its ISO code), to `country_shop` on the shop of the token, to `country_lang` in the shop default language and to `zone`, rather than `State::getStates()`, which has no filter and no paging. A state belongs to no shop (no `state_shop` table): those of the shop are the states of its countries.
+- The back-office address of the page is never part of the answer.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - the list itself (a legacy list on 8.0.1, a Symfony grid on 9.0.0, the **Enabled** icon against a switch, the paging choices, **Assign to a new zone** on 8.0.1 only); the columns, the filters, their labels and the table (`state`) are the same.
+
+#### `somcp_update_carrier`
+**State**: written · [issue #320](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/320), position [#322](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/322), shipping costs settings [#323](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/323), size and weight limits [#330](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/330), logo [#331](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/331), zones [#336](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/336), ranges and prices [#337](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/337)
+**Nature**: `acts(EDIT, 'AdminCarriers')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes the **General settings** of one carrier of **Shipping > Carriers**, as its edit page saves them: **Carrier name**, **Transit time** per language, **Speed grade**, **Logo**, **Tracking URL**, **Enabled** (8.0.1) / **Active** (9.0.0) and **Group access**, the **Zones** it delivers to (the zone boxes of **Shipping locations and costs**), its place in the list (the **Position** column, dragged on 8.0.1, **Rearrange** on 9.0.0), the ranges and their price in each zone (the **Ranges** table of **Shipping locations and costs** on 8.0.1, **Set ranges and prices** with **Manage ranges** on 9.0.0), and the other settings of **Shipping locations and costs**: **Free shipping**, **Add handling costs** / **Handling costs**, **Billing** / **Shipping costs**, **Tax** and **Out-of-range behavior** / **Out of range behavior**, and the four limits of **Size, weight, and group access** (8.0.1) / **Size and weight** (9.0.0). Only the fields given change.
+
+**Do not use for** - the carrier of one order (→ `somcp_set_order_carrier`); the handling amount (**Shipping > Preferences**, `PS_SHIPPING_HANDLING`, for every carrier); the tax rule itself (→ `somcp_update_tax_rule`); the units of the limits (`dimension_unit`, `weight_unit`, shop settings of **International > Localization**); the zones themselves (**International > Locations > Zones**, → `somcp_list_zones` to read them); deleting a carrier (→ `somcp_delete_carrier`).
+
+**Parameters** - the names of the answer of `somcp_get_carrier`, so a read can be given back as it is.
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_carrier` | **ID** | integer | yes | from `somcp_list_carriers` or `somcp_get_carrier`; read through `SomcpTool::id()`; unknown or an older version: the line of `SomcpToolGetCarrier::notFound()`, with the `id_reference` of the current version |
+| `name` | **Carrier name** | string | no | 64 characters at most, `Validate::isCarrierName` (`letters, digits and spaces, without < > ; = # { }`); the carrier stored as `0` and shown under the shop name keeps `0` when that name is given back |
+| `delay` | **Transit time** | object | no | keyed by ISO code, through `SomcpToolCreateProduct::languages()` and `texts()`, required in every language filled, 512 characters at most, `Validate::isGenericName`; a language left out keeps its text; the one text `somcp_get_carrier` answers is passed when it is the stored text of one language |
+| `languages` | | array | no | the languages `delay` is given in, as the other writes |
+| `grade` | **Speed grade** | integer | no | `grade: an integer from 0 to 9` |
+| `tracking_url` | **Tracking URL** | string | no | `""` empties it; otherwise an absolute URL of 255 characters at most, `@` where the tracking number goes |
+| `active` | **Enabled** / **Active** | boolean | no | `active: true or false` |
+| `group_access` | **Group access** | array | no | the full list after the change: the objects `somcp_get_carrier` answers (`{id_group, name}`, `name` ignored) or bare `id_group` integers from `somcp_list_customer_groups`; empty: `group_access: at least one customer group`; a group the shop of the token does not have: `SomcpTool::notFound('group_access', 'customer group', $id, 'somcp_list_customer_groups')` |
+| `zones` | the zone boxes of **Shipping locations and costs** | array | no | the full list of zones the carrier serves after the call: the objects `somcp_get_carrier` answers (`{id_zone, name}`) or bare `id_zone` integers from `somcp_list_zones`, compared as a set (the order does not count); each `id_zone` read with `SomcpTool::id()`, unknown or not in the shop of the token (`zone_shop`): `SomcpTool::notFound('zones[<i>].id_zone', 'zone', $id, 'somcp_list_zones')`; `name` may be left out, and passes when it is the zone's name, otherwise `zones[<i>].name: the name of a zone is not changed here - leave it out or give it as somcp_list_zones answers it`; a zone given twice: `zones[<i>]: id_zone <id> is already in the list`; empty: `zones: at least one zone - turn the carrier off with active instead`, since a carrier with no zone is offered nowhere |
+| `is_free` | **Free shipping** | boolean | no | `is_free: true or false`; given `true` alone, it turns `handling_costs` off, as 9.0.0 does |
+| `handling_costs` | **Add handling costs** (8.0.1) / **Handling costs** (9.0.0) | boolean | no | `handling_costs: true or false`; given `true` alone, it turns `is_free` off; both given `true`: `handling_costs: a free carrier adds no handling costs - set is_free false in the same call` |
+| `billing` | **Billing**: **According to total price.** / **According to total weight.** (8.0.1); **Shipping costs**: **Based on the order's total price** / **Based on the order's total weight** (9.0.0) | string | no | `"price"` (stored 2) or `"weight"` (stored 1), otherwise `billing: price or weight`; compared with the billing the read answers (`SomcpToolGetCarrier::method()`, the default method resolved), so a carrier stored with 0 given back its own `billing` keeps 0; `null`, as a free carrier is read, passes when the read says so |
+| `id_tax_rules_group` | **Tax** | integer | no | `0` (**No tax**) or a tax rule from `somcp_list_tax_rules`, checked with `SomcpToolGetTaxRule::existingRule()`; unknown: `SomcpTool::notFound('id_tax_rules_group', 'tax rule', $id, 'somcp_list_tax_rules')`; written for the shop of the token only |
+| `out_of_range` | **Out-of-range behavior** / **Out of range behavior** | string | no | `"highest_range"` (**Apply the cost of the highest defined range**, 0) or `"disable_carrier"` (**Disable carrier**, 1), otherwise `out_of_range: highest_range or disable_carrier` |
+| `max_width` | **Maximum package width** (8.0.1) / **Max order width** (9.0.0) | integer | no | `0` for no limit; a whole number from 0, in `PS_DIMENSION_UNIT`, otherwise `max_width: a whole number from 0, in cm, 0 for no limit`; `12.5` or `"12"` is refused, not rounded |
+| `max_height` | **Maximum package height** / **Max order height** | integer | no | the same, `max_height:` |
+| `max_depth` | **Maximum package depth** / **Max order depth** | integer | no | the same, `max_depth:` |
+| `max_weight` | **Maximum package weight** / **Max order weight** | number | no | `0` for no limit; a number from 0 (a string of digits read as one, through `SomcpToolCreateProduct::float()`), in `PS_WEIGHT_UNIT`, otherwise `max_weight: a number from 0, in kg, 0 for no limit`; a negative weight is refused on both versions, as the 9.0.0 form does (`PositiveOrZero`), since it would match no cart and hide the carrier; compared rounded to 6 decimals, so `5` and `5.000000` are equal |
+| `logo` | **Logo** | object | no | merchant: a new logo, which replaces the current one, `{url}` or `{upload_ref}` through `SomcpUpload::schema()` and `argument()`, declared with `files: ['logo' => SomcpUpload::images()]`, the rules of `somcp_update_manufacturer`; the `download_ref` `somcp_get_carrier` answers for this carrier (or `null` when it has none) is no change, recognised by the file it names through `SomcpUpload::same($logo, 'carrier_logo', $id)`, and nothing is downloaded |
+| `remove_logo` | the **Delete** of **Logo** | boolean | no | merchant: `true` removes the logo, a change only when the carrier has one; `remove_logo: true or false`; with `logo`: `remove_logo: not with logo, which already replaces the current one` |
+| `ranges` | **Ranges** (8.0.1) / **Set ranges and prices** (9.0.0) | array | no | the whole list after the call, in the shape `somcp_get_carrier` answers: `{from, to, prices: [{id_zone, zone, price_tax_excl}]}`, `from` the **>=** / **Minimum** bound (included), `to` the **<** / **Maximum** bound (excluded), in `range_unit`; `price_tax_excl` a number from 0, or `null` (or the zone left out) for no price in that zone; `zone` is read back only. Every problem in the same list: not a list: `ranges: a list of {from, to, prices} as somcp_get_carrier answers it`; `ranges[<i>]: from and to are numbers from 0, to above from`; `ranges[<i>]: starts below the end of the range before it - the maximum of a range is the minimum of the next` (once sorted by `from`, the rule of the alert of 9.0.0); `ranges[<i>].prices: id_zone <id> is not served by this carrier - serve the zone first` (the zones after the call, `zones` given or stored); `ranges[<i>].prices: id_zone <id> is already in this range`; `ranges[<i>].prices: price_tax_excl of zone <id> is a number from 0, or null for no price`; a `zone` that is not the zone's name: `ranges[<i>].prices: the name of zone <id> is not changed here - leave it out or give it as somcp_get_carrier answers it`; a non-empty list on a carrier with no billing by price or weight after the call (a free one): `ranges: the carrier has no billing by price or weight - set billing in the same call` (the empty list a free carrier is read with passes) |
+| `position` | **Position** (shown plus 1) | integer | no | merchant: the place among the carriers, from 0 as `somcp_list_carriers` and `somcp_get_carrier` give it; the others shift. Refused outside 0 to the number of carriers not deleted minus 1: `position: a whole number from 0 to <last>, the place among the carriers`; left out, the carrier keeps its place |
+
+Unknown arguments through `SomcpTool::unknownFields()`. The other keys of the answer of `somcp_get_carrier` (`id_reference`, `external_module`, `tax_rule`, `handling_cost_tax_excl`, `range_unit`, `dimension_unit`, `weight_unit`) pass silently when they hold what the shop holds (numbers compared as numbers; `range_unit`, `tax_rule` and `handling_cost_tax_excl` with what the carrier shows once the call is done, through the public `SomcpToolGetCarrier::rangeUnit()`, so a read taken before a change of billing, tax or handling costs can come back with it), and are refused as `changed by another tool, not this one` when they differ; `language` and `warning` always pass.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call again:` (`SomcpTool::refused('changed', $problems)`), every problem at once. A failed save after a new version was made names both identifiers, with the hint to read the new one with `somcp_get_carrier` before calling again. A failed move answers `The carrier could not be moved to position <n>: <reason>. The other changes of this call may be saved. Read the carrier again with somcp_get_carrier, tell the merchant what it holds now, and do not call again before.`, logged as the other failures. A logo the shop refuses (an `upload_ref` the account does not hold or that expired, an address that answers no image, a file that is not an image) with nothing else to change is refused in the same envelope, `- logo: <reason>` (for example `- logo: no file of this account matches this upload_ref, or it expired or was already used`), and nothing is written: no new version, no hook. With other fields to change, the logo leaves the call, the other fields are written, and the answer gives `logo` with its `refused` reason and the `warning` `The other changes were saved, but the logo was not: <reason>.`, as for a logo that could not be stored after the other fields were saved.
+
+**Then** - every field given is compared with the stored value first (`delay` language by language, `group_access` and `zones` as sorted lists). Nothing differs: `changed: false` and `The carrier already holds every value given. Nothing was written.`, nothing saved, no new version. Something differs: while no order uses the carrier (`order_carrier`, counted as `CarrierRepository::getOrdersCount()` of 9.0.0), it is changed in place; once one does, a new version is made as 9.0.0 makes it (`duplicateObject()`, the old one `deleted`, `Carrier::copyCarrierData()`, the old groups), then `actionCarrierUpdate` is fired with the old `id_carrier` and the new carrier, as the 8.0.1 wizard does. `name`, `grade`, `url`, `active` and `delay` are set on the object and saved with `update()` for the shop of the token; `setGroups()` only when `group_access` changes. The zones are written on the carrier now in use, after `update()` (and after `copyCarrierData()` for a new version, which copies the old ones), as 9.0.0 does in `CarrierRepository::updateAssociatedZones()`: the `carrier_zone` rows of the carrier deleted, then one row per zone given, with `Db::delete()` and `Db::insert()`, since no object writes that table alone. The `delivery` rows are left as they are on both versions: `Carrier::addZone()` of 8.0.1 would add a price of 0 in every range, making the carrier free in a zone the merchant never priced, and `deleteZone()` would drop prices no tool gives back; a failed zone write names what was saved, through the same failure answer. `changes` records `zones` with `old` and `new` the sorted lists of `id_zone`. `is_free`, `shipping_handling`, `shipping_method`, `range_behavior` and the four limits go in the same `update()` (`max_weight` through `hydrate()`, since 8.0 declares the property an int while the column keeps a decimal); the prices of the ranges are kept when the carrier turns free, as 9.0.0 does, rather than deleted as the 8.0.1 wizard does, since a free carrier charges nothing whatever they hold and they would be lost once it is paid again. The tax is written after, with `Carrier::setTaxRulesGroup($id, false)` on the carrier now in use, for the shop of the token, so a call that changes both makes one version; a failed tax write names what was saved, through the same failure answer. `position` is written last with `Carrier::updatePosition()`, where the drag and drop of the 8.0.1 list ends and the same move as the 9.0.0 **Rearrange**, through the shared `SomcpCatalog::movePosition()`, so the other carriers shift as there; the core finds the carrier from its own id, so no request value is handed over. A move is not a change of the carrier: alone, it never makes a new version, even when an order uses the carrier, as neither version of the core makes one; with fields that do, the carrier now in use is moved after them. `changes` records `position` with its old and new place. The logo counts as a change of the carrier: a logo given always does (an address cannot be compared with a stored file), a removal only when there is one; it is written on the carrier now in use, after the new version is made (whose `copyCarrierData()` has already copied the old logo), so the old version keeps its own for past orders. The file comes through `SomcpUpload::fetchImage()` into a temporary file before anything is written, where the brand and supplier tools fetch it after, since a carrier an order uses gets a new identifier at the first write and a logo that is never stored must not cause one; then, once the carrier is saved, `ImageManager::resize()` to `img/s/<id_carrier>.jpg` (`_PS_SHIP_IMG_DIR_`), forced to JPEG, as the 8.0.1 wizard writes it, on both versions; `remove_logo` deletes that file, as `CarrierLogoFileUploader::deleteOldFile()` does on 9.0.0; both then delete the copies the back office list keeps in the image cache (`carrier_mini_<id>.jpg`, `carrier_mini_<id>_<id_shop>.jpg`). `changes` records `logo` with `old` the `download_ref` read before and `new` the `url` or `upload_ref` given (`SomcpUpload::origin()`), or `null` for a removal. `ranges` is sorted by `from`, then compared with the ranges of the billing the carrier has after the call (`SomcpToolGetCarrier::ranges()`, over the zones after the call), bounds and prices as numbers, so `50` and `50.000000` are equal and the read given back is no change. Decision (the whole list): `ranges` replaces every range of the billing in one call, as both back offices save the whole table, rather than separate operations per range: a range has no identifier the merchant sees, and the bounds of the next range move with it. Decision (the `delivery` rows): written global (`id_shop` and `id_shop_group` NULL) on both versions, as 9.0.0 does in `CarrierRangeRepository::set()`, and every row of the carrier for that range table deleted first whatever its shop, rather than the rows of the shop context as 8.0.1 does, since `SomcpToolGetCarrier::ranges()` picks a shop row before the global one and a row left behind would hide what was just written. The write, on the carrier now in use (after `copyCarrierData()` for a new version, so the copied ranges are replaced, never added), in one transaction: the `delivery` rows of the carrier for `range_price` or `range_weight`, then its rows of that table, deleted; each range inserted (`delimiter1`, `delimiter2`), then one `delivery` row per zone with a price, with `Db::insert()`, since `RangePrice::add()` and `RangeWeight::add()` would add a price of 0 in every zone; the ranges of the other billing are kept, so a carrier switched back finds them again, as on both back offices. A failed range write names what was saved, through the same failure answer. `changes` records `ranges` with `old` and `new` the two lists in the shape of `somcp_get_carrier`.
+
+**Returns** - `changed: true`, `id_carrier` (the carrier now in use), `changes` (one entry per field changed: `field`, `old`, `new`, `delay (fr)` for a language, `billing` and `out_of_range` in their words), with a new version `replaced_id_carrier` and a `warning` (`An order uses this carrier, so the shop keeps it for that order and gives the carrier a new identifier, <new>. Use <new> from now on.`), with more than one shop `also_in_other_shops` (the other shops of the carrier) and a `warning`, with an added zone that has no price yet in `delivery` for the billing of the carrier a `warning` naming it (`The zone(s) <ids> have no price yet: the shop does not offer this carrier there until its ranges get one.`), none for a free carrier, which the shop offers in every zone it serves without a price, with ranges written and more than one shop in the installation a `warning` that their prices now apply in every shop, with a logo given or removed `logo` (the `url` or `upload_ref` with `stored: true`, `removed: true`, or the `refused` reason), then `carrier`, the object of `somcp_get_carrier` read back through `SomcpToolGetCarrier::carrier()`.
+
+**Notes** - replayable: the same call twice changes nothing the second time. The carrier of the shop of the token only; its name, **Speed grade**, **Logo**, **Tracking URL**, status, groups, zones (`carrier_zone` has no shop column), place in the list, **Free shipping**, handling costs, billing, **Out-of-range behavior** and the size and weight limits are shared by every shop (a move says so in the `warning` with more than one shop), the **Transit time** and the **Tax** are per shop. A carrier made by a module is changed the same way, as the back office does. `update()` writes back the `shipping_method` the constructor resolves from `PS_SHIPPING_METHOD` when `0` is stored, as the form does: the billing does not change.
+
+**Differences between 8.0.1 and 9.0.0** - the page (the wizard, with **Enabled** in **Summary** and **Group access** in step 3, against the **General settings** tab of a Symfony form) and when a new version is made: at every save on 8.0.1, only once an order uses the carrier on 9.0.0; the place is dragged in the 8.0.1 list and set in the **Rearrange** mode of 9.0.0, both through `Carrier::updatePosition()`; 8.0.1 deletes the prices of a free carrier and 9.0.0 does not (the tool keeps them on both); 9.0.0 switches free shipping and handling costs against each other, 8.0.1 saves what is posted (the tool follows 9.0.0); a blank limit is 0 on 8.0.1 and refused on 9.0.0 (the tool takes 0 for no limit, never a blank); 8.0.1 adds prices of 0 for an added zone and deletes the prices of a removed one, 9.0.0 touches only `carrier_zone` (the tool follows 9.0.0 on both); the ranges are a table edited in place with **Add new range** and **Delete** on 8.0.1 and the **Ranges** window with **Add range** on 9.0.0, their prices written for the shop context on 8.0.1 and global on 9.0.0, the bounds unchecked by the 8.0.1 server and checked by `CarrierRangeZone::assertRanges()` on 9.0.0 (the tool writes global rows and checks the bounds on both); the logo is uploaded by AJAX into the image cache and copied at save on 8.0.1, any image resized to JPEG, and checked at save on 9.0.0, JPEG only, 8 MB at most (the tool takes every image the module takes, 10 MiB at most, as a JPEG, on both: the stored file is the same). The tool follows 9.0.0 on both, so a carrier no order uses keeps the identifier the assistant has just read. The columns and `Carrier::copyCarrierData()` are the same.
+
+#### `somcp_delete_carrier`
+**State**: written · [issue #321](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/321)
+**Nature**: `acts(DELETE, 'AdminCarriers')` · **Scope**: `mcp.orders.write`
+
+**Does** - deletes one carrier of **Shipping > Carriers**, as the **Delete** of its row (and **Delete selected** in **Bulk actions**, one carrier per call). Irreversible: the description asks the assistant to confirm with the merchant by name first, and to turn the carrier off with `somcp_update_carrier` when it may come back.
+
+**Do not use for** - turning a carrier off (→ `somcp_update_carrier`, `active`); the carrier of one order (→ `somcp_set_order_carrier`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_carrier` | the row deleted | integer | yes | from `somcp_list_carriers`; missing or not a whole number: `SomcpTool::notAnIdentifier()`; unknown or already `deleted`: the line of `SomcpToolGetCarrier::notFound()` |
+
+Unknown arguments through `SomcpTool::unknownFields()`, with the fields of `somcp_list_carriers` and `somcp_get_carrier` named as worked out by the shop, so a carrier given whole is understood.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:` (`SomcpTool::refused('deleted', $problems)`), every problem at once, nothing written:
+- the default carrier (`PS_CARRIER_DEFAULT` of the shop of the token): `id_carrier: <id> is the default carrier of the shop - choose another default carrier in Shipping > Preferences first`; deleted, the checkout would go on pointing to a carrier no list shows;
+- a carrier of a module (`is_module`): `id_carrier: <id> belongs to the module <external_module_name>, which manages it - disable it with somcp_update_carrier, or manage it from that module`; the module keeps its reference and would recreate it or stop offering delivery.
+
+A delete that fails is checked on the table and answered `The carrier could not be deleted.`, with the hint to read `somcp_list_carriers`.
+
+**Then** - one behaviour on both versions, the one of 9.0.0: used by an order (`Carrier::isUsed()`), it is flagged `deleted = 1` and saved, never `Carrier::delete()`, which on 8.0.1 would remove the row the orders point to; used by none, `Carrier::delete()` removes it with its links (`cart_rule_carrier`, `module_carrier`, its tax rules group rows). Then `Warehouse::removeCarrier()` by its `id_reference` and `Carrier::cleanPositions()`, as the 8.0.1 list does. Checked on the table rather than trusted from the core: gone, or `deleted = 1` when kept for orders. Logged as `carrier_deleted`.
+
+**Returns** - `deleted: true`, `id_carrier`, `carrier` (the object of `somcp_get_carrier` as it was before the deletion), `kept_for_orders` (`true` with the `warning` `Orders use this carrier: PrestaShop keeps it hidden for them, and it is gone from the list.` when it was only flagged); with more than one shop, `also_in_other_shops` and a `warning`, since a carrier is not tied to one shop.
+
+**Notes** - not replayable: a second call finds no carrier. The demo carriers: 1 is the default and is refused, 2 is used by orders and is kept hidden, 3 and 4 are removed.
+
+**Differences between 8.0.1 and 9.0.0** - the core: the 8.0.1 list only flags every carrier `deleted`, used or not, and removes its logo; 9.0.0 removes a carrier no order uses and flags the others. The tool behaves the same on both, as 9.0.0 does, so `Carrier::delete()` is only called on a carrier no order uses, where it gives the same result on both.
 
 #### `somcp_list_tax_rules`
 **State**: written
@@ -2304,7 +2584,7 @@ On 8.0.1 the filter label is **Free Shipping**, on 9.0.0 **Free shipping**; the 
 
 | Name | Type | Required | Role |
 |---|---|---|---|
-| `active` | boolean | no | true by default, enabled rules only; false lists disabled ones too |
+| `active` | boolean | no | the **Enabled** filter: true by default, enabled rules only; false disabled rules only; anything else refused (`active: true or false`) |
 | `name` | string | no | part of the rule name (the **Name** filter of the list), case-insensitive; left out, every rule |
 
 **Returns** - per rule: `id_tax_rules_group`, `name`, `active`, `rate` in the default country, `country` (ISO code of that country). Plus `count`, and `taxes_enabled`: false when the shop has taxes switched off, so that no rule applies.
@@ -2333,7 +2613,7 @@ the rules (→ `somcp_list_tax_rules`).
 
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
-| `id_tax_rules_group` | the rule opened from the list | integer | yes | from `somcp_list_tax_rules` (`active: false` lists disabled ones too) |
+| `id_tax_rules_group` | the rule opened from the list | integer | yes | from `somcp_list_tax_rules` (`active: false` lists the disabled ones) |
 | `country` | **Country** | string | no | ISO code of a country (`DE`): only the rows of that country; left out, every row |
 | `language` | | string | no | ISO code for the country, state and tax names; the shop default when left out |
 
@@ -2367,15 +2647,16 @@ its **Name** and **Enable**, as **Add new tax rule** then **Save and stay** do.
 It is the first step of setting up the taxes of a new shop: the rule gets its
 rows per country afterwards, and products take its `id_tax_rules_group`.
 
-**Do not use for** - adding a country, a state or a zip range to a rule,
-changing or deleting a rule (no tool yet); giving a rule to a product
+**Do not use for** - adding a country, a state or a zip range to a rule
+(→ `somcp_add_country_rule`); changing a rule (→ `somcp_update_tax_rule`); deleting a rule
+(→ `somcp_delete_tax_rule`); giving a rule to a product
 (→ `somcp_update_product`, `id_tax_rules_group`).
 
 **Parameters**
 
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
-| `name` | **Name** | string | yes | at most 64 characters, `Validate::isGenericName()` (no `<`, `>`, `=`, `{`, `}`) |
+| `name` | **Name** | string | yes | at most the size of the **Name** column, read from the database: 64 characters on PrestaShop 9, 50 on some 8.0 shops; `Validate::isGenericName()` (no `<`, `>`, `=`, `{`, `}`) |
 | `active` | **Enable** | boolean | no | left out, `false`, the default of the form; the answer says so. A disabled rule is not offered on the product page |
 
 **Then** - `new TaxRulesGroup()`, `name`, `active`, `add()` with
@@ -2392,7 +2673,7 @@ rule was created disabled, as the form does.
 
 **Errors** - in the envelope `Nothing was created. Correct these and call
 again:`, every problem at once, each named with its field: `name` missing
-(`name: required`), not a text, empty, too long (`name: 64 characters at most,
+(`name: required`), not a text, empty, too long (`name: <size of the column> characters at most,
 <n> given`) or with a refused character; `active` not a boolean (`active: true
 or false`, as `somcp_list_tax_rules`); unknown arguments through
 `SomcpTool::unknownFields()`, the fields `somcp_get_tax_rule` returns and the
@@ -2400,10 +2681,314 @@ shop works out named as such. A failed `add()` is reported as such, the rule
 removed again if it went in: nothing half written.
 
 **Notes**
-- Not replayable: each call creates one more rule, even with the same name. On a lost answer, read `somcp_list_tax_rules` with `name` and `active: false` before calling again.
+- Not replayable: each call creates one more rule, even with the same name. On a lost answer, read `somcp_list_tax_rules` with `name`, with `active: true` and with `active: false`, before calling again.
 - Scope `mcp.catalog.write`, as `somcp_list_tax_rules` reads with `mcp.catalog.read`: a tax rule is created to price products.
 - Multistore: the rule is created for the token's shop only, as the form in one shop's context.
-- The same form, fields, class definition and tables on 8.0.1 and 9.0.0; only the panel title differs (**Tax Rules** / **Tax rules**). Names are not unique: the back office saves two rules of the same name.
+- The same form, fields and class definition on 8.0.1 and 9.0.0; the panel title differs (**Tax Rules** / **Tax rules**), and so can the size of the `tax_rules_group.name` column: `varchar(64)` on 9.0.0, `varchar(50)` on some 8.0 shops although the class says 64. The limit is read from the column (`SHOW COLUMNS`), 64 when it cannot be read, so a name the database would cut is refused instead. Names are not unique: the back office saves two rules of the same name.
+
+#### `somcp_update_tax_rule`
+**State**: written · [issue #294](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/294)
+**Nature**: `acts(EDIT, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes the **Name** and **Enable** of one tax rule of
+**International > Taxes > Tax Rules**, as its edit page then **Save and stay**
+do, and so also switches a rule on or off as the **Enabled** column of the
+list does (the same `active` field). Only what is given changes.
+
+**Do not use for** - adding a country row to the rule
+(→ `somcp_add_country_rule`); deleting one (→ `somcp_delete_country_rule`);
+changing one (→ `somcp_update_country_rule`); deleting a rule (→ `somcp_delete_tax_rule`); giving a
+rule to a product (→ `somcp_update_product`, `id_tax_rules_group`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax_rules_group` | the rule edited | integer | yes | from `somcp_list_tax_rules` or the answer of `somcp_create_tax_rule`; a rule that does not exist, is deleted or is not in the token's shop is not found, through `SomcpToolGetTaxRule::existingRule()`, as `somcp_get_tax_rule` answers it |
+| `name` | **Name** | string | no | the checks of the create, through `SomcpToolCreateTaxRule::name()`: not empty, at most the size of the **Name** column (64 characters on PrestaShop 9, 50 on some 8.0 shops), `Validate::isGenericName()`. Left out: unchanged |
+| `active` | **Enable** | boolean | no | `true` or `false`, refused otherwise with `active: true or false`. Left out: unchanged |
+
+The fields `somcp_get_tax_rule` returns and the shop works out
+(`SomcpToolCreateTaxRule::COMPUTED`) are refused as worked out by the shop,
+so a rule read with `somcp_get_tax_rule` can be given back after its
+`id_tax_rules_group`, `name` and `active` are picked out.
+
+**Then** - `name` and `active` are compared with the stored values first.
+Nothing differs: `changed: false`, `id_tax_rules_group` and `reason` (`The
+tax rule already holds every value given. Nothing was written.`), and
+`update()` is never called. Something differs and no order line carries the
+rule (`TaxRulesGroup::isUsed()`): `name`, `active`, `update()` with
+`id_shop_list` set to the token's shop. Carried by an order line: the rule
+stays unchanged for the orders already placed and the change goes on a copy,
+through `SomcpToolUpdateTaxRule::replaceUsed()`, never `update()` on the used
+rule: (1) `duplicateObject()`, (2) a `tax_rules_group_shop` row for the copy
+per shop of the old rule, (3) the `tax_rule` rows copied as `historize()` does,
+(4) `product`, `product_shop` and `carrier_tax_rules_group_shop` moved to the
+copy (never `carrier`), (5) the old rule `softDelete()`d, so the lists no
+longer show it, then (6) `name` and `active` written on the copy with
+`update()`. The copy is complete before anything leaves the old rule: a failure
+in 1 to 3 removes it and nothing moved; a failure in 4 to 6 names the step and
+both identifiers, logged, so the merchant can look in the back office. The
+tools that change the country rows of a rule call the same function (#303,
+#304).
+
+**Returns** - `changed: true`, `id_tax_rules_group`, `changes` (one entry per
+field changed: `field`, `old`, `new`), then `tax_rule` as `somcp_get_tax_rule`
+returns it, read back through `SomcpToolGetTaxRule::rule()`. When the rule is
+also in other shops, `also_in_other_shops` (their number) and a `warning`.
+A rule carried by an order line: `id_tax_rules_group` is the copy's,
+`replaced_id_tax_rules_group` the old one, and the `warning` starts with `This
+rule is used by orders already placed: PrestaShop keeps it unchanged for them
+and gives the rule a new identifier, <new>. Products and carriers now use the
+new one.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once, each named with its field: identifier not
+given or not found (pointing to `somcp_list_tax_rules`), `name` as the create
+refuses it, `active` not a boolean, unknown arguments through
+`SomcpTool::unknownFields()`. A failed `update()` is reported as such.
+
+**Notes**
+- Replayable: the same call twice changes nothing the second time. For a rule carried by an order line, the old identifier is not found after the first call: on a lost answer, find the copy with `somcp_list_tax_rules` and `name`.
+- A disabled rule is no longer offered on the product page; products that already have it keep it.
+- Multistore: a tax rule has no per-shop name or status (`tax_rules_group` only), so the change shows in every shop the rule is in, as the back office does it from one shop's context.
+- The same form, fields and class definition on 8.0.1 and 9.0.0; the panel title differs (**Tax Rules** / **Tax rules**), and so can the size of the `tax_rules_group.name` column (see `somcp_create_tax_rule`).
+- Differences between 8.0.1 and 9.0.0: for a rule an order line carries, `TaxRulesGroup::update()` copies it through `historize()`. On 9.0.0 that works; on 8.0.1 its last but one statement updates a `carrier.id_tax_rules_group` column that does not exist, so `historize()` fails after the old rule is deleted and its copy made, the carriers stay on the deleted rule and the change is never written. The tool runs the 9.0.0 sequence itself, so it behaves the same on both.
+
+#### `somcp_delete_tax_rule`
+**State**: written · [issue #296](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/296)
+**Nature**: `acts(DELETE, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one tax rule of **International > Taxes > Tax Rules** with
+its rows per country, as the row action **Delete** of the list does
+(**Delete selected** does the same for several, one per call here).
+
+**Do not use for** - switching a rule off (→ `somcp_update_tax_rule`,
+`active: false`), which keeps it for later; deleting one country row of a
+rule (→ `somcp_delete_country_rule`); adding a country row
+(→ `somcp_add_country_rule`); changing one (→ `somcp_update_country_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax_rules_group` | the row deleted | integer | yes | from `somcp_list_tax_rules`; unknown, deleted or not in the token's shop: not found, through `SomcpToolGetTaxRule::existingRule()`, as `somcp_get_tax_rule` answers it |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Refused, nothing deleted** - every reason at once, unlike the back office,
+which deletes the rule and leaves products and carriers pointing at a rule
+that no longer exists, then charged no tax without a word:
+- products of the token's shop on it (`product_shop`): `id_tax_rules_group: used by N products - give them another tax rule with somcp_update_product first, or they would be sold without tax`;
+- carriers of the token's shop on it (`carrier_tax_rules_group_shop`, deleted carriers left out): `id_tax_rules_group: used by N carriers - give them another tax rule in Shipping > Carriers first`;
+- a rule `tax_rules_group_shop` also ties to another shop: `id_tax_rules_group: also used by N other shops of this installation - delete it from the back office in the context of every shop`, since `delete()` removes it from every shop.
+
+One of a kind is said in the singular (`used by 1 carrier`).
+
+**Then** - `TaxRulesGroup::delete()`, as `AdminController::processDelete()`
+calls it for this controller; then `tax_rules_group` is checked to no longer
+hold the row.
+
+**Returns** - `deleted: true`, `id_tax_rules_group`, `name` (read before),
+`country_rules_deleted` (the number of its `tax_rule` rows, read before).
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`, each problem named with its field. A failed `delete()` is reported
+as such, with a hint to read the rule with `somcp_get_tax_rule`.
+
+**Notes**
+- Not replayable: a second call finds nothing and says so.
+- A real deletion, not the `deleted = 1` a change of a used rule leaves: past orders keep their amounts (`order_detail_tax`).
+- No difference between 8.0.1 and 9.0.0: the same controller path, the same `delete()`, the same tables.
+
+#### `somcp_add_country_rule`
+**State**: written · [issue #303](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/303)
+**Nature**: `acts(ADD, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - adds a row to one tax rule of **International > Taxes > Tax
+Rules**, as the **New tax rule** panel of its edit page then **Save and
+stay** do: a country, its states, a zip/postal code range, a behavior, a tax
+and a description. A rule without a row charges nothing. **All** in
+**Country** adds one row for each country of the shop in one call.
+
+**Do not use for** - creating a
+rule (→ `somcp_create_tax_rule`); renaming or switching a rule off
+(→ `somcp_update_tax_rule`); deleting a row (→ `somcp_delete_country_rule`);
+changing a row (→ `somcp_update_country_rule`).
+
+**Parameters**
+
+The names are those `somcp_get_tax_rule` gives in each `country_rules`
+entry, so a row read there can be given here.
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax_rules_group` | the rule edited | integer | yes | from `somcp_list_tax_rules`; unknown, deleted or not in the token's shop: not found, through `SomcpToolGetTaxRule::existingRule()` |
+| `country` | **Country** | string or `null` | yes | ISO code, read through `SomcpToolCreateSupplier::supplierCountry()`, as the supplier and manufacturer address tools (`country: no country of this shop has the ISO code "ZZ"`); `null` is **All**: one row, `id_state` 0, for each country of the shop (`country_shop`), active or not, as `processCreateRule()` loops over `Country::getCountries()`, read through `SomcpToolCreateSupplier::shopCountries()`, the join `supplierCountry()` uses. Left out stays `country: required, the ISO code of the country`: **All** is asked for, never the result of a field left out |
+| `state` | **State** | string or `null` | no | one state, as `somcp_get_tax_rule` gives it: one ISO code of the country's states through `SomcpToolCreateSupplier::stateOf()` (`state: US has no state with the ISO code "ZZ"`), one row; `null` is **All**; a code for a country without states: `state: FR has no states, leave the field out` (`null` is accepted there). With `states` in the same call: `state: state or states, not both`, `state: null` counting as given |
+| `states` | **State** | array of strings | no | the list for several: ISO codes of the country's states, one row each, each through `SomcpToolCreateSupplier::stateOf()` (`states: US has no state with the ISO code "ZZ"`); left out or empty: **All** (one row, `id_state` 0); given for a country without states: `states: FR has no states, leave the field out`; a code twice counts once |
+| `zipcode_from` | **Zip/Postal code range**, first bound | string | no | `Validate::isPostCode()`, no hyphen, the size of the column at most (12), and `Country::checkZipCode()` when the country has `need_zip_code` and a `zip_code_format` (`zipcode_from: not in the format of US (00000)`) |
+| `zipcode_to` | **Zip/Postal code range**, second bound | string | no | the same checks; only with `zipcode_from` (`zipcode_to: only with zipcode_from`); the two ordered and folded by `TaxRule::breakDownZipCode()` |
+| `behavior` | **Behavior** | string | no | `this_tax_only` (the default, first option of the form), `combine` or `one_after_another`, the values of `SomcpToolGetTaxRule::BEHAVIORS` |
+| `id_tax` | **Tax** | integer | yes | from `somcp_list_taxes`; `0` is **No Tax**; otherwise a tax that exists and is not deleted. Required here, unlike the form, so a row is never added without a tax by omission |
+| `description` | **Description** | string | no | `Validate::isString()`, the size of the column at most (100) |
+
+Unknown arguments through `SomcpTool::unknownFields()`; `id_tax_rule`,
+`country_name`, `state_name`, `tax_name` and `rate` are named as worked out
+by the shop. A `country_rules` entry of `somcp_get_tax_rule`, or the
+`country_rule` of `somcp_delete_country_rule`, is given back with
+`id_tax_rules_group` once those five are picked out.
+
+**Refused, nothing written** - every problem at once:
+- a country and state that already have a **This tax only** row, through `TaxRulesGroup::hasUniqueTaxRuleForCountry()` as the form checks it, named with the field the call used (`state` or `states`): `states: US AL already has a This tax only row in this rule - delete it with somcp_delete_country_rule first` (`country: US ...` without a state);
+- a **This tax only** row asked where the country and state already have any row, which the form lets through although the other rows would never apply: `states: US AL already has a row in this rule, and a This tax only row must be alone - choose combine or one_after_another, or delete that row with somcp_delete_country_rule first`;
+- with **All**, the same two tests for each country, gathered into one line rather than one per country: `country: 3 countries already have a row in this rule that All would contradict: FR, US, DE - delete them with somcp_delete_country_rule first, or choose combine or one_after_another`. The core stops at the first such country and keeps the rows written before it; the tool writes none;
+- with **All**, a state or a range, which belong to one country: `state: only with one country, not with All` (or `states:`), `zipcode_from: only with one country, not with All` (or `zipcode_to:`). A range is refused rather than checked against the format of every country, which the core refuses for most of them anyway.
+
+**Then** - one `TaxRule` per state (or one with `id_state` 0), for each
+country with **All**, then `add()`;
+a failure after the first row deletes the rows the call added, so a call adds
+all its rows or none. Then `update()` on the rule, for the token's shop only,
+as `updateTaxRulesGroup()` does, so its `date_upd` says when it last changed.
+A rule an order line carries (`TaxRulesGroup::isUsed()`) is first replaced by
+a copy under a new identifier, through `SomcpToolUpdateTaxRule::replaceUsed()`,
+the copy `somcp_update_tax_rule` makes, and the rows go on the copy.
+
+**Returns** - `created: true`, `id_tax_rules_group` (the copy's for a used
+rule, with `replaced_id_tax_rules_group`), `id_tax_rule` (the rows added, one
+per state, or per country with **All**), `country_count` (the number of
+countries written, with **All** only), `also_in_other_shops` and `warning` when `tax_rules_group_shop`
+ties the rule to other shops, then `tax_rule` as `somcp_get_tax_rule` returns
+it.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, each problem named with its field. A failed `add()` is reported as
+such, with a hint to read the rule with `somcp_get_tax_rule`.
+
+**Notes**
+- Not replayable: the same call twice adds the rows twice (unless the first is **This tax only**, then refused). Read the rule first, and again if an answer is lost.
+- A row with no state applies to the whole country; a **Combine** or **One after another** row adds to the other rows that match an address.
+- No difference between 8.0.1 and 9.0.0: the same panel and table; `TaxRule` gives no size on 8.0.1, hence the limits read from the columns.
+
+#### `somcp_update_country_rule`
+**State**: written · [issue #306](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/306)
+**Nature**: `acts(EDIT, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes one row of a tax rule of **International > Taxes > Tax
+Rules** in place, as the row **Edit** of the list on its edit page fills the
+**New tax rule** panel with the row and **Save and stay** saves it: its
+country, state, zip/postal code range, behavior, tax and description. One row
+per call; only what is given changes.
+
+**Do not use for** - adding a state or a country to a rule (→
+`somcp_add_country_rule`: a second state is a second row); deleting a row
+(→ `somcp_delete_country_rule`); the **Name** and **Enable** of the rule
+(→ `somcp_update_tax_rule`).
+
+**Parameters**
+
+The names are those of a `country_rules` entry of `somcp_get_tax_rule`, so a
+row read there can be given back after its `id_tax_rule`, with only what
+changes.
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax_rule` | the row edited | integer | yes | from `somcp_get_tax_rule`; found as `somcp_delete_country_rule` finds it, through `SomcpToolDeleteCountryRule::ruleOf()`: `id_tax_rule: no country row of a tax rule of this shop has the identifier <n> - find it with somcp_get_tax_rule` |
+| `country` | **Country** | string | no | ISO code, through `SomcpToolCreateSupplier::supplierCountry()`, as `somcp_add_country_rule`. Changed alone, the stored state must belong to the new country, otherwise `state: AL is not a state of FR - give state too, or null for All` |
+| `state` | **State** | string or `null` | no | one ISO code of the country's states, through `SomcpToolCreateSupplier::stateOf()` (`state: US has no state with the ISO code "ZZ"`); `null` is **All** (`id_state` 0); given for a country without states: `state: FR has no states, leave the field out`. Singular, as `somcp_get_tax_rule` gives it |
+| `zipcode_from` | **Zip/Postal code range**, first bound | string or `null` | no | the checks of `SomcpToolAddCountryRule::zipcodes()`, against the country the row will have (run again when the country changes); `null` removes the range, both bounds |
+| `zipcode_to` | **Zip/Postal code range**, second bound | string or `null` | no | the same checks; ordered and folded by `TaxRule::breakDownZipCode()` with the resulting `zipcode_from`; given without a range left: `zipcode_to: only with zipcode_from` |
+| `behavior` | **Behavior** | string | no | the values of `SomcpToolGetTaxRule::BEHAVIORS`, through `SomcpToolAddCountryRule::behavior()` |
+| `id_tax` | **Tax** | integer | no | from `somcp_list_taxes`, `0` **No Tax**, through `SomcpToolAddCountryRule::tax()` |
+| `description` | **Description** | string | no | through `SomcpToolAddCountryRule::description()` |
+
+Left out (or `null` for `behavior` and `id_tax`): unchanged. Unknown
+arguments through `SomcpTool::unknownFields()`; `country_name`, `state_name`,
+`tax_name` and `rate` are named as worked out by the shop. No
+`id_tax_rules_group`: the row names its rule.
+
+**Refused, nothing written** - every problem at once, and when the country,
+the state or the behavior changes, the two checks of
+`SomcpToolAddCountryRule::unique()` with the edited row left out of both, as
+`hasUniqueTaxRuleForCountry()` leaves it out on the edit page:
+`state: US AL already has a This tax only row in this rule - delete it with somcp_delete_country_rule first`
+(`country: US ...` without a state), and the **This tax only** row that would
+not be alone for its country and state.
+
+**Then** - every field given compared with the stored row first (zip codes
+after `breakDownZipCode()`). Nothing differs: `changed: false`, `id_tax_rule`
+and `reason` `The country row already holds every value given. Nothing was
+written.`, nothing saved and no copy made. Something differs: a rule an order
+line carries (`TaxRulesGroup::isUsed()`) is first replaced by a copy through
+`SomcpToolUpdateTaxRule::replaceUsed()`, and the same row is found again on
+the copy with `SomcpToolDeleteCountryRule::sameRow()`; then `TaxRule::update()`
+on the row, then `update()` on the rule for the token's shop only, so its
+`date_upd` says when it last changed.
+
+**Returns** - `changed: true`, `id_tax_rule` (the row on the copy, for a used
+rule), `id_tax_rules_group`, for a used rule `replaced_id_tax_rules_group`
+and the `warning` of `somcp_add_country_rule`, `changes` (one entry per field
+changed: `field`, `old`, `new`, in the names and values of a `country_rules`
+entry), `also_in_other_shops` and its `warning` when `tax_rules_group_shop`
+ties the rule to other shops, then `tax_rule` as `somcp_get_tax_rule` returns
+it.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, each problem named with its field. A failed `update()` is reported
+as such, with a hint to read the rule with `somcp_get_tax_rule`.
+
+**Notes**
+- Replayable: the same call twice changes nothing the second time.
+- No difference between 8.0.1 and 9.0.0 for an unused rule: the same `processCreateRule()` and table; for a used rule the copy is made the same way on both.
+
+#### `somcp_delete_country_rule`
+**State**: written · [issue #304](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/304)
+**Nature**: `acts(DELETE, 'AdminTaxRulesGroup')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one row of a tax rule of **International > Taxes > Tax
+Rules**, as the row **Delete** of the list on its edit page does (**Delete
+selected** does the same for several, one per call here).
+
+**Do not use for** - deleting the whole rule (→ `somcp_delete_tax_rule`);
+switching a rule off (→ `somcp_update_tax_rule`, `active: false`); adding a
+row (→ `somcp_add_country_rule`); changing a row in place
+(→ `somcp_update_country_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax_rule` | the row deleted | integer | yes | from `somcp_get_tax_rule`, `country_rules[].id_tax_rule`; read with `SomcpTool::id()`; its rule must pass `SomcpToolGetTaxRule::existingRule()` for the token's shop, otherwise `id_tax_rule: no country row of a tax rule of this shop has the identifier <n> - find it with somcp_get_tax_rule`, so a row of a deleted rule or of another shop's rule is not found |
+
+Unknown arguments through `SomcpTool::unknownFields()`. No
+`id_tax_rules_group`: the row names its rule, and a second identifier could
+only contradict it.
+
+**Then** - the row read before, through `SomcpToolGetTaxRule::countryRule()`;
+`TaxRule::delete()`, then `tax_rule` is checked to no longer hold the row;
+then `update()` on the rule, for the token's shop only, as
+`updateTaxRulesGroup()` does, so its `date_upd` says when it last changed. A
+rule an order line carries (`TaxRulesGroup::isUsed()`) is first replaced by a
+copy under a new identifier, through `SomcpToolUpdateTaxRule::replaceUsed()`,
+and the same row is deleted from the copy, as PrestaShop 9 does it. The last
+row may go: the rule stays, charging nothing.
+
+**Returns** - `deleted: true`, `id_tax_rule`, `id_tax_rules_group` (the
+copy's for a used rule, with `replaced_id_tax_rules_group`), `country_rule`
+(the row as it was, a `country_rules` entry of `somcp_get_tax_rule`), then
+`tax_rule` as `somcp_get_tax_rule` returns it after the deletion. A `warning`
+when the last row went while products or carriers of the token's shop take
+the rule (the counts of `SomcpToolDeleteTaxRule::users()`), and
+`also_in_other_shops` when `tax_rules_group_shop` ties the rule to other
+shops.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`, each problem named with its field. A failed `delete()` is reported
+as such, with a hint to read the rule with `somcp_get_tax_rule`.
+
+**Notes**
+- Not replayable: a second call finds nothing and says so.
+- No difference between 8.0.1 and 9.0.0 for an unused rule: the same controller path, the same `TaxRule::delete()`, the same table; for a used rule the copy is made the same way on both.
 
 #### `somcp_list_taxes`
 **State**: written · [issue #237](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/237)
@@ -2422,7 +3007,9 @@ a product takes a tax rule, never a tax); what a rule applies per country
 
 | Name | On screen | Type | Required | Role |
 |---|---|---|---|---|
+| `id_tax` | **ID** filter | integer | no | the tax with this identifier; one no tax has gives an empty list, as the **ID** filter of `somcp_list_customer_groups` |
 | `name` | **Name** filter | string | no | part of the name, case-insensitive, in the language of the answer; left out, every tax |
+| `rate` | **Rate** filter | number | no | the taxes whose rate is exactly this number, compared at the three decimals of the column (`5.5` finds `5.500`) |
 | `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**, the default of the list) |
 | `language` | | string | no | ISO code for the names, through `SomcpTool::readLanguage()`; the shop default when left out |
 
@@ -2436,6 +3023,8 @@ rate is charged at all) and `language`.
 
 **Errors** - in the envelope `Nothing was read. Correct these and call again:`,
 every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_tax` that is not an identifier (`SomcpTool::notAnIdentifier()`), a `rate`
+that is not a number (`rate: a number, for example 20 or 5.5`), an
 `active` that is not a boolean (`active: true or false`, the line of
 `somcp_list_tax_rules`), a language the shop does not have, named by
 `SomcpTool::languageProblem()` with the ones it has. An empty list is
@@ -2445,7 +3034,327 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 - Read through a query on `tax` and `tax_lang` (left join, so a tax with no name in the language read is still listed), `deleted = 0`, rather than `Tax::getTaxes()`, which takes the language and nothing else and has no name filter. A tax deleted from the list stays in the table with `deleted = 1` when an order used it; the list leaves it out, and so does the tool.
 - Taxes are not tied to a shop (no `tax_shop` table on either version): the same list for every shop.
 - `name` filters as the **Name** filter of `somcp_list_tax_rules`, `somcp_list_manufacturers` and `somcp_list_attachments` do.
-- The same list, columns, filters and tables on 8.0.1 and 9.0.0; 9.0.0 only offers two more **Items per page** choices. The **Tax options** form below the list is not read.
+- `rate` is an equality, where the list matches the rate as text: there `6` also finds 6.250, 6.600 and 6.850, while the rate an assistant is given is always the one it means exactly.
+- The same list, columns, filters and tables on 8.0.1 and 9.0.0; 9.0.0 only offers two more **Items per page** choices. The **Tax options** form below the list is read by `somcp_get_tax_options`.
+- The taxes are created, changed and deleted with `somcp_create_tax`.
+
+#### `somcp_list_languages`
+**State**: written · [issue #339](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/339)
+**Nature**: `acts(VIEW, 'AdminLanguages')` · **Scope**: `mcp.catalog.read`
+
+**Does** - lists the languages of **International > Localization >
+Languages** with the columns of that list: **ID**, **Name**, **ISO code**,
+**Language code**, **Locale** (shown on 9.0.0), **Date format**, **Date format
+(full)**, **Enabled**, and which one is the shop default. The `iso_code` is
+the key every translated field of the other tools takes. Read only.
+
+**Do not use for** - the translations of the shop (**International >
+Translations**); adding, changing or deleting a language (later tools).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_lang` | **ID** filter | integer | no | one language, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_cms_pages` do |
+| `name` | **Name** filter | string | no | part of the name, case-insensitive |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`fr`) |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**) |
+
+No filter on the codes and date formats, no paging and no `language`: a shop
+holds a handful of languages, and their names are those of the `lang` table.
+
+**Returns** - `languages`, sorted by `id_lang` as the list: `id_lang` (**ID**),
+`name` (**Name**), `iso_code` (**ISO code**), `language_code` (**Language
+code**), `locale` (**Locale**, read on both versions), `date_format` (**Date
+format**), `date_format_full` (**Date format (full)**), `active`
+(**Enabled**), `is_rtl`, `default` (`true` for the `PS_LANG_DEFAULT` of the
+shop of the token, the language a tool reads in when `language` is left out).
+Plus `count`. Only an enabled language is accepted by the `language` and
+`languages` of the other tools; a disabled one is listed so the assistant can
+tell the merchant why.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_lang` that is not an identifier (`SomcpTool::notAnIdentifier()`), an
+`active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`). An empty list is `languages: []`, `count: 0`.
+
+**Notes**
+- Read through a query on `lang` joined to `lang_shop` on the shop of the token, rather than `Language::getLanguages()`, so every filter stays one `WHERE`; the default read as `somcp_ping` reads it.
+- No flag image: the flag is a file the assistant has no use for.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - the **Locale** column and its filter on 9.0.0 only (the answer gives `locale` on both, from the same column); otherwise the same list, filters, labels and tables (`lang`, `lang_shop`).
+
+#### `somcp_list_currencies`
+**State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)
+**Nature**: `acts(VIEW, 'AdminCurrencies')` · **Scope**: `mcp.catalog.read`
+
+**Does** - lists the currencies of **International > Localization >
+Currencies** with the columns of that list: **ID**, **Currency**, **Symbol**,
+**ISO code**, **Exchange rate**, **Enabled**, and which one is the shop
+default. The `iso_code` is what the `currency` of the other tools takes
+(`somcp_create_order`, `somcp_set_order_currency`,
+`somcp_create_catalog_price_rule`). Read only.
+
+**Do not use for** - changing the currency of an order (→
+`somcp_set_order_currency`); adding, changing, enabling or deleting a
+currency, or updating the exchange rates (later tools).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_currency` | **ID** filter | integer | no | one currency, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_languages` do |
+| `name` | **Currency** filter | string | no | part of the name in `language`, case-insensitive |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`eur`) |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**) |
+| `language` | - | string | no | ISO code of one of the shop's active languages, for the names and symbols; the shop default language when left out, as `somcp_list_taxes` |
+
+No **Symbol** filter and no paging: a shop holds a handful of currencies, and
+the answer gives every symbol.
+
+**Returns** - `currencies`, sorted by `id_currency` as the list: `id_currency`
+(**ID**), `name` (**Currency**, in `language`), `symbol` (**Symbol**, in
+`language`), `iso_code` (**ISO code**), `conversion_rate` (**Exchange rate**, a
+number, the rate of the shop of the token from `currency_shop`, against the
+default currency), `active` (**Enabled**), `default` (`true` for the
+`PS_CURRENCY_DEFAULT` of the shop, whose rate is 1). Plus `count` and
+`language`. Only an enabled currency is accepted by the `currency` of the
+other tools; a disabled one is listed so the assistant can tell the merchant
+why.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_currency` that is not an identifier (`SomcpTool::notAnIdentifier()`), an
+`active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`), a language the shop does not have
+(`SomcpTool::languageProblem()`, as `somcp_list_taxes`). An empty list is
+`currencies: []`, `count: 0`.
+
+**Notes**
+- Read through a query on `currency` (`deleted = 0`) joined to `currency_shop` on the shop of the token and to `currency_lang` in the language asked, rather than `Currency::getCurrencies()`, which has no name or ISO code filter; the default read as `Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop)`.
+- The **Exchange rate** block below the list (**Live exchange rates**, **Update exchange rates**) holds actions, not part of this list.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its bulk actions, its labels or the tables (`currency`, `currency_lang`, `currency_shop`); the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0).
+
+#### `somcp_create_tax`
+**State**: written · [issue #308](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/308)
+**Nature**: `acts(ADD, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`
+
+**Does** - creates one tax of **International > Taxes > Taxes**, as **Add new
+tax** then **Save**: a **Name** per language, a **Rate** and **Enable**. A tax
+rule charges a tax per country (`somcp_add_country_rule`, `id_tax`): this is
+how a rate the install did not provide is made.
+
+**Do not use for** - the rate a country charges in a rule (→ a tax rule row,
+`somcp_add_country_rule`, which takes this `id_tax`); a product's tax
+(→ `somcp_update_product`, which takes a tax rule, never a tax).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `languages` | | array of strings | no | ISO codes of the languages the `name` is given in, through `SomcpToolCreateProduct::languages()`; every active language by default, a language left out taking the default one's text (`completeTexts()`) |
+| `name` | **Name** | object by ISO code | yes | one text per language being filled (a plain string when one is), each trimmed, at most the size of `tax_lang.name` (`SomcpTool::columnSize()`, 32), checked with `validateField('name', ...)` on a `Tax`: `name (fr): 32 characters at most, 40 given`, `name (fr): a character PrestaShop refuses in a tax name (< > = { }) - ...` |
+| `rate` | **Rate** | number | yes | a percentage from 0 to 100 with at most three decimals, `rate: a number from 0 to 100, at most three decimals, for example 20 or 5.5`; stored as given (`5.5` is `5.500`) |
+| `active` | **Enable** | boolean | no | left out, `false`, the form's default; not a boolean: `active: true or false` |
+
+Decision (**Rate**): 0 to 100 rather than the form's numeric-in-6-characters, which takes `-5` and `999999`; a rate out of range would charge every order of the countries the tax is given to. The three decimals are the column's: a fourth is refused rather than stored rounded.
+
+Unknown arguments through `SomcpTool::unknownFields()`, with `id_tax` named as worked out by the shop, so a row of `somcp_list_taxes` can be given back.
+
+**Returns** - `created: true`, `id_tax`, and `tax`, the row of `somcp_list_taxes` for that tax in the shop default language (`id_tax`, `name`, `rate`, `active`), read back through the shared `SomcpToolListTaxes::tax()`. With `active: false` a `warning` tells the merchant to enable the tax before giving it to a rule; on a multistore the answer gives `also_in_other_shops`, the number of other shops the tax now shows in, with a `warning`, as the tax rule tools do.
+
+**Errors** - in the envelope of #169, under `Nothing was created.`, every problem at once.
+
+**Notes**
+- Not replayable: the same call twice creates two taxes, as the form does; the description says to read `somcp_list_taxes` first.
+- A tax is tied to no shop (no `tax_shop` table): the same tax for every shop of a multistore.
+- The same fields, checks and tables on 8.0.1 and 9.0.0; `Validate::isGenericName()` refuses `< > = { }` on both.
+- Changing a tax is `somcp_update_tax`, deleting it `somcp_delete_tax`.
+
+#### `somcp_update_tax`
+**State**: written · [issue #309](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/309)
+**Nature**: `acts(EDIT, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes one tax of **International > Taxes > Taxes**, as its **Edit**
+then **Save** or the **Enabled** switch of its row: **Name**, **Rate**,
+**Enable**. Only the fields given change. Every field is checked by the
+functions of `somcp_create_tax`, and the answer is the same shared row.
+
+**Do not use for** - the tax one country charges in a rule
+(→ `somcp_update_country_rule`, `id_tax`); deleting a tax
+(→ `somcp_delete_tax`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax` | the tax edited | integer | yes | from `somcp_list_taxes`; `SomcpTool::notAnIdentifier('id_tax')`, and `SomcpTool::notFound()` for a tax missing or flagged deleted |
+| `languages` | | array of strings | no | as `somcp_create_tax`: the languages the `name` given covers |
+| `name` | **Name** | object by ISO code | no | the check of `somcp_create_tax`, for the languages given only; a language left out keeps its name; given, never empty. The `name` of a row of `somcp_list_taxes`, one text, is taken back as it is: when it is the stored name of one of the languages, it is no change, even on a shop with several languages |
+| `rate` | **Rate** | number | no | the check of `somcp_create_tax` (0 to 100, three decimals) |
+| `active` | **Enable** | boolean | no | `true` or `false` |
+
+Left out: unchanged. Unknown arguments through `SomcpTool::unknownFields()`; a row of `somcp_list_taxes` can be given back, nothing in it being worked out but `id_tax`, which this tool takes.
+
+**Refused, nothing written** - on PrestaShop 8 only, `active: false` for an enabled tax that tax rule rows charge, since the core would delete those rows: `active: on PrestaShop 8, disabling this tax deletes its 2 row(s) in the tax rules 1, 9 - change their tax with somcp_update_country_rule first, or keep the tax enabled`, counted through `SomcpToolUpdateTax::charging()`. On 9.0.0 the rows stay and the change goes through.
+
+Decision (PrestaShop 8, disabling): refuse rather than follow the back office, which removes the rows from every rule without a word and leaves those countries untaxed with nothing to undo it. Detected with `version_compare(_PS_VERSION_, '9.0.0', '<')`.
+
+**Returns** - `changed: true`, `id_tax` (the new tax for a used one); for a used tax `replaced_id_tax` and a `warning`; `changes` (one entry per field changed: `field`, `old`, `new`); then `tax`, the shared row. Nothing differs: `changed: false`, `id_tax` and `The tax already holds every value given. Nothing was written.`. On a multistore, `also_in_other_shops` gives the number of other shops the change shows in, with a `warning`, as the tax rule tools do.
+
+**Errors** - in the envelope of #169, under `Nothing was changed.`, every problem at once. On a used tax, the rows still on the old tax are counted after the save, whatever the core answered (`SomcpToolUpdateTax::charging()`): a row left there is an error that says what the shop now holds, `The tax was copied to a new identifier, <new>, but <n> row(s) of the tax rules <ids> still charge the old one, <old>, which is now hidden - give them the new tax with somcp_update_country_rule.`, logged as `tax_update_failed` with both identifiers.
+
+**Notes**
+- Replayable: the same call twice changes nothing the second time.
+- A tax is tied to no shop: the change shows in every shop of a multistore (`also_in_other_shops`, counted by `SomcpToolCreateTax::otherShops()`).
+- On 8.0.1 a used tax turned off goes through the core's copy path, which does not delete rows; the refusal above applies only to a tax no order carries.
+
+#### `somcp_delete_tax`
+**State**: written · [issue #310](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/310)
+**Nature**: `acts(DELETE, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one tax of **International > Taxes > Taxes**, as the
+**Delete** of its row. Irreversible.
+
+**Do not use for** - a tax that should stop being charged in one country
+(→ `somcp_delete_country_rule`); turning a tax off (→ `somcp_update_tax`,
+`active`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_tax` | the row deleted | integer | yes | from `somcp_list_taxes`, the check of `somcp_update_tax` (`notAnIdentifier()`, `notFound()` for a tax missing or flagged deleted) |
+
+Unknown arguments through `SomcpTool::unknownFields()`, with `name`, `rate` and `active` named as worked out by the shop, so a row of `somcp_list_taxes` given whole is understood.
+
+**Refused, nothing written** - a tax that tax rule rows charge: `id_tax: charged by 2 row(s) of the tax rules 1, 9 - give them another tax with somcp_update_country_rule, or delete them with somcp_delete_country_rule first, or those countries would be charged nothing`, counted through `SomcpToolUpdateTax::charging()`.
+
+Decision (rows): refuse rather than delete them with the tax as the back office does, which removes the rows from every rule at once and leaves those countries untaxed with nothing to read back. Refused, the assistant moves or deletes the rows one by one with the country row tools, each of which says what it changes.
+
+**Returns** - `deleted: true`, `id_tax`, `tax` (the row as it was: `name`, `rate`, `active`), and `kept_for_orders`: `true` with a `warning` when the tax was only flagged (an order carries it), `false` when it was really removed. On a multistore, `also_in_other_shops` gives the number of other shops the tax is gone from, with a `warning`.
+
+**Errors** - in the envelope of #169, under `Nothing was deleted.`, every problem at once.
+
+**Notes**
+- Not replayable: the second call finds no tax (`notFound()`).
+- A tax is tied to no shop: gone for every shop of a multistore.
+- The same `Tax::delete()`, handlers and tables on 8.0.1 and 9.0.0.
+
+#### `somcp_get_tax_options`
+**State**: written · [issue #311](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/311)
+**Nature**: `acts(VIEW, 'AdminTaxes')` · **Scope**: `mcp.catalog.read`
+
+**Does** - reads the **Tax options** of **International > Taxes > Taxes**, the
+form below the list of taxes: **Enable tax**, **Display tax in the shopping
+cart**, **Based on**, **Use ecotax** and **Ecotax**. These settings decide
+whether the rates of the tax rules are charged at all, on which address and
+with which ecotax. Read only.
+
+**Do not use for** - the taxes and their rates (→ `somcp_list_taxes`); the
+rate a country charges (→ `somcp_get_tax_rule`); the ecotax of one product
+(→ `somcp_get_product`, `ecotax_tax_excl`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `language` | | string | no | ISO code, through `SomcpTool::readLanguage()` and listed with `SomcpTool::languageProblem()`; the shop default when left out. A tax rule name is not translated, but the answer gives `language` as the other tax tools do |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - one object, under the names an update takes back (#307), read
+by the shared `SomcpToolGetTaxOptions::options()`:
+- `taxes_enabled`: **Enable tax** (`PS_TAX`), the name `somcp_list_taxes`, `somcp_list_tax_rules` and `somcp_get_tax_rule` already give it;
+- `display_tax_in_cart`: **Display tax in the shopping cart** (`PS_TAX_DISPLAY`);
+- `based_on`: **Based on** (`PS_TAX_ADDRESS_TYPE`), `"invoice_address"` or `"delivery_address"`; a value that is neither (an old shop) is given as stored, with a `warning`;
+- `use_ecotax`: **Use ecotax** (`PS_USE_ECOTAX`);
+- `ecotax_id_tax_rules_group`: **Ecotax** (`PS_ECOTAX_TAX_RULES_GROUP_ID`), `0` for **No tax**; the `id_tax_rules_group` of `somcp_list_tax_rules`;
+- `ecotax_tax_rule`: the name of that rule, read through `SomcpToolGetTaxRule::existingRule()`, `null` for 0 or for a rule deleted since (then a `warning`: choose another with `somcp_update_tax_options`);
+- `ecotax_rate`: the rate the shop charges on an ecotax, `SomcpCatalog::ecotaxRate()`, the number the product tools use for `ecotax_tax_incl`;
+- `language`.
+
+Each key is read with `Configuration::get($key, null, $idShopGroup, $idShop)`,
+the shop and group of the token, as `somcp_get_seo_settings` reads.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once (`SomcpTool::refused('read', $problems)`): an unknown
+argument, a language the shop does not have.
+
+**Notes**
+- When **Enable tax** is off, a `warning` says so: no rate of any tax rule is charged, and the cart shows no tax line whatever **Display tax in the shopping cart** holds (the core turns it off with **Enable tax**).
+- Read only, replayable.
+- The same form, the same five keys and the same `TaxOptionsConfiguration` on 8.0.1 and 9.0.0.
+- To change them: `somcp_update_tax_options`.
+
+#### `somcp_update_tax_options`
+**State**: written · [issue #312](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/312)
+**Nature**: `acts(EDIT, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes the **Tax options** of **International > Taxes > Taxes**, as
+the **Save** of that card does: **Enable tax**, **Display tax in the shopping
+cart**, **Based on**, **Use ecotax**, **Ecotax**. Only the fields given change;
+the answer of `somcp_get_tax_options` can be given back as it is.
+
+**Do not use for** - the rates (→ `somcp_update_tax`, `somcp_update_country_rule`); the ecotax of one product (→ `somcp_update_product`).
+
+**Parameters**
+
+Every field takes what `somcp_get_tax_options` answers.
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `taxes_enabled` | **Enable tax** | boolean | no | `PS_TAX` |
+| `display_tax_in_cart` | **Display tax in the shopping cart** | boolean | no | `PS_TAX_DISPLAY`; `true` with **Enable tax** off (given or stored) refused |
+| `based_on` | **Based on** | string | no | `invoice_address` (**Invoice address**) or `delivery_address` (**Delivery address**), stored as `id_address_invoice` / `id_address_delivery` in `PS_TAX_ADDRESS_TYPE` |
+| `use_ecotax` | **Use ecotax** | boolean | no | `PS_USE_ECOTAX`; see the refusal below |
+| `ecotax_id_tax_rules_group` | **Ecotax** | integer | no | `PS_ECOTAX_TAX_RULES_GROUP_ID`: `0` (**No tax**) or an enabled tax rule of the shop from `somcp_list_tax_rules`, checked with `SomcpToolGetTaxRule::existingRule()`; refused while **Use ecotax** stays off, as the form hides the field and never saves it |
+| `reset_product_ecotax` | | boolean | no | confirms `use_ecotax: false` when products carry an ecotax; refused with anything but `use_ecotax: false` |
+
+A value given equal to the stored one is never refused, whatever the other
+fields hold: the conditions on `display_tax_in_cart` and
+`ecotax_id_tax_rules_group` apply only to a value that changes. Unknown
+arguments through `SomcpTool::unknownFields()`: `ecotax_tax_rule`,
+`ecotax_rate` and `language` given back as `somcp_get_tax_options` reads them
+are no change, given otherwise they are named as worked out by the shop, as
+`warning` always is.
+
+**Refused, nothing written** - `use_ecotax: false` while it is on and at least
+one product of the shop carries an ecotax (`product_shop.ecotax > 0`), unless
+`reset_product_ecotax: true` is given. The core then sets the ecotax of every
+product to 0 (`Product::resetEcoTax()`), which no screen can give back.
+
+**Then** - nothing differs: `changed: false` and `The tax options already hold
+every value given. Nothing was written.` Something differs: each key saved
+with `Configuration::updateValue($key, $value, false, $idShopGroup, $idShop)`,
+the shop and group of the token, in the order of the core's Save; turning the
+ecotax off with the flag runs `Product::resetEcoTax()` first, as the core does;
+a save that leaves **Enable tax** off also stores `PS_TAX_DISPLAY` 0, as the
+core does, and lists it in `changes`. Logged as `tax_options_updated`.
+
+**Returns** - `changed: true`, `changes` (one entry per key changed: `field`,
+`old`, `new`, under the names of the parameters, `based_on` in its screen
+words), `products_reset` (the count, only when the ecotax was turned off with
+the flag), `warning` when products were reset (in every shop) or the
+installation has more than one shop (this shop only), then `tax_options`, the
+object of `somcp_get_tax_options` read back through
+`SomcpToolGetTaxOptions::options()`.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once: a switch that is not `true` or `false`, a
+`based_on` that is neither address, an ecotax rule unknown, disabled or given
+with the ecotax off, `reset_product_ecotax` without `use_ecotax: false`, the
+ecotax turned off without the flag. A save that fails half way names the
+fields already saved and asks to read them with `somcp_get_tax_options`.
+
+**Notes**
+- Replayable: the same call twice changes nothing the second time.
+- Changing **Based on** or **Enable tax** changes the prices of carts not yet ordered; orders already placed keep their amounts.
+- The same form, keys and `TaxOptionsConfiguration.php` on 8.0.1 and 9.0.0.
 
 #### `somcp_list_customer_groups`
 **State**: written · [issue #51](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/51)
@@ -2465,7 +3374,9 @@ one customer's groups (→ `somcp_get_customer`).
 
 | Name | Type | Required | Role |
 |---|---|---|---|
+| `id_group` | integer | no | **ID**: keeps the group with this identifier; a group this shop does not have gives an empty list, as the filter on screen |
 | `name` | string | no | part of **Group name**, case-insensitive; the same parameter as `somcp_list_suppliers`, `somcp_list_manufacturers` and `somcp_list_attachments` |
+| `show_prices` | boolean | no | **Show prices** (**Yes** / **No**): `true` for the groups that show prices, `false` for those that hide them; every group when left out |
 | `language` | string | no | ISO code of one of the shop's active languages; a code the shop does not have is refused. The shop default language when left out. |
 
 **Returns** - `groups`, per group:
@@ -2485,6 +3396,11 @@ Plus `count`, `customer_groups_enabled` (**Customer groups** of
 **Performance**: when false the shop ignores groups for prices) and
 `language`. Groups of the token's shop only (`group_shop`), sorted by
 **ID** as the list.
+
+**Errors** - every problem at once, nothing read, each under "Nothing was read.
+Correct these and call again:": a field the tool does not take; `id_group: a
+whole number above 0`; `name: a text`; `show_prices: true or false`; a language
+the shop does not have, with the ones it has.
 
 **Notes**
 - Read with one query on `group`, `group_lang` and `group_shop` for the
@@ -2719,6 +3635,7 @@ The products and the categories they are sorted into: texts, prices, combination
 - `category_default` and `cover_image` are read for the page only, one query each (`category_lang` and `image_shop` of the shop of the token), never one per product. The cover is handed out by `SomcpDownload::offer()`, as the images of `somcp_get_product`.
 - A `language` the shop does not have is refused, like the other read tools, rather than read in the default language.
 - A field the tool does not take, a `sort` outside the list, an `active` that is not true or false, an `id_product` or `id_category` that is not a whole number above 0, a price bound that is not a number or a quantity bound that is not a whole number is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
+- An `id_category` the shop does not have is refused in the same answer, `id_category: no category of this shop has the identifier <n> - find it with somcp_list_categories`, instead of answering an empty list.
 
 #### `somcp_get_product`
 **State**: written
@@ -2796,8 +3713,8 @@ The products and the categories they are sorted into: texts, prices, combination
 |---|---|---|---|
 | `basics` | `product_type` | merchant | a value of PrestaShop's `ProductType`: `standard`, `combinations`, `pack`, `virtual` |
 | | `name` | merchant | required; 128 characters at most per language (`ProductSettings::MAX_NAME_LENGTH`) |
-| | `description_short` (summary) | assistant | 100 to 200 characters per language, refused outside |
-| | `description` | assistant | free length; HTML cleaned |
+| | `description_short` (summary) | assistant | 100 to 200 characters per language, refused outside; HTML cleaned, 65 535 bytes at most on PrestaShop 8 |
+| | `description` | assistant | HTML cleaned; 65 535 bytes at most on PrestaShop 8 |
 | `categories` | `categories` | merchant, from the shop | ids from `somcp_list_categories` |
 | | `id_category_default` | merchant, from the shop | one of `categories`, added to them if missing; Home when none |
 | `brand` | `id_manufacturer` | merchant, from the shop | id from `somcp_list_manufacturers` |
@@ -3044,13 +3961,13 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `name` | merchant | required; 128 characters at most; forbidden characters `<>{}`, and `;=#` before PrestaShop 9.1 (`Validate::isCatalogName` of the running version) |
 | `id_parent` | merchant, from the shop | from `somcp_list_categories`; Home (the top category of the shop of the token) when left out; never the root |
 | `active` (Displayed) | merchant | true by default |
-| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office |
-| `additional_description` (additional information) | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office |
+| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
+| `additional_description` (additional information) | assistant | rich text, cleaned by `Validate::isCleanHtml()` as in the back office; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
 | `groups` (group access) | merchant, from the shop | ids from `somcp_list_customer_groups`, or the `{"id_group", "name"}` objects `somcp_get_category` returns (the schema takes both, the name is ignored); every group when left out, as in the back office; an empty list is refused rather than read as every group |
 | `link_rewrite` | assistant | generated from the name when left out; `Tools::str2url()` then `Validate::isLinkRewrite()`; 128 characters at most |
 | `meta_title` | assistant | 255 characters at most; past 70, a search result cuts it |
 | `meta_description` | assistant | 512 characters at most; past 160, a search result cuts it |
-| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
+| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}`; 255 characters at most |
 | `redirect_type` | assistant | PrestaShop 9 only, refused on 8 with a clear message: what the page does while not displayed, a value of the core's `RedirectType` (`301`, `302`, `404`, `410`); the shop default when left out |
 | `id_type_redirected` | merchant, from the shop | PrestaShop 9 only: the category a `301` or `302` goes to, from `somcp_list_categories`; 0 or left out for the closest parent, as the storefront does; refused next to a `404` or `410` |
 | `cover_image` | merchant | an object with `url` or `upload_ref` (one of the two, never both), downloaded or redeemed with the guards of `somcp_create_product`'s images |
@@ -3208,11 +4125,11 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Field | Who fills it | Rule |
 |---|---|---|
 | `name` | merchant | required; one string, the same in every language (`Manufacturer::$name` has no `lang`); 64 characters at most; forbidden characters `<>{}`, and `;=#` before PrestaShop 9.1 (`Validate::isCatalogName` of the running version) |
-| `short_description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` |
-| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` |
+| `short_description` | assistant | rich text, cleaned by `Validate::isCleanHtml()`; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
+| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()`; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
 | `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most; past 70, a search result cuts it |
 | `meta_description` | assistant | same characters; 512 characters at most; past 160, a search result cuts it |
-| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
+| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}`; 255 characters at most |
 | `logo` | merchant | an object with `url` (a public `https` address) or `upload_ref` (a file already on the shop), one of the two, as the `images` of `somcp_create_product`, fetched and checked by the same shared function |
 | `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 
@@ -3455,7 +4372,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | Field | Who fills it | Rule |
 |---|---|---|
 | `name` | merchant | required; one string, the same in every language (`Supplier::$name` has no `lang`); 64 characters at most; forbidden characters `<>{}`, and `;=#` before PrestaShop 9.1 (`Validate::isCatalogName` of the running version) |
-| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()` |
+| `description` | assistant | rich text, cleaned by `Validate::isCleanHtml()`; 65 535 bytes at most on PrestaShop 8 (21 844 characters in the back office form), refused past that rather than stored cut |
 | `phone`, `phone_mobile` | merchant | `Validate::isPhoneNumber()`: digits, spaces and `+-.()/`; 32 characters at most |
 | `address1` | merchant | required by PrestaShop for a supplier; `Validate::isAddress()`; 128 characters at most |
 | `address2` | merchant | same rules, not required |
@@ -3466,7 +4383,7 @@ The `combination` of a specific price or a supplier, and the `combinations` of a
 | `dni` | merchant | national ID number, required when the country asks for one (`need_identification_number`, checked by `Address::validateField()`); `Validate::isDniLite()`, 16 characters at most |
 | `meta_title` | assistant | forbidden characters `<>{}`, and `=` before PrestaShop 9.1 (`Validate::isGenericName`); 255 characters at most; past 70, a search result cuts it |
 | `meta_description` | assistant | same characters; 512 characters at most; past 160, a search result cuts it |
-| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}` |
+| `meta_keywords` | assistant | PrestaShop 8 only, refused on 9 with a clear message; 5 keywords at most, comma separated; forbidden characters `<>={}`; 255 characters at most |
 | `logo` | merchant | an object with `url` (a public `https` address) or `upload_ref` (a file already on the shop), one of the two, as the `images` of `somcp_create_product`, fetched and checked by the same shared function |
 | `active` | merchant | true by default; a boolean, a string such as `"false"` is refused |
 
@@ -4053,7 +4970,7 @@ The quantities the storefront sells against, per product and combination.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `threshold` | integer | no | each product's own low stock level when absent, 0 when it has none |
-| `active` | boolean | no | enabled products only, true by default; false includes the disabled ones (**Filter by status**) |
+| `active` | boolean | no | enabled products only, true by default; false disabled products only (**Filter by status**); anything else refused (`active: true or false`) |
 | `id_category` | integer | no | products associated with this category, its default one or not, from `somcp_list_categories` (**Filter by categories**) |
 | `id_supplier` | integer | no | products whose default supplier this is (`product.id_supplier`), from `somcp_list_suppliers` (**Filter by supplier**) |
 | `search` | string | no | part of the product name, of the product or combination reference, of the attributes of the combination (Black, Size - M), or of the supplier name, as the search box of the tab (**Search products**); from PrestaShop 9 on, also of an EAN-13, ISBN, UPC or MPN code |
@@ -4070,6 +4987,7 @@ The quantities the storefront sells against, per product and combination.
 - Lowest quantity first. A product still being created, or not in this shop, is left out.
 - The filters are those of the **Stock** tab of **Catalog > Stock**, the same on PrestaShop 8 and 9. `search` matches each line on its own: a combination is found by its own reference, without its other combinations. `total_count` counts with every filter applied.
 - A field the tool does not take, a `threshold` that is not a whole number, an `active` that is not true or false, or an `id_category` or `id_supplier` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read, rather than dropped while the whole stock is listed.
+- An `id_category` or `id_supplier` the shop does not have is refused in the same answer, named with the tool that lists them (`id_category: no category of this shop has the identifier <n> - find it with somcp_list_categories`, `id_supplier: no supplier of this shop has the identifier <n> - find it with somcp_list_suppliers`), instead of answering an empty list.
 
 #### `somcp_set_stock_quantity`
 **State**: written
@@ -4169,6 +5087,7 @@ Customer accounts and what belongs to them: groups, addresses, a summary of thei
 - `sales_tax_incl` sums `total_paid_tax_incl / conversion_rate` of the customer's valid orders in this shop, `0` when none (the grid shows "--"). PrestaShop 8.0 sums `total_paid_real` on its **Sales** column instead, so the figure can differ from the 8.0 screen for an order not fully paid; 9.0 sums the same total as the tool.
 - `last_visit` is the latest `connections.date_add` of a visitor tied to the customer, as the **Last visit** column.
 - A field the tool does not take, a `sort` or `order` outside its list, a yes/no filter that is not true or false, a date that is not YYYY-MM-DD, or an `id_default_group` or `id_gender` that is not a whole number above 0 is refused in one answer, `Nothing was read`, before anything is read: never ignored, never replaced by the default order.
+- An `id_default_group` the shop does not have is refused in the same answer, `id_default_group: no customer group of this shop has the identifier <n> - find it with somcp_list_customer_groups`; an `id_gender` it does not have with the list of its social titles, worded as `somcp_create_customer` words it (`id_gender: not a social title of this shop, which has 1 Mr., 2 Mrs.`), named in the language asked. Neither is answered with an empty list.
 - A read: nothing written, nothing to retry.
 
 #### `somcp_get_customer`
@@ -4232,7 +5151,7 @@ Plus `language` (the ISO code the names were read in). Dates in ISO 8601.
 | `lastname` | **Last name** | string | yes | same rule |
 | `email` | **Email** | string | yes | refused when a registered account of this shop already uses it, with that account's `id_customer` |
 | `is_guest` | **Guest account** (9.0.0 only on screen) | boolean | no | `false` by default; a guest has no password and may share its email with other guests |
-| `id_gender` | **Social title** | integer | no | `id_gender` of the shop; an unknown one is refused with the list of the shop's social titles and their identifiers |
+| `id_gender` | **Social title** | integer | no | `id_gender` of the shop, a whole number or a string of digits as `somcp_search_customers` takes it; an unknown one is refused with the list of the shop's social titles and their identifiers |
 | `birthday` | **Birthday** | string | no | `YYYY-MM-DD`, in the past |
 | `active` | **Enabled** | boolean | no | `true` by default |
 | `partner_offers` | **Partner offers** | boolean | no | `false` by default (`optin`) |
@@ -4334,12 +5253,14 @@ Figures over a period, computed from valid orders.
 | `date_from` | string | yes | **From:**, `YYYY-MM-DD`, that day included, in the shop's time zone |
 | `date_to` | string | yes | **To:**, `YYYY-MM-DD`, that day included; not before `date_from` |
 | `compare_previous` | boolean | no | adds `previous`: the same figures for the period of the same length that ends the day before `date_from` |
+| `delivery_country` | string | no | **All countries**, the filter of **Sales and orders**: the ISO code of a country, only the orders whose delivery address is in it, read as `somcp_search_orders` reads it; every country when left out |
+| `language` | string | no | ISO code of one of the shop's active languages, for the status names of `orders_by_status`; the shop default when left out, a code the shop does not have refused |
 
-**Returns** - `date_from` / `date_to` (as received), `currency` (ISO code of the default currency, the one every amount is in), `revenue_tax_excl` (**Revenue** on Stats Dashboard), `sales_tax_excl` (**Sales** on Sales and orders: revenue of the orders in a validated status minus their credit slips), `revenue_tax_incl`, `orders_count` (**Placed orders** / **Orders placed**), `products_bought` (**Bought items** / **Products bought**, sum of `order_detail.product_quantity`), `average_basket_tax_excl` and `average_basket_tax_incl` (`0` with no order), `new_customers` (**Registrations**: accounts created in the period), and `previous` with `compare_previous` (the same object with its own dates, without `previous`). Amounts are rounded to 2 decimals.
+**Returns** - `date_from` / `date_to` (as received), `delivery_country` (the ISO code, upper case, when it was given), `currency` (ISO code of the default currency, the one every amount is in), `language` (the ISO code the status names are in), `revenue_tax_excl` (**Revenue** on Stats Dashboard), `sales_tax_excl` (**Sales** on Sales and orders: revenue of the orders in a validated status minus their credit slips), `revenue_tax_incl`, `orders_count` (**Placed orders** / **Orders placed**), `products_bought` (**Bought items** / **Products bought**, sum of `order_detail.product_quantity`), `average_basket_tax_excl` and `average_basket_tax_incl` (`0` with no order), `new_customers` (**Registrations**: accounts created in the period), `orders_by_status` (the pie **Percentage of orders per status.** of **Sales and orders**: one entry per status that has at least one order, the most orders first, then by `id_order_state`, each with `id_order_state` as `somcp_list_order_statuses` names it, `name` in `language`, `orders`, the orders whose latest status it is, and `percent`, their share of the block rounded to 2 decimals; every order **placed** in the period counts, valid or not, dated by its **order date** (`date_add`) as the screen does, so this block counts the orders `somcp_search_orders` finds on the same dates; an empty list when no order was placed, the screen's **No orders for this period.**), and `previous` with `compare_previous` (the same object with its own dates, without `previous`). Amounts are rounded to 2 decimals.
 
-**Errors** - a missing or malformed date, or `date_to` before `date_from`: a refusal that names the field. An empty period is not an error: every figure is `0`.
+**Errors** - every mistake of the call at once, in the envelope of the shared conventions (`Nothing was read. Correct these and call again:`): a field the tool does not take, a missing or malformed date, `date_to` before `date_from`, a `compare_previous` that is not `true` or `false`, a `delivery_country` no country has, a `language` the shop does not have. An empty period is not an error: every figure is `0`.
 
-**Notes** - counts orders with `valid = 1`, dated by **`invoice_date`** (not `date_add`), amounts divided by `conversion_rate`, as `statsforecast` and `statssales` do; **Sales** also keeps only statuses counted as validated (`logable`) and takes off the credit slips with the formula of `statssales`. The tables are read directly, so the figures still come when the stats modules are disabled or uninstalled. Only the token's shop. `somcp_search_orders` filters on `date_add`: on the same dates a few orders can differ at the edges of the period. **Visits**, conversion and the distribution blocks are not returned.
+**Notes** - with `delivery_country`, every figure but `new_customers` keeps only the orders delivered in that country, credit slips included, and `previous` uses the same filter; `new_customers` counts accounts, which have no delivery country, so it is unchanged. Counts orders with `valid = 1`, dated by **`invoice_date`** (not `date_add`), amounts divided by `conversion_rate`, as `statsforecast` and `statssales` do; **Sales** also keeps only statuses counted as validated (`logable`) and takes off the credit slips with the formula of `statssales`. The tables are read directly, so the figures still come when the stats modules are disabled or uninstalled. Only the token's shop. `somcp_search_orders` filters on `date_add`: on the same dates a few orders can differ at the edges of the period. **Visits**, conversion and the distribution blocks of **Stats Dashboard** (payment, category, language, zone, currency, attribute) are not returned. `orders_by_status` keeps the token's shop, where the core reads every shop for this block alone.
 
 Same labels, module versions (`statsforecast` 2.0.4, `statssales` 2.1.0) and queries on 8.0.1 and 9.0.0.
 
@@ -4364,7 +5285,7 @@ Same labels, module versions (`statsforecast` 2.0.4, `statssales` 2.1.0) and que
 
 **Returns** - `date_from` / `date_to` (as received), `currency` (ISO code of the default currency, the one every amount is in), `language` (ISO code the names are in), `products[]` with `id_product`, `reference` (**Reference**), `name` (**Name**), `quantity_sold` (**Quantity sold**), `average_price_tax_excl` (**Price sold**), `revenue_tax_excl` (**Sales**), `quantity_sold_per_day` (**Quantity sold in a day**, 2 decimals), `page_views` (**Page views**), `quantity` (**Available quantity for sale**), `active` (**Active**), then `total_count` and `offset`. Amounts are rounded to 2 decimals.
 
-**Errors** - a missing or malformed date, `date_to` before `date_from`, an unknown `sort`, an out-of-range `limit` or `offset`: a refusal that names the field; an unknown `language`: the shared language refusal. An empty period is not an error: `products` is empty, `total_count` is `0`.
+**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`), a missing or malformed date (`date_from: a date, YYYY-MM-DD`), `date_to` before `date_from` (`date_to: a date not before date_from`), an unknown `sort` (`sort: one of sales, ...`), an out-of-range `limit` (`limit: a whole number from 1 to 100`) or `offset` (`offset: a whole number, 0 at least`), an unknown `language` (`language: not one of the shop's languages, which are en, fr - leave language out for the shop default`). An empty period is not an error: `products` is empty, `total_count` is `0`.
 
 **Notes** - counts orders with `valid = 1`, dated by **`invoice_date`** (not `date_add`), as `somcp_get_sales_summary`; one row per product, **combinations merged** (`GROUP BY od.product_id`); a product deleted since is not listed. **Sales** is `SUM(unit_price_tax_excl * product_quantity / conversion_rate)`, credit slips not taken off; **Price sold** is the average of the order lines' unit prices, not weighted by quantity; **Quantity sold in a day** divides by the days from the later of `date_from` and the product's date added to the shop, to the earlier of `date_to` and today, both included (`0` when there is no such day). **Page views** sums `page_viewed` over the day ranges inside the period, `0` when page views are not recorded (`statsdata`, **Save page views**). **Available quantity for sale** is the `stock_available` row without combination. Only the token's shop. The tables are read directly, so the list still comes when `statsbestproducts` is disabled or uninstalled.
 
@@ -4389,19 +5310,22 @@ The CMS pages of the storefront.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_cms_category` | integer | no | only the pages of that category (not of its sub-categories), as the screen; every category when left out. A category the shop does not have is refused |
+| `id_cms` | integer | no | **ID** filter: exactly this page, as `id_product` of `somcp_search_products`; a page the shop does not have gives an empty list |
+| `link_rewrite` | string | no | **URL** filter: part of the page's URL alias, the name `pages[].link_rewrite` has in the answer and in `somcp_update_cms_seo`, compared without case |
 | `active` | boolean | no | **Displayed** filter: `true` displayed pages only, `false` hidden only; both when left out |
 | `title` | string | no | part of the **Title**, compared without case |
+| `meta_title` | string | no | **Meta title** filter: part of the page's Meta title (column `head_seo_title`), the name `pages[].meta_title` has in the answer and in `somcp_update_cms_seo`, compared without case |
 | `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 No paging: a shop has a few dozen pages at most, and every matching page is returned.
 
 **Returns** - `pages[]` with `id_cms` (**ID**, the identifier `somcp_update_cms_seo` and `somcp_audit_cms_seo` take), `link_rewrite` (**URL**), `title` (**Title**, column `meta_title`), `meta_title` (**Meta title**, column `head_seo_title`, empty string when not set), `position` (**Position**, from 0 as in the other tools; the screen shows it from 1), `active` (**Displayed**), `id_cms_category`, `url` (the page's address on the storefront); `categories[]`, every category of the shop, root included, with `id_cms_category`, `name`, `description`, `id_parent` (`0` for the root), `position` (from 0), `active`, `pages_count` (pages directly in it); then `total_count` (pages returned) and `language` (ISO code the texts are in). Pages sorted by category then position, categories by `id_parent` then position.
 
-**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); an `id_cms_category` that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, whose `categories[]`, called without the filter, list them; a non-boolean `active`: `active: true or false`; a non-string `title`: `title: a string, part of the page Title`; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages. No page matching is not an error: `pages` is empty.
+**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); an `id_cms_category` that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, whose `categories[]`, called without the filter, list them; a non-boolean `active`: `active: true or false`; a non-string `title`: `title: a string, part of the page Title`; an `id_cms` that is not a whole number above 0: `id_cms: a whole number above 0`; a non-string `link_rewrite`: `link_rewrite: a string, part of the page URL`; a non-string `meta_title`: `meta_title: a string, part of the page Meta title`; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages. No page matching is not an error: `pages` is empty.
 
 **Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_update_cms_seo`, never by the column name. Categories are returned because no other tool gives an `id_cms_category`. Only the token's shop (`cms_shop`, `cms_category_shop`, `id_shop` of the `_lang` tables). The content of a page is not returned.
 
-Same columns, filters and grid queries on 8.0.1 and 9.0.0; 9.0.0 adds a **Rearrange** column for drag and drop, with nothing to read.
+Same columns and grid queries on 8.0.1 and 9.0.0. 8.0.1 also has a **Position** filter, which 9.0.0 replaces with a **Rearrange** button for drag and drop: the tool takes no position filter on either, since the answer gives the position of every page, from 0, and a filter from 1 beside it would invite an off-by-one.
 
 #### `somcp_get_cms_page`
 **State**: written · [issue #24](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/24)
@@ -4966,7 +5890,7 @@ What search engines read of the shop: titles, descriptions, URLs and their setti
 | `link_rewrite` | object | no | per ISO code; `Tools::str2url()` then `Validate::isLinkRewrite()`, 128 characters at most, never empty |
 | `meta_keywords` | object | no | per ISO code, comma separated; the form's **Meta keywords**, PrestaShop 8 only: a value is refused on 9, which has none, and `null` is skipped |
 | `indexation` | boolean | no | whether search engines may index the page (**Indexation by search engines**) |
-| `language` | string | no | as `somcp_get_cms_page` returns it: the language its plain texts are in, read as `languages: ["<iso>"]` when `languages` is left out; next to a `languages` that does not hold it, refused as `language: not one of languages` |
+| `language` | string | no | as `somcp_get_cms_page` returns it: the language its plain texts are in, read as `languages: ["<iso>"]` when `languages` is left out; next to a `languages` that does not hold it, refused as `language: not one of languages`; one the shop does not have is refused once, with the shop's languages, as every tool words it (`language: not one of the shop's languages, which are en, fr - leave language out for the shop default`) |
 | `title`, `content`, `id_cms_category`, `active`, `position`, `seo_title`, `url` | as read | no | what `somcp_get_cms_page` returns and this tool does not write, accepted unchanged so a page read there can be given back whole; a different value is refused with where it is changed (`not changed by this tool - the merchant changes it in Design > Pages > Edit`, or `worked out by the shop from the Meta title and the Title` / `from the Friendly URL`) |
 
 **Returns** - `changed`, `id_cms`; when something changed, `changes` (each a `field`, named `<field> (<iso>)` for a text, its `old` and `new` value, as the other update tools give them), `seo_warnings` (per ISO code) and `page` (`id_cms`, `active`, `indexation`, and per language changed its `title`, `meta_title`, `seo_title` - the title search engines read -, `meta_description`, `meta_keywords` (`null` on PrestaShop 9) and `link_rewrite`, read back from the shop). A call that changes nothing answers `changed: false` with a `reason`.
@@ -5166,6 +6090,7 @@ None.
 | `last_generated` | - | `GSITEMAP_LAST_EXPORT`, `null` before the first generation |
 | `frequency` | **How often do you update your store?** | the value as on screen (`weekly`, ...) |
 | `excluded_pages` | **Indicate the pages that you do not want to include in your sitemap files:** | the `page` names unticked |
+| `check_image_file` | **Check this box if you wish to check the presence of the image files on the server** | `GSITEMAP_CHECK_IMAGE_FILE` of the token's shop while the installed `gsitemap` is below 4.3.1; `null` from 4.3.1 on, whose screen no longer has the box, and when the module is not installed |
 | `robots_txt_sitemaps` | - | the `Sitemap:` lines of robots.txt, as `somcp_get_robots_txt` returns them |
 | `missing_products` | - | active products of the token's shop visible in the catalogue and absent from every sitemap: `count`, and the first 20 as `products`, each `id_product` and `name` (default language) |
 | `inactive_listed` | - | disabled products still listed, the first 20: `url`, `id_product` |
@@ -5181,7 +6106,7 @@ None.
 - Errors, every one in the same answer: `sample` out of range, a `language` the shop does not have, a field the tool does not take.
 
 **Differences between 8.0.1 and 9.0.0**
-- `gsitemap` 4.2.0 / 4.4.0: the image-file check exists on 8.0.1 only; the brand priority on 9.0.0 only; the page list of 9.0.0 holds public pages only, and **best-sales** is labelled **Best sellers**. Same table, same file names, same index location.
+- `gsitemap` 4.2.0 / 4.4.0: the image-file check exists on 8.0.1 only, answered as `check_image_file` before gsitemap 4.3.1 and `null` after (the module version decides, not PrestaShop's); the brand priority on 9.0.0 only; the page list of 9.0.0 holds public pages only, and **best-sales** is labelled **Best sellers**. Same table, same file names, same index location.
 
 ### AEO
 
@@ -5387,6 +6312,8 @@ The levers that turn visits into orders: carts left behind, what customers searc
 | `with_customer` | boolean | no | true: only carts linked to a customer account (guest accounts included); false: only carts without one |
 | `customer_name` | string | no | the **Customer** filter: first name, last name or both, whole or partial |
 | `online` | boolean | no | the **Online** filter |
+| `id_cart` | integer | no | the **ID** filter; a cart that is not abandoned (it has an order, is empty or too recent) gives an empty list, not an error |
+| `id_carrier` | integer | no | the **Carrier** filter, from `somcp_list_carriers`, matched on the carrier's reference so carts saved before the carrier was edited are found |
 | `language` | string | no | ISO code of one of the shop's active languages for product names (#149); shop default when left out; unknown code refused |
 | `limit` / `offset` | integer | no | as `somcp_search_orders`: 20 by default, 100 at most |
 
@@ -5411,7 +6338,7 @@ The levers that turn visits into orders: carts left behind, what customers searc
 | `total_value_complete` | false when the sum leaves a matching cart out: more than 1000 carts match (it then covers the 1000 newest), or a cart could not be priced any more (a product removed since); each cart is priced by PrestaShop itself |
 | `language` | ISO code used |
 
-**Errors** - in the shape of #169, all in one answer: unknown arguments, `older_than_hours` below 1, invalid dates, `date_from` after `date_to`, `limit` outside 1 to 100, a negative `offset`, an unknown language.
+**Errors** - in the shape of #169, all in one answer: unknown arguments, `older_than_hours` below 1, invalid dates, `date_from` after `date_to`, `limit` outside 1 to 100, a negative `offset`, an unknown language, an `id_cart` or `id_carrier` that is not a whole number above 0, a carrier this shop does not have or a deleted one (`id_carrier: no carrier of this shop has the identifier N - find it with somcp_list_carriers`).
 
 **Notes**
 - The back office rule on both versions: a cart with no order, created more than 24 hours ago (`AdminCartsController` on 8.0.1, `CartStatus::ABANDONED_CART_EXPIRATION_TIME` in `CartQueryBuilder` on 9.0.0, both on `cart.date_add` against PHP's clock). A younger cart without an order is **Non ordered**.
@@ -5896,7 +6823,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_update_carrier`, `somcp_delete_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

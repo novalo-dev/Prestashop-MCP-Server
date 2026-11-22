@@ -15,6 +15,7 @@
     {"why": "an unknown sort is refused, naming the field", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "sort": "name"}, "expect": "error", "contains": ["sort"]},
     {"why": "a limit above 100 is refused, naming the field", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "limit": 101}, "expect": "error", "contains": ["limit"]},
     {"why": "a negative offset is refused, naming the field", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "offset": -1}, "expect": "error", "contains": ["offset"]},
-    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"date_from": "2001-02-01", "date_to": "2001-02-10", "language": "zz"}, "expect": "error", "contains": ["Nothing was read.", "language: not one of the shop's languages, which are "]},
+    {"why": "every mistake is reported in the same answer, a misspelt filter included", "arguments": {"date_from": "01/02/2001", "date_to": "2001-02-10", "sort": "name", "langage": "fr", "language": "zz", "limit": 101}, "expect": "error", "contains": ["Nothing was read.", "date_from: a date, YYYY-MM-DD", "sort: one of sales, ", "langage: not a field of this tool", "limit: a whole number from 1 to 100", "language: not one of the shop's languages, which are "]}
   ]
 }

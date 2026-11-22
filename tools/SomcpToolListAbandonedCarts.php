@@ -63,7 +63,7 @@ class SomcpToolListAbandonedCarts
     private const MAX_VALUED = 1000;
 
     /** @var array<int, string> */
-    private const FIELDS = ['older_than_hours', 'date_from', 'date_to', 'with_customer', 'customer_name', 'online', 'language', 'limit', 'offset'];
+    private const FIELDS = ['older_than_hours', 'date_from', 'date_to', 'with_customer', 'customer_name', 'online', 'id_cart', 'id_carrier', 'language', 'limit', 'offset'];
 
     /**
      * @return SomcpTool
@@ -108,6 +108,16 @@ class SomcpToolListAbandonedCarts
                         'type' => 'boolean',
                         'description' => 'True for the carts whose visitor was on the shop in the last 30 minutes '
                             . '(the Online column), false for the others.',
+                    ],
+                    'id_cart' => [
+                        'type' => 'integer',
+                        'description' => 'The cart, from the ID column of Orders > Shopping Carts. A cart that is not '
+                            . 'abandoned (it has an order, is empty or is too recent) gives an empty list.',
+                    ],
+                    'id_carrier' => [
+                        'type' => 'integer',
+                        'description' => 'The carrier chosen in the cart, from somcp_list_carriers. Carts saved before '
+                            . 'the carrier was edited are found too.',
                     ],
                     'language' => [
                         'type' => 'string',
@@ -172,6 +182,28 @@ class SomcpToolListAbandonedCarts
             $problems[] = 'customer_name: a text';
         }
 
+        $idCart = 0;
+        if (array_key_exists('id_cart', $arguments) && $arguments['id_cart'] !== null) {
+            $idCart = SomcpTool::id($arguments, 'id_cart');
+            if ($idCart === 0) {
+                $problems[] = SomcpTool::notAnIdentifier('id_cart');
+            }
+        }
+        // A cart keeps the carrier identifier it was saved with, and a carrier
+        // gets a new one at each edit: matching the reference finds both.
+        $carrierReference = null;
+        if (array_key_exists('id_carrier', $arguments) && $arguments['id_carrier'] !== null) {
+            $idCarrier = SomcpTool::id($arguments, 'id_carrier');
+            if ($idCarrier === 0) {
+                $problems[] = SomcpTool::notAnIdentifier('id_carrier');
+            } else {
+                $carrierReference = SomcpTool::carrierReference($idCarrier, $idShop);
+                if ($carrierReference === null) {
+                    $problems[] = SomcpTool::notFound('id_carrier', 'carrier', $idCarrier, 'somcp_list_carriers');
+                }
+            }
+        }
+
         $limit = self::DEFAULT_LIMIT;
         if (array_key_exists('limit', $arguments) && $arguments['limit'] !== null) {
             if (!is_int($arguments['limit']) || $arguments['limit'] < 1 || $arguments['limit'] > self::MAX_LIMIT) {
@@ -205,7 +237,7 @@ class SomcpToolListAbandonedCarts
         }
         [$idLang, $iso] = $language;
 
-        $where = self::conditions($arguments, $idShop, $hours, $dateFrom, $dateTo);
+        $where = self::conditions($arguments, $idShop, $hours, $dateFrom, $dateTo, $idCart, $carrierReference);
         $from = '`' . _DB_PREFIX_ . 'cart` a
              LEFT JOIN `' . _DB_PREFIX_ . 'customer` c ON c.`id_customer` = a.`id_customer`';
         $db = Db::getInstance();
@@ -283,10 +315,12 @@ class SomcpToolListAbandonedCarts
      * @param int $hours
      * @param string|null $dateFrom
      * @param string|null $dateTo
+     * @param int $idCart 0 for every cart
+     * @param int|null $carrierReference null for every carrier
      *
      * @return string
      */
-    private static function conditions(array $arguments, int $idShop, int $hours, ?string $dateFrom, ?string $dateTo): string
+    private static function conditions(array $arguments, int $idShop, int $hours, ?string $dateFrom, ?string $dateTo, int $idCart, ?int $carrierReference): string
     {
         // The core compares the creation date with PHP's clock, not the
         // database's: the same clock here gives the same rows.
@@ -325,6 +359,15 @@ class SomcpToolListAbandonedCarts
         }
         if (isset($arguments['online']) && is_bool($arguments['online'])) {
             $conditions[] = self::onlineSql() . ' = ' . ($arguments['online'] ? 1 : 0);
+        }
+        if ($idCart > 0) {
+            $conditions[] = 'a.`id_cart` = ' . $idCart;
+        }
+        if ($carrierReference !== null) {
+            // A subquery rather than the carrier join: the count and the total
+            // value read this clause without that join.
+            $conditions[] = 'a.`id_carrier` IN (SELECT ca2.`id_carrier` FROM `' . _DB_PREFIX_ . 'carrier` ca2 '
+                . 'WHERE ca2.`id_reference` = ' . (int) $carrierReference . ')';
         }
 
         return implode(' AND ', $conditions);

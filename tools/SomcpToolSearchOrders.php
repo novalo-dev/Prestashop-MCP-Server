@@ -170,6 +170,9 @@ class SomcpToolSearchOrders
         if ($asked && $language === null) {
             $errors[] = SomcpTool::languageProblem($idShop);
         }
+        // Joins the same list, so an unknown country and any other mistake
+        // are answered together, as somcp_get_sales_summary answers them.
+        $idCountry = self::deliveryCountry($arguments, $errors);
         if ($errors !== []) {
             return SomcpTool::refused('read', $errors);
         }
@@ -178,16 +181,6 @@ class SomcpToolSearchOrders
             return SomcpTool::languageRefused($idShop);
         }
         [$idLang, $languageIso] = $language;
-        $idCountry = 0;
-        if (isset($arguments['delivery_country']) && trim((string) $arguments['delivery_country']) !== '') {
-            $iso = trim((string) $arguments['delivery_country']);
-            // Country::getByIso() stops the request on a malformed code
-            // rather than answering false, so the code is checked first.
-            $idCountry = Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
-            if ($idCountry <= 0) {
-                return SomcpTool::text('No country has this ISO code: give delivery_country as a code such as FR.', true);
-            }
-        }
         $where = self::conditions($arguments, $idShop, $idCountry);
 
         // The count joins the same tables as the list, so a filter on the
@@ -289,6 +282,11 @@ class SomcpToolSearchOrders
                 $errors[] = $key . ': a date, YYYY-MM-DD';
             }
         }
+        // As every other list reads its identifier filters: 0 or a value that
+        // is not a whole number is a mistake to name, not a filter to drop.
+        if (array_key_exists('id_order', $arguments) && SomcpTool::id($arguments, 'id_order') === 0) {
+            $errors[] = SomcpTool::notAnIdentifier('id_order');
+        }
         if (array_key_exists('status_id', $arguments)) {
             $idStatus = SomcpTool::id($arguments, 'status_id');
             if ($idStatus === 0) {
@@ -319,6 +317,38 @@ class SomcpToolSearchOrders
     }
 
     /**
+     * The delivery country filter, read once for every tool that takes it.
+     *
+     * Shared so a code is read and refused the same way wherever the
+     * assistant gives it: a sales summary and the orders behind it must
+     * keep the same orders for the same code.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<int, string> $problems a line is added for a code no country has
+     *
+     * @return int the country, 0 when the filter is left out or refused
+     */
+    public static function deliveryCountry(array $arguments, array &$problems): int
+    {
+        $value = $arguments['delivery_country'] ?? null;
+        if ($value === null || (is_string($value) && trim($value) === '')) {
+            return 0;
+        }
+        // A list or an object is no code: refused rather than cast.
+        $iso = is_scalar($value) ? trim((string) $value) : '';
+        // Country::getByIso() stops the request on a malformed code
+        // rather than answering false, so the code is checked first.
+        $idCountry = Validate::isLanguageIsoCode($iso) ? (int) Country::getByIso($iso) : 0;
+        if ($idCountry <= 0) {
+            $problems[] = 'delivery_country: an ISO code of a country, for example FR';
+
+            return 0;
+        }
+
+        return $idCountry;
+    }
+
+    /**
      * The WHERE clause, from the filters the caller gave.
      *
      * @param array<string, mixed> $arguments
@@ -333,9 +363,10 @@ class SomcpToolSearchOrders
         // connected to one shop has no business reading another's orders.
         $conditions = ['o.`id_shop` = ' . $idShop];
 
-        if (!empty($arguments['id_order'])) {
-            // A value that is not a whole number matches no order rather than
-            // being cast to another one.
+        if (array_key_exists('id_order', $arguments)) {
+            // Only a whole number above 0 reaches this point: problems() refuses
+            // the rest. One the shop has not answers an empty list, as the ID
+            // filter of the back office list does.
             $conditions[] = 'o.`id_order` = ' . SomcpTool::id($arguments, 'id_order');
         }
         if (!empty($arguments['reference'])) {

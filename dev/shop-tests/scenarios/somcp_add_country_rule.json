@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {"why": "a rule that does not exist", "arguments": {"id_tax_rules_group": 999999, "country": "US", "id_tax": 1}, "expect": "error", "contains": ["Nothing was created.", "- id_tax_rules_group: ", "somcp_list_tax_rules"]},
+    {"why": "every mistake at once", "arguments": {"id_tax_rules_group": 1, "country": "ZZ", "id_tax": 999999, "behavior": "both", "rate": 4, "contry": "US"}, "expect": "error", "contains": ["Nothing was created.", "- country: no country of this shop has the ISO code \"ZZ\"", "- id_tax: ", "- behavior: one of this_tax_only, ", "- rate: worked out by the shop", "- contry: not a field of this tool"]},
+    {"why": "a state the country does not have, and a zip code out of its format", "arguments": {"id_tax_rules_group": 1, "country": "US", "states": ["ZZ"], "zipcode_from": "ABCDE", "id_tax": 1}, "expect": "error", "contains": ["- states: US has no state with the ISO code \"ZZ\"", "- zipcode_from: not in the format of US (00000)"]},
+    {"why": "states for a country that has none", "arguments": {"id_tax_rules_group": 1, "country": "FR", "states": ["AL"], "id_tax": 1}, "expect": "error", "contains": ["- states: FR has no states, leave the field out"]},
+    {"why": "one state the country does not have, given as a rule reads it", "arguments": {"id_tax_rules_group": 1, "country": "US", "state": "ZZ", "id_tax": 1}, "expect": "error", "contains": ["- state: US has no state with the ISO code \"ZZ\""]},
+    {"why": "one state and a list of states at once", "arguments": {"id_tax_rules_group": 1, "country": "US", "state": "AL", "states": ["FL"], "id_tax": 1}, "expect": "error", "contains": ["- state: state or states, not both"]},
+    {"why": "one state for a country that has none", "arguments": {"id_tax_rules_group": 1, "country": "FR", "state": "AL", "id_tax": 1}, "expect": "error", "contains": ["- state: FR has no states, leave the field out"]},
+    {"why": "a second bound without a first", "arguments": {"id_tax_rules_group": 1, "country": "US", "zipcode_to": "35999", "id_tax": 1}, "expect": "error", "contains": ["- zipcode_to: only with zipcode_from"]}
+  ]
+}

@@ -28,7 +28,11 @@ in mind.
 2. **Read the figures** with `somcp_get_sales_summary`. Add
    `compare_previous: true` when a comparison helps ("is it better than
    before?"): `previous` then holds the period of the same length that ends the
-   day before `date_from`, with its own dates.
+   day before `date_from`, with its own dates. When the merchant asks about
+   one country, pass its ISO code as `delivery_country`: the figures then keep
+   the orders delivered there, as the **All countries** filter of
+   **Stats > Sales and orders**, and `new_customers` stays the same. Pass the
+   same `delivery_country` to `somcp_search_orders` for the orders behind them.
 3. **The products that sold most**, when the merchant asks for best sellers:
    use `somcp_list_best_sellers` with the same dates. It is sorted by sales
    tax excluded, as **Stats > Best-selling products**; pass `sort` for the
@@ -57,6 +61,11 @@ in mind.
 - `somcp_list_best_sellers` counts the same orders the same way: its
   `revenue_tax_excl` is **Sales** of Best-selling products, credit slips not
   taken off, and `page_views` is `0` when the shop does not record page views.
+- `orders_by_status` counts every order **placed** in the period, valid or
+  not, under its latest status, as the distribution of order statuses of
+  **Stats > Sales and orders**: dated by the order date, not the invoice date,
+  so it counts the orders `somcp_search_orders` finds on the same dates. Pass
+  `language` for the status names in the merchant's language.
 - An empty period gives zeros, not an error: say there was no sale.
 
 ## Do not use when

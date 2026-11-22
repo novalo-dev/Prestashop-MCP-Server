@@ -29,9 +29,27 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_tax_rules`
 - `somcp_get_tax_rule`
 - `somcp_list_taxes`
+- `somcp_list_languages`
+- `somcp_list_currencies`
+- `somcp_create_tax`
+- `somcp_update_tax`
+- `somcp_delete_tax`
+- `somcp_get_tax_options`
+- `somcp_update_tax_options`
 - `somcp_create_tax_rule`
+- `somcp_update_tax_rule`
+- `somcp_delete_tax_rule`
+- `somcp_add_country_rule`
+- `somcp_update_country_rule`
+- `somcp_delete_country_rule`
 - `somcp_list_customer_groups`
 - `somcp_list_carriers`
+- `somcp_get_carrier`
+- `somcp_list_zones`
+- `somcp_list_countries`
+- `somcp_list_states`
+- `somcp_update_carrier`
+- `somcp_delete_carrier`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -193,7 +211,22 @@ as for every file of the shop.
 Carriers come from `somcp_list_carriers`: give its `id_carrier` in
 `shipping.carriers`, never a guessed one. A disabled carrier is listed too;
 say so before tying a product to it. No carrier given means every carrier
-may deliver the product.
+may deliver the product. To tell which zones and customer groups a carrier
+serves before tying it, read it with `somcp_get_carrier`.
+The zones of the shop, with their `id_zone` and the number of countries in
+each, come from `somcp_list_zones`. The countries, with their ISO code, their
+zone and whether they are enabled, come from `somcp_list_countries`. The
+states of a country, with the ISO code `state` and `states` take, come from
+`somcp_list_states`.
+To rename a carrier, change its transit time, speed grade, logo, tracking URL,
+status, customer groups, zones, ranges and their prices per zone, place in the
+list, free shipping, handling costs, billing, tax, out-of-range behavior or size and weight limits, use
+`somcp_update_carrier`; a carrier an order uses gets a new `id_carrier`,
+given in the answer: use that one from then on. A move alone keeps the
+identifier.
+To remove a carrier for good, confirm it with the merchant by name, then use
+`somcp_delete_carrier`; when they may want it back, turn it off with
+`somcp_update_carrier` instead.
 
 Tax rules come from `somcp_list_tax_rules`: take the `id_tax_rules_group` from
 there, 0 for no tax. Match the merchant's "20 %" on the `rate`, not on the
@@ -204,12 +237,68 @@ For the rate a customer delivered abroad pays, read the rule with
 `somcp_get_tax_rule`: its `country_rules` give the tax per country, state and
 zip code range, and `country` narrows them to one country.
 The taxes those rows apply, with their `id_tax` and rate, come from
-`somcp_list_taxes`; a product never takes a tax, only a tax rule.
+`somcp_list_taxes`, which `rate` narrows to the taxes at exactly that rate;
+a product never takes a tax, only a tax rule.
+Whether those rates are charged at all, on the invoice or the delivery
+address, and with which ecotax, comes from `somcp_get_tax_options`: read it
+before setting up taxes, and say so when `taxes_enabled` is false.
+They are changed with `somcp_update_tax_options`: give only the fields to
+change, or the answer of `somcp_get_tax_options` back with the changes in it.
+Turning `use_ecotax` off sets the ecotax of every product to 0, which nothing
+gives back: when products carry one, the tool refuses until
+`reset_product_ecotax: true` is given, and that is only given once the merchant
+has said so.
+
+A rate a shop does not have yet is created with `somcp_create_tax`, after
+reading `somcp_list_taxes`: give one `name` per language and a `rate` from 0 to
+100. It is created disabled unless `active` is `true`, and a tax rule can only
+charge an enabled tax, so enable it before giving its `id_tax` to
+`somcp_add_country_rule`. The name is the merchant's; never invent a rate.
+
+A tax is changed with `somcp_update_tax`: give `id_tax` and only the fields to
+change (`name`, `rate`, `active`). Changing a `rate` changes it for every tax
+rule that charges the tax, without touching the rules. On PrestaShop 8,
+disabling a tax that tax rules charge would delete those rows; the tool refuses
+it, so move the rows with `somcp_update_country_rule` first. A tax carried by
+past orders is kept for them and the change gets a new `id_tax`, which the
+answer gives.
+
+A tax is deleted with `somcp_delete_tax`, after confirming with the merchant by
+name: it is irreversible. It is refused while tax rule rows still charge it, so
+give those countries another tax with `somcp_update_country_rule` or delete the
+rows with `somcp_delete_country_rule` first; to keep a tax for later, switch it
+off with `somcp_update_tax` instead. A tax carried by past orders is kept hidden
+for them and gone from the list.
 
 A missing tax rule is created with `somcp_create_tax_rule`, after reading
-`somcp_list_tax_rules` with `active: false`: two rules may carry the same name.
+`somcp_list_tax_rules` with `active: true` and with `active: false` (the
+enabled rules, then the disabled ones): two rules may carry the same name.
 The name is the merchant's; the rule is created without countries and
 disabled unless `active` is `true`.
+
+The Name of a rule, and whether it is enabled, are changed with
+`somcp_update_tax_rule`, which gives the old and new value of each field it
+changed. A rule that orders already placed carry stays unchanged for them and
+the change gets a new identifier: the one in the answer is used from then on,
+and the merchant is told the products and carriers moved to it.
+
+A rule is deleted with `somcp_delete_tax_rule` only after reading it with
+`somcp_get_tax_rule` and asking the merchant, by its name: the deletion cannot
+be undone, and switching it off with `somcp_update_tax_rule` keeps it for
+later. It is refused while products or carriers still take it; the products
+get another rule with `somcp_update_product` first.
+
+A rule charges a tax only through its rows: one is added with
+`somcp_add_country_rule` after reading the rule with `somcp_get_tax_rule`,
+with the tax from `somcp_list_taxes`, and shown to the merchant first. The
+same call twice adds the row twice, so a lost answer is checked by reading
+the rule again. A rule used by past orders gets a new identifier, given in the
+answer, as for a change. A row is changed in place with
+`somcp_update_country_rule`, giving its `id_tax_rule` and only what changes,
+after showing the merchant the change; a second state is a second row, added
+with `somcp_add_country_rule`. A row is deleted with `somcp_delete_country_rule`,
+by the `id_tax_rule` the rule gives, after asking the merchant: a rule left
+without rows charges no tax to the products that take it.
 
 ## Who fills each field
 
@@ -230,12 +319,16 @@ start of its description who provides it, and that is a rule for you:
 
 Texts are objects keyed by ISO code, given for every language in `languages`; a
 language of the shop left out takes the default language's text. Lengths count
-the visible text, spaces included, HTML tags not counted.
+the visible text, spaces included, HTML tags not counted. The ISO codes of the
+shop's languages, which one is the default and which are enabled, come from
+`somcp_list_languages`: only an enabled language is accepted.
 
 ## Prices
 
 Every price is either **tax included** or **tax excluded**: the field name says
-which, and so must you. Always give the currency with an amount.
+which, and so must you. Always give the currency with an amount. The ISO codes
+of the shop's currencies, the default and the enabled ones come from
+`somcp_list_currencies`.
 
 The prices returned are the base price of the product, before specific prices,
 discounts and combination impacts. A customer may pay something else: say so

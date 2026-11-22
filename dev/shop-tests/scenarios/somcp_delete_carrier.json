@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "a carrier the shop does not have is refused, pointing to the list", "arguments": {"id_carrier": 999999}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_carrier: no carrier of this shop has the identifier 999999 - find it with somcp_list_carriers"]},
+    {"why": "an identifier that is not a number and a misspelt field are refused at once", "arguments": {"id_carrier": "x", "colour": 1}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_carrier: a whole number above 0", "- colour: not a field of this tool"]},
+    {"why": "a field of the carrier given back is named as worked out by the shop", "arguments": {"id_carrier": 999999, "name": "My carrier"}, "expect": "error", "contains": ["- name: worked out by the shop, so it is not written here"]}
+  ]
+}

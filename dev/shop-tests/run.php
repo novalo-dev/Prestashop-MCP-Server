@@ -406,6 +406,1118 @@ if ($createStatus !== null && $deleteStatus !== null) {
     }
 }
 
+// A tax rule created, updated, then deleted twice (#294, #296): the JSON
+// scenarios cannot hold the identifier of a rule they created, which differs
+// from one version to the other, and every demo rule is still taken by a
+// product, a carrier or the lines of the demo orders, so none of them can be
+// renamed, switched off or deleted. The rule must leave no row behind, and
+// deleting it again must be refused rather than read as a success.
+$createTaxRule = $registry->get('somcp_create_tax_rule');
+$updateTaxRule = $registry->get('somcp_update_tax_rule');
+$deleteTaxRule = $registry->get('somcp_delete_tax_rule');
+if ($createTaxRule !== null && $updateTaxRule !== null && $deleteTaxRule !== null) {
+    $taxRuleCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $taxRuleText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+
+    $calls += 7;
+    try {
+        $result = $taxRuleCall($createTaxRule, ['name' => 'Somcp deleted twice', 'active' => true]);
+        $answer = json_decode(trim($taxRuleText($result)), true);
+        $idRule = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+        if (!empty($result['isError']) || $idRule === 0) {
+            $failures[] = 'somcp_delete_tax_rule (a rule just created): the rule could not be created - ' . excerpt($result);
+        } else {
+            // Each step leaves the rule as the next one expects it, and the last
+            // one gives it back its name, so the deletion below reads the same.
+            $updates = [
+                'a new name' => [['name' => 'Somcp renamed tax rule'], ['"changed": true', '"field": "name"', '"old": "Somcp deleted twice"', '"new": "Somcp renamed tax rule"', '"tax_rule"', '"name": "Somcp renamed tax rule"']],
+                'the name it already holds, nothing written' => [['name' => 'Somcp renamed tax rule'], ['"changed": false', '"id_tax_rules_group": ' . $idRule, 'Nothing was written.']],
+                'switched off, as the Enabled column of the list' => [['active' => false], ['"changed": true', '"field": "active"', '"active": false']],
+                'switched back on with its first name' => [['active' => true, 'name' => 'Somcp deleted twice'], ['"changed": true', '"active": true', '"name": "Somcp deleted twice"']],
+            ];
+            foreach ($updates as $why => [$arguments, $needles]) {
+                $result = $taxRuleCall($updateTaxRule, ['id_tax_rules_group' => $idRule] + $arguments);
+                $text = $taxRuleText($result);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== []) {
+                    $failures[] = 'somcp_update_tax_rule (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_tax_rule (' . $why . ')');
+                }
+            }
+
+            $result = $taxRuleCall($deleteTaxRule, ['id_tax_rules_group' => $idRule]);
+            $text = $taxRuleText($result);
+            $left = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rules_group` WHERE `id_tax_rules_group` = ' . $idRule
+            );
+            $missing = array_filter(['"deleted": true', '"name": "Somcp deleted twice"', '"country_rules_deleted": 0'], static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            });
+            if (!empty($result['isError']) || $missing !== [] || $left !== 0) {
+                $failures[] = 'somcp_delete_tax_rule (a rule just created): expected it deleted with no row left - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_delete_tax_rule (a rule just created)');
+            }
+
+            $result = $taxRuleCall($deleteTaxRule, ['id_tax_rules_group' => $idRule]);
+            $text = $taxRuleText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was deleted') === false
+                || strpos($text, 'no tax rule of this shop has the identifier ' . $idRule) === false) {
+                $failures[] = 'somcp_delete_tax_rule (the same rule again): expected a refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_delete_tax_rule (the same rule again, refused)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_tax_rule (a rule just created): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+
+    // Rows added to a rule just created, changed, then deleted (#303, #306, #304): the scenario cannot hold the
+    // identifier of the rule, and every demo rule is taken by orders, so the
+    // working addition is tried here, then the rule is deleted whatever happens.
+    $addCountryRule = $registry->get('somcp_add_country_rule');
+    if ($addCountryRule !== null) {
+        $calls += 2;
+        $idRows = 0;
+        try {
+            $result = $taxRuleCall($createTaxRule, ['name' => 'Somcp country rows', 'active' => true]);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            $idRows = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+            $rowsAsked = [
+                'id_tax_rules_group' => $idRows, 'country' => 'US', 'states' => ['AL', 'FL'],
+                'zipcode_from' => '36000', 'zipcode_to' => '35000', 'id_tax' => 1,
+                'behavior' => 'this_tax_only', 'description' => 'somcp',
+            ];
+            $result = $taxRuleCall($addCountryRule, $rowsAsked);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            $rowsRead = is_array($answer) ? ($answer['tax_rule']['country_rules'] ?? []) : [];
+            $folded = array_filter($rowsRead, static function ($row): bool {
+                return is_array($row) && ($row['zipcode_from'] ?? null) === '35000' && ($row['zipcode_to'] ?? null) === '36000'
+                    && ($row['behavior'] ?? null) === 'this_tax_only' && in_array($row['state'] ?? null, ['AL', 'FL'], true);
+            });
+            if ($idRows === 0 || !empty($result['isError']) || !is_array($answer) || ($answer['created'] ?? false) !== true
+                || count($answer['id_tax_rule'] ?? []) !== 2 || count($rowsRead) !== 2 || count($folded) !== 2) {
+                $failures[] = 'somcp_add_country_rule (two states of a rule just created): expected two rows, the range in order - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_add_country_rule (two states of a rule just created)');
+            }
+
+            $result = $taxRuleCall($addCountryRule, $rowsAsked);
+            $text = $taxRuleText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was created.') === false
+                || strpos($text, 'states: US AL already has a This tax only row in this rule') === false) {
+                $failures[] = 'somcp_add_country_rule (the same rows again): expected a refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_add_country_rule (the same rows again, refused)');
+            }
+
+            // The AL row changed in place (#306): a field, the same call again,
+            // the range removed, a country its state does not belong to, and
+            // a behavior, the FL row of another state left as it was.
+            $updateCountryRule = $registry->get('somcp_update_country_rule');
+            $idAl = is_array($answer) ? (int) ($answer['id_tax_rule'][0] ?? 0) : 0;
+            if ($updateCountryRule !== null && $idAl > 0) {
+                $calls += 5;
+                $alRow = static function ($answer) use ($idAl): ?array {
+                    foreach (is_array($answer) ? ($answer['tax_rule']['country_rules'] ?? []) : [] as $row) {
+                        if (is_array($row) && (int) ($row['id_tax_rule'] ?? 0) === $idAl) {
+                            return $row;
+                        }
+                    }
+
+                    return null;
+                };
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'description' => 'somcp2']);
+                $text = $taxRuleText($result);
+                $changed = json_decode(trim($text), true);
+                if (!empty($result['isError']) || !is_array($changed) || ($changed['changed'] ?? null) !== true
+                    || strpos($text, '"field": "description"') === false || ($alRow($changed)['description'] ?? null) !== 'somcp2') {
+                    $failures[] = 'somcp_update_country_rule (the description of a row): expected it changed - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country_rule (the description of a row)');
+                }
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'description' => 'somcp2']);
+                $changed = json_decode(trim($taxRuleText($result)), true);
+                if (!empty($result['isError']) || !is_array($changed) || ($changed['changed'] ?? null) !== false) {
+                    $failures[] = 'somcp_update_country_rule (the same call again): expected nothing changed - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country_rule (the same call again, nothing changed)');
+                }
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'zipcode_from' => null]);
+                $changed = json_decode(trim($taxRuleText($result)), true);
+                $row = $alRow($changed);
+                if (!empty($result['isError']) || !is_array($changed) || ($changed['changed'] ?? null) !== true
+                    || $row === null || $row['zipcode_from'] !== null || $row['zipcode_to'] !== null) {
+                    $failures[] = 'somcp_update_country_rule (the range removed): expected no zip code left - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country_rule (the range removed)');
+                }
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'country' => 'FR']);
+                $text = $taxRuleText($result);
+                if (empty($result['isError']) || strpos($text, 'Nothing was changed.') === false
+                    || strpos($text, '- state: AL is not a state of FR') === false) {
+                    $failures[] = 'somcp_update_country_rule (a country without the row\'s state): expected a refusal - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'error', 'somcp_update_country_rule (a country without the row\'s state, refused)');
+                }
+
+                $result = $taxRuleCall($updateCountryRule, ['id_tax_rule' => $idAl, 'behavior' => 'combine']);
+                $changed = json_decode(trim($taxRuleText($result)), true);
+                if (!empty($result['isError']) || !is_array($changed) || ($changed['changed'] ?? null) !== true
+                    || ($alRow($changed)['behavior'] ?? null) !== 'combine') {
+                    $failures[] = 'somcp_update_country_rule (the behavior of a row): expected it changed - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_country_rule (the behavior of a row)');
+                }
+            }
+
+            // The two rows deleted one by one (#304), the rule left with none,
+            // then the same row again refused rather than read as a success.
+            $deleteCountryRule = $registry->get('somcp_delete_country_rule');
+            $rowIds = is_array($answer) ? array_map('intval', $answer['id_tax_rule'] ?? []) : [];
+            if ($deleteCountryRule !== null && count($rowIds) === 2) {
+                $calls += 3;
+                $firstDeleted = null;
+                foreach ($rowIds as $step => $idRowDeleted) {
+                    $result = $taxRuleCall($deleteCountryRule, ['id_tax_rule' => $idRowDeleted]);
+                    $answerDeleted = json_decode(trim($taxRuleText($result)), true);
+                    if ($step === 0 && is_array($answerDeleted) && is_array($answerDeleted['country_rule'] ?? null)) {
+                        $firstDeleted = $answerDeleted['country_rule'];
+                    }
+                    $rulesLeft = is_array($answerDeleted) ? ($answerDeleted['tax_rule']['country_rules'] ?? null) : null;
+                    if (!empty($result['isError']) || !is_array($answerDeleted) || ($answerDeleted['deleted'] ?? false) !== true
+                        || (int) ($answerDeleted['country_rule']['id_tax_rule'] ?? 0) !== $idRowDeleted
+                        || !is_array($rulesLeft) || count($rulesLeft) !== 1 - $step) {
+                        $failures[] = 'somcp_delete_country_rule (row ' . ($step + 1) . ' of a rule just created): expected it deleted - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_delete_country_rule (row ' . ($step + 1) . ' of a rule just created)');
+                    }
+                }
+                $result = $taxRuleCall($deleteCountryRule, ['id_tax_rule' => $rowIds[0]]);
+                $text = $taxRuleText($result);
+                if (empty($result['isError']) || strpos($text, 'Nothing was deleted.') === false
+                    || strpos($text, 'has the identifier ' . $rowIds[0]) === false) {
+                    $failures[] = 'somcp_delete_country_rule (the same row again): expected a refusal - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'error', 'somcp_delete_country_rule (the same row again, refused)');
+                }
+
+                // The row a deletion gives back, added again as it was (#307):
+                // what a read returns is what the write takes, state included.
+                if (is_array($firstDeleted)) {
+                    ++$calls;
+                    $again = array_diff_key($firstDeleted, array_flip(['id_tax_rule', 'country_name', 'state_name', 'tax_name', 'rate']));
+                    $result = $taxRuleCall($addCountryRule, ['id_tax_rules_group' => $idRows] + $again);
+                    $answerAgain = json_decode(trim($taxRuleText($result)), true);
+                    $rowAgain = is_array($answerAgain) ? ($answerAgain['tax_rule']['country_rules'][0] ?? null) : null;
+                    if (!empty($result['isError']) || !is_array($answerAgain) || ($answerAgain['created'] ?? false) !== true
+                        || count($answerAgain['id_tax_rule'] ?? []) !== 1 || !is_array($rowAgain)
+                        || ($rowAgain['state'] ?? null) !== 'AL' || ($rowAgain['state'] ?? null) !== ($firstDeleted['state'] ?? '')
+                        || ($rowAgain['zipcode_from'] ?? '') !== ($firstDeleted['zipcode_from'] ?? '')
+                        || ($rowAgain['zipcode_to'] ?? '') !== ($firstDeleted['zipcode_to'] ?? '')
+                        || ($rowAgain['description'] ?? '') !== ($firstDeleted['description'] ?? '')) {
+                        $failures[] = 'somcp_add_country_rule (a deleted row given back): expected it added as it was - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_add_country_rule (a deleted row given back)');
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_add_country_rule (two states of a rule just created): ' . get_class($e) . ' - ' . $e->getMessage();
+        } finally {
+            if ($idRows > 0) {
+                $rule = new TaxRulesGroup($idRows);
+                if (Validate::isLoadedObject($rule)) {
+                    $rule->delete();
+                }
+            }
+        }
+    }
+
+    // Every country at once (#318): the All of Country, on a rule just
+    // created, then the same call again and a state and a range with All.
+    if ($addCountryRule !== null) {
+        $calls += 3;
+        $idAll = 0;
+        try {
+            $result = $taxRuleCall($createTaxRule, ['name' => 'Somcp every country', 'active' => true]);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            $idAll = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+            $shopCountries = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'country_shop` WHERE `id_shop` = ' . (int) $context->shop->id
+            );
+            $allAsked = ['id_tax_rules_group' => $idAll, 'country' => null, 'id_tax' => 1];
+            $result = $taxRuleCall($addCountryRule, $allAsked);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            if ($idAll === 0 || $shopCountries === 0 || !empty($result['isError']) || !is_array($answer)
+                || ($answer['created'] ?? false) !== true || ($answer['country_count'] ?? null) !== $shopCountries
+                || count($answer['id_tax_rule'] ?? []) !== $shopCountries) {
+                $failures[] = 'somcp_add_country_rule (every country, All): expected one row per country of the shop - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_add_country_rule (every country, All)');
+            }
+
+            $result = $taxRuleCall($addCountryRule, $allAsked + ['behavior' => 'this_tax_only']);
+            $text = $taxRuleText($result);
+            if (empty($result['isError']) || strpos($text, 'Nothing was created.') === false
+                || strpos($text, 'countries already have a row in this rule that All would contradict:') === false
+                || substr_count($text, 'All would contradict') !== 1) {
+                $failures[] = 'somcp_add_country_rule (All again): expected one refusal line naming the countries - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_add_country_rule (All again, refused)');
+            }
+
+            $before = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax_rules_group` = ' . $idAll
+            );
+            $result = $taxRuleCall($addCountryRule, $allAsked + ['states' => ['AL'], 'zipcode_from' => '35000']);
+            $text = $taxRuleText($result);
+            $after = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax_rules_group` = ' . $idAll
+            );
+            if (empty($result['isError']) || $after !== $before
+                || strpos($text, 'states: only with one country, not with All') === false
+                || strpos($text, 'zipcode_from: only with one country, not with All') === false) {
+                $failures[] = 'somcp_add_country_rule (All with a state and a range): expected both refused, no row written - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_add_country_rule (All with a state and a range, refused)');
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_add_country_rule (every country, All): ' . get_class($e) . ' - ' . $e->getMessage();
+        } finally {
+            if ($idAll > 0) {
+                $rule = new TaxRulesGroup($idAll);
+                if (Validate::isLoadedObject($rule)) {
+                    $rule->delete();
+                }
+            }
+        }
+    }
+
+    // A rule an order line carries (#295): changed, it must stay as it was
+    // for that order and the change go on a copy. No scenario can give an
+    // order line a rule of its own, so order line 1 is pointed at a rule
+    // created here and given back the rule it had, whatever happens.
+    $calls += 1;
+    $orderLine = (int) Db::getInstance()->getValue(
+        'SELECT MIN(`id_order_detail`) FROM `' . _DB_PREFIX_ . 'order_detail`'
+    );
+    $lineRule = (int) Db::getInstance()->getValue(
+        'SELECT `id_tax_rules_group` FROM `' . _DB_PREFIX_ . 'order_detail` WHERE `id_order_detail` = ' . $orderLine
+    );
+    try {
+        $result = $taxRuleCall($createTaxRule, ['name' => 'Somcp used by an order', 'active' => true]);
+        $answer = json_decode(trim($taxRuleText($result)), true);
+        $idUsed = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+        if ($orderLine === 0 || $idUsed === 0) {
+            $failures[] = 'somcp_update_tax_rule (a rule used by an order): no order line, or the rule could not be created - ' . excerpt($result);
+        } else {
+            Db::getInstance()->update('order_detail', ['id_tax_rules_group' => $idUsed], '`id_order_detail` = ' . $orderLine);
+            $result = $taxRuleCall($updateTaxRule, ['id_tax_rules_group' => $idUsed, 'name' => 'Somcp used by an order renamed']);
+            $answer = json_decode(trim($taxRuleText($result)), true);
+            $idCopy = is_array($answer) ? (int) ($answer['id_tax_rules_group'] ?? 0) : 0;
+            $old = Db::getInstance()->getRow(
+                'SELECT `deleted`, `name` FROM `' . _DB_PREFIX_ . 'tax_rules_group` WHERE `id_tax_rules_group` = ' . $idUsed
+            );
+            $copy = Db::getInstance()->getRow(
+                'SELECT `deleted`, `name` FROM `' . _DB_PREFIX_ . 'tax_rules_group` WHERE `id_tax_rules_group` = ' . $idCopy
+            );
+            $rows = static function (int $id): int {
+                return (int) Db::getInstance()->getValue(
+                    'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax_rules_group` = ' . $id
+                );
+            };
+            $inShop = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rules_group_shop` WHERE `id_tax_rules_group` = ' . $idCopy
+                . ' AND `id_shop` = ' . (int) $context->shop->id
+            );
+            $kept = (int) Db::getInstance()->getValue(
+                'SELECT `id_tax_rules_group` FROM `' . _DB_PREFIX_ . 'order_detail` WHERE `id_order_detail` = ' . $orderLine
+            );
+            if (!empty($result['isError']) || !is_array($answer) || $idCopy === 0 || $idCopy === $idUsed
+                || (int) ($answer['replaced_id_tax_rules_group'] ?? 0) !== $idUsed
+                || strpos((string) ($answer['warning'] ?? ''), 'a new identifier, ' . $idCopy . '.') === false
+                || !is_array($old) || (int) $old['deleted'] !== 1 || $old['name'] !== 'Somcp used by an order'
+                || !is_array($copy) || (int) $copy['deleted'] !== 0 || $copy['name'] !== 'Somcp used by an order renamed'
+                || $rows($idCopy) !== $rows($idUsed) || $inShop !== 1 || $kept !== $idUsed) {
+                $failures[] = 'somcp_update_tax_rule (a rule used by an order): expected a copy under a new identifier, the old rule deleted and kept by the order - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_tax_rule (a rule used by an order, changed on a copy)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_tax_rule (a rule used by an order): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($orderLine > 0) {
+            Db::getInstance()->update('order_detail', ['id_tax_rules_group' => $lineRule], '`id_order_detail` = ' . $orderLine);
+        }
+    }
+}
+
+// A tax created, changed, then deleted (#308, #309, #310): the JSON scenario
+// cannot hold the identifier of a tax it created, and every demo tax is charged
+// by a tax rule row, so none can be the one made, changed or removed here. The
+// tax below is created, its rate and switch changed, charged by a rule created
+// for it (so disabling it tells the two versions apart), then that row removed
+// and the tax really deleted; whatever is left is cleaned up at the end.
+$createTax = $registry->get('somcp_create_tax');
+if ($createTax !== null) {
+    $taxCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        return $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+    };
+    $taxText = static function (array $result): string {
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return $text;
+    };
+
+    $calls += 1;
+    $idTax = 0;
+    try {
+        $result = $taxCall($createTax, ['languages' => ['en'], 'name' => ['en' => 'Somcp test tax'], 'rate' => 1.234]);
+        $answer = json_decode(trim($taxText($result)), true);
+        $idTax = is_array($answer) ? (int) ($answer['id_tax'] ?? 0) : 0;
+        $text = $taxText($result);
+        $missing = array_filter(
+            ['"created": true', '"rate": 1.234', '"active": false', 'enable it with somcp_update_tax'],
+            static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }
+        );
+        // The old key of the other shops (#314) must not come back beside also_in_other_shops.
+        if (!empty($result['isError']) || $idTax === 0 || $missing !== [] || strpos($text, '"in_every_shop"') !== false) {
+            $failures[] = 'somcp_create_tax (a disabled tax): expected it created with its rate and the warning - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_tax (a disabled tax)');
+        }
+
+        // The tax changed in place (#309): a field, the same call again, enabled.
+        $updateTax = $registry->get('somcp_update_tax');
+        if ($updateTax !== null && $idTax > 0) {
+            $calls += 3;
+            $taxUpdates = [
+                'a new rate' => [['rate' => 2.5], ['"changed": true', '"field": "rate"', '"new": 2.5']],
+                'the same rate again, nothing written' => [['rate' => 2.5], ['"changed": false', 'Nothing was written.']],
+                'enabled' => [['active' => true], ['"changed": true', '"field": "active"', '"active": true']],
+            ];
+            foreach ($taxUpdates as $why => [$arguments, $needles]) {
+                $result = $taxCall($updateTax, ['id_tax' => $idTax] + $arguments);
+                $text = $taxText($result);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== [] || strpos($text, '"in_every_shop"') !== false) {
+                    $failures[] = 'somcp_update_tax (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_tax (' . $why . ')');
+                }
+            }
+
+            // The row of somcp_list_taxes given back whole changes nothing,
+            // its name being one text even on a shop with several languages (#309).
+            $listTaxes = $registry->get('somcp_list_taxes');
+            if ($listTaxes !== null) {
+                $calls += 2;
+                $listed = json_decode(trim($taxText($taxCall($listTaxes, ['id_tax' => $idTax]))), true);
+                $row = is_array($listed) ? ($listed['taxes'][0] ?? null) : null;
+                if (!is_array($row) || (int) ($row['id_tax'] ?? 0) !== $idTax) {
+                    $failures[] = 'somcp_update_tax (the row of somcp_list_taxes given back): the row could not be read';
+                } else {
+                    $result = $taxCall($updateTax, $row);
+                    $text = $taxText($result);
+                    if (!empty($result['isError']) || strpos($text, '"changed": false') === false) {
+                        $failures[] = 'somcp_update_tax (the row of somcp_list_taxes given back): expected no change - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_tax (the row of somcp_list_taxes given back, nothing written)');
+                    }
+                }
+            }
+
+            // Disabling a tax a tax rule row charges: refused on PrestaShop 8,
+            // where the core would delete the row; allowed on 9, where it stays.
+            $ruleForTax = $registry->get('somcp_create_tax_rule');
+            $rowForTax = $registry->get('somcp_add_country_rule');
+            if ($ruleForTax !== null && $rowForTax !== null) {
+                $idRuleForTax = 0;
+                try {
+                    $result = $taxCall($ruleForTax, ['name' => 'Somcp rule charging a test tax', 'active' => true]);
+                    $answer = json_decode(trim($taxText($result)), true);
+                    $idRuleForTax = is_array($answer) ? (int) ($answer['tax_rule']['id_tax_rules_group'] ?? 0) : 0;
+                    $result = $idRuleForTax > 0 ? $taxCall($rowForTax, [
+                        'id_tax_rules_group' => $idRuleForTax, 'country' => 'US', 'states' => ['AL'],
+                        'id_tax' => $idTax, 'behavior' => 'this_tax_only',
+                    ]) : $result;
+                    $added = json_decode(trim($taxText($result)), true);
+                    $charged = (int) Db::getInstance()->getValue(
+                        'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax` = ' . (int) $idTax
+                    );
+                    if ($idRuleForTax === 0 || !is_array($added) || ($added['created'] ?? false) !== true || $charged < 1) {
+                        $failures[] = 'somcp_update_tax (disabling a charged tax): the charging row could not be set up - ' . excerpt($result);
+                    } else {
+                        $calls += 1;
+                        $result = $taxCall($updateTax, ['id_tax' => $idTax, 'active' => false]);
+                        $text = $taxText($result);
+                        $left = (int) Db::getInstance()->getValue(
+                            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax_rule` WHERE `id_tax` = ' . (int) $idTax
+                        );
+                        if (version_compare(_PS_VERSION_, '9.0.0', '<')) {
+                            if (empty($result['isError']) || strpos($text, 'Nothing was changed.') === false
+                                || strpos($text, '- active: on PrestaShop 8, disabling this tax deletes its 1 row(s)') === false
+                                || $left !== $charged) {
+                                $failures[] = 'somcp_update_tax (disabling a charged tax on PrestaShop 8): expected a refusal, the row kept - ' . excerpt($result);
+                            } else {
+                                printf("  %-6s %s\n", 'error', 'somcp_update_tax (disabling a charged tax, refused on PrestaShop 8)');
+                            }
+                        } else {
+                            if (!empty($result['isError']) || strpos($text, '"changed": true') === false || $left !== $charged) {
+                                $failures[] = 'somcp_update_tax (disabling a charged tax on PrestaShop 9): expected it changed, the row kept - ' . excerpt($result);
+                            } else {
+                                printf("  %-6s %s\n", 'ok', 'somcp_update_tax (disabling a charged tax, allowed on PrestaShop 9)');
+                            }
+                        }
+
+                        // The tax deleted (#310): refused while the row charges
+                        // it, then the row removed and the tax really deleted.
+                        $deleteTax = $registry->get('somcp_delete_tax');
+                        $deleteRowForTax = $registry->get('somcp_delete_country_rule');
+                        $idRowForTax = (int) ($added['id_tax_rule'][0] ?? 0);
+                        if ($deleteTax !== null && $deleteRowForTax !== null && $idRowForTax > 0) {
+                            $calls += 3;
+                            $result = $taxCall($deleteTax, ['id_tax' => $idTax]);
+                            $text = $taxText($result);
+                            if (empty($result['isError']) || strpos($text, 'Nothing was deleted.') === false
+                                || strpos($text, '- id_tax: charged by 1 row(s)') === false) {
+                                $failures[] = 'somcp_delete_tax (a tax a rule charges): expected a refusal - ' . excerpt($result);
+                            } else {
+                                printf("  %-6s %s\n", 'error', 'somcp_delete_tax (a tax a rule charges, refused)');
+                            }
+
+                            $taxCall($deleteRowForTax, ['id_tax_rule' => $idRowForTax]);
+
+                            $result = $taxCall($deleteTax, ['id_tax' => $idTax]);
+                            $text = $taxText($result);
+                            if (!empty($result['isError']) || strpos($text, '"deleted": true') === false
+                                || strpos($text, '"kept_for_orders": false') === false
+                                || strpos($text, '"in_every_shop"') !== false) {
+                                $failures[] = 'somcp_delete_tax (a tax nothing charges): expected it deleted - ' . excerpt($result);
+                            } else {
+                                printf("  %-6s %s\n", 'ok', 'somcp_delete_tax (a tax nothing charges)');
+                            }
+
+                            $gone = (int) Db::getInstance()->getValue(
+                                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'tax` WHERE `id_tax` = ' . (int) $idTax . ' AND `deleted` = 0'
+                            );
+                            if ($gone !== 0) {
+                                $failures[] = 'somcp_delete_tax (the tax after deletion): expected it gone from the list, still there';
+                            } else {
+                                printf("  %-6s %s\n", 'ok', 'somcp_delete_tax (the tax gone from the list)');
+                                $idTax = 0;
+                            }
+                        }
+                    }
+                } catch (Throwable $e) {
+                    $failures[] = 'somcp_update_tax (disabling a charged tax): ' . get_class($e) . ' - ' . $e->getMessage();
+                } finally {
+                    // The rule and its row go, so the tax is charged by nothing
+                    // and the deletion below removes it.
+                    if ($idRuleForTax > 0) {
+                        $rule = new TaxRulesGroup($idRuleForTax);
+                        if (Validate::isLoadedObject($rule)) {
+                            $rule->delete();
+                        }
+                    }
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_tax (a disabled tax): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // No rule charges it and no order carries it, so it is really removed.
+        if ($idTax > 0) {
+            $tax = new Tax($idTax);
+            if (Validate::isLoadedObject($tax)) {
+                $tax->delete();
+            }
+        }
+    }
+}
+
+// A carrier read, given back, changed and put back (#320): the JSON scenario
+// cannot give a read back nor compare two reads. Demo carrier 3 is used by no
+// order, so it is changed in place and keeps its identifier; no call is made
+// on a carrier with orders, which would leave a new version behind for the
+// tools after it.
+$getCarrier = $registry->get('somcp_get_carrier');
+$updateCarrier = $registry->get('somcp_update_carrier');
+if ($getCarrier !== null && $updateCarrier !== null) {
+    $carrierCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text, json_decode(trim($text), true)];
+    };
+    $calls += 22;
+    $carrierBefore = null;
+    try {
+        [$result, $text, $carrierBefore] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+        if (!empty($result['isError']) || !is_array($carrierBefore)) {
+            $failures[] = 'somcp_update_carrier (reading carrier 3 first): ' . excerpt($result);
+            $carrierBefore = null;
+        } else {
+            $steps = [
+                'the read given back as it is, nothing written' => [$carrierBefore, ['"changed": false', 'Nothing was written.']],
+                'a new speed grade, changed in place' => [['id_carrier' => 3, 'grade' => 5], ['"changed": true', '"id_carrier": 3', '"field": "grade"', '"new": 5']],
+                'the same speed grade again, nothing written' => [['id_carrier' => 3, 'grade' => 5], ['"changed": false']],
+                'the read of the start given back, the grade put back' => [$carrierBefore, ['"changed": true', '"id_carrier": 3', '"field": "grade"', '"new": ' . (int) $carrierBefore['grade']]],
+                // The costs settings of #323, then the read of the start given
+                // back with ranges of another billing than the one stored.
+                'billed by weight, disabled out of range, no tax' => [['id_carrier' => 3, 'billing' => 'weight', 'out_of_range' => 'disable_carrier', 'id_tax_rules_group' => 0], ['"changed": true', '"id_carrier": 3', '"field": "billing"', '"field": "out_of_range"', '"field": "id_tax_rules_group"']],
+                'made free, the handling costs turned off with it' => [['id_carrier' => 3, 'is_free' => true], ['"changed": true', '"id_carrier": 3', '"field": "is_free"', '"field": "handling_costs"', '"handling_costs": false']],
+                'the read of the start given back, the costs settings put back' => [$carrierBefore, ['"changed": true', '"id_carrier": 3', '"field": "billing"', '"field": "is_free"']],
+                // The size and weight limits of #330, then put back as read.
+                'a width and a weight limit, changed in place' => [['id_carrier' => 3, 'max_width' => 40, 'max_weight' => 2.5], ['"changed": true', '"id_carrier": 3', '"field": "max_width"', '"field": "max_weight"', '"new": 2.5']],
+                'the same limits again, nothing written' => [['id_carrier' => 3, 'max_width' => 40, 'max_weight' => 2.5], ['"changed": false']],
+                'the limits of the start given back' => [['id_carrier' => 3, 'max_width' => (int) $carrierBefore['max_width'], 'max_weight' => (float) $carrierBefore['max_weight']], ['"changed": true', '"id_carrier": 3', '"field": "max_width"']],
+                // The zones of #336: given back as read, a zone added, then
+                // the zones of the start given back alone, since the ranges of
+                // the start have no price in the added zone.
+                'the zones given back as read, nothing written' => [['id_carrier' => 3, 'zones' => $carrierBefore['zones']], ['"changed": false']],
+                'a zone added, its missing price said' => [['id_carrier' => 3, 'zones' => [['id_zone' => 1], ['id_zone' => 2], ['id_zone' => 3]]], ['"changed": true', '"id_carrier": 3', '"field": "zones"', 'The zone(s) 3 have no price yet']],
+                'the zones of the start given back' => [['id_carrier' => 3, 'zones' => $carrierBefore['zones']], ['"changed": true', '"id_carrier": 3', '"field": "zones"']],
+            ];
+            // The prices of the zones the carrier keeps are not touched by a zone change.
+            $pricesOf = static function (): int {
+                return (int) Db::getInstance()->getValue(
+                    'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'delivery` WHERE `id_carrier` = 3 AND `id_zone` IN (1, 2)'
+                );
+            };
+            $pricesBefore = $pricesOf();
+            foreach ($steps as $why => [$arguments, $needles]) {
+                [$result, $text] = $carrierCall($updateCarrier, $arguments);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== [] || strpos($text, '"replaced_id_carrier"') !== false) {
+                    $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                }
+            }
+            // The ranges of #337: given back as read, one price changed and a
+            // range added, read again, then the ranges of the start given back.
+            $rangesBefore = is_array($carrierBefore['ranges'] ?? null) ? $carrierBefore['ranges'] : [];
+            $rangesChanged = $rangesBefore;
+            foreach ($rangesChanged[0]['prices'] ?? [] as $i => $price) {
+                if ((int) $price['id_zone'] === 1) {
+                    $rangesChanged[0]['prices'][$i]['price_tax_excl'] = 9;
+                }
+            }
+            $rangesChanged[] = ['from' => 200, 'to' => 500, 'prices' => [['id_zone' => 1, 'price_tax_excl' => 0], ['id_zone' => 2, 'price_tax_excl' => 0]]];
+            $rangeSteps = [
+                'the ranges given back as read, nothing written' => [$rangesBefore, ['"changed": false']],
+                'a price changed and a range added, in place' => [$rangesChanged, ['"changed": true', '"id_carrier": 3', '"field": "ranges"']],
+                'the ranges of the start given back' => [$rangesBefore, ['"changed": true', '"id_carrier": 3', '"field": "ranges"']],
+            ];
+            foreach ($rangeSteps as $why => [$ranges, $needles]) {
+                [$result, $text] = $carrierCall($updateCarrier, ['id_carrier' => 3, 'ranges' => $ranges]);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if ($rangesBefore === [] || !empty($result['isError']) || $missing !== [] || strpos($text, '"replaced_id_carrier"') !== false) {
+                    $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                }
+                if ($why === 'a price changed and a range added, in place') {
+                    [$result, , $changed] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+                    $first = [];
+                    foreach ($changed['ranges'][0]['prices'] ?? [] as $price) {
+                        $first[(int) $price['id_zone']] = $price['price_tax_excl'];
+                    }
+                    if (!empty($result['isError']) || count($changed['ranges'] ?? []) !== count($rangesBefore) + 1 || (float) ($first[1] ?? -1) !== 9.0) {
+                        $failures[] = 'somcp_update_carrier (the ranges read after the change): expected ' . (count($rangesBefore) + 1) . ' ranges and 9 in zone 1 - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (the ranges read after the change)');
+                    }
+                }
+            }
+            [$result, $text, $carrierAfter] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+            unset($carrierBefore['logo'], $carrierAfter['logo']);
+            if ($pricesOf() !== $pricesBefore) {
+                $failures[] = 'somcp_update_carrier (the zones changed and put back): expected the prices of zones 1 and 2 unchanged, ' . $pricesBefore . ' rows before, ' . $pricesOf() . ' after';
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (the prices of the zones kept, unchanged)');
+            }
+            if (!empty($result['isError']) || $carrierAfter !== $carrierBefore) {
+                $failures[] = 'somcp_update_carrier (carrier 3 read again): expected it as read at the start - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 3 read again, as at the start)');
+            }
+            // A free carrier is offered in every zone it serves without a
+            // price, so adding a zone to demo carrier 1 (free, used by no
+            // order) says nothing about a missing price, then is put back.
+            [$result, , $freeBefore] = $carrierCall($getCarrier, ['id_carrier' => 1]);
+            if (!empty($result['isError']) || !is_array($freeBefore) || !is_array($freeBefore['zones'] ?? null)) {
+                $failures[] = 'somcp_update_carrier (reading carrier 1 first): ' . excerpt($result);
+            } else {
+                $freeSteps = [
+                    'a zone added to a free carrier, no missing price said' => [['id_carrier' => 1, 'zones' => [['id_zone' => 1], ['id_zone' => 2]]], ['"changed": true', '"id_carrier": 1']],
+                    'the zones of the free carrier given back' => [['id_carrier' => 1, 'zones' => $freeBefore['zones']], ['"changed": true', '"id_carrier": 1']],
+                ];
+                foreach ($freeSteps as $why => [$arguments, $needles]) {
+                    [$result, $text] = $carrierCall($updateCarrier, $arguments);
+                    $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                        return strpos($text, $needle) === false;
+                    });
+                    if (!empty($result['isError']) || $missing !== [] || strpos($text, 'have no price yet') !== false || strpos($text, '"replaced_id_carrier"') !== false) {
+                        $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' and no missing price - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                    }
+                }
+                [$result, , $freeAfter] = $carrierCall($getCarrier, ['id_carrier' => 1]);
+                if (!empty($result['isError']) || ($freeAfter['zones'] ?? null) !== $freeBefore['zones']) {
+                    $failures[] = 'somcp_update_carrier (carrier 1 read again): expected the zones read at the start - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 1 read again, its zones as at the start)');
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_carrier (a carrier changed and put back): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+
+    // A carrier moved first and put back (#322): the order of the list is
+    // read before and after, which the JSON scenario cannot compare. A move
+    // never makes a new version, so carrier 4 keeps its identifier.
+    $listCarriers = $registry->get('somcp_list_carriers');
+    if ($listCarriers !== null) {
+        $calls += 6;
+        $order = static function () use ($carrierCall, $listCarriers): array {
+            [, , $answer] = $carrierCall($listCarriers, []);
+            $ids = [];
+            foreach (is_array($answer) ? ($answer['carriers'] ?? []) : [] as $entry) {
+                $ids[] = (int) ($entry['id_carrier'] ?? 0);
+            }
+
+            return $ids;
+        };
+        try {
+            [$result, $text, $fourth] = $carrierCall($getCarrier, ['id_carrier' => 4]);
+            $orderBefore = $order();
+            if (!empty($result['isError']) || !is_array($fourth) || !isset($fourth['position']) || !in_array(4, $orderBefore, true)) {
+                $failures[] = 'somcp_update_carrier (reading carrier 4 first): ' . excerpt($result);
+            } else {
+                $expected = array_merge([4], array_values(array_diff($orderBefore, [4])));
+                $steps = [
+                    'carrier 4 moved first, in place' => [['id_carrier' => 4, 'position' => 0], ['"changed": true', '"id_carrier": 4', '"field": "position"', '"new": 0']],
+                    'the same place again, nothing written' => [['id_carrier' => 4, 'position' => 0], ['"changed": false']],
+                ];
+                foreach ($steps as $why => [$arguments, $needles]) {
+                    [$result, $text] = $carrierCall($updateCarrier, $arguments);
+                    $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                        return strpos($text, $needle) === false;
+                    });
+                    if (!empty($result['isError']) || $missing !== [] || strpos($text, '"replaced_id_carrier"') !== false) {
+                        $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                    }
+                }
+                $orderMoved = $order();
+                if ($orderMoved !== $expected) {
+                    $failures[] = 'somcp_update_carrier (the list after the move): expected ' . implode(', ', $expected) . ', got ' . implode(', ', $orderMoved);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 4 first in the list, the others shifted)');
+                }
+                [$result, $text] = $carrierCall($updateCarrier, ['id_carrier' => 4, 'position' => (int) $fourth['position']]);
+                $orderAfter = $order();
+                if (!empty($result['isError']) || $orderAfter !== $orderBefore) {
+                    $failures[] = 'somcp_update_carrier (carrier 4 put back): expected ' . implode(', ', $orderBefore) . ', got ' . implode(', ', $orderAfter) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 4 put back, the list as at the start)');
+                }
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_update_carrier (a carrier moved and put back): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
+
+    // The logo of #331, on carrier 3, which no order uses: the read given
+    // back changes nothing, a removal changes something only when there was
+    // a logo, and a GIF deposited is stored and read back as a download_ref.
+    // The carrier is left without a logo only when it had none at the start.
+    $calls += 7;
+    try {
+        [$result, $text, $third] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+        // The smallest valid GIF: one transparent pixel.
+        $reference = SomcpUpload::inviteFor((int) $employee->id, $updateCarrier, 'logo');
+        $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+        $entered = $invitation === null
+            ? 'no deposit could be opened'
+            : SomcpUpload::enter($invitation, 'data', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'logo.gif');
+        if (!empty($result['isError']) || !is_array($third) || !array_key_exists('logo', $third)) {
+            $failures[] = 'somcp_update_carrier (reading the logo of carrier 3 first): ' . excerpt($result);
+        } elseif ($entered !== '') {
+            $failures[] = 'somcp_update_carrier (a GIF logo): the GIF was not deposited - ' . $entered;
+        } else {
+            $hadLogo = $third['logo'] !== null;
+            $steps = [
+                'the logo read given back, nothing written' => [['id_carrier' => 3, 'logo' => $third['logo']], ['"changed": false']],
+                'the logo removed' => [['id_carrier' => 3, 'remove_logo' => true], $hadLogo ? ['"changed": true', '"field": "logo"', '"removed": true'] : ['"changed": false']],
+                'a GIF logo deposited, stored' => [['id_carrier' => 3, 'logo' => ['upload_ref' => $reference]], ['"changed": true', '"id_carrier": 3', '"field": "logo"', '"stored": true']],
+            ];
+            foreach ($steps as $why => [$arguments, $needles]) {
+                [$result, $text] = $carrierCall($updateCarrier, $arguments);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== [] || strpos($text, '"replaced_id_carrier"') !== false) {
+                    $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                }
+            }
+            [$result, $text, $logoAfter] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+            if (!empty($result['isError']) || !is_array($logoAfter) || !isset($logoAfter['logo'][SomcpDownload::ARG_REF])) {
+                $failures[] = 'somcp_update_carrier (carrier 3 read after its logo): expected the logo as a download_ref - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 3 read back with its new logo)');
+            }
+            if (!$hadLogo) {
+                [$result] = $carrierCall($updateCarrier, ['id_carrier' => 3, 'remove_logo' => true]);
+                if (!empty($result['isError'])) {
+                    $failures[] = 'somcp_update_carrier (the logo removed again): ' . excerpt($result);
+                }
+            }
+            // A refused logo alone on carrier 2, which orders use (#342): the
+            // call is refused, and the carrier keeps its identifier.
+            [$result, $text] = $carrierCall($updateCarrier, ['id_carrier' => 2, 'logo' => ['upload_ref' => 'somcp-unknown-reference']]);
+            if (empty($result['isError']) || strpos($text, 'Nothing was changed. Correct these and call again:') === false
+                || strpos($text, '- logo: no file of this account matches this upload_ref') === false) {
+                $failures[] = 'somcp_update_carrier (a refused logo alone on carrier 2): expected the refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (a refused logo alone on carrier 2)');
+            }
+            [$result, $text] = $carrierCall($getCarrier, ['id_carrier' => 2]);
+            if (!empty($result['isError']) || strpos($text, '"id_carrier": 2') === false) {
+                $failures[] = 'somcp_update_carrier (carrier 2 after a refused logo): expected it under the same identifier - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 2 kept its identifier)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_carrier (a carrier logo changed): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
+// A carrier deleted (#321): the JSON scenario cannot read the default carrier
+// of the shop nor delete a carrier it made. The default carrier is refused,
+// then a throwaway carrier no order uses is really removed and not found again.
+// No demo carrier is deleted, so the tools after this one keep them.
+$deleteCarrier = $registry->get('somcp_delete_carrier');
+if ($deleteCarrier !== null && isset($carrierCall)) {
+    $calls += 3;
+    $idThrowaway = 0;
+    try {
+        $idDefault = (int) Configuration::get('PS_CARRIER_DEFAULT');
+        [$result, $text] = $carrierCall($deleteCarrier, ['id_carrier' => $idDefault]);
+        if (empty($result['isError']) || strpos($text, '- id_carrier: ') === false || strpos($text, 'default carrier') === false) {
+            $failures[] = 'somcp_delete_carrier (the default carrier): expected a refusal - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'error', 'somcp_delete_carrier (the default carrier, refused)');
+        }
+
+        $throwaway = new Carrier();
+        $throwaway->name = 'somcp test';
+        $throwaway->active = false;
+        $throwaway->delay = [];
+        foreach (Language::getIDs(false) as $idLang) {
+            $throwaway->delay[(int) $idLang] = 'somcp test';
+        }
+        if ($throwaway->add()) {
+            $idThrowaway = (int) $throwaway->id;
+        }
+        [$result, $text] = $carrierCall($deleteCarrier, ['id_carrier' => $idThrowaway]);
+        $left = (int) Db::getInstance()->getValue(
+            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'carrier` WHERE `id_carrier` = ' . $idThrowaway
+        );
+        if ($idThrowaway === 0 || !empty($result['isError']) || strpos($text, '"deleted": true') === false
+            || strpos($text, '"kept_for_orders": false') === false || $left !== 0) {
+            $failures[] = 'somcp_delete_carrier (a carrier no order uses): expected it removed - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_delete_carrier (a carrier no order uses, removed)');
+            $idGone = $idThrowaway;
+            $idThrowaway = 0;
+            [$result, $text] = $carrierCall($deleteCarrier, ['id_carrier' => $idGone]);
+            if (empty($result['isError']) || strpos($text, '- id_carrier: no carrier of this shop has the identifier ' . $idGone) === false) {
+                $failures[] = 'somcp_delete_carrier (the same call again): expected not found - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_delete_carrier (the same call again, not found)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_carrier (a carrier deleted): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Left behind only when the tool failed: removed so the tools after
+        // this one see the demo carriers alone.
+        if ($idThrowaway > 0) {
+            $throwaway = new Carrier($idThrowaway);
+            if (Validate::isLoadedObject($throwaway)) {
+                $throwaway->delete();
+            }
+        }
+    }
+}
+
+// The tax options changed and put back (#312): the JSON scenario cannot read
+// the options first and give them back, and a change it made would stay for
+// the tools after it. The read of somcp_get_tax_options is given back as it
+// is (nothing written), one field changed, the same call again, the ecotax
+// switched on and off, then every value given back and read again. On
+// PrestaShop 8 the product scenarios leave a product carrying an ecotax, so
+// the switch off is refused without the confirmation, then confirmed; the
+// ecotax the core wipes is written back afterwards for the tools after it.
+$getTaxOptions = $registry->get('somcp_get_tax_options');
+$updateTaxOptions = $registry->get('somcp_update_tax_options');
+if ($getTaxOptions !== null && $updateTaxOptions !== null) {
+    $optionsCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
+        $result = $tool->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $tool->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+
+        return [$result, $text];
+    };
+    $optionKeys = ['PS_TAX', 'PS_TAX_DISPLAY', 'PS_TAX_ADDRESS_TYPE', 'PS_USE_ECOTAX', 'PS_ECOTAX_TAX_RULES_GROUP_ID'];
+    $idShopOptions = (int) $context->shop->id;
+    $idGroupOptions = (int) Shop::getGroupFromShop($idShopOptions);
+    $optionsWere = [];
+    foreach ($optionKeys as $key) {
+        $optionsWere[$key] = Configuration::get($key, null, $idGroupOptions, $idShopOptions);
+    }
+    // Read as the tool counts them, and kept to be written back in finally.
+    $ecotaxProducts = Db::getInstance()->executeS(
+        'SELECT `id_product`, `ecotax` FROM `' . _DB_PREFIX_ . 'product` WHERE `ecotax` > 0'
+    ) ?: [];
+    $ecotaxShops = Db::getInstance()->executeS(
+        'SELECT `id_product`, `id_shop`, `ecotax` FROM `' . _DB_PREFIX_ . 'product_shop` WHERE `ecotax` > 0'
+    ) ?: [];
+    $carryingEcotax = count(array_filter($ecotaxShops, static function (array $row) use ($idShopOptions): bool {
+        return (int) $row['id_shop'] === $idShopOptions;
+    }));
+    $calls += $carryingEcotax > 0 ? 8 : 7;
+    try {
+        [$result, $text] = $optionsCall($getTaxOptions, []);
+        $read = json_decode(trim($text), true);
+        if (!empty($result['isError']) || !is_array($read)) {
+            $failures[] = 'somcp_update_tax_options (the options read first): expected them read - ' . excerpt($result);
+        } else {
+            $other = ($read['based_on'] ?? '') === 'invoice_address' ? 'delivery_address' : 'invoice_address';
+            $steps = [
+                'the read given back as it is, nothing written' => [$read, ['"changed": false', 'Nothing was written.']],
+                'Based on changed' => [['based_on' => $other], ['"changed": true', '"field": "based_on"', '"new": "' . $other . '"']],
+                'the same call again, nothing written' => [['based_on' => $other], ['"changed": false']],
+                'the ecotax on' => [['use_ecotax' => true, 'ecotax_id_tax_rules_group' => 0], ['"changed": true', '"use_ecotax": true']],
+            ];
+            if ($carryingEcotax > 0) {
+                $steps['the ecotax off unconfirmed, a product carrying one'] = [['use_ecotax' => false], ['Nothing was changed', 'reset_product_ecotax: true to confirm'], true];
+                $steps['the ecotax off, confirmed'] = [['use_ecotax' => false, 'reset_product_ecotax' => true], ['"changed": true', '"field": "use_ecotax"', '"products_reset": ']];
+            } else {
+                $steps['the ecotax off, no product carrying one'] = [['use_ecotax' => false], ['"changed": true', '"field": "use_ecotax"']];
+            }
+            $steps['every value given back'] = [$read, []];
+            foreach ($steps as $why => $step) {
+                [$arguments, $needles] = $step;
+                $refusal = $step[2] ?? false;
+                [$result, $text] = $optionsCall($updateTaxOptions, $arguments);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (empty($result['isError']) === $refusal || $missing !== []) {
+                    $failures[] = 'somcp_update_tax_options (' . $why . '): expected ' . ($refusal ? 'refused' : 'ok') . ' with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_tax_options (' . $why . ')');
+                }
+            }
+            [$result, $text] = $optionsCall($getTaxOptions, []);
+            $again = json_decode(trim($text), true);
+            if (!is_array($again) || $again != $read) {
+                $failures[] = 'somcp_update_tax_options (read again): expected the options as read at the start - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_tax_options (read again, as at the start)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_tax_options: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Whatever happened, the tools after this one find the demo options.
+        foreach ($optionsWere as $key => $value) {
+            // A key the shop never had is left out, as the test never writes it.
+            if ($value !== false) {
+                Configuration::updateValue($key, $value, false, $idGroupOptions, $idShopOptions);
+            }
+        }
+        // The confirmed switch off set every ecotax to 0, which no tool can
+        // give back: the stored amounts are written back as they were read.
+        foreach ($ecotaxProducts as $row) {
+            Db::getInstance()->update('product', ['ecotax' => (float) $row['ecotax']], '`id_product` = ' . (int) $row['id_product']);
+        }
+        foreach ($ecotaxShops as $row) {
+            Db::getInstance()->update('product_shop', ['ecotax' => (float) $row['ecotax']], '`id_product` = ' . (int) $row['id_product'] . ' AND `id_shop` = ' . (int) $row['id_shop']);
+        }
+    }
+}
+
+// A supplier description too long for its column (#333): a JSON scenario
+// cannot hold a 65 KB string in a readable way. On PrestaShop 8 the class
+// declares no size and the text column would cut the description without a
+// word, so the tool refuses it with the reason; on 9 the declared size keeps
+// it in. The name, address and city are left out, so neither version creates
+// anything and nothing is left behind.
+$createSupplier = $registry->get('somcp_create_supplier');
+if ($createSupplier !== null) {
+    $calls += 1;
+    try {
+        $arguments = ['languages' => ['en'], 'description' => ['en' => '<p>' . str_repeat('a', 65536) . '</p>']];
+        $result = $createSupplier->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $createSupplier->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $needles = ['Nothing was created', 'name: required, the supplier name'];
+        if (empty(Supplier::$definition['fields']['description']['size'])) {
+            $needles[] = 'description (en): longer than the 65535 bytes this shop can store';
+        }
+        $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+            return strpos($text, $needle) === false;
+        });
+        if (empty($result['isError']) || $missing !== []) {
+            $failures[] = 'somcp_create_supplier (a description too long for the shop): expected a refusal with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'error', 'somcp_create_supplier (a description too long for the shop, refused)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_supplier (a description too long for the shop): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
+// The same for a product description (#334): the missing price keeps 9.0.0
+// from creating a product, so nothing is left behind on either version.
+$createProduct = $registry->get('somcp_create_product');
+if ($createProduct !== null) {
+    $calls += 1;
+    try {
+        $arguments = [
+            'languages' => ['en'],
+            'basics' => ['name' => ['en' => 'Somcp long description'], 'description' => ['en' => '<p>' . str_repeat('a', 65536) . '</p>']],
+            'pricing' => [],
+        ];
+        $result = $createProduct->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $createProduct->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $needles = ['pricing.price_tax_excl: required, the selling price tax excluded'];
+        if (empty(Product::$definition['fields']['description']['size'])) {
+            $needles[] = 'basics.description (en): longer than the 65535 bytes this shop can store';
+        }
+        $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+            return strpos($text, $needle) === false;
+        });
+        if (empty($result['isError']) || $missing !== []) {
+            $failures[] = 'somcp_create_product (a description too long for the shop): expected a refusal with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'error', 'somcp_create_product (a description too long for the shop, refused)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_product (a description too long for the shop): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // A category deleted with a subcategory and a product, once per mode (#227):
 // the JSON scenario only reaches categories with neither, so the reading of
 // the subcategories and the settling of the products never ran. The tree is

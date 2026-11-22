@@ -4,6 +4,11 @@
     {"why": "finds a group by part of its name, whatever the case", "arguments": {"name": "GUES"}, "expect": "ok", "contains": ["\"name\": \"Guest\"", "\"count\": 1"]},
     {"why": "the names read in a language the shop has, said by its code", "arguments": {"language": "en"}, "expect": "ok", "contains": ["\"language\": \"en\"", "\"name\": \"Customer\""]},
     {"why": "a name no group carries gives an empty list", "arguments": {"name": "no such group"}, "expect": "ok", "contains": ["\"groups\": []", "\"count\": 0"]},
-    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["This language is not one of the shop's", "en"]}
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read.", "- language: not one of the shop's languages, which are ", "en"]},
+    {"why": "the ID filter of the list keeps one group", "arguments": {"id_group": 3}, "expect": "ok", "contains": ["\"name\": \"Customer\"", "\"count\": 1"]},
+    {"why": "a group the shop does not have narrows the list to nothing, as the filter on screen", "arguments": {"id_group": 999999}, "expect": "ok", "contains": ["\"groups\": []", "\"count\": 0"]},
+    {"why": "the groups that show prices, the Show prices filter set to Yes", "arguments": {"show_prices": true}, "expect": "ok", "contains": ["\"groups\"", "\"show_prices\": true"]},
+    {"why": "a misspelt field, an unknown language, a Show prices and an identifier of the wrong kind, reported together", "arguments": {"nmae": "Guest", "language": "zz", "show_prices": "yes", "id_group": "x"}, "expect": "error", "contains": ["Nothing was read.", "- nmae: not a field of this tool", "- language: not one of the shop's languages, which are ", "- show_prices: true or false", "- id_group: a whole number above 0"]},
+    {"why": "a name that is not a text is refused, not ignored into every group", "arguments": {"name": ["Guest"]}, "expect": "error", "contains": ["- name: a text"]}
   ]
 }

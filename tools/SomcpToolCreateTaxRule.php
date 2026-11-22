@@ -42,14 +42,20 @@ class SomcpToolCreateTaxRule
 
     /**
      * @var array<int, string> what somcp_get_tax_rule returns and the shop works out, named so the
-     *                         assistant learns why it is dropped rather than meeting an "unknown field"
+     *                         assistant learns why it is dropped rather than meeting an "unknown field";
+     *                         public so somcp_update_tax_rule refuses the same fields
      */
-    private const COMPUTED = [
+    public const COMPUTED = [
         'id_tax_rules_group', 'date_add', 'date_upd', 'country_rules', 'rate_in_default_country',
         'default_country', 'taxes_enabled', 'language',
     ];
 
-    /** @var int The size of the name column (TaxRulesGroup::$definition). */
+    /**
+     * The size of the name column in TaxRulesGroup::$definition, used only when
+     * the column itself cannot be read.
+     *
+     * @var int
+     */
     private const NAME_MAX = 64;
 
     /**
@@ -64,15 +70,15 @@ class SomcpToolCreateTaxRule
                 . 'countries: products then take its id_tax_rules_group. Read somcp_list_tax_rules first: '
                 . 'PrestaShop accepts two rules of the same name. The name is the merchant\'s - ask, never '
                 . 'invent. Left out, Enable is No, as in the form. One rule per call. Not to be retried: if the '
-                . 'answer is lost, look for the name in somcp_list_tax_rules with active false before anything '
-                . 'else. To give a rule to a product use somcp_update_product.',
+                . 'answer is lost, look for the name in somcp_list_tax_rules, with active true and with active '
+                . 'false, before anything else. To give a rule to a product use somcp_update_product.',
             [
                 'type' => 'object',
                 'properties' => [
                     'name' => [
                         'type' => 'string',
-                        'description' => 'Merchant. Required. The Name of the rule, 64 characters at most, '
-                            . 'without < > = { }.',
+                        'description' => 'Merchant. Required. The Name of the rule, at most the size of the '
+                            . 'Name column (64 characters on PrestaShop 9, 50 on some 8.0 shops), without < > = { }.',
                     ],
                     'active' => [
                         'type' => 'boolean',
@@ -187,14 +193,41 @@ class SomcpToolCreateTaxRule
     }
 
     /**
+     * The size of the name column of this shop's database.
+     *
+     * The class says 64, but some 8.0 shops still have the 50-character
+     * column of their install: a longer name passes the class check, then is
+     * cut or refused by the database, so the rule saved is not the name given.
+     *
+     * @return int
+     */
+    private static function nameMax(): int
+    {
+        // executeS rather than getRow, which appends a LIMIT that SHOW COLUMNS
+        // does not take.
+        $columns = Db::getInstance()->executeS(
+            'SHOW COLUMNS FROM `' . bqSQL(_DB_PREFIX_ . 'tax_rules_group') . "` LIKE 'name'"
+        );
+        if (is_array($columns) && isset($columns[0]['Type'])
+            && preg_match('/^varchar\((\d+)\)/i', (string) $columns[0]['Type'], $match)) {
+            return (int) $match[1];
+        }
+
+        return self::NAME_MAX;
+    }
+
+    /**
      * The name given in the call, or null with the reason.
+     *
+     * Public so somcp_update_tax_rule checks a new name here, against the
+     * same column, rather than with a second copy that could drift.
      *
      * @param array<string, mixed> $arguments
      * @param array<int, string> $errors
      *
      * @return string|null
      */
-    private static function name(array $arguments, array &$errors): ?string
+    public static function name(array $arguments, array &$errors): ?string
     {
         if (!array_key_exists('name', $arguments) || $arguments['name'] === null) {
             $errors[] = 'name: required';
@@ -212,8 +245,9 @@ class SomcpToolCreateTaxRule
 
             return null;
         }
-        if (Tools::strlen($name) > self::NAME_MAX) {
-            $errors[] = 'name: ' . self::NAME_MAX . ' characters at most, ' . Tools::strlen($name) . ' given';
+        $max = self::nameMax();
+        if (Tools::strlen($name) > $max) {
+            $errors[] = 'name: ' . $max . ' characters at most, ' . Tools::strlen($name) . ' given';
 
             return null;
         }

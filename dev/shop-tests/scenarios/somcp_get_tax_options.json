@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "reads the five tax options of the demo shop, under the names an update takes back", "arguments": {}, "expect": "ok", "contains": ["\"taxes_enabled\":", "\"display_tax_in_cart\":", "\"based_on\":", "\"use_ecotax\":", "\"ecotax_id_tax_rules_group\":", "\"ecotax_tax_rule\":", "\"ecotax_rate\":", "\"language\""]},
+    {"why": "in a language given by ISO code, which the answer names", "arguments": {"language": "EN"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a wrong language and a misspelt field are refused at once", "arguments": {"language": "zz", "x": 1}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- language: not one of the shop's languages, which are ", "- x: not a field of this tool"]}
+  ]
+}

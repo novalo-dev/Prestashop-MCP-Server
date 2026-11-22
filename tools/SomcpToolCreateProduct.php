@@ -906,6 +906,12 @@ class SomcpToolCreateProduct
                 if ($length < self::SUMMARY_MIN || $length > self::SUMMARY_MAX) {
                     $errors[] = 'basics.description_short (' . $languages['filled'][$idLang] . '): ' . self::SUMMARY_MIN
                         . ' to ' . self::SUMMARY_MAX . ' characters of visible text, ' . $length . ' given';
+                } elseif (($bytes = SomcpTool::overTextColumn($probe, 'description_short', $html)) !== null) {
+                    // The visible text is held short, not its markup: on 8.0.1
+                    // the column would cut a heavily styled summary without a
+                    // word, as for the category texts (#333).
+                    $errors[] = 'basics.description_short (' . $languages['filled'][$idLang] . '): longer than the '
+                        . $bytes . ' bytes this shop can store';
                 }
                 $summaries[$idLang] = $html;
             }
@@ -915,7 +921,15 @@ class SomcpToolCreateProduct
         $descriptions = self::texts($group, 'description', 'basics.description', $languages, $errors);
         if ($descriptions !== null) {
             foreach ($descriptions as $idLang => $html) {
-                $descriptions[$idLang] = self::html($html, 'basics.description (' . $languages['filled'][$idLang] . ')', $errors);
+                $where = 'basics.description (' . $languages['filled'][$idLang] . ')';
+                $descriptions[$idLang] = self::html($html, $where, $errors);
+                // The cleaned HTML is measured, since it is what is stored: on
+                // 8.0.1 the class declares no size and the column would cut it
+                // mid-tag while the answer said the product was saved, as for
+                // the category texts (#333).
+                if (($bytes = SomcpTool::overTextColumn($probe, 'description', $descriptions[$idLang])) !== null) {
+                    $errors[] = $where . ': longer than the ' . $bytes . ' bytes this shop can store';
+                }
             }
             $plan['texts']['description'] = $descriptions;
         }
@@ -1538,14 +1552,14 @@ class SomcpToolCreateProduct
         if (array_key_exists('carriers', $group)) {
             $references = [];
             foreach (array_unique(self::ids($group['carriers'], 'id_carrier', 'shipping.carriers', $errors)) as $idCarrier) {
-                $carrier = new Carrier($idCarrier);
-                if (!Validate::isLoadedObject($carrier) || $carrier->deleted || !$carrier->isAssociatedToShop($idShop)) {
+                // A product is tied to the carrier's reference, which survives
+                // the new identifier a carrier gets each time it is edited.
+                $reference = SomcpTool::carrierReference($idCarrier, $idShop);
+                if ($reference === null) {
                     $errors[] = SomcpTool::notFound('shipping.carriers', 'carrier', $idCarrier, 'somcp_list_carriers');
                     continue;
                 }
-                // A product is tied to the carrier's reference, which survives
-                // the new identifier a carrier gets each time it is edited.
-                $references[] = (int) $carrier->id_reference;
+                $references[] = $reference;
             }
             $plan['carriers'] = array_values(array_unique($references));
         }
@@ -3427,6 +3441,26 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * Whether a plain text is a translated field given back as a read answered it.
+     *
+     * The read tools answer a translated field as one text, in the language
+     * they read it in. On a shop with several languages such a text names no
+     * language, so texts() refuses it as ambiguous; when it is the stored text
+     * of one of the languages, it is the row given back as it was read, which
+     * is no change rather than a mistake.
+     *
+     * @param mixed $value the argument as given
+     * @param array<int, string> $stored the stored texts, by language identifier
+     * @param array{filled: array<int, string>, all: array<int, int>, fallback: int} $languages
+     *
+     * @return bool
+     */
+    public static function givenBackAsRead($value, array $stored, array $languages): bool
+    {
+        return is_string($value) && count($languages['filled']) > 1 && in_array($value, $stored, true);
+    }
+
+    /**
      * A product label - stock or delivery - checked against the product's own rules.
      *
      * @param array<string, mixed> $group
@@ -3694,11 +3728,14 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * A whole number as a client may send it: public, so a tool outside this
+     * family reads a position the way the catalogue tools read theirs.
+     *
      * @param mixed $value
      *
      * @return int|null
      */
-    protected static function integer($value): ?int
+    public static function integer($value): ?int
     {
         if (is_int($value)) {
             return $value;
@@ -3738,11 +3775,14 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * A number as a client may send it: public, so a tool outside this
+     * family reads an amount or a weight the way the catalogue tools do.
+     *
      * @param mixed $value
      *
      * @return float|null
      */
-    protected static function float($value): ?float
+    public static function float($value): ?float
     {
         if (is_int($value) || is_float($value)) {
             return is_finite((float) $value) ? (float) $value : null;

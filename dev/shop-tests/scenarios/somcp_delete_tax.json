@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "a tax that does not exist", "arguments": {"id_tax": 999999}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- id_tax: ", "somcp_list_taxes"]},
+    {"why": "a non-identifier and a field the shop works out, at once", "arguments": {"id_tax": "x", "rate": 4}, "expect": "error", "contains": ["- id_tax: a whole number above 0", "- rate: worked out by the shop"]}
+  ]
+}

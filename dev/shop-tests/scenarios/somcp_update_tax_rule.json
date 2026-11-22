@@ -1,0 +1,7 @@
+{
+  "calls": [
+    {"why": "the value the demo rule already holds changes nothing, and keeps its identifier although the demo orders carry it", "arguments": {"id_tax_rules_group": 1, "active": true}, "expect": "ok", "contains": ["\"changed\": false", "\"id_tax_rules_group\": 1", "Nothing was written."]},
+    {"why": "a rule that does not exist", "arguments": {"id_tax_rules_group": 999999, "active": true}, "expect": "error", "contains": ["Nothing was changed.", "- id_tax_rules_group: ", "somcp_list_tax_rules"]},
+    {"why": "every mistake at once", "arguments": {"id_tax_rules_group": 1, "name": "Somcp {rule}", "active": "yes", "rate_in_default_country": 4, "nmae": "x"}, "expect": "error", "contains": ["Nothing was changed.", "- name: a character PrestaShop refuses", "- active: true or false", "- rate_in_default_country: worked out by the shop", "- nmae: not a field of this tool"]}
+  ]
+}

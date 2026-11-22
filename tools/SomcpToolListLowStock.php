@@ -74,8 +74,8 @@ class SomcpToolListLowStock
                     ],
                     'active' => [
                         'type' => 'boolean',
-                        'description' => 'true (the default) for enabled products only, false to include '
-                            . 'the disabled ones too.',
+                        'description' => 'true (the default) for enabled products only, false for disabled ones '
+                            . 'only, the Status filter of the product list.',
                     ],
                     'id_category' => [
                         'type' => 'integer',
@@ -134,9 +134,9 @@ class SomcpToolListLowStock
             && !is_int($threshold) && !(is_string($threshold) && preg_match('/^-?\d+$/', trim($threshold)))) {
             $errors[] = 'threshold: a whole number';
         }
-        if (array_key_exists('active', $arguments) && !is_bool($arguments['active'])) {
-            $errors[] = 'active: true or false';
-        }
+        // The Status filter as every list reads it: false is the disabled
+        // products only, not every product.
+        $status = SomcpTool::statusFilter($arguments, true, $errors);
         foreach (['id_category', 'id_supplier'] as $key) {
             if (array_key_exists($key, $arguments) && SomcpTool::id($arguments, $key) === 0) {
                 $errors[] = SomcpTool::notAnIdentifier($key);
@@ -144,6 +144,16 @@ class SomcpToolListLowStock
         }
 
         $shop = Somcp::currentShop();
+        // A category or a supplier the shop does not have used to answer an
+        // empty list, which the assistant read as "nothing low on stock".
+        $idCategory = SomcpTool::id($arguments, 'id_category');
+        if ($idCategory > 0 && SomcpToolUpdateCategory::existingCategory($idCategory, (int) $shop->id) === null) {
+            $errors[] = SomcpTool::notFound('id_category', 'category', $idCategory, 'somcp_list_categories');
+        }
+        $idSupplier = SomcpTool::id($arguments, 'id_supplier');
+        if ($idSupplier > 0 && SomcpToolGetSupplier::existingSupplier($idSupplier, (int) $shop->id) === null) {
+            $errors[] = SomcpTool::notFound('id_supplier', 'supplier', $idSupplier, 'somcp_list_suppliers');
+        }
         // The shop default rather than the context language, which on an MCP
         // call follows the client's browser header: a name searched in one
         // language would find nothing in another (#149).
@@ -163,7 +173,6 @@ class SomcpToolListLowStock
         [$idLang, $iso] = $language;
 
         $threshold = isset($arguments['threshold']) ? (int) $arguments['threshold'] : null;
-        $activeOnly = !(isset($arguments['active']) && $arguments['active'] === false);
         $filters = [
             'id_category' => SomcpTool::id($arguments, 'id_category'),
             'id_supplier' => SomcpTool::id($arguments, 'id_supplier'),
@@ -180,14 +189,14 @@ class SomcpToolListLowStock
             ? (string) $threshold
             : 'IFNULL(IF(pas.`id_product_attribute` IS NULL, ps.`low_stock_threshold`, pas.`low_stock_threshold`), 0)';
 
-        $count = self::query($shop, $idLang, $activeOnly, $level, $filters);
+        $count = self::query($shop, $idLang, $status, $level, $filters);
         $count->select('COUNT(*)');
         $total = (int) Db::getInstance()->getValue($count);
 
         $limit = self::limit($arguments);
         $offset = max(0, (int) ($arguments['offset'] ?? 0));
 
-        $page = self::query($shop, $idLang, $activeOnly, $level, $filters);
+        $page = self::query($shop, $idLang, $status, $level, $filters);
         $page->select('p.`id_product`, IFNULL(pas.`id_product_attribute`, 0) AS `id_product_attribute`');
         // A combination is labelled with its own reference; the product's
         // would point the merchant at the wrong shelf.
@@ -234,13 +243,13 @@ class SomcpToolListLowStock
      *
      * @param Shop $shop
      * @param int $idLang
-     * @param bool $activeOnly
+     * @param bool|null $status true enabled only, false disabled only, null both
      * @param string $level SQL built by handle() from a cast integer or fixed columns
      * @param array{id_category: int, id_supplier: int, search: string} $filters
      *
      * @return DbQuery
      */
-    private static function query(Shop $shop, int $idLang, bool $activeOnly, string $level, array $filters): DbQuery
+    private static function query(Shop $shop, int $idLang, ?bool $status, string $level, array $filters): DbQuery
     {
         $idShop = (int) $shop->id;
 
@@ -274,8 +283,8 @@ class SomcpToolListLowStock
         // A product the back office is still creating has no name yet and
         // nobody can sell it, so it is not short of anything.
         $query->where('p.`state` = ' . (int) Product::STATE_SAVED);
-        if ($activeOnly) {
-            $query->where('ps.`active` = 1');
+        if ($status !== null) {
+            $query->where('ps.`active` = ' . (int) $status);
         }
         $query->where('IFNULL(sa.`quantity`, 0) <= ' . $level);
         if ($filters['id_category'] > 0) {

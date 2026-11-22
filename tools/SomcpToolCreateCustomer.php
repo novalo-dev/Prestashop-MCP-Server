@@ -326,25 +326,62 @@ class SomcpToolCreateCustomer
         if (!array_key_exists('id_gender', $arguments) || $arguments['id_gender'] === null) {
             return;
         }
-        $idLang = (int) $customer->id_lang;
-        $genders = [];
-        foreach (Db::getInstance()->executeS('SELECT g.`id_gender`, gl.`name` FROM `' . _DB_PREFIX_ . 'gender` g'
-            . ' LEFT JOIN `' . _DB_PREFIX_ . 'gender_lang` gl ON gl.`id_gender` = g.`id_gender` AND gl.`id_lang` = ' . $idLang
-            . ' ORDER BY g.`id_gender`') ?: [] as $row) {
-            $genders[(int) $row['id_gender']] = (string) $row['name'];
+        $genders = self::genders((int) $customer->id_lang);
+        // Read as every other identifier, so "1" is taken as somcp_search_customers
+        // takes it; 0 stays the customer without a title.
+        $raw = $arguments['id_gender'];
+        $none = $raw === 0 || (is_string($raw) && trim($raw) === '0');
+        $id = SomcpTool::id($arguments, 'id_gender');
+        if ($none) {
+            $customer->id_gender = 0;
+
+            return;
         }
-        $id = $arguments['id_gender'];
-        if (!is_int($id) || ($id !== 0 && !isset($genders[$id]))) {
-            // No tool lists the social titles yet, so the list goes with the refusal.
-            $known = [];
-            foreach ($genders as $idGender => $name) {
-                $known[] = $idGender . ' ' . $name;
-            }
-            $errors[] = 'id_gender: not a social title of this shop, which has ' . ($known === [] ? 'none' : implode(', ', $known));
+        if ($id === 0 || !isset($genders[$id])) {
+            $errors[] = self::genderProblem($genders);
 
             return;
         }
         $customer->id_gender = $id;
+    }
+
+    /**
+     * The social titles of the shop, the one read shared with somcp_search_customers.
+     *
+     * @param int $idLang
+     *
+     * @return array<int, string> names keyed by id_gender
+     */
+    public static function genders(int $idLang): array
+    {
+        $genders = [];
+        foreach (Db::getInstance()->executeS('SELECT g.`id_gender`, gl.`name` FROM `' . _DB_PREFIX_ . 'gender` g'
+            . ' LEFT JOIN `' . _DB_PREFIX_ . 'gender_lang` gl ON gl.`id_gender` = g.`id_gender` AND gl.`id_lang` = ' . (int) $idLang
+            . ' ORDER BY g.`id_gender`') ?: [] as $row) {
+            $genders[(int) $row['id_gender']] = (string) $row['name'];
+        }
+
+        return $genders;
+    }
+
+    /**
+     * The refusal of a social title the shop does not have.
+     *
+     * No tool lists the social titles yet, so the list goes with the refusal,
+     * worded the same by every tool that takes one.
+     *
+     * @param array<int, string> $genders as genders() returns them
+     *
+     * @return string
+     */
+    public static function genderProblem(array $genders): string
+    {
+        $known = [];
+        foreach ($genders as $idGender => $name) {
+            $known[] = $idGender . ' ' . $name;
+        }
+
+        return 'id_gender: not a social title of this shop, which has ' . ($known === [] ? 'none' : implode(', ', $known));
     }
 
     /**

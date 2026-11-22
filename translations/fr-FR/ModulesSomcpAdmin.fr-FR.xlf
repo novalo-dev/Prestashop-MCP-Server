@@ -1102,6 +1102,31 @@
       <source>List carriers</source>
       <target>Lister les transporteurs</target>
     </trans-unit>
+    <!-- Read a carrier -->
+    <trans-unit id="84e99d3fd81765da665db8112b31e85f" resname="Read a carrier">
+      <source>Read a carrier</source>
+      <target>Lire un transporteur</target>
+    </trans-unit>
+    <!-- Change a carrier -->
+    <trans-unit id="1beee38e2cf4d04609f880d19fd0e875" resname="Change a carrier">
+      <source>Change a carrier</source>
+      <target>Modifier un transporteur</target>
+    </trans-unit>
+    <!-- Delete a carrier -->
+    <trans-unit id="4dfc01412935824fc22fa157f946e0c6" resname="Delete a carrier">
+      <source>Delete a carrier</source>
+      <target>Supprimer un transporteur</target>
+    </trans-unit>
+    <!-- List zones -->
+    <trans-unit id="41a56c9f32163238a58057c116e95405" resname="List zones">
+      <source>List zones</source>
+      <target>Lister les zones</target>
+    </trans-unit>
+    <!-- List countries -->
+    <trans-unit id="597d4652b89187306aaad598ec4d29d9" resname="List countries">
+      <source>List countries</source>
+      <target>Lister les pays</target>
+    </trans-unit>
     <!-- Create a return status -->
     <trans-unit id="bed8b046732e0d12fe3f9bbb9776d996" resname="Create a return status">
       <source>Create a return status</source>
@@ -1317,10 +1342,75 @@
       <source>Create a tax rule</source>
       <target>Créer une règle de taxes</target>
     </trans-unit>
+    <!-- Update a tax rule -->
+    <trans-unit id="fea1da3360c83a06c7b4032aabb265b2" resname="Update a tax rule">
+      <source>Update a tax rule</source>
+      <target>Modifier une règle de taxes</target>
+    </trans-unit>
+    <!-- Delete a tax rule -->
+    <trans-unit id="e118f2cb25653e78be2bf928f33c5c73" resname="Delete a tax rule">
+      <source>Delete a tax rule</source>
+      <target>Supprimer une règle de taxes</target>
+    </trans-unit>
+    <!-- Add a country to a tax rule -->
+    <trans-unit id="3a5f4137832641961ab253f2016082ad" resname="Add a country to a tax rule">
+      <source>Add a country to a tax rule</source>
+      <target>Ajouter un pays à une règle de taxes</target>
+    </trans-unit>
+    <!-- Change a country of a tax rule -->
+    <trans-unit id="d58782c81a883370acb05776a08b5dcc" resname="Change a country of a tax rule">
+      <source>Change a country of a tax rule</source>
+      <target>Modifier un pays d'une règle de taxes</target>
+    </trans-unit>
+    <!-- Delete a country from a tax rule -->
+    <trans-unit id="16f8d7c2a66e8428af1e2ba43d261275" resname="Delete a country from a tax rule">
+      <source>Delete a country from a tax rule</source>
+      <target>Supprimer un pays d'une règle de taxes</target>
+    </trans-unit>
     <!-- List taxes -->
     <trans-unit id="0fd7b8361fef733e7f4558af57526e46" resname="List taxes">
       <source>List taxes</source>
       <target>Lister les taxes</target>
+    </trans-unit>
+    <!-- List languages -->
+    <trans-unit id="97cc1767f13c1422740aefe14beff70a" resname="List languages">
+      <source>List languages</source>
+      <target>Lister les langues</target>
+    </trans-unit>
+    <!-- List states -->
+    <trans-unit id="dc33f489fd940765f4aa64b1c2b3176e" resname="List states">
+      <source>List states</source>
+      <target>Lister les états</target>
+    </trans-unit>
+    <!-- List currencies -->
+    <trans-unit id="2bf77d506d87bad12f0fd5c4e0f9d91f" resname="List currencies">
+      <source>List currencies</source>
+      <target>Lister les devises</target>
+    </trans-unit>
+    <!-- Create a tax -->
+    <trans-unit id="a359ec56c8052fe0440c1f859793be63" resname="Create a tax">
+      <source>Create a tax</source>
+      <target>Créer une taxe</target>
+    </trans-unit>
+    <!-- Change a tax -->
+    <trans-unit id="447c0e8572e292767b7df773493f23cd" resname="Change a tax">
+      <source>Change a tax</source>
+      <target>Modifier une taxe</target>
+    </trans-unit>
+    <!-- Delete a tax -->
+    <trans-unit id="51e8d443135548b7d91a7e7ceadfc989" resname="Delete a tax">
+      <source>Delete a tax</source>
+      <target>Supprimer une taxe</target>
+    </trans-unit>
+    <!-- Read the tax options -->
+    <trans-unit id="ae1e33d672ea136651d8cc3242d38ba3" resname="Read the tax options">
+      <source>Read the tax options</source>
+      <target>Lire les options de taxe</target>
+    </trans-unit>
+    <!-- Change the tax options -->
+    <trans-unit id="8ea17560b96b18d975befc410b0784b7" resname="Change the tax options">
+      <source>Change the tax options</source>
+      <target>Modifier les options de taxe</target>
     </trans-unit>
     <!-- List files -->
     <trans-unit id="92f00b54c2461cd9c23db65a88cd11e1" resname="List files">

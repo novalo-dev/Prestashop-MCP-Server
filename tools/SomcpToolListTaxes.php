@@ -52,10 +52,20 @@ class SomcpToolListTaxes
             [
                 'type' => 'object',
                 'properties' => [
+                    'id_tax' => [
+                        'type' => 'integer',
+                        'description' => 'Keep the tax with this identifier (ID), as the filter of the list: '
+                            . 'an identifier no tax has gives an empty list.',
+                    ],
                     'name' => [
                         'type' => 'string',
                         'description' => 'Part of the tax name (Name), case-insensitive, read in the language '
                             . 'of the answer. Left out, every tax.',
+                    ],
+                    'rate' => [
+                        'type' => 'number',
+                        'description' => 'Keep the taxes whose Rate is exactly this number, for example 20 or '
+                            . '5.5, compared at the three decimals the shop stores.',
                     ],
                     'active' => [
                         'type' => 'boolean',
@@ -92,7 +102,22 @@ class SomcpToolListTaxes
         // A misspelt filter, or an Enabled that is not a boolean, would answer
         // another list than the one asked for without a word: refused, with
         // a wrong language among them so the call is corrected in one go.
-        $errors = SomcpTool::unknownFields($arguments, ['name', 'active', 'language']);
+        $errors = SomcpTool::unknownFields($arguments, ['id_tax', 'name', 'rate', 'active', 'language']);
+        $idTax = 0;
+        if (array_key_exists('id_tax', $arguments) && $arguments['id_tax'] !== null) {
+            $idTax = SomcpTool::id($arguments, 'id_tax');
+            if ($idTax === 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_tax');
+            }
+        }
+        $rate = null;
+        if (array_key_exists('rate', $arguments) && $arguments['rate'] !== null) {
+            if ((is_int($arguments['rate']) || is_float($arguments['rate'])) && is_finite((float) $arguments['rate'])) {
+                $rate = round((float) $arguments['rate'], 3);
+            } else {
+                $errors[] = 'rate: a number, for example 20 or 5.5';
+            }
+        }
         if (array_key_exists('active', $arguments) && !is_bool($arguments['active'])) {
             $errors[] = 'active: true or false';
         }
@@ -116,7 +141,16 @@ class SomcpToolListTaxes
         // A tax deleted from the list stays in the table, flagged, when an
         // order used it; the back office list leaves it out, and so does this.
         $query->where('t.`deleted` = 0');
-        // The Enabled (All / Yes / No) and Name filters of the list.
+        // The ID, Rate, Enabled (All / Yes / No) and Name filters of the list.
+        if ($idTax > 0) {
+            $query->where('t.`id_tax` = ' . (int) $idTax);
+        }
+        // An equality where the list matches the rate as text: there, 6 also
+        // finds 6.250 and 6.850, and an assistant given a rate means that one.
+        // Rounded to the three decimals of the column, so 5.5 finds 5.500.
+        if ($rate !== null) {
+            $query->where('t.`rate` = ' . sprintf('%.3F', $rate));
+        }
         if (isset($arguments['active'])) {
             $query->where('t.`active` = ' . (int) $arguments['active']);
         }
@@ -130,12 +164,7 @@ class SomcpToolListTaxes
 
         $taxes = [];
         foreach (Db::getInstance()->executeS($query) ?: [] as $row) {
-            $taxes[] = [
-                'id_tax' => (int) $row['id_tax'],
-                'name' => (string) ($row['name'] ?? ''),
-                'rate' => (float) $row['rate'],
-                'active' => (bool) $row['active'],
-            ];
+            $taxes[] = self::row($row);
         }
 
         return SomcpTool::json([
@@ -146,5 +175,48 @@ class SomcpToolListTaxes
             'taxes_enabled' => (bool) Configuration::get('PS_TAX', null, null, $idShop),
             'language' => $iso,
         ]);
+    }
+
+    /**
+     * One tax read back as a row of this list, or null when none has the identifier.
+     *
+     * The row the tax write tools answer with, so a created, changed or
+     * deleted tax reads with the same fields under the same names as the list.
+     * A tax flagged deleted (kept for past orders) is not read, as the list
+     * leaves it out.
+     *
+     * @param int $idTax
+     * @param int $idLang the language the name is read in
+     *
+     * @return array{id_tax: int, name: string, rate: float, active: bool}|null
+     */
+    public static function tax(int $idTax, int $idLang): ?array
+    {
+        $query = new DbQuery();
+        $query->select('t.`id_tax`, tl.`name`, t.`rate`, t.`active`');
+        $query->from('tax', 't');
+        $query->leftJoin('tax_lang', 'tl', 'tl.`id_tax` = t.`id_tax` AND tl.`id_lang` = ' . (int) $idLang);
+        $query->where('t.`id_tax` = ' . (int) $idTax);
+        $query->where('t.`deleted` = 0');
+        $row = Db::getInstance()->getRow($query);
+
+        return is_array($row) && $row !== [] ? self::row($row) : null;
+    }
+
+    /**
+     * One database row mapped to the fields of this list.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array{id_tax: int, name: string, rate: float, active: bool}
+     */
+    private static function row(array $row): array
+    {
+        return [
+            'id_tax' => (int) $row['id_tax'],
+            'name' => (string) ($row['name'] ?? ''),
+            'rate' => (float) $row['rate'],
+            'active' => (bool) $row['active'],
+        ];
     }
 }

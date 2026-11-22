@@ -341,6 +341,11 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 $texts[$idLang] = self::html($html, $where, $errors);
                 if (($check = $probe->validateField($field, $texts[$idLang], $idLang)) !== true) {
                     $errors[] = $where . ': ' . self::reason($check);
+                } elseif (($bytes = SomcpTool::overTextColumn($probe, $field, $texts[$idLang])) !== null) {
+                    // The cleaned HTML is measured, since it is what is
+                    // stored: on 8.0.1 the column would cut it mid-tag while
+                    // the answer said it was saved.
+                    $errors[] = $where . ': longer than the ' . $bytes . ' bytes this shop can store';
                 }
             }
             if ($texts !== null) {
@@ -551,7 +556,12 @@ class SomcpToolCreateCategory extends SomcpToolCreateProduct
                 return $keyword !== '';
             }));
             $texts[$idLang] = implode(', ', $keywords);
-            if (count($keywords) > self::META_KEYWORDS_MAX) {
+            // 255 is the varchar of the brand and category columns on 8.0.1,
+            // where the brand declares no size and MySQL would cut the rest.
+            $max = SomcpTool::columnSize($probe, 'meta_keywords', 255);
+            if (Tools::strlen($texts[$idLang]) > $max) {
+                $errors[] = $where . ': ' . $max . ' characters at most, ' . Tools::strlen($texts[$idLang]) . ' given';
+            } elseif (count($keywords) > self::META_KEYWORDS_MAX) {
                 $errors[] = $where . ': ' . self::META_KEYWORDS_MAX . ' keywords at most, ' . count($keywords) . ' given';
             } elseif (($check = $probe->validateField('meta_keywords', $texts[$idLang], $idLang)) !== true) {
                 $errors[] = $where . ': a character PrestaShop refuses there (< > { }, and = before PrestaShop 9.1) - ' . self::reason($check);

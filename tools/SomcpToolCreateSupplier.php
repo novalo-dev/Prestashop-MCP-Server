@@ -318,13 +318,16 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
     /**
      * The country given, among the countries of this shop.
      *
+     * Public so the tax rule tools read a country as the address tools do,
+     * with the same refusal line.
+     *
      * @param array<string, mixed> $arguments
      * @param int $idShop
      * @param array<int, string> $errors
      *
      * @return Country|null
      */
-    protected static function supplierCountry(array $arguments, int $idShop, array &$errors): ?Country
+    public static function supplierCountry(array $arguments, int $idShop, array &$errors): ?Country
     {
         if (!array_key_exists('country', $arguments)) {
             $errors[] = 'country: required, the ISO code of the country';
@@ -334,13 +337,9 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         $iso = self::string($arguments['country']);
         $iso = $iso === null ? '' : Tools::strtoupper(trim($iso));
         // Validated before the query: Country::getByIso() would stop the
-        // request on a malformed code, and the shop's own countries are read
-        // through country_shop, which that method does not look at.
-        $idCountry = Validate::isLanguageIsoCode($iso) ? (int) Db::getInstance()->getValue(
-            'SELECT c.`id_country` FROM `' . _DB_PREFIX_ . 'country` c'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'country_shop` cs ON cs.`id_country` = c.`id_country` AND cs.`id_shop` = ' . (int) $idShop
-            . ' WHERE c.`iso_code` = \'' . pSQL($iso) . '\''
-        ) : 0;
+        // request on a malformed code.
+        $found = Validate::isLanguageIsoCode($iso) ? self::shopCountries($idShop, $iso) : [];
+        $idCountry = (int) array_key_first($found);
         $country = $idCountry > 0 ? new Country($idCountry) : null;
         if ($country === null || !Validate::isLoadedObject($country)) {
             $errors[] = 'country: no country of this shop has the ISO code "' . $iso . '"';
@@ -349,6 +348,35 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
         }
 
         return $country;
+    }
+
+    /**
+     * The countries of this shop, by id_country, with their ISO code.
+     *
+     * Read through country_shop, which Country::getByIso() does not look at,
+     * active or not as the Country list of the tax rule form offers them.
+     * Public and shared so one code and the All of a tax rule row go through
+     * the same join.
+     *
+     * @param int $idShop
+     * @param string $iso one ISO code, already validated, or '' for every country
+     *
+     * @return array<int, string>
+     */
+    public static function shopCountries(int $idShop, string $iso = ''): array
+    {
+        $rows = Db::getInstance()->executeS(
+            'SELECT c.`id_country`, c.`iso_code` FROM `' . _DB_PREFIX_ . 'country` c'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'country_shop` cs ON cs.`id_country` = c.`id_country` AND cs.`id_shop` = ' . (int) $idShop
+            . ($iso === '' ? '' : ' WHERE c.`iso_code` = \'' . pSQL($iso) . '\'')
+            . ' ORDER BY c.`id_country`'
+        );
+        $countries = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $countries[(int) $row['id_country']] = (string) $row['iso_code'];
+        }
+
+        return $countries;
     }
 
     /**
@@ -376,11 +404,30 @@ class SomcpToolCreateSupplier extends SomcpToolCreateManufacturer
 
             return 0;
         }
-        $iso = self::string($arguments['state']);
+
+        return self::stateOf($country, $arguments['state'], 'state', $errors);
+    }
+
+    /**
+     * One state of the country, by its ISO code, or 0 with the reason.
+     *
+     * Public so every tool that takes a state by its code looks it up and
+     * words its refusal the same way, whatever the field is called.
+     *
+     * @param Country $country
+     * @param mixed $value
+     * @param string $path the field named in the refusal
+     * @param array<int, string> $errors
+     *
+     * @return int
+     */
+    public static function stateOf(Country $country, $value, string $path, array &$errors): int
+    {
+        $iso = self::string($value);
         $iso = $iso === null ? '' : Tools::strtoupper(trim($iso));
         $idState = Validate::isStateIsoCode($iso) ? (int) State::getIdByIso($iso, (int) $country->id) : 0;
         if ($idState <= 0) {
-            $errors[] = 'state: ' . $country->iso_code . ' has no state with the ISO code "' . $iso . '"';
+            $errors[] = $path . ': ' . $country->iso_code . ' has no state with the ISO code "' . $iso . '"';
         }
 
         return $idState;

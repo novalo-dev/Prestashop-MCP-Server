@@ -34,8 +34,11 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpToolGetTaxRule
 {
-    /** @var array<int, string> the choices of Behavior, by the value stored in tax_rule.behavior */
-    private const BEHAVIORS = [
+    /**
+     * @var array<int, string> the choices of Behavior, by the value stored in tax_rule.behavior;
+     *                         public so the tools that write a row take the words this one answers
+     */
+    public const BEHAVIORS = [
         0 => 'this_tax_only',
         1 => 'combine',
         2 => 'one_after_another',
@@ -60,7 +63,7 @@ class SomcpToolGetTaxRule
                     'id_tax_rules_group' => [
                         'type' => 'integer',
                         'description' => 'Identifier of the tax rule, from somcp_list_tax_rules (active: false '
-                            . 'lists disabled ones too).',
+                            . 'lists the disabled ones).',
                     ],
                     'country' => [
                         'type' => 'string',
@@ -188,12 +191,15 @@ class SomcpToolGetTaxRule
      * The tax rule as stored, when it belongs to the shop of the token and
      * was not deleted.
      *
+     * Public so the tools that change a rule refuse exactly the rules this
+     * tool answers as unknown.
+     *
      * @param int $idGroup
      * @param int $idShop
      *
      * @return array<string, mixed>|null
      */
-    private static function existingRule(int $idGroup, int $idShop): ?array
+    public static function existingRule(int $idGroup, int $idShop): ?array
     {
         // A query rather than new TaxRulesGroup(), which loads a rule of any
         // shop. A rule deleted from the back office stays in the table,
@@ -211,15 +217,36 @@ class SomcpToolGetTaxRule
     }
 
     /**
+     * One row of the rule, in the shape of a country_rules entry, or null
+     * when the rule has no such row.
+     *
+     * Public so the tools that change a row answer with it as this tool
+     * reads it, rather than with a second shape that could drift.
+     *
+     * @param int $idGroup
+     * @param int $idTaxRule
+     * @param int $idLang
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function countryRule(int $idGroup, int $idTaxRule, int $idLang): ?array
+    {
+        $rows = self::rows($idGroup, $idLang, 0, $idTaxRule);
+
+        return $rows[0] ?? null;
+    }
+
+    /**
      * The rows of the rule, in the order of the list of its edit page.
      *
      * @param int $idGroup
      * @param int $idLang
      * @param int $idCountry 0 for every country
+     * @param int $idTaxRule 0 for every row
      *
      * @return array<int, array<string, mixed>>
      */
-    private static function rows(int $idGroup, int $idLang, int $idCountry): array
+    private static function rows(int $idGroup, int $idLang, int $idCountry, int $idTaxRule = 0): array
     {
         // Left joins: a row may point at a tax deleted since, or at no state,
         // and the edit page still lists it.
@@ -236,6 +263,9 @@ class SomcpToolGetTaxRule
         $query->where('tr.`id_tax_rules_group` = ' . (int) $idGroup);
         if ($idCountry > 0) {
             $query->where('tr.`id_country` = ' . (int) $idCountry);
+        }
+        if ($idTaxRule > 0) {
+            $query->where('tr.`id_tax_rule` = ' . (int) $idTaxRule);
         }
         $query->orderBy('tr.`id_tax_rule` ASC');
 

@@ -37,6 +37,8 @@ if (!defined('_PS_VERSION_')) {
 
 class SomcpToolGetSalesSummary
 {
+    private const FIELDS = ['date_from', 'date_to', 'compare_previous', 'delivery_country', 'language'];
+
     /**
      * @return SomcpTool
      */
@@ -47,10 +49,10 @@ class SomcpToolGetSalesSummary
             Somcp::t('Get a sales summary'),
             'Returns the sales of a period as Stats Dashboard and Sales and orders count them: valid '
                 . 'orders dated by invoice date, tax excluded, in the default currency. revenue_tax_excl is '
-                . 'Revenue on Stats Dashboard, sales_tax_excl is Sales on Sales and orders (credit slips '
-                . 'taken off). Also orders, products bought, average basket and new customers; previous with '
-                . 'compare_previous. The orders behind the figures are somcp_search_orders, dated by order '
-                . 'date, so the edges of a period can differ; the products that sold most are '
+                . 'Revenue, sales_tax_excl is Sales (credit slips taken off). Also orders, products bought, '
+                . 'average basket, new customers, and orders_by_status: every order placed in the period, '
+                . 'dated by order date, per latest status. previous with compare_previous. The orders behind '
+                . 'the figures are somcp_search_orders; the products that sold most are '
                 . 'somcp_list_best_sellers.',
             [
                 'type' => 'object',
@@ -66,6 +68,17 @@ class SomcpToolGetSalesSummary
                     'compare_previous' => [
                         'type' => 'boolean',
                         'description' => 'Also return, in previous, the same figures for the period of the same length that ends the day before date_from.',
+                    ],
+                    'delivery_country' => [
+                        'type' => 'string',
+                        'description' => 'ISO code of a country, for example FR: only the orders delivered there, as the '
+                            . 'All countries filter of Sales and orders. Every country when left out.',
+                    ],
+                    'language' => [
+                        'type' => 'string',
+                        'description' => 'ISO code of one of the shop\'s active languages, for example fr, '
+                            . 'for the status names; a code the shop does not have is refused. '
+                            . 'The shop default language when left out.',
                     ],
                 ],
                 'required' => ['date_from', 'date_to'],
@@ -85,26 +98,50 @@ class SomcpToolGetSalesSummary
      */
     public static function handle(array $arguments, array $context): array
     {
+        // Every mistake is named in one answer, so the assistant fixes them
+        // all at once rather than one call per mistake.
+        $problems = SomcpTool::unknownFields($arguments, self::FIELDS);
         $dateFrom = SomcpTool::day($arguments['date_from'] ?? null);
         if ($dateFrom === null) {
-            return SomcpTool::text('date_from: a date, YYYY-MM-DD.', true);
+            $problems[] = 'date_from: a date, YYYY-MM-DD';
         }
         $dateTo = SomcpTool::day($arguments['date_to'] ?? null);
         if ($dateTo === null) {
-            return SomcpTool::text('date_to: a date, YYYY-MM-DD.', true);
+            $problems[] = 'date_to: a date, YYYY-MM-DD';
+        } elseif ($dateFrom !== null && $dateTo < $dateFrom) {
+            $problems[] = 'date_to: a date not before date_from';
         }
-        if ($dateTo < $dateFrom) {
-            return SomcpTool::text('date_to: a date not before date_from.', true);
+        // "yes" used to be taken as true: only a boolean says what was meant.
+        $compare = $arguments['compare_previous'] ?? null;
+        if ($compare !== null && !is_bool($compare)) {
+            $problems[] = 'compare_previous: true or false';
         }
-
-        // The shop comes from the token, never from the caller.
+        $idCountry = SomcpToolSearchOrders::deliveryCountry($arguments, $problems);
+        // The shop comes from the token, never from the caller; read before
+        // the language so its line can name the shop's languages.
         $idShop = Somcp::currentShopId();
+        $language = SomcpTool::readLanguage($arguments, $idShop);
+        if ($language === null) {
+            $problems[] = SomcpTool::languageProblem($idShop);
+        }
+        if ($problems !== [] || $dateFrom === null || $dateTo === null || $language === null) {
+            return SomcpTool::refused('read', $problems);
+        }
+        [$idLang, $iso] = $language;
+
         $currency = new Currency((int) Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop));
 
-        $summary = ['date_from' => $dateFrom, 'date_to' => $dateTo, 'currency' => (string) $currency->iso_code]
-            + self::figures($dateFrom, $dateTo, $idShop);
+        $country = [];
+        if ($idCountry > 0) {
+            $country['delivery_country'] = Tools::strtoupper((string) Country::getIsoById($idCountry));
+        }
 
-        if (!empty($arguments['compare_previous'])) {
+        $summary = ['date_from' => $dateFrom, 'date_to' => $dateTo] + $country
+            + ['currency' => (string) $currency->iso_code, 'language' => $iso]
+            + self::figures($dateFrom, $dateTo, $idShop, $idCountry)
+            + ['orders_by_status' => self::statuses($dateFrom, $dateTo, $idShop, $idLang, $idCountry)];
+
+        if ($compare === true) {
             // Same number of days, ending the day before the period asked,
             // so a month is compared with the days just before it.
             $days = (int) (new DateTime($dateFrom))->diff(new DateTime($dateTo))->days;
@@ -113,8 +150,18 @@ class SomcpToolGetSalesSummary
             $summary['previous'] = [
                 'date_from' => $previousFrom->format('Y-m-d'),
                 'date_to' => $previousTo->format('Y-m-d'),
+            ] + $country + [
                 'currency' => (string) $currency->iso_code,
-            ] + self::figures($previousFrom->format('Y-m-d'), $previousTo->format('Y-m-d'), $idShop);
+                'language' => $iso,
+            ] + self::figures($previousFrom->format('Y-m-d'), $previousTo->format('Y-m-d'), $idShop, $idCountry) + [
+                'orders_by_status' => self::statuses(
+                    $previousFrom->format('Y-m-d'),
+                    $previousTo->format('Y-m-d'),
+                    $idShop,
+                    $idLang,
+                    $idCountry
+                ),
+            ];
         }
 
         return SomcpTool::json($summary);
@@ -126,15 +173,17 @@ class SomcpToolGetSalesSummary
      * @param string $dateFrom YYYY-MM-DD, already checked
      * @param string $dateTo YYYY-MM-DD, already checked
      * @param int $idShop
+     * @param int $idCountry delivery country, 0 for every country
      *
      * @return array<string, int|float>
      */
-    private static function figures(string $dateFrom, string $dateTo, int $idShop): array
+    private static function figures(string $dateFrom, string $dateTo, int $idShop, int $idCountry): array
     {
         $db = Db::getInstance();
         // Whole days: an invoice issued at 18:00 on the last day counts.
         $between = "'" . pSQL($dateFrom) . " 00:00:00' AND '" . pSQL($dateTo) . " 23:59:59'";
         $orders = 'o.`valid` = 1 AND o.`id_shop` = ' . (int) $idShop . ' AND o.`invoice_date` BETWEEN ' . $between;
+        $orders .= self::country($idCountry);
 
         // Revenue and Placed orders of Stats Dashboard.
         $totals = $db->getRow(
@@ -171,7 +220,8 @@ class SomcpToolGetSalesSummary
         );
 
         // Registrations: accounts created in the period, guests included as
-        // the dashboard counts them.
+        // the dashboard counts them. An account has no delivery country, so
+        // the country filter leaves this figure as it is.
         $newCustomers = (int) $db->getValue(
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'customer` c
              WHERE c.`id_shop` = ' . (int) $idShop . ' AND c.`date_add` BETWEEN ' . $between
@@ -191,5 +241,86 @@ class SomcpToolGetSalesSummary
             'average_basket_tax_incl' => $count > 0 ? round($revenueIncl / $count, 2) : 0,
             'new_customers' => $newCustomers,
         ];
+    }
+
+    /**
+     * The distribution of order statuses of Sales and orders, the pie
+     * Percentage of orders per status.
+     *
+     * Unlike the totals, the screen counts every order placed in the period,
+     * valid or not, dated by its order date and under its latest status. The
+     * core reads every shop here while its totals read one; this keeps the
+     * shop of the token, so the block agrees with the figures beside it.
+     *
+     * @param string $dateFrom YYYY-MM-DD, already checked
+     * @param string $dateTo YYYY-MM-DD, already checked
+     * @param int $idShop
+     * @param int $idLang language of the status names
+     * @param int $idCountry delivery country, 0 for every country
+     *
+     * @return array<int, array<string, int|float|string>>
+     */
+    private static function statuses(string $dateFrom, string $dateTo, int $idShop, int $idLang, int $idCountry): array
+    {
+        // The latest status is the history row with the latest date, the
+        // highest row first at an equal date, as the order page shows it.
+        $rows = Db::getInstance()->executeS(
+            'SELECT oh.`id_order_state`, osl.`name`, COUNT(*) AS `orders`
+             FROM `' . _DB_PREFIX_ . 'orders` o
+             INNER JOIN `' . _DB_PREFIX_ . 'order_history` oh ON oh.`id_order` = o.`id_order`
+                AND oh.`id_order_history` = (
+                    SELECT oh2.`id_order_history` FROM `' . _DB_PREFIX_ . 'order_history` oh2
+                    WHERE oh2.`id_order` = o.`id_order`
+                    ORDER BY oh2.`date_add` DESC, oh2.`id_order_history` DESC
+                    LIMIT 1
+                )
+             LEFT JOIN `' . _DB_PREFIX_ . 'order_state_lang` osl ON osl.`id_order_state` = oh.`id_order_state`
+                AND osl.`id_lang` = ' . (int) $idLang . '
+             WHERE o.`id_shop` = ' . (int) $idShop . "
+                AND o.`date_add` BETWEEN '" . pSQL($dateFrom) . " 00:00:00' AND '" . pSQL($dateTo) . " 23:59:59'"
+                . self::country($idCountry) . '
+             GROUP BY oh.`id_order_state`, osl.`name`
+             ORDER BY `orders` DESC, oh.`id_order_state` ASC'
+        );
+        if (!is_array($rows) || $rows === []) {
+            return [];
+        }
+
+        $total = 0;
+        foreach ($rows as $row) {
+            $total += (int) $row['orders'];
+        }
+        $statuses = [];
+        foreach ($rows as $row) {
+            $statuses[] = [
+                'id_order_state' => (int) $row['id_order_state'],
+                'name' => (string) $row['name'],
+                'orders' => (int) $row['orders'],
+                // The share the pie draws.
+                'percent' => round((int) $row['orders'] * 100 / $total, 2),
+            ];
+        }
+
+        return $statuses;
+    }
+
+    /**
+     * The condition of the All countries filter of Sales and orders: the
+     * orders whose delivery address is in the country. A subquery rather
+     * than a join, so every query of the tool takes it as it is, credit
+     * slips included.
+     *
+     * @param int $idCountry 0 for every country
+     *
+     * @return string
+     */
+    private static function country(int $idCountry): string
+    {
+        if ($idCountry <= 0) {
+            return '';
+        }
+
+        return ' AND o.`id_address_delivery` IN (SELECT a.`id_address` FROM `' . _DB_PREFIX_
+            . 'address` a WHERE a.`id_country` = ' . (int) $idCountry . ')';
     }
 }

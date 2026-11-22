@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "lists every zone of the shop with the number of countries in each", "arguments": {}, "expect": "ok", "contains": ["\"zones\"", "\"id_zone\": 1", "\"name\": \"Europe\"", "\"active\": true", "\"countries\"", "\"count\": 8"]},
+    {"why": "filtered by part of the name, whatever the case", "arguments": {"name": "europe"}, "expect": "ok", "contains": ["\"name\": \"Europe\"", "\"name\": \"Europe (non-EU)\"", "\"count\": 2"]},
+    {"why": "disabled zones only: the shop has none, an empty list rather than an error", "arguments": {"active": false}, "expect": "ok", "contains": ["\"zones\": []", "\"count\": 0"]},
+    {"why": "one zone by its identifier (ID)", "arguments": {"id_zone": 3}, "expect": "ok", "contains": ["\"id_zone\": 3", "\"name\": \"Asia\"", "\"count\": 1"]},
+    {"why": "an identifier no zone has lists nothing", "arguments": {"id_zone": 999999}, "expect": "ok", "contains": ["\"zones\": []", "\"count\": 0"]},
+    {"why": "an identifier of the wrong kind is refused", "arguments": {"id_zone": [1]}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_zone: a whole number above 0"]},
+    {"why": "an active that is not a boolean and a misspelt filter are refused at once", "arguments": {"active": "yes", "nmae": "x"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- active: true or false", "- nmae: not a field of this tool"]}
+  ]
+}

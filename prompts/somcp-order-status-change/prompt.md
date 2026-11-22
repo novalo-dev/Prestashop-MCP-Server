@@ -13,6 +13,12 @@ of it can be undone by calling again.
 - `somcp_delete_order_status`
 - `somcp_list_return_statuses`
 - `somcp_list_carriers`
+- `somcp_get_carrier`
+- `somcp_list_zones`
+- `somcp_list_countries`
+- `somcp_list_states`
+- `somcp_update_carrier`
+- `somcp_delete_carrier`
 - `somcp_create_return_status`
 - `somcp_update_return_status`
 - `somcp_search_orders`
@@ -87,6 +93,20 @@ status change: it never moves the order to shipped, and
   customer will get, read `somcp_list_carriers`: its `tracking_url` holds `@`
   where the number goes. An order keeps the `id_carrier` it was placed with,
   which may be an older row of the carrier: match it on `id_reference`.
+  `somcp_get_carrier` gives the zones and groups it serves, how it bills
+  and the price of each range per zone.
+  `somcp_list_zones` lists the zones of the shop, with their `id_zone`.
+  `somcp_list_countries` lists the countries, with their ISO code and zone.
+  `somcp_list_states` lists the states of a country, with their ISO code and
+  zone.
+  `somcp_update_carrier` changes its name, transit time, speed grade,
+  logo, tracking URL, status, groups, zones, ranges and their prices per zone,
+  place in the list, free shipping,
+  handling costs, billing, tax, out-of-range behavior or size and
+  weight limits, only when the merchant asks for it; a carrier an order uses gets a new `id_carrier`,
+  given in the answer.
+  `somcp_delete_carrier` removes one, only once the merchant has confirmed
+  it by name; turning it off with `somcp_update_carrier` can be undone.
 
 When the merchant says an order has left with its number, set the number
 first, then the shipped status: the shipped email then carries the tracking

@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "a tax that does not exist", "arguments": {"id_tax": 999999, "rate": 5}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_tax: ", "somcp_list_taxes"]},
+    {"why": "a rate out of range, a non-boolean active and a misspelt field, all at once", "arguments": {"id_tax": 1, "rate": -1, "active": "no", "nmae": "x"}, "expect": "error", "contains": ["- rate: a number from 0 to 100", "- active: true or false", "- nmae: not a field of this tool"]}
+  ]
+}

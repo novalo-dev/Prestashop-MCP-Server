@@ -874,6 +874,26 @@ T = {
  "Lister les transporteurs",
  "Listar los transportistas",
  "Versanddienste auflisten"),
+"Read a carrier": (
+ "Lire un transporteur",
+ "Leer un transportista",
+ "Einen Versanddienst lesen"),
+"Change a carrier": (
+ "Modifier un transporteur",
+ "Modificar un transportista",
+ "Einen Versanddienst ändern"),
+"Delete a carrier": (
+ "Supprimer un transporteur",
+ "Eliminar un transportista",
+ "Einen Versanddienst löschen"),
+"List zones": (
+ "Lister les zones",
+ "Listar las zonas",
+ "Zonen auflisten"),
+"List countries": (
+ "Lister les pays",
+ "Listar los países",
+ "Länder auflisten"),
 "Create a return status": (
  "Créer un statut de retour",
  "Crear un estado de devolución",
@@ -1046,10 +1066,62 @@ T = {
  "Créer une règle de taxes",
  "Crear una regla de impuestos",
  "Eine Steuerregel anlegen"),
+"Update a tax rule": (
+ "Modifier une règle de taxes",
+ "Modificar una regla de impuestos",
+ "Eine Steuerregel ändern"),
+"Delete a tax rule": (
+ "Supprimer une règle de taxes",
+ "Eliminar una regla de impuestos",
+ "Eine Steuerregel löschen"),
+"Add a country to a tax rule": (
+ "Ajouter un pays à une règle de taxes",
+ "Añadir un país a una regla de impuestos",
+ "Einer Steuerregel ein Land hinzufügen"),
+"Change a country of a tax rule": (
+ "Modifier un pays d'une règle de taxes",
+ "Modificar un país de una regla de impuestos",
+ "Ein Land einer Steuerregel ändern"),
+"Delete a country from a tax rule": (
+ "Supprimer un pays d'une règle de taxes",
+ "Eliminar un país de una regla de impuestos",
+ "Ein Land aus einer Steuerregel löschen"),
 "List taxes": (
  "Lister les taxes",
  "Listar los impuestos",
  "Steuern auflisten"),
+"List languages": (
+ "Lister les langues",
+ "Listar los idiomas",
+ "Sprachen auflisten"),
+"List states": (
+ "Lister les états",
+ "Listar los estados",
+ "Staaten auflisten"),
+"List currencies": (
+ "Lister les devises",
+ "Listar las monedas",
+ "Währungen auflisten"),
+"Create a tax": (
+ "Créer une taxe",
+ "Crear un impuesto",
+ "Eine Steuer anlegen"),
+"Change a tax": (
+ "Modifier une taxe",
+ "Modificar un impuesto",
+ "Eine Steuer ändern"),
+"Delete a tax": (
+ "Supprimer une taxe",
+ "Eliminar un impuesto",
+ "Eine Steuer löschen"),
+"Read the tax options": (
+ "Lire les options de taxe",
+ "Leer las opciones de impuestos",
+ "Steueroptionen lesen"),
+"Change the tax options": (
+ "Modifier les options de taxe",
+ "Modificar las opciones de impuestos",
+ "Steueroptionen ändern"),
 "List files": (
  "Lister les fichiers",
  "Listar los archivos",

@@ -53,9 +53,19 @@ class SomcpToolListCustomerGroups
             [
                 'type' => 'object',
                 'properties' => [
+                    'id_group' => [
+                        'type' => 'integer',
+                        'description' => 'Keep the group with this identifier (ID), as the filter of the list: '
+                            . 'a group this shop does not have gives an empty list.',
+                    ],
                     'name' => [
                         'type' => 'string',
                         'description' => 'Part of the group name, case-insensitive.',
+                    ],
+                    'show_prices' => [
+                        'type' => 'boolean',
+                        'description' => 'true for the groups that show prices, false for those that hide them '
+                            . '(Show prices). Left out, every group.',
                     ],
                     'language' => [
                         'type' => 'string',
@@ -87,8 +97,38 @@ class SomcpToolListCustomerGroups
         $idShopGroup = (int) $shop->id_shop_group;
 
         $language = SomcpTool::readLanguage($arguments, $idShop);
+        // A misspelt or wrongly typed filter would otherwise be ignored and
+        // every group answered as if nothing narrowed the list: each mistake
+        // is named, all in one answer, so the call is corrected in one go.
+        $errors = SomcpTool::unknownFields($arguments, ['id_group', 'name', 'show_prices', 'language']);
         if ($language === null) {
-            return SomcpTool::languageRefused($idShop);
+            $errors[] = SomcpTool::languageProblem($idShop);
+        }
+        $idGroupFilter = 0;
+        if (array_key_exists('id_group', $arguments) && $arguments['id_group'] !== null) {
+            $idGroupFilter = SomcpTool::id($arguments, 'id_group');
+            if ($idGroupFilter === 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_group');
+            }
+        }
+        $name = '';
+        if (array_key_exists('name', $arguments) && $arguments['name'] !== null) {
+            if (is_string($arguments['name'])) {
+                $name = trim($arguments['name']);
+            } else {
+                $errors[] = 'name: a text';
+            }
+        }
+        $showPrices = null;
+        if (array_key_exists('show_prices', $arguments) && $arguments['show_prices'] !== null) {
+            if (is_bool($arguments['show_prices'])) {
+                $showPrices = $arguments['show_prices'];
+            } else {
+                $errors[] = 'show_prices: true or false';
+            }
+        }
+        if ($errors !== [] || $language === null) {
+            return SomcpTool::refused('read', $errors);
         }
         [$idLang, $iso] = $language;
 
@@ -107,9 +147,17 @@ class SomcpToolListCustomerGroups
         $query->from('group', 'g');
         $query->innerJoin('group_shop', 'gs', 'gs.`id_group` = g.`id_group` AND gs.`id_shop` = ' . $idShop);
         $query->leftJoin('group_lang', 'gl', 'gl.`id_group` = g.`id_group` AND gl.`id_lang` = ' . (int) $idLang);
-        $name = isset($arguments['name']) && is_scalar($arguments['name']) ? trim((string) $arguments['name']) : '';
+        // The ID filter of the list: a group this shop does not have is an
+        // empty list, as on screen, not a refusal - it narrows, it does not
+        // look one group up.
+        if ($idGroupFilter > 0) {
+            $query->where('g.`id_group` = ' . $idGroupFilter);
+        }
         if ($name !== '') {
             $query->where("gl.`name` LIKE '%" . pSQL($name) . "%'");
+        }
+        if ($showPrices !== null) {
+            $query->where('g.`show_prices` = ' . ($showPrices ? 1 : 0));
         }
         $query->orderBy('g.`id_group` ASC');
 

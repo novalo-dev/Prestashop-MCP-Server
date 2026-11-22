@@ -16,6 +16,284 @@ are:
 
 ## Unreleased
 
+## 2.0.4 - 2026-11-22
+
+### Added
+
+**Read a carrier in full.** The new tool somcp_get_carrier reads one carrier of
+Shipping > Carriers as its edit page shows it: the zones it delivers to, the
+customer groups allowed to use it, its tax, its handling costs, whether its
+costs are billed by price or by weight, its ranges with the price of each in
+every zone, its Out-of-range behavior, its speed grade and its size and weight
+limits. Until now the assistant only saw the carrier list, so it could not tell
+where a carrier delivers, to whom, nor what a customer pays there, and a
+merchant setting up delivery had to open each carrier.
+
+**List the currencies.** The new tool somcp_list_currencies lists the
+currencies of International > Localization > Currencies, with their name,
+symbol, ISO code, the exchange rate of the shop, whether they are enabled, and
+which one is the shop default. Until now the assistant only learnt the codes
+from a refused currency change, without the names, the rates or the disabled
+currencies.
+
+**List the languages.** The new tool somcp_list_languages lists the languages
+of International > Localization > Languages, with their ISO code, language
+code, locale and date formats, whether they are enabled, and which one is the
+shop default. Until now the assistant only read the codes in one line of the
+connection check, without the disabled languages, so it could not tell the
+merchant why a language was refused.
+
+**List the states.** The new tool somcp_list_states lists the states of
+International > Locations > States, with their ISO code, their country and
+the zone each belongs to. Until now the assistant had to guess the code of a
+state when adding a tax rule row or the address of a supplier.
+
+**List the countries.** The new tool somcp_list_countries lists the countries
+of International > Locations > Countries, with their ISO code, their zone,
+whether they are enabled, and what an address there must hold: a state, a
+postcode and its format, a tax identification number. Until now the assistant
+had to guess the ISO code every other tool takes for a country, and could not
+tell which countries the shop sells to.
+
+**List the delivery zones.** The new tool somcp_list_zones lists the zones of
+International > Locations > Zones, with the number of countries in each. Until
+now the assistant only saw the zones a carrier already serves, so it could not
+tell which other zones the shop has before choosing where a carrier delivers.
+
+**Change a carrier.** The new tool somcp_update_carrier changes the general
+settings of one carrier of Shipping > Carriers: its name, its transit time in
+each language, its speed grade, its tracking URL, whether it is active and the
+customer groups allowed to use it. It also changes the order of the carriers,
+as the list of Shipping > Carriers does, which is the order the checkout offers
+them in. It also changes or removes the logo of a carrier, from a picture sent
+in the chat or an address. It also chooses the zones a carrier delivers to, as the
+zone boxes of Shipping locations and costs do; the prices already typed are
+kept. Until now the assistant could read a carrier but had to send the
+merchant to the back office to change any of it. A carrier no order uses keeps
+its identifier; one that orders already use gets a new one, as the back office
+does, so those orders keep the carrier they were placed with. Moving a carrier
+never gives it a new identifier.
+
+**Set how a carrier charges.** somcp_update_carrier also sets whether a carrier
+is free, adds the handling costs, bills by price or weight, which tax it
+charges and what happens beyond its last range, as the Shipping locations and
+costs step of a carrier does. Turning a carrier free keeps the prices of its
+ranges, so they are still there if it becomes paid again. It also sets the
+largest and heaviest package a carrier takes, as Size and weight does. It also
+sets the ranges of a carrier and their price in each zone, as the table of
+Shipping locations and costs does.
+
+**Delete a carrier.** The new tool somcp_delete_carrier deletes one carrier of
+Shipping > Carriers, such as the demo carriers of a new shop. A carrier orders
+use stays hidden for them, as the back office keeps it; one no order uses is
+removed. The default carrier and a carrier a module manages are refused, so
+the checkout never points to a carrier that is gone and a module never loses
+its own carrier behind its back.
+
+**Change the tax options.** The new tool somcp_update_tax_options changes the
+Tax options of International > Taxes > Taxes, as their Save: Enable tax,
+Display tax in the shopping cart, Based on (invoice or delivery address), Use
+ecotax and the Ecotax tax rule. Until now the assistant could read them but a
+merchant setting up a shop had to change them by hand. Turning the ecotax off
+sets the ecotax of every product to 0, as the back office does, and nothing
+gives it back: when products carry one, the tool asks for an explicit
+confirmation first.
+
+**Create a tax.** The new tool somcp_create_tax creates a tax of International >
+Taxes > Taxes, with its name in each language, its rate and whether it is
+enabled, as the Add new tax form does, and answers with the tax as the list
+shows it. Until now the assistant could list the taxes a shop had but not make a
+new one, so a rate the install did not provide (a reduced VAT, a new sales tax)
+could not be set up at all; now a tax rule can be given a rate the merchant
+needs. A tax is created disabled, as the form's default, and is shared by every
+shop of a multistore, as PrestaShop stores it.
+
+**Change a tax.** The new tool somcp_update_tax changes the name, rate or
+enabled state of a tax of International > Taxes > Taxes, as its edit page and
+the Enabled switch of the list do, and answers with the old and new value of
+each change and the tax as it was saved. Only the fields given change, and a
+call that would change nothing writes nothing. Changing a rate changes it for
+every tax rule that charges the tax, without touching the rules. On PrestaShop
+8, disabling a tax that tax rules still charge would delete those rows from
+every rule and leave those countries untaxed, so the tool refuses it and asks
+for the rows to be moved first; on PrestaShop 9 the rows stay. A tax used by
+past orders is kept unchanged for them and the change applies under a new
+identifier, which the answer gives.
+
+**Delete a tax.** The new tool somcp_delete_tax deletes a tax of International >
+Taxes > Taxes, as the Delete of its row does. It is refused while tax rule rows
+still charge the tax, so those countries are never left untaxed without notice:
+give them another tax with somcp_update_country_rule, or delete the rows with
+somcp_delete_country_rule, first. A tax used by past orders is kept hidden for
+them and removed from the list, as PrestaShop does, and the answer says so. The
+deletion is irreversible; to keep a tax for later, switch it off with
+somcp_update_tax instead.
+
+**Read the tax options.** The new tool somcp_get_tax_options reads the Tax
+options below the list of International > Taxes > Taxes: Enable tax, Display
+tax in the shopping cart, Based on (invoice or delivery address), Use ecotax
+and the Ecotax rule with the rate it charges. Until now the assistant could
+create taxes and tax rules but could not see whether the shop charges them at
+all, nor on which address; it now says so before setting up a rate, and warns
+when taxes are switched off.
+
+**Update a tax rule.** The new tool somcp_update_tax_rule changes the name of
+a tax rule of International > Taxes > Tax Rules and whether it is enabled, as
+its edit page and the Enabled column of the list do, and answers with the old
+and new value of each change and the rule as it was saved. A call that would
+change nothing writes nothing. Until now the assistant could create a tax rule
+but not rename it or switch it off. A rule used by past orders keeps its old
+version for them, and the change applies under a new identifier, which the
+answer gives: products and carriers move to it, on PrestaShop 8 as on 9.
+
+**Delete a tax rule.** The new tool somcp_delete_tax_rule deletes a tax rule
+of International > Taxes > Tax Rules with its rows per country, as the Delete
+action of the list does. Unlike the back office, it refuses a rule that
+products or carriers still take, and says how many: deleted, they would be
+sold without tax from then on, on every invoice, without anyone noticing.
+
+**Add a country to a tax rule.** The new tool somcp_add_country_rule adds a
+row to a tax rule of International > Taxes > Tax Rules, as the New tax rule
+panel of its edit page does: a country, some of its states or all of them, a
+zip/postal code range, a behavior, a tax and a description. Until now a rule
+created by the assistant charged nothing, since no tool could give it a
+country. A call adds all its rows or none, and refuses a This tax only row
+that would clash with another row of the same country and state. A rule used
+by past orders keeps its old version for them, and the rows go on a copy under
+a new identifier, which the answer gives. A row read from the rule, or the row
+a deletion gives back, can be given again as it was, its state included.
+The All choice of Country is offered too: one call adds a row for every
+country of the shop, as the panel does, which is how a merchant sets up a rule
+that charges the same rate everywhere before changing a few countries. Unlike
+the panel, which stops at the first country that clashes and keeps the rows
+already written, it writes nothing and names every clashing country at once.
+
+**Delete a country from a tax rule.** The new tool somcp_delete_country_rule
+deletes one row of a tax rule, as the Delete of that row on the rule's edit
+page does, and answers with the row as it was and the rule as it is left.
+When the last row of a rule goes while products or carriers still take it, the
+answer says how many, since they are now sold without tax. A rule used by past
+orders keeps the row for them, and the deletion applies to a copy under a new
+identifier, which the answer gives.
+
+**Change a country of a tax rule.** The new tool somcp_update_country_rule
+changes one row of a tax rule in place, as the Edit of that row on the rule's
+edit page does: its country, state, zip/postal code range, behavior, tax or
+description, only what is asked. Until now a wrong row had to be deleted and
+added again. The answer gives the old and new value of each change, and a call
+that would change nothing writes nothing. A row cannot be turned into a This
+tax only row that would clash with another row of the same country and state.
+A rule used by past orders keeps the row as it was for them, and the change
+applies to a copy under a new identifier, which the answer gives.
+
+### Changed
+
+**Contributors shown without GitHub.** A shop that cannot reach GitHub, or
+whose update check is switched off, shows the contributors from a list shipped
+with the module. That list was three weeks old; it now carries the counts of
+this release.
+
+**Find a content page by its ID, URL or Meta title.** The list of content pages
+takes the filters ID, URL and Meta title of Design > Pages, as well as Title and
+Displayed.
+
+**Sales summary: the orders in each status.** The sales summary now gives how
+many orders of the period are in each status, and their share, as the
+distribution of order statuses of Stats > Sales and orders shows them: every
+order placed in the period, valid or not, under its latest status, the status
+names in the language asked for. Until now the assistant had to page through
+every order of the period to tell how many were still waiting or cancelled.
+
+**Sales summary: one delivery country, and every mistake at once.** The sales
+summary can now be limited to the orders delivered in one country, as the All
+countries filter of Stats > Sales and orders: the revenue, the sales, the orders
+and the products bought then count that country only. A call with several
+mistakes (a wrong date, a field the tool does not take, a comparison asked as
+"yes") now names them all in one answer, where it used to stop at the first one
+or take "yes" as a yes.
+
+**Taxes: one tax, or the taxes at one rate.** The list of taxes can now be
+narrowed by ID and by rate, as the ID and Rate filters of International >
+Taxes. A rate finds the taxes at exactly that rate: asked for 6, it no longer
+gives 6.25 or 6.85 too, as the filter of the page does. Until now the assistant
+read every tax and picked the right one itself.
+
+**Abandoned carts: one cart or one carrier.** The list can now be narrowed to
+one cart or to the carts of one carrier, as the ID and Carrier filters of
+Orders > Shopping Carts. Carts saved before the carrier was edited are found
+too. Until now the assistant asked about one cart or one carrier read every
+abandoned cart and sorted them itself.
+
+**Customer groups: one group, or the groups that show prices.** The list of
+customer groups can now be narrowed to one group or to the groups that show
+or hide prices, as the ID and Show prices filters of Shop Parameters >
+Customer Settings > Groups. A mistake in the call, such as a misspelt filter,
+is now named with the others instead of being ignored, which used to give
+every group back as if nothing had been asked.
+
+**Sitemap audit: the image-file check.** The sitemap audit now says whether the
+Google sitemap module checks that the image files exist on the server before
+listing them, the box of its Configure screen, on the module versions that
+still have it. Until now the assistant could not tell why images were missing
+from a sitemap generated with the box ticked.
+
+**Products, low stock and customers: an unknown category, supplier, group or
+title.** The product search, the low stock list and the customer search now
+say when the category, supplier, customer group or social title asked for
+does not exist in the shop, and where to find the right one. Until now they
+answered that nothing matched, and the assistant told the merchant there was
+no such product or customer.
+
+**Best sellers and page SEO: every mistake named at once.** The best sellers
+now name every mistake of a request in one answer, a misspelt filter
+included, instead of the first one only, or none for a misspelt filter, which
+used to answer as if it had not been given. A wrong language given back to
+the SEO update of a CMS page is named once, with the shop's languages.
+
+**The built-in assistant runs on Neuron AI 4.1.27.** Nothing changes in how
+you use it.
+
+**The anti-robot check of the sign-in page runs on the ALTCHA library 2.4.0.**
+Nothing changes on the page.
+
+**Compact mode finds tools asked for in more languages.** A request written in
+Chinese, Japanese, Korean or Thai now finds the right tool, and a request of
+several words is weighed by its pairs of words. The tools and the checks on
+every call are unchanged.
+
+### Fixed
+
+**Orders: searching by an order number that is not one.** Searching the orders
+by an order number that is not one is now refused with the reason, instead of
+answering the latest orders or none.
+
+**Disabled tax rules and disabled products short of stock.** Asking for the
+disabled tax rules, or the disabled products short of stock, now lists those
+only, as the Enabled and Status filters of the back office do. Until now the
+enabled ones came along, so an assistant that had just listed the disabled
+taxes got every tax rule back.
+
+**Tax rules: a name too long for the shop.** On shops whose tax rule names
+hold 50 characters, a longer name is now refused with the limit instead of
+being cut, so the rule saved always carries the name the merchant gave.
+
+**Products, categories, brands and suppliers: a description too long for the
+shop.** On PrestaShop 8, a description of a product, a category, a brand or a
+supplier too long for the shop to store, or brand meta keywords past 255
+characters, are now refused with the reason, instead of being saved cut
+without a word.
+
+### Security
+
+**The file behind a signed link is looked up in the store by its name.** A
+file of the assistant opened through its signed link was sent from the path
+read in the database. It is now found again by its bare name inside the
+uploads folder before it is sent, so nothing reached through a request can
+name a file elsewhere. Two rules join the security checks to keep it that
+way: one refuses an upload read where PHP put it, the other a file read,
+sent or removed at a path the request had a hand in. These are the two
+shapes the PrestaShop Addons security review reports.
+
 ## 2.0.3 - 2026-11-17
 
 ### Added

@@ -39,6 +39,8 @@ asks for.
   language is filled (`SomcpToolCreateProduct::languages()` and `texts()`, for
   every write tool). A name given back in a write answer is in the shop's
   default language, with `language` beside it.
+- The codes, with the default and the enabled languages, are listed by
+  `somcp_list_languages`.
 
 **Dates.** ISO 8601 in and out. A date and time a tool returns carries the
 shop's offset (`2026-11-05T08:00:00+01:00`) and is `null` when the field is
@@ -2979,6 +2981,54 @@ that is not a number (`rate: a number, for example 20 or 5.5`), an
 - `rate` is an equality, where the list matches the rate as text: there `6` also finds 6.250, 6.600 and 6.850, while the rate an assistant is given is always the one it means exactly.
 - The same list, columns, filters and tables on 8.0.1 and 9.0.0; 9.0.0 only offers two more **Items per page** choices. The **Tax options** form below the list is read by `somcp_get_tax_options`.
 - The taxes are created, changed and deleted with `somcp_create_tax`.
+
+#### `somcp_list_languages`
+**State**: written · [issue #339](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/339)
+**Nature**: `acts(VIEW, 'AdminLanguages')` · **Scope**: `mcp.catalog.read`
+
+**Does** - lists the languages of **International > Localization >
+Languages** with the columns of that list: **ID**, **Name**, **ISO code**,
+**Language code**, **Locale** (shown on 9.0.0), **Date format**, **Date format
+(full)**, **Enabled**, and which one is the shop default. The `iso_code` is
+the key every translated field of the other tools takes. Read only.
+
+**Do not use for** - the translations of the shop (**International >
+Translations**); adding, changing or deleting a language (later tools).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_lang` | **ID** filter | integer | no | one language, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_cms_pages` do |
+| `name` | **Name** filter | string | no | part of the name, case-insensitive |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`fr`) |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**) |
+
+No filter on the codes and date formats, no paging and no `language`: a shop
+holds a handful of languages, and their names are those of the `lang` table.
+
+**Returns** - `languages`, sorted by `id_lang` as the list: `id_lang` (**ID**),
+`name` (**Name**), `iso_code` (**ISO code**), `language_code` (**Language
+code**), `locale` (**Locale**, read on both versions), `date_format` (**Date
+format**), `date_format_full` (**Date format (full)**), `active`
+(**Enabled**), `is_rtl`, `default` (`true` for the `PS_LANG_DEFAULT` of the
+shop of the token, the language a tool reads in when `language` is left out).
+Plus `count`. Only an enabled language is accepted by the `language` and
+`languages` of the other tools; a disabled one is listed so the assistant can
+tell the merchant why.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_lang` that is not an identifier (`SomcpTool::notAnIdentifier()`), an
+`active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`). An empty list is `languages: []`, `count: 0`.
+
+**Notes**
+- Read through a query on `lang` joined to `lang_shop` on the shop of the token, rather than `Language::getLanguages()`, so every filter stays one `WHERE`; the default read as `somcp_ping` reads it.
+- No flag image: the flag is a file the assistant has no use for.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - the **Locale** column and its filter on 9.0.0 only (the answer gives `locale` on both, from the same column); otherwise the same list, filters, labels and tables (`lang`, `lang_shop`).
 
 #### `somcp_create_tax`
 **State**: written · [issue #308](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/308)

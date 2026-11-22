@@ -29,6 +29,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_tax_rules`
 - `somcp_get_tax_rule`
 - `somcp_list_taxes`
+- `somcp_list_languages`
 - `somcp_create_tax`
 - `somcp_update_tax`
 - `somcp_delete_tax`
@@ -314,7 +315,9 @@ start of its description who provides it, and that is a rule for you:
 
 Texts are objects keyed by ISO code, given for every language in `languages`; a
 language of the shop left out takes the default language's text. Lengths count
-the visible text, spaces included, HTML tags not counted.
+the visible text, spaces included, HTML tags not counted. The ISO codes of the
+shop's languages, which one is the default and which are enabled, come from
+`somcp_list_languages`: only an enabled language is accepted.
 
 ## Prices
 

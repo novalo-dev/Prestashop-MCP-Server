@@ -1090,6 +1090,10 @@ T = {
  "Lister les taxes",
  "Listar los impuestos",
  "Steuern auflisten"),
+"List languages": (
+ "Lister les langues",
+ "Listar los idiomas",
+ "Sprachen auflisten"),
 "Create a tax": (
  "Créer une taxe",
  "Crear un impuesto",

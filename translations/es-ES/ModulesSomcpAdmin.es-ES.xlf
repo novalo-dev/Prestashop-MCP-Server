@@ -1372,6 +1372,11 @@
       <source>List taxes</source>
       <target>Listar los impuestos</target>
     </trans-unit>
+    <!-- List languages -->
+    <trans-unit id="97cc1767f13c1422740aefe14beff70a" resname="List languages">
+      <source>List languages</source>
+      <target>Listar los idiomas</target>
+    </trans-unit>
     <!-- Create a tax -->
     <trans-unit id="a359ec56c8052fe0440c1f859793be63" resname="Create a tax">
       <source>Create a tax</source>

@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "lists every language of the shop with its codes and the default one", "arguments": {}, "expect": "ok", "contains": ["\"languages\"", "\"id_lang\"", "\"iso_code\": \"en\"", "\"language_code\"", "\"locale\"", "\"date_format\"", "\"date_format_full\"", "\"is_rtl\": false", "\"default\": true", "\"count\""]},
+    {"why": "one language by its ISO code, whatever the case", "arguments": {"iso_code": "EN"}, "expect": "ok", "contains": ["\"iso_code\": \"en\"", "\"default\": true", "\"count\": 1"]},
+    {"why": "filtered by part of the name, whatever the case", "arguments": {"name": "english"}, "expect": "ok", "contains": ["\"iso_code\": \"en\""]},
+    {"why": "disabled languages only: the shop has none, an empty list rather than an error", "arguments": {"active": false}, "expect": "ok", "contains": ["\"languages\": []", "\"count\": 0"]},
+    {"why": "an identifier no language has lists nothing", "arguments": {"id_lang": 999999}, "expect": "ok", "contains": ["\"languages\": []", "\"count\": 0"]},
+    {"why": "an identifier of the wrong kind is refused", "arguments": {"id_lang": [1]}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_lang: a whole number above 0"]},
+    {"why": "an active that is not a boolean and a misspelt filter are refused at once", "arguments": {"active": "yes", "nmae": "x"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- active: true or false", "- nmae: not a field of this tool"]}
+  ]
+}

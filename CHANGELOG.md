@@ -125,6 +125,10 @@ applies to a copy under a new identifier, which the answer gives.
 
 ### Changed
 
+**Find a content page by its ID, URL or Meta title.** The list of content pages
+takes the filters ID, URL and Meta title of Design > Pages, as well as Title and
+Displayed.
+
 **Sales summary: the orders in each status.** The sales summary now gives how
 many orders of the period are in each status, and their share, as the
 distribution of order statuses of Stats > Sales and orders shows them: every

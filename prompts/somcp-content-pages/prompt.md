@@ -22,7 +22,8 @@ in mind.
 ## Workflow
 
 1. **List the pages** with `somcp_list_cms_pages`. When the merchant names a
-   page, pass part of its title as `title`; when they name a category, take
+   page, pass part of its title as `title`, of its URL as `link_rewrite` or
+   of its Meta title as `meta_title`; when they name a category, take
    its `id_cms_category` from `categories[]` and pass it. Pass `language`
    when they want the texts in another language than the shop default.
 2. **Pick the page the merchant means** by its `id_cms`, the identifier every

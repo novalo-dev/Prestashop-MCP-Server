@@ -4968,19 +4968,22 @@ The CMS pages of the storefront.
 | Name | Type | Required | Role |
 |---|---|---|---|
 | `id_cms_category` | integer | no | only the pages of that category (not of its sub-categories), as the screen; every category when left out. A category the shop does not have is refused |
+| `id_cms` | integer | no | **ID** filter: exactly this page, as `id_product` of `somcp_search_products`; a page the shop does not have gives an empty list |
+| `link_rewrite` | string | no | **URL** filter: part of the page's URL alias, the name `pages[].link_rewrite` has in the answer and in `somcp_update_cms_seo`, compared without case |
 | `active` | boolean | no | **Displayed** filter: `true` displayed pages only, `false` hidden only; both when left out |
 | `title` | string | no | part of the **Title**, compared without case |
+| `meta_title` | string | no | **Meta title** filter: part of the page's Meta title (column `head_seo_title`), the name `pages[].meta_title` has in the answer and in `somcp_update_cms_seo`, compared without case |
 | `language` | string | no | ISO code of one of the shop's active languages, refused otherwise, among the other problems of the call with `SomcpTool::languageProblem()`; the shop default when left out |
 
 No paging: a shop has a few dozen pages at most, and every matching page is returned.
 
 **Returns** - `pages[]` with `id_cms` (**ID**, the identifier `somcp_update_cms_seo` and `somcp_audit_cms_seo` take), `link_rewrite` (**URL**), `title` (**Title**, column `meta_title`), `meta_title` (**Meta title**, column `head_seo_title`, empty string when not set), `position` (**Position**, from 0 as in the other tools; the screen shows it from 1), `active` (**Displayed**), `id_cms_category`, `url` (the page's address on the storefront); `categories[]`, every category of the shop, root included, with `id_cms_category`, `name`, `description`, `id_parent` (`0` for the root), `position` (from 0), `active`, `pages_count` (pages directly in it); then `total_count` (pages returned) and `language` (ISO code the texts are in). Pages sorted by category then position, categories by `id_parent` then position.
 
-**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); an `id_cms_category` that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, whose `categories[]`, called without the filter, list them; a non-boolean `active`: `active: true or false`; a non-string `title`: `title: a string, part of the page Title`; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages. No page matching is not an error: `pages` is empty.
+**Errors** - every problem at once, nothing read, each under "Nothing was read. Correct these and call again:": a field the tool does not take (`<field>: not a field of this tool`); an `id_cms_category` that is not a whole number above 0: `id_cms_category: a whole number above 0` (`"3"` is read as 3); an unknown one: `id_cms_category: no page category of this shop has the identifier <id> - find it with somcp_list_cms_pages`, whose `categories[]`, called without the filter, list them; a non-boolean `active`: `active: true or false`; a non-string `title`: `title: a string, part of the page Title`; an `id_cms` that is not a whole number above 0: `id_cms: a whole number above 0`; a non-string `link_rewrite`: `link_rewrite: a string, part of the page URL`; a non-string `meta_title`: `meta_title: a string, part of the page Meta title`; an unknown `language`: `SomcpTool::languageProblem()`, with the shop's languages. No page matching is not an error: `pages` is empty.
 
 **Notes** - the screen's **Title** is the column `meta_title` and its **Meta title** is `head_seo_title`: the tool names them `title` and `meta_title`, as `somcp_update_cms_seo`, never by the column name. Categories are returned because no other tool gives an `id_cms_category`. Only the token's shop (`cms_shop`, `cms_category_shop`, `id_shop` of the `_lang` tables). The content of a page is not returned.
 
-Same columns, filters and grid queries on 8.0.1 and 9.0.0; 9.0.0 adds a **Rearrange** column for drag and drop, with nothing to read.
+Same columns and grid queries on 8.0.1 and 9.0.0. 8.0.1 also has a **Position** filter, which 9.0.0 replaces with a **Rearrange** button for drag and drop: the tool takes no position filter on either, since the answer gives the position of every page, from 0, and a filter from 1 beside it would invite an off-by-one.
 
 #### `somcp_get_cms_page`
 **State**: written · [issue #24](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/24)

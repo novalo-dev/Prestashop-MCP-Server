@@ -61,6 +61,16 @@ class SomcpToolListCmsPages
                             . 'call, not those of its sub-categories, as the screen shows one category at a time. '
                             . 'Left out, the pages of every category.',
                     ],
+                    'id_cms' => [
+                        'type' => 'integer',
+                        'description' => 'The ID filter: exactly this page, from pages[] of a previous call. A '
+                            . 'page the shop does not have gives an empty list.',
+                    ],
+                    'link_rewrite' => [
+                        'type' => 'string',
+                        'description' => 'The URL filter: part of the page URL alias, case-insensitive, as '
+                            . 'pages[].link_rewrite gives it. Left out, every page.',
+                    ],
                     'active' => [
                         'type' => 'boolean',
                         'description' => 'The Displayed filter: true for displayed pages only, false for hidden '
@@ -69,6 +79,11 @@ class SomcpToolListCmsPages
                     'title' => [
                         'type' => 'string',
                         'description' => 'Part of the page Title, case-insensitive. Left out, every page.',
+                    ],
+                    'meta_title' => [
+                        'type' => 'string',
+                        'description' => 'The Meta title filter: part of the page Meta title, case-insensitive, '
+                            . 'as pages[].meta_title gives it. Left out, every page.',
                     ],
                     'language' => [
                         'type' => 'string',
@@ -101,7 +116,7 @@ class SomcpToolListCmsPages
 
         // A misspelt filter is named rather than ignored: the assistant would
         // otherwise read the pages of every category as those it asked for.
-        $errors = SomcpTool::unknownFields($arguments, ['id_cms_category', 'active', 'title', 'language']);
+        $errors = SomcpTool::unknownFields($arguments, ['id_cms_category', 'id_cms', 'link_rewrite', 'active', 'title', 'meta_title', 'language']);
         // Listed with the call's other mistakes, so it is corrected in one go.
         if ($language === null) {
             $errors[] = SomcpTool::languageProblem($idShop);
@@ -113,6 +128,24 @@ class SomcpToolListCmsPages
         $title = $arguments['title'] ?? null;
         if ($title !== null && !is_string($title)) {
             $errors[] = 'title: a string, part of the page Title';
+        }
+        $alias = $arguments['link_rewrite'] ?? null;
+        if ($alias !== null && !is_string($alias)) {
+            $errors[] = 'link_rewrite: a string, part of the page URL';
+        }
+        $metaTitle = $arguments['meta_title'] ?? null;
+        if ($metaTitle !== null && !is_string($metaTitle)) {
+            $errors[] = 'meta_title: a string, part of the page Meta title';
+        }
+        $idCms = null;
+        if (($arguments['id_cms'] ?? null) !== null) {
+            // Matched exactly, as id_product of somcp_search_products: a page
+            // the shop does not have gives an empty list, not a refusal,
+            // since the screen's ID filter answers the same.
+            $idCms = SomcpTool::id($arguments, 'id_cms');
+            if ($idCms === 0) {
+                $errors[] = SomcpTool::notAnIdentifier('id_cms');
+            }
         }
         $idCategory = null;
         if (($arguments['id_cms_category'] ?? null) !== null) {
@@ -147,7 +180,11 @@ class SomcpToolListCmsPages
             return SomcpTool::refused('read', $errors);
         }
 
-        $needle = $title !== null ? Tools::strtolower(trim($title)) : '';
+        $needles = [
+            'title' => is_string($title) ? Tools::strtolower(trim($title)) : '',
+            'link_rewrite' => is_string($alias) ? Tools::strtolower(trim($alias)) : '',
+            'meta_title' => is_string($metaTitle) ? Tools::strtolower(trim($metaTitle)) : '',
+        ];
         $link = Somcp::legacyContext()->link ?? new Link();
 
         $listed = [];
@@ -155,13 +192,18 @@ class SomcpToolListCmsPages
             if ($idCategory !== null && $page['id_cms_category'] !== $idCategory) {
                 continue;
             }
+            if ($idCms !== null && $page['id_cms'] !== $idCms) {
+                continue;
+            }
             if ($active !== null && $page['active'] !== $active) {
                 continue;
             }
             // Compared in PHP rather than with LIKE, so that % or _ in what
             // the merchant typed are plain characters, as on the screen.
-            if ($needle !== '' && strpos(Tools::strtolower($page['title']), $needle) === false) {
-                continue;
+            foreach ($needles as $field => $needle) {
+                if ($needle !== '' && strpos(Tools::strtolower($page[$field]), $needle) === false) {
+                    continue 2;
+                }
             }
             // Given the alias, the link is built from the route without
             // loading each page again.

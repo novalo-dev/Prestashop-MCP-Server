@@ -2338,7 +2338,7 @@ Unknown arguments through `SomcpTool::unknownFields()`.
 
 **Does** - changes the **General settings** of one carrier of **Shipping > Carriers**, as its edit page saves them: **Carrier name**, **Transit time** per language, **Speed grade**, **Tracking URL**, **Enabled** (8.0.1) / **Active** (9.0.0) and **Group access**. Only the fields given change.
 
-**Do not use for** - the carrier of one order (→ `somcp_set_order_carrier`); the position, free shipping, tax, handling costs, billing, out-of-range behavior, size and weight limits, logo, zones and ranges, which later tools write; deleting a carrier.
+**Do not use for** - the carrier of one order (→ `somcp_set_order_carrier`); the position, free shipping, tax, handling costs, billing, out-of-range behavior, size and weight limits, logo, zones and ranges, which later tools write; deleting a carrier (→ `somcp_delete_carrier`).
 
 **Parameters** - the names of the answer of `somcp_get_carrier`, so a read can be given back as it is.
 
@@ -2364,6 +2364,36 @@ Unknown arguments through `SomcpTool::unknownFields()`. The other keys of the an
 **Notes** - replayable: the same call twice changes nothing the second time. The carrier of the shop of the token only; its name, **Speed grade**, **Tracking URL**, status and groups are shared by every shop, the **Transit time** is per shop. A carrier made by a module is changed the same way, as the back office does. `update()` writes back the `shipping_method` the constructor resolves from `PS_SHIPPING_METHOD` when `0` is stored, as the form does: the billing does not change.
 
 **Differences between 8.0.1 and 9.0.0** - the page (the wizard, with **Enabled** in **Summary** and **Group access** in step 3, against the **General settings** tab of a Symfony form) and when a new version is made: at every save on 8.0.1, only once an order uses the carrier on 9.0.0. The tool follows 9.0.0 on both, so a carrier no order uses keeps the identifier the assistant has just read. The columns and `Carrier::copyCarrierData()` are the same.
+
+#### `somcp_delete_carrier`
+**State**: written · [issue #321](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/321)
+**Nature**: `acts(DELETE, 'AdminCarriers')` · **Scope**: `mcp.orders.write`
+
+**Does** - deletes one carrier of **Shipping > Carriers**, as the **Delete** of its row (and **Delete selected** in **Bulk actions**, one carrier per call). Irreversible: the description asks the assistant to confirm with the merchant by name first, and to turn the carrier off with `somcp_update_carrier` when it may come back.
+
+**Do not use for** - turning a carrier off (→ `somcp_update_carrier`, `active`); the carrier of one order (→ `somcp_set_order_carrier`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_carrier` | the row deleted | integer | yes | from `somcp_list_carriers`; missing or not a whole number: `SomcpTool::notAnIdentifier()`; unknown or already `deleted`: the line of `SomcpToolGetCarrier::notFound()` |
+
+Unknown arguments through `SomcpTool::unknownFields()`, with the fields of `somcp_list_carriers` and `somcp_get_carrier` named as worked out by the shop, so a carrier given whole is understood.
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call again:` (`SomcpTool::refused('deleted', $problems)`), every problem at once, nothing written:
+- the default carrier (`PS_CARRIER_DEFAULT` of the shop of the token): `id_carrier: <id> is the default carrier of the shop - choose another default carrier in Shipping > Preferences first`; deleted, the checkout would go on pointing to a carrier no list shows;
+- a carrier of a module (`is_module`): `id_carrier: <id> belongs to the module <external_module_name>, which manages it - disable it with somcp_update_carrier, or manage it from that module`; the module keeps its reference and would recreate it or stop offering delivery.
+
+A delete that fails is checked on the table and answered `The carrier could not be deleted.`, with the hint to read `somcp_list_carriers`.
+
+**Then** - one behaviour on both versions, the one of 9.0.0: used by an order (`Carrier::isUsed()`), it is flagged `deleted = 1` and saved, never `Carrier::delete()`, which on 8.0.1 would remove the row the orders point to; used by none, `Carrier::delete()` removes it with its links (`cart_rule_carrier`, `module_carrier`, its tax rules group rows). Then `Warehouse::removeCarrier()` by its `id_reference` and `Carrier::cleanPositions()`, as the 8.0.1 list does. Checked on the table rather than trusted from the core: gone, or `deleted = 1` when kept for orders. Logged as `carrier_deleted`.
+
+**Returns** - `deleted: true`, `id_carrier`, `carrier` (the object of `somcp_get_carrier` as it was before the deletion), `kept_for_orders` (`true` with the `warning` `Orders use this carrier: PrestaShop keeps it hidden for them, and it is gone from the list.` when it was only flagged); with more than one shop, `also_in_other_shops` and a `warning`, since a carrier is not tied to one shop.
+
+**Notes** - not replayable: a second call finds no carrier. The demo carriers: 1 is the default and is refused, 2 is used by orders and is kept hidden, 3 and 4 are removed.
+
+**Differences between 8.0.1 and 9.0.0** - the core: the 8.0.1 list only flags every carrier `deleted`, used or not, and removes its logo; 9.0.0 removes a carrier no order uses and flags the others. The tool behaves the same on both, as 9.0.0 does, so `Carrier::delete()` is only called on a carrier no order uses, where it gives the same result on both.
 
 #### `somcp_list_tax_rules`
 **State**: written
@@ -6515,7 +6545,7 @@ request: one line, stroke paths on a 24 px grid.
 
 **Arguments** - `product` (name, reference or ean13 of a product).
 
-**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_update_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
+**Tools** - `somcp_ping`, `somcp_upload_file`, `somcp_download_file`, `somcp_search_products`, `somcp_get_product`, `somcp_list_categories`, `somcp_get_category`, `somcp_get_category_kpis`, `somcp_list_manufacturers`, `somcp_get_manufacturer`, `somcp_list_manufacturer_addresses`, `somcp_get_manufacturer_address`, `somcp_list_suppliers`, `somcp_get_supplier`, `somcp_list_attributes`, `somcp_get_attribute_group`, `somcp_get_attribute_value`, `somcp_list_features`, `somcp_get_feature`, `somcp_get_feature_value`, `somcp_list_attachments`, `somcp_list_tax_rules`, `somcp_get_tax_rule`, `somcp_list_taxes`, `somcp_create_tax_rule`, `somcp_update_tax_rule`, `somcp_delete_tax_rule`, `somcp_list_customer_groups`, `somcp_list_carriers`, `somcp_get_carrier`, `somcp_update_carrier`, `somcp_delete_carrier`, `somcp_create_product`, `somcp_update_product`, `somcp_set_product_active`, `somcp_delete_product`, `somcp_create_category`, `somcp_update_category`, `somcp_set_category_active`, `somcp_delete_category`, `somcp_create_manufacturer`, `somcp_update_manufacturer`, `somcp_set_manufacturer_active`, `somcp_create_manufacturer_address`, `somcp_update_manufacturer_address`, `somcp_delete_manufacturer_address`, `somcp_create_supplier`, `somcp_update_supplier`, `somcp_set_supplier_active`, `somcp_create_attribute_group`, `somcp_update_attribute_group`, `somcp_delete_attribute_group`, `somcp_create_attribute_value`, `somcp_update_attribute_value`, `somcp_delete_attribute_value`, `somcp_create_feature`, `somcp_update_feature`, `somcp_delete_feature`, `somcp_create_feature_value`, `somcp_update_feature_value`, `somcp_delete_feature_value`. A tool joins the prompt in the pull request that writes it; the prompt ships with the first tool of its section.
 
 **The guide must say** - search before reading, and read before changing; take category identifiers from `somcp_list_categories`, never guess them; say whether a price is tax included or excluded; one product per write, never retried on a lost answer; switching a product off is reversible, deleting it is not, and the merchant is told which is happening.
 

@@ -44,6 +44,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_update_carrier`
+- `somcp_delete_carrier`
 - `somcp_create_product`
 - `somcp_update_product`
 - `somcp_set_product_active`
@@ -210,6 +211,9 @@ serves before tying it, read it with `somcp_get_carrier`.
 To rename a carrier, change its transit time, speed grade, tracking URL,
 status or customer groups, use `somcp_update_carrier`; a carrier an order
 uses gets a new `id_carrier`, given in the answer: use that one from then on.
+To remove a carrier for good, confirm it with the merchant by name, then use
+`somcp_delete_carrier`; when they may want it back, turn it off with
+`somcp_update_carrier` instead.
 
 Tax rules come from `somcp_list_tax_rules`: take the `id_tax_rules_group` from
 there, 0 for no tax. Match the merchant's "20 %" on the `rate`, not on the

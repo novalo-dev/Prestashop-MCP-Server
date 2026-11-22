@@ -35,6 +35,13 @@ but had to send the merchant to the back office to change any of it. A carrier
 no order uses keeps its identifier; one that orders already use gets a new one,
 as the back office does, so those orders keep the carrier they were placed with.
 
+**Delete a carrier.** The new tool somcp_delete_carrier deletes one carrier of
+Shipping > Carriers, such as the demo carriers of a new shop. A carrier orders
+use stays hidden for them, as the back office keeps it; one no order uses is
+removed. The default carrier and a carrier a module manages are refused, so
+the checkout never points to a carrier that is gone and a module never loses
+its own carrier behind its back.
+
 **Change the tax options.** The new tool somcp_update_tax_options changes the
 Tax options of International > Taxes > Taxes, as their Save: Enable tax,
 Display tax in the shopping cart, Based on (invoice or delivery address), Use

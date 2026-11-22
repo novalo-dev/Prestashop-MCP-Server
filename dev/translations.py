@@ -882,6 +882,10 @@ T = {
  "Modifier un transporteur",
  "Modificar un transportista",
  "Einen Versanddienst ändern"),
+"Delete a carrier": (
+ "Supprimer un transporteur",
+ "Eliminar un transportista",
+ "Einen Versanddienst löschen"),
 "Create a return status": (
  "Créer un statut de retour",
  "Crear un estado de devolución",

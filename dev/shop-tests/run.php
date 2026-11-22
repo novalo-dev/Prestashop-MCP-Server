@@ -1026,6 +1026,65 @@ if ($getCarrier !== null && $updateCarrier !== null) {
     }
 }
 
+// A carrier deleted (#321): the JSON scenario cannot read the default carrier
+// of the shop nor delete a carrier it made. The default carrier is refused,
+// then a throwaway carrier no order uses is really removed and not found again.
+// No demo carrier is deleted, so the tools after this one keep them.
+$deleteCarrier = $registry->get('somcp_delete_carrier');
+if ($deleteCarrier !== null && isset($carrierCall)) {
+    $calls += 3;
+    $idThrowaway = 0;
+    try {
+        $idDefault = (int) Configuration::get('PS_CARRIER_DEFAULT');
+        [$result, $text] = $carrierCall($deleteCarrier, ['id_carrier' => $idDefault]);
+        if (empty($result['isError']) || strpos($text, '- id_carrier: ') === false || strpos($text, 'default carrier') === false) {
+            $failures[] = 'somcp_delete_carrier (the default carrier): expected a refusal - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'error', 'somcp_delete_carrier (the default carrier, refused)');
+        }
+
+        $throwaway = new Carrier();
+        $throwaway->name = 'somcp test';
+        $throwaway->active = false;
+        $throwaway->delay = [];
+        foreach (Language::getIDs(false) as $idLang) {
+            $throwaway->delay[(int) $idLang] = 'somcp test';
+        }
+        if ($throwaway->add()) {
+            $idThrowaway = (int) $throwaway->id;
+        }
+        [$result, $text] = $carrierCall($deleteCarrier, ['id_carrier' => $idThrowaway]);
+        $left = (int) Db::getInstance()->getValue(
+            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'carrier` WHERE `id_carrier` = ' . $idThrowaway
+        );
+        if ($idThrowaway === 0 || !empty($result['isError']) || strpos($text, '"deleted": true') === false
+            || strpos($text, '"kept_for_orders": false') === false || $left !== 0) {
+            $failures[] = 'somcp_delete_carrier (a carrier no order uses): expected it removed - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_delete_carrier (a carrier no order uses, removed)');
+            $idGone = $idThrowaway;
+            $idThrowaway = 0;
+            [$result, $text] = $carrierCall($deleteCarrier, ['id_carrier' => $idGone]);
+            if (empty($result['isError']) || strpos($text, '- id_carrier: no carrier of this shop has the identifier ' . $idGone) === false) {
+                $failures[] = 'somcp_delete_carrier (the same call again): expected not found - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'error', 'somcp_delete_carrier (the same call again, not found)');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_carrier (a carrier deleted): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        // Left behind only when the tool failed: removed so the tools after
+        // this one see the demo carriers alone.
+        if ($idThrowaway > 0) {
+            $throwaway = new Carrier($idThrowaway);
+            if (Validate::isLoadedObject($throwaway)) {
+                $throwaway->delete();
+            }
+        }
+    }
+}
+
 // The tax options changed and put back (#312): the JSON scenario cannot read
 // the options first and give them back, and a change it made would stay for
 // the tools after it. The read of somcp_get_tax_options is given back as it

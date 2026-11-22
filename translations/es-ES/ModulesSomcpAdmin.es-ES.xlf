@@ -1112,6 +1112,11 @@
       <source>Change a carrier</source>
       <target>Modificar un transportista</target>
     </trans-unit>
+    <!-- Delete a carrier -->
+    <trans-unit id="4dfc01412935824fc22fa157f946e0c6" resname="Delete a carrier">
+      <source>Delete a carrier</source>
+      <target>Eliminar un transportista</target>
+    </trans-unit>
     <!-- Create a return status -->
     <trans-unit id="bed8b046732e0d12fe3f9bbb9776d996" resname="Create a return status">
       <source>Create a return status</source>

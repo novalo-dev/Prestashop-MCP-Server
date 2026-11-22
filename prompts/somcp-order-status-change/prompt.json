@@ -15,6 +15,7 @@
     "somcp_list_carriers",
     "somcp_get_carrier",
     "somcp_update_carrier",
+    "somcp_delete_carrier",
     "somcp_create_return_status",
     "somcp_update_return_status",
     "somcp_delete_return_status",

@@ -15,6 +15,7 @@ of it can be undone by calling again.
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_update_carrier`
+- `somcp_delete_carrier`
 - `somcp_create_return_status`
 - `somcp_update_return_status`
 - `somcp_search_orders`
@@ -94,6 +95,8 @@ status change: it never moves the order to shipped, and
   `somcp_update_carrier` changes its name, transit time, speed grade,
   tracking URL, status or groups, only when the merchant asks for it; a
   carrier an order uses gets a new `id_carrier`, given in the answer.
+  `somcp_delete_carrier` removes one, only once the merchant has confirmed
+  it by name; turning it off with `somcp_update_carrier` can be undone.
 
 When the merchant says an order has left with its number, set the number
 first, then the shipped status: the shipped email then carries the tracking

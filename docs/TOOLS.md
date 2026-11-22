@@ -3372,8 +3372,8 @@ The products and the categories they are sorted into: texts, prices, combination
 |---|---|---|---|
 | `basics` | `product_type` | merchant | a value of PrestaShop's `ProductType`: `standard`, `combinations`, `pack`, `virtual` |
 | | `name` | merchant | required; 128 characters at most per language (`ProductSettings::MAX_NAME_LENGTH`) |
-| | `description_short` (summary) | assistant | 100 to 200 characters per language, refused outside |
-| | `description` | assistant | free length; HTML cleaned |
+| | `description_short` (summary) | assistant | 100 to 200 characters per language, refused outside; HTML cleaned, 65 535 bytes at most on PrestaShop 8 |
+| | `description` | assistant | HTML cleaned; 65 535 bytes at most on PrestaShop 8 |
 | `categories` | `categories` | merchant, from the shop | ids from `somcp_list_categories` |
 | | `id_category_default` | merchant, from the shop | one of `categories`, added to them if missing; Home when none |
 | `brand` | `id_manufacturer` | merchant, from the shop | id from `somcp_list_manufacturers` |

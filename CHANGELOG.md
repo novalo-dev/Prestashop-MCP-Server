@@ -200,10 +200,11 @@ taxes got every tax rule back.
 hold 50 characters, a longer name is now refused with the limit instead of
 being cut, so the rule saved always carries the name the merchant gave.
 
-**Categories, brands and suppliers: a description too long for the shop.** On
-PrestaShop 8, a description of a category, a brand or a supplier too long for
-the shop to store, or brand meta keywords past 255 characters, are now refused
-with the reason, instead of being saved cut without a word.
+**Products, categories, brands and suppliers: a description too long for the
+shop.** On PrestaShop 8, a description of a product, a category, a brand or a
+supplier too long for the shop to store, or brand meta keywords past 255
+characters, are now refused with the reason, instead of being saved cut
+without a word.
 
 ### Security
 

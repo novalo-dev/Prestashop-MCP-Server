@@ -906,6 +906,12 @@ class SomcpToolCreateProduct
                 if ($length < self::SUMMARY_MIN || $length > self::SUMMARY_MAX) {
                     $errors[] = 'basics.description_short (' . $languages['filled'][$idLang] . '): ' . self::SUMMARY_MIN
                         . ' to ' . self::SUMMARY_MAX . ' characters of visible text, ' . $length . ' given';
+                } elseif (($bytes = SomcpTool::overTextColumn($probe, 'description_short', $html)) !== null) {
+                    // The visible text is held short, not its markup: on 8.0.1
+                    // the column would cut a heavily styled summary without a
+                    // word, as for the category texts (#333).
+                    $errors[] = 'basics.description_short (' . $languages['filled'][$idLang] . '): longer than the '
+                        . $bytes . ' bytes this shop can store';
                 }
                 $summaries[$idLang] = $html;
             }
@@ -915,7 +921,15 @@ class SomcpToolCreateProduct
         $descriptions = self::texts($group, 'description', 'basics.description', $languages, $errors);
         if ($descriptions !== null) {
             foreach ($descriptions as $idLang => $html) {
-                $descriptions[$idLang] = self::html($html, 'basics.description (' . $languages['filled'][$idLang] . ')', $errors);
+                $where = 'basics.description (' . $languages['filled'][$idLang] . ')';
+                $descriptions[$idLang] = self::html($html, $where, $errors);
+                // The cleaned HTML is measured, since it is what is stored: on
+                // 8.0.1 the class declares no size and the column would cut it
+                // mid-tag while the answer said the product was saved, as for
+                // the category texts (#333).
+                if (($bytes = SomcpTool::overTextColumn($probe, 'description', $descriptions[$idLang])) !== null) {
+                    $errors[] = $where . ': longer than the ' . $bytes . ' bytes this shop can store';
+                }
             }
             $plan['texts']['description'] = $descriptions;
         }

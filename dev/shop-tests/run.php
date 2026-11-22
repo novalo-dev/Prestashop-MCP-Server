@@ -1114,6 +1114,49 @@ if ($createSupplier !== null) {
     }
 }
 
+// The same for a product description (#334): the missing price keeps 9.0.0
+// from creating a product, so nothing is left behind on either version.
+$createProduct = $registry->get('somcp_create_product');
+if ($createProduct !== null) {
+    $calls += 1;
+    try {
+        $arguments = [
+            'languages' => ['en'],
+            'basics' => ['name' => ['en' => 'Somcp long description'], 'description' => ['en' => '<p>' . str_repeat('a', 65536) . '</p>']],
+            'pricing' => [],
+        ];
+        $result = $createProduct->call($arguments, [
+            'id_shop' => (int) $context->shop->id,
+            'id_employee' => (int) $employee->id,
+            'id_lang' => (int) $context->language->id,
+            'id_client' => 0,
+            'scopes' => implode(' ', $createProduct->getRequiredScopes()),
+            'responses' => [],
+            'resumed' => [],
+            'capabilities' => [],
+            'arguments' => $arguments,
+        ]);
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $needles = ['pricing.price_tax_excl: required, the selling price tax excluded'];
+        if (empty(Product::$definition['fields']['description']['size'])) {
+            $needles[] = 'basics.description (en): longer than the 65535 bytes this shop can store';
+        }
+        $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+            return strpos($text, $needle) === false;
+        });
+        if (empty($result['isError']) || $missing !== []) {
+            $failures[] = 'somcp_create_product (a description too long for the shop): expected a refusal with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'error', 'somcp_create_product (a description too long for the shop, refused)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_product (a description too long for the shop): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
+}
+
 // A category deleted with a subcategory and a product, once per mode (#227):
 // the JSON scenario only reaches categories with neither, so the reading of
 // the subcategories and the settling of the products never ran. The tree is

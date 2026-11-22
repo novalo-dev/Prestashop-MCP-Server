@@ -16,6 +16,11 @@ are:
 
 ## Unreleased
 
+### Changed
+
+**Sign-in page of a connection.** The anti-robot check is updated to ALTCHA
+3.7.0. Nothing changes on the page.
+
 ## 2.0.4 - 2026-11-22
 
 ### Added

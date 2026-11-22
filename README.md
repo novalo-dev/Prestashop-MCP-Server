@@ -64,9 +64,10 @@ checks. [Compact mode](#compact-mode).
 
 > "Who is the customer behind order #1042, and what else did they buy?"
 
-The tools cover orders, catalogue, stock, customers, statistics, SEO, content
-pages, modules and appearance, and ready-made prompts guide the assistant
-through the usual jobs. [See them all](#tools).
+The tools cover orders, carriers and their delivery zones, taxes, catalogue,
+stock, customers, statistics, SEO, content pages, modules and appearance, and
+ready-made prompts guide the assistant through the usual jobs.
+[See them all](#tools).
 
 ---
 

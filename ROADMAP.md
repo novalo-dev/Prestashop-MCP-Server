@@ -13,17 +13,21 @@ before starting something large, so two people do not build the same thing.
 ## The shop from A to Z
 
 The module's tools are listed in the [README](README.md#tools) and
-described in [docs/TOOLS.md](docs/TOOLS.md): orders, catalogue, stock,
-customers, discounts, statistics, content, modules, appearance, system, SEO,
-AEO and sales. The last ones still to write are tracked as issues labelled
+described in [docs/TOOLS.md](docs/TOOLS.md): orders, carriers, taxes,
+catalogue, stock, customers, discounts, statistics, content, modules,
+appearance, system, SEO, AEO and sales. The last ones still to write are tracked as issues labelled
 [`new tool`](https://github.com/novalo-dev/Prestashop-MCP-Server/issues?q=is%3Aissue+is%3Aopen+label%3A%22new+tool%22).
 
 What comes next is letting an assistant set up a whole shop, in the order a
 merchant does it:
 
-- **Base settings**: shop details, countries, currencies, taxes.
-- **Shipping and payment preferences**: carriers and their zones, and the
-  preferences of **Payment > Preferences**. The payment modules themselves,
+- **Base settings**: shop details, and the countries, states, languages and
+  currencies, which an assistant lists today but cannot change yet. Taxes,
+  tax rules and the tax options are done.
+- **Shipping and payment preferences**: a carrier is read, changed and
+  deleted today, and the delivery zones are listed; creating a carrier and
+  managing the zones come next, with the preferences of
+  **Payment > Preferences**. The payment modules themselves,
   their accounts and keys, stay with the merchant.
 - **Appearance**: the `custom.css` of a child theme of Classic or Hummingbird,
   never the parent theme or its templates, and the native modules of the

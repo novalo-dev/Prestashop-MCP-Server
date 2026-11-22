@@ -46,7 +46,7 @@ class SomcpToolUpdateCarrier
     private const ARGUMENTS = [
         'id_carrier', 'languages', 'name', 'delay', 'grade', 'tracking_url', 'active', 'group_access', 'position',
         'is_free', 'handling_costs', 'billing', 'id_tax_rules_group', 'out_of_range', 'max_width', 'max_height',
-        'max_depth', 'max_weight', 'logo', 'remove_logo',
+        'max_depth', 'max_weight', 'logo', 'remove_logo', 'zones',
     ];
 
     /**
@@ -54,7 +54,7 @@ class SomcpToolUpdateCarrier
      *                         passed when they hold what the shop holds, so a read given back changes nothing
      */
     private const READ_BACK = [
-        'id_reference', 'external_module', 'zones', 'tax_rule', 'handling_cost_tax_excl', 'ranges',
+        'id_reference', 'external_module', 'tax_rule', 'handling_cost_tax_excl', 'ranges',
         'range_unit', 'dimension_unit', 'weight_unit',
     ];
 
@@ -85,7 +85,7 @@ class SomcpToolUpdateCarrier
             'somcp_update_carrier',
             Somcp::t('Change a carrier'),
             'Changes one carrier of Shipping > Carriers: Carrier name, Transit time, Speed grade, Logo, Tracking '
-                . 'URL, Active, Group access, the place in the list, Free shipping, handling costs, billing by '
+                . 'URL, Active, Group access, Zones (from somcp_list_zones), the place in the list, Free shipping, handling costs, billing by '
                 . 'price or weight, Tax, Out-of-range behavior and the size and weight limits. Only the fields '
                 . 'given change; the answer of somcp_get_carrier can be given back as it is. A carrier an order '
                 . 'uses gets a new id_carrier, which the answer gives. Not for the carrier of one order '
@@ -130,6 +130,12 @@ class SomcpToolUpdateCarrier
                         'description' => 'Every customer group allowed to use the carrier after the change, '
                             . 'as id_group integers from somcp_list_customer_groups or the objects '
                             . 'somcp_get_carrier answers.',
+                    ],
+                    'zones' => [
+                        'type' => 'array',
+                        'description' => 'Every zone the carrier delivers to after the change, as the objects '
+                            . 'somcp_get_carrier answers or id_zone from somcp_list_zones. An added zone has no '
+                            . 'price until its ranges get one.',
                     ],
                     'position' => [
                         'type' => 'integer',
@@ -264,7 +270,7 @@ class SomcpToolUpdateCarrier
         $stored = $read === null ? null : self::stored($idCarrier, $idShop);
         $plan = [
             'changes' => [], 'set' => [], 'groups' => null, 'position' => null, 'tax' => null,
-            'logo' => null, 'remove_logo' => false,
+            'logo' => null, 'remove_logo' => false, 'zones' => null, 'added_zones' => [],
         ];
 
         $after = self::planCosts($arguments, $read, $stored, $idShop, $errors, $plan);
@@ -338,6 +344,17 @@ class SomcpToolUpdateCarrier
             if ($groups !== null && $stored !== null && $groups !== $stored['groups']) {
                 $plan['changes'][] = ['field' => 'group_access', 'old' => $stored['groups'], 'new' => $groups];
                 $plan['groups'] = $groups;
+            }
+        }
+
+        if (array_key_exists('zones', $arguments)) {
+            $zones = self::zones($arguments['zones'], $idShop, $errors);
+            // Compared as a set: the order of the list does not count, so the
+            // zones of somcp_get_carrier given back, sorted by name, are no change.
+            if ($zones !== null && $stored !== null && $zones !== $stored['zones']) {
+                $plan['changes'][] = ['field' => 'zones', 'old' => $stored['zones'], 'new' => $zones];
+                $plan['zones'] = $zones;
+                $plan['added_zones'] = array_values(array_diff($zones, $stored['zones']));
             }
         }
 
@@ -702,12 +719,85 @@ class SomcpToolUpdateCarrier
     }
 
     /**
+     * The zones the carrier delivers to after the change, as a sorted list of id_zone, or null with the reasons.
+     *
+     * The full list: either the objects somcp_get_carrier answers or
+     * somcp_list_zones lists, or bare identifiers. A name given must be the
+     * zone's own, so a list meant for another zone is not taken silently.
+     *
+     * @param mixed $value
+     * @param int $idShop
+     * @param array<int, string> $errors
+     *
+     * @return array<int, int>|null
+     */
+    private static function zones($value, int $idShop, array &$errors): ?array
+    {
+        if (!is_array($value) || !array_is_list($value)) {
+            $errors[] = 'zones: a list of id_zone from somcp_list_zones';
+
+            return null;
+        }
+        // A carrier with no zone is offered to no address; turning it off is
+        // the reversible way to stop it.
+        if ($value === []) {
+            $errors[] = 'zones: at least one zone - turn the carrier off with active instead';
+
+            return null;
+        }
+        // The zones of this shop, as the zone boxes of the carrier page list them.
+        $known = [];
+        foreach (Db::getInstance()->executeS(
+            'SELECT z.`id_zone`, z.`name` FROM `' . _DB_PREFIX_ . 'zone` z'
+            . ' INNER JOIN `' . _DB_PREFIX_ . 'zone_shop` zs ON zs.`id_zone` = z.`id_zone` AND zs.`id_shop` = ' . $idShop
+        ) ?: [] as $row) {
+            $known[(int) $row['id_zone']] = (string) $row['name'];
+        }
+
+        $ids = [];
+        $wrong = false;
+        foreach ($value as $index => $zone) {
+            $path = 'zones[' . $index . ']';
+            $id = SomcpTool::id(is_array($zone) ? $zone : ['id_zone' => $zone], 'id_zone');
+            if ($id === 0) {
+                $errors[] = SomcpTool::notAnIdentifier($path . '.id_zone');
+                $wrong = true;
+                continue;
+            }
+            if (!isset($known[$id])) {
+                $errors[] = SomcpTool::notFound($path . '.id_zone', 'zone', $id, 'somcp_list_zones');
+                $wrong = true;
+                continue;
+            }
+            if (is_array($zone) && array_key_exists('name', $zone) && $zone['name'] !== $known[$id]) {
+                $errors[] = $path . '.name: the name of a zone is not changed here - leave it out or give it as '
+                    . 'somcp_list_zones answers it';
+                $wrong = true;
+                continue;
+            }
+            if (isset($ids[$id])) {
+                $errors[] = $path . ': id_zone ' . $id . ' is already in the list';
+                $wrong = true;
+                continue;
+            }
+            $ids[$id] = $id;
+        }
+        if ($wrong) {
+            return null;
+        }
+        $ids = array_values($ids);
+        sort($ids);
+
+        return $ids;
+    }
+
+    /**
      * What the shop stores for the fields this tool writes.
      *
      * @param int $idCarrier
      * @param int $idShop
      *
-     * @return array{name: string, grade: int, url: string, active: bool, position: int, max_width: int, max_height: int, max_depth: int, max_weight: float, is_free: bool, handling: bool, method: int, range_behavior: int, tax: int, delay: array<int, string>, groups: array<int, int>, orders: int}
+     * @return array{name: string, grade: int, url: string, active: bool, position: int, max_width: int, max_height: int, max_depth: int, max_weight: float, is_free: bool, handling: bool, method: int, range_behavior: int, tax: int, delay: array<int, string>, groups: array<int, int>, zones: array<int, int>, orders: int}
      */
     private static function stored(int $idCarrier, int $idShop): array
     {
@@ -735,6 +825,15 @@ class SomcpToolUpdateCarrier
             $groups[] = (int) $line['id_group'];
         }
 
+        // No shop column: the zones of a carrier are the same in every shop.
+        $zones = [];
+        foreach ($db->executeS(
+            'SELECT `id_zone` FROM `' . _DB_PREFIX_ . 'carrier_zone` WHERE `id_carrier` = ' . $idCarrier
+            . ' ORDER BY `id_zone` ASC'
+        ) ?: [] as $line) {
+            $zones[] = (int) $line['id_zone'];
+        }
+
         return [
             'name' => (string) ($row['name'] ?? ''),
             'grade' => (int) ($row['grade'] ?? 0),
@@ -756,6 +855,7 @@ class SomcpToolUpdateCarrier
             ),
             'delay' => $delay,
             'groups' => $groups,
+            'zones' => $zones,
             'orders' => self::orders($idCarrier),
         ];
     }
@@ -827,7 +927,7 @@ class SomcpToolUpdateCarrier
         // A move alone is not a change of the carrier: neither version of the
         // core makes a new version for it, so the orders keep it as it is.
         $edits = $plan['set'] !== [] || $plan['groups'] !== null || $plan['tax'] !== null
-            || $plan['logo'] !== null || $plan['remove_logo'];
+            || $plan['logo'] !== null || $plan['remove_logo'] || $plan['zones'] !== null;
 
         try {
             if ($edits && self::orders($idCarrier) > 0) {
@@ -907,6 +1007,10 @@ class SomcpToolUpdateCarrier
                 $done = (bool) $carrier->setGroups($plan['groups']);
             }
             $failure = $done ? '' : 'PrestaShop refused to save it';
+            if ($done && $plan['zones'] !== null) {
+                $done = self::writeZones((int) $carrier->id, $plan['zones']);
+                $failure = $done ? '' : 'the carrier was saved, but PrestaShop refused its zones';
+            }
             if ($done && $plan['tax'] !== null) {
                 // After the copy, which took over the old tax, so one call
                 // makes one version. setTaxRulesGroup() writes the shops of
@@ -988,11 +1092,27 @@ class SomcpToolUpdateCarrier
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'carrier_shop` WHERE `id_carrier` = ' . $newId
             . ' AND `id_shop` <> ' . $idShop
         );
+        // An added zone has no price until its ranges get one: the shop does
+        // not offer the carrier there, which the merchant has to know now.
+        $unpriced = [];
+        foreach ($plan['added_zones'] as $idZone) {
+            $priced = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'delivery` WHERE `id_carrier` = ' . $newId
+                . ' AND `id_zone` = ' . (int) $idZone
+            );
+            if ($priced === 0) {
+                $unpriced[] = (int) $idZone;
+            }
+        }
+        if ($unpriced !== []) {
+            $warnings[] = 'The zone(s) ' . implode(', ', $unpriced) . ' have no price yet: the shop does not offer '
+                . 'this carrier there until its ranges get one.';
+        }
         if ($otherShops > 0) {
             $result['also_in_other_shops'] = $otherShops;
             $warnings[] = 'This carrier is also in ' . $otherShops . ' other shop(s): its name, Speed grade, '
                 . 'Tracking URL, status, groups, Free shipping, handling costs, billing, Out-of-range '
-                . 'behavior and size and weight limits change there too, as they do from the back office; the Transit time and the Tax '
+                . 'behavior, zones and size and weight limits change there too, as they do from the back office; the Transit time and the Tax '
                 . 'were changed for this shop only.';
         }
         if ($plan['position'] !== null && SomcpToolCreateTax::otherShops() > 0) {
@@ -1007,6 +1127,34 @@ class SomcpToolUpdateCarrier
         $result['carrier'] = SomcpToolGetCarrier::carrier($newId, $idShop, $idLang);
 
         return SomcpTool::json($result);
+    }
+
+    /**
+     * Replaces the zones of a carrier, as 9.0.0 does in CarrierRepository::updateAssociatedZones().
+     *
+     * Only carrier_zone is written, on both versions: Carrier::addZone() of
+     * 8.0.1 would also add a price of 0 in every range, making the carrier
+     * free in a zone the merchant never priced, and deleteZone() would drop
+     * prices no tool gives back. No object writes that table alone.
+     *
+     * @param int $idCarrier the carrier now in use
+     * @param array<int, int> $zones
+     *
+     * @return bool
+     */
+    private static function writeZones(int $idCarrier, array $zones): bool
+    {
+        $db = Db::getInstance();
+        if (!$db->delete('carrier_zone', '`id_carrier` = ' . $idCarrier)) {
+            return false;
+        }
+        foreach ($zones as $idZone) {
+            if (!$db->insert('carrier_zone', ['id_carrier' => $idCarrier, 'id_zone' => (int) $idZone])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

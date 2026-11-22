@@ -1008,7 +1008,7 @@ if ($getCarrier !== null && $updateCarrier !== null) {
 
         return [$result, $text, json_decode(trim($text), true)];
     };
-    $calls += 12;
+    $calls += 15;
     $carrierBefore = null;
     try {
         [$result, $text, $carrierBefore] = $carrierCall($getCarrier, ['id_carrier' => 3]);
@@ -1030,7 +1030,20 @@ if ($getCarrier !== null && $updateCarrier !== null) {
                 'a width and a weight limit, changed in place' => [['id_carrier' => 3, 'max_width' => 40, 'max_weight' => 2.5], ['"changed": true', '"id_carrier": 3', '"field": "max_width"', '"field": "max_weight"', '"new": 2.5']],
                 'the same limits again, nothing written' => [['id_carrier' => 3, 'max_width' => 40, 'max_weight' => 2.5], ['"changed": false']],
                 'the limits of the start given back' => [['id_carrier' => 3, 'max_width' => (int) $carrierBefore['max_width'], 'max_weight' => (float) $carrierBefore['max_weight']], ['"changed": true', '"id_carrier": 3', '"field": "max_width"']],
+                // The zones of #336: given back as read, a zone added, then
+                // the zones of the start given back alone, since the ranges of
+                // the start have no price in the added zone.
+                'the zones given back as read, nothing written' => [['id_carrier' => 3, 'zones' => $carrierBefore['zones']], ['"changed": false']],
+                'a zone added, its missing price said' => [['id_carrier' => 3, 'zones' => [['id_zone' => 1], ['id_zone' => 2], ['id_zone' => 3]]], ['"changed": true', '"id_carrier": 3', '"field": "zones"', 'The zone(s) 3 have no price yet']],
+                'the zones of the start given back' => [['id_carrier' => 3, 'zones' => $carrierBefore['zones']], ['"changed": true', '"id_carrier": 3', '"field": "zones"']],
             ];
+            // The prices of the zones the carrier keeps are not touched by a zone change.
+            $pricesOf = static function (): int {
+                return (int) Db::getInstance()->getValue(
+                    'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'delivery` WHERE `id_carrier` = 3 AND `id_zone` IN (1, 2)'
+                );
+            };
+            $pricesBefore = $pricesOf();
             foreach ($steps as $why => [$arguments, $needles]) {
                 [$result, $text] = $carrierCall($updateCarrier, $arguments);
                 $missing = array_filter($needles, static function (string $needle) use ($text): bool {
@@ -1044,6 +1057,11 @@ if ($getCarrier !== null && $updateCarrier !== null) {
             }
             [$result, $text, $carrierAfter] = $carrierCall($getCarrier, ['id_carrier' => 3]);
             unset($carrierBefore['logo'], $carrierAfter['logo']);
+            if ($pricesOf() !== $pricesBefore) {
+                $failures[] = 'somcp_update_carrier (the zones changed and put back): expected the prices of zones 1 and 2 unchanged, ' . $pricesBefore . ' rows before, ' . $pricesOf() . ' after';
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (the prices of the zones kept, unchanged)');
+            }
             if (!empty($result['isError']) || $carrierAfter !== $carrierBefore) {
                 $failures[] = 'somcp_update_carrier (carrier 3 read again): expected it as read at the start - ' . excerpt($result);
             } else {

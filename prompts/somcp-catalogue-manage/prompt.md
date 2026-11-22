@@ -212,7 +212,7 @@ serves before tying it, read it with `somcp_get_carrier`.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`.
 To rename a carrier, change its transit time, speed grade, logo, tracking URL,
-status, customer groups, place in the list, free shipping, handling costs,
+status, customer groups, zones, place in the list, free shipping, handling costs,
 billing, tax, out-of-range behavior or size and weight limits, use
 `somcp_update_carrier`; a carrier an order uses gets a new `id_carrier`,
 given in the answer: use that one from then on. A move alone keeps the

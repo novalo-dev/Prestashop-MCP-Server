@@ -38,7 +38,9 @@ each language, its speed grade, its tracking URL, whether it is active and the
 customer groups allowed to use it. It also changes the order of the carriers,
 as the list of Shipping > Carriers does, which is the order the checkout offers
 them in. It also changes or removes the logo of a carrier, from a picture sent
-in the chat or an address. Until now the assistant could read a carrier but had to send the
+in the chat or an address. It also chooses the zones a carrier delivers to, as the
+zone boxes of Shipping locations and costs do; the prices already typed are
+kept. Until now the assistant could read a carrier but had to send the
 merchant to the back office to change any of it. A carrier no order uses keeps
 its identifier; one that orders already use gets a new one, as the back office
 does, so those orders keep the carrier they were placed with. Moving a carrier

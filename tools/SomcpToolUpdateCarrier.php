@@ -21,9 +21,9 @@ declare(strict_types=1);
  * somcp_update_carrier - the General settings of one carrier of Shipping >
  * Carriers, as its edit page saves them: Carrier name, Transit time, Speed
  * grade, Tracking URL, Enabled / Active and Group access, its place in the
- * list, the Logo, the settings of Shipping locations and costs that are not
- * ranges (Free shipping, handling costs, billing, Tax and Out-of-range
- * behavior) and the size and weight limits. Only what is given changes; a call that
+ * list, the Logo, the settings of Shipping locations and costs (Free
+ * shipping, handling costs, billing, Tax, Out-of-range behavior, the zones,
+ * the ranges and their price in each zone) and the size and weight limits. Only what is given changes; a call that
  * would change nothing writes nothing.
  *
  * The two versions of PrestaShop save a carrier differently: the 8.0.1 wizard
@@ -46,7 +46,7 @@ class SomcpToolUpdateCarrier
     private const ARGUMENTS = [
         'id_carrier', 'languages', 'name', 'delay', 'grade', 'tracking_url', 'active', 'group_access', 'position',
         'is_free', 'handling_costs', 'billing', 'id_tax_rules_group', 'out_of_range', 'max_width', 'max_height',
-        'max_depth', 'max_weight', 'logo', 'remove_logo', 'zones',
+        'max_depth', 'max_weight', 'logo', 'remove_logo', 'zones', 'ranges',
     ];
 
     /**
@@ -54,8 +54,7 @@ class SomcpToolUpdateCarrier
      *                         passed when they hold what the shop holds, so a read given back changes nothing
      */
     private const READ_BACK = [
-        'id_reference', 'external_module', 'tax_rule', 'handling_cost_tax_excl', 'ranges',
-        'range_unit', 'dimension_unit', 'weight_unit',
+        'id_reference', 'external_module', 'tax_rule', 'handling_cost_tax_excl', 'range_unit', 'dimension_unit', 'weight_unit',
     ];
 
     /** @var array<int, string> The three sizes, whole numbers in the dimension unit of the shop. */
@@ -84,10 +83,10 @@ class SomcpToolUpdateCarrier
         return new SomcpTool(
             'somcp_update_carrier',
             Somcp::t('Change a carrier'),
-            'Changes one carrier of Shipping > Carriers: Carrier name, Transit time, Speed grade, Logo, Tracking '
-                . 'URL, Active, Group access, Zones (from somcp_list_zones), the place in the list, Free shipping, handling costs, billing by '
-                . 'price or weight, Tax, Out-of-range behavior and the size and weight limits. Only the fields '
-                . 'given change; the answer of somcp_get_carrier can be given back as it is. A carrier an order '
+            'Changes a carrier of Shipping > Carriers: Carrier name, Transit time, Speed grade, Logo, Tracking '
+                . 'URL, Active, Group access, Zones (from somcp_list_zones), ranges and prices per zone, the place in the list, '
+                . 'Free shipping, handling costs, billing by price or weight, Tax, Out-of-range behavior, size and weight limits. '
+                . 'Only what is given changes; the answer of somcp_get_carrier can be given back. A carrier an order '
                 . 'uses gets a new id_carrier, which the answer gives. Not for the carrier of one order '
                 . '(somcp_set_order_carrier). Replayable: the same call twice changes nothing the second time.',
             [
@@ -136,6 +135,11 @@ class SomcpToolUpdateCarrier
                         'description' => 'Every zone the carrier delivers to after the change, as the objects '
                             . 'somcp_get_carrier answers or id_zone from somcp_list_zones. An added zone has no '
                             . 'price until its ranges get one.',
+                    ],
+                    'ranges' => [
+                        'type' => 'array',
+                        'description' => 'Every range after the change, as somcp_get_carrier answers them: {from, to, '
+                            . 'prices: [{id_zone, price_tax_excl}]}, from included, to excluded; null for no price.',
                     ],
                     'position' => [
                         'type' => 'integer',
@@ -271,6 +275,7 @@ class SomcpToolUpdateCarrier
         $plan = [
             'changes' => [], 'set' => [], 'groups' => null, 'position' => null, 'tax' => null,
             'logo' => null, 'remove_logo' => false, 'zones' => null, 'added_zones' => [],
+            'ranges' => null, 'billing_after' => null,
         ];
 
         $after = self::planCosts($arguments, $read, $stored, $idShop, $errors, $plan);
@@ -356,6 +361,10 @@ class SomcpToolUpdateCarrier
                 $plan['zones'] = $zones;
                 $plan['added_zones'] = array_values(array_diff($zones, $stored['zones']));
             }
+        }
+
+        if (array_key_exists('ranges', $arguments)) {
+            self::planRanges($arguments['ranges'], $read, $stored, $idShop, $errors, $plan);
         }
 
         self::planLimits($arguments, $stored, $idShop, $errors, $plan);
@@ -544,6 +553,7 @@ class SomcpToolUpdateCarrier
         }
 
         $billing = $finalFree ? null : $finalBilling;
+        $plan['billing_after'] = $billing;
         $warnings = [];
         $rule = $finalTax > 0 ? SomcpToolGetTaxRule::existingRule($finalTax, $idShop) : null;
         $after = [
@@ -557,6 +567,169 @@ class SomcpToolUpdateCarrier
         }
 
         return $after;
+    }
+
+    /**
+     * Records the change of the ranges and their price in each zone, as the
+     * Ranges table of Shipping locations and costs saves them.
+     *
+     * The list replaces every range of the billing in one call, as both back
+     * offices save the whole table: a range has no identifier the merchant
+     * sees, and the bounds of the next range move with it, which only the
+     * whole list keeps coherent. It is compared with the ranges the carrier
+     * shows once this call is done, so the read given back changes nothing.
+     *
+     * @param mixed $value
+     * @param array<string, mixed>|null $read
+     * @param array<string, mixed>|null $stored from stored()
+     * @param int $idShop
+     * @param array<int, string> $errors
+     * @param array<string, mixed> $plan
+     *
+     * @return void
+     */
+    private static function planRanges($value, ?array $read, ?array $stored, int $idShop, array &$errors, array &$plan): void
+    {
+        if (!is_array($value) || !array_is_list($value)) {
+            $errors[] = 'ranges: a list of {from, to, prices} as somcp_get_carrier answers it';
+
+            return;
+        }
+
+        // The zones the carrier serves once this call is done, by name as the read lists them.
+        $served = [];
+        if ($stored !== null) {
+            $ids = $plan['zones'] ?? $stored['zones'];
+            if ($ids !== []) {
+                foreach (Db::getInstance()->executeS(
+                    'SELECT `id_zone`, `name` FROM `' . _DB_PREFIX_ . 'zone`'
+                    . ' WHERE `id_zone` IN (' . implode(', ', array_map('intval', $ids)) . ')'
+                    . ' ORDER BY `name` ASC, `id_zone` ASC'
+                ) ?: [] as $row) {
+                    $served[(int) $row['id_zone']] = (string) $row['name'];
+                }
+            }
+        }
+
+        $ranges = [];
+        $bounds = [];
+        $wrong = false;
+        foreach ($value as $index => $range) {
+            $path = 'ranges[' . $index . ']';
+            if (!is_array($range)) {
+                $errors[] = $path . ': an object {from, to, prices}';
+                $wrong = true;
+                continue;
+            }
+            $from = $range['from'] ?? null;
+            $to = $range['to'] ?? null;
+            $numbers = (is_int($from) || is_float($from)) && (is_int($to) || is_float($to));
+            if (!$numbers || $from < 0 || $to <= $from) {
+                $errors[] = $path . ': from and to are numbers from 0, to above from';
+                $wrong = true;
+            }
+            if ($numbers) {
+                $bounds[] = ['index' => $index, 'from' => (float) $from, 'to' => (float) $to];
+            }
+
+            $prices = [];
+            foreach (array_keys($served) as $idZone) {
+                $prices[$idZone] = null;
+            }
+            $given = $range['prices'] ?? [];
+            if (!is_array($given) || !array_is_list($given)) {
+                $errors[] = $path . '.prices: a list of {id_zone, price_tax_excl}';
+                $wrong = true;
+                $given = [];
+            }
+            $seen = [];
+            foreach ($given as $entry) {
+                $idZone = is_array($entry) ? SomcpTool::id($entry, 'id_zone') : 0;
+                if ($idZone === 0) {
+                    $errors[] = SomcpTool::notAnIdentifier($path . '.prices.id_zone');
+                    $wrong = true;
+                    continue;
+                }
+                if ($stored !== null && !isset($served[$idZone])) {
+                    $errors[] = $path . '.prices: id_zone ' . $idZone . ' is not served by this carrier - serve the zone first';
+                    $wrong = true;
+                    continue;
+                }
+                if (isset($seen[$idZone])) {
+                    $errors[] = $path . '.prices: id_zone ' . $idZone . ' is already in this range';
+                    $wrong = true;
+                    continue;
+                }
+                $seen[$idZone] = true;
+                // The name is read back only: a zone is renamed in Locations, not here.
+                if (array_key_exists('zone', $entry) && isset($served[$idZone]) && $entry['zone'] !== $served[$idZone]) {
+                    $errors[] = $path . '.prices: the name of zone ' . $idZone . ' is not changed here - leave it out or give it as somcp_get_carrier answers it';
+                    $wrong = true;
+                    continue;
+                }
+                $price = $entry['price_tax_excl'] ?? null;
+                if ($price !== null && (!(is_int($price) || is_float($price)) || $price < 0)) {
+                    $errors[] = $path . '.prices: price_tax_excl of zone ' . $idZone . ' is a number from 0, or null for no price';
+                    $wrong = true;
+                    continue;
+                }
+                $prices[$idZone] = $price === null ? null : (float) $price;
+            }
+            $ranges[] = ['from' => (float) ($numbers ? $from : 0), 'to' => (float) ($numbers ? $to : 0), 'prices' => $prices];
+        }
+
+        // The rule of the alert of 9.0.0, which CarrierRangeZone::assertRanges()
+        // enforces there and nothing enforces in 8.0.1: an overlap would charge
+        // a cart two prices.
+        usort($bounds, static function (array $a, array $b): int {
+            return $a['from'] <=> $b['from'];
+        });
+        for ($i = 1, $count = count($bounds); $i < $count; ++$i) {
+            if ($bounds[$i]['from'] < $bounds[$i - 1]['to']) {
+                $errors[] = 'ranges[' . $bounds[$i]['index'] . ']: starts below the end of the range before it - the maximum of a range is the minimum of the next';
+                $wrong = true;
+            }
+        }
+
+        if ($read === null || $stored === null) {
+            return;
+        }
+        $billing = $plan['billing_after'];
+        if ($billing !== 'price' && $billing !== 'weight') {
+            // The read of a free carrier answers no range: given back, it is no change.
+            if ($value !== []) {
+                $errors[] = 'ranges: the carrier has no billing by price or weight - set billing in the same call';
+            }
+
+            return;
+        }
+        if ($wrong) {
+            return;
+        }
+
+        usort($ranges, static function (array $a, array $b): int {
+            return $a['from'] <=> $b['from'];
+        });
+        $zones = [];
+        foreach ($served as $idZone => $name) {
+            $zones[] = ['id_zone' => $idZone, 'name' => $name];
+        }
+        $warnings = [];
+        $idShopGroup = (int) Shop::getGroupFromShop($idShop);
+        $old = SomcpToolGetCarrier::ranges((int) $read['id_carrier'], $billing, $zones, $idShopGroup, $idShop, $warnings);
+        $new = [];
+        foreach ($ranges as $range) {
+            $line = ['from' => $range['from'], 'to' => $range['to'], 'prices' => []];
+            foreach ($zones as $zone) {
+                $line['prices'][] = ['id_zone' => $zone['id_zone'], 'zone' => $zone['name'], 'price_tax_excl' => $range['prices'][$zone['id_zone']]];
+            }
+            $new[] = $line;
+        }
+        // Compared as numbers, so 50 and 50.000000 are the same bound.
+        if (!self::same($new, $old)) {
+            $plan['changes'][] = ['field' => 'ranges', 'old' => $old, 'new' => $new];
+            $plan['ranges'] = ['billing' => $billing, 'list' => $ranges];
+        }
     }
 
     /**
@@ -927,7 +1100,7 @@ class SomcpToolUpdateCarrier
         // A move alone is not a change of the carrier: neither version of the
         // core makes a new version for it, so the orders keep it as it is.
         $edits = $plan['set'] !== [] || $plan['groups'] !== null || $plan['tax'] !== null
-            || $plan['logo'] !== null || $plan['remove_logo'] || $plan['zones'] !== null;
+            || $plan['logo'] !== null || $plan['remove_logo'] || $plan['zones'] !== null || $plan['ranges'] !== null;
 
         try {
             if ($edits && self::orders($idCarrier) > 0) {
@@ -1019,6 +1192,12 @@ class SomcpToolUpdateCarrier
                 Somcp::actAsShop($idShop);
                 $done = (bool) $carrier->setTaxRulesGroup((int) $plan['tax'], false);
                 $failure = $done ? '' : 'the carrier was saved, but PrestaShop refused its tax';
+            }
+            if ($done && $plan['ranges'] !== null) {
+                // On the carrier now in use: copyCarrierData() gave a new
+                // version the old ranges first, so they are replaced, never added.
+                $done = self::writeRanges((int) $carrier->id, $plan['ranges']['billing'], $plan['ranges']['list']);
+                $failure = $done ? '' : 'the carrier was saved, but PrestaShop refused its ranges';
             }
         } catch (Throwable $e) {
             $done = false;
@@ -1115,6 +1294,10 @@ class SomcpToolUpdateCarrier
                 . 'behavior, zones and size and weight limits change there too, as they do from the back office; the Transit time and the Tax '
                 . 'were changed for this shop only.';
         }
+        if ($plan['ranges'] !== null && SomcpToolCreateTax::otherShops() > 0) {
+            $warnings[] = 'The prices of the ranges are written for every shop of this installation, as the 9.0.0 '
+                . 'back office writes them, so they now apply in the other shops too.';
+        }
         if ($plan['position'] !== null && SomcpToolCreateTax::otherShops() > 0) {
             $warnings[] = 'The place in the list of carriers is the same in every shop of this installation, so '
                 . 'the new order shows in the other shops too.';
@@ -1155,6 +1338,67 @@ class SomcpToolUpdateCarrier
         }
 
         return true;
+    }
+
+    /**
+     * Replaces the ranges of one billing and their prices, as 9.0.0 does in
+     * CarrierRangeRepository::set().
+     *
+     * The delivery rows are written global (no shop, no shop group) on both
+     * versions, and every row of the carrier for that billing is deleted
+     * first whatever its shop: somcp_get_carrier picks a shop row before the
+     * global one, so a shop row left behind would hide what was just written.
+     * RangePrice::add() and RangeWeight::add() are not used: they add a price
+     * of 0 in every zone, which would make the carrier free in a zone the
+     * merchant left unpriced. The ranges of the other billing are kept, so a
+     * carrier switched back to it finds them again, as on both back offices.
+     * One transaction, so a failure leaves the ranges as they were.
+     *
+     * @param int $idCarrier the carrier now in use
+     * @param string $billing price or weight
+     * @param array<int, array{from: float, to: float, prices: array<int, float|null>}> $ranges sorted by from
+     *
+     * @return bool
+     */
+    private static function writeRanges(int $idCarrier, string $billing, array $ranges): bool
+    {
+        $table = $billing === 'price' ? 'range_price' : 'range_weight';
+        $column = 'id_' . $table;
+        $db = Db::getInstance();
+        if (!$db->execute('START TRANSACTION')) {
+            return false;
+        }
+        $done = $db->delete('delivery', '`id_carrier` = ' . $idCarrier . ' AND `' . $column . '` > 0')
+            && $db->delete($table, '`id_carrier` = ' . $idCarrier);
+        foreach ($ranges as $range) {
+            if (!$done) {
+                break;
+            }
+            $done = $db->insert($table, [
+                'id_carrier' => $idCarrier,
+                'delimiter1' => (float) $range['from'],
+                'delimiter2' => (float) $range['to'],
+            ]);
+            $idRange = $done ? (int) $db->Insert_ID() : 0;
+            $done = $done && $idRange > 0;
+            foreach ($range['prices'] as $idZone => $price) {
+                if (!$done || $price === null) {
+                    continue;
+                }
+                $done = $db->insert('delivery', [
+                    'id_shop' => null,
+                    'id_shop_group' => null,
+                    'id_carrier' => $idCarrier,
+                    'id_range_price' => $billing === 'price' ? $idRange : null,
+                    'id_range_weight' => $billing === 'weight' ? $idRange : null,
+                    'id_zone' => (int) $idZone,
+                    'price' => (float) $price,
+                ], true);
+            }
+        }
+        $db->execute($done ? 'COMMIT' : 'ROLLBACK');
+
+        return $done;
     }
 
     /**

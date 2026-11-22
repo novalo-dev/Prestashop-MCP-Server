@@ -1008,7 +1008,7 @@ if ($getCarrier !== null && $updateCarrier !== null) {
 
         return [$result, $text, json_decode(trim($text), true)];
     };
-    $calls += 15;
+    $calls += 19;
     $carrierBefore = null;
     try {
         [$result, $text, $carrierBefore] = $carrierCall($getCarrier, ['id_carrier' => 3]);
@@ -1053,6 +1053,44 @@ if ($getCarrier !== null && $updateCarrier !== null) {
                     $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
                 } else {
                     printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                }
+            }
+            // The ranges of #337: given back as read, one price changed and a
+            // range added, read again, then the ranges of the start given back.
+            $rangesBefore = is_array($carrierBefore['ranges'] ?? null) ? $carrierBefore['ranges'] : [];
+            $rangesChanged = $rangesBefore;
+            foreach ($rangesChanged[0]['prices'] ?? [] as $i => $price) {
+                if ((int) $price['id_zone'] === 1) {
+                    $rangesChanged[0]['prices'][$i]['price_tax_excl'] = 9;
+                }
+            }
+            $rangesChanged[] = ['from' => 200, 'to' => 500, 'prices' => [['id_zone' => 1, 'price_tax_excl' => 0], ['id_zone' => 2, 'price_tax_excl' => 0]]];
+            $rangeSteps = [
+                'the ranges given back as read, nothing written' => [$rangesBefore, ['"changed": false']],
+                'a price changed and a range added, in place' => [$rangesChanged, ['"changed": true', '"id_carrier": 3', '"field": "ranges"']],
+                'the ranges of the start given back' => [$rangesBefore, ['"changed": true', '"id_carrier": 3', '"field": "ranges"']],
+            ];
+            foreach ($rangeSteps as $why => [$ranges, $needles]) {
+                [$result, $text] = $carrierCall($updateCarrier, ['id_carrier' => 3, 'ranges' => $ranges]);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if ($rangesBefore === [] || !empty($result['isError']) || $missing !== [] || strpos($text, '"replaced_id_carrier"') !== false) {
+                    $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                }
+                if ($why === 'a price changed and a range added, in place') {
+                    [$result, , $changed] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+                    $first = [];
+                    foreach ($changed['ranges'][0]['prices'] ?? [] as $price) {
+                        $first[(int) $price['id_zone']] = $price['price_tax_excl'];
+                    }
+                    if (!empty($result['isError']) || count($changed['ranges'] ?? []) !== count($rangesBefore) + 1 || (float) ($first[1] ?? -1) !== 9.0) {
+                        $failures[] = 'somcp_update_carrier (the ranges read after the change): expected ' . (count($rangesBefore) + 1) . ' ranges and 9 in zone 1 - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (the ranges read after the change)');
+                    }
                 }
             }
             [$result, $text, $carrierAfter] = $carrierCall($getCarrier, ['id_carrier' => 3]);

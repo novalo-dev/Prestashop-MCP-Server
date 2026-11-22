@@ -51,7 +51,9 @@ is free, adds the handling costs, bills by price or weight, which tax it
 charges and what happens beyond its last range, as the Shipping locations and
 costs step of a carrier does. Turning a carrier free keeps the prices of its
 ranges, so they are still there if it becomes paid again. It also sets the
-largest and heaviest package a carrier takes, as Size and weight does.
+largest and heaviest package a carrier takes, as Size and weight does. It also
+sets the ranges of a carrier and their price in each zone, as the table of
+Shipping locations and costs does.
 
 **Delete a carrier.** The new tool somcp_delete_carrier deletes one carrier of
 Shipping > Carriers, such as the demo carriers of a new shop. A carrier orders

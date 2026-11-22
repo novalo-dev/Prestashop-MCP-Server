@@ -95,7 +95,8 @@ status change: it never moves the order to shipped, and
   and the price of each range per zone.
   `somcp_list_zones` lists the zones of the shop, with their `id_zone`.
   `somcp_update_carrier` changes its name, transit time, speed grade,
-  logo, tracking URL, status, groups, zones, place in the list, free shipping,
+  logo, tracking URL, status, groups, zones, ranges and their prices per zone,
+  place in the list, free shipping,
   handling costs, billing, tax, out-of-range behavior or size and
   weight limits, only when the merchant asks for it; a carrier an order uses gets a new `id_carrier`,
   given in the answer.

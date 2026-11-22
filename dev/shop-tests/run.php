@@ -988,7 +988,7 @@ if ($getCarrier !== null && $updateCarrier !== null) {
 
         return [$result, $text, json_decode(trim($text), true)];
     };
-    $calls += 9;
+    $calls += 12;
     $carrierBefore = null;
     try {
         [$result, $text, $carrierBefore] = $carrierCall($getCarrier, ['id_carrier' => 3]);
@@ -1006,6 +1006,10 @@ if ($getCarrier !== null && $updateCarrier !== null) {
                 'billed by weight, disabled out of range, no tax' => [['id_carrier' => 3, 'billing' => 'weight', 'out_of_range' => 'disable_carrier', 'id_tax_rules_group' => 0], ['"changed": true', '"id_carrier": 3', '"field": "billing"', '"field": "out_of_range"', '"field": "id_tax_rules_group"']],
                 'made free, the handling costs turned off with it' => [['id_carrier' => 3, 'is_free' => true], ['"changed": true', '"id_carrier": 3', '"field": "is_free"', '"field": "handling_costs"', '"handling_costs": false']],
                 'the read of the start given back, the costs settings put back' => [$carrierBefore, ['"changed": true', '"id_carrier": 3', '"field": "billing"', '"field": "is_free"']],
+                // The size and weight limits of #330, then put back as read.
+                'a width and a weight limit, changed in place' => [['id_carrier' => 3, 'max_width' => 40, 'max_weight' => 2.5], ['"changed": true', '"id_carrier": 3', '"field": "max_width"', '"field": "max_weight"', '"new": 2.5']],
+                'the same limits again, nothing written' => [['id_carrier' => 3, 'max_width' => 40, 'max_weight' => 2.5], ['"changed": false']],
+                'the limits of the start given back' => [['id_carrier' => 3, 'max_width' => (int) $carrierBefore['max_width'], 'max_weight' => (float) $carrierBefore['max_weight']], ['"changed": true', '"id_carrier": 3', '"field": "max_width"']],
             ];
             foreach ($steps as $why => [$arguments, $needles]) {
                 [$result, $text] = $carrierCall($updateCarrier, $arguments);

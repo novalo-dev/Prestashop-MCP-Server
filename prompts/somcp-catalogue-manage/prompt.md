@@ -210,9 +210,10 @@ may deliver the product. To tell which zones and customer groups a carrier
 serves before tying it, read it with `somcp_get_carrier`.
 To rename a carrier, change its transit time, speed grade, tracking URL,
 status, customer groups, place in the list, free shipping, handling costs,
-billing, tax or out-of-range behavior, use `somcp_update_carrier`; a
-carrier an order uses gets a new `id_carrier`, given in the answer: use that
-one from then on. A move alone keeps the identifier.
+billing, tax, out-of-range behavior or size and weight limits, use
+`somcp_update_carrier`; a carrier an order uses gets a new `id_carrier`,
+given in the answer: use that one from then on. A move alone keeps the
+identifier.
 To remove a carrier for good, confirm it with the merchant by name, then use
 `somcp_delete_carrier`; when they may want it back, turn it off with
 `somcp_update_carrier` instead.

@@ -21,10 +21,10 @@ declare(strict_types=1);
  * somcp_update_carrier - the General settings of one carrier of Shipping >
  * Carriers, as its edit page saves them: Carrier name, Transit time, Speed
  * grade, Tracking URL, Enabled / Active and Group access, its place in the
- * list, and the settings of Shipping locations and costs that are not
- * ranges: Free shipping, handling costs, billing, Tax and Out-of-range
- * behavior. Only what is given changes; a call that would change nothing
- * writes nothing.
+ * list, the settings of Shipping locations and costs that are not ranges
+ * (Free shipping, handling costs, billing, Tax and Out-of-range behavior)
+ * and the size and weight limits. Only what is given changes; a call that
+ * would change nothing writes nothing.
  *
  * The two versions of PrestaShop save a carrier differently: the 8.0.1 wizard
  * makes a new carrier at every save, 9.0.0 changes it in place while no order
@@ -45,7 +45,8 @@ class SomcpToolUpdateCarrier
     /** @var array<int, string> The arguments this tool writes, under the names somcp_get_carrier returns. */
     private const ARGUMENTS = [
         'id_carrier', 'languages', 'name', 'delay', 'grade', 'tracking_url', 'active', 'group_access', 'position',
-        'is_free', 'handling_costs', 'billing', 'id_tax_rules_group', 'out_of_range',
+        'is_free', 'handling_costs', 'billing', 'id_tax_rules_group', 'out_of_range', 'max_width', 'max_height',
+        'max_depth', 'max_weight',
     ];
 
     /**
@@ -53,9 +54,15 @@ class SomcpToolUpdateCarrier
      *                         passed when they hold what the shop holds, so a read given back changes nothing
      */
     private const READ_BACK = [
-        'id_reference', 'logo', 'external_module', 'zones', 'tax_rule', 'handling_cost_tax_excl', 'max_width',
-        'max_height', 'max_depth', 'max_weight', 'ranges', 'range_unit', 'dimension_unit', 'weight_unit',
+        'id_reference', 'logo', 'external_module', 'zones', 'tax_rule', 'handling_cost_tax_excl', 'ranges',
+        'range_unit', 'dimension_unit', 'weight_unit',
     ];
+
+    /** @var array<int, string> The three sizes, whole numbers in the dimension unit of the shop. */
+    private const SIZES = ['max_width', 'max_height', 'max_depth'];
+
+    /** @var int The largest value of the unsigned int(10) size columns. */
+    private const SIZE_MAX = 4294967295;
 
     /** @var array<int, string> The values of billing, by the shipping_method they store. */
     private const BILLING = [
@@ -77,11 +84,11 @@ class SomcpToolUpdateCarrier
         return new SomcpTool(
             'somcp_update_carrier',
             Somcp::t('Change a carrier'),
-            'Changes the General settings of one carrier of Shipping > Carriers: Carrier name, Transit time, '
-                . 'Speed grade, Tracking URL, Active, Group access, the place in the list, Free shipping, handling '
-                . 'costs, billing by price or weight, Tax and Out-of-range behavior. Only the fields given change; the answer '
-                . 'of somcp_get_carrier can be given back as it is. A carrier an order uses gets a new '
-                . 'id_carrier, which the answer gives. Not for the carrier of one order '
+            'Changes one carrier of Shipping > Carriers: Carrier name, Transit time, Speed grade, Tracking '
+                . 'URL, Active, Group access, the place in the list, Free shipping, handling costs, billing by '
+                . 'price or weight, Tax, Out-of-range behavior and the size and weight limits. Only the fields '
+                . 'given change; the answer of somcp_get_carrier can be given back as it is. A carrier an order '
+                . 'uses gets a new id_carrier, which the answer gives. Not for the carrier of one order '
                 . '(somcp_set_order_carrier). Replayable: the same call twice changes nothing the second time.',
             [
                 'type' => 'object',
@@ -153,6 +160,24 @@ class SomcpToolUpdateCarrier
                         'type' => 'string',
                         'enum' => ['highest_range', 'disable_carrier'],
                         'description' => 'Out-of-range behavior: charge the highest range, or disable the carrier.',
+                    ],
+                    'max_width' => [
+                        'type' => 'integer',
+                        'description' => 'Largest package width the carrier takes, a whole number in the '
+                            . 'dimension_unit of the shop; 0 for no limit.',
+                    ],
+                    'max_height' => [
+                        'type' => 'integer',
+                        'description' => 'Largest package height, as max_width.',
+                    ],
+                    'max_depth' => [
+                        'type' => 'integer',
+                        'description' => 'Largest package depth, as max_width.',
+                    ],
+                    'max_weight' => [
+                        'type' => 'number',
+                        'description' => 'Heaviest package the carrier takes, in the weight_unit of the shop; 0 '
+                            . 'for no limit.',
                     ],
                 ],
                 'required' => ['id_carrier'],
@@ -313,6 +338,8 @@ class SomcpToolUpdateCarrier
             }
         }
 
+        self::planLimits($arguments, $stored, $idShop, $errors, $plan);
+
         if (array_key_exists('position', $arguments)) {
             // Carriers have one order for the whole installation, counted
             // among those not deleted, as Carrier::updatePosition() counts them.
@@ -468,6 +495,52 @@ class SomcpToolUpdateCarrier
     }
 
     /**
+     * Records the changes of the size and weight limits.
+     *
+     * Only a whole number is a size, as the help of both forms says, so 12.5
+     * or "12" is refused rather than rounded. A negative weight is refused on
+     * both versions, as the 9.0.0 form does: 8.0.1 would store it, and a
+     * negative limit matches no cart, which hides the carrier at checkout.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed>|null $stored from stored()
+     * @param int $idShop
+     * @param array<int, string> $errors
+     * @param array<string, mixed> $plan
+     *
+     * @return void
+     */
+    private static function planLimits(array $arguments, ?array $stored, int $idShop, array &$errors, array &$plan): void
+    {
+        $idShopGroup = (int) Shop::getGroupFromShop($idShop);
+        $dimension = (string) Configuration::get('PS_DIMENSION_UNIT', null, $idShopGroup, $idShop);
+        foreach (self::SIZES as $key) {
+            if (!array_key_exists($key, $arguments)) {
+                continue;
+            }
+            $size = $arguments[$key];
+            if (!is_int($size) || $size < 0 || $size > self::SIZE_MAX) {
+                $errors[] = $key . ': a whole number from 0, in ' . $dimension . ', 0 for no limit';
+            } elseif ($stored !== null && $size !== $stored[$key]) {
+                $plan['changes'][] = ['field' => $key, 'old' => $stored[$key], 'new' => $size];
+                $plan['set'][$key] = $size;
+            }
+        }
+
+        if (array_key_exists('max_weight', $arguments)) {
+            $weight = SomcpToolCreateProduct::float($arguments['max_weight']);
+            if ($weight === null || $weight < 0) {
+                $errors[] = 'max_weight: a number from 0, in '
+                    . (string) Configuration::get('PS_WEIGHT_UNIT', null, $idShopGroup, $idShop) . ', 0 for no limit';
+            } elseif ($stored !== null && round($weight, 6) !== round($stored['max_weight'], 6)) {
+                // Compared as the decimal(20,6) column stores it, so 5 and 5.000000 are one weight.
+                $plan['changes'][] = ['field' => 'max_weight', 'old' => $stored['max_weight'], 'new' => $weight];
+                $plan['set']['max_weight'] = $weight;
+            }
+        }
+    }
+
+    /**
      * Records the Transit time change per language, and the full set of texts to write.
      *
      * somcp_get_carrier answers the transit time as one text, in the language
@@ -587,14 +660,14 @@ class SomcpToolUpdateCarrier
      * @param int $idCarrier
      * @param int $idShop
      *
-     * @return array{name: string, grade: int, url: string, active: bool, position: int, is_free: bool, handling: bool, method: int, range_behavior: int, tax: int, delay: array<int, string>, groups: array<int, int>, orders: int}
+     * @return array{name: string, grade: int, url: string, active: bool, position: int, max_width: int, max_height: int, max_depth: int, max_weight: float, is_free: bool, handling: bool, method: int, range_behavior: int, tax: int, delay: array<int, string>, groups: array<int, int>, orders: int}
      */
     private static function stored(int $idCarrier, int $idShop): array
     {
         $db = Db::getInstance();
         $row = $db->getRow(
             'SELECT `name`, `grade`, `url`, `active`, `position`, `is_free`, `shipping_handling`,'
-            . ' `shipping_method`, `range_behavior` FROM `' . _DB_PREFIX_ . 'carrier`'
+            . ' `shipping_method`, `range_behavior`, `max_width`, `max_height`, `max_depth`, `max_weight` FROM `' . _DB_PREFIX_ . 'carrier`'
             . ' WHERE `id_carrier` = ' . $idCarrier
         ) ?: [];
 
@@ -621,6 +694,10 @@ class SomcpToolUpdateCarrier
             'url' => (string) ($row['url'] ?? ''),
             'active' => (bool) ($row['active'] ?? false),
             'position' => (int) ($row['position'] ?? 0),
+            'max_width' => (int) ($row['max_width'] ?? 0),
+            'max_height' => (int) ($row['max_height'] ?? 0),
+            'max_depth' => (int) ($row['max_depth'] ?? 0),
+            'max_weight' => (float) ($row['max_weight'] ?? 0),
             'is_free' => (bool) ($row['is_free'] ?? false),
             'handling' => (bool) ($row['shipping_handling'] ?? false),
             'method' => (int) ($row['shipping_method'] ?? 0),
@@ -755,6 +832,18 @@ class SomcpToolUpdateCarrier
             if (array_key_exists('shipping_method', $plan['set'])) {
                 $carrier->shipping_method = (int) $plan['set']['shipping_method'];
             }
+            foreach (self::SIZES as $key) {
+                if (array_key_exists($key, $plan['set'])) {
+                    $carrier->{$key} = (int) $plan['set'][$key];
+                }
+            }
+            if (array_key_exists('max_weight', $plan['set'])) {
+                // Through hydrate(): 8.0 declares the property an int while
+                // the column and 9.0 keep a decimal weight, so 2.5 stays 2.5.
+                // The id_lang it resets is already null: the carrier is
+                // loaded without a language, every translation kept.
+                $carrier->hydrate(['max_weight' => (float) $plan['set']['max_weight']]);
+            }
             if (array_key_exists('range_behavior', $plan['set'])) {
                 // Declared a boolean by the core: 1 is Disable carrier.
                 $carrier->range_behavior = (int) $plan['set']['range_behavior'] === 1;
@@ -838,8 +927,8 @@ class SomcpToolUpdateCarrier
         if ($otherShops > 0) {
             $result['also_in_other_shops'] = $otherShops;
             $warnings[] = 'This carrier is also in ' . $otherShops . ' other shop(s): its name, Speed grade, '
-                . 'Tracking URL, status, groups, Free shipping, handling costs, billing and Out-of-range '
-                . 'behavior change there too, as they do from the back office; the Transit time and the Tax '
+                . 'Tracking URL, status, groups, Free shipping, handling costs, billing, Out-of-range '
+                . 'behavior and size and weight limits change there too, as they do from the back office; the Transit time and the Tax '
                 . 'were changed for this shop only.';
         }
         if ($plan['position'] !== null && SomcpToolCreateTax::otherShops() > 0) {

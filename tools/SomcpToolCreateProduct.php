@@ -3755,11 +3755,14 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * A number as a client may send it: public, so a tool outside this
+     * family reads an amount or a weight the way the catalogue tools do.
+     *
      * @param mixed $value
      *
      * @return float|null
      */
-    protected static function float($value): ?float
+    public static function float($value): ?float
     {
         if (is_int($value) || is_float($value)) {
             return is_finite((float) $value) ? (float) $value : null;

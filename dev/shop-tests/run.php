@@ -1008,7 +1008,7 @@ if ($getCarrier !== null && $updateCarrier !== null) {
 
         return [$result, $text, json_decode(trim($text), true)];
     };
-    $calls += 19;
+    $calls += 22;
     $carrierBefore = null;
     try {
         [$result, $text, $carrierBefore] = $carrierCall($getCarrier, ['id_carrier' => 3]);
@@ -1104,6 +1104,35 @@ if ($getCarrier !== null && $updateCarrier !== null) {
                 $failures[] = 'somcp_update_carrier (carrier 3 read again): expected it as read at the start - ' . excerpt($result);
             } else {
                 printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 3 read again, as at the start)');
+            }
+            // A free carrier is offered in every zone it serves without a
+            // price, so adding a zone to demo carrier 1 (free, used by no
+            // order) says nothing about a missing price, then is put back.
+            [$result, , $freeBefore] = $carrierCall($getCarrier, ['id_carrier' => 1]);
+            if (!empty($result['isError']) || !is_array($freeBefore) || !is_array($freeBefore['zones'] ?? null)) {
+                $failures[] = 'somcp_update_carrier (reading carrier 1 first): ' . excerpt($result);
+            } else {
+                $freeSteps = [
+                    'a zone added to a free carrier, no missing price said' => [['id_carrier' => 1, 'zones' => [['id_zone' => 1], ['id_zone' => 2]]], ['"changed": true', '"id_carrier": 1']],
+                    'the zones of the free carrier given back' => [['id_carrier' => 1, 'zones' => $freeBefore['zones']], ['"changed": true', '"id_carrier": 1']],
+                ];
+                foreach ($freeSteps as $why => [$arguments, $needles]) {
+                    [$result, $text] = $carrierCall($updateCarrier, $arguments);
+                    $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                        return strpos($text, $needle) === false;
+                    });
+                    if (!empty($result['isError']) || $missing !== [] || strpos($text, 'have no price yet') !== false || strpos($text, '"replaced_id_carrier"') !== false) {
+                        $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' and no missing price - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                    }
+                }
+                [$result, , $freeAfter] = $carrierCall($getCarrier, ['id_carrier' => 1]);
+                if (!empty($result['isError']) || ($freeAfter['zones'] ?? null) !== $freeBefore['zones']) {
+                    $failures[] = 'somcp_update_carrier (carrier 1 read again): expected the zones read at the start - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 1 read again, its zones as at the start)');
+                }
             }
         }
     } catch (Throwable $e) {

@@ -1316,16 +1316,24 @@ class SomcpToolUpdateCarrier
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'carrier_shop` WHERE `id_carrier` = ' . $newId
             . ' AND `id_shop` <> ' . $idShop
         );
-        // An added zone has no price until its ranges get one: the shop does
-        // not offer the carrier there, which the merchant has to know now.
+        // An added zone with no price for the billing of the carrier is a
+        // zone the shop does not offer it in (Carrier::getCarriersForOrder()),
+        // which the merchant has to know now. A free carrier is offered in
+        // every zone it serves without any price, so nothing is said for it;
+        // the rows of the other billing, kept when the billing was switched,
+        // do not count, since checkout never reads them.
         $unpriced = [];
-        foreach ($plan['added_zones'] as $idZone) {
-            $priced = (int) Db::getInstance()->getValue(
-                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'delivery` WHERE `id_carrier` = ' . $newId
-                . ' AND `id_zone` = ' . (int) $idZone
-            );
-            if ($priced === 0) {
-                $unpriced[] = (int) $idZone;
+        $billingAfter = $plan['billing_after'];
+        if ($billingAfter === 'price' || $billingAfter === 'weight') {
+            $column = $billingAfter === 'price' ? 'id_range_price' : 'id_range_weight';
+            foreach ($plan['added_zones'] as $idZone) {
+                $priced = (int) Db::getInstance()->getValue(
+                    'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'delivery` WHERE `id_carrier` = ' . $newId
+                    . ' AND `id_zone` = ' . (int) $idZone . ' AND `' . $column . '` > 0'
+                );
+                if ($priced === 0) {
+                    $unpriced[] = (int) $idZone;
+                }
             }
         }
         if ($unpriced !== []) {

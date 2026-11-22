@@ -16,6 +16,8 @@ are:
 
 ## Unreleased
 
+## 2.0.4 - 2026-11-22
+
 ### Added
 
 **Read a carrier in full.** The new tool somcp_get_carrier reads one carrier of
@@ -185,6 +187,11 @@ A rule used by past orders keeps the row as it was for them, and the change
 applies to a copy under a new identifier, which the answer gives.
 
 ### Changed
+
+**Contributors shown without GitHub.** A shop that cannot reach GitHub, or
+whose update check is switched off, shows the contributors from a list shipped
+with the module. That list was three weeks old; it now carries the counts of
+this release.
 
 **Find a content page by its ID, URL or Meta title.** The list of content pages
 takes the filters ID, URL and Meta title of Design > Pages, as well as Title and

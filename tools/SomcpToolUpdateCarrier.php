@@ -21,9 +21,9 @@ declare(strict_types=1);
  * somcp_update_carrier - the General settings of one carrier of Shipping >
  * Carriers, as its edit page saves them: Carrier name, Transit time, Speed
  * grade, Tracking URL, Enabled / Active and Group access, its place in the
- * list, the settings of Shipping locations and costs that are not ranges
- * (Free shipping, handling costs, billing, Tax and Out-of-range behavior)
- * and the size and weight limits. Only what is given changes; a call that
+ * list, the Logo, the settings of Shipping locations and costs that are not
+ * ranges (Free shipping, handling costs, billing, Tax and Out-of-range
+ * behavior) and the size and weight limits. Only what is given changes; a call that
  * would change nothing writes nothing.
  *
  * The two versions of PrestaShop save a carrier differently: the 8.0.1 wizard
@@ -46,7 +46,7 @@ class SomcpToolUpdateCarrier
     private const ARGUMENTS = [
         'id_carrier', 'languages', 'name', 'delay', 'grade', 'tracking_url', 'active', 'group_access', 'position',
         'is_free', 'handling_costs', 'billing', 'id_tax_rules_group', 'out_of_range', 'max_width', 'max_height',
-        'max_depth', 'max_weight',
+        'max_depth', 'max_weight', 'logo', 'remove_logo',
     ];
 
     /**
@@ -54,7 +54,7 @@ class SomcpToolUpdateCarrier
      *                         passed when they hold what the shop holds, so a read given back changes nothing
      */
     private const READ_BACK = [
-        'id_reference', 'logo', 'external_module', 'zones', 'tax_rule', 'handling_cost_tax_excl', 'ranges',
+        'id_reference', 'external_module', 'zones', 'tax_rule', 'handling_cost_tax_excl', 'ranges',
         'range_unit', 'dimension_unit', 'weight_unit',
     ];
 
@@ -84,7 +84,7 @@ class SomcpToolUpdateCarrier
         return new SomcpTool(
             'somcp_update_carrier',
             Somcp::t('Change a carrier'),
-            'Changes one carrier of Shipping > Carriers: Carrier name, Transit time, Speed grade, Tracking '
+            'Changes one carrier of Shipping > Carriers: Carrier name, Transit time, Speed grade, Logo, Tracking '
                 . 'URL, Active, Group access, the place in the list, Free shipping, handling costs, billing by '
                 . 'price or weight, Tax, Out-of-range behavior and the size and weight limits. Only the fields '
                 . 'given change; the answer of somcp_get_carrier can be given back as it is. A carrier an order '
@@ -179,13 +179,19 @@ class SomcpToolUpdateCarrier
                         'description' => 'Heaviest package the carrier takes, in the weight_unit of the shop; 0 '
                             . 'for no limit.',
                     ],
+                    'logo' => SomcpUpload::schema('Merchant. A new logo, which replaces the current one.', 'the logo'),
+                    'remove_logo' => [
+                        'type' => 'boolean',
+                        'description' => 'Merchant. true removes the logo. Not with logo, which already replaces it.',
+                    ],
                 ],
                 'required' => ['id_carrier'],
             ],
             [SomcpScope::ORDERS_WRITE],
             [self::class, 'handle'],
             // The right the carrier edit page asks for in Team, Permissions.
-            SomcpTool::acts(SomcpPermission::EDIT, 'AdminCarriers')
+            SomcpTool::acts(SomcpPermission::EDIT, 'AdminCarriers'),
+            files: ['logo' => SomcpUpload::images()]
         );
     }
 
@@ -256,7 +262,10 @@ class SomcpToolUpdateCarrier
     {
         $probe = new Carrier();
         $stored = $read === null ? null : self::stored($idCarrier, $idShop);
-        $plan = ['changes' => [], 'set' => [], 'groups' => null, 'position' => null, 'tax' => null];
+        $plan = [
+            'changes' => [], 'set' => [], 'groups' => null, 'position' => null, 'tax' => null,
+            'logo' => null, 'remove_logo' => false,
+        ];
 
         $after = self::planCosts($arguments, $read, $stored, $idShop, $errors, $plan);
         if ($read !== null && $after !== null) {
@@ -264,16 +273,10 @@ class SomcpToolUpdateCarrier
                 if (!array_key_exists($key, $arguments)) {
                     continue;
                 }
-                // A download_ref carries its own expiry, so the one given back
-                // is not the one a new read would answer: it is recognised by
-                // the file it names, as the other updates recognise theirs.
                 // The keys that follow the billing, the handling costs or the
                 // tax are compared with what the carrier shows once this call
                 // is done, so a read taken before a change can come back with it.
-                $same = $key === 'logo'
-                    ? SomcpUpload::same($arguments[$key], 'carrier_logo', (string) $idCarrier)
-                    : self::same($arguments[$key], array_key_exists($key, $after) ? $after[$key] : ($read[$key] ?? null));
-                if (!$same) {
+                if (!self::same($arguments[$key], array_key_exists($key, $after) ? $after[$key] : ($read[$key] ?? null))) {
                     $errors[] = $key . ': changed by another tool, not this one - leave it out or give it as '
                         . 'somcp_get_carrier answers it';
                 }
@@ -339,6 +342,7 @@ class SomcpToolUpdateCarrier
         }
 
         self::planLimits($arguments, $stored, $idShop, $errors, $plan);
+        self::planLogo($arguments, $read, $idCarrier, $errors, $plan);
 
         if (array_key_exists('position', $arguments)) {
             // Carriers have one order for the whole installation, counted
@@ -356,6 +360,50 @@ class SomcpToolUpdateCarrier
         }
 
         return $plan;
+    }
+
+    /**
+     * Records the change of the Logo, under the names and rules of somcp_update_manufacturer.
+     *
+     * A download_ref carries its own expiry, so the one given back is not the
+     * one a new read would answer: it is recognised by the file it names, and
+     * is no change. An address cannot be compared with a stored file, so any
+     * other logo given counts as a change; a removal only when there is a logo.
+     *
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed>|null $read the carrier as somcp_get_carrier answers it
+     * @param int $idCarrier
+     * @param array<int, string> $errors
+     * @param array<string, mixed> $plan
+     *
+     * @return void
+     */
+    private static function planLogo(array $arguments, ?array $read, int $idCarrier, array &$errors, array &$plan): void
+    {
+        if (array_key_exists('logo', $arguments)
+            && !SomcpUpload::same($arguments['logo'], 'carrier_logo', (string) $idCarrier)) {
+            $plan['logo'] = SomcpUpload::argument($arguments, 'logo', $errors, 'logo');
+        }
+        if (array_key_exists('remove_logo', $arguments)) {
+            if (!is_bool($arguments['remove_logo'])) {
+                $errors[] = 'remove_logo: true or false';
+            } elseif ($arguments['remove_logo'] && array_key_exists('logo', $arguments)) {
+                $errors[] = 'remove_logo: not with logo, which already replaces the current one';
+            } else {
+                $plan['remove_logo'] = $arguments['remove_logo'];
+            }
+        }
+
+        if ($read === null) {
+            return;
+        }
+        if ($plan['logo'] !== null) {
+            $plan['changes'][] = ['field' => 'logo', 'old' => $read['logo'] ?? null, 'new' => SomcpUpload::origin($plan['logo'])];
+        } elseif ($plan['remove_logo'] && ($read['logo'] ?? null) === null) {
+            $plan['remove_logo'] = false;
+        } elseif ($plan['remove_logo']) {
+            $plan['changes'][] = ['field' => 'logo', 'old' => $read['logo'], 'new' => null];
+        }
     }
 
     /**
@@ -779,7 +827,8 @@ class SomcpToolUpdateCarrier
 
         // A move alone is not a change of the carrier: neither version of the
         // core makes a new version for it, so the orders keep it as it is.
-        $edits = $plan['set'] !== [] || $plan['groups'] !== null || $plan['tax'] !== null;
+        $edits = $plan['set'] !== [] || $plan['groups'] !== null || $plan['tax'] !== null
+            || $plan['logo'] !== null || $plan['remove_logo'];
 
         try {
             if ($edits && self::orders($idCarrier) > 0) {
@@ -877,6 +926,16 @@ class SomcpToolUpdateCarrier
             return self::failed($idCarrier, $replaced ? $newId : null, $failure, $idEmployee);
         }
 
+        // On the carrier now in use, after the new version: copyCarrierData()
+        // has already given it the old logo, and the old version keeps its own
+        // for the orders placed with it.
+        $logo = null;
+        if ($plan['remove_logo']) {
+            $logo = self::removeLogo($newId);
+        } elseif ($plan['logo'] !== null) {
+            $logo = self::storeLogo($newId, $plan['logo']);
+        }
+
         if ($plan['position'] !== null) {
             // Written last, on the carrier now in use: a new version stands
             // where the old one stood, then moves. Carrier::updatePosition()
@@ -919,6 +978,12 @@ class SomcpToolUpdateCarrier
                 . 'a new identifier, ' . $newId . '. Use ' . $newId . ' from now on.';
         }
         $result['changes'] = $plan['changes'];
+        if ($logo !== null) {
+            $result['logo'] = $logo;
+            if (isset($logo['refused'])) {
+                $warnings[] = 'The other changes were saved, but the logo was not: ' . $logo['refused'] . '.';
+            }
+        }
         // Said under the key the tax tools use for the same fact (#314).
         $otherShops = (int) Db::getInstance()->getValue(
             'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'carrier_shop` WHERE `id_carrier` = ' . $newId
@@ -943,6 +1008,86 @@ class SomcpToolUpdateCarrier
         $result['carrier'] = SomcpToolGetCarrier::carrier($newId, $idShop, $idLang);
 
         return SomcpTool::json($result);
+    }
+
+    /**
+     * A logo downloaded, checked and written where both versions of the core keep it.
+     *
+     * One JPEG at img/s/<id_carrier>.jpg, shared by every shop, with no image
+     * type: what the 8.0.1 wizard makes from any image and 9.0.0 takes as it
+     * is. Any image the module takes is turned into that JPEG on both, so a
+     * PNG sent in the chat is not refused on 9.0.0 only. The file comes from
+     * SomcpUpload::fetchImage(), as every other image does.
+     *
+     * @param int $idCarrier
+     * @param array{url: string, upload_ref: string} $source
+     *
+     * @return array<string, mixed> the url or upload_ref, with stored: true or the reason it was refused
+     */
+    private static function storeLogo(int $idCarrier, array $source): array
+    {
+        $origin = SomcpUpload::origin($source);
+        $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
+        if ($file === false) {
+            return $origin + ['refused' => 'the shop has no room to receive it'];
+        }
+
+        try {
+            $refusal = SomcpUpload::fetchImage($source, $file);
+            if ($refusal === '') {
+                // Forced to JPEG: the file is named .jpg whatever the image
+                // quality setting of the shop would pick for a PNG.
+                $stored = ImageManager::resize($file, _PS_SHIP_IMG_DIR_ . $idCarrier . '.jpg', null, null, 'jpg', true);
+                if ($stored) {
+                    self::dropListCopies($idCarrier);
+                }
+                $refusal = $stored ? '' : 'the shop could not read it as an image';
+            }
+        } catch (Throwable $e) {
+            $refusal = 'the shop could not save it';
+        } finally {
+            @unlink($file);
+        }
+
+        return $origin + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
+    }
+
+    /**
+     * Removes the logo as the 9.0.0 CarrierLogoFileUploader::deleteOldFile() does.
+     *
+     * @param int $idCarrier
+     *
+     * @return array<string, mixed>
+     */
+    private static function removeLogo(int $idCarrier): array
+    {
+        $file = _PS_SHIP_IMG_DIR_ . $idCarrier . '.jpg';
+        if (is_file($file) && !@unlink($file)) {
+            return ['refused' => 'the shop could not delete its file'];
+        }
+        self::dropListCopies($idCarrier);
+
+        return ['removed' => true];
+    }
+
+    /**
+     * Deletes the small copies of a logo the back office list keeps in the
+     * image cache, so the list shows the new one: carrier_mini_<id>.jpg, and
+     * carrier_mini_<id>_<id_shop>.jpg per shop, which HelperList names so.
+     *
+     * @param int $idCarrier
+     *
+     * @return void
+     */
+    private static function dropListCopies(int $idCarrier): void
+    {
+        $copies = glob(_PS_TMP_IMG_DIR_ . 'carrier_mini_' . $idCarrier . '_*.jpg') ?: [];
+        $copies[] = _PS_TMP_IMG_DIR_ . 'carrier_mini_' . $idCarrier . '.jpg';
+        foreach ($copies as $copy) {
+            if (is_file($copy)) {
+                @unlink($copy);
+            }
+        }
     }
 
     /**

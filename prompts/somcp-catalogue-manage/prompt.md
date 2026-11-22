@@ -208,7 +208,7 @@ Carriers come from `somcp_list_carriers`: give its `id_carrier` in
 say so before tying a product to it. No carrier given means every carrier
 may deliver the product. To tell which zones and customer groups a carrier
 serves before tying it, read it with `somcp_get_carrier`.
-To rename a carrier, change its transit time, speed grade, tracking URL,
+To rename a carrier, change its transit time, speed grade, logo, tracking URL,
 status, customer groups, place in the list, free shipping, handling costs,
 billing, tax, out-of-range behavior or size and weight limits, use
 `somcp_update_carrier`; a carrier an order uses gets a new `id_carrier`,

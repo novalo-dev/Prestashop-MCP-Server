@@ -1089,6 +1089,58 @@ if ($getCarrier !== null && $updateCarrier !== null) {
             $failures[] = 'somcp_update_carrier (a carrier moved and put back): ' . get_class($e) . ' - ' . $e->getMessage();
         }
     }
+
+    // The logo of #331, on carrier 3, which no order uses: the read given
+    // back changes nothing, a removal changes something only when there was
+    // a logo, and a GIF deposited is stored and read back as a download_ref.
+    // The carrier is left without a logo only when it had none at the start.
+    $calls += 5;
+    try {
+        [$result, $text, $third] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+        // The smallest valid GIF: one transparent pixel.
+        $reference = SomcpUpload::inviteFor((int) $employee->id, $updateCarrier, 'logo');
+        $invitation = $reference === '' ? null : SomcpUpload::find($reference, (int) $employee->id);
+        $entered = $invitation === null
+            ? 'no deposit could be opened'
+            : SomcpUpload::enter($invitation, 'data', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'logo.gif');
+        if (!empty($result['isError']) || !is_array($third) || !array_key_exists('logo', $third)) {
+            $failures[] = 'somcp_update_carrier (reading the logo of carrier 3 first): ' . excerpt($result);
+        } elseif ($entered !== '') {
+            $failures[] = 'somcp_update_carrier (a GIF logo): the GIF was not deposited - ' . $entered;
+        } else {
+            $hadLogo = $third['logo'] !== null;
+            $steps = [
+                'the logo read given back, nothing written' => [['id_carrier' => 3, 'logo' => $third['logo']], ['"changed": false']],
+                'the logo removed' => [['id_carrier' => 3, 'remove_logo' => true], $hadLogo ? ['"changed": true', '"field": "logo"', '"removed": true'] : ['"changed": false']],
+                'a GIF logo deposited, stored' => [['id_carrier' => 3, 'logo' => ['upload_ref' => $reference]], ['"changed": true', '"id_carrier": 3', '"field": "logo"', '"stored": true']],
+            ];
+            foreach ($steps as $why => [$arguments, $needles]) {
+                [$result, $text] = $carrierCall($updateCarrier, $arguments);
+                $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                    return strpos($text, $needle) === false;
+                });
+                if (!empty($result['isError']) || $missing !== [] || strpos($text, '"replaced_id_carrier"') !== false) {
+                    $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                }
+            }
+            [$result, $text, $logoAfter] = $carrierCall($getCarrier, ['id_carrier' => 3]);
+            if (!empty($result['isError']) || !is_array($logoAfter) || !isset($logoAfter['logo'][SomcpDownload::ARG_REF])) {
+                $failures[] = 'somcp_update_carrier (carrier 3 read after its logo): expected the logo as a download_ref - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 3 read back with its new logo)');
+            }
+            if (!$hadLogo) {
+                [$result] = $carrierCall($updateCarrier, ['id_carrier' => 3, 'remove_logo' => true]);
+                if (!empty($result['isError'])) {
+                    $failures[] = 'somcp_update_carrier (the logo removed again): ' . excerpt($result);
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_carrier (a carrier logo changed): ' . get_class($e) . ' - ' . $e->getMessage();
+    }
 }
 
 // A carrier deleted (#321): the JSON scenario cannot read the default carrier

@@ -51,8 +51,8 @@ same write tool over a list in one call - thirty orders set to Shipped, or
 twenty products switched off - with an answer item by item, each one saying
 whether it went through or why it was refused, and every item checked against
 the employee's rights as if it were called alone. The runner lives in the
-search library the module already installs, `novalo/mcp-tool-discovery`, off
-by default; the module turns it on once it moves to the version that ships it.
+search library the module already installs, `novalo/mcp-tool-discovery`, which
+ships it off by default; the module installs that version and turns it on next.
 
 ## Tests
 

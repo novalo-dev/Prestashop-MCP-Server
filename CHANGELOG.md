@@ -196,6 +196,11 @@ you use it.
 **The anti-robot check of the sign-in page runs on the ALTCHA library 2.4.0.**
 Nothing changes on the page.
 
+**Compact mode finds tools asked for in more languages.** A request written in
+Chinese, Japanese, Korean or Thai now finds the right tool, and a request of
+several words is weighed by its pairs of words. The tools and the checks on
+every call are unchanged.
+
 ### Fixed
 
 **Disabled tax rules and disabled products short of stock.** Asking for the

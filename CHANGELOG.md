@@ -30,10 +30,13 @@ merchant setting up delivery had to open each carrier.
 **Change a carrier.** The new tool somcp_update_carrier changes the general
 settings of one carrier of Shipping > Carriers: its name, its transit time in
 each language, its speed grade, its tracking URL, whether it is active and the
-customer groups allowed to use it. Until now the assistant could read a carrier
-but had to send the merchant to the back office to change any of it. A carrier
-no order uses keeps its identifier; one that orders already use gets a new one,
-as the back office does, so those orders keep the carrier they were placed with.
+customer groups allowed to use it. It also changes the order of the carriers,
+as the list of Shipping > Carriers does, which is the order the checkout offers
+them in. Until now the assistant could read a carrier but had to send the
+merchant to the back office to change any of it. A carrier no order uses keeps
+its identifier; one that orders already use gets a new one, as the back office
+does, so those orders keep the carrier they were placed with. Moving a carrier
+never gives it a new identifier.
 
 **Delete a carrier.** The new tool somcp_delete_carrier deletes one carrier of
 Shipping > Carriers, such as the demo carriers of a new shop. A carrier orders

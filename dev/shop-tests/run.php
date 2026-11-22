@@ -1024,6 +1024,62 @@ if ($getCarrier !== null && $updateCarrier !== null) {
     } catch (Throwable $e) {
         $failures[] = 'somcp_update_carrier (a carrier changed and put back): ' . get_class($e) . ' - ' . $e->getMessage();
     }
+
+    // A carrier moved first and put back (#322): the order of the list is
+    // read before and after, which the JSON scenario cannot compare. A move
+    // never makes a new version, so carrier 4 keeps its identifier.
+    $listCarriers = $registry->get('somcp_list_carriers');
+    if ($listCarriers !== null) {
+        $calls += 6;
+        $order = static function () use ($carrierCall, $listCarriers): array {
+            [, , $answer] = $carrierCall($listCarriers, []);
+            $ids = [];
+            foreach (is_array($answer) ? ($answer['carriers'] ?? []) : [] as $entry) {
+                $ids[] = (int) ($entry['id_carrier'] ?? 0);
+            }
+
+            return $ids;
+        };
+        try {
+            [$result, $text, $fourth] = $carrierCall($getCarrier, ['id_carrier' => 4]);
+            $orderBefore = $order();
+            if (!empty($result['isError']) || !is_array($fourth) || !isset($fourth['position']) || !in_array(4, $orderBefore, true)) {
+                $failures[] = 'somcp_update_carrier (reading carrier 4 first): ' . excerpt($result);
+            } else {
+                $expected = array_merge([4], array_values(array_diff($orderBefore, [4])));
+                $steps = [
+                    'carrier 4 moved first, in place' => [['id_carrier' => 4, 'position' => 0], ['"changed": true', '"id_carrier": 4', '"field": "position"', '"new": 0']],
+                    'the same place again, nothing written' => [['id_carrier' => 4, 'position' => 0], ['"changed": false']],
+                ];
+                foreach ($steps as $why => [$arguments, $needles]) {
+                    [$result, $text] = $carrierCall($updateCarrier, $arguments);
+                    $missing = array_filter($needles, static function (string $needle) use ($text): bool {
+                        return strpos($text, $needle) === false;
+                    });
+                    if (!empty($result['isError']) || $missing !== [] || strpos($text, '"replaced_id_carrier"') !== false) {
+                        $failures[] = 'somcp_update_carrier (' . $why . '): expected ok with ' . implode(', ', $missing) . ' - ' . excerpt($result);
+                    } else {
+                        printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (' . $why . ')');
+                    }
+                }
+                $orderMoved = $order();
+                if ($orderMoved !== $expected) {
+                    $failures[] = 'somcp_update_carrier (the list after the move): expected ' . implode(', ', $expected) . ', got ' . implode(', ', $orderMoved);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 4 first in the list, the others shifted)');
+                }
+                [$result, $text] = $carrierCall($updateCarrier, ['id_carrier' => 4, 'position' => (int) $fourth['position']]);
+                $orderAfter = $order();
+                if (!empty($result['isError']) || $orderAfter !== $orderBefore) {
+                    $failures[] = 'somcp_update_carrier (carrier 4 put back): expected ' . implode(', ', $orderBefore) . ', got ' . implode(', ', $orderAfter) . ' - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 4 put back, the list as at the start)');
+                }
+            }
+        } catch (Throwable $e) {
+            $failures[] = 'somcp_update_carrier (a carrier moved and put back): ' . get_class($e) . ' - ' . $e->getMessage();
+        }
+    }
 }
 
 // A carrier deleted (#321): the JSON scenario cannot read the default carrier

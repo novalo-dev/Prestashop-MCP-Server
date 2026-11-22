@@ -3708,11 +3708,14 @@ class SomcpToolCreateProduct
     }
 
     /**
+     * A whole number as a client may send it: public, so a tool outside this
+     * family reads a position the way the catalogue tools read theirs.
+     *
      * @param mixed $value
      *
      * @return int|null
      */
-    protected static function integer($value): ?int
+    public static function integer($value): ?int
     {
         if (is_int($value)) {
             return $value;

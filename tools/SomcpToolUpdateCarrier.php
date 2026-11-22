@@ -20,8 +20,9 @@ declare(strict_types=1);
 /*
  * somcp_update_carrier - the General settings of one carrier of Shipping >
  * Carriers, as its edit page saves them: Carrier name, Transit time, Speed
- * grade, Tracking URL, Enabled / Active and Group access. Only what is given
- * changes; a call that would change nothing writes nothing.
+ * grade, Tracking URL, Enabled / Active and Group access, and its place in
+ * the list. Only what is given changes; a call that would change nothing
+ * writes nothing.
  *
  * The two versions of PrestaShop save a carrier differently: the 8.0.1 wizard
  * makes a new carrier at every save, 9.0.0 changes it in place while no order
@@ -40,14 +41,14 @@ if (!defined('_PS_VERSION_')) {
 class SomcpToolUpdateCarrier
 {
     /** @var array<int, string> The arguments this tool writes, under the names somcp_get_carrier returns. */
-    private const ARGUMENTS = ['id_carrier', 'languages', 'name', 'delay', 'grade', 'tracking_url', 'active', 'group_access'];
+    private const ARGUMENTS = ['id_carrier', 'languages', 'name', 'delay', 'grade', 'tracking_url', 'active', 'group_access', 'position'];
 
     /**
      * @var array<int, string> The other keys of the answer of somcp_get_carrier,
      *                         passed when they hold what the shop holds, so a read given back changes nothing
      */
     private const READ_BACK = [
-        'id_reference', 'is_free', 'position', 'logo', 'external_module', 'zones', 'id_tax_rules_group',
+        'id_reference', 'is_free', 'logo', 'external_module', 'zones', 'id_tax_rules_group',
         'tax_rule', 'handling_costs', 'handling_cost_tax_excl', 'billing', 'out_of_range', 'max_width',
         'max_height', 'max_depth', 'max_weight', 'ranges', 'range_unit', 'dimension_unit', 'weight_unit',
     ];
@@ -67,7 +68,7 @@ class SomcpToolUpdateCarrier
             'somcp_update_carrier',
             Somcp::t('Change a carrier'),
             'Changes the General settings of one carrier of Shipping > Carriers: Carrier name, Transit time, '
-                . 'Speed grade, Tracking URL, Active and Group access. Only the fields given change; the answer '
+                . 'Speed grade, Tracking URL, Active, Group access and the place in the list. Only the fields given change; the answer '
                 . 'of somcp_get_carrier can be given back as it is. A carrier an order uses gets a new '
                 . 'id_carrier, which the answer gives. Not for the carrier of one order '
                 . '(somcp_set_order_carrier). Replayable: the same call twice changes nothing the second time.',
@@ -111,6 +112,11 @@ class SomcpToolUpdateCarrier
                         'description' => 'Every customer group allowed to use the carrier after the change, '
                             . 'as id_group integers from somcp_list_customer_groups or the objects '
                             . 'somcp_get_carrier answers.',
+                    ],
+                    'position' => [
+                        'type' => 'integer',
+                        'description' => 'Merchant. The place among the carriers, from 0 as somcp_list_carriers '
+                            . 'gives it (the back office list shows it plus 1); the others shift.',
                     ],
                 ],
                 'required' => ['id_carrier'],
@@ -189,7 +195,7 @@ class SomcpToolUpdateCarrier
     {
         $probe = new Carrier();
         $stored = $read === null ? null : self::stored($idCarrier, $idShop);
-        $plan = ['changes' => [], 'set' => [], 'groups' => null];
+        $plan = ['changes' => [], 'set' => [], 'groups' => null, 'position' => null];
 
         if ($read !== null) {
             foreach (self::READ_BACK as $key) {
@@ -264,6 +270,21 @@ class SomcpToolUpdateCarrier
             if ($groups !== null && $stored !== null && $groups !== $stored['groups']) {
                 $plan['changes'][] = ['field' => 'group_access', 'old' => $stored['groups'], 'new' => $groups];
                 $plan['groups'] = $groups;
+            }
+        }
+
+        if (array_key_exists('position', $arguments)) {
+            // Carriers have one order for the whole installation, counted
+            // among those not deleted, as Carrier::updatePosition() counts them.
+            $last = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'carrier` WHERE `deleted` = 0'
+            ) - 1;
+            $position = SomcpToolCreateProduct::integer($arguments['position']);
+            if ($position === null || $position < 0 || $position > $last) {
+                $errors[] = 'position: a whole number from 0 to ' . $last . ', the place among the carriers';
+            } elseif ($stored !== null && $position !== $stored['position']) {
+                $plan['changes'][] = ['field' => 'position', 'old' => $stored['position'], 'new' => $position];
+                $plan['position'] = $position;
             }
         }
 
@@ -390,13 +411,13 @@ class SomcpToolUpdateCarrier
      * @param int $idCarrier
      * @param int $idShop
      *
-     * @return array{name: string, grade: int, url: string, active: bool, delay: array<int, string>, groups: array<int, int>, orders: int}
+     * @return array{name: string, grade: int, url: string, active: bool, position: int, delay: array<int, string>, groups: array<int, int>, orders: int}
      */
     private static function stored(int $idCarrier, int $idShop): array
     {
         $db = Db::getInstance();
         $row = $db->getRow(
-            'SELECT `name`, `grade`, `url`, `active` FROM `' . _DB_PREFIX_ . 'carrier`'
+            'SELECT `name`, `grade`, `url`, `active`, `position` FROM `' . _DB_PREFIX_ . 'carrier`'
             . ' WHERE `id_carrier` = ' . $idCarrier
         ) ?: [];
 
@@ -422,6 +443,7 @@ class SomcpToolUpdateCarrier
             'grade' => (int) ($row['grade'] ?? 0),
             'url' => (string) ($row['url'] ?? ''),
             'active' => (bool) ($row['active'] ?? false),
+            'position' => (int) ($row['position'] ?? 0),
             'delay' => $delay,
             'groups' => $groups,
             'orders' => self::orders($idCarrier),
@@ -492,8 +514,12 @@ class SomcpToolUpdateCarrier
         $newId = $idCarrier;
         $replaced = false;
 
+        // A move alone is not a change of the carrier: neither version of the
+        // core makes a new version for it, so the orders keep it as it is.
+        $edits = $plan['set'] !== [] || $plan['groups'] !== null;
+
         try {
-            if (self::orders($idCarrier) > 0) {
+            if ($edits && self::orders($idCarrier) > 0) {
                 // As 9.0.0 does in CarrierRepository::getEditableOrNewVersion():
                 // the orders keep the old row, hidden, and the change goes on a
                 // copy that takes over its ranges, zones, logo, tax and reference.
@@ -536,7 +562,7 @@ class SomcpToolUpdateCarrier
             // PS_SHIPPING_METHOD when 0 was stored, as the form saves it: the
             // billing the merchant sees does not change.
             $carrier->id_shop_list = [$idShop];
-            $done = $carrier->update();
+            $done = !$edits || $carrier->update();
             if ($done && $plan['groups'] !== null) {
                 $done = (bool) $carrier->setGroups($plan['groups']);
             }
@@ -548,6 +574,29 @@ class SomcpToolUpdateCarrier
 
         if (!$done) {
             return self::failed($idCarrier, $replaced ? $newId : null, $failure, $idEmployee);
+        }
+
+        if ($plan['position'] !== null) {
+            // Written last, on the carrier now in use: a new version stands
+            // where the old one stood, then moves. Carrier::updatePosition()
+            // finds the carrier from its own id, so no request value is needed.
+            $failure = SomcpCatalog::movePosition($carrier, (int) $carrier->position, (int) $plan['position']);
+            if ($failure !== '') {
+                SomcpLogger::log(
+                    'carrier_update_failed',
+                    SomcpLogger::OUTCOME_FAILURE,
+                    'carrier ' . $newId . ' position: ' . Tools::substr($failure, 0, 500),
+                    '',
+                    $idEmployee
+                );
+
+                return SomcpTool::text(
+                    'The carrier could not be moved to position ' . (int) $plan['position'] . ': ' . $failure
+                        . '. The other changes of this call may be saved. Read the carrier again with '
+                        . 'somcp_get_carrier, tell the merchant what it holds now, and do not call again before.',
+                    true
+                );
+            }
         }
 
         if ($replaced) {
@@ -579,6 +628,10 @@ class SomcpToolUpdateCarrier
             $warnings[] = 'This carrier is also in ' . $otherShops . ' other shop(s): its name, Speed grade, '
                 . 'Tracking URL, status and groups change there too, as they do from the back office; the '
                 . 'Transit time was changed for this shop only.';
+        }
+        if ($plan['position'] !== null && SomcpToolCreateTax::otherShops() > 0) {
+            $warnings[] = 'The place in the list of carriers is the same in every shop of this installation, so '
+                . 'the new order shows in the other shops too.';
         }
         if ($warnings !== []) {
             $result['warning'] = implode(' ', $warnings);

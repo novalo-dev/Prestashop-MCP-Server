@@ -47,6 +47,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_get_carrier`
 - `somcp_list_zones`
 - `somcp_list_countries`
+- `somcp_list_states`
 - `somcp_update_carrier`
 - `somcp_delete_carrier`
 - `somcp_create_product`
@@ -214,7 +215,9 @@ may deliver the product. To tell which zones and customer groups a carrier
 serves before tying it, read it with `somcp_get_carrier`.
 The zones of the shop, with their `id_zone` and the number of countries in
 each, come from `somcp_list_zones`. The countries, with their ISO code, their
-zone and whether they are enabled, come from `somcp_list_countries`.
+zone and whether they are enabled, come from `somcp_list_countries`. The
+states of a country, with the ISO code `state` and `states` take, come from
+`somcp_list_states`.
 To rename a carrier, change its transit time, speed grade, logo, tracking URL,
 status, customer groups, zones, ranges and their prices per zone, place in the
 list, free shipping, handling costs, billing, tax, out-of-range behavior or size and weight limits, use

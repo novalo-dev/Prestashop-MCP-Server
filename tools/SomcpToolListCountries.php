@@ -262,12 +262,15 @@ class SomcpToolListCountries
     /**
      * Whether the zone is one of the zones of the shop, as somcp_list_zones lists them.
      *
+     * Public and shared with somcp_list_states, so a zone filter is refused
+     * the same way wherever it is taken.
+     *
      * @param int $idZone
      * @param int $idShop
      *
      * @return bool
      */
-    private static function zoneOfShop(int $idZone, int $idShop): bool
+    public static function zoneOfShop(int $idZone, int $idShop): bool
     {
         return (bool) Db::getInstance()->getValue(
             'SELECT 1 FROM `' . _DB_PREFIX_ . 'zone_shop` WHERE `id_zone` = ' . (int) $idZone

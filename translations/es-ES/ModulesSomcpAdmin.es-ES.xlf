@@ -1377,6 +1377,11 @@
       <source>List languages</source>
       <target>Listar los idiomas</target>
     </trans-unit>
+    <!-- List states -->
+    <trans-unit id="dc33f489fd940765f4aa64b1c2b3176e" resname="List states">
+      <source>List states</source>
+      <target>Listar los estados</target>
+    </trans-unit>
     <!-- List currencies -->
     <trans-unit id="2bf77d506d87bad12f0fd5c4e0f9d91f" resname="List currencies">
       <source>List currencies</source>

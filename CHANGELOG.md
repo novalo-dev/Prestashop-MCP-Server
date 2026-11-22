@@ -41,6 +41,11 @@ shop default. Until now the assistant only read the codes in one line of the
 connection check, without the disabled languages, so it could not tell the
 merchant why a language was refused.
 
+**List the states.** The new tool somcp_list_states lists the states of
+International > Locations > States, with their ISO code, their country and
+the zone each belongs to. Until now the assistant had to guess the code of a
+state when adding a tax rule row or the address of a supplier.
+
 **List the countries.** The new tool somcp_list_countries lists the countries
 of International > Locations > Countries, with their ISO code, their zone,
 whether they are enabled, and what an address there must hold: a state, a

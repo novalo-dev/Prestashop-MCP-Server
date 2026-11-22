@@ -1094,6 +1094,10 @@ T = {
  "Lister les langues",
  "Listar los idiomas",
  "Sprachen auflisten"),
+"List states": (
+ "Lister les états",
+ "Listar los estados",
+ "Staaten auflisten"),
 "List currencies": (
  "Lister les devises",
  "Listar las monedas",

@@ -1,0 +1,14 @@
+{
+  "calls": [
+    {"why": "the first page of the states of the shop, 50 by default, with the paging keys", "arguments": {}, "expect": "ok", "contains": ["\"states\"", "\"id_state\"", "\"iso_code\"", "\"id_country\"", "\"country\"", "\"country_name\"", "\"id_zone\"", "\"zone\"", "\"returned\": 50", "\"total_count\"", "\"offset\": 0"]},
+    {"why": "the states of one country, by its ISO code whatever the case", "arguments": {"country": "us", "limit": 300}, "expect": "ok", "contains": ["\"country\": \"US\"", "\"name\": \"California\"", "\"returned\": 56", "\"total_count\": 56"]},
+    {"why": "one state by its ISO code within its country, with its zone", "arguments": {"country": "US", "iso_code": "al"}, "expect": "ok", "contains": ["\"name\": \"Alabama\"", "\"iso_code\": \"AL\"", "\"returned\": 1"]},
+    {"why": "filtered by part of the name, whatever the case", "arguments": {"name": "carolina", "country": "US"}, "expect": "ok", "contains": ["\"name\": \"North Carolina\"", "\"name\": \"South Carolina\""]},
+    {"why": "the next page is read with offset and a smaller limit", "arguments": {"limit": 5, "offset": 10}, "expect": "ok", "contains": ["\"returned\": 5", "\"offset\": 10"]},
+    {"why": "disabled states only: the shop has none, an empty list rather than an error", "arguments": {"active": false}, "expect": "ok", "contains": ["\"states\": []", "\"returned\": 0"]},
+    {"why": "an identifier no state has lists nothing", "arguments": {"id_state": 999999}, "expect": "ok", "contains": ["\"states\": []", "\"returned\": 0", "\"total_count\": 0"]},
+    {"why": "a country the shop does not have is refused, naming the tool that lists them", "arguments": {"country": "ZZ"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- country: no country of this shop has the ISO code ZZ - find it with somcp_list_countries"]},
+    {"why": "an identifier of the wrong kind is refused", "arguments": {"id_state": [1]}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_state: a whole number above 0"]},
+    {"why": "an active that is not a boolean, a zone the shop does not have and a misspelt filter are refused at once", "arguments": {"active": "yes", "id_zone": 999999, "nmae": "x"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- active: true or false", "- id_zone: no zone of this shop has the identifier 999999 - find it with somcp_list_zones", "- nmae: not a field of this tool"]}
+  ]
+}

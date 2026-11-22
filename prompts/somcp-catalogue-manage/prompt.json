@@ -48,6 +48,7 @@
     "somcp_get_carrier",
     "somcp_list_zones",
     "somcp_list_countries",
+    "somcp_list_states",
     "somcp_update_carrier",
     "somcp_delete_carrier",
     "somcp_create_product",

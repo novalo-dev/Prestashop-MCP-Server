@@ -2439,6 +2439,62 @@ that is not a boolean (`active: true or false`, the line of
 
 **Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`country`, `country_lang`, `country_shop`); the edit form is legacy on 8.0.1 and Symfony on 9.0.0, with **Zip/Postal** written **ZIP/Postal**.
 
+#### `somcp_list_states`
+**State**: written · [issue #341](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/341)
+**Nature**: `acts(VIEW, 'AdminStates')` · **Scope**: `mcp.orders.read`
+
+**Does** - lists the states of **International > Locations > States** with
+the columns of that list: **ID**, **Name**, **ISO code**, **Zone**,
+**Country**, **Enabled**. It is the source of the state ISO code that `state`
+and `states` of `somcp_add_country_rule` and `somcp_update_country_rule`, and
+`state` of `somcp_create_supplier`, `somcp_update_supplier` and
+`somcp_update_manufacturer_address`, take within its country. Read only.
+
+**Do not use for** - the countries (→ `somcp_list_countries`); the zones (→
+`somcp_list_zones`); the tax rows of a state (→ `somcp_get_tax_rule`);
+enabling a state or changing its zone (a later tool).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_state` | **ID** filter | integer | no | one state, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_zones` do |
+| `name` | **Name** filter | string | no | part of the name, case-insensitive |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`ca` finds **California**, and the states of other countries with the same code) |
+| `country` | **Country** filter | string | no | the ISO code of the country, as `country` of the country rule and supplier tools and `iso_code` of `somcp_list_countries` give it, for example `US`, read through `SomcpToolCreateSupplier::shopCountries()`; a code the shop does not have: `SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code')` |
+| `id_zone` | **Zone** filter | integer | no | the states of one zone, from `somcp_list_zones`; a zone the shop does not have: `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')`, checked by `SomcpToolListCountries::zoneOfShop()` |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both |
+| `limit` | **Display** / **Items per page** | integer | no | how many states to return, 50 by default (the default of both screens) and 300 at most |
+| `offset` | the pages of the list | integer | no | how many to skip, to read the next page |
+
+The country filter takes the ISO code, not `id_country`: every tool that takes
+a state takes its country by ISO code, so the assistant gives this tool the
+value it gives the next one. No `language`: a state name is not translated.
+
+**Returns** - `states`, sorted by `id_state` as the list: `id_state` (**ID**),
+`name` (**Name**), `iso_code` (**ISO code**, the value `state` and `states` of
+the other tools take), `id_country`, `country` (the ISO code of the country,
+the value `country` of the other tools takes) and `country_name` (**Country**,
+in the shop default language, as `somcp_get_tax_rule` names it), `id_zone`
+and `zone` (**Zone**, the name as `somcp_list_zones` gives it, the state's own
+zone, not always that of its country), `active` (**Enabled**). Then
+`returned`, `total_count` (the matches before `limit`) and `offset`, the
+paging keys of `somcp_search_customers` and `somcp_list_countries`.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_state` or `id_zone` that is not an identifier
+(`SomcpTool::notAnIdentifier()`), a country or a zone the shop does not have,
+an `active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`). An empty list is `states: []`, `returned: 0`.
+
+**Notes**
+- Read through a query on `state` joined to `country` (for its ISO code), to `country_shop` on the shop of the token, to `country_lang` in the shop default language and to `zone`, rather than `State::getStates()`, which has no filter and no paging. A state belongs to no shop (no `state_shop` table): those of the shop are the states of its countries.
+- The back-office address of the page is never part of the answer.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - the list itself (a legacy list on 8.0.1, a Symfony grid on 9.0.0, the **Enabled** icon against a switch, the paging choices, **Assign to a new zone** on 8.0.1 only); the columns, the filters, their labels and the table (`state`) are the same.
+
 #### `somcp_update_carrier`
 **State**: written · [issue #320](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/320), position [#322](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/322), shipping costs settings [#323](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/323), size and weight limits [#330](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/330), logo [#331](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/331), zones [#336](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/336), ranges and prices [#337](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/337)
 **Nature**: `acts(EDIT, 'AdminCarriers')` · **Scope**: `mcp.orders.write`

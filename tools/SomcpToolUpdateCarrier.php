@@ -1092,6 +1092,51 @@ class SomcpToolUpdateCarrier
      */
     private static function apply(int $idCarrier, int $idShop, array $plan, int $idLang, int $idEmployee): array
     {
+        // The logo is fetched before anything is written, where the brand and
+        // supplier tools fetch it after: a carrier an order uses gets a new
+        // identifier at the first write, and a logo the shop then refuses
+        // must not be the cause of one.
+        $logoFile = '';
+        $logo = null;
+        try {
+            if ($plan['logo'] !== null) {
+                $refusal = self::fetchLogo($plan['logo'], $logoFile);
+                if ($refusal !== '') {
+                    $logo = SomcpUpload::origin($plan['logo']) + ['refused' => $refusal];
+                    $plan['logo'] = null;
+                    $plan['changes'] = array_values(array_filter($plan['changes'], static function (array $change): bool {
+                        return $change['field'] !== 'logo';
+                    }));
+                    if ($plan['changes'] === []) {
+                        // The new version would be the only thing to happen.
+                        return SomcpTool::refused('changed', ['logo: ' . $refusal]);
+                    }
+                }
+            }
+
+            return self::write($idCarrier, $idShop, $plan, $idLang, $idEmployee, $logoFile, $logo);
+        } finally {
+            if ($logoFile !== '') {
+                @unlink($logoFile);
+            }
+        }
+    }
+
+    /**
+     * Writes the plan once the logo, if any, is in hand.
+     *
+     * @param int $idCarrier
+     * @param int $idShop
+     * @param array<string, mixed> $plan
+     * @param int $idLang for the carrier read back
+     * @param int $idEmployee
+     * @param string $logoFile the logo fetched by fetchLogo(), '' without one
+     * @param array<string, mixed>|null $logo the answer of a logo already refused
+     *
+     * @return array<string, mixed>
+     */
+    private static function write(int $idCarrier, int $idShop, array $plan, int $idLang, int $idEmployee, string $logoFile, ?array $logo): array
+    {
         $carrier = new Carrier($idCarrier);
         $oldGroups = array_map('intval', array_column($carrier->getGroups() ?: [], 'id_group'));
         $newId = $idCarrier;
@@ -1211,11 +1256,11 @@ class SomcpToolUpdateCarrier
         // On the carrier now in use, after the new version: copyCarrierData()
         // has already given it the old logo, and the old version keeps its own
         // for the orders placed with it.
-        $logo = null;
         if ($plan['remove_logo']) {
             $logo = self::removeLogo($newId);
         } elseif ($plan['logo'] !== null) {
-            $logo = self::storeLogo($newId, $plan['logo']);
+            $refusal = self::storeLogo($newId, $logoFile);
+            $logo = SomcpUpload::origin($plan['logo']) + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
         }
 
         if ($plan['position'] !== null) {
@@ -1402,45 +1447,56 @@ class SomcpToolUpdateCarrier
     }
 
     /**
-     * A logo downloaded, checked and written where both versions of the core keep it.
+     * Downloads and checks a logo into a temporary file, through
+     * SomcpUpload::fetchImage() as every other image.
+     *
+     * @param array{url: string, upload_ref: string} $source
+     * @param string $file set to the temporary file, which the caller deletes
+     *
+     * @return string the reason it was refused, '' when the file is in hand
+     */
+    private static function fetchLogo(array $source, string &$file): string
+    {
+        $made = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
+        if ($made === false) {
+            return 'the shop has no room to receive it';
+        }
+        $file = $made;
+
+        try {
+            return SomcpUpload::fetchImage($source, $file);
+        } catch (Throwable $e) {
+            return 'the shop could not save it';
+        }
+    }
+
+    /**
+     * Writes a logo in hand where both versions of the core keep it.
      *
      * One JPEG at img/s/<id_carrier>.jpg, shared by every shop, with no image
      * type: what the 8.0.1 wizard makes from any image and 9.0.0 takes as it
      * is. Any image the module takes is turned into that JPEG on both, so a
-     * PNG sent in the chat is not refused on 9.0.0 only. The file comes from
-     * SomcpUpload::fetchImage(), as every other image does.
+     * PNG sent in the chat is not refused on 9.0.0 only.
      *
      * @param int $idCarrier
-     * @param array{url: string, upload_ref: string} $source
+     * @param string $file from fetchLogo()
      *
-     * @return array<string, mixed> the url or upload_ref, with stored: true or the reason it was refused
+     * @return string the reason it was refused, '' once stored
      */
-    private static function storeLogo(int $idCarrier, array $source): array
+    private static function storeLogo(int $idCarrier, string $file): string
     {
-        $origin = SomcpUpload::origin($source);
-        $file = tempnam(_PS_TMP_IMG_DIR_, 'somcp');
-        if ($file === false) {
-            return $origin + ['refused' => 'the shop has no room to receive it'];
-        }
-
         try {
-            $refusal = SomcpUpload::fetchImage($source, $file);
-            if ($refusal === '') {
-                // Forced to JPEG: the file is named .jpg whatever the image
-                // quality setting of the shop would pick for a PNG.
-                $stored = ImageManager::resize($file, _PS_SHIP_IMG_DIR_ . $idCarrier . '.jpg', null, null, 'jpg', true);
-                if ($stored) {
-                    self::dropListCopies($idCarrier);
-                }
-                $refusal = $stored ? '' : 'the shop could not read it as an image';
+            // Forced to JPEG: the file is named .jpg whatever the image
+            // quality setting of the shop would pick for a PNG.
+            if (!ImageManager::resize($file, _PS_SHIP_IMG_DIR_ . $idCarrier . '.jpg', null, null, 'jpg', true)) {
+                return 'the shop could not read it as an image';
             }
-        } catch (Throwable $e) {
-            $refusal = 'the shop could not save it';
-        } finally {
-            @unlink($file);
-        }
+            self::dropListCopies($idCarrier);
 
-        return $origin + ($refusal === '' ? ['stored' => true] : ['refused' => $refusal]);
+            return '';
+        } catch (Throwable $e) {
+            return 'the shop could not save it';
+        }
     }
 
     /**

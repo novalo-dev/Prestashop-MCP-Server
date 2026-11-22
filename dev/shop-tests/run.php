@@ -1170,7 +1170,7 @@ if ($getCarrier !== null && $updateCarrier !== null) {
     // back changes nothing, a removal changes something only when there was
     // a logo, and a GIF deposited is stored and read back as a download_ref.
     // The carrier is left without a logo only when it had none at the start.
-    $calls += 5;
+    $calls += 7;
     try {
         [$result, $text, $third] = $carrierCall($getCarrier, ['id_carrier' => 3]);
         // The smallest valid GIF: one transparent pixel.
@@ -1212,6 +1212,21 @@ if ($getCarrier !== null && $updateCarrier !== null) {
                 if (!empty($result['isError'])) {
                     $failures[] = 'somcp_update_carrier (the logo removed again): ' . excerpt($result);
                 }
+            }
+            // A refused logo alone on carrier 2, which orders use (#342): the
+            // call is refused, and the carrier keeps its identifier.
+            [$result, $text] = $carrierCall($updateCarrier, ['id_carrier' => 2, 'logo' => ['upload_ref' => 'somcp-unknown-reference']]);
+            if (empty($result['isError']) || strpos($text, 'Nothing was changed. Correct these and call again:') === false
+                || strpos($text, '- logo: no file of this account matches this upload_ref') === false) {
+                $failures[] = 'somcp_update_carrier (a refused logo alone on carrier 2): expected the refusal - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (a refused logo alone on carrier 2)');
+            }
+            [$result, $text] = $carrierCall($getCarrier, ['id_carrier' => 2]);
+            if (!empty($result['isError']) || strpos($text, '"id_carrier": 2') === false) {
+                $failures[] = 'somcp_update_carrier (carrier 2 after a refused logo): expected it under the same identifier - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_carrier (carrier 2 kept its identifier)');
             }
         }
     } catch (Throwable $e) {

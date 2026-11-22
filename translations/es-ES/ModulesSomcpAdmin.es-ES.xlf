@@ -1122,6 +1122,11 @@
       <source>List zones</source>
       <target>Listar las zonas</target>
     </trans-unit>
+    <!-- List countries -->
+    <trans-unit id="597d4652b89187306aaad598ec4d29d9" resname="List countries">
+      <source>List countries</source>
+      <target>Listar los países</target>
+    </trans-unit>
     <!-- Create a return status -->
     <trans-unit id="bed8b046732e0d12fe3f9bbb9776d996" resname="Create a return status">
       <source>Create a return status</source>

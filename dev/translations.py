@@ -890,6 +890,10 @@ T = {
  "Lister les zones",
  "Listar las zonas",
  "Zonen auflisten"),
+"List countries": (
+ "Lister les pays",
+ "Listar los países",
+ "Länder auflisten"),
 "Create a return status": (
  "Créer un statut de retour",
  "Crear un estado de devolución",

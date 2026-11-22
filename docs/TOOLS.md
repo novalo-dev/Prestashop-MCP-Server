@@ -2378,6 +2378,65 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 
 **Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`zone`, `zone_shop`).
 
+#### `somcp_list_countries`
+**State**: written · [issue #338](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/338)
+**Nature**: `acts(VIEW, 'AdminCountries')` · **Scope**: `mcp.orders.read`
+
+**Does** - lists the countries of **International > Locations > Countries**
+with the columns of that list: **ID**, **Country**, **ISO code**, **Call
+prefix**, **Zone**, **Enabled**, and what an address of the country must
+hold. It is the source of the country ISO code that every other tool takes
+as `country` or `delivery_country`, and it shows which countries the shop
+sells to. Read only.
+
+**Do not use for** - the zones (→ `somcp_list_zones`); the tax rows of a
+country (→ `somcp_get_tax_rule`); enabling or changing a country (a later
+tool).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_country` | **ID** filter | integer | no | one country, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_zones` do |
+| `name` | **Country** filter | string | no | part of the name in `language`, case-insensitive |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`fr` finds **France**) |
+| `id_zone` | **Zone** filter | integer | no | the countries of one zone, from `somcp_list_zones`; a zone the shop does not have: `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')` |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both |
+| `language` | - | string | no | ISO code of one of the shop's active languages, for the names; a code the shop does not have is refused; the shop default language when left out, as `somcp_list_taxes` |
+| `limit` | **Display** | integer | no | how many countries to return, 50 by default (the default of the screen) and 300 at most |
+| `offset` | the pages of the list | integer | no | how many to skip, to read the next page |
+
+No **Call prefix** filter: the answer gives every prefix.
+
+**Returns** - `countries`, sorted by `name` as the list: `id_country` (**ID**),
+`name` (**Country**), `iso_code` (**ISO code**), `call_prefix` (**Call
+prefix**, an integer, `0` where the screen shows `-`), `id_zone` and `zone`
+(**Zone**, the name as `somcp_list_zones` gives it), `active` (**Enabled**),
+`contains_states` (**Contains states**), `need_zip_code` (**Does it need
+Zip/Postal code?**), `zip_code_format` (**Zip/Postal code format**, as stored,
+for example `NNNNN`, `""` when none), `need_identification_number` (**Do you
+need a tax identification number?**, the **DNI** an address there must give).
+Then `returned`, `total_count` (the matches before `limit`), `offset` and
+`language`, the paging keys of `somcp_search_customers`. **Default currency**,
+**Address format** and **Display tax label** are settings of the country, left
+for the tool that edits one.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_country` or `id_zone` that is not an identifier
+(`SomcpTool::notAnIdentifier()`), a zone the shop does not have, an `active`
+that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`), a language the shop does not have
+(`SomcpTool::languageProblem()`). An empty list is `countries: []`,
+`returned: 0`.
+
+**Notes**
+- Read through a query on `country` joined to `country_shop` on the shop of the token and to `country_lang` in the language asked, rather than `Country::getCountries()`, which has no name or ISO filter and no paging.
+- The back-office address of the page is never part of the answer.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`country`, `country_lang`, `country_shop`); the edit form is legacy on 8.0.1 and Symfony on 9.0.0, with **Zip/Postal** written **ZIP/Postal**.
+
 #### `somcp_update_carrier`
 **State**: written · [issue #320](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/320), position [#322](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/322), shipping costs settings [#323](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/323), size and weight limits [#330](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/330), logo [#331](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/331), zones [#336](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/336), ranges and prices [#337](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/337)
 **Nature**: `acts(EDIT, 'AdminCarriers')` · **Scope**: `mcp.orders.write`

@@ -27,6 +27,13 @@ limits. Until now the assistant only saw the carrier list, so it could not tell
 where a carrier delivers, to whom, nor what a customer pays there, and a
 merchant setting up delivery had to open each carrier.
 
+**List the countries.** The new tool somcp_list_countries lists the countries
+of International > Locations > Countries, with their ISO code, their zone,
+whether they are enabled, and what an address there must hold: a state, a
+postcode and its format, a tax identification number. Until now the assistant
+had to guess the ISO code every other tool takes for a country, and could not
+tell which countries the shop sells to.
+
 **List the delivery zones.** The new tool somcp_list_zones lists the zones of
 International > Locations > Zones, with the number of countries in each. Until
 now the assistant only saw the zones a carrier already serves, so it could not

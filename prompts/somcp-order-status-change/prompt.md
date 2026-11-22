@@ -15,6 +15,7 @@ of it can be undone by calling again.
 - `somcp_list_carriers`
 - `somcp_get_carrier`
 - `somcp_list_zones`
+- `somcp_list_countries`
 - `somcp_update_carrier`
 - `somcp_delete_carrier`
 - `somcp_create_return_status`
@@ -94,6 +95,7 @@ status change: it never moves the order to shipped, and
   `somcp_get_carrier` gives the zones and groups it serves, how it bills
   and the price of each range per zone.
   `somcp_list_zones` lists the zones of the shop, with their `id_zone`.
+  `somcp_list_countries` lists the countries, with their ISO code and zone.
   `somcp_update_carrier` changes its name, transit time, speed grade,
   logo, tracking URL, status, groups, zones, ranges and their prices per zone,
   place in the list, free shipping,

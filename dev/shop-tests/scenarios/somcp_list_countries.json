@@ -1,0 +1,16 @@
+{
+  "calls": [
+    {"why": "the first page of the countries of the shop, 50 by default, with the paging keys", "arguments": {}, "expect": "ok", "contains": ["\"countries\"", "\"id_country\"", "\"iso_code\"", "\"call_prefix\"", "\"id_zone\"", "\"zone\"", "\"returned\": 50", "\"total_count\"", "\"offset\": 0", "\"language\""]},
+    {"why": "enabled countries only: the country the shop was installed for is one", "arguments": {"active": true}, "expect": "ok", "contains": ["\"iso_code\": \"FR\"", "\"name\": \"France\"", "\"active\": true"]},
+    {"why": "one country by its ISO code, whatever the case, with its zone and postcode format", "arguments": {"iso_code": "jp"}, "expect": "ok", "contains": ["\"iso_code\": \"JP\"", "\"id_zone\": 3", "\"zone\": \"Asia\"", "\"zip_code_format\": \"NNN-NNNN\"", "\"returned\": 1"]},
+    {"why": "a country whose addresses need a tax identification number says so", "arguments": {"iso_code": "es"}, "expect": "ok", "contains": ["\"iso_code\": \"ES\"", "\"need_identification_number\": true"]},
+    {"why": "filtered by part of the name, whatever the case", "arguments": {"name": "united"}, "expect": "ok", "contains": ["\"name\": \"United States\""]},
+    {"why": "the countries of one zone", "arguments": {"id_zone": 1, "iso_code": "fr"}, "expect": "ok", "contains": ["\"iso_code\": \"FR\"", "\"id_zone\": 1", "\"returned\": 1"]},
+    {"why": "the next page is read with offset and a smaller limit", "arguments": {"limit": 5, "offset": 200}, "expect": "ok", "contains": ["\"returned\": 5", "\"offset\": 200"]},
+    {"why": "an identifier no country has lists nothing", "arguments": {"id_country": 999999}, "expect": "ok", "contains": ["\"countries\": []", "\"returned\": 0", "\"total_count\": 0"]},
+    {"why": "in a language given by ISO code, which the answer names", "arguments": {"language": "EN", "iso_code": "fr"}, "expect": "ok", "contains": ["\"language\": \"en\""]},
+    {"why": "a language the shop does not have is refused, naming the ones it has", "arguments": {"language": "zz"}, "expect": "error", "contains": ["- language: not one of the shop's languages, which are ", "en"]},
+    {"why": "an identifier of the wrong kind is refused", "arguments": {"id_country": [1]}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_country: a whole number above 0"]},
+    {"why": "an active that is not a boolean, a zone the shop does not have and a misspelt filter are refused at once", "arguments": {"active": "yes", "id_zone": 999999, "nmae": "x"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- active: true or false", "- id_zone: no zone of this shop has the identifier 999999 - find it with somcp_list_zones", "- nmae: not a field of this tool"]}
+  ]
+}

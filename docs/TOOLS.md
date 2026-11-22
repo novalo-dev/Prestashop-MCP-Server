@@ -2460,8 +2460,8 @@ enabling a state or changing its zone (a later tool).
 |---|---|---|---|---|
 | `id_state` | **ID** filter | integer | no | one state, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_zones` do |
 | `name` | **Name** filter | string | no | part of the name, case-insensitive |
-| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`ca` finds **California**, and the states of other countries with the same code) |
-| `country` | **Country** filter | string | no | the ISO code of the country, as `country` of the country rule and supplier tools and `iso_code` of `somcp_list_countries` give it, for example `US`, read through `SomcpToolCreateSupplier::shopCountries()`; a code the shop does not have: `SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code')` |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`ca` finds **California**, and the states of other countries with the same code); a value that is not a text is refused with `iso_code: the ISO code of a state, for example CA` |
+| `country` | **Country** filter | string | no | the ISO code of the country, as `country` of the country rule and supplier tools and `iso_code` of `somcp_list_countries` give it, for example `US`, read through `SomcpToolCreateSupplier::shopCountries()`; a code the shop does not have: `SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code')`; a list or an object is a mistake in the call, refused with `country: an ISO code of 2 letters, for example US` |
 | `id_zone` | **Zone** filter | integer | no | the states of one zone, from `somcp_list_zones`; a zone the shop does not have: `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')`, checked by `SomcpToolListCountries::zoneOfShop()` |
 | `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both |
 | `limit` | **Display** / **Items per page** | integer | no | how many states to return, 50 by default (the default of both screens) and 300 at most |

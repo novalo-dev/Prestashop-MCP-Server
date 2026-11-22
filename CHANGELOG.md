@@ -21,6 +21,14 @@ are:
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA
 3.7.0. Nothing changes on the page.
 
+### Fixed
+
+**A country given the wrong way when listing states.** When the assistant gave
+the country of somcp_list_states as a list instead of a code, it was told the
+shop had no country with an empty code, as if a country were missing. It is now
+told to give an ISO code of 2 letters, and a state code given the wrong way is
+refused the same way instead of being ignored, which listed every state.
+
 ## 2.0.4 - 2026-11-22
 
 ### Added

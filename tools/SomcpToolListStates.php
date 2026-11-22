@@ -135,15 +135,27 @@ class SomcpToolListStates
         }
         $idCountry = 0;
         if (array_key_exists('country', $arguments) && $arguments['country'] !== null && $arguments['country'] !== '') {
-            $code = is_scalar($arguments['country']) ? Tools::strtoupper(trim((string) $arguments['country'])) : '';
-            // The ISO code the country rule and supplier tools take, through
-            // the join they read the shop's countries with; validated first
-            // so a malformed code never reaches the query.
-            $found = Validate::isLanguageIsoCode($code) ? SomcpToolCreateSupplier::shopCountries($idShop, $code) : [];
-            $idCountry = (int) array_key_first($found);
-            if ($idCountry === 0) {
-                $errors[] = SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code');
+            if (!is_scalar($arguments['country'])) {
+                // A list or an object is a mistake in the call, not a code
+                // the shop lacks: told as such, the way an identifier of the
+                // wrong kind is kept apart from one no record has.
+                $errors[] = 'country: an ISO code of 2 letters, for example US';
+            } else {
+                $code = Tools::strtoupper(trim((string) $arguments['country']));
+                // The ISO code the country rule and supplier tools take, through
+                // the join they read the shop's countries with; validated first
+                // so a malformed code never reaches the query.
+                $found = Validate::isLanguageIsoCode($code) ? SomcpToolCreateSupplier::shopCountries($idShop, $code) : [];
+                $idCountry = (int) array_key_first($found);
+                if ($idCountry === 0) {
+                    $errors[] = SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code');
+                }
             }
+        }
+        // A state code of the wrong kind was dropped from the filters, which
+        // answered every state as if that one had been asked for.
+        if (array_key_exists('iso_code', $arguments) && $arguments['iso_code'] !== null && !is_scalar($arguments['iso_code'])) {
+            $errors[] = 'iso_code: the ISO code of a state, for example CA';
         }
         $idZone = 0;
         if (array_key_exists('id_zone', $arguments) && $arguments['id_zone'] !== null) {

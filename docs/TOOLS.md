@@ -3030,6 +3030,59 @@ every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
 
 **Differences between 8.0.1 and 9.0.0** - the **Locale** column and its filter on 9.0.0 only (the answer gives `locale` on both, from the same column); otherwise the same list, filters, labels and tables (`lang`, `lang_shop`).
 
+#### `somcp_list_currencies`
+**State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)
+**Nature**: `acts(VIEW, 'AdminCurrencies')` · **Scope**: `mcp.catalog.read`
+
+**Does** - lists the currencies of **International > Localization >
+Currencies** with the columns of that list: **ID**, **Currency**, **Symbol**,
+**ISO code**, **Exchange rate**, **Enabled**, and which one is the shop
+default. The `iso_code` is what the `currency` of the other tools takes
+(`somcp_create_order`, `somcp_set_order_currency`,
+`somcp_create_catalog_price_rule`). Read only.
+
+**Do not use for** - changing the currency of an order (→
+`somcp_set_order_currency`); adding, changing, enabling or deleting a
+currency, or updating the exchange rates (later tools).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_currency` | **ID** filter | integer | no | one currency, exact, read with `SomcpTool::id()`; an identifier the shop does not have gives an empty list, as the screen and `somcp_list_languages` do |
+| `name` | **Currency** filter | string | no | part of the name in `language`, case-insensitive |
+| `iso_code` | **ISO code** filter | string | no | exact, case-insensitive (`eur`) |
+| `active` | **Enabled** filter | boolean | no | `true` enabled only, `false` disabled only; left out, both (**All**) |
+| `language` | - | string | no | ISO code of one of the shop's active languages, for the names and symbols; the shop default language when left out, as `somcp_list_taxes` |
+
+No **Symbol** filter and no paging: a shop holds a handful of currencies, and
+the answer gives every symbol.
+
+**Returns** - `currencies`, sorted by `id_currency` as the list: `id_currency`
+(**ID**), `name` (**Currency**, in `language`), `symbol` (**Symbol**, in
+`language`), `iso_code` (**ISO code**), `conversion_rate` (**Exchange rate**, a
+number, the rate of the shop of the token from `currency_shop`, against the
+default currency), `active` (**Enabled**), `default` (`true` for the
+`PS_CURRENCY_DEFAULT` of the shop, whose rate is 1). Plus `count` and
+`language`. Only an enabled currency is accepted by the `currency` of the
+other tools; a disabled one is listed so the assistant can tell the merchant
+why.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
+`id_currency` that is not an identifier (`SomcpTool::notAnIdentifier()`), an
+`active` that is not a boolean (`active: true or false`, the line of
+`somcp_list_taxes`), a language the shop does not have
+(`SomcpTool::languageProblem()`, as `somcp_list_taxes`). An empty list is
+`currencies: []`, `count: 0`.
+
+**Notes**
+- Read through a query on `currency` (`deleted = 0`) joined to `currency_shop` on the shop of the token and to `currency_lang` in the language asked, rather than `Currency::getCurrencies()`, which has no name or ISO code filter; the default read as `Configuration::get('PS_CURRENCY_DEFAULT', null, null, $idShop)`.
+- The **Exchange rate** block below the list (**Live exchange rates**, **Update exchange rates**) holds actions, not part of this list.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its bulk actions, its labels or the tables (`currency`, `currency_lang`, `currency_shop`); the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0).
+
 #### `somcp_create_tax`
 **State**: written · [issue #308](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/308)
 **Nature**: `acts(ADD, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`

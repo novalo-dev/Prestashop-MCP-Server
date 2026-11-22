@@ -27,6 +27,13 @@ limits. Until now the assistant only saw the carrier list, so it could not tell
 where a carrier delivers, to whom, nor what a customer pays there, and a
 merchant setting up delivery had to open each carrier.
 
+**List the currencies.** The new tool somcp_list_currencies lists the
+currencies of International > Localization > Currencies, with their name,
+symbol, ISO code, the exchange rate of the shop, whether they are enabled, and
+which one is the shop default. Until now the assistant only learnt the codes
+from a refused currency change, without the names, the rates or the disabled
+currencies.
+
 **List the languages.** The new tool somcp_list_languages lists the languages
 of International > Localization > Languages, with their ISO code, language
 code, locale and date formats, whether they are enabled, and which one is the

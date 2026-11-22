@@ -1094,6 +1094,10 @@ T = {
  "Lister les langues",
  "Listar los idiomas",
  "Sprachen auflisten"),
+"List currencies": (
+ "Lister les devises",
+ "Listar las monedas",
+ "Währungen auflisten"),
 "Create a tax": (
  "Créer une taxe",
  "Crear un impuesto",

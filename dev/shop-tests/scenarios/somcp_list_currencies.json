@@ -1,0 +1,11 @@
+{
+  "calls": [
+    {"why": "lists every currency of the shop with its rate and the default one", "arguments": {}, "expect": "ok", "contains": ["\"currencies\"", "\"id_currency\"", "\"symbol\"", "\"iso_code\"", "\"conversion_rate\"", "\"active\": true", "\"default\": true", "\"count\"", "\"language\""]},
+    {"why": "disabled currencies only: the shop has none, an empty list rather than an error", "arguments": {"active": false}, "expect": "ok", "contains": ["\"currencies\": []", "\"count\": 0"]},
+    {"why": "an identifier no currency has lists nothing", "arguments": {"id_currency": 999999}, "expect": "ok", "contains": ["\"currencies\": []", "\"count\": 0"]},
+    {"why": "an ISO code no currency has lists nothing", "arguments": {"iso_code": "zzz"}, "expect": "ok", "contains": ["\"currencies\": []", "\"count\": 0"]},
+    {"why": "an identifier of the wrong kind is refused", "arguments": {"id_currency": [1]}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- id_currency: a whole number above 0"]},
+    {"why": "a language the shop does not have is refused", "arguments": {"language": "zz"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- language: not one of the shop's languages"]},
+    {"why": "an active that is not a boolean and a misspelt filter are refused at once", "arguments": {"active": "yes", "nmae": "x"}, "expect": "error", "contains": ["Nothing was read. Correct these and call again:", "- active: true or false", "- nmae: not a field of this tool"]}
+  ]
+}

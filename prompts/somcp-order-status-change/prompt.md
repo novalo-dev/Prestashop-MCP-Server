@@ -93,7 +93,8 @@ status change: it never moves the order to shipped, and
   `somcp_get_carrier` gives the zones and groups it serves, how it bills
   and the price of each range per zone.
   `somcp_update_carrier` changes its name, transit time, speed grade,
-  tracking URL, status, groups or place in the list, only when the
+  tracking URL, status, groups, place in the list, free shipping,
+  handling costs, billing, tax or out-of-range behavior, only when the
   merchant asks for it; a carrier an order uses gets a new `id_carrier`,
   given in the answer.
   `somcp_delete_carrier` removes one, only once the merchant has confirmed

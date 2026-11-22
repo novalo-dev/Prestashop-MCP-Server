@@ -38,6 +38,12 @@ its identifier; one that orders already use gets a new one, as the back office
 does, so those orders keep the carrier they were placed with. Moving a carrier
 never gives it a new identifier.
 
+**Set how a carrier charges.** somcp_update_carrier also sets whether a carrier
+is free, adds the handling costs, bills by price or weight, which tax it
+charges and what happens beyond its last range, as the Shipping locations and
+costs step of a carrier does. Turning a carrier free keeps the prices of its
+ranges, so they are still there if it becomes paid again.
+
 **Delete a carrier.** The new tool somcp_delete_carrier deletes one carrier of
 Shipping > Carriers, such as the demo carriers of a new shop. A carrier orders
 use stays hidden for them, as the back office keeps it; one no order uses is

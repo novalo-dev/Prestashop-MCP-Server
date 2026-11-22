@@ -177,12 +177,7 @@ class SomcpToolGetCarrier
         $carrier['billing'] = self::billing($row, $idShopGroup, $idShop);
         $carrier['out_of_range'] = self::OUT_OF_RANGE[(int) $row['range_behavior']] ?? self::OUT_OF_RANGE[0];
         $carrier['ranges'] = self::ranges($idCarrier, $carrier['billing'], $carrier['zones'], $idShopGroup, $idShop, $warnings);
-        $carrier['range_unit'] = null;
-        if ($carrier['billing'] === 'price') {
-            $carrier['range_unit'] = (string) Currency::getIsoCodeById((int) Configuration::get('PS_CURRENCY_DEFAULT', null, $idShopGroup, $idShop));
-        } elseif ($carrier['billing'] === 'weight') {
-            $carrier['range_unit'] = (string) Configuration::get('PS_WEIGHT_UNIT', null, $idShopGroup, $idShop);
-        }
+        $carrier['range_unit'] = self::rangeUnit($carrier['billing'], $idShopGroup, $idShop);
         // 0 is no limit, as the form shows it.
         $carrier['max_width'] = (int) $row['max_width'];
         $carrier['max_height'] = (int) $row['max_height'];
@@ -220,7 +215,24 @@ class SomcpToolGetCarrier
         if ((bool) $row['is_free']) {
             return null;
         }
-        $method = (int) $row['shipping_method'];
+
+        return self::method((int) $row['shipping_method'], $idShopGroup, $idShop);
+    }
+
+    /**
+     * The billing a stored shipping_method stands for, whether the carrier is free or not.
+     *
+     * Public so somcp_update_carrier compares a billing given with the one
+     * this read answers, the default method resolved the same way.
+     *
+     * @param int $method carrier.shipping_method
+     * @param int $idShopGroup
+     * @param int $idShop
+     *
+     * @return string|null "price", "weight", or null for a method neither
+     */
+    public static function method(int $method, int $idShopGroup, int $idShop): ?string
+    {
         if ($method === Carrier::SHIPPING_METHOD_DEFAULT) {
             $method = (int) Configuration::get('PS_SHIPPING_METHOD', null, $idShopGroup, $idShop)
                 ? Carrier::SHIPPING_METHOD_WEIGHT
@@ -234,6 +246,28 @@ class SomcpToolGetCarrier
     }
 
     /**
+     * The unit of the bounds of the ranges: the default currency when billed
+     * by price, the weight unit when billed by weight, none for a free carrier.
+     *
+     * @param string|null $billing from billing()
+     * @param int $idShopGroup
+     * @param int $idShop
+     *
+     * @return string|null
+     */
+    public static function rangeUnit(?string $billing, int $idShopGroup, int $idShop): ?string
+    {
+        if ($billing === 'price') {
+            return (string) Currency::getIsoCodeById((int) Configuration::get('PS_CURRENCY_DEFAULT', null, $idShopGroup, $idShop));
+        }
+        if ($billing === 'weight') {
+            return (string) Configuration::get('PS_WEIGHT_UNIT', null, $idShopGroup, $idShop);
+        }
+
+        return null;
+    }
+
+    /**
      * The ranges of the carrier and the price of each in every zone it
      * serves, as the ranges table of Shipping locations and costs shows them.
      *
@@ -241,6 +275,8 @@ class SomcpToolGetCarrier
      * keep rows of the other kind from an earlier setting, which the form
      * does not show and the core never charges, so giving them would tell
      * the merchant a price no customer pays. A free carrier has none.
+     * Public so somcp_update_carrier compares the ranges given back with the
+     * ones the carrier shows once its billing has changed.
      *
      * @param int $idCarrier
      * @param string|null $billing "price", "weight" or null, from billing()
@@ -251,7 +287,7 @@ class SomcpToolGetCarrier
      *
      * @return array<int, array{from: float, to: float, prices: array<int, array{id_zone: int, zone: string, price_tax_excl: float|null}>}>
      */
-    private static function ranges(int $idCarrier, ?string $billing, array $zones, int $idShopGroup, int $idShop, array &$warnings): array
+    public static function ranges(int $idCarrier, ?string $billing, array $zones, int $idShopGroup, int $idShop, array &$warnings): array
     {
         if ($billing !== 'price' && $billing !== 'weight') {
             return [];

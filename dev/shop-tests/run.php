@@ -988,7 +988,7 @@ if ($getCarrier !== null && $updateCarrier !== null) {
 
         return [$result, $text, json_decode(trim($text), true)];
     };
-    $calls += 6;
+    $calls += 9;
     $carrierBefore = null;
     try {
         [$result, $text, $carrierBefore] = $carrierCall($getCarrier, ['id_carrier' => 3]);
@@ -1001,6 +1001,11 @@ if ($getCarrier !== null && $updateCarrier !== null) {
                 'a new speed grade, changed in place' => [['id_carrier' => 3, 'grade' => 5], ['"changed": true', '"id_carrier": 3', '"field": "grade"', '"new": 5']],
                 'the same speed grade again, nothing written' => [['id_carrier' => 3, 'grade' => 5], ['"changed": false']],
                 'the read of the start given back, the grade put back' => [$carrierBefore, ['"changed": true', '"id_carrier": 3', '"field": "grade"', '"new": ' . (int) $carrierBefore['grade']]],
+                // The costs settings of #323, then the read of the start given
+                // back with ranges of another billing than the one stored.
+                'billed by weight, disabled out of range, no tax' => [['id_carrier' => 3, 'billing' => 'weight', 'out_of_range' => 'disable_carrier', 'id_tax_rules_group' => 0], ['"changed": true', '"id_carrier": 3', '"field": "billing"', '"field": "out_of_range"', '"field": "id_tax_rules_group"']],
+                'made free, the handling costs turned off with it' => [['id_carrier' => 3, 'is_free' => true], ['"changed": true', '"id_carrier": 3', '"field": "is_free"', '"field": "handling_costs"', '"handling_costs": false']],
+                'the read of the start given back, the costs settings put back' => [$carrierBefore, ['"changed": true', '"id_carrier": 3', '"field": "billing"', '"field": "is_free"']],
             ];
             foreach ($steps as $why => [$arguments, $needles]) {
                 [$result, $text] = $carrierCall($updateCarrier, $arguments);

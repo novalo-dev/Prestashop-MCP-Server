@@ -2531,8 +2531,8 @@ as `country` or `delivery_country`, and it shows which countries the shop
 sells to. Read only.
 
 **Do not use for** - the zones (→ `somcp_list_zones`); the tax rows of a
-country (→ `somcp_get_tax_rule`); enabling or changing a country (a later
-tool).
+country (→ `somcp_get_tax_rule`); every field of one country (→
+`somcp_get_country`); enabling or changing a country (a later tool).
 
 **Parameters**
 
@@ -2559,8 +2559,8 @@ for example `NNNNN`, `""` when none), `need_identification_number` (**Do you
 need a tax identification number?**, the **DNI** an address there must give).
 Then `returned`, `total_count` (the matches before `limit`), `offset` and
 `language`, the paging keys of `somcp_search_customers`. **Default currency**,
-**Address format** and **Display tax label** are settings of the country, left
-for the tool that edits one.
+**Address format** and **Display tax label** are settings of the country, read
+with `somcp_get_country`.
 
 **Errors** - in the envelope `Nothing was read. Correct these and call again:`,
 every problem at once: an unknown argument (`SomcpTool::unknownFields()`), an
@@ -2577,6 +2577,48 @@ that is not a boolean (`active: true or false`, the line of
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - none in the list, its columns, its filters, its labels or the tables (`country`, `country_lang`, `country_shop`); the edit form is legacy on 8.0.1 and Symfony on 9.0.0, with **Zip/Postal** written **ZIP/Postal**.
+
+#### `somcp_get_country`
+**State**: written · [issue #359](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/359)
+**Nature**: `acts(VIEW, 'AdminCountries')` · **Scope**: `mcp.orders.read`
+
+**Does** - reads one country of **International > Locations > Countries** as
+its **Edit** page shows it: every field of the form, the three that
+`somcp_list_countries` leaves out included (**Default currency**, **Address
+format**, **Display tax label**). It is the read before the change of a
+country. Read only.
+
+**Do not use for** - many countries (→ `somcp_list_countries`); the states of
+a country (→ `somcp_list_states`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_country` | - | integer | yes | the country, from `somcp_list_countries`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_country')`; not a country of the shop (`country_shop`, as the list filters it): `SomcpTool::notFound('id_country', 'country', $id, 'somcp_list_countries')` |
+| `language` | - | string | no | the ISO code of the language of **Country**, through `SomcpTool::readLanguage()`; refused with `SomcpTool::languageProblem()`; the shop default language when left out |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - `language`, then the keys of the row of `somcp_list_countries`
+(`id_country`, `name`, `iso_code`, `call_prefix`, `id_zone`, `zone`,
+`active`, `contains_states`, `need_zip_code`, `zip_code_format`,
+`need_identification_number`), built by `SomcpToolListCountries::row()` and
+read through `SomcpToolListCountries::country()`, the query of the list; then:
+- `id_currency` (**Default currency**): `0` for **Default store currency**, as stored; `currency`: the ISO code of that currency (`Currency::getIsoCodeById()`), or `null` for the default;
+- `address_format` (**Address format**): the stored format as a list of lines (the `format` column of `address_format` split on new lines, empty lines dropped), or `null` when the country has no row; `address_format_used`: the lines PrestaShop applies (`AddressFormat::getAddressCountryFormat()`, the format of the shop's default country when the country has none, and the `dni` line when it needs one);
+- `display_tax_label` (**Display tax label (e.g. "Tax incl.")**): boolean;
+- `states`: the number of states of the country, so the assistant knows whether `somcp_list_states` has something to show.
+
+**Errors** - in the envelope `Nothing was read. Correct these and call again:`,
+every problem at once.
+
+**Notes**
+- The **Address format** is read from the table on both versions: the 9.0.0 form shows the field empty, `GetCountryForEditingHandler` leaving the reading of the format commented out.
+- The back-office address of the page is never part of the answer.
+- A read: nothing written, nothing to retry.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), some labels (**Does it need Zip/Postal code?** on 8.0.1, **Does it need a ZIP/Postal code?** on 9.0.0), the empty **Address format** of the 9.0.0 form; the class, the tables and the stored values are the same.
 
 #### `somcp_list_states`
 **State**: written · [issue #341](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/341)

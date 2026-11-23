@@ -178,10 +178,7 @@ class SomcpToolListCountries
         $limit = max(1, min(self::MAX_LIMIT, $limit));
         $offset = isset($arguments['offset']) && is_numeric($arguments['offset']) ? max(0, (int) $arguments['offset']) : 0;
 
-        $page = self::query($filters, $idShop, $idLang);
-        $page->select('c.`id_country`, cl.`name`, c.`iso_code`, c.`call_prefix`, c.`id_zone`, z.`name` AS `zone`');
-        $page->select('c.`active`, c.`contains_states`, c.`need_zip_code`, c.`zip_code_format`, c.`need_identification_number`');
-        $page->leftJoin('zone', 'z', 'z.`id_zone` = c.`id_zone`');
+        $page = self::select(self::query($filters, $idShop, $idLang));
         // Name order, as the back office list, so a country sits where the
         // merchant sees it; the identifier settles two countries of one name.
         $page->orderBy('cl.`name` ASC, c.`id_country` ASC');
@@ -189,24 +186,7 @@ class SomcpToolListCountries
 
         $countries = [];
         foreach (Db::getInstance()->executeS($page) ?: [] as $row) {
-            $countries[] = [
-                'id_country' => (int) $row['id_country'],
-                'name' => (string) ($row['name'] ?? ''),
-                'iso_code' => (string) $row['iso_code'],
-                // 0 where the list shows -, a country with no prefix.
-                'call_prefix' => (int) $row['call_prefix'],
-                // The keys of somcp_list_zones and of the zones of
-                // somcp_get_carrier, so a zone read here is the same there.
-                'id_zone' => (int) $row['id_zone'],
-                'zone' => (string) ($row['zone'] ?? ''),
-                'active' => (bool) $row['active'],
-                // What an address of the country must hold, which the address
-                // and tax rule tools check: the assistant asks for it first.
-                'contains_states' => (bool) $row['contains_states'],
-                'need_zip_code' => (bool) $row['need_zip_code'],
-                'zip_code_format' => (string) ($row['zip_code_format'] ?? ''),
-                'need_identification_number' => (bool) $row['need_identification_number'],
-            ];
+            $countries[] = self::row($row);
         }
 
         return SomcpTool::json([
@@ -216,6 +196,72 @@ class SomcpToolListCountries
             'offset' => $offset,
             'language' => $iso,
         ]);
+    }
+
+    /**
+     * One country of the shop as the list returns it, or null when the shop has none with this identifier.
+     *
+     * Public so somcp_get_country starts from the same fields as the list.
+     *
+     * @param int $idShop
+     * @param int $idLang
+     * @param int $idCountry
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function country(int $idShop, int $idLang, int $idCountry): ?array
+    {
+        $filters = ['id_country' => $idCountry, 'id_zone' => 0, 'name' => '', 'iso_code' => '', 'active' => null];
+        $row = Db::getInstance()->getRow(self::select(self::query($filters, $idShop, $idLang)));
+
+        return is_array($row) && $row !== [] ? self::row($row) : null;
+    }
+
+    /**
+     * A row of the list, built from what select() reads.
+     *
+     * Public so every tool that answers a country gives the same fields.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>
+     */
+    public static function row(array $row): array
+    {
+        return [
+            'id_country' => (int) $row['id_country'],
+            'name' => (string) ($row['name'] ?? ''),
+            'iso_code' => (string) $row['iso_code'],
+            // 0 where the list shows -, a country with no prefix.
+            'call_prefix' => (int) $row['call_prefix'],
+            // The keys of somcp_list_zones and of the zones of
+            // somcp_get_carrier, so a zone read here is the same there.
+            'id_zone' => (int) $row['id_zone'],
+            'zone' => (string) ($row['zone'] ?? ''),
+            'active' => (bool) $row['active'],
+            // What an address of the country must hold, which the address
+            // and tax rule tools check: the assistant asks for it first.
+            'contains_states' => (bool) $row['contains_states'],
+            'need_zip_code' => (bool) $row['need_zip_code'],
+            'zip_code_format' => (string) ($row['zip_code_format'] ?? ''),
+            'need_identification_number' => (bool) $row['need_identification_number'],
+        ];
+    }
+
+    /**
+     * The columns row() reads, added to a query of query().
+     *
+     * @param DbQuery $query
+     *
+     * @return DbQuery
+     */
+    private static function select(DbQuery $query): DbQuery
+    {
+        $query->select('c.`id_country`, cl.`name`, c.`iso_code`, c.`call_prefix`, c.`id_zone`, z.`name` AS `zone`');
+        $query->select('c.`active`, c.`contains_states`, c.`need_zip_code`, c.`zip_code_format`, c.`need_identification_number`');
+        $query->leftJoin('zone', 'z', 'z.`id_zone` = c.`id_zone`');
+
+        return $query;
     }
 
     /**

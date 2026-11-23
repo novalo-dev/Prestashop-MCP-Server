@@ -337,6 +337,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_update_zone` | ✎ Change a zone | Zones › edit |
 | `somcp_delete_zone` | ✎ Delete a zone | Zones › delete |
 | `somcp_list_countries` | ● List countries | Countries › view |
+| `somcp_get_country` | ● Read a country | Countries › view |
 | `somcp_list_states` | ● List states | States › view |
 | `somcp_create_state` | ✎ Create a state | States › add |
 | `somcp_update_state` | ✎ Change a state | States › edit |

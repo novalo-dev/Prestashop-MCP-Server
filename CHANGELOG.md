@@ -105,6 +105,14 @@ removed in the back office. A state an address or a tax rule row uses is
 kept, with the tax rules named, so no tax row is left pointing to a state
 that no longer exists.
 
+**Read a country.** The new tool somcp_get_country reads one country of
+International > Locations > Countries as its edit page shows it, with what
+the list of countries leaves out: its default currency, its address format
+and whether prices show the tax label. The address format is given both as
+stored and as the storefront applies it, so the merchant learns which lines
+an address of that country shows, even on PrestaShop 9 where the edit page
+displays the field empty.
+
 **List the countries.** The new tool somcp_list_countries lists the countries
 of International > Locations > Countries, with their ISO code, their zone,
 whether they are enabled, and what an address there must hold: a state, a

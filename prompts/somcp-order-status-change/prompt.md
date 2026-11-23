@@ -19,6 +19,7 @@ of it can be undone by calling again.
 - `somcp_update_zone`
 - `somcp_delete_zone`
 - `somcp_list_countries`
+- `somcp_get_country`
 - `somcp_list_states`
 - `somcp_create_state`
 - `somcp_update_state`
@@ -105,7 +106,8 @@ status change: it never moves the order to shipped, and
   `somcp_create_zone` creates one the merchant needs, with no country yet;
   `somcp_update_zone` renames one, or allows or stops shipping to it;
   `somcp_delete_zone` deletes one that holds no country and no state.
-  `somcp_list_countries` lists the countries, with their ISO code and zone.
+  `somcp_list_countries` lists the countries, with their ISO code and zone;
+  `somcp_get_country` reads every field of one, its address format included.
   `somcp_list_states` lists the states of a country, with their ISO code and
   zone; `somcp_create_state` creates one the merchant needs, in the zone the
   merchant chooses; `somcp_update_state` renames one, changes its ISO code or

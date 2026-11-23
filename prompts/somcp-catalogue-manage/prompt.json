@@ -51,6 +51,7 @@
     "somcp_update_zone",
     "somcp_delete_zone",
     "somcp_list_countries",
+    "somcp_get_country",
     "somcp_list_states",
     "somcp_create_state",
     "somcp_update_state",

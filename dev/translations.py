@@ -1122,6 +1122,10 @@ T = {
  "Supprimer un état",
  "Eliminar un estado",
  "Einen Staat löschen"),
+"Read a country": (
+ "Lire un pays",
+ "Leer un país",
+ "Ein Land lesen"),
 "List currencies": (
  "Lister les devises",
  "Listar las monedas",

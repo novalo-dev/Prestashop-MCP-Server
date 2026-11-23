@@ -50,6 +50,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_update_zone`
 - `somcp_delete_zone`
 - `somcp_list_countries`
+- `somcp_get_country`
 - `somcp_list_states`
 - `somcp_create_state`
 - `somcp_update_state`
@@ -227,7 +228,9 @@ to it; before stopping it, tell the merchant which carriers serve it.
 `somcp_delete_zone` deletes a zone with no country and no state; the carriers
 that served it lose it and their prices for it, so read them with
 `somcp_get_carrier` and tell the merchant first. The countries, with their ISO code, their
-zone and whether they are enabled, come from `somcp_list_countries`. The
+zone and whether they are enabled, come from `somcp_list_countries`; every
+field of one country, its default currency, address format and tax label
+included, from `somcp_get_country`. The
 states of a country, with the ISO code `state` and `states` take, come from
 `somcp_list_states`. A state the merchant needs and the shop lacks is created
 with `somcp_create_state`, in a country that uses states; ask for its zone,

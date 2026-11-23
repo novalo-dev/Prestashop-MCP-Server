@@ -2435,7 +2435,7 @@ do for one zone.
 
 **Do not use for** - the zones a carrier serves (→ `somcp_update_carrier`,
 `zones`); the zone of a country (a later tool); creating a zone
-(→ `somcp_create_zone`).
+(→ `somcp_create_zone`); deleting one (→ `somcp_delete_zone`).
 
 **Parameters**
 
@@ -2466,6 +2466,53 @@ again:`, every problem at once.
 - The back-office address of the page is never part of the answer.
 
 **Differences between 8.0.1 and 9.0.0** - none in the fields, the checks or the tables; only the titles of the edit page (**Edit: Asia** / **Editing zone Asia**).
+
+#### `somcp_delete_zone`
+**State**: written · [issue #350](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/350)
+**Nature**: `acts(DELETE, 'AdminZones')` · **Scope**: `mcp.orders.write`
+
+**Does** - deletes one zone of **International > Locations > Zones**, as the
+**Delete** of its row does, once it holds no country and no state.
+
+**Do not use for** - removing a zone from one carrier (→ `somcp_update_carrier`,
+`zones`); disabling a zone for a while (→ `somcp_update_zone`, `active`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_zone` | **ID** | integer | yes | read with `SomcpTool::id()`; a zone the shop of the token does not have refused with `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')` |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Refused**, every reason at once, under `Nothing was deleted.`:
+- the zone still holds countries (`country.id_zone`): `id_zone: zone <id> holds <n> countries - move them to another zone first`;
+- the zone still holds states (`state.id_zone`): `id_zone: zone <id> holds <n> states - move them to another zone first`;
+- the zone is also in another shop (`zone_shop`, `SomcpToolUpdateZone::otherShops()`): `id_zone: zone <id> is also used by <n> other shops - deleting it would remove it there too`.
+
+Decision (countries and states): refused, where the back office deletes.
+`Zone::delete()` sets `id_zone = 0` on every country and state of the zone:
+those countries then belong to no zone, no carrier is offered to their
+addresses and no tax rule by zone reaches them. The other shops: refused, as
+`somcp_delete_feature` refuses a shared feature, since the row of `zone` is
+shared.
+
+**Returns** - `deleted: true`, `id_zone`, `name` (as it was), and
+`carriers_detached`, the `id_carrier` of the carriers that served the zone
+(`[]` when none), read before `Zone::delete()` removes their `carrier_zone` and
+`delivery` rows; when not empty, a `warning`: `The <n> carriers (<ids>) no
+longer serve this zone, and their prices for it are deleted: check their zones
+with somcp_get_carrier.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`, every problem at once.
+
+**Notes**
+- Not undoable: the answer gives the name so the assistant can recreate the zone with `somcp_create_zone`, not its carrier prices. The description says to read `somcp_list_zones` (its `countries`) and `somcp_get_carrier` first.
+- A second call on the same identifier is refused as an unknown zone.
+- Logged as `zone_deleted` with the zone name and the carriers detached. The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none: `Zone::delete()` and `DeleteZoneHandler` are the same on both.
 
 #### `somcp_list_countries`
 **State**: written · [issue #338](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/338)

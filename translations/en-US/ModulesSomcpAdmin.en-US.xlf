@@ -1132,6 +1132,11 @@
       <source>Change a zone</source>
       <target>Change a zone</target>
     </trans-unit>
+    <!-- Delete a zone -->
+    <trans-unit id="dfd3591fce3ecf8efba63586fd38b641" resname="Delete a zone">
+      <source>Delete a zone</source>
+      <target>Delete a zone</target>
+    </trans-unit>
     <!-- List countries -->
     <trans-unit id="597d4652b89187306aaad598ec4d29d9" resname="List countries">
       <source>List countries</source>

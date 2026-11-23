@@ -981,11 +981,12 @@ if ($createTax !== null) {
     }
 }
 
-// A zone created and changed (#348, #349): the JSON scenario cannot hold the
-// identifier of a zone it created, and every demo zone holds countries, so none
-// can be the one made or changed here. Two zones are created, the second under
-// the first one's name in other letters, the first renamed and disabled, then
-// both are removed; whatever is left is cleaned up at the end.
+// A zone created, changed and deleted (#348, #349, #350): the JSON scenario
+// cannot hold the identifier of a zone it created, and every demo zone holds
+// countries, so none can be the one made, changed or removed here. Two zones
+// are created, the second under the first one's name in other letters, the
+// first renamed and disabled, both deleted, then a third deleted while a
+// carrier serves it; whatever is left is cleaned up at the end.
 $createZone = $registry->get('somcp_create_zone');
 if ($createZone !== null) {
     $zoneCall = static function (SomcpTool $tool, array $arguments) use ($context, $employee): array {
@@ -1090,10 +1091,59 @@ if ($createZone !== null) {
                 }
             }
         }
+
+        // The zones deleted (#350): the two empty ones, then a third given to
+        // demo carrier 3, which no order uses, so it keeps its identifier.
+        // The zone is put on the carrier the way the carrier page does it,
+        // Carrier::addZone(), rather than through somcp_update_carrier, whose
+        // zones replace the whole list of the carrier.
+        $deleteZone = $registry->get('somcp_delete_zone');
+        if ($deleteZone !== null) {
+            foreach ($zoneIds as $idEmpty) {
+                $calls += 1;
+                $result = $zoneCall($deleteZone, ['id_zone' => $idEmpty]);
+                $answer = json_decode(trim($zoneText($result)), true);
+                if (!empty($result['isError']) || !is_array($answer) || ($answer['deleted'] ?? null) !== true
+                    || ($answer['carriers_detached'] ?? null) !== []) {
+                    $failures[] = 'somcp_delete_zone (an empty zone): expected it deleted, no carrier detached - ' . excerpt($result);
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_delete_zone (an empty zone)');
+                    $zoneIds = array_values(array_diff($zoneIds, [$idEmpty]));
+                }
+            }
+
+            $calls += 2;
+            $result = $zoneCall($createZone, ['name' => 'somcp zone served']);
+            $answer = json_decode(trim($zoneText($result)), true);
+            $idServed = is_array($answer) ? (int) ($answer['id_zone'] ?? 0) : 0;
+            $carrier = new Carrier(3);
+            if ($idServed === 0 || !Validate::isLoadedObject($carrier) || !$carrier->addZone($idServed)) {
+                $failures[] = 'somcp_delete_zone (a zone a carrier serves): the zone could not be set up - ' . excerpt($result);
+                if ($idServed > 0) {
+                    $zoneIds[] = $idServed;
+                }
+            } else {
+                $result = $zoneCall($deleteZone, ['id_zone' => $idServed]);
+                $text = $zoneText($result);
+                $answer = json_decode(trim($text), true);
+                $left = (int) Db::getInstance()->getValue(
+                    'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'carrier_zone` WHERE `id_zone` = ' . (int) $idServed
+                );
+                if (!empty($result['isError']) || !is_array($answer) || ($answer['deleted'] ?? null) !== true
+                    || ($answer['carriers_detached'] ?? null) !== [3] || strpos($text, 'no longer serve this zone') === false
+                    || $left !== 0) {
+                    $failures[] = 'somcp_delete_zone (a zone a carrier serves): expected it deleted, carrier 3 detached - ' . excerpt($result);
+                    $zoneIds[] = $idServed;
+                } else {
+                    printf("  %-6s %s\n", 'ok', 'somcp_delete_zone (a zone a carrier serves, carrier detached)');
+                }
+            }
+        }
     } catch (Throwable $e) {
         $failures[] = 'somcp_create_zone (a new zone): ' . get_class($e) . ' - ' . $e->getMessage();
     } finally {
-        // No country, state or carrier uses them, so nothing else changes.
+        // What a failed check left behind: no country or state uses these
+        // zones, and Zone::delete() takes their carrier rows with them.
         foreach ($zoneIds as $idZoneLeft) {
             $zone = new Zone($idZoneLeft);
             if (Validate::isLoadedObject($zone)) {

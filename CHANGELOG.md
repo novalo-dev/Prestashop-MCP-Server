@@ -31,6 +31,12 @@ Enabled switch of the list do. Only what differs is saved, so giving back a zone
 as it was read changes nothing. When a zone is closed, the assistant is told
 which carriers served it and how many countries no longer get them.
 
+**Delete a delivery zone.** The new tool somcp_delete_zone deletes a zone that
+holds no country and no state, as the Delete of its row does. A zone that still
+holds some is refused rather than deleted, because the back office would leave
+those countries in no zone, where no carrier reaches their addresses. The
+answer gives the name of the zone and the carriers that lost it.
+
 ### Changed
 
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA

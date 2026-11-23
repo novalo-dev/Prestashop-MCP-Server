@@ -1153,6 +1153,58 @@ if ($createZone !== null) {
     }
 }
 
+// A state created (#353): the JSON scenario cannot delete the state it made,
+// and a second run would then be refused by the ISO code test. ZZ is a code
+// no state of Italy has, on a fresh install as on the test shops; the state
+// is deleted at the end, no address uses it.
+$createState = $registry->get('somcp_create_state');
+if ($createState !== null) {
+    $calls += 1;
+    $idState = 0;
+    try {
+        $result = $createState->call(
+            ['country' => 'IT', 'name' => 'somcp state', 'iso_code' => 'zz', 'id_zone' => 1],
+            [
+                'id_shop' => (int) $context->shop->id,
+                'id_employee' => (int) $employee->id,
+                'id_lang' => (int) $context->language->id,
+                'id_client' => 0,
+                'scopes' => implode(' ', $createState->getRequiredScopes()),
+                'responses' => [],
+                'resumed' => [],
+                'capabilities' => [],
+                'arguments' => [],
+            ]
+        );
+        $text = '';
+        foreach ($result['content'] ?? [] as $block) {
+            $text .= (string) ($block['text'] ?? '') . "\n";
+        }
+        $answer = json_decode(trim($text), true);
+        $idState = is_array($answer) ? (int) ($answer['id_state'] ?? 0) : 0;
+        $missing = array_values(array_filter(
+            ['"created": true', '"iso_code": "ZZ"', '"country": "IT"', '"zone": "Europe"'],
+            static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }
+        ));
+        if (!empty($result['isError']) || $idState === 0 || $missing !== []) {
+            $failures[] = 'somcp_create_state (a new state): expected ' . implode(', ', $missing ?: ['an id_state']) . ' - ' . excerpt($result);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_create_state (a new state)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_create_state (a new state): ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($idState > 0) {
+            $state = new State($idState);
+            if (Validate::isLoadedObject($state)) {
+                $state->delete();
+            }
+        }
+    }
+}
+
 // A carrier read, given back, changed and put back (#320): the JSON scenario
 // cannot give a read back nor compare two reads. Demo carrier 3 is used by no
 // order, so it is changed in place and keeps its identifier; no call is made

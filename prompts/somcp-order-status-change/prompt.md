@@ -20,6 +20,7 @@ of it can be undone by calling again.
 - `somcp_delete_zone`
 - `somcp_list_countries`
 - `somcp_list_states`
+- `somcp_create_state`
 - `somcp_update_carrier`
 - `somcp_delete_carrier`
 - `somcp_create_return_status`
@@ -104,7 +105,8 @@ status change: it never moves the order to shipped, and
   `somcp_delete_zone` deletes one that holds no country and no state.
   `somcp_list_countries` lists the countries, with their ISO code and zone.
   `somcp_list_states` lists the states of a country, with their ISO code and
-  zone.
+  zone; `somcp_create_state` creates one the merchant needs, in the zone the
+  merchant chooses.
   `somcp_update_carrier` changes its name, transit time, speed grade,
   logo, tracking URL, status, groups, zones, ranges and their prices per zone,
   place in the list, free shipping,

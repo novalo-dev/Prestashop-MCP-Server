@@ -2586,7 +2586,8 @@ and `states` of `somcp_add_country_rule` and `somcp_update_country_rule`, and
 
 **Do not use for** - the countries (→ `somcp_list_countries`); the zones (→
 `somcp_list_zones`); the tax rows of a state (→ `somcp_get_tax_rule`);
-enabling a state or changing its zone (a later tool).
+creating a state (→ `somcp_create_state`); enabling a state or changing its
+zone (a later tool).
 
 **Parameters**
 
@@ -2628,6 +2629,63 @@ an `active` that is not a boolean (`active: true or false`, the line of
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - the list itself (a legacy list on 8.0.1, a Symfony grid on 9.0.0, the **Enabled** icon against a switch, the paging choices, **Assign to a new zone** on 8.0.1 only); the columns, the filters, their labels and the table (`state`) are the same.
+
+#### `somcp_create_state`
+**State**: written · [issue #353](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/353)
+**Nature**: `acts(ADD, 'AdminStates')` · **Scope**: `mcp.orders.write`
+
+**Does** - creates one state of **International > Locations > States**, as
+**Add new state** then **Save** do: **Name**, **ISO code**, **Country**,
+**Zone** and **Status**. The tax rule rows and the addresses take a state by
+its ISO code within its country (`somcp_list_states`): without it, only the
+states the install left can be used.
+
+**Do not use for** - the zone of a whole country (a later tool); the tax of a
+state (→ `somcp_add_country_rule`, which takes the state by its ISO code);
+changing, enabling or deleting a state (later tools).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `country` | **Country** | string | yes | the ISO code of the country, as `somcp_list_states` takes it, through `SomcpToolCreateSupplier::shopCountries()`; not a string: `country: an ISO code of 2 letters, for example US`; not a country of the shop: `SomcpTool::notFound('country', 'country', $code, 'somcp_list_countries', 'ISO code')`; a country without `contains_states`: `country: <name> does not use states - only the countries with "contains states" take one` |
+| `name` | **Name** | string | yes | trimmed, at most the size of `state.name` (`SomcpTool::columnSize()`, 80 as fallback), checked with `validateField('name', ...)` on a `new State()`: `name: a character PrestaShop refuses in a state name (< > = { }) - ...` |
+| `iso_code` | **ISO code** | string | yes | not a text: `iso_code: the ISO code of a state, for example CA`; trimmed and upper-cased, checked with `Validate::isStateIsoCode()`: `iso_code: 1 to 4 letters or digits, optionally a dash and 1 to 4 more, for example CA or US-CA`; taken by a state of the same country (`State::getIdByIso($code, $idCountry)`): `iso_code: state <id> of <country> already has the ISO code <code>` |
+| `id_zone` | **Zone** | integer | yes | read with `SomcpTool::id()`; a zone of the shop through `SomcpToolListCountries::zoneOfShop()`: `SomcpTool::notFound('id_zone', 'zone', $id, 'somcp_list_zones')` |
+| `active` | **Status** | boolean | no | left out, `true`, the default of both forms; not a boolean: `active: true or false` |
+
+Unknown arguments through `SomcpTool::unknownFields()`, with `id_state`,
+`id_country`, `country_name` and `zone` named as worked out by the shop, so a
+row of `somcp_list_states` given back is told why.
+
+The **Zone** has no default from the zone of the country, as the form has
+none: the state's own zone is what the carrier prices read for its addresses.
+The description says to read the zone of the country with
+`somcp_list_countries` and propose it.
+
+The **ISO code** is refused when a state of the same country has it, on both
+versions: 9.0.0 checks it against every state of the installation, but the
+demo data itself gives the same code to states of several countries (`AL` in
+Italy and the United States), and every tool takes a state within its country.
+
+**Returns** - `created: true`, `id_state`, and `state`, the row of
+`somcp_list_states` for that state (`id_state`, `name`, `iso_code`,
+`id_country`, `country`, `country_name`, `id_zone`, `zone`, `active`), read back
+through `SomcpToolListStates::state()` and `row()`, the functions the list
+uses. When the installation has more than one shop, `also_in_other_shops` (as
+the tax tools count it, `SomcpToolCreateTax::otherShops()`) and a `warning`: a
+state has no shop table.
+
+**Errors** - in the envelope `Nothing was created. Correct these and call
+again:`, every problem at once. A failed `add()` is reported with a hint to
+read `somcp_list_states` before calling again.
+
+**Notes**
+- Not replayable, but a second identical call is refused by the ISO code test, so it creates nothing twice.
+- `tax_behavior` is not on the form and is left at its default.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), the help texts (9.0.0 only) and the ISO code test (one country on 8.0.1, every country on 9.0.0, see above); the fields, the class and the table (`state`) are the same.
 
 #### `somcp_update_carrier`
 **State**: written · [issue #320](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/320), position [#322](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/322), shipping costs settings [#323](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/323), size and weight limits [#330](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/330), logo [#331](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/331), zones [#336](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/336), ranges and prices [#337](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/337)

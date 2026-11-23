@@ -195,14 +195,7 @@ class SomcpToolListStates
         $limit = max(1, min(self::MAX_LIMIT, $limit));
         $offset = isset($arguments['offset']) && is_numeric($arguments['offset']) ? max(0, (int) $arguments['offset']) : 0;
 
-        // A state name is not translated; the country is named in the shop
-        // default language, as somcp_get_tax_rule names it.
-        $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
-        $page = self::query($filters, $idShop);
-        $page->select('s.`id_state`, s.`name`, s.`iso_code`, s.`id_country`, c.`iso_code` AS `country`');
-        $page->select('cl.`name` AS `country_name`, s.`id_zone`, z.`name` AS `zone`, s.`active`');
-        $page->leftJoin('country_lang', 'cl', 'cl.`id_country` = s.`id_country` AND cl.`id_lang` = ' . (int) $idLang);
-        $page->leftJoin('zone', 'z', 'z.`id_zone` = s.`id_zone`');
+        $page = self::select(self::query($filters, $idShop), $idShop);
         // Identifier order, as the back office list, so a state sits where
         // the merchant sees it.
         $page->orderBy('s.`id_state` ASC');
@@ -210,20 +203,7 @@ class SomcpToolListStates
 
         $states = [];
         foreach (Db::getInstance()->executeS($page) ?: [] as $row) {
-            $states[] = [
-                'id_state' => (int) $row['id_state'],
-                'name' => (string) $row['name'],
-                'iso_code' => (string) $row['iso_code'],
-                'id_country' => (int) $row['id_country'],
-                'country' => (string) $row['country'],
-                'country_name' => (string) ($row['country_name'] ?? ''),
-                // The state's own zone, not always the zone of its country:
-                // the key of somcp_list_zones and of the zones of
-                // somcp_get_carrier.
-                'id_zone' => (int) $row['id_zone'],
-                'zone' => (string) ($row['zone'] ?? ''),
-                'active' => (bool) $row['active'],
-            ];
+            $states[] = self::row($row);
         }
 
         return SomcpTool::json([
@@ -232,6 +212,72 @@ class SomcpToolListStates
             'total_count' => $total,
             'offset' => $offset,
         ]);
+    }
+
+    /**
+     * One state of the shop as the list returns it, or null when the shop has none with this identifier.
+     *
+     * Public so somcp_create_state answers the state it wrote with the same
+     * fields as the list.
+     *
+     * @param int $idShop
+     * @param int $idState
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function state(int $idShop, int $idState): ?array
+    {
+        $filters = ['id_state' => $idState, 'id_country' => 0, 'id_zone' => 0, 'name' => '', 'iso_code' => '', 'active' => null];
+        $row = Db::getInstance()->getRow(self::select(self::query($filters, $idShop), $idShop));
+
+        return is_array($row) && $row !== [] ? self::row($row) : null;
+    }
+
+    /**
+     * A row of the list, built from what select() reads.
+     *
+     * Public so every tool that answers a state gives the same fields.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>
+     */
+    public static function row(array $row): array
+    {
+        return [
+            'id_state' => (int) $row['id_state'],
+            'name' => (string) $row['name'],
+            'iso_code' => (string) $row['iso_code'],
+            'id_country' => (int) $row['id_country'],
+            'country' => (string) $row['country'],
+            'country_name' => (string) ($row['country_name'] ?? ''),
+            // The state's own zone, not always the zone of its country: the
+            // key of somcp_list_zones and of the zones of somcp_get_carrier.
+            'id_zone' => (int) $row['id_zone'],
+            'zone' => (string) ($row['zone'] ?? ''),
+            'active' => (bool) $row['active'],
+        ];
+    }
+
+    /**
+     * The columns row() reads, added to a query of query().
+     *
+     * @param DbQuery $query
+     * @param int $idShop
+     *
+     * @return DbQuery
+     */
+    private static function select(DbQuery $query, int $idShop): DbQuery
+    {
+        // A state name is not translated; the country is named in the shop
+        // default language, as somcp_get_tax_rule names it.
+        $idLang = (int) Configuration::get('PS_LANG_DEFAULT', null, null, $idShop);
+        $query->select('s.`id_state`, s.`name`, s.`iso_code`, s.`id_country`, c.`iso_code` AS `country`');
+        $query->select('cl.`name` AS `country_name`, s.`id_zone`, z.`name` AS `zone`, s.`active`');
+        $query->leftJoin('country_lang', 'cl', 'cl.`id_country` = s.`id_country` AND cl.`id_lang` = ' . (int) $idLang);
+        $query->leftJoin('zone', 'z', 'z.`id_zone` = s.`id_zone`');
+
+        return $query;
     }
 
     /**

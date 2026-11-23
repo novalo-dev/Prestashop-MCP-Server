@@ -82,6 +82,14 @@ International > Locations > States, with their ISO code, their country and
 the zone each belongs to. Until now the assistant had to guess the code of a
 state when adding a tax rule row or the address of a supplier.
 
+**Create a state.** The new tool somcp_create_state creates a state of
+International > Locations > States, with its name, its ISO code, its country,
+its zone and its status, as Add new state does. A merchant who sells to a
+region PrestaShop does not ship no longer has to open the back office before
+the assistant can add a tax rule row or an address there. An ISO code another
+state of the same country already has is refused, so the same call twice
+creates nothing twice.
+
 **List the countries.** The new tool somcp_list_countries lists the countries
 of International > Locations > Countries, with their ISO code, their zone,
 whether they are enabled, and what an address there must hold: a state, a

@@ -1397,6 +1397,11 @@
       <source>List states</source>
       <target>Lister les états</target>
     </trans-unit>
+    <!-- Create a state -->
+    <trans-unit id="2468d5fdcf74da5ad9bbd14d2c64f0b6" resname="Create a state">
+      <source>Create a state</source>
+      <target>Créer un état</target>
+    </trans-unit>
     <!-- List currencies -->
     <trans-unit id="2bf77d506d87bad12f0fd5c4e0f9d91f" resname="List currencies">
       <source>List currencies</source>

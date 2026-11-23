@@ -338,6 +338,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_delete_zone` | ✎ Delete a zone | Zones › delete |
 | `somcp_list_countries` | ● List countries | Countries › view |
 | `somcp_list_states` | ● List states | States › view |
+| `somcp_create_state` | ✎ Create a state | States › add |
 | `somcp_set_order_status` | ✎ Change the status of an order | Orders › edit |
 | `somcp_set_order_tracking` | ✎ Set the tracking number of an order | Orders › edit |
 | `somcp_add_order_message` | ✎ Add a message to an order | Orders › edit |

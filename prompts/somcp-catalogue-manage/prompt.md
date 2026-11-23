@@ -33,6 +33,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_currencies`
 - `somcp_get_currency`
 - `somcp_update_currency`
+- `somcp_delete_currency`
 - `somcp_create_tax`
 - `somcp_update_tax`
 - `somcp_delete_tax`
@@ -356,7 +357,9 @@ of the shop's currencies, the default and the enabled ones come from
 `somcp_list_currencies`; the decimals, the price format and whether a
 currency is an alternative one, from `somcp_get_currency`. A currency's
 exchange rate, decimals and status are changed with `somcp_update_currency`:
-the default currency keeps a rate of 1 and cannot be switched off.
+the default currency keeps a rate of 1 and cannot be switched off. A
+currency is deleted with `somcp_delete_currency`, never the default one nor one
+a country uses; orders placed in it keep it.
 
 The prices returned are the base price of the product, before specific prices,
 discounts and combination impacts. A customer may pay something else: say so

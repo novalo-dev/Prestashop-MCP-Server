@@ -97,6 +97,14 @@ currency of a shop keeps a rate of 1 and cannot be switched off, as in the back
 office. A currency read with somcp_get_currency can be given back as it is, and
 only what differs is written.
 
+**Delete a currency.** The new tool somcp_delete_currency deletes one currency
+of International > Localization > Currencies, as the Delete of its row does.
+The default currency of a shop is refused, as in the back office, and so is a
+currency a country still uses as its default currency: the merchant sets the
+country back to the default store currency first, so no country is left with a
+currency the shop no longer lists. Orders placed in the currency keep it, and
+the answer says which payment modules stopped accepting it.
+
 ### Changed
 
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA

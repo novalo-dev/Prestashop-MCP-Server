@@ -73,7 +73,8 @@ class SomcpToolUpdateCurrency
                 . 'switch of the list: Exchange rate, Decimals and Status. Take id_currency from '
                 . 'somcp_list_currencies; a row of somcp_get_currency can be given back whole, and only what '
                 . 'differs is written. The default currency keeps rate 1 and stays enabled. For the names and '
-                . 'symbols, a later tool; for the currency of a country, somcp_update_country.',
+                . 'symbols, a later tool; to delete a currency, somcp_delete_currency; for the currency of a '
+                . 'country, somcp_update_country.',
             [
                 'type' => 'object',
                 'properties' => [

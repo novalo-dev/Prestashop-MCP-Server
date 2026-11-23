@@ -34,6 +34,7 @@
     "somcp_list_currencies",
     "somcp_get_currency",
     "somcp_update_currency",
+    "somcp_delete_currency",
     "somcp_create_tax",
     "somcp_update_tax",
     "somcp_delete_tax",

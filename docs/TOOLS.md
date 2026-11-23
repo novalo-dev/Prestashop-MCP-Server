@@ -3659,6 +3659,47 @@ again:`, every problem at once.
 
 **Differences between 8.0.1 and 9.0.0** - none in the handlers, the checks or the tables.
 
+#### `somcp_delete_currency`
+**State**: written · [issue #366](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/366)
+**Nature**: `acts(DELETE, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one currency of **International > Localization >
+Currencies**, as the **Delete** of its row does (and **Delete selected** for
+one currency). PrestaShop keeps the row, flagged deleted, for the orders
+placed in it.
+
+**Do not use for** - switching a currency off (→ `somcp_update_currency`,
+`active`); many currencies at once (one call per currency).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_currency` | - | integer | yes | the currency to delete, from `somcp_list_currencies`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_currency')`; unknown: `SomcpTool::notFound('id_currency', 'currency', $id, 'somcp_list_currencies')`, through `SomcpToolGetCurrency::read()` |
+
+Unknown arguments through `SomcpTool::unknownFields()`. Refusals, all at once:
+- the default currency of the shop of the token: `id_currency: <ISO code> is the default currency of this shop - PrestaShop never deletes it`;
+- the default currency of another shop (`PS_CURRENCY_DEFAULT` read for each shop): `id_currency: <name> is the default currency for shop <shop name>, and therefore cannot be removed`;
+- a country uses it as its **Default currency** (`country.id_currency`), which the back office does not check: `id_currency: <ISO code> is the default currency of <n> countries (<iso>, ...) - set them to the default store currency first with somcp_update_country (id_currency 0)`, the first ten named;
+- the installation has more than one shop (`SomcpToolCreateTax::otherShops()`): `id_currency: a currency is shared by every shop - deleting it here would remove it from the <n> other shops of this installation too`, the rule of `somcp_delete_zone` and `somcp_delete_state`.
+
+**Returns** - `deleted: true`, `id_currency`, `warning` and `currency`, the
+answer of `somcp_get_currency` read before the deletion. The warning:
+- payment restrictions removed (`module_currency`, counted before): `<n> payment modules no longer accept <ISO code> in Payment > Preferences; adding the currency again does not bring that setting back.`;
+- always: `Orders placed in <ISO code> keep it; PrestaShop keeps the currency hidden for them, and adding <ISO code> again brings the same currency back.`
+
+**Errors** - in the envelope `Nothing was deleted. Correct these and call
+again:`, every problem at once; the shop refusing `Currency::delete()`:
+`Nothing was deleted. The shop refused to delete currency <id> - read it again
+with somcp_list_currencies`.
+
+**Notes**
+- Deleted through `Currency::delete()`: the `module_currency` rows of the currency go, then `softDelete()` flags the row `deleted = 1`; it leaves every list.
+- Logged as `currency_deleted`, `currency_delete_failed` when the shop refuses.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler, `Currency::delete()` or the tables.
+
 #### `somcp_create_tax`
 **State**: written · [issue #308](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/308)
 **Nature**: `acts(ADD, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`

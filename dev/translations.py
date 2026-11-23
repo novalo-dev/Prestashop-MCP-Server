@@ -1138,6 +1138,10 @@ T = {
  "Modifier une devise",
  "Modificar una moneda",
  "Eine Währung ändern"),
+"Delete a currency": (
+ "Supprimer une devise",
+ "Eliminar una moneda",
+ "Eine Währung löschen"),
 "List currencies": (
  "Lister les devises",
  "Listar las monedas",

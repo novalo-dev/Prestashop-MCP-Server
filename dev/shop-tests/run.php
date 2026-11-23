@@ -1353,6 +1353,60 @@ if ($updateCurrency !== null && isset($currencyCall, $idDefault) && $idDefault >
     }
 }
 
+// A currency deleted (#366): the default currency is refused, a currency
+// created for the test is deleted, then the same call is refused as
+// unknown. The CI shop's own currencies are never deleted; the test
+// currency is removed from every table in finally, the soft-deleted row
+// included.
+$deleteCurrency = $registry->get('somcp_delete_currency');
+if ($deleteCurrency !== null && isset($currencyCall, $idDefault) && $idDefault > 0) {
+    ++$calls;
+    $testIso = 'ZZZ';
+    try {
+        [$defaultResult] = $currencyCall($deleteCurrency, ['id_currency' => $idDefault]);
+        $created = new Currency();
+        $created->iso_code = $testIso;
+        $created->conversion_rate = 1;
+        $created->precision = 2;
+        $created->active = true;
+        $names = [];
+        $symbols = [];
+        foreach (Language::getLanguages(false) as $lang) {
+            $names[(int) $lang['id_lang']] = 'Somcp test currency';
+            $symbols[(int) $lang['id_lang']] = 'Z';
+        }
+        $created->setLocalizedNames($names);
+        $created->setLocalizedSymbols($symbols);
+        $created->id_shop_list = [(int) $context->shop->id];
+        if (!$created->add()) {
+            throw new RuntimeException('the test currency could not be created');
+        }
+        $idTest = (int) $created->id;
+        [$result, $answer] = $currencyCall($deleteCurrency, ['id_currency' => $idTest]);
+        [$againResult] = $currencyCall($deleteCurrency, ['id_currency' => $idTest]);
+        if (empty($defaultResult['isError']) || strpos(excerpt($defaultResult), 'PrestaShop never deletes it') === false) {
+            $failures[] = 'somcp_delete_currency (the default currency): expected a refusal - ' . excerpt($defaultResult);
+        } elseif (($answer['deleted'] ?? null) !== true || ($answer['currency']['iso_code'] ?? null) !== $testIso) {
+            $failures[] = 'somcp_delete_currency (a test currency): expected deleted true - ' . excerpt($result);
+        } elseif (empty($againResult['isError']) || strpos(excerpt($againResult), 'no currency of this shop has the identifier ' . $idTest) === false) {
+            $failures[] = 'somcp_delete_currency (the same call again): expected a refusal as unknown - ' . excerpt($againResult);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_delete_currency (a test currency)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_currency: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $ids = array_map('intval', array_column(Db::getInstance()->executeS(
+            "SELECT `id_currency` FROM `" . _DB_PREFIX_ . "currency` WHERE `iso_code` = '" . pSQL($testIso) . "'"
+        ) ?: [], 'id_currency'));
+        if ($ids !== []) {
+            foreach (['currency', 'currency_lang', 'currency_shop', 'module_currency'] as $table) {
+                Db::getInstance()->delete($table, 'id_currency IN (' . implode(', ', $ids) . ')');
+            }
+        }
+    }
+}
+
 // The address format of a country changed, given back, then the same call
 // again (#361): the JSON scenario cannot hold the lines France stores, which
 // the localization pack of the CI shop decides. France is read first and its

@@ -1315,6 +1315,44 @@ if ($listCurrencies !== null && $getCurrency !== null) {
     }
 }
 
+// The default currency changed (#364): its identifier, its rate and its
+// decimals depend on the country the CI shop is installed for, so they are
+// read first. Switching it off and giving it a rate are refused; its
+// decimals change once, the same call writes nothing, then they are put back.
+$updateCurrency = $registry->get('somcp_update_currency');
+if ($updateCurrency !== null && isset($currencyCall, $idDefault) && $idDefault > 0) {
+    ++$calls;
+    $restorePrecision = null;
+    try {
+        $before = $currencyCall($getCurrency, ['id_currency' => $idDefault])[1];
+        [$offResult] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'active' => false]);
+        [$rateResult] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'conversion_rate' => 2]);
+        $precision = (int) ($before['precision'] ?? 2);
+        [$result, $answer] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'precision' => $precision + 1]);
+        if (($answer['changed'] ?? null) === true) {
+            $restorePrecision = $precision;
+        }
+        [$againResult, $again] = $currencyCall($updateCurrency, ['id_currency' => $idDefault, 'precision' => $precision + 1]);
+        if (empty($offResult['isError']) || strpos(excerpt($offResult), 'and therefore cannot be disabled') === false) {
+            $failures[] = 'somcp_update_currency (switch off the default currency): expected a refusal - ' . excerpt($offResult);
+        } elseif (empty($rateResult['isError']) || strpos(excerpt($rateResult), 'its rate stays 1') === false) {
+            $failures[] = 'somcp_update_currency (a rate for the default currency): expected a refusal - ' . excerpt($rateResult);
+        } elseif (($answer['changed'] ?? null) !== true || ($answer['currency']['precision'] ?? null) !== $precision + 1) {
+            $failures[] = 'somcp_update_currency (the decimals): expected changed true - ' . excerpt($result);
+        } elseif (($again['changed'] ?? null) !== false) {
+            $failures[] = 'somcp_update_currency (the same call again): expected changed false - ' . excerpt($againResult);
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_update_currency (the default currency)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_currency: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        if ($restorePrecision !== null) {
+            Db::getInstance()->update('currency', ['precision' => (int) $restorePrecision], 'id_currency = ' . (int) $idDefault);
+        }
+    }
+}
+
 // The address format of a country changed, given back, then the same call
 // again (#361): the JSON scenario cannot hold the lines France stores, which
 // the localization pack of the CI shop decides. France is read first and its

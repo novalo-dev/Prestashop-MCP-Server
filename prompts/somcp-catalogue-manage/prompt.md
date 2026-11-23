@@ -32,6 +32,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_languages`
 - `somcp_list_currencies`
 - `somcp_get_currency`
+- `somcp_update_currency`
 - `somcp_create_tax`
 - `somcp_update_tax`
 - `somcp_delete_tax`
@@ -353,7 +354,9 @@ Every price is either **tax included** or **tax excluded**: the field name says
 which, and so must you. Always give the currency with an amount. The ISO codes
 of the shop's currencies, the default and the enabled ones come from
 `somcp_list_currencies`; the decimals, the price format and whether a
-currency is an alternative one, from `somcp_get_currency`.
+currency is an alternative one, from `somcp_get_currency`. A currency's
+exchange rate, decimals and status are changed with `somcp_update_currency`:
+the default currency keeps a rate of 1 and cannot be switched off.
 
 The prices returned are the base price of the product, before specific prices,
 discounts and combination impacts. A customer may pay something else: say so

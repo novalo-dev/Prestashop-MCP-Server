@@ -459,6 +459,7 @@ Details of every tool are in [docs/TOOLS.md](docs/TOOLS.md).
 | `somcp_list_languages` | ● List languages | Languages › view |
 | `somcp_list_currencies` | ● List currencies | Currencies › view |
 | `somcp_get_currency` | ● Read a currency | Currencies › view |
+| `somcp_update_currency` | ✎ Change a currency | Currencies › edit |
 | `somcp_create_tax` | ✎ Create a tax | Taxes › add |
 | `somcp_update_tax` | ✎ Change a tax | Taxes › edit |
 | `somcp_delete_tax` | ✎ Delete a tax | Taxes › delete |

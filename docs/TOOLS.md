@@ -3606,6 +3606,59 @@ every problem at once.
 
 **Differences between 8.0.1 and 9.0.0** - none in the page, the fields or the tables (page title **Currencies** on 8.0.1, **Editing currency <name>** on 9.0.0); the demo data differs (US Dollar and Euro on 8.0.1, US Dollar alone on 9.0.0).
 
+#### `somcp_update_currency`
+**State**: written · [issue #364](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/364)
+**Nature**: `acts(EDIT, 'AdminCurrencies')` · **Scope**: `mcp.catalog.write`
+
+**Does** - changes one currency of **International > Localization >
+Currencies**, as its **Edit** page does for **Exchange rate**, **Decimals** and
+**Status**, or as the **Enabled** switch of the list does. Only the fields
+given and different from the stored currency are written.
+
+**Do not use for** - the names, symbols and format (a later part, #365);
+deleting a currency (→ `somcp_delete_currency`); the currency of a country
+(→ `somcp_update_country`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_currency` | - | integer | yes | the currency, from `somcp_list_currencies`; read with `SomcpTool::id()`; not one: `SomcpTool::notAnIdentifier('id_currency')`; not a currency of the shop: `SomcpTool::notFound('id_currency', 'currency', $id, 'somcp_list_currencies')`, found through `SomcpToolGetCurrency::read()` and `SomcpToolListCurrencies::currency()` |
+| `conversion_rate` | **Exchange rate** | number | no | above 0, 6 decimals kept (`currency_shop.conversion_rate`, decimal(13,6)); otherwise `conversion_rate: a number above 0, the value of 1 <default currency> in this currency`; a different rate for the default currency of the shop: `conversion_rate: <ISO code> is the default currency of this shop - every rate is relative to it, its rate stays 1` |
+| `precision` | **Decimals** | integer | no | 0 or more; otherwise `precision: a whole number of 0 or more` |
+| `active` | **Status** | boolean | no | not a boolean: `active: true or false`; `false` for the default currency of any shop (`PS_CURRENCY_DEFAULT` read per shop): `active: <name> is the default currency for shop <shop name>, and therefore cannot be disabled`, one line per shop |
+
+A row of `somcp_get_currency` given back whole writes nothing: `language`,
+`name`, `symbol`, `iso_code`, `default`, `numeric_iso_code`, `alternative`,
+`pattern` and `modified` are taken only when they equal the stored value, read
+in the `language` given; otherwise `<field>: worked out by the shop`, or for
+`name`, `symbol` and `pattern` `<field>: changed by somcp_update_currency part
+3, not written yet`. At least one of `conversion_rate`, `precision` and
+`active`, otherwise `conversion_rate, precision or active: give at least one
+field to change`. Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Returns** - the shape of every update tool (#356): `changed: true`,
+`id_currency` and `changes` (`field`, `old`, `new`); nothing differed,
+`changed: false`, `id_currency` and `reason` (`The currency already holds
+every value given. Nothing was written.`). In both cases `currency`, the
+answer of `somcp_get_currency` read back. When something was written, a
+`warning` when:
+- `conversion_rate` changed: `Prices in <ISO code> are now converted at <rate>; orders already placed keep the rate they were placed at.`;
+- `active` set to `false` while payment modules accept the currency in the shop (`module_currency`): `<n> payment modules accept <ISO code> in Payment > Preferences; they keep that setting but the currency is no longer offered.`;
+- `precision` or `active` changed on an installation of several shops (`SomcpToolCreateTax::otherShops()`): `also_in_other_shops: <n>` and `Decimals and Status are shared by every shop: this change reaches every shop of this installation (<n + 1>).`; the exchange rate stays the one of this shop.
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once.
+
+**Notes**
+- Written through `new Currency($id, null, $idShop)` with `id_shop_list` the shop of the token, so the rate goes to its `currency_shop` row only; the names, symbols and formats are put back in every language before `update()`, which the constructor had turned into the string of one language.
+- Replayable: the same call twice writes once, the second answers `changed: false`.
+- `iso_code` is read-only on the **Edit** page of both versions: never written here.
+- Logged as `currency_updated` with the fields changed, `currency_update_failed` when the shop refuses.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handlers, the checks or the tables.
+
 #### `somcp_create_tax`
 **State**: written · [issue #308](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/308)
 **Nature**: `acts(ADD, 'AdminTaxes')` · **Scope**: `mcp.catalog.write`

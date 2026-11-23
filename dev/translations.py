@@ -1134,6 +1134,10 @@ T = {
  "Lire une devise",
  "Leer una moneda",
  "Eine Währung lesen"),
+"Change a currency": (
+ "Modifier une devise",
+ "Modificar una moneda",
+ "Eine Währung ändern"),
 "List currencies": (
  "Lister les devises",
  "Listar las monedas",

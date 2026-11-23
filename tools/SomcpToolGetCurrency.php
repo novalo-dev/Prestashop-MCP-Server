@@ -90,26 +90,47 @@ class SomcpToolGetCurrency
         if ($language === null) {
             $errors[] = SomcpTool::languageProblem($idShop);
         }
-        $row = null;
+        $answer = null;
         $idCurrency = SomcpTool::id($arguments, 'id_currency');
         if ($idCurrency === 0) {
             $errors[] = SomcpTool::notAnIdentifier('id_currency');
         } elseif ($language !== null) {
-            // Only a currency currency_shop ties to the shop of the token and
-            // not deleted, as the list filters them.
-            $row = SomcpToolListCurrencies::currency($idShop, $language[0], $idCurrency);
-            if ($row === null) {
+            $answer = self::read($idShop, $language, $idCurrency);
+            if ($answer === null) {
                 $errors[] = SomcpTool::notFound('id_currency', 'currency', $idCurrency, 'somcp_list_currencies');
             }
         }
-        if ($errors !== [] || $row === null) {
+        if ($errors !== [] || $answer === null) {
             return SomcpTool::refused('read', $errors);
         }
 
+        return SomcpTool::json($answer);
+    }
+
+    /**
+     * One currency as this tool answers it, or null when the shop lists none with this identifier.
+     *
+     * Public so somcp_update_currency compares what it is given with this
+     * very answer, and reads the currency back the same way after a change.
+     *
+     * @param int $idShop
+     * @param array{0: int, 1: string} $language the language of the name, the symbol and the format, as SomcpTool::readLanguage() gives it
+     * @param int $idCurrency
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function read(int $idShop, array $language, int $idCurrency): ?array
+    {
+        // Only a currency currency_shop ties to the shop of the token and
+        // not deleted, as the list filters them.
+        $row = SomcpToolListCurrencies::currency($idShop, $language[0], $idCurrency);
+        if ($row === null) {
+            return null;
+        }
         $numeric = (string) ($row['numeric_iso_code'] ?? '');
         $pattern = (string) ($row['pattern'] ?? '');
 
-        return SomcpTool::json(['language' => $language[1]]
+        return ['language' => $language[1]]
             + SomcpToolListCurrencies::row($row, SomcpToolListCurrencies::defaultCurrency($idShop))
             + [
                 // Decimals of the form.
@@ -122,6 +143,6 @@ class SomcpToolGetCurrency
                 // The names or symbols differ from the CLDR ones, which Restore
                 // default settings brings back.
                 'modified' => (bool) $row['modified'],
-            ]);
+            ];
     }
 }

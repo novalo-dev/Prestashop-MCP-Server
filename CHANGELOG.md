@@ -89,6 +89,14 @@ code, whether it is an alternative currency, its price format in the language
 asked and whether its names or symbols were customized. The assistant can now
 tell the merchant how prices in that currency are shown before changing it.
 
+**Change a currency.** The new tool somcp_update_currency changes the exchange
+rate, the number of decimals and the status of one currency of International >
+Localization > Currencies, as its edit page and the Enabled switch of the list
+do. The rate is the one of the shop the assistant is connected to; the default
+currency of a shop keeps a rate of 1 and cannot be switched off, as in the back
+office. A currency read with somcp_get_currency can be given back as it is, and
+only what differs is written.
+
 ### Changed
 
 **Sign-in page of a connection.** The anti-robot check is updated to ALTCHA

@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "a currency the shop does not have", "arguments": {"id_currency": 99999, "active": true}, "expect": "error", "contains": ["Nothing was changed.", "- id_currency: no currency of this shop has the identifier 99999"]},
+    {"why": "an identifier that is not one, a rate of 0, negative decimals, a status that is not a boolean and a field the tool does not take, all at once", "arguments": {"id_currency": "x", "conversion_rate": 0, "precision": -1, "active": "yes", "rate": 1}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- id_currency: a whole number above 0", "- conversion_rate: a number above 0, the value of 1 ", "- precision: a whole number of 0 or more", "- active: true or false", "- rate: not a field of this tool"]}
+  ]
+}

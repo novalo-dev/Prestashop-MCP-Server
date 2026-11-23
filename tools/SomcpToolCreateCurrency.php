@@ -219,8 +219,12 @@ class SomcpToolCreateCurrency
         $currency->setLocalizedNames($names);
         $currency->setLocalizedSymbols($symbols);
         // A reused row keeps the formats it had in every language, as the
-        // core's add keeps the stored row when no format is given.
-        $currency->setLocalizedPatterns($currency->getLocalizedPatterns());
+        // core's add keeps the stored row when no format is given. A new
+        // currency has none yet: its formats stay null, which the setter,
+        // typed for an array, refuses.
+        if ($restored) {
+            $currency->setLocalizedPatterns($currency->getLocalizedPatterns());
+        }
 
         try {
             $currency->refreshLocalizedCurrencyData(Language::getLanguages(false), $repository);

@@ -31,6 +31,7 @@ word, a reference prefix or a barcode fragment.
 - `somcp_list_taxes`
 - `somcp_list_languages`
 - `somcp_update_language`
+- `somcp_delete_language`
 - `somcp_list_currencies`
 - `somcp_get_currency`
 - `somcp_create_currency`
@@ -352,7 +353,9 @@ shop's languages, which one is the default and which are enabled, come from
 `somcp_list_languages`: only an enabled language is accepted. A language's
 name, date formats and status are changed with `somcp_update_language`; the
 default language stays enabled, and switching one off moves the employees who
-use it to the default.
+use it to the default. `somcp_delete_language` deletes a language with every
+text of the shop in it, which cannot be undone: offer to switch it off first,
+and confirm with the merchant before deleting.
 
 ## Prices
 

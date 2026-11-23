@@ -1,0 +1,6 @@
+{
+  "calls": [
+    {"why": "a language the shop does not have", "arguments": {"id_lang": 99999}, "expect": "error", "contains": ["Nothing was deleted.", "- id_lang: no language of this shop has the identifier 99999"]},
+    {"why": "an identifier that is not one and a field the tool does not take, at once", "arguments": {"id_lang": "x", "force": true}, "expect": "error", "contains": ["Nothing was deleted. Correct these and call again:", "- force: not a field of this tool", "- id_lang: a whole number above 0"]}
+  ]
+}

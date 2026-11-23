@@ -1405,6 +1405,53 @@ if ($listLanguages !== null && $updateLanguage !== null && isset($currencyCall))
     }
 }
 
+// A language deleted (#371): the default language is refused; a language
+// added for the test, without any _lang row copied, is deleted with the tool
+// and gone after. The CI shop's own languages are never deleted; the test
+// language is removed in finally if the tool failed.
+$deleteLanguage = $registry->get('somcp_delete_language');
+if ($deleteLanguage !== null && isset($currencyCall, $idDefaultLang) && $idDefaultLang > 0) {
+    ++$calls;
+    $testLangIso = 'zz';
+    try {
+        [$defaultResult] = $currencyCall($deleteLanguage, ['id_lang' => $idDefaultLang]);
+        $added = new Language();
+        $added->name = 'Somcp test language';
+        $added->iso_code = $testLangIso;
+        $added->language_code = 'zz-zz';
+        $added->locale = 'zz-ZZ';
+        $added->date_format_lite = 'Y-m-d';
+        $added->date_format_full = 'Y-m-d H:i:s';
+        $added->active = true;
+        $added->id_shop_list = [(int) $context->shop->id];
+        // $only_add: no text of the shop is copied into the test language.
+        if (!$added->add(true, false, true)) {
+            throw new RuntimeException('the test language could not be created');
+        }
+        $idTestLang = (int) $added->id;
+        [$result, $answer] = $currencyCall($deleteLanguage, ['id_lang' => $idTestLang]);
+        if (empty($defaultResult['isError']) || strpos(excerpt($defaultResult), 'PrestaShop never deletes it') === false) {
+            $failures[] = 'somcp_delete_language (the default language): expected a refusal - ' . excerpt($defaultResult);
+        } elseif (($answer['deleted'] ?? null) !== true || ($answer['iso_code'] ?? null) !== $testLangIso) {
+            $failures[] = 'somcp_delete_language (a test language): expected deleted true - ' . excerpt($result);
+        } elseif (Language::getIdByIso($testLangIso, true)) {
+            $failures[] = 'somcp_delete_language (a test language): the language is still there';
+        } else {
+            printf("  %-6s %s\n", 'ok', 'somcp_delete_language (a test language)');
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_delete_language: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $left = (int) Db::getInstance()->getValue(
+            "SELECT `id_lang` FROM `" . _DB_PREFIX_ . "lang` WHERE `iso_code` = '" . pSQL($testLangIso) . "'"
+        );
+        if ($left > 0) {
+            Db::getInstance()->delete('lang_shop', 'id_lang = ' . $left);
+            Db::getInstance()->delete('lang', 'id_lang = ' . $left);
+        }
+    }
+}
+
 // The symbol of the default currency changed, then its default settings
 // restored (#365): the demo currencies keep the CLDR texts (modified 0), so
 // restoring them puts the shop back as it was installed. The symbol is given

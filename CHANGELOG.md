@@ -27,6 +27,14 @@ and off, without the back office. The default language cannot be switched off,
 and when a language is, the employees who used it move to the default language
 and the merchant is told how many.
 
+**Delete a language.** The new tool somcp_delete_language deletes a language of
+International > Localization > Languages, as the Delete of its row does. Every
+text of the shop in that language goes with it, so the assistant offers to
+switch the language off instead, and the default language and the one the
+employee uses in the back office are refused. The employees who used it move
+to the default language, and the merchant is told how many customers had
+chosen it.
+
 **Add a currency.** The new tool somcp_create_currency adds an official
 currency to International > Localization > Currencies, as Add new currency
 does: its ISO code, its exchange rate, and optionally its decimals, status,

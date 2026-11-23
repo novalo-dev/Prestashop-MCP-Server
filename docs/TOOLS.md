@@ -3472,8 +3472,8 @@ Languages** with the columns of that list: **ID**, **Name**, **ISO code**,
 the key every translated field of the other tools takes. Read only.
 
 **Do not use for** - the translations of the shop (**International >
-Translations**); changing a language (→ `somcp_update_language`); adding or
-deleting one (later tools).
+Translations**); changing a language (→ `somcp_update_language`); deleting
+one (→ `somcp_delete_language`); adding one (a later tool).
 
 **Parameters**
 
@@ -3521,8 +3521,8 @@ language** and **Status**. Only the fields that differ are written; a row of
 `somcp_list_languages` given back whole writes nothing.
 
 **Do not use for** - the **ISO code** (part 2, #369), the **Flag** and the
-**"No-picture" image** (part 3, #370); deleting a language (a later
-tool); translating a text (→ the update tool of that
+**"No-picture" image** (part 3, #370); deleting a language (→
+`somcp_delete_language`); translating a text (→ the update tool of that
 object).
 
 **Parameters**
@@ -3569,6 +3569,57 @@ changed.`
 - The back-office address of the page is never part of the answer.
 
 **Differences between 8.0.1 and 9.0.0** - 9.0.0 shows **Locale** read-only and its list has a **Locale** column; the handler, the checks and the table are the same.
+
+#### `somcp_delete_language`
+**State**: written · [issue #371](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/371)
+**Nature**: `acts(DELETE, 'AdminLanguages')` · **Scope**: `mcp.catalog.write`
+
+**Does** - deletes one language of **International > Localization >
+Languages**, as the **Delete** of its row does (and **Delete selected** for
+one language). The page warns: "When you delete a language, all related
+translations in the database will be deleted."
+
+**Do not use for** - switching a language off, which keeps its texts (→
+`somcp_update_language` with `active: false`); deleting a translation of one
+object (→ the update tool of that object).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_lang` | **ID** | integer | yes | from `somcp_list_languages`, found through `SomcpToolListLanguages::language()`; otherwise `SomcpTool::notFound()` with that tool |
+
+Unknown arguments through `SomcpTool::unknownFields()`.
+
+**Refused**, every problem at once, before anything is deleted:
+- the default language of any shop (`PS_LANG_DEFAULT` read per shop): `id_lang: <name> is the default language of this shop - PrestaShop never deletes it`, or `... of shop <shop name>`;
+- the language of the employee of the token, the "Used language" check of the back office: `id_lang: <name> is the language you use in the back office - change it in your profile first`;
+- an installation of several shops (`SomcpToolCreateTax::otherShops()`): `id_lang: a language is shared by every shop - deleting it here would remove it from the <n> other shops of this installation too`.
+
+**Then** - `Shop::setContext(Shop::CONTEXT_ALL)`, as `DeleteLanguageHandler`
+does; every employee whose `id_lang` it is moved to the default language, the
+query of `EditLanguageHandler::updateEmployeeLanguage()` (the back office
+leaves them on a language that no longer exists); `Language::delete()`, which
+removes the rows of every `_lang` table, the translation and e-mail files and
+the language images; `Tools::generateRobotsFile()`, as the handler writes
+robots.txt again; the context put back in `finally`. Customers keep their
+`id_lang`: the storefront falls back on the default language for them. Log
+lines `language_deleted` and `language_delete_failed`.
+
+**Returns** - `deleted: true`, `id_lang`, `name`, `iso_code`, and a `warning`:
+- always: `Every text of the shop in <name> was deleted with it (products, categories, pages, e-mails); adding the language again starts from the texts of the default language.`;
+- employees moved: `<n> employees used <name> in the back office; they now use <default name>.`;
+- customers: `<n> customers had chosen <name>; they now see the shop in <default name>.`
+
+**Errors** - in the envelope of #169, under `Nothing was deleted.`; the shop
+refusing: `Nothing was deleted. The shop refused to delete language <id>:
+<reason> - read it again with somcp_list_languages`.
+
+**Notes**
+- A deletion cannot be undone: the description offers `somcp_update_language` with `active: false` instead.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - none in the handler, `Language::delete()` or the tables.
 
 #### `somcp_list_currencies`
 **State**: written · [issue #340](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/340)

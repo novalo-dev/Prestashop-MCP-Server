@@ -65,7 +65,7 @@ class SomcpToolUpdateLanguage
                 . 'code, Date format, Date format (full), RTL language and Status. Take id_lang from '
                 . 'somcp_list_languages; a row of that list can be given back whole, only what differs is written. '
                 . 'The default language stays enabled. Not for the texts of a product or a page in that language: '
-                . 'the update tool of that object.',
+                . 'the update tool of that object. To delete one, somcp_delete_language.',
             [
                 'type' => 'object',
                 'properties' => [

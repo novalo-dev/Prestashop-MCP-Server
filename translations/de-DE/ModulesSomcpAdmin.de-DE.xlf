@@ -1432,6 +1432,11 @@
       <source>Change a language</source>
       <target>Eine Sprache ändern</target>
     </trans-unit>
+    <!-- Delete a language -->
+    <trans-unit id="0df232d987e6469fc7a1d53743a57228" resname="Delete a language">
+      <source>Delete a language</source>
+      <target>Eine Sprache löschen</target>
+    </trans-unit>
     <!-- Change a currency -->
     <trans-unit id="a746a7434a12991b1ac216076ec56d95" resname="Change a currency">
       <source>Change a currency</source>

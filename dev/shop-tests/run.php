@@ -1325,6 +1325,66 @@ if ($deleteState !== null) {
     }
 }
 
+// A country enabled, the same call again, then put back (#360): the JSON
+// scenario only covers the refusals, since a change it made would stay for
+// the tools read after it. Afghanistan is disabled on a fresh install, in a
+// zone no demo carrier serves and with no payment module offered to it, so
+// both warnings are due; it is put back as it was whatever happens.
+$updateCountry = $registry->get('somcp_update_country');
+$idAfghanistan = (int) Country::getByIso('AF');
+if ($updateCountry !== null && $idAfghanistan > 0) {
+    $calls += 3;
+    $before = new Country($idAfghanistan);
+    $wasActive = (bool) $before->active;
+    $wasLabel = (bool) $before->display_tax_label;
+    $countryContext = [
+        'id_shop' => (int) $context->shop->id,
+        'id_employee' => (int) $employee->id,
+        'id_lang' => (int) $context->language->id,
+        'id_client' => 0,
+        'scopes' => implode(' ', $updateCountry->getRequiredScopes()),
+        'responses' => [],
+        'resumed' => [],
+        'capabilities' => [],
+        'arguments' => [],
+    ];
+    $change = ['id_country' => $idAfghanistan, 'active' => true, 'display_tax_label' => false];
+    try {
+        foreach ([
+            'a country enabled' => [$change, ['"changed": true', '"field": "active"', '"field": "display_tax_label"', 'No payment module is offered to ', 'No carrier serves zone ']],
+            'the same call again' => [$change, ['"changed": false', 'The country already holds every value given.']],
+            'put back' => [['id_country' => $idAfghanistan, 'active' => $wasActive, 'display_tax_label' => $wasLabel], ['"changed": true']],
+        ] as $label => [$arguments, $needles]) {
+            $result = $updateCountry->call($arguments, $countryContext);
+            $text = '';
+            foreach ($result['content'] ?? [] as $block) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+            $missing = array_values(array_filter($needles, static function (string $needle) use ($text): bool {
+                return strpos($text, $needle) === false;
+            }));
+            // Active before the tax label, the order of the form.
+            if ($label === 'a country enabled' && strpos($text, '"field": "active"') > strpos($text, '"field": "display_tax_label"')) {
+                $missing[] = 'active before display_tax_label in changes';
+            }
+            if (!empty($result['isError']) || $missing !== []) {
+                $failures[] = 'somcp_update_country (' . $label . '): expected ' . implode(', ', $missing) . ' - ' . excerpt($result);
+            } else {
+                printf("  %-6s %s\n", 'ok', 'somcp_update_country (' . $label . ')');
+            }
+        }
+    } catch (Throwable $e) {
+        $failures[] = 'somcp_update_country: ' . get_class($e) . ' - ' . $e->getMessage();
+    } finally {
+        $left = new Country($idAfghanistan);
+        if ((bool) $left->active !== $wasActive || (bool) $left->display_tax_label !== $wasLabel) {
+            $left->active = $wasActive;
+            $left->display_tax_label = $wasLabel;
+            $left->update();
+        }
+    }
+}
+
 // A carrier read, given back, changed and put back (#320): the JSON scenario
 // cannot give a read back nor compare two reads. Demo carrier 3 is used by no
 // order, so it is changed in place and keeps its identifier; no call is made

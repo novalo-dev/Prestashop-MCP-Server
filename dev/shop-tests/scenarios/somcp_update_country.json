@@ -1,0 +1,8 @@
+{
+  "calls": [
+    {"why": "a country the shop does not have", "arguments": {"id_country": 99999}, "expect": "error", "contains": ["Nothing was changed.", "- id_country: no country of this shop has the identifier 99999"]},
+    {"why": "the ISO code of another country", "arguments": {"id_country": 1, "iso_code": "FR"}, "expect": "error", "contains": ["Nothing was changed.", "- iso_code: country ", "already has the ISO code FR"]},
+    {"why": "every mistake at once", "arguments": {"id_country": 1, "call_prefix": "x", "id_currency": 99999, "id_zone": 99999, "active": "yes", "zone": "x"}, "expect": "error", "contains": ["Nothing was changed. Correct these and call again:", "- call_prefix: a whole number, 0 for none", "- id_currency: no currency of this shop has the identifier 99999", "- id_zone: no zone of this shop has the identifier 99999", "- active: true or false", "- zone: worked out by the shop - change id_zone"]},
+    {"why": "an identifier that is not one and a field the tool does not take", "arguments": {"id_country": "x", "colour": "x"}, "expect": "error", "contains": ["Nothing was changed.", "- id_country: a whole number above 0", "- colour: not a field of this tool"]}
+  ]
+}

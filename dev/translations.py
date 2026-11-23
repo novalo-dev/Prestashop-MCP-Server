@@ -1126,6 +1126,10 @@ T = {
  "Lire un pays",
  "Leer un país",
  "Ein Land lesen"),
+"Change a country": (
+ "Modifier un pays",
+ "Modificar un país",
+ "Ein Land ändern"),
 "List currencies": (
  "Lister les devises",
  "Listar las monedas",

@@ -1417,6 +1417,11 @@
       <source>Read a country</source>
       <target>Leer un país</target>
     </trans-unit>
+    <!-- Change a country -->
+    <trans-unit id="aeb962537896ceb3ac61f18ee5897a0b" resname="Change a country">
+      <source>Change a country</source>
+      <target>Modificar un país</target>
+    </trans-unit>
     <!-- List currencies -->
     <trans-unit id="2bf77d506d87bad12f0fd5c4e0f9d91f" resname="List currencies">
       <source>List currencies</source>

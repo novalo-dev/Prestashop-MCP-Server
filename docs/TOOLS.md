@@ -2532,7 +2532,7 @@ sells to. Read only.
 
 **Do not use for** - the zones (→ `somcp_list_zones`); the tax rows of a
 country (→ `somcp_get_tax_rule`); every field of one country (→
-`somcp_get_country`); enabling or changing a country (a later tool).
+`somcp_get_country`); enabling or changing a country (→ `somcp_update_country`).
 
 **Parameters**
 
@@ -2589,7 +2589,7 @@ format**, **Display tax label**). It is the read before the change of a
 country. Read only.
 
 **Do not use for** - many countries (→ `somcp_list_countries`); the states of
-a country (→ `somcp_list_states`).
+a country (→ `somcp_list_states`); changing a country (→ `somcp_update_country`).
 
 **Parameters**
 
@@ -2619,6 +2619,78 @@ every problem at once.
 - A read: nothing written, nothing to retry.
 
 **Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), some labels (**Does it need Zip/Postal code?** on 8.0.1, **Does it need a ZIP/Postal code?** on 9.0.0), the empty **Address format** of the 9.0.0 form; the class, the tables and the stored values are the same.
+
+#### `somcp_update_country`
+**State**: written · [issue #360](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/360)
+**Nature**: `acts(EDIT, 'AdminCountries')` · **Scope**: `mcp.orders.write`
+
+**Does** - changes one country of **International > Locations > Countries**,
+as **Edit** then **Save** do, and as the **Enabled** switch and the bulk
+action **Assign to a new zone** do for one country: **Country** (per
+language), **ISO code**, **Call prefix**, **Default currency**, **Zone**,
+**Active**, **Contains states**, **Do you need a tax identification
+number?**, **Display tax label (e.g. "Tax incl.")**. Only the fields that
+differ are written.
+
+**Do not use for** - the zip code and the address format (a later part of
+this tool, #361); one state (→ `somcp_update_state`); the tax of a country (→
+`somcp_add_country_rule`).
+
+**Parameters**
+
+| Name | On screen | Type | Required | Role |
+|---|---|---|---|---|
+| `id_country` | - | integer | yes | the country, from `somcp_list_countries`; a country of the shop (`country_shop`), found as `somcp_get_country` finds it |
+| `languages`, `name` | **Country** | object | no | one text per language keyed by ISO code, the rule of #149 (`SomcpToolCreateProduct::languages()` and `texts()`); a plain text equal to a stored name is no change (`givenBackAsRead()`); at most the size of `name` in `Country::$definition` (64), `isGenericName` |
+| `iso_code` | **ISO code** | string | no | trimmed, upper-cased, `Validate::isLanguageIsoCode()`: `iso_code: 2 or 3 letters, for example FR`; another country has it (`Country::getByIso()`): `iso_code: country <id> (<name>) already has the ISO code <code>` |
+| `call_prefix` | **Call prefix** | integer | no | 0 or more: `call_prefix: a whole number, 0 for none (the list shows -)` |
+| `id_currency` | **Default currency** | integer | no | `0` for **Default store currency**, or a currency `currency_shop` ties to the shop, as `somcp_list_currencies` lists them; otherwise `SomcpTool::notFound('id_currency', 'currency', $id, 'somcp_list_currencies')` |
+| `id_zone` | **Zone** | integer | no | a zone of the shop (`SomcpToolListCountries::zoneOfShop()`), the message of `somcp_create_state` |
+| `active` | **Active** | boolean | no | `active: true or false` |
+| `contains_states` | **Contains states** | boolean | no | the same |
+| `need_identification_number` | **Do you need a tax identification number?** | boolean | no | the same |
+| `display_tax_label` | **Display tax label (e.g. "Tax incl.")** | boolean | no | the same |
+
+A row of `somcp_get_country` can be given back whole: `language` (any
+language of the shop), `zone`, `currency`, `states` and `address_format_used`
+are taken only when they equal the stored values, otherwise `<field>: worked
+out by the shop - change <the field it comes from>`; `need_zip_code`,
+`zip_code_format` and `address_format` are taken when they equal the stored
+values and otherwise refused until the part that writes them (#361). Unknown
+arguments through `SomcpTool::unknownFields()`. Before the write, the whole
+object goes through `validateFields()` and `validateFieldsLang()`.
+
+**Then** - the fields that differ are set on the `Country` loaded in every
+language, then `update()`. When the zone changed, the states of the country
+whose zone was the old one get the new one, each through `State::update()`,
+as 8.0.1 does on **Save**; a state the merchant put in another zone is not
+touched. Nothing differs: no write.
+
+**Returns** - the shape of every update tool: `changed: true`, `id_country`,
+`changes` (`field`, `old`, `new`; a name as `name (<iso>)`), `states_moved`
+(the `id_state` list, only when the zone changed), and `country`, the answer
+of `somcp_get_country` read back in the shop default language; or `changed:
+false`, `id_country`, `reason: The country already holds every value given.
+Nothing was written.` and `country`. When the installation has more than one
+shop, `also_in_other_shops` and a warning: the `country` row is shared by
+every shop. Logged as `country_updated` with the field names, or
+`country_update_failed`.
+
+Warnings, in `warning`:
+- **Active** set to `true` with no `module_country` row for the country and the shop: `No payment module is offered to <name> in this shop: its customers cannot pay until one is allowed for it in Payment > Preferences.`
+- **Active** set to `true` in a zone no carrier serves (`SomcpToolUpdateZone::carriers()`): `No carrier serves zone <id> (<name>): customers of <name> are offered no carrier until one serves it - see somcp_update_carrier.`
+- **Contains states** set to `false` while the country has states: `The <n> states of <name> are no longer offered in its address form; they are kept.`; set to `true` with none: `<name> has no state yet: add them with somcp_create_state.`
+- **Do you need a tax identification number?** set to `true`: `New addresses in <name> must now give an identification number; the existing ones are not checked.`
+
+**Errors** - in the envelope `Nothing was changed. Correct these and call
+again:`, every problem at once (`SomcpTool::refused('changed', $problems)`).
+
+**Notes**
+- Replayable: a second identical call answers `changed: false`.
+- The payment restrictions (**Payment > Preferences**), the shop association and the address format are never written here: the 8.0.1 list switch adds every payment module to a country it enables, which the edit form of both versions does not.
+- The back-office address of the page is never part of the answer.
+
+**Differences between 8.0.1 and 9.0.0** - the page (legacy on 8.0.1, Symfony on 9.0.0), some labels, the states moved with the zone (8.0.1 only in the back office, both here), the refusal of an ISO code another country has (8.0.1 only in the back office, both here), **Country options** (8.0.1 only, not part of this tool); the class and the tables are the same.
 
 #### `somcp_list_states`
 **State**: written · [issue #341](https://github.com/novalo-dev/Prestashop-MCP-Server/issues/341)

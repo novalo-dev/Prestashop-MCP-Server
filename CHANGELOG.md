@@ -105,6 +105,16 @@ removed in the back office. A state an address or a tax rule row uses is
 kept, with the tax rules named, so no tax row is left pointing to a state
 that no longer exists.
 
+**Change a country.** The new tool somcp_update_country changes one country
+of International > Locations > Countries as its edit page does: its name in
+each language, ISO code, call prefix, default currency, zone, whether it is
+enabled, whether it has states, whether addresses need a tax identification
+number and whether prices show the tax label. A country moved to another zone
+takes along its states that were in the old zone, on PrestaShop 9 as on
+PrestaShop 8, so its addresses are offered the carriers of the new zone.
+Enabling a country never adds payment modules for it; the answer warns when
+no payment module or no carrier is offered there yet.
+
 **Read a country.** The new tool somcp_get_country reads one country of
 International > Locations > Countries as its edit page shows it, with what
 the list of countries leaves out: its default currency, its address format

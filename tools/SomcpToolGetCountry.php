@@ -105,6 +105,39 @@ class SomcpToolGetCountry
             return SomcpTool::refused('read', $errors);
         }
 
+        return SomcpTool::json(self::read($row, $language[1]));
+    }
+
+    /**
+     * One country as this tool answers it, or null when the shop has none with this identifier.
+     *
+     * Public so somcp_update_country answers the country it changed exactly as
+     * this read gives it, and compares a read given back against the same fields.
+     *
+     * @param int $idShop
+     * @param array{0: int, 1: string} $language the identifier and ISO code of the language of the name
+     * @param int $idCountry
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function country(int $idShop, array $language, int $idCountry): ?array
+    {
+        $row = SomcpToolListCountries::country($idShop, $language[0], $idCountry);
+
+        return $row === null ? null : self::read($row, $language[1]);
+    }
+
+    /**
+     * The fields of the Edit page added to a row of the list.
+     *
+     * @param array<string, mixed> $row a row of SomcpToolListCountries::country()
+     * @param string $iso the ISO code of the language the name was read in
+     *
+     * @return array<string, mixed>
+     */
+    private static function read(array $row, string $iso): array
+    {
+        $idCountry = (int) $row['id_country'];
         $country = new Country($idCountry);
         $idCurrency = (int) $country->id_currency;
         $currency = $idCurrency > 0 ? (string) Currency::getIsoCodeById($idCurrency) : '';
@@ -115,7 +148,7 @@ class SomcpToolGetCountry
             'SELECT `format` FROM `' . _DB_PREFIX_ . 'address_format` WHERE `id_country` = ' . (int) $idCountry
         );
 
-        $result = ['language' => $language[1]] + $row + [
+        return ['language' => $iso] + $row + [
             // 0 is Default store currency, as stored, so a write can give it back.
             'id_currency' => $idCurrency,
             'currency' => $currency !== '' ? $currency : null,
@@ -130,8 +163,6 @@ class SomcpToolGetCountry
                 'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'state` WHERE `id_country` = ' . (int) $idCountry
             ),
         ];
-
-        return SomcpTool::json($result);
     }
 
     /**
